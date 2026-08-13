@@ -1,0 +1,7 @@
+allowBuilds:
+  esbuild: true
+# pnpm 11+ moved several package.json settings here.
+# Allow esbuild (pulled in transitively via tsx) to run its install script,
+# otherwise pnpm exits non-zero on an "Ignored build scripts" warning.
+onlyBuiltDependencies:
+  - esbuild
