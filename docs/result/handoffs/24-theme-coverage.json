@@ -1,0 +1,1519 @@
+{
+ "agent": "Agent-24-Theme-Coverage",
+ "createdAt": "2026-08-19",
+ "baseline": {
+  "themeableGroups": 31,
+  "task20Verified": 14,
+  "dynamicSamples": 3
+ },
+ "groupListDerivation": "data/stripe.com/theme-runs/2026-08-18T12-07-34-566Z/theme-adapter.json paintGroups[] filtered status==\"themeable\" -> exactly 31 (matches coverage.themeableGroups=31; same adapter as theme-extractions/2026-08-18T12-07-22-308Z/site-theme-adapter.json). Expected value per group = selected-theme.json tokens[group.semanticToken] (cool-neutral); border groups keep preservedPrefix width/style with token color; class selectors (.wr-st*/.wr-doc-st*) taken from group.selectors (node-scoped pseudo selectors held as fallback, not needed).",
+ "method": "production package data/stripe.com/production-builds/2026-08-19T06-36-35-798Z/package copied to scratchpad temp dir, served by its own dependency-free server.mjs on 127.0.0.1:46521 with env={PATH}. Playwright (repo playwright 1.62.1, chromium) visited all 20 routes at 1440x900 and 390x844; every element carrying a group class had the mapped computed property read back and compared to the cool-neutral expectation (border groups counted only when computed style==preserved style and width>0; shadows only when box-shadow!=none). Dynamic surfaces: homepage [data-wr-pattern-id] triggers clicked per viewport, groups re-scanned inside visible [id^=wr-obs-]/[id^=wr-dyn-] regions. verified requires >=1 VISIBLE (getClientRects>0) matched element. Negative control: pg000003 on / — 434/434 elements computed rgb(11,105,122), 0 still original rgb(83,58,253), proving the comparator can fail.",
+ "routesExercised": [
+  "/ [desktop 1440 + mobile 390]",
+  "/careers/apply/product-manager-global-expansion-mena/8081418 [desktop 1440 + mobile 390]",
+  "/careers/listing/product-lead-emea-payments/7768979 [desktop 1440 + mobile 390]",
+  "/cookie-settings [desktop 1440 + mobile 390]",
+  "/customers/hargreaves-lansdown [desktop 1440 + mobile 390]",
+  "/en-hk/customers/amp [desktop 1440 + mobile 390]",
+  "/fr/resources/more/self-financing-capacity-in-france [desktop 1440 + mobile 390]",
+  "/in/resources/more/payment-fraud-red-flags [desktop 1440 + mobile 390]",
+  "/industries/media-entertainment [desktop 1440 + mobile 390]",
+  "/legal/becs [desktop 1440 + mobile 390]",
+  "/newsroom/news/tour-berlin-2025 [desktop 1440 + mobile 390]",
+  "/resources/more/arr-loans-explained [desktop 1440 + mobile 390]",
+  "/resources/more/how-can-my-customers-pay-by-bank-a-guide [desktop 1440 + mobile 390]",
+  "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program [desktop 1440 + mobile 390]",
+  "/resources/more/kit-digital [desktop 1440 + mobile 390]",
+  "/resources/more/real-time-payments-explained [desktop 1440 + mobile 390]",
+  "/resources/more/uk-to-eu-vat-compliance [desktop 1440 + mobile 390]",
+  "/resources/more/virtual-credit-cards-for-businesses-explained [desktop 1440 + mobile 390]",
+  "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it [desktop 1440 + mobile 390]",
+  "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know [desktop 1440 + mobile 390]"
+ ],
+ "dynamicSurfacesExercised": [
+  "/ mega-menu dynamic trigger#1 [desktop] (wr-obs-/wr-dyn- regions visible; 10 groups re-verified inside)",
+  "/ mega-menu dynamic trigger#2 [desktop] (10 groups re-verified inside)",
+  "/ mega-menu dynamic trigger#4 [desktop] (10 groups re-verified inside)",
+  "/ portal menu trigger#1 [mobile 390] (7 groups re-verified inside)",
+  "note: 5 desktop triggers found, 3 produced visible dynamic regions; 3 mobile triggers found, 1 (portal) produced regions; Escape pressed between triggers; no dialog/locale-switcher trigger exposed beyond these on the 20-route static export"
+ ],
+ "groups": [
+  {
+   "id": "pg000001",
+   "token": "color.text.secondary",
+   "property": "color",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 2542,
+    "visibleFound": 2542,
+    "allMatched": 9996,
+    "allFound": 9996
+   },
+   "routes": [
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "color"
+   ],
+   "evidence": {
+    "expected": "rgb(62, 84, 96)",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/cookie-settings [desktop]",
+     "cls": "wr-doc-st001358",
+     "tag": "div",
+     "actual": "rgb(62, 84, 96)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000002",
+   "token": "color.text.primary",
+   "property": "color",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 4587,
+    "visibleFound": 4587,
+    "allMatched": 10200,
+    "allFound": 10200
+   },
+   "routes": [
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "color"
+   ],
+   "evidence": {
+    "expected": "rgb(15, 40, 54)",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/cookie-settings [desktop]",
+     "cls": "wr-st000305",
+     "tag": "button",
+     "actual": "rgb(15, 40, 54)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000003",
+   "token": "color.link",
+   "property": "color",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 1530,
+    "visibleFound": 1530,
+    "allMatched": 10707,
+    "allFound": 10707
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979",
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [
+    "/ dynamic trigger#1 [desktop]",
+    "/ dynamic trigger#1 [mobile]",
+    "/ dynamic trigger#2 [desktop]",
+    "/ dynamic trigger#4 [desktop]"
+   ],
+   "propertiesChecked": [
+    "color"
+   ],
+   "evidence": {
+    "expected": "rgb(11, 105, 122)",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st006967",
+     "tag": "a",
+     "actual": "rgb(11, 105, 122)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": true
+   }
+  },
+  {
+   "id": "pg000005",
+   "token": "color.text.muted",
+   "property": "color",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 2646,
+    "visibleFound": 2646,
+    "allMatched": 5292,
+    "allFound": 5292
+   },
+   "routes": [
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "color"
+   ],
+   "evidence": {
+    "expected": "rgb(112, 132, 144)",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/cookie-settings [desktop]",
+     "cls": "wr-st003439",
+     "tag": "a",
+     "actual": "rgb(112, 132, 144)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000009",
+   "token": "color.accent.primary",
+   "property": "color",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 1132,
+    "visibleFound": 1132,
+    "allMatched": 2460,
+    "allFound": 2460
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979",
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "color"
+   ],
+   "evidence": {
+    "expected": "rgb(16, 148, 141)",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st000151",
+     "tag": "button",
+     "actual": "rgb(16, 148, 141)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": true
+   }
+  },
+  {
+   "id": "pg000011",
+   "token": "color.action.primaryText",
+   "property": "color",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 576,
+    "visibleFound": 576,
+    "allMatched": 1377,
+    "allFound": 1377
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979",
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [
+    "/ dynamic trigger#1 [mobile]"
+   ],
+   "propertiesChecked": [
+    "color"
+   ],
+   "evidence": {
+    "expected": "rgb(255, 255, 255)",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st000154",
+     "tag": "a",
+     "actual": "rgb(255, 255, 255)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": true
+   }
+  },
+  {
+   "id": "pg000046",
+   "token": "color.surface.primary",
+   "property": "background-color",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 996,
+    "visibleFound": 996,
+    "allMatched": 2699,
+    "allFound": 2699
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979",
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [
+    "/ dynamic trigger#1 [desktop]",
+    "/ dynamic trigger#1 [mobile]",
+    "/ dynamic trigger#2 [desktop]",
+    "/ dynamic trigger#4 [desktop]"
+   ],
+   "propertiesChecked": [
+    "background-color"
+   ],
+   "evidence": {
+    "expected": "rgb(247, 250, 251)",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st001179",
+     "tag": "section",
+     "actual": "rgb(247, 250, 251)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": true
+   }
+  },
+  {
+   "id": "pg000048",
+   "token": "color.surface.elevated",
+   "property": "background-color",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 158,
+    "visibleFound": 158,
+    "allMatched": 919,
+    "allFound": 919
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979",
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [
+    "/ dynamic trigger#1 [desktop]",
+    "/ dynamic trigger#2 [desktop]",
+    "/ dynamic trigger#4 [desktop]"
+   ],
+   "propertiesChecked": [
+    "background-color"
+   ],
+   "evidence": {
+    "expected": "rgb(255, 255, 255)",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st001209",
+     "tag": "div",
+     "actual": "rgb(255, 255, 255)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000050",
+   "token": "color.surface.secondary",
+   "property": "background-color",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 170,
+    "visibleFound": 170,
+    "allMatched": 431,
+    "allFound": 431
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979",
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [
+    "/ dynamic trigger#1 [desktop]",
+    "/ dynamic trigger#2 [desktop]",
+    "/ dynamic trigger#4 [desktop]"
+   ],
+   "propertiesChecked": [
+    "background-color"
+   ],
+   "evidence": {
+    "expected": "rgb(233, 240, 243)",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st000117",
+     "tag": "div",
+     "actual": "rgb(233, 240, 243)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": true
+   }
+  },
+  {
+   "id": "pg000052",
+   "token": "color.accent.primary",
+   "property": "background-color",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 121,
+    "visibleFound": 121,
+    "allMatched": 316,
+    "allFound": 316
+   },
+   "routes": [
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "background-color"
+   ],
+   "evidence": {
+    "expected": "rgb(16, 148, 141)",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/cookie-settings [desktop]",
+     "cls": "wr-st000183",
+     "tag": "a",
+     "actual": "rgb(16, 148, 141)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000054",
+   "token": "color.canvas",
+   "property": "background-color",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 34,
+    "visibleFound": 34,
+    "allMatched": 68,
+    "allFound": 68
+   },
+   "routes": [
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "background-color"
+   ],
+   "evidence": {
+    "expected": "rgb(247, 250, 251)",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/cookie-settings [desktop]",
+     "cls": "wr-doc-st001358",
+     "tag": "div",
+     "actual": "rgb(247, 250, 251)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": true
+   }
+  },
+  {
+   "id": "pg000056",
+   "token": "color.accent.secondary",
+   "property": "background-color",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 62,
+    "visibleFound": 62,
+    "allMatched": 124,
+    "allFound": 124
+   },
+   "routes": [
+    "/"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "background-color"
+   ],
+   "evidence": {
+    "expected": "rgb(64, 141, 175)",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st000984",
+     "tag": "div",
+     "actual": "rgb(64, 141, 175)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": true
+   }
+  },
+  {
+   "id": "pg000057",
+   "token": "color.action.primary",
+   "property": "background-color",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 21,
+    "visibleFound": 21,
+    "allMatched": 61,
+    "allFound": 61
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979"
+   ],
+   "dynamicSurfaces": [
+    "/ dynamic trigger#1 [mobile]"
+   ],
+   "propertiesChecked": [
+    "background-color"
+   ],
+   "evidence": {
+    "expected": "rgb(13, 124, 128)",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st000154",
+     "tag": "a",
+     "actual": "rgb(13, 124, 128)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": true
+   }
+  },
+  {
+   "id": "pg000113",
+   "token": "color.border.default",
+   "property": "border-top",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 284,
+    "visibleFound": 284,
+    "allMatched": 596,
+    "allFound": 596
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979",
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [
+    "/ dynamic trigger#1 [desktop]",
+    "/ dynamic trigger#2 [desktop]",
+    "/ dynamic trigger#4 [desktop]"
+   ],
+   "propertiesChecked": [
+    "border-top-color",
+    "border-top-style",
+    "border-top-width"
+   ],
+   "evidence": {
+    "expected": "rgb(210, 223, 229)",
+    "expectedBorderStyle": "solid",
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st002414",
+     "tag": "div",
+     "actual": "rgb(210, 223, 229)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": true
+   }
+  },
+  {
+   "id": "pg000114",
+   "token": "color.border.strong",
+   "property": "border-top",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 68,
+    "visibleFound": 68,
+    "allMatched": 136,
+    "allFound": 136
+   },
+   "routes": [
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "border-top-color",
+    "border-top-style",
+    "border-top-width"
+   ],
+   "evidence": {
+    "expected": "rgb(150, 173, 184)",
+    "expectedBorderStyle": "inset",
+    "sample": {
+     "surface": "/cookie-settings [desktop]",
+     "cls": "wr-st007320",
+     "tag": "iframe",
+     "actual": "rgb(150, 173, 184)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000125",
+   "token": "color.border.default",
+   "property": "border-top",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 8,
+    "visibleFound": 8,
+    "allMatched": 16,
+    "allFound": 16
+   },
+   "routes": [
+    "/"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "border-top-color",
+    "border-top-style",
+    "border-top-width"
+   ],
+   "evidence": {
+    "expected": "rgb(210, 223, 229)",
+    "expectedBorderStyle": "dashed",
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st002412",
+     "tag": "div",
+     "actual": "rgb(210, 223, 229)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": true
+   }
+  },
+  {
+   "id": "pg000145",
+   "token": "color.border.default",
+   "property": "border-right",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 84,
+    "visibleFound": 84,
+    "allMatched": 197,
+    "allFound": 197
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979",
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [
+    "/ dynamic trigger#1 [desktop]",
+    "/ dynamic trigger#2 [desktop]",
+    "/ dynamic trigger#4 [desktop]"
+   ],
+   "propertiesChecked": [
+    "border-right-color",
+    "border-right-style",
+    "border-right-width"
+   ],
+   "evidence": {
+    "expected": "rgb(210, 223, 229)",
+    "expectedBorderStyle": "solid",
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st000298",
+     "tag": "div",
+     "actual": "rgb(210, 223, 229)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000146",
+   "token": "color.border.strong",
+   "property": "border-right",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 68,
+    "visibleFound": 68,
+    "allMatched": 136,
+    "allFound": 136
+   },
+   "routes": [
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "border-right-color",
+    "border-right-style",
+    "border-right-width"
+   ],
+   "evidence": {
+    "expected": "rgb(150, 173, 184)",
+    "expectedBorderStyle": "inset",
+    "sample": {
+     "surface": "/cookie-settings [desktop]",
+     "cls": "wr-st007320",
+     "tag": "iframe",
+     "actual": "rgb(150, 173, 184)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000157",
+   "token": "color.border.default",
+   "property": "border-right",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 9,
+    "visibleFound": 9,
+    "allMatched": 18,
+    "allFound": 18
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "border-right-color",
+    "border-right-style",
+    "border-right-width"
+   ],
+   "evidence": {
+    "expected": "rgb(210, 223, 229)",
+    "expectedBorderStyle": "dashed",
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st002424",
+     "tag": "div",
+     "actual": "rgb(210, 223, 229)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": true
+   }
+  },
+  {
+   "id": "pg000175",
+   "token": "color.border.default",
+   "property": "border-bottom",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 98,
+    "visibleFound": 98,
+    "allMatched": 231,
+    "allFound": 231
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979",
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [
+    "/ dynamic trigger#1 [desktop]",
+    "/ dynamic trigger#2 [desktop]",
+    "/ dynamic trigger#4 [desktop]"
+   ],
+   "propertiesChecked": [
+    "border-bottom-color",
+    "border-bottom-style",
+    "border-bottom-width"
+   ],
+   "evidence": {
+    "expected": "rgb(210, 223, 229)",
+    "expectedBorderStyle": "solid",
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st007269",
+     "tag": "span",
+     "actual": "rgb(210, 223, 229)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000176",
+   "token": "color.border.strong",
+   "property": "border-bottom",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 68,
+    "visibleFound": 68,
+    "allMatched": 136,
+    "allFound": 136
+   },
+   "routes": [
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "border-bottom-color",
+    "border-bottom-style",
+    "border-bottom-width"
+   ],
+   "evidence": {
+    "expected": "rgb(150, 173, 184)",
+    "expectedBorderStyle": "inset",
+    "sample": {
+     "surface": "/cookie-settings [desktop]",
+     "cls": "wr-st007320",
+     "tag": "iframe",
+     "actual": "rgb(150, 173, 184)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000179",
+   "token": "color.border.default",
+   "property": "border-bottom",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 14,
+    "visibleFound": 14,
+    "allMatched": 50,
+    "allFound": 50
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979"
+   ],
+   "dynamicSurfaces": [
+    "/ dynamic trigger#1 [mobile]"
+   ],
+   "propertiesChecked": [
+    "border-bottom-color",
+    "border-bottom-style",
+    "border-bottom-width"
+   ],
+   "evidence": {
+    "expected": "rgb(210, 223, 229)",
+    "expectedBorderStyle": "dashed",
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st007661",
+     "tag": "div",
+     "actual": "rgb(210, 223, 229)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": true
+   }
+  },
+  {
+   "id": "pg000205",
+   "token": "color.border.default",
+   "property": "border-left",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 235,
+    "visibleFound": 235,
+    "allMatched": 746,
+    "allFound": 746
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979",
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [
+    "/ dynamic trigger#1 [desktop]",
+    "/ dynamic trigger#2 [desktop]",
+    "/ dynamic trigger#4 [desktop]"
+   ],
+   "propertiesChecked": [
+    "border-left-color",
+    "border-left-style",
+    "border-left-width"
+   ],
+   "evidence": {
+    "expected": "rgb(210, 223, 229)",
+    "expectedBorderStyle": "solid",
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st000298",
+     "tag": "div",
+     "actual": "rgb(210, 223, 229)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000206",
+   "token": "color.border.strong",
+   "property": "border-left",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 68,
+    "visibleFound": 68,
+    "allMatched": 136,
+    "allFound": 136
+   },
+   "routes": [
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "border-left-color",
+    "border-left-style",
+    "border-left-width"
+   ],
+   "evidence": {
+    "expected": "rgb(150, 173, 184)",
+    "expectedBorderStyle": "inset",
+    "sample": {
+     "surface": "/cookie-settings [desktop]",
+     "cls": "wr-st007320",
+     "tag": "iframe",
+     "actual": "rgb(150, 173, 184)"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000234",
+   "token": "decoration.radius.small",
+   "property": "border-radius",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 281,
+    "visibleFound": 281,
+    "allMatched": 738,
+    "allFound": 738
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979",
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [
+    "/ dynamic trigger#1 [desktop]",
+    "/ dynamic trigger#1 [mobile]",
+    "/ dynamic trigger#2 [desktop]",
+    "/ dynamic trigger#4 [desktop]"
+   ],
+   "propertiesChecked": [
+    "border-top-left-radius"
+   ],
+   "evidence": {
+    "expected": "4px",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st000370",
+     "tag": "button",
+     "actual": "4px"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": true
+   }
+  },
+  {
+   "id": "pg000235",
+   "token": "decoration.radius.large",
+   "property": "border-radius",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 204,
+    "visibleFound": 204,
+    "allMatched": 1008,
+    "allFound": 1008
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979",
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "border-top-left-radius"
+   ],
+   "evidence": {
+    "expected": "10px",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st000296",
+     "tag": "div",
+     "actual": "10px"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": true
+   }
+  },
+  {
+   "id": "pg000237",
+   "token": "decoration.radius.pill",
+   "property": "border-radius",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 393,
+    "visibleFound": 393,
+    "allMatched": 992,
+    "allFound": 992
+   },
+   "routes": [
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "border-top-left-radius"
+   ],
+   "evidence": {
+    "expected": "16.5px",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/cookie-settings [desktop]",
+     "cls": "wr-st000486",
+     "tag": "a",
+     "actual": "16.5px"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000238",
+   "token": "decoration.radius.medium",
+   "property": "border-radius",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 127,
+    "visibleFound": 127,
+    "allMatched": 308,
+    "allFound": 308
+   },
+   "routes": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979",
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "border-top-left-radius"
+   ],
+   "evidence": {
+    "expected": "6px",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/ [desktop]",
+     "cls": "wr-st000553",
+     "tag": "nav",
+     "actual": "6px"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000266",
+   "token": "decoration.shadow.large",
+   "property": "box-shadow",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 5,
+    "visibleFound": 5,
+    "allMatched": 608,
+    "allFound": 608
+   },
+   "routes": [
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "box-shadow"
+   ],
+   "evidence": {
+    "expected": "rgba(15, 40, 54, 0.16) 0px 30px 60px -12px, rgba(15, 40, 54, 0.2) 0px 18px 36px -18px",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/cookie-settings [desktop]",
+     "cls": "wr-st000771",
+     "tag": "span",
+     "actual": "rgba(15, 40, 54, 0.16) 0px 30px 60px -12px, rgba(15, 40, 54, 0.2) 0px 18px 36px -18px"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000267",
+   "token": "decoration.shadow.small",
+   "property": "box-shadow",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 55,
+    "visibleFound": 55,
+    "allMatched": 112,
+    "allFound": 112
+   },
+   "routes": [
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [],
+   "propertiesChecked": [
+    "box-shadow"
+   ],
+   "evidence": {
+    "expected": "rgba(15, 40, 54, 0.18) 0px 2px 5px -1px, rgba(15, 40, 54, 0.14) 0px 1px 3px -1px",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/customers/hargreaves-lansdown [desktop]",
+     "cls": "wr-st003610",
+     "tag": "a",
+     "actual": "rgba(15, 40, 54, 0.18) 0px 2px 5px -1px, rgba(15, 40, 54, 0.14) 0px 1px 3px -1px"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  },
+  {
+   "id": "pg000268",
+   "token": "decoration.shadow.medium",
+   "property": "box-shadow",
+   "classification": "verified",
+   "elements": {
+    "visibleMatched": 46,
+    "visibleFound": 46,
+    "allMatched": 86,
+    "allFound": 86
+   },
+   "routes": [
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/industries/media-entertainment",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "dynamicSurfaces": [
+    "/ dynamic trigger#1 [desktop]",
+    "/ dynamic trigger#1 [mobile]",
+    "/ dynamic trigger#2 [desktop]",
+    "/ dynamic trigger#4 [desktop]"
+   ],
+   "propertiesChecked": [
+    "box-shadow"
+   ],
+   "evidence": {
+    "expected": "rgba(15, 40, 54, 0.16) 0px 13px 27px -5px, rgba(15, 40, 54, 0.18) 0px 8px 16px -8px",
+    "expectedBorderStyle": null,
+    "sample": {
+     "surface": "/cookie-settings [desktop]",
+     "cls": "wr-st001237",
+     "tag": "div",
+     "actual": "rgba(15, 40, 54, 0.16) 0px 13px 27px -5px, rgba(15, 40, 54, 0.18) 0px 8px 16px -8px"
+    },
+    "matchRate": "100%",
+    "coveredInTask20": false
+   }
+  }
+ ],
+ "totals": {
+  "verified": 31,
+  "notExercised": 0,
+  "mismatch": 0
+ },
+ "mismatches": [],
+ "jsErrors": [],
+ "scanArtifacts": "/private/tmp/claude-501/-Users-woops-projects-web-recon/4995d92c-5d3b-4c90-a438-d95c77060545/scratchpad/theme-cov/{checklist.json,results.json,scan.js,dyn-desktop.json,dyn-mobile.json}",
+ "debtStatus": "CLOSED"
+}

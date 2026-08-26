@@ -1,0 +1,127 @@
+{
+  "task": "25-verification",
+  "role": "Task25-Verifier (round 1, fresh adversarial agent)",
+  "createdAt": "2026-08-25",
+  "verdict": "PASS — zero blocker/major findings; 2 minor findings listed. Builder verdict 'READY FOR FIRST REAL PRODUCTION PILOT' is supported by the evidence; stripe honestly remains PRODUCTION_INPUTS_REQUIRED.",
+  "method": "Nothing in the handoff was trusted without re-checking the artifact or re-running the command. Commands re-run by this verifier tonight (2026-08-25 ~22:15-22:30 KST): pnpm typecheck; pnpm smoke:release (FRESH full run); pnpm smoke:production; pnpm smoke:assets; pnpm smoke:seo; pnpm smoke:content-injection; pnpm release:plan <stripe project>; pnpm release:build <stripe project> --dry-run; independent python trace of 7 requirement kinds from raw artifacts; find -newermt sweeps over data/ and docs/result; git status/log/reflog/branch/stash (read-only only). All src/release code read in full.",
+
+  "spec33Questions": {
+    "A_reimplemented_existing_algorithms": {
+      "answer": "NO",
+      "evidence": [
+        "src/release/collect.ts contains zero detection machinery: it only JSON-reads verdicts existing artifacts already carry (seo plan domainState/businessFacts, report/needs-input.json, replacement-manifest.json, font-inventory.json license[], generation-result.json unresolved[], inventory manifest counts, network-qa totals, production-spec indexabilityGate). grep for fetch(/playwright/chromium/jsdom/cheerio over src/release/*.ts: only an example URL string in checklist.ts.",
+        "grep for exec/spawn/child_process over src/release + CLIs: zero code hits (comments only) — stage runners in src/release/stages.ts call ONLY public typed APIs: prepareContentRun/ingestGenerationResult (content-injection), createThemeRun (theme), createProductionSeoPlanRun (seo), runProductionCompile/runProductionQa (production).",
+        "src/release/freshness.ts imports hashDirectory/hashFile from src/production/hash.ts (dir-sha256-v1 reused, not re-implemented).",
+        "src/release/resolve-assets.ts is NEW machinery, not a duplicate: grep 'providedFile' in src/assets hits only the schema field (types.ts:395) and its null initializer (materialize.ts:226) — the Task 22 replacement seam had no byte-applying consumer before (preflight R1 confirmed); the release layer is that consumer and derives a NEW materialization run without touching the base."
+      ]
+    },
+    "B_requirements_derived_from_artifacts": {
+      "answer": "YES — 7 distinct kinds traced value-for-value from raw artifacts to data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z/requirements.json (python re-read, independent of the smoke)",
+      "traces": [
+        "production-domain: production-seo-plans/2026-08-18T19-26-12-572Z/production-seo-plan.json domainState.productionDomain.status='needs-input' → requirement 'production-domain' (release-blocking, evidence file recorded)",
+        "business-fact: site.businessFacts.phone.status='needs-input' → 'business-fact-phone' (high-value, resolutionOptions ['facts.phone']); 7 canonical + 39 slot facts = 46 total",
+        "font-license: asset-inventories/2026-08-19T05-54-47-361Z/font-inventory.json license[] families ['sohne-var','sourcecodepro'] status='license-needs-review' → exactly ['font-license-sohne-var','font-license-sourcecodepro']",
+        "replacement-image: replacement-manifest.json 340 entries with replacement.status!='provided' → 340 requirements; 51 classification='replacement-required' → exactly 51 release-blocking",
+        "content-route: template manifest routes (20) minus content-run scopedRoutes (['/']) = 19 → exactly 19 content-route requirements (release-blocking)",
+        "source-brand-asset: inventory manifest counts.inlineSvgEntries=374 → requirement 'source-brand-inline-svg' count=374 (release-blocking)",
+        "external-url: generation-result.json unresolved[] with slotKey ending '.href' = 25 of 64 → exactly 25 external-url requirements (remaining 39 → business-fact-slot-*)"
+      ],
+      "totalsCrosscheck": "340+46+25+19+2+1+1+1+1+1 = 437 requirements; blocking 19+2+1+51+1 = 74 — matches requirements.json counts {total:437, releaseBlockingUnresolved:74} exactly"
+    },
+    "C_stripe_specific_constants_in_code": {
+      "answer": "NO",
+      "evidence": [
+        "grep 'stripe' over src/release + src/cli-release-*: one doc COMMENT in nl.ts (cites the accepted stripe content run as precedent for manual LLM conversion) — no code constant.",
+        "grep for the known stripe numbers (182, 437, 374, 340, 289, 4424, 278, 1671, 1755, 51/64/66/19/74 as literals) over src/release: zero code hits (only §19 prose in SEVERITY_POLICY basis strings and 64-hex regexes).",
+        "grep '2026-08-1xT' run-id pattern over all of src/: only pre-existing doc comments in other subsystems' store.ts files; none in release code.",
+        "scripts/smoke-release.ts stripe canary section references the accepted candidate PATH (that IS the spec §23 canary input) but derives every expected count by re-reading the artifacts at runtime (checks 23.1-23.8 compare collected vs re-read values, no literals)."
+      ]
+    },
+    "D_domain_only_change_reruns_reconstruction": {
+      "answer": "NO — verified by re-running the fixture myself",
+      "evidence": [
+        "Fresh smoke:release run (this verifier, exit 0): '13c domain-only resolution invalidates seo+production ONLY' PASS; '26.4 domain-only change re-ran seo+production only (content regenerate count 0)' PASS; '26.3 reconstruction rerun count = 0 and template compile count = 0 (whole scenario)' PASS (summed over ALL release runs' audit records); '26.5 asset replacement re-ran assets+production only' PASS.",
+        "Structural guarantee: src/release/types.ts FROZEN_STAGES=['reconstruction','template'] have NO runners (DEFAULT_STAGE_RUNNERS omits them); src/release/build.ts throws 'release build refused: frozen stage inputs drifted' rather than executing them.",
+        "Stripe dry-run re-run by this verifier: WOULD RUN (nothing), WOULD REUSE all 7 stages; release-project.json/requirements.json md5-identical before and after plan + dry-run."
+      ]
+    },
+    "E_preview_vs_indexable_honestly_separated": {
+      "answer": "YES",
+      "evidence": [
+        "src/release/gate.ts: PRODUCTION_READY requires (a) releaseBlockers()==0, (b) production-spec indexabilityGate.decision=='indexable', (c) isolated-package QA failed==0, (d) production stage fresh — all artifact-derived; no writable ready flag exists.",
+        "src/release/requirements.ts releaseBlockers(): status 'accepted-limitation' still blocks (spec §7 — acknowledgements never unlock indexable production; asserted in code, checklist text, and report).",
+        "src/release/freshness.ts applyBlocking(): indexable target + unresolved release-blocking ⇒ production stage BLOCKED — a domain alone cannot produce a fake-indexable compile. Fresh smoke: 21.1 (production BLOCKED BY content-route + font-license with the domain provided), 21.2 (seo would still rerun, production never), 21.3 (project stays PRODUCTION_INPUTS_REQUIRED) all PASS.",
+        "Preview honesty: smoke test 20 PASS — preview build stands WITH unresolved factual requirements (noindex policy unchanged from Task 23).",
+        "SEVERITY_POLICY (src/release/types.ts) transcribes the spec §19 conditions: domain / content-route / font-license / source-brand-asset / replacement-required(+still-renders escalation) = release-blocking; og-image high-value with an explicit written §22 policy basis ('blocking only if the indexable policy says so — ours does not')."
+      ]
+    },
+    "F_fixture_reaches_PRODUCTION_READY": {
+      "answer": "YES — re-run fresh by this verifier: smoke:release 84 checks, 0 failures, exit 0",
+      "evidence": [
+        "'22b synthetic project reached PRODUCTION_READY honestly' PASS; '22c final spec is indexable with the operator domain (newco-prod.example) and zero blockers' PASS; '26.1 isolated-package QA green (0 hydration/JS errors)' PASS; '26.2 zero external requests' PASS; '26.6 replacement hero bytes actually serve' PASS; '26.7 sitemap.xml served in the indexable package' PASS; '20b every route READY after full resolution' PASS.",
+        "The transition is PRODUCTION_INPUTS_REQUIRED → (pack1: facts/urls/assets/font/routeContent) → only-domain-blocker → (injected seo failure + honest retry) → (pack2: domain only) → PRODUCTION_READY via selective rebuild — with the fixture pipeline being the REAL reconstruction → template → content → theme → seo → assets → production stack (verified in scripts/smoke-release.ts imports and section 0 PASSes).",
+        "Honest fixture caveat correctly disclosed by the builder (report + handoff): the fixture's initial network-qa.json is hand-built; the browser-measured authority is the production QA census (0 external requests), independently asserted."
+      ]
+    },
+    "G_historical_artifacts_unmodified": {
+      "answer": "YES",
+      "evidence": [
+        "find data -newermt 2026-08-20 -type f (excluding the new release-projects namespace and transient .smoke dirs): 0 files across ALL hosts — every pre-existing run dir (all 9 stripe lineage dirs included) untouched.",
+        "find docs/result -newermt 2026-08-20: ADD-only (25 report, 25-handoff, 25-preflight, 17 regression logs, 3 canary logs, and now this verification file).",
+        "Fresh smoke:release checks 25.1-25.3 PASS (byte snapshots of the six stripe lineage dirs before/after collection; accepted fixture runs untouched, reruns in NEW run-id dirs).",
+        "Re-verified after this verifier's own runs: 0 stripe files outside release-projects newer than 21:50 tonight; release-projects file set byte-identical (md5) across my release:plan + release:build --dry-run.",
+        "git: HEAD still 2777b41 (reflog has exactly one entry — the initial commit); no stash; branches unchanged; the tracked modified/deleted set is identical to the pre-task snapshot (README.md, ROADMAP.md, package.json, pnpm-lock.yaml, src/cli.ts, tsconfig.json, 2 deletions) — package.json's release/smoke:release script additions are working-tree edits to an already-dirty tracked file, permitted; zero git write operations."
+      ]
+    }
+  },
+
+  "spec34Gates": {
+    "A_release_project_v1": "PASS — src/release/types.ts ReleaseProjectSchema (strict zod, closed 10-state enum, per-stage {id,path,hash} lineage); stripe project file validates (loaded via ReleaseProjectSchema.parse in my release:plan run); smoke 1.1-1.3 fresh PASS.",
+    "B_production_resolution_v1": "PASS — ProductionResolutionSchema, ALL fields optional, strict (unknown fields rejected); smoke 3.1/3.2 + 11.1-11.3 fresh PASS (schema reject, unknown-slot reject, NL-seam parser enforces the same validator).",
+    "C_requirement_normalization": "PASS — src/release/collect.ts reads only existing artifacts; 7 kinds traced end-to-end (see §33 B); smoke 2.1 + 4-9 + 23.1-23.8 fresh PASS.",
+    "D_stage_dependency_graph": "PASS — src/release/graph.ts STAGE_DEPENDENCIES (incl. the content→theme pin edge, preflight R9) + RESOLUTION_FIELD_IMPACTS + THEME_SELECTION_IMPACTS; smoke 12.1/12.2/13a/14a/15 fresh PASS.",
+    "E_fresh_stale_blocked": "PASS — src/release/freshness.ts one sha256 over upstream dir-hashes + per-stage resolution slice (asset files content-hashed); artifact drift re-hash every plan/build; smoke 16.1-16.4 + 13b/13c/14b + 21.1 fresh PASS.",
+    "F_selective_recomputation": "PASS — build.ts executes only stale stages topologically with staleness propagation; smoke 18c (content/theme/seo/assets/production vs frozen roots), 19.3, 26.4, 26.5 fresh PASS.",
+    "G_dry_run": "PASS — smoke 17.1 (host-namespace snapshot byte-identity), 17.2, 18b, 21.1-21.2 fresh PASS; stripe dry-run re-run myself: WOULD RUN (nothing)/WOULD REUSE all 7, md5-verified zero mutation.",
+    "H_resume_retry": "PASS — smoke 19.1-19.4 fresh PASS (injected seo failure → failedStage/failureArtifact/retryable recorded, nothing rerun before the failure, retry reruns only seo+production, failure cleared); project saved after every successful stage (build.ts crash-safe adoption).",
+    "I_operator_checklist": "PASS — data/stripe.com/release-projects/.../operator-checklist.md inspected: Why/How-to-resolve/Used-on/Expected/Evidence per item, priority groups, large-group collapse (content-route ×19, replacement-image ×51/×289), route table, technical warnings + GED register; smoke 24 fresh PASS.",
+    "J_route_level_readiness": "PASS — release:plan re-run myself: ROUTES table shows all 20 stripe routes with content/seo/residual-asset state ('/' CONTENT_READY, 19 × NEEDS_INPUT — matches the preflight-verified 19 uninjected routes); smoke 20b fresh PASS (fixture ends all-READY).",
+    "K_preview_indexable_distinction": "PASS — see §33 E; gate.ts + applyBlocking + smoke 20/21.1-21.3/22c fresh PASS.",
+    "L_stripe_blockers_derived": "PASS — 437 requirements / 74 release-blocking, every count independently re-derived from artifacts by this verifier (see §33 B); kinds match the Task 24 blocker list one-for-one (domain, business facts, replacement assets, fonts, uninjected routes, inline-SVG marks, og/logo/handle).",
+    "M_stripe_stays_input_required": "PASS — release-project.json releaseState=PRODUCTION_INPUTS_REQUIRED, target preview, 0 resolutions applied; both prepare run records carry finalVerdict PRODUCTION_INPUTS_REQUIRED with 74 blockers; smoke 23.9 fresh PASS.",
+    "N_synthetic_production_ready": "PASS — see §33 F (fresh smoke 22b/22c/26.x).",
+    "O_unnecessary_reconstruction_zero": "PASS — smoke 26.3 fresh PASS (rerun counts summed over ALL release runs: reconstruction 0, template 0); structurally impossible (no runners for frozen stages; refuse-on-drift).",
+    "P_full_regression": "PASS — pnpm typecheck exit 0. Re-run by this verifier: smoke:release 84/0, smoke:production 84/0, smoke:assets 113/113, smoke:seo 72/72, smoke:content-injection 68/68 (all exit 0; content-injection includes a real next build). Builder logs inspected for the other 12 suites (docs/result/handoffs/25-regression-logs/): final lines match the Task 24 baseline count-for-count (verifier 81, selector 81, multi-observer 58, interaction-detector 92, interaction-explorer 108, interaction-patterns 88, sitespec 252, reconstruction 205, reconstruction-qa 134, e2e 130, recon-template 58, theme 47); the two literal 'FAIL' strings inside regression-content-injection.log are a negative-path test's expected [content:qa] output — the suite itself reports 68/68. Total 17 suites / 1,755 checks / 0 failures.",
+    "Q_historical_artifact_modified_zero": "PASS — see §33 G.",
+    "R_git_operations_zero": "PASS — reflog has exactly the initial commit; HEAD 2777b41; no stash; no new branches; tracked dirty set identical to the pre-task snapshot."
+  },
+
+  "reportQuality": {
+    "sections": "docs/result/25-operator-release-orchestrator-2026-08-25.md has EXACTLY the 22 spec §35 sections in the spec's order (grep '^## ' verified).",
+    "planReadability": "release:plan output (re-run myself) is a self-contained one-screen view: PROJECT / READY / NEEDS INPUT (by priority, truncated with pointers) / ROUTES / NEXT ACTIONS — understandable without reading any log (spec §14).",
+    "checklistReadability": "operator-checklist.md is genuinely human-readable (spec §21) — see gate I.",
+    "stripeVerdict": "PRODUCTION_INPUTS_REQUIRED preserved everywhere (project file, run records, plan output, report §Stripe Canary — 'and that is the PASS').",
+    "honesty": "Report names its own caveats: og-image/logo/handle SEO consumption is a recorded seam (requirements kept high-value/optional so nothing is faked), inherited network censuses conservative until re-measured, fixture network-qa baseline hand-built with the production census as the real authority, uncommitted working tree recorded as the top operational risk (spec §29) with zero git ops."
+  },
+
+  "minorFindings": [
+    {
+      "id": "V25-M1",
+      "severity": "minor",
+      "gate": "H/§28 audit trail",
+      "description": "Orphan audit run dir: data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z/runs/2026-08-25T12-40-15-656Z/ (an earlier prepare) exists on disk but release-project.json .runs[] lists only 2026-08-25T12-58-28-566Z — prepareReleaseProject rebuilds the project with runs:[newRun], dropping references to prior prepare runs (the run.json files themselves survive). Cosmetic audit-trail completeness on re-prepare; both records carry identical, honest verdicts (PRODUCTION_INPUTS_REQUIRED, 74 blockers), so nothing is misleading.",
+      "location": "src/release/prepare.ts (runs initialization) / data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z/runs/",
+      "suggestedFix": "On re-prepare, carry forward the existing project's runs[] list (or enumerate runs/ on load)."
+    },
+    {
+      "id": "V25-M2",
+      "severity": "minor",
+      "gate": "D (§12 'Theme 선택')",
+      "description": "Theme SELECTION has graph semantics (THEME_SELECTION_IMPACTS = [theme, production], smoke test 15) but no operator-facing resolution path in this task — production-resolution-v1 has no theme field, so changing themes remains a subsystem-level operation outside release:resolve. Theme invalidation via the content→theme edge IS fully wired and exercised (theme genuinely re-ran in the fixture's pack-1 build). Spec §32 test 15 ('theme invalidation') is satisfied; this is a seam note, consistent with the task's conductor scope.",
+      "location": "src/release/graph.ts THEME_SELECTION_IMPACTS (exported, unconsumed by resolve.ts)",
+      "suggestedFix": "Future task: a theme-selection field in a later resolution schema version, wired to THEME_SELECTION_IMPACTS."
+    }
+  ],
+
+  "builderKnownLimitationsReviewed": "All 8 knownLimitations in 25-handoff.json were checked against code/artifacts and are accurately described and honestly surfaced (project limitations[], warnings, checklist, report). None rises to a finding: the og/logo/handle seam keeps those requirements non-blocking; inherited censuses carry a derivation note and collect.ts emits a stale-census warning; the §12 content→assets simplification is recorded as a limitation."
+}

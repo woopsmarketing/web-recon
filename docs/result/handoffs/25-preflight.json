@@ -1,0 +1,274 @@
+{
+  "task": "25-preflight",
+  "role": "Task25-Preflight",
+  "createdAt": "2026-08-25",
+  "specFile": "/Users/woops/projects/web-recon/prompt",
+  "purpose": "Self-contained discovery handoff for the Task25-Builder: accepted Stripe lineage map, where every needs-input/warning/blocker lives (file + JSON shape), repo conventions, the reuse surface for selective rebuild, the regression baseline, defect-register sources, route sources, and concrete recommendations. Everything cited is on disk; no crawls, no git writes, no historical artifact was modified (this file is the only write).",
+
+  "acceptedLineage": {
+    "host": "stripe.com",
+    "note": "Chain verified by following manifest back-references (recon-template manifest.source, content-run manifest.templateId, theme-run manifest, seo snapshot .source, asset inventory .inputs, production-spec .lineage). All paths repo-relative.",
+    "stages": {
+      "discoveryVerification": {
+        "dir": "data/stripe.com/2026-08-17T21-23-37-542Z",
+        "evidence": "source-seo-snapshot source.verificationFile names data/stripe.com/2026-08-17T21-23-37-542Z/verification.json"
+      },
+      "siteObservation": {
+        "dir": "data/stripe.com/site-observations/2026-08-17T21-23-54-037Z-augmented",
+        "pagesObserved": 18,
+        "evidence": "seo snapshot .source.siteObservationFile; asset inventory .inputs.observationRunDir"
+      },
+      "siteSpec": {
+        "dir": "data/stripe.com/site-specs/2026-08-17T21-38-01-773Z",
+        "schemaVersion": 4,
+        "evidence": "recon-template manifest.source.siteSpecRunId"
+      },
+      "reconstruction": {
+        "dir": "data/stripe.com/reconstructions/2026-08-17T21-38-04-901Z",
+        "frozenAuthority": "Exact Reconstruction 27/27 interaction equivalence (Task 17/17.1); QA run 2026-08-17T21-38-08-701Z",
+        "evidence": "recon-template manifest.source.reconstructionRunId"
+      },
+      "reconTemplate": {
+        "dir": "data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z",
+        "templateId": "stripe.com-2026-08-18T10-45-40-007Z",
+        "slotSchemaVersion": 2,
+        "files": "manifest.json (schemaName recon-template-v1; source{siteSpecRunId,reconstructionRunId}; routes[] = THE intended production route list, 20 entries), slots.json, slot-bindings.json, default-content.json, site-map.json, slot-overrides.example.json, app/ (Next template app), report/"
+      },
+      "contentRun": {
+        "dir": "data/stripe.com/content-runs/2026-08-18T10-46-26-129Z",
+        "schemaName": "content-run-v1",
+        "scopedRoutes": ["/"],
+        "counts": { "units": 370, "editableSlots": 566, "generatedSlots": 361, "unresolvedSlots": 64, "imageBriefs": 8 },
+        "brandLeakWarnings": 66,
+        "generator": "claude-code-operator (manual --result ingest seam, NOT the fake provider)",
+        "intentHash": "6f8a232718d490b5c8cc22f2afe34dd7639d28c0445fc73f56f33871cca5dec9"
+      },
+      "themeExtraction": {
+        "dir": "data/stripe.com/theme-extractions/2026-08-18T12-07-22-308Z",
+        "files": "original.theme.json, site-theme-adapter.json (31 themeable paint groups), paint-groups.json (293), report/theme-review.json"
+      },
+      "themeRunAccepted": {
+        "dir": "data/stripe.com/theme-runs/2026-08-18T12-07-34-566Z",
+        "themeId": "cool-neutral",
+        "compatibility": "compatible-with-warnings",
+        "qaPass": true,
+        "siblingRuns": {
+          "2026-08-18T12-07-33-626Z": "original.stripe.com (compatible; no-op — cannot prove baking)",
+          "2026-08-18T12-07-35-609Z": "warm-editorial (compatible-with-warnings)"
+        },
+        "themeLibrary": "themes/library/{cool-neutral,dark-accent,warm-editorial}.theme.json"
+      },
+      "sourceSeoSnapshot": {
+        "dir": "data/stripe.com/source-seo-snapshots/2026-08-18T19-25-49-810Z",
+        "schemaName": "source-seo-snapshot-v1"
+      },
+      "seoPlan": {
+        "dir": "data/stripe.com/production-seo-plans/2026-08-18T19-26-12-572Z",
+        "schemaName": "production-seo-plan-v1",
+        "mode": "preview",
+        "routeCount": 20,
+        "needsInputCount": 182,
+        "files": "production-seo-plan.json, rendered-head.json, robots.txt, sitemap.preview.xml, manifest.json, report/{needs-input,qa,link-qa}.json"
+      },
+      "assetInventory": {
+        "dir": "data/stripe.com/asset-inventories/2026-08-19T05-54-47-361Z",
+        "schemaName": "asset-inventory-v1 (+ font-inventory-v1)",
+        "counts": { "entries": 721, "urlEntries": 347, "inlineSvgEntries": 374, "truncatedEntries": 15, "replacement-recommended": 289, "replacement-required": 51, "safe-to-materialize": 4, "license-needs-review": 3 },
+        "files": "asset-inventory.json, classification.json, font-inventory.json, manifest.json"
+      },
+      "assetMaterialization": {
+        "dir": "data/stripe.com/asset-materializations/2026-08-19T05-54-55-204Z",
+        "schemaName": "asset-materialization-v1",
+        "counts": { "fetched": 278, "uniqueMediaFiles": 230, "rewriteEntries": 278, "replacementManifestEntries": 340 },
+        "files": "manifest.json, rewrite-map.json, replacement-manifest.json, media/ (230 files), report/{network-qa,font-qa}.json"
+      },
+      "productionSpec": {
+        "dir": "data/stripe.com/production-specs/2026-08-19T06-36-35-798Z",
+        "file": "production-spec.json",
+        "schemaName": "production-spec-v1"
+      },
+      "productionBuild": {
+        "dir": "data/stripe.com/production-builds/2026-08-19T06-36-35-798Z",
+        "schemaName": "production-build-v1",
+        "files": "manifest.json, app/, package/{site/,server.mjs,deploy-manifest.json,sitemap.preview.xml,RUN.md}, report/{qa.json (159/159, launchEnv=[PATH]),bake-report.json}",
+        "deployManifestSchema": "production-deploy-manifest-v1"
+      },
+      "verificationRecompileNotDeliverable": "data/stripe.com/production-builds/2026-08-19T07-57-26-869Z (GED-B re-verification; all 5 lineage hashes byte-identical to accepted spec; the 06-36-35-798Z spec/build remain the deliverable)"
+    },
+    "lineageRecordingInSpec": {
+      "where": "production-spec.json .lineage.{template,contentRun,theme,seoPlan,assets}",
+      "commonShape": "{ dir, hash (64-hex dir-sha256-v1), fileCount, byteCount, excluded[] } extended per layer with ids: template{templateId,slotSchemaVersion}, contentRun{contentRunId,slotValueCount}, theme{themeRunId,themeId,themeName,themeMode,adapterVersion,adapterSourceFile}, seoPlan{seoPlanRunId,mode,routeCount,needsInputCount}, assets{materializationRunId,inventoryRunDir,mediaFileCount,rewriteEntryCount,replacementManifestEntryCount}",
+      "hashMethod": "dir-sha256-v1 — per-file sha256; manifest lines '<relpath>\\t<sha256>' sorted by path; dir hash = sha256(manifest utf8); excluded subtrees recorded. Implementation: hashDirectory() in src/production/hash.ts (exported via src/production/index.ts). REUSE THIS for stage freshness hashing.",
+      "zodSchema": "src/production/types.ts productionSpecSchema (schemaVersion z.literal(1), schemaName z.literal('production-spec-v1'))"
+    }
+  },
+
+  "requirementSources": {
+    "principle": "Spec §8: the Release Orchestrator COLLECTS these artifacts' verdicts; it never re-implements the detectors. Every collector below cites a real file and real keys from the accepted run.",
+    "productionDomain": {
+      "file": "production-seo-plans/<run>/production-seo-plan.json",
+      "shape": "domainState: { productionDomain: { value: null, status: 'needs-input', basis: 'no production domain provided — a domain is never invented', previewFallback: null }, mode: 'preview' }",
+      "also": "production-spec.json baseUrl { value: null, status: 'needs-input'|'provided', mode: 'preview'|'production', basis }"
+    },
+    "businessFacts": {
+      "file": "production-seo-plans/<run>/production-seo-plan.json",
+      "shape": "site.businessFacts.{address,phone,prices,reviews,ratings,foundingDate,sameAs} each { status: 'needs-input', value: null }"
+    },
+    "seoNeedsInput": {
+      "file": "production-seo-plans/<run>/report/needs-input.json",
+      "shape": "{ total: 182, entries: [ { location, basis } ] }",
+      "realExamples": [
+        "{ location: 'domainState.productionDomain', basis: 'no production domain provided — a domain is never invented' }",
+        "{ location: 'routes[/].openGraph.image', basis: 'no production social image exists yet (asset independence is Task 22); source images are forbidden' }",
+        "{ location: 'routes[/].twitter.site', basis: 'no production social account provided — never invented' }",
+        "{ location: 'routes[/careers/apply/...]/title', basis: 'route not in content-run scope; source copy is forbidden — provide content or extend the content run' }"
+      ]
+    },
+    "uninjectedRoutes": {
+      "derivation": "template manifest.routes[] minus content-run manifest scopedRoutes; machine evidence = seo needs-input entries whose basis contains 'route not in content-run scope' — 19 distinct routes[...] locations verified in the accepted plan",
+      "contentRunSide": "content-runs/<run>/manifest.json scopedRoutes:['/'], counts.unresolvedSlots:64; generation-result.json unresolved:[{slotKey, reason}] (e.g. { slotKey: 'global.footer.link.documentation.href', reason: 'needs factual input: external destination for product docs not provided' })"
+    },
+    "replacementAssets": {
+      "classificationFile": "asset-inventories/<run>/classification.json — { byClassification: { 'replacement-recommended':289, 'replacement-required':51, 'safe-to-materialize':4, 'license-needs-review':3 }, decisions: [ { inventoryId:'ai000001', url, classification, ruleId, evidence[] } ] }",
+      "operatorSeamFile": "asset-materializations/<run>/replacement-manifest.json — { schemaVersion, schemaName, entries: [ { inventoryId, sourceUrl, classification, slotKeys[], imageBrief, replacement: { status: 'awaiting-input', providedFile: null, providedBy: null }, note } ] } (340 entries)",
+      "residualRenderFile": "asset-materializations/<run>/report/network-qa.json — { baseline:[{route,total,local,sourceHost,otherExternal,sourceUrls[]}], independent:[...], totals } (residual=4 on /)",
+      "productionCensus": "production-builds/<run>/report/qa.json — externalRequestTotal:4, externalRequestsByHost, unexpectedExternalHosts:[], sourceHostMentionsInHtml:4424",
+      "gotcha": "The true unique residual render set is 5 files (Task 24 reconciliation), not the /-scoped 4; and replacement.providedFile is a schema field ONLY — no code path currently consumes it to swap bytes (see risks)."
+    },
+    "fontLicense": {
+      "file": "asset-inventories/<run>/font-inventory.json",
+      "shape": "license: [ { family:'sohne-var', status:'license-needs-review', reason, selfHostApproved:false } ]; fallbackPlan: [ { family, fallbackStack, basis } ]; familyUsage[], fontUrls[], fontFaceRules[]",
+      "measuredCost": "asset-materializations/<run>/report/font-qa.json — { fonts[], appReflow{elementsMeasured:264,elementsChanged:93,widthDelta{p50,p95,max},docHeightDelta}, samples[] }"
+    },
+    "inlineSvgBrandMarks": {
+      "file": "asset-inventories/<run>/manifest.json counts.inlineSvgEntries = 374 (also asset-inventory.json entries of kind inline-svg)",
+      "note": "template-layer limitation; outside the asset layer by design"
+    },
+    "contentBrandLeaks": {
+      "file": "content-runs/<run>/report/brand-leak.json",
+      "shape": "{ brandTokens:['stripe'], scannedSlots:566, warnings: [ { issue:'source-brand-leak', slotKey, kind:'brand-token-in-untouched-default', detail } ] } (66 warnings)"
+    },
+    "themeWarnings": {
+      "file": "theme-runs/<run>/compatibility.json — { result:'compatible-with-warnings', checks:[{id,level:'ok'|..., detail}] }; qa.json — { pass, pages[{route,width,domIdentical,geometryDeltaP95,jsErrors,hydrationErrors,newLowContrastTexts,pass,notes[]}] }"
+    },
+    "consolidatedBlockers": {
+      "file": "production-specs/<run>/production-spec.json indexabilityGate",
+      "shape": "{ decision:'preview'|'indexable', robotsPolicy, blockers:[{id, summary, evidence}] }",
+      "sevenBlockerIds": ["production-domain-needs-input", "seo-needs-input-values", "replacement-required-assets", "fonts-license-needs-review", "business-facts-needs-input", "uninjected-route-content", "source-brand-inline-svg"],
+      "also": "package/deploy-manifest.json carries the same blockers[] plus routes[{route,htmlFile,expectedTitle,headMarker}], knownResidualSourceHosts, contentProof",
+      "derivation": "Since GED-B fix, blocker summaries are computed by buildPreviewBlockers() in src/production/run.ts from the same artifacts the evidence strings cite — model for Task 25 collectors"
+    }
+  },
+
+  "conventions": {
+    "schemas": "NO central schema dir (src/schema/ and src/storage/ exist but are EMPTY — ignore them). Zod v4 schemas live in each subsystem's types.ts with exported constants (e.g. PRODUCTION_SPEC_SCHEMA_NAME='production-spec-v1') and schemaVersion z.literal(1) + schemaName z.literal('<kind>-v1'). Known names: production-spec-v1, production-build-v1, production-deploy-manifest-v1, content-run-v1, recon-template-v1, asset-inventory-v1, font-inventory-v1, asset-materialization-v1, source-seo-snapshot-v1, production-seo-plan-v1. Task 25 should add release-project-v1 and production-resolution-v1 in src/release/types.ts.",
+    "storage": "data/<host>/<kind-plural>/<run-id>/ ; run id = new Date().toISOString().replace(/[:.]/g,'-') (e.g. 2026-08-19T06-36-35-798Z); every subsystem store.ts exports <kind>Dir(host,runId), new<Kind>RunId(), createdAtFromRunId(runId) (createdAt is RECOVERED from the run id — one clock reading). Paths are RELATIVE to repo root ('data/...') — CLIs must run from repo root.",
+    "cli": "src/cli-<area>-<verb>.ts, package.json script '<area>:<verb>': tsx src/cli-....ts. Manual argv parsing (first non-'--' positional + '--flag value' lookups; no arg library). Exit codes: 0 ok; 1 validation/QA failure (usually process.exitCode=1); 2 usage error or hard guard (e.g. assets:qa exits 2 if the layer makes residuals WORSE). CLI is a thin wrapper over a typed API exported from src/<area>/index.ts barrel. ESM throughout: type:module, NodeNext, imports carry .js extensions, node>=22, tsx runner, dotenv only via src/config/env.ts (FIRECRAWL_API_KEY optional — irrelevant to Task 25).",
+    "smoke": "scripts/smoke-<name>.ts + script smoke:<name>. Pattern: local `let checks=0; let failures=0; function check(name, ok, detail='')` printing '  PASS/FAIL <name>'; sections via console.log('\\n== <title>'); final line '<N>/<N> checks passed' or 'smoke:<x> — N checks, M failures'; process.exit(1) if failures>0. Fixtures: built in-script (fixture SiteSpec objects, hosts like fixture-content-injection.example), written to data/.smoke-<name>-<pid> (rm -rf before/after) or mkdtemp(os.tmpdir()); smokes run the REAL pipeline stages against fixtures (real reconstruction, real next build, real Chromium where needed).",
+    "reports": "docs/result/<NN>-<kebab-title>-<YYYY-MM-DD>.md. Task 23 style: header block 'Task:/Title:/Previous:/Status:' then Korean prose with English technical terms, ASCII pipeline diagram, ## sections, measured-number tables, 'Known Limitations' + 'Final Verdict' sections. Task 24 was English (aggregator-written). Task 25 report path is fixed by spec §35: docs/result/25-operator-release-orchestrator-2026-08-25.md with the §35 section list.",
+    "handoffs": "docs/result/handoffs/<NN>-handoff.json with keys task/title/verdict/outputs/newModules/cli/tests/browserQa/regression/importantDecisions/knownLimitations/inputRequirements/nextTaskMustKnow; verifier writes <NN>-verification.json.",
+    "orchestrationModel": "src/e2e/execute-stage.ts is the in-repo precedent for stage orchestration: ONE executeStage() wrapper; closed failure vocabulary (E2eFailure), elapsed recorded even on throw, fatality is a property of the failure type (FATAL_FAILURES set), partial stages still record artifacts. README: the E2E orchestrator calls each stage's PUBLIC API, never exec('pnpm ...') — Task 25 release:build should do the same (typed imports, not subprocesses)."
+  },
+
+  "reuseSurface": {
+    "content": {
+      "typedApi": "src/content-injection/index.ts — prepareContentRun (packet.ts), ingestGenerationResult / revalidateSlotValues / loadContentRun / updateManifest / recordLayoutQa (run.ts), runContentLayoutQa (layout-qa.ts), loadReconTemplate (load-template.ts), detectSourceBrandLeaks",
+      "cli": "content:prepare <template-manifest> --intent '...' [--routes a,b] [--facts f.json]; content:generate <run-dir> --provider fake | --result <generation-result.json>; content:validate <run-dir>; content:qa <run-dir>",
+      "acceptedRunUsed": "manual --result ingest (generator 'claude-code-operator') — the fake provider CANNOT fit 1-3-char micro-slots (GED-D); for deterministic rebuilds prefer the --result seam with a pre-authored JSON"
+    },
+    "theme": {
+      "typedApi": "src/theme/index.ts — runThemeExtraction, createThemeRun, loadThemeRun, loadThemeFile, loadAdapterFile, checkThemeCompatibility, generateThemeOverlay, runThemeQa, listThemeLibrary (THEME_LIBRARY_DIR='themes/library')",
+      "cli": "theme:extract <template-manifest>; theme:preview <template-manifest> --theme <file> --adapter <site-theme-adapter.json> [--content-run <dir>] [--no-serve] (creates the theme run artifact); theme:qa <theme-run-dir> [--routes] [--widths]",
+      "acceptedRunUsed": "cool-neutral theme file themes/library/cool-neutral.theme.json + adapter theme-extractions/2026-08-18T12-07-22-308Z/site-theme-adapter.json + content-run 10-46-26-129Z"
+    },
+    "seo": {
+      "typedApi": "src/seo/index.ts — observeSourceSeo / loadSourceSeoSnapshot (source-observe.ts), createProductionSeoPlanRun / loadProductionSeoPlanRun (run.ts), runSeoQa, generateRobotsTxt/generateSitemapXml, renderPlanHead",
+      "cli": "seo:observe <site-observation> --verification <file> [--live-site-files]; seo:plan <template-manifest> --content-run <dir> --source-snapshot <dir> [--domain <d>] [--facts <json>]; seo:qa <plan-run-dir>",
+      "acceptedRunUsed": "seo:plan with template 10-45-40-007Z manifest + content-run 10-46-26-129Z + snapshot 19-25-49-810Z, NO --domain/--facts → preview mode. KEY SEAM: --domain flips domainState.mode to 'production', which flips production:compile to the indexable path; --facts fills site.businessFacts.",
+      "offline": "seo:plan is fully offline/deterministic — cheap to re-run selectively"
+    },
+    "assets": {
+      "typedApi": "src/assets/index.ts — createAssetInventoryRun / loadAssetInventoryRun (run.ts), createAssetMaterializationRun / loadAssetMaterializationRun (materialize.ts), applyRewrite (rewrite.ts), safe-fetch policy types",
+      "cli": "assets:inventory <site-spec-dir> --template <dir> [--content-run <dir>] [--observation <dir>] [--live-font-css]; assets:materialize <inventory-run-dir> [--concurrency N]; assets:qa <mat-run-dir> --template <dir> [--content-run <dir>]",
+      "acceptedRunUsed": "inventory from site-spec 21-38-01-773Z + template 10-45-40-007Z + content-run 10-46-26-129Z + observation 21-23-54-037Z-augmented + --live-font-css; materialize with defaults",
+      "networkNote": "materialize fetches SOURCE-HOST assets (allowlist = observed hosts). Task 25 must NOT trigger new source fetches for Stripe — reuse the existing materialization run. SSRF fetcher blocks loopback/private ranges; policy field allowPrivateHostPorts is the TEST-ONLY fixture override (used by smoke-assets with a 127.0.0.1 server)."
+    },
+    "production": {
+      "typedApi": "src/production/index.ts — runProductionCompile({host, templateRunDir, contentRunDir, themeRunDir, seoPlanRunDir, materializationRunDir, log}) (run.ts), runProductionQa({packageDir, log}) + launchPackageIsolated (qa.ts), buildPreviewBlockers (pure; artifact-derived), hashDirectory/hashFile (hash.ts, dir-sha256-v1)",
+      "cli": "production:compile --host <h> --template <dir> --content-run <dir> --theme-run <dir> --seo-plan <dir> --materialization <dir>; production:qa <build-run-dir>",
+      "indexablePath": "src/production/run.ts: mode = seoPlan.domainState.mode; decision = mode==='preview' ? 'preview' : 'indexable'; blockers built via buildPreviewBlockers ONLY in preview mode — Builder must read run.ts lines ~240-360 before wiring the PRODUCTION_READY gate and must NOT weaken it"
+    },
+    "notReusableDirectly": "Reconstruction/template compile (compile:recon-template) exist but MUST NOT be re-run for stripe (spec §12/§26); the release graph treats them as frozen upstream nodes identified by hash."
+  },
+
+  "regressionBaseline": {
+    "suites": 16,
+    "totalChecks": 1671,
+    "perSuite": { "verifier": 81, "selector": 81, "multi-observer": 58, "interaction-detector": 92, "interaction-explorer": 108, "interaction-patterns": 88, "sitespec": 252, "reconstruction": 205, "reconstruction-qa": 134, "e2e": 130, "recon-template": 58, "content-injection": 68, "theme": 47, "seo": 72, "assets": 113, "production": 84 },
+    "excluded": "smoke:playwright (environment sanity) is excluded from the count by baseline convention since Task 20",
+    "howRun": "pnpm smoke:<name> from repo root, one at a time; final line of each log is the count. Preserved logs: docs/result/handoffs/final-regression-logs/regression-<suite>.log (16 files).",
+    "browserSuites": "12 suites launch real Chromium (verifier, multi-observer, interaction-explorer, sitespec(?imports), reconstruction, reconstruction-qa, e2e, content-injection, theme, seo, assets, production) — Playwright Chromium must be installed. selector / interaction-detector / interaction-patterns / recon-template are offline.",
+    "gotchas": [
+      "Suites that run `next build` (reconstruction, e2e, content-injection, recon-template, theme, production) take minutes each — use generous timeouts (several suites exceed 2 minutes; budget up to 10 minutes each).",
+      "Run from repo root: storage paths are relative ('data/...'), fixtures write data/.smoke-<name>-<pid>.",
+      "No env vars required for any smoke suite (FIRECRAWL_API_KEY optional and unused by smokes; dotenv auto-loads .env via src/config/env.ts).",
+      "smoke-* fixtures self-clean, but a crashed run can leave data/.smoke-* dirs — safe to ignore/remove ONLY dot-smoke dirs, never named-host run dirs.",
+      "Task 25 adds smoke:release; regression target becomes 17 suites / 1,671+N checks; the 16 existing suites must stay byte-identical in count."
+    ]
+  },
+
+  "defectRegisterSources": {
+    "canonical": "docs/result/handoffs/24-aggregation-phase1.json .genericDefects[] — entries { id, description, file, sites[], severity, decision:'post-mvp', rationale } for all seven GED-A..G (full ids: GED-D-fake-provider-repair-nonconvergence, GED-E-seo-proxy-title-entity-escaping, GED-F-body-anchor-source-identity-no-neutralization, GED-G-no-per-file-cross-route-residual-render-list)",
+    "final": "docs/result/handoffs/24-final.json .corrections.postMvp (one-line each) + docs/result/24-mvp-final-acceptance-2026-08-19.md sections 'Post-MVP (classified, not fixed in Task 24)' and 'Post-MVP Roadmap' (items 1-5 incl. F1 sampler hardening)",
+    "summary": {
+      "GED-D": "micro-slot (1-3 char) fake-provider non-convergence + repair loop lacks no-progress detection; honest FAIL; operator-override seam (content:validate path) recovers. Affects release: route-content requirements may carry honest FAILs.",
+      "GED-E": "Task 21 preview proxy misses HTML-entity-escaped titles; PROVEN CLOSED in the production path by Task 23 route-map title baking; preview-proxy-only.",
+      "GED-F": "body anchors on uninjected routes carry source identity at scale (stripe 4,424 occurrences over 20 routes); no neutralization layer; primarily an input requirement (inject remaining routes).",
+      "GED-G": "no per-file cross-route residual-render list; replacement-manifest.json is the complete entry authority; the current render set is 5 unique files (not '4').",
+      "F1": "GED-A state-flip criterion has a bounded masking window in the production-QA interaction SAMPLER; frozen 27/27 + parity QA remain the fidelity authorities."
+    },
+    "task25Duty": "Preserve as a structured technical-debt register in the release layer; do NOT fix; the orchestrator must be able to surface affected blockers/warnings (e.g. GED-F ⇒ uninjected-route-content, GED-G ⇒ replacement-required residuals)."
+  },
+
+  "routes": {
+    "intendedProductionRouteList": "recon-templates/2026-08-18T10-45-40-007Z/manifest.json .routes[] (20 routes, path-only) — authoritative; mirrored in site-map.json, the template app's route-map.json, production-seo-plan.json .routes[], and package/deploy-manifest.json .routes[{route,htmlFile,expectedTitle,headMarker}]",
+    "uninjected19": "template routes minus content-run scopedRoutes(['/']); verified: the 19 distinct 'routes[...]' locations in seo plan report/needs-input.json whose basis contains 'route not in content-run scope' are exactly the 19 (list spot-checked: /careers/apply/..., /careers/listing/..., /cookie-settings, /customers/hargreaves-lansdown, /en-hk/customers/amp, /fr/resources/..., /in/resources/..., /industries/media-entertainment, /legal/becs, /newsroom/news/tour-berlin-2025, 8x /resources/more/..., /zh-hk/resources/more/...)",
+    "routeReadinessInputs": "per-route content state (content-run scopedRoutes + unresolved slotKeys' route prefix), per-route SEO state (needs-input locations parse 'routes[<route>].<field>'), per-route asset state (network-qa.json baseline/independent per-route rows + qa.json externalRequestsByHost)"
+  },
+
+  "recommendations": {
+    "layout": {
+      "module": "src/release/ — types.ts (release-project-v1 + production-resolution-v1 zod + requirement model + closed ReleaseState enum), store.ts (data/<host>/release-projects/<projectId>/ + runs/<run-id>/ audit trail), collect.ts (requirement normalization from subsystem artifacts), graph.ts (stage dependency graph), freshness.ts (dir-sha256-v1 via src/production/hash.ts hashDirectory), plan.ts, resolve.ts, build.ts (typed-API stage invocations, executeStage-style records), checklist.ts (operator-checklist.md generation), debt.ts (GED register), index.ts barrel",
+      "clis": "src/cli-release-prepare.ts / cli-release-plan.ts / cli-release-resolve.ts / cli-release-build.ts (+ --dry-run); package.json scripts release:prepare / release:plan / release:resolve / release:build; smoke: scripts/smoke-release.ts + 'smoke:release'",
+      "dataOutputs": "data/<host>/release-projects/<projectId>/release-project.json + requirements.json + operator-checklist.md + runs/<run-id>/ (each resolve/build appends a new run dir; NEVER mutates subsystem run dirs). New subsystem reruns (seo plan, theme run, production spec/build) land in their normal kind namespaces under NEW run ids.",
+      "fixture": "synthetic full-resolution site as an in-script fixture in smoke-release.ts following smoke-content-injection.ts (fixture SiteSpec → REAL reconstruction → REAL template compile → content via --result-style ingest covering ALL fixture routes → theme run → seo:plan WITH --domain and --facts → assets → production compile) under data/.smoke-release-<pid>; fixture host e.g. fixture-release.example"
+    },
+    "releaseStateEnum": "DISCOVERED, RECONSTRUCTED, TEMPLATED, CONTENT_READY, THEME_READY, SEO_PREVIEW_READY, ASSET_PREVIEW_READY, PRODUCTION_PREVIEW_READY, PRODUCTION_INPUTS_REQUIRED, PRODUCTION_READY — matches spec §5 and existing verdict language ('PRODUCTION PREVIEW READY', 'PRODUCTION INPUTS REQUIRED'); closed zod enum, never a boolean.",
+    "requirementKindMapping": "production-domain→seo plan domainState; business-fact→site.businessFacts.*; seo-fact/og-image/social-handle→needs-input.json locations (openGraph.image, twitter.site, ...); replacement-image→replacement-manifest entries (classification replacement-required first, awaiting-input); organization-logo→needs-input + inventory brand entries; font-license→font-inventory license[]; content-route→scopedRoutes gap; source-brand-asset→inventory inlineSvgEntries + brand-leak warnings; external-url→generation-result unresolved[] href reasons.",
+    "dependencyGraph": "domain→{seo, production}; facts→{seo(structured data), production}; route content→{content, seo, production}; image replacement→{assets, production}; font decision→{assets, production(+layout QA note)}; theme choice→{theme, production}. reconstruction/template are roots — NEVER re-run unless source URL changes (assert rerun count 0 in smoke per spec §26).",
+    "staleness": "store per-stage input hashes (dir-sha256-v1 of upstream artifact dirs + sha256 of resolution/intent JSON) in release-project.json; fresh = recorded hash matches recomputed; stale = upstream or resolution hash moved; blocked = unresolved release-blocking requirement on the stage's inputs."
+  },
+
+  "workingTreeState": {
+    "branch": "main",
+    "commits": "single commit 2777b41 'chore: initialize web-recon foundation (Phase 1)'",
+    "dirty": "121 entries: 6 modified (README.md, ROADMAP.md, package.json, pnpm-lock.yaml, src/cli.ts, tsconfig.json), 2 deleted (docs/result/작업내용-2026-08-13.md, src/observer/.gitkeep), 113 untracked (all of docs/result/ task reports+handoffs, docs/info/, and essentially every src/ module and scripts/ smoke suite)",
+    "gitignore": "data/, tmp/, /prompt, /prompt2, *.log, node_modules/, .env are ignored — all run artifacts are untracked BY DESIGN and invisible to git",
+    "spec29Duty": "Record 'entire pipeline uncommitted on a single Phase-1 commit' as an operational risk in the Task 25 release report AND surface it in the release project (e.g. a warning), but perform ZERO git write operations."
+  },
+
+  "risks": [
+    "R1 — Replacement seam is record-only: replacement-manifest replacement.providedFile is a schema field with NO consumer anywhere in src/ (verified by grep). Resolving an assets[assetId] requirement therefore needs new release-layer machinery that produces a NEW materialization-style artifact (or overlay) and recompiles — it must not pretend the existing seam applies bytes. Recommendation: for the synthetic fixture, design the fixture so its rendered assets are local/brand-neutral from the start (no replacement-required render surfaces), and treat replacement application for real sites as a resolution-driven NEW asset run; document whichever seam is built.",
+    "R2 — SSRF fetcher blocks loopback: a synthetic fixture cannot materialize assets from a 127.0.0.1 server without the TEST-ONLY allowPrivateHostPorts policy override (already used by smoke-assets). Use that override inside smoke-release only, never in production code paths.",
+    "R3 — Indexable gate is currently seo-plan-driven: production:compile flips to 'indexable' purely on seoPlan.domainState.mode!=='preview' and skips buildPreviewBlockers in that mode (src/production/run.ts ~line 256). The release layer must implement the spec §19 PRODUCTION_READY gate itself (all blocker requirements resolved: replacement-required render assets 0, font decision resolved, etc.) and must not let a domain alone flip a project to PRODUCTION_READY. Read run.ts before wiring.",
+    "R4 — Stripe must stay PRODUCTION_INPUTS_REQUIRED (spec §24): the canary asserts requirement COLLECTION, not resolution. Do not re-run stripe content/theme/assets/production; collection is read-only over the accepted run dirs. A stripe release:build --dry-run is safe; a real build is unnecessary and slow (and any new run must go to NEW run-id dirs if ever executed).",
+    "R5 — No hardcoded Stripe counts (spec §23, GED-B precedent): every number in requirements (182, 51, 19, 374, 64, 66, 2 fonts...) must be read from the artifacts at runtime; the Task 24 verifier grepped for literals and Task 25's verifier will too.",
+    "R6 — Fake provider micro-slots (GED-D): if the fixture content run uses the fake provider, 1-3-char slots will honestly FAIL; author the fixture generation result manually (the --result/ingestGenerationResult seam the accepted stripe run used) to keep smoke:release deterministic and green.",
+    "R7 — Long runtimes: fixture pipeline includes real next build (≈3-4s each) plus Chromium QA; keep the fixture site tiny (2-3 routes) so smoke:release stays in minutes. Existing heavyweight suites already run up to several minutes.",
+    "R8 — Historical immutability (spec rule 3): only ADD files; new outputs in NEW run-id dirs / new release-projects namespace; docs/result and data existing files untouched; recommend smoke check asserting mtimes of cited lineage dirs unchanged after a release build (pattern exists in Task 23: find -newermt).",
+    "R9 — Theme invalidation semantics: theme runs pin the content run in their manifest (contentRunDir) — a content rerun invalidates the theme run too. The dependency graph should encode content→theme edge for correctness even though spec §12 lists 'Theme 선택 → Theme run → spec → build' only.",
+    "R10 — release-project vs host coupling: fixture host and stripe host use the same data/<host>/release-projects/ convention; projectId should be deterministic (e.g. host+lineage hash prefix) so re-prepare is idempotent and never renames an existing project."
+  ],
+
+  "builderBriefing": "# Task 25 Builder Briefing (facts only)\n\n## What exists\nEngine pipeline complete through Task 24 (MVP PREVIEW READY — PRODUCTION INPUTS REQUIRED, audit ACCEPT). Regression baseline 16 suites / 1,671 checks / 0 failures (per-suite table + logs in docs/result/handoffs/final-regression-logs/). Spec for Task 25 is /Users/woops/projects/web-recon/prompt (read §§4-26,32-37 twice). No 'release' code exists anywhere in src/ — greenfield module.\n\n## Accepted Stripe lineage (all frozen, read-only)\nverification data/stripe.com/2026-08-17T21-23-37-542Z → observation site-observations/2026-08-17T21-23-54-037Z-augmented → site-spec site-specs/2026-08-17T21-38-01-773Z (v4) → reconstruction reconstructions/2026-08-17T21-38-04-901Z (frozen 27/27) → template recon-templates/2026-08-18T10-45-40-007Z (slot v2, routes[]=20) → content content-runs/2026-08-18T10-46-26-129Z (scope ['/'], 361 values, 64 unresolved, 66 brand-leak warnings) → theme-extraction theme-extractions/2026-08-18T12-07-22-308Z + theme-run theme-runs/2026-08-18T12-07-34-566Z (cool-neutral) → seo snapshot source-seo-snapshots/2026-08-18T19-25-49-810Z + plan production-seo-plans/2026-08-18T19-26-12-572Z (preview, 182 needs-input) → assets asset-inventories/2026-08-19T05-54-47-361Z + asset-materializations/2026-08-19T05-54-55-204Z → spec production-specs/2026-08-19T06-36-35-798Z (production-spec-v1, 5 layers pinned dir-sha256-v1, 7 blockers) → build production-builds/2026-08-19T06-36-35-798Z (package/, QA 159/159).\n\n## Where requirements live (collect, never re-detect)\n- domain: seo plan production-seo-plan.json domainState.productionDomain.status='needs-input'\n- business facts: seo plan site.businessFacts.<7 facts>.status='needs-input'\n- per-route SEO: seo plan report/needs-input.json {total, entries:[{location:'routes[/x].title', basis}]} — 19 uninjected routes = entries whose basis contains 'route not in content-run scope'\n- assets: inventory classification.json byClassification + decisions[]; materialization replacement-manifest.json entries[].replacement.status='awaiting-input'; residual render report/network-qa.json; build report/qa.json externalRequestsByHost\n- fonts: inventory font-inventory.json license[] {family,status:'license-needs-review',selfHostApproved:false} + fallbackPlan[]\n- inline SVG marks: inventory manifest counts.inlineSvgEntries=374\n- content: content run manifest counts.unresolvedSlots + generation-result.json unresolved[{slotKey,reason}] + report/brand-leak.json warnings[]\n- consolidated: production-spec.json indexabilityGate.blockers[{id,summary,evidence}] (7 ids) — buildPreviewBlockers() in src/production/run.ts is the GED-B-fixed model of artifact-derived summaries.\nNever hardcode the numbers (182/51/19/374/64/...) — derive at runtime.\n\n## Reuse surface (typed APIs, never exec pnpm)\ncontent: prepareContentRun / ingestGenerationResult / revalidateSlotValues / runContentLayoutQa (src/content-injection). theme: runThemeExtraction / createThemeRun / runThemeQa (src/theme). seo: observeSourceSeo / createProductionSeoPlanRun (--domain flips mode to production; --facts fills businessFacts) / runSeoQa (src/seo). assets: createAssetInventoryRun / createAssetMaterializationRun (src/assets). production: runProductionCompile({host,templateRunDir,contentRunDir,themeRunDir,seoPlanRunDir,materializationRunDir,log}) / runProductionQa({packageDir,log}) / hashDirectory (dir-sha256-v1 — reuse for freshness). Orchestration precedent: src/e2e/execute-stage.ts (closed failure vocabulary, elapsed always recorded, fatality per failure type).\n\n## Conventions\nSchemas: zod in src/<area>/types.ts, schemaName '<kind>-v1' literals (add release-project-v1, production-resolution-v1 in src/release/types.ts). Storage: data/<host>/<kind>/<run-id>/, run id = toISOString().replace(/[:.]/g,'-'), createdAt recovered from run id. CLI: src/cli-release-*.ts, manual argv parsing, exit 0/1/2, thin over barrel. Smoke: scripts/smoke-release.ts, local check() counter, final 'N/N checks passed', exit 1 on failure, fixture under data/.smoke-release-<pid>. Report: docs/result/25-operator-release-orchestrator-2026-08-25.md (§35 section list). Handoff: docs/result/handoffs/25-handoff.json in the 21/22/23 key style.\n\n## Hard constraints\nNo git writes. No new crawls/source fetches (stripe collection is read-only; do NOT re-run stripe materialize). Historical run dirs immutable — only NEW dirs (release-projects namespace + new run ids for any rerun). Stripe ends PRODUCTION_INPUTS_REQUIRED (that IS the pass). Fixture proves PREVIEW→PRODUCTION_READY with reconstruction/template/content rerun counts asserted 0 on domain-only change. All 16 existing suites must still pass with identical counts.\n\n## Traps found in preflight\n1) replacement-manifest .replacement.providedFile has NO consumer in src/ — applying a replacement image needs new release-layer machinery producing a NEW asset artifact; don't assume an existing apply path. For the fixture, avoid replacement-required render surfaces entirely.\n2) SSRF fetcher blocks 127.0.0.1; fixture materialization needs the TEST-ONLY allowPrivateHostPorts policy (see smoke-assets usage) — test code only.\n3) production:compile flips to 'indexable' purely on seoPlan.domainState.mode and skips blocker derivation in that mode — the release PRODUCTION_READY gate must itself verify spec §19 conditions from artifacts; a domain alone must not produce PRODUCTION_READY.\n4) Fake content provider cannot fill 1-3-char slots (GED-D) — author fixture generation results manually via the --result/ingestGenerationResult seam (what the accepted stripe run did).\n5) Theme runs pin their content run (manifest.contentRunDir) — encode content→theme dependency edge.\n6) Run everything from repo root (relative 'data/...' paths).\n7) GED register sources: 24-aggregation-phase1.json .genericDefects (full ids GED-D-fake-provider-repair-nonconvergence, GED-E-seo-proxy-title-entity-escaping, GED-F-body-anchor-source-identity-no-neutralization, GED-G-no-per-file-cross-route-residual-render-list), 24-final.json corrections.postMvp, 24 report Post-MVP sections. Preserve as structured debt register; map GED-F→uninjected-route-content, GED-G→replacement-required residuals.\n8) Working tree: single commit 2777b41, 121 dirty entries, data/ gitignored — record as operational risk in the release report (spec §29), change nothing."
+}

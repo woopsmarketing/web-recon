@@ -1,0 +1,185 @@
+{
+  "task": "26C-verification",
+  "role": "26-Production-Verifier (fresh agent; sections 46-49 of the Task 26 spec; adversarially independent of the 26-Production-Builder)",
+  "createdAt": "2026-08-26T00:00:00Z",
+  "verdict": "PASS_WITH_LIMITATIONS",
+  "claimsUnderAudit": {
+    "report": "docs/result/26C-linear-production-release-2026-08-26.md",
+    "handoff": "docs/result/handoffs/26C-handoff.json",
+    "builderVerdict": "PRODUCTION_INPUTS_REQUIRED (expected honest end state per spec sections 44-45; NOT grounds for FAIL)"
+  },
+  "method": [
+    "read only spec + formal reports + handoffs + run artifacts (no builder conversation)",
+    "recomputed every audited number directly from raw artifacts (source-seo-snapshot.json, production-seo-plan.json + manifest + report/qa.json + needs-input.json, asset-inventory.json, classification.json, materialization manifest + rewrite-map + replacement-manifest + media dir, font-inventory.json, network-qa.json, production-spec.json, bake-report.json, production qa.json, requirements.json, regression logs) with own python scripts",
+    "recomputed ALL FIVE lineage dir hashes from artifact bytes with an independent dir-sha256-v1 implementation",
+    "copied the production package OUTSIDE the repo (session scratchpad), launched with env -i PATH=... node server.mjs (minimal env, Task 23 convention), drove it with own Playwright scripts: 25 route x viewport visits + 18 interaction executions; own screenshots (set C); server killed after verification",
+    "visually reviewed A (source) / B (exact reconstruction) / C (production package) screenshot sets side-by-side as composited triptychs plus full-resolution crops; index in docs/result/handoffs/26-screenshots-index.md"
+  ],
+  "seoAudit": {
+    "sourceSnapshot": {
+      "claimed": { "pages": 8, "titles": "8/8, 0 dup", "descriptions": "8/8, 0 dup", "canonical": "8/8 self", "robotsMeta": { "none": 6, "index": 1, "noindex": 1 }, "hreflang": 0, "og": 27, "twitter": 51, "jsonLdPages": 1, "headings": 164, "linkGraph": "8/51/700", "broken": 0, "unverified": 178, "robotsDisallow": 2, "sitemapUrls": 1003 },
+      "recomputed": "ALL identical from source-seo-snapshot.json (titles 8 present 0 dup; descriptions 8/0; canonical 8; robots none 6 + index 1 (/customers/automattic) + noindex 1 (/integrations); hreflang 0; og 27; twitter 51; jsonLd 1 page; headings 164, 0 pages missing h1; link graph nodes 8 edges 51 occurrences 700; broken 0; unverifiedInternalLinkTargets.targets 178; robots.txt live 200 Disallow /api/ + /cdn-cgi/, sitemap urlset 1003)",
+      "match": true
+    },
+    "separation": {
+      "forbiddenCopyEvidence": "plan manifest checks.forbiddenCopy: pass, 56 comparisons, 0 violations; brandIsolation: pass, 123 scanned strings vs [linear, linear.app, @linear], 0 violations",
+      "ownRecompute": "independent comparison of every production route title+description against every source title/description/og/twitter string (exact + >=15-char containment, both directions): 0 violations; regex scan of all plan route/site string values for 'linear': 0 hits",
+      "match": true
+    },
+    "previewPostureInBuiltPackage": {
+      "robotsMeta": "noindex,nofollow present in all 8 built site/*.html pages (verified by grep) AND served post-hydration on all 25 browser visits",
+      "canonical": "0 canonical links in all 8 built pages and in all browser visits",
+      "robotsTxt": "packaged robots.txt = User-agent: * / Disallow: / with NO Sitemap line (served 200)",
+      "sitemap": "/sitemap.xml served 404 from the package; no sitemap file under site/; sitemap.preview.xml exists only at package root as plan artifact",
+      "match": true
+    },
+    "seoQa": {
+      "claimed": "69/69 PASS; 24 runtime errors all inherited (24 upstream identical), 0 introduced; link audit 1564/172/1122/0/164/106",
+      "recomputed": "qa.json totals 69 checks 0 failures (recounted per-route+site checks = 69/0); runtimeErrors 24 all prefixed /customers, upstreamRuntimeErrors 24 all /customers, introducedRuntimeErrors 0; linkTotals identical",
+      "needsInput": "report/needs-input.json total 41, entries 41 (recounted)",
+      "match": true
+    },
+    "observation": "all 8 production route titles are the identical string 'FlowPilot (synthetic-pilot-brand) | Enterprise AI work-automation and AI-agent operations platform' (descriptions differ per route). Duplicate titles across routes are an operator-facing SEO quality item for the eventual real launch; harmless under preview noindex and consistent with derived-title design, but worth an operator note. Not claimed otherwise by the builder."
+  },
+  "assetsAudit": {
+    "inventory": {
+      "claimed": { "entries": 448, "url": 241, "inlineSvg": 207, "truncated": 0, "hosts": { "webassets.linear.app": 180, "linear.app": 55, "static.linear.app": 6 }, "byClassification": { "safe": 0, "recommended": 155, "required": 84, "license": 2 }, "byRule": { "default-conservative": 141, "video-brand-content": 14, "image-brief-warning": 73, "brand-social-card": 8, "brand-favicon": 3, "font-license-unknown": 2 } },
+      "recomputed": "ALL identical from asset-inventory.json entries + classification.json decisions (448 = 241 url + 207 inline-svg; 0 truncated; host histogram identical; classification and ruleId histograms identical; safe-to-materialize honestly 0)",
+      "match": true
+    },
+    "materialization": {
+      "claimed": { "candidates": 155, "fetched": 155, "failed": 0, "skipped": 86, "mediaFiles": 155, "mediaBytes": 209680490, "rewriteEntries": 155, "seamEntries": 239 },
+      "recomputed": "manifest counts identical; media dir on disk = 155 files / 209,680,490 bytes exactly; media filenames == fetched localPaths set; statuses: fetched 155 / skipped-replacement-required 84 / skipped-license-needs-review 2",
+      "noForbiddenMaterialization": "0 fetched entries with classification other than replacement-recommended; all 155 rewrite-map sourceUrls are replacement-recommended; no replacement-required URL (Linear logos, customer logos, real-people imagery, og cards, favicons) appears in rewrite-map or media/",
+      "replacementManifest": "239 entries = 155 recommended + 84 required, all replacement: awaiting-input",
+      "match": true
+    },
+    "realPeopleTestimonial": {
+      "shipsInPackage": "CONFIRMED: site/index.html contains 'Gabriel Peal' x4, 'Nik Koblov' x4, 'OpenAI' x8, 'Ramp' x8 (0 in other route HTML); visually confirmed rendering on the injected homepage MOBILE variant at 390 (review-locked twin, real quote + names + OpenAI logo)",
+      "editableTwins": "CONFIRMED visually at 1440/1920: desktop testimonial cards render 'Add a customer story here...' + 'Customer name / Role, Company (to be provided)' placeholders",
+      "disposition": "named as replacement-required CONTENT + operator top priority + explicit model-gap in the 26C report section 5 and limitation 2 and handoff assets.realPeopleContent; the machine requirements.json has no review-locked-content kind (disclosed honest model gap) - the OpenAI/Ramp logo tokens are inside the release-blocking source-brand-inline-svg requirement (207 entries). Requirement-or-recorded-gap condition SATISFIED via the recorded model gap; noted that the machine-readable operator checklist itself does not name the testimonial (prose artifacts do)",
+      "match": true
+    }
+  },
+  "fontsAudit": {
+    "recomputed": "font-inventory.json: 2 font URLs (InterVariable.woff2 8 pages, tiempos-headline-regular.woff2 7 pages); fontFaceRules [] with provenance live-fetched (5 stylesheets fetched, 0 rules); both families status license-needs-review, selfHostApproved false, reason 'no verifiable open-license evidence...presumed proprietary until an operator verifies'; fallback stacks present for both (SF Pro Display... / ui-monospace...); no font file fetched (2 skipped-license-needs-review in materialization); no license guess anywhere in inventory, release requirements (font-license x2 release-blocking), checklist, or RUN.md",
+    "match": true
+  },
+  "productionSpecAudit": {
+    "hashRecompute": "ALL FIVE lineage hashes recomputed from artifact bytes with an independent python dir-sha256-v1 implementation: template 2558f2c0... (41 files / 31,885,945 B), contentRun 656fee57... (46 / 32,246,465), theme bcb83de0... (40 / 30,103,050), seoPlan 676ce200... (8 / 237,047), assets e83710a1... (160 / 210,076,618) - every hash, fileCount and byteCount MATCHES the spec exactly",
+    "internalConsistency": "lineage ids match the accepted 26B runs and the 26C phase runs; baseUrl {value null, status needs-input, mode preview}; buildMode static-export; indexability gate = preview with exactly the 6 claimed blockers (uninjected-route-content correctly absent); release prepare run.json inputArtifactHashes carry the same hash values",
+    "match": true
+  },
+  "independentLaunchAudit": {
+    "procedure": "package copied to session scratchpad (outside repo, 247MB); launched `env -i PATH=<minimal> node server.mjs --port 48620` from the copy; server.mjs greps clean of any repo path (one comment mentions 'web-recon' only); no node_modules, no env vars",
+    "results": "server up immediately; 8/8 routes HTTP 200; /robots.txt 200 disallow-all; /sitemap.xml 404; unknown route 404; /wr/theme-overlay.css 200 (dark-accent overlay); 25 browser visits all served entirely from the package + the 2 known residual source hosts",
+    "independenceConditions": "external SiteSpec / exact-run / template-dir / content-env / theme-proxy dependencies: 0 observed (nothing else was running; env carried only PATH)",
+    "serverKilled": true,
+    "match": true
+  },
+  "releaseAudit": {
+    "claimed": { "total": 378, "releaseBlocking": 88, "bySeverity": { "release-blocking": 88, "high-value": 289, "optional": 1 }, "byKind": { "replacement-image": "239/84", "external-url": "117/0", "seo-fact": "8/0", "business-fact": "7/0", "font-license": "2/2", "production-domain": "1/1", "source-brand-asset": "1/1", "og-image": "1/0", "organization-logo": "1/0", "social-handle": "1/0" } },
+    "recomputed": "requirements.json: 378 total; severity histogram 88/289/1; kind histogram identical incl. blocking splits; all 88 release-blocking are status unresolved",
+    "artifactDerivation": "external-url requirement slotKeys == content-run generation-result.unresolved slotKeys EXACTLY (117==117 set equality); replacement-image requirement ids == replacement-manifest inventoryIds EXACTLY (239 set equality); blocking replacement-image ids == classification replacement-required ids EXACTLY (84 set equality); font-license == 2 font-inventory license entries; production-domain == seo plan domainState; grep of src/release/prepare.ts and src/production/run.ts for hardcoded 378/88/239/117/84 and 'linear': 0 hits",
+    "planFreshness": "release plan 'all 7 stages READY(fresh) / dry-run WOULD RUN nothing' independently confirmed in substance: all five artifact hashes recomputed today still equal the pinned spec hashes, so every stage input is byte-identical (nothing could be stale); prepare run.json shows reusedStages and zero mutation",
+    "match": true
+  },
+  "networkCensusAudit": {
+    "artifactReconciliation": "network-qa.json: baseline 206 source-host requests -> independent residual 60; per-route 15/16/2/3/12/12/0/0 (recounted from independent[].sourceUrls); 60 unique files, hosts linear.app 25 + webassets.linear.app 35; every one of the 60 classified replacement-required/image-brief-warning via classification join; 0 other classes, 0 unattributed",
+    "ownBrowserCensus": "my own no-scroll desktop census across all 8 routes on the isolated package: 31 external requests, hosts {linear.app: 12, webassets.linear.app: 19}, 0 unexpected hosts - EXACTLY equal to the claimed package census (31/12/19/0); every external URL reconciles to the classified replacement-required set or the residual list (0 unattributed); across all 25 visits (incl. 390/1920/2048) only the two known hosts ever appear",
+    "mediaNote": "2 local ERR_ABORTED requests observed (/media/...png on /changelog, /media/...mp4 on /plan) are browser-side lazy/prefetch cancellations - both files exist in the package and serve HTTP 200",
+    "match": true
+  },
+  "runtimeHydrationAudit": {
+    "routeVisits": "25/25 visits (8 routes x 390/1440/1920 + home 2048): 0 console errors, 0 pageerrors - including /customers at all widths (the inherited CORS class is really gone: wordmark masks serve same-origin from /media)",
+    "interactionRuns": "18 interaction executions: 0 console errors, 0 pageerrors",
+    "match": true
+  },
+  "regressionAudit": {
+    "claimed": { "suites": 17, "checks": 1794, "failures": 0, "typecheck": "exit 0" },
+    "recomputed": "summed from docs/result/handoffs/26C-regression-logs/ final lines: 81+81+62+92+108+88+257+217+134+130+64+68+47+79+117+85+84 = 1,794; STATUS: typecheck + all 17 suites exit=0 (start 2026-08-25T23:56:32Z done 2026-08-26T00:14:43Z); delta vs 26B baseline +12 (seo 72->79, assets 113->117, production 84->85) as claimed",
+    "engineChanges": "C-EC1..C-EC6 files present (src/seo/seo-qa.ts, src/seo/index.ts, src/seo/production-plan.ts, src/assets/safe-fetch.ts, src/assets/materialize.ts, src/production/run.ts); grep for 'linear' over all changed files: 0 hits (excluding linear-gradient)",
+    "match": true
+  },
+  "browserQaMatrix": {
+    "columns": ["httpStatus", "consoleErrors", "pageErrors", "horizontalOverflowPx", "robotsMeta", "canonicalCount", "descriptionPresent", "titleFlowPilot", "themeOverlayLinked", "flowpilotTextOccurrences", "linearTextOccurrences", "externalRequestsNoScroll", "clippingFinding"],
+    "rows": [
+      { "route": "/", "vp390": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 1, 13, 5, "none"], "vp1440": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 5, 15, 9, "MINOR: closing-CTA heading 3rd line overlapped by buttons"], "vp1920": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 5, 15, 9, "MINOR: same CTA overlap"], "vp2048": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 5, 15, 9, "not re-screenshotted; same desktop layout"] },
+      { "route": "/changelog", "vp390": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 30, 4, 2, "none"], "vp1440": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 30, 4, 2, "INHERITED from Phase A: feed paragraphs render in ~half-width columns with vertical text overlap (see visualReview)"], "vp1920": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 30, 4, 2, "same inherited"] },
+      { "route": "/customers", "vp390": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 1, 0, 1, "none"], "vp1440": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 1, 16, 2, "MINOR: shared closing-CTA overlap"], "vp1920": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 1, 16, 2, "same"] },
+      { "route": "/customers/automattic", "vp390": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 1, 18, 1, "none"], "vp1440": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 1, 18, 1, "none"], "vp1920": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 1, 18, 1, "none"] },
+      { "route": "/integrations", "vp390": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 1, 79, 0, "none"], "vp1440": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 3, 79, 12, "none"], "vp1920": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 3, 79, 12, "none"] },
+      { "route": "/plan", "vp390": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 1, 0, 5, "none"], "vp1440": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 2, 0, 5, "MINOR: shared closing-CTA overlap"], "vp1920": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 2, 0, 5, "same"] },
+      { "route": "/pricing", "vp390": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 1, 4, 0, "none"], "vp1440": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 1, 4, 0, "MINOR: shared closing-CTA overlap"], "vp1920": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 1, 4, 0, "same"] },
+      { "route": "/security", "vp390": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 9, 0, 0, "MINOR: hero heading 3rd line overlaps intro paragraph"], "vp1440": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 9, 0, 0, "none"], "vp1920": [200, 0, 0, 0, "noindex,nofollow", 0, true, true, true, 9, 0, 0, "none"] }
+    ],
+    "sourceIdentityLeak": "every visible 'Linear' occurrence reconciles to the 26B-accounted review-locked/asset categories (header wordmark SVG, aria-hidden hero headline [no brand token], logo walls, /customers story wall 16, /customers/automattic long-form 18, /integrations descriptions 79, /pricing product-name slots 4, homepage mock internals + mobile testimonial twin 13-15, /changelog feed internals 4); nothing presents Linear as a FlowPilot fact in changed surfaces; /plan and /security are fully clean (0)",
+    "theme": "dark-accent visually applied on every route (navy canvas tint, rgb(235,240,248) primary text and rgb(178,189,205) secondary text measured; accent rgb(129,140,248) on Get-a-demo / Get-started pills; theme-overlay.css linked on 25/25 visits)",
+    "assets": "0 broken local images across all visits; below-fold loading=lazy images do not decode at scroll-0 (disclosed inherited behavior); 60-residual replacement-required renders load from the two known source hosts by design"
+  },
+  "interactionAcceptance": {
+    "inventorySource": "interaction-models/2026-08-25T19-33-19-974Z/interaction-patterns.json: 23 confirmed patterns = disclosure 13, dialog 8, selection 2",
+    "tested": 18,
+    "byType": {
+      "disclosure": {
+        "modelPatterns": 13,
+        "tested": 13,
+        "cases": "header Product mega-menu on ALL 8 routes (ip000001/6/11/13/15/17/20/22): aria-expanded false->true + declared region visible with 347 chars of FlowPilot nav copy in themed rgb(235,240,248) on every route; /changelog Fixes (ip000007, same signature as ip000010): expanded + existing aria-controls target visible (689 chars); homepage listbox combobox n001659 (ip000004): expanded + mounted listbox; homepage menu-trigger n000128 (ip000002 family): expanded + mounted regions; /plan section expander n000094 (ip000018 family): expanded + mounted dialog-role region",
+        "verdict": "equivalent 13/13, mismatch 0, unsupported 0"
+      },
+      "dialog": {
+        "modelPatterns": 8,
+        "tested": 3,
+        "cases": "mobile portal menu (the shared-shell pattern that constitutes all 8 per-route dialog patterns) on / (ip000005), /pricing (ip000021), /changelog (ip000009): trigger aria-expanded true + role=dialog portal mounts with 167 chars FlowPilot site navigation (System/Intake/Plan/Build/Diffs/Monitor/...) - representative of the identical remaining 5",
+        "verdict": "equivalent 3/3 tested (8/8 by shared signature), mismatch 0, unsupported 0"
+      },
+      "selection": {
+        "modelPatterns": 2,
+        "tested": 2,
+        "cases": "homepage role=option 'Steven' (ip000003): aria-selected false->true on click; /changelog role=radio (ip000008): aria-checked false->true on click",
+        "verdict": "equivalent 2/2, mismatch 0, unsupported 0"
+      }
+    },
+    "consoleDuringInteractions": "0 errors / 0 pageerrors across all 18 executions",
+    "harnessNote": "one initial failure (mobile-menu on /changelog) was my own generic selector picking a hidden desktop twin; retry with the visible trigger id succeeded cleanly - not a package defect",
+    "totals": { "equivalent": 18, "mismatch": 0, "unsupported": 0 }
+  },
+  "visualReview": {
+    "indexFile": "docs/result/handoffs/26-screenshots-index.md",
+    "setsViewed": "A/B from data/linear.app/manual-visual-review/2026-08-25T19-10-00-000Z (reused); C captured by me from the isolated package; viewed as A|B|C triptychs (46 segment images) + full-resolution crops; coverage: every route at 390 + 1440, homepage additionally 1920, desktop-open + mobile-open interaction states",
+    "documentHeightParity": "A, B and C full-page screenshots have pixel-identical heights for every route at 390 and 1440 (independent visual confirmation of the doc-height-delta-0 chain); only home@1920 set-A is ~64px taller (live-source drift at capture time, disclosed class)",
+    "aVsB_fidelity": "high across 7 of 8 routes: /, /customers, /customers/automattic, /integrations, /plan, /pricing, /security are near-indistinguishable at both widths (hero mockup animation frames and /security marquee offset differ - disclosed). EXCEPTION /changelog @1440: feed body paragraphs render in a ~half-width column with adjacent paragraphs vertically OVERLAPPING, and disclosure chips (Fixes/Improvements/...) letter-wrap vertically - disclosed numerically in Phase A (geometry p95 320.73px, height delta 0, accepted by the 26A verifier) but the 'media-embed internals' prose under-describes it; /changelog @390 is clean",
+    "bVsC_safety": "transformation is real and safe: FlowPilot copy replaces editable source copy everywhere sampled; testimonials placeholdered on desktop editable twins; /customers teasers 'Customer story coming soon'; /customers/automattic reframed as sample pending material; /security compliance claims honestly deferred ('will be published once provided'); metrics dashed to '(metrics pending)'; dark-accent tint + accent pills applied incl. open interaction states; retained Linear surfaces are exactly the disclosed review-locked/asset categories (wordmark, hero headline, logo walls incl. OpenAI/Ramp sprite, feed internals, automattic body, $10/$16, real-people mobile testimonial twin)",
+    "newFindings": [
+      "C-VR1 (minor, generic content-fitting): injected closing-CTA heading 'Dependable automation. Ready today.' wraps to 3 lines at desktop widths and the CTA buttons render OVER the third line ('today.') - visible on /, /customers, /plan, /pricing at 1440 (and home at 1920; 2048 shares the layout); 390 renders cleanly. Source/clone 2-line original has no overlap. Undetectable by the existing gates (doc-height delta 0, no horizontal overflow) - evidence: 26C-verification-screens/finding-*-cta-overlap.png",
+      "C-VR2 (minor, same class): /security @390 hero heading 'Secure by design. Private by default.' third line overlaps the intro paragraph; 1440 clean - evidence: finding-security390-hero-overlap.png",
+      "C-VR3 (characterization): the /changelog desktop feed text-column narrowing + paragraph overlap described in aVsB_fidelity is broader than the Phase A prose suggests (numerically disclosed, visually significant at 1440)"
+    ],
+    "interactionStates": "desktop mega-panel open @1440 (set C) is pixel-equivalent to the 26B themed-preview capture (set B side); mobile portal menu open @390 shows the FlowPilot nav with the disclosed translucent-backdrop / unswapped-hamburger cosmetics"
+  },
+  "discrepancies": [
+    "none numeric - every recomputed number matched the handoff exactly (source SEO snapshot full recount; forbidden-copy 56/0 + own recompute 0; needs-input 41; seo:qa 69/69 with 24/24/0 error split; assets 448 = 241+207 with 0/155/84/2 and full rule histogram; materialization 155/0/86 with byte-exact media dir; fonts 2x license-needs-review; ALL 5 lineage hashes byte-recomputed MATCH; requirements 378/88/289/1 with exact set-equality to source artifacts; network census 206->60 all attributed + own census exactly 31/12/19/0; production QA 75/75 posture reproduced; regression 1,794/0 from logs)",
+    "C-VR1/C-VR2: two minor injected-content overflow overlaps (closing CTA at desktop widths on 4 routes; /security mobile hero) - new visual findings in the transformed package, in the disclosed 'operator will replace copy' surface class but NOT previously named; a generic vertical intra-section overlap detector is the engine seam (the current layout QA measures doc-height/horizontal overflow only, so it honestly could not see these)",
+    "C-VR3: /changelog desktop feed fidelity deviation is visually broader than the 'media-embed internals' characterization (inherited Phase A acceptance, numbers were honest)",
+    "observation: all 8 production titles are duplicates of one another (operator SEO quality note for real launch; harmless in preview)",
+    "observation: the machine-readable operator-checklist/requirements do not name the real-people testimonial - only the report/handoff prose do (exactly the disclosed model gap; a content-review requirement kind remains the seam)"
+  ],
+  "acceptedLimitations": [
+    "PRODUCTION_INPUTS_REQUIRED end state (expected per spec section 44; confirmed honest: no invented domain/facts/licenses/assets found anywhere)",
+    "real-people testimonial ships on the homepage mobile review-locked twin pending operator content (visually confirmed; named priority)",
+    "60 residual source-host renders + 1,162 source-URL strings + 316 linear.app HTML mentions by replacement-required policy design",
+    "84 replacement-required assets never fetched; 2 fonts license-needs-review on measured fallback stacks; 207 inline-SVG brand marks release-blocking",
+    "inherited Phase A/B visuals: hero animation drift, lazy below-fold decode at scroll-0, /security marquee offset, mobile-menu cosmetics, 3 preserved-gradient groups, /changelog desktop feed geometry",
+    "repo remains uncommitted on the single foundation commit (standing Task 25 operational risk)"
+  ],
+  "constraintsRespected": {
+    "engineCodeModified": false,
+    "runArtifactsModified": false,
+    "builderReportsModified": false,
+    "git": "no add/commit/push",
+    "serversKilled": true,
+    "liveSourceAccess": "none (0 requests to linear.app by me; browser residual loads to the source CDN are the package's own by-design behavior)",
+    "ownOutputs": ["docs/result/handoffs/26C-verification.json", "docs/result/handoffs/26-screenshots-index.md", "docs/result/handoffs/26C-verification-screens/ (30 files + 46 triptych segments + 2 result JSONs)"]
+  },
+  "conclusion": "Every audited 26C claim reproduces from primary evidence, including a byte-level independent recomputation of all five ProductionSpec lineage hashes, exact set-equality of the 378-requirement release project against its source artifacts, a perfectly matching independent network census (31/12/19/0), and an isolated-package launch with zero console/hydration errors on all 25 route visits. Interaction acceptance is 18/18 equivalent across all three discovered pattern types with clean consoles. SEO separation is real (0 copied strings by my own comparison) and the preview posture (noindex,nofollow / disallow-all robots / no canonical / sitemap 404) is served by the actual package. No replacement-required asset was materialized; fonts carry no guessed licenses; the real-people testimonial's shipping state matches its disclosed model-gap disposition. The three-set visual review confirms high A-vs-B fidelity (with the disclosed /changelog desktop feed exception) and safe B-vs-C transformation, and surfaces two new minor injected-copy overlap defects (closing CTA at desktop widths; /security mobile hero) that the current QA gates cannot detect - operator copy input or a generic overlap detector closes them. PRODUCTION_INPUTS_REQUIRED is the correct honest end state. Verdict: PASS_WITH_LIMITATIONS."
+}

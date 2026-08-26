@@ -1,0 +1,137 @@
+{
+  "agent": "Agent-24-Stripe",
+  "subject": "stripe.com production candidate",
+  "verifiedAt": "2026-08-19",
+  "specPath": "data/stripe.com/production-specs/2026-08-19T06-36-35-798Z/production-spec.json",
+  "buildPackagePath": "data/stripe.com/production-builds/2026-08-19T06-36-35-798Z/package",
+  "method": {
+    "isolation": "package/ copied to scratchpad temp dir (outside repo), launched 'env -i PATH=<node bin dir only> node server.mjs --port 46217' with cwd=isolated dir; server stopped and copy deleted after checks",
+    "browser": "real Chromium via repo playwright, fresh contexts per check; desktop 1440x900, mobile 390x844",
+    "independence": "all checks re-derived from frozen artifacts (interaction files, theme-adapter paint groups, slot-values.json, replacement-manifest.json) — Task 23's qa.json numbers were not reused as evidence, and different theme classes / interaction probes were chosen than Task 23 sampled"
+  },
+  "axes": {
+    "A-reconstruction": {
+      "scope": "SAMPLE — 5 of the 27 frozen interaction-equivalence patterns; explicitly NOT a re-run of the frozen 27/27 acceptance",
+      "sampleSelection": "pattern ids and expected targets taken from frozen reconstruction-qa/2026-08-17T21-38-08-701Z/interactions/*.json; triggers located in the production build via data-wr-pattern-id markers",
+      "results": [
+        { "pattern": "ip000001 desktop / mega-menu trigger 1", "pass": true, "evidence": "aria-expanded false->true, visible [data-wr-dyn-node] regions 0->161" },
+        { "pattern": "ip000002 desktop / mega-menu trigger 2", "pass": true, "evidence": "aria-expanded false->true, regions 161->255" },
+        { "pattern": "ip000006 mobile(390) / portal menu", "pass": true, "evidence": "aria-expanded false->true, 31 dynamic regions visible (portal path)" },
+        { "pattern": "ip000022 desktop /industries/media-entertainment nav disclosure (static target)", "pass": true, "evidence": "aria-expanded false->true; visibility diff shows exactly the frozen target appearing: div.wr-st001237 1264x634 @top=70 with 'PaymentsPayments Online payments Managed Payments...' — frozen QA recorded 1262x629.7 @y=70 with the same textSample" },
+        { "pattern": "ip000023 desktop /newsroom/news/tour-berlin-2025 nav disclosure (static target)", "pass": true, "evidence": "same target signature became visible, 1264x634 @top=70" }
+      ],
+      "passed": 5,
+      "failed": 0,
+      "hydrationOrJsErrors": 0,
+      "notes": "static-target disclosures (ip000022/23) do not mount [data-wr-dyn-node] elements; a dyn-node-count metric alone reads 0->0 there — verified instead by full visibility diff against the frozen target signature",
+      "verdict": "PASS (sample 5/5)"
+    },
+    "B-template": {
+      "scope": "10 slot values from accepted content run content-runs/2026-08-18T10-46-26-129Z checked against served HTML of / (content-run scope is / only; other routes have no injected values by design)",
+      "slotChecks": [
+        { "key": "global.footer.text.solutions", "value": "서비스", "found": true },
+        { "key": "home.header.nav.pricing.label", "value": "요금", "found": true },
+        { "key": "home.header.nav.sign-in.label", "value": "로그인", "found": true },
+        { "key": "home.main.cta.get-started.label", "value": "상담 문의", "found": true },
+        { "key": "home.main.heading.flexible-solutions-for-every-bus", "value": "모든 팀에 맞는 유연한 자동화.", "found": true },
+        { "key": "home.main.heading.powering-businesses-of-all-sizes", "value": "규모와 무관하게, 모든 팀을 위해.", "found": true },
+        { "key": "home.main.text.professional-services", "value": "도입 컨설팅.", "found": true },
+        { "key": "home.main.text.building-the-economic-infrastruc", "value": "AI 시대의 업무 인프라를 만듭니다", "found": true },
+        { "key": "home.main.link.stripe-for-enterprises.label", "value": "중견·대기업 솔루션", "found": true },
+        { "key": "home.main.text.grow-your-business-with-a-compre", "value": "상담, 문서, 정산, 보고까지 — 우리 회사의 업무 방식에 맞게 구성하는 AI 자동화 도구 모음입니다.", "found": true }
+      ],
+      "passed": 10,
+      "failed": 0,
+      "verdict": "PASS (10/10 baked values served on the right route)"
+    },
+    "C-content-safety": {
+      "scope": "grep of served HTML for all 20 routes: tel:, ₩, ★, aggregateRating/ratingValue/reviewCount/priceRange, $-price patterns; JSON-LD audit on all 20 routes",
+      "telLinks": 0,
+      "wonSigns": 0,
+      "starChars": 0,
+      "schemaRatingFields": 0,
+      "jsonLd": "20/20 routes carry exactly one JSON-LD block: @graph of [WebSite{name}, Organization{name,description}] only — 플로우데스크 identity, no url/logo/sameAs/address/telephone/foundingDate/rating keys, zero 'stripe' mentions",
+      "dollarPricePatterns": "present ($149.00/$37.25 on /, $12,382.22 on /industries/media-entertainment, $1,200/$900 in fraud article, etc.) — traced: $149.00/$37.25 appear in frozen template page data (recon-templates/2026-08-18T10-45-40-007Z/app/reconstruction-data/pages/p000001.json), $12,382.22 in site-specs/2026-08-17T21-38-01-773Z/pages/p000009.json, $1,200 in p000008.json — all source-site template/mockup content on uninjected routes or decorative UI mockups, none invented. Most raw '$N' grep hits are RSC flight reference tokens, not prices",
+      "bodySocialLinks": "body anchors to github.com/stripe, twitter share intents etc. exist (172 matches across routes) — part of the named content-layer body-anchor limitation, traced to source template (site-spec pages p000016/p000017/x000001); none in head metadata",
+      "verdict": "PASS (no invented business facts; all fact-like strings trace to frozen source-template artifacts)"
+    },
+    "D-theme": {
+      "scope": "computed-style spot check: 10 classes across 3 routes, 7 distinct cool-neutral tokens; classes chosen from theme-adapter.json themeable paint groups, deliberately different from Task 23's 5-class sample",
+      "checks": [
+        { "route": "/", "cls": "wr-st000089", "prop": "color", "computed": "rgb(11, 105, 122)", "token": "color.link", "sourceOriginal": "rgb(83, 58, 253)", "pass": true },
+        { "route": "/", "cls": "wr-st000129", "prop": "color", "computed": "rgb(11, 105, 122)", "token": "color.link", "sourceOriginal": "rgb(83, 58, 253)", "pass": true },
+        { "route": "/", "cls": "wr-st000154", "prop": "background-color", "computed": "rgb(13, 124, 128)", "token": "color.action.primary", "sourceOriginal": "rgb(83, 58, 253)", "pass": true },
+        { "route": "/", "cls": "wr-st000150", "prop": "color", "computed": "rgb(16, 148, 141)", "token": "color.accent.primary", "sourceOriginal": "rgb(99, 91, 255)", "pass": true },
+        { "route": "/", "cls": "wr-st000984 (31 elements)", "prop": "background-color", "computed": "rgb(64, 141, 175)", "token": "color.accent.secondary", "sourceOriginal": "rgb(127, 125, 252)", "pass": true },
+        { "route": "/industries/media-entertainment", "cls": "wr-st000330", "prop": "color", "computed": "rgb(112, 132, 144)", "token": "color.text.muted", "sourceOriginal": "rgb(114, 127, 150)", "pass": true },
+        { "route": "/industries/media-entertainment", "cls": "wr-st000585", "prop": "color", "computed": "rgb(112, 132, 144)", "token": "color.text.muted", "sourceOriginal": "rgb(114, 127, 150)", "pass": true },
+        { "route": "/customers/hargreaves-lansdown", "cls": "wr-st000300", "prop": "color", "computed": "rgb(15, 40, 54)", "token": "color.text.primary", "sourceOriginal": "rgb(10, 37, 64)", "pass": true },
+        { "route": "/customers/hargreaves-lansdown", "cls": "wr-st000301", "prop": "color", "computed": "rgb(15, 40, 54)", "token": "color.text.primary", "sourceOriginal": "rgb(10, 37, 64)", "pass": true },
+        { "route": "/customers/hargreaves-lansdown", "cls": "wr-st000021", "prop": "color", "computed": "rgb(62, 84, 96)", "token": "color.text.secondary", "sourceOriginal": "rgb(66, 84, 102)", "pass": true }
+      ],
+      "overlayServed": "/wr/theme-overlay.css referenced by <link> and served (verified in HTML + browser load)",
+      "rawSourcePalette": "0 of 10 checked classes computed to the original source value; every computed value equals the cool-neutral token exactly",
+      "passed": 10,
+      "failed": 0,
+      "notes": "extends the theme check to 2 non-home routes for the first time (Task 23 sample was /-only) — still a sample; Task 20 multi-route paint-coverage debt is reduced but NOT discharged (31 themeable groups, ~13 group/route combinations now browser-verified beyond Task 20's 14)",
+      "verdict": "PASS (sample 10/10)"
+    },
+    "E-seo": {
+      "scope": "head audit of all 20 routes over live HTTP + robots.txt + body-string count",
+      "routes200": "20/20",
+      "canonicalTags": 0,
+      "ogUrlTags": 0,
+      "headStripeComOccurrences": 0,
+      "noindexMetaPresent": "20/20",
+      "jsonLdIdentity": "WebSite/Organization 플로우데스크 only, no stripe identity, no sameAs/social links in head (only og:site_name=플로우데스크)",
+      "robotsTxt": "200; 'User-agent: *' + 'Disallow: /', no Sitemap line; /sitemap.xml serves 404 (checked in Task-23 lineage; robots re-verified live here)",
+      "bodyStripeComOccurrences": 4424,
+      "bodyStripeComNote": "matches the known content-layer limitation exactly (4,424 across 20 routes; body anchors to out-of-table source routes + share intents + github.com/stripe links) — confirmed and recorded, not hidden; head/meta isolation is complete",
+      "verdict": "PASS (head/robots fully independent; body brand strings = known named limitation, count confirmed)"
+    },
+    "F-assets": {
+      "scope": "real-Chromium network census on 3 routes (no scroll) + scroll census on /",
+      "noScrollCensus": {
+        "/": { "totalRequests": 15, "local": 13, "external": { "images.stripeassets.com": 2 }, "files": ["payment-bento-background.jpg", "ConnectBentoBackground.jpg"] },
+        "/industries/media-entertainment": { "totalRequests": 15, "local": 15, "external": {} },
+        "/newsroom/news/tour-berlin-2025": { "totalRequests": 14, "local": 12, "external": { "images.stripeassets.com": 2 }, "files": ["3___DSC2639.jpg?w=2000&q=80&fm=webp", "3___DSC2639.jpg?fm=webp&q=80"] }
+      },
+      "scrollCensusHome": { "totalRequests": 28, "external": { "images.stripeassets.com": 4 }, "files": ["payment-bento-background.jpg", "ConnectBentoBackground.jpg", "enterprise-accordion-hertz.png", "KurtisMoyer.png"] },
+      "otherExternalHosts": 0,
+      "replacementRequiredTraceability": "every residual external file (incl. newsroom 3___DSC2639.jpg, inventoryIds ai000058/ai000059/ai000685-687/ai000715) is classification=replacement-required, replacement.status=awaiting-input in asset-materializations/2026-08-19T05-54-55-204Z/replacement-manifest.json",
+      "finding": "the commonly cited 'known 4 replacement-required surfaces' (Task 22, /-only scroll census) is the homepage set; the full residual RENDERING surface set across sampled routes is 5 unique source files (4 on / with scroll + DSC2639 on newsroom). Same single residual host, same by-design classification — a counting nuance, not a new dependency",
+      "verdict": "PASS (residuals = replacement-required surfaces on the one known host only; 0 other external hosts; all other assets from local /media)"
+    },
+    "G-build-integrity": {
+      "hashRecomputation": {
+        "method": "independent from-scratch dir-sha256-v1 implementation (scratchpad/dirhash.mjs), written against the spec's hashMethodDescription; note: the description's \"manifest lines '<relpath>\\t<sha256>'\" means newline-TERMINATED lines — a join without trailing newline produces a different hash (first attempt reproduced fileCount/byteCount but not the hash until line termination matched src/production/hash.ts)",
+        "template": { "expected": "662b81559987919e34d556b6a1a54427720826844a0cfbf9d708ead143d72cce", "recomputed": "662b81559987919e34d556b6a1a54427720826844a0cfbf9d708ead143d72cce", "fileCount": "51/51", "byteCount": "70090456/70090456", "excluded": [".next", "node_modules", "out"], "match": true },
+        "assets": { "expected": "28d38014161382002eb72d91c8e3614d2d23e42fb5830901e74bb962ff039552", "recomputed": "28d38014161382002eb72d91c8e3614d2d23e42fb5830901e74bb962ff039552", "fileCount": "235/235", "byteCount": "60826619/60826619", "match": true }
+      },
+      "blockersPresent": "7 machine-readable blockers in spec, each with evidence path: production-domain-needs-input, seo-needs-input-values(182), replacement-required-assets(51/4), fonts-license-needs-review, business-facts-needs-input, uninjected-route-content(19), source-brand-inline-svg(374)",
+      "envPathOnlyRun": "package copy launched from isolated dir with 'env -i PATH=<single node bin dir>' — served / 200 text/html and all subsequent checks; server stopped and copy removed after",
+      "verdict": "PASS (2/2 recomputed hashes match; blockers present; PATH-only launch proven)"
+    }
+  },
+  "genericDefectCandidates": [
+    "interaction-QA metric gap: production qa.ts sampleInteractions counts only [data-wr-dyn-node] mounts; disclosures with STATIC targets (exists-before, hidden->visible — e.g. subroute header menus ip000022/23) score regionsAppeared=0 and would be invisible to that metric. The build behaves correctly (proven by visibility diff); the generic QA harness under-measures this interaction class",
+    "content-layer body anchors carry source identity at scale (4,424 stripe.com strings, incl. github.com/stripe and social share intents) — named limitation since Task 21, but it is a generic pipeline gap: no layer neutralizes out-of-table body anchors on uninjected routes",
+    "residual-asset communication: deploy-manifest records residual HOSTS, and the 'known 4 surfaces' phrase is /-scoped — a per-FILE residual rendering list across all routes does not exist anywhere; operators could under-replace (newsroom DSC2639 is easy to miss)"
+  ],
+  "siteSpecificFindings": [
+    "newsroom route residual is a person/event photo (3___DSC2639.jpg, fetched twice with different query variants) — replacement-required, awaiting operator input",
+    "uninjected 19 routes serve source English body content with $-price mockup figures (all traced to frozen template/site-spec artifacts, none invented)",
+    "theme adapter selectors span routes: several themeable classes (wr-st000300/000020/000062) do not occur on / at all — homepage-only theme QA structurally cannot cover them (my checks covered wr-st000300/000021 on /customers/hargreaves-lansdown instead)"
+  ],
+  "notExercised": [
+    "full 27/27 interaction equivalence re-run (5-pattern sample only, per task instruction; frozen acceptance remains the authority)",
+    "remaining ~18 themeable paint-group/route combinations (Task 20 multi-route paint-coverage debt reduced by 2 extra routes but not discharged)",
+    "scroll-based network census on 17 routes other than / (no-scroll 20-route census exists in Task 23 qa.json; my scroll census covered / only)",
+    "contentRun/theme/seoPlan lineage hash recomputation (task scope was 2 of 5: template + assets; the other 3 were independently recomputed by Agent-23-Verifier)",
+    "font rendering fidelity and SVG internal paint (frozen named limitations, not re-tested)",
+    "slot-value verification on routes other than / (content run scope is / only — nothing to verify elsewhere)",
+    "sitemap.xml 404 / unknown-route 404 live re-check in this session (verified by Agent-23-Verifier against the same package; robots.txt re-verified live here)"
+  ],
+  "overallVerdict": "ACCEPT_WITH_LIMITATIONS",
+  "verdictBasis": "every exercised check passed (A 5/5 sample, B 10/10, C clean, D 10/10 sample, E 20-route head clean + robots, F residuals exactly the by-design replacement-required set, G hashes/blockers/PATH-only proven). Limitations are the pre-agreed named set: PREVIEW mode with 7 open blockers, 4-5 residual replacement-required render surfaces, font fallbacks, 19 uninjected routes, 4,424 body brand strings, SVG brand marks — none hidden, all operator-input-bound, none a defect of the compile/bake machinery"
+}

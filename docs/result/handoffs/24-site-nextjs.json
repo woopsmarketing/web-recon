@@ -1,0 +1,130 @@
+{
+  "agent": "Agent-24-Site-B",
+  "site": "nextjs.org",
+  "generatedAt": "2026-08-19",
+  "scope": {
+    "why": "large docs-style Next.js site — structurally distinct from stripe.com (marketing SaaS) and small Korean business sites: 87,191 element nodes, deep docs route tree, Radix dynamic-mount menus, selection-type homepage triggers, brand name == hostname",
+    "routes": "40 routes / 15 observed pages (12 family representatives + 3 validation samples) frozen from the historical 2026-08-13 discovery→verification→selection run; NO new crawling for the base pipeline",
+    "qaRouteSubsets": {
+      "templateParity": ["/", "/blog/next-15", "/docs/app/api-reference/functions/generate-metadata", "/docs/messages/no-page-custom-font", "/docs/pages/guides/sass"],
+      "contentInjection": ["/"],
+      "themeQa": ["/"],
+      "seoQa": ["/", "/blog/next-15", "/docs/pages/guides/sass"],
+      "assetsNetworkQa": ["/", "/blog/next-15"],
+      "productionQa": "all 40 routes (route/title/hydration census) + interaction/overflow sample on /"
+    },
+    "liveNetworkTouched": "only: 4 polite asset fetches (concurrency 1, 500ms spacing; 2 succeeded) and browser QA against locally served clones; no Firecrawl, no re-crawl, no live robots/sitemap fetch"
+  },
+  "usedHistoricalArtifacts": {
+    "used": true,
+    "paths": [
+      "data/nextjs.org/2026-08-13T08-13-18-089Z (discovery/verification/families/selection)",
+      "data/nextjs.org/site-observations/2026-08-13T10-10-17-240Z (15 pages, desktop+mobile)",
+      "data/nextjs.org/interaction-explorations/2026-08-13T13-42-51-648Z",
+      "data/nextjs.org/interaction-models/2026-08-13T14-46-43-801Z (45 patterns / 35 unknowns)"
+    ],
+    "note": "old site-specs (schema v1/v2, 2026-08-13) were NOT reused; the current compiler (schema v4) recompiled fresh from the historical observation artifacts — this itself is a generality proof: a 6-day-old observation tree compiles under today's engine unchanged"
+  },
+  "stages": [
+    {
+      "stage": "1-sitespec-compile",
+      "status": "pass",
+      "keyNumbers": "schema v4, 40 routes, 15 pages, 82.85 MB, 45 verified patterns + 35 unknowns carried, round-trip validation PASS, 4.7s, 0 network",
+      "runPath": "data/nextjs.org/site-specs/2026-08-19T07-12-11-927Z"
+    },
+    {
+      "stage": "2-reconstruction",
+      "status": "pass",
+      "keyNumbers": "40/40 routes mapped, 87,191 element / 42,960 text nodes, 4,068 CSS classes, 45 pattern triggers, generation 1.06s, next build PASS 2.3s, validation PASS",
+      "runPath": "data/nextjs.org/reconstructions/2026-08-19T07-12-24-135Z"
+    },
+    {
+      "stage": "3-recon-template",
+      "status": "pass",
+      "keyNumbers": "12,933 slots (text 8,759 / url 4,119 / image 55; 8,555 review-flagged), 48,552 bindings resolved 48,552/48,552, default-content no-op 48,552/48,552; parity QA 12/12 route-width pairs content+structure equal, max doc-height delta 0px, geometry p95 0px, mutation canary 126/126, interactions 2/2, 0 runtime/hydration errors, 216s",
+      "runPath": "data/nextjs.org/recon-templates/2026-08-19T07-12-35-732Z",
+      "siteSpecificNote": "0 dynamic-template bindings, 0 paint-twin, 0 svg-text (stripe had 155 dynamic + paint-twins) — different binding profile, engine handled it"
+    },
+    {
+      "stage": "4-content-injection-fake",
+      "status": "partial",
+      "keyNumbers": "scope '/': 151 units / 232 editable slots; fake provider 177 assigned / 135 changed / 24 needs-input, validation PASS 0 warnings; browser QA applied 380/380, interactions 2/2, layout FAIL both widths; repair loop ran 2 bounded iterations, honest residual FAIL",
+      "runPath": "data/nextjs.org/content-runs/2026-08-19T07-13-56-376Z",
+      "failureClassification": "site-specific-difference (real clip) + known-limitation (remnants)",
+      "detail": "1 true layout failure: slot global.footer.link.x.label default is the 1-char label 'X'; deterministic fake provider injects 4-char 'Fake' which clips horizontally @390+@1440 and cannot shorten across repair iterations. 2 further findings are stale-duplicate-text-remnant on 'Blog' labels (3 occurrences, 2 slotted) — the documented Task 19.1 non-failing category. QA detection, evidence, and the bounded repair loop all behaved correctly; the FAIL is honest."
+    },
+    {
+      "stage": "5-theme",
+      "status": "pass-with-honest-incompatibles",
+      "keyNumbers": "extraction: 137 paint groups (27 themeable / 51 preserved / 59 review), 21 tokens; original theme run QA PASS (paint 52/52, geometry 0px/979 nodes, height delta 0, interactions 2/2, contrast new-low 0); cool-neutral QA FAIL (1 new low-contrast node n000005 at 390/1440/1920; geometry 0px; paint 52/52); dark-accent QA FAIL (26-27 new low-contrast nodes; paint 22/22 applied)",
+      "runPath": "data/nextjs.org/theme-extractions/2026-08-19T07-13-17-973Z + theme-runs/2026-08-19T07-19-{45-138Z,46-072Z,47-029Z}",
+      "failureClassification": "site-specific-difference",
+      "detail": "static checker said compatible-with-warnings for all three; browser QA is the stricter truth and honestly fails both curated themes on new low-contrast text — curated themes are not deliverable on nextjs.org without human bind of the 59 review groups. Site-specific twist: even the ORIGINAL extracted palette carries a contrast-low warning (action text on action surface 4.15 < 4.5) — the checker flags the source site's own design. Reverse of stripe: dark-accent was checker-refused there, checker-compatible here but browser-failed."
+    },
+    {
+      "stage": "6-seo",
+      "status": "partial",
+      "keyNumbers": "source snapshot: 15 pages, 0 duplicate titles, 14 canonical clusters, robots not-fetched (live fetch deliberately skipped); plan: 40 routes preview mode, 403 needs-input values, forbidden-copy PASS (163 comparisons), brand isolation PASS (525 strings vs 5 terms); seo:qa 26/29 — all title/robots/canonical/og/JSON-LD/site-file checks PASS on 3 routes, 3 FAILs are one repeated check",
+      "runPath": "data/nextjs.org/source-seo-snapshots/2026-08-19T07-13-19-405Z + production-seo-plans/2026-08-19T07-17-36-315Z",
+      "failureClassification": "site-specific-difference (true-positive detection; underlying cause is the known-limitation that brand assets are never auto-fetched)",
+      "detail": "'served head contains no source-brand term' fails on every route because React 19 auto-hoists <link rel=preload as=image> for eager images into the head, and those URLs live on https://nextjs.org/_next/static/... — on a site whose brand IS its hostname, every un-internalized asset URL is a brand leak. The check is a true positive (head really carries source-brand strings); stripe passed only because its asset hosts differ from its brand terms' casing/host. Composition note: seo:qa runs without the asset-rewrite layer chained, and even the full chain would not fix it here since the leaking assets are replacement-required (never fetched by policy)."
+    },
+    {
+      "stage": "7-assets",
+      "status": "partial-by-policy",
+      "keyNumbers": "inventory: 292 entries (214 url / 78 inline-svg, 0 truncated) — classification 4 replacement-recommended / 154 replacement-required / 56 license-needs-review; 3 font families license-needs-review, 0 @font-face rules (no --live-font-css by choice); materialize: 2/4 fetched (0.5 MB, 2 unique files, 2 rewrite entries, 158 replacement-seam entries); network QA: residual source-host requests 45/45 baseline (/, /blog/next-15) — zero gain; font QA unobserved",
+      "runPath": "data/nextjs.org/asset-inventories/2026-08-19T07-14-44-035Z + asset-materializations/2026-08-19T07-16-12-236Z",
+      "failureClassification": "known-limitation (policy) + generic-engine-defect (one fetch candidate) + live-source-instability none",
+      "detail": "nextjs.org's asset population is dominated by brand marks (vercel/nextjs logotypes, partner logos, avatars) — the conservative classifier correctly refuses 154 of 214, so asset independence is near-zero without operator replacements. That is the policy working, not failing. Fetch failures: (a) ai000001 https://nextjs.org/%23b http-error — a CSS url(#b) SVG fragment reference mis-inventoried as a fetchable page URL (generic engine defect, see below); (b) blog mp4 rejected too-large — the size bound working as designed."
+    },
+    {
+      "stage": "8-production",
+      "status": "pass-with-2-qa-fails",
+      "keyNumbers": "production-spec-v1 written (5 layers pinned, dir-sha256-v1), preview mode, 7 machine-recorded blockers, next build 4.2s, package 151 MB (site/ + dependency-free server.mjs + deploy-manifest); production:qa 297/299 — 40/40 routes 200, 40/40 browser titles, content proof 5/5, theme link + computed paint 5/5, hydration clean incl. mobile, overflow clean, external requests 521 all nextjs.org (matches known-residual policy check, PASS)",
+      "runPath": "data/nextjs.org/production-specs/2026-08-19T07-25-08-322Z + production-builds/2026-08-19T07-25-08-322Z",
+      "failureClassification": "generic-engine-defect (both fails)",
+      "detail": "the 2 FAILs are interactions-desktop:/ and interactions-mobile:/ 'clicked=1 regionsAppeared=0'. The homepage's clickable P1 trigger on nextjs.org is a SELECTION pattern (aria-checked toggle) that legitimately mounts no region — parity/theme QA proved the state flip works ('state aria-checked=true, regions 0', equivalent 2/2). production:qa's absolute regionsAppeared>0 assertion encodes stripe's disclosure/menu trigger shape and false-fails selection-type triggers. Theme lineage used the QA-passed original theme run (both curated themes honestly failed browser QA and were not forced in)."
+    }
+  ],
+  "genericEngineDefects": [
+    {
+      "id": "production-blocker-summaries-hardcoded",
+      "where": "src/production/run.ts lines ~191-217",
+      "evidence": "nextjs.org production-spec blockers read '19/20 route titles', '51 replacement-required assets; 4 still render', 'sohne-var / SourceCodePro licenses', '19 of 20 routes', '374 inline-svg entries' — all stripe-run literals; actuals are 39/40 titles, 154 replacement-required, residual 45, fonts are nextjs.org families, 39/40 routes, 78 inline-svg. Evidence PATHS are correct and derived; only the human-readable summary strings are hardcoded.",
+      "severity": "medium (misleading machine-adjacent prose in an authoritative artifact; ids/evidence stay correct)"
+    },
+    {
+      "id": "production-qa-interaction-check-assumes-region-mount",
+      "where": "production:qa interaction phase",
+      "evidence": "clicked=1 regionsAppeared=0 FAIL on a selection/aria-checked toggle whose correct behavior mounts no region (proven equivalent 2/2 in parity and theme QA on the same app)",
+      "severity": "medium (false FAIL on any site whose sampled triggers are state-toggles rather than disclosures/menus)"
+    },
+    {
+      "id": "asset-inventory-fetches-css-fragment-references",
+      "where": "asset catalog -> assets:inventory url-entry path",
+      "evidence": "ai000001 kind=background-image url=https://nextjs.org/%23b usageCount=2 — a CSS url(#b) same-document SVG reference resolved against the page URL and classified as a fetchable asset; fetch correctly failed http-error and was recorded",
+      "severity": "low (graceful failure, but fragment-only url() refs should never enter the fetch set)"
+    }
+  ],
+  "siteSpecificFindings": [
+    "binding profile differs structurally from stripe: 48,552 bindings all static, 0 dynamic-template / 0 paint-twin / 0 svg-text — engine handled both profiles",
+    "brand == hostname makes every un-internalized asset URL a brand-term leak; React 19's automatic image-preload hoisting surfaces them in the served <head>, failing seo:qa's brand-isolation head check as a true positive",
+    "asset population is brand-dominated (154/214 replacement-required): asset independence is near-zero by policy until operator replacements arrive",
+    "original extracted palette itself fails WCAG AA on one pair (action text on action surface 4.15) — checker flags the source site's own design",
+    "curated theme compatibility inverts vs stripe: checker-compatible but browser-QA-failed here (cool-neutral 1 node, dark-accent 26-27 nodes new low-contrast); honest incompatible-in-practice",
+    "degenerate 1-character slot default ('X' footer label) breaks deterministic fake-provider length fitting — layout QA caught it at both widths",
+    "seo snapshot clean structure: 0 duplicate titles, 14 canonical clusters across 15 pages"
+  ],
+  "notExercised": [
+    "fresh discovery/verification/selection (deliberate: historical 2026-08-13 run reused; live drift not measured)",
+    "reconstruction-qa vs live original (Task 15) — would measure 6 days of live-source drift, not engine generality",
+    "content injection beyond route '/' (scope discipline)",
+    "--live-font-css @font-face recovery and therefore font fallback reflow QA (font QA honestly 'unobserved')",
+    "seo:observe --live-site-files (robots.txt/sitemap recorded not-fetched)",
+    "theme QA on routes beyond '/' (Task 20 multi-route paint-coverage debt remains undischarged)",
+    "stripe-depth interaction equivalence (27/27 class); here only the 2 homepage triggers per QA phase",
+    "operator replacement seam, --domain production SEO mode, real LLM provider"
+  ],
+  "overallVerdict": "PIPELINE_GENERALIZES",
+  "verdictBasis": "every stage from SiteSpec compile through ProductionSpec compile + isolated production QA executed on a structurally different large docs site using 6-day-old observation artifacts, producing valid schema-checked artifacts at each seam; all failures are classified — 3 generic engine defects (2 QA-layer, 1 asset-inventory, none blocking), the rest honest site-specific or policy-bound results; nothing was forced to pass"
+}

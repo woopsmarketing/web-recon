@@ -1,0 +1,79 @@
+{
+  "task": "26-final-audit",
+  "role": "26-Final-Auditor (fresh agent; section 52 of the Task 26 spec; no involvement in any implementation or verification)",
+  "createdAt": "2026-08-26T01:30:00Z",
+  "method": [
+    "read the Task 26 spec (sections 44/52/54/57/58/60) and all formal inputs: 26A/26B/26C reports + handoffs + verifications, 26-source-scout.json, 26-preflight.json, release project artifacts, 26-screenshots-index.md, regression logs, git state",
+    "no conversation context from any agent; formal evidence only",
+    "own recomputations: summed all three regression log sets (26A=1,776, 26B=1,782, 26C=1,794 — grep over suite log final lines), recounted requirements.json (378/88/289/1 + full kind histogram, all 88 blocking unresolved), grepped src/ for Linear-specific code (only hit: identifier 'baselineArea'), verified C-EC3/C-EC6 hardcode removal in src/seo/production-plan.ts and src/production/run.ts, grepped the built package site/index.html (noindex,nofollow; 'FlowPilot (synthetic-pilot-brand)' title; 'Gabriel Peal' x4 / 'Nik Koblov' x4), checked mtimes of Task17-25 reports/handoffs and data/stripe.com (0 files newer than Task 26 start), inspected git log/reflog/staged/stash",
+    "opened screenshots myself: home 1440 A|B|C triptych (segs/home-1440-top.png), home 390 mobile triple incl. the real-people testimonial region (segs/home-390-bot.png), interaction-open state (interaction-home-product-open-1440.png), C-VR1 evidence (finding-home1440-cta-overlap.png), C-VR3 evidence (finding-changelog1440-B-column-overlap.png)"
+  ],
+  "questions": {
+    "q1_fresh_source": {
+      "verdict": "YES — genuinely fresh",
+      "evidence": "26-preflight.json (2026-08-25T18:08Z): repo-wide grep 'linear.app' -> 0 hits, find '*linear*' -> 0 hits, dataHosts list had no linear.app; data/linear.app/ directory born 2026-08-25T18:10:52Z (mtime Aug 26 03:10:52 KST, 2 minutes after preflight); fresh Firecrawl discovery of 1,750 URLs (26-source-scout.json), 110 verified, 8 pilot routes selected from observed evidence; all lineage ids in the release run.json inputArtifactHashes point exclusively at data/linear.app/ runs; no Stripe artifact appears in any Linear lineage"
+    },
+    "q2_stripe_bias": {
+      "verdict": "YES — real Stripe-era bias surfaced; every fix generic, none Linear-specific",
+      "evidence": "16 engine changes (EC1-6, B-EC1-4, C-EC1-6). Clear Stripe-era assumptions exposed: EC1 (mount gated on menu|dialog taxonomy — Stripe had no mounted disclosure), EC2 (probe never combined with prepare-scroll — Stripe explored without it), EC3 (coverage floor sized on Stripe's trailing-widget case), EC4 (Task-17 centered-cap rule required cap engaged at >=2 widths — Stripe's curve), B-EC1/2/3 + C-EC1 (absolute zero-console-error QA gates — Stripe's clone logged 0 so inherited-error case untested), C-EC3 (LITERAL hardcoded '89 hreflang alternates / single-locale Korean site' Stripe prose), C-EC4 (audio asset kind unmodeled — Stripe had none), C-EC5 (uninjected-route blocker unconditional — Stripe canary always had uninjected routes), C-EC6 (LITERAL hardcoded '(20 routes' Stripe count). Own grep over src/: only 'baselineArea'; own code check: production-plan.ts now sums page.hreflangCount from the actual snapshot, run.ts interpolates seoPlan.routes.length; both phase verifiers did mtime-scoped file audits + greps; all 16 fixture-backed in the regression suites"
+    },
+    "q3_reconstruction_sufficient": {
+      "verdict": "YES — with one honestly-carried visual deviation (/changelog desktop feed)",
+      "evidence": "Gate metrics recomputed by the independent 26A verifier from raw per-pair files: 8/8 routes, content exact 1.0 over 18,918 nodes, 0 runtime/hydration/page errors, geometry median-of-p95 0.085px, doc-height delta max 0.5px, trigger equivalence 23/23, visible-target 20/23 (all 3 = one 1x20px blinking caret), dynamic mounts 16/16, wide centered drift 0px on 24/24; verifier launched the app with its own Playwright script and reproduced clean consoles + the Product panel box; CORS mask-image claim independently probed (403/200+ACAO). Deviation: /changelog desktop feed body renders in a half-width column with overlapping paragraphs — numerically published in 26A (p95 320.73px, 571/2,259 nodes, height delta 0) but prose called it 'media-embed internals' (C-VR3 under-characterization); confirmed by me from finding-changelog1440-B-column-overlap.png; mobile clean, 7/8 routes high-fidelity at both widths per the screenshots index"
+    },
+    "q4_transformation_worked": {
+      "verdict": "YES",
+      "evidence": "Template: 3,079 slots / 9,929 bindings, default parity 20/20 pairs at 0px, mutation canary 30/30 — every number recomputed identically by the 26B verifier from slots.json/slot-bindings.json/parity-qa.json. Content: 1,395 assigned / 543 changed / 117 needs-input, layout QA 16/16 with applied 1,265/1,265 and doc-height delta 0. Theme: original-parity browser-proven no-op (157/157 paint checks, DOM identical) and dark-accent 115/115 with 0 new low-contrast incl. inside the click-mounted panel. 26B verifier launched the themed+injected preview itself and confirmed FlowPilot copy live on all 8 routes + themed paint in open interaction states; I confirmed the FlowPilot rewrite, dark-accent tint, and open mega-panel with rewritten nav copy from the triptychs and interaction-home-product-open-1440.png"
+    },
+    "q5_source_identity_as_fact": {
+      "verdict": "NO unaccounted identity presented as fact; retained surfaces are disclosed, classified, and blocked-or-prioritized",
+      "evidence": "0 brand tokens in all 543 changed values (verifier recomputed); browser-visible 'Linear' occurrences reconciled route-by-route to the accounted review-locked/asset categories with 0 unaccounted leaks (26B + 26C verifications); no invented FlowPilot domains/phones/addresses/certifications/customers (regex sweeps + visual confirmation of 'to be provided' placeholders). Real-people testimonial (Gabriel Peal/OpenAI, Nik Koblov/Ramp): ships on the injected homepage MOBILE variant via the review-locked twin — verified by me visually (segs/home-390-bot.png shows it in the C column) and by grep (4+4 occurrences in package/site/index.html); it is named replacement-required CONTENT and operator top priority in 26C report section 5 + limitation 2 + handoff, never shipped as approved content; the OpenAI/Ramp sprite marks sit inside the release-blocking source-brand-inline-svg requirement (207 entries). Honest residual gap, correctly disclosed: the machine-readable requirements/checklist have no review-locked-content kind, so only the prose artifacts name the testimonial"
+    },
+    "q6_seo_independent": {
+      "verdict": "YES — derived, never copied; honest preview posture",
+      "evidence": "forbidden-copy 56 comparisons / 0 violations plus the 26C verifier's OWN exact+containment recompute (0); brand isolation 123 strings vs {linear, linear.app, @linear} = 0 violations; my own grep of the built package: 'noindex,nofollow' present, title 'FlowPilot (synthetic-pilot-brand) | Enterprise AI work-automation...'; canonical null (never invented), robots.txt Disallow / with no Sitemap line, /sitemap.xml 404 — all verified served by the isolated package; 41 needs-input honestly listed. Noted operator item: all 8 derived titles are identical strings (harmless under preview noindex; flagged by the 26C verifier)"
+    },
+    "q7_asset_runtime_honesty": {
+      "verdict": "YES — conservative and fully attributed",
+      "evidence": "448 entries = 241 URL + 207 inline-SVG; classification 0 safe / 155 recommended / 84 required / 2 license — recomputed identically by the 26C verifier incl. rule histogram; 84 replacement-required NEVER fetched (verifier: no required URL in rewrite-map or media/; media dir byte-exact 155 files / 209,680,490 B); 60 residual renders 60/60 attributed to replacement-required image-brief-warning, 0 unattributed; package census 31 requests {linear.app 12, webassets 19, unexpected 0} exactly matched by the verifier's independent census; fonts: 0 @font-face recoverable, both families license-needs-review with selfHostApproved false — nothing guessed, fallback reflow honestly 'unobserved'; the 12 wordmark masks materialized under default-conservative are honestly flagged replacement-required-equivalent (named classification-evidence limitation)"
+    },
+    "q8_requirements_artifact_derived": {
+      "verdict": "YES",
+      "evidence": "my own recount of requirements.json: 378 total, severity 88/289/1, kinds replacement-image 239 (84 blocking) / external-url 117 / seo-fact 8 / business-fact 7 / font-license 2 (blocking) / production-domain 1 (blocking) / source-brand-asset 1 (blocking) / og-image 1 / organization-logo 1 / social-handle 1; all 88 blocking status=unresolved; 26C verifier proved SET-EQUALITY: 117 external-url slotKeys == content-run unresolved slotKeys, 239 replacement ids == replacement-manifest inventoryIds, 84 blocking ids == classification replacement-required ids; my grep of src/release/prepare.ts for hardcoded 378/88: 0 hits; checklist evidence fields point at real artifact paths (font-inventory.json, production-seo-plan.json, manifest.json)"
+    },
+    "q9_verdict_inflation": {
+      "verdict": "NO — no phase verdict is dishonest; the final state is the deflated one",
+      "evidence": "final state is PRODUCTION_INPUTS_REQUIRED (the spec-expected honest state, section 44), not PRODUCTION_READY; every phase verdict carried PASS_WITH_LIMITATIONS from an adversarial verifier. Weighed items: animated-hero mockup (spec section 16 exact-preservation philosophy, honestly the cause of the 3 caret mismatches + probe prefix + source-drift, all disclosed); C-VR3 /changelog desktop feed (prose under-characterized but numbers honest and published in 26A — the single weakest gate call, corrected in Phase D and confirmed by my own viewing); C-VR1/C-VR2 injected-copy overlaps (found BY the process; existing gates measure doc-height/horizontal overflow only, honestly recorded as a generic-detector seam with screenshots); identical derived SEO titles (noted, harmless in preview); review-locked token surfaces incl. real-people testimonial (named, release-blocking where the model allows, disclosed model gap where it does not). None of these converts READY FOR TRANSFORMATION / READY FOR PRODUCTION PIPELINE / PRODUCTION_INPUTS_REQUIRED into an overclaim"
+    },
+    "q10_proceed": {
+      "verdict": "YES — proceed",
+      "evidence": "the section-60 success definition is met on evidence: a brand-new public source went URL -> Exact Reconstruction -> Template -> Independent Content -> Theme -> Independent SEO -> Asset/Font policy -> Production Package -> Release Requirements with 16 generic engine corrections and zero Linear-specific code; regression evolution 1,755 -> 1,776 -> 1,782 -> 1,794 all 0 failures (final and intermediate sets summed by me from logs); the Release Orchestrator names exactly what real publication needs. Recommended carry-forwards for the next stage: (1) generic vertical intra-section overlap detector (C-VR1/C-VR2 seam), (2) a content-review requirement kind so review-locked text like the real-people testimonial becomes a machine requirement, (3) /changelog-class deep-feed layout characterization improvement, (4) per-route differentiation of derived SEO titles, (5) commit the workspace (standing single-commit risk)"
+    }
+  },
+  "historicalIntegrity": {
+    "verdict": "PASS",
+    "evidence": "Task 17-25 reports and handoffs all carry mtimes on or before 2026-08-25 22:49 KST (latest: 25-final.json Aug 25 22:49), before the Task 26 window opened (preflight 2026-08-26 03:08 KST); find data/stripe.com -newermt '2026-08-26 03:00' -> 0 files; Linear outputs exist only under data/linear.app/ plus docs/result/26*, docs/result/handoffs/26*, and the named src/ engine changes — matching the section-57 namespace rule"
+  },
+  "gitCheck": {
+    "verdict": "PASS",
+    "evidence": "git log --all: exactly one commit (2777b41 initial); git reflog: only that initial commit ever — 0 commits during Task 26; staged diff empty; 0 stashes; preflight recorded ahead/behind 0/0; the uncommitted-workspace risk is reported in 26C limitation 9 and the release project warnings, as section 58 requires"
+  },
+  "regressionVerifiedBySumming": {
+    "26A": { "summed": 1776, "claimed": 1776, "failures": 0 },
+    "26B": { "summed": 1782, "claimed": 1782, "failures": 0 },
+    "26C": { "summed": 1794, "claimed": 1794, "failures": 0, "perSuite": "117+68+130+92+108+88+62+85+64+134+217+84+81+79+257+47+81 = 1,794; STATUS: typecheck + 17 suites all exit=0; FAIL strings inside sitespec/content-injection logs verified to be intentional negative-test fixtures" },
+    "baseline": 1755
+  },
+  "screenshotsPersonallyViewed": [
+    "docs/result/handoffs/26C-verification-screens/segs/home-1440-top.png (A|B|C triptych: A-B near-identical; C shows FlowPilot rewrite + dark-accent + disclosed retentions)",
+    "docs/result/handoffs/26C-verification-screens/segs/home-390-bot.png (mobile triple; real-people testimonial visible in C column as disclosed; footer nav rewritten Agent Sessions/Service Desk)",
+    "docs/result/handoffs/26C-verification-screens/interaction-home-product-open-1440.png (mega-panel mounted once, FlowPilot nav copy, themed pill)",
+    "docs/result/handoffs/26C-verification-screens/finding-home1440-cta-overlap.png (C-VR1 confirmed: buttons overlap 3rd line 'today.')",
+    "docs/result/handoffs/26C-verification-screens/finding-changelog1440-B-column-overlap.png (C-VR3 confirmed: half-width column with overlapping paragraphs)"
+  ],
+  "overallVerdict": "ACCEPT",
+  "finalTask26VerdictRecommendation": {
+    "verdict": "LINEAR PILOT ENGINE PASS — PRODUCTION INPUTS REQUIRED",
+    "justification": "The frozen engine took a genuinely fresh, complex public source end-to-end — exact reconstruction (content 1.0, 0 runtime/hydration errors, 0px wide drift), lossless templating, real synthetic-brand content injection on all 8 routes, a browser-proven theme, copied-nothing SEO, conservative asset/font independence, a hash-pinned independent package that passes isolated-launch QA, and an artifact-derived release project — while 16 latent Stripe-era assumptions were fixed generically with fixtures and a green 1,794-check regression. No production inputs (domain, licenses, replacement assets, business facts) exist and none were invented, so PRODUCTION_INPUTS_REQUIRED is the honest and expected end state; PRODUCTION_READY would be a fabrication and NOT READY would ignore that every gate the engine controls passed under three layers of adversarial verification. The disclosed weak points (C-VR1/2 copy overlaps, C-VR3 changelog-feed characterization, the real-people testimonial model gap, identical derived titles) are named, evidenced, and non-blocking for an engine-pass judgment."
+  }
+}

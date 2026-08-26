@@ -1,0 +1,101 @@
+{
+  "task": 22,
+  "title": "Asset & Font Independence Foundation",
+  "verdict": "READY FOR PRODUCTION BUILD WITH INPUT REQUIREMENTS",
+  "outputs": {
+    "assetInventoryRun": "data/stripe.com/asset-inventories/2026-08-19T05-54-47-361Z (asset-inventory-v1: 721 entries = 347 url + 374 inline-svg, 15 truncated; classification 4 safe / 289 recommended / 51 required / 3 license-review; font-inventory-v1: 3 font URLs, 3 live-fetched @font-face rules, 2 families license-needs-review)",
+    "assetMaterializationRun": "data/stripe.com/asset-materializations/2026-08-19T05-54-55-204Z (fetched 278/278, 0 failures, 230 unique media files 57.5 MB, rewrite-map 278 entries, replacement-manifest 340 entries, report/network-qa.json + report/font-qa.json)",
+    "report": "docs/result/22-asset-font-independence-2026-08-19.md"
+  },
+  "newModules": [
+    "src/assets/ (types.ts store.ts inventory.ts classify.ts fonts.ts safe-fetch.ts materialize.ts rewrite.ts serve.ts network-qa.ts font-qa.ts run.ts index.ts)",
+    "src/cli-assets-inventory.ts",
+    "src/cli-assets-materialize.ts",
+    "src/cli-assets-preview.ts",
+    "src/cli-assets-qa.ts",
+    "scripts/smoke-assets.ts"
+  ],
+  "cli": [
+    "pnpm assets:inventory <site-spec-dir> --template <template-run-dir> [--content-run <dir>] [--observation <dir>] [--live-font-css] [--max-stylesheets N]",
+    "pnpm assets:materialize <inventory-run-dir> [--concurrency N] [--timeout MS] [--max-bytes N] [--spacing MS]",
+    "pnpm assets:preview <materialization-run-dir> --template <dir> [--content-run <dir>] [--theme-overlay <css-file>]",
+    "pnpm assets:qa <materialization-run-dir> --template <dir> [--content-run <dir>] [--routes /a,/b] [--skip-font-qa]",
+    "pnpm smoke:assets"
+  ],
+  "tests": {
+    "suite": "smoke:assets",
+    "passed": 111,
+    "failed": 0,
+    "ssrfChecks": 45,
+    "ssrfCoverage": "private-range table incl. metadata 169.254.169.254 / CGNAT / IPv4-mapped IPv6; scheme/credential/port/allowlist gates; DNS-based rejection via injected resolver (private + dual-resolution); loopback rejected without the test-only escape hatch; per-hop redirect re-validation (metadata endpoint, private-resolving host, allowlist exit, loop); streaming size cap; MIME gates; timeout"
+  },
+  "browserQa": {
+    "networkQa": {
+      "routes": ["/", "/industries/media-entertainment", "/customers/hargreaves-lansdown"],
+      "baselineSourceHostRequests": 31,
+      "independentSourceHostRequests": 4,
+      "residual": "4 requests, all images.stripeassets.com, all on /, all replacement-required surfaces (ConnectBentoBackground.jpg, enterprise-accordion-hertz.png, KurtisMoyer.png, payment-bento-background.jpg) awaiting operator replacements",
+      "otherExternal": 0
+    },
+    "fontQa": {
+      "fontsLoaded": ["sohne-var", "SourceCodePro"],
+      "appReflow": "93/264 text elements changed when the real webfont is applied over today's fallback; width delta p50 0 / p95 12.2px / max 79.4px; height p95 3.8px; docHeight delta 0px",
+      "samples": "sohne-var vs fallback stack +0.05% width; SourceCodePro vs sans-serif -20.9%",
+      "mechanism": "source font bytes fetched via safe fetcher and injected as data: URLs (font CDN sends no CORS header); measurement only, bytes never stored"
+    }
+  },
+  "regression": {
+    "passed": true,
+    "totalChecks": 1585,
+    "suites": 15,
+    "perSuite": {
+      "smoke:verifier": 81,
+      "smoke:selector": 81,
+      "smoke:multi-observer": 58,
+      "smoke:interaction-detector": 92,
+      "smoke:interaction-explorer": 108,
+      "smoke:interaction-patterns": 88,
+      "smoke:sitespec": 252,
+      "smoke:reconstruction": 205,
+      "smoke:reconstruction-qa": 134,
+      "smoke:e2e": 130,
+      "smoke:recon-template": 58,
+      "smoke:content-injection": 68,
+      "smoke:theme": 47,
+      "smoke:seo": 72,
+      "smoke:assets": 111
+    },
+    "note": "81+81+58+92+108+88+252+205+134+130+58+68+47+72+111 = 1585; smoke:playwright excluded from the count as in the Task 20/21 baselines"
+  },
+  "importantDecisions": [
+    "classification is the fetch gate: safe-to-materialize needs POSITIVE evidence (Task 19 keep-default brief); unproven defaults to replacement-recommended (fetched for independence but flagged for operator replacement); brand marks / people / customer identity (favicon, og social cards, logo filenames, brief warnings) are replacement-required and NEVER fetched; fonts are always license-needs-review and never self-hosted",
+    "sibling-variant-escalation: a webp/query rendition sharing host+pathname with a replacement-required asset is escalated to required (upward only) — added after the first QA round exposed that picture-source fm=webp variants of the KurtisMoyer person photo escaped the brief join and were materialized; the honest residual is 4, not 0",
+    "SSRF hardening is structural: DNS-resolved before connect with the socket pinned to the validated addresses (custom lookup, no TOCTOU), full re-validation on every redirect hop, streaming byte cap (destroy, not truncate), MIME validation, host allowlist = exactly the inventory's observed hosts",
+    "storage is content-addressed /media/<sha256>.<ext> with extension from the RESPONSE MIME (a .png URL serving JPEG stores as .jpg — real case), identical bytes dedupe (278 fetches -> 230 files)",
+    "rewrite at the serve boundary (immutable app untouched): proxy serves /media/* and substitutes raw + &amp; + \\u0026 URL encodings in HTML, RSC flight (text/x-component) and the generated stylesheet, longest URL first; composition Template -> Content(env) -> Asset(rewrite + /media) -> Theme(css append) -> SEO(head splice)",
+    "truncation artifacts (Observer 500-char attribute cap) are detected evidence-based (strict-prefix with mid-token continuation, incl. host-level cuts hidden by URL normalization) and recorded as unfetchable, never fetched or invented",
+    "@font-face rules are recoverable ONLY by bounded opt-in live fetch of source stylesheets (--live-font-css, max 5, safe fetcher); without the flag fontFaceRules stays empty with provenance not-fetched; f965fdf4.woff2's rule was not found in the fetched CSS and is recorded as unrecovered",
+    "font QA loads source webfonts as data: URLs because the font CDN serves no Access-Control-Allow-Origin (measured); bytes are in-memory for measurement only"
+  ],
+  "knownLimitations": [
+    "serve-boundary proxy is the MVP delivery; static baking of media/ + rewrite-map into the built app is Task 23's work (applyRewrite + rewrite-map.json + media/ reusable as-is)",
+    "4 residual source-host requests remain BY DESIGN (replacement-required surfaces on /); network QA covered 3 of 20 routes (highest asset density); the other 17 routes' residual counts are unmeasured",
+    "374 inline-SVG entries (incl. the source logo) are outside this layer: already local markup, no network dependency, brand review remains the template layer's named limitation",
+    "15 truncated srcset variants are permanently unfetchable (observer cap); they were dropped at reconstruction compile and produced no observed runtime requests",
+    "person/customer detection relies on Task 19 imageBriefs (homepage scope); un-briefed photos on other routes are materialized as replacement-recommended without human review",
+    "no font is self-hosted (licenses unverified, not guessed); the clone renders fallbacks as it always has; measured cost in report/font-qa.json; mobile-viewport font/network QA unmeasured",
+    "video poster: zero occurrences in stored artifacts; <source media> attribute was never observed (outside observer whitelist)"
+  ],
+  "inputRequirements": [
+    "replacement images for the 51 replacement-required assets — most urgently the 4 residual rendering surfaces (customer logo, person photo, branded product screenshots) plus 4 favicons and 8 og/social cards; replacement-manifest.json + Task 19 imageBriefs carry the specs",
+    "font decision: verify sohne-var / SourceCodePro licenses and approve self-hosting, OR accept the measured fallback stacks, OR pick open-license alternatives",
+    "carried from Task 21: production domain, og:image, organization logo"
+  ],
+  "nextTaskMustKnow": [
+    "Task 23 static baking inputs are ready: asset-materializations/<run>/media/ (content-hashed, immutable-cacheable), rewrite-map.json, and applyRewrite() in src/assets/rewrite.ts work on any buffered HTML/CSS string — bake by copying media/ into the app's public/ and applying the map to built output",
+    "startAssetServedApp/startAssetProxy (src/assets/serve.ts) compose with the content overlay env and accept themeOverlayCss; the SEO proxy (Task 21) can be chained in front for the full stack",
+    "the residual-4 and font-fallback states must be carried as named limitations into Task 24 acceptance unless operator inputs arrive first",
+    "replacement seam: fill replacement-manifest.json entries (status provided + providedFile) and re-run assets:materialize to swap operator images in",
+    "frozen lineage untouched (find -newermt check, 8 directories, 0 files); superseded intra-task runs were deleted, final runs are 2026-08-19T05-54-47-361Z (inventory) and 2026-08-19T05-54-55-204Z (materialization)"
+  ]
+}

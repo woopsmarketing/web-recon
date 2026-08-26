@@ -1,0 +1,157 @@
+{
+  "task": "26A-linear-fresh-reconstruction",
+  "role": "26-Reconstruction-Builder (fresh agent; sections 12-18 of the Task 26 spec)",
+  "createdAt": "2026-08-25T21:05:00Z",
+  "report": "docs/result/26A-linear-fresh-reconstruction-2026-08-26.md",
+  "pilotRoutes": [
+    "https://linear.app/",
+    "https://linear.app/changelog",
+    "https://linear.app/customers",
+    "https://linear.app/customers/automattic",
+    "https://linear.app/integrations",
+    "https://linear.app/plan",
+    "https://linear.app/pricing",
+    "https://linear.app/security"
+  ],
+  "runs": {
+    "pilotScope": "data/linear.app/2026-08-25T18-28-28-180Z-pilot (derived discovery of the 8 scout-selected routes; provenance in pilot-scope-provenance.json; /homepage alias deliberately excluded)",
+    "verification": "data/linear.app/2026-08-25T18-28-28-180Z-pilot/verification.json (8/8 valid-html)",
+    "selection": "data/linear.app/2026-08-25T18-28-28-180Z-pilot/selected-pages.json (8 singleton families)",
+    "observation": "data/linear.app/site-observations/2026-08-25T19-23-01-716Z",
+    "interactionDetection": "data/linear.app/site-observations/2026-08-25T19-23-01-716Z/interaction-analysis.json",
+    "interactionExploration": "data/linear.app/interaction-explorations/2026-08-25T19-30-59-785Z",
+    "interactionModel": "data/linear.app/interaction-models/2026-08-25T19-33-19-974Z",
+    "siteSpec": "data/linear.app/site-specs/2026-08-25T20-30-27-653Z",
+    "reconstruction": "data/linear.app/reconstructions/2026-08-25T20-30-33-313Z",
+    "qa": "data/linear.app/reconstruction-qa/2026-08-25T20-30-41-209Z",
+    "wideViewportCheck": "data/linear.app/manual-visual-review/2026-08-25T19-10-00-000Z/wide-viewport-final-accepted.json",
+    "visualReview": "data/linear.app/manual-visual-review/2026-08-25T19-10-00-000Z (96 PNG: 8 routes x 4 widths x {original,clone,diff})",
+    "supersededRuns": {
+      "note": "correction trail, kept: observations 18-28-58-485Z / 19-15-00-417Z, exploration 18-31-33-260Z, model 18-33-58-557Z, site-specs 18-34-05-947Z / 19-33-28-997Z, reconstructions 18-35-11-608Z / 18-56-47-359Z / 19-33-38-239Z / 20-07-04-819Z / 20-17-46-970Z, QA 18-35-24-346Z / 18-56-54-863Z / 19-33-47-452Z / 20-07-13-065Z / 20-17-56-143Z"
+    }
+  },
+  "perRouteGate": [
+    { "route": "/", "renders": true, "runtimeErrors": 0, "hydrationErrors": 0, "majorInteractionFailures": 0, "majorGeometryFailures": 0, "contentExactRatio": 1, "documentHeightDeltaPx": 0, "geometryP95Px": { "desktop": 13.67, "mobile": 0.08 }, "screenshotChangedRatio": { "desktop1440": 0.2075, "mobile390": 0.2332, "wide1920": 0.2701, "wide2048": 0.2537 }, "wideCenteredDriftPx": 0, "notes": "hero product-UI mockup is a live animation: live-original desktop pair is source-drift; 3 caret-blink visible-target mismatches recorded as minor limitation" },
+    { "route": "/changelog", "renders": true, "runtimeErrors": 0, "hydrationErrors": 0, "majorInteractionFailures": 0, "majorGeometryFailures": 0, "contentExactRatio": 1, "documentHeightDeltaPx": 0, "geometryP95Px": { "desktop": 320.73, "mobile": 7.83 }, "screenshotChangedRatio": { "desktop1440": 0.0885, "mobile390": 0.1289, "wide1920": 0.067, "wide2048": 0.0629 }, "wideCenteredDriftPx": 0, "notes": "geometry p95 driven by media-embed internals deep in the 57k-char feed; median 0.53px, height delta 0" },
+    { "route": "/customers", "renders": true, "runtimeErrors": 0, "hydrationErrors": 0, "majorInteractionFailures": 0, "majorGeometryFailures": 0, "contentExactRatio": 1, "documentHeightDeltaPx": 0, "geometryP95Px": { "desktop": 0.83, "mobile": 0.12 }, "screenshotChangedRatio": { "desktop1440": 0.4956, "mobile390": 0.4159, "wide1920": 0.3736, "wide2048": 0.3508 }, "wideCenteredDriftPx": 0, "notes": "screenshot ratio dominated by customer wordmark mask-image assets CORS-allowlisted to https://linear.app (CDN 403 for other origins) - Phase C asset materialization territory" },
+    { "route": "/customers/automattic", "renders": true, "runtimeErrors": 0, "hydrationErrors": 0, "majorInteractionFailures": 0, "majorGeometryFailures": 0, "contentExactRatio": 1, "documentHeightDeltaPx": 0, "geometryP95Px": { "desktop": 0.09, "mobile": 0.03 }, "screenshotChangedRatio": { "desktop1440": 0.0651, "mobile390": 0.1131, "wide1920": 0.0514, "wide2048": 0.0489 }, "wideCenteredDriftPx": 0 },
+    { "route": "/integrations", "renders": true, "runtimeErrors": 0, "hydrationErrors": 0, "majorInteractionFailures": 0, "majorGeometryFailures": 0, "contentExactRatio": 1, "documentHeightDeltaPx": 0, "geometryP95Px": { "desktop": 0.53, "mobile": 0.53 }, "screenshotChangedRatio": { "desktop1440": 0.0235, "mobile390": 0.0371, "wide1920": 0.0188, "wide2048": 0.018 }, "wideCenteredDriftPx": 0 },
+    { "route": "/plan", "renders": true, "runtimeErrors": 0, "hydrationErrors": 0, "majorInteractionFailures": 0, "majorGeometryFailures": 0, "contentExactRatio": 1, "documentHeightDeltaPx": 0, "geometryP95Px": { "desktop": 1.0, "mobile": 0.08 }, "screenshotChangedRatio": { "desktop1440": 0.3292, "mobile390": 0.2107, "wide1920": 0.2641, "wide2048": 0.2515 }, "wideCenteredDriftPx": 0, "notes": "screenshot ratio includes live drift + product-screenshot lazy decode at scroll 0" },
+    { "route": "/pricing", "renders": true, "runtimeErrors": 0, "hydrationErrors": 0, "majorInteractionFailures": 0, "majorGeometryFailures": 0, "contentExactRatio": 1, "documentHeightDeltaPx": 0, "geometryP95Px": { "desktop": 0.14, "mobile": 0.13 }, "screenshotChangedRatio": { "desktop1440": 0.3831, "mobile390": 0.3292, "wide1920": 0.2917, "wide2048": 0.2746 }, "wideCenteredDriftPx": 0, "notes": "2 of 3 actionability-error actions were here (overlaid mockup internals); recorded as execution-error unknowns" },
+    { "route": "/security", "renders": true, "runtimeErrors": 0, "hydrationErrors": 0, "majorInteractionFailures": 0, "majorGeometryFailures": 0, "contentExactRatio": 1, "documentHeightDeltaPx": 0, "geometryP95Px": { "desktop": 80.01, "mobile": 80.0 }, "screenshotChangedRatio": { "desktop1440": 0.046, "mobile390": 0.0675, "wide1920": 0.0388, "wide2048": 0.0375 }, "wideCenteredDriftPx": 0, "notes": "80px cluster = the animated SVG logo-marquee strip sitting higher inside its own section; height delta 0, best visual ratios of the set" }
+  ],
+  "interactionTotals": {
+    "candidatesDetected": 526,
+    "actionsPlanned": 34,
+    "actionsExecuted": 31,
+    "actionsChanged": 26,
+    "actionabilityErrors": 3,
+    "locatorResolutionRate": 1.0,
+    "dynamicTargetsMountedInExploration": 16,
+    "confirmedPatterns": { "total": 23, "disclosure": 13, "dialog": 8, "selection": 2 },
+    "byMechanism": { "aria-expanded": 13, "target-mounted": 8, "aria-checked": 2 },
+    "unknowns": { "total": 11, "style-only-change": 2, "already-in-target-state": 2, "execution-error": 3, "unsupported-dynamic-region": 1, "insufficient-evidence": 3 },
+    "qaEquivalence": {
+      "triggerState": { "equivalent": 23, "mismatch": 0 },
+      "userVisibleTarget": { "equivalent": 20, "mismatch": 3, "notObserved": 0, "notDeclared": 0 },
+      "mismatchExplanation": "all 3 mismatches are one 1x20px blinking caret inside the homepage hero's animated product-UI mockup (blink phase at uncorrelated measurement instants); every real panel/menu/dialog equivalent",
+      "byType": { "dialog": "8/8 equivalent", "disclosure": "11/13 equivalent (2 caret)", "selection": "1/2 equivalent (1 caret)" },
+      "dynamicTargets": { "compared": 16, "withCloneChildren": 16, "childCountMatches": 16, "contentGaps": 0 },
+      "unknownsReplay": { "signatureGroups": 10, "sampled": 8, "cloneNoOp": 8, "gapsDetected": 2, "unverifiable": 3, "autoImplemented": 0 }
+    }
+  },
+  "fidelity": {
+    "pageViewportPairs": 16,
+    "completed": 16,
+    "comparedNodes": 18918,
+    "missingNodes": 0,
+    "contentExactRatio": 1.0,
+    "geometryMedianOfMedians": 0.01,
+    "geometryMedianOfP95": 0.085,
+    "documentHeightDeltaMaxPx": 0.5,
+    "styleComparedProperties": 1381062,
+    "styleMismatchedProperties": 627,
+    "runtimeErrors": 0,
+    "hydrationErrors": 0,
+    "screenshotChangedRatioMedian": 0.168,
+    "wideViewportWorstCenteredDriftPx": { "1440": 0, "1920": 0, "2048": 0, "routes": "all 8" },
+    "correctionsApplied": ["document-canvas-background"]
+  },
+  "engineChanges": [
+    {
+      "id": "EC1",
+      "classification": "generic-reconstruction-defect",
+      "summary": "Dynamic-region mount was taxonomy-gated (menu|dialog only); now evidence-gated on data-wr-dyn-id, so a disclosure whose declared target was observed to MOUNT gets its panel",
+      "files": ["src/reconstruction/runtime-template.ts"],
+      "fixture": "smoke:reconstruction 141b disclosure-with-mounted-target",
+      "revertProven": true
+    },
+    {
+      "id": "EC2",
+      "classification": "generic-observer-defect",
+      "summary": "Layout probe now mirrors the observation's prepare-scroll (shared autoScrollPrepare moved into layout-probe.ts); a lazy-mounting page observed with --prepare-scroll can now align its probe",
+      "files": ["src/observer/layout-probe.ts", "src/observer/observe-page.ts"],
+      "fixture": "smoke:multi-observer /lazy scroll-mount parity",
+      "revertProven": true
+    },
+    {
+      "id": "EC3",
+      "classification": "generic-compile-policy-defect",
+      "summary": "Probe prefix attachment: structural (tag+parent) prefix via extracted computeProbeAttachment(); >=90% coverage floor removed (early-DOM animated region capped Linear's homepage at 13% while the exact prefix held the whole shell); >=100-element floor and per-node truth-sanity gate remain",
+      "files": ["src/sitespec/compile-page.ts", "src/sitespec/index.ts"],
+      "fixture": "smoke:sitespec probe-attachment unit block (5 checks incl. negative controls)",
+      "revertProven": false
+    },
+    {
+      "id": "EC4",
+      "classification": "generic-reconstruction-defect",
+      "summary": "Layout inference: capped-fill variant of centered-max-width (w == min(parentContent, cap) at every desktop width, cap engaged only above truth width) - closes 480-612px wide-viewport left-pin on marketing shells",
+      "files": ["src/reconstruction/layout-inference.ts"],
+      "fixture": "smoke:reconstruction inference fixtures (positive + left-pinned negative control)",
+      "revertProven": false
+    },
+    {
+      "id": "EC5",
+      "classification": "generic-reconstruction-defect",
+      "summary": "Declared/observed channel reconciliation for framework-portal disclosures: observed targets apply before the declared branch, host-capture root unwrap, declared region id lands on the compiler-marked template node, unmount clears the host's once-only marker - kills the unpositioned ghost duplicate and the host-in-host nesting",
+      "files": ["src/reconstruction/runtime-template.ts", "src/reconstruction/interaction-bindings.ts"],
+      "fixture": "smoke:reconstruction 141b extended (static host + captured subtree through the real compiler; single-mount, marker, reopen)",
+      "revertProven": true
+    },
+    {
+      "id": "EC6",
+      "classification": "additive-optional-IR-field (supports EC5)",
+      "summary": "DynamicTemplateNode.sourceHtmlId carries the captured element's own html id as evidence (never re-emitted as a DOM id); interaction-bindings marks the node matching the declared targetSourceHtmlId as data-wr-declared-region",
+      "files": ["src/sitespec/types.ts", "src/sitespec/dynamic-template.ts", "src/reconstruction/interaction-bindings.ts"],
+      "fixture": "smoke:reconstruction 141b marker assertion",
+      "revertProven": false
+    }
+  ],
+  "limitations": [
+    "homepage hero product-UI mockup is a continuous animation: live-original desktop comparison is source-drift (1994 vs 2024 elements), probe attaches the 267-element structural shell prefix only, and the 3 visible-target mismatches are its 1x20px caret's blink phase - mockup exactly preserved per spec section 16",
+    "customer wordmark mask-image SVGs on webassets.linear.app are CORS-allowlisted to https://linear.app (measured 403 for other origins): clone renders tinted blocks without mask cutouts on /customers card covers - Phase C asset materialization required (customer-identity assets are replacement territory regardless)",
+    "below-the-fold loading=lazy images do not decode at QA's scroll-0 capture (72 attributed occurrences); files verified reachable (HTTP 200)",
+    "localized decorative-region geometry offsets: /security logo-marquee strip 80px inside its section; /changelog media-embed internals deep in the feed; single mockup nodes on / and /pricing - all with document height delta 0",
+    "mobile menu cosmetics: overlay backdrop slightly translucent vs opaque original; hamburger icon does not swap to close glyph while open (scripted trigger content not replayed)",
+    "3 actionability-error actions (overlaid animated mockup internals on / and /pricing) recorded as execution-error unknowns",
+    "inherited from Task 17.1 unchanged: SVG internal paint, open-state coordinates are truth-viewport observations, bounded captures, font-source-binding-unverified (Inter Variable falls back to metric-compatible stack)"
+  ],
+  "regression": {
+    "requiredBecauseEngineChanged": true,
+    "suites": 17,
+    "checks": 1776,
+    "failures": 0,
+    "baseline": { "suites": 17, "checks": 1755, "failures": 0 },
+    "checksAdded": { "multi-observer": 4, "sitespec": 5, "reconstruction": 12 },
+    "typecheck": "exit 0",
+    "logs": "docs/result/handoffs/26A-regression-logs/ (17 suite logs + typecheck.log + driver STATUS with per-suite exit codes; start 2026-08-25T20:48:45Z, done 2026-08-25T21:07:08Z)"
+  },
+  "recovery": {
+    "interrupted": true,
+    "summary": "Original builder instance was killed by an external usage limit (~2026-08-25T20:53Z) after writing report+handoff but while the final regression rerun was still executing in a detached background driver. A recovery instance audited all artifacts on 2026-08-26: no pipeline stage was rerun (all verified complete from run artifacts); the regression driver completed on its own (STATUS: typecheck + 17 suites all exit 0, done 2026-08-25T21:07:08Z); logs were copied from the ephemeral session scratchpad to docs/result/handoffs/26A-regression-logs/; the reported regression total was corrected from 1,779 to the log-derived 1,776 (per-suite rows were already correct); all six engine changes verified present in src/ with no Linear-specific hardcoding; three orphaned next-server QA clone servers (ports 4656-4658, cwd inside data/linear.app/reconstructions) were terminated.",
+    "artifactsReused": ["pilot-scope+verification", "observation 2026-08-25T19-23-01-716Z", "interaction detection/exploration/model", "sitespec 2026-08-25T20-30-27-653Z", "reconstruction 2026-08-25T20-30-33-313Z", "qa 2026-08-25T20-30-41-209Z", "wide-viewport acceptance (24/24 drift 0)", "visual review (96 PNG)", "regression logs (completed post-interruption)"],
+    "artifactsRegenerated": [],
+    "auditedAt": "2026-08-25T21:45:00Z"
+  },
+  "verdict": "READY FOR TRANSFORMATION"
+}

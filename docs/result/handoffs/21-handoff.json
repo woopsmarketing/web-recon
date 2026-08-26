@@ -1,0 +1,80 @@
+{
+  "task": 21,
+  "title": "Source SEO Observation & Production SEO Foundation",
+  "verdict": "READY FOR ASSET INDEPENDENCE",
+  "outputs": {
+    "sourceSeoSnapshot": "data/stripe.com/source-seo-snapshots/2026-08-18T19-25-49-810Z (source-seo-snapshot-v1, 18 pages, provenance observed; live robots.txt 200/17 disallow + sitemap-index 9 partitions)",
+    "productionSeoPlan": "data/stripe.com/production-seo-plans/2026-08-18T19-26-12-572Z (production-seo-plan-v1, 20 routes, PREVIEW mode, provenance derived; plan.json, rendered-head.json, robots.txt, sitemap.preview.xml, report/{needs-input,qa,link-qa}.json)",
+    "report": "docs/result/21-source-production-seo-foundation-2026-08-19.md"
+  },
+  "newModules": [
+    "src/seo/ (types.ts head-parse.ts source-observe.ts live-fetch.ts production-plan.ts brand-isolation.ts render-head.ts robots-sitemap.ts serve.ts link-qa.ts seo-qa.ts run.ts store.ts index.ts)",
+    "src/cli-seo-observe.ts",
+    "src/cli-seo-plan.ts",
+    "src/cli-seo-preview.ts",
+    "src/cli-seo-qa.ts",
+    "scripts/smoke-seo.ts"
+  ],
+  "cli": [
+    "pnpm seo:observe <site-observation> --verification <file> [--live-site-files]",
+    "pnpm seo:plan <template-manifest> --content-run <dir> --source-snapshot <dir> [--domain <d>] [--facts <json>]",
+    "pnpm seo:preview <plan-run-dir> [--no-serve]",
+    "pnpm seo:qa <plan-run-dir> [--routes /a,/b]",
+    "pnpm smoke:seo"
+  ],
+  "tests": { "suite": "smoke:seo", "passed": 72, "failed": 0 },
+  "browserQa": { "passed": 29, "failed": 0, "documentTitleInjectedPostHydration": true },
+  "regression": {
+    "passed": true,
+    "totalChecks": 1474,
+    "suites": 14,
+    "perSuite": {
+      "smoke:verifier": 81,
+      "smoke:selector": 81,
+      "smoke:multi-observer": 58,
+      "smoke:interaction-detector": 92,
+      "smoke:interaction-explorer": 108,
+      "smoke:interaction-patterns": 88,
+      "smoke:sitespec": 252,
+      "smoke:reconstruction": 205,
+      "smoke:reconstruction-qa": 134,
+      "smoke:e2e": 130,
+      "smoke:recon-template": 58,
+      "smoke:content-injection": 68,
+      "smoke:theme": 47,
+      "smoke:seo": 72
+    },
+    "note": "81+81+58+92+108+88+252+205+134+130+58+68+47+72 = 1474; smoke:playwright excluded from the count as in the Task 20 baseline"
+  },
+  "importantDecisions": [
+    "source-seo-snapshot-v1 and production-seo-plan-v1 are two zod schema families sharing zero object schemas; copying a source SEO value is a checked run failure (forbiddenCopy), and the brand forbidden-term set is DERIVED from source evidence (host, JSON-LD org identity, og:site_name, sameAs) — 20 terms, no hardcoded list",
+    "metadata delivery is a serve-boundary head proxy (Task 20 precedent; immutable app untouched): rewrites <title> in the head AND in the RSC flight payload (React would revert the tab title at hydration otherwise), injects the rendered head block, serves /robots.txt and /sitemap.xml; composition Template → Content(env) → Theme(css append) → SEO(head splice)",
+    "preview domain state: no domain → noindex,nofollow on every route, robots.txt Disallow all with no Sitemap line, canonical intent recorded but never finalized, /sitemap.xml 404, sitemap.preview.xml is a path-only plan artifact; domain-provided mode exists and is smoke-proven",
+    "uninjected routes serve a needs-input title with brand-only previewFallback (플로우데스크) so the source title never reaches the browser",
+    "robots.txt/sitemap were live-fetched (opt-in, bounded) because no stored artifact carries them; results marked live-fetched with timestamp",
+    "internal link QA is measurement not a gate: body anchors are template/content-layer property"
+  ],
+  "knownLimitations": [
+    "serve-boundary overlay is the MVP delivery; production head baking is the deploy task's work (rendered-head.json reusable)",
+    "19/20 routes have needs-input titles (content run scope is '/' only) — brand fallback served",
+    "body content/links of uninjected routes still carry source text: 10,420 anchors point at source routes outside the 20-route table (clone 404s by design) + 4 stripe.com absolute anchors (newsroom)",
+    "redirects/pagination/CWV/performance not observed; sitemap fetch bounded (index only, partitions not crawled)",
+    "no SEO Delta Report yet — requires a production domain",
+    "flight title rewrite relies on literal string match over the fully buffered response; post-hydration QA check is the safety net"
+  ],
+  "inputRequirements": [
+    "production domain (blocks: canonical finalization, og:url, absolute sitemap, index,follow robots)",
+    "business facts: address, phone, prices, reviews, ratings, foundingDate, sameAs social links (all currently needs-input; provide via seo:plan --facts)",
+    "production social image for og:image / twitter image (asset gap — Task 22)",
+    "organization logo asset (Task 22)",
+    "content injection for the 19 uninjected routes (titles/descriptions stay needs-input until then)",
+    "production twitter/x account handle (twitter:site)"
+  ],
+  "nextTaskMustKnow": [
+    "SEO proxy (src/seo/serve.ts startSeoServedApp) already composes content overlay + optional theme overlay CSS + SEO head; Task 22/23 can reuse it or bake rendered-head.json statically",
+    "needs-input report (report/needs-input.json, 182 entries) already names og:image/logo as asset gaps",
+    "link-qa.json quantifies source-host absolute links (4) and out-of-table internal links (10,420) for asset/content independence planning",
+    "regenerating the plan with --domain flips robots/canonical/sitemap to production values in one run (smoke section 5 proves the path)",
+    "frozen artifacts (template 2026-08-18T10-45-40-007Z, content run 2026-08-18T10-46-26-129Z, observation runs) verified untouched after QA (mtime check)"
+  ]
+}

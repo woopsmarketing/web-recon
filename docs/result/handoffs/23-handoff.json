@@ -1,0 +1,91 @@
+{
+  "task": 23,
+  "title": "ProductionSpec & Independent Production Build",
+  "verdict": "PRODUCTION PREVIEW READY",
+  "outputs": {
+    "productionSpec": "data/stripe.com/production-specs/2026-08-19T06-36-35-798Z/production-spec.json (production-spec-v1; 5 layers pinned by id + dir-sha256-v1 hash; baseUrl needs-input/preview; build-mode audit; 7 machine-readable blockers)",
+    "productionBuild": "data/stripe.com/production-builds/2026-08-19T06-36-35-798Z (app/ baked copy, package/ deployment bundle 150MB, report/{bake-report,qa}.json)",
+    "deploymentPackage": "data/stripe.com/production-builds/2026-08-19T06-36-35-798Z/package (site/ 350 files 146.8MB incl. robots.txt + /media 230 files, dependency-free server.mjs, deploy-manifest.json, sitemap.preview.xml artifact, RUN.md)",
+    "report": "docs/result/23-production-spec-independent-build-2026-08-19.md"
+  },
+  "newModules": [
+    "src/production/ (types.ts hash.ts patch.ts bake.ts static-server.ts packaging.ts qa.ts run.ts store.ts index.ts)",
+    "src/cli-production-compile.ts",
+    "src/cli-production-qa.ts",
+    "scripts/smoke-production.ts"
+  ],
+  "cli": [
+    "pnpm production:compile --host <h> --template <dir> --content-run <dir> --theme-run <dir> --seo-plan <dir> --materialization <dir>",
+    "pnpm production:qa <production-build-run-dir>",
+    "pnpm smoke:production"
+  ],
+  "tests": { "suite": "smoke:production", "passed": 71, "failed": 0 },
+  "browserQa": {
+    "passed": 159,
+    "failed": 0,
+    "isolation": "package copied OUTSIDE the repo (mkdtemp), launched via its own server.mjs with env={PATH} only",
+    "routes200": "20/20",
+    "browserTitles": "20/20",
+    "contentProof": "5/5 injected Korean values visible on /",
+    "themePaint": "5/5 DOM classes computed color == cool-neutral token",
+    "hydrationJsErrors": 0,
+    "externalRequests": "4 total, all images.stripeassets.com replacement-required surfaces (2 on /, 2 on /newsroom/news/tour-berlin-2025), 0 other hosts; no-scroll full-load census over all 20 routes",
+    "interactions": "desktop triggers clicked 2 -> 6 dynamic regions visible; mobile(390px) 1 -> 2 regions (portal path); overflow desktop+mobile clean"
+  },
+  "regression": {
+    "passed": true,
+    "totalChecks": 1656,
+    "suites": 16,
+    "perSuite": {
+      "smoke:verifier": 81,
+      "smoke:selector": 81,
+      "smoke:multi-observer": 58,
+      "smoke:interaction-detector": 92,
+      "smoke:interaction-explorer": 108,
+      "smoke:interaction-patterns": 88,
+      "smoke:sitespec": 252,
+      "smoke:reconstruction": 205,
+      "smoke:reconstruction-qa": 134,
+      "smoke:e2e": 130,
+      "smoke:recon-template": 58,
+      "smoke:content-injection": 68,
+      "smoke:theme": 47,
+      "smoke:seo": 72,
+      "smoke:assets": 111,
+      "smoke:production": 71
+    },
+    "note": "previous 15 suites unchanged: 81+81+58+92+108+88+252+205+134+130+58+68+47+72+111 = 1585 (delta 0 vs Task 22 baseline); +71 production = 1656; smoke:playwright excluded as in Tasks 20-22"
+  },
+  "importantDecisions": [
+    "spec-before-bake: production-spec-v1 is written and schema-validated before any file is copied; every layer pinned by id + dir-sha256-v1 (per-file sha256, sorted 'path\\thash' manifest, sha256 of manifest; node_modules/.next/out excluded and the exclusion recorded)",
+    "theme lineage pick: cool-neutral run 2026-08-18T12-07-34-566Z — the only accepted theme run whose manifest records the accepted content run as lineage (QA'd on injected Korean content); original is a no-op and could not prove theme baking in a browser; compiler is theme-agnostic (--theme-run)",
+    "bakes are anchor-guarded patches of a COPY: missing/ambiguous/already-applied anchors fail the build loudly (a future generator version cannot be silently half-baked); content bake preserves the default-vs-value distinction so Task 18 guard/srcset semantics are untouched",
+    "SEO titles are baked into route-map.json instead of string-splicing responses — head <title> and the RSC flight payload both derive from the route table, closing the Task 21 flight-rewrite fragility; head blocks are spliced into exported HTML at build time; description asserted as consistency (needs-input routes have none — never invented)",
+    "build mode: full static export (output:'export') — route table is path-only (compiler verifies; query keys would abort), no dynamic APIs; recorded behavior deltas: query strings no longer 404, prerender instead of per-request",
+    "runtime independence proven structurally: QA copies package/ outside the repo and launches its own dependency-free server.mjs (node:http/fs only, 18 HTTP behaviors smoke-tested) with env={PATH}",
+    "indexability gate: PREVIEW enforced, 7 blockers machine-recorded in the spec with evidence paths; residual source hosts derived from Task 22 network-qa.json evidence, not hardcoded"
+  ],
+  "knownLimitations": [
+    "PREVIEW build: noindex,nofollow + Disallow-all + /sitemap.xml 404; canonical/og:url/absolute sitemap not generated (no domain)",
+    "4 residual external requests remain BY DESIGN (replacement-required surfaces); 430 source-host URL strings remain in site files (mostly never-fetched required assets + body anchors); 4,424 'stripe.com' string occurrences in served HTML across 20 routes (body anchors — content-layer named limitation since Task 21)",
+    "static-export behavior delta: query-string URLs no longer 404",
+    "306 anchors on / point outside the 20-route table (404-by-design)",
+    "QA interactions are a sample (desktop 2 clicked / mobile 1), not a re-run of the frozen 27/27 equivalence",
+    "fonts still render fallback stacks (licenses unverified; Task 22 measured cost applies)",
+    "deploy-manifest knownResidualSourceHosts reflects Task 22 evidence until a recompile after operator replacements"
+  ],
+  "inputRequirements": [
+    "production domain (then: regenerate seo:plan --domain, recompile once -> indexable path)",
+    "business facts (address/phone/prices/reviews/ratings/foundingDate/sameAs) via seo:plan --facts",
+    "replacement images for 51 replacement-required assets (4 rendering surfaces first) via replacement-manifest seam + re-materialize + recompile",
+    "font license decision (verify/approve self-hosting, accept fallbacks, or pick open-license alternatives)",
+    "og:image + organization logo, twitter handle, content injection for the 19 uninjected routes"
+  ],
+  "nextTaskMustKnow": [
+    "Task 24 acceptance target: data/stripe.com/production-builds/2026-08-19T06-36-35-798Z/package — launch with 'node server.mjs --port N' from any directory, or re-run pnpm production:qa for the full isolated procedure",
+    "recompiling with new inputs = point production:compile at new run dirs; it creates NEW spec/build namespaces and never touches history; per-layer hashes make lineage drift detectable",
+    "the Task 20 deferred theme multi-route paint-coverage debt (ROADMAP Deferred section) is NOT discharged by this task's 5-class homepage sample — Task 24 must still cover it",
+    "residual-4 assets + font-fallback + 19 uninjected routes must be pre-agreed as named limitations in Task 24 acceptance unless operator inputs arrive first",
+    "frozen lineage verified untouched (find -newermt over 8 namespaces after task start: 0 files)"
+  ]
+}

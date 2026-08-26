@@ -1,0 +1,166 @@
+{
+  "agent": "Agent-24-Aggregator",
+  "phase": 1,
+  "createdAt": "2026-08-19",
+  "inputs": [
+    "docs/result/handoffs/{21,22,23}-handoff.json + {21,22,23}-verification.json",
+    "docs/result/handoffs/24-site-{stripe,domainchecker,nextjs}.json",
+    "docs/result/handoffs/24-theme-coverage.json",
+    "docs/result/handoffs/overnight-preflight.json",
+    "spot-checks: src/production/run.ts:185-220, src/production/qa.ts:402-503, src/assets/inventory.ts:67, ROADMAP.md:1340-1353, task 21/22/23 report verdict sections"
+  ],
+  "axes": {
+    "A-reconstruction-fidelity": {
+      "status": "PASS (sampled; frozen 27/27 acceptance remains authority)",
+      "evidence": "stripe: 5/5 sampled frozen interaction patterns incl. static-target disclosures verified by visibility diff against frozen target signatures, 0 hydration errors; domainchecker: offline v4 recompile from 6-day-old artifacts, parity 40/40 pairs, interactions 3/3, direct probe of <details> disclosure in shipped package; nextjs: 87,191 nodes, parity 12/12, interactions 2/2, 0 runtime errors",
+      "openIssues": [
+        "full 27/27 stripe equivalence not re-run in Task 24 (by instruction; frozen acceptance is the authority)",
+        "production:qa interaction metric under-measures static-target/selection interactions (GED-A) — build correctness proven by independent probes, not by that metric",
+        "reconstruction-qa vs LIVE original not exercised on domainchecker/nextjs (drift not measured, by design)"
+      ]
+    },
+    "B-editable-template-fidelity": {
+      "status": "PASS",
+      "evidence": "stripe: 10/10 baked Korean slot values served on correct route; domainchecker: 1,957 slots / 4,832 bindings, read-back 4,832/4,832 + default no-op 4,832/4,832, mutation canary 24/24; nextjs: 12,933 slots / 48,552 bindings resolved + no-op, mutation 126/126; engine handled 3 different binding profiles (paint-twin/svg-text/dynamic present on stripe, absent elsewhere, emitted as 0 not error)",
+      "openIssues": [
+        "content injection scope is route / only on all three sites (19/18/39 uninjected routes = input requirement)",
+        "micro-slot (1-3 char) fake-provider fitting fails and repair loop cannot converge (GED-D, post-MVP)"
+      ]
+    },
+    "C-content-injection-safety": {
+      "status": "PASS",
+      "evidence": "stripe: 0 tel/₩/★/rating fields on 20 routes; every $-price traced to frozen source-template artifacts, none invented; JSON-LD identity 플로우데스크 only; domainchecker: 362 fake values obviously-placeholder, validation PASS, honest FAIL on 2 clipped slots recovered via documented §29 operator-override seam; nextjs: 24 needs-input honest, applied 380/380, layout FAIL honest (1-char 'X' slot) with correct evidence",
+      "openIssues": [
+        "GED-D non-convergence on micro-slots (honest FAIL, operator seam works)",
+        "stale-duplicate-text remnants (documented Task 19.1 non-failing category, seen on nextjs 'Blog' labels)",
+        "body anchors on uninjected routes carry source identity (GED-F, named limitation since Task 21)"
+      ]
+    },
+    "D-theme-safety": {
+      "status": "PASS — Task 20 deferred paint-coverage debt CLOSED",
+      "evidence": "24-theme-coverage: all 31 themeable paint groups classified verified (0 not-exercised, 0 mismatch) with computed-style evidence across 20 routes x 2 viewports + 4 dynamic surfaces, 100% match rates, negative control proven (pg000003 434/434); satisfies ROADMAP.md:1340-1353 requirement exactly; stripe spot 10/10 incl. 2 non-home routes; domainchecker cool-neutral run QA PASS (paint 36/36, contrast new-low 0); nextjs original-theme QA PASS 52/52",
+      "openIssues": [
+        "curated themes honestly incompatible on nextjs (browser contrast FAIL) and dark-accent on stripe — compatibility genuinely discriminates by site; not a defect",
+        "static compatibility checker is weaker than browser QA (nextjs: checker said compatible-with-warnings, browser failed) — browser QA remains the required gate",
+        "ROADMAP.md still lists the debt as open; Phase-2 report must record CLOSED (no artifact edits in Phase 1)"
+      ]
+    },
+    "E-seo-independence": {
+      "status": "PASS for production head/robots; body brand strings = named limitation",
+      "evidence": "stripe: 20/20 heads with 0 canonical/og:url/source-brand occurrences, noindex 20/20, robots Disallow-all no Sitemap, JSON-LD clean; domainchecker: production build serves 'Fake Company' titles 19/19 incl. entity-escaped /blog (proves Task 23 baking closes GED-E); nextjs: 26/29 with all title/robots/canonical/JSON-LD checks PASS; forbidden-copy and brand-isolation derived (not hardcoded) on all 3 sites",
+      "openIssues": [
+        "GED-E entity-escaped titles leak on the Task 21 preview PROXY only (production path baked, proven closed)",
+        "4,424 stripe.com body-anchor strings (GED-F, named, count confirmed live)",
+        "nextjs brand==hostname: React 19 preload hoisting puts source-host asset URLs in served head — true-positive detection; closable only by operator asset replacements (input requirement)",
+        "preview mode everywhere: no domain, 182/173/403 needs-input values"
+      ]
+    },
+    "F-asset-independence": {
+      "status": "PASS with named residuals (site-dependent by policy)",
+      "evidence": "domainchecker: TOTAL independence (baseline 28 -> 0, external hosts {} in production QA); stripe: residuals = exactly the replacement-required awaiting-input set on the 1 known host (5 unique files across sampled routes), 0 other external hosts, all traceable in replacement-manifest.json; nextjs: near-zero independence BY POLICY (154/214 brand-dominated assets correctly refused fetch) — conservative classifier working; SSRF hardening independently assessed sound (22-verification)",
+      "openIssues": [
+        "GED-C: CSS url(#fragment) refs enter the fetch set as page-URL+fragment (graceful http-error, but phantom failure noise)",
+        "GED-G: no per-file cross-route rendering-residual list for operators ('known 4' is /-scoped; newsroom DSC2639 easy to miss) — replacement-manifest has the complete entry list but not render-priority",
+        "fonts never self-hosted (license input requirement); font QA unobserved on domainchecker/nextjs (no --live-font-css)"
+      ]
+    },
+    "G-production-build-integrity": {
+      "status": "PASS",
+      "evidence": "stripe: 2/2 lineage hashes independently recomputed by site agent (5/5 by Agent-23-Verifier, two independent dir-sha256-v1 implementations agree), 7 machine-recorded blockers with derived evidence paths, env -i PATH-only isolated launch proven twice; domainchecker: spec-before-bake, 150/152 QA; nextjs: 297/299 QA, 40/40 routes/titles; dependency-free server.mjs proven on 3 structurally different sites; the 4 total QA FAILs across sites are all GED-A false negatives with build correctness independently proven",
+      "openIssues": [
+        "GED-A false-fails block clean acceptance on static-target/selection-trigger sites",
+        "GED-B: blocker summary strings hardcode stripe literals in non-stripe specs (evidence paths correct)",
+        "app/ working copy in build runs is not the independent deliverable (package/ is) — disclosed, scoping only"
+      ]
+    }
+  },
+  "genericDefects": [
+    {
+      "id": "GED-A-production-qa-interaction-metric",
+      "description": "production:qa sampleInteractions() defines interaction success solely as visible [id^=wr-obs-]/[id^=wr-dyn-] region mounts (qa.ts:493) and asserts regionsAppeared>0 (qa.ts:405,425). Encodes stripe's dynamically-mounted mega-menu shape; false-fails (a) static-target disclosures (domainchecker 13/13 patterns, native <details>) and (b) selection/aria-checked toggles (nextjs homepage). Stripe's own static-target patterns ip000022/23 read 0->0 under this metric (verified there by visibility diff instead).",
+      "file": "src/production/qa.ts:402-426 (assertions), 463-503 (sampleInteractions)",
+      "sites": ["domainchecker (2 hard FAILs, build proven correct by direct probe)", "nextjs (2 hard FAILs, proven equivalent 2/2 in parity+theme QA)", "stripe (metric blind spot only; sampled triggers happen to mount regions)"],
+      "severity": "medium",
+      "decision": "fix-now",
+      "rationale": "small, contained to one QA function; clearly generic (independently found on 2 sites + flagged on the 3rd); materially affects QA correctness — the authoritative production gate false-fails passing builds. Fix: count success on state-flip evidence (aria-expanded/aria-checked/open attribute change or a target-visibility diff) OR region mounts, not region mounts alone."
+    },
+    {
+      "id": "GED-B-production-blocker-summaries-hardcoded",
+      "description": "ProductionSpec blocker summary strings hardcode stripe-run literals ('19/20 route titles', '51 replacement-required assets; 4 still render on /', 'sohne-var / SourceCodePro', '19 of 20 routes', '374 inline-svg entries') while blocker ids and evidence paths derive correctly from inputs. Non-stripe specs carry factually wrong prose in an authoritative machine-adjacent artifact (nextjs actuals: 39/40, 154 required, residual 45, different fonts, 78 inline-svg).",
+      "file": "src/production/run.ts:189-218",
+      "sites": ["nextjs (proven wrong literals in its spec)", "domainchecker (same code path)", "stripe (accidentally correct — the numbers are its own)"],
+      "severity": "medium",
+      "decision": "fix-now",
+      "rationale": "small and safe — the correct values (needsInput.total, replacement counts, residual count, font families, route counts, inline-svg count) are already computed or loadable in the same scope, exactly as the evidence strings prove; materially affects MVP honesty (an operator reading a non-stripe spec is told stripe's numbers)."
+    },
+    {
+      "id": "GED-C-asset-inventory-css-fragment-url",
+      "description": "Fragment-only CSS url(#id) SVG references are resolved against the page URL and enter the inventory as fetchable url-entries (nextjs ai000001 = https://nextjs.org/%23b, kind=background-image, usageCount=2). Fetch fails gracefully and is recorded as http-error, but the entry is a phantom asset that pollutes inventory counts and fetch-failure reports an operator might chase.",
+      "file": "src/assets/inventory.ts (background-image/url-entry ingestion; note the generated-styles regex at line 67 already requires https?:// — the fragment path enters via the SiteSpec asset-catalog background-image channel)",
+      "sites": ["nextjs (observed)", "any site using SVG filter/gradient url(#...) refs in computed background/styles"],
+      "severity": "low",
+      "decision": "fix-now",
+      "rationale": "one-line-class predicate (skip refs that are fragment-only / resolve to the page URL differing only by fragment) at ingestion; removes false fetch-failure noise from operator-facing reports; zero behavioral risk to real assets. Lowest priority of the three fix-nows."
+    },
+    {
+      "id": "GED-D-fake-provider-repair-nonconvergence",
+      "description": "Deterministic fake provider's minimum token 'Fake' (4 chars, unbreakable) physically cannot fit 1-3-char micro-slots (chips, single-char CTA/labels; common on Korean sites — domainchecker sourceCharacterCount 1 and 3 @ 16-39px; nextjs 1-char 'X' footer label), and content:qa --repair re-invokes the same deterministic provider, burning bounded iterations with zero progress and no no-progress detection. Detection and honest FAIL are correct; documented operator-override seam recovers.",
+      "file": "content-injection fake provider + content:qa repair loop (src/content-injection/)",
+      "sites": ["domainchecker (2 slots, recovered via §29 seam)", "nextjs (1 slot, honest residual FAIL)"],
+      "severity": "low",
+      "decision": "post-mvp",
+      "rationale": "requires length-aware provider generation and/or repair-loop no-progress detection — behavior design, not a spot fix; current behavior is honest (FAIL with evidence) and the documented operator seam works; test-provider seam, not the production content path."
+    },
+    {
+      "id": "GED-E-seo-proxy-title-entity-escaping",
+      "description": "Task 21 preview proxy's literal-string title rewrite misses HTML-entity-escaped titles (source '<title>X & Y</title>' served as '&amp;'), so the source title (with brand) reaches the browser on that route via the PREVIEW PROXY. The 21-handoff pre-named this fragility and its post-hydration QA safety net caught it exactly as designed. PROVEN closed in the production path: Task 23 bakes titles into route-map.json; domainchecker production QA serves 'Fake Company' on the same /blog route.",
+      "file": "src/seo/serve.ts (head/flight literal title rewrite)",
+      "sites": ["domainchecker (observed)", "any site with & < > or quotes in <title> when previewed via the Task 21 proxy"],
+      "severity": "low for MVP (production deliverable unaffected); medium if the preview proxy is used operator-facing",
+      "decision": "post-mvp",
+      "rationale": "does not affect the MVP deliverable (production builds bake titles; proven on the exact failing route); proxy is preview-only tooling with a working QA safety net; fix (also match entity-encoded variants) belongs to roadmap hardening of the preview path."
+    },
+    {
+      "id": "GED-F-body-anchor-source-identity-no-neutralization",
+      "description": "Body anchors on uninjected routes carry source identity at scale (stripe: 4,424 'stripe.com' occurrences incl. github.com/stripe and social share intents across 20 routes) and no pipeline layer neutralizes out-of-table body anchors. Head/meta isolation is complete; url slots exist for injected routes.",
+      "file": "cross-layer gap (template/content layers); no single file",
+      "sites": ["stripe (4,424, count confirmed live)", "structurally any site with uninjected routes"],
+      "severity": "medium visibility, but assessed as known-limitation/input-requirement rather than engine defect",
+      "decision": "post-mvp",
+      "rationale": "named limitation since Task 21, disclosed in every artifact since; primary remedy is the existing input requirement (content injection for remaining routes, where url slots already handle anchors); a generic neutralization layer for out-of-table anchors is design work, not a small fix. Carry as named limitation in Phase-2 acceptance; roadmap the neutralization layer."
+    },
+    {
+      "id": "GED-G-no-per-file-cross-route-residual-render-list",
+      "description": "Deploy-manifest records residual HOSTS; the commonly cited 'known 4 surfaces' is /-scoped (scroll census); no artifact lists per-FILE residual RENDERING surfaces across all routes, so operators could under-replace (newsroom 3___DSC2639.jpg is easy to miss). Mitigant: replacement-manifest.json already carries every replacement-required entry with awaiting-input status and slot/brief joins — the complete list exists, render-prioritization does not.",
+      "file": "src/production/packaging.ts (deploy-manifest) / src/assets/network-qa.ts (census scope)",
+      "sites": ["stripe (observed; 5 unique files vs 'known 4' phrasing)"],
+      "severity": "low",
+      "decision": "post-mvp",
+      "rationale": "operator-communication gap, not a correctness defect; a complete per-file render list requires cross-route scroll censuses (measurably bigger scope); the honest interim fix is prose — Phase-2 report must state the 5-unique-file figure and point operators at replacement-manifest.json as the authoritative complete list."
+    }
+  ],
+  "consistencyFindings": [
+    "residual-4 vs 5-unique-files RECONCILED, no contradiction: Task 22's 'residual 4' = /-only scroll census (4 files on /); Task 23's 'external 4' = no-scroll 20-route census (2 requests on / + 2 query-variants of one newsroom file); union of censuses = 5 unique source files, all on the single known host, all classification=replacement-required awaiting-input in replacement-manifest.json. A counting-scope nuance — but GED-B's hardcoded '4 still render on /' propagates the /-scoped number into specs, and Phase-2 prose must use 5.",
+    "theme debt CLOSED is CONSISTENT with ROADMAP.md:1340-1353: the debt section demands all 31 themeable groups classified verified/not-exercised/mismatch with browser computed-style evidence; 24-theme-coverage.json delivers verified 31/31, mismatch 0, not-exercised 0, over 20 routes x 2 viewports + 4 dynamic surfaces with a negative control. ROADMAP text itself still reads as open debt — Phase-2 report (a writing-enabled step) should record closure; no artifact edited now.",
+    "hash lineage DOUBLY consistent: Agent-24-Stripe recomputed template+assets hashes from scratch (incl. discovering the newline-termination detail) matching the spec; Agent-23-Verifier had already recomputed all 5 layer hashes with its own implementation — two independent implementations, byte-identical results.",
+    "7 machine-recorded blockers consistent across 23-handoff, 23-verification, and all three site production specs (ids + evidence paths derived correctly everywhere; only summary prose wrong on non-stripe sites per GED-B).",
+    "interaction false-fails form a coherent pattern, not site-quality noise: domainchecker 150/152 and nextjs 297/299 fail exactly and only the 2 GED-A checks; stripe passes 159/159 because its sampled homepage triggers happen to mount dyn regions — confirms the defect is trigger-shape-dependent.",
+    "GED-E closure chain verified end-to-end on the same route: seo:qa /blog FAIL (proxy, entity-escaped title) -> production qa.json browser-title:/blog ok ('Fake Company') — preview defect, production closed.",
+    "regression arithmetic chain consistent and verifier-audited at each step: 1,402 (Task 20 baseline) -> +72 seo = 1,474 (21) -> +111 assets = 1,585 (22) -> +71 production = 1,656 (23); smoke:playwright consistently excluded.",
+    "seo:qa scores differ (domainchecker 25/29, nextjs 26/29) but decompose fully into explained root causes (GED-E x1 + site-specific head preload leak x2; nextjs brand==hostname x3); no unexplained mismatches.",
+    "one prose-vs-artifact nuance already on record (23-verification): report says '54 flight .txt', site contains 84 (54 = rewritten subset); machine artifacts accurate; non-blocking.",
+    "verdict-language alignment: 21/22/23 report Final Verdict sections match their handoff verdict fields (READY FOR ASSET INDEPENDENCE / READY FOR PRODUCTION BUILD WITH INPUT REQUIREMENTS / PRODUCTION PREVIEW READY); both site generality agents independently returned PIPELINE_GENERALIZES; stripe returned ACCEPT_WITH_LIMITATIONS."
+  ],
+  "provisionalVerdict": "MVP PREVIEW READY — PRODUCTION INPUTS REQUIRED (provisional; final certification in Phase 2)",
+  "verdictRationale": [
+    "Every axis A-G passes on evidence, with all hard FAILs across three sites decomposing into 2 QA-metric defects (GED-A, artifacts proven correct by independent probes), 1 preview-proxy defect closed in the production path (GED-E), 1 honest test-provider floor with a working operator seam (GED-D), 1 site-specific leak closed by the asset layer, and 1 live-source instability — no stage produced a wrong artifact silently. NOT READY is therefore unsupported.",
+    "Generality proven: the full pipeline (offline v4 recompile -> reconstruction -> template -> injection -> theme -> SEO -> assets -> ProductionSpec -> isolated PATH-only package) ran to completion on a small Korean business site and a large docs site using 6-day-old observation artifacts, with honest site-discriminating gates (theme compatibility, asset classification).",
+    "MVP CORE READY (unqualified) would overclaim: the deliverable is machine-enforced PREVIEW mode — 7 recorded blockers (no domain, 182+ SEO needs-input values, 51 replacement-required assets with 5 unique files still rendering from the source host, unverified font licenses, absent business facts, 19/20 uninjected routes, 374 inline-SVG brand marks) are all operator-INPUT-bound, none machinery defects; noindex/Disallow-all/sitemap-404 are enforced until inputs arrive.",
+    "The three fix-now defects (GED-A/B/C) are QA-honesty corrections, not functionality gaps — they do not change the verdict direction, but Phase-2 certification should land them so the final report's numbers (152/152, 299/299, corrected blocker prose) are clean.",
+    "Theme paint-coverage debt — the one item ROADMAP forbade deferring past Task 24 — is discharged (31/31 verified, 0 mismatch)."
+  ],
+  "correctionPlan": {
+    "fixNow": ["GED-A-production-qa-interaction-metric", "GED-B-production-blocker-summaries-hardcoded", "GED-C-asset-inventory-css-fragment-url"],
+    "affectedReVerification": "After fixes by a correction agent (not this aggregator): (1) GED-A — re-run pnpm production:qa against the EXISTING domainchecker and nextjs build runs: the 2 interaction FAILs must flip to PASS on state-flip evidence (expect 152/152 and 299/299) and stripe must stay 159/159 unchanged (no-regression guard); smoke:production must be extended with a static-target/selection-trigger fixture and re-pass. (2) GED-B — recompile production specs for domainchecker and nextjs into NEW run namespaces (never editing existing artifacts) and assert every blocker summary derives from that run's actual counts; a stripe recompile should reproduce identical layer hashes with now-derived (still numerically identical) summaries; smoke:production assertion added for derived-summary invariants. (3) GED-C — smoke:assets extended with a url(#fragment) fixture proving exclusion; optionally re-run assets:inventory on the nextjs lineage to confirm entry count drops by exactly the phantom entries with no real asset lost. Then the full 16-suite regression (expected >= 1,656 checks, growth only from new fixture checks) must pass before Phase-2 final certification; frozen stripe acceptance package (production-builds/2026-08-19T06-36-35-798Z/package) and all frozen lineage remain untouched (verify with find -newermt)."
+  }
+}

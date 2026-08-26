@@ -1,0 +1,300 @@
+{
+  "task": "26C-linear-production-release",
+  "role": "26-Production-Builder (fresh agent; sections 32-45 of the Task 26 spec)",
+  "createdAt": "2026-08-26T00:20:00Z",
+  "report": "docs/result/26C-linear-production-release-2026-08-26.md",
+  "inputs": {
+    "template": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z",
+    "contentRun": "data/linear.app/content-runs/2026-08-25T21-54-40-120Z",
+    "themeRun": "data/linear.app/theme-runs/2026-08-25T22-24-00-120Z",
+    "observation": "data/linear.app/site-observations/2026-08-25T19-23-01-716Z",
+    "siteSpec": "data/linear.app/site-specs/2026-08-25T20-30-27-653Z",
+    "pilotVerification": "data/linear.app/2026-08-25T18-28-28-180Z-pilot/verification.json",
+    "phaseBVerdict": "PASS_WITH_LIMITATIONS (26B-verification.json)"
+  },
+  "runs": {
+    "sourceSeoSnapshot": "data/linear.app/source-seo-snapshots/2026-08-25T23-15-08-566Z",
+    "productionSeoPlan": "data/linear.app/production-seo-plans/2026-08-25T23-27-49-099Z",
+    "assetInventory": "data/linear.app/asset-inventories/2026-08-25T23-19-27-365Z",
+    "assetMaterialization": "data/linear.app/asset-materializations/2026-08-25T23-28-36-880Z",
+    "productionSpec": "data/linear.app/production-specs/2026-08-25T23-54-21-435Z",
+    "productionBuild": "data/linear.app/production-builds/2026-08-25T23-54-21-435Z",
+    "releaseProject": "data/linear.app/release-projects/linear.app-2026-08-25T23-54-21-435Z",
+    "supersededRuns": {
+      "note": "correction trail, kept on disk: seo plan 2026-08-25T23-15-43-499Z (pre-C-EC3 prose; its 64/69 qa.json is the C-EC1/C-EC2 discovery evidence), materialization 2026-08-25T23-20-21-743Z (pre-C-EC4; 152/155 with 3 honest failures), production spec+build 2026-08-25T23-32-42-075Z and release project linear.app-2026-08-25T23-32-42-075Z (pre-C-EC5/6; 7 blockers incl. the spurious zero-count one). Canonical candidate = 2026-08-25T23-54-21-435Z"
+    }
+  },
+  "sourceSeo": {
+    "pages": 8,
+    "titles": "8/8 present, 0 duplicates",
+    "descriptions": "8/8 present, 0 duplicates",
+    "canonical": "8/8 self-referential (8 clusters)",
+    "robotsMeta": { "none": 6, "index": ["/customers/automattic"], "noindex": ["/integrations"] },
+    "hreflangAlternates": 0,
+    "openGraphEntries": 27,
+    "twitterEntries": 51,
+    "jsonLdPages": 1,
+    "headings": 164,
+    "pagesMissingH1": 0,
+    "linkGraph": { "nodes": 8, "edges": 51, "internalLinkOccurrences": 700 },
+    "orphanCandidatesWithinObservedSubgraph": 0,
+    "brokenInternalLinks": 0,
+    "unverifiedInternalLinkTargets": 178,
+    "indexability": { "no-observed-blocker": 7, "robots-noindex": 1 },
+    "robotsTxtLive": { "httpStatus": 200, "disallowRules": 2, "sitemapUrls": 1 },
+    "sitemapLive": { "kind": "urlset", "urlCount": 1003 },
+    "liveRequests": "2 (robots.txt + sitemap.xml, opt-in --live-site-files; files exist in no stored artifact)"
+  },
+  "productionSeo": {
+    "mode": "preview",
+    "routes": 8,
+    "contentInjectedRoutes": 8,
+    "knownTitles": 8,
+    "knownDescriptions": 8,
+    "needsInputValues": 41,
+    "forbiddenCopy": { "pass": true, "comparisons": 56, "violations": 0 },
+    "brandIsolation": { "pass": true, "scannedStrings": 123, "forbiddenTerms": ["linear", "linear.app", "@linear"], "violations": 0 },
+    "previewPosture": "noindex,nofollow all routes; robots.txt Disallow / with no Sitemap line; canonical unresolved (null, never invented); /sitemap.xml 404; path-only sitemap.preview.xml as plan artifact only",
+    "structuredData": "WebSite + Organization with name/description only; address/phone/prices/reviews/ratings/foundingDate/sameAs all needs-input and OMITTED (never invented); locale honestly needs-input (intent declares no language)",
+    "qa": {
+      "checks": "69/69 PASS",
+      "runtimeErrors": { "raw": 24, "inherited": 24, "seoIntroduced": 0 },
+      "headSourceAssetReferencesMeasured": { "total": 57, "perRoute": { "/": 1, "/customers": 1, "/customers/automattic": 1, "/integrations": 54 }, "note": "body-hoisted preload URLs, asset-layer territory; 56/57 rewritten to /media in the baked package, the 1 remaining is a replacement-required asset" },
+      "linkAudit": { "anchors": 1564, "routeResolves": 172, "brokenInternal": 1122, "sourceHostAbsolute": 0, "external": 164, "nonNavigational": 106 }
+    }
+  },
+  "assets": {
+    "inventory": {
+      "entries": 448,
+      "urlEntries": 241,
+      "inlineSvgEntries": 207,
+      "truncated": 0,
+      "hosts": { "webassets.linear.app": 180, "linear.app": 55, "static.linear.app": 6 },
+      "slotJoinedEntries": 192,
+      "imageBriefJoinedEntries": 73,
+      "byClassification": {
+        "safe-to-materialize": 0,
+        "replacement-recommended": 155,
+        "replacement-required": 84,
+        "license-needs-review": 2
+      },
+      "byRule": {
+        "default-conservative": 141,
+        "video-brand-content": 14,
+        "image-brief-warning": 73,
+        "brand-social-card": 8,
+        "brand-favicon": 3,
+        "font-license-unknown": 2
+      }
+    },
+    "materialization": {
+      "candidates": 155,
+      "fetched": 155,
+      "failed": 0,
+      "skippedByClassification": 86,
+      "uniqueMediaFiles": 155,
+      "mediaBytes": 209680490,
+      "rewriteEntries": 155,
+      "replacementSeamEntries": 239,
+      "maxBytesFlag": 134217728
+    },
+    "customerWordmarkMasks": {
+      "count": 12,
+      "classification": "replacement-recommended/default-conservative (no brief evidence reaches the review-locked surface; CDN-hash filenames defeat name rules)",
+      "effect": "materialized + rewritten -> served same-origin from /media: Phase-A CORS console errors on /customers eliminated (production QA 0 console errors) and mask cutouts render",
+      "honestDisposition": "customer-identity assets: flagged replacement-required-equivalent for the operator in report + seam (awaiting-input); materialization is a runtime-dependency fix, NOT production approval"
+    },
+    "realPeopleContent": {
+      "finding": "review-locked homepage testimonial twin naming real people (Gabriel Peal/OpenAI, Nik Koblov/Ramp) still renders on the injected homepage mobile variant and ships in site/index.html (4 occurrences each, HTML + flight)",
+      "slotKeys": ["home.main.link.you-ll-probably-build-a-better-product-j.label.*", "home.main.link.our-speed-is-intense-and-linear-helps-us.label.*"],
+      "editableTwins": "properly placeholdered ('Customer name / Role, Company (to be provided)') on / and /plan",
+      "openAiRampTokensOnAllRoutes": "inline-SVG <symbol> customer-logo sprite in the shared shell - inside the 207-entry source-brand-inline-svg release-blocking requirement",
+      "classification": "replacement-required CONTENT; the release requirement model has no kind for review-locked slot text, so it is carried as a NAMED operator priority + limitation, never silently absorbed"
+    }
+  },
+  "fonts": {
+    "fontUrls": ["https://static.linear.app/fonts/InterVariable.woff2?v=4.1", "https://static.linear.app/fonts/Tiempos/tiempos-headline-regular.woff2"],
+    "fontFaceRulesRecovered": 0,
+    "fontFaceProvenance": "live-fetched (5 render-order stylesheets, 0 rules; source splits ~60 stylesheets and injects fonts via JS - nothing invented)",
+    "families": [
+      { "family": "inter variable", "declarations": 4188, "status": "license-needs-review", "selfHostApproved": false, "fallbackStack": "\"SF Pro Display\", -apple-system, system-ui, Segoe UI, Roboto, ... sans-serif" },
+      { "family": "berkeley mono", "declarations": 109, "status": "license-needs-review", "selfHostApproved": false, "fallbackStack": "ui-monospace, \"SF Mono\", Menlo, monospace" }
+    ],
+    "webfontUndefinedInClone": true,
+    "fallbackReflowQa": "honestly unobserved (font-qa.json note): the harness refuses to guess the family-to-URL binding without a recovered @font-face rule; the clone has rendered on fallback stacks since Phase A and the accepted Phase A geometry parity embeds that cost"
+  },
+  "networkIndependence": {
+    "method": "assets:qa real-Chromium census, baseline (un-proxied) vs independent (asset-served), scroll-triggered lazy loads, ALL 8 pilot routes",
+    "baselineSourceRequests": 206,
+    "independentResidualRequests": 60,
+    "residualUniqueFiles": 60,
+    "residualByHost": { "linear.app": 25, "webassets.linear.app": 35 },
+    "residualByClassification": { "replacement-required (image-brief-warning)": 60, "any other class or unattributed": 0 },
+    "perRouteResidual": { "/": 15, "/changelog": 16, "/customers": 2, "/customers/automattic": 3, "/integrations": 12, "/plan": 12, "/pricing": 0, "/security": 0 },
+    "perFileList": "data/linear.app/asset-materializations/2026-08-25T23-28-36-880Z/report/network-qa.json (independent[].sourceUrls per route) - the Task 24 GED-G per-file residual render list, satisfied from the existing artifact with no engine change",
+    "packageCensus": { "method": "production:qa, no scroll, all 8 routes", "externalRequests": 31, "byHost": { "linear.app": 12, "webassets.linear.app": 19 }, "unexpectedHosts": 0 }
+  },
+  "productionSpec": {
+    "schema": "production-spec-v1",
+    "runId": "2026-08-25T23-54-21-435Z",
+    "hashMethod": "dir-sha256-v1",
+    "lineage": {
+      "template": { "id": "linear.app-2026-08-25T21-53-26-980Z", "hash": "2558f2c0bd2847c3e9e59678c3ce2698c17c40666f1c75e0cd10a9e20391c7c7", "files": 41, "bytes": 31885945 },
+      "contentRun": { "id": "2026-08-25T21-54-40-120Z", "hash": "656fee57c11e2bfe57a1fe72afc4dc75c90628b751ac3e824415ad5d38657925", "files": 46, "bytes": 32246465 },
+      "theme": { "id": "2026-08-25T22-24-00-120Z (dark-accent)", "hash": "bcb83de075a70c921a3ce39766b600673dfb709f00d48238496dd87f73ebb892", "files": 40, "bytes": 30103050 },
+      "seoPlan": { "id": "2026-08-25T23-27-49-099Z (preview)", "hash": "676ce2008a805c1d791a7b8b993c12a3fd12c60d3926f222e6be0873401111f2", "files": 8, "bytes": 237047 },
+      "assets": { "id": "2026-08-25T23-28-36-880Z", "hash": "e83710a19e68a0e5fdf1c85f37637f47588e70f922d871fd24b847a8accf6661", "files": 160, "bytes": 210076618 }
+    },
+    "baseUrl": { "value": null, "status": "needs-input", "mode": "preview" },
+    "buildMode": "static-export (route table path-only, 8 routes, no query variants)",
+    "indexabilityGate": {
+      "decision": "preview",
+      "blockers": ["production-domain-needs-input", "seo-needs-input-values (41)", "replacement-required-assets (84 never fetched; 60 residual renders)", "fonts-license-needs-review (2)", "business-facts-needs-input", "source-brand-inline-svg (207)"],
+      "note": "uninjected-route-content correctly ABSENT: all 8 routes injected (C-EC5)"
+    }
+  },
+  "productionBuild": {
+    "bake": {
+      "contentSlotValuesBaked": 1395,
+      "unknownOverlayKeys": 0,
+      "themeOverlayBytes": 262039,
+      "seoRouteTitlesBaked": "8/8 (0 guard mismatches)",
+      "headBlocksSpliced": "8/8",
+      "assetRewrites": { "htmlFiles": 5, "html": 718, "flightFiles": 17, "flight": 1132, "cssFiles": 1, "css": 53, "total": 1903 },
+      "residualSourceUrlStringsInSite": 1162
+    },
+    "package": { "siteFiles": 215, "siteBytes": 258657406, "mediaFiles": 155, "routeHtmlFiles": 10, "packageSize": "261 MB", "server": "dependency-free server.mjs" },
+    "isolatedQa": {
+      "checks": "75/75, 0 failed",
+      "isolation": "package copied outside the repo (/var/folders/**/wr-production-qa-*), spawned with env=[PATH] only",
+      "routes200": "8/8",
+      "browserTitles": "8/8 post-hydration",
+      "hydrationJsErrors": "0 on all 8 routes desktop + mobile / - including /customers (inherited CORS class eliminated by mask materialization)",
+      "contentProofs": "5/5 FlowPilot values differing from defaults",
+      "theme": "overlay link + 5/5 computed-paint probes",
+      "interactions": "desktop 2 triggers -> 4 regions/2 state flips; mobile portal menu 1 trigger -> 1 region",
+      "overflow": "none desktop/mobile",
+      "externalCensus": { "requests": 31, "hosts": { "linear.app": 12, "webassets.linear.app": 19 }, "unexpectedHosts": 0 },
+      "sourceHostMentionsInHtml": 316
+    },
+    "independence": {
+      "externalSiteSpecRuntimeDependency": 0,
+      "exactRunDependency": 0,
+      "templateExternalDirectoryDependency": 0,
+      "contentEnvDependency": 0,
+      "themePreviewProxyDependency": 0
+    }
+  },
+  "release": {
+    "projectId": "linear.app-2026-08-25T23-54-21-435Z",
+    "state": "PRODUCTION_INPUTS_REQUIRED",
+    "requirementsTotal": 378,
+    "releaseBlockingUnresolved": 88,
+    "bySeverity": { "release-blocking": 88, "high-value": 289, "optional": 1 },
+    "byKind": {
+      "replacement-image": { "total": 239, "releaseBlocking": 84 },
+      "external-url": { "total": 117, "releaseBlocking": 0 },
+      "seo-fact": { "total": 8, "releaseBlocking": 0 },
+      "business-fact": { "total": 7, "releaseBlocking": 0 },
+      "font-license": { "total": 2, "releaseBlocking": 2 },
+      "production-domain": { "total": 1, "releaseBlocking": 1 },
+      "source-brand-asset": { "total": 1, "releaseBlocking": 1, "svgEntries": 207 },
+      "og-image": { "total": 1, "releaseBlocking": 0 },
+      "organization-logo": { "total": 1, "releaseBlocking": 0 },
+      "social-handle": { "total": 1, "releaseBlocking": 0 }
+    },
+    "contentRouteRequirements": 0,
+    "routeReadiness": "8/8 CONTENT_READY (content:injected; seo-needs-input 4 each; residual-assets 15/16/2/3/12/12/0/0)",
+    "plan": "all 7 stages READY (fresh); NEXT ACTIONS: domain, 2 font decisions, 84 replacement images",
+    "dryRun": "release:build --dry-run: WOULD RUN nothing - all stages fresh, all 7 WOULD REUSE, zero mutation",
+    "derivation": "all counts collected at runtime from seo plan needs-input, content-run unresolved slots, replacement-manifest, font-inventory, spec gate - nothing hardcoded"
+  },
+  "engineChanges": [
+    {
+      "id": "C-EC1",
+      "classification": "generic-seo-qa-defect (26B introduced-vs-inherited class)",
+      "summary": "seo:qa console gate failed on errors the un-proxied app already emits (source-CDN CORS refusals). Each route now also captured on the upstream serving; only SEO-introduced errors fail (shared findIntroducedJsErrors); inherited count reported (real run: 24 inherited / 0 introduced)",
+      "files": ["src/seo/seo-qa.ts"],
+      "fixture": "smoke:seo section 9 helper checks + real-run evidence",
+      "linearSpecific": false
+    },
+    {
+      "id": "C-EC2",
+      "classification": "generic-seo-qa-scope-defect",
+      "summary": "head brand-term scan graded the entire hydrated head, so body-hoisted <link rel=preload> source-CDN URLs (React 19 float) failed the SEO layer for asset-layer state. Now SEO-controlled surfaces (title/meta/canonical/JSON-LD) FAIL on brand terms; app-emitted head asset refs are MEASURED per route (headSourceAssetReferences), never graded",
+      "files": ["src/seo/seo-qa.ts", "src/seo/index.ts"],
+      "fixture": "smoke:seo section 9 (6 checks incl. positive + negative controls)",
+      "linearSpecific": false
+    },
+    {
+      "id": "C-EC3",
+      "classification": "generic-prose-defect (hardcoded source facts)",
+      "summary": "production-plan no-hreflang decision claimed '89 hreflang alternates / single-locale Korean site' verbatim in every plan; now derived from the actual snapshot (Linear: '0 alternates across 8 observed pages') and the plan's locale state; language-basis string genericized",
+      "files": ["src/seo/production-plan.ts"],
+      "fixture": "smoke:seo section 4 evidence-derivation check",
+      "linearSpecific": false
+    },
+    {
+      "id": "C-EC4",
+      "classification": "generic-materializer-defect (unmodeled asset kind)",
+      "summary": "catalog kind 'audio' fell through to expected-kind 'image', mime-rejecting every audio asset (first source with audio). Added audio expected-kind (audio/* only), extension map entries, materializer mapping",
+      "files": ["src/assets/safe-fetch.ts", "src/assets/materialize.ts"],
+      "fixture": "smoke:assets 4 checks (fetch under audio kind; still rejected under image; mimeAllowed matrix; extension)",
+      "linearSpecific": false
+    },
+    {
+      "id": "C-EC5",
+      "classification": "generic-gate-defect",
+      "summary": "uninjected-route-content blocker emitted unconditionally - a fully-injected pilot got a '0 of 8 routes' blocker; now omitted at zero",
+      "files": ["src/production/run.ts"],
+      "fixture": "smoke:production fully-injected negative control (6 blockers, id absent)",
+      "linearSpecific": false
+    },
+    {
+      "id": "C-EC6",
+      "classification": "generic-prose-defect",
+      "summary": "buildMode reason hardcoded '(20 routes' (Stripe count); now interpolates the actual route-table count",
+      "files": ["src/production/run.ts"],
+      "fixture": "recompiled spec reads '(8 routes'; prose not asserted by any suite",
+      "linearSpecific": false
+    }
+  ],
+  "regression": {
+    "requiredBecauseEngineChanged": true,
+    "suites": 17,
+    "checks": 1794,
+    "failures": 0,
+    "baseline": { "suites": 17, "checks": 1782, "failures": 0 },
+    "checksAdded": { "seo": 7, "assets": 4, "production": 1 },
+    "typecheck": "exit 0",
+    "perSuite": {
+      "verifier": 81, "selector": 81, "multi-observer": 62, "interaction-detector": 92,
+      "interaction-explorer": 108, "interaction-patterns": 88, "sitespec": 257,
+      "reconstruction": 217, "reconstruction-qa": 134, "e2e": 130, "recon-template": 64,
+      "content-injection": 68, "theme": 47, "seo": 79, "assets": 117, "production": 85, "release": 84
+    },
+    "logs": "docs/result/handoffs/26C-regression-logs/ (17 suite logs + typecheck.log + STATUS with per-suite exit codes; run twice - after the engine changes and again on the byte-final tree after three smoke-comment neutralizations, both 1,794/0; kept logs are the final run, start 2026-08-25T23:56:32Z done 2026-08-26T00:14:43Z)"
+  },
+  "liveAccess": {
+    "summary": "low-volume polite access only: 2 robots/sitemap fetches (seo:observe opt-in), 5 stylesheet fetches (assets:inventory --live-font-css), 3 manual CSS probes for @font-face confirmation, 3 HEAD requests to size the failed assets, 155+155 asset fetches across the two materialization runs (safe fetcher: allowlisted hosts, concurrency 2, 100ms spacing), browser baseline censuses loading source assets as any visitor would; robots.txt disallows only /api/ and /cdn-cgi/ - all access compliant"
+  },
+  "constraintsRespected": {
+    "gitAddCommitPush": false,
+    "historicalArtifactsModified": false,
+    "stripeArtifactsTouched": false,
+    "task17to25ReportsTouched": false,
+    "outputsOnlyUnder": ["data/linear.app/", "docs/result/26C-*", "docs/result/handoffs/26C-*", "src+scripts engine changes listed above"],
+    "serversKilled": true
+  },
+  "limitations": [
+    "PRODUCTION_INPUTS_REQUIRED is the end state - no domain/facts/licenses/replacement assets exist and none were invented",
+    "real-people testimonial content (Gabriel Peal/OpenAI, Nik Koblov/Ramp) still renders on the injected homepage mobile variant via the review-locked twin and ships in the package; replacement-required CONTENT carried as a named operator priority because the release requirement model has no review-locked-content kind (honest model gap; seam = a future generic content-review requirement kind); same applies in principle to all 255 review-locked source-brand token slots from 26B incl. /pricing $10/$16 and the header wordmark SVG",
+    "60 residual source-host renders remain by design (all replacement-required; per-file list in network-qa.json); 1,162 source-URL strings / 316 linear.app mentions remain in served files (body anchors + never-fetched required assets)",
+    "12 customer wordmark masks materialized under default-conservative: runtime-localized but customer-identity assets - flagged replacement-required-equivalent; deterministic ruleset had no evidence path to 'required' (review-locked surface carries no briefs)",
+    "fonts: fallback reflow cost unmeasured for this source (no @font-face recoverable from stored evidence; harness refuses to guess the family-URL binding); licenses unverified, never guessed; clone has always rendered on the measured fallback stacks",
+    "seo:qa measures the SEO boundary before the asset layer: 57 measured head asset refs are expected there; 56/57 resolve in the baked package",
+    "inherited from 26A/26B unchanged: hero-animation source drift, lazy below-fold decode, /security marquee offset, mobile-menu cosmetics, 3 preserved-gradient theme groups, inline-SVG paint (207 entries, release-blocking requirement)",
+    "workspace-versioning: the repo remains uncommitted on the single foundation commit (standing Task 25 operational risk)"
+  ],
+  "verdict": "PRODUCTION_INPUTS_REQUIRED"
+}

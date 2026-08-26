@@ -1,0 +1,376 @@
+{
+ "task": "26B-linear-template-content-theme",
+ "role": "26-Transformation-Builder (fresh agent; sections 20-30 of the Task 26 spec)",
+ "createdAt": "2026-08-26T00:00:00Z",
+ "report": "docs/result/26B-linear-template-content-theme-2026-08-26.md",
+ "inputs": {
+  "reconstruction": "data/linear.app/reconstructions/2026-08-25T20-30-33-313Z",
+  "siteSpec": "data/linear.app/site-specs/2026-08-25T20-30-27-653Z",
+  "phaseAVerdict": "PASS_WITH_LIMITATIONS (26A-verification.json)"
+ },
+ "runs": {
+  "template": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z",
+  "templateId": "linear.app-2026-08-25T21-53-26-980Z",
+  "contentRun": "data/linear.app/content-runs/2026-08-25T21-54-40-120Z",
+  "themeExtraction": "data/linear.app/theme-extractions/2026-08-25T22-16-41-774Z",
+  "themeRunOriginal": "data/linear.app/theme-runs/2026-08-25T22-23-53-486Z",
+  "themeRunCurated": "data/linear.app/theme-runs/2026-08-25T22-24-00-120Z"
+ },
+ "template": {
+  "routes": 8,
+  "slots": 3079,
+  "slotsByType": {
+   "text": 2441,
+   "url": 443,
+   "image": 195
+  },
+  "scope": {
+   "global": 131,
+   "page": 2948
+  },
+  "editability": {
+   "editable": 1586,
+   "review": 1493
+  },
+  "bindings": 9929,
+  "bindingsBySurface": {
+   "static": 9663,
+   "dynamicTemplate": 262,
+   "paintTwin": 4,
+   "svgText": 0
+  },
+  "bindingsByTarget": {
+   "text": 7433,
+   "attribute": 2496
+  },
+  "bindingsByViewport": {
+   "desktop": 5104,
+   "mobile": 4825
+  },
+  "multiBindingSlots": 2813,
+  "crossSurfaceSlots": 7,
+  "excludedCandidates": {
+   "total": 1435,
+   "ariaHidden": 66,
+   "presentationRole": 10,
+   "svgOpaque": 1359
+  },
+  "compileValidation": {
+   "bindingsResolved": "9929/9929",
+   "defaultNoOps": "9929/9929"
+  },
+  "svgTextZeroIsHonest": "no rendered SVG text run satisfied the Task 19.1 co-binding evidence on Linear; reported as 0, not fabricated",
+  "overSlotizationReview": "no explosion: product mock UIs are svg-opaque-excluded (1,359) or review-flagged uniform lists; ~150 small editable DOM text fragments in the hero mockup on / are real visible text; no engine change needed",
+  "defaultParity": {
+   "pairs": 20,
+   "contentEqual": "20/20",
+   "structureEqual": "20/20",
+   "docHeightDeltaMaxPx": 0,
+   "geometryP95Px": 0,
+   "templateIntroducedJsErrors": 0,
+   "inheritedJsErrors": "24 total on /customers pairs - identical CORS asset-load errors on the exact side (Phase A disclosed limitation)",
+   "hydrationErrors": 0,
+   "interactionRegression": "5/5 equivalent",
+   "mutationCanary": {
+    "checks": 30,
+    "applied": 30,
+    "structureUnchanged": true,
+    "runtimeClean": true
+   }
+  }
+ },
+ "content": {
+  "brand": "FlowPilot",
+  "brandClass": "synthetic-pilot-brand",
+  "intent": "English translation of the spec section-23 canary intent (enterprise AI work-automation / AI-agent operations platform; demo-request conversion); intent.json verbatim, hash in manifest",
+  "provider": "manual seam (content:generate --result), generator claude-code-operator / claude-fable-5; bounded packet only, raw slot list never used",
+  "units": 1202,
+  "batches": 36,
+  "editableSlots": 1586,
+  "reviewSlotsSkipped": 1493,
+  "assigned": 1395,
+  "changedVsDefault": 543,
+  "needsInput": 117,
+  "imageBriefs": {
+   "total": 73,
+   "replaceRecommended": 61,
+   "keepDefaultDecorative": 12
+  },
+  "validation": "PASS (3 non-failing broken-internal-route warnings on kept default deep-docs hrefs)",
+  "perRoute": {
+   "global": {
+    "assigned": 127,
+    "changed": 18,
+    "needsInput": 4,
+    "preserved": {
+     "keptDefault": 109,
+     "notInOverlay": 0,
+     "reviewLocked": 0
+    },
+    "brandLeaks": 4,
+    "blockedVisibleSourceContent": 0
+   },
+   "/": {
+    "assigned": 228,
+    "changed": 107,
+    "needsInput": 2,
+    "preserved": {
+     "keptDefault": 121,
+     "notInOverlay": 20,
+     "reviewLocked": 213
+    },
+    "brandLeaks": 19,
+    "blockedVisibleSourceContent": 0
+   },
+   "/changelog": {
+    "assigned": 561,
+    "changed": 266,
+    "needsInput": 54,
+    "preserved": {
+     "keptDefault": 295,
+     "notInOverlay": 16,
+     "reviewLocked": 380
+    },
+    "brandLeaks": 27,
+    "blockedVisibleSourceContent": 0
+   },
+   "/customers": {
+    "assigned": 90,
+    "changed": 23,
+    "needsInput": 2,
+    "preserved": {
+     "keptDefault": 67,
+     "notInOverlay": 2,
+     "reviewLocked": 381
+    },
+    "brandLeaks": 2,
+    "blockedVisibleSourceContent": 0
+   },
+   "/customers/automattic": {
+    "assigned": 52,
+    "changed": 16,
+    "needsInput": 21,
+    "preserved": {
+     "keptDefault": 36,
+     "notInOverlay": 3,
+     "reviewLocked": 21
+    },
+    "brandLeaks": 4,
+    "blockedVisibleSourceContent": 0
+   },
+   "/integrations": {
+    "assigned": 33,
+    "changed": 4,
+    "needsInput": 26,
+    "preserved": {
+     "keptDefault": 29,
+     "notInOverlay": 12,
+     "reviewLocked": 388
+    },
+    "brandLeaks": 12,
+    "blockedVisibleSourceContent": 0
+   },
+   "/plan": {
+    "assigned": 172,
+    "changed": 79,
+    "needsInput": 2,
+    "preserved": {
+     "keptDefault": 93,
+     "notInOverlay": 21,
+     "reviewLocked": 32
+    },
+    "brandLeaks": 21,
+    "blockedVisibleSourceContent": 0
+   },
+   "/pricing": {
+    "assigned": 60,
+    "changed": 9,
+    "needsInput": 2,
+    "preserved": {
+     "keptDefault": 51,
+     "notInOverlay": 0,
+     "reviewLocked": 78
+    },
+    "brandLeaks": 2,
+    "blockedVisibleSourceContent": 0
+   },
+   "/security": {
+    "assigned": 72,
+    "changed": 21,
+    "needsInput": 4,
+    "preserved": {
+     "keptDefault": 51,
+     "notInOverlay": 0,
+     "reviewLocked": 0
+    },
+    "brandLeaks": 2,
+    "blockedVisibleSourceContent": 0
+   }
+  },
+  "layoutQa": {
+   "pages": "16/16 PASS at 390/1440 across all 8 routes",
+   "docHeightDeltaPx": 0,
+   "appliedValueChecks": "1265/1265 (static 1158 + dynamic-template 107)",
+   "interactionChecks": "5/5",
+   "contentIntroducedJsErrors": 0,
+   "hydrationErrors": 0,
+   "repairCandidates": 0,
+   "screenshots": 32,
+   "earlierRoundsFailedHonestly": "round 1: 16/16 pages failing (31 fixed-width micro-label clips from over-length authored values, 4 unslotted-duplicate desyncs, 152 false dynamic applied-failures from the QA marker gap B-EC2, inherited-CORS gating); fixed by shortening/reverting content + the generic QA fixes; round 3 clean"
+  },
+  "brandCleanup": {
+   "scanWarningsTotal": 91,
+   "changedValuesWithBrandTokens": 0,
+   "imageSlotDefaultsOnSourceCdn": 73,
+   "externalCtaUrlsNeedsInput": 11,
+   "internalHrefTokenPaths": 7,
+   "pricingSourcePriceStringsReverted": 2,
+   "reviewLockedSlotsWithBrandTokens": {
+    "total": 255,
+    "customers": 76,
+    "integrations": 115,
+    "changelog": 31,
+    "home": 19,
+    "customersAutomattic": 12,
+    "pricing": 2
+   },
+   "blockedVisibleSourceContent": 0,
+   "testimonialsAndMetrics": "explicit non-factual placeholders; no invented people/companies/metrics; no retained source testimonials in changed surfaces"
+  }
+ },
+ "theme": {
+  "extraction": {
+   "paintGroups": 217,
+   "themeable": 27,
+   "preserved": 140,
+   "review": 50,
+   "tokensAssigned": 21,
+   "originalTheme": "original.linear.app (mode dark, export-candidate)"
+  },
+  "libraryCompatibility": {
+   "cool-neutral": "compatible-with-warnings",
+   "warm-editorial": "compatible-with-warnings",
+   "dark-accent": "compatible-with-warnings"
+  },
+  "selected": "dark-accent",
+  "selectionReason": "single reasoned test choice per section 28 (no ranking): the one library theme whose dark mode matches the site's original dark mode; light themes would lean hardest on the preserved-paint warnings",
+  "originalParityQa": {
+   "run": "data/linear.app/theme-runs/2026-08-25T22-23-53-486Z",
+   "pages": "16/16 PASS (8 routes x 390/1440)",
+   "domIdentical": true,
+   "geometryMaxPx": 0,
+   "docHeightDeltaPx": 0,
+   "newLowContrast": 0,
+   "paintChecks": "157/157 applied (static 128 + pseudo 28 + dynamic-template 1)",
+   "groupsVerified": "26/27",
+   "interactions": "5/5 equivalent"
+  },
+  "curatedQa": {
+   "run": "data/linear.app/theme-runs/2026-08-25T22-24-00-120Z",
+   "baseline": "content-injected (FlowPilot overlay composed underneath)",
+   "pages": "16/16 PASS (8 routes x 390/1440)",
+   "domIdentical": true,
+   "geometryMaxPx": 0,
+   "docHeightDeltaPx": 0,
+   "newHorizontalOverflow": 0,
+   "newLowContrast": 0,
+   "themeIntroducedJsErrors": 0,
+   "hydrationErrors": 0,
+   "paintChecks": "115/115 applied (static 98 + pseudo 16 + dynamic-template 1, mounted-panel text verified at themed rgb(235,240,248))",
+   "coverage": {
+    "themedGroups": 20,
+    "verifiedGroups": 19,
+    "themedElementWeight": 22032
+   },
+   "interactions": "5/5 equivalent incl. desktop mega-menu open and mobile portal menu open"
+  }
+ },
+ "engineChanges": [
+  {
+   "id": "B-EC1",
+   "classification": "generic-template-qa-defect",
+   "summary": "Parity/mutation gate failed on template-side console errors even when the exact reference emitted the identical errors (source-CDN CORS asset refusals). New rule: fail only on template-INTRODUCED js errors (absent from the exact capture), with serve-origin normalization across the two harness ports. Exported normalizeJsError/findIntroducedJsErrors; PairComparison gains templateIntroducedJsErrors.",
+   "files": [
+    "src/recon-template/parity-qa.ts"
+   ],
+   "fixture": "smoke:recon-template section-15 unit block (5 checks incl. negative controls) + section-14 introduced-errors assertion",
+   "linearSpecific": false
+  },
+  {
+   "id": "B-EC2",
+   "classification": "generic-content-qa-defect",
+   "summary": "Layout QA had the same absolute error gate (now compares against the default capture of the same app via the shared helper), and verifyDynamicBatch's mounted-region query did not know the Phase-A observed-channel mount markers (data-wr-obs-mounted) - every observed-channel panel was invisible, producing 152 false '0 mounted regions' applied-failures; query extended, applied checks now 1265/1265.",
+   "files": [
+    "src/content-injection/layout-qa.ts"
+   ],
+   "fixture": "shared helper covered by section-15; marker query exercised by smoke:content-injection dynamic checks and the real run (152 false failures -> 0)",
+   "linearSpecific": false
+  },
+  {
+   "id": "B-EC3",
+   "classification": "generic-theme-qa-defect",
+   "summary": "Theme QA had the same absolute error gate; now fails only on theme-INTRODUCED js errors vs the unthemed baseline capture (same shared helper).",
+   "files": [
+    "src/theme/theme-qa.ts"
+   ],
+   "fixture": "shared helper covered by section-15; smoke:theme behavior unchanged on its clean fixture",
+   "linearSpecific": false
+  },
+  {
+   "id": "B-EC4",
+   "classification": "generic-theme-qa-detector-gap",
+   "summary": "Dynamic-surface paint probes searched mounted regions via [id^=wr-obs-]/[id^=wr-dyn-] only; Phase A observed-channel mounts (data-wr-obs-mounted on a static host) were invisible, so dynamicPaint sampled 0 elements despite 12 themeable groups carrying 582 dynamic-occurrence elements. Query extended with [data-wr-dynamic-target], [data-wr-obs-mounted]; re-run samples real paint inside click-mounted panels.",
+   "files": [
+    "src/theme/theme-qa.ts"
+   ],
+   "fixture": "exercised by the re-run (0 sampled -> real samples); smoke:theme dynamic checks unchanged on its declared-mount fixture",
+   "linearSpecific": false
+  }
+ ],
+ "regression": {
+  "requiredBecauseEngineChanged": true,
+  "suites": 17,
+  "checks": 1782,
+  "failures": 0,
+  "baseline": {
+   "suites": 17,
+   "checks": 1776,
+   "failures": 0
+  },
+  "checksAdded": {
+   "recon-template": 6
+  },
+  "typecheck": "exit 0",
+  "perSuite": {
+   "verifier": 81,
+   "selector": 81,
+   "multi-observer": 62,
+   "interaction-detector": 92,
+   "interaction-explorer": 108,
+   "interaction-patterns": 88,
+   "sitespec": 257,
+   "reconstruction": 217,
+   "reconstruction-qa": 134,
+   "e2e": 130,
+   "recon-template": 64,
+   "content-injection": 68,
+   "theme": 47,
+   "seo": 72,
+   "assets": 113,
+   "production": 84,
+   "release": 84
+  },
+  "logs": "docs/result/handoffs/26B-regression-logs/ (17 suite logs + typecheck.log + STATUS with per-suite exit codes; start 2026-08-25T22:38:18Z, done 2026-08-25T22:56:23Z)"
+ },
+ "limitations": [
+  "homepage hero headline stays source copy: the visible line is painted by aria-hidden nodes inside the ANIMATED hero (generic aria-hidden exclusion); the only slotted address is a 1x1 sr-only H1 (review-flagged, sibling-repetition:30); rewriting it alone would fail the stale-twin desync gate - Phase C animated-region/asset seam territory; string carries no brand token; rest of the hero section is rewritten",
+  "/pricing per-user price strings remain source values (unslotted-duplicate revert per Task 19.1 desync rule); operator pricing input required",
+  "255 review-locked slots retain source-brand tokens (logo walls, integrations grid, changelog media internals, automattic long-form body) - section-27 deferred warnings, Phase C asset/operator territory; the case-study page now frames itself as a sample pending real material",
+  "all 73 image slots still reference source-CDN URLs (Phase C asset independence); 61 carry replace-recommended briefs with warnings",
+  "11 external CTA destinations needs-input; defaults render until operator supplies them",
+  "/customers logs the Phase-A-disclosed inherited CORS console errors in every capture (asset hotlink; Phase C)",
+  "theme: 3 preserved-gradient groups + raster/inline-SVG internal paint keep original colors under any library theme",
+  "inherited Phase A limitations carry forward (hero mockup animation, lazy below-fold decode, /security marquee offset, mobile-menu cosmetics, font-source-binding-unverified)"
+ ],
+ "verdict": "READY FOR PRODUCTION PIPELINE"
+}

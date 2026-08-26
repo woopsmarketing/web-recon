@@ -1,0 +1,133 @@
+{
+  "task": "25",
+  "title": "Operator Release Orchestrator & Production Input Resolution",
+  "role": "Task25-Builder",
+  "verdict": "READY FOR FIRST REAL PRODUCTION PILOT — stripe canary honestly PRODUCTION_INPUTS_REQUIRED; synthetic fixture PRODUCTION_READY via selective rebuild",
+  "createdAt": "2026-08-25",
+  "reportPath": "docs/result/25-operator-release-orchestrator-2026-08-25.md",
+
+  "outputs": {
+    "newModules": [
+      "src/release/types.ts (release-project-v1, production-resolution-v1, release-requirements-v1, release-run-v1, closed ReleaseState enum, SEVERITY_POLICY)",
+      "src/release/store.ts (data/<host>/release-projects/<projectId>/ namespace; release run audit records)",
+      "src/release/graph.ts (STAGE_DEPENDENCIES, RESOLUTION_FIELD_IMPACTS, THEME_SELECTION_IMPACTS, downstreamOf, invalidatedStages)",
+      "src/release/collect.ts (requirement NORMALIZATION from existing subsystem artifacts + route readiness + artifact facts)",
+      "src/release/requirements.ts (requirement<->resolution matching §11, carry-forward merge, effectiveResolution, releaseBlockers)",
+      "src/release/freshness.ts (stage input hashing fresh/stale, applyBlocking; reuses Task 23 hashDirectory dir-sha256-v1)",
+      "src/release/gate.ts (deriveReleaseState — artifact-derived; PRODUCTION_READY requires indexable spec + 0 blockers + passing isolated QA)",
+      "src/release/debt.ts (GED register preserved from docs/result/handoffs/24-aggregation-phase1.json genericDefects)",
+      "src/release/resolve-assets.ts (applyAssetResolutions — the NEW consumer of the Task 22 replacement seam; derives a new materialization run, never mutates the base)",
+      "src/release/stages.ts (typed stage runners: content/theme/seo/assets/production — public APIs only, no subprocess, no algorithm duplication)",
+      "src/release/prepare.ts (release:prepare), src/release/resolve.ts (release:resolve), src/release/build.ts (release:build + --dry-run + failure recovery + audit trail)",
+      "src/release/plan.ts (release:plan view), src/release/checklist.ts (operator-checklist.md), src/release/nl.ts (ResolutionParser seam + manual-json provider)",
+      "src/release/index.ts (barrel)",
+      "src/cli-release-prepare.ts, src/cli-release-plan.ts, src/cli-release-resolve.ts, src/cli-release-build.ts",
+      "scripts/smoke-release.ts (84 checks)"
+    ],
+    "changedExistingFiles": [
+      "package.json (+ scripts release:prepare/plan/resolve/build, smoke:release)",
+      "src/production/run.ts (ADDITIVE indexable-path fix: production-mode seo plans write sitemap.xml which is now copied into the export and served — QA already required /sitemap.xml 200 in production mode and assemblePackage crashed on the missing sitemap.preview.xml; preview path byte-identical, smoke:production 84/84 unchanged)"
+    ],
+    "newDataArtifacts": [
+      "data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z/ (release-project.json, requirements.json, operator-checklist.md, technical-debt.json, runs/2026-08-25T12-58-28-566Z/) — ADD-only; all lineage dirs untouched (find -newermt 2026-08-20 over all 9 lineage dirs = 0 files)",
+      "docs/result/handoffs/25-stripe-canary/{release-prepare.log,release-plan.log,release-build-dry-run.log}",
+      "docs/result/handoffs/25-regression-logs/regression-<suite>.log (17 logs)"
+    ]
+  },
+
+  "schemas": {
+    "release-project-v1": "src/release/types.ts ReleaseProjectSchema — projectId, source, acceptedLineage (7 stages, id/path/dir-sha256-v1 hash; production = spec+build), auxiliary (seoSourceSnapshotDir, assetInventoryDir), intent, target, stageStatus (fresh/stale/blocked + inputsHash + current artifact), requirements/checklist file refs, resolutions[] (inline pack + hash + match table), releaseState (closed 10-state enum), failure, limitations, warnings, technicalDebt, runs",
+    "production-resolution-v1": "src/release/types.ts ProductionResolutionSchema — ALL fields optional: notes, productionBaseUrl, facts (7 canonical + record-only twitterSite), urls, assets (inventoryId | og-image | organization-logo), fontDecisions (use-fallback-stack | self-host-license-verified), routeContent (route|'global'), acknowledgements; strict (unknown fields rejected)",
+    "release-requirements-v1": "requirements.json — requirementId (deterministic), kind (11 closed kinds), severity (release-blocking/high-value/optional per SEVERITY_POLICY with written §19-based rationale), status (unresolved/resolved/accepted-limitation/not-applicable), sourceStage, route/slotKey/assetId/fontId/factKey, message, resolutionOptions, evidence[{file,pointer,detail}], resolvedBy{resolutionId,field}",
+    "release-run-v1": "runs/<runId>/run.json — kind prepare|resolve|build, intentHash, resolutionHash (cumulative effective pack), inputArtifactHashes (7 stages), reusedStages, rerunStages, blockedStages, operatorOverrides, warnings, blockers, finalVerdict, stageExecutions, failure"
+  },
+
+  "cli": {
+    "release:prepare": "pnpm release:prepare data/stripe.com/production-specs/2026-08-19T06-36-35-798Z   → 437 requirements (74 release-blocking), state PRODUCTION_INPUTS_REQUIRED (transcript: docs/result/handoffs/25-stripe-canary/release-prepare.log)",
+    "release:plan": "pnpm release:plan data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z   → READY/NEEDS INPUT/ROUTES/NEXT ACTIONS one-screen view (transcript: 25-stripe-canary/release-plan.log)",
+    "release:resolve": "pnpm release:resolve <project-dir> --resolution <pack.json>   (exercised in smoke:release with 3 packs; validates production-resolution-v1 + slot/route existence, records a new release run, invalidates exactly the graph-named stages)",
+    "release:build": "pnpm release:build data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z --dry-run   → WOULD RUN (nothing) / WOULD REUSE all 7 / zero mutation (transcript: 25-stripe-canary/release-build-dry-run.log); real builds exercised on the fixture inside smoke:release"
+  },
+
+  "runIdsProduced": {
+    "stripeCanary": {
+      "projectDir": "data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z",
+      "prepareRunId": "2026-08-25T12-58-28-566Z",
+      "note": "collection is read-only; no stripe subsystem stage was re-run and no source host fetched"
+    },
+    "syntheticFixture": "ephemeral by design — data/release-fixture.example/* namespaces (site-spec, reconstruction, template, content-runs, theme-extractions/runs, source-seo-snapshots, production-seo-plans, asset-inventories/materializations, production-specs/builds, release-projects) are created by smoke:release and removed at both ends; full transcript preserved in docs/result/handoffs/25-regression-logs/regression-release.log"
+  },
+
+  "tests": {
+    "smokeRelease": { "checks": 84, "failures": 0, "command": "pnpm smoke:release", "coversSpecCases": "all 26 §32 cases (mapping in scripts/smoke-release.ts section headers: 1-3 schemas/normalization, 4-9 requirement kinds, 10 resolved, 11 invalid reject, 12-15 graph/invalidation, 16 hashing, 17 dry-run no-mutation, 18 selective rerun, 19 failure resume, 20 preview, 21 indexable blocker, 22 PREVIEW→READY, 23 stripe collection, 24 checklist, 25 immutability, 26 runtime/hydration QA)" },
+    "regression": {
+      "suites": 17,
+      "totalChecks": 1755,
+      "failures": 0,
+      "perSuite": {
+        "verifier": 81, "selector": 81, "multi-observer": 58, "interaction-detector": 92,
+        "interaction-explorer": 108, "interaction-patterns": 88, "sitespec": 252,
+        "reconstruction": 205, "reconstruction-qa": 134, "e2e": 130, "recon-template": 58,
+        "content-injection": 68, "theme": 47, "seo": 72, "assets": 113, "production": 84,
+        "release": 84
+      },
+      "baselineNote": "16 existing suites byte-identical to the Task 24 baseline (1,671); release adds 84",
+      "logs": "docs/result/handoffs/25-regression-logs/regression-<suite>.log"
+    },
+    "typecheck": "pnpm typecheck PASS (0 errors)"
+  },
+
+  "completionGates": {
+    "A_release-project-v1": "src/release/types.ts + data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z/release-project.json + smoke 1.1-1.3",
+    "B_production-resolution-v1": "src/release/types.ts + smoke 3.1/3.2/11.1-11.3",
+    "C_requirement_normalization": "src/release/collect.ts + smoke 2.1, 4-9, 23.1-23.8 (every expected value re-read from artifacts at runtime)",
+    "D_dependency_graph": "src/release/graph.ts + smoke 12.1/12.2/13a/14a/15",
+    "E_fresh_stale_blocked": "src/release/freshness.ts + smoke 16.1-16.4, 13b/13c/14b, 21.1",
+    "F_selective_recomputation": "src/release/build.ts + smoke 18c (content/theme/seo/assets/production vs frozen roots), 19.3, 26.4, 26.5",
+    "G_dry_run": "smoke 17.1/17.2/18b/21.1-21.2 + docs/result/handoffs/25-stripe-canary/release-build-dry-run.log (zero mutation snapshot-asserted)",
+    "H_resume_retry": "smoke 19.1-19.4 (injected seo failure; retry reruns only seo+production; failure record cleared)",
+    "I_operator_checklist": "src/release/checklist.ts + data/stripe.com/release-projects/.../operator-checklist.md + smoke 24",
+    "J_route_readiness": "collect.ts routeReadiness + release-plan.log ROUTES table + smoke 20b",
+    "K_preview_indexable_distinction": "src/release/gate.ts + freshness.applyBlocking + smoke 20/21.1-21.3/22c",
+    "L_stripe_blockers_derived": "smoke 23.1-23.8 + data/stripe.com/release-projects/.../requirements.json (437 reqs; kind counts in the report table)",
+    "M_stripe_stays_input_required": "release-project.json releaseState=PRODUCTION_INPUTS_REQUIRED + smoke 23.9",
+    "N_synthetic_production_ready": "smoke 22b/22c (indexable spec, baseUrl newco-prod.example, 0 blockers)",
+    "O_unnecessary_reconstruction_zero": "smoke 26.3 (rerun counts summed over ALL release runs: reconstruction 0, template 0) + 26.4 (domain-only: seo+production) + 26.5 (asset-only: assets+production)",
+    "P_full_regression_pass": "docs/result/handoffs/25-regression-logs/ — 17 suites, 1,755 checks, 0 failures",
+    "Q_historical_immutability": "smoke 25.1-25.3 (mtime+size snapshots) + find -newermt 2026-08-20 over all 9 stripe lineage dirs = 0 files",
+    "R_git_operations_zero": "no git write commands executed anywhere in the task; HEAD still 2777b41; git status read-only only"
+  },
+
+  "importantDecisions": [
+    "Requirement statuses are re-derived from artifacts after every build (collect + merge): a resolution whose consuming stage was rebuilt but whose gap persists stays UNRESOLVED — bookkeeping can never fake readiness.",
+    "PRODUCTION_READY gate is artifact-derived only: indexable production spec + zero unresolved release-blocking requirements + PASSING isolated-package QA + fresh production stage. A domain alone flips the SEO plan mode but BLOCKS the production stage while blockers remain (preflight R3).",
+    "accepted-limitation (acknowledgements) deliberately does NOT unlock indexable production for release-blocking requirements (spec §7: blockers must be resolved) — stripe's inline-SVG mark blocker therefore cannot be acknowledged away.",
+    "severity policy encoded once (SEVERITY_POLICY) as a transcription of spec §19: og-image/organization-logo/business-facts are high-value (not §19 conditions), social handle optional, everything §19 names is release-blocking; replacement-recommended assets downgrade to high-value unless they still render from source (residual escalation).",
+    "applyAssetResolutions is the release-layer consumer of the Task 22 record-only replacement seam (preflight R1): derives a NEW materialization run (media content-hashed, rewrite map extended, entries flipped to provided, font-decisions.json recorded); inherited network/font QA reports carry a derivation note and stale-census warnings (conservative, never fake-better).",
+    "Frozen stages (reconstruction/template) have NO runners at all; release:build refuses on their input drift — unnecessary re-reconstruction is structurally impossible, not just untested.",
+    "release:build reuses ONLY public typed APIs (prepareContentRun/ingestGenerationResult, createThemeRun, createProductionSeoPlanRun, runProductionCompile/runProductionQa) — zero subprocess, zero algorithm duplication.",
+    "projectId is deterministic (<host>-<specRunId>) so re-prepare is idempotent; requirement ids are deterministic (artifact discriminators) so identity survives re-collection.",
+    "Indexable-path sitemap fix in src/production/run.ts was required (Task 23 gap: production-mode compile crashed on missing sitemap.preview.xml and QA demanded a served /sitemap.xml); additive, preview path byte-identical, smoke:production count unchanged (84)."
+  ],
+
+  "knownLimitations": [
+    "og-image / organization-logo / social-handle resolutions are recorded, matched and shipped in media/, but the SEO plan has no consumption seam for them yet (named seam; requirements are high-value/optional so honesty is preserved).",
+    "Derived materialization runs inherit report/network-qa.json + font-qa.json from the base run (conservative direction; derivation note written; collect warns when an inherited census lists a provided asset as residual). Re-measurement = re-run assets:qa against the derived run.",
+    "The release graph follows spec §12: content reruns do not invalidate the asset inventory, so replacement-manifest slotKey/imageBrief joins may reference the earlier content run (recorded as a project limitation).",
+    "fontDecisions 'self-host-license-verified' records the decision but no font-fetch machinery exists (Task 22 never fetches fonts); 'use-fallback-stack' matches the measured fallback reality. Layout-QA is not re-run on a font decision (the fallback is exactly what font-qa measured); noted via warnings.",
+    "Production build-dir freshness tracks the spec dir hash (1 file); the 60MB+ build directory itself is not re-hashed on every plan (QA report inside it is read directly).",
+    "The fixture's initial materialization network-qa.json is a hand-built zero-residual fixture (assets:qa is browser-measured); the REAL authority in the fixture is the production QA census, independently asserting 0 external requests.",
+    "smoke:release requires the accepted stripe artifacts on disk (data/stripe.com/...) for the canary section — it is machine-local by design, like all data/ evidence.",
+    "release:resolve/build re-hash all lineage dirs on each invocation (~seconds for stripe-sized lineage); acceptable, not optimized."
+  ],
+
+  "inputRequirements": "unchanged from Task 24, now machine-readable per project: stripe needs domain, business facts, replacement assets (51 required / 289 recommended), font decisions (2), content for 19 routes, og-image/logo/handle, inline-SVG brand decision — see data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z/{requirements.json,operator-checklist.md}",
+
+  "nextTaskMustKnow": [
+    "Read src/release/index.ts barrel first; the whole layer is greenfield and generic (grep-verified: no site-specific literals).",
+    "To run a real pilot: pnpm release:prepare <accepted-spec-dir> → release:plan → author a production-resolution-v1 pack (manual JSON or your own LLM seam via src/release/nl.ts) → release:resolve → release:build --dry-run → release:build.",
+    "The synthetic fixture flow in scripts/smoke-release.ts §0 is the reference implementation of a full pipeline + release lifecycle on a tiny site (including the brand-isolation trap: production identity must not contain source-host tokens).",
+    "GED-D/E/F/G remain open post-MVP debt; the register is embedded per project (technical-debt.json) and surfaced in checklists.",
+    "The working tree is STILL uncommitted on 2777b41 — recorded as the top operational risk (report §Historical Integrity); committing is a user decision."
+  ]
+}

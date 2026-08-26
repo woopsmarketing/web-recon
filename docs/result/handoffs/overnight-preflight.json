@@ -1,0 +1,171 @@
+{
+  "generatedAt": "2026-08-19",
+  "auditor": "MVP-Preflight-Auditor (read-only; this file is the single write)",
+  "frozenLayers": [
+    {
+      "layer": "Exact Reconstruction (Tasks 17 + 17.1)",
+      "status": "FROZEN — READY FOR TEMPLATE PHASE (10/10 freeze conditions)",
+      "report": "docs/result/17.1-exact-reconstruction-final-acceptance-2026-08-18.md",
+      "runIds": {
+        "e2eRun": "data/stripe.com/e2e-runs/2026-08-17T21-23-33-002Z",
+        "finalReconstruction": "data/stripe.com/reconstructions/2026-08-17T21-38-04-901Z",
+        "siteSpec": "data/stripe.com/site-specs/2026-08-17T21-38-01-773Z (schema v4)",
+        "qa": "data/stripe.com/reconstruction-qa/2026-08-17T21-38-08-701Z",
+        "manualVisualReview": "data/stripe.com/manual-visual-review/2026-08-17T21-55-00-000Z"
+      },
+      "headline": "triggerState 27/27, userVisibleTarget 27/27, content exact 1.0, runtime/hydration 0"
+    },
+    {
+      "layer": "Recon Template / Slot V2 (Task 18)",
+      "status": "SHIPPED — superseded for lineage by 19.1 v2 template run",
+      "report": "docs/result/18-recon-template-slot-v2-foundation-2026-08-18.md",
+      "runIds": {
+        "mainTemplate_v1": "data/stripe.com/recon-templates/2026-08-18T07-59-02-437Z (20 routes)",
+        "targetedSaasTemplate": "data/stripe.com/recon-templates/2026-08-18T08-07-05-671Z"
+      },
+      "headline": "9,529 slots / 24,512 bindings; parity 46/46; mutation 15/15 incl. portal menu"
+    },
+    {
+      "layer": "Content Injection (Tasks 19 + 19.1)",
+      "status": "FROZEN — CONTENT INJECTION FROZEN, READY FOR THEME PHASE (13/13 freeze-gate)",
+      "reports": [
+        "docs/result/19-natural-language-content-injection-2026-08-18.md",
+        "docs/result/19.1-visible-content-injection-completeness-2026-08-18.md"
+      ],
+      "runIds": {
+        "task19ContentRun": "data/stripe.com/content-runs/2026-08-18T09-30-41-211Z",
+        "acceptedTemplateRun_v2": "data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z (Slot V2 v2: paint-twin + svg-text)",
+        "acceptedContentRun": "data/stripe.com/content-runs/2026-08-18T10-46-26-129Z"
+      },
+      "headline": "bindings 24,518/24,518; applied 450/450 (static 291 + paint-twin 4 + dynamic-template 155); layout QA 3/3; SVG 로그인 pill live"
+    },
+    {
+      "layer": "Theme (Task 20)",
+      "status": "SHIPPED — READY FOR SEO PHASE",
+      "report": "docs/result/20-theme-extraction-adapter-foundation-2026-08-18.md",
+      "runIds": {
+        "themeExtraction": "data/stripe.com/theme-extractions/2026-08-18T12-07-22-308Z",
+        "themeRun_original": "data/stripe.com/theme-runs/2026-08-18T12-07-33-626Z (no-op PASS)",
+        "themeRun_coolNeutral": "data/stripe.com/theme-runs/2026-08-18T12-07-34-566Z (on injected Korean content, PASS)",
+        "themeRun_warmEditorial": "data/stripe.com/theme-runs/2026-08-18T12-07-35-609Z (PASS)"
+      },
+      "headline": "293 paint groups (31 themeable/180 preserved/82 review), 21 tokens; 3 canary runs all-zero geometry/hydration; dark-accent honestly incompatible (refused)"
+    }
+  ],
+  "knownLimitations": {
+    "task17_1": [
+      "SVG internal paint not reconstructed (multi-site sampling deferred)",
+      "open-overlay wide-viewport coordinates fixed at 1440 observation (-240px@1920 / -304px@2048)",
+      "font materialization non-goal (mobile font-fallback reflow, media-entertainment 0.477)",
+      "trigger-inside-target content swap not replayed",
+      "asset-load-failure x47 (non-materialization non-goal)",
+      "content fingerprint exact-match: live data regions may report mismatch across visits"
+    ],
+    "task19_1": [
+      "SVG fill/stroke/stop-color/gradient/mask paint not restorable or editable (svg-internal-paint-and-geometry-not-slotted)",
+      "only visible SVG text runs slotted (aria-hidden/css-hidden/title/desc/unreferenced-defs excluded)",
+      "paint twins without box-overlap/equality evidence not co-bound",
+      "decorative aria-hidden mockup regions keep defaults (stale-duplicate-text-remnant, non-failing)",
+      "SVG text length has no geometric probe (char-count constraint + visual pass only)",
+      "dynamic-template-embedded SVG text runs untested on a real site (generic applier path exists)"
+    ],
+    "task20": [
+      "svg-internal-paint-not-themed (logos/icons keep original colors)",
+      "raster/video/asset colors never recolored (asset-color-mismatch-risk warning only)",
+      "133 gradient token strings preserved, never substituted (preserved-gradient-conflict warning)",
+      "serve-boundary overlay is MVP delivery (local proxy for preview/QA); production static-file+link baking is a FOLLOW-UP DEPLOY TASK — overlay CSS artifact reusable as-is",
+      "paint verification is sample-based (see task20DeferredThemeDebt)",
+      "dark theme incompatible under current adapter coverage (82 review groups need human bind)",
+      "caret-color/outline-color/text-decoration-color 0 occurrences (not in observer style whitelist)",
+      "dynamic paint QA samples: only 3 class samples inside mounted regions (not exhaustive)"
+    ]
+  },
+  "task20DeferredThemeDebt": {
+    "recordedInRoadmap": false,
+    "roadmapEvidence": "ROADMAP.md Task 20 section (lines ~1095-1145) records only the measurement '293 paint groups (31 themeable / 180 preserved / 82 review)'; the 'Deferred / Future' section (lines 1149-1152) lists only 'SEO analysis' and 'Competitive analysis' — the multi-route/multi-site paint-coverage debt is NOT in ROADMAP.md",
+    "recordedWhere": "docs/result/20-theme-extraction-adapter-foundation-2026-08-18.md, 'Known Limitations' section (lines 377-385)",
+    "baseline": {
+      "themeableGroups": 31,
+      "browserVerifiedGroupsOnHomepage": 14,
+      "paintChecks": "67/67 on QA route (/) only; remaining 17 groups are same-value-identity occurrences on other routes, unverified in browser",
+      "dynamicPaintSamples": 3,
+      "expansionPath": "add QA routes for exhaustive group verification; human bind of 82 review groups raises coverage (official path to dark compatibility)"
+    }
+  },
+  "acceptedArtifactPaths": {
+    "exactReconstructionApp": "data/stripe.com/reconstructions/2026-08-17T21-38-04-901Z/app",
+    "siteSpec": "data/stripe.com/site-specs/2026-08-17T21-38-01-773Z/site-spec.json",
+    "templateRun": "data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z/ (manifest.json, site-map.json, slots.json, default-content.json, slot-bindings.json, app/)",
+    "contentRun": "data/stripe.com/content-runs/2026-08-18T10-46-26-129Z/ (slot-values overlay consumed via WR_SLOT_VALUES_FILE)",
+    "themeExtraction": "data/stripe.com/theme-extractions/2026-08-18T12-07-22-308Z/ (original.theme.json, site-theme-adapter.json, paint-groups.json)",
+    "themeRuns": "data/stripe.com/theme-runs/2026-08-18T12-07-{33-626Z,34-566Z,35-609Z}/ (selected-theme.json, theme-adapter.json, theme-overlay.css, compatibility.json, qa.json)",
+    "curatedThemeLibrary": "themes/library/{cool-neutral,warm-editorial,dark-accent}.theme.json",
+    "e2eManifest": "data/stripe.com/e2e-runs/2026-08-17T21-23-33-002Z/e2e-manifest.json"
+  },
+  "testBaseline": {
+    "suites": 13,
+    "checks": 1402,
+    "source": "docs/result/20-theme-extraction-adapter-foundation-2026-08-18.md Smoke Tests table (lines 335-352); arithmetic verified: 81+81+58+92+108+88+252+205+134+130+58+68+47 = 1,402",
+    "suiteChecks": {
+      "smoke:verifier": 81,
+      "smoke:selector": 81,
+      "smoke:multi-observer": 58,
+      "smoke:interaction-detector": 92,
+      "smoke:interaction-explorer": 108,
+      "smoke:interaction-patterns": 88,
+      "smoke:sitespec": 252,
+      "smoke:reconstruction": 205,
+      "smoke:reconstruction-qa": 134,
+      "smoke:e2e": 130,
+      "smoke:recon-template": 58,
+      "smoke:content-injection": 68,
+      "smoke:theme": 47
+    },
+    "note": "package.json defines 14 smoke scripts; smoke:playwright (Phase-1 environment sanity) is NOT counted in the 13-suite/1,402 baseline. Task 20's '13 suites / 1,402 checks' claim VERIFIED consistent with package.json + report."
+  },
+  "workingTree": {
+    "totalEntries": 99,
+    "modified": ["README.md", "ROADMAP.md", "package.json", "pnpm-lock.yaml", "src/cli.ts", "tsconfig.json"],
+    "deleted": ["docs/result/작업내용-2026-08-13.md", "src/observer/.gitkeep"],
+    "untrackedCount": 91,
+    "untrackedSummary": "all of docs/info/, docs/result/01..20 reports, all 13 smoke scripts, all 22 non-root CLIs, and every src/ subsystem (content-injection, discovery, e2e, explorer, interaction-*, multi-observer, observer, patterns, recon-template, reconstruction, reconstruction-qa, schema, selector, sitespec, storage, theme, verifier)",
+    "onlyCommit": "2777b41 chore: initialize web-recon foundation (Phase 1)",
+    "conflictRiskForTasks21to24": "None structural — no src/seo, src/assets, src/production exist. But virtually the ENTIRE engine (Tasks 02-20) is uncommitted; any accidental checkout/clean is catastrophic, and README.md/ROADMAP.md/package.json are already dirty, so Tasks 21-24 edits will interleave with existing uncommitted edits."
+  },
+  "existingCodeRelevantToTasks21to24": [
+    "src/seo/ — DOES NOT EXIST (Task 21 greenfield)",
+    "src/assets/ or asset pipeline — DOES NOT EXIST as a module (asset references live in SiteSpec asset-catalog; materialization is an explicit non-goal so far; @font-face URLs partially observed — Task 22 greenfield)",
+    "src/production/ or production build path — DOES NOT EXIST; Task 20 named the production overlay baking (static file + <link> at build time) as the follow-up deploy task's work; generated apps already run `next build` per reconstruction",
+    "src/theme/ + themes/library/ — theme overlay css artifacts reusable as-is for production baking",
+    "docs/info/PRODUCT_VISION.md — defines ProductionSpec -> Production Compiler -> Production Website, SEO Audit/Delta Report principles (never copy source SEO), asset/font internalization goals (sections 4-5, 9)",
+    "scripts/smoke-*.ts — 14 scripts; naming convention smoke-<domain>.ts, registered as pnpm smoke:<domain>",
+    "Known SEO-owned gap already named by reports: document-title not injected (since Task 18)"
+  ],
+  "risks": [
+    "Entire pipeline (Tasks 02-20) is uncommitted on top of a single Phase-1 commit — highest operational risk for an overnight multi-task program",
+    "Task 20 theme paint-coverage debt (31 groups / 14 browser-verified / 3 dynamic samples) is NOT recorded in ROADMAP.md — only inside the Task 20 report's Known Limitations; overnight program should carry it explicitly",
+    "Theme delivery is a serve-boundary local proxy (preview/QA only); Task 23 Production Build must implement the static overlay-baking path itself",
+    "Asset/font materialization has been an explicit non-goal in EVERY task so far (asset-load-failure x47 in the accepted run); Task 22 starts from zero pipeline code",
+    "document title is un-injected since Task 18 — an SEO-visible gap Task 21 must own",
+    "SVG internal paint remains unreconstructable and unthemed — if Task 24 acceptance criteria include pixel-perfect branding surfaces, this named limitation must be pre-agreed as excluded",
+    "smoke suites include live-browser and live-site stages (e2e, reconstruction) — full 1,402-check regression is time-costly; overnight tasks should re-run the full set only at acceptance points",
+    "Firecrawl/tsx environment gotchas recorded in memory task17-progress.md (auto-memory) — consult before fresh E2E runs"
+  ],
+  "missingInputs": [
+    "No Task 21-24 spec documents found under docs/ (only PRODUCT_VISION.md principles for SEO/assets/production)",
+    "ROADMAP.md entry for the theme multi-route paint-coverage debt (should be added by a writing-enabled task, not this auditor)",
+    "No production deployment target/config (no wrangler/vercel/docker config in repo root)",
+    "No real LLM provider configured (content generation used the manual JSON seam; fine if Tasks 21-24 stay deterministic)"
+  ],
+  "filesRead": {
+    "allRequestedFilesExisted": true,
+    "list": [
+      "README.md", "ROADMAP.md", "docs/info/PRODUCT_VISION.md", "package.json",
+      "docs/result/17.1-exact-reconstruction-final-acceptance-2026-08-18.md",
+      "docs/result/18-recon-template-slot-v2-foundation-2026-08-18.md",
+      "docs/result/19-natural-language-content-injection-2026-08-18.md",
+      "docs/result/19.1-visible-content-injection-completeness-2026-08-18.md",
+      "docs/result/20-theme-extraction-adapter-foundation-2026-08-18.md"
+    ]
+  }
+}

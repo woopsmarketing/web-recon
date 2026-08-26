@@ -1,0 +1,56 @@
+{
+  "task": "24",
+  "title": "MVP Final Acceptance",
+  "verdict": "MVP PREVIEW READY — PRODUCTION INPUTS REQUIRED",
+  "verifiedAt": "2026-08-19",
+  "reportPath": "docs/result/24-mvp-final-acceptance-2026-08-19.md",
+  "axes": {
+    "A-reconstruction-fidelity": "PASS (stripe 5/5 fresh sample vs frozen 27/27 authority; dc parity 40/40 + direct probe; nextjs parity 12/12; 0 hydration errors on all sites)",
+    "B-editable-template-fidelity": "PASS (stripe 10/10 baked values; dc 4,832/4,832 bindings + mutation 24/24; nextjs 48,552/48,552 + mutation 126/126)",
+    "C-content-injection-safety": "PASS (0 invented facts on 3 sites; all fact-like strings traced to frozen artifacts; FAILs honest with evidence + working operator seam)",
+    "D-theme-safety": "PASS (31/31 groups verified 0 mismatch on stripe package; dc cool-neutral QA PASS; nextjs curated themes honestly refused by browser QA)",
+    "E-seo-independence": "PASS for production head/robots (20/20 stripe heads source-brand-free; entity-title leak proxy-only, proven closed by baking; 4,424 body brand strings = named limitation)",
+    "F-asset-independence": "PASS with named residuals (dc total 28→0; stripe 5 unique replacement-required files on 1 known host; nextjs near-zero BY POLICY 154/214 refused)",
+    "G-production-build-integrity": "PASS (5/5 lineage hashes doubly recomputed; PATH-only isolated launches on 3 sites; post-correction QA 159/159, 152/152, 299/299)"
+  },
+  "regression": {
+    "suites": 16,
+    "totalChecks": 1671,
+    "failures": 0,
+    "chain": "1,402 (T20) -> 1,474 (T21 +seo 72) -> 1,585 (T22 +assets 111) -> 1,656 (T23 +production 71) -> 1,671 (T24 corrections: production 71->84, assets 111->113; other 14 suites byte-match)"
+  },
+  "themeDebt": {
+    "status": "CLOSED",
+    "evidence": "docs/result/handoffs/24-theme-coverage.json — 31/31 themeable groups verified, 0 not-exercised, 0 mismatch, 20 routes x 2 viewports + 4 dynamic surfaces, negative control proven; ROADMAP debt section carries the closure record (stripe-scoped; multi-site exhaustive coverage remains post-MVP)"
+  },
+  "corrections": {
+    "fixed": ["GED-A-production-qa-interaction-metric (qa.ts state-flip OR region-mount, inert negative control)", "GED-B-production-blocker-summaries-hardcoded (run.ts buildPreviewBlockers derives all values from cited artifacts)", "GED-C-asset-inventory-css-fragment-url (isFragmentOnlyCssRef filters both ingestion channels, fragmentRefsSkipped recorded)"],
+    "reVerification": "existing untouched builds: domainchecker 150/152 -> 152/152, nextjs 297/299 -> 299/299, stripe accepted 159/159 unchanged; stripe spec recompile 2026-08-19T07-57-26-869Z reproduces all 5 lineage hashes byte-identically (accepted spec/build untouched, still the deliverable); nextjs inventory 292 -> 291 (phantom %23b only, zero real assets lost)",
+    "verifier": "Agent-24-Correction-Verifier PASS (docs/result/handoffs/24-correction-1-verification.json); finding F1 carried as named limitation",
+    "postMvp": ["GED-D micro-slot repair non-convergence", "GED-E preview-proxy entity-escaped titles (production path closed by baking)", "GED-F body-anchor source identity / no neutralization layer", "GED-G per-file cross-route residual-render list"]
+  },
+  "inputRequirements": [
+    "production domain (then seo:plan --domain + one recompile -> indexable path)",
+    "business facts via seo:plan --facts (address/phone/prices/reviews/ratings/foundingDate/sameAs)",
+    "replacement images for 51 replacement-required assets — the 5 unique residual render files first (4 on / + newsroom 3___DSC2639.jpg), then favicons + og/social cards (replacement-manifest seam)",
+    "font license decision (sohne-var / SourceCodePro: verify+self-host, accept measured fallbacks, or open-license alternatives)",
+    "og:image + organization logo + twitter/x handle",
+    "content injection for the 19 uninjected routes",
+    "inline-SVG brand mark replacement (374 entries, template layer)"
+  ],
+  "knownLimitations": [
+    "F1: GED-A state-flip criterion has a bounded masking window in the production-QA interaction SAMPLER (attribute flip with nothing rendered would pass); frozen 27/27 + parity QA remain the fidelity authorities; inert control proves non-triviality",
+    "residual render set is 5 unique files (not the /-scoped '4'): union of Task 22 scroll census (/) and Task 23 20-route no-scroll census; single known host, all replacement-required awaiting-input",
+    "4,424 stripe.com body-anchor occurrences across 20 routes (content-layer named limitation since Task 21; head/meta isolation complete)",
+    "micro-slot (1-3 char) fake-provider non-convergence (GED-D): honest FAIL + documented operator-override seam",
+    "production-package interaction QA is a 2-3-trigger sample, never a 27/27 re-run",
+    "SVG internal paint not reconstructed/themed/slotted; inline-SVG brand marks remain in markup",
+    "fonts render measured fallback stacks (licenses unverified by design)",
+    "PREVIEW mode enforced: noindex / Disallow-all / sitemap 404 until inputs arrive",
+    "curated themes site-conditional (nextjs browser-contrast FAIL, stripe dark-accent refused); browser QA is the binding gate over the static checker",
+    "theme 31/31 closure is stripe-scoped (dc 10/27 sampled, nextjs homepage-only)",
+    "stale-duplicate-text remnants (Task 19.1 non-failing category)",
+    "live-source drift unmeasured for dc/nextjs (historical artifacts reused by design; 1 dead asset URL recorded as http-error)",
+    "entire pipeline uncommitted on single Phase-1 commit (operational risk; git ops outside Task-24 rules)"
+  ]
+}

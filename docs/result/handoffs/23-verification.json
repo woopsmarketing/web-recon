@@ -1,0 +1,68 @@
+{
+  "task": "23",
+  "verdict": "PASS",
+  "verifier": "Agent-23-Verifier (independent, no builder context)",
+  "verifiedAt": "2026-08-19",
+  "checkedClaims": [
+    "production-spec-v1 exists with all 5 lineage layers pinned (templateId/contentRunId/themeRunId+themeId+adapterVersion/seoPlanRunId/materializationRunId), each with dir-sha256-v1 hash, fileCount, byteCount, recorded exclusions; baseUrl={value:null,status:needs-input,mode:preview}; compiler v1; buildMode audit with honest reason + 2 behavior deltas; 7 blockers machine-recorded with evidence paths",
+    "ALL 5 lineage hashes independently recomputed from the frozen artifact dirs with a from-scratch dir-sha256-v1 implementation: template 662b8155... (51 files / 70,090,456 B, node_modules/.next/out excluded at any depth), contentRun 29ec2f5e... (29/14,515,354), theme 08809e20... (14/15,138,806), seoPlan 93db4c31... (8/1,996,368), assets 28d38014... (235/60,826,619) — every hash, file count, and byte count matches the spec exactly",
+    "qa.json: checks.length=159, every check ok:true, passed=159 failed=0 — matches the claimed 159/159; includes 20x4 HTTP checks, 20x3 browser checks, 5 content proofs, theme link+computed-paint, interactions desktop/mobile, overflow, internal links, robots/sitemap/404, external-request census (4 total, all images.stripeassets.com, on / and /newsroom/news/tour-berlin-2025 only)",
+    "bake-report.json: content 361 keys/0 unknown, theme overlay 742,332 B (matches on-disk site/wr/theme-overlay.css), SEO 20/20 titles baked + 20/20 head splices + 0 failures + robots 233 B, rewrite 4,207 HTML + 6,312 flight + 4 CSS = 10,523; residual 430 — I independently recounted residual source-host URL occurrences across all site .html/.txt/.css with the same needle set (stripe.com 40 + images.stripeassets.com 390 + videos.stripeassets.com 0) and got exactly 430",
+    "package/site verified on disk: 350 files / 146,762,358 bytes (exact match), 22 .html, 230 files in /media, robots.txt is Disallow-all with no Sitemap line, wr/theme-overlay.css present; index.html carries baked Korean title '플로우데스크 | 기업용 AI 업무자동화 솔루션', noindex,nofollow meta, wr-seo-head-start marker, description/og/twitter metas, /media/<sha>.webp srcset references",
+    "runtime-independence code audited in src/production/qa.ts launchPackageIsolated(): mkdtemp(os.tmpdir(), 'wr-production-qa-') + cp package + spawn(node server.mjs --port 0) with env={PATH: process.env.PATH} and cwd=isolatedDir — the isolation claim is real code, not prose; qa.json isolatedDir=/var/folders/.../wr-production-qa-gsVdRh and launchEnv=[PATH] are consistent",
+    "regression log audited (scratchpad regression.log, ALL-DONE, 16 suites all exit:0): 81+81+58+92+108+88+252+205+134+130+58+68+47+72+111 = 1,585 (identical to Task 22 baseline) + smoke:production 71 = 1,656 — matches the handoff per-suite table exactly; per-suite logs also present in scratchpad/regression/",
+    "smoke:production re-run ONCE by verifier: 71 checks, 0 failures",
+    "theme lineage rationale verified: theme-runs/2026-08-18T12-07-34-566Z/manifest.json records themeId=cool-neutral and contentRunDir=content-runs/2026-08-18T10-46-26-129Z (the accepted content run); 3 theme runs exist as claimed",
+    "knownResidualSourceHosts derived from asset materialization report/network-qa.json at compile time (src/production/run.ts:160-166) and residual needles from rewrite-map sourceUrl hosts (run.ts:319) — data-driven, not hardcoded",
+    "deploy-manifest.json contains only spec refs, route/title table, content proofs, theme path, blockers, residual hosts — no credentials of any kind; no deploy performed"
+  ],
+  "independentRuntimeTest": {
+    "procedure": "copied package/ to a fresh mktemp dir in verifier scratchpad (not the builder's mkdtemp), launched 'env -i PATH=/usr/bin:/bin node server.mjs --port 46127' from that dir, curled routes, then killed the server and removed the dir",
+    "results": {
+      "routes200": "/ , /legal/becs , /industries/media-entertainment , /cookie-settings , /newsroom/news/tour-berlin-2025 — all 200 text/html",
+      "bakedTitle": "/ serves <title>플로우데스크 | 기업용 AI 업무자동화 솔루션</title>; /legal/becs serves fallback <title>플로우데스크</title> (as planned)",
+      "noindex": "noindex,nofollow meta present on /",
+      "koreanContent": "'모든 팀에 맞는 유연한 자동화.' and '규모와 무관하게, 모든 팀을 위해.' present in served / HTML",
+      "localMedia": "/media/2daf8ce7...f679.webp (referenced from index.html srcset) -> 200 image/webp",
+      "robotsTxt": "200, 'User-agent: *' + 'Disallow: /' and no Sitemap line",
+      "sitemapXml404": true,
+      "unknownRoute404": true,
+      "themeOverlay": "/wr/theme-overlay.css -> 200, 742,332 bytes",
+      "serverStoppedAndCleaned": true
+    },
+    "verdict": "runtime independence and preview policy REAL under a minimal env (PATH only) outside the repo"
+  },
+  "numberMismatches": [
+    "prose-only nuance, non-blocking: the report's build section says '22 HTML + flight .txt 54개'; the site actually contains 84 flight .txt files (excluding robots.txt). 54 is the number of flight files that received >=1 rewrite (bake-report rewrite.flightFiles semantics — bake.ts only increments when occurrences>0). The machine artifact (bake-report.json) is accurate; only the report prose conflates 'flight files rewritten' with 'flight files produced'."
+  ],
+  "hiddenLimitations": [],
+  "limitationsDisclosureAudit": {
+    "metaConsistency": "honest — qa.ts asserts description CONSISTENCY (served vs baked), not presence; qa.json details show desc=false(baked=false) on the 19 uninjected routes and the report states needs-input descriptions are never invented",
+    "themePaintSample": "disclosed — report and handoff both state the theme check is a 5-class homepage sample and that the Task 20 multi-route paint-coverage debt is NOT discharged (explicit in nextTaskMustKnow)",
+    "interactionSample": "disclosed — report limitation 5 states desktop 2/3 clicked, mobile 1/2, explicitly NOT a re-run of the frozen 27/27 equivalence",
+    "sourceHostBodyStrings": "disclosed — 4,424 stripe.com occurrences in served HTML stated in report, handoff, and recorded in qa.json sourceHostMentionsInHtml",
+    "residual430AndExternal4": "disclosed with honest methodology note (Task 22 scroll-based vs Task 23 no-scroll census)",
+    "titleFallback": "disclosed — blocker seo-needs-input-values states 19/20 route titles serve the brand-only fallback"
+  },
+  "historicalIntegrity": "intact",
+  "historicalIntegrityEvidence": [
+    "git log: single commit 2777b41, no new commits, no stashes; builder performed no git ops",
+    "find -newermt '2026-08-19 15:10' (after Task 22 outputs at 14:54-15:03 local, before Task 23 compile at 15:36) over site-specs, recon-templates, content-runs, theme-extractions, theme-runs, production-seo-plans, asset-inventories, asset-materializations: 0 files",
+    "stronger than mtime: all 5 lineage dir hashes recomputed byte-identical to the values pinned in the spec",
+    "docs/result 17.x-22 report mtimes all predate Task 23 (latest: 22-asset-font-independence at Aug 19 15:03)"
+  ],
+  "stripeHardcodeFindings": [],
+  "stripeHardcodeNote": "grep over src/production/*, both CLIs and scripts/smoke-production.ts: 'stripe' appears only in the usage-example comment block of src/cli-production-compile.ts (documentation, not logic). Source-host knowledge flows from --host and from network-qa.json / rewrite-map.json artifacts (run.ts:160,319) — data, not hardcode.",
+  "blockingFindings": [],
+  "nonBlockingFindings": [
+    "prose '54 flight .txt' vs actual 84 flight .txt files (54 = rewritten subset; machine artifacts correct)",
+    "interactions-desktop QA check passes on clicked>0 (2 of 3 attempted triggers clicked); acceptable because disclosed, but Task 24 should not read it as full interaction coverage",
+    "theme computed-paint probe covers color property only (color:var(--wr-theme-color-*) rules) on 5 homepage classes — consistent with the disclosed sample scope; background/border paints and other routes remain for Task 24 per the deferred Task 20 debt",
+    "the 'app/' baked working copy inside production-builds/<run>/ retains node_modules-dependent Next sources; only package/ is the independent deliverable (RUN.md and QA are correctly scoped to package/)"
+  ],
+  "safeForTask24": true,
+  "notesForTask24": [
+    "acceptance target data/stripe.com/production-builds/2026-08-19T06-36-35-798Z/package verified launchable from any directory with env PATH only",
+    "must still discharge: Task 20 multi-route theme paint coverage, and pre-agree residual-4 assets / font fallbacks / 19 uninjected routes / 4,424 body brand strings as named limitations unless operator inputs arrive"
+  ]
+}

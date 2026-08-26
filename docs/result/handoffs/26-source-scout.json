@@ -1,0 +1,1206 @@
+{
+  "task": "26-source-scout",
+  "role": "26-Source-Scout (fresh agent; sections 7-11 of the Task 26 spec)",
+  "createdAt": "2026-08-25T18:23:21.649Z",
+  "sourceRoot": "https://linear.app/",
+  "firecrawlKeyLiveValidated": true,
+  "discoveredCount": 1750,
+  "verifiedCount": 110,
+  "genuinelyDistinctRealPages": 81,
+  "discovery": {
+    "probeRun": {
+      "dir": "data/linear.app/2026-08-25T18-10-52-136Z",
+      "maxUrls": 300,
+      "normalizedCount": 300,
+      "note": "first live Firecrawl call; hit the 300 cap, so a second broader Map call was made"
+    },
+    "broadRun": {
+      "dir": "data/linear.app/2026-08-25T18-11-04-122Z",
+      "maxUrls": 2000,
+      "rawCount": 1753,
+      "normalizedCount": 1750,
+      "duplicateCount": 3,
+      "note": "returned under the 2000 cap -> effectively complete Firecrawl Map coverage of linear.app (subdomains excluded by policy)"
+    },
+    "discoveredCount": 1750
+  },
+  "scoutSample": {
+    "dir": "data/linear.app/2026-08-25T18-13-03-543Z-scout-sample",
+    "method": "deterministic bounded seed list derived from the broad discovery (data workaround, zero engine-code change): structural exclusions (workspace app permalinks, app shell, auth/oauth, non-HTML, _rsc probes) then per-first-segment sampling (group index always; members lexical-sorted, K=3 if group>=20, K=2 if >=5, else all). Full rule + per-URL detail in scout-sample-provenance.json",
+    "broadLinks": 1750,
+    "excludedByRule": {
+      "excluded:non-html-resource": 4,
+      "excluded:workspace-app-permalink": 260,
+      "excluded:app-shell-route": 332,
+      "excluded:rsc-flight-probe": 4,
+      "excluded:auth-or-oauth": 3,
+      "excluded:foreign-host-path": 1,
+      "excluded:external-404-probe": 1
+    },
+    "includableAfterExclusion": 1145,
+    "sampledCandidates": 107,
+    "boundReasoning": "spec recommends ~40-80 verified URLs; 107 candidates were verified because ~40 of them were depth-1 guess URLs from external links that only live verification could classify — they collapsed into one soft-404 duplicate family, leaving the genuinely distinct page count inside the recommended band"
+  },
+  "verification": {
+    "mainRun": {
+      "dir": "data/linear.app/2026-08-25T18-13-03-543Z-scout-sample",
+      "candidates": 107,
+      "validHtml": 105,
+      "uniqueVerifiedUrls": 103,
+      "httpErrors": [
+        {
+          "url": "https://linear.app/android",
+          "httpStatus": 404
+        },
+        {
+          "url": "https://linear.app/ios",
+          "httpStatus": 404
+        }
+      ],
+      "redirects": [
+        {
+          "from": "https://linear.app/blog",
+          "to": "https://linear.app/now"
+        },
+        {
+          "from": "https://linear.app/blog/a-design-reset",
+          "to": "https://linear.app/now/a-design-reset"
+        },
+        {
+          "from": "https://linear.app/blog/behind-the-latest-design-refresh",
+          "to": "https://linear.app/now/behind-the-latest-design-refresh"
+        },
+        {
+          "from": "https://linear.app/blog/building-at-the-early-stage",
+          "to": "https://linear.app/now/building-at-the-early-stage"
+        }
+      ],
+      "duplicateGroups": 15,
+      "soft404Count": 23,
+      "soft404Urls": [
+        "/about-us",
+        "/actualit",
+        "/case-studies",
+        "/community",
+        "/company",
+        "/design",
+        "/faq",
+        "/figma",
+        "/kairosjp",
+        "/leadership",
+        "/news",
+        "/plans",
+        "/press",
+        "/pricing-plans",
+        "/product",
+        "/products",
+        "/services",
+        "/solutions",
+        "/ssupergio",
+        "/subprocessors",
+        "/trust",
+        "/trust/subprocessors",
+        "/watch"
+      ],
+      "blocked": 0,
+      "navigationErrors": 0
+    },
+    "supplementRun": {
+      "dir": "data/linear.app/2026-08-25T18-13-03-543Z-scout-sample-supplement",
+      "candidates": 7,
+      "validHtml": 7,
+      "uniqueVerifiedUrls": 7,
+      "reason": "homepage deep observation proved 7 routes the sampling heuristic had excluded as app-shell are actually nav-linked marketing pages; verified from observed nav evidence (6 real product pages + /join-slack redirect stub)"
+    },
+    "verifiedCount": 110,
+    "genuinelyDistinctRealPages": 81,
+    "genuinelyDistinctNote": "valid-html candidates minus the shared soft-404 fingerprint group, deduplicated by exact content fingerprint (textHash+structureHash) so /homepage, ?ashby_jid=/? _bd=/?category= variants and the /blog->/now redirects count once; includes the /join-slack stub"
+  },
+  "selection": {
+    "dir": "data/linear.app/2026-08-25T18-13-03-543Z-scout-sample",
+    "verifiedUrls": 103,
+    "familyCount": 65,
+    "familyTypeCounts": {
+      "content-duplicate": 4,
+      "sibling-pattern": 1,
+      "scope-structure": 9,
+      "singleton": 51
+    },
+    "largestFamilySize": 23,
+    "selectedRepresentatives": 65,
+    "note": "selected-pages.json holds ALL 65 family representatives (whole-site understanding); the production pilot scope below is the bounded 8-route subset — the Reconstruction-Builder should scope deep observation to the pilot routes, not all representatives"
+  },
+  "wholeSiteUrlFamilies": [
+    {
+      "firstSegment": "integrations",
+      "discoveredUrls": 309
+    },
+    {
+      "firstSegment": "changelog",
+      "discoveredUrls": 274
+    },
+    {
+      "firstSegment": "demo",
+      "discoveredUrls": 230
+    },
+    {
+      "firstSegment": "docs",
+      "discoveredUrls": 146
+    },
+    {
+      "firstSegment": "now",
+      "discoveredUrls": 104
+    },
+    {
+      "firstSegment": "settings",
+      "discoveredUrls": 78
+    },
+    {
+      "firstSegment": "blog",
+      "discoveredUrls": 60
+    },
+    {
+      "firstSegment": "customers",
+      "discoveredUrls": 50
+    },
+    {
+      "firstSegment": "careers",
+      "discoveredUrls": 46
+    },
+    {
+      "firstSegment": "ssc-cloud",
+      "discoveredUrls": 39
+    },
+    {
+      "firstSegment": "developers",
+      "discoveredUrls": 31
+    },
+    {
+      "firstSegment": "enablement",
+      "discoveredUrls": 29
+    },
+    {
+      "firstSegment": "filamentdm",
+      "discoveredUrls": 29
+    },
+    {
+      "firstSegment": "alephic",
+      "discoveredUrls": 25
+    },
+    {
+      "firstSegment": "alan-eu",
+      "discoveredUrls": 20
+    },
+    {
+      "firstSegment": "method",
+      "discoveredUrls": 12
+    },
+    {
+      "firstSegment": "quality",
+      "discoveredUrls": 11
+    },
+    {
+      "firstSegment": "wrapbook",
+      "discoveredUrls": 11
+    },
+    {
+      "firstSegment": "learn",
+      "discoveredUrls": 10
+    }
+  ],
+  "structuralFamilies": [
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/",
+      "examples": [
+        "/"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/about",
+      "examples": [
+        "/about"
+      ]
+    },
+    {
+      "type": "content-duplicate",
+      "size": 23,
+      "representative": "undefined/faq",
+      "examples": [
+        "/about-us",
+        "/actualit",
+        "/case-studies"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/agents",
+      "examples": [
+        "/agents"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/ai",
+      "examples": [
+        "/ai"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/brand",
+      "examples": [
+        "/brand"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/build",
+      "examples": [
+        "/build"
+      ]
+    },
+    {
+      "type": "content-duplicate",
+      "size": 4,
+      "representative": "undefined/careers",
+      "examples": [
+        "/careers",
+        "/careers?ashby_jid=342b329b-f0f0-4034-bc22-8996d716e93e",
+        "/careers?ashby_jid=ae8f25a2-ce51-49dd-9ab6-af6734b4e2f4"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/change",
+      "examples": [
+        "/change"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/changelog",
+      "examples": [
+        "/changelog"
+      ]
+    },
+    {
+      "type": "sibling-pattern",
+      "size": 3,
+      "representative": "undefined/changelog/2019-04-25-linear-desktop-app",
+      "examples": [
+        "/changelog/2019-04-11-option-to-display-usernames-or-real-names",
+        "/changelog/2019-04-25-linear-desktop-app",
+        "/changelog/2019-05-02-creating-new-issues-via-email"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/contact",
+      "examples": [
+        "/contact"
+      ]
+    },
+    {
+      "type": "scope-structure",
+      "size": 2,
+      "representative": "undefined/contact/sales",
+      "examples": [
+        "/contact/sales",
+        "/contact/support"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/customers",
+      "examples": [
+        "/customers"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/customers/ai",
+      "examples": [
+        "/customers/ai"
+      ]
+    },
+    {
+      "type": "scope-structure",
+      "size": 2,
+      "representative": "undefined/customers/alan",
+      "examples": [
+        "/customers/alan",
+        "/customers/automattic"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/data",
+      "examples": [
+        "/data"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/developers",
+      "examples": [
+        "/developers"
+      ]
+    },
+    {
+      "type": "scope-structure",
+      "size": 2,
+      "representative": "undefined/developers/advanced-usage",
+      "examples": [
+        "/developers/advanced-usage",
+        "/developers/agent-best-practices"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/developers/agent-interaction",
+      "examples": [
+        "/developers/agent-interaction"
+      ]
+    },
+    {
+      "type": "content-duplicate",
+      "size": 2,
+      "representative": "undefined/docs",
+      "examples": [
+        "/docs",
+        "/docs?_bd=1787565440569"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/docs/account-preferences",
+      "examples": [
+        "/docs/account-preferences"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/docs/agents-api-deprecated",
+      "examples": [
+        "/docs/agents-api-deprecated"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/download",
+      "examples": [
+        "/download"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/dpa",
+      "examples": [
+        "/dpa"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/enablement/guide",
+      "examples": [
+        "/enablement/guide"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/enablement/guide/building-blocks",
+      "examples": [
+        "/enablement/guide/building-blocks"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/enablement/guide/building-dashboards",
+      "examples": [
+        "/enablement/guide/building-dashboards"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/enterprise",
+      "examples": [
+        "/enterprise"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/features",
+      "examples": [
+        "/features"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/fm",
+      "examples": [
+        "/fm"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/homepage",
+      "examples": [
+        "/homepage"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/insights",
+      "examples": [
+        "/insights"
+      ]
+    },
+    {
+      "type": "content-duplicate",
+      "size": 2,
+      "representative": "undefined/integrations",
+      "examples": [
+        "/integrations",
+        "/integrations?category=Agents"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/integrations/11ai",
+      "examples": [
+        "/integrations/11ai"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/integrations/agents",
+      "examples": [
+        "/integrations/agents"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/learn",
+      "examples": [
+        "/learn"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/learn/building-with-your-users",
+      "examples": [
+        "/learn/building-with-your-users"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/learn/customer-questions",
+      "examples": [
+        "/learn/customer-questions"
+      ]
+    },
+    {
+      "type": "scope-structure",
+      "size": 2,
+      "representative": "undefined/legal/aup",
+      "examples": [
+        "/legal/ai-addendum",
+        "/legal/aup"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/method",
+      "examples": [
+        "/method"
+      ]
+    },
+    {
+      "type": "scope-structure",
+      "size": 2,
+      "representative": "undefined/method/build-in-public",
+      "examples": [
+        "/method/build-in-public",
+        "/method/build-with-users"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/mobile",
+      "examples": [
+        "/mobile"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/next",
+      "examples": [
+        "/next"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/now",
+      "examples": [
+        "/now"
+      ]
+    },
+    {
+      "type": "scope-structure",
+      "size": 2,
+      "representative": "undefined/now/a-design-reset",
+      "examples": [
+        "/now/a-design-reset",
+        "/now/building-at-the-early-stage"
+      ]
+    },
+    {
+      "type": "scope-structure",
+      "size": 2,
+      "representative": "undefined/now/ai",
+      "examples": [
+        "/now/ai",
+        "/now/author/adrien-griveau"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/now/behind-the-latest-design-refresh",
+      "examples": [
+        "/now/behind-the-latest-design-refresh"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/plan",
+      "examples": [
+        "/plan"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/pricing",
+      "examples": [
+        "/pricing"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/privacy",
+      "examples": [
+        "/privacy"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/quality",
+      "examples": [
+        "/quality"
+      ]
+    },
+    {
+      "type": "scope-structure",
+      "size": 2,
+      "representative": "undefined/quality/00",
+      "examples": [
+        "/quality/00",
+        "/quality/01"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/readme",
+      "examples": [
+        "/readme"
+      ]
+    },
+    {
+      "type": "scope-structure",
+      "size": 2,
+      "representative": "undefined/releases/2020-12",
+      "examples": [
+        "/releases/2020-12",
+        "/releases/2021-06"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/releases/2022",
+      "examples": [
+        "/releases/2022"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/releases/figma",
+      "examples": [
+        "/releases/figma"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/resource-kit",
+      "examples": [
+        "/resource-kit"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/security",
+      "examples": [
+        "/security"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/security/vulnerability",
+      "examples": [
+        "/security/vulnerability"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/startups",
+      "examples": [
+        "/startups"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/switch",
+      "examples": [
+        "/switch"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/switch/jira-guide",
+      "examples": [
+        "/switch/jira-guide"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/switch/migration-guide",
+      "examples": [
+        "/switch/migration-guide"
+      ]
+    },
+    {
+      "type": "singleton",
+      "size": 1,
+      "representative": "undefined/terms",
+      "examples": [
+        "/terms"
+      ]
+    }
+  ],
+  "sharedShell": {
+    "measuredOn": "81 genuinely distinct verified pages (soft-404 family excluded)",
+    "withHeaderLandmark": 77,
+    "withNavLandmark": 76,
+    "withFooterLandmark": 72,
+    "withMainLandmark": 76,
+    "pagesWithoutFooter": [
+      "/quality",
+      "/quality/00",
+      "/quality/01",
+      "/releases/figma",
+      "/resource-kit",
+      "/switch",
+      "/switch/jira-guide",
+      "/switch/migration-guide",
+      "/join-slack"
+    ],
+    "distinctLandmarkHashes": 27,
+    "topLandmarkHashClusterSizes": [
+      19,
+      17,
+      5,
+      4,
+      4
+    ],
+    "observation": "one marketing shell (header+nav+main+footer) is near-universal on real pages; landmark-hash clustering shows a small number of shell variants (docs/enablement/legal templates differ)",
+    "homepageNav": {
+      "headerPrimary": [
+        "/customers",
+        "/pricing",
+        "/now",
+        "/contact",
+        "/docs"
+      ],
+      "productNavBlock": [
+        "/coding-sessions",
+        "/intake",
+        "/plan",
+        "/build",
+        "/diffs",
+        "/monitor",
+        "/agents"
+      ],
+      "authCtas": [
+        "/login (Open app)",
+        "/signup (Sign up)"
+      ],
+      "footerGroups": [
+        "/download",
+        "/security",
+        "/asks",
+        "/agents",
+        "/customer-requests",
+        "/insights",
+        "/mobile",
+        "/integrations",
+        "/about",
+        "/careers",
+        "/blog",
+        "/method",
+        "/quality",
+        "/brand",
+        "/switch",
+        "/developers",
+        "/enterprise",
+        "/startups",
+        "/join-slack",
+        "/privacy",
+        "/terms",
+        "/dpa",
+        "/legal/aup"
+      ],
+      "promoted": [
+        "4 latest /changelog/* entries",
+        "/customers/openai",
+        "/customers/ramp",
+        "/customers/opendoor"
+      ],
+      "evidence": "data/linear.app/2026-08-25T18-17-10-755Z/viewports/{desktop,mobile}/links.json (identical 47 unique internal link targets on both viewports)"
+    }
+  },
+  "homepageDeepObservation": {
+    "dir": "data/linear.app/2026-08-25T18-17-10-755Z",
+    "viewports": {
+      "desktop": {
+        "elementCount": 1994,
+        "effectiveVisibleCount": 1727,
+        "documentWidth": 1440,
+        "documentHeight": 10898,
+        "uniqueStyleCount": 1095,
+        "assetCount": 219,
+        "uniqueAssetCount": 147,
+        "scrollContainerCount": 0,
+        "linkCount": 76
+      },
+      "mobile": {
+        "elementCount": 1994,
+        "effectiveVisibleCount": 659,
+        "documentWidth": 390,
+        "documentHeight": 6382,
+        "uniqueStyleCount": 844,
+        "assetCount": 215,
+        "uniqueAssetCount": 146,
+        "scrollContainerCount": 2,
+        "linkCount": 76
+      }
+    },
+    "notes": [
+      "desktop document height 10898px vs mobile 6382px; effective-visible 1727 vs 659 of 1994 elements — strong responsive divergence (mobile collapses nav + sections)",
+      "219 asset references on desktop of which 179 inline SVG — the site is inline-SVG-heavy rather than <img>-heavy",
+      "prepare-scroll (read-only) used; fonts.ready true, network idle reached; no bot challenge"
+    ]
+  },
+  "interactionHeavyRoutes": [
+    {
+      "url": "https://linear.app/",
+      "evidence": "89 button elements, 5 inputs, 32 img/180 media (static); mobile hides 62% of desktop-visible elements -> menu/disclosure surface; product nav block + promoted carousels"
+    },
+    {
+      "url": "https://linear.app/changelog",
+      "evidence": "61 buttons, 7 inputs, 16 img/103 media, 57,035 chars — long interactive feed"
+    },
+    {
+      "url": "https://linear.app/method/build-with-users",
+      "evidence": "44 buttons (static count)"
+    },
+    {
+      "url": "https://linear.app/enterprise",
+      "evidence": "40 buttons, 4 inputs"
+    },
+    {
+      "url": "https://linear.app/fm",
+      "evidence": "33 buttons, 10 inputs — audio player page (Linear.fm)"
+    },
+    {
+      "url": "https://linear.app/intake",
+      "evidence": "32 buttons"
+    },
+    {
+      "url": "https://linear.app/developers/agent-interaction",
+      "evidence": "30 buttons, docs template sidebar"
+    },
+    {
+      "url": "https://linear.app/customer-requests",
+      "evidence": "23 buttons"
+    },
+    {
+      "url": "https://linear.app/startups",
+      "evidence": "22 buttons, 11 inputs"
+    },
+    {
+      "url": "https://linear.app/docs",
+      "evidence": "18-24 buttons across docs pages (sidebar/toc controls)"
+    },
+    {
+      "url": "https://linear.app/pricing",
+      "evidence": "static count only 3 buttons/3 inputs — plan toggles/FAQ are likely client-mounted; static profile is a lower bound (flagged for interaction exploration)"
+    },
+    {
+      "url": "https://linear.app/integrations",
+      "evidence": "?category=Agents variant returns byte-identical content with canonical to /integrations -> client-side category filtering"
+    }
+  ],
+  "assetHeavyRoutes": [
+    {
+      "url": "https://linear.app/pricing",
+      "evidence": "340 media elements (largely inline SVG)"
+    },
+    {
+      "url": "https://linear.app/agents",
+      "evidence": "337 media + 44 img, 1,955 elements"
+    },
+    {
+      "url": "https://linear.app/",
+      "evidence": "180 media + 32 img static; 219 asset refs observed (179 inline SVG)"
+    },
+    {
+      "url": "https://linear.app/features",
+      "evidence": "133 img elements (feature gallery)"
+    },
+    {
+      "url": "https://linear.app/switch/jira-guide",
+      "evidence": "133 media"
+    },
+    {
+      "url": "https://linear.app/enterprise",
+      "evidence": "116 media"
+    },
+    {
+      "url": "https://linear.app/changelog",
+      "evidence": "103 media + 16 img"
+    },
+    {
+      "url": "https://linear.app/intake",
+      "evidence": "93 media + 25 img"
+    },
+    {
+      "url": "https://linear.app/integrations",
+      "evidence": "84 img (integration logo grid)"
+    },
+    {
+      "url": "https://linear.app/customers",
+      "evidence": "62 img (customer logo wall)"
+    },
+    {
+      "url": "https://linear.app/change",
+      "evidence": "55 img"
+    }
+  ],
+  "selectedPilotRoutes": [
+    {
+      "url": "https://linear.app/",
+      "kind": "A",
+      "family": "root (force-isolated root family; /homepage is a verified exact-fingerprint alias)",
+      "selectionEvidence": {
+        "navigationImportance": "site root; every nav path starts here",
+        "familyRepresentation": "root family; alias /homepage collapses onto it (identical text+structure hashes)",
+        "interactionComplexity": "89 buttons / 5 inputs static; mobile menu + product nav + promoted content",
+        "visualComplexity": "1,997 elements, depth 20, desktop doc height 10,898px",
+        "contentDiversity": "7,976 chars; hero + product pillars + changelog promos + customer promos",
+        "assetDiversity": "180 media + 32 img static; 219 asset refs incl. 179 inline SVG",
+        "seoVariety": "title \"Linear – The system for product development\", canonical https://linear.app/",
+        "responsiveComplexity": "measured: 1727 vs 659 effective-visible elements desktop vs mobile; doc height 10898 vs 6382"
+      }
+    },
+    {
+      "url": "https://linear.app/plan",
+      "kind": "B",
+      "family": "product-detail pillar pages (nav product block: /plan /build /diffs /monitor /coding-sessions /intake, plus /agents /ai /insights /mobile /asks /customer-requests) — structurally singletons in the sample, conceptually one product-detail line",
+      "selectionEvidence": {
+        "navigationImportance": "homepage product nav block member (with /build, /diffs, /monitor, /coding-sessions, /intake); one of Linear's two flagship pillars (Plan/Build)",
+        "familyRepresentation": "stands in for the product-detail line above (elementCount range 455-965 across siblings)",
+        "interactionComplexity": "15 buttons static; product UI mockups expected to carry disclosure/tab candidates",
+        "visualComplexity": "733 elements, maxDepth 23 (deepest nesting outside homepage/changelog)",
+        "contentDiversity": "4,785 chars; marketing feature narrative; title \"Linear Plan – Define the product direction\"",
+        "assetDiversity": "21 img + 53 media — product-screenshot-heavy",
+        "seoVariety": "product-page title pattern distinct from index/legal pages",
+        "responsiveComplexity": "static profile only (deep observation pending); product mock UIs are wide-layout sensitive"
+      }
+    },
+    {
+      "url": "https://linear.app/pricing",
+      "kind": "C",
+      "family": "singleton (only pricing/conversion page found; /pricing-plans and /plans are soft-404 guesses)",
+      "selectionEvidence": {
+        "navigationImportance": "primary header nav item",
+        "familyRepresentation": "sole pricing page on the site",
+        "interactionComplexity": "static 3 buttons/3 inputs is a lower bound — plan toggles/FAQ expected to be client-mounted; flagged as an exploration priority",
+        "visualComplexity": "1,370 elements, 6 section landmarks",
+        "contentDiversity": "2,646 chars; plan matrix + conversion copy",
+        "assetDiversity": "340 media elements — highest static media count of any verified route (inline SVG pricing table iconography)",
+        "seoVariety": "title \"Pricing – Linear\", canonical present",
+        "responsiveComplexity": "pricing tables are the classic responsive-collapse surface (static evidence: 14 lists / 87 list items)"
+      }
+    },
+    {
+      "url": "https://linear.app/customers",
+      "kind": "D",
+      "family": "customers index — head of the 50-URL /customers/* discovered family",
+      "selectionEvidence": {
+        "navigationImportance": "first item of the primary header nav; homepage promotes three customer stories",
+        "familyRepresentation": "index of the customers family (50 discovered URLs)",
+        "interactionComplexity": "3 buttons static; 139 links (filter/grid navigation)",
+        "visualComplexity": "1,205 elements",
+        "contentDiversity": "4,245 chars; logo wall + story teasers",
+        "assetDiversity": "62 img — customer logo wall (asset-classification stress case: customer identity assets)",
+        "seoVariety": "title \"Linear Customers\"",
+        "responsiveComplexity": "logo/card grid reflow (static evidence; deep observation pending)"
+      }
+    },
+    {
+      "url": "https://linear.app/customers/automattic",
+      "kind": "D",
+      "family": "customers detail scope-structure family {/customers/alan, /customers/automattic} (deterministic family rep is /customers/alan; automattic chosen for pilot because it is the richest verified case study: 6,332 vs 1,763 chars — deviation recorded)",
+      "selectionEvidence": {
+        "navigationImportance": "reached from /customers index; homepage promotes sibling case studies",
+        "familyRepresentation": "member of the verified customers-detail structural family standing in for ~49 detail URLs",
+        "interactionComplexity": "3 buttons — content template, low interaction (honest)",
+        "visualComplexity": "305 elements — article template",
+        "contentDiversity": "6,332 chars long-form case study; title \"How Automattic migrated to Linear…\"",
+        "assetDiversity": "3 img + 15 media — quote/portrait/metrics blocks (brand-isolation stress case)",
+        "seoVariety": "narrative title pattern, distinct from product/index pages",
+        "responsiveComplexity": "long-form article reflow (static evidence)"
+      }
+    },
+    {
+      "url": "https://linear.app/security",
+      "kind": "E",
+      "family": "security/trust pages {/security, /security/vulnerability}; /trust and /trust/subprocessors are soft-404s (do not exist)",
+      "selectionEvidence": {
+        "navigationImportance": "footer nav item 'Security'",
+        "familyRepresentation": "the site's trust/compliance surface (with /security/vulnerability deferred sibling)",
+        "interactionComplexity": "3 buttons — low (honest)",
+        "visualComplexity": "365 elements",
+        "contentDiversity": "3,162 chars; 29 headings — compliance/certification listing structure",
+        "assetDiversity": "44 media (badge/cert iconography)",
+        "seoVariety": "title \"Security – Linear\"",
+        "responsiveComplexity": "multi-column trust grid collapse (static evidence)"
+      }
+    },
+    {
+      "url": "https://linear.app/changelog",
+      "kind": "F",
+      "family": "changelog — head of the 274-URL /changelog/* discovered family; verified sibling-pattern detail family (/changelog/<slug>, 3 verified siblings)",
+      "selectionEvidence": {
+        "navigationImportance": "homepage promotes the 4 latest changelog entries with a link to the index",
+        "familyRepresentation": "index of the second-largest discovered URL family (274 URLs); detail siblings form the sample's only sibling-pattern family",
+        "interactionComplexity": "61 buttons + 7 inputs — most interactive non-homepage route verified",
+        "visualComplexity": "2,181 elements, maxDepth 21",
+        "contentDiversity": "57,035 chars — the most content-heavy route verified",
+        "assetDiversity": "16 img + 103 media inline in feed entries",
+        "seoVariety": "feed-style title \"Changelog – Linear\"; entry pages carry per-release titles",
+        "responsiveComplexity": "long feed with media embeds (static evidence)"
+      }
+    },
+    {
+      "url": "https://linear.app/integrations",
+      "kind": "F",
+      "family": "integrations directory — head of the 309-URL /integrations/* discovered family (largest URL family on the site)",
+      "selectionEvidence": {
+        "navigationImportance": "footer nav item; directory hub for 300+ detail pages",
+        "familyRepresentation": "index of the single largest discovered URL family (309 URLs)",
+        "interactionComplexity": "?category=Agents variant is fingerprint-identical with canonical to /integrations -> client-side category filter (exploration target)",
+        "visualComplexity": "1,203 elements",
+        "contentDiversity": "7,265 chars; 161 links; categorized directory",
+        "assetDiversity": "84 img — third-party integration logo grid (license/brand stress case)",
+        "seoVariety": "title \"Integrations – Linear\"; category variants canonicalize to the index",
+        "responsiveComplexity": "multi-column card grid collapse (static evidence)"
+      }
+    }
+  ],
+  "pilotKindCoverage": {
+    "A": "https://linear.app/",
+    "B": "https://linear.app/plan",
+    "C": "https://linear.app/pricing",
+    "D": [
+      "https://linear.app/customers",
+      "https://linear.app/customers/automattic"
+    ],
+    "E": "https://linear.app/security",
+    "F": [
+      "https://linear.app/changelog",
+      "https://linear.app/integrations"
+    ],
+    "note": "all six kinds exist on the live site and are covered by observed routes; nothing invented"
+  },
+  "excludedOrDeferredFamilies": [
+    {
+      "family": "workspace app permalinks (<slug>/issue|project|team|document|review|initiative|view|dashboard/…)",
+      "discoveredUrls": 260,
+      "decision": "excluded",
+      "reason": "Linear application product surface (public share links into the private app), out of pilot scope per spec §3"
+    },
+    {
+      "family": "app shell routes (/demo/* 230, /settings/* 78, /my-issues, /views, /team, etc.)",
+      "discoveredUrls": 332,
+      "decision": "excluded",
+      "reason": "application UI, not public marketing pages; /demo is the interactive product demo workspace"
+    },
+    {
+      "family": "auth (/login, /signup, /oauth/*)",
+      "discoveredUrls": 3,
+      "decision": "excluded",
+      "reason": "login/auth pages forbidden by spec"
+    },
+    {
+      "family": "non-HTML (robots.txt, sitemap.xml, /rss/*, /.well-known/*) and ?_rsc= flight probes",
+      "discoveredUrls": 8,
+      "decision": "excluded",
+      "reason": "not HTML pages"
+    },
+    {
+      "family": "soft-404 alias family (23 verified URLs incl. /trust, /company, /faq, /pricing-plans, workspace slugs)",
+      "verifiedUrls": 23,
+      "decision": "excluded",
+      "reason": "single content-duplicate family: Linear serves its not-found page as HTTP 200; these routes do not really exist"
+    },
+    {
+      "family": "/docs (146 discovered URLs)",
+      "decision": "deferred",
+      "reason": "real and large but a distinct three-pane docs template; piloting it would dominate the 5-8 route budget; representative /docs verified and available for a later phase"
+    },
+    {
+      "family": "/now + /blog (104 + 60 discovered; /blog 301s to /now)",
+      "decision": "deferred",
+      "reason": "content-heavy kind already covered by /changelog; blog-post template recorded as a follow-up family"
+    },
+    {
+      "family": "/careers (46 discovered)",
+      "decision": "deferred",
+      "reason": "Ashby-driven job board; ?ashby_jid= variants are fingerprint-identical (client-rendered overlays) and drift as jobs change"
+    },
+    {
+      "family": "/developers (31 discovered)",
+      "decision": "deferred",
+      "reason": "developer docs template, smaller sibling of /docs"
+    },
+    {
+      "family": "/integrations/<slug> details (308 discovered)",
+      "decision": "deferred",
+      "reason": "index piloted; detail template (verified examples /integrations/11ai, /integrations/agents) deferred"
+    },
+    {
+      "family": "/changelog/<slug> details (273 discovered)",
+      "decision": "deferred",
+      "reason": "index piloted; the verified sibling-pattern detail family stands ready for a later phase"
+    },
+    {
+      "family": "product-detail siblings (/build /diffs /monitor /coding-sessions /intake /asks /customer-requests /agents /ai /insights /mobile /enterprise /startups /features)",
+      "decision": "deferred",
+      "reason": "represented by /plan for the pilot; all verified 200 with same shell"
+    },
+    {
+      "family": "small marketing/legal singletons (/about /brand /download /switch/* /method/* /quality/* /learn/* /releases/* /legal/* /privacy /terms /dpa /contact/* /readme /next /change /data /fm /resource-kit /enablement/*)",
+      "decision": "deferred",
+      "reason": "verified and recorded; outside the bounded pilot budget"
+    },
+    {
+      "family": "/join-slack",
+      "decision": "excluded",
+      "reason": "10-element redirect stub to external Slack invite, no content"
+    }
+  ],
+  "knownSourceInstability": [
+    "soft-404s as HTTP 200: Linear serves its not-found page with status 200 and full HTML shell absence (11 elements); 23 of 107 sampled candidates were such pages — only fingerprint duplicate-grouping catches them (hard 404s also exist: /android, /ios returned real HTTP 404)",
+    "section rename drift: /blog and /blog/* permanently redirect to /now (renamed section); homepage footer still labels the /blog link 'Blog'",
+    "homepage promo drift: latest-changelog and customer-story promos on the homepage change over time (observed entries dated 2026-07/2026-08)",
+    "careers volatility: /careers?ashby_jid=<uuid> variants collapse to /careers by canonical+fingerprint; job postings will drift",
+    "cache-buster/probe queries in Firecrawl Map output: ?_bd=<timestamp> (docs), ?_rsc=<id> (Next.js RSC flight), synthetic external-guess URLs (/homepage /about-us /pricing-plans etc.)",
+    "no bot protection encountered: 114 verification fetches + 1 two-viewport deep observation with prepare-scroll all succeeded; 0 blocked, 0 navigation errors, no challenge pages",
+    "stability positive: / vs /homepage and /quality vs /quality/00 fetched minutes apart produced byte-identical text+structure fingerprints — no A/B variance observed in the sample (not exhaustively tested)",
+    "robots.txt (fetched read-only): disallows only /api/ and /cdn-cgi/ (Allow /api/og/); every route verified/observed here is allowed"
+  ],
+  "toolingIssues": [],
+  "toolingNotes": [
+    "no CLI failed on Linear: pnpm recon, pnpm verify (x2), pnpm select, pnpm observe all completed with exit 0 and zero engine-code changes",
+    "scout-side data workaround (not an engine defect): the deterministic seed-list heuristic initially misclassified 7 nav-linked marketing routes (/coding-sessions /intake /diffs /monitor /asks /customer-requests /join-slack) as app-shell; corrected with a supplemental 7-URL verification run driven by homepage nav evidence",
+    "engine behavior worth knowing (by design, not a defect): pnpm select force-isolates the site root into its own family, so the /homepage alias remained a separate singleton family despite exact-fingerprint duplicate evidence; the Reconstruction-Builder must NOT treat /homepage as a distinct pilot page",
+    "pnpm select on this sample: 103 verified -> 65 families (36.9% reduction); low merge rate is expected at K<=3 members per URL family and does not indicate a selector defect"
+  ],
+  "artifacts": {
+    "probeDiscovery": "data/linear.app/2026-08-25T18-10-52-136Z/discovery.json",
+    "broadDiscovery": "data/linear.app/2026-08-25T18-11-04-122Z/discovery.json",
+    "scoutSampleDiscovery": "data/linear.app/2026-08-25T18-13-03-543Z-scout-sample/discovery.json",
+    "scoutSampleProvenance": "data/linear.app/2026-08-25T18-13-03-543Z-scout-sample/scout-sample-provenance.json",
+    "verification": "data/linear.app/2026-08-25T18-13-03-543Z-scout-sample/verification.json",
+    "verifiedUrls": "data/linear.app/2026-08-25T18-13-03-543Z-scout-sample/verified-urls.json",
+    "pageFamilies": "data/linear.app/2026-08-25T18-13-03-543Z-scout-sample/page-families.json",
+    "selectedPages": "data/linear.app/2026-08-25T18-13-03-543Z-scout-sample/selected-pages.json",
+    "supplementDiscovery": "data/linear.app/2026-08-25T18-13-03-543Z-scout-sample-supplement/discovery.json",
+    "supplementVerification": "data/linear.app/2026-08-25T18-13-03-543Z-scout-sample-supplement/verification.json",
+    "supplementVerifiedUrls": "data/linear.app/2026-08-25T18-13-03-543Z-scout-sample-supplement/verified-urls.json",
+    "homepageObservation": "data/linear.app/2026-08-25T18-17-10-755Z/observation.json"
+  },
+  "verdict": "PILOT SCOPE DEFINED — 8 routes selected from observed evidence; READY FOR RECONSTRUCTION BUILDER",
+  "selectedPilotRouteCount": 8
+}

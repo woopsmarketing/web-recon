@@ -1,0 +1,146 @@
+{
+  "task": "26B-verification",
+  "role": "26-Transformation-Verifier (fresh agent; section 31 of the Task 26 spec; adversarially independent of the 26-Transformation-Builder)",
+  "createdAt": "2026-08-26T00:00:00Z",
+  "verdict": "PASS_WITH_LIMITATIONS",
+  "claimsUnderAudit": {
+    "report": "docs/result/26B-linear-template-content-theme-2026-08-26.md",
+    "handoff": "docs/result/handoffs/26B-handoff.json",
+    "builderVerdict": "READY FOR PRODUCTION PIPELINE"
+  },
+  "method": [
+    "read only spec + reports + handoffs + run artifacts (no builder conversation)",
+    "recomputed every audited number directly from raw run artifacts (slots.json, slot-bindings.json, slot-values.json, generation-result.json, layout-qa.json, brand-leak.json, qa.json, regression logs) with own Node scripts",
+    "launched the injected+themed preview myself via pnpm theme:preview (template manifest + dark-accent + adapter + content run; own scratchpad run-dir) and drove it with an own Playwright script (not the builder QA harness)",
+    "servers killed after verification; no engine code, run artifacts, or builder reports modified"
+  ],
+  "templateDefaultParity": {
+    "claimed": { "pairs": "20/20", "docHeightDeltaMaxPx": 0, "geometryP95Px": 0, "templateIntroducedJsErrors": 0, "hydration": 0, "inheritedErrors": 24, "interactions": "5/5", "mutation": "30/30" },
+    "recomputed": {
+      "pairsInParityQaJson": 20,
+      "allPass": true,
+      "contentEqual": "20/20",
+      "structureEqual": "20/20",
+      "docHeightDeltaMaxPx": 0,
+      "geometryP95MaxPx": 0,
+      "templateIntroducedJsErrorsSum": 0,
+      "hydrationErrorsSum": 0,
+      "inheritedJsErrors": "12+12=24, only on the two /customers pairs, byte-level notes name the webassets.linear.app CORS mask-image loads present in BOTH captures",
+      "wideCoverage": "/ and /customers/automattic at 1920+2048 present in the pair set",
+      "interactionRegression": "5/5 equivalent rows in parity-qa.json",
+      "mutationCanary": "30/30 applied counted from mutation-qa.json checks[] (hero 2, cta-label 4, cta-href 4, nav-label 16, image 4); structureEqual true, runtimeClean true"
+    },
+    "match": true,
+    "note": "parity-qa.json/mutation-qa.json are the per-pair raw files (one row per route x width with per-side error/geometry fields); every row was read, not just a summary"
+  },
+  "templateCompile": {
+    "claimed": { "slots": 3079, "bindings": 9929, "text": 2441, "url": 443, "image": 195, "global": 131, "page": 2948, "editable": 1586, "review": 1493, "static": 9663, "dynamicTemplate": 262, "paintTwin": 4, "svgText": 0, "textTargets": 7433, "attributeTargets": 2496, "desktop": 5104, "mobile": 4825, "multiBindingSlots": 2813, "crossSurfaceSlots": 7, "excludedCandidates": 1435 },
+    "recomputedFromSlotsAndBindingsJson": "every value identical, including svg-text absent from the surface histogram (honest 0) and excluded candidates 66 aria-hidden + 10 presentation + 1359 svg-opaque = 1435",
+    "match": true
+  },
+  "contentRun": {
+    "claimed": { "assigned": 1395, "changed": 543, "needsInput": 117, "units": 1202, "batches": 36, "imageBriefs": 73, "layoutQaPages": "16/16", "applied": "1265/1265", "docHeightDeltaPx": 0, "brandLeakWarnings": 91 },
+    "recomputed": {
+      "assignedTotal": 1395,
+      "assignedPerRoute": { "global": 127, "/": 228, "/changelog": 561, "/customers": 90, "/customers/automattic": 52, "/integrations": 33, "/plan": 172, "/pricing": 60, "/security": 72 },
+      "changedVsDefaultTotal": 543,
+      "changedPerRoute": { "global": 18, "/": 107, "/changelog": 266, "/customers": 23, "/customers/automattic": 16, "/integrations": 4, "/plan": 79, "/pricing": 9, "/security": 21 },
+      "needsInputTotal": 117,
+      "needsInputPerRoute": { "global": 4, "/": 2, "/changelog": 54, "/customers": 2, "/customers/automattic": 21, "/integrations": 26, "/plan": 2, "/pricing": 2, "/security": 4 },
+      "units": 1202,
+      "batchesInGenerationRequest": 36,
+      "imageBriefs": "73 (61 replace-recommended + 12 keep-default)",
+      "validation": "pass, 0 errors, 3 broken-internal-route warnings (kept default deep-docs hrefs) exactly as claimed",
+      "layoutQa": "16/16 pages pass; max |injectedDocHeight-defaultDocHeight| = 0; new horizontal overflow 0; appliedChecks 1265/1265 (static 1158 + dynamic-template 107); interactions 5/5; repairCandidates 0; 32 screenshots; only /customers pages carry inherited CORS errors (12/15), notes mark them present in BOTH captures"
+    },
+    "match": true
+  },
+  "brandLeakScan": {
+    "claimedCategories": { "imageSlotDefaultsOnSourceCdn": 73, "externalCtaUrls": 11, "internalHrefTokenPaths": 7, "pricingPriceStringsReverted": 2, "reviewLockedTokenSlots": 255, "changedValuesWithTokens": 0, "blockedVisibleSourceContent": 0 },
+    "recomputed": {
+      "scanWarnings": "91 in brand-leak.json; classified against template slots: image 73 + external URL 11 (3 url-rule + 8 token) + internal href 7 = 91, no remainder",
+      "changedValuesContainingToken": "0 (recomputed over all 543 changed values)",
+      "reviewLockedSlotsWithToken": "255 with per-route breakdown identical to the claim (home 19, changelog 31, customers 76, automattic 12, integrations 115, pricing 2) — requires JSON-stringifying the 122 structured image defaults; a string-only scan undercounts to 133",
+      "pricingTokenSlots": "pricing.main.text.linear-agent + pricing.main.text.linear-asks (review, 4 bindings each) — matches the 4 visible occurrences seen in-browser; the editable pricing.main.text.linear-insights was changed to 'FlowPilot Insights'"
+    },
+    "browserVisibleTokenReconciliation": {
+      "/": "13-15 visible 'Linear' occurrences, all inside the review-locked set: animated-hero mock-UI internals, the 'Purpose-built Linear is shaped by...' line, homepage changelog promos, and (mobile variant) the review-locked testimonial twin; the editable testimonial surface renders 'Add a customer story here... / Customer name / Role, Company (to be provided)'",
+      "/pricing": "4 occurrences = the 2 review-locked product-name slots x2 renders; source $10/$16 price strings present (disclosed unslotted-duplicate revert)",
+      "/changelog": "4 occurrences in review-locked feed internals",
+      "/customers": "16 occurrences in review-locked story-teaser wall (accounted: 76 token slots)",
+      "/customers/automattic": "18 occurrences in the review-locked long-form body; page opens with 'A customer story will be published here once provided' + explicit FlowPilot sample-layout frame (claim confirmed visually)",
+      "/plan": "0 visible", "/security": "0 visible",
+      "headerWordmark": "the 'Linear' logo wordmark persists in the header on every route (SVG asset / review-locked home.nav.text.linear) — inside the disclosed asset/review categories, Phase C replacement territory",
+      "unaccountedLeaks": 0
+    },
+    "match": true,
+    "characterizationDiscrepancy": "the handoff labels the 19 homepage review-locked token slots 'home mock internals'; recompute shows they also include the customer-testimonial quote block whose review-locked twin (with real names Gabriel Peal/OpenAI, Nik Koblov/Ramp) still renders on the mobile variant. Counted and dispositioned correctly (inside the 255, deferred with warning), but the label understates that real-person testimonials remain visible pending Phase C/operator review"
+  },
+  "browserConfirmation": {
+    "serve": "pnpm theme:preview <template-manifest> --theme themes/library/dark-accent.theme.json --adapter <extraction>/site-theme-adapter.json --content-run <content-run> --run-dir <scratchpad>; themed+injected proxy on :49652, injected-unthemed upstream on :49649; both killed after verification",
+    "routesViewports": [
+      "/ @390, @1440, @1920 (themed)", "/pricing @390, @1440", "/security @390, @1440", "/plan @390, @1440", "/changelog @390, @1440", "/customers @1440", "/customers/automattic @1440", "/integrations @1440", "/ @1440 upstream (theme A/B)"
+    ],
+    "results": {
+      "http": "200 on all 15 page loads",
+      "horizontalOverflow": "0 pages (documentElement.scrollWidth <= clientWidth everywhere, incl. 390 and 1920)",
+      "consoleErrors": "0 on every route except /customers @1440 (24, all webassets.linear.app CORS/asset-load class — the Phase-A-disclosed inherited limitation); 0 pageerrors everywhere",
+      "contentActuallyChanged": {
+        "spotChecks": "injected values render and source values are gone: / 'Run your operations on autopilot.' (was 'A new species of product tool.'), /plan 'Close the gap between design and execution' (was '...planning and building'), /security 'Secure by design. Private by default.' + operator placeholders for SOC 2/GDPR/HIPAA/ISO (was 'Safe, secure, and private.'), /pricing 'Dependable automation. Ready today.' (was 'Built for the future. Available today.'), /changelog FlowPilot release feed (30 FlowPilot mentions)",
+        "disclosedRetentions": "homepage hero headline 'The product development system...' still source (aria-hidden animated-hero limitation, confirmed visible); /pricing $10/$16 source prices confirmed visible (disclosed revert)"
+      }
+    },
+    "interactions": [
+      { "check": "desktop nav mega-panel (ip000001/n000021) @1440", "result": "opens: aria-expanded=true, 2 mounted regions, 694 chars visible FlowPilot nav copy (Intake/Plan/Build/Diffs/Monitor descriptions rewritten), panel text themed rgb(235, 240, 248), console clean" },
+      { "check": "mobile hamburger menu (ip000005/n000057) @390", "result": "opens: aria-expanded=true, full-screen portal menu mounts with nav items, console clean; sampled menu text still original rgb(247, 248, 248) (preserved-paint group inside the portal menu — cosmetic, consistent with the 20-of-27 themed-group coverage; not a QA-claim violation)" },
+      { "check": "second desktop disclosure (ip000004/n001659) @1440", "result": "opens: aria-expanded=true, 1 mounted region, 73 chars, themed text, console clean" }
+    ],
+    "themeApplication": {
+      "originalParityNoOp": "verified from theme run 2026-08-25T22-23-53-486Z qa.json: 16/16 DOM-identical pairs, geometry max 0, doc-height 0, 157/157 paint checks, 0 new low contrast, 5/5 interactions — artifact-level no-op confirmed",
+      "curatedVisuallyConfirmed": "themed canvas rgb(15, 19, 28) vs upstream rgb(8, 9, 10); text rgb(235, 240, 248) vs rgb(247, 248, 248); surface rgb(28, 34, 48) vs rgb(15, 16, 17) — dark-accent palette live on static pages AND inside the open mega-panel (my own computed-style samples)",
+      "contrast": "qa.json newLowContrastTexts = 0 on all 16 curated pairs (recomputed); visually consistent (light text on navy)",
+      "compatibility": "compatible-with-warnings reproduced at my own preview launch with the same two warnings (3 preserved-gradient groups; raster/inline-SVG paint never recolored)"
+    },
+    "layoutSafety": "no clipping/overflow regressions observed at 390/1440 on visited routes, homepage centered at 1920; artifact doc-height delta 0 and 16/16 recomputed",
+    "screenshots": "docs/result/handoffs/26B-verification-screens/ (18 PNG: themed_-390/1440/1920, themed_pricing-390/1440, themed_security-390/1440, themed_plan-390/1440, themed_changelog-390/1440, themed_customers-1440, themed_customers_automattic-1440, themed_integrations-1440, upstream_home-1440, interaction-desktop-nav-panel-1440, interaction-mobile-menu-390, interaction-desktop-disclosure2-1440)"
+  },
+  "engineChangeAudit": {
+    "changes": "B-EC1..B-EC4 all present in src/recon-template/parity-qa.ts, src/content-injection/layout-qa.ts, src/theme/theme-qa.ts",
+    "linearSpecificStrings": "grep for 'linear' over the three changed files: 0 hits (excluding css linear-gradient)",
+    "design": "introduced-vs-inherited error rule is evidence-relative (normalize only the harness serve origin 127.0.0.1/localhost:port; fail on any error absent from the reference capture) — site-agnostic, cannot mask a template/content/theme-introduced error; layout-qa and theme-qa import the shared helper; mounted-region queries extended with [data-wr-dynamic-target]/[data-wr-obs-mounted] (generic Phase-A marker vocabulary)",
+    "fixtures": "scripts/smoke-recon-template.ts carries the §14 introduced-errors assertion + the §15 5-check unit block incl. negative controls (template-only error still fails; different asset URL not normalized away) — all present and passing in the regression log (64/64)"
+  },
+  "regressionAudit": {
+    "claimed": { "suites": 17, "checks": 1782, "failures": 0, "typecheck": "exit 0" },
+    "recomputed": "summed from docs/result/handoffs/26B-regression-logs/ suite logs: 113+68+130+92+108+88+62+84+64+134+217+84+81+72+257+47+81 = 1782; STATUS shows typecheck + all 17 suites exit 0 (start 2026-08-25T22:38:18Z done 22:56:23Z); per-suite counts identical to the handoff; delta vs 26A baseline +6, all in recon-template (58->64)",
+    "match": true
+  },
+  "syntheticBrandRules": {
+    "recordedAsSyntheticPilotBrand": "intent.json embeds the synthetic-pilot-brand rule verbatim; generation-result sitePlan.siteIdentity.workingName = 'FlowPilot (synthetic-pilot-brand)'",
+    "inventedFactScan": "regex sweep over generation-result.json + slot-values.json: 0 FlowPilot domains, 0 emails, 0 phone numbers (all numeric hits are ISO dates), 0 street addresses, 0 'founded in', 0 certification claims ('SOC 2 ... will be published here once provided by the operator'), 0 customer-count claims; testimonial surfaces are explicit placeholders",
+    "match": true
+  },
+  "discrepancies": [
+    "none numeric — every recomputed number matched the handoff exactly (template 3,079/9,929 and full histograms; parity 20/20 + 24 inherited; mutation 30/30; content 1,395/543/117 with identical per-route splits; units 1,202/36 batches; briefs 73=61+12; layout 16/16 + 1,265/1,265 + 0px; brand scan 91=73+11+7; review-locked 255 with identical splits; theme 217/27/140/50, 21 tokens, 157/157 and 115/115, 0 new low contrast; regression 1,782/0)",
+    "characterization only: the 255 review-locked token category's 'home mock internals 19' label omits that it includes the homepage testimonial quote twin — real-person/company testimonials (Gabriel Peal/OpenAI, Nik Koblov/Ramp) remain visible on the mobile variant of the injected homepage. Correctly counted, review-locked, warned, and deferred; the editable twin was properly replaced with placeholders. Flagged for Phase C/operator review priority",
+    "cosmetic observation: inside the open mobile portal menu the sampled text renders the original rgb(247,248,248) rather than the dark-accent rgb(235,240,248) — consistent with partial (20/27) group theming; no claim in the report contradicts this"
+  ],
+  "acceptedLimitations": [
+    "homepage hero headline stays source copy (aria-hidden animated hero; no brand token; confirmed visible in-browser and honestly disclosed)",
+    "/pricing $10/$16 source price strings visible (unslotted-duplicate revert; operator pricing input required)",
+    "255 review-locked slots retain source-brand tokens incl. homepage testimonial twin — Phase C asset/operator territory",
+    "73 image slots on source CDN (deferred to Phase C by design; briefs present)",
+    "11 external CTA destinations needs-input (defaults render)",
+    "/customers inherited CORS console errors (Phase A disclosure; verified identical class in-browser)",
+    "3 preserved-gradient groups + raster/inline-SVG internal paint keep original colors under dark-accent (reproduced at preview launch)"
+  ],
+  "constraintsRespected": {
+    "engineCodeModified": false,
+    "runArtifactsModified": false,
+    "builderReportsModified": false,
+    "git": "no add/commit/push",
+    "serversKilled": true,
+    "ownOutputs": ["docs/result/handoffs/26B-verification.json", "docs/result/handoffs/26B-verification-screens/ (18 PNG)"]
+  },
+  "conclusion": "Every audited claim reproduced from primary evidence: template compile and default parity are lossless and browser-proven; all 8 pilot routes genuinely render FlowPilot content (confirmed live on /, /pricing, /security, /plan, /changelog, /customers, /customers/automattic, /integrations); the dark-accent theme is really applied (static + open interaction states) with 0 new contrast/overflow findings; interactions still mount with clean consoles; every source-brand remnant found in the rendered DOM reconciles to a builder-accounted category with zero unaccounted leaks presented as new-brand facts; the 4 engine changes are generic QA-layer fixes with fixtures and a green 1,782-check regression. PASS_WITH_LIMITATIONS rather than PASS solely because substantial disclosed source-brand surfaces (hero headline, prices, review-locked testimonial/logo/story surfaces, source-CDN images, header wordmark) remain visible by design pending Phase C — the builder's READY FOR PRODUCTION PIPELINE verdict is not overstated."
+}

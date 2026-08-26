@@ -1,0 +1,126 @@
+{
+  "agent": "Agent-24-Site-A",
+  "site": "domainchecker.co.kr",
+  "siteChoiceReason": "preferred site; complete historical artifact chain existed (discovery/verification/selection 2026-08-13T07-51-15-559Z, site-observation 2026-08-13T10-08-10-588Z, interaction exploration 2026-08-13T13-41-01-872Z, interaction model 2026-08-13T14-46-42-923Z) so no re-crawl of the source pages was needed; smallest corpus site (19 routes / 6 observed pages) exercises the full pipeline fastest",
+  "usedHistoricalArtifacts": {
+    "used": true,
+    "paths": [
+      "data/domainchecker.co.kr/2026-08-13T07-51-15-559Z (discovery.json, verification.json, page-families.json, selected-pages.json)",
+      "data/domainchecker.co.kr/site-observations/2026-08-13T10-08-10-588Z",
+      "data/domainchecker.co.kr/interaction-explorations/2026-08-13T13-41-01-872Z",
+      "data/domainchecker.co.kr/interaction-models/2026-08-13T14-46-42-923Z"
+    ],
+    "liveNetworkUsed": [
+      "seo:observe --live-site-files: one bounded robots.txt + sitemap fetch (no stored artifact carries them)",
+      "assets:materialize: 97 asset fetches at concurrency 2 / 300ms spacing against the operator's own site + its supabase image host (96 ok, 1 http-error)",
+      "note: historical site-spec runs (2026-08-13, schema v1/v2) are NOT loadable by the current v4 engine — expected fail-fast versioning; the offline recompile path (compile:sitespec from the stored Task 09-12 artifacts) regenerated a v4 spec with zero re-observation, which is itself a strong generality result"
+    ]
+  },
+  "stages": [
+    {
+      "stage": "sitespec-recompile (compile:sitespec, offline)",
+      "status": "pass",
+      "keyNumbers": "schema v4, 19 routes / 6 pages, 13 verified patterns (all disclosure) / 10 unknowns, 11.31 MB, 635 ms, round-trip validation PASS; compiled from 6-day-old stored observation artifacts with 0 network",
+      "runPath": "data/domainchecker.co.kr/site-specs/2026-08-19T07-12-09-707Z"
+    },
+    {
+      "stage": "reconstruction (pnpm reconstruct + next build)",
+      "status": "pass",
+      "keyNumbers": "19 clone routes, next build PASS in 2390 ms, sourceSchemaVersion 4, built app present (.next/BUILD_ID)",
+      "runPath": "data/domainchecker.co.kr/reconstructions/2026-08-19T07-12-21-249Z"
+    },
+    {
+      "stage": "recon-template compile (compile:recon-template)",
+      "status": "pass",
+      "keyNumbers": "1,957 slots (text 1,660 / url 260 / image 37; global 47 / page 1,910; 588 flagged for review), 4,832 bindings (all static; paint-twin 0, svg-text 0 — those Slot V2 v2 surfaces simply do not occur on this site), 474 excluded (aria-hidden 18, svg-opaque 456), read-back validation 4,832/4,832 resolved + 4,832/4,832 default no-ops, 256 ms",
+      "runPath": "data/domainchecker.co.kr/recon-templates/2026-08-19T07-14-22-868Z"
+    },
+    {
+      "stage": "recon-template parity QA (qa:recon-template, browser)",
+      "status": "pass",
+      "keyNumbers": "40/40 page-width pairs content-equal AND structure-equal, max doc-height delta 0px, geometry p95 0px, 0 runtime / 0 hydration errors, interactions 3/3 equivalent, mutation canary 24/24 applied with structure unchanged, 217 s",
+      "runPath": "data/domainchecker.co.kr/recon-templates/2026-08-19T07-14-22-868Z/report/{parity-qa,mutation-qa}.json"
+    },
+    {
+      "stage": "content injection (content:prepare/generate fake/validate/qa)",
+      "status": "pass",
+      "keyNumbers": "217 units / 362 editable slots / 6 batches; fake provider assigned 362 (290 changed vs default), validation PASS, 0 needs-input; values are obviously-placeholder ('Fake', 'Fake n', brand '테스트상호' intent — no realistic business facts invented); first content:qa FAIL @390 (2 slots clipped), --repair x2 did NOT converge, operator-override seam (hand-edit slot-values.json '테'/'샘플' + content:validate manualEdits:true) then final content:qa PASS: 3/3 route-width pages, 918 changed-slot observations, applied 612/612, interactions 3/3, 0 repair candidates",
+      "runPath": "data/domainchecker.co.kr/content-runs/2026-08-19T07-18-26-879Z",
+      "failureClassification": "initial @390 clip: generic-engine-defect (low severity, see genericEngineDefects[1] — deterministic fake provider's minimum token 'Fake' (4 chars, unbreakable) physically cannot fit slots with sourceCharacterCount 1 and 3 / mobile width 16-39px, and the repair loop re-invokes the same deterministic provider so it can never converge; the DETECTION and honest FAIL are the engine working correctly; resolved through the documented §29 operator-override seam)"
+    },
+    {
+      "stage": "theme extraction + curated compatibility + theme run QA",
+      "status": "pass",
+      "keyNumbers": "extraction: 105 paint groups (27 themeable / 29 preserved / 49 review), 19 tokens, original theme mode light export-candidate; curated verdicts: cool-neutral, warm-editorial AND dark-accent all compatible-with-warnings (asset-color-mismatch-risk only) — NOTE dark-accent was refused on stripe but is admitted here (light-imagery-poor site); theme run cool-neutral composed over injected content: QA PASS at 390/1440/1920 — dom equal, geometry max 0px over 752 nodes, height delta 0px, contrast new-low 0, paint checks 36/36 applied, groups verified 10/27 (sample-based, known limitation), interactions 3/3 equivalent",
+      "runPath": "data/domainchecker.co.kr/theme-extractions/2026-08-19T07-22-22-639Z + data/domainchecker.co.kr/theme-runs/2026-08-19T07-22-44-093Z"
+    },
+    {
+      "stage": "source SEO snapshot (seo:observe --live-site-files)",
+      "status": "pass",
+      "keyNumbers": "6 pages, all titled, og 9-10 / ld+json 2-4 each, 0 duplicate titles, 5 canonical clusters, 0 broken internal links, robots.txt live-fetched",
+      "runPath": "data/domainchecker.co.kr/source-seo-snapshots/2026-08-19T07-23-28-578Z"
+    },
+    {
+      "stage": "production SEO plan + seo:qa (preview mode, serve-boundary proxy)",
+      "status": "partial",
+      "keyNumbers": "plan: 19 routes (1 injected / 18 needs-input with previewFallback 'Fake Company'), 173 needs-input values, forbidden-copy PASS (79 comparisons), brand isolation PASS at plan time (252 strings vs 3 derived terms: domainchecker / domainchecker.co.kr / 도메인체커); seo:qa 25/29 — all robots/canonical/JSON-LD/sitemap/route-200/console checks PASS; 4 FAILs from 2 root causes on the PREVIEW PROXY only, both proven closed in the Task 23 production build (see classifications)",
+      "runPath": "data/domainchecker.co.kr/production-seo-plans/2026-08-19T07-23-36-101Z",
+      "failureClassification": "(a) /blog title not rewritten: generic-engine-defect — source title contains '&', served HTML entity-escapes it to '&amp;', the Task 21 literal-string title/flight rewrite misses it, source title reaches the browser; any site with & < > or quotes in <title> hits this; instance of the fragility 21-handoff pre-named ('literal string match ... post-hydration QA is the safety net' — the safety net fired exactly as designed); PROVEN closed downstream: production build bakes titles into route-map.json and /blog serves 'Fake Company' (production qa.json browser-title:/blog ok). (b) source-brand terms in served head on /blog + /blog/check-domain-availability: site-specific-difference — the source site is itself a Next.js app; its hoistable <link rel=preload as=image imageSrcSet=...> nodes carrying source-host _next/image URLs were faithfully reconstructed and React 19 hoists them into document.head at runtime; stripe's tree had no such nodes; remedied by the asset layer by design (production build: 0 external requests, head preloads rewritten to /media)"
+    },
+    {
+      "stage": "asset inventory + materialization + assets:qa",
+      "status": "pass",
+      "keyNumbers": "inventory: 171 entries (131 url / 40 inline-svg, 17 truncated), classification 10 replacement-required / 114 recommended / 7 license-review; fonts: 0 @font-face (no --live-font-css, provenance not-fetched, 1 family license-needs-review); materialize: 96/97 fetched, 79 unique files 2.9 MB, 96 rewrite entries; assets:qa over /, /blog, /blog/check-domain-availability: source-host requests baseline 28 -> independent 0, other-external 0 — FULL asset independence (stripe's accepted run has residual 4)",
+      "runPath": "data/domainchecker.co.kr/asset-inventories/2026-08-19T07-27-37-144Z + data/domainchecker.co.kr/asset-materializations/2026-08-19T07-27-43-521Z",
+      "failureClassification": "1 fetch http-error (ai000096, a /_next/image URL for a blog cover recorded 2026-08-13 that the source site no longer serves): live-source-instability; recorded by the engine, never invented"
+    },
+    {
+      "stage": "ProductionSpec compile + production build + production:qa",
+      "status": "partial",
+      "keyNumbers": "production-spec-v1 written before bake, 5 layers pinned by id + dir-sha256-v1, mode preview, 7 machine-recorded indexability blockers, next build 2683 ms, isolated-launch QA: 150/152 — routes 19/19 x200, browser titles incl. /blog = 'Fake Company', content proof 5/5 fake values visible, theme link + computed paint 5/5, overflow clean both viewports, hydration 0 errors, external requests 0 (empty host set); 2 FAILs: interactions-desktop:/ (clicked=1 regionsAppeared=0) and interactions-mobile:/ (clicked=2 regionsAppeared=0)",
+      "runPath": "data/domainchecker.co.kr/production-specs/2026-08-19T07-29-18-763Z + data/domainchecker.co.kr/production-builds/2026-08-19T07-29-18-763Z",
+      "failureClassification": "generic-engine-defect (QA metric, false negative — the built site is fine): src/production/qa.ts sampleInteractions() requires regionsAppeared>0 counting ONLY elements with id^=wr-obs-/wr-dyn- (dynamically-mounted regions); domainchecker's 13 verified patterns are ALL disclosure with static/native targets (8 static, 0 dynamic, 5 undeclared), so the count is structurally 0 even when the interaction works; direct browser probe of the shipped package (node server.mjs, Playwright): clicking the <summary> trigger n000932 flips <details> open false->true and renders the content box (766x59.75 desktop, 356x105.25 @390 mobile) — behavior verified working; ANY site whose verified interactions are all static-target would false-fail these 2 checks"
+    }
+  ],
+  "genericEngineDefects": [
+    {
+      "id": "GED-1-production-qa-interaction-metric",
+      "severity": "medium (false FAIL of a passing build; blocks clean acceptance on static-target-only sites)",
+      "where": "src/production/qa.ts sampleInteractions()",
+      "defect": "interaction success is defined as 'a wr-obs-*/wr-dyn-* region became visible', which encodes a stripe-shaped assumption (runtime-mounted menu/dialog regions); sites whose verified patterns have only static or native targets (e.g. native <details> accordions — domainchecker: 13/13) always report regionsAppeared=0 and fail, even though the interaction demonstrably works in the same package (verified by direct probe)",
+      "evidence": "data/domainchecker.co.kr/production-builds/2026-08-19T07-29-18-763Z/report/qa.json (interactions-desktop:/ + interactions-mobile:/) vs the probe result recorded in this handoff"
+    },
+    {
+      "id": "GED-2-fake-provider-repair-nonconvergence",
+      "severity": "low (test-provider seam; honest FAIL, documented operator seam recovers)",
+      "where": "content-injection fake provider + content:qa --repair loop",
+      "defect": "the deterministic fake provider's minimum output token 'Fake' (4 chars, single unbreakable word) exceeds the physical capacity of very short slots (sourceCharacterCount 1, mobile box ~39px), and the repair loop re-invokes the same deterministic provider, regenerating the identical value — 2 iterations burned with zero progress and no no-progress detection; any site with 1-3-char micro-slots (chips, single-character CTA pills, common on Korean sites) reproduces this",
+      "evidence": "data/domainchecker.co.kr/content-runs/2026-08-19T07-18-26-879Z/report/layout-qa.json repairCandidates (home.main.cta.102-da-dr-seo.label.01, home.main.text.content-3, both 'clipped horizontally @390')"
+    },
+    {
+      "id": "GED-3-seo-proxy-title-entity-escaping",
+      "severity": "medium for the Task 21 preview proxy only — PROVEN closed in the Task 23 production path",
+      "where": "src/seo/serve.ts head/flight literal-string title rewrite (Task 21 serve-boundary delivery)",
+      "defect": "a source <title> containing '&' is served as '&amp;', the literal string match misses it, and the SOURCE title (with source brand) reaches the browser on that route; & in titles is extremely common, so any site titled 'X & Y' leaks on the preview proxy; the 21-handoff pre-named the literal-match fragility and its post-hydration QA safety net caught it exactly as designed; Task 23's route-map title baking serves the correct 'Fake Company' on the same route",
+      "evidence": "seo:qa /blog expected 'Fake Company' actual '블로그 · 도메인체커 | 도메인 투자 & SEO 가이드 | 도메인체커' (production-seo-plans/2026-08-19T07-23-36-101Z/report/qa.json) vs production-builds/2026-08-19T07-29-18-763Z/report/qa.json browser-title:/blog ok"
+    }
+  ],
+  "siteSpecificFindings": [
+    "dark-accent curated theme is compatible-with-warnings on domainchecker (only asset-color-mismatch-risk) whereas it was honestly refused on stripe — the compatibility gate genuinely discriminates by site, it is not a hardcoded verdict",
+    "0 paint-twin and 0 svg-text bindings: the Slot V2 v2 surfaces added in Task 19.1 simply do not occur on this site; the compiler emits them as 0 rather than failing (svg-opaque exclusions: 456)",
+    "source site is itself Next.js: reconstructed hoistable <link rel=preload imageSrcSet> nodes get re-hoisted into the clone's head by React 19, carrying source-host image URLs until the asset layer rewrites them (root cause of the seo:qa head-brand FAILs; gone in the production build)",
+    "asset independence is TOTAL here (baseline 28 -> 0 residual; production QA external hosts {}) because the site has no replacement-required rendering surfaces on the QA routes — cleaner than the stripe reference run (residual 4)",
+    "all 13 verified interaction patterns are native-details/aria-expanded disclosures with static targets — the site that exposes GED-1",
+    "1 of 97 asset URLs (blog cover via /_next/image) died between observation (2026-08-13) and today: live-source-instability, recorded as http-error"
+  ],
+  "notExercised": [
+    "qa:reconstruction against the LIVE original (snapshot/live/clone three-way) — template-parity QA against the exact clone was used as the fidelity gate instead",
+    "fresh interaction exploration (reused the 2026-08-13 exploration/model runs by design)",
+    "assets:inventory --live-font-css (@font-face recovery) — font QA reports 'unobserved', 1 family stays license-needs-review",
+    "dark-accent / warm-editorial theme RUNS (only the deterministic compatibility gate was exercised for them)",
+    "seo:plan --domain (production-domain mode), --facts business facts, operator image replacement seam",
+    "content injection beyond route / (18 routes stay needs-input with brand-only fallback, as on stripe)"
+  ],
+  "overallVerdict": "PIPELINE_GENERALIZES",
+  "verdictBasis": "every stage from offline SiteSpec recompile through the isolated production package ran to completion on a non-stripe Korean site; the only hard FAILs decompose into 2 QA-metric/preview-proxy generic defects (both with the shipped artifact proven correct by direct evidence), 1 test-provider floor recovered through the documented operator seam, 1 site-specific head-leak closed by the asset layer, and 1 live-source instability — no stage produced a wrong artifact silently, and every failure was surfaced by the engine's own QA before this agent looked"
+}

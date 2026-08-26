@@ -1,0 +1,298 @@
+{
+  "schema": "pre-overnight-architecture-audit-v1",
+  "auditDate": "2026-08-26",
+  "mode": "READ_ONLY_ARCHITECTURE_INVESTIGATION",
+  "report": "docs/result/pre-overnight-architecture-audit-2026-08-26.md",
+  "method": {
+    "orchestrator": 1,
+    "specialists": 7,
+    "aggregator": "fresh, isolated",
+    "isolation": "no specialist saw another's conversation; all transfer via disk handoffs",
+    "adjudicationRule": "ACTUAL CODE IS CURRENT REALITY",
+    "repoWrites": ["docs/result/pre-overnight-architecture-audit-2026-08-26.md", "docs/result/handoffs/pre-overnight-audit.json"],
+    "gitOperations": 0,
+    "buildsRun": 0,
+    "testsRun": 0,
+    "liveCrawls": 0
+  },
+
+  "verdict": "READY WITH ARCHITECTURE CHANGES",
+
+  "checkpointRecommendation": "NEEDS_REVIEW_BEFORE_CHECKPOINT",
+  "checkpointDetail": {
+    "branch": "main",
+    "head": "2777b41 chore: initialize web-recon foundation (Phase 1) — the ONLY commit, 18 tracked files",
+    "modified": 6,
+    "deleted": 2,
+    "untrackedPaths": 125,
+    "untrackedRealFiles": 501,
+    "uncommittedLoc": 83336,
+    "commitSizeIfStaged": "47MB / 501 files (40MB = 93 evidence PNGs; 6.5MB = 330 .ts + 37 .md + 37 .json)",
+    "dataDirIgnored": true,
+    "dataDirSize": "18GB (stripe 12G, linear 3.2G, nextjs 1.7G, domainchecker 695M, mozilla 465M, seoworld 406M)",
+    "gigabyteRisk": false,
+    "secretsFound": 0,
+    "secretScan": "every committable non-PNG file scanned for fc-*/sk-ant-*/sk-*/AKIA*/ghp_* — 0 matches; .env gitignored and holds one key NAME only",
+    "blockers": [],
+    "deliberateDecisionsRequired": [
+      "PNG question: 40MB of cited evidence screenshots are permanent once in history — decide explicitly, not via `git add -A`",
+      "EVIDENCE LOSS TRAP: .gitignore:26 (*.log) excludes all 90 regression logs — the entire measured basis for '17 suites / 1,794 checks' would NOT be committed and dies to `git clean -xfd`",
+      "Checkpoint on a branch (checkpoint/pre-overnight-2026-08-26), not on main, so the single-commit history survives if the program is abandoned"
+    ],
+    "benignDeletions": [
+      "src/observer/.gitkeep (dir now holds 9 real files)",
+      "docs/result/작업내용-2026-08-13.md — byte-identical 5,333-byte rename; new name carries a doubled .md.md extension worth fixing in the same commit"
+    ]
+  },
+
+  "architecture": {
+    "siteInstance": "PROTO_SITEINSTANCE — release-project.json already carries site identity, ArtifactRef{id,path,hash} REFERENCES (not copies) to all 7 lineage stages, authored deltas in resolutions[], and per-stage fresh|stale|blocked status. EXTEND IT; never build a parallel model. Four defects: (1) identity is run-scoped, projectId=${host}-${spec.runId}, two projects already exist for linear.app 22 min apart; (2) re-prepare DESTROYS authored state, prepare.ts:223 hardcodes resolutions:[] and :238 runs:[]; (3) vocabulary is value-substitution only, no page/region enablement; (4) acceptedLineage and stageStatus[*].artifact diverge after a build. CRITICAL: release:resolve and release:build have NEVER run on real data — all 5 run.json on disk are kind:'prepare'.",
+    "region": "DOES NOT EXIST. Build a deterministic region compiler as a read-only sibling artifact. regionId = <scope>#<landmark>/<childPath> using ELEMENT-CHILD INDEX chains (never global nNNNNNN ordinals, which renumber on any inserted div — interaction-explorer/types.ts:443-448), scope='global' when the subtree fingerprint is on every non-locale route (min 2) else the route key, plus a tag-skeleton sha256 recorded BESIDE the id, versioned behind regionSchemaVersion. All three primitives already ship at page scope: discover-targets.ts:614-626, build-locator.ts:107-120, structural-profile.ts:588-626. Lifting the skeleton hasher to subtree scope ALSO repairs the stripe shared-shell failure. Join slots via slot-bindings.json (pageId,viewport,nodeId) — ZERO slot-schema change. Do NOT use persisted ancestorIds (truncated to 12 at extract.ts:315/360/385/416, omitting exactly the top ancestors where region roots sit). Name it PageRegion or Block — 'region' and 'Section' are both taken.",
+    "contentV2": "EXTEND, do not build a second engine. Every proposed layer maps onto an existing concept except Region Plan, which is the one genuinely new layer. Slot-subset repair ALREADY WORKS in place (repair.ts:39-107); the blocker is the TRIGGER (layout-evidence-only, repair.ts:35) and the missing reason field on RepairItem, not the granularity. GenerationBatch is declared with the exact right shape (id+scope+route+unitIds[]) and NEVER EXECUTED — cli-content-generate.ts:74 passes all 1,202 linear units in one call, contradicting the schema's own comment at types.ts:237. Making the batch key a Region unlocks region repair, real batching, cross-page consistency scoping and per-region telemetry at once.",
+    "editor": "FEASIBLE with ZERO changes to any generated file — but CUT tonight for capacity, not architecture. Serve-boundary overlay ships three times (theme/serve.ts:60-117, seo/serve.ts:98-184, assets/serve.ts:70). seo/serve.ts:81-84 already splices arbitrary HTML before </head>. Slot->DOM is already solved: data-wr-node on every element (compile-node.ts:249) + parity-qa.ts:858's existing resolver; DOM->slot is an in-memory inversion. Both viewports render into ONE document (.wr-variant[data-wr-viewport]) so desktop/mobile is an iframe resize. Portals selectable via data-wr-dyn-node after trigger activation. ADD NO NEW DOM ATTRIBUTE. Two unmeasured unknowns block a build: React-19 survival of an injected <script>, and next-start restart latency (module-memoized contract, no hot reload)."
+  },
+
+  "reuse": [
+    {"what": "Site Factory Controller", "existsAs": "src/release/graph.ts + stages.ts", "detail": "stage DAG + pluggable runners + cascade fixpoint + drift detection + dry-run + crash-safe save + retry/resume. Can host content->production; CANNOT host discovery->template."},
+    {"what": "Editor write format", "existsAs": "production-resolution-v1 (release/types.ts:211-237)", "detail": "closed 8-field vocabulary already includes urls[slotKey], assets[assetId], routeContent[route].slotValues validated against slots.json at resolve.ts:74-89"},
+    {"what": "Revision precedent", "existsAs": "reconstruction-qa iterations/q000..q00N (store.ts:34-35)", "detail": "shipped numbered append-only chain: a corrected clone is generated inside q00N, never on top of the baseline"},
+    {"what": "No-question-bomb UX", "existsAs": "release/checklist.ts:104-115 + types.ts:210", "detail": "'Every field optional — this is NOT an intake form'; 378 requirements render as a 238-line checklist, groups over 8 collapse"},
+    {"what": "Preview server", "existsAs": "parity-qa.ts:114-173 buildApp/startApp + cli-content-preview.ts", "detail": "live next start; pnpm content:preview is already a long-running human preview"},
+    {"what": "Region primitives", "existsAs": "discover-targets.ts:614-626, build-locator.ts:107-120, structural-profile.ts:588-626", "detail": "child-index path, tag:nth path, domain-separated sha256 skeleton hasher — all shipped at page scope"},
+    {"what": "Slot->DOM resolver", "existsAs": "parity-qa.ts:858", "detail": ".wr-variant[data-wr-viewport=V] [data-wr-node=N] — the exact selector an editor needs"},
+    {"what": "Asset reference+override", "existsAs": "release/resolve-assets.ts:56-185", "detail": "derives a new materialization without touching the base; caveat: :69 does a full 210MB cp per edit"},
+    {"what": "Serve-boundary HTML injection", "existsAs": "seo/serve.ts:68-86", "detail": "splices arbitrary HTML before </head> AND rewrites the RSC flight payload — required or React reverts at hydration"},
+    {"what": "Requirement/blocker taxonomy", "existsAs": "release/types.ts:58-89 + SEVERITY_POLICY :444", "detail": "10 states, 11 requirement kinds, 3 severities, 4 statuses, deterministic artifact-derived ids"}
+  ],
+
+  "newModulesRecommended": [
+    {"module": "src/recon-template/route-policy.ts", "purpose": "pure route scope policy computation (CORE_RECONSTRUCT / COLLECTION_INDEX / COLLECTION_REPRESENTATIVE / STRUCTURE_ONLY / EXCLUDE)", "calledFrom": "recon-template/compile.ts:86", "schemaImpact": "optional scopePolicy/scopePolicyReason on SiteMapRouteSchema + 2 manifest counts; SiteSpec/SlotV2/selector/multi-observer/reconstruction all UNTOUCHED"},
+    {"module": "src/regions/** + src/cli-compile-regions.ts", "purpose": "deterministic PageRegion compiler, read-only over reconstruction pages + slot-bindings", "calledFrom": "new CLI", "schemaImpact": "new sibling artifact only; zero slot-schema change"},
+    {"module": "src/release/instance.ts", "purpose": "site-scoped identity + non-destructive prepare + authored{} accessor over release-project.json", "calledFrom": "release/prepare.ts, release/store.ts", "schemaImpact": "additive `authored` object on a .strict() schema — a deliberate schema-version event"},
+    {"module": "src/telemetry/with-telemetry.ts", "purpose": "generic withTelemetry<T extends {name}>(obj, methodKey, ctx) covering all three AI seams", "calledFrom": "providers.ts:239 resolveGenerator, interaction-patterns/ai/analyzer.ts:42, release/nl.ts:48", "schemaImpact": "optional telemetry field on ContentGenerationResult.generator + append-only <runDir>/telemetry.json"},
+    {"module": "content-runs/<run>/slot-accounting.json (sibling artifact)", "purpose": "two-axis slot accounting: origin (PROVIDED/GENERATED/SYNTHETIC/PRESERVED) x disposition (REMOVED/HUMAN_APPROVED/UNRESOLVED)", "calledFrom": "content-injection/run.ts:125-184 writeReviewArtifacts", "schemaImpact": "derived sibling; slot-values.json stays BARE"},
+    {"module": "editor/ (root Next app) + src/editor/ + src/cli-editor.ts", "purpose": "Visual Editor V1 — DEFERRED, listed for placement only", "calledFrom": "n/a", "schemaImpact": "zero workspace change, zero new dependencies; do NOT add to root tsconfig.json"}
+  ],
+
+  "doTonight": [
+    {"item": "Git checkpoint", "wave": 0, "reason": "highest operational risk, cheapest fix; blocking prerequisite"},
+    {"item": "Re-measure the 1,794 baseline", "wave": 0, "reason": "26C logs predate current src/ mtimes and no suite self-asserts its check count"},
+    {"item": "GED-E (proxy entity-title rewrite)", "wave": 1, "reason": "smallest, best-isolated defect; both halves of the fix already exist in-repo (rewrite.ts:17-24, bake.ts:295-297)"},
+    {"item": "GED-G (per-file residual render list)", "wave": 1, "reason": "data already captured at network-qa.ts:21-40; a scope+join gap. Real fix is the ['/'] default at cli-assets-qa.ts:57"},
+    {"item": "Region Model compiler (consumer-free)", "wave": 1, "reason": "read-only new artifact; touches no existing schema"},
+    {"item": "Template Factory V2 + Route Scope + Collections", "wave": 2, "reason": "narrow seam at compile.ts:87; STRUCTURE_ONLY is free; -47.8% to -62.8% slot reduction measured"},
+    {"item": "SiteInstance (extend release-project) + theme-edit enablement + non-destructive prepare + template report/ hash exclusion", "wave": 2, "reason": "resolves stop condition A; unblocks the whole program"},
+    {"item": "Content V2 + GED-D no-progress guard + slot accounting + cost telemetry", "wave": 2, "reason": "one agent, one module tree; GED-D's provider half is subsumed by V2"},
+    {"item": "Full regression + per-suite count diff", "wave": "0,1,2,3,4", "reason": "mandatory gate at every wave boundary"},
+    {"item": "Final audit + machine handoff", "wave": 4, "reason": "next-program input"}
+  ],
+
+  "optionalIfTime": ["Collection Foundation", "GED-F detector half only", "Revision", "Template/Site Library registry"],
+
+  "prerequisites": [
+    {"for": "everything", "requires": "wave-0 checkpoint + re-measured baseline"},
+    {"for": "Template Factory V2", "requires": "must add NO `template` StageRunner (build.ts:218 and smoke:release's 0-rerun assertions would become false)"},
+    {"for": "Template Factory V2", "requires": "add report/ to the template stage excluded[] hash set (prepare.ts:126-145, freshness.ts:151-160) or qa:recon-template after prepare bricks release:build"},
+    {"for": "Region Model", "requires": "must not open src/recon-template/types.ts; join via slot-bindings.json"},
+    {"for": "Content V2", "requires": "SiteInstance defines authored.slotValues and owns stages.ts; Content V2 consumes read-only and must not touch contentStageRunner"},
+    {"for": "Cost telemetry", "requires": "Content V2 owns providers.ts"},
+    {"for": "Brand Sanitization", "requires": "SiteInstance schema must land first (both want release/types.ts)"},
+    {"for": "Revision", "requires": "Brand Sanitization lands REQUIREMENT_KINDS + SEVERITY_POLICY first; Revision rebases and appends"}
+  ],
+
+  "parallelGroups": [
+    {"wave": 0, "serial": true, "items": ["Git checkpoint", "Full regression re-measure"], "gate": "17 suites / 1,794 checks / 0 failures with per-suite counts matching the baseline table; typecheck exit 0"},
+    {"wave": 1, "parallel": ["GED-E", "GED-G", "Region compiler"], "falselyParallel": ["GED-E and GED-G both want src/assets/rewrite.ts — GED-E OWNS it, GED-G must not open it", "Region would want recon-template/types.ts under a naive design; the slot-bindings join removes the overlap"], "gate": "full regression + count diff"},
+    {"wave": 2, "parallel": ["Template Factory V2 + Route Scope + Collections (owns recon-template/*)", "SiteInstance + theme edge + non-destructive prepare (owns release/*)", "Content V2 + GED-D + slot accounting + telemetry (owns content-injection/*)"], "falselyParallel": ["SiteInstance and Content V2 both change how content values are written — contract: SiteInstance defines authored.slotValues and owns stages.ts; Content V2 consumes read-only", "Template Factory V2 needs one line in release/prepare.ts — file it as a change request to the SiteInstance owner, never edit directly", "all three want package.json script entries — defer to the wave integrator"], "gate": "full regression + count diff + additivity proof (every existing on-disk artifact still validates)"},
+    {"wave": 3, "serialWithinWave": ["Brand Sanitization (detector-only)", "Revision + Library registry"], "reason": "both need src/release/types.ts; two sequential slots, not two parallel agents", "gate": "full regression + count diff"},
+    {"wave": 4, "serial": true, "items": ["Full regression", "per-suite count diff", "typecheck", "final audit + handoff"]}
+  ],
+
+  "sequentialGates": [
+    "wave 0 must complete before ANY implementation agent starts",
+    "every wave boundary requires a full 17-suite regression AND a per-suite check-count diff — no suite asserts its own total, so an exit code alone is not evidence",
+    "wave 2 additionally requires an additivity proof: all existing on-disk artifacts must still validate",
+    "Brand Sanitization must land its REQUIREMENT_KINDS + SEVERITY_POLICY additions before Revision opens release/types.ts"
+  ],
+
+  "fileOwnership": {
+    "singleOwnerFiles": [
+      "src/recon-template/types.ts", "src/recon-template/compile.ts", "src/recon-template/site-map.ts",
+      "src/release/types.ts", "src/release/store.ts", "src/release/prepare.ts", "src/release/graph.ts",
+      "src/release/stages.ts", "src/release/collect.ts", "src/release/freshness.ts",
+      "src/content-injection/types.ts", "src/content-injection/providers.ts", "src/content-injection/repair.ts", "src/content-injection/run.ts",
+      "src/production/bake.ts", "src/production/qa.ts", "src/production/run.ts", "src/production/types.ts",
+      "src/assets/rewrite.ts", "src/assets/network-qa.ts",
+      "package.json",
+      "scripts/smoke-release.ts", "scripts/smoke-production.ts", "scripts/smoke-content-injection.ts",
+      "scripts/smoke-seo.ts", "scripts/smoke-assets.ts", "scripts/smoke-recon-template.ts"
+    ],
+    "bySubsystem": {
+      "TemplateFactoryV2+RouteScope+Collections": ["src/recon-template/types.ts", "src/recon-template/compile.ts", "src/recon-template/site-map.ts", "src/recon-template/route-policy.ts (new)", "src/cli-compile-recon-template.ts", "scripts/smoke-recon-template.ts"],
+      "SiteInstance": ["src/release/types.ts", "src/release/store.ts", "src/release/prepare.ts", "src/release/graph.ts", "src/release/freshness.ts", "src/release/stages.ts", "src/release/instance.ts (new)", "scripts/smoke-release.ts"],
+      "ContentV2+GED-D+telemetry": ["src/content-injection/**", "src/cli-content-generate.ts", "src/cli-content-qa.ts", "src/telemetry/with-telemetry.ts (new)", "scripts/smoke-content-injection.ts"],
+      "RegionCompiler": ["src/regions/** (new)", "src/cli-compile-regions.ts (new)"],
+      "GED-E": ["src/seo/serve.ts", "src/seo/render-head.ts", "src/assets/rewrite.ts", "scripts/smoke-seo.ts"],
+      "GED-G": ["src/cli-assets-qa.ts", "src/assets/network-qa.ts", "src/assets/types.ts", "src/production/qa.ts", "src/production/packaging.ts", "scripts/smoke-assets.ts", "scripts/smoke-production.ts"],
+      "BrandSanitization": ["src/release/types.ts", "src/release/collect.ts", "src/release/plan.ts", "src/content-injection/brand-leak.ts", "src/seo/link-qa.ts", "src/production/bake.ts"],
+      "Revision+Library": ["src/release/types.ts", "src/release/store.ts", "src/editor/registry.ts (new)", "scripts/smoke-revision.ts (new)"]
+    },
+    "worstCollisions": [
+      {"file": "src/recon-template/types.ts", "importers": 25, "wantedBy": ["Template Factory V2", "Slot policy", "Region model", "Brand Sanitization/GED-F", "Visual Editor"], "resolution": "single-owner it; route the Region slot join through slot-bindings.json so Region never opens it"},
+      {"file": "package.json", "scriptEntries": 57, "wantedBy": ["every subsystem"], "resolution": "no unified CLI dispatcher exists; defer ALL script additions to a wave integrator"},
+      {"file": "src/release/types.ts", "wantedBy": ["SiteInstance", "Brand Sanitization", "Revision"], "resolution": "sequence, do not parallelize"}
+    ],
+    "hotFilesByImportCount": [
+      {"file": "src/observer/types.ts", "importedBy": 61, "crossModule": 9},
+      {"file": "src/sitespec/index.ts", "importedBy": 43, "crossModule": 6},
+      {"file": "src/reconstruction-qa/types.ts", "importedBy": 28, "crossModule": 0},
+      {"file": "src/interaction-explorer/types.ts", "importedBy": 27, "crossModule": 4},
+      {"file": "src/recon-template/types.ts", "importedBy": 25, "crossModule": 1, "note": "#5 by count, #1 by contention"},
+      {"file": "src/interaction-patterns/types.ts", "importedBy": 24, "crossModule": 3},
+      {"file": "src/selector/types.ts", "importedBy": 21, "crossModule": 5},
+      {"file": "src/reconstruction/types.ts", "importedBy": 21, "crossModule": 1},
+      {"file": "src/reconstruction/index.ts", "importedBy": 19, "crossModule": 7},
+      {"file": "src/interaction-detector/types.ts", "importedBy": 19, "crossModule": 4}
+    ]
+  },
+
+  "doNotTouch": [
+    {"path": "docs/result/handoffs/24-aggregation-phase1.json", "severity": "HIGHEST", "why": "NOT documentation — a RUNTIME INPUT. src/release/debt.ts:15 hardcodes it and reads it at release-prepare time, filtering on decision==='post-mvp' (:44). Moving/renaming/reformatting it silently empties every release project's technical-debt register, and the miss DEGRADES TO A WARNING (:19-25), never an error. An agent tidying docs/ would break a shipped feature with no failing test."},
+    {"path": "data/stripe.com/production-specs/2026-08-19T06-36-35-798Z", "severity": "HIGH", "why": "hardcoded at scripts/smoke-release.ts:1623, read unguarded at :1625; data/ is gitignored so loss is unrecoverable"},
+    {"path": "data/stripe.com/{recon-templates/2026-08-18T10-45-40-007Z, content-runs/2026-08-18T10-46-26-129Z, theme-runs/2026-08-18T12-07-34-566Z, production-seo-plans/2026-08-18T19-26-12-572Z, asset-materializations/2026-08-19T05-54-55-204Z, asset-inventories/2026-08-19T05-54-47-361Z}", "severity": "HIGH", "why": "smoke:release lineage, byte-checked"},
+    {"path": "src/reconstruction/runtime-template.ts, src/reconstruction/app-template.ts, src/recon-template/app-templates.ts", "severity": "HIGH", "why": "embed complete Next.js/React source inside template literals (INTERACTION_RUNTIME_TSX spans runtime-template.ts:379-959). tsc CANNOT detect corruption here, and their inner import statements are not real module edges."},
+    {"path": "docs/result/handoffs/*-regression-logs/", "severity": "HIGH", "why": "the only measured evidence for the 1,794 baseline, and gitignored (.gitignore:26) so unrecoverable if deleted"},
+    {"path": "data/domainchecker.co.kr/content-runs/2026-08-19T07-18-26-879Z/report/repair/, data/nextjs.org/content-runs/2026-08-19T07-13-56-376Z/report/repair/", "severity": "MEDIUM", "why": "byte-identical iteration pairs reproducing GED-D"},
+    {"path": "data/domainchecker.co.kr/production-seo-plans/2026-08-19T07-23-36-101Z/report/qa.json", "severity": "MEDIUM", "why": "the only on-disk reproduction of GED-E"},
+    {"path": "data/stripe.com/asset-materializations/2026-08-19T05-54-55-204Z/report/network-qa.json", "severity": "MEDIUM", "why": "the GED-G under-count reproduction (3-route census)"},
+    {"path": "docs/result/handoffs/26B-verification-screens/, 26C-verification-screens/", "severity": "MEDIUM", "why": "93 PNGs cited as visual evidence by 26-screenshots-index.md"},
+    {"path": "all historical run dirs under data/<host>/<kind>/<run-id>/", "severity": "HIGH", "why": "'historical artifacts modified 0' is an audited invariant across Tasks 23-26; new work must create NEW run ids only"},
+    {"path": "docs/result/*.md for tasks 01-26", "severity": "MEDIUM", "why": "append new reports, never edit accepted ones"}
+  ],
+
+  "highRiskConflicts": [
+    {"pair": "SiteInstance <-> Content Run", "level": "HIGH", "reason": "the content run holds the only authored bytes production consumes (slot-values.json, production/run.ts:234,:375) and two mutually exclusive editing doctrines govern one file: content-injection/run.ts:216-244 sanctions in-place editing, release/store.ts:13-15 forbids it. Getting it wrong silently discards operator work on every rebuild."},
+    {"pair": "Region OFF <-> Interaction", "level": "HIGH", "reason": "an asymmetric cut leaves a live trigger pointing at a removed target; runtime-template.ts:672's declared-region querySelector has an UNVERIFIED null path; the compiler throw does not fire (plan-reconstruction.ts:195 spans all SiteSpec pages) and reconstruction is frozen so the real validator never re-runs. production/qa.ts:404-410 samples 3 triggers on / and needs an observable response."},
+    {"pair": "Brand Sanitization <-> SVG limitation", "level": "HIGH", "reason": "the source logo ships as opaque <path> geometry inside node.v, plus aria-label='Linear' x208 and <symbol id='Linear'> x128 that NO module detects. source-brand-asset is release-blocking and its only listed resolutions cannot unlock indexable production (requirements.ts:209-216) — so ANY source with an inline-SVG logo is structurally unable to reach PRODUCTION_READY today."},
+    {"pair": "Template Factory V2 <-> frozen stages", "level": "MEDIUM_HIGH", "reason": "'template' and 'reconstruction' are declared FROZEN (release/types.ts:52, enforced build.ts:137/164/276). V2 changes the COMPILER, not existing runs, so the freeze survives — provided V2 adds no `template` StageRunner. Separately, cli-qa-recon-template.ts:96/:110 write into the template run dir and build.ts:164 throws on frozen drift: add report/ to excluded[]."}
+  ],
+
+  "measurementDefects": [
+    {"id": "BRAND-COUNT", "severity": "HIGH", "what": "bake.ts:264 counts only `https://${host}` for hosts derived from NETWORK REQUESTS (run.ts:243-247), missing hrefs, visible text, aria-labels and symbol ids. Ground truth: stripe package holds 11,061 stripe.com occurrences across 15 subdomains vs a reported 430; linear holds 782 URLs + 208 aria-label + 128 symbol id + 89 plain-text in index.html + 294 src= at the source CDN.", "compounding": "qa.ts:436-443 filters observed hosts against knownResidualSourceHosts which for linear IS the source host — the assertion is vacuous by construction. sourceHostMentionsInHtml is computed at qa.ts:216 and returned at :459 with ZERO consumers in src/.", "corroboration": "independently found by Specialist G: smoke-production.ts:266 asserts residualSourceUrlOccurrencesInSite === 1 exactly while linear reports sourceHostAbsolute:0 alongside 316 real mentions.", "notBroken": "the network-request blocker path is honest (60 linear / 4 stripe residuals -> 84 blocking replacement-image requirements); head/SEO isolation is independently verified clean; content-hashed /media/<sha256> erases source filenames; THE GATE IS NOT FALSELY GREEN — source-brand-asset plus the 84 blockers hold linear at INPUTS_REQUIRED.", "fix": "a new release-blocking requirement KIND collected from the existing brand-leak report at collect.ts:520-526 — never a new QA assertion"},
+    {"id": "NO-SUITE-SELF-VALIDATION", "severity": "MEDIUM", "what": "rg for EXPECTED_CHECK|EXPECTED_TOTAL|TOTAL_CHECKS|expectedChecks over scripts/smoke-*.ts returns 0 matches. Every count is emergent from how many times check() happens to be called — a suite could silently emit 40 fewer checks and still exit 0 and print PASS.", "fix": "make a per-suite check-count diff against the baseline table a mandatory gate step"},
+    {"id": "FIXTURE-BLIND-SPOTS", "severity": "MEDIUM", "what": "two of the four carried defects survived only because of fixture blind spots: smoke:seo section 7 uses an entity-free ASCII title ('Root Original Title', smoke-seo.ts:72/:170) which is why GED-E was never caught; no suite exercises assets:qa with a multi-route census, which is why GED-G's ['/'] default went unnoticed. 'Suite passes' is weak evidence on these paths."},
+    {"id": "NO-PRODUCTION-SEO-PLAN-EVER", "severity": "MEDIUM", "what": "all 5 SEO plans on disk are preview mode — no production-mode plan has ever been generated, so every https://${domain} canonical/sitemap/robots branch is entirely unverified."}
+  ],
+
+  "ged": [
+    {"id": "GED-D", "title": "micro-slot repair non-convergence", "verdict": "YES_WITH_ORDERING_CONSTRAINT", "severity": "LOW as an MVP blocker, MEDIUM as an engine defect", "scope": "GENERIC — reproduced independently on two unrelated sites; trigger is any slot with sourceCharacterCount <= 3", "code": ["src/content-injection/providers.ts:75 (Math.max(4,target))", "src/content-injection/repair.ts:34-35"], "fixture": "byte-identical iteration pairs at data/domainchecker.co.kr/content-runs/2026-08-19T07-18-26-879Z/report/repair/ and data/nextjs.org/content-runs/2026-08-19T07-13-56-376Z/report/repair/", "constraint": "take ONLY the no-progress guard now; the provider length-awareness half is subsumed by Content Generation V2. BLAST RADIUS: changing fakeText changes every generated string — smoke:seo, smoke:release and smoke:production all depend on literal fake output."},
+    {"id": "GED-E", "title": "proxy entity-title rewrite", "verdict": "YES", "severity": "LOW for the shipped deliverable (production bakes titles since Task 23), MEDIUM on the preview path", "scope": "GENERIC — any site whose <title> contains an entity-escapable character, preview path only", "code": ["src/seo/serve.ts:77-79 (literal split/join)"], "fixture": "data/domainchecker.co.kr/production-seo-plans/2026-08-19T07-23-36-101Z/report/qa.json — 4 failures, the & in the title is the trigger", "note": "both halves of the fix already exist in-repo: assets/rewrite.ts:17-24 rewriteVariants and bake.ts:295-297 escapeForTitle. Stripe's 0-failure SEO QA is a SAMPLING ARTIFACT — it has an entity-bearing title on a route that was never proxied.", "constraint": "none — the natural warm-up item. Land with a negative assertion in smoke:seo covering an entity-escaped title."},
+    {"id": "GED-F", "title": "body-anchor neutralization", "verdict": "YES_WITH_ORDERING_CONSTRAINT", "severity": "MEDIUM visibility, LOW correctness", "scope": "GENERIC — structurally affects any site with uninjected routes; magnitude scales with how few routes were injected", "code": ["absence — rg 'neutraliz|rewriteAnchor' returns 0 hits"], "fixture": "stripe production-builds/2026-08-19T06-36-35-798Z/report/qa.json sourceHostMentionsInHtml:4424; linear 316", "constraint": "this IS the Brand Sanitization subsystem — do not implement standalone. Sequence AFTER Content V2 and AFTER Region/Page ON-OFF (both change which routes are uninjected). FIX AT BAKE, never in the template compiler (grouping.ts:625 is under frozen 46/46 parity). Ship DETECTOR-ONLY tonight; neutralization opt-in, default OFF, because smoke-production.ts:266 asserts residualSourceUrlOccurrencesInSite === 1 exactly. Single-owner src/recon-template/types.ts for the duration."},
+    {"id": "GED-G", "title": "per-file residual render list", "verdict": "YES", "severity": "LOW — an operator-communication gap, not a correctness defect", "scope": "GENERIC — any multi-route site with residual external assets", "code": ["src/cli-assets-qa.ts:57 (?? ['/'])"], "fixture": "data/stripe.com/asset-materializations/2026-08-19T05-54-55-204Z/report/network-qa.json — 3-route census; the newsroom image is ABSENT because that route was never measured", "note": "Task 26 did NOT fix this — it hand-passed --routes and joined in prose; technical-debt.json still carries it open. The data already exists at network-qa.ts:21-40.", "constraint": "pair with GED-E as the low-risk wave-1 pair; expect to update hardcoded residual=5 expectations at smoke-production.ts:423/:442"}
+  ],
+
+  "stopConditions": [
+    {"id": "A", "condition": "SiteInstance seriously duplicates an existing model", "status": "TRIGGERED", "evidence": "release-project.json already carries site identity, hash-pinned ArtifactRef lineage, authored deltas and per-stage derivation state; the resolution pack already expresses per-slot overrides for all 3,079 slots", "alternative": "EXTEND release-project.json — add a stable site-scoped siteId, make prepare non-destructive, declare an additive `authored` object. Never build a parallel model. This is the plan of record."},
+    {"id": "B", "condition": "Region identity cannot be made stable", "status": "NOT_TRIGGERED", "evidence": "a deterministic doc-tree compiler using element-child paths + a tag-skeleton sha256, built from three primitives that already ship at page scope"},
+    {"id": "C", "condition": "Visual Editor needs a large renderer rewrite", "status": "NOT_TRIGGERED", "evidence": "proven false — serve-boundary injection (seo/serve.ts:81-84) + data-wr-node (compile-node.ts:249) + the existing resolver (parity-qa.ts:858) require ZERO renderer change"},
+    {"id": "D", "condition": "Content V2 requires destroying the frozen content architecture", "status": "NOT_TRIGGERED", "evidence": "every V2 layer maps onto an existing concept; only Region Plan is new; slot-subset repair already works in place"},
+    {"id": "E", "condition": "A working-tree checkpoint is impossible", "status": "NOT_TRIGGERED", "evidence": "47MB / 501 files, data/ verified gitignored, zero secrets found — needs two deliberate decisions, not a blocker"},
+    {"id": "F", "condition": "Widespread file-ownership conflict in the parallel plan", "status": "NOT_TRIGGERED_AS_PLANNED", "evidence": "would be TRIGGERED by the naive 23-item plan (four subsystems want the slot contract concurrently); the 5-wave plan plus 27 single-owner files defuses it"}
+  ],
+
+  "postOvernight": [
+    "Visual Editor V1 — after measuring React-19 <script> injection survival and next-start restart latency",
+    "Region/Page ON-OFF consumers with the R0-R7 cascade rules",
+    "GED-F anchor neutralization — after Content V2 and enablement change which routes are uninjected",
+    "Incremental bake / preview overlay seam (one content edit must not cost a 210MB copy + full next build)",
+    "Site CREATION in the release layer (auxiliary.siteSpecDir hardcoded null at prepare.ts:213; frozen roots have no runner)",
+    "A real LLM provider behind the existing ContentGenerator seam, and a real ResolutionParser",
+    "A production-mode SEO plan — none has ever been generated; that entire branch is unverified",
+    "Collection/blog engine behind the already-recorded limitation (release/prepare.ts:227-229)",
+    "QA-result authority — today every QA writes back into the artifact it measured",
+    "Atomic writes / locking — none exist anywhere in the repo",
+    "Artifact GC and an index for the 18GB data/ tree",
+    "README.md / ROADMAP.md / PRODUCT_VISION.md reconciliation for Tasks 25-26"
+  ],
+
+  "docDrift": [
+    {"claim": "Roadmap is current", "claimedIn": "ROADMAP.md", "reality": "ends at Task 24; ZERO mentions of Task 25/26, src/release/ (17 files, 3,666 LOC), smoke:release or any release:* CLI"},
+    {"claim": "README project structure", "claimedIn": "README.md:2017+", "reality": "tree stops around Task 07 — no src/assets/, src/production/, src/release/, src/reconstruction-qa/, 11 CLIs missing; 0 hits for Task 25/26"},
+    {"claim": "ProductionSpec, theme system, asset materialization, SEO Production Engine, Source-vs-Production SEO are NOT implemented", "claimedIn": "docs/info/PRODUCT_VISION.md:501-517", "reality": "all five shipped with real artifacts. (Its claims about site management UI / version-preview-rollback / editing-CMS remain accurate.)"},
+    {"claim": "The Recon Template stays immutable", "claimedIn": "Task 18", "reality": "its own qa:recon-template writes 3 files into the run dir (cli-qa-recon-template.ts:96,110), and template is a FROZEN release stage whose drift throws (build.ts:164)"},
+    {"claim": "16 suites / 1,671 checks", "claimedIn": "Task 24 report + stored memory", "reality": "stale Task-24 baseline; current verified reality is 17 suites / 1,794 checks, recomputed exactly from 26C-regression-logs"},
+    {"claim": "THEME_SELECTION_IMPACTS is part of the dependency model", "claimedIn": "release/graph.ts:16", "reality": "zero ENGINE call sites — but asserted by scripts/smoke-release.ts:1210, so wire it live rather than delete it"},
+    {"claim": "a run never writes a byte into anything it read", "claimedIn": "content-injection/store.ts:5-16", "reality": "true across layers, false within — a content run dir is a mutable accumulator spanning 46 min with manifest.json written last"},
+    {"claim": "no absolute local path ever reaches an artifact", "claimedIn": "observer/store.ts:246-248", "reality": "violated by content-runs .templateManifestFile and all four theme-runs pointers (/Users/woops/...)"},
+    {"claim": "batching is operative", "claimedIn": "docs/result/19-*.md:127 and types.ts:237", "reality": "buildBatches produces batches that are never executed; cli-content-generate.ts:74 passes all 1,202 linear units in one call"},
+    {"claim": "278/278 assets fetched, residual 31->4, measured fallback cost", "claimedIn": "Task 22 / memory", "reality": "stripe-only. Linear is 155/155 and 206->60; linear carries 6 blockers not 7; linear's fallback cost is UNMEASURED (appReflow: null) while collect.ts:466 still emits 'measured fallback stacks render'"},
+    {"claim": "manual-visual-review is a pipeline namespace", "claimedIn": "implied by data/ layout", "reality": "ORPHAN — zero src/ or scripts/ references; 129MB on linear.app, produced by .ts files stored INSIDE data/"},
+    {"claim": "scripts/smoke-playwright.ts may be missing", "claimedIn": "this audit's own baseline hypothesis", "reality": "FALSE — it exists (961 bytes) and is the one smoke script tracked in HEAD. All 18 smoke files present, all 37 CLIs wired, zero drift."}
+  ],
+
+  "runtimeVerificationRequired": [
+    "Does an injected <script> before </head> survive React 19 hydration at the serve boundary? Strong precedent from the title/RSC rewrite, but untested for a script element.",
+    "next start restart latency after a slot-value change (module-memoized contract at app-templates.ts:109,155-158; pages cached at :411-419) — is it acceptable for interactive editing?",
+    "release:resolve and release:build against REAL data — all 5 on-disk run.json are kind:'prepare'; every SiteInstance write path is unexercised code",
+    "A production-mode SEO plan end to end — no such plan has ever been generated",
+    "Whether filtering pagesById at compile.ts:87 leaves parity QA green on a real multi-route site",
+    "Subtree skeleton-hash shared-shell detection on stripe (predicted to repair the 3,467 page-scope header slots; unproven)"
+  ],
+
+  "verifiedAccurate": [
+    "17 suites / 1,794 checks / 0 failures — recomputed exactly from docs/result/handoffs/26C-regression-logs/ (18m11s, typecheck exit 0)",
+    "Task 25's 17 suites / 1,755 checks — also exact",
+    "linear 378 requirements / 88 blocking (84 replacement-image + 2 font-license + 1 production-domain + 1 source-brand-asset)",
+    "stripe 9,529 slots / 24,518 bindings (the Task-18 v1 lineage is 24,512 exactly as documented — not drift)",
+    "linear 3,079 slots / 9,929 bindings",
+    "Task 19 = 357 values / 68 needs-input, layout QA 3/3, applied 438/438; Task 19.1 = 450/450 applied (static 291 + dynamic 155 + paint-twin 4)",
+    "stripe 278/278 assets fetched and 31->4 residual (stripe-scoped)",
+    "all 18 smoke scripts present and wired; all 37 CLIs wired"
+  ],
+
+  "reportsRead": [
+    "README.md", "ROADMAP.md", "docs/info/PRODUCT_VISION.md",
+    "docs/result/17.1-exact-reconstruction-final-acceptance-2026-08-18.md",
+    "docs/result/18-recon-template-slot-v2-foundation-2026-08-18.md",
+    "docs/result/19-natural-language-content-injection-2026-08-18.md",
+    "docs/result/19.1-visible-content-injection-completeness-2026-08-18.md",
+    "docs/result/20-theme-extraction-adapter-foundation-2026-08-18.md",
+    "docs/result/21-source-production-seo-foundation-2026-08-19.md",
+    "docs/result/22-asset-font-independence-2026-08-19.md",
+    "docs/result/23-production-spec-independent-build-2026-08-19.md",
+    "docs/result/24-mvp-final-acceptance-2026-08-19.md",
+    "docs/result/25-operator-release-orchestrator-2026-08-25.md",
+    "docs/result/26-linear-first-production-pilot-2026-08-26.md",
+    "docs/result/26-LINEAR-PILOT-SUMMARY-2026-08-26.md",
+    "docs/result/26A-linear-fresh-reconstruction-2026-08-26.md",
+    "docs/result/26B-linear-template-content-theme-2026-08-26.md",
+    "docs/result/26C-linear-production-release-2026-08-26.md",
+    "docs/result/OVERNIGHT-MVP-COMPLETION-2026-08-19.md",
+    "docs/result/handoffs/24-final.json", "docs/result/handoffs/24-aggregation-phase1.json",
+    "docs/result/handoffs/24-correction-1.json", "docs/result/handoffs/24-correction-1-verification.json",
+    "docs/result/handoffs/24-theme-coverage.json", "docs/result/handoffs/final-audit.json",
+    "docs/result/handoffs/25-handoff.json", "docs/result/handoffs/25-final.json", "docs/result/handoffs/25-verification.json",
+    "docs/result/handoffs/26-final-audit.json", "docs/result/handoffs/26A-handoff.json",
+    "docs/result/handoffs/26B-handoff.json", "docs/result/handoffs/26C-handoff.json",
+    "docs/result/handoffs/26C-verification.json", "docs/result/handoffs/26-screenshots-index.md",
+    "docs/result/handoffs/21-handoff.json", "docs/result/handoffs/22-handoff.json", "docs/result/handoffs/23-handoff.json",
+    "docs/result/handoffs/25-regression-logs/", "docs/result/handoffs/26C-regression-logs/", "docs/result/handoffs/final-regression-logs/"
+  ],
+
+  "codePathsInspectedCount": 312,
+  "codePathsInspectedSrcCount": 203,
+  "codePathsInspectedNote": "Full per-specialist lists are in the seven scratchpad handoffs (audit-A..G.json) plus aggregate.json; every structural claim in the report carries an inline file:line citation.",
+
+  "requiredChangesBeforeImplementation": [
+    "1. SiteInstance EXTENDS release-project.json — no new model. Add a stable site-scoped siteId, make prepare non-destructive (it resets resolutions[] and runs[] at prepare.ts:223/:238), declare an additive `authored` object on the .strict() schema.",
+    "2. ONE content write path: SiteInstance.authored.slotValues is authoritative; content-runs/<run>/slot-values.json becomes derived and stays BARE; the generation-result.json merge base is unchanged; hand-editing a lineage run is deprecated and must warn that the edit will not survive a rebuild.",
+    "3. Region identity from a doc-tree compiler using element-child paths — NOT persisted ancestorIds (truncated to 12) and NOT global nodeId ordinals. Join via slot-bindings.json so src/recon-template/types.ts is never opened by the Region subsystem. Name it PageRegion or Block.",
+    "4. Theme edit: add a theme field to ProductionResolutionSchema, wire THEME_SELECTION_IMPACTS into RESOLUTION_FIELD_IMPACTS, add the theme slice to computeStageInputsHash. Do NOT delete the constant — smoke-release.ts:1210 asserts it.",
+    "5. Template Factory V2 must add NO `template` StageRunner. Separately add report/ to the template stage's excluded[] hash set, or qa:recon-template after release:prepare bricks release:build.",
+    "6. Brand leak becomes a new release-blocking requirement KIND collected from the existing brand-leak report — never a new production QA assertion. Add an SVG aria-label/symbol-id scan, which nothing detects today.",
+    "7. GED-F ships DETECTOR-ONLY; any anchor neutralization is opt-in and defaults OFF (smoke-production.ts:266 asserts residual === 1 exactly).",
+    "8. Add no new DOM attribute. The slot->DOM map is complete; data-wr-slot would flip parity risk LOW->MEDIUM against parity-qa.ts:245-248.",
+    "9. Region/Page ON-OFF is CUT tonight; only the consumer-free compiler ships. The later consumer must carry the routes->pages reference count, the trigger/target cut check, and the collect.ts:258-283 exclusion.",
+    "10. Re-measure the 1,794 baseline in wave 0 before any agent starts, and make a per-suite check-count diff a mandatory gate at every wave boundary — no suite asserts its own total."
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "task": "22",
+  "verdict": "PASS",
+  "verifier": "Agent-22-Asset-Verifier (independent; read-only except this file)",
+  "verifiedAt": "2026-08-19",
+  "checkedClaims": [
+    {
+      "claim": "smoke:assets 111/111 with 45 SSRF/fetch-safety checks",
+      "status": "confirmed",
+      "evidence": "regression/assets.log ends '111/111 checks passed' with 0 real FAIL lines (the one grep hit is an expected-negative PASS description); sections 1-4 (address validation, URL policy, DNS-based rejection, fixture fetch limits/MIME/redirect re-validation) contain exactly 45 PASS lines; verifier re-ran pnpm smoke:assets live once: 111/111 PASS"
+    },
+    {
+      "claim": "Full regression 15 suites = 1,585",
+      "status": "confirmed",
+      "evidence": "All 15 logs present in scratchpad/regression/ (Aug 19 14:48-15:11); terminal lines 81+81+58+92+108+88+252+205+134+130+58+68+47+72+111 recomputed by verifier = 1,585; every case-insensitive 'fail' match is an expected-negative-case PASS line or an intentional fixture failure inside a passing check"
+    },
+    {
+      "claim": "Inventory 721 entries (347 URL / 374 inline-SVG / 15 truncated)",
+      "status": "confirmed",
+      "evidence": "asset-inventory.json entries.length=721; kind histogram sums to 347 URL entries (background-image 2, icon 4, image 64, image-srcset 127, picture-source 138, source 1, og-image 8, font 3) + inline-svg 374; truncated flag on exactly 15 entries"
+    },
+    {
+      "claim": "Classification 4 safe / 289 recommended / 51 required / 3 license-review",
+      "status": "confirmed",
+      "evidence": "classification.json byClassification matches exactly; totals 347 = all URL entries; inline-SVG excluded by design with the exclusion documented in classify.ts and the report; decisions carry ruleId + evidence per entry"
+    },
+    {
+      "claim": "Materialization 278/278 fetched 0 failures, 230 unique media files 57.5 MB, rewrite-map 278, replacement-manifest 340",
+      "status": "confirmed",
+      "evidence": "manifest.json entry statuses: fetched 278, skipped-replacement-required 51, skipped-truncated 15, skipped-license-needs-review 3 (total 347); counts{failed:0, uniqueFiles:230, totalBytes:60331730 = 57.5MB, rewriteEntries:278}; media/ contains exactly 230 files, ALL matching ^[0-9a-f]{64}\\.ext$, 20-file sha256 spot-check all filenames match recomputed content hashes; rewrite-map.json entries.length=278; replacement-manifest.json 340 = 289 recommended + 51 required, entries carry slotKeys + joined Task 19 imageBrief (24 entries) + awaiting-input seam"
+    },
+    {
+      "claim": "Network QA baseline 31 -> independent 4 on 3 routes",
+      "status": "confirmed",
+      "evidence": "report/network-qa.json recomputed: baseline sourceHost 19+8+4=31, independent 4+0+0=4, otherExternal 0 on all routes; the 4 residual URLs are exactly the named replacement-required surfaces (payment-bento-background, ConnectBentoBackground, enterprise-accordion-hertz, KurtisMoyer) on /"
+    },
+    {
+      "claim": "Font QA: 2 families loaded via data: URLs, 93/264 reflow, width p95 12.2px, docHeight delta 0",
+      "status": "confirmed",
+      "evidence": "report/font-qa.json: fonts sohne-var + SourceCodePro loaded:true, appReflow{elementsMeasured:264, elementsChanged:93, widthDelta.p95:12.17, docHeightDelta:0}; font-inventory.json license: both families license-needs-review with selfHostApproved:false and 'presumed proprietary until an operator verifies' reasoning — no license guessed, nothing self-hosted; fontFaceRules 3 with provenance live-fetched"
+    },
+    {
+      "claim": "Smoke tests exercise real production code",
+      "status": "confirmed",
+      "evidence": "scripts/smoke-assets.ts imports 16 symbols from ../src/assets/index.js (safeFetchAsset, createAssetInventoryRun, createAssetMaterializationRun, applyRewrite, startAssetProxy, ...), runs a real local HTTP fixture on 127.0.0.1 admitted only via the explicit test-only allowPrivateHostPorts escape hatch, injects lookup only to simulate hostile DNS, and drives real Chromium for the /media load check — no mocking of the module under test"
+    },
+    {
+      "claim": "Frozen lineage untouched, no git operations",
+      "status": "confirmed",
+      "evidence": "find -newermt '2026-08-19 04:30' returns 0 files in site-specs/2026-08-17T21-38-01-773Z, recon-templates/2026-08-18T10-45-40-007Z, content-runs/2026-08-18T10-46-26-129Z, theme-extractions/2026-08-18T12-07-22-308Z, source-seo-snapshots/, production-seo-plans/, site-observations/; docs/result reports 17.x-20 keep Aug 18 mtimes (21 report Aug 19 04:35 = its own completion time); repo still at 2777b41 single commit; git diff --stat shows only the 8 pre-existing dirty tracked files"
+    }
+  ],
+  "numberMismatches": [],
+  "hiddenLimitations": [],
+  "honestyNotes": [
+    "278 vs 347 fetch gap fully explained and machine-recorded: 51 replacement-required + 3 license-needs-review + 15 truncated = 69 skipped by classification, each with an explicit skipped-* status in manifest.json — '0 failures' is honestly scoped to the 278 candidates",
+    "17/20 routes unmeasured for network QA is disclosed in both the report and the handoff knownLimitations, with the qualifier that only rendered required assets can become residual",
+    "The residual-4 (not 0) is itself the product of the builder's own disclosed correction (sibling-variant escalation after webp person-photo renditions escaped the brief join) — the first QA's residual-0 was rejected as dishonest by the builder",
+    "f965fdf4.woff2's @font-face is recorded as unrecovered rather than invented; favicon/og rewrite honestly recorded as 0 occurrences because the clone never emits those surfaces"
+  ],
+  "historicalIntegrity": "intact",
+  "stripeHardcodeFindings": [
+    "grep of src/assets/** and src/cli-assets-*.ts for stripe/sohne/flowdesk: 3 hits, all comments/examples (network-qa.ts docstring example, classify.ts docstring example, font-qa.ts explanatory comment) — zero brand strings in engine logic",
+    "Brand terms are derived at runtime by deriveBrandTermsFromHost(sourceHost) (host labels >= 4 chars, same guard as Task 21 brand-isolation); person/customer evidence is joined from Task 19 imageBriefs; fetch allowlist is built from the inventory's observed hosts in materialize.ts — all data-driven"
+  ],
+  "ssrfAssessment": {
+    "verdict": "sound for this threat model",
+    "dnsToctou": "closed: validateHop resolves all addresses via dns.promises.lookup(all:true) BEFORE connecting, rejects if ANY resolved address is private, then pins the socket to the validated addresses via a custom lookup callback — no re-resolution at connect time",
+    "redirects": "manually followed; every hop re-runs the FULL validation (scheme, credentials, host allowlist, port, DNS) with isRedirectHop status labeling; redirect loop bounded by maxRedirects; overall deadline spans all hops",
+    "bypassProbes": "http://user@host rejected (explicit username/password check); decimal/hex/IPv6-literal host forms are blocked by the outer exact-hostname allowlist gate before DNS is even consulted, and would additionally fail the resolved-address check; IPv4-mapped (::ffff:) and NAT64 (64:ff9b::) embedded IPv4 unwrapped and validated; metadata 169.254.169.254, CGNAT 100.64/10, 0/8, TEST-NETs, benchmarking, multicast, reserved all in the range table",
+    "minorGaps": [
+      "IPv6 deprecated site-local fec0::/10 and documentation 2001:db8::/32 are not in the reject table (mitigated by the exact-host allowlist outer gate and non-routability)",
+      "image MIME gate also accepts 'binary/octet-stream' — a mild relaxation presumably for a real CDN response",
+      "overall deadline is checked at hop START and the per-request timeout is socket-idle based, so a slow-drip body could stretch one fetch past timeoutMs (bounded by the 30MB streaming cap)"
+    ],
+    "severity": "minor gaps are non-blocking: inputs are operator-supplied inventory URLs constrained to observed CDN hosts, not arbitrary user input"
+  },
+  "blockingFindings": [],
+  "nonBlockingFindings": [
+    "Entire pipeline still uncommitted on top of 2777b41 — pre-existing operational risk carried from preflight, not caused by Task 22",
+    "3 SSRF micro-gaps listed in ssrfAssessment.minorGaps (fec0::/10, binary/octet-stream image MIME, slow-drip vs wall deadline) — all mitigated by the allowlist outer gate and byte cap",
+    "replacement-manifest imageBrief join covers 24 of 340 entries (homepage-brief scope); consistent with the disclosed limitation that un-briefed routes get no human-reviewed person/customer detection",
+    "Font reflow QA is 1 route / desktop viewport only — disclosed",
+    "Superseded intra-task runs were deleted by the builder (disclosed); only the two final runs exist, so the first-QA residual-0 state is not independently re-derivable — acceptable since it was superseded within the task, not a historical artifact"
+  ],
+  "specCoverage": {
+    "A_inventory": "met — img/srcset, picture-source, CSS url(), background-image, favicon, og-image, video source, inline SVG, font URLs all present as kinds/origins in asset-inventory.json; video poster honestly 0 occurrences in stored artifacts",
+    "B_safeFetcher": "met — http/https only, credential/port gates, pre-connect DNS validation of every address, pinned connection, per-hop redirect re-validation, streaming byte cap with socket destroy, MIME gate, redirect/deadline bounds, concurrency 2 + spacing",
+    "C_contentHashStorage": "met — /media/<sha256>.<ext> verified by recomputing hashes; manifest entries carry sourceUrl/sha256/mime/size/localPath/status/redirectChain; extension from response MIME",
+    "D_rewrite": "met — rewrite-map 278; serve-boundary substitution of raw/&amp;/\\u0026 encodings in HTML, RSC flight and stylesheet; favicon/og honestly recorded as never-emitted surfaces (required, awaiting input)",
+    "E_brandClassification": "met — deterministic first-match rules with ruleId+evidence; brand marks/people/customer assets replacement-required and NEVER fetched (fixture hit-counter proof in smoke)",
+    "F_fontInventory": "met — 3 URLs, 3 live-fetched @font-face rules with provenance, familyUsage, fallbackPlan",
+    "G_noLicenseGuessing": "met — both families license-needs-review, selfHostApproved false, zero font bytes stored",
+    "H_fallbackFontQa": "met — measured 93/264 reflow, width/height percentiles, docHeight 0, data:-URL mechanism disclosed",
+    "I_runtimeNetworkQa": "met — real-Chromium census, baseline 31 -> 4, residuals individually named; 3/20 route sample disclosed",
+    "J_replacementSeam": "met — 340-entry manifest joined to slots + Task 19 imageBriefs with awaiting-input seam",
+    "K_smokeAndRegression": "met — 111/111 re-run live by verifier; 15-suite logs audited = 1,585"
+  },
+  "safeForTask23": true
+}

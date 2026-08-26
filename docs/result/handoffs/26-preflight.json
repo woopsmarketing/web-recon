@@ -1,0 +1,141 @@
+{
+  "task": "26-preflight",
+  "role": "26-Preflight-Agent (fresh, read-only with respect to all product/engine code)",
+  "createdAt": "2026-08-25T18:08:09Z",
+  "createdAtLocal": "2026-08-26T03:08:09+09:00",
+  "gitSummary": {
+    "branch": "main",
+    "headCommit": "2777b41 chore: initialize web-recon foundation (Phase 1)",
+    "remote": "origin https://github.com/woopsmarketing/web-recon.git",
+    "aheadBehindUpstream": "0/0",
+    "modifiedCount": 6,
+    "modifiedFiles": ["README.md", "ROADMAP.md", "package.json", "pnpm-lock.yaml", "src/cli.ts", "tsconfig.json"],
+    "deletedCount": 2,
+    "deletedFiles": ["docs/result/작업내용-2026-08-13.md", "src/observer/.gitkeep"],
+    "untrackedCount": 120,
+    "stashes": 0,
+    "note": "Workspace heavily uncommitted, exactly the known Task25 state: the single Phase-1 commit is HEAD and all Task02-25 engine code (src/*), smoke scripts, reports (docs/result/) and handoffs are untracked or modified on top of it. Recorded honestly; NOT changed. No git add/commit/push performed by this agent."
+  },
+  "smokeBaseline": {
+    "method": "Fresh sequential run of pnpm typecheck + all 17 smoke suites on 2026-08-26 02:49-03:07 KST; per-suite logs kept in session scratchpad (smoke-logs/). Counts parsed from actual suite output, not from expectations.",
+    "typecheck": "pnpm typecheck exit 0",
+    "suites": 17,
+    "checks": 1755,
+    "passed": 1755,
+    "failures": [],
+    "perSuite": {
+      "verifier": { "checks": 81, "failures": 0, "exit": 0, "seconds": 7 },
+      "selector": { "checks": 81, "failures": 0, "exit": 0, "seconds": 1 },
+      "multi-observer": { "checks": 58, "failures": 0, "exit": 0, "seconds": 19 },
+      "interaction-detector": { "checks": 92, "failures": 0, "exit": 0, "seconds": 0 },
+      "interaction-explorer": { "checks": 108, "failures": 0, "exit": 0, "seconds": 94 },
+      "interaction-patterns": { "checks": 88, "failures": 0, "exit": 0, "seconds": 1 },
+      "sitespec": { "checks": 252, "failures": 0, "exit": 0, "seconds": 0 },
+      "reconstruction": { "checks": 205, "failures": 0, "exit": 0, "seconds": 7 },
+      "reconstruction-qa": { "checks": 134, "failures": 0, "exit": 0, "seconds": 145 },
+      "e2e": { "checks": 130, "failures": 0, "exit": 0, "seconds": 615 },
+      "recon-template": { "checks": 58, "failures": 0, "exit": 0, "seconds": 52 },
+      "content-injection": { "checks": 68, "failures": 0, "exit": 0, "seconds": 57 },
+      "theme": { "checks": 47, "failures": 0, "exit": 0, "seconds": 36 },
+      "seo": { "checks": 72, "failures": 0, "exit": 0, "seconds": 1 },
+      "assets": { "checks": 113, "failures": 0, "exit": 0, "seconds": 4 },
+      "production": { "checks": 84, "failures": 0, "exit": 0, "seconds": 3 },
+      "release": { "checks": 84, "failures": 0, "exit": 0, "seconds": 37 }
+    },
+    "totalSeconds": 1081,
+    "matchesTask25Baseline": true,
+    "task25Baseline": { "suites": 17, "checks": 1755, "failures": 0 },
+    "notes": [
+      "Nothing was skipped: all 17 suites ran to completion locally (fixtures + local HTTP servers + real Chromium where the suite needs it); no live external site is a deterministic smoke dependency.",
+      "'FAIL' strings visible inside the sitespec and content-injection logs are intentional negative-test fixtures that the suites assert MUST fail; both suites passed (252/252, 68/68).",
+      "smoke:playwright exists in package.json but is a Phase-1 environment probe and was not part of the Task25 17-suite baseline; the 17 suites above are exactly the ones in docs/result/handoffs/25-regression-logs/."
+    ]
+  },
+  "task25State": {
+    "reportExists": "docs/result/25-operator-release-orchestrator-2026-08-25.md",
+    "reportVerdict": "READY FOR FIRST REAL PRODUCTION PILOT",
+    "handoff": {
+      "path": "docs/result/handoffs/25-handoff.json",
+      "verdict": "READY FOR FIRST REAL PRODUCTION PILOT — stripe canary honestly PRODUCTION_INPUTS_REQUIRED; synthetic fixture PRODUCTION_READY via selective rebuild"
+    },
+    "verification": {
+      "path": "docs/result/handoffs/25-verification.json",
+      "verdict": "PASS — zero blocker/major findings; 2 minor findings listed. Builder verdict 'READY FOR FIRST REAL PRODUCTION PILOT' is supported by the evidence; stripe honestly remains PRODUCTION_INPUTS_REQUIRED."
+    },
+    "final": {
+      "path": "docs/result/handoffs/25-final.json",
+      "verdict": "READY FOR FIRST REAL PRODUCTION PILOT",
+      "regression": "17 suites / 1,755 checks / 0 failures (ran by Task25 final verifier 2026-08-25)"
+    },
+    "regressionLogs": "docs/result/handoffs/25-regression-logs/ (17 logs present)"
+  },
+  "linearArtifactsFound": {
+    "verdict": "NONE — Linear is a completely fresh source",
+    "dataHosts": ["developer.mozilla.org", "docs.firecrawl.dev", "domainchecker.co.kr", "example.com", "nextjs.org", "seoworld.co.kr", "stripe.com"],
+    "searches": [
+      "grep -ril 'linear.app' across src/, scripts/, docs/, data/ -> 0 hits",
+      "case-insensitive whole-word 'linear' across src/, scripts/ -> only scripts/smoke-theme.ts:89, a 'linear-gradient(...)' CSS test fixture (not Linear-related)",
+      "find -iname '*linear*' repo-wide excluding node_modules (includes tmp/ and all run/output dirs) -> 0 hits"
+    ]
+  },
+  "tooling": {
+    "node": "v22.22.3 (package.json engines >=22 satisfied)",
+    "pnpm": "11.21.0",
+    "tsx": "4.23.12",
+    "typescript": "5.9.3",
+    "playwright": {
+      "package": "1.62.1",
+      "requiredChromiumRevision": "1234",
+      "installedBrowsers": "chromium-1234 and chromium_headless_shell-1234 present in ~/Library/Caches/ms-playwright (plus older 1208/1228) — required revision installed, no 'playwright install' needed"
+    },
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "zod": "4.4.3",
+    "firecrawl": {
+      "sdk": "4.32.0",
+      "invocation": "pnpm recon (src/cli.ts) via src/discovery/firecrawl.ts (DiscoveryProvider boundary); throws if FIRECRAWL_API_KEY missing; env loaded via src/config/env.ts (import 'dotenv/config') from repo-root .env",
+      "apiKeyPresent": true,
+      "apiKeyValidatedLive": false,
+      "note": ".env contains FIRECRAWL_API_KEY (also .env.example template). Not validated with a live call — preflight is forbidden from external network requests. If expired, pnpm recon fails fast with a 401 message; Source-Scout will confirm on first use."
+    },
+    "cliEntrypoints": {
+      "discovery": ["recon"],
+      "verificationSelection": ["verify", "select"],
+      "observation": ["observe", "observe:site"],
+      "interaction": ["detect:interactions", "explore:interactions", "model:interactions"],
+      "sitespec": ["compile:sitespec"],
+      "reconstruction": ["reconstruct", "qa:reconstruction", "e2e:reconstruct"],
+      "template": ["compile:recon-template", "qa:recon-template"],
+      "content": ["content:prepare", "content:generate", "content:validate", "content:preview", "content:qa"],
+      "theme": ["theme:extract", "theme:list", "theme:check", "theme:preview", "theme:qa"],
+      "seo": ["seo:observe", "seo:plan", "seo:preview", "seo:qa"],
+      "assets": ["assets:inventory", "assets:materialize", "assets:preview", "assets:qa"],
+      "production": ["production:compile", "production:qa"],
+      "release": ["release:prepare", "release:plan", "release:resolve", "release:build"],
+      "note": "All present in package.json; every stage of discovery -> observation -> interaction -> sitespec -> reconstruction -> QA -> template -> content -> theme -> SEO -> assets -> production -> release has a CLI entrypoint."
+    }
+  },
+  "diskSpace": {
+    "volume": "/System/Volumes/Data (/dev/disk3s5)",
+    "size": "926Gi",
+    "used": "100Gi",
+    "available": "805Gi",
+    "repoSize": "16G total, of which data/ is 15G",
+    "assessment": "Ample headroom; a full Linear pilot run (expected order of a few GB in data/linear.app/) fits easily."
+  },
+  "ports": {
+    "namedDefaults": { "productionStaticServer": "PORT env or 3000 (src/production/static-server.ts), operator-facing default only" },
+    "dynamicAllocation": "QA/preview tooling uses ephemeral ports: reconstruction-qa start-clone listens on port 0; production QA launches the isolated server.mjs with --port 0",
+    "checkedFree": [3000, 3100, 3210, 4000, 4100, 4200, 4310, 5000],
+    "busy": [],
+    "assessment": "Port 3000 free at preflight time; all other serve paths self-allocate free ports."
+  },
+  "blockers": [],
+  "caveats": [
+    "FIRECRAWL_API_KEY present but not live-validated (external network calls are out of preflight scope). Failure mode is fail-fast with a clear 401 message at the first pnpm recon call.",
+    "Entire engine sits on a single init commit with 120 untracked + 6 modified + 2 deleted files — no git safety net for accidental deletion; identical to the accepted Task25 state; per Task26 spec this is recorded, not fixed.",
+    "Live-site variance: linear.app response behavior (bot protection, geo/AB variants) cannot be assessed without network access; Source-Scout must observe and record actual behavior on first contact."
+  ],
+  "verdict": "READY",
+  "verdictBasis": "Smoke baseline reproduced exactly (17 suites / 1,755 checks / 0 failures, typecheck clean) on this machine tonight; Task25 acceptance artifacts present and consistent (report + handoff + verification PASS + final 'READY FOR FIRST REAL PRODUCTION PILOT'); zero pre-existing Linear artifacts anywhere in the repo; all pipeline CLIs, node/pnpm/tsx/playwright(chromium 1234)/firecrawl tooling present; 805Gi disk free; required ports free or self-allocating. No blockers found."
+}

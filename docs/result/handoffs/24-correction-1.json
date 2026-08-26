@@ -1,0 +1,98 @@
+{
+  "agent": "Agent-24-Correction-1",
+  "createdAt": "2026-08-19",
+  "scope": "Task-24 Phase-1 correctionPlan.fixNow only: GED-A, GED-B, GED-C. No redesign, no other refactoring, no git operations, no doc edits.",
+  "corrections": [
+    {
+      "id": "GED-A-production-qa-interaction-metric",
+      "files": ["src/production/qa.ts"],
+      "whatChanged": "sampleInteractions() (now exported, with exported InteractionSampleResult) counts success as region mounts OR observable state flips. Per clicked trigger it snapshots serialized trigger state before and after the click — aria-expanded / aria-checked / aria-selected / aria-pressed (via closest(), so a wrapping toggle counts), native <details> open (closest('details')), and visibility of every aria-controls target already in the DOM — and increments stateFlips when the snapshots differ. The wr-obs-/wr-dyn- region-mount path is byte-for-byte unchanged for mount-type triggers. The two assertions (interactions-desktop:/ and interactions-mobile:/) now require clicked>0 && (regionsAppeared + stateFlips) > 0 and report all three numbers in the detail string.",
+      "testAdded": "smoke:production new section 'interaction sampling: mount-type AND static-target triggers (GED-A)' — 5 real-Chromium fixture checks: mount-type still passes via region mount; native <details> passes as stateFlips=1 with regionsAppeared=0 (the domainchecker false-fail shape); aria-checked selection toggle passes (the nextjs false-fail shape); aria-expanded + aria-controls target-visibility change passes; an inert trigger produces neither regions nor flips (criteria are not trivially satisfiable)."
+    },
+    {
+      "id": "GED-B-production-blocker-summaries-hardcoded",
+      "files": ["src/production/run.ts"],
+      "whatChanged": "Blocker construction extracted into exported pure buildPreviewBlockers(PreviewBlockerInputs) — same 7 blocker ids, same order, same evidence-path shapes. Every previously hardcoded literal is now derived from the same in-scope lineage artifacts the evidence paths cite: needs-input total + fallback-title route count (needs-input.json entries matching routes[...].title) / route count (seo plan), replacement-required count (replacement-manifest classification filter) + residual count (network-qa.json totals.residualSourceUrls.length, also replacing the hardcoded 'residual=4' in the evidence string), webfont family names (font-inventory.json license[].family from the materialization's inventoryRunDir), uninjected-route arithmetic + scope (content manifest scopedRoutes vs seo plan route count), inline-svg entry count (inventory manifest counts.inlineSvgEntries). One phrasing change: '4 still render on / from source hosts' became '<n> source-host asset URLs still render in the network census' because the number is census-derived, not /-scoped prose (the aggregation's consistencyFindings flagged the /-scoped phrasing as misleading).",
+      "testAdded": "smoke:production new section 'preview blocker summaries derive from inputs (GED-B)' — 8 checks: exact derived summaries for seo/replacement/fonts/uninjected/inline-svg from one input set, a second input set (nextjs-shaped numbers) produces different derived prose, and blocker ids are stable across input sets."
+    },
+    {
+      "id": "GED-C-asset-inventory-css-fragment-url",
+      "files": ["src/assets/inventory.ts", "src/assets/run.ts", "src/assets/types.ts", "src/assets/index.ts"],
+      "whatChanged": "New exported predicate isFragmentOnlyCssRef(url) in inventory.ts: true for raw fragment-only url(#id) values and for their browser-serialized form where the percent-encoded '#' was resolved into the page URL as a path segment (last path segment starting with %23 — the observed https://nextjs.org/%23b shape). URLs with a real file plus fragment (sprite.svg#icon) are NOT skipped. createAssetInventoryRun filters both ingestion channels (SiteSpec asset-catalog and generated-CSS url() refs) through the predicate before entry assembly and records the skip honestly as counts.fragmentRefsSkipped (inventory counts + manifest counts; schema field optional so all pre-fix inventory artifacts still zod-load). counts.catalogAssets keeps the raw catalog size so the delta is visible.",
+      "testAdded": "smoke:assets — fixture lineage gains a 12th catalog asset (kind background-image, url https://fixturebrand.example/%23glow) plus a generated-CSS mask-image:url(...) ref to the same fragment URL; new checks assert entries stay 15, fragmentRefsSkipped === 2, the fragment URL is never inventoried, and 4 predicate unit cases (raw '#b', encoded %23b, sprite.svg#icon negative, plain png negative)."
+    }
+  ],
+  "reVerification": {
+    "productionQa": {
+      "method": "runProductionQa executed against the EXISTING build packages via a driver that writes reports to docs/result/handoffs/24-correction-1-evidence/ so no existing run directory is modified (existing report/qa.json files verified untouched and still carrying the historical 150/152 and 297/299 evidence).",
+      "stripe": "159/159 (build 2026-08-19T06-36-35-798Z, unchanged — no-regression guard holds; external hosts only images.stripeassets.com:4)",
+      "domainchecker": "152/152 (build 2026-08-19T07-29-18-763Z; the 2 prior FAILs flip to PASS on state-flip evidence: interactions-desktop clicked=1 stateFlips=1, interactions-mobile clicked=2 stateFlips=2, regionsAppeared 0 both — external hosts {})",
+      "nextjs": "299/299 (build 2026-08-19T07-25-08-322Z; the 2 prior FAILs flip to PASS: desktop and mobile both clicked=1 regionsAppeared=0 stateFlips=1)",
+      "reports": [
+        "docs/result/handoffs/24-correction-1-evidence/stripe-qa.json",
+        "docs/result/handoffs/24-correction-1-evidence/domainchecker-qa.json",
+        "docs/result/handoffs/24-correction-1-evidence/nextjs-qa.json"
+      ]
+    },
+    "specRecompiles": {
+      "domainchecker": {
+        "newRun": "data/domainchecker.co.kr/production-specs/2026-08-19T07-56-17-216Z",
+        "lineageHashesIdenticalToPriorSpec": true,
+        "derivedSummaries": "173 SEO values (18/19 fallback titles); 10 replacement-required, residual=0; fonts 'inter'; 18 of 19 routes uninjected; 40 inline-svg entries"
+      },
+      "nextjs": {
+        "newRun": "data/nextjs.org/production-specs/2026-08-19T07-57-15-072Z",
+        "lineageHashesIdenticalToPriorSpec": true,
+        "derivedSummaries": "403 SEO values (39/40 fallback titles); 154 replacement-required, residual=33; fonts 'geist mono / geistsans / inter'; 39 of 40 routes uninjected; 78 inline-svg entries — matches the aggregation's proven actuals"
+      },
+      "stripe": {
+        "newRun": "data/stripe.com/production-specs/2026-08-19T07-57-26-869Z",
+        "acceptedSpec": "2026-08-19T06-36-35-798Z (untouched, remains the deliverable)",
+        "fiveLineageLayerHashesIdenticalToAccepted": true,
+        "derivedSummaries": "numerically identical to the accepted spec (182, 19/20, 51, residual=4, 19 of 20, 374 inline-svg); font names now derive from the font inventory as 'sohne-var / sourcecodepro' (accepted spec's hand-written prose had 'SourceCodePro' casing)"
+      },
+      "gedCInventoryRerun": {
+        "newRun": "data/nextjs.org/asset-inventories/2026-08-19T07-55-28-981Z",
+        "result": "entries 292 -> 291; the ONLY removed entry is the phantom ('background-image', 'https://nextjs.org/%23b', a000001); zero entries added; counts.fragmentRefsSkipped=1; byClassification replacement-recommended 4 -> 3 (the phantom's class), all other counts identical — no real asset lost"
+      }
+    },
+    "regression": {
+      "suites": 16,
+      "totalChecks": 1671,
+      "totalFailures": 0,
+      "perSuite": {
+        "smoke:verifier": 81,
+        "smoke:selector": 81,
+        "smoke:multi-observer": 58,
+        "smoke:interaction-detector": 92,
+        "smoke:interaction-explorer": 108,
+        "smoke:interaction-patterns": 88,
+        "smoke:sitespec": 252,
+        "smoke:reconstruction": 205,
+        "smoke:reconstruction-qa": 134,
+        "smoke:e2e": 130,
+        "smoke:recon-template": 58,
+        "smoke:content-injection": 68,
+        "smoke:theme": 47,
+        "smoke:seo": 72,
+        "smoke:assets": 113,
+        "smoke:production": 84
+      },
+      "deltasExplained": [
+        "smoke:production 71 -> 84 (+13): +8 GED-B derived-blocker checks, +5 GED-A interaction-sampling fixture checks",
+        "smoke:assets 111 -> 113 (+2): +2 GED-C checks (fragment skip end-to-end + predicate unit cases)",
+        "all other 14 suites byte-match the Task 23 baseline counts (1,585 across them); 1,656 + 13 + 2 = 1,671; smoke:playwright excluded as in Tasks 20-23"
+      ],
+      "sequencing": "all 16 suites run sequentially in one runner process, per-suite logs preserved"
+    },
+    "immutabilityCheck": "find -newermt over the accepted stripe spec+build (2026-08-19T06-36-35-798Z), the existing domainchecker/nextjs builds, and the prior nextjs inventory run returned ZERO files modified during this correction; all new outputs live in new run namespaces or docs/result/handoffs/24-correction-1-evidence/"
+  },
+  "honestIssues": [
+    "Stripe recompile summary prose is numerically identical but not byte-identical to the accepted spec: font family names now derive from font-inventory.json license entries ('sohne-var / sourcecodepro') where the accepted spec's hardcoded prose read 'sohne-var / SourceCodePro' (casing), and the replacement-assets phrasing changed from '4 still render on / from source hosts' to '4 source-host asset URLs still render in the network census' because the count is census-derived, not /-scoped (per the aggregation's own residual-4-vs-5 reconciliation). The accepted candidate itself was not touched.",
+    "production:qa re-run reports were intentionally written to docs/result/handoffs/24-correction-1-evidence/ instead of overwriting report/qa.json inside the existing build run directories — the historical 150/152 and 297/299 FAIL evidence the aggregation cites is preserved; the standard CLI (pnpm production:qa <build-dir>) still writes into the build dir for future runs.",
+    "smoke:production's header claim 'no Chromium' is no longer fully true: the GED-A fixture section launches Chromium (header comment updated). smoke:assets already used Chromium, so the regression convention is unchanged.",
+    "GED-A stateFlips also counts a state flip when a mount-type trigger happens to toggle aria-expanded — acceptance remains sound because it is OR'd with the unchanged mount criterion; the inert-trigger fixture proves the criteria cannot be satisfied by a click with no observable response.",
+    "counts.catalogAssets in asset-inventory.json now reports the RAW catalog size (pre-skip) so fragmentRefsSkipped explains the entries delta; on fragment-free sites the emitted files are unchanged except the new fragmentRefsSkipped:0 field (schema-optional, so all pre-fix artifacts still load)."
+  ],
+  "evidenceLogs": "full per-suite regression logs, QA driver logs, recompile logs and the inventory re-run log were kept in the session scratchpad (logs/regression-*.log, qa-*.log, recompile-*.log, inventory-nextjs.log); durable machine evidence is in docs/result/handoffs/24-correction-1-evidence/ and the new run namespaces listed above"
+}

@@ -1,0 +1,99 @@
+{
+  "task": "21",
+  "verdict": "PASS",
+  "verifier": "Agent-21-SEO-Verifier (independent; read-only except this file)",
+  "verifiedAt": "2026-08-19",
+  "checkedClaims": [
+    {
+      "claim": "smoke:seo 72/72 PASS",
+      "status": "confirmed",
+      "evidence": "regression/seo.log ends '72/72 checks passed'; independently re-run once by verifier: 72/72 PASS live"
+    },
+    {
+      "claim": "Full regression 14 suites = 1,474 checks",
+      "status": "confirmed",
+      "evidence": "All 14 logs present in scratchpad/regression/ with terminal lines 81,81,58,92,108,88,252,205,134,130,58,68,47,72 — verifier recomputed the sum = 1,474; zero FAIL lines in summaries. Note: preflight baseline already recorded smoke:e2e at 130 (not 126), so there is no e2e count discrepancy to explain — baseline 1,402 arithmetic uses 130"
+    },
+    {
+      "claim": "Snapshot: 18 pages, robots.txt 200/17 disallow, sitemap-index 9 partitions, 0 broken / 1,692 unverified, 15 orphans",
+      "status": "confirmed",
+      "evidence": "source-seo-snapshot.json: pages.length=18, robotsTxt{status:live-fetched, httpStatus:200, disallowRules:17}, sitemaps[0]{kind:sitemap-index, urlCount:9}, brokenInternalLinks:0, unverifiedInternalLinkTargets.targets:1692, orphanCandidatesWithinObservedSubgraph:15; page-level aggregates recomputed by verifier and all match (robots meta 0/18, empty descriptions exactly p000004+p000010, hreflang 16 pages x 89 = 1,424, OG 60, Twitter 90, JSON-LD 12 pages, 637 headings, imgs 710 withAlt + 78 emptyAlt + 1 missing = 789, 0 pages missing h1)"
+    },
+    {
+      "claim": "Plan: 20 routes preview, forbidden-copy 83/0, brand isolation 265 strings/0 violations, 182 needs-input, Disallow-all robots, path-only sitemap",
+      "status": "confirmed",
+      "evidence": "manifest.json checks{forbiddenCopy:{comparisons:83,violations:[]}, brandIsolation:{scannedStrings:265,violations:[], 20 derived terms incl. Stripe, LLC / @stripe / sameAs links}}; counts.needsInputValues=182 and needs-input.json has 182 entries; robots.txt is 'User-agent: * / Disallow: /' with no Sitemap line; sitemap.preview.xml header explicitly declares itself a non-conformant path-only plan artifact"
+    },
+    {
+      "claim": "Browser QA 29/29, document.title post-hydration = production title, 20/20 routes 200",
+      "status": "confirmed",
+      "evidence": "report/qa.json: pass:true, totals{checks:29,failures:0}, 3 routes x 8 checks + 5 site checks; each route has 'document.title renders the production plan title (post-hydration)' with expected==actual (injected: 플로우데스크 | 기업용 AI 업무자동화 솔루션; fallback: 플로우데스크); site check 'every planned route serves 200 through the SEO proxy 20/20'; runtimeErrors:[]"
+    },
+    {
+      "claim": "Link QA: 13,570 anchors = 244 resolve + 10,420 broken-internal + 4 source-host + 2,138 external + 764 non-nav",
+      "status": "confirmed",
+      "evidence": "report/link-qa.json totals recomputed by verifier; 244+10420+4+2138+764=13,570 exactly"
+    },
+    {
+      "claim": "Fact safety: no invented address/phone/prices/reviews/ratings/foundingDate/sameAs",
+      "status": "confirmed",
+      "evidence": "plan.site.businessFacts: all 7 facts {status:needs-input, value:null}; rendered JSON-LD @graph emits only WebSite{name} + Organization{name,description} — no url/sameAs/address/telephone/foundingDate/logo/rating"
+    },
+    {
+      "claim": "No copying of source SEO / brand-clean production surfaces",
+      "status": "confirmed",
+      "evidence": "Production titles/descriptions are Korean 플로우데스크 values derived from content-run siteIdentity (basis fields recorded per value); source title 'Stripe | Financial Infrastructure...' appears in rendered-head.json only as upstreamTitle (the string to REPLACE); forbidden terms are derived by src/seo/brand-isolation.ts deriveForbiddenTerms() from snapshot evidence, not a hardcoded list"
+    },
+    {
+      "claim": "Tests exercise real production code paths",
+      "status": "confirmed",
+      "evidence": "scripts/smoke-seo.ts imports 25 symbols from ../src/seo/index.js (observeSourceSeo, createProductionSeoPlanRun, startSeoProxy, checkBrandIsolation, ...) and drives real Chromium via playwright; fixtures are synthetic inputs fed through the real public APIs, not mocks of the engine"
+    },
+    {
+      "claim": "Frozen artifacts untouched",
+      "status": "confirmed",
+      "evidence": "find -newermt '2026-08-19 00:00' returned 0 files in site-specs/2026-08-17T21-38-01-773Z, recon-templates/2026-08-18T10-45-40-007Z, content-runs/2026-08-18T10-46-26-129Z, theme-extractions/2026-08-18T12-07-22-308Z (all src/seo files are Aug 19 04:15+); docs/result 17.x-20 reports all have Aug 18 mtimes; git diff --stat shows only the pre-existing tracked dirty files (README, ROADMAP, package.json, pnpm-lock, src/cli.ts, tsconfig) — no historical report is tracked-modified; no new commits (repo still at 2777b41)"
+    },
+    {
+      "claim": "Metadata reaches the browser head (document-title-not-slotted gap closed)",
+      "status": "confirmed",
+      "evidence": "src/seo/serve.ts rewrites head <title> AND every literal occurrence of upstreamTitle in the buffered response (RSC flight payload); qa.json verifies document.title post-hydration on injected and fallback routes — the check that would catch a React revert"
+    }
+  ],
+  "numberMismatches": [],
+  "hiddenLimitations": [],
+  "honestyNotes": [
+    "19/20 needs-input titles are disclosed in manifest counts (knownTitles:1, needsInputTitles:19), in the report's Known Limitations, and in the handoff — not hidden as PASS",
+    "10,420 broken-internal anchors are reported as measurement with explicit by-design explanation (out-of-table source routes), not gated or spun as success",
+    "Snapshot '0 broken internal links' is properly qualified: only verified-non-2xx counts as broken; 1,692 unverified targets recorded separately as 'unobserved, not broken'",
+    "Source SEO defects (2 empty meta descriptions, 1 missing alt) recorded as observed, not corrected",
+    "orphan claim scoped honestly: field is named orphanCandidatesWithinObservedSubgraph"
+  ],
+  "historicalIntegrity": "intact",
+  "stripeHardcodeFindings": [
+    "grep of src/seo/** and src/cli-seo-*.ts for stripe/플로우데스크/flowdesk: only one comment example in production-plan.ts line 18 — zero Stripe strings in engine logic",
+    "Forbidden brand terms are derived at runtime from the source snapshot (host, canonical/og hosts, JSON-LD Organization name/legalName, twitter:site, sameAs) in deriveForbiddenTerms()",
+    "Minor generalization nuance (non-blocking): deriveForbiddenTerms only adds the bare host label as a term when it is >= 4 chars (brand-isolation.ts line 46), so very short brand labels (e.g. 'x') would rely on the full-host terms only — a deliberate false-positive guard, not Stripe-specific"
+  ],
+  "blockingFindings": [],
+  "nonBlockingFindings": [
+    "Entire pipeline (Tasks 02-21) remains uncommitted on top of the single Phase-1 commit — pre-existing operational risk carried from preflight, not caused by Task 21",
+    "brand-isolation host-label length guard (>=4 chars) is a small generalization edge for short brand names",
+    "Flight-payload title rewrite is literal string replacement over the buffered response — builder discloses this with the post-hydration QA safety net; acceptable for the serve-boundary MVP",
+    "sitemap live fetch bounded to the index (partitions not crawled) — disclosed",
+    "The task-prompt concern 'e2e 126 vs 130' is moot: the frozen preflight baseline itself records smoke:e2e at 130 and the 1,402 arithmetic uses 130"
+  ],
+  "specCoverage": {
+    "A_sourceObserver": "met — all page-level and site-level fields present in source-seo-snapshot-v1 and recomputed",
+    "B_productionPlan": "met — derived from template+content+snapshot, zero copying (83 comparisons)",
+    "C_domainState": "met — preview mode: noindex,nofollow all routes, no canonical, no invented domain, /sitemap.xml 404; domain-provided mode smoke-proven",
+    "D_factSafety": "met — 7/7 facts needs-input, JSON-LD omits them",
+    "E_metadataRendering": "met — browser-verified post-hydration",
+    "F_robotsTxt": "met", "G_sitemap": "met (path-only preview, honestly labeled)",
+    "H_internalLinkQa": "met (measurement with full classification)",
+    "I_brandIsolation": "met (derived terms, 265 strings, 0 violations)",
+    "J_browserQa": "met (29/29 real Chromium)",
+    "K_smokeAndRegression": "met (72/72 re-run live; 14-suite logs audited = 1,474)"
+  },
+  "safeForTask22": true
+}

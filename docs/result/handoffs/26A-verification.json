@@ -1,0 +1,160 @@
+{
+  "task": "26A-verification",
+  "role": "26-Reconstruction-Verifier (fresh agent; section 19 of the Task 26 spec; adversarially independent of the builder)",
+  "createdAt": "2026-08-26T00:00:00Z",
+  "verdict": "PASS_WITH_LIMITATIONS",
+  "claimsUnderAudit": {
+    "report": "docs/result/26A-linear-fresh-reconstruction-2026-08-26.md",
+    "handoff": "docs/result/handoffs/26A-handoff.json",
+    "builderVerdict": "READY FOR TRANSFORMATION"
+  },
+  "method": "No builder conversation was available or used. Every headline number was recomputed from raw run artifacts (per-pair QA page JSON, per-pattern interaction JSON, unknowns, wide-viewport JSONs, review-summary.json, regression logs), the reconstructed app was launched and driven with an independent Playwright script (own console capture, own screenshots), the mask-image CORS claim was probed directly against the live CDN (3 requests), and all engine-change files were inspected for Linear-specific hardcoding.",
+  "artifactAudit": {
+    "qaRun": "data/linear.app/reconstruction-qa/2026-08-25T20-30-41-209Z",
+    "recomputedFromRawPerPairFiles": {
+      "pageViewportPairs": { "claimed": 16, "recomputed": 16, "match": true },
+      "comparedNodes": { "claimed": 18918, "recomputed": 18918, "match": true, "note": "sum of cloneMappedNodes over 16 pairs" },
+      "missingNodes": { "claimed": 0, "recomputed": 0, "match": true },
+      "contentExactRatio": { "claimed": 1.0, "recomputed": 1.0, "match": true, "note": "exactRatio 1 on every pair; 7,792 text nodes total via manifest" },
+      "cloneJsErrors": { "claimed": 0, "recomputed": 0, "match": true },
+      "clonePageErrors": { "claimed": 0, "recomputed": 0, "match": true },
+      "cloneHydrationErrors": { "claimed": 0, "recomputed": 0, "match": true, "note": "summed per-pair cloneHydrationErrors = 0" },
+      "geometryWorstAxisP95PerPair": { "claimed": "handoff perRouteGate", "recomputed": "matches every pair (e.g. / desktop 13.67, /changelog desktop 320.73, /security 80.01/80.00, /pricing 0.14/0.13)", "match": true },
+      "documentHeightDelta": { "claimed": "0 per route (perRouteGate) / max 0.5 site-level", "recomputed": "raw per-pair 0.03-0.50px", "match": "site-level max 0.5 exact; per-route 0 is presentation rounding of sub-pixel values - recorded, immaterial" },
+      "styleCompared": { "claimed": 1381062, "recomputed": 1381062, "match": true, "note": "from final-summary; mismatched 627 (0.045%)" },
+      "interactionTriggerState": { "claimed": "23/23 equivalent", "recomputed": "23 equivalent / 0 mismatch from 23 per-pattern files", "match": true },
+      "interactionVisibleTarget": { "claimed": "20 equivalent / 3 mismatch", "recomputed": "20/3; byType dialog 8/8, disclosure 11/13, selection 1/2", "match": true },
+      "dynamicTargets": { "claimed": "16 compared, 16 with clone children, 16 child-count match, 0 gaps", "recomputed": "16/16/16/0 from dynamicTargetChildren fields", "match": true },
+      "explorationStats": { "claimed": "34 planned / 31 executed / 26 changed / 3 actionability-error / locator 1.0", "recomputed": "identical from interaction-exploration.json stats (incl. strategies id-exact 17 / semantic 2 / structural 15)", "match": true },
+      "candidatesDetected": { "claimed": 526, "recomputed": 526, "match": true },
+      "unknowns": { "claimed": "11 cases / 10 groups; reasons style-only 2, already-in-state 2, execution-error 3, unsupported-dynamic-region 1, insufficient-evidence 3; replay 8 sampled, 8 clone no-op, 2 gaps, 3 unverifiable", "recomputed": "identical from unknown-interactions.json + final-summary.unknowns", "match": true },
+      "wideViewport": { "claimed": "worstCenteredDrift 0 on all 24 route-width combos (1440/1920/2048 x 8 routes)", "recomputed": "24 rows, all worstCenteredDrift 0 in wide-viewport-final-accepted.json; pre-fix file honestly shows 480-612px on 5 routes", "match": true },
+      "visualReviewPngCount": { "claimed": 96, "recomputed": 96, "match": true }
+    },
+    "discrepanciesFound": [
+      {
+        "id": "D1",
+        "severity": "minor",
+        "finding": "Handoff perRouteGate '/' row screenshotChangedRatio {desktop1440: 0.2075, mobile390: 0.2332, wide1920: 0.2701, wide2048: 0.2537} does not match the on-disk review-summary.json {0.2262, 0.1843, 0.2707, 0.2817}. All 28 ratios for the other 7 routes match the artifact exactly.",
+        "assessment": "Confined to the homepage, whose hero is a continuously-animating mockup, so this threshold-free live-vs-clone diagnostic is run-dependent by nature (the desktop1440 value matches the QA snapshot-clone pair instead, suggesting a stale/mixed source for that one row). Not a gate metric; does not affect any gate conclusion."
+      },
+      {
+        "id": "D2",
+        "severity": "clarification",
+        "finding": "perRouteGate documentHeightDeltaPx: 0 rows are rounded; raw per-pair deltas are 0.03-0.50px. The site-level documentHeightDeltaMaxPx 0.5 in the same handoff is exact.",
+        "assessment": "Presentation rounding, honestly reported at site level."
+      },
+      {
+        "id": "D3",
+        "severity": "clarification",
+        "finding": "'runtime errors 0' is true for the QA vocabulary (cloneJsErrors + clonePageErrors + hydration all 0 on all 16 pairs), but /customers pairs additionally log 72 console errors (48 desktop + 24 mobile) that are all failed CORS image loads of the webassets.linear.app mask-image assets.",
+        "assessment": "These are the disclosed asset-hotlink-blocked limitation surfacing in the console, not JS defects; independently reproduced in my own browser (24 console errors on /customers, every one 'Access to image ... blocked by CORS' / net::ERR_FAILED; pageErrors 0, hydrationErrors 0)."
+      }
+    ]
+  },
+  "browserConfirmation": {
+    "serve": "npx --no-install next start -p 4971 from data/linear.app/reconstructions/2026-08-25T20-30-33-313Z/app (pre-built .next present); server stopped after verification",
+    "independentScript": "own Playwright script (not the QA harness), own console/pageerror/hydration listeners",
+    "routesViewportsStates": [
+      { "check": "/ @1440", "http": 200, "consoleErrors": 0, "pageErrors": 0, "hydrationErrors": 0, "docHeight": 10898, "matchesObservation": "observation desktop height 10898 exactly" },
+      { "check": "/ @390", "http": 200, "consoleErrors": 0, "pageErrors": 0, "hydrationErrors": 0, "docHeight": 6382, "matchesObservation": "observation mobile height 6382 exactly" },
+      { "check": "/ @1920", "http": 200, "consoleErrors": 0, "pageErrors": 0, "hydrationErrors": 0, "docHeight": 10898, "note": "shell centered, no left-pin; visually verified" },
+      { "check": "/ @2048", "http": 200, "consoleErrors": 0, "pageErrors": 0, "hydrationErrors": 0, "docHeight": 10898 },
+      { "check": "/pricing @1440 + @390", "http": 200, "consoleErrors": 0, "pageErrors": 0, "hydrationErrors": 0 },
+      { "check": "/security @1440 + @390", "http": 200, "consoleErrors": 0, "pageErrors": 0, "hydrationErrors": 0 },
+      { "check": "/customers @1440 + @390", "http": 200, "consoleErrors": "24 per viewport - all CORS mask-image loads (disclosed limitation)", "pageErrors": 0, "hydrationErrors": 0 },
+      { "check": "/customers/automattic @1440", "http": 200, "consoleErrors": 0, "pageErrors": 0, "hydrationErrors": 0 },
+      { "check": "/changelog @1440", "http": 200, "consoleErrors": 0, "pageErrors": 0, "hydrationErrors": 0 },
+      { "check": "/integrations @1440", "http": 200, "consoleErrors": 0, "pageErrors": 0, "hydrationErrors": 0 },
+      { "check": "/plan @1440", "http": 200, "consoleErrors": 0, "pageErrors": 0, "hydrationErrors": 0 },
+      { "check": "interaction: desktop nav Product disclosure open on / @1440", "result": "trigger aria-expanded true; panel mounted ONCE (no ghost duplicate), region 856x268 @ x=506,y=65 - matches the builder's claimed box (856x268 @ x=505/506); real content (Intake/Build/Monitor/Plan/Diffs/Integrations + Coding sessions promo + Changelog link); console 0/0/0" },
+      { "check": "interaction: mobile hamburger menu open on / @390", "result": "full-screen dialog mounts (390x779 @ y=65) with complete site navigation (System/Product/Resources groups); disclosed cosmetics visible exactly as recorded (slightly translucent backdrop, hamburger icon does not swap to close glyph); console 0/0/0" },
+      { "check": "interaction: mobile menu open on /pricing @390", "result": "dialog mounts (390x779), aria-expanded true; console 0/0/0" }
+    ],
+    "horizontalOverflow": "none on any visited route/viewport",
+    "screenshotEvidence": "/private/tmp/claude-501/-Users-woops-projects-web-recon/4949d124-f229-410b-88cc-045042d56d2f/scratchpad/browser-evidence/ (17 PNG + source-crop comparisons + results.json/results2.json)",
+    "comparisonAgainstStoredSource": {
+      "method": "fresh clone screenshot vs top-crop of the stored SOURCE original PNG at the same width (mobile originals downsampled 3x->1x)",
+      "changedPixelRatios": { "home-1440": 0.0506, "home-390": 0.0764, "home-1920": 0.1365, "pricing-1440": 0.0289, "pricing-390": 0.0268, "security-1440": 0.0558, "security-390": 0.1099 },
+      "eyeball": "home/pricing/security shells are visually near-identical to the source; residual deltas are confined to animated-mockup internals (text wrap inside the hero demo), font-fallback line-wrap shifts (disclosed), and the security marquee offset (disclosed)"
+    },
+    "liveSourceObservations": [
+      "live /pricing renders 'US$10'/'US$16' where snapshot+clone render '$10'/'$16' - client-side currency formatting on the live site; snapshot-clone content gate unaffected; classified source-side dynamism, not a builder failure"
+    ]
+  },
+  "corsClaimIndependentlyVerified": {
+    "claim": "webassets.linear.app mask-image SVGs are CORS-allowlisted to https://linear.app (403 otherwise)",
+    "probe": "3 low-volume curl requests to one wordmark SVG",
+    "result": "Origin http://127.0.0.1:4971 -> 403; Origin https://linear.app -> 200 with access-control-allow-origin: https://linear.app; no-Origin -> 200",
+    "verdict": "claim TRUE; /customers tinted-blocks-without-cutouts rendering confirmed in my own browser"
+  },
+  "engineChangeAudit": {
+    "task26FilesModifiedInSrc": [
+      "src/reconstruction/layout-inference.ts",
+      "src/observer/layout-probe.ts",
+      "src/observer/observe-page.ts",
+      "src/sitespec/compile-page.ts",
+      "src/sitespec/index.ts",
+      "src/reconstruction/runtime-template.ts",
+      "src/sitespec/types.ts",
+      "src/sitespec/dynamic-template.ts",
+      "src/reconstruction/interaction-bindings.ts"
+    ],
+    "scopeCheck": "mtime audit against the preflight timestamp (2026-08-26 03:08 KST): exactly the 9 files named in EC1-EC6 changed during the Task 26 window; nothing else in src/ was touched; tracked-file git status is byte-identical to 26-preflight.json (same 6 modified / 2 deleted)",
+    "genericityCheck": {
+      "grep": "repo-wide case-insensitive grep over src/ and scripts/: zero .linear-* selectors, zero linear.app strings, zero Linear route/text/conditional branches; only hits are the identifier 'baselineArea', generic Radix-framework-id doc comments (site-agnostic), and a pre-Task-26 recon-template file (mtime 2026-08-18)",
+      "EC1": "GENERIC - dynamic-region mount gated on data-wr-dyn-id (emitted only from observed evidence), not on pattern taxonomy; fixture §141b in smoke-reconstruction",
+      "EC2": "GENERIC - autoScrollPrepare moved into layout-probe.ts, probe mirrors the observation's prepare-scroll flag; /lazy fixture in smoke-multi-observer",
+      "EC3": "GENERIC - computeProbeAttachment() structural prefix (tag+parent equality), coverage floor removed, >=100-element floor + truth-sanity gate retained; §probe unit block in smoke-sitespec incl. negative controls",
+      "EC4": "GENERIC - capped-fill variant of centered-max-width: pure arithmetic over probe widths (w == min(parentContent, cap) at every desktop width, equal gaps where engaged, truth gate); code comment documents it; positive + left-pinned negative fixtures",
+      "EC5": "GENERIC - observed-channel-before-declared-channel ordering, single-root host unwrap, marker-based declared-region identity, unmount clears once-only marker; §141b extended fixture through the real compiler",
+      "EC6": "GENERIC additive-optional IR field sourceHtmlId (evidence, never re-emitted as DOM id); old SiteSpecs load unchanged"
+    },
+    "verdict": "all six changes are generic, evidence/fixture-driven, and free of Linear-specific hardcoding; effect on the clone independently confirmed in-browser (panel mounts once with no ghost at the claimed coordinates; wide viewports center at 1920/2048)"
+  },
+  "regressionAudit": {
+    "logs": "docs/result/handoffs/26A-regression-logs/",
+    "driverStatus": "typecheck + 17 suites all exit 0; start 2026-08-25T20:48:45Z, done 2026-08-25T21:07:08Z",
+    "perSuiteChecksSummedFromLogs": { "verifier": 81, "selector": 81, "multi-observer": 62, "interaction-detector": 92, "interaction-explorer": 108, "interaction-patterns": 88, "sitespec": 257, "reconstruction": 217, "reconstruction-qa": 134, "e2e": 130, "recon-template": 58, "content-injection": 68, "theme": 47, "seo": 72, "assets": 113, "production": 84, "release": 84 },
+    "recomputedTotal": 1776,
+    "claimedTotal": 1776,
+    "failures": 0,
+    "match": true,
+    "note": "the recovery instance's correction of 1,779 -> 1,776 is right: the per-suite log counts sum to 1,776 (baseline 1,755 + 4 multi-observer + 5 sitespec + 12 reconstruction)"
+  },
+  "limitationsAudit": {
+    "verdict": "honest - none of the recorded limitations is a euphemism for a gate failure",
+    "items": [
+      { "limitation": "3 visible-target mismatches = blinking caret", "evidence": "raw per-pattern JSON: all 3 mismatch fields point at the SAME 1x20px span at x=764,y=5382 inside the hero mockup, whose visible flag flips between uncorrelated measurement instants (ip000001 direction, ip000002/ip000003 visible); the real panels those patterns open verify equivalent, and I opened the Product panel myself (mounted once, correct box, correct content)", "confirmed": true },
+      { "limitation": "customer wordmark mask-image CORS", "evidence": "live CDN probe 403/200+ACAO; tinted blocks reproduced in my browser; layout unaffected (geometry p95 0.83px, height delta 0)", "confirmed": true },
+      { "limitation": "lazy below-fold images at scroll-0", "evidence": "QA asset-load-failure 72 occurrences on 2 pages; original pairs show the same failed counts at scroll 0 (originalImagesFailed 36 = cloneImagesFailed 36 on /customers desktop)", "confirmed": true },
+      { "limitation": "localized decorative offsets (/security 80px marquee, /changelog feed internals, mockup nodes)", "evidence": "recomputed per-pair: medians <=0.53px and height deltas <=0.5px on those pairs; offsets are node-cluster-local (33/32 nodes on /security, 571 of 2,259 on /changelog)", "confirmed": true },
+      { "limitation": "mobile menu cosmetics (translucent backdrop, no hamburger->close icon swap)", "evidence": "seen directly in my own open-state screenshot, exactly as recorded", "confirmed": true },
+      { "limitation": "3 actionability-errors as execution-error unknowns", "evidence": "exploration actionStatusSummary confirms 3; unknowns file carries them; no behavior claimed", "confirmed": true }
+    ]
+  },
+  "gateEvaluation": {
+    "allSelectedRoutesRender": "PASS - 8/8 verified in artifacts AND in my own browser (HTTP 200 each)",
+    "runtimeErrors0": "PASS - 0 JS + 0 page errors across 16 QA pairs, and 0 in my own console capture on all 11 route-viewport visits (the /customers console entries are the disclosed CORS asset loads, not JS errors)",
+    "hydrationErrors0": "PASS - 0 in QA per-pair sums and 0 in my own capture",
+    "majorInteractionFailures0": "PASS - 23/23 trigger state, all real panels/menus/dialogs equivalent, 16/16 mounts; sole mismatches are one caret's blink phase (minor limitation, correctly recorded)",
+    "majorGeometryFailures0": "PASS - content exact 1.0, height deltas <=0.5px, wide centered drift 0 on 24/24, residual offsets localized and decorative",
+    "viewports": "PASS - 390/1440/1920 everywhere + 2048 canary; independently exercised 390/1440/1920/2048 on homepage"
+  },
+  "acceptedLimitations": [
+    "homepage hero mockup animation (source dynamism): live-original desktop pair is source-drift; caret blink causes the 3 visible-target mismatches",
+    "customer wordmark mask-image CORS allow-list -> tinted blocks on /customers until Phase C asset materialization (replacement territory regardless)",
+    "below-fold lazy images do not decode at scroll-0 QA capture (matches live behavior)",
+    "localized decorative geometry offsets (/security marquee 80px, /changelog feed internals) with document flow intact",
+    "mobile menu cosmetic deltas (backdrop translucency, no icon swap)",
+    "inherited Task 17.1 limitations incl. font-source-binding-unverified (fallback metrics cause small line-wrap shifts, seen on /security hero)"
+  ],
+  "constraintsRespected": {
+    "engineCodeModified": false,
+    "artifactsModified": false,
+    "gitAddCommitPush": false,
+    "serversStartedThenKilled": ["next start port 4971 - killed, port verified free"],
+    "liveRequests": "3 curl probes to one webassets.linear.app asset (low volume, public)"
+  },
+  "conclusion": "Every headline claim in 26A reproduces from primary evidence; the three discrepancies found (D1 stale/mixed homepage screenshot-ratio row, D2 rounding presentation, D3 console-error vocabulary nuance) are minor, disclosed-adjacent, and do not touch any section-17 gate. The builder verdict READY FOR TRANSFORMATION is supported. Verifier verdict: PASS_WITH_LIMITATIONS (the accepted limitations listed above carry into Phase B/C)."
+}
