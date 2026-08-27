@@ -26,6 +26,9 @@ export interface RouteLinkAudit {
   routeResolves: number;
   brokenInternal: { href: string }[];
   sourceHostAbsolute: number;
+  /** The actual source-host hrefs behind `sourceHostAbsolute` — GED-F needs
+   *  the URL, not just the count, to report a brand finding (Task 27). */
+  sourceHostAbsoluteHrefs: string[];
   external: number;
   nonNavigational: number;
 }
@@ -50,6 +53,7 @@ export function auditAnchors(
     routeResolves: 0,
     brokenInternal: [] as { href: string }[],
     sourceHostAbsolute: 0,
+    sourceHostAbsoluteHrefs: [] as string[],
     external: 0,
     nonNavigational: 0,
   };
@@ -68,8 +72,10 @@ export function auditAnchors(
     if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed) || trimmed.startsWith("//")) {
       try {
         const url = new URL(trimmed.startsWith("//") ? `https:${trimmed}` : trimmed);
-        if (url.host === sourceHost || url.host === `www.${sourceHost}`) result.sourceHostAbsolute += 1;
-        else result.external += 1;
+        if (url.host === sourceHost || url.host === `www.${sourceHost}`) {
+          result.sourceHostAbsolute += 1;
+          result.sourceHostAbsoluteHrefs.push(trimmed);
+        } else result.external += 1;
       } catch {
         result.external += 1;
       }
@@ -103,6 +109,7 @@ export async function runInternalLinkQa(options: {
         routeResolves: 0,
         brokenInternal: [],
         sourceHostAbsolute: 0,
+        sourceHostAbsoluteHrefs: [],
         external: 0,
         nonNavigational: 0,
       });
@@ -119,10 +126,11 @@ export async function runInternalLinkQa(options: {
       routeResolves: acc.routeResolves + audit.routeResolves,
       brokenInternal: [...acc.brokenInternal, ...audit.brokenInternal.map((b) => ({ href: `${audit.route} → ${b.href}` }))],
       sourceHostAbsolute: acc.sourceHostAbsolute + audit.sourceHostAbsolute,
+      sourceHostAbsoluteHrefs: [...acc.sourceHostAbsoluteHrefs, ...audit.sourceHostAbsoluteHrefs],
       external: acc.external + audit.external,
       nonNavigational: acc.nonNavigational + audit.nonNavigational,
     }),
-    { fetchedRoutes: 0, anchors: 0, routeResolves: 0, brokenInternal: [] as { href: string }[], sourceHostAbsolute: 0, external: 0, nonNavigational: 0 },
+    { fetchedRoutes: 0, anchors: 0, routeResolves: 0, brokenInternal: [] as { href: string }[], sourceHostAbsolute: 0, sourceHostAbsoluteHrefs: [] as string[], external: 0, nonNavigational: 0 },
   );
   return { routes: audits, totals };
 }

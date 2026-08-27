@@ -23,7 +23,7 @@
 import { createHash } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
@@ -63,12 +63,17 @@ import {
   createAssetMaterializationRun,
   loadAssetInventoryRun,
 } from "../src/assets/index.js";
+import { hashDirectory } from "../src/production/hash.js";
 import { runProductionCompile, runProductionQa } from "../src/production/index.js";
 import {
   buildRelease,
   collectRequirements,
   computeStageInputsHash,
+  CONTENT_DERIVED_HASH_EXCLUSIONS,
+  FROZEN_TEMPLATE_HASH_EXCLUSIONS,
+  staleExclusionSetWarnings,
   downstreamOf,
+  effectiveResolution,
   invalidatedStages,
   loadReleaseProject,
   loadRequirementsFile,
@@ -80,13 +85,33 @@ import {
   ReleaseProjectSchema,
   RequirementSchema,
   resolveRelease,
+  RELEASE_PROJECT_REVISION,
   RESOLUTION_FIELD_IMPACTS,
   STAGE_DEPENDENCIES,
   THEME_SELECTION_IMPACTS,
+  adaptReleaseProject,
+  defaultSiteId,
+  emptyAuthoredState,
   planRelease,
+  refreshStageStatuses,
+  type AuthoredState,
   type ProductionResolution,
   type ReleaseRun,
+  mergeRequirements,
+  releaseBlockers,
+  REQUIREMENT_KINDS,
+  SEVERITY_POLICY,
+  type Requirement,
 } from "../src/release/index.js";
+// brand-scan is not (yet) on the release barrel — see changeRequests in the
+// Task 27 handoff for src/release/index.ts.
+import {
+  BRAND_SURFACE_POLICY,
+  brandFindingSeverity,
+  brandSurfaceRequirements,
+  type BrandFinding,
+  type BrandSurfaceReport,
+} from "../src/release/brand-scan.js";
 
 let checks = 0;
 let failures = 0;
@@ -100,6 +125,66 @@ function check(name: string, ok: boolean | undefined, detail = ""): void {
 }
 function section(title: string): void {
   console.log(`\n== ${title}`);
+}
+
+/**
+ * The plan↔build AGREEMENT invariant (Task 27 — release:plan cascade fix).
+ *
+ * `release:plan` and `release:build --dry-run` answer the same question about
+ * the same project, so their per-stage verdicts must be identical: what plan
+ * calls READY is exactly what build would REUSE, and what plan calls
+ * STALE/BLOCKED is exactly what build would RUN or refuse. Before the fix,
+ * build applied the dependency cascade and plan did not, so plan printed
+ * "READY (fresh): theme, seo, production" for a project build was about to
+ * rebuild end to end. Asserting the AGREEMENT (not plan's output shape) is
+ * what makes a re-divergence impossible to land green.
+ */
+async function planBuildAgreement(projectDir: string): Promise<{
+  agrees: boolean;
+  planNotReady: string;
+  buildNotReuse: string;
+  view: Awaited<ReturnType<typeof planRelease>>;
+  detail: string;
+}> {
+  const view = await planRelease(projectDir, { log: () => {} });
+  const dry = await buildRelease(projectDir, { dryRun: true, log: () => {} });
+  const sorted = (stages: readonly string[]): string => [...stages].sort().join(",");
+  const planReady = sorted(view.ready);
+  const buildReuse = sorted(dry.plan.wouldReuse);
+  const planNotReady = sorted([...view.stale, ...view.blocked.map((entry) => entry.stage)]);
+  const buildNotReuse = sorted([...dry.plan.wouldRun, ...dry.plan.blocked.map((entry) => entry.stage)]);
+  return {
+    agrees: planReady === buildReuse && planNotReady === buildNotReuse,
+    planNotReady,
+    buildNotReuse,
+    view,
+    detail:
+      `plan.ready=[${planReady}] vs build.wouldReuse=[${buildReuse}] | ` +
+      `plan.stale+blocked=[${planNotReady}] vs build.wouldRun+blocked=[${buildNotReuse}]`,
+  };
+}
+
+/**
+ * The THREE-surface agreement invariant (Task 27 — release:resolve closure fix).
+ *
+ * `release:resolve` prints "invalidated: …" the moment a pack lands, and it was
+ * the ONE surface still reading a hand-maintained impact table instead of the
+ * dependency graph: it said "content, seo, production" for a routeContent pack
+ * that `release:plan`, run one second later, called "STALE: content, theme, seo,
+ * production". Asserting that all three operator surfaces name the SAME stage
+ * set — resolve's invalidation, plan's stale+blocked, build --dry-run's
+ * would-run+blocked — is what keeps the closure derived rather than curated.
+ */
+async function resolvePlanBuildAgreement(
+  projectDir: string,
+  invalidated: readonly string[],
+): Promise<{ agrees: boolean; detail: string }> {
+  const agreement = await planBuildAgreement(projectDir);
+  const resolveSet = [...invalidated].sort().join(",");
+  return {
+    agrees: agreement.agrees && resolveSet === agreement.planNotReady,
+    detail: `resolve.invalidated=[${resolveSet}] | ${agreement.detail}`,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -1144,6 +1229,324 @@ async function main(): Promise<void> {
     );
 
     // =======================================================================
+    section("1b. TASK 27 — stable site identity + frozen template report/ exclusion");
+    // =======================================================================
+    check(
+      "27.1 project carries a STABLE siteId and revision 2",
+      loaded.project.siteId === defaultSiteId(HOST) &&
+        loaded.project.projectRevision === RELEASE_PROJECT_REVISION,
+      `${loaded.project.siteId} rev${loaded.project.projectRevision}`,
+    );
+    check(
+      "27.2 projectId is the siteId — NOT the production-spec run id",
+      loaded.project.projectId === loaded.project.siteId &&
+        !loaded.project.projectId.includes(compile0.runId),
+      loaded.project.projectId,
+    );
+    check(
+      "27.3 project starts with an EMPTY authored block (schema-valid)",
+      JSON.stringify(loaded.project.authored) === JSON.stringify(emptyAuthoredState()),
+      JSON.stringify(loaded.project.authored),
+    );
+    // Explicit operator siteId → its own project namespace (several customer
+    // sites from ONE template).
+    const secondSite = await prepareReleaseProject({
+      productionSpecRef: compile0.specDir,
+      siteId: "second-customer",
+      log: () => {},
+    });
+    check(
+      "27.4 operator-supplied siteId is honored and gets its own project",
+      secondSite.project.siteId === "second-customer" &&
+        secondSite.projectDir !== projectDir &&
+        secondSite.projectDir.endsWith(path.join("release-projects", "second-customer")),
+      secondSite.projectDir,
+    );
+    check(
+      "27.5 the same siteId prepared twice keeps ONE identity (no run-scoped fork)",
+      (
+        await prepareReleaseProject({
+          productionSpecRef: compile0.specDir,
+          siteId: "second-customer",
+          log: () => {},
+        })
+      ).projectDir === secondSite.projectDir,
+    );
+    await rm(secondSite.projectDir, { recursive: true, force: true });
+
+    // ---- frozen template hash excludes report/ ---------------------------
+    // `pnpm qa:recon-template` writes into the template run dir; before Task 27
+    // that bricked release:build (build.ts refuses frozen-stage drift).
+    check(
+      "27.6 prepare recorded report/ in the template artifact exclusions",
+      (loaded.project.acceptedLineage.template.excluded ?? []).includes("report"),
+      JSON.stringify(loaded.project.acceptedLineage.template.excluded),
+    );
+    await mkdir(path.join(templateDir, "report"), { recursive: true });
+    await writeFile(
+      path.join(templateDir, "report", "template-qa.json"),
+      JSON.stringify({ simulated: "qa:recon-template output", at: new Date().toISOString() }, null, 2) + "\n",
+      "utf8",
+    );
+    const afterQaWrite = await buildRelease(projectDir, { dryRun: true, log: () => {} });
+    check(
+      "27.7 a template report/ write does NOT stale or block the frozen template",
+      afterQaWrite.plan.wouldReuse.includes("template") &&
+        afterQaWrite.plan.blocked.length === 0 &&
+        afterQaWrite.plan.wouldRun.length === 0,
+      `run=${JSON.stringify(afterQaWrite.plan.wouldRun)} blocked=${JSON.stringify(afterQaWrite.plan.blocked)}`,
+    );
+    let frozenDriftRefusal = false;
+    try {
+      await buildRelease(projectDir, { log: () => {} });
+    } catch {
+      frozenDriftRefusal = true;
+    }
+    check("27.8 a REAL build after template QA still runs (no frozen-drift refusal)", !frozenDriftRefusal);
+
+    // ---- content hash excludes DERIVED outputs (Task 27 hardening) --------
+    // Same landmine one stage over: Task 27 added `report/telemetry.jsonl`,
+    // `report/repair/` and `slot-accounting.json` writes INTO a content run
+    // dir, all of them made again by `pnpm content:qa` / `content:validate`.
+    // Without an exclusion set the content stage — and everything downstream
+    // of it — goes stale for bytes no rebuild consumes.
+    check(
+      "27H.1 prepare recorded report/ + slot-accounting.json in the CONTENT exclusions",
+      CONTENT_DERIVED_HASH_EXCLUSIONS.includes("report") &&
+        CONTENT_DERIVED_HASH_EXCLUSIONS.includes("slot-accounting.json") &&
+        CONTENT_DERIVED_HASH_EXCLUSIONS.every((entry) =>
+        (loaded.project.acceptedLineage.content.excluded ?? []).includes(entry),
+      ),
+      JSON.stringify(loaded.project.acceptedLineage.content.excluded),
+    );
+    const slotValuesFile = path.join(contentRunDir, "slot-values.json");
+    const slotValuesBefore = await readFile(slotValuesFile, "utf8");
+    const accountingFile = path.join(contentRunDir, "slot-accounting.json");
+    const accountingBefore = existsSync(accountingFile)
+      ? await readFile(accountingFile, "utf8")
+      : null;
+    // Simulate exactly what a post-prepare content QA / revalidation pass
+    // writes (src/cli-content-qa.ts:164,270 + src/content-injection/run.ts:188).
+    await mkdir(path.join(contentRunDir, "report", "repair"), { recursive: true });
+    await writeFile(
+      path.join(contentRunDir, "report", "telemetry.jsonl"),
+      JSON.stringify({ simulated: "content:qa telemetry", at: new Date().toISOString() }) + "\n",
+      "utf8",
+    );
+    await writeFile(
+      path.join(contentRunDir, "report", "repair", "repair-stop.json"),
+      JSON.stringify({ simulated: "bounded repair loop stop", at: new Date().toISOString() }, null, 2) + "\n",
+      "utf8",
+    );
+    await writeFile(
+      accountingFile,
+      JSON.stringify(
+        { schemaName: "content-slot-accounting-v1", simulatedRefreshAt: new Date().toISOString() },
+        null,
+        2,
+      ) + "\n",
+      "utf8",
+    );
+    const afterContentQa = await buildRelease(projectDir, { dryRun: true, log: () => {} });
+    check(
+      "27H.2 content QA writes (report/ + slot-accounting.json) do NOT stale content",
+      afterContentQa.plan.wouldReuse.includes("content") &&
+        afterContentQa.plan.wouldRun.length === 0 &&
+        afterContentQa.plan.blocked.length === 0,
+      `run=${JSON.stringify(afterContentQa.plan.wouldRun)} blocked=${JSON.stringify(afterContentQa.plan.blocked)}`,
+    );
+    // The OTHER direction: slot-values.json is AUTHORED INPUT that production
+    // bakes (src/production/run.ts:234,375). It must never be excluded, so a
+    // real edit still stales content and cascades downstream.
+    const editedSlotValues = JSON.parse(slotValuesBefore) as Record<string, unknown>;
+    const firstSlotKey = Object.keys(editedSlotValues)[0]!;
+    editedSlotValues[firstSlotKey] = `${String(editedSlotValues[firstSlotKey])} (edited)`;
+    await writeFile(slotValuesFile, JSON.stringify(editedSlotValues, null, 2) + "\n", "utf8");
+    const afterSlotEdit = await buildRelease(projectDir, { dryRun: true, log: () => {} });
+    check(
+      "27H.3 a REAL slot-values.json edit DOES stale content and cascade downstream",
+      afterSlotEdit.plan.wouldRun.includes("content") &&
+        afterSlotEdit.plan.wouldRun.includes("theme") &&
+        afterSlotEdit.plan.wouldRun.includes("seo"),
+      `run=${JSON.stringify(afterSlotEdit.plan.wouldRun)}`,
+    );
+    // Restore the accepted bytes so the rest of the scenario is unaffected.
+    await writeFile(slotValuesFile, slotValuesBefore, "utf8");
+    if (accountingBefore !== null) await writeFile(accountingFile, accountingBefore, "utf8");
+    else await rm(accountingFile, { force: true });
+    const afterRestore = await buildRelease(projectDir, { dryRun: true, log: () => {} });
+    check(
+      "27H.4 restoring slot-values.json returns content to fresh (hash, not mtime)",
+      afterRestore.plan.wouldRun.length === 0 && afterRestore.plan.wouldReuse.includes("content"),
+      `run=${JSON.stringify(afterRestore.plan.wouldRun)}`,
+    );
+    // ---- residual risk on projects prepared BEFORE the fix ----------------
+    // DECISION: warn, never silently re-adopt the current set on load — the
+    // recorded hash was computed under the recorded set, so swapping the set
+    // in could brick a project at LOAD time. The three legacy projects on disk
+    // record templateExcluded=[".next","node_modules","out"] and content [].
+    const legacyShaped = JSON.parse(JSON.stringify(loaded.project)) as typeof loaded.project;
+    legacyShaped.stageStatus.template.artifact!.excluded = [".next", "node_modules", "out"];
+    legacyShaped.stageStatus.content.artifact!.excluded = [];
+    const legacyWarnings = staleExclusionSetWarnings(legacyShaped);
+    check(
+      "27H.5 a pre-fix recorded exclusion set warns the operator (template + content)",
+      legacyWarnings.length === 2 &&
+        legacyWarnings.some((w) => w.startsWith("template:") && w.includes('"report"')) &&
+        legacyWarnings.some((w) => w.startsWith("content:") && w.includes('"slot-accounting.json"')) &&
+        legacyWarnings.every((w) => w.includes("release:prepare")),
+      JSON.stringify(legacyWarnings),
+    );
+    check(
+      "27H.6 a project recorded under the CURRENT sets warns about nothing",
+      staleExclusionSetWarnings(loaded.project).length === 0 &&
+        FROZEN_TEMPLATE_HASH_EXCLUSIONS.includes("report"),
+      JSON.stringify(staleExclusionSetWarnings(loaded.project)),
+    );
+    // ---- 27H.7 the warning must REACH the operator, and its printed remedy
+    // must actually WORK ------------------------------------------------------
+    // The previous revision of this block asserted
+    // `planRelease(...).warnings.length === 0` under a name claiming the
+    // warning reaches the operator — an assertion that could not fail when the
+    // wiring broke. What follows drives a LEGACY-SHAPED project (recorded
+    // exclusion sets predating the fix, and hashes recorded UNDER those sets so
+    // nothing is drifted — the shape the three real projects on disk have)
+    // through refreshStageStatuses, release:plan and release:build --dry-run,
+    // then follows the remedy the warning prints and asserts it clears.
+    const legacyProjectId = `${loaded.project.siteId}-legacy-exclusions`;
+    const legacyPrepared = await prepareReleaseProject({
+      productionSpecRef: compile0.specDir,
+      projectId: legacyProjectId,
+      log: () => {},
+    });
+    const legacyDir = legacyPrepared.projectDir;
+    const legacyFile = path.join(legacyDir, "release-project.json");
+    const legacyTemplateExclusions = [".next", "node_modules", "out"];
+    const legacyDoc = (await loadReleaseProject(legacyDir)).project;
+    const legacyTemplateHash = (await hashDirectory(templateDir, legacyTemplateExclusions)).hash;
+    const legacyContentHash = (await hashDirectory(contentRunDir, [])).hash;
+    for (const ref of [legacyDoc.acceptedLineage.template, legacyDoc.stageStatus.template.artifact!]) {
+      ref.excluded = [...legacyTemplateExclusions];
+      ref.hash = legacyTemplateHash;
+    }
+    for (const ref of [legacyDoc.acceptedLineage.content, legacyDoc.stageStatus.content.artifact!]) {
+      ref.excluded = [];
+      ref.hash = legacyContentHash;
+    }
+    await writeFile(legacyFile, JSON.stringify(legacyDoc, null, 2) + "\n", "utf8");
+
+    const legacyReloaded = (await loadReleaseProject(legacyDir)).project;
+    const legacyRefreshed = await refreshStageStatuses(
+      legacyReloaded,
+      effectiveResolution(legacyReloaded.resolutions),
+      { log: () => {} },
+    );
+    const legacyContentWarning = legacyRefreshed.warnings.find((w) => w.startsWith("content:"));
+    check(
+      "27H.7a a real legacy-shaped project (loaded from disk) warns on BOTH stages and is NOT drifted",
+      legacyRefreshed.warnings.some((w) => w.startsWith("template:") && w.includes('"report"')) &&
+        legacyContentWarning !== undefined &&
+        legacyContentWarning.includes('"slot-accounting.json"') &&
+        legacyContentWarning.includes(contentRunDir) &&
+        legacyRefreshed.warnings.every((w) => !w.includes("artifact drift")),
+      JSON.stringify(legacyRefreshed.warnings),
+    );
+    const legacyPlan = await planRelease(legacyDir, { log: () => {} });
+    check(
+      "27H.7b the warning reaches the operator through release:plan (warnings[] AND the rendered screen)",
+      legacyPlan.warnings.some(
+        (w) => w.startsWith("content:") && w.includes(contentRunDir) && w.includes("release:prepare"),
+      ) &&
+        legacyPlan.text.includes("WARNINGS") &&
+        legacyPlan.text.includes("predate the derived-output fix"),
+      `warnings=${legacyPlan.warnings.length} rendered=${legacyPlan.text.includes("predate the derived-output fix")}`,
+    );
+    const legacyBuildLog: string[] = [];
+    await buildRelease(legacyDir, { dryRun: true, log: (line) => legacyBuildLog.push(line) });
+    check(
+      "27H.7c the warning reaches the operator through release:build --dry-run",
+      legacyBuildLog.some((line) => line.trim() === "WARNINGS") &&
+        legacyBuildLog.some(
+          (line) => line.includes("predate the derived-output fix") && line.includes(contentRunDir),
+        ),
+      legacyBuildLog.filter((line) => line.includes("predate")).join(" | ") || "(no warning line logged)",
+    );
+    // Now DO what the warning tells the operator to do.
+    const legacyBefore = (await loadReleaseProject(legacyDir)).project;
+    const remedied = await prepareReleaseProject({
+      productionSpecRef: compile0.specDir,
+      projectId: legacyProjectId,
+      log: () => {},
+    });
+    const remediedPlan = await planRelease(legacyDir, { log: () => {} });
+    check(
+      "27H.7d following the PRINTED remedy actually CLEARS the warning (content re-hashed under the current set)",
+      remedied.reprepared === true &&
+        staleExclusionSetWarnings(remedied.project).length === 0 &&
+        CONTENT_DERIVED_HASH_EXCLUSIONS.every((entry) =>
+          (remedied.project.stageStatus.content.artifact?.excluded ?? []).includes(entry),
+        ) &&
+        remediedPlan.warnings.every((w) => !w.includes("predate the derived-output fix")) &&
+        !remediedPlan.text.includes("predate the derived-output fix"),
+      JSON.stringify(remedied.project.stageStatus.content.artifact?.excluded) +
+        " / " +
+        JSON.stringify(staleExclusionSetWarnings(remedied.project)),
+    );
+    check(
+      "27H.7e the re-hash keeps the carried per-stage state (same artifact id/path, carried inputsHash, authored, resolutions)",
+      remedied.project.stageStatus.content.artifact!.path ===
+        legacyBefore.stageStatus.content.artifact!.path &&
+        remedied.project.stageStatus.content.artifact!.id ===
+          legacyBefore.stageStatus.content.artifact!.id &&
+        remedied.project.stageStatus.content.inputsHash ===
+          legacyBefore.stageStatus.content.inputsHash &&
+        remedied.project.stageStatus.content.artifact!.hash !==
+          legacyBefore.stageStatus.content.artifact!.hash &&
+        JSON.stringify(remedied.project.authored) === JSON.stringify(legacyBefore.authored) &&
+        remedied.project.resolutions.length === legacyBefore.resolutions.length &&
+        remedied.project.createdAt === legacyBefore.createdAt,
+      `${remedied.project.stageStatus.content.inputsHash} vs ${legacyBefore.stageStatus.content.inputsHash}`,
+    );
+    // The adoption is scoped to the SAME path on purpose: a stage that a
+    // release:build rerun advanced to a DIFFERENT run dir must still win over
+    // the accepted lineage, or a re-prepare would silently revert it.
+    const rerunContentDir = path.join(HOST_DATA_DIR, "content-runs", "2026-08-25T00-00-03-999Z");
+    await cp(contentRunDir, rerunContentDir, { recursive: true });
+    const advancedDoc = (await loadReleaseProject(legacyDir)).project;
+    advancedDoc.stageStatus.content.artifact = {
+      ...advancedDoc.stageStatus.content.artifact!,
+      id: "2026-08-25T00-00-03-999Z",
+      path: rerunContentDir,
+      hash: (await hashDirectory(rerunContentDir, [...CONTENT_DERIVED_HASH_EXCLUSIONS])).hash,
+    };
+    await writeFile(legacyFile, JSON.stringify(advancedDoc, null, 2) + "\n", "utf8");
+    const afterAdvancedReprepare = await prepareReleaseProject({
+      productionSpecRef: compile0.specDir,
+      projectId: legacyProjectId,
+      log: () => {},
+    });
+    check(
+      "27H.7f a stage advanced to a DIFFERENT run dir is NOT reverted to the accepted lineage by the re-hash",
+      afterAdvancedReprepare.project.stageStatus.content.artifact!.path === rerunContentDir &&
+        afterAdvancedReprepare.project.acceptedLineage.content.path === contentRunDir,
+      afterAdvancedReprepare.project.stageStatus.content.artifact!.path,
+    );
+    await rm(legacyDir, { recursive: true, force: true });
+    await rm(rerunContentDir, { recursive: true, force: true });
+    // …and the project recorded under the CURRENT sets says nothing, on every
+    // one of those surfaces.
+    const currentPlan = await planRelease(projectDir, { log: () => {} });
+    const currentBuildLog: string[] = [];
+    await buildRelease(projectDir, { dryRun: true, log: (line) => currentBuildLog.push(line) });
+    check(
+      "27H.7g a project recorded under the CURRENT sets emits NO exclusion warning on any surface",
+      currentPlan.warnings.every((w) => !w.includes("predate the derived-output fix")) &&
+        !currentPlan.text.includes("predate the derived-output fix") &&
+        currentBuildLog.every((line) => !line.includes("predate the derived-output fix")),
+      JSON.stringify(currentPlan.warnings),
+    );
+
+    // =======================================================================
     section("2. requirement kinds derived from the fixture artifacts (tests 4-9)");
     // =======================================================================
     const byId = new Map(requirementsFile0.requirements.map((requirement) => [requirement.requirementId, requirement]));
@@ -1223,6 +1626,61 @@ async function main(): Promise<void> {
       "13b invalidatedStages(domain-only) = [seo, production]",
       JSON.stringify(invalidatedStages(domainOnly)) === JSON.stringify(["seo", "production"]),
     );
+    // ---- Task 27: THEME_SELECTION_IMPACTS is WIRED, not declared ----------
+    check(
+      "27.9 theme is a live resolution field impact (no longer a dead constant)",
+      RESOLUTION_FIELD_IMPACTS.theme === THEME_SELECTION_IMPACTS,
+    );
+    const themeOnly: ProductionResolution = {
+      schemaVersion: 1,
+      schemaName: "production-resolution-v1",
+      theme: { tokens: { "color.action.primary": "rgb(12, 34, 56)" } },
+    };
+    check(
+      "27.10 invalidatedStages(theme-only) = [theme, production] EXACTLY",
+      JSON.stringify(invalidatedStages(themeOnly)) === JSON.stringify(["theme", "production"]),
+      JSON.stringify(invalidatedStages(themeOnly)),
+    );
+    // The theme slice must be inside computeStageInputsHash, and inside NO
+    // other stage's slice — assert all five stages, not just the two.
+    const authoredNoTheme: AuthoredState = emptyAuthoredState();
+    const authoredTheme: AuthoredState = {
+      ...emptyAuthoredState(),
+      theme: { tokens: { "color.action.primary": "rgb(12, 34, 56)" } },
+    };
+    const allHashes = {
+      reconstruction: "a".repeat(64),
+      template: "b".repeat(64),
+      content: "c".repeat(64),
+      theme: "d".repeat(64),
+      seo: "e".repeat(64),
+      assets: "f".repeat(64),
+    };
+    const empty2: ProductionResolution = { schemaVersion: 1, schemaName: "production-resolution-v1" };
+    const hashWith = (stage: Parameters<typeof computeStageInputsHash>[0], authored: AuthoredState): string =>
+      computeStageInputsHash(stage, allHashes, empty2, {}, "ih", authored);
+    check(
+      "27.11 theme slice IS in the theme stage inputs hash",
+      hashWith("theme", authoredTheme) !== hashWith("theme", authoredNoTheme),
+    );
+    check(
+      "27.12 theme edit does NOT move reconstruction/template/content/seo/assets input hashes",
+      (["reconstruction", "template", "content", "seo", "assets"] as const).every(
+        (stage) => hashWith(stage, authoredTheme) === hashWith(stage, authoredNoTheme),
+      ),
+    );
+    check(
+      "27.13 an EMPTY authored block hashes identically to no authored block (legacy-safe)",
+      computeStageInputsHash("content", allHashes, empty2, {}, "ih", emptyAuthoredState()) ===
+        computeStageInputsHash("content", allHashes, empty2, {}, "ih"),
+    );
+    check(
+      "27.14 authored.slotValues IS in the content stage inputs hash (Visual Editor seam)",
+      computeStageInputsHash("content", allHashes, empty2, {}, "ih", {
+        ...emptyAuthoredState(),
+        slotValues: { "home.hero.title": "authored" },
+      }) !== computeStageInputsHash("content", allHashes, empty2, {}, "ih", emptyAuthoredState()),
+    );
 
     // =======================================================================
     section("4. stage input hashing (test 16)");
@@ -1296,6 +1754,12 @@ async function main(): Promise<void> {
     check(
       "17.2 dry-run on the fresh baseline: nothing to run, all stages reused",
       dry0.plan.wouldRun.length === 0 && dry0.plan.wouldReuse.length === 7,
+    );
+    const agree0 = await planBuildAgreement(projectDir);
+    check(
+      "27P.1 release:plan and release:build --dry-run agree on the ALL-FRESH baseline",
+      agree0.agrees && agree0.planNotReady === "",
+      agree0.detail,
     );
 
     // =======================================================================
@@ -1387,6 +1851,58 @@ async function main(): Promise<void> {
         dry1.plan.wouldReuse.includes("template"),
       JSON.stringify(dry1.plan),
     );
+    // ---- 27P: the reported defect — plan omitted the cascade that build
+    // applies, so the two operator surfaces disagreed about THIS state (a
+    // resolution applied, nothing rebuilt yet) and the un-cascaded view was
+    // the one release:resolve PERSISTED.
+    const agree1 = await planBuildAgreement(projectDir);
+    check(
+      "27P.2 plan and build --dry-run agree on the stage set with a PENDING resolution",
+      agree1.agrees,
+      agree1.detail,
+    );
+    check(
+      "27P.3 the agreed set carries the DEPENDENCY CASCADE (theme re-runs only because content will)",
+      agree1.planNotReady.split(",").includes("theme") &&
+        (agree1.view.stale.includes("theme")
+          ? agree1.view.project.stageStatus.theme.reasons.some((reason) =>
+              reason.includes("upstream stage content will be rebuilt"),
+            )
+          : false),
+      `${agree1.planNotReady} | invalidated=${JSON.stringify(resolved1.invalidated)} | ` +
+        JSON.stringify(agree1.view.project.stageStatus.theme.reasons),
+    );
+    // ---- 27R: release:resolve was the THIRD surface reasoning about
+    // staleness without applying the graph — RESOLUTION_FIELD_IMPACTS.
+    // routeContent read [content, seo, production] and theme DEPENDS on
+    // content, so resolve under-reported by exactly one stage. The closure is
+    // now derived from STAGE_DEPENDENCIES inside invalidatedStages().
+    check(
+      "27R.1 resolve reports the DERIVED closure: a routeContent pack invalidates theme too",
+      resolved1.invalidated.includes("theme") &&
+        JSON.stringify(
+          invalidatedStages({
+            schemaVersion: 1,
+            schemaName: "production-resolution-v1",
+            routeContent: { "/pricing": { slotValues: { "slot-1": "x" } } },
+          }),
+        ) === JSON.stringify(["content", "theme", "seo", "production"]),
+      JSON.stringify(resolved1.invalidated),
+    );
+    const three1 = await resolvePlanBuildAgreement(projectDir, resolved1.invalidated);
+    check(
+      "27R.2 all THREE surfaces agree for a routeContent pack (resolve = plan = build --dry-run)",
+      three1.agrees,
+      three1.detail,
+    );
+    const persistedAfterResolve = (await loadReleaseProject(projectDir)).project;
+    check(
+      "27P.4 the PERSISTED stageStatus carries the cascaded view, not the raw per-stage freshness",
+      persistedAfterResolve.stageStatus.theme.status === "stale" &&
+        persistedAfterResolve.stageStatus.production.status !== "fresh",
+      `theme=${persistedAfterResolve.stageStatus.theme.status} ` +
+        `production=${persistedAfterResolve.stageStatus.production.status}`,
+    );
 
     const build1 = await buildRelease(projectDir, { log: () => {} });
     check(
@@ -1396,6 +1912,14 @@ async function main(): Promise<void> {
         build1.run?.reusedStages.includes("reconstruction") === true &&
         build1.run?.reusedStages.includes("template") === true,
       JSON.stringify(build1.run?.rerunStages) + (build1.project.failure ? ` FAILURE: ${build1.project.failure.message}` : ""),
+    );
+    check(
+      "27H.8 the RERUN content artifact records the same exclusion set as prepare",
+      CONTENT_DERIVED_HASH_EXCLUSIONS.length > 0 &&
+        CONTENT_DERIVED_HASH_EXCLUSIONS.every((entry) =>
+        (build1.project.stageStatus.content.artifact?.excluded ?? []).includes(entry),
+      ),
+      JSON.stringify(build1.project.stageStatus.content.artifact?.excluded),
     );
     check(
       "22a after pack1 the ONLY blocker left is the domain",
@@ -1751,6 +2275,63 @@ async function main(): Promise<void> {
     }
     check("25.1 historical stripe lineage byte-untouched by collection", stripeUntouched);
 
+    // ---- Task 27: EVERY legacy on-disk project still loads ---------------
+    // Revision-1 documents (no siteId, no authored block) are ADAPTED on read;
+    // the files themselves are never rewritten by a load.
+    const legacyProjectDirs = [
+      "data/linear.app/release-projects/linear.app-2026-08-25T23-32-42-075Z",
+      "data/linear.app/release-projects/linear.app-2026-08-25T23-54-21-435Z",
+      "data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z",
+    ].filter((dir) => existsSync(dir));
+    check(
+      "27.15 all three legacy release projects are on disk",
+      legacyProjectDirs.length === 3,
+      JSON.stringify(legacyProjectDirs),
+    );
+    const beforeLegacy = new Map<string, Map<string, string>>();
+    for (const dir of legacyProjectDirs) beforeLegacy.set(dir, await snapshotTree(dir));
+    const legacyLoaded: Array<{ dir: string; siteId: string; adaptedFrom: number | null }> = [];
+    let legacyLoadError = "";
+    for (const dir of legacyProjectDirs) {
+      try {
+        const legacy = await loadReleaseProject(dir);
+        legacyLoaded.push({ dir, siteId: legacy.project.siteId, adaptedFrom: legacy.adaptedFrom });
+      } catch (error) {
+        legacyLoadError += `${dir}: ${error instanceof Error ? error.message : String(error)}; `;
+      }
+    }
+    check(
+      "27.16 every legacy (revision-1) project loads and is adapted, never rejected",
+      legacyLoadError === "" &&
+        legacyLoaded.length === legacyProjectDirs.length &&
+        legacyLoaded.every((entry) => entry.adaptedFrom === 1 && entry.siteId.length > 0),
+      legacyLoadError || JSON.stringify(legacyLoaded),
+    );
+    check(
+      "27.17 the TWO linear.app projects adapt to ONE stable siteId",
+      legacyLoaded.filter((entry) => entry.dir.includes("linear.app")).length === 2 &&
+        new Set(
+          legacyLoaded.filter((entry) => entry.dir.includes("linear.app")).map((entry) => entry.siteId),
+        ).size === 1,
+      JSON.stringify(legacyLoaded.map((entry) => entry.siteId)),
+    );
+    let legacyUntouched = true;
+    for (const dir of legacyProjectDirs) {
+      if (!treesIdentical(beforeLegacy.get(dir)!, await snapshotTree(dir))) legacyUntouched = false;
+    }
+    check("27.18 loading a legacy project rewrites NOTHING on disk", legacyUntouched);
+    check(
+      "27.19 a revision from the future is refused, not silently downgraded",
+      (() => {
+        try {
+          adaptReleaseProject({ projectRevision: RELEASE_PROJECT_REVISION + 1 });
+          return false;
+        } catch {
+          return true;
+        }
+      })(),
+    );
+
     // Fixture-side immutability: the ACCEPTED fixture lineage dirs were never
     // modified by resolve/build — new runs went to NEW run-id directories.
     const acceptedContent = await snapshotTree(contentRunDir);
@@ -1781,6 +2362,506 @@ async function main(): Promise<void> {
       lastRun.operatorOverrides.includes(`fontDecision:${fontFamily}`),
       JSON.stringify(lastRun.operatorOverrides),
     );
+
+    // =======================================================================
+    section("14. TASK 27 — authored state, theme authoring, non-destructive prepare");
+    // =======================================================================
+    const authoredProject = (await loadReleaseProject(projectDir)).project;
+    // Every slot value the operator supplied through a pack must now live in
+    // the AUTHORITATIVE authored block (the future Visual Editor's target).
+    const packSlotKeys = new Set<string>();
+    for (const applied of authoredProject.resolutions) {
+      for (const content of Object.values(applied.resolution.routeContent ?? {})) {
+        for (const key of Object.keys(content.slotValues ?? {})) packSlotKeys.add(key);
+      }
+      for (const key of Object.keys(applied.resolution.urls ?? {})) packSlotKeys.add(key);
+    }
+    check(
+      "27.20 every pack-supplied slot value is folded into authored.slotValues",
+      packSlotKeys.size > 0 &&
+        [...packSlotKeys].every((key) => key in authoredProject.authored.slotValues),
+      `${packSlotKeys.size} pack key(s) vs ${Object.keys(authoredProject.authored.slotValues).length} authored`,
+    );
+    check(
+      "27.21 authored.slotValues round-trips through save/load (schema-valid)",
+      ReleaseProjectSchema.safeParse(authoredProject).success &&
+        authoredProject.authored.updatedAt !== null,
+    );
+    // …and the DERIVED materialization is what production actually consumes.
+    const materializedSlotValues = JSON.parse(
+      await readFile(
+        path.join(authoredProject.stageStatus.content.artifact!.path, "slot-values.json"),
+        "utf8",
+      ),
+    ) as Record<string, unknown>;
+    check(
+      "27.22 content-runs/<run>/slot-values.json is the DERIVED output of authored.slotValues",
+      Object.entries(authoredProject.authored.slotValues).every(
+        ([key, value]) => JSON.stringify(materializedSlotValues[key]) === JSON.stringify(value),
+      ),
+      JSON.stringify([...packSlotKeys].filter((key) => materializedSlotValues[key] === undefined)),
+    );
+    check(
+      "27.23 slot-values.json format is UNCHANGED (bare slot-key → value map, no envelope)",
+      Object.keys(materializedSlotValues).length > 0 &&
+        !("schemaVersion" in materializedSlotValues) &&
+        !("schemaName" in materializedSlotValues) &&
+        !("slotValues" in materializedSlotValues) &&
+        Object.keys(materializedSlotValues).every((key) => key.includes(".")),
+      JSON.stringify(Object.keys(materializedSlotValues).slice(0, 3)),
+    );
+    const servedSiteDir = path.join(
+      HOST_DATA_DIR,
+      "production-builds",
+      authoredProject.stageStatus.production.artifact!.id,
+      "package",
+      "site",
+    );
+    const servedHtml = (
+      await Promise.all(
+        [...(await snapshotTree(servedSiteDir)).keys()]
+          .filter((rel) => rel.endsWith(".html"))
+          .map((rel) => readFile(path.join(servedSiteDir, rel), "utf8")),
+      )
+    ).join("\n");
+    const authoredStrings = Object.values(authoredProject.authored.slotValues).filter(
+      (value): value is string => typeof value === "string" && !/^https?:/i.test(value),
+    );
+    check(
+      "27.24 authored slot values actually SERVE in the production package",
+      authoredStrings.length > 0 && authoredStrings.every((value) => servedHtml.includes(value)),
+      JSON.stringify(authoredStrings.slice(0, 3)),
+    );
+
+    // ---- theme authoring: exactly {theme, production} go stale ------------
+    // The token is DERIVED from this site's adapter at runtime (never a
+    // literal): only a themeable paint group's bound token actually paints.
+    const currentAdapter = JSON.parse(
+      await readFile(
+        path.join(authoredProject.stageStatus.theme.artifact!.path, "theme-adapter.json"),
+        "utf8",
+      ),
+    ) as { paintGroups: Array<{ status: string; semanticToken: string | null }> };
+    const authoredToken = currentAdapter.paintGroups.find(
+      (group) =>
+        group.status === "themeable" &&
+        group.semanticToken !== null &&
+        group.semanticToken.startsWith("color."),
+    )?.semanticToken;
+    check(
+      "27.24b a themeable colour token is discoverable from this site's adapter",
+      authoredToken !== undefined,
+      JSON.stringify(currentAdapter.paintGroups.slice(0, 3)),
+    );
+    const themePack: ProductionResolution = {
+      schemaVersion: 1,
+      schemaName: "production-resolution-v1",
+      theme: { tokens: { [authoredToken!]: "rgb(12, 34, 56)" }, note: "브랜드 액션 컬러" },
+    };
+    const themePackFile = path.join(scratch, "theme-pack.json");
+    await writeFile(themePackFile, JSON.stringify(themePack, null, 2), "utf8");
+    const themeResolved = await resolveRelease(projectDir, { resolutionFile: themePackFile, log: () => {} });
+    check(
+      "27.25 a theme edit invalidates [theme, production] and nothing else",
+      JSON.stringify(themeResolved.invalidated) === JSON.stringify(["theme", "production"]),
+      JSON.stringify(themeResolved.invalidated),
+    );
+    check(
+      "27.26 the token landed in authored.theme (authoritative)",
+      themeResolved.project.authored.theme.tokens?.[authoredToken!] === "rgb(12, 34, 56)",
+      JSON.stringify(themeResolved.project.authored.theme),
+    );
+    const themeDry = await buildRelease(projectDir, { dryRun: true, log: () => {} });
+    check(
+      "27.27 theme stale, production stale — reconstruction/template/content FRESH",
+      JSON.stringify(themeDry.plan.wouldRun) === JSON.stringify(["theme", "production"]) &&
+        ["reconstruction", "template", "content", "seo", "assets"].every((stage) =>
+          themeDry.plan.wouldReuse.includes(stage as never),
+        ),
+      `run=${JSON.stringify(themeDry.plan.wouldRun)} reuse=${JSON.stringify(themeDry.plan.wouldReuse)}`,
+    );
+    // The derived closure must NOT widen a theme edit: downstreamOf("theme")
+    // is {production} only, so THEME_SELECTION_IMPACTS survives it unchanged
+    // (Wave 2 acceptance criterion) — asserted here against the LIVE project,
+    // not only against the constant.
+    const three2 = await resolvePlanBuildAgreement(projectDir, themeResolved.invalidated);
+    check(
+      "27R.3 all THREE surfaces agree for a theme pack — still {theme, production}, never widened",
+      three2.agrees && JSON.stringify(themeResolved.invalidated) === JSON.stringify(["theme", "production"]),
+      three2.detail,
+    );
+    let badThemeRejected = false;
+    const badThemeFile = path.join(scratch, "bad-theme.json");
+    await writeFile(
+      badThemeFile,
+      JSON.stringify({
+        schemaVersion: 1,
+        schemaName: "production-resolution-v1",
+        theme: { tokens: { "layout.grid.columns": "12" } },
+      }),
+      "utf8",
+    );
+    try {
+      await resolveRelease(projectDir, { resolutionFile: badThemeFile, log: () => {} });
+    } catch {
+      badThemeRejected = true;
+    }
+    check("27.28 a LAYOUT value has no token to land in — refused by the contract", badThemeRejected);
+    const themeBuild = await buildRelease(projectDir, { log: () => {} });
+    check(
+      "27.29 the theme build re-ran theme+production ONLY and reused content",
+      themeBuild.failed === false &&
+        JSON.stringify(themeBuild.run?.rerunStages) === JSON.stringify(["theme", "production"]) &&
+        themeBuild.run?.reusedStages.includes("content") === true,
+      JSON.stringify(themeBuild.run?.rerunStages) +
+        (themeBuild.project.failure ? ` FAILURE: ${themeBuild.project.failure.message}` : ""),
+    );
+    const newThemeOverlay = await readFile(
+      path.join(themeBuild.project.stageStatus.theme.artifact!.path, "theme-overlay.css"),
+      "utf8",
+    );
+    check(
+      "27.30 the authored token is what the new theme overlay paints",
+      newThemeOverlay.includes("rgb(12, 34, 56)"),
+    );
+
+    // ---- non-destructive re-prepare --------------------------------------
+    const beforeReprepare = (await loadReleaseProject(projectDir)).project;
+    const reprepared = await prepareReleaseProject({
+      productionSpecRef: compile0.specDir,
+      projectId: beforeReprepare.projectId,
+      log: () => {},
+    });
+    check(
+      "27.31 re-prepare lands on the SAME project (identity is stable)",
+      reprepared.reprepared === true &&
+        reprepared.projectDir === projectDir &&
+        reprepared.project.siteId === beforeReprepare.siteId &&
+        reprepared.project.createdAt === beforeReprepare.createdAt,
+      `${reprepared.projectDir} / ${reprepared.project.siteId}`,
+    );
+    check(
+      "27.32 re-prepare PRESERVES resolutions",
+      reprepared.project.resolutions.length === beforeReprepare.resolutions.length &&
+        JSON.stringify(reprepared.project.resolutions.map((r) => r.resolutionId)) ===
+          JSON.stringify(beforeReprepare.resolutions.map((r) => r.resolutionId)),
+      `${reprepared.project.resolutions.length} vs ${beforeReprepare.resolutions.length}`,
+    );
+    check(
+      "27.33 re-prepare PRESERVES authored state (slotValues + theme)",
+      JSON.stringify(reprepared.project.authored) === JSON.stringify(beforeReprepare.authored),
+      JSON.stringify(reprepared.project.authored),
+    );
+    check(
+      "27.34 re-prepare PRESERVES run history (and appends its own run)",
+      reprepared.project.runs.length === beforeReprepare.runs.length + 1 &&
+        beforeReprepare.runs.every((run) =>
+          reprepared.project.runs.some((kept) => kept.runId === run.runId),
+        ),
+      `${reprepared.project.runs.length} vs ${beforeReprepare.runs.length}`,
+    );
+    check(
+      "27.35 re-prepare PRESERVES the advanced stage artifacts (no lineage regression)",
+      reprepared.project.stageStatus.content.artifact!.path ===
+        beforeReprepare.stageStatus.content.artifact!.path &&
+        reprepared.project.stageStatus.theme.artifact!.path ===
+          beforeReprepare.stageStatus.theme.artifact!.path,
+    );
+    // …while requirements are genuinely RECOMPUTED from the re-hashed lineage.
+    const rerequirements = await loadRequirementsFile(projectDir);
+    check(
+      "27.36 re-prepare RECOMPUTES requirements (distinct from preserving them)",
+      rerequirements.requirements.length > 0 &&
+        rerequirements.requirements.filter((r) => r.status === "resolved").length > 0,
+      `${rerequirements.counts.total} total / ${rerequirements.counts.resolved} resolved`,
+    );
+    const rereparedReloaded = await loadReleaseProject(projectDir);
+    check(
+      "27.37 the saved project is revision 2 and re-loads without adaptation",
+      rereparedReloaded.adaptedFrom === null &&
+        rereparedReloaded.project.projectRevision === RELEASE_PROJECT_REVISION,
+    );
+
+    // ---- Task 27 GED-F: brand leak becomes a RELEASE REQUIREMENT ---------
+    section("Task 27 — brand-leak requirement kind (GED-F)");
+    check(
+      "27.brand.1 `brand-leak` is a declared requirement kind with a severity basis",
+      (REQUIREMENT_KINDS as readonly string[]).includes("brand-leak") &&
+        SEVERITY_POLICY["brand-leak"].severity === "high-value" &&
+        SEVERITY_POLICY["brand-leak"].basis.length > 0,
+    );
+    check(
+      "27.brand.2 every requirement kind still has a severity policy row",
+      REQUIREMENT_KINDS.every((kind) => SEVERITY_POLICY[kind] !== undefined),
+    );
+
+    // A synthetic report, so the POLICY is tested rather than whatever a given
+    // lineage happens to contain.
+    const finding = (partial: Partial<BrandFinding>): BrandFinding => ({
+      surface: "visible-text",
+      origin: "injected-value",
+      route: "/",
+      value: 'value still contains source brand token "fixture"',
+      matched: "fixture",
+      sourceUrl: null,
+      slotKey: "home.hero.headline",
+      nodeId: null,
+      evidenceFile: "data/x/content-runs/r/report/brand-leak.json",
+      evidencePointer: "warnings[home.hero.headline]",
+      suggestedResolution: 'routeContent["/"].slotValues["home.hero.headline"]',
+      ...partial,
+    });
+    const shipping = finding({});
+    const untouched = finding({ origin: "template-default", slotKey: "home.nav.about.label" });
+    const engineBlocked = finding({ origin: "engine-blocked", slotKey: "home.hero.sub" });
+    const unbound = finding({ slotKey: null });
+    const svgMark = finding({
+      surface: "svg-aria-label",
+      slotKey: null,
+      nodeId: "n000017",
+      value: "Fixture Logo",
+      evidenceFile: "data/x/recon-templates/t/app/reconstruction-data/pages/p000001.json",
+      evidencePointer: "desktop.doc[n000017].v",
+    });
+    check(
+      "27.brand.3 blocking ONLY for a shipping value on a slot-bound identity surface",
+      brandFindingSeverity(shipping) === "release-blocking",
+    );
+    check(
+      "27.brand.4 an untouched default and an engine-blocked slot stay NON-blocking",
+      brandFindingSeverity(untouched) === "high-value" &&
+        brandFindingSeverity(engineBlocked) === "high-value",
+      `${brandFindingSeverity(untouched)} / ${brandFindingSeverity(engineBlocked)}`,
+    );
+    check(
+      "27.brand.5 a finding with NO write target is never release-blocking (the source-brand-asset trap)",
+      brandFindingSeverity(unbound) === "high-value" &&
+        brandFindingSeverity(svgMark) === "high-value" &&
+        BRAND_SURFACE_POLICY["svg-aria-label"].canBlock === false,
+    );
+
+    const syntheticReport: BrandSurfaceReport = {
+      schemaName: "brand-surface-report-v1",
+      schemaVersion: 1,
+      host: HOST,
+      brandTokens: ["fixture"],
+      neutralization: { enabled: false, default: "OFF", basis: "detector only" },
+      scanned: { routes: 1, elementNodes: 10, inlineSvgNodes: 1, contentWarnings: 4, unavailable: [] },
+      counts: {
+        "visible-text": 3,
+        "source-url": 0,
+        "title-meta": 0,
+        canonical: 0,
+        "open-graph": 0,
+        "json-ld": 0,
+        "image-logo": 0,
+        "image-alt": 0,
+        "aria-label": 0,
+        "svg-text": 0,
+        "svg-aria-label": 1,
+        "svg-symbol-id": 0,
+        "dynamic-template-content": 0,
+        "body-anchor-identity": 0,
+      },
+      findings: [shipping, untouched, engineBlocked, svgMark],
+      truncated: 0,
+    };
+    const brandReqs = brandSurfaceRequirements(syntheticReport);
+    const blockingReq = brandReqs.find((requirement) => requirement.severity === "release-blocking");
+    check(
+      "27.brand.6 a finding becomes a STRUCTURED requirement with a deterministic artifact-derived id",
+      blockingReq?.requirementId === "brand-leak-visible-text-home.hero.headline" &&
+        blockingReq.kind === "brand-leak" &&
+        blockingReq.slotKey === "home.hero.headline" &&
+        blockingReq.evidence[0].file === shipping.evidenceFile &&
+        blockingReq.evidence[0].pointer === shipping.evidencePointer,
+      JSON.stringify(blockingReq?.requirementId),
+    );
+    check(
+      "27.brand.7 requirement ids are stable across re-collection (same report → same ids)",
+      JSON.stringify(brandSurfaceRequirements(syntheticReport).map((r) => r.requirementId)) ===
+        JSON.stringify(brandReqs.map((r) => r.requirementId)),
+    );
+    check(
+      "27.brand.8 the non-blocking surfaces stay grouped, non-blocking, and carry the exact count",
+      brandReqs.filter((r) => r.severity === "high-value").length === 2 &&
+        brandReqs.find((r) => r.requirementId === "brand-leak-svg-aria-label")?.count === 1 &&
+        brandReqs.find((r) => r.requirementId === "brand-leak-visible-text")?.count === 2,
+      JSON.stringify(brandReqs.map((r) => `${r.requirementId}:${r.severity}:${r.count ?? "-"}`)),
+    );
+    check(
+      "27.brand.9 every brand requirement validates against the requirement schema",
+      brandReqs.every((requirement) => RequirementSchema.safeParse(requirement).success),
+    );
+
+    // The whole point of the blocking policy: the blocker is REACHABLE.
+    const brandResolution: ProductionResolution = {
+      schemaVersion: 1,
+      schemaName: "production-resolution-v1",
+      routeContent: { "/": { slotValues: { "home.hero.headline": "반복 업무 자동화 플랫폼" } } },
+    };
+    const brandMatch = matchResolutionToRequirements(brandReqs, brandResolution);
+    check(
+      "27.brand.10 an AUTHORED replacement matches the blocking brand requirement",
+      brandMatch.matches.some(
+        (match) => match.requirementId === "brand-leak-visible-text-home.hero.headline",
+      ),
+      JSON.stringify(brandMatch.matches),
+    );
+    const brandMerged = mergeRequirements(null, brandReqs, [
+      {
+        resolutionId: "res-brand-1",
+        appliedAt: new Date().toISOString(),
+        file: "resolutions/res-brand-1.json",
+        resolutionHash: "0".repeat(64),
+        resolution: brandResolution,
+        matched: [],
+        unmatchedFields: [],
+      },
+    ]);
+    check(
+      "27.brand.11 the resolution CLEARS it — the kind has a reachable resolution path",
+      brandMerged.find((r) => r.requirementId === "brand-leak-visible-text-home.hero.headline")
+        ?.status === "resolved" &&
+        releaseBlockers(brandMerged).filter((r) => r.kind === "brand-leak").length === 0,
+      JSON.stringify(releaseBlockers(brandMerged).map((r) => r.requirementId)),
+    );
+    const brandAck = mergeRequirements(null, brandReqs, [
+      {
+        resolutionId: "res-brand-2",
+        appliedAt: new Date().toISOString(),
+        file: "resolutions/res-brand-2.json",
+        resolutionHash: "0".repeat(64),
+        resolution: {
+          schemaVersion: 1,
+          schemaName: "production-resolution-v1",
+          acknowledgements: [
+            { requirementId: "brand-leak-svg-aria-label", note: "inline SVG mark — GED-F future work" },
+          ],
+        },
+        matched: [],
+        unmatchedFields: [],
+      },
+    ]);
+    check(
+      "27.brand.12 an acknowledgement records the SVG mark as an accepted limitation",
+      brandAck.find((r) => r.requirementId === "brand-leak-svg-aria-label")?.status ===
+        "accepted-limitation",
+    );
+
+    // One slot can now carry two different gaps; one value must clear both.
+    const twoOnOneSlot: Requirement[] = [
+      {
+        requirementId: "external-url-home.hero.headline",
+        kind: "external-url",
+        severity: "high-value",
+        status: "unresolved",
+        sourceStage: "content",
+        slotKey: "home.hero.headline",
+        message: "unresolved",
+        resolutionOptions: ['urls["home.hero.headline"]'],
+        evidence: [{ file: "x", pointer: "y" }],
+      },
+      brandReqs[0],
+    ];
+    const bothMatched = matchResolutionToRequirements(twoOnOneSlot, {
+      schemaVersion: 1,
+      schemaName: "production-resolution-v1",
+      urls: { "home.hero.headline": "https://newco.example/docs" },
+    });
+    check(
+      "27.brand.13 one slot value resolves EVERY requirement bound to that slot (no silent drop)",
+      bothMatched.matches.length === 2,
+      JSON.stringify(bothMatched.matches),
+    );
+
+    // A routeContent slot value bound to NO open requirement used to produce
+    // matched: [] AND unmatchedFields: [] — the operator's input appeared in
+    // neither column of the resolve summary.
+    const unboundSlotValue = matchResolutionToRequirements(twoOnOneSlot, {
+      schemaVersion: 1,
+      schemaName: "production-resolution-v1",
+      routeContent: {
+        global: { slotValues: { "home.nobody.asked.for.this": "authored anyway" } },
+      },
+    });
+    check(
+      "27P.5 an authored slot value that matches NO open requirement is reported as unmatched",
+      unboundSlotValue.matches.length === 0 &&
+        unboundSlotValue.unmatchedFields.length === 1 &&
+        unboundSlotValue.unmatchedFields[0] ===
+          "routeContent.global.slotValues.home.nobody.asked.for.this",
+      JSON.stringify(unboundSlotValue),
+    );
+    check(
+      "27P.6 a slot value that DOES bind still matches every bound requirement (27P.5 is not a blanket)",
+      matchResolutionToRequirements(twoOnOneSlot, {
+        schemaVersion: 1,
+        schemaName: "production-resolution-v1",
+        routeContent: { global: { slotValues: { "home.hero.headline": "NewCo" } } },
+      }).matches.length === 2,
+    );
+
+    // …and the real lineage is genuinely measured, so 25.1's immutability
+    // check above is not vacuous for the new scan.
+    check(
+      "27.brand.14 the stripe lineage brand scan measured real routes and inline SVG",
+      stripeCollected.brandSurfaces.scanned.routes > 0 &&
+        stripeCollected.brandSurfaces.scanned.inlineSvgNodes > 0 &&
+        stripeCollected.brandSurfaces.neutralization.enabled === false,
+      JSON.stringify(stripeCollected.brandSurfaces.scanned),
+    );
+    const stripeBrandReqs = stripeCollected.requirements.filter((r) => r.kind === "brand-leak");
+    check(
+      "27.brand.15 stripe brand-leak requirement counts are read from the scan, never hardcoded",
+      stripeBrandReqs.length > 0 &&
+        stripeBrandReqs.every((requirement) => {
+          if (requirement.severity !== "high-value") return true;
+          const surface = requirement.requirementId.slice("brand-leak-".length);
+          return (
+            requirement.count ===
+            (stripeCollected.brandSurfaces.counts as Record<string, number>)[surface]
+          );
+        }),
+      JSON.stringify(stripeBrandReqs.map((r) => `${r.requirementId}:${r.count ?? "-"}`)),
+    );
+
+    // ---- 27R.4: the two surfaces must DESCRIBE a drifted frozen stage the
+    // same way, not merely agree on the stage set. plan rendered it "STALE
+    // (will re-run on release:build)" while build files it BLOCKED BY
+    // frozen-stage-input-drift and REFUSES — opposite words for one state.
+    // Runs LAST because the drift is deliberately left in place until the
+    // probe file is removed. (`stale` — the field the plan↔build agreement
+    // invariant compares — is unchanged; only the rendering split.)
+    const frozenProbe = path.join(templateDir, "wr-frozen-drift-probe.json");
+    await writeFile(frozenProbe, JSON.stringify({ simulated: "frozen input drift" }), "utf8");
+    const driftPlan = await planRelease(projectDir, { log: () => {} });
+    const driftDry = await buildRelease(projectDir, { dryRun: true, log: () => {} });
+    let driftRefused = false;
+    try {
+      await buildRelease(projectDir, { log: () => {} });
+    } catch {
+      driftRefused = true;
+    }
+    check(
+      "27R.4 build REFUSES a drifted frozen stage and plan now says so too (no opposite wording)",
+      driftRefused &&
+        driftDry.plan.blocked.some(
+          (entry) => entry.stage === "template" && entry.blockedBy.includes("frozen-stage-input-drift"),
+        ) &&
+        driftPlan.text.includes("BLOCKED BY frozen-stage-input-drift") &&
+        !driftPlan.text.includes("will re-run on release:build") &&
+        driftPlan.nextActions.some((action) => action.includes("release:build REFUSES")),
+      `refused=${driftRefused} nextActions=${JSON.stringify(driftPlan.nextActions.slice(-1))}`,
+    );
+    await rm(frozenProbe, { force: true });
+    const restoredPlan = await planRelease(projectDir, { log: () => {} });
+    check(
+      "27R.5 removing the drift clears the frozen block (the probe was the cause)",
+      !restoredPlan.text.includes("frozen-stage-input-drift") && restoredPlan.ready.includes("template"),
+      `ready=${JSON.stringify(restoredPlan.ready)}`,
+    );
+
   } finally {
     fixture.server.close();
     await rm(HOST_DATA_DIR, { recursive: true, force: true });

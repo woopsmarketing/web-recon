@@ -6,15 +6,17 @@
  *   reconstruction → template → content → { theme, seo } → production
  *                    template ────────────→ assets ──────→ production
  *
- * and each resolution field invalidates exactly the stages the spec names:
+ * and each resolution field DIRECTLY affects the stages the spec names —
+ * `invalidatedStages` then closes that set over the graph above, so a
+ * content-affecting field also stales theme + seo + production:
  *
- *   productionBaseUrl → seo → production
- *   facts             → content(affected slots) → seo(structured data) → production
- *   urls              → content → seo → production
- *   routeContent      → content → seo → production
- *   assets            → assets → production
- *   fontDecisions     → assets → production   (layout-QA note recorded, §12)
- *   theme selection   → theme → production
+ *   productionBaseUrl → seo
+ *   facts             → content (affected slots) + seo (structured data)
+ *   urls              → content + seo
+ *   routeContent      → content + seo
+ *   assets            → assets
+ *   fontDecisions     → assets                  (layout-QA note recorded, §12)
+ *   theme selection   → theme                   (closure adds production only)
  *
  * Reconstruction / template are frozen roots: unless the SOURCE URL changes
  * (out of release scope) they are NEVER re-run (spec §12/§26).
@@ -48,6 +50,11 @@ export const STAGE_ORDER: readonly ReleaseStage[] = [
   "production",
 ];
 
+/** Theme selection → theme + production. Reconstruction / template / content
+ *  are NEVER touched by a theme edit: theme is a paint overlay over an
+ *  unchanged template + content (Task 20). */
+export const THEME_SELECTION_IMPACTS: ReleaseStage[] = ["theme", "production"];
+
 /** Resolution field → stages it makes stale (downstream closure applied later). */
 export const RESOLUTION_FIELD_IMPACTS: Record<string, ReleaseStage[]> = {
   productionBaseUrl: ["seo", "production"],
@@ -56,10 +63,11 @@ export const RESOLUTION_FIELD_IMPACTS: Record<string, ReleaseStage[]> = {
   routeContent: ["content", "seo", "production"],
   assets: ["assets", "production"],
   fontDecisions: ["assets", "production"],
+  // Task 27: `theme` IS a resolution-pack field now (production-resolution-v1
+  // `theme`, folded into authored.theme) — THEME_SELECTION_IMPACTS is no longer
+  // a dead declaration, it is the live impact set for that field.
+  theme: THEME_SELECTION_IMPACTS,
 };
-
-/** Theme selection (not a resolution-pack field) → theme + production. */
-export const THEME_SELECTION_IMPACTS: ReleaseStage[] = ["theme", "production"];
 
 /** All stages transitively downstream of `stage` (exclusive). */
 export function downstreamOf(stage: ReleaseStage): ReleaseStage[] {
@@ -79,8 +87,15 @@ export function downstreamOf(stage: ReleaseStage): ReleaseStage[] {
   return STAGE_ORDER.filter((s) => out.has(s));
 }
 
-/** The stages a resolution pack makes stale (its own fields only — the
- *  dependency closure is already encoded in RESOLUTION_FIELD_IMPACTS). */
+/** The stages a resolution pack makes stale: the union of its matched fields'
+ *  DIRECT impacts, closed over STAGE_DEPENDENCIES with `downstreamOf`.
+ *
+ *  The closure is DERIVED, never hand-maintained. RESOLUTION_FIELD_IMPACTS used
+ *  to claim to be pre-closed and was not (`routeContent` omitted `theme`, which
+ *  depends on content), so release:resolve reported 3 invalidated stages for a
+ *  pack release:plan then called 4 stale — the same "surface reasons about
+ *  staleness without applying the graph" defect fixed in release:plan. Deriving
+ *  it here means the next row added to the table cannot reintroduce it. */
 export function invalidatedStages(resolution: ProductionResolution): ReleaseStage[] {
   const stale = new Set<ReleaseStage>();
   const fieldPresent = (field: keyof ProductionResolution): boolean => {
@@ -93,7 +108,12 @@ export function invalidatedStages(resolution: ProductionResolution): ReleaseStag
   };
   for (const [field, stages] of Object.entries(RESOLUTION_FIELD_IMPACTS)) {
     if (fieldPresent(field as keyof ProductionResolution)) {
-      for (const stage of stages) stale.add(stage);
+      for (const stage of stages) {
+        stale.add(stage);
+        // `downstreamOf` is itself transitively closed, so closing an already
+        // hand-closed row (productionBaseUrl, assets, theme) is a no-op.
+        for (const downstream of downstreamOf(stage)) stale.add(downstream);
+      }
     }
   }
   // acknowledgements + notes change requirement status only — no stage rerun.

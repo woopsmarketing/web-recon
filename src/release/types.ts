@@ -21,6 +21,22 @@ export const PRODUCTION_RESOLUTION_SCHEMA_NAME = "production-resolution-v1";
 export const RELEASE_REQUIREMENTS_SCHEMA_NAME = "release-requirements-v1";
 export const RELEASE_RUN_SCHEMA_NAME = "release-run-v1";
 
+/**
+ * Release project REVISION (Task 27) — a second version axis, deliberately
+ * separate from `schemaVersion`.
+ *
+ * `schemaVersion` is shared by requirements.json / run.json / the resolution
+ * pack; bumping it would invalidate every one of those files. The customer
+ * AUTHORING fields (`siteId`, `authored`) are a change to the PROJECT document
+ * alone, so the project carries its own revision and old documents are ADAPTED
+ * on load (see instance.ts `adaptReleaseProject`) — never rewritten on disk.
+ *
+ *   1  Task 25/26 — run-scoped projectId, no authored state
+ *   2  Task 27    — stable siteId + authoritative `authored` block
+ */
+export const RELEASE_PROJECT_REVISION = 2 as const;
+export const LEGACY_RELEASE_PROJECT_REVISION = 1 as const;
+
 // ---------------------------------------------------------------------------
 // Stages
 // ---------------------------------------------------------------------------
@@ -86,6 +102,7 @@ export const REQUIREMENT_KINDS = [
   "source-brand-asset",
   "social-handle",
   "seo-fact",
+  "brand-leak",
 ] as const;
 export const RequirementKindSchema = z.enum(REQUIREMENT_KINDS);
 export type RequirementKind = z.infer<typeof RequirementKindSchema>;
@@ -167,6 +184,55 @@ export const RequirementsFileSchema = z
 export type RequirementsFile = z.infer<typeof RequirementsFileSchema>;
 
 // ---------------------------------------------------------------------------
+// Authored state (Task 27) — the customer-authoring half of a site instance
+// ---------------------------------------------------------------------------
+
+/**
+ * The operator's theme input. Token ids and values are validated against the
+ * Task 20 Theme Contract (`isThemeToken` / `isSafeThemeValue`) at resolve time:
+ * the contract vocabulary is CLOSED and carries paint only, so a layout value
+ * has no token to land in — that is the whole enforcement, not a second
+ * blocklist.
+ */
+export const AuthoredThemeSchema = z
+  .object({
+    /** Theme file to start from; default is the current theme run's theme. */
+    themeSourceFile: z.string().min(1).optional(),
+    /** theme-contract-v1 token id → paint value (overrides the base theme). */
+    tokens: z.record(z.string(), z.string()).optional(),
+    note: z.string().optional(),
+  })
+  .strict();
+export type AuthoredTheme = z.infer<typeof AuthoredThemeSchema>;
+
+/**
+ * AUTHORITATIVE authored state. This is the future Visual Editor's write
+ * target and the single source of truth for the values it owns:
+ *
+ *   slotValues  content-runs/<run>/slot-values.json is a DERIVED,
+ *               MATERIALIZED OUTPUT of this map (store.ts, stages.ts)
+ *   theme       theme-runs/<run>/selected-theme.json is derived from this
+ *
+ * Values still ARRIVE through resolution packs (`urls`,
+ * `routeContent[*].slotValues`, `theme`); resolve folds them in here and the
+ * pack stays as the immutable audit record of HOW the value arrived — a
+ * derivation, never a second independent source.
+ */
+export const AuthoredStateSchema = z
+  .object({
+    /** slot key → authored value (string for text/url slots). */
+    slotValues: z.record(z.string(), z.unknown()),
+    theme: AuthoredThemeSchema,
+    updatedAt: z.string().nullable(),
+  })
+  .strict();
+export type AuthoredState = z.infer<typeof AuthoredStateSchema>;
+
+export function emptyAuthoredState(): AuthoredState {
+  return { slotValues: {}, theme: {}, updatedAt: null };
+}
+
+// ---------------------------------------------------------------------------
 // Resolution pack — production-resolution-v1 (spec §9)
 // ---------------------------------------------------------------------------
 
@@ -228,6 +294,9 @@ export const ProductionResolutionSchema = z
     fontDecisions: z.record(z.string(), FontDecisionSchema).optional(),
     /** template route (or `global`) → provided content. */
     routeContent: z.record(z.string(), RouteContentSchema).optional(),
+    /** Theme authoring input (Task 27). Folded into `authored.theme` at
+     *  resolve time; wires THEME_SELECTION_IMPACTS live. */
+    theme: AuthoredThemeSchema.optional(),
     /** Explicit operator acknowledgements → accepted-limitation. An
      *  acknowledgement never unlocks indexable production (spec §7). */
     acknowledgements: z
@@ -320,6 +389,15 @@ export const ReleaseProjectSchema = z
   .object({
     schemaVersion: z.literal(RELEASE_SCHEMA_VERSION),
     schemaName: z.literal(RELEASE_PROJECT_SCHEMA_NAME),
+    /** Project document revision — see RELEASE_PROJECT_REVISION. */
+    projectRevision: z.literal(RELEASE_PROJECT_REVISION),
+    /**
+     * STABLE site identity (Task 27). One customer site keeps ONE siteId
+     * across every prepare/build cycle; several distinct customer sites may
+     * eventually be produced from one template by giving each its own siteId.
+     * `projectId` defaults to it, so re-prepare lands in the SAME project.
+     */
+    siteId: z.string().min(1),
     projectId: z.string().min(1),
     createdAt: z.string(),
     updatedAt: z.string(),
@@ -367,6 +445,8 @@ export const ReleaseProjectSchema = z
     requirementsFile: z.string(),
     checklistFile: z.string(),
     resolutions: z.array(AppliedResolutionSchema),
+    /** Authoritative authored state (Task 27) — see AuthoredStateSchema. */
+    authored: AuthoredStateSchema,
     releaseState: ReleaseStateSchema,
     failure: ReleaseFailureSchema.nullable(),
     limitations: z.array(z.string()),
@@ -474,5 +554,14 @@ export const SEVERITY_POLICY: Record<RequirementKind, { severity: RequirementSev
   "social-handle": {
     severity: "optional",
     basis: "§22: a social handle is optional",
+  },
+  "brand-leak": {
+    severity: "high-value",
+    basis:
+      "policy: DEFAULT high-value. A brand surface is escalated to release-blocking at collection " +
+      "time (brand-scan.ts brandFindingSeverity) ONLY when the surface publishes the source's " +
+      "identity AND an implemented resolution can clear it — i.e. it is slot-bound. Blocking a " +
+      "surface with no write target is what makes `source-brand-asset` unreachable; this kind " +
+      "does not repeat that",
   },
 };

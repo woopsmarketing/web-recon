@@ -1,0 +1,160 @@
+{
+  "agent": "Task 27 — Stretch Goal B: Template / Site Registry Foundation",
+  "objective": "A filesystem-only registry that INDEXES the templates and customer sites already on disk — register, list, read back, rebuild — without becoming a second source of truth, without a database and without a UI.",
+  "status": "PASS",
+  "filesCreated": [
+    "src/registry/types.ts",
+    "src/registry/scan.ts",
+    "src/registry/store.ts",
+    "src/registry/index.ts",
+    "scripts/smoke-registry.ts",
+    "docs/result/handoffs/27-registry.json"
+  ],
+  "filesModified": [
+    "package.json (one script line: \"smoke:registry\")"
+  ],
+  "filesModifiedOutsideOwnership": [],
+  "historicalArtifactsModified": 0,
+  "placement": {
+    "chosen": "src/registry/",
+    "why": "The registry spans TWO subsystem namespaces — recon-templates (src/recon-template) and release-projects (src/release) — so it belongs to neither. src/editor/registry.ts was the audit's suggestion, but no src/editor exists and no UI is built here; creating that directory would name a component that does not exist. src/registry/ is a peer module directory, which is this repo's one and only structural idiom (src/release/, src/regions/, src/seo/, src/theme/ …)."
+  },
+  "storage": {
+    "templateIndex": "data/.registry/templates.json  (template-registry-v1)",
+    "siteIndex": "data/.registry/sites.json  (site-registry-v1)",
+    "constants": "src/registry/store.ts:48-50 (REGISTRY_DIR/.registry, TEMPLATE_REGISTRY_FILE, SITE_REGISTRY_FILE)",
+    "dataRootOverride": "every entry point takes an optional { dataRoot } (src/registry/scan.ts:34-41); the default is \"data\". The suite uses it to work in data/.smoke-registry-<pid>.",
+    "whyDotPrefixed": "`.registry` can never be mistaken for a host folder by the scanner, which is the same convention the smoke suites' data/.smoke-<name>-<pid> scratch dirs already rely on (src/registry/scan.ts:47-58 skips every dot-prefixed entry).",
+    "machineLocal": "data/ is gitignored, so the index is machine-local by construction — which is exactly why it must be rebuildable, and is.",
+    "indexedArtifacts": [
+      "data/<host>/recon-templates/<run>/manifest.json + site-map.json  → template entry",
+      "data/<host>/release-projects/<id>/release-project.json           → site entry",
+      "data/<host>/release-projects/<id>/revisions/r00N/revision.json   → revision pointer"
+    ]
+  },
+  "templateRegistryFields": {
+    "schema": "src/registry/types.ts:45 (TemplateEntrySchema, strict zod)",
+    "fields": [
+      "templateId (manifest.templateId — the registry key)",
+      "host, runId, templateDir (repo-relative POSIX)",
+      "createdAt (manifest.createdAt, itself derived from the run id — no second clock)",
+      "compilerVersion",
+      "source { host, rootUrl, siteSpecRunId, reconstructionRunId }",
+      "routes[], routeCount",
+      "routePolicyApplied",
+      "slotizedRouteCount / structureOnlyRouteCount / excludedRouteCount",
+      "slotCount, bindingCount",
+      "collections[] { collectionId, groupedBy, semanticKind, reconstructedRoutes, representativeRoutes, discoveredMemberCount, countIsFloor }",
+      "limitations[]"
+    ],
+    "fieldNamesTakenFromWave2A": "counts.slotizedRoutes / counts.structureOnlyRoutes / counts.excludedRoutes / counts.collections and routePolicy.applied were read from src/recon-template/types.ts:676-712 (TemplateManifestSchema) and site-map collections[] from CollectionSpecSchema at src/recon-template/types.ts:546 — not guessed from the brief.",
+    "preTask27Templates": "A compiler v1/v2 manifest has none of those optional counts. The entry records routePolicyApplied=false and reports slotizedRouteCount = routeCount, structureOnlyRouteCount = 0 — TRUE BY DEFINITION for a compile with no policy (default scope core-reconstruct), not a measurement, and labelled as such at src/registry/types.ts:63-71 and src/registry/scan.ts:122-126."
+  },
+  "siteRegistryFields": {
+    "schema": "src/registry/types.ts:104 (SiteEntrySchema, strict zod)",
+    "fields": [
+      "siteKey (`<host>/<projectId>` — the registry key)",
+      "siteId (Wave 2B: ReleaseProject.siteId)",
+      "projectId, host, projectDir (repo-relative POSIX)",
+      "name + nameSource (derived-from-site-id — see nameIsDerived below)",
+      "templateLineage { templateId, path, hash } — acceptedLineage.template verbatim",
+      "releaseState",
+      "createdAt, updatedAt",
+      "projectRevision, adaptedFromRevision (null unless the on-disk document was older)",
+      "revision { revisionId, parentRevisionId, authoredStateHash, origin, createdAt, revisionCount } | null — Stretch A's chain head",
+      "authoredSlotCount"
+    ],
+    "keyIsNotSiteId": "siteId is NOT unique on disk today. Every pre-Task-27 project has its siteId adapted from the host at load time (src/release/instance.ts:128-160), so the two legacy linear.app projects both adapt to siteId `linear.app`. The key is therefore the directory identity (siteKey); the collision is REPORTED as a registry warning (src/registry/scan.ts:234) and readSite() on an ambiguous siteId returns null rather than an arbitrary project (src/registry/store.ts:293-299).",
+    "nameIsDerived": "`name` is derived from siteId, not stored. A registry-only display name would be a fact the registry could not rebuild from disk — i.e. exactly the second source of truth this goal forbids. See changeRequests[0] for the field that would fix it properly."
+  },
+  "databaseUsed": false,
+  "uiBuilt": false,
+  "rebuildableFromDisk": true,
+  "secondSourceOfTruthAvoided": "Every field is copied or counted from an artifact another subsystem owns, `read*` re-derives from that artifact and returns the derived entry (reporting `indexAgreed:false` when the cached one disagreed), an artifact that was never registered still reads via a scan, and `rebuildRegistry` recreates both index files from a scan alone — so the index is a cache whose loss costs only scan time.",
+  "apiSurface": {
+    "derive": "templateEntryFromDisk (scan.ts:92), siteEntryFromDisk (scan.ts:191), scanTemplates, scanSites, listHosts, siteRegistryWarnings",
+    "index": "loadTemplateRegistry/loadSiteRegistry (a missing file is the EMPTY registry, never an error), saveTemplateRegistry/saveSiteRegistry",
+    "register": "registerTemplate (store.ts:155), registerSite (store.ts:172) — upsert by key, entries kept lexically sorted",
+    "list": "listTemplates, listSites — read the cache, which is the only reason the cache exists",
+    "read": "readTemplate (store.ts:215), readSite (store.ts:263) → ResolvedEntry<T> { entry, resolvedFrom: artifact|index, registered, indexAgreed, artifactMissing }",
+    "rebuild": "rebuildRegistry (store.ts:333)",
+    "helpers": "sitesWithSiteId (every project sharing one siteId), entriesAgree (key-sorted JSON comparison)"
+  },
+  "conflictResolution": {
+    "rule": "the artifact wins",
+    "implementation": "readTemplate/readSite use the cached entry ONLY to learn which directory to look in, then re-derive from that directory and return the fresh entry with indexAgreed = entriesAgree(cached, fresh). If the cached directory is gone, a scan is tried before giving up. Only when both fail is the stale entry returned, and then resolvedFrom is \"index\" and artifactMissing is true, so a dangling pointer can never be mistaken for a live artifact.",
+    "listingIsExplicitlyStale": "listTemplates/listSites return the cache verbatim and do NOT re-derive — that is what makes listing cheap. Check 27B.19 pins this so the difference is deliberate and visible, not an accident."
+  },
+  "newSuite": "smoke:registry (scripts/smoke-registry.ts) — 27 checks, 0 failures",
+  "checks": {
+    "smoke:registry": "27 checks, 0 failures",
+    "smoke:release": "162 checks, 0 failures (unchanged by this agent; smoke-release.ts not edited)",
+    "coverage": [
+      "27B.1-27B.7 read-only derivation over the REAL data/ tree: the policied compiler-v3 stripe template (20 routes, 10 slotized, 10 structure-only, 4661 slots, 3 collections), the pre-policy compiler-v2 template (9529 slots, definitional split), all five release projects, revision-1 in-memory adaptation, and the legacy siteId collision warning",
+      "27B.8-27B.13 register a template / a site, list them, read them back (by siteKey and by unambiguous siteId), ambiguous siteId resolves to null",
+      "27B.14-27B.17 delete the index in the scratch root, rebuild, entries byte-identical to before; the reloaded file matches too; the namespace is hidden from the host scan",
+      "27B.18-27B.20 a hand-tampered template entry and a hand-tampered site entry both lose to their artifacts and are flagged disagreeing",
+      "27B.21-27B.24 an unregistered artifact still reads; a dangling entry reads as index-only; a rebuild prunes it; an unknown id resolves to null",
+      "27B.25-27B.27 derivation is deterministic, and the five real artifact directories are byte-identical afterwards with no revisions/ dir created in the real project"
+    ]
+  },
+  "testsRun": [
+    { "command": "pnpm typecheck", "exitCode": 0, "checks": null, "note": "tsc --noEmit clean" },
+    { "command": "pnpm smoke:registry", "exitCode": 0, "checks": 27, "note": "new suite; final line 'smoke:registry — 27 checks, 0 failures'" },
+    { "command": "pnpm smoke:release", "exitCode": 0, "checks": 162, "note": "unaffected by this agent; run as the brief required" }
+  ],
+  "evidence": [
+    "src/registry/types.ts:1-14 — module doctrine: an entry is a derived summary, the artifact is the source of truth",
+    "src/registry/types.ts:45-83 — TemplateEntrySchema; :63-71 documents the definitional (not measured) split on a pre-policy template",
+    "src/registry/types.ts:104-137 — SiteEntrySchema; :107-113 explains why siteKey and not siteId is the key; :117-120 marks `name` as derived",
+    "src/registry/scan.ts:1-16 — scan is the truth; enumeration is scan + lexical sort, the shipped idiom; hidden entries skipped",
+    "src/registry/scan.ts:92-137 — templateEntryFromDisk reads manifest.json (required) + site-map.json (optional, compiler-v3 collections)",
+    "src/registry/scan.ts:181-215 — siteEntryFromDisk; loadReleaseProject adapts a legacy document in memory and never rewrites it",
+    "src/registry/scan.ts:234-249 — siteRegistryWarnings reports non-unique siteIds instead of deduplicating them",
+    "src/registry/store.ts:13-21 — the artifact-wins doctrine, stated where it is implemented",
+    "src/registry/store.ts:215-261 — readTemplate: cached entry supplies the directory, the artifact supplies the answer, scan fallback, dangling last",
+    "src/registry/store.ts:328-352 — rebuildRegistry throws the index away and rewrites it from a scan",
+    "scripts/smoke-registry.ts — 27 checks; run output pasted above in checks.coverage",
+    "data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z/manifest.json — the compiler-v3 artifact 27B.1/27B.2 index (counts.slotizedRoutes 10, counts.structureOnlyRoutes 10, counts.collections 3)",
+    "data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z/manifest.json — the compiler-v2 artifact 27B.3 indexes with no routePolicy at all",
+    "data/linear.app/release-projects/flowpilot-wr27/release-project.json — the revision-2 project 27B.11 indexes (siteId flowpilot-wr27, acceptedLineage.template linear.app-2026-08-25T21-53-26-980Z)",
+    "data/linear.app/release-projects/linear.app-2026-08-25T23-32-42-075Z/release-project.json — a revision-1 project with no siteId field, adapted on load (27B.6/27B.7)"
+  ],
+  "changeRequests": [
+    {
+      "file": "src/release/types.ts",
+      "owner": "release-types owner (Wave 2B)",
+      "change": "add an optional `displayName: z.string().min(1).optional()` to ReleaseProjectSchema, set by `release:prepare --name`",
+      "why": "The site registry needs a human-facing name. Today it DERIVES `name` from siteId, because a name stored only in the index would be a fact that could not be rebuilt from disk — the exact second-source-of-truth this goal forbids. Once the field exists, src/registry/scan.ts:200 changes to `project.displayName ?? project.siteId` and nameSource gains an `authored` value. Purely additive; every existing project keeps loading."
+    },
+    {
+      "file": "src/release/prepare.ts",
+      "owner": "prepare owner (Wave 2)",
+      "change": "after the project is written, call `registerSite(projectDir)` from src/registry/index.js",
+      "why": "Registration is currently a library call nothing invokes automatically, so the index only exists once someone builds it. Wiring prepare (and src/cli-compile-recon-template.ts for registerTemplate) makes the index self-maintaining. Deliberately NOT done here: both files belong to other agents, and the registry is correct without it because `read*` falls back to a scan and `rebuildRegistry` recovers everything."
+    },
+    {
+      "file": "src/cli-compile-recon-template.ts",
+      "owner": "recon-template CLI owner (Wave 2A)",
+      "change": "after the compile writes its run directory, call `registerTemplate(runDir)` from src/registry/index.js",
+      "why": "Same reason as above, for the template half."
+    }
+  ],
+  "limitations": [
+    "NO CLI. The registry is a library plus a suite; there is no `pnpm registry:list`. Adding one is a new src/cli-registry.ts and one package.json line, but the brief said keep it small and a CLI was not asked for.",
+    "NO automatic registration. Nothing in the pipeline calls registerTemplate/registerSite yet — see changeRequests 2 and 3. Until then the honest workflow is `rebuildRegistry()`, which is O(number of run directories) and reads two small JSON files per template.",
+    "NO preview thumbnails. The audit noted `preview` as the one genuinely missing template field, derivable from the 1,384 existing PNGs. Not built: it needs a screenshot-selection policy, which is a design decision, not an indexing one.",
+    "NO locking and NO atomic writes — consistent with the rest of the repo, which has neither. Two processes registering at once can lose one entry (last writer wins on the whole file). The consequence is bounded by design: a lost entry is recovered by a rebuild.",
+    "`name` is siteId until src/release/types.ts gains a displayName (changeRequest 1).",
+    "The index is machine-local because data/ is gitignored. It is not shared, not committed, and not a deployment artifact.",
+    "A template directory that fails to parse is SKIPPED with a warning on the scan result rather than aborting it (src/registry/scan.ts:150-153, and scan.ts:224-227 for sites). A caller that ignores `warnings` will silently see a short list; no current caller does.",
+    "readSite/readTemplate scan the whole data root on a cache miss. That is cheap at today's 6 templates / 5 projects and would need an index-first strategy at thousands."
+  ],
+  "followUps": [
+    "Wire registerTemplate/registerSite into the compile and prepare CLIs (changeRequests 2, 3) so the index maintains itself.",
+    "Add `pnpm registry:list` (templates and sites, one line each) once an operator actually needs to read it outside a test.",
+    "Add `displayName` to ReleaseProject (changeRequest 1) and stop deriving `name`.",
+    "Give the legacy linear.app projects distinct siteIds, or accept the collision permanently — the registry now names it out loud (27B.7) instead of letting two customer sites share an identity silently, which is the failure the pre-overnight audit reported at line 346.",
+    "Template preview images, once a screenshot-selection policy exists."
+  ]
+}

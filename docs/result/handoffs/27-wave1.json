@@ -1,0 +1,100 @@
+{
+  "schema": "task27-wave-gate-v1",
+  "wave": 1,
+  "gate": "PASS",
+  "baselineSha": "d33abb3",
+  "gitOperations": 0,
+  "agents": {
+    "builders": ["1A GED-E", "1B GED-G", "1C PageRegion"],
+    "freshVerifiers": 3,
+    "verifierVerdicts": "3/3 PASS",
+    "hardeningCorrectionAgents": 3,
+    "hardeningReverifier": 1,
+    "hardeningReverdict": "PASS",
+    "integrator": 1,
+    "totalAgents": 11
+  },
+  "deliverables": {
+    "gedE": {
+      "handoff": "docs/result/handoffs/27-ged-e.json",
+      "fix": "src/seo/serve.ts rewriteHtmlHead now substitutes the upstream title across 6 encodings via new src/seo/escape-variants.ts (raw, 3 HTML apostrophe spellings, JSON, JSON+html-escaped), each needle replaced under its own encoding",
+      "productionPathTouched": false,
+      "productionPathEvidence": "git diff -- src/production/bake.ts is empty; rewriteHtmlHead has no caller in the bake path",
+      "negativeFixtureDiscriminates": "5 of 6 encodings survive the pre-fix code (verifier reconstructed pre-fix rewriteHtmlHead from git show HEAD: and replayed it). 'raw' is STRUCTURALLY non-discriminating: pre-fix step (b) split/join used a needle EQUAL to the raw variant, so no placement survives it. Measured with 6 exotic placements, not assumed; assertion retained as a forward regression guard.",
+      "checks": { "before": 79, "after": 97 }
+    },
+    "gedG": {
+      "handoff": "docs/result/handoffs/27-ged-g.json",
+      "fix": "route-scope default derived from the template run's site-map.json (was a bare ?? ['/']); new src/assets/residual-report.ts emits asset-residual-report-v1 with per-file normalized URL, host, per-route hits + occurrence counts, nullable inventory id (exact-URL join, no guessing), replacement fields read from replacement-manifest, and evidence refs",
+      "recrawled": false,
+      "competingTruthAvoided": "every replacement field is READ from replacementManifest.entries with manifestFile citing the source artifact; nothing re-derived",
+      "operatorOverrideHonesty": "an explicit --routes that parses to zero routes now REFUSES the run at the CLI (exit 1, matching the file's existing bad-input idiom) and the library records discardedExplicitRoutes in scope provenance",
+      "checks": { "assets": { "before": 117, "after": 140 }, "production": { "before": 85, "after": 89 } }
+    },
+    "pageRegion": {
+      "handoff": "docs/result/handoffs/27-page-region.json",
+      "artifact": "data/<host>/page-regions/<run-id>/page-regions.json (NEW kind namespace, versioned sibling)",
+      "slotSchemaModified": false,
+      "reconTemplateFilesOpened": 0,
+      "joinPath": "slot-bindings.json (pageId, viewport, nodeId)",
+      "newDomAttributes": [],
+      "onOffImplemented": false,
+      "canaries": {
+        "linear": { "regions": 68, "global": 5, "page": 63, "slotsJoined": "3079/3079", "bindingsJoined": "9929/9929", "orphans": 0, "sha256": "5e55e3390f95f00214e77a1b45218c6dbc5ebf506e0f4a39905edb1212600b9f" },
+        "stripe": { "regions": 1014, "routes": 20, "pages": 18, "slotsJoined": "9529/9529", "bindingsJoined": "24518/24518", "orphans": 0, "sha256": "3aaf467a25b03a2685dbe30520126a14b7a5a933dff08fc1d4871c361e5f5880", "bytes": 2316064 }
+      },
+      "determinism": "two compiles byte-identical on both canaries; independently reproduced by the verifier, whose fresh compiles also matched the persisted artifacts",
+      "localityHonest": "downstream insert (the program's actual requirement): 0 of 68 ids lost, 0 slotKey drift. UPSTREAM insert: 45 of 68 linear regions repathed (66%) because skeleton.ts pathSegment is a TAG-SCOPED ordinal and region roots are overwhelmingly <div>, so a <div> insert is a same-tag insert. Quantified in limitations and pinned by smoke checks rather than left as prose.",
+      "majorDefectFoundAndFixed": {
+        "defect": "global-lift branch minted its id via regionIdOf(scope, landmarkKey, childPath) which IGNORES rootTag, while the grouping key INCLUDES rootTag — so a landmark rendering as a different tag at mobile on EVERY non-locale page lifted both tag-variants to global with the identical id and hit `throw new RegionCompileError(duplicate global region id)`. Result: exit 1, NO artifact at all — total compile failure on a legitimate responsive-markup input.",
+        "whyItSurvived": "both canaries report viewportRootMismatches=0 and no check in the 50-check suite asserted otherwise; the branch had zero coverage",
+        "fix": "src/regions/compile.ts global id assignment pass — lifted groups bucketed by unsuffixed base id; a base id with ONE group keeps the id verbatim (backward compat), several are ranked so the variant with fewest @mobile drafts keeps the plain id; duplicate throw retained as a backstop",
+        "reachabilityProof": "at most TWO global variants per base id are reachable (one draft per page per root tag; a group missing a page is not global). Page scope is protected by the per-page drafts Map keyed on landmarkKey|childPath + @mobile, so no other collision of this shape is reachable.",
+        "backwardCompatProof": "both canary artifacts recompile BYTE-IDENTICAL after the fix (verifier independently reproduced the pre-fix crash, then confirmed both hashes)",
+        "regressionTest": "scripts/smoke-regions.ts §8, 13 checks covering page-scope AND the global-scope case that used to abort"
+      },
+      "checks": { "before": 50, "after": 67 }
+    }
+  },
+  "integration": {
+    "handoff": "docs/result/handoffs/27-wave1-integration.json",
+    "applied": ["src/seo/index.ts re-exports escape-variants helpers", "src/assets/index.ts re-exports residual-report functions/types", "4 deep-path importers folded into barrel imports, stale integrator-TODO comments removed"],
+    "noEditNeeded": "src/production/index.ts already wildcard-exports ./qa.js",
+    "refused": ["fold rewriteVariants (src/assets/rewrite.ts) into src/seo/escape-variants.ts — a refactor, not an integration seam; would broaden asset-rewrite behavior beyond GED-E scope and create an assets->seo module edge that does not exist"]
+  },
+  "regression": {
+    "logs": "docs/result/handoffs/27-regression-logs/wave1/",
+    "suites": 18,
+    "typecheck": "exit 0",
+    "totalChecks": 1906,
+    "baselineChecks": 1794,
+    "delta": 112,
+    "failures": 0,
+    "negativeCountDeltas": [],
+    "perSuite": {
+      "verifier": [81, 81], "selector": [81, 81], "multi-observer": [62, 62],
+      "interaction-detector": [92, 92], "interaction-explorer": [108, 108],
+      "interaction-patterns": [88, 88], "sitespec": [257, 257], "reconstruction": [217, 217],
+      "reconstruction-qa": [134, 134], "e2e": [130, 130], "recon-template": [64, 64],
+      "content-injection": [68, 68], "theme": [47, 47], "seo": [79, 97],
+      "assets": [117, 140], "production": [85, 89], "release": [84, 84], "regions": [null, 67]
+    }
+  },
+  "historicalIntegrity": {
+    "existingRunDirsModified": 0,
+    "evidence": "find data -type f -newer docs/result/handoffs/27-start.json returns ONLY the two new data/<host>/page-regions/ run dirs (a NEW kind namespace)",
+    "task24AggregationHandoffTouched": false,
+    "headStillBaseline": true,
+    "stagedChanges": 0,
+    "stashEntries": 0
+  },
+  "carriedLimitations": [
+    "the residual report has never been produced by a real `pnpm assets:qa` run — proven by a three-origin Chromium fixture census in smoke:assets plus a READ-ONLY dry-run join over historical stripe artifacts, because a real run would write into an existing asset-materialization run dir which this wave forbids",
+    "the assets:qa CLI exit-1 on an empty --routes is asserted by READING, not by execution — no suite in this repo spawns the assets:qa process; the library-level branch it depends on IS covered by checks",
+    "PageRegion granularity is NOT uniform and a consumer must not assume it is: linear has 25 regions on the homepage but 7 on /changelog, whose 3,234 bindings sit in a handful of large regions because that page's main content carries no sectioning markup",
+    "the PageRegion global lift is strict (identical landmarkKey + childPath + rootTag + subtree hash on EVERY non-locale page) and often misses a real shared shell — linear's footer is shared by 7 of 8 pages and stays page-scoped; stripe lifts only 2 regions. Cost is MEASURED (nearGlobalGroups, nearGlobalMaxPages) rather than assumed, and deliberately not loosened without a consumer to justify the decision.",
+    "stripe carries 449 regions whose landmark is a body-scoped <header> nested in plain <div>s; correct per the HTML-AAM demotion rule but the largest single lever on stripe's region count",
+    "PageRegion orphan accounting reports 0 on both canaries — a real measurement, with both orphan/unresolved paths proven live by planted bindings in smoke §6, but never yet exercised by real data",
+    "route scope for the residual census is only as complete as the template site-map (representative routes per family, not every source URL); the artifact records its scope, source and any --max-routes truncation so the gap is legible rather than silent"
+  ]
+}

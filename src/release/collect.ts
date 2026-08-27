@@ -8,6 +8,8 @@
  *          report/brand-leak.json
  *   assets replacement-manifest.json + classification + report/network-qa.json
  *   fonts  font-inventory.json license[] (+ release-layer font-decisions.json)
+ *   brand  content report/brand-leak.json + template runtime IR surfaces
+ *          (GED-F detector — see brand-scan.ts; DETECTION ONLY, no rewrite)
  *   inline svg  asset inventory manifest counts.inlineSvgEntries
  *   production  production-spec.json indexabilityGate + build report/qa.json
  *
@@ -19,6 +21,7 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
+import { brandSurfaceRequirements, scanBrandSurfaces, type BrandSurfaceReport } from "./brand-scan.js";
 import {
   SEVERITY_POLICY,
   type Requirement,
@@ -60,6 +63,8 @@ export interface ArtifactFacts {
   fontFamiliesUndecided: string[];
   inlineSvgEntryCount: number;
   brandLeakWarnings: number;
+  /** GED-F surface census (artifact-derived, never hardcoded). */
+  brandSurfaceCounts: Record<string, number>;
   unresolvedSlotCount: number;
   themeCompatibility: string | null;
   specDecision: "preview" | "indexable" | null;
@@ -72,6 +77,8 @@ export interface CollectResult {
   routeReadiness: RouteReadiness[];
   warnings: string[];
   facts: ArtifactFacts;
+  /** The full GED-F scan behind the `brand-leak` requirements. */
+  brandSurfaces: BrandSurfaceReport;
 }
 
 async function readJson<T>(file: string): Promise<T> {
@@ -490,7 +497,20 @@ export async function collectRequirements(paths: LineagePaths): Promise<CollectR
     requirements.push(requirement);
   }
 
-  // ---- 8. inline-SVG source-brand marks (template-layer limitation) -------
+  // ---- 8. brand-leak surfaces (GED-F detector, Task 27) -------------------
+  // The content run's brand-leak warnings stop being a log line and become
+  // STRUCTURED requirements, joined by the surfaces nothing detected before
+  // (inline-SVG aria-label / <symbol id>). Blocking policy lives in
+  // brand-scan.ts, not here. Scanned BEFORE section 9 so the existing
+  // inline-SVG blocker can cite which surfaces actually carry the mark.
+  const brandSurfaces = await scanBrandSurfaces({
+    host: paths.host,
+    templateRunDir: paths.templateRunDir,
+    contentRunDir: paths.contentRunDir,
+    productionBuildDir: paths.productionBuildDir ?? null,
+  });
+
+  // ---- 9. inline-SVG source-brand marks (template-layer limitation) -------
   const inlineSvgEntryCount = inventoryManifest.counts.inlineSvgEntries ?? 0;
   if (inlineSvgEntryCount > 0) {
     requirements.push(
@@ -512,9 +532,36 @@ export async function collectRequirements(paths: LineagePaths): Promise<CollectR
             pointer: "counts.inlineSvgEntries",
             detail: String(inlineSvgEntryCount),
           },
+          // WHICH surfaces inside those marks carry the brand (Task 27). The
+          // blocker itself stays unreachable until GED-F neutralization ships
+          // — this only stops the operator from having to guess what it is.
+          ...(["svg-aria-label", "svg-symbol-id", "svg-text"] as const)
+            .filter((surface) => brandSurfaces.counts[surface] > 0)
+            .map((surface) => ({
+              file: brandSurfaces.findings.find((finding) => finding.surface === surface)
+                ?.evidenceFile ?? path.join(paths.templateRunDir, "manifest.json"),
+              pointer: `brand-surface:${surface}`,
+              detail: `${brandSurfaces.counts[surface]} occurrence(s) — e.g. ${
+                brandSurfaces.findings.find((finding) => finding.surface === surface)?.value ?? ""
+              }`,
+            })),
         ],
       }),
     );
+  }
+
+  requirements.push(...brandSurfaceRequirements(brandSurfaces));
+  if (brandSurfaces.truncated > 0) {
+    warnings.push(
+      `content: brand surface scan kept a capped sample — ${brandSurfaces.truncated} finding(s) ` +
+        "beyond the per-surface cap are counted but not listed individually",
+    );
+  }
+  for (const gap of brandSurfaces.scanned.unavailable) {
+    // "not-yet-measured" is the normal pre-production state, not an operator
+    // action — only a genuinely MISSING artifact earns a warning line.
+    if (gap.kind !== "missing-artifact") continue;
+    warnings.push(`brand: surface ${gap.surface} unmeasured on this lineage — ${gap.reason}`);
   }
 
   // ---- warnings (never blockers) ------------------------------------------
@@ -568,6 +615,7 @@ export async function collectRequirements(paths: LineagePaths): Promise<CollectR
       .map((license) => license.family),
     inlineSvgEntryCount,
     brandLeakWarnings: brandLeak.warnings.length,
+    brandSurfaceCounts: brandSurfaces.counts,
     unresolvedSlotCount: (generationResult.unresolved ?? []).length,
     themeCompatibility: themeCompat?.result ?? null,
     specDecision: spec?.indexabilityGate.decision ?? null,
@@ -584,5 +632,5 @@ export async function collectRequirements(paths: LineagePaths): Promise<CollectR
     return a.requirementId < b.requirementId ? -1 : 1;
   });
 
-  return { requirements, routeReadiness, warnings, facts };
+  return { requirements, routeReadiness, warnings, facts, brandSurfaces };
 }

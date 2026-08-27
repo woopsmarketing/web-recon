@@ -1,0 +1,658 @@
+{
+ "agent": "27-2B — Release Project → Customer Site Authoring Foundation + 2B-HARDENING (content-stage hash landmine) + 27-2B-CORRECTION (release hardening correction: MAJOR 1 non-frozen re-hash pickup, MAJOR 2 fake-pass check)",
+ "objective": "Extend src/release (the proto-SiteInstance) with stable site identity, non-destructive prepare, an authoritative authored block, one content write doctrine, live theme authoring/invalidation, and the frozen-template report/ hash exclusion — additively, with every legacy artifact still loading.",
+ "status": "PASS",
+ "parallelSiteInstanceCreated": false,
+ "routeOrRegionEnablementImplemented": false,
+ "filesCreated": [
+  "src/release/instance.ts",
+  "docs/result/handoffs/27-release-authoring.json"
+ ],
+ "filesModified": [
+  "src/release/types.ts",
+  "src/release/store.ts",
+  "src/release/graph.ts",
+  "src/release/freshness.ts",
+  "src/release/prepare.ts",
+  "src/release/resolve.ts",
+  "src/release/build.ts",
+  "src/release/stages.ts",
+  "src/release/requirements.ts",
+  "src/release/index.ts",
+  "src/cli-release-prepare.ts",
+  "scripts/smoke-release.ts",
+  "src/release/plan.ts"
+ ],
+ "filesModifiedOutsideOwnership": [],
+ "siteId": {
+  "field": "ReleaseProject.siteId (src/release/types.ts:399), required in project revision 2",
+  "howSupplied": "operator: `pnpm release:prepare <spec> --site-id <id>` (src/cli-release-prepare.ts) → PrepareOptions.siteId (src/release/prepare.ts:75). Default is defaultSiteId(host) — a deterministic host slug (src/release/instance.ts:40), identical on every prepare. projectId now defaults to the siteId (src/release/prepare.ts:135-136), never to the production-spec run id.",
+  "stableAcross": "prepare → resolve → build → prepare. Re-prepare resolves the SAME project directory and carries siteId + createdAt forward (src/release/prepare.ts:146, 302-303). Several distinct customer sites are produced from one template by passing distinct --site-id values, each getting its own release-projects/<siteId> namespace (smoke 27.4/27.5).",
+  "legacyLoadStrategy": "Version ADAPTATION, never rewrite. ReleaseProject carries its own `projectRevision` axis (RELEASE_PROJECT_REVISION = 2, src/release/types.ts:37) kept separate from the shared `schemaVersion` (which requirements.json / run.json / the resolution pack also assert). loadReleaseProject routes every document through adaptReleaseProject (src/release/store.ts:93 → src/release/instance.ts:128): a revision-1 document (no projectRevision field) gets siteId = defaultSiteId(source.host) and an `authored` block REPLAYED from its applied resolutions, in memory only. A read never writes; the file is persisted at revision 2 only when the operator's next command saves it. A revision from the future is refused rather than downgraded (smoke 27.19)."
+ },
+ "nonDestructivePrepare": {
+  "whatIsPreserved": [
+   "resolutions[] (every AppliedResolution, ids and order) — src/release/prepare.ts:147, 306",
+   "authored.slotValues + authored.theme + authored.updatedAt — src/release/prepare.ts:148, 307",
+   "runs[] run history (the new prepare run is APPENDED) — src/release/prepare.ts:149, 322",
+   "siteId and createdAt — src/release/prepare.ts:146, 302",
+   "failure record — src/release/prepare.ts:309",
+   "stageStatus artifacts for the EXECUTABLE stages (content/theme/seo/assets/production), so a project advanced by release:build never regresses to the originally accepted lineage — src/release/prepare.ts:243-252"
+  ],
+  "whatIsRecomputed": [
+   "acceptedLineage: every stage directory re-hashed (dir-sha256-v1), template under the new report/ exclusion — src/release/prepare.ts:188-210",
+   "requirements: re-COLLECTED from the artifacts and merged against the CARRIED resolutions so a closed gap is not re-opened — src/release/prepare.ts:227",
+   "frozen stage artifacts (reconstruction/template) adopted from the freshly re-hashed lineage — src/release/prepare.ts:247-250",
+   "stage fresh/stale via refreshStageStatuses under the carried effective resolution + authored state, plus target mode and blocking — src/release/prepare.ts:329-340",
+   "releaseState (always artifact-derived) and the technical-debt register + operator checklist"
+  ],
+  "testFileLine": "scripts/smoke-release.ts:2119 (27.31 same project/siteId/createdAt), :2127 (27.32 resolutions), :2134 (27.33 authored), :2139 (27.34 run history), :2147 (27.35 advanced stage artifacts), :2156 (27.36 requirements genuinely recomputed), :2163 (27.37 saved at revision 2)"
+ },
+ "authored": {
+  "fieldsLanded": [
+   "authored.slotValues — AUTHORITATIVE; the future Visual Editor's write target (src/release/types.ts:220-232)",
+   "authored.theme — { themeSourceFile?, tokens?, note? }, validated against theme-contract-v1 (src/release/types.ts:198-212)",
+   "authored.updatedAt — set only when a fold actually changed a value (src/release/instance.ts:79-99)"
+  ],
+  "fieldsDeferred": [
+   "assets / fontDecisions — left in the resolution packs. They are BINARY-file decisions consumed by resolve-assets.ts through content-hashed local files, not text an editor types; moving them tonight would have meant re-plumbing asset content hashing with no authoring benefit.",
+   "facts / productionBaseUrl / acknowledgements — left in the resolution packs. These are release-gate inputs (SEO plan + indexability gate), not per-site authored content; `facts` in particular is matched requirement-by-requirement and its canonical-key slice already drives the seo stage hash.",
+   "route enablement / region enablement — explicitly out of scope for tonight."
+  ],
+  "duplicateTruthAvoidedHow": "Values still ARRIVE through a resolution pack, but resolve folds them into `authored` at the moment of application (src/release/resolve.ts:151) and nothing reads them back out of the pack as an independent source. resolutions[] stays the immutable AUDIT RECORD of how each value arrived. In the one place both are visible — contentStageRunner — the pack-derived view is applied FIRST and authored LAST, so authored always wins (src/release/stages.ts:121-138). Legacy revision-1 projects have their authored block replayed from their packs on first load (src/release/instance.ts:101-107), so authored is authoritative from the very first read rather than being a second empty home."
+ },
+ "contentWriteDoctrine": {
+  "authoritative": "release-project.json → authored.slotValues",
+  "derived": "content-runs/<run-id>/slot-values.json — MATERIALIZED by contentStageRunner into a NEW content run on every release:build (src/release/stages.ts:133-175). Its format is UNCHANGED: a bare slot-key → value map, written by the unmodified content-injection ingestGenerationResult, so src/production/run.ts:234/:375 and every other consumer are untouched (smoke 27.22/27.23). The generation-result.json merge base is unchanged.",
+  "warningEmittedWhere": "Three places, all explicit: (1) src/release/store.ts:17-33 — the doctrine is documented at the file that previously forbade in-place edits, naming the Task 19 §29 manual-edit seam as SUPPORTED BUT NON-AUTHORITATIVE; (2) src/release/stages.ts:91-98 — contentStageRunner reads the base content run manifest's `manualEdits` flag and emits a warning that those bytes are non-authoritative and are not carried forward, surfaced onto the release run via the new StageRunnerResult.warnings (src/release/build.ts:222-224); (3) src/release/resolve.ts:177-183 — every resolve that folds slot values records the doctrine warning on the resolve run. The content-injection in-place editing seam itself was NOT modified (Agent 2C owns it) and remains backward compatible."
+ },
+ "themeInvalidation": {
+  "staleStages": [
+   "theme",
+   "production"
+  ],
+  "freshStages": [
+   "reconstruction",
+   "template",
+   "content",
+   "seo",
+   "assets"
+  ],
+  "hashSliceIncluded": "computeStageInputsHash now takes an optional `authored` argument and resolutionSliceFor returns { authoredTheme } for the theme stage (src/release/freshness.ts:91-94). The slice is folded in ONLY when non-empty, so an empty/absent authored block hashes byte-identically to the pre-Task-27 formula and no existing project gains phantom staleness (smoke 27.13). THEME_SELECTION_IMPACTS is now WIRED, not declared: `theme` is a real production-resolution-v1 field (src/release/types.ts:298) and RESOLUTION_FIELD_IMPACTS.theme === THEME_SELECTION_IMPACTS (src/release/graph.ts:67), so invalidatedStages picks it up through the existing loop. Token ids and values are gated by the Task 20 contract at resolve time — isThemeToken (CLOSED paint-only vocabulary) + isSafeThemeValue (src/release/resolve.ts:104-121) — so a layout value has literally no token to land in.",
+  "testFileLine": "scripts/smoke-release.ts:1309 (27.9 wired), :1318 (27.10 exactly [theme,production]), :1341 (27.11 in the theme hash), :1345 (27.12 NOT in the other five stage hashes), :2058 (27.25 real resolve), :2069 (27.27 dry-run: theme+production stale, other five reused), :2092 (27.28 layout value refused), :2095 (27.29 real build re-ran theme+production only), :2107 (27.30 the authored token paints the new overlay)"
+ },
+ "templateReportHashExclusion": {
+  "prepareLine": "src/release/prepare.ts:194-198 — the template hashRef now spreads FROZEN_TEMPLATE_HASH_EXCLUSIONS (node_modules, .next, out, report)",
+  "freshnessLine": "src/release/freshness.ts:46-51 declares FROZEN_TEMPLATE_HASH_EXCLUSIONS (the single source both sides use) and :190-192 documents that refreshStageStatuses re-hashes with the RECORDED ArtifactRef.excluded set — which prepare wrote from that same constant, so the two can never disagree by construction rather than by convention.",
+  "testFileLine": "scripts/smoke-release.ts:1201 (27.6 report/ recorded in the exclusions), :1213 (27.7 after a simulated qa:recon-template write the template is still wouldReuse, nothing blocked), :1225 (27.8 a REAL release:build after that write does not hit the frozen-drift refusal at src/release/build.ts:164)"
+ },
+ "legacyProjectsLoaded": [
+  "data/linear.app/release-projects/linear.app-2026-08-25T23-32-42-075Z",
+  "data/linear.app/release-projects/linear.app-2026-08-25T23-54-21-435Z",
+  "data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z"
+ ],
+ "changeRequests": [
+  {
+   "file": "src/production/run.ts:256",
+   "owner": "production / integrator",
+   "change": "Consider hashing options.contentRunDir with the release layer's CONTENT_DERIVED_HASH_EXCLUSIONS (and the template dir with FROZEN_TEMPLATE_HASH_EXCLUSIONS) when recording production-spec lineage, so the spec's recorded lineage hashes mean the same thing as the release project's.",
+   "why": "Today the spec's content lineage hash includes report/ and slot-accounting.json. Nothing compares it to the release ArtifactRef, so there is no live bug — but two hashes over the same directory with different meanings is exactly the shape that produced this landmine twice."
+  },
+  {
+   "file": "src/content-injection/run.ts:188-215 (writeReviewArtifacts / updateManifest)",
+   "owner": "content-injection agent",
+   "change": "Consider whether the derived reporting block written into manifest.json (validation counts, brandLeakWarnings, counts.*, slotAccounting) belongs in slot-accounting.json / report/ instead, leaving manifest.json to inputs only.",
+   "why": "manifest.json must stay inside the content lineage hash because it carries real inputs, so any derived field written into it is the one remaining way a pure QA/revalidation pass can drift the content stage (see the manifest limitation above)."
+  }
+ ],
+ "testsRun": [
+  {
+   "command": "pnpm typecheck",
+   "exitCode": 0,
+   "checks": null,
+   "note": "tsc --noEmit clean across the whole repo (an earlier run showed errors only in sibling agents' in-flight files src/recon-template/collections.ts and src/content-injection/batching.ts; both were resolved by their owners before the final run). Zero errors in src/release/**, src/cli-release-*.ts, scripts/smoke-release.ts at any point."
+  },
+  {
+   "command": "pnpm smoke:release",
+   "exitCode": 0,
+   "checks": 122,
+   "note": "0 failures. Baseline was 84 checks (Task 25/26); 38 Task-27 checks added, none removed or weakened. One intermediate failure was found and fixed honestly: 27.30 initially asserted a hardcoded token id ('color.action.primary') that this fixture's adapter does not bind, so no overlay rule was emitted; the test now DERIVES a themeable colour token from the site's own theme-adapter.json at runtime (scripts/smoke-release.ts:2058-2075), matching the suite's 'never a literal' convention."
+  },
+  {
+   "command": "pnpm typecheck",
+   "exitCode": 0,
+   "checks": null,
+   "note": "tsc --noEmit clean after the hardening edits (freshness.ts, prepare.ts, stages.ts, plan.ts, build.ts, scripts/smoke-release.ts)."
+  },
+  {
+   "command": "pnpm smoke:release",
+   "exitCode": 0,
+   "checks": 130,
+   "note": "0 failures. 122 -> 130: eight new checks 27H.1-27H.8, none removed or weakened (two of them, 27H.1 and 27H.8, were strengthened after the negative control showed an empty exclusion set made them vacuously true). One earlier run CRASHED with ENOENT on data/release-fixture.example/recon-templates/.../manifest.json because a SIBLING agent was running pnpm smoke:release concurrently on the same throwaway fixture host namespace (confirmed by ps: a second scripts/smoke-release.ts process); re-run after it exited, clean."
+  },
+  {
+   "command": "pnpm smoke:release (negative control, CONTENT_DERIVED_HASH_EXCLUSIONS temporarily = [])",
+   "exitCode": 1,
+   "checks": 130,
+   "note": "5 failures, including 27H.2 failing as run=[\"content\",\"theme\",\"seo\",\"production\"]. Proves the defect was real and that the new checks actually detect it rather than passing vacuously. The constant was restored immediately and re-verified at 130/0."
+  },
+  {
+   "command": "pnpm typecheck",
+   "exitCode": 0,
+   "checks": null,
+   "note": "tsc --noEmit clean on the final tree after the two hardening corrections (src/release/prepare.ts, scripts/smoke-release.ts)."
+  },
+  {
+   "command": "pnpm smoke:release",
+   "exitCode": 0,
+   "checks": 136,
+   "note": "0 failures. 130 -> 136: the vacuous name-inverted check 27H.7 was REMOVED (-1) and seven real checks 27H.7a-27H.7g were added (+7). No other check was removed or weakened. Six negative controls were run against this suite (NC1-NC6, see hardeningCorrections); each produced the expected FAIL and was restored."
+  }
+ ],
+ "evidence": [
+  "src/release/instance.ts — new: defaultSiteId (:40), projectIdForSite (:47), resolutionSlotValues (:57), mergeAuthoredTheme (:67), foldResolutionIntoAuthored (:79), authoredFromResolutions (:101), adaptReleaseProject (:128). NO parallel SiteInstance schema — the file only adds the authoring capabilities the release project lacked.",
+  "src/release/types.ts:37-38 — RELEASE_PROJECT_REVISION=2 / LEGACY_RELEASE_PROJECT_REVISION=1, a version axis separate from the shared schemaVersion (with the reason written down).",
+  "src/release/types.ts:198-238 — AuthoredThemeSchema + AuthoredStateSchema + emptyAuthoredState.",
+  "src/release/types.ts:298 — ProductionResolutionSchema gains the optional `theme` field (the pack stays .strict(); every field still optional).",
+  "src/release/types.ts:396-400, :448 — ReleaseProjectSchema gains projectRevision, siteId, authored.",
+  "src/release/store.ts:17-33 — the CONTENT WRITE DOCTRINE, written at the file that previously forbade in-place content edits.",
+  "src/release/store.ts:88-99 — loadReleaseProject now adapts any shipped revision and returns adaptedFrom; a read never writes.",
+  "src/release/graph.ts:51-54, :67 — THEME_SELECTION_IMPACTS moved above its use and wired into RESOLUTION_FIELD_IMPACTS.theme (it had ZERO engine call sites before).",
+  "src/release/freshness.ts:46-51 — FROZEN_TEMPLATE_HASH_EXCLUSIONS (node_modules, .next, out, report), the single constant prepare hashes with.",
+  "src/release/freshness.ts:74-95 — resolutionSliceFor gains the authored slice: authoredSlotValues on content, authoredTheme on theme, both folded in only when non-empty so legacy inputsHashes stay valid.",
+  "src/release/freshness.ts:104-125, :166-173 — computeStageInputsHash takes the optional authored state; refreshStageStatuses passes project.authored.",
+  "src/release/prepare.ts:130-160 — stable identity + the non-destructive load of an existing project, logging exactly what is carried.",
+  "src/release/prepare.ts:194-198 — the template lineage hash excludes report/.",
+  "src/release/prepare.ts:227 — requirements recomputed AND matched against the carried resolutions.",
+  "src/release/prepare.ts:240-258 — stage seeding: executable stages keep their advanced artifacts, frozen stages re-adopt the freshly re-hashed lineage (which is also how a legacy project migrates onto the new exclusion set).",
+  "src/release/prepare.ts:302-322 — createdAt / resolutions / authored / failure / runs all carried.",
+  "src/release/prepare.ts:326-341 — re-prepare answers freshness honestly under the carried authoring instead of asserting a fresh baseline.",
+  "src/release/resolve.ts:100-124 — theme authoring validated against theme-contract-v1 (isThemeToken + isSafeThemeValue) before anything is applied.",
+  "src/release/resolve.ts:142-152 — the pack is folded into the authoritative authored block at the moment of application.",
+  "src/release/resolve.ts:175-189 — the content write doctrine warning and the theme invalidation log line.",
+  "src/release/stages.ts:44-52 — StageRunnerResult.warnings; src/release/build.ts:222-224 records them on the release run.",
+  "src/release/stages.ts:79-98 — authored is authoritative; a base content run carrying in-place manual edits produces an explicit non-authoritative warning.",
+  "src/release/stages.ts:133-138, :170-179 — authored.slotValues applied last and MATERIALIZED into the new content run's slot-values.json (format unchanged).",
+  "src/release/stages.ts:190-243 — themeStageRunner applies the authored theme: contract token overrides merged onto the base theme, written to <projectDir>/authored/theme.json so the theme run's provenance points at a real non-lineage file.",
+  "src/release/build.ts:239-246, :261-268 — both computeStageInputsHash call sites pass project.authored.",
+  "src/release/requirements.ts:276-283, :296 — effectiveResolution derives the cumulative theme (a projection of the immutable applied-resolution log, not a second source).",
+  "src/cli-release-prepare.ts — --site-id flag, and the CLI now prints the siteId plus, on a re-prepare, exactly what was preserved.",
+  "scripts/smoke-release.ts — 38 new checks: 1155-1231 (identity + template report/), 1305-1360 (theme wiring + hash slices), 1893-1945 (legacy loads, byte-untouched), 1988-2170 (authored round-trip, theme authoring end-to-end, non-destructive re-prepare).",
+  "/private/tmp/claude-501/-Users-woops-projects-web-recon/65e5b51c-f951-45fb-bee7-f8e9da931b0d/scratchpad/smoke2.log — full 122-check run, 0 failures.",
+  "git status --porcelain data/ is EMPTY after both smoke runs — no historical artifact directory was modified; docs/result/handoffs/24-aggregation-phase1.json is untouched.",
+  "src/release/freshness.ts:57-105 — CONTENT_DERIVED_HASH_EXCLUSIONS with the per-file inclusion/exclusion reasoning",
+  "src/release/freshness.ts:114-116 — STAGE_HASH_EXCLUSIONS (template + content, one map)",
+  "src/release/freshness.ts:118-155 — staleExclusionSetWarnings + the decision rationale for choosing (b) over (a)",
+  "src/release/freshness.ts:272 — warnings seeded into refreshStageStatuses",
+  "src/release/prepare.ts:200-206 — content ArtifactRef hashed with the exclusion set",
+  "src/release/stages.ts:203-209 — contentStageRunner records the same set on rerun artifacts",
+  "src/release/build.ts:148-155 — dry-run now prints WARNINGS",
+  "src/release/plan.ts:120-127, :166 — release:plan surfaces warnings (new PlanView.warnings)",
+  "scripts/smoke-release.ts:1232-1334 — checks 27H.1-27H.7; scripts/smoke-release.ts:1642-1649 — check 27H.8",
+  "src/cli-content-qa.ts:164,182,270 and src/content-injection/run.ts:188,285 — the Task 27 content-run writes this fix accounts for",
+  "src/production/run.ts:234,375 — slot-values.json is baked by production, which is why it stays in the hash",
+  "src/release/collect.ts:184 — report/brand-leak.json is read by requirement COLLECTION (re-run every prepare/build), not by the hash",
+  "src/release/prepare.ts:265-274 — MAJOR 1 fix. `const samePath = carried?.artifact != null && carried.artifact.path === lineageArtifact.path;` / `const artifact = carried !== undefined && !frozen && !samePath ? carried.artifact : lineageArtifact;` with the widening rationale in the comment at :259-272.",
+  "src/release/prepare.ts:277 — the carried `inputsHash` is still `carried?.inputsHash ?? computeStageInputsHash(...)`; the MAJOR 1 fix touches only the artifact ref, so no per-stage derivation state is lost.",
+  "src/release/prepare.ts:258 — `frozen` is unchanged and still evaluated first, so reconstruction/template behavior is byte-for-byte what it was.",
+  "scripts/smoke-release.ts:1330-1476 — MAJOR 2 fix: the vacuous name-inverted 27H.7 is gone and 27H.7a-27H.7g replace it, driving a real legacy-shaped project through refreshStageStatuses, planRelease and buildRelease --dry-run.",
+  "scripts/smoke-release.ts:1349-1362 — the legacy shape is built by re-hashing the template dir under [.next, node_modules, out] and the content dir under [] and writing those hashes into BOTH acceptedLineage and stageStatus, so the fixture is legacy WITHOUT being drifted (27H.7a asserts no 'artifact drift' warning appears).",
+  "scripts/smoke-release.ts:1425-1447 — 27H.7f copies the content run dir to data/release-fixture.example/content-runs/2026-08-25T00-00-03-999Z, points the stage at it, re-prepares and asserts the carried path survives; both the copy and the legacy project dir are removed at :1455-1456.",
+  "data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z/release-project.json — READ ONLY. Confirms the MAJOR 1 precondition on real disk: stageStatus.content.artifact === acceptedLineage.content, both `excluded: []`. Not modified (git status shows no data/ change).",
+  "Negative controls NC1-NC6 (hardeningCorrections[3]) — each temporary break produced the expected FAIL and was restored from a byte copy; `diff` confirms freshness.ts / plan.ts / build.ts are identical to their pre-control bytes.",
+  "Final tree: `pnpm typecheck` exit 0; `pnpm smoke:release` — 136 checks, 0 failures."
+ ],
+ "limitations": [
+  "Re-prepare re-collects requirements from the production-spec lineage directories named on the command line, NOT from stage artifacts that release:build has since advanced. Preserved stage artifacts are kept (smoke 27.35), but the requirement gap set is recomputed against the accepted candidate's lineage. Measured: smoke 27.36 shows requirements recomputed with resolved statuses intact. Named seam, not silently accepted.",
+  "The four legacy projects' TEMPLATE hashes on disk were computed with report/ INCLUDED (all six recon-template run dirs already contain report/). Their exclusion set migrates only when release:prepare is re-run for that project (prepare.ts:247-250 re-adopts the frozen lineage). Until then, a qa:recon-template write can still drift a legacy project's template hash. Recomputing it in place would mean rewriting a historical hash, which the immutability rule forbids — so the migration is an explicit operator action, not a silent rewrite.",
+  "assets, fontDecisions, facts, productionBaseUrl and acknowledgements were deliberately LEFT under the resolution packs (see authored.fieldsDeferred for the per-field reason). They are not duplicated into `authored`.",
+  "Theme authoring supports contract token overrides and an alternate themeSourceFile. Selecting a theme by themeId from the theme library (src/theme listThemeLibrary) is NOT wired — no library picker exists in the release layer.",
+  "There is no CLI that writes authored.slotValues directly yet; today values reach `authored` only by being folded from a resolution pack. The schema, the hashing seam and the materialization path are all in place for the Visual Editor, but the direct write path itself is future work.",
+  "Only pnpm typecheck and pnpm smoke:release were run, per the brief. The full 17-suite regression is the integrator's job and was NOT run here.",
+  "src/content-injection/run.ts was NOT modified (Agent 2C owns it): the Task 19 §29 in-place manual-edit seam still behaves exactly as before. The doctrine is enforced from the release side by warning and by always materializing a NEW content run.",
+  "HARDENING RESIDUAL, analysed not measured: content-run manifest.json stays IN the content hash (it carries runId/scopedRoutes/truthMode/manualEdits that production/run.ts:192 and collect.ts:120 read), and revalidateSlotValues rewrites it via updateManifest (src/content-injection/run.ts:127,285). For a run already ingested under Task 27 code the rewritten bytes are identical (every field is a deterministic function of in-hash inputs), so no drift. For a LEGACY content run whose manifest has no `slotAccounting` block yet, the first revalidation adds one and the content stage will drift once. That degrades to stale+rerun, never a refusal, and excluding manifest.json would be the silent-staleness bug this task exists to avoid.",
+  "HARDENING RESIDUAL: the three legacy on-disk projects are WARNED about, not migrated. Their recorded hashes are untouched by rule; a qa:recon-template write can still brick their build until an operator re-prepares. That is now a loud, actionable message on release:plan and release:build (including dry-run) instead of a silent risk.",
+  "src/production/run.ts:256 hashes the content run dir with NO exclusions when recording the production spec's own lineage block. That hash is never compared against the release layer's ArtifactRef (prepare.ts re-hashes independently and does not cross-check), so it does not affect freshness — but it is inconsistent with the release layer's set. Not fixed: src/production is outside this agent's ownership. Logged as a changeRequest.",
+  "MAJOR 1 correction, honest scope: a re-prepare now RE-BASELINES a non-frozen artifact sitting at the same path as the accepted lineage, so that stage's own 'artifact bytes drifted' signal is re-baselined rather than raised (downstream stages still go stale, since their recorded inputsHash was computed against the old artifact hash). This is inherent to prepare's contract ('recomputes every ArtifactRef from disk'); a drift-guard was tried in design and rejected because it would have blocked the very re-hash the printed remedy promises.",
+  "27H.6 and 27H.7g are ABSENCE assertions and cannot, alone, detect a dead warning producer (negative control 6: both stayed PASS with staleExclusionSetWarnings stubbed out). They are only sound because the presence checks 27H.7a-27H.7c now live in the same suite; do not delete the presence half without deleting the absence half."
+ ],
+ "followUps": [
+  "Add a `release:author` command (or the Visual Editor's write path) that writes authored.slotValues / authored.theme directly on the project; the inputs-hash seam already stales content or theme correctly (smoke 27.14, 27.11).",
+  "Run `pnpm release:prepare <spec> --project-id <legacy-id>` once per legacy project to migrate its template ArtifactRef onto the report/ exclusion; it is non-destructive by construction now.",
+  "Consider folding assets/fontDecisions into `authored` once the asset content-hash seam (freshness.resolutionAssetContentHashes) can hash an authored file reference directly.",
+  "Wire theme-library selection (themeId → listThemeLibrary) into authored.theme when a curated library ships.",
+  "Route enablement and region enablement remain deferred (out of scope tonight, per the brief).",
+  "Run `pnpm release:prepare <spec> --project-id <legacy-id>` once per legacy project to migrate BOTH the template and the content ArtifactRef onto the current exclusion sets; the new warning names the exact command and project id.",
+  "If a third stage ever gains derived-output writes, add it to STAGE_HASH_EXCLUSIONS (src/release/freshness.ts:114) — the warning helper and both hash sites then pick it up with no further edits.",
+  "scripts/smoke-release.ts uses a single fixed fixture host (data/release-fixture.example) that it rm's at both ends, so two agents running pnpm smoke:release concurrently on one working tree clobber each other (observed this session). Consider a per-process fixture namespace.",
+  "Sweep the rest of the smoke suites for the same fake-pass shape (a check whose NAME claims a behavior while its assertion tests the healthy path). Only scripts/smoke-release.ts was audited here, and only its 27H.* block was audited exhaustively (8 checks inspected, 1 vacuous).",
+  "Consider a suite-level lint: any check whose name contains 'reaches', 'warns', 'refuses' or 'blocks' must assert a NON-empty / positive condition, or must be paired with a companion check that does."
+ ],
+ "smokeReleaseChecks": {
+  "baseline": 84,
+  "now": 136,
+  "failures": 0,
+  "added": 38,
+  "log": "scripts/smoke-release.ts sections '1b. TASK 27', the 27.9-27.14 block inside section 3, the 27.15-27.19 block inside section 12, and new section '14. TASK 27'",
+  "hardeningAdded": 8,
+  "hardeningLog": "scripts/smoke-release.ts 27H.1-27H.7 (inside section 1b, after 27.8) and 27H.8 (inside section 9, after the selective-rerun build)",
+  "correctionDelta": "130 -> 136: -1 (vacuous 27H.7 removed) +7 (27H.7a-27H.7g, scripts/smoke-release.ts:1330-1476)."
+ },
+ "hardening": [
+  {
+   "item": "1 — content-stage lineage hash exclusion set",
+   "defect": "src/release/prepare.ts hashed the content run dir with NO exclusion set while the template stage had FROZEN_TEMPLATE_HASH_EXCLUSIONS. Task 27 itself added writes INTO a content run dir (report/telemetry.jsonl at src/cli-content-qa.ts:164, report/repair/ at :270, slot-accounting.json refreshed by revalidateSlotValues -> src/content-injection/run.ts:188 reached from :285), so running pnpm content:qa / content:validate after release:prepare drifted the prepared project's content stage hash.",
+   "severity": "Lower than the template one: content is an EXECUTABLE stage, so drift degrades to stale+rerun (content, theme, seo, production) rather than the frozen-stage hard refusal at src/release/build.ts:164. Still a feature spuriously invalidating the stage it belongs to.",
+   "fix": {
+    "constant": "src/release/freshness.ts:105 — CONTENT_DERIVED_HASH_EXCLUSIONS = [\"report\", \"slot-accounting.json\"], declared beside FROZEN_TEMPLATE_HASH_EXCLUSIONS (freshness.ts:47) with the full inclusion/exclusion reasoning in the doc comment at freshness.ts:57-104.",
+    "prepare": "src/release/prepare.ts:200-206 — acceptedLineage.content now spreads CONTENT_DERIVED_HASH_EXCLUSIONS into hashRef, exactly as the template ref does at :196-199.",
+    "freshness": "src/release/freshness.ts:296-299 — refreshStageStatuses re-hashes with the RECORDED ArtifactRef.excluded, which prepare wrote from the same constant, so the two sides agree by construction (identical contract to the template fix). Both places therefore agree; no one-sided change.",
+    "rerunPath": "src/release/stages.ts:203-209 — contentStageRunner now returns excluded: [...CONTENT_DERIVED_HASH_EXCLUSIONS] so a BUILD-produced content run is recorded under the same set (src/release/build.ts:227,234 hashes and records result.excluded). Without this, a rerun content artifact would have been the one remaining shape still exposed."
+   },
+   "inclusionReasoning": {
+    "excluded": {
+     "report/": "Every file under it is a REPORT ABOUT the content run, never an input to it: validation.json, brand-leak.json, operator-review.{json,md}, layout-qa.json, telemetry.jsonl, repair/, screenshots/. Each is a pure function of inputs that STAY in the hash (slot-values.json + the template + content-units.json), so a report that moved without them is derived noise. Note: src/release/collect.ts:184 does read report/brand-leak.json — but requirements are RE-COLLECTED from the artifacts on every prepare and every build (src/release/build.ts imports collectRequirements), never read out of this hash, so excluding it loses no signal.",
+     "slot-accounting.json": "Task 27's SIBLING account, derived from manifest + template + units + overlay (src/content-injection/accounting.ts). Nothing consumes the FILE at build time — src/release/stages.ts:180-197 reads the in-memory outcome.accounting of the run it just produced. Verified by grep: the only other references are a console.log in src/cli-content-generate.ts:151 and doc comments."
+    },
+    "keptInDeliberately": {
+     "slot-values.json": "AUTHORED INPUT that production reads and bakes (src/production/run.ts:234 and :375). Excluding it would let a real operator content edit ship as 'fresh' — a silent staleness bug strictly worse than the drift being fixed. Proven still hash-relevant by smoke 27H.3.",
+     "manifest.json": "Carries real inputs (runId, scopedRoutes, truthMode, manualEdits) read by src/production/run.ts:192, src/release/collect.ts:120 and src/release/stages.ts:80-84.",
+     "generation-result.json": "Read by src/release/stages.ts:72-74, src/release/collect.ts:123 and src/assets/inventory.ts:219.",
+     "content-units.json / content-policy.json / generation-request.json / generation-schema.json / intent.json / region-plan.json / template-summary.json": "Generation inputs and the packet layer's outputs; region-plan.json is written at prepareContentRun time (src/content-injection/packet.ts:359), not by a QA pass, so it is not derived-rewrite noise."
+    }
+   },
+   "tests": {
+    "forwardDirection": "scripts/smoke-release.ts:1275 (27H.2) — after writing report/telemetry.jsonl, report/repair/repair-stop.json and a refreshed slot-accounting.json into the prepared project's content run, a dry-run build still has content in wouldReuse with wouldRun=[] and blocked=[].",
+    "reverseDirection": "scripts/smoke-release.ts:1290 (27H.3) — editing one value in slot-values.json DOES stale content and cascade to theme+seo; :1302 (27H.4) restoring the exact bytes returns it to fresh, proving the hash (not mtime) is what is compared.",
+    "recordedSets": "scripts/smoke-release.ts:1237 (27H.1) prepare recorded both entries on acceptedLineage.content; :1644 (27H.8) the BUILD-produced content artifact records them too.",
+    "negativeControl": "MEASURED, not assumed: with CONTENT_DERIVED_HASH_EXCLUSIONS temporarily set to [] and everything else unchanged, pnpm smoke:release reported 130 checks / 5 failures, with 27H.2 failing as run=[\"content\",\"theme\",\"seo\",\"production\"] — i.e. the exact spurious four-stage rerun the fix removes. The constant was restored and the run returned to 130/0."
+   }
+  },
+  {
+   "item": "2 — legacy projects whose RECORDED exclusion set predates the fix",
+   "observed": "MEASURED on disk: all three legacy release projects (data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z, data/linear.app/release-projects/linear.app-2026-08-25T23-32-42-075Z, .../linear.app-2026-08-25T23-54-21-435Z) record stageStatus.template.artifact.excluded = [\".next\",\"node_modules\",\"out\"] and stageStatus.content.artifact.excluded = [].",
+   "decision": "(b) emit an explicit operator warning — NOT (a) refresh the recorded set on load.",
+   "reasoning": "src/release/freshness.ts:296-299 re-hashes with the RECORDED set, so the recorded hash only has meaning UNDER that set. Swapping the current set in during adaptReleaseProject would reinterpret a hash computed under the old one: every one of the six recon-template run dirs already contains report/, so those bytes are folded into the recorded template hash today. Adopting the new set would make the recomputed hash differ immediately, turning three projects that build fine right now into projects a frozen-stage refusal (build.ts:164) bricks at LOAD time, with no operator action and no way to opt out. That trades a latent, action-triggered risk for a certain, unconditional break. Option (a) could only be made safe by verifying recorded == recomputed-under-new-set first, which requires disk I/O inside adaptReleaseProject — today a pure, synchronous, read-never-writes function (src/release/instance.ts:126-160). Historical hash immutability (Tasks 23-26) also forbids rewriting the hash itself. So the residual risk is SURFACED rather than hidden or silently 'fixed'.",
+   "implementation": {
+    "helper": "src/release/freshness.ts:136 staleExclusionSetWarnings(project) — compares each stage's recorded artifact.excluded against STAGE_HASH_EXCLUSIONS (freshness.ts:114, the single map of stage -> current set), and names the missing entries, the artifact path, the consequence (frozen refusal vs unnecessary rerun of the stage and everything downstream) and the exact remedy (re-run release:prepare with --project-id <id>, non-destructive since Task 27).",
+    "wiring": "src/release/freshness.ts:272 seeds refreshStageStatuses' warnings with it, so it flows into every consumer of RefreshedStatuses.warnings. Two surfacing gaps were closed so the warning actually reaches an operator: src/release/build.ts:148-155 now prints a WARNINGS block in DRY-RUN mode (the dry run returns before the run record is assembled, so warnings were previously dropped in exactly the mode used to ask 'what will happen?'), and src/release/plan.ts:120-127 + :166 add a WARNINGS section and a PlanView.warnings field (release:plan never surfaced refreshed.warnings at all)."
+   },
+   "tests": {
+    "warns": "scripts/smoke-release.ts:1316 (27H.5) — a project clone shaped like the legacy ones (template [\".next\",\"node_modules\",\"out\"], content []) produces exactly 2 warnings, one per stage, naming \"report\" / \"slot-accounting.json\" and release:prepare.",
+    "quiet": "scripts/smoke-release.ts:1324 (27H.6) — a project recorded under the CURRENT sets warns about nothing; :1330 (27H.7) the same silence is observed through planRelease().warnings, proving the plan surface is wired.",
+    "liveLegacyCheck": "MEASURED read-only against the real on-disk stripe project via loadReleaseProject + refreshStageStatuses({verifyArtifacts:false}): both warnings fire with the correct artifact paths (data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z and data/stripe.com/content-runs/2026-08-18T10-46-26-129Z) and no file under data/ was written (smoke 27.18 'loading a legacy project rewrites NOTHING on disk' still passes)."
+   }
+  }
+ ],
+ "hardeningCorrections": [
+  {
+   "correction": "MAJOR 1 — the remedy printed by staleExclusionSetWarnings was a lie for every NON-frozen stage (content included)",
+   "defect": "src/release/prepare.ts (pre-correction :258-259) chose `carried !== undefined && !frozen ? carried.artifact : lineageArtifact`. For every executable stage the CARRIED ArtifactRef (with its old `excluded`) was kept and the freshly re-hashed lineage ref was discarded, so the content stage could never pick up CONTENT_DERIVED_HASH_EXCLUSIONS. The warning at src/release/freshness.ts:150-152 tells the operator to `pnpm release:prepare --project-id <id>`; doing so changed nothing and the warning persisted forever.",
+   "reproducedOnRealDisk": "data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z/release-project.json — stageStatus.content.artifact is byte-identical to acceptedLineage.content, both `\"excluded\": []`, so `carried !== undefined` is true and the re-hash is thrown away (read-only inspection; the file was NOT modified).",
+   "fix": {
+    "file": "src/release/prepare.ts:265-274",
+    "code": "const samePath = carried?.artifact != null && carried.artifact.path === lineageArtifact.path;\nconst artifact = carried !== undefined && !frozen && !samePath ? carried.artifact : lineageArtifact;",
+    "shape": "Adopt the freshly re-hashed lineage ref when the carried artifact IS the lineage artifact (same path). The carried ref is still preferred whenever the paths differ."
+   },
+   "whyWideningThePickupPastFrozenStagesIsSafe": "The comment at prepare.ts:255-257 scopes the pickup to frozen stages for ONE reason: an executable stage that a release:build rerun advanced points at a NEW run dir the accepted lineage does not know about, and adopting the lineage there would silently revert the project to the pre-rerun artifact (asserted by the pre-existing check 27.35). That risk is entirely a PATH-DIVERGENCE risk. Guarding on `carried.artifact.path === lineageArtifact.path` preserves it exactly: a diverged stage still keeps its carried ref (proved by 27H.7f and by 27.35, both of which FAIL under an unguarded 'always adopt lineage' — negative control 5). When the paths are equal the two refs describe the SAME bytes on disk and differ only in how they were hashed, so adopting is a re-hash in place, not an artifact swap: id and path are unchanged (asserted by 27H.7e).",
+   "constraintsSatisfied": {
+    "printed remedy actually clears the warning": "smoke 27H.7d — drives a real legacy-shaped project through the printed re-prepare and asserts staleExclusionSetWarnings === [] and planRelease().warnings/text carry no 'predate the derived-output fix' line. FAILS under negative control 1 (fix reverted).",
+    "carried per-stage status/derivation state is not lost": "smoke 27H.7e — artifact id and path unchanged, carried `inputsHash` unchanged (prepare.ts:277 still reads `carried?.inputsHash ?? …`), authored block and resolutions and createdAt unchanged, while artifact.hash DID change (the re-hash actually happened). FAILS under negative control 1.",
+    "a stage whose lineage artifact genuinely CHANGED still behaves as before": "smoke 27H.7f — the content stage is pointed at a DIFFERENT (copied) run dir and a re-prepare must keep it, with acceptedLineage.content still pointing at the original. FAILS under negative control 5. The pre-existing 27.35 is the same guard on the real rerun path and also FAILS under negative control 5.",
+    "frozen stages keep their existing behavior exactly": "`frozen` is still evaluated first and unchanged (prepare.ts:258); for reconstruction/template `!frozen` is false so the lineage ref is adopted exactly as before, whatever `samePath` says. Checks 27.6/27.7/27.8 and 27H.7a (template warning) are unchanged and green."
+   },
+   "honestTradeoff": "A re-prepare now re-baselines a non-frozen artifact that sits at the SAME path as the accepted lineage. If an operator hand-edited bytes in that run dir and then ran release:prepare, the stage's own 'artifact bytes drifted' signal is re-baselined instead of raised (downstream stages still stale, because their recorded inputsHash was computed against the old artifact hash). This is inherent: prepare is defined as 'recomputes every ArtifactRef from disk' (prepare.ts:9-10), and re-hashing and drift-detecting the same directory are the same number. A drift-guard that refused to adopt when the carried hash no longer matched was considered and REJECTED: the legacy content dir's old hash folded report/ bytes in, so a single `pnpm content:qa` run makes it 'drifted' under the carried set and the guard would have blocked the very re-hash MAJOR 1 is about — the remedy would still never clear."
+  },
+  {
+   "correction": "MAJOR 2 — a fake-pass check that asserted the opposite of its own name",
+   "defect": "scripts/smoke-release.ts (pre-correction :1329-1332) named a check '27H.7 the freshness warning reaches the operator through release:plan' and asserted `(await planRelease(projectDir, …)).warnings.length === 0` — against the HEALTHY project, so it could not fail when the wiring broke. `grep -n '\\.warnings' scripts/smoke-release.ts` returned exactly that one line for the whole 2,300-line suite: nothing tested the freshness.ts:272 seeding line or the WARNINGS blocks at build.ts:148-155 and plan.ts:120-127.",
+   "fix": {
+    "file": "scripts/smoke-release.ts:1330-1476",
+    "replacedBy": "27H.7a … 27H.7g — one vacuous check removed, seven real ones added (net +6; suite 130 -> 136).",
+    "whatItDoes": "Builds a REAL legacy-shaped release project on disk (its own projectId `<siteId>-legacy-exclusions` under the fixture host namespace): the template ref is rewritten to the pre-Task-27 set [.next, node_modules, out] and the content ref to [], with BOTH hashes recomputed under those legacy sets so the project is legacy but NOT drifted — the exact shape of the three real projects on disk. It is then driven end to end through refreshStageStatuses (27H.7a), release:plan warnings[] AND the rendered screen (27H.7b), release:build --dry-run log (27H.7c); the printed remedy is followed and asserted to clear (27H.7d) while preserving carried state (27H.7e); path-scoping is asserted (27H.7f); and the CURRENT-set project is asserted to emit nothing on plan and build (27H.7g). Both the legacy project dir and the copied content run dir are removed immediately afterwards."
+   },
+   "checkNames": [
+    "27H.7a a real legacy-shaped project (loaded from disk) warns on BOTH stages and is NOT drifted",
+    "27H.7b the warning reaches the operator through release:plan (warnings[] AND the rendered screen)",
+    "27H.7c the warning reaches the operator through release:build --dry-run",
+    "27H.7d following the PRINTED remedy actually CLEARS the warning (content re-hashed under the current set)",
+    "27H.7e the re-hash keeps the carried per-stage state (same artifact id/path, carried inputsHash, authored, resolutions)",
+    "27H.7f a stage advanced to a DIFFERENT run dir is NOT reverted to the accepted lineage by the re-hash",
+    "27H.7g a project recorded under the CURRENT sets emits NO exclusion warning on any surface"
+   ],
+   "assertsArtifactPath": "27H.7a/27H.7b/27H.7c each require the warning string to contain the CONTENT artifact path (contentRunDir), not merely to be non-empty."
+  },
+  {
+   "correction": "vacuity audit of the 27H.* block",
+   "inspected": 8,
+   "inspectedIds": [
+    "27H.1",
+    "27H.2",
+    "27H.3",
+    "27H.4",
+    "27H.5",
+    "27H.6",
+    "27H.7",
+    "27H.8"
+   ],
+   "vacuousFound": 1,
+   "vacuousIds": [
+    "27H.7"
+   ],
+   "removed": 1,
+   "perCheck": {
+    "27H.1": "NOT vacuous. Asserts the CONSTANT contains both entries AND the recorded lineage ref contains every entry of the constant — an empty constant can no longer satisfy it (the previous agent recorded a negative control for exactly this).",
+    "27H.2": "NOT vacuous. Writes real content-QA outputs and asserts content is still reused; removing the exclusion set makes it fail.",
+    "27H.3": "NOT vacuous. Edits slot-values.json and asserts the cascade; it is the anti-over-exclusion control for 27H.2.",
+    "27H.4": "NOT vacuous. Restores the bytes and asserts fresh — proves hash, not mtime.",
+    "27H.5": "NOT vacuous. Confirmed by negative control 6 (staleExclusionSetWarnings stubbed to return []): 27H.5 FAILS.",
+    "27H.6": "WEAK BUT CORRECTLY NAMED, kept. Its name claims an ABSENCE ('warns about nothing') and it asserts absence, so it is not name-inverted; but an absence assertion cannot detect a dead producer — under negative control 6 it stays PASS. That is exactly why it is now paired with the presence checks 27H.7a-c in the same suite: together the pair fails in both directions. Same reasoning applies to the new 27H.7g.",
+    "27H.7": "VACUOUS AND NAME-INVERTED — removed and replaced (see the MAJOR 2 entry).",
+    "27H.8": "NOT vacuous. Asserts the constant is non-empty AND that a BUILD-produced content artifact records every entry of it."
+   },
+   "alsoNoted": "The exclusion-set constants themselves (freshness.ts:47, :105) and the site-map path normalization the verifier byte-verified were NOT touched; none of the correct fixes were weakened or removed."
+  },
+  {
+   "correction": "negative controls executed (each: break, run, confirm the expected check FAILS, restore, confirm green)",
+   "controls": [
+    {
+     "id": "NC1",
+     "broke": "src/release/prepare.ts — reverted the samePath guard to the pre-correction `carried !== undefined && !frozen`",
+     "result": "27H.7d FAIL, 27H.7e FAIL; 136 checks / 2 failures",
+     "restored": true
+    },
+    {
+     "id": "NC2",
+     "broke": "src/release/freshness.ts:272 — refreshStageStatuses seeded `warnings` with [] instead of [...staleExclusionSetWarnings(project)]",
+     "result": "27H.7a, 27H.7b, 27H.7c all FAIL",
+     "restored": true
+    },
+    {
+     "id": "NC3",
+     "broke": "src/release/plan.ts:120 — WARNINGS render block disabled",
+     "result": "27H.7b FAIL only (27H.7a and 27H.7c still PASS — the surfaces are independently covered)",
+     "restored": true
+    },
+    {
+     "id": "NC4",
+     "broke": "src/release/build.ts:148 — dry-run WARNINGS log block disabled",
+     "result": "27H.7c FAIL only",
+     "restored": true
+    },
+    {
+     "id": "NC5",
+     "broke": "src/release/prepare.ts — over-wide fix: `const artifact = lineageArtifact` for every stage",
+     "result": "27H.7f FAIL and the pre-existing 27.35 FAIL — the path guard is load-bearing",
+     "restored": true
+    },
+    {
+     "id": "NC6",
+     "broke": "src/release/freshness.ts — staleExclusionSetWarnings stubbed to always return []",
+     "result": "27H.5, 27H.7a, 27H.7b, 27H.7c FAIL; 27H.6 and 27H.7g stayed PASS (absence assertions, as analyzed above)",
+     "restored": true
+    }
+   ],
+   "restorationVerified": "src/release/freshness.ts, src/release/plan.ts and src/release/build.ts were each restored from a byte copy taken immediately before the temporary edit and `diff` reports them identical; `grep -n 'void samePath\\|false as boolean' src/release/*.ts scripts/smoke-release.ts` returns nothing. Final tree: pnpm typecheck exit 0, pnpm smoke:release 136 checks / 0 failures."
+  }
+ ],
+ "planCascadeFix": {
+  "agent": "Task 27 — Release Plan Cascade Fix (follow-up to the real-data release exercise)",
+  "objective": "Make release:plan agree with release:build about the same project by giving the dependency-cascade fixpoint ONE implementation, decide and record what the persisted stageStatus stores, stop a resolution field that matches no requirement from vanishing, and correct one prose count in the exercise handoff.",
+  "status": "PASS",
+  "defect1_planOmittedTheCascade": {
+   "symptom": "release:plan printed \"READY (fresh): … theme, seo, production\" while release:build --dry-run printed \"WOULD RUN content, theme, seo, production\" for the same project state (a resolution applied, nothing rebuilt yet). The persisted stageStatus carried the same un-cascaded view.",
+   "rootCause": "The staleness fixpoint was inlined in buildRelease only (src/release/build.ts, pre-fix lines 109-126). refreshStageStatuses returned RAW per-stage freshness, so plan.ts, resolve.ts and prepare.ts — the three other readers, two of which PERSIST what they get — never saw the cascade.",
+   "fix": "Extracted the fixpoint verbatim into `propagateStaleStages` (src/release/freshness.ts:367) and call it from INSIDE refreshStageStatuses (src/release/freshness.ts:343). The inline loop in build.ts is deleted, not duplicated: the cascaded view is now the only view any reader can obtain, so the surfaces cannot drift apart by omission again. The function is exported so a future caller that legitimately needs it (e.g. a reader that assembles StageStatus without a refresh) reuses it rather than re-deriving it.",
+   "singleSourceProperty": "There is exactly one `status = \"stale\"` cascade assignment in src/release/**; `grep -n propagateStaleStages src/release/*.ts` returns the definition (freshness.ts:367), its single call site (freshness.ts:343) and one comment reference in build.ts:113. No call site can opt out, because it runs inside the only function that produces StageStatus records from a project.",
+   "buildBehaviourUnchanged": "The fixpoint is idempotent over a DAG and it now runs immediately before the point build used to run it (same input: the just-refreshed statuses, before applyBlocking). buildRelease's classification loop, execution order, run record and refusal logic are untouched. Pre-existing build assertions 17.2 / 18b / 18c / 27.25 / 27.27 / 27.29 stayed green.",
+   "persistedStageStatusDecision": {
+    "decision": "The persisted `stageStatus` stores the CASCADED view.",
+    "reasoning": [
+     "Consistency by construction beats consistency by convention. The alternative — persist raw freshness and require every reader to cascade — is exactly the arrangement that produced this defect: the cascade lived at one call site and three others silently skipped it. Nothing in the type system or the schema would have caught a fourth reader forgetting, and no test did.",
+     "The cascaded view is the honest answer to the question stageStatus is read to answer. src/release/gate.ts:44 derives PRODUCTION_READY partly from `stageStatus.production.status === \"fresh\"`. Under the raw view a project whose content stage is stale could still report production as fresh, so a project awaiting a full rebuild could be derived PRODUCTION_READY. Under the cascaded view it cannot.",
+     "Nothing is lost. The raw per-stage signal is still fully recoverable from the record: a cascade-only stage carries `reasons` containing exactly \"upstream stage <dep> will be rebuilt\" and NOT \"stage inputs changed since the artifact was produced\" or \"artifact bytes drifted from the recorded hash\". Check 27P.3 asserts that discrimination on a stage (theme) that is stale for no other reason.",
+     "No stored artifact is invalidated. stageStatus is recomputed from disk on every load path (refreshStageStatuses re-hashes and re-derives); the persisted copy is a report, never an input to its own recomputation. Every release-project.json already on disk still parses, validates and re-derives identically."
+    ],
+    "guaranteeIfARawViewWereEverNeeded": "It is not needed today, and no reader asks for one. If one ever does, the seam is `propagateStaleStages` being a separate exported function over a caller-owned record — a reader would call refreshStageStatuses's internals rather than re-implementing a cascade. That is a deliberate future seam, not a current code path."
+   },
+   "residualDisagreementNotFixed": "A FROZEN stage that is stale is classified differently by the two surfaces even though the stage SET agrees: build.ts:129-133 files it under BLOCKED BY \"frozen-stage-input-drift\" (and then refuses the build), while plan.ts renders it under \"STALE (will re-run on release:build)\" — which is wrong for a frozen stage, since build refuses rather than re-runs it. This is a distinct defect from the one assigned, it is a label not a stage set (checks 27P.1/27P.2 still hold), and plan.ts is being edited concurrently by the brand agent, so it is reported as a follow-up rather than fixed here."
+  },
+  "defect2_unmatchedResolutionFieldWasInvisible": {
+   "symptom": "A resolution pack whose routeContent slot values bind to no open requirement produced `matched: []` AND `unmatchedFields: []` — the operator's authored value appeared in neither column of the release:resolve summary.",
+   "rootCause": "src/release/requirements.ts matched routeContent slot values by pushing directly into `matches` for each bound requirement, with no else-branch — unlike every other field, which routes through `take()` and lands in `unmatched` when nothing binds.",
+   "fix": "src/release/requirements.ts:115 — `if (bound.length === 0) take(undefined, field);` before the per-requirement loop. The field is now reported as unmatched, which resolve.ts renders as \"matched no open requirement (recorded, still applied where consumable)\" — the accurate description: the value IS still folded into authored.slotValues and still ships.",
+   "noiseControl": "Authoring is not only gap-filling, so unmatched authored slot values can arrive in bulk. src/release/resolve.ts:172-180 caps the WARNING/log text at 12 field names plus \"… and N more\"; the recorded pack's `matched` / `unmatchedFields` arrays stay complete and uncapped, so the audit trail is unaffected.",
+   "notABlanketChange": "Check 27P.6 asserts a slot value that DOES bind still matches every requirement bound to that slot (the Task 27 multi-map behaviour at requirements.ts:50-56 is untouched)."
+  },
+  "exerciseHandoffProseCorrection": {
+   "file": "docs/result/handoffs/27-real-release-exercise.json",
+   "step": "steps[9] (\"10. verify the plan reports WOULD RUN / WOULD REUSE / BLOCKED BY correctly\")",
+   "change": "\"(87 release-blocking ids)\" → \"(88 release-blocking ids — the same 88 reported everywhere else in this handoff)\"",
+   "why": "The BLOCKED BY line lists 88 ids, matching the 88 release-blocking requirements reported in steps[0] and elsewhere in the same document. Prose only; no measured value, artifact or count elsewhere in the file was touched. JSON re-validated after the edit."
+  },
+  "filesCreated": [],
+  "filesModified": [
+   "src/release/freshness.ts",
+   "src/release/build.ts",
+   "src/release/requirements.ts",
+   "src/release/resolve.ts",
+   "scripts/smoke-release.ts",
+   "docs/result/handoffs/27-real-release-exercise.json",
+   "docs/result/handoffs/27-release-authoring.json"
+  ],
+  "filesModifiedOutsideOwnership": [],
+  "changeRequests": [],
+  "testsRun": [
+   {
+    "command": "pnpm typecheck",
+    "exitCode": 0,
+    "checks": "tsc --noEmit, whole repo",
+    "note": "Clean. STAGE_DEPENDENCIES became unused in build.ts after the loop was removed and its import was narrowed to STAGE_ORDER (build.ts:25)."
+   },
+   {
+    "command": "pnpm smoke:release",
+    "exitCode": 0,
+    "checks": 157,
+    "note": "151 → 157 (+6: 27P.1-27P.6), 0 failures. Every pre-existing check stayed green."
+   },
+   {
+    "command": "NEGATIVE CONTROL 1 — reintroduce the exact pre-fix divergence (remove the propagateStaleStages call from refreshStageStatuses, put the fixpoint back in buildRelease only), then pnpm smoke:release",
+    "exitCode": 1,
+    "checks": "157 checks, 3 failures",
+    "note": "27P.2, 27P.3 and 27P.4 FAILED and reproduced the reported symptom verbatim: \"plan.ready=[production,reconstruction,template,theme] vs build.wouldReuse=[reconstruction,template]\", and the persisted record read \"theme=fresh production=fresh\". Restored, re-ran: 157/0."
+   },
+   {
+    "command": "NEGATIVE CONTROL 2 — remove `if (bound.length === 0) take(undefined, field);` from requirements.ts, then pnpm smoke:release",
+    "exitCode": 1,
+    "checks": "157 checks, 1 failure",
+    "note": "27P.5 FAILED with the reported symptom verbatim: {\"matches\":[],\"acknowledgements\":[],\"unmatchedFields\":[]}. Restored, re-ran: 157/0."
+   },
+   {
+    "command": "NEGATIVE CONTROL 3 — remove the cascade from BOTH surfaces (mutual absence), then pnpm smoke:release",
+    "exitCode": 1,
+    "checks": "157 checks, 4 failures",
+    "note": "Deliberate control on the agreement check itself: 27P.2 (agreement) PASSED under mutual absence, which is exactly why 27P.3 (the cascade is present in the agreed set) and 27P.4 (the persisted view carries it) exist — both FAILED, along with 2 pre-existing build checks. Restored, re-ran: 157/0."
+   }
+  ],
+  "newChecks": [
+   {
+    "id": "27P.1",
+    "file": "scripts/smoke-release.ts:1737",
+    "asserts": "plan and build --dry-run agree on the all-fresh baseline (plan.ready === build.wouldReuse, and neither reports a not-ready stage)."
+   },
+   {
+    "id": "27P.2",
+    "file": "scripts/smoke-release.ts:1837",
+    "asserts": "THE INVARIANT, on the state that exposed the defect (pack1 resolved, nothing rebuilt): plan.ready === build.wouldReuse AND plan.stale+blocked === build.wouldRun+blocked, compared as sorted stage sets."
+   },
+   {
+    "id": "27P.3",
+    "file": "scripts/smoke-release.ts:1842",
+    "asserts": "The agreed set actually carries the CASCADE, so mutual absence cannot satisfy 27P.2: theme is not-ready, theme is NOT in resolved1.invalidated (so it is stale by cascade alone), and its reason is exactly \"upstream stage content will be rebuilt\"."
+   },
+   {
+    "id": "27P.4",
+    "file": "scripts/smoke-release.ts:1855",
+    "asserts": "The stageStatus PERSISTED by release:resolve, re-read from disk via loadReleaseProject, carries the cascaded view (theme stale, production not fresh) — the on-disk half of the defect."
+   },
+   {
+    "id": "27P.5",
+    "file": "scripts/smoke-release.ts:2734",
+    "asserts": "A routeContent slot value bound to no open requirement is reported in unmatchedFields with its full field path, instead of vanishing from both columns."
+   },
+   {
+    "id": "27P.6",
+    "file": "scripts/smoke-release.ts:2742",
+    "asserts": "27P.5 is not a blanket: a slot value that DOES bind still matches every requirement bound to that slot."
+   }
+  ],
+  "evidence": [
+   "src/release/freshness.ts:367 — `propagateStaleStages`, the ONE cascade implementation (moved verbatim from build.ts).",
+   "src/release/freshness.ts:340-343 — called inside refreshStageStatuses, so plan / build / resolve / prepare all receive the cascaded view.",
+   "src/release/build.ts:109-116 — the inline fixpoint is gone, replaced by a comment naming where it lives; build.ts:25 import narrowed to STAGE_ORDER.",
+   "src/release/plan.ts:39 and src/release/resolve.ts:160 and src/release/prepare.ts:352 — unmodified call sites that now get the cascade for free (plan.ts is owned by the brand agent's concurrent work and was NOT edited).",
+   "src/release/gate.ts:44 — the `stageStatus.production.status === \"fresh\"` test that the cascaded persisted view makes honest.",
+   "src/release/requirements.ts:105-117 — the routeContent slotValues branch, now routing an unbound field through `take(undefined, field)`.",
+   "src/release/resolve.ts:167-181 — the unmatched-field warning, capped at 12 names for the operator screen while the recorded arrays stay complete.",
+   "scripts/smoke-release.ts:142-176 — `planBuildAgreement`, which runs BOTH surfaces on the same project dir and compares sorted stage sets.",
+   "docs/result/handoffs/27-real-release-exercise.json:88 — the 87 → 88 prose correction."
+  ],
+  "limitations": [
+   "The frozen-stage labelling disagreement described in defect1.residualDisagreementNotFixed is NOT fixed: for a drifted frozen stage, plan says STALE (will re-run) while build says BLOCKED BY frozen-stage-input-drift and refuses. The stage SET still agrees, so 27P.1/27P.2 pass; the operator-facing WORDS do not.",
+   "27P.1-27P.4 exercise the synthetic release fixture (data/release-fixture.example), not the real linear.app project. The real project at data/linear.app/release-projects/flowpilot-wr27 was NOT re-run (no write into any existing data/ run directory), so the fix is proven on the fixture and by the negative control reproducing the exercise's exact printed symptom, not by re-executing the real-data exercise.",
+   "The agreement check compares plan and build --dry-run only. release:prepare and release:resolve persist the same cascaded record by construction (same function), and 27P.4 asserts resolve's persisted output, but prepare's persisted output is not separately asserted.",
+   "The 12-name cap on the unmatched-field warning is a display choice; a pack with hundreds of unbound authored slot values will show 12 plus a count. The complete list is in the recorded resolution's unmatchedFields."
+  ],
+  "followUps": [
+   "Make release:plan render a drifted FROZEN stage as BLOCKED/REFUSED rather than \"STALE (will re-run on release:build)\" — plan.ts:57-63 classifies by status only, while build.ts:129-133 additionally splits frozen stale stages out. Extend the 27P agreement helper to compare the per-stage VERDICT KIND, not just the stage set, once that lands.",
+   "Consider asserting the plan↔build agreement on the real linear.app project as part of a future real-data exercise (read-only plan + dry-run only, no build).",
+   "release:resolve's unmatched-field warning now fires on ordinary bulk authoring. If the Visual Editor path starts sending large packs, consider splitting the message into \"unmatched (no requirement asked for this)\" vs \"unmatched (nothing consumes this)\" using consumingStageOfField (requirements.ts:125)."
+  ]
+ },
+ "resolveClosureFix": {
+  "agent": "Task 27 — Release Resolve Dependency-Closure Fix (third operator surface)",
+  "objective": "Stop release:resolve under-reporting invalidated stages by DERIVING the dependency closure from STAGE_DEPENDENCIES inside invalidatedStages instead of trusting a hand-maintained table that falsely claimed to be pre-closed, and align the words plan and build use for a drifted frozen stage.",
+  "status": "PASS",
+  "defect_resolveUnderReportedInvalidation": {
+   "symptom": "`pnpm release:resolve <proj> --resolution res.json` printed \"invalidated: content, seo, production\" (3) while `pnpm release:plan <proj>` run immediately after printed \"STALE: content, theme, seo, production\" (4) for the same pack and the same unchanged project.",
+   "rootCause": "src/release/graph.ts RESOLUTION_FIELD_IMPACTS.routeContent read [\"content\",\"seo\",\"production\"] and omitted \"theme\", even though STAGE_DEPENDENCIES.theme includes \"content\" (graph.ts:31 — a theme run pins its content run). The doc comment on invalidatedStages asserted \"the dependency closure is already encoded in RESOLUTION_FIELD_IMPACTS\", which was false: the same defect class as the release:plan cascade bug — a surface reasoning about staleness without applying the dependency graph.",
+   "fix": "src/release/graph.ts:113-117 — invalidatedStages now unions each matched field's DIRECT impacts with `downstreamOf(stage)` (the pre-existing fixpoint at graph.ts:73). The closure is DERIVED, so a future row added to the table cannot reintroduce the omission. RESOLUTION_FIELD_IMPACTS is unchanged and keeps its role as the FIELD -> DIRECTLY-AFFECTED-STAGES table (genuine domain knowledge); the false doc comment is replaced (graph.ts:90-97) and the file header now states the rows are direct impacts closed later (graph.ts:9-18).",
+   "notFixedByHand": "\"theme\" was deliberately NOT hand-added to the routeContent row. Verified by negative control: reverting ONLY the closure step (leaving the table untouched) reproduces the reported symptom exactly.",
+   "rowByRowEffect": {
+    "method": "Measured with a scratch script that closed every RESOLUTION_FIELD_IMPACTS row over downstreamOf and compared to the row's literal value; not reasoned about on paper.",
+    "changed": [
+     "facts: [content, seo, production] -> [content, theme, seo, production] (+theme — theme depends on content)",
+     "urls: [content, seo, production] -> [content, theme, seo, production] (+theme — same reason)",
+     "routeContent: [content, seo, production] -> [content, theme, seo, production] (+theme — the reported defect)"
+    ],
+    "unchanged": [
+     "productionBaseUrl: [seo, production] (downstreamOf(seo) = [production], already present)",
+     "assets: [assets, production] (downstreamOf(assets) = [production], already present)",
+     "fontDecisions: [assets, production] (same)",
+     "theme: [theme, production] (downstreamOf(theme) = [production], already present)"
+    ],
+    "idempotence": "Confirmed by measurement, not assumed: closing every row a second time produced a byte-identical set. downstreamOf's fixpoint adds a candidate when ANY of its deps is already in the out-set, so its result is itself transitively closed and closing an already hand-closed row is a no-op.",
+    "everyAddedStageIsCorrect": "The only stage any row gains is `theme`, and only for rows that stale `content`. That is exactly what STAGE_DEPENDENCIES.theme = [template, content] says and what release:build already did — build's dry-run named theme for these packs before this fix (check 18b, pre-existing and green throughout)."
+   },
+   "themeSelectionImpactsNotWidened": {
+    "requirement": "Wave 2 acceptance: a theme edit stales {theme, production} and NOT {reconstruction, template, content}.",
+    "result": "HELD. THEME_SELECTION_IMPACTS is byte-identical (graph.ts:56, still [\"theme\",\"production\"]) and its closed form is the same list, because downstreamOf(\"theme\") is [production] alone. scripts/smoke-release.ts:1210-area assertion on the literal value, plus checks 15, 27.9, 27.10, 27.25 and 27.27, all stayed green with no edit."
+   }
+  },
+  "frozenStageWordingAlignment": {
+   "reportedBy": "The same verifier, as a lower-priority 'fix only if clean' item; also carried as a followUp by the plan-cascade agent (planCascadeFix.followUps[0]).",
+   "symptom": "For a FROZEN stage whose inputs drifted, src/release/plan.ts rendered \"STALE (will re-run on release:build)\" while src/release/build.ts files it BLOCKED BY frozen-stage-input-drift and REFUSES the build. The stage SET agreed (so 27P.1/27P.2 held); the WORDS told the operator the opposite of what would happen.",
+   "fix": "Rendering and next-actions only, in src/release/plan.ts: staleFrozen / staleRerun split (plan.ts:70-71); a drifted frozen stage renders under \"BLOCKED BY frozen-stage-input-drift (release:build REFUSES — frozen roots are never re-run)\" (plan.ts:138); the remaining stale stages render under a header that says blocked rather than 'will re-run' while a frozen input has drifted (plan.ts:126-131); and NEXT ACTIONS no longer offers `pnpm release:build` in that state, because build would refuse it (plan.ts:94-104).",
+   "buildUnchanged": "src/release/build.ts was NOT edited. Its blocking behaviour, refusal message and classification are untouched — this is plan's words moving to match build's behaviour, not the reverse.",
+   "agreementInvariantUnaffected": "PlanView.stale — the field scripts/smoke-release.ts:154 compares against build.wouldRun+blocked — is unchanged; the split is derived locally for rendering. 27P.1/27P.2 stayed green."
+  },
+  "filesCreated": [],
+  "filesModified": [
+   "src/release/graph.ts",
+   "src/release/plan.ts",
+   "scripts/smoke-release.ts",
+   "docs/result/handoffs/27-release-authoring.json"
+  ],
+  "filesModifiedOutsideOwnership": [],
+  "changeRequests": [],
+  "testsRun": [
+   {
+    "command": "pnpm typecheck",
+    "exitCode": 0,
+    "checks": "tsc --noEmit, whole repo",
+    "note": "Clean after every edit (graph.ts, plan.ts, smoke-release.ts), including the final run after the graph.ts header-comment rewrite."
+   },
+   {
+    "command": "pnpm smoke:release",
+    "exitCode": 0,
+    "checks": 162,
+    "note": "157 -> 162 (+5: 27R.1-27R.5), 0 failures. No pre-existing check was removed or weakened except 27P.3, which had to change: it asserted `resolved1.invalidated.includes(\"theme\") === false`, a claim that WAS the defect. Its real subject — that the agreed set carries the cascade and theme's reason is exactly \"upstream stage content will be rebuilt\" — is retained verbatim; only the now-false clause was dropped, and 27R.1 asserts the opposite claim explicitly."
+   },
+   {
+    "command": "NEGATIVE CONTROL 1 — revert ONLY the closure step in invalidatedStages (restore `for (const stage of stages) stale.add(stage);`, table untouched), then pnpm smoke:release",
+    "exitCode": 1,
+    "checks": "162 checks, 2 failures",
+    "note": "27R.1 and 27R.2 FAILED and reproduced the reported symptom verbatim: resolve.invalidated=[assets,content,production,seo] vs plan.stale+blocked=[assets,content,production,seo,theme]. Restored from a pre-revert copy and verified byte-identical by sha256 (98a0f3bd…e369); re-ran: 162 checks, 0 failures. NOTE (honest): 27R.3 (theme pack) PASSED under the revert — the theme row was already hand-closed, so 27R.3 is a non-regression guard on THEME_SELECTION_IMPACTS, not a closure detector. 27R.1/27R.2 are the detectors."
+   },
+   {
+    "command": "NEGATIVE CONTROL 2 — revert ONLY plan.ts's frozen-aware STALE header, then pnpm smoke:release",
+    "exitCode": 1,
+    "checks": "162 checks, 1 failure",
+    "note": "27R.4 FAILED (plan text again contained \"will re-run on release:build\" for a project build refuses). Restored from a pre-revert copy and verified byte-identical by sha256 (97c85f09…9b9f44); re-ran: 162 checks, 0 failures."
+   }
+  ],
+  "newChecks": [
+   {
+    "id": "27R.1",
+    "file": "scripts/smoke-release.ts:1881",
+    "asserts": "release:resolve reports the DERIVED closure — the live pack1 resolution includes theme, and invalidatedStages() on a routeContent-only pack returns exactly [content, theme, seo, production]."
+   },
+   {
+    "id": "27R.2",
+    "file": "scripts/smoke-release.ts:1894",
+    "asserts": "ALL THREE surfaces name the same stage set for a routeContent pack: resolve.invalidated === plan.stale+blocked === build --dry-run wouldRun+blocked (sorted sets, same project dir, nothing rebuilt in between)."
+   },
+   {
+    "id": "27R.3",
+    "file": "scripts/smoke-release.ts:2489",
+    "asserts": "The same three-surface agreement for a THEME pack, and that the derived closure did not widen it: still exactly [theme, production] on the live project."
+   },
+   {
+    "id": "27R.4",
+    "file": "scripts/smoke-release.ts:2847",
+    "asserts": "A genuinely drifted frozen stage (a probe file written into the fixture's template run dir): build --dry-run files template under frozen-stage-input-drift, a real build THROWS, and plan's text now says BLOCKED BY frozen-stage-input-drift, contains no \"will re-run on release:build\", and offers the REFUSES next action."
+   },
+   {
+    "id": "27R.5",
+    "file": "scripts/smoke-release.ts:2860",
+    "asserts": "Removing the probe clears the frozen block and template returns to READY — proving 27R.4 measured the probe rather than pre-existing state."
+   }
+  ],
+  "evidence": [
+   "src/release/graph.ts:113-117 — the derived closure inside invalidatedStages (`for (const downstream of downstreamOf(stage)) stale.add(downstream);`).",
+   "src/release/graph.ts:90-97 — the replaced doc comment; the previous text claimed the closure was already encoded in the table.",
+   "src/release/graph.ts:9-18 — file header now describes the rows as DIRECT impacts closed by invalidatedStages.",
+   "src/release/graph.ts:63 — RESOLUTION_FIELD_IMPACTS.routeContent still reads [content, seo, production]; it was deliberately not hand-patched.",
+   "src/release/graph.ts:73-88 — downstreamOf, the pre-existing fixpoint reused rather than re-derived.",
+   "src/release/graph.ts:56 — THEME_SELECTION_IMPACTS unchanged.",
+   "src/release/plan.ts:70-71 — staleFrozen / staleRerun split (rendering + next-actions only).",
+   "src/release/plan.ts:94-104 — NEXT ACTIONS: the REFUSES action replaces the release:build action while a frozen input has drifted.",
+   "src/release/plan.ts:126-140 — the two rendered blocks, with build's own 'frozen-stage-input-drift' wording.",
+   "src/release/build.ts:130 — the unmodified build-side classification the wording now matches.",
+   "scripts/smoke-release.ts:167-190 — resolvePlanBuildAgreement, which layers resolve's reported set onto the existing planBuildAgreement helper.",
+   "scripts/smoke-release.ts:1874-1900 — 27R.1 / 27R.2 and the amended 27P.3.",
+   "scripts/smoke-release.ts:2829-2865 — 27R.4 / 27R.5, run last so the deliberate frozen drift is cleaned up in place and the fixture data dir is wiped by the suite's finally block."
+  ],
+  "limitations": [
+   "27R.1-27R.5 exercise the synthetic release fixture (data/release-fixture.example). No existing data/ run directory was written: the real projects were read only, and the row-by-row closure measurement ran in the scratchpad against the imported module.",
+   "27R.3 passes both with and without the closure (the theme row was already hand-closed), so it is a non-regression guard rather than a detector. 27R.1 and 27R.2 are the checks that fail on a reverted closure.",
+   "The three-surface agreement is asserted at two points in the fixture flow (a routeContent-bearing pack and a theme pack) on states where the stale set happens to be exactly the invalidated set. It is not a universal identity — a project that is ALSO stale for an unrelated reason (artifact drift) would legitimately make plan's set a superset of resolve's, and the checks do not model that case.",
+   "The frozen-stage wording alignment changes plan's rendered text and NEXT ACTIONS only. PlanView.stale still lists the frozen stage, so a programmatic consumer reading `stale` still sees it as stale rather than blocked; only the operator-facing surface distinguishes them."
+  ],
+  "followUps": [
+   "Consider extending planBuildAgreement to compare the per-stage VERDICT KIND (rerun / refuse / reuse) rather than the stage set, which would make the frozen-stage wording alignment machine-enforced instead of asserted through rendered text. This was the plan-cascade agent's followUp[0]; 27R.4 closes the operator-visible half of it, not the structural half.",
+   "release:prepare and release:build print no invalidation summary of their own, so the three-surface agreement covers the three surfaces that DO report one. If a fourth reporting surface is added (e.g. a Visual Editor status pane), it must consume invalidatedStages / refreshStageStatuses rather than re-deriving, and should be added to resolvePlanBuildAgreement.",
+   "PlanView could expose the staleFrozen / staleRerun split as fields so a consumer of the API (not just the rendered text) can tell a pending rerun from a refusal; not done here because it changes the PlanView contract, which is outside a wording fix."
+  ]
+ }
+}

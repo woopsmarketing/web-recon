@@ -1,7 +1,9 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { buildSlotAccounting } from "./accounting.js";
 import { detectSourceBrandLeaks } from "./brand-leak.js";
 import { loadReconTemplate, type LoadedReconTemplate } from "./load-template.js";
+import { applyTruthMode, resolveTruthMode } from "./truth-mode.js";
 import { buildOverlayValues, changedKeys, effectiveSlotValues } from "./overlay.js";
 import { buildOperatorReview } from "./report.js";
 import { validateGenerationResult, validateSlotAssignments } from "./validate.js";
@@ -26,6 +28,7 @@ import {
   LAYOUT_QA_REPORT_FILE,
   OPERATOR_REVIEW_JSON_FILE,
   OPERATOR_REVIEW_MD_FILE,
+  SLOT_ACCOUNTING_FILE,
   SLOT_VALUES_FILE,
   VALIDATION_REPORT_FILE,
   ContentValidationError,
@@ -36,6 +39,8 @@ import {
   type ContentUnitsFile,
   type GenerationRequest,
   type LayoutQaReport,
+  type SlotAccountingFile,
+  type TruthModeDecision,
   type ValidationReport,
 } from "./types.js";
 
@@ -55,6 +60,12 @@ export interface LoadedContentRun {
   request: GenerationRequest;
   template: LoadedReconTemplate;
   result?: ContentGenerationResult;
+  /**
+   * Task 27 §4: what the run's truth mode decided, per slot. Populated by
+   * `ingestGenerationResult`; empty on a run loaded straight off disk, because
+   * the decisions are evidence about ONE ingest, not a property of the run.
+   */
+  truthDecisions?: TruthModeDecision[];
 }
 
 async function readJson(file: string): Promise<unknown> {
@@ -120,6 +131,8 @@ export interface IngestOutcome {
   validation: ValidationReport;
   overlay: Record<string, SlotValue>;
   changed: Set<string>;
+  /** Task 27 §2: the sibling account of every in-scope slot. */
+  accounting: SlotAccountingFile;
 }
 
 async function writeReviewArtifacts(
@@ -127,7 +140,7 @@ async function writeReviewArtifacts(
   validation: ValidationReport,
   overlay: Record<string, SlotValue>,
   layoutQa?: LayoutQaReport,
-): Promise<Set<string>> {
+): Promise<{ changed: Set<string>; accounting: SlotAccountingFile }> {
   const reportDir = path.join(run.runDir, CONTENT_REPORT_DIR);
   await mkdir(reportDir, { recursive: true });
   const changed = changedKeys(run.template, overlay);
@@ -157,6 +170,22 @@ async function writeReviewArtifacts(
     changedKeys: changed,
     overlay,
   });
+  // §2: EVERY in-scope slot accounted for, on two orthogonal axes, in a
+  // SIBLING artifact — `slot-values.json` stays a bare { slotKey: value } map
+  // because the release orchestrator reads it that way.
+  const accounting = buildSlotAccounting({
+    manifest: run.manifest,
+    template: run.template,
+    unitsFile: run.unitsFile,
+    overlay,
+    sources: run.result?.sources ?? {},
+    unresolved: run.result?.unresolved ?? [],
+    truthMode: resolveTruthMode(run.intent.truthMode ?? run.manifest.truthMode),
+    truthDecisions: run.truthDecisions ?? [],
+    syntheticKeys: new Set(run.result?.synthetic ?? []),
+    manualEdits: run.manifest.manualEdits,
+  });
+  await writeRunJson(run.runDir, SLOT_ACCOUNTING_FILE, accounting);
   await writeRunJson(run.runDir, path.join(CONTENT_REPORT_DIR, VALIDATION_REPORT_FILE), validation);
   await writeRunJson(run.runDir, path.join(CONTENT_REPORT_DIR, BRAND_LEAK_REPORT_FILE), brandLeak);
   await writeRunJson(run.runDir, path.join(CONTENT_REPORT_DIR, OPERATOR_REVIEW_JSON_FILE), review.json);
@@ -179,8 +208,14 @@ async function writeReviewArtifacts(
       unresolvedSlots: validation.stats.unresolvedSlots,
       imageBriefs: validation.stats.imageBriefs,
     },
+    slotAccounting: {
+      file: SLOT_ACCOUNTING_FILE,
+      inScopeSlots: accounting.totals.inScopeSlots,
+      reconciled: accounting.reconciliation.reconciled,
+      ambiguousSlots: accounting.scopeHonesty.ambiguousSlots,
+    },
   }));
-  return changed;
+  return { changed, accounting };
 }
 
 /**
@@ -192,31 +227,67 @@ export async function ingestGenerationResult(
   run: LoadedContentRun,
   result: ContentGenerationResult,
 ): Promise<IngestOutcome> {
-  run.result = result;
-  await writeRunJson(run.runDir, GENERATION_RESULT_FILE, result);
+  // §4: the truth mode is an ENGINE behaviour, not a prompt request. Under
+  // verified-only an unbacked factual claim is withheld and becomes
+  // needs-input BEFORE anything can become an overlay; under
+  // synthetic-allowed the same value is kept with synthetic provenance.
+  const truthMode = resolveTruthMode(run.intent.truthMode ?? run.manifest.truthMode);
+  const enforced = applyTruthMode(run.template, truthMode, result, run.intent.providedFacts);
+  run.result = enforced.result;
+  run.truthDecisions = enforced.decisions;
+  await writeRunJson(run.runDir, GENERATION_RESULT_FILE, enforced.result);
   await updateManifest(run, (m) => ({
     ...m,
     generator: { name: result.generator.name, ...(result.generator.model ? { model: result.generator.model } : {}) },
     manualEdits: false,
+    truthMode,
   }));
-  const validation = validateGenerationResult(run.template, run.unitsFile, result);
-  const overlay = buildOverlayValues(result);
+  const validation = validateGenerationResult(run.template, run.unitsFile, enforced.result);
+  const overlay = buildOverlayValues(enforced.result);
   if (validation.pass) {
     await writeRunJson(run.runDir, SLOT_VALUES_FILE, overlay);
   }
-  const changed = await writeReviewArtifacts(run, validation, validation.pass ? overlay : {});
+  const { changed, accounting } = await writeReviewArtifacts(
+    run,
+    validation,
+    validation.pass ? overlay : {},
+  );
   if (!validation.pass) {
     throw new ContentValidationError(
       `generation result failed validation with ${validation.errors.length} error(s); see report/${VALIDATION_REPORT_FILE}`,
     );
   }
-  return { validation, overlay, changed };
+  return { validation, overlay, changed, accounting };
 }
 
 /**
- * Revalidate the CURRENT slot-values.json (§29 human override). Detects
- * manual edits by comparing against the stored generation result, keeps every
- * safety check, and refreshes the reports.
+ * The content write doctrine, stated AT THE POINT OF EDIT (Task 27 final
+ * residual). `release:resolve` (src/release/resolve.ts) and `release:build`
+ * (src/release/stages.ts) already say this to the operator who works through
+ * the release layer; the operator who hand-edits slot-values.json and never
+ * touches that layer was told nothing. Same load-bearing words in all three
+ * places on purpose — one message to the operator, not three dialects.
+ */
+export const CONTENT_WRITE_DOCTRINE_WARNING =
+  "content write doctrine: content-runs/<run>/slot-values.json is a DERIVED, MATERIALIZED " +
+  "output — editing a historical content run's slot-values.json in place is " +
+  "NON-AUTHORITATIVE and will be replaced by the next release:build, which re-materializes " +
+  "a NEW content run from the project's AUTHORITATIVE authored.slotValues. To KEEP an edit, " +
+  "author it through `pnpm release:resolve` (it folds the value into authored.slotValues).";
+
+/**
+ * Revalidate the CURRENT slot-values.json — a DERIVED, NON-AUTHORITATIVE
+ * overlay, not the site's source of truth (§29 human override).
+ *
+ * This is the hand-edit path: an operator edits the overlay, re-runs validate
+ * → preview → qa, and never needs another LLM call. Every safety check applies
+ * unchanged and manual edits are recorded in the manifest — but the bytes
+ * validated here are a MATERIALIZED output of the release layer. The project's
+ * `authored.slotValues` is authoritative, and the next `release:build`
+ * re-materializes a new content run from it, discarding any edit that was
+ * never authored there. Callers that face an operator MUST surface
+ * `CONTENT_WRITE_DOCTRINE_WARNING` when `manifest.manualEdits` comes back true
+ * (see src/cli-content-validate.ts); the value is derived, not authoritative.
  */
 export async function revalidateSlotValues(run: LoadedContentRun): Promise<IngestOutcome> {
   const overlayFile = path.join(run.runDir, SLOT_VALUES_FILE);
@@ -236,13 +307,13 @@ export async function revalidateSlotValues(run: LoadedContentRun): Promise<Inges
     { manual: manualEdits },
   );
   await updateManifest(run, (m) => ({ ...m, manualEdits }));
-  const changed = await writeReviewArtifacts(run, validation, overlay);
+  const { changed, accounting } = await writeReviewArtifacts(run, validation, overlay);
   if (!validation.pass) {
     throw new ContentValidationError(
       `slot-values.json failed validation with ${validation.errors.length} error(s); see report/${VALIDATION_REPORT_FILE}`,
     );
   }
-  return { validation, overlay, changed };
+  return { validation, overlay, changed, accounting };
 }
 
 /** Persist a layout QA report and refresh manifest + operator review. */

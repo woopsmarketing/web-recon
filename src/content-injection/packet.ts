@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { CONTENT_POLICY } from "./policy.js";
+import { briefFacts, briefGaps, briefPreferences } from "./brief.js";
+import { buildRegionPlanFile, loadRegionContracts } from "./region-plan.js";
 import { buildContentUnits, type BuiltUnits } from "./units.js";
 import { loadReconTemplate, type LoadedReconTemplate } from "./load-template.js";
 import { contentRunDir, createdAtFromRunId, newContentRunId } from "./store.js";
@@ -17,18 +19,24 @@ import {
   ContentIntentSchema,
   ContentRunManifestSchema,
   ContentUnitsFileSchema,
+  DEFAULT_CONTENT_TRUTH_MODE,
   GENERATION_REQUEST_FILE,
   GENERATION_SCHEMA_FILE,
   GenerationRequestSchema,
   INTENT_FILE,
   ContentInputError,
+  REGION_PLAN_FILE,
   SLOT_VALUE_SOURCES,
   TEMPLATE_SUMMARY_FILE,
+  type BriefGap,
+  type ContentBrief,
   type ContentIntent,
   type ContentRunManifest,
+  type ContentTruthMode,
   type ContentUnit,
   type GenerationBatch,
   type GenerationRequest,
+  type RegionPlanFile,
 } from "./types.js";
 
 /**
@@ -51,6 +59,16 @@ export interface PrepareOptions {
   includeReview?: boolean;
   preferences?: Record<string, string>;
   providedFacts?: { kind: string; value: string }[];
+  /** Task 27 §5: the operator's brief. Every field optional, nothing blocking. */
+  brief?: ContentBrief;
+  /** Task 27 §4. Defaults to DEFAULT_CONTENT_TRUTH_MODE (verified-only). */
+  truthMode?: ContentTruthMode;
+  /**
+   * Task 27: a `page-regions.json` from the Wave-1 PageRegion compiler. When
+   * given, the packet also emits the RegionPlan layer. Absent is normal — a
+   * template that was never region-compiled still prepares exactly as before.
+   */
+  pageRegionsFile?: string;
   /** Output directory override (tests); default data/<host>/content-runs/<id>. */
   outputDir?: string;
   runId?: string;
@@ -64,6 +82,9 @@ export interface PreparedContentRun {
   units: BuiltUnits;
   request: GenerationRequest;
   template: LoadedReconTemplate;
+  /** Emitted only when a page-regions artifact was supplied. */
+  regionPlan?: RegionPlanFile;
+  briefGaps: BriefGap[];
 }
 
 export function intentHash(rawIntent: string): string {
@@ -146,6 +167,8 @@ function buildGenerationJsonSchema(units: ContentUnit[]): unknown {
         },
       },
       imageBriefs: { type: "array" },
+      /** Task 27 §4: slot keys whose value is an invented fictional detail. */
+      synthetic: { type: "array", items: { type: "string" } },
       notes: { type: "array", items: { type: "string" } },
     },
     required: [
@@ -201,9 +224,21 @@ const GENERATION_INSTRUCTIONS = [
   "URLs: keep existing internal routes unless the user asked for a rename; javascript: URLs are rejected; when the user provided no destination for an external link, mark it needs-input instead of inventing one.",
   "Facts the user did not provide (customers, prices, statistics, awards, addresses, phone numbers, testimonials) must become needs-input, never invented values.",
   "Every written value carries a source: user-provided | derived-copy | generated-marketing.",
+  "Generic marketing copy is NOT a factual claim: it stays generated-marketing and needs no backing.",
   "Use the recorded constraints (original character/word counts, line counts, boxes) as references; the browser layout QA decides acceptance.",
   "One value per logical slot — the template propagates it to every bound occurrence (desktop, mobile, dynamic menus).",
 ];
+
+/**
+ * Mode-specific instruction line (Task 27 §4). The two modes differ in ONE
+ * rule, so the packet states exactly that one rule rather than shipping two
+ * instruction sets that could drift apart.
+ */
+function truthModeInstruction(mode: ContentTruthMode): string {
+  return mode === "synthetic-allowed"
+    ? "Content truth mode synthetic-allowed: you MAY invent fictional business detail, and every slot key whose value is invented MUST be listed in `synthetic` so its provenance is recorded."
+    : "Content truth mode verified-only: a verifiable claim the user did not provide is refused by the engine and becomes needs-input. Do not state a fact you cannot support.";
+}
 
 export async function prepareContentRun(options: PrepareOptions): Promise<PreparedContentRun> {
   const template = await loadReconTemplate(options.templateManifestFile);
@@ -218,12 +253,21 @@ export async function prepareContentRun(options: PrepareOptions): Promise<Prepar
     }
   }
 
+  // §5: the brief contributes, it never gates. Explicit options win over it so
+  // a caller can always override without editing the brief file.
+  const truthMode = options.truthMode ?? options.brief?.truthMode ?? DEFAULT_CONTENT_TRUTH_MODE;
+  const gaps = briefGaps(options.brief);
   const intent = ContentIntentSchema.parse({
     schemaVersion: CONTENT_SCHEMA_VERSION,
     rawIntent: options.rawIntent,
-    requestedScope: { routes, includeReview: options.includeReview ?? false },
-    preferences: options.preferences ?? {},
-    providedFacts: options.providedFacts ?? [],
+    requestedScope: {
+      routes,
+      includeReview: options.includeReview ?? options.brief?.includeReview ?? false,
+    },
+    preferences: { ...briefPreferences(options.brief), ...(options.preferences ?? {}) },
+    providedFacts: [...briefFacts(options.brief), ...(options.providedFacts ?? [])],
+    truthMode,
+    ...(options.brief !== undefined ? { brief: options.brief } : {}),
   });
 
   const units = buildContentUnits(template, routes, intent.requestedScope.includeReview);
@@ -240,8 +284,11 @@ export async function prepareContentRun(options: PrepareOptions): Promise<Prepar
     policyVersion: CONTENT_POLICY_VERSION,
     steps: ["site-content-plan", "unit-values"],
     batches: buildBatches(units.units),
-    instructions: GENERATION_INSTRUCTIONS,
+    batchUnitLimit: BATCH_UNIT_LIMIT,
+    truthMode,
+    instructions: [...GENERATION_INSTRUCTIONS, truthModeInstruction(truthMode)],
     allowedSources: [...SLOT_VALUE_SOURCES, "needs-input (via unresolved)"],
+    briefGaps: gaps,
   });
 
   const manifest = ContentRunManifestSchema.parse({
@@ -259,6 +306,7 @@ export async function prepareContentRun(options: PrepareOptions): Promise<Prepar
     includeReview: intent.requestedScope.includeReview,
     manualEdits: false,
     repairIterations: 0,
+    truthMode,
     counts: {
       units: units.units.length,
       editableSlots: units.editableSlotCount,
@@ -289,5 +337,37 @@ export async function prepareContentRun(options: PrepareOptions): Promise<Prepar
   await write(GENERATION_SCHEMA_FILE, buildGenerationJsonSchema(units.units));
   await write(CONTENT_RUN_MANIFEST_FILE, manifest);
 
-  return { runDir, runId, manifest, intent, units, request, template };
+  // RegionPlan is emitted only when a PageRegion artifact was supplied. The
+  // packet depends on that compiler's SMALL STABLE CONTRACT, never its
+  // internals (see region-plan.ts), so an absent artifact costs nothing.
+  let regionPlan: RegionPlanFile | undefined;
+  if (options.pageRegionsFile !== undefined) {
+    const unitsFile = ContentUnitsFileSchema.parse({
+      schemaVersion: CONTENT_SCHEMA_VERSION,
+      templateId: template.manifest.templateId,
+      units: units.units,
+      reviewSlotKeys: units.reviewSlotKeys,
+    });
+    regionPlan = buildRegionPlanFile({
+      runId,
+      templateId: template.manifest.templateId,
+      scopedRoutes: routes,
+      unitsFile,
+      contracts: await loadRegionContracts(options.pageRegionsFile),
+      contractFile: options.pageRegionsFile,
+    });
+    await write(REGION_PLAN_FILE, regionPlan);
+  }
+
+  return {
+    runDir,
+    runId,
+    manifest,
+    intent,
+    units,
+    request,
+    template,
+    ...(regionPlan !== undefined ? { regionPlan } : {}),
+    briefGaps: gaps,
+  };
 }

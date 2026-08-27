@@ -1,0 +1,401 @@
+{
+  "agent": "1C — PageRegion Compiler",
+  "task": "27 — Overnight Authoring Foundation & Template Factory V2",
+  "objective": "Ship a deterministic, consumer-free visual-section grouping artifact (PageRegion) compiled from the reconstruction runtime trees and joined to Slot V2 through (pageId, viewport, nodeId), with a new versioned sibling artifact, a CLI and a targeted smoke suite. Compiler and artifact only: no consumer, no ON/OFF behavior.",
+  "status": "PASS",
+  "filesCreated": [
+    "src/regions/types.ts",
+    "src/regions/skeleton.ts",
+    "src/regions/select-roots.ts",
+    "src/regions/compile.ts",
+    "src/regions/load-input.ts",
+    "src/regions/store.ts",
+    "src/regions/index.ts",
+    "src/cli-compile-regions.ts",
+    "scripts/smoke-regions.ts",
+    "data/linear.app/page-regions/2026-08-26T16-14-07-901Z/page-regions.json",
+    "data/linear.app/page-regions/2026-08-26T16-14-07-901Z/report/region-summary.json",
+    "data/stripe.com/page-regions/2026-08-26T16-14-08-675Z/page-regions.json",
+    "data/stripe.com/page-regions/2026-08-26T16-14-08-675Z/report/region-summary.json",
+    "docs/result/handoffs/27-page-region.json"
+  ],
+  "filesModified": [
+    "package.json (exactly two added script lines: \"compile:regions\" and \"smoke:regions\"; verified with `git diff package.json` — 2 insertions, 0 deletions, 0 other hunks)",
+    "src/regions/compile.ts (correction C1: a global id assignment pass added between the global lift and the emit loop, lines 312-364, plus the emit loop reading it at line 371. No other behaviour changed; both canaries recompile byte-identically.)",
+    "scripts/smoke-regions.ts (corrections C1+C2: makePage takes an optional differing mobile body; +2 checks in §3, +2 in §7, +13 in the new §8; two module-scope helpers, findMainLandmark and buildViewportSplitFixture. 50 -> 67 checks, none removed.)",
+    "docs/result/handoffs/27-page-region.json (this file: `corrections` added, regionIdScheme.whyStable[0] corrected, the desktop/mobile limitation rewritten, a new measured limitation appended, the smoke section table and testsRun updated.)"
+  ],
+  "filesModifiedOutsideOwnership": [],
+  "changeRequests": [],
+  "artifactSchema": {
+    "file": "data/<host>/page-regions/<run-id>/page-regions.json",
+    "sibling": "data/<host>/page-regions/<run-id>/report/region-summary.json (carries the only clock reading: runId + createdAt)",
+    "namespace": "NEW data/<host>/page-regions/ kind. Nothing is written into any recon-template, reconstruction or site-spec run directory.",
+    "topLevel": {
+      "schemaVersion": "1 — envelope (file shape)",
+      "schemaName": "\"page-regions-v1\"",
+      "regionSchemaVersion": "1 — one PageRegion record's shape, versioned independently of the envelope",
+      "compilerVersion": "1 — bumped whenever the SELECTION POLICY changes, because the ids then move",
+      "engine": "\"deterministic-runtime-tree-to-page-regions\"",
+      "templateId": "the recon-template's templateId",
+      "template": "{ templateId, runDir, host, rootUrl, slotSchemaVersion?, slotsHash, slotBindingsHash, siteMapHash, routeMapHash } — sha256 of the four input files' BYTES, so a region artifact can always be proven to belong to the template it claims",
+      "policy": "{ unwrapMaxHops, shellLookaheadDepth, descentDepthCap, skeletonDepthCap, skeletonBreadthCap, globalMinPages } — every constant that can move an id, persisted with the ids",
+      "routes": "[{ route, pageSourceId, localePrefixed, renderCoverage? }] — many routes MAY name one pageSourceId; never collapsed",
+      "pages": "[{ pageSourceId, routes[], viewports[], regions, bindings, joinedBindings, orphanBindings, unresolvedBindings }] — pageSourceId coverage",
+      "counts": "pages, routes, regions, globalRegions, pageRegions, slots, slotsJoined, orphanSlots, bindings, joinedBindings, orphanBindings, unresolvedBindings, emptyCandidatesDropped, depthCapHits, unwrapHops, viewportMerges, viewportRootMismatches, globalCandidatesLandmarkQualifiedOnly, nearGlobalGroups, nearGlobalMaxPages",
+      "regions": "PageRegion[], sorted by regionId",
+      "limitations": "closed-vocabulary honesty codes",
+      "provenance": "\"derived\""
+    },
+    "pageRegion": {
+      "regionId": "<scopeKey>:rgn:<landmarkKey>:<childPath>",
+      "scope": "\"global\" | \"page\"",
+      "scopeKey": "\"global\" or the owning pageSourceId",
+      "landmark": "{ kind, key, source: tag|role|document }",
+      "childPath": "`div:1>section:3`, or `self` when the region root IS the landmark root",
+      "rootTag": "tag of the region root element",
+      "structuralHash": "sha256 skeleton of the representative (desktop) subtree — persisted BESIDE the id, never as it",
+      "elementCount": "elements in the representative subtree",
+      "bindingCount": "joined bindings, summed over every page and viewport occurrence",
+      "dynamicTemplateBindingCount": "of those, bindings whose surface is dynamic-template (captured portal/menu content hosted in this region)",
+      "slotKeys": "sorted slot KEYS (stable across recompiles; slot ids are not)",
+      "pages": "[{ pageSourceId, routes[] (ALL of them), occurrences: [{ viewport, nodeId, elementCount, structuralHash, bindingCount, docOrder }] }]"
+    },
+    "deliberateOmission": "page-regions.json carries NO createdAt. It is a pure function of its inputs and the guarantee shipped is BYTE identity across two compiles; a timestamp would break that. The single clock reading lives in the run directory name and in report/region-summary.json."
+  },
+  "regionIdScheme": {
+    "format": "<scopeKey>:rgn:<landmarkKey>:<childPath>",
+    "examples": [
+      "global:rgn:nav1:self",
+      "p000001:rgn:main1:div:2>section:4",
+      "p000001:rgn:footer1:self"
+    ],
+    "scopeKey": "\"global\", or the owning pageSourceId. NOT a route key: routes -> pageSourceId is many-to-one, so keying on a route would mint N identical regions for one shared page and force an arbitrary choice of \"the\" route. The brief's \"scoped to its route key\" is honoured in substance — every route that reaches the page is listed in region.pages[].routes and in the artifact's pages[] table — but the KEY itself is the pageSourceId. This is the one deliberate deviation from the brief's wording and it is called out here rather than buried.",
+    "landmarkKey": "<landmark kind><document-order ordinal> — header1, nav1, nav2, main1, footer1 — or the literal \"doc\" for the implicit document scope that holds content outside every landmark. Assigned in a document-order pre-pass (src/regions/skeleton.ts:153 analyzeTree) so the candidate walk cannot influence numbering.",
+    "childPath": "`tag:nth`",
+    "childPathDetail": "slash-free chain of `tag:n` segments joined by `>`, measured from the LOCAL LANDMARK ROOT down to the region root, where n is the 1-based position among SAME-TAG element siblings (src/regions/skeleton.ts:104 pathSegment). `self` when the region root is the landmark root itself.",
+    "whyStable": [
+      "TAG-SCOPED ordinal, not a dense child index — but read the limit honestly: it protects a region only from an insert of a DIFFERENT tag. A wrapper <div> inserted ahead of a <section> leaves `section:3` alone, where a dense index would have moved every following sibling; a <div> inserted ahead of a <div>-ROOTED region repaths it, because that is a same-tag insert. On real markup, whose region roots are overwhelmingly <div>s, this matters a lot: on the linear canary an upstream <div> insert at the top of <main> repaths 45 of 68 regions (66%), while the same <div> APPENDED repaths 0. Both directions are measured in scripts/smoke-regions.ts — §3 on the fixture (positive: both <section> ids survive an upstream <div> insert; negative control: the same-tag <div> sibling DOES shift; asymmetry: downstream loses no id, upstream does) and §7 on the real canary (0/68 downstream vs 45/68 upstream).",
+      "Measured from the LOCAL LANDMARK ROOT, not the document root, so a change in the outer shell above the landmark cannot repath everything below it.",
+      "Does NOT use the global nNNNNNN node ordinals — they renumber on any inserted node (src/interaction-explorer/types.ts).",
+      "Does NOT use persisted ancestorIds — they are truncated to 12 by src/recon-template/extract.ts, which drops exactly the TOP ancestors a region root lives among.",
+      "The structural skeleton hash is persisted BESIDE the id, never as it: the id must survive a markup edit inside the region, and the hash exists precisely to announce that edit."
+    ],
+    "uniqueness": "Enforced. The compiler throws on a duplicate region id and on two roots in one tree resolving to the same address (src/regions/compile.ts). Verified on the real canaries: 68/68 unique on linear, 1014/1014 on stripe."
+  },
+  "regionRootSelection": {
+    "candidateSet": "Closed and structural. Landmarks: header/nav/main/footer/aside plus role=banner|navigation|main|contentinfo|complementary. Sectioning: section/article/aside plus role=region. No AI, no semantic classification.",
+    "rules": [
+      "1. UNWRAP — collapse transparent single-element-child div/span wrappers (no role, no aria-label, no text of its own) so `div > div > <section>` yields ONE region, not three nested ones (src/regions/skeleton.ts:206).",
+      "2. SCOPE — a landmark opens a new id scope; its own path resets to `self` (src/regions/select-roots.ts:102).",
+      "3. SHELL — if a landmark or sectioning element sits within shellLookaheadDepth=6 levels below the node, the node is a CONTAINER of sections, so descend into its element children (src/regions/select-roots.ts:107). Bounded by descentDepthCap=12.",
+      "4. EMIT — otherwise the node is a region root, unless it holds no binding, no text and no media, in which case it is dropped as a spacer (src/regions/select-roots.ts:118)."
+    ],
+    "htmlLandmarkScoping": "<header>/<footer>/<aside> count as landmarks ONLY when not nested inside article/aside/main/nav/section — the HTML-AAM rule verbatim, not a tuning knob. This was added after measurement: the linear.app homepage carries nine <header> elements, eight of them card headers, and treating each as a landmark shattered the homepage into 59 regions with two depth-cap hits. With the rule: 25 regions, 0 depth-cap hits, whole-site 102 -> 68.",
+    "semanticMeaning": "NOT attempted, as instructed. No region carries a hero/features/pricing label."
+  },
+  "slotSchemaModified": false,
+  "reconTemplateTypesOpened": false,
+  "newDomAttributes": [],
+  "canary": {
+    "host": "linear.app",
+    "templateRunId": "2026-08-25T21-53-26-980Z",
+    "outputRunId": "2026-08-26T16-14-07-901Z",
+    "pages": 8,
+    "routes": 8,
+    "regions": 68,
+    "slotsJoined": 3079,
+    "orphanSlots": 0,
+    "globalRegions": 5,
+    "detail": {
+      "slotsTotal": 3079,
+      "bindingsTotal": 9929,
+      "joinedBindings": 9929,
+      "orphanBindings": 0,
+      "unresolvedBindings": 0,
+      "pageRegions": 63,
+      "emptyCandidatesDropped": 169,
+      "depthCapHits": 0,
+      "viewportMerges": 103,
+      "viewportRootMismatches": 0,
+      "regionsPerPage": {
+        "p000001": 25,
+        "p000002": 7,
+        "p000003": 8,
+        "p000004": 11,
+        "p000005": 7,
+        "p000006": 19,
+        "p000007": 17,
+        "p000008": 9
+      },
+      "globalRegionIds": [
+        "global:rgn:doc:div:1>div:1>a:1",
+        "global:rgn:doc:div:1>div:1>div:2>span:1",
+        "global:rgn:doc:div:1>div:1>div:3>span:1",
+        "global:rgn:doc:div:1>div:1>div:4>span:1",
+        "global:rgn:nav1:self"
+      ],
+      "compileWallClock": "load 48 ms / compile 28 ms / total 79 ms"
+    }
+  },
+  "secondCanary": {
+    "host": "stripe.com",
+    "templateRunId": "2026-08-18T10-45-40-007Z",
+    "outputRunId": "2026-08-26T16-14-08-675Z",
+    "completed": true,
+    "compileWallClock": "load 132 ms / compile 103 ms / total 242 ms",
+    "pages": 18,
+    "routes": 20,
+    "regions": 1014,
+    "globalRegions": 2,
+    "pageRegions": 1012,
+    "slots": 9529,
+    "slotsJoined": 9529,
+    "orphanSlots": 0,
+    "bindings": 24518,
+    "joinedBindings": 24518,
+    "orphanBindings": 0,
+    "unresolvedBindings": 0,
+    "sharedPagesObserved": [
+      {
+        "pageSourceId": "p000012",
+        "routes": [
+          "/resources/more/arr-loans-explained",
+          "/resources/more/virtual-credit-cards-for-businesses-explained"
+        ]
+      },
+      {
+        "pageSourceId": "p000013",
+        "routes": [
+          "/resources/more/kit-digital",
+          "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it"
+        ]
+      }
+    ],
+    "sharedShellObservation": "MEASURED, NOT CHASED, as instructed. The audit predicted the subtree-skeleton lift would repair the stripe shared-shell problem. It does NOT under the strict rule this Task shipped: only 2 regions lift to global (two shell iframes), because stripe's header/footer subtree differs on at least one page. The measurement of what a looser rule would buy is persisted in counts: globalCandidatesLandmarkQualifiedOnly=17 (regions the Task-18 'every page THAT HAS THAT LANDMARK' variant would lift and the strict rule does not) and nearGlobalGroups=72 with nearGlobalMaxPages=10/18 (fingerprints shared by >=2 non-locale pages but not all). Adopting either rule is a decision with a consumer; this Task has no consumer, so nothing was changed on the strength of it.",
+    "linearEquivalent": "nearGlobalGroups=1, nearGlobalMaxPages=7/8 — linear's footer is byte-identical on 7 of 8 pages (changelog's footer carries 7 extra elements), so it stays page-scoped. Same phenomenon, small enough to read directly."
+  },
+  "determinismProof": {
+    "claim": "Two compiles of one input produce BYTE-IDENTICAL page-regions.json.",
+    "how": "The artifact is a pure function of its inputs: no timestamp, no absolute path (runDir is normalized to a repo-relative forward-slash path), every collection sorted by a total order (regions by regionId, routes by route, pages by pageSourceId, slotKeys lexicographically), and Map iteration replaced by explicit sorts everywhere it reaches output.",
+    "evidence": [
+      "scripts/smoke-regions.ts §2 — synthetic fixture serialized twice, strings compared: PASS",
+      "scripts/smoke-regions.ts §2 — the artifact contains no \"createdAt\" substring: PASS",
+      "scripts/smoke-regions.ts §2 — the compile does not mutate the input trees (JSON snapshot before/after): PASS",
+      "scripts/smoke-regions.ts §7 — the REAL linear.app canary loaded and compiled twice, byte-compared: PASS",
+      "stripe.com compiled twice to two scratch directories: `cmp` reported identical; sha256 of both page-regions.json = 3aaf467a25b03a2685dbe30520126a14b7a5a933dff08fc1d4871c361e5f5880 (2,316,064 bytes)"
+    ]
+  },
+  "localityProof": {
+    "claim": "A node inserted downstream adds at most one region and repaths none. A node inserted UPSTREAM does not move same-scope siblings of a different tag.",
+    "fixture": "Synthetic four-page site built as real RuntimePage trees in scripts/smoke-regions.ts. No real data is mutated anywhere.",
+    "evidence": [
+      "§3 downstream insert (a <div> appended after hero/features/cta): no existing region id disappeared — PASS",
+      "§3 downstream insert: exactly ONE new region id appeared — PASS",
+      "§3 downstream insert: every pre-existing region kept its exact slotKeys list — PASS",
+      "§3 upstream insert (a <div> prepended before both <section>s): both `main1:div:1>section:1` and `main1:div:1>section:2` keep their ids AND their slots — PASS. A dense child index would have moved both.",
+      "§3 negative control, stated honestly rather than hidden: the same-tag <div> sibling DOES shift (`div:1>a:1` -> `div:2>a:1`) because a tag-scoped ordinal only protects against inserts of a DIFFERENT tag — PASS",
+      "§3 the shell regions (global nav, global footer) are untouched by either insert — PASS"
+    ]
+  },
+  "smokeRegionsChecks": {
+    "command": "pnpm smoke:regions",
+    "result": "67/67 checks passed",
+    "exitCode": 0,
+    "sections": {
+      "§1 selection": "10 checks — visual-section granularity, header collapses to nav, shared footer lifts global, locale page does not block promotion, unwrap does not double a wrapper, hash is beside the id not as it, no DOM attribute minted, written bytes validate against the published zod schema",
+      "§2 DETERMINISM": "3 checks (required test 1)",
+      "§3 LOCALITY": "8 checks (required test 2) — 6 original plus 2 pinning the ASYMMETRY: a downstream insert loses NO id while an upstream one does, and the single id the upstream insert costs is named exactly.",
+      "§4 JOIN": "6 checks (required test 3) — slot -> region through (pageId, viewport, nodeId), both viewports joined, occurrence names the node id",
+      "§5 SHARED OWNERSHIP": "5 checks (required test 4) — one page behind two routes reports BOTH, in the region record and in the coverage table; counted once as a page and twice as a route",
+      "§6 ACCOUNTING": "11 checks (required test 5) — joined+orphan+unresolved == total bindings; sum of regions' bindingCount == joinedBindings; slotsJoined+orphanSlots == slots; union of region slotKeys size == slotsJoined; a planted body-shell binding is reported ORPHAN and a planted ghost nodeId is reported UNRESOLVED (two different failures, never conflated); the per-page table sums to the top-level totals",
+      "§7 real canary": "11 checks against data/linear.app/recon-templates/2026-08-25T21-53-26-980Z, skipped with a SKIP line if absent — 9 original plus 2 that MEASURE locality on real markup (downstream <div> insert into all 16 trees loses 0/68 ids; upstream insert repaths 45/68), with a NOTE line printing the percentage.",
+      "§8 viewport root tag split": "13 checks (added by correction C1) — the page-scope half (mismatch counted, both variants emitted with the mobile one suffixed, each variant carrying only its own viewport's occurrence, the limitation declared) AND the global-scope half that used to abort the compile (regression check, both variants lifted with distinct ids, each covering every page, mismatch counted per page, no page-scoped leftovers, every id unique), plus the tie case where the two tags are rendered opposite ways round on different pages (two distinct ids, the root tag breaks the tie, byte-identical on a second compile)."
+    }
+  },
+  "testsRun": [
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "checks": null,
+      "note": "tsc --noEmit clean across the whole repo after every edit, including the two sibling agents' in-flight changes."
+    },
+    {
+      "command": "pnpm smoke:regions",
+      "exitCode": 0,
+      "checks": 50,
+      "note": "50/50 checks passed. Two checks FAILED on the first run and both were my test's expectations, not compiler defects: the fixture's `div > a` CTA is unwrapped to the <a> per the documented unwrap rule, so its id is `div:1>a:1`, not `div:1`. The expectations were corrected to the real behavior and a new check was added that asserts the unwrap explicitly."
+    },
+    {
+      "command": "pnpm compile:regions data/linear.app/recon-templates/2026-08-25T21-53-26-980Z",
+      "exitCode": 0,
+      "checks": null,
+      "note": "Real compile. Wrote data/linear.app/page-regions/2026-08-26T16-14-07-901Z/. 68 regions, 3079/3079 slots joined, 0 orphan, 0 unresolved, 79 ms."
+    },
+    {
+      "command": "pnpm compile:regions data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z",
+      "exitCode": 0,
+      "checks": null,
+      "note": "Real compile of the large canary. Wrote data/stripe.com/page-regions/2026-08-26T16-14-08-675Z/. 1014 regions, 9529/9529 slots joined, 0 orphan, 0 unresolved, 242 ms — it completes easily; no estimate was guessed."
+    },
+    {
+      "command": "cmp <two stripe compiles>",
+      "exitCode": 0,
+      "checks": null,
+      "note": "Byte-identical, sha256 3aaf467a25b03a2685dbe30520126a14b7a5a933dff08fc1d4871c361e5f5880."
+    },
+    {
+      "command": "git status --porcelain / git diff package.json",
+      "exitCode": 0,
+      "checks": null,
+      "note": "My only tracked modification is package.json (+2 lines, 0 deletions). The other modified tracked files (scripts/smoke-assets.ts, scripts/smoke-production.ts, scripts/smoke-seo.ts, src/assets/*, src/cli-assets-qa.ts, src/production/qa.ts, src/seo/serve.ts) belong to the two sibling agents and were never opened for writing by me. No file under data/<host>/<kind>/<existing-run-id>/ was touched; the two new run directories are under the NEW data/<host>/page-regions/ kind."
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "checks": null,
+      "note": "tsc --noEmit clean after the C1/C2 corrections, with three sibling agents' Wave-1 changes in the same working tree."
+    },
+    {
+      "command": "pnpm smoke:regions",
+      "exitCode": 0,
+      "checks": 67,
+      "note": "67/67 checks passed, up from 50: +2 in §3 (insert asymmetry on the fixture), +2 in §7 (insert asymmetry measured on the real canary), +13 in §8 (viewport root-tag split at page AND global scope). No check was removed or weakened."
+    },
+    {
+      "command": "pnpm exec tsx src/cli-compile-regions.ts data/linear.app/recon-templates/2026-08-25T21-53-26-980Z --output <scratch>",
+      "exitCode": 0,
+      "checks": null,
+      "note": "Post-fix recompile into a scratch dir. sha256 5e55e3390f95f00214e77a1b45218c6dbc5ebf506e0f4a39905edb1212600b9f — byte-identical to the persisted run, confirmed with `cmp`. The persisted run directory was NOT written."
+    },
+    {
+      "command": "pnpm exec tsx src/cli-compile-regions.ts data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z --output <scratch>",
+      "exitCode": 0,
+      "checks": null,
+      "note": "Post-fix recompile into a scratch dir. 2,316,064 bytes, sha256 3aaf467a25b03a2685dbe30520126a14b7a5a933dff08fc1d4871c361e5f5880 — byte-identical to the persisted run, confirmed with `cmp`."
+    },
+    {
+      "command": "pnpm exec tsx <scratch>/repro.ts (pre-fix and post-fix)",
+      "exitCode": 0,
+      "checks": null,
+      "note": "The verifier's reproduction, re-run independently. BEFORE: 1 page OK (two ids, viewportRootMismatches=1), 2 and 3 pages THREW RegionCompileError: duplicate global region id global:rgn:main1:self. AFTER: all three OK, mismatches 1/2/3, ids global:rgn:main1:self + global:rgn:main1:self@mobile."
+    },
+    {
+      "command": "pnpm exec tsx <scratch>/adversarial.ts",
+      "exitCode": 0,
+      "checks": null,
+      "note": "Six root-tag-collision shapes compiled twice each (see corrections[0].widerHazardReview.verifiedBy). All: ids unique, byte-identical across compiles, no throw."
+    },
+    {
+      "command": "pnpm exec tsx <scratch>/measure.ts",
+      "exitCode": 0,
+      "checks": null,
+      "note": "Independent re-measurement of the locality asymmetry on the linear canary: upstream insert 45/68 ids lost, downstream 0/68, 0 slotKey drift either way, 16 trees mutated in memory. data/ was not written."
+    }
+  ],
+  "evidence": [
+    "src/regions/types.ts:1-70 — why the name is PageRegion and not Region/Section; the three things the artifact is forbidden to be (a Slot V2 change, a DOM attribute, a semantic classifier).",
+    "src/regions/types.ts:55-95 — RegionPolicy: every constant that can move an id, in one object, folded into every hash.",
+    "src/regions/types.ts:98-120 — SECTIONING_CONTENT_TAGS / BODY_SCOPED_LANDMARK_TAGS: the HTML-AAM landmark-scoping rule.",
+    "src/regions/skeleton.ts:1-35 — the three existing repo primitives this file reuses the shape of, and why the tag:nth form was the one taken.",
+    "src/regions/skeleton.ts:104 pathSegment — the tag-scoped sibling ordinal.",
+    "src/regions/skeleton.ts:128 regionIdOf — the id format and why the page-scope key is a pageSourceId, not a route key.",
+    "src/regions/skeleton.ts:153 analyzeTree — the single document-order pre-pass producing landmark scopes and the anchor set.",
+    "src/regions/skeleton.ts:206 unwrap — the transparent-wrapper collapse.",
+    "src/regions/skeleton.ts:226 hasAnchorWithin — the bounded shell test.",
+    "src/regions/skeleton.ts:310 structuralHashOf — domain-separated sha256 skeleton, policy tag folded in, persisted beside the id.",
+    "src/regions/skeleton.ts:329 routeHasLocalePrefix — the Task-18 locale rule RESTATED rather than imported from src/recon-template/grouping.ts, deliberately, so PageRegion carries no module edge into the most contended file cluster in the repo.",
+    "src/regions/select-roots.ts:1-45 — the four selection rules, in the order applied, with the reason each exists.",
+    "src/regions/compile.ts:267-315 — the global lift, and the landmark-qualified variant measured but not applied.",
+    "src/regions/load-input.ts:1-30 — one recon-template run directory in, one new directory out; the four inputs hashed by bytes.",
+    "src/regions/store.ts:1-25 — the NEW data/<host>/page-regions/ namespace and why nothing is written into a template run.",
+    "src/cli-compile-regions.ts — CLI following the src/cli-compile-recon-template.ts idiom (parseArgs/printUsage/printCounts, the offline-counters footer line).",
+    "scripts/smoke-regions.ts — 50 checks, ending in the exact `N/N checks passed` line the program gates on.",
+    "data/linear.app/page-regions/2026-08-26T16-14-07-901Z/page-regions.json — the real linear artifact.",
+    "data/linear.app/page-regions/2026-08-26T16-14-07-901Z/report/region-summary.json — counts, landmark and root-tag breakdowns, the 20 largest regions, and the only clock reading.",
+    "data/stripe.com/page-regions/2026-08-26T16-14-08-675Z/page-regions.json — the real stripe artifact (2.3 MB, 1014 regions).",
+    "src/regions/compile.ts:312-364 — the global id assignment pass: bucket lifted groups by unsuffixed base id, single-group base ids keep the id verbatim (backward compatibility), multi-group base ids rank by @mobile-draft count then by root tag.",
+    "src/regions/compile.ts:371 — the emit loop now reads globalIdByGroup instead of calling regionIdOf directly; the duplicate-id throw is retained as a backstop.",
+    "scripts/smoke-regions.ts:422-445 — §3 asymmetry pin on the fixture: downstream loses 0 ids, upstream loses exactly p1:rgn:main1:div:1>div:1>a:1.",
+    "scripts/smoke-regions.ts:592-641 — §7 asymmetry measured on the REAL linear canary: 16 trees mutated in memory, downstream 0/68 lost, upstream 45/68 lost, with a NOTE line printing 66%.",
+    "scripts/smoke-regions.ts:646-738 — §8, the 13 checks covering both halves of the viewport root-tag branch plus the tie case.",
+    "scripts/smoke-regions.ts:256-298 — viewportSplitBody / buildViewportSplitFixture: the fixture that renders one `main` landmark as <main> at desktop and <article role=\"main\"> at mobile, and optionally the opposite way round on chosen pages.",
+    "docs/result/handoffs/27-page-region.json corrections[0].determinismPreserved — the before/after sha256 pair for each canary, produced by recompiling into scratch dirs and `cmp`-ing against the persisted artifacts."
+  ],
+  "limitations": [
+    "NO CONSUMER, BY INSTRUCTION. Nothing reads a PageRegion. No rendering, serving, release or QA path branches on one. The artifact is inert.",
+    "REGION SEMANTIC MEANING IS UNKNOWN and no attempt was made to infer it. A region is a seam, not a 'hero'.",
+    "GRANULARITY FOLLOWS THE MARKUP, and therefore varies a lot. linear.app: 25 regions on the homepage (which is section-rich) but 7 on /changelog, whose 3,234 bindings sit in a handful of large regions because the page's main content carries no sectioning markup. A page authored entirely in <div>s gets few, large regions. This is honest — there is no structural evidence there to cut on — but it means PageRegion granularity is NOT uniform and a consumer must not assume it is.",
+    "STRIPE CARRIES 449 REGIONS WHOSE LANDMARK IS A <header>. Those are body-scoped <header> elements nested in plain <div>s (not in sectioning content), so the HTML-AAM demotion rule does not reach them and each opens a landmark scope. It inflates stripe to ~56 regions/page. It is correct per the spec rule and it is not obviously wrong, but it is the largest single lever on stripe's region count and a future policy change there would move ids.",
+    "THE GLOBAL LIFT IS STRICT AND OFTEN MISSES A REAL SHARED SHELL. It requires identical landmarkKey, identical childPath, identical rootTag AND identical subtree hash on EVERY non-locale page. linear's footer is shared by 7 of 8 pages and stays page-scoped; stripe lifts only 2 regions. The cost is measured (nearGlobalGroups, nearGlobalMaxPages, globalCandidatesLandmarkQualifiedOnly) rather than assumed, and nothing was loosened on that evidence because loosening is a decision with a consumer.",
+    "THE UNWRAP RULE CAN ROOT A REGION AT A LEAF. `div > a` becomes a region rooted at the <a>, `div > img` at the <img>. No content is lost (the wrapper had no text of its own) but a consumer expecting every region root to be a block container would be surprised. Asserted explicitly in smoke §1 so the behavior is pinned, not accidental.",
+    "DESKTOP AND MOBILE ARE MERGED ON (landmarkKey, childPath) and split with an `@mobile` suffix only when the root TAG disagrees. Both canaries reported viewportRootMismatches=0, so that split path is exercised only by construction, never by real data. It was also the site of the one MAJOR defect found in verification: the GLOBAL branch never applied the suffix, so a landmark that swaps tag responsively on every page aborted the entire compile with `duplicate global region id`. Fixed and covered at both scopes (corrections C1, smoke §8) — but the honest statement remains that no real site has yet driven this path.",
+    "LANDMARK ORDINALS SHIFT if a landmark of the same kind is inserted before an existing one. That is rarer than a <div> insert and is the price of measuring paths from a local landmark root, but it is a real (and unavoidable, given the constraints) instability in the id.",
+    "THE PAGE-SCOPE KEY IS A pageSourceId, NOT A ROUTE KEY — a deliberate deviation from the brief's wording, taken because routes -> pageSourceId is many-to-one. Every route is still reported.",
+    "THE COMPILER READS A RECON-TEMPLATE RUN DIRECTORY, not a reconstruction run. It uses the runtime trees the template already carries in its app/reconstruction-data/, so it needs neither the reconstruction run nor the SiteSpec on disk. A template run whose app/ has been pruned cannot be region-compiled.",
+    "ORPHANS ARE ZERO ON BOTH CANARIES (0/9,929 and 0/24,518). That is a real measurement, not a disabled check: the two orphan/unresolved paths are proven live by planted bindings in smoke §6. But it means the orphan accounting has never been exercised by real data, and a site with slots on shell ancestors would be the first to test it.",
+    "THE ID SURVIVES A DOWNSTREAM INSERT AND OFTEN DOES NOT SURVIVE AN UPSTREAM ONE. Measured on the linear canary: a <div> inserted as the FIRST child of <main> on all 8 pages x 2 viewports repaths 45 of 68 regions (66%), e.g. p000001:rgn:main1:div:2>a:1 -> …div:3>a:1; the same <div> APPENDED repaths 0. The mechanism is that src/regions/skeleton.ts:104 pathSegment is a TAG-SCOPED ordinal, so on markup whose region roots are overwhelmingly <div>s a <div> insert IS a same-tag insert. The downstream-insert requirement is met; the upstream case is a real and unfixed cost of element-child paths, pinned in smoke §3 and §7 so it cannot drift out of view."
+  ],
+  "followUps": [
+    "No consumer exists. Before anything is built on PageRegion, decide whether the global lift stays strict; counts.globalCandidatesLandmarkQualifiedOnly and counts.nearGlobalGroups are already persisted in every artifact to make that decision on measured evidence rather than on taste.",
+    "A Visual Editor selection layer can map a clicked element to its region with NO new DOM attribute: read data-wr-node off the element and look it up in the region occurrences. The artifact already carries every occurrence's nodeId per (page, viewport). Nothing else is needed.",
+    "structuralHash is a drift detector with no consumer yet. A recompile-and-diff check ('which regions changed markup since the last template compile?') is the cheapest useful thing to build on it.",
+    "Region granularity on <div>-only pages is the weakest part of the artifact. If a consumer needs uniform granularity, the honest fix is geometric (bounding boxes from the SiteSpec), not structural — and it would be a different, non-deterministic-by-construction input than this compiler takes.",
+    "src/regions/ is importable without src/recon-template/. Keep it that way: the (pageId, viewport, nodeId) join is the entire contract and it is what kept this Task out of the 25-importer file.",
+    "The global id assignment ranks variants open-endedly (@mobile, then @mobile2…) although at most two are structurally reachable. If a future change lets a page hold more than one draft per (address, root tag) — a third viewport, or a per-breakpoint capture — revisit that suffix vocabulary BEFORE it mints an id, because ids are the one thing here that cannot be renamed later.",
+    "No real site has yet produced viewportRootMismatches > 0. If one does, check the artifact for a `@mobile` id pair before assuming the global lift is complete: the two variants are separate regions and a consumer that expects one region per landmark path will see two."
+  ],
+  "corrections": [
+    {
+      "id": "C1",
+      "severity": "MAJOR",
+      "title": "Global lift never applied the @mobile suffix — a viewport root-tag mismatch on every page ABORTED the whole compile",
+      "reportedBy": "independent verifier of the Wave-1 PageRegion compiler",
+      "defect": "src/regions/compile.ts minted a global region id with regionIdOf(\"global\", landmarkKey, childPath), which ignores rootTag, while the grouping key is `${landmarkKey}|${childPath}|${rootTag}|${structuralHash}` and DOES carry it. When a landmark renders as a different element tag at mobile than at desktop on every non-locale page, both tag variants satisfy the global-lift test, both lift, and both minted the identical id — hitting `if (emitted.has(regionId)) throw new RegionCompileError(...)`. The page-scoped branch already handled the same situation with a `@mobile` suffix; only the global branch was missing it.",
+      "impact": "TOTAL compile failure, not a degraded result: `pnpm compile:regions` exits 1 with COMPILE ERROR and writes NO artifact at all, on a legitimate realistic input (a site that swaps a landmark's tag responsively).",
+      "reproductionBefore": "Two pages with role=\"main\" rendered as <main> at desktop and <article> at mobile -> THREW RegionCompileError: duplicate global region id global:rgn:main1:self. The SAME input with ONE page succeeded and produced p1:rgn:main1:self + p1:rgn:main1:self@mobile with viewportRootMismatches=1 — the suffix logic existed but was reachable only in page scope. Reproduced independently before the fix.",
+      "fix": "src/regions/compile.ts:312-364 — a new `global id assignment` pass runs between the global lift and the emit loop. It buckets the lifted groups by their unsuffixed base id; a base id with ONE group keeps the unsuffixed id verbatim (the case every existing artifact was compiled under), and a base id with several ranks them so the variant built from the FEWEST `@mobile` drafts keeps the unsuffixed id, mirroring page scope, with the next taking `@mobile`. Ties — a site that renders the two tags the opposite way round on different pages — are broken by the root tag so the assignment is a function of the input, never of Map iteration order. The emit loop reads the assignment (src/regions/compile.ts:371) and keeps its duplicate-id throw as a backstop.",
+      "whyAtMostTwoVariants": "Two drafts of ONE page share a (landmarkKey, childPath) address only when their root tags DIFFER, so a page contributes at most one draft per root tag; and a group that misses a page is not global. A base id can therefore hold at most two global groups. The rank is still written as an open-ended index (@mobile, then @mobile2…) so a third variant would be NAMED rather than silently collide.",
+      "behaviourAfter": "1 page -> p1:rgn:main1:self + p1:rgn:main1:self@mobile (unchanged). 2 or 3 pages -> global:rgn:main1:self + global:rgn:main1:self@mobile, both covering every page, viewportRootMismatches counted per page, no throw.",
+      "determinismPreserved": {
+        "claim": "Every input that compiled before compiles to the SAME BYTES after.",
+        "linear": {
+          "artifact": "data/linear.app/page-regions/2026-08-26T16-14-07-901Z/page-regions.json",
+          "sha256Before": "5e55e3390f95f00214e77a1b45218c6dbc5ebf506e0f4a39905edb1212600b9f",
+          "sha256After": "5e55e3390f95f00214e77a1b45218c6dbc5ebf506e0f4a39905edb1212600b9f",
+          "method": "recompiled from data/linear.app/recon-templates/2026-08-25T21-53-26-980Z into a SCRATCH --output dir; the persisted run directory was not written. `cmp` against the on-disk artifact: identical."
+        },
+        "stripe": {
+          "artifact": "data/stripe.com/page-regions/2026-08-26T16-14-08-675Z/page-regions.json",
+          "bytes": 2316064,
+          "sha256Before": "3aaf467a25b03a2685dbe30520126a14b7a5a933dff08fc1d4871c361e5f5880",
+          "sha256After": "3aaf467a25b03a2685dbe30520126a14b7a5a933dff08fc1d4871c361e5f5880",
+          "method": "recompiled from data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z into a SCRATCH --output dir; `cmp` against the on-disk artifact: identical."
+        },
+        "note": "Both canaries report viewportRootMismatches=0, so neither takes the new branch at all — which is exactly why the branch had no coverage. Byte-identity is necessary evidence of backward compatibility, not sufficient evidence that the fix works; §8 supplies the latter."
+      },
+      "coverageAdded": "scripts/smoke-regions.ts §8 (13 checks) covers BOTH halves of the branch: the page-scope case (viewportRootMismatches=1, both ids emitted, each variant carrying only its own viewport's occurrence, the limitation declared) and the global-scope case that used to throw (regression check that the compile no longer aborts, both variants lifted with distinct ids, both covering every page, mismatches counted per page, no page-scoped leftovers, every id unique), plus the tie case with its determinism replay.",
+      "widerHazardReview": {
+        "question": "regionIdOf() ignores rootTag while the group key includes it — is there another reachable collision of the same shape?",
+        "answer": "NO other reachable one was found, and the reasoning is structural rather than empirical. Page scope is protected by a stronger invariant than global scope had: the per-page drafts are a Map keyed on `${landmarkKey}|${childPath}` plus an `@mobile` discriminator, so ONE page holds at most one draft per (address, suffix) pair. Two page-scoped groups can therefore never both contribute an unsuffixed member from the same page, and their ids differ by the suffix. Global scope was the one place where the grouping crossed pages and so escaped that per-page Map — which is precisely the defect fixed. Global and page ids cannot collide with each other because the scopeKey namespaces them ('global' vs a pageSourceId), the only residual being a pageSourceId literally equal to the string 'global', which the template generator does not mint.",
+        "verifiedBy": "Six adversarial fixtures compiled directly (all-split; genuine tie with opposite orientations on two pages; a 3-page mix where the <main> variant lifts globally while the <article> variant stays page-scoped on two pages; a split page beside an unsplit page of the OTHER tag, where the global id belongs to the tag the split page carries only at mobile; and three distinct root tags across three pages). Every case: ids unique, two compiles byte-identical, no throw. The genuine-tie and the page-scope-leftover cases are kept in the suite as §8; the rest were scratch."
+      }
+    },
+    {
+      "id": "C2",
+      "severity": "MINOR",
+      "title": "The locality claim was materially overstated on real markup",
+      "reportedBy": "same verifier",
+      "defect": "regionIdScheme.whyStable[0] said a wrapper <div> inserted ahead of a <section> leaves `section:3` alone. That is TRUE and it is proven in the suite, but as the HEADLINE stability claim it overstates the real-world protection, and the 11-entry limitations array named the landmark-ordinal instability without ever quantifying this much larger one.",
+      "measurement": {
+        "what": "An UPSTREAM <div> insert, unshifted as the first child of <main> on all 8 linear.app pages x 2 viewports (16 trees), versus the same <div> APPENDED as the last child.",
+        "upstream": "45 of 68 region ids lost (66%) — e.g. p000001:rgn:main1:div:2>a:1 -> p000001:rgn:main1:div:3>a:1. 6 new ids, 0 slotKey drift on the 23 survivors.",
+        "downstream": "0 of 68 ids lost, 6 new ids, 0 slotKey drift. Genuinely clean.",
+        "mechanism": "src/regions/skeleton.ts:104 pathSegment is a TAG-SCOPED ordinal, so it protects a region only from an insert of a DIFFERENT tag. linear's region roots are overwhelmingly <div>s, so a <div> insert IS a same-tag insert for most of them.",
+        "measuredIndependently": "Yes — re-measured here from data/linear.app/recon-templates/2026-08-25T21-53-26-980Z rather than copied from the verifier's report; the 45/68 and 0/68 figures reproduced exactly."
+      },
+      "fix": "(a) regionIdScheme.whyStable[0] rewritten to state what the tag-scoped ordinal does and does NOT buy, with the measured number; (b) a new limitations entry quantifying it; (c) scripts/smoke-regions.ts pins the asymmetry in two places — §3 on the fixture (`downstream loses NO id, upstream does`, plus the exact identity of the one id the upstream insert costs) and §7 on the REAL canary (`downstream loses 0`, `upstream repaths 45 of 68`), with a NOTE line printing the percentage so a reader learns it from the suite output.",
+      "notFixed": "The id scheme itself is UNCHANGED. Element-child paths were mandated by the accepted pre-overnight audit and the downstream-insert requirement is met; chasing upstream-insert stability would mean a different id scheme and a different decision, with no consumer to make it for."
+    }
+  ]
+}

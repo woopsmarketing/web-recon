@@ -1,6 +1,7 @@
 /**
  * pnpm assets:qa <materialization-run-dir> --template <template-run-dir>
- *   [--content-run <content-run-dir>] [--routes /a,/b] [--skip-font-qa]
+ *   [--content-run <content-run-dir>] [--routes /a,/b] [--max-routes N]
+ *   [--skip-font-qa]
  *
  * Runtime network QA (Task 22 I) + fallback font QA (Task 22 H) in a real
  * browser: starts the immutable template app once, measures which runtime
@@ -8,6 +9,15 @@
  * (baseline) and WITH it (independent), then measures the layout cost of
  * the fallback font stacks. Reports are written into the materialization
  * run's report/ directory.
+ *
+ * Route scope (Task 27 GED-G): the census covers every route the template
+ * run's site-map.json declares, NOT "/" alone — a residual asset that only
+ * renders on another route was invisible before. --routes still overrides the
+ * scope explicitly (and is REFUSED, not silently ignored, when it declares no
+ * route); --max-routes bounds a very large site map. The residual
+ * requests are then joined per FILE with the inventory (identity) and the
+ * replacement manifest (requirement, read not re-derived) into
+ * report/residual-source-assets.json.
  *
  * Exit code 2 when the independent serve shows MORE residual source
  * requests than the baseline (the layer must never make things worse);
@@ -18,8 +28,10 @@ import { existsSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 
 import {
+  buildResidualAssetReport,
   loadAssetInventoryRun,
   loadAssetMaterializationRun,
+  resolveCensusRoutes,
   runFontFallbackQa,
   runNetworkQa,
   startAssetServedApp,
@@ -33,7 +45,7 @@ async function main(): Promise<void> {
   const templateRunDir = value("--template");
   if (!runRef || !templateRunDir) {
     console.log(
-      "Usage: pnpm assets:qa <materialization-run-dir> --template <template-run-dir> [--content-run <dir>] [--routes /a,/b] [--skip-font-qa]",
+      "Usage: pnpm assets:qa <materialization-run-dir> --template <template-run-dir> [--content-run <dir>] [--routes /a,/b] [--max-routes N] [--skip-font-qa]",
     );
     process.exitCode = 1;
     return;
@@ -51,10 +63,31 @@ async function main(): Promise<void> {
     process.exitCode = 1;
     return;
   }
-  const routes = value("--routes")
-    ?.split(",")
-    .map((r) => r.trim())
-    .filter((r) => r.length > 0) ?? ["/"];
+  const maxRoutesRaw = value("--max-routes");
+  const maxRoutes = maxRoutesRaw === undefined ? null : Number.parseInt(maxRoutesRaw, 10);
+  if (maxRoutes !== null && (!Number.isFinite(maxRoutes) || maxRoutes <= 0)) {
+    console.log(`[assets:qa] --max-routes must be a positive integer: ${maxRoutesRaw}`);
+    process.exitCode = 1;
+    return;
+  }
+  const routeScope = await resolveCensusRoutes({
+    templateRunDir,
+    explicitRoutes: value("--routes") ?? null,
+    maxRoutes,
+  });
+  // Same idiom as --max-routes above: bad operator input is refused, never
+  // quietly swapped for a different scope. resolveCensusRoutes still records
+  // the discarded value so a programmatic caller keeps the provenance too.
+  if (routeScope.discardedExplicitRoutes !== null) {
+    console.log(
+      `[assets:qa] --routes declared no route: ${JSON.stringify(routeScope.discardedExplicitRoutes)}` +
+        ` — pass routes as "/,/pricing", or omit --routes to use ${routeScope.siteMapFile ?? "the site map"}`,
+    );
+    process.exitCode = 1;
+    return;
+  }
+  const routes = routeScope.routes;
+  console.log(`[assets:qa] route scope: ${routeScope.source} — ${routeScope.note}`);
 
   const sourceHosts = [
     ...new Set([
@@ -96,6 +129,57 @@ async function main(): Promise<void> {
     console.log(
       `[assets:qa] residual source requests total: ${networkReport.totals.independentSourceRequests}` +
         ` (baseline ${networkReport.totals.baselineSourceRequests}) → ${networkFile}`,
+    );
+
+    // Cross-route per-file residual report (Task 27 GED-G): WHERE each residual
+    // file still renders, joined to inventory identity and to the replacement
+    // manifest's verdict (read, never re-derived).
+    const residualReport = buildResidualAssetReport({
+      networkReport,
+      inventory: inventoryRun.inventory,
+      replacementManifest: materialization.replacementManifest,
+      routeScope,
+      files: {
+        networkQa: path.relative(process.cwd(), networkFile),
+        inventory: path.relative(
+          process.cwd(),
+          path.join(inventoryRun.runDir, inventoryRun.manifest.files.inventory),
+        ),
+        replacementManifest: path.relative(
+          process.cwd(),
+          path.join(
+            materialization.runDir,
+            materialization.manifest.files.replacementManifest,
+          ),
+        ),
+      },
+    });
+    const residualFile = path.join(
+      materialization.runDir,
+      "report",
+      "residual-source-assets.json",
+    );
+    await writeFile(residualFile, JSON.stringify(residualReport, null, 2) + "\n", "utf8");
+    for (const file of residualReport.files) {
+      console.log(
+        `  ${String(file.occurrences).padStart(3)}x  ${file.url}\n` +
+          `        routes: ${file.routes.map((hit) => `${hit.route} (${hit.occurrences})`).join(", ")}\n` +
+          `        inventory: ${file.inventoryId ?? "unjoined"}  replacement: ${
+            file.replacement.inManifest
+              ? `${file.replacement.classification} / ${file.replacement.status}`
+              : "not in replacement-manifest.json"
+          }`,
+      );
+    }
+    console.log(
+      `[assets:qa] residual files: ${residualReport.counts.residualFiles} across ` +
+        `${residualReport.counts.routesWithResidual}/${residualReport.counts.routesMeasured} measured routes ` +
+        `(${
+          residualReport.counts.invisibleAtRootOnly === null
+            ? '"/" not measured, so'
+            : `${residualReport.counts.invisibleAtRootOnly}`
+        } invisible to a "/"-only census, ` +
+        `${residualReport.counts.unjoinedToInventory} unjoined to the inventory) → ${residualFile}`,
     );
 
     if (!argv.includes("--skip-font-qa")) {

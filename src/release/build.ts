@@ -22,7 +22,7 @@ import { productionBuildDir } from "../production/index.js";
 import { collectRequirements, type LineagePaths } from "./collect.js";
 import { deriveReleaseState } from "./gate.js";
 import { EXECUTABLE_STAGES, FROZEN_STAGES } from "./types.js";
-import { STAGE_DEPENDENCIES, STAGE_ORDER } from "./graph.js";
+import { STAGE_ORDER } from "./graph.js";
 import {
   applyBlocking,
   computeStageInputsHash,
@@ -106,25 +106,14 @@ export async function buildRelease(
   const targetMode = effective.productionBaseUrl === undefined ? "preview" : "indexable-production";
 
   // ---- 1. freshness --------------------------------------------------------
-  const refreshed = await refreshStageStatuses(project, effective, { log });
   // Staleness propagates through the dependency graph: a stage whose upstream
-  // WILL be rebuilt is itself stale (the plan must predict the cascade).
-  let propagated = true;
-  while (propagated) {
-    propagated = false;
-    for (const stage of STAGE_ORDER) {
-      const status = refreshed.stageStatus[stage];
-      if (status.status !== "fresh") continue;
-      const staleDep = STAGE_DEPENDENCIES[stage].find(
-        (dep) => refreshed.stageStatus[dep].status !== "fresh",
-      );
-      if (staleDep !== undefined) {
-        status.status = "stale";
-        status.reasons = [...status.reasons, `upstream stage ${staleDep} will be rebuilt`];
-        propagated = true;
-      }
-    }
-  }
+  // WILL be rebuilt is itself stale (the plan must predict the cascade). The
+  // fixpoint used to be inlined right here, which is exactly why release:plan
+  // and release:build --dry-run disagreed about the same project; it now lives
+  // inside refreshStageStatuses (freshness.ts `propagateStaleStages`) so every
+  // reader gets it. What this build DOES with the cascaded statuses below is
+  // unchanged.
+  const refreshed = await refreshStageStatuses(project, effective, { log });
   const blockers = releaseBlockers(requirementsFile.requirements);
   applyBlocking(refreshed.stageStatus, blockers, targetMode);
 
@@ -145,6 +134,14 @@ export async function buildRelease(
   // ---- 2. dry run (spec §18): report, mutate NOTHING -----------------------
   if (dryRun) {
     log("");
+    // A dry run returns before the run record is assembled, so the freshness
+    // warnings would otherwise be invisible in exactly the mode an operator
+    // uses to ask "what will happen?".
+    if (refreshed.warnings.length > 0) {
+      log("WARNINGS");
+      for (const warning of refreshed.warnings) log(`  ${warning}`);
+      log("");
+    }
     log("WOULD RUN");
     for (const stage of wouldRun) log(`  ${stage}`);
     if (wouldRun.length === 0) log("  (nothing — all stages fresh)");
@@ -221,6 +218,9 @@ export async function buildRelease(
     try {
       log(`[release] running stage ${stage}…`);
       const result = await runner(context);
+      // Stage runners surface operator-facing warnings (e.g. the content write
+      // doctrine notice) onto the release run rather than only into the log.
+      warnings.push(...(result.warnings ?? []));
       const hashed = await hashDirectory(result.path, result.excluded ?? []);
       const artifact: ArtifactRef = {
         id: result.id,
@@ -236,7 +236,14 @@ export async function buildRelease(
       refreshed.stageStatus[stage] = {
         status: "fresh",
         artifact,
-        inputsHash: computeStageInputsHash(stage, artifactHashes, effective, assetHashes, project.intent.intentHash),
+        inputsHash: computeStageInputsHash(
+          stage,
+          artifactHashes,
+          effective,
+          assetHashes,
+          project.intent.intentHash,
+          project.authored,
+        ),
         reasons: [],
         blockedBy: [],
       };
@@ -264,6 +271,7 @@ export async function buildRelease(
           effective,
           assetHashes,
           project.intent.intentHash,
+          project.authored,
         );
         if (downstreamStatus.artifact !== null && downstreamStatus.inputsHash === expected) {
           if (downstreamStatus.status !== "fresh") {

@@ -1,4 +1,6 @@
-import { mkdir, rm, writeFile, readFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { cp, mkdir, mkdtemp, rm, stat, writeFile, readFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { chromium } from "playwright";
 import { startApp } from "../src/recon-template/parity-qa.js";
@@ -20,24 +22,70 @@ import {
 } from "../src/reconstruction/index.js";
 import { compileReconTemplate } from "../src/recon-template/index.js";
 import {
+  BRAND_SURFACES,
+  brandTokensFromHost,
+  containsBrandToken,
+  firstBrandTokenInIdentifier,
+  isSourceHostUrl,
+  scanBodyAnchorIdentity,
+  scanElementProps,
+  scanInlineSvgMarkup,
+} from "../src/content-injection/brand-surfaces.js";
+import {
+  BRAND_SURFACE_POLICY,
+  GED_F_NEUTRALIZATION_DEFAULT,
+  scanBrandSurfaces,
+} from "../src/release/brand-scan.js";
+import {
+  BATCH_UNIT_LIMIT,
   CONTENT_POLICY,
+  ContentGenerationResultSchema,
   ContentIntentSchema,
   ContentPolicySchema,
   ContentValidationError,
   FakeContentGenerator,
+  GenerationRequestSchema,
+  MAX_REPAIR_ITERATIONS,
+  RepairProgressGuard,
+  RepairRequestSchema,
+  RepairStopSchema,
+  SLOT_DISPOSITIONS,
+  SLOT_ORIGINS,
+  SlotAccountingFileSchema,
+  applyTruthMode,
+  assertNoBatchConflicts,
+  buildOverlayValues,
+  buildRegionPlanFile,
+  buildRegionPlans,
   buildRepairRequest,
   detectSourceBrandLeaks,
+  executeGenerationBatches,
+  factClaimIn,
+  failureSignatureOf,
+  inScopeSlotKeys,
   ingestGenerationResult,
   intentHash,
   loadContentRun,
+  loadRegionContracts,
   mergeRepairValues,
+  noRepairCandidatesStop,
   prepareContentRun,
   revalidateSlotValues,
   runContentLayoutQa,
   unitsForRepair,
   validateSlotAssignments,
+  type ContentGenerationInput,
+  type ContentGenerationResult,
+  type ContentGenerator,
   type ContentUnit,
 } from "../src/content-injection/index.js";
+// Not re-exported by the content-injection barrel yet — imported from the
+// module it is defined in (see the Task 27 final-residual handoff).
+import { CONTENT_WRITE_DOCTRINE_WARNING } from "../src/content-injection/run.js";
+import { TelemetryRecorder, parseTelemetryLines } from "../src/telemetry/index.js";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
 
 /**
  * Task 19 smoke — Natural Language Content Injection Foundation.
@@ -58,6 +106,14 @@ import {
  *            intentional overflow detected · §18 repair loop (bounded, fake
  *            provider) · §19 manual edits revalidate · §20 hydration-safe
  *            injected render
+ *
+ * Task 27 adds five offline sections after the browser half: §1 real batch
+ * EXECUTION (one call per batch, deterministic, duplicate keys detected), §2/§3
+ * total slot accounting on the origin × disposition axes, §4 content truth mode
+ * (verified-only refuses an unbacked claim; synthetic-allowed marks it), §6
+ * GED-D no-progress detection in repair, §7 provider-neutral telemetry with
+ * usage ABSENT when nobody reported any, and the RegionPlan layer over the
+ * PageRegion consumer contract.
  */
 
 let checks = 0;
@@ -1344,6 +1400,706 @@ async function main(): Promise<void> {
     }
     check("§19 unsafe manual edit rejected by revalidation", manualRejected);
 
+    // -----------------------------------------------------------------------
+    // Task 27 §1 — the batches are actually EXECUTED
+    // -----------------------------------------------------------------------
+    section("Task 27 §1 — deterministic batch execution");
+    const runB = await loadContentRun(runDir);
+    check(
+      "§1 request records the batch bound it was cut at",
+      runB.request.batchUnitLimit === BATCH_UNIT_LIMIT,
+      String(runB.request.batchUnitLimit),
+    );
+    check(
+      "§1 no batch exceeds the bound",
+      runB.request.batches.every((b) => b.unitIds.length <= BATCH_UNIT_LIMIT),
+      JSON.stringify(runB.request.batches.map((b) => b.unitIds.length)),
+    );
+    check(
+      "§1 global batch comes first (site-wide consistency before page passes)",
+      runB.request.batches.length >= 2 && runB.request.batches[0].scope === "global",
+      JSON.stringify(runB.request.batches.map((b) => `${b.batchId}:${b.scope}`)),
+    );
+    const exec1 = await executeGenerationBatches({
+      runId: runB.manifest.runId,
+      intent: runB.intent,
+      policy: CONTENT_POLICY,
+      unitsFile: runB.unitsFile,
+      request: runB.request,
+      generator: new FakeContentGenerator(),
+    });
+    check(
+      "§1 one generator CALL per batch — not one call for the whole site",
+      exec1.report.calls.length === runB.request.batches.length &&
+        exec1.report.calls.every((c, i) => c.callIndex === i && c.batchId === runB.request.batches[i].batchId),
+      `${exec1.report.calls.length} call(s) for ${runB.request.batches.length} batch(es)`,
+    );
+    check(
+      "§1 no call carried the whole unit set",
+      exec1.report.calls.every((c) => c.unitCount < runB.unitsFile.units.length) ||
+        runB.request.batches.length === 1,
+      JSON.stringify(exec1.report.calls.map((c) => c.unitCount)),
+    );
+    const exec2 = await executeGenerationBatches({
+      runId: runB.manifest.runId,
+      intent: runB.intent,
+      policy: CONTENT_POLICY,
+      unitsFile: runB.unitsFile,
+      request: runB.request,
+      generator: new FakeContentGenerator(),
+    });
+    check(
+      "§1 two executions are byte-identical (result + report)",
+      JSON.stringify(exec1.result) === JSON.stringify(exec2.result) &&
+        JSON.stringify(exec1.report) === JSON.stringify(exec2.report),
+    );
+    const wholeSet = await new FakeContentGenerator().generate({
+      mode: "initial",
+      intent: runB.intent,
+      policy: CONTENT_POLICY,
+      units: runB.unitsFile.units,
+      request: runB.request,
+    });
+    check(
+      "§1 batched output equals the single-call output (batching changed nothing but the calls)",
+      JSON.stringify(exec1.result.slotValues) === JSON.stringify(wholeSet.slotValues) &&
+        JSON.stringify(exec1.result.unresolved) === JSON.stringify(wholeSet.unresolved),
+    );
+    // Ceil-style chunking at a deliberately small bound.
+    {
+      const BOUND = 3;
+      const ids = runB.unitsFile.units.map((u) => u.unitId);
+      const smallBatches = [];
+      for (let i = 0; i < ids.length; i += BOUND) {
+        smallBatches.push({
+          batchId: `small${String(smallBatches.length + 1).padStart(3, "0")}`,
+          scope: "page" as const,
+          route: "/",
+          unitIds: ids.slice(i, i + BOUND),
+        });
+      }
+      const smallRequest = GenerationRequestSchema.parse({ ...runB.request, batches: smallBatches });
+      const execSmall = await executeGenerationBatches({
+        runId: runB.manifest.runId,
+        intent: runB.intent,
+        policy: CONTENT_POLICY,
+        unitsFile: runB.unitsFile,
+        request: smallRequest,
+        generator: new FakeContentGenerator(),
+      });
+      check(
+        `§1 ${ids.length} units at bound ${BOUND} produce ceil(N/B) = ${Math.ceil(ids.length / BOUND)} calls`,
+        execSmall.report.calls.length === Math.ceil(ids.length / BOUND) &&
+          execSmall.report.calls.every((c) => c.unitCount <= BOUND),
+        String(execSmall.report.calls.length),
+      );
+      check(
+        "§1 re-chunked execution still merges to the same slot values",
+        JSON.stringify(execSmall.result.slotValues) === JSON.stringify(exec1.result.slotValues),
+      );
+    }
+    // A key two batches both produce must be DETECTED, never last-write-wins.
+    {
+      const stubPlan = exec1.result.sitePlan;
+      class DuplicateKeyGenerator implements ContentGenerator {
+        readonly name = "duplicate-stub";
+        private call = 0;
+        async generate(input: ContentGenerationInput): Promise<ContentGenerationResult> {
+          void input;
+          this.call++;
+          return ContentGenerationResultSchema.parse({
+            schemaVersion: 1,
+            contractVersion: 1,
+            generator: { name: this.name },
+            sitePlan: stubPlan,
+            // EVERY batch claims the same key with a DIFFERENT value.
+            slotValues: { [heroKey]: `value from call ${this.call}` },
+            sources: { [heroKey]: "generated-marketing" },
+            unresolved: [],
+            imageBriefs: [],
+          });
+        }
+      }
+      const dup = await executeGenerationBatches({
+        runId: runB.manifest.runId,
+        intent: runB.intent,
+        policy: CONTENT_POLICY,
+        unitsFile: runB.unitsFile,
+        request: runB.request,
+        generator: new DuplicateKeyGenerator(),
+      });
+      check(
+        "§1 duplicate key across batches DETECTED (not silently merged)",
+        dup.report.conflicts.some((c) => c.kind === "duplicate-slot-value" && c.slotKey === heroKey),
+        JSON.stringify(dup.report.conflicts.slice(0, 3)),
+      );
+      check(
+        "§1 duplicate is not last-write-wins (first writer's value kept)",
+        dup.result.slotValues[heroKey] === "value from call 1",
+        String(dup.result.slotValues[heroKey]),
+      );
+      let conflictThrew = false;
+      try {
+        assertNoBatchConflicts(dup.report);
+      } catch (error) {
+        conflictThrew = error instanceof ContentValidationError;
+      }
+      check("§1 a conflicting recombination FAILS the run", conflictThrew);
+    }
+
+    // -----------------------------------------------------------------------
+    // Task 27 §2/§3 — total slot accounting on two orthogonal axes
+    // -----------------------------------------------------------------------
+    section("Task 27 §2/§3 — slot accounting (origin × disposition)");
+    const accounting = SlotAccountingFileSchema.parse(
+      JSON.parse(await readFile(path.join(runDir, "slot-accounting.json"), "utf8")),
+    );
+    check(
+      "§2 slot-accounting.json is a SIBLING artifact of slot-values.json",
+      accounting.schemaName === "content-slot-accounting-v1",
+    );
+    const expectedInScope = inScopeSlotKeys(runB.unitsFile);
+    check(
+      "§2 the in-scope population is unit slots ∪ review slots, with nothing dropped",
+      accounting.totals.inScopeSlots === expectedInScope.length &&
+        accounting.reconciliation.missing.length === 0,
+      `${accounting.totals.inScopeSlots} vs ${expectedInScope.length}`,
+    );
+    check(
+      "§2 every entry carries exactly one origin and one disposition from the closed vocabularies",
+      accounting.entries.every(
+        (e) =>
+          (SLOT_ORIGINS as readonly string[]).includes(e.origin) &&
+          (SLOT_DISPOSITIONS as readonly string[]).includes(e.disposition),
+      ) && new Set(accounting.entries.map((e) => e.slotKey)).size === accounting.entries.length,
+    );
+    const originSum = Object.values(accounting.totals.byOrigin).reduce((a, b) => a + b, 0);
+    const dispositionSum = Object.values(accounting.totals.byDisposition).reduce((a, b) => a + b, 0);
+    check(
+      "§2 totals reconcile: Σorigin == Σdisposition == in-scope slots, none double-counted",
+      originSum === accounting.totals.inScopeSlots &&
+        dispositionSum === accounting.totals.inScopeSlots &&
+        accounting.reconciliation.doubleCounted.length === 0 &&
+        accounting.reconciliation.reconciled,
+      `${originSum}/${dispositionSum}/${accounting.totals.inScopeSlots}`,
+    );
+    check(
+      "§3 review slots are their OWN ambiguous bucket, not folded into a success number",
+      accounting.scopeHonesty.ambiguousSlots === runB.unitsFile.reviewSlotKeys.length &&
+        accounting.scopeHonesty.ambiguousSlots > 0 &&
+        runB.unitsFile.reviewSlotKeys.every((key) => {
+          const entry = accounting.entries.find((e) => e.slotKey === key);
+          return entry?.customerFacing === "ambiguous" && entry.disposition === "human-required";
+        }),
+      `${accounting.scopeHonesty.ambiguousSlots} ambiguous`,
+    );
+    check(
+      "§3 the account states what it CANNOT see (template exclusions)",
+      typeof accounting.scopeHonesty.templateExcludedCandidates === "number" &&
+        accounting.scopeHonesty.note.includes("NOT claimed to be complete"),
+    );
+    const bareOverlay = JSON.parse(
+      await readFile(path.join(runDir, "slot-values.json"), "utf8"),
+    ) as Record<string, unknown>;
+    check(
+      "§2 slot-values.json stays a BARE { slotKey: value } map (format unchanged)",
+      Object.values(bareOverlay).every(
+        (v) => typeof v === "string" || (typeof v === "object" && v !== null && "src" in (v as object)),
+      ),
+    );
+
+    // -----------------------------------------------------------------------
+    // Task 27 final residual §29 — the content write doctrine AT THE POINT OF
+    // EDIT. release:resolve and release:build already warn the operator who
+    // works through the release layer; the operator who only hand-edits
+    // slot-values.json and runs `pnpm content:validate` used to be told
+    // nothing, and learned at the next build that the edit was discarded.
+    // -----------------------------------------------------------------------
+    section("Task 27 §29 — content write doctrine at the point of edit");
+    check(
+      "§29 the doctrine names the overlay DERIVED + NON-AUTHORITATIVE and gives the remedy",
+      CONTENT_WRITE_DOCTRINE_WARNING.includes("DERIVED, MATERIALIZED") &&
+        CONTENT_WRITE_DOCTRINE_WARNING.includes("NON-AUTHORITATIVE") &&
+        CONTENT_WRITE_DOCTRINE_WARNING.includes("will be replaced by the next release:build") &&
+        CONTENT_WRITE_DOCTRINE_WARNING.includes("authored.slotValues") &&
+        CONTENT_WRITE_DOCTRINE_WARNING.includes("release:resolve"),
+      CONTENT_WRITE_DOCTRINE_WARNING,
+    );
+    // ONE dialect, not two: the load-bearing phrases are asserted against the
+    // release layer's actual source, so a reword there fails this check.
+    const resolveSource = await readFile("src/release/resolve.ts", "utf8");
+    check(
+      "§29 the wording matches release:resolve — one operator message, not two dialects",
+      ["DERIVED, MATERIALIZED", "NON-AUTHORITATIVE", "replaced by the next release:build"].every(
+        (phrase) => resolveSource.includes(phrase) && CONTENT_WRITE_DOCTRINE_WARNING.includes(phrase),
+      ),
+    );
+    const injectionRunSource = await readFile("src/content-injection/run.ts", "utf8");
+    const revalidateDecl = injectionRunSource.indexOf("export async function revalidateSlotValues");
+    const revalidateDoc = injectionRunSource.slice(
+      injectionRunSource.lastIndexOf("/**", revalidateDecl),
+      revalidateDecl,
+    );
+    check(
+      "§29 revalidateSlotValues' own doc says the value is DERIVED, not authoritative",
+      revalidateDoc.includes("DERIVED, NON-AUTHORITATIVE") &&
+        revalidateDoc.includes("derived, not authoritative") &&
+        revalidateDoc.includes("CONTENT_WRITE_DOCTRINE_WARNING"),
+      revalidateDoc.slice(0, 120),
+    );
+    // The CLI runs as an operator runs it — a real process, on COPIES of the
+    // run so this section cannot perturb the sections after it.
+    const runValidateCli = async (dir: string): Promise<{ code: number; out: string }> => {
+      try {
+        const { stdout, stderr } = await execFileAsync(path.resolve("node_modules/.bin/tsx"), [
+          "src/cli-content-validate.ts",
+          dir,
+        ]);
+        return { code: 0, out: stdout + stderr };
+      } catch (err) {
+        const failed = err as { code?: number; stdout?: string; stderr?: string };
+        return { code: failed.code ?? 1, out: (failed.stdout ?? "") + (failed.stderr ?? "") };
+      }
+    };
+    // The BASELINE copy: overlay restored to exactly the stored generation
+    // result, so it is not a hand edit and the warning must stay silent —
+    // the doctrine is a signal, not background noise.
+    const uneditedRunDir = path.join(fixtureRoot, "content-runs", "run-a-unedited");
+    await cp(runDir, uneditedRunDir, { recursive: true });
+    const storedResult = JSON.parse(
+      await readFile(path.join(uneditedRunDir, "generation-result.json"), "utf8"),
+    ) as { slotValues: Record<string, unknown> };
+    await writeFile(
+      path.join(uneditedRunDir, "slot-values.json"),
+      JSON.stringify(storedResult.slotValues, null, 2) + "\n",
+      "utf8",
+    );
+    const uneditedCli = await runValidateCli(uneditedRunDir);
+    check(
+      "§29 no manual edits → no warning (the doctrine is a signal, not noise)",
+      uneditedCli.code === 0 &&
+        uneditedCli.out.includes("manualEdits false") &&
+        !uneditedCli.out.includes("NON-AUTHORITATIVE"),
+      `exit ${uneditedCli.code} :: ${uneditedCli.out.slice(-400)}`,
+    );
+    // The EDITED copy: that same overlay with one headline rewritten by hand —
+    // the operator gesture the doctrine is about.
+    const editedRunDir = path.join(fixtureRoot, "content-runs", "run-a-hand-edited");
+    await cp(uneditedRunDir, editedRunDir, { recursive: true });
+    await writeFile(
+      path.join(editedRunDir, "slot-values.json"),
+      JSON.stringify({ ...storedResult.slotValues, [heroKey]: "Hand-edited headline" }, null, 2) + "\n",
+      "utf8",
+    );
+    const editedCli = await runValidateCli(editedRunDir);
+    check(
+      "§29 content:validate WARNS at the point of edit when manual edits are detected",
+      editedCli.code === 0 &&
+        editedCli.out.includes("manualEdits true") &&
+        editedCli.out.includes("WARNING") &&
+        editedCli.out.includes("NON-AUTHORITATIVE") &&
+        editedCli.out.includes("replaced by the next release:build"),
+      `exit ${editedCli.code} :: ${editedCli.out.slice(-400)}`,
+    );
+
+    // -----------------------------------------------------------------------
+    // Task 27 §4 — content truth mode
+    // -----------------------------------------------------------------------
+    section("Task 27 §4 — verified-only vs synthetic-allowed");
+    const CLAIM = "Trusted by 4,000 teams worldwide";
+    const claimResult = ContentGenerationResultSchema.parse({
+      ...exec1.result,
+      slotValues: { ...exec1.result.slotValues, [heroKey]: CLAIM },
+      sources: { ...exec1.result.sources, [heroKey]: "generated-marketing" },
+    });
+    const verified = applyTruthMode(runB.template, "verified-only", claimResult, []);
+    check(
+      "§4 verified-only REFUSES an unsupported factual claim (leaves it UNRESOLVED)",
+      verified.result.slotValues[heroKey] === undefined &&
+        verified.result.unresolved.some((u) => u.slotKey === heroKey) &&
+        verified.decisions.some((d) => d.slotKey === heroKey && d.decision === "refused-unresolved"),
+      JSON.stringify(verified.decisions.filter((d) => d.slotKey === heroKey)),
+    );
+    const backed = applyTruthMode(runB.template, "verified-only", claimResult, [
+      { kind: "metric", value: "4,000 teams" },
+    ]);
+    check(
+      "§4 the same claim is KEPT when the user actually provided the fact",
+      backed.result.slotValues[heroKey] === CLAIM &&
+        backed.decisions.some((d) => d.slotKey === heroKey && d.decision === "backed-by-user-fact"),
+    );
+    const synthetic = applyTruthMode(runB.template, "synthetic-allowed", claimResult, []);
+    check(
+      "§4 synthetic-allowed KEEPS the invention and marks it synthetic",
+      synthetic.result.slotValues[heroKey] === CLAIM &&
+        (synthetic.result.synthetic ?? []).includes(heroKey) &&
+        synthetic.decisions.some((d) => d.slotKey === heroKey && d.decision === "marked-synthetic"),
+    );
+    check(
+      "§4 generic marketing copy is NOT a factual claim in either mode",
+      verified.result.slotValues[footerKey] !== undefined &&
+        synthetic.result.slotValues[footerKey] !== undefined &&
+        factClaimIn(String(exec1.result.slotValues[footerKey])) === undefined,
+      String(exec1.result.slotValues[footerKey]),
+    );
+    // End to end: a synthetic-allowed run records SYNTHETIC provenance in the account.
+    {
+      const synthDir = path.join(fixtureRoot, "content-runs", "run-synth");
+      await prepareContentRun({
+        templateManifestFile: path.join(templateDir, "manifest.json"),
+        rawIntent: INTENT,
+        routes: ["/"],
+        runId: "2026-08-18T00-00-02-000Z",
+        outputDir: synthDir,
+        truthMode: "synthetic-allowed",
+      });
+      const synthRun = await loadContentRun(synthDir);
+      const synthOutcome = await ingestGenerationResult(
+        synthRun,
+        ContentGenerationResultSchema.parse({ ...claimResult, synthetic: [heroKey] }),
+      );
+      const entry = synthOutcome.accounting.entries.find((e) => e.slotKey === heroKey);
+      check(
+        "§4 synthetic value is recorded as origin `synthetic-fact` + disposition `applied`",
+        entry?.origin === "synthetic-fact" && entry.disposition === "applied",
+        JSON.stringify(entry),
+      );
+      check(
+        "§4 the run's truth mode is persisted on the manifest and the account",
+        synthRun.manifest.truthMode === "synthetic-allowed" &&
+          synthOutcome.accounting.truthMode === "synthetic-allowed",
+      );
+    }
+    {
+      const strictDir = path.join(fixtureRoot, "content-runs", "run-verified");
+      await prepareContentRun({
+        templateManifestFile: path.join(templateDir, "manifest.json"),
+        rawIntent: INTENT,
+        routes: ["/"],
+        runId: "2026-08-18T00-00-03-000Z",
+        outputDir: strictDir,
+      });
+      const strictRun = await loadContentRun(strictDir);
+      const strictOutcome = await ingestGenerationResult(strictRun, claimResult);
+      const entry = strictOutcome.accounting.entries.find((e) => e.slotKey === heroKey);
+      check(
+        "§4 verified-only is the DEFAULT: the claim lands as source-preserved/unresolved",
+        strictRun.manifest.truthMode === "verified-only" &&
+          entry?.origin === "source-preserved" &&
+          entry.disposition === "unresolved",
+        JSON.stringify(entry),
+      );
+    }
+    // The default is STRICTER than Task 19, and that is pinned here rather than
+    // described in prose: a HISTORICAL result — one a Task 19 run would have
+    // applied verbatim, because the rule then bound only the prompt — is
+    // re-ingested twice. Under the default its fact-shaped values are demoted;
+    // under the escape hatch the overlay is byte-identical to what Task 19
+    // produced, so preserving history costs exactly one flag.
+    {
+      const HISTORICAL_HERO = "Trusted by 4,000 teams worldwide";
+      const HISTORICAL_FOOTER = "Plans from $19 a month, 99.9% uptime since 2019";
+      const historical = ContentGenerationResultSchema.parse({
+        ...exec1.result,
+        slotValues: {
+          ...exec1.result.slotValues,
+          [heroKey]: HISTORICAL_HERO,
+          [footerKey]: HISTORICAL_FOOTER,
+        },
+        sources: {
+          ...exec1.result.sources,
+          [heroKey]: "generated-marketing",
+          [footerKey]: "generated-marketing",
+        },
+      });
+      const task19Overlay = buildOverlayValues(historical);
+      const histStrictDir = path.join(fixtureRoot, "content-runs", "run-historical-strict");
+      await prepareContentRun({
+        templateManifestFile: path.join(templateDir, "manifest.json"),
+        rawIntent: INTENT,
+        routes: ["/"],
+        runId: "2026-08-18T00-00-04-000Z",
+        outputDir: histStrictDir,
+      });
+      const histStrictRun = await loadContentRun(histStrictDir);
+      const histStrict = await ingestGenerationResult(histStrictRun, historical);
+      check(
+        "§4 re-ingesting a HISTORICAL Task-19 result DEMOTES its fact-shaped values (a real behaviour change, not a no-op)",
+        histStrict.overlay[heroKey] !== HISTORICAL_HERO &&
+          histStrict.overlay[footerKey] !== HISTORICAL_FOOTER &&
+          histStrict.accounting.truthDecisions.filter((d) => d.decision === "refused-unresolved").length === 2 &&
+          [heroKey, footerKey].every((key) =>
+            histStrict.accounting.entries.find((e) => e.slotKey === key)?.disposition === "unresolved",
+          ),
+        JSON.stringify(histStrict.accounting.truthDecisions),
+      );
+      const histKeepDir = path.join(fixtureRoot, "content-runs", "run-historical-keep");
+      await prepareContentRun({
+        templateManifestFile: path.join(templateDir, "manifest.json"),
+        rawIntent: INTENT,
+        routes: ["/"],
+        runId: "2026-08-18T00-00-05-000Z",
+        outputDir: histKeepDir,
+        truthMode: "synthetic-allowed",
+      });
+      const histKeepRun = await loadContentRun(histKeepDir);
+      const histKeep = await ingestGenerationResult(histKeepRun, historical);
+      check(
+        "§4 the escape hatch is LOSSLESS: synthetic-allowed reproduces the Task 19 overlay byte-for-byte",
+        JSON.stringify(histKeep.overlay) === JSON.stringify(task19Overlay) &&
+          [heroKey, footerKey].every((key) =>
+            histKeep.accounting.entries.find((e) => e.slotKey === key)?.origin === "synthetic-fact",
+          ),
+        `${Object.keys(histKeep.overlay).length} vs ${Object.keys(task19Overlay).length}`,
+      );
+    }
+
+    // -----------------------------------------------------------------------
+    // Task 27 §6 (GED-D) — bounded no-progress detection in repair
+    // -----------------------------------------------------------------------
+    section("Task 27 §6 (GED-D) — repair no-progress guard");
+    {
+      // The reproduction: providers.ts `Math.max(4, target)` means a micro-slot
+      // is "shortened" to exactly the value that already failed.
+      const microRequest = RepairRequestSchema.parse({
+        schemaVersion: 1,
+        contractVersion: 1,
+        runId: "run-a",
+        iteration: 1,
+        items: [{ slotKey: heroKey, currentValue: "Fake", overflowEvidence: ["clipped horizontally"] }],
+      });
+      const microResult = await new FakeContentGenerator().generate({
+        mode: "repair",
+        intent: runB.intent,
+        policy: CONTENT_POLICY,
+        units: [],
+        request: runB.request,
+        repair: microRequest,
+      });
+      check(
+        "GED-D reproduction: a micro-slot repair returns the value that already failed",
+        microResult.slotValues[heroKey] === "Fake",
+        String(microResult.slotValues[heroKey]),
+      );
+      const guard = new RepairProgressGuard();
+      const stop = guard.evaluate({
+        iteration: 1,
+        candidateKeys: [heroKey],
+        failureSignature: "signature-1",
+        repairedValues: microResult.slotValues as Record<string, never>,
+        currentOverlay: { [heroKey]: "Fake" } as Record<string, never>,
+      });
+      check(
+        "GED-D stops at iteration 1 with a MACHINE-READABLE reason, before the bound",
+        stop !== undefined &&
+          stop.reason === "no-candidate-keys-changed" &&
+          stop.iteration === 1 &&
+          stop.iteration < MAX_REPAIR_ITERATIONS &&
+          stop.unchangedSlotKeys.includes(heroKey),
+        JSON.stringify(stop),
+      );
+      check(
+        "GED-D the stop record round-trips through its schema",
+        stop !== undefined && RepairStopSchema.parse(stop).reason === "no-candidate-keys-changed",
+      );
+      // A repair that DOES change something is not stopped; repeating it is.
+      const guard2 = new RepairProgressGuard();
+      const first = guard2.evaluate({
+        iteration: 1,
+        candidateKeys: [heroKey],
+        failureSignature: "signature-1",
+        repairedValues: { [heroKey]: "Shorter" } as Record<string, never>,
+        currentOverlay: { [heroKey]: "A much longer failing value" } as Record<string, never>,
+      });
+      const second = guard2.evaluate({
+        iteration: 2,
+        candidateKeys: [heroKey],
+        failureSignature: "signature-2",
+        repairedValues: { [heroKey]: "Shorter" } as Record<string, never>,
+        currentOverlay: { [heroKey]: "A much longer failing value" } as Record<string, never>,
+      });
+      check(
+        "GED-D a progressing repair is NOT stopped; an identical repeat IS",
+        first === undefined && second !== undefined && second.reason === "repair-values-identical",
+        JSON.stringify([first, second]),
+      );
+      check(
+        "GED-D the failure signature is deterministic over the same evidence",
+        failureSignatureOf(report2) === failureSignatureOf(report2) &&
+          failureSignatureOf(report2) !== failureSignatureOf(report3),
+      );
+      // Iteration 0 is not an iteration: the record must say which of the two
+      // things happened, or a reader cannot tell "never ran" from "ran and gave up".
+      const neverStarted = noRepairCandidatesStop(0);
+      const stoppedAfter = noRepairCandidatesStop(2);
+      check(
+        "GED-D `no-repair-candidates` distinguishes NEVER STARTED from stopped-after-N",
+        neverStarted.iteration === 0 &&
+          neverStarted.detail.startsWith("never started") &&
+          stoppedAfter.iteration === 2 &&
+          stoppedAfter.detail.includes("after 2 completed iteration") &&
+          !stoppedAfter.detail.includes("never started"),
+        JSON.stringify([neverStarted.detail, stoppedAfter.detail]),
+      );
+    }
+
+    // -----------------------------------------------------------------------
+    // Task 27 §7 — provider-neutral telemetry (usage ABSENT when unknown)
+    // -----------------------------------------------------------------------
+    section("Task 27 §7 — generation telemetry");
+    {
+      const telemetryFile = path.join(fixtureRoot, "telemetry", "content.jsonl");
+      const recorder = new TelemetryRecorder({
+        file: telemetryFile,
+        engine: "natural-language-content-injection",
+        runId: runB.manifest.runId,
+      });
+      await executeGenerationBatches({
+        runId: runB.manifest.runId,
+        intent: runB.intent,
+        policy: CONTENT_POLICY,
+        unitsFile: runB.unitsFile,
+        request: runB.request,
+        generator: new FakeContentGenerator(),
+        telemetry: recorder,
+      });
+      // The manual out-of-process seam: nobody reported usage.
+      await recorder.record({
+        seamId: "content.generate.manual",
+        stage: "manual",
+        provider: "manual",
+        batchIds: runB.request.batches.map((b) => b.batchId),
+        unitCount: runB.unitsFile.units.length,
+        slotCount: 0,
+        routes: runB.manifest.scopedRoutes,
+        elapsedMs: 0,
+        retryCount: 0,
+        outcome: "ok",
+      });
+      const events = parseTelemetryLines(await readFile(telemetryFile, "utf8"));
+      check(
+        "§7 append-only JSONL: one line per call, all parse",
+        events.length === runB.request.batches.length + 1,
+        String(events.length),
+      );
+      const manualEvent = events[events.length - 1];
+      const rawManual = JSON.parse(
+        (await readFile(telemetryFile, "utf8")).trim().split("\n").pop()!,
+      ) as Record<string, unknown>;
+      check(
+        "§7 manual result file leaves usage ABSENT — not zero, not estimated",
+        manualEvent.usage === undefined && !("usage" in rawManual),
+        JSON.stringify(rawManual),
+      );
+      // The real invariant, and the one a plausible implementation breaks: a
+      // provider with no `lastUsage()` hook must leave the key OFF EVERY LINE.
+      // Zero-filling it, or estimating tokens from the text, fails here.
+      const rawLines = (await readFile(telemetryFile, "utf8")).trim().split("\n");
+      check(
+        "§7 a provider with no usage hook leaves `usage` off EVERY line — never zero-filled, never estimated",
+        rawLines.length === runB.request.batches.length + 1 &&
+          rawLines.every((line) => !("usage" in (JSON.parse(line) as Record<string, unknown>))),
+        rawLines.length === 0 ? "no lines" : rawLines[0].slice(0, 160),
+      );
+      // A provider that DOES report usage — the absence above is a decision,
+      // not an unimplemented code path.
+      class UsageReportingGenerator implements ContentGenerator {
+        readonly name = "usage-stub";
+        private readonly inner = new FakeContentGenerator();
+        async generate(input: ContentGenerationInput): Promise<ContentGenerationResult> {
+          return this.inner.generate(input);
+        }
+        lastUsage(): { inputTokens: number; outputTokens: number } {
+          return { inputTokens: 11, outputTokens: 7 };
+        }
+      }
+      const usageFile = path.join(fixtureRoot, "telemetry", "usage.jsonl");
+      const usageRecorder = new TelemetryRecorder({
+        file: usageFile,
+        engine: "natural-language-content-injection",
+        runId: runB.manifest.runId,
+      });
+      await executeGenerationBatches({
+        runId: runB.manifest.runId,
+        intent: runB.intent,
+        policy: CONTENT_POLICY,
+        unitsFile: runB.unitsFile,
+        request: runB.request,
+        generator: new UsageReportingGenerator(),
+        telemetry: usageRecorder,
+      });
+      check(
+        "§7 a provider that reports usage has it recorded verbatim",
+        usageRecorder.events.every((e) => e.usage?.inputTokens === 11 && e.usage?.outputTokens === 7),
+      );
+    }
+
+    // -----------------------------------------------------------------------
+    // Task 27 — RegionPlan, over the PageRegion consumer contract only
+    // -----------------------------------------------------------------------
+    section("Task 27 — RegionPlan layer");
+    {
+      const heroKeys = heroUnit!.slots.map((s) => s.key);
+      // A page-regions.json carrying fields this layer does NOT depend on:
+      // they must be ignored, proving the contract is the small stable one.
+      const regionsFile = path.join(fixtureRoot, "page-regions.json");
+      await writeFile(
+        regionsFile,
+        JSON.stringify({
+          schemaVersion: 1,
+          schemaName: "page-regions-v1",
+          regionSchemaVersion: 1,
+          compilerVersion: 1,
+          somethingTheCompilerAddedLater: true,
+          regions: [
+            {
+              regionId: "p000001:rgn:main1:section:1",
+              scope: "page",
+              slotKeys: heroKeys,
+              structuralHash: "deadbeef",
+              pages: [{ pageSourceId: "p000001", routes: ["/"], occurrences: [] }],
+            },
+          ],
+        }),
+        "utf8",
+      );
+      const contracts = await loadRegionContracts(regionsFile);
+      check(
+        "RegionPlan depends only on regionId / scope / slotKeys / pages",
+        contracts.length === 1 &&
+          contracts[0].regionId === "p000001:rgn:main1:section:1" &&
+          contracts[0].routes.join(",") === "/",
+      );
+      const planned = buildRegionPlans(contracts, runB.unitsFile, ["/"]);
+      check(
+        "RegionPlan groups the hero unit under its region",
+        planned.plans.length === 1 &&
+          planned.plans[0].unitIds.includes(heroUnit!.unitId) &&
+          planned.plans[0].purpose === "primary-message-region",
+        JSON.stringify(planned.plans[0]?.unitIds),
+      );
+      check(
+        "RegionPlan reports units no region claimed, instead of inventing one",
+        planned.unassignedUnitIds.length > 0 &&
+          !planned.unassignedUnitIds.includes(heroUnit!.unitId),
+        String(planned.unassignedUnitIds.length),
+      );
+      const planFile = buildRegionPlanFile({
+        runId: runB.manifest.runId,
+        templateId: runB.manifest.templateId,
+        scopedRoutes: ["/"],
+        unitsFile: runB.unitsFile,
+        contracts,
+        contractFile: regionsFile,
+      });
+      check(
+        "RegionPlan artifact records where its contract came from",
+        planFile.schemaName === "content-region-plan-v1" &&
+          planFile.contractSource.kind === "page-regions-artifact" &&
+          planFile.contractSource.regionsRead === 1,
+      );
+    }
+
     section("template artifact immutability");
     const templateSlotsRaw = await readFile(path.join(templateDir, "slots.json"), "utf8");
     const recompiledDir = path.join(fixtureRoot, "recon-templates", "fixture-b");
@@ -1357,6 +2113,194 @@ async function main(): Promise<void> {
       "template slots.json untouched by the whole content chain",
       templateSlotsRaw === (await readFile(path.join(recompiledDir, "slots.json"), "utf8")),
     );
+
+    // ---------------------------------------------------------------------
+    section("Task 27 GED-F — source-brand SURFACE detection (detector only)");
+    // A minimal inline-SVG mark carrying BOTH of the surfaces the pre-Task-27
+    // engine detected with nothing: the accessible name of the logo and the
+    // <symbol> id. `LinearAi` also proves the identifier matcher splits camel
+    // humps — the plain word-boundary test misses a brand glued to a suffix.
+    const SVG_FIXTURE =
+      '<svg viewBox="0 0 24 24" aria-label="Linear Logo" data-wr-node="n000017">' +
+      '<defs><symbol id="Linear"><path d="M0 0h4v4H0z"/></symbol>' +
+      '<symbol id="LinearAi"><path d="M1 1h2v2H1z"/></symbol>' +
+      '<symbol id="ChevronDown"><path d="M2 2h1v1H2z"/></symbol></defs>' +
+      '<title>Linear</title><text>Made by Linear</text>' +
+      '<use href="#Linear"/></svg>';
+    const svgTokens = brandTokensFromHost("linear.app");
+    const svgHits = scanInlineSvgMarkup(SVG_FIXTURE, svgTokens);
+    const bySurface = (surface: string): number =>
+      svgHits.filter((hit) => hit.surface === surface).length;
+    check(
+      "27.brand.1 SVG aria-label is detected (nothing detected it before)",
+      bySurface("svg-aria-label") === 1 &&
+        svgHits.find((hit) => hit.surface === "svg-aria-label")?.value === "Linear Logo",
+      JSON.stringify(svgHits.filter((hit) => hit.surface === "svg-aria-label")),
+    );
+    check(
+      "27.brand.2 SVG <symbol id> is detected, camel humps included, non-brand ids ignored",
+      bySurface("svg-symbol-id") === 2 &&
+        svgHits
+          .filter((hit) => hit.surface === "svg-symbol-id")
+          .map((hit) => hit.value)
+          .sort()
+          .join(",") === "Linear,LinearAi",
+      JSON.stringify(svgHits.filter((hit) => hit.surface === "svg-symbol-id")),
+    );
+    check(
+      "27.brand.3 SVG <text>/<title> is detected on its own surface",
+      bySurface("svg-text") === 2,
+      JSON.stringify(svgHits.filter((hit) => hit.surface === "svg-text")),
+    );
+    check(
+      "27.brand.4 identifier matching splits camel humps; word matching does not over-match",
+      firstBrandTokenInIdentifier("LinearAi", svgTokens) === "linear" &&
+        firstBrandTokenInIdentifier("ChevronDown", svgTokens) === undefined &&
+        containsBrandToken("collinear regression", "linear") === false &&
+        containsBrandToken("Linear Logo", "linear") === true,
+    );
+    const propHits = scanElementProps(
+      {
+        href: "https://linear.app/pricing",
+        src: "https://cdn.example/img.png",
+        srcset: "https://linear.app/a.png 1x, https://cdn.example/b.png 2x",
+        alt: "Linear screenshot",
+        "aria-label": "Open Linear menu",
+      },
+      svgTokens,
+      "linear.app",
+    );
+    check(
+      "27.brand.5 element props split into source-url / image-alt / aria-label",
+      propHits.filter((hit) => hit.surface === "source-url").length === 2 &&
+        propHits.filter((hit) => hit.surface === "image-alt").length === 1 &&
+        propHits.filter((hit) => hit.surface === "aria-label").length === 1 &&
+        isSourceHostUrl("https://www.linear.app/x", "linear.app") &&
+        !isSourceHostUrl("/relative", "linear.app"),
+      JSON.stringify(propHits.map((hit) => hit.surface)),
+    );
+    check(
+      "27.brand.6 body anchors carry the href, not just a count",
+      scanBodyAnchorIdentity(
+        '<a href="https://linear.app/a">a</a><a href="/local">b</a><a href="https://other.example/c">c</a>',
+        "linear.app",
+      ).map((hit) => hit.sourceUrl).join(",") === "https://linear.app/a",
+    );
+    check(
+      "27.brand.7 every declared surface has a policy row (no silent gap)",
+      BRAND_SURFACES.every((surface) => BRAND_SURFACE_POLICY[surface] !== undefined) &&
+        BRAND_SURFACES.some((surface) => BRAND_SURFACE_POLICY[surface].detection === "unavailable"),
+    );
+
+    // ---- GED-F neutralization DEFAULT IS OFF -----------------------------
+    // Not a comment, an assertion: the constant, the scan's recorded setting
+    // with no option passed, and — the part that matters — the scan leaving
+    // every input byte untouched.
+    const gedFDir = await mkdtemp(path.join(os.tmpdir(), "wr-gedf-"));
+    try {
+      const gedFTemplate = path.join(gedFDir, "template");
+      const gedFContent = path.join(gedFDir, "content");
+      await mkdir(path.join(gedFTemplate, "app", "reconstruction-data", "pages"), { recursive: true });
+      await mkdir(path.join(gedFContent, "report"), { recursive: true });
+      await writeFile(
+        path.join(gedFTemplate, "app", "reconstruction-data", "route-map.json"),
+        JSON.stringify({ routes: [{ path: "/", pageFile: "pages/p000001.json" }] }),
+      );
+      await writeFile(
+        path.join(gedFTemplate, "app", "reconstruction-data", "pages", "p000001.json"),
+        JSON.stringify({
+          desktop: {
+            doc: {
+              k: "e",
+              n: "n000001",
+              t: "div",
+              c: [
+                { k: "e", n: "n000017", t: "span", v: SVG_FIXTURE },
+                { k: "e", n: "n000018", t: "a", p: { href: "https://linear.app/pricing" } },
+              ],
+            },
+          },
+        }),
+      );
+      await writeFile(
+        path.join(gedFContent, "content-units.json"),
+        JSON.stringify({ units: [{ scope: "page", route: "/", slots: [{ key: "home.hero.headline" }] }] }),
+      );
+      await writeFile(
+        path.join(gedFContent, "report", "brand-leak.json"),
+        JSON.stringify({
+          warnings: [
+            {
+              issue: "source-brand-leak",
+              slotKey: "home.hero.headline",
+              kind: "brand-token-in-value",
+              detail: 'generated value still contains source brand token "linear"',
+            },
+          ],
+        }),
+      );
+      const beforeMtimes = new Map<string, number>();
+      for (const rel of [
+        "template/app/reconstruction-data/route-map.json",
+        "template/app/reconstruction-data/pages/p000001.json",
+        "content/content-units.json",
+        "content/report/brand-leak.json",
+      ]) {
+        const info = await stat(path.join(gedFDir, rel));
+        beforeMtimes.set(rel, info.mtimeMs);
+      }
+      const beforeBodies = new Map<string, string>();
+      for (const rel of beforeMtimes.keys()) {
+        beforeBodies.set(rel, await readFile(path.join(gedFDir, rel), "utf8"));
+      }
+      const gedFReport = await scanBrandSurfaces({
+        host: "linear.app",
+        templateRunDir: gedFTemplate,
+        contentRunDir: gedFContent,
+      });
+      check(
+        "27.brand.8 GED-F neutralization DEFAULT is OFF (constant)",
+        GED_F_NEUTRALIZATION_DEFAULT === false,
+        String(GED_F_NEUTRALIZATION_DEFAULT),
+      );
+      check(
+        "27.brand.9 a scan with NO option recorded neutralization disabled",
+        gedFReport.neutralization.enabled === false && gedFReport.neutralization.default === "OFF",
+        JSON.stringify(gedFReport.neutralization),
+      );
+      check(
+        "27.brand.10 an EXPLICIT opt-in is recorded and still rewrites nothing",
+        (await scanBrandSurfaces({
+          host: "linear.app",
+          templateRunDir: gedFTemplate,
+          contentRunDir: gedFContent,
+          neutralize: true,
+        })).neutralization.enabled === true,
+      );
+      let unchanged = true;
+      for (const [rel, body] of beforeBodies) {
+        if ((await readFile(path.join(gedFDir, rel), "utf8")) !== body) unchanged = false;
+        if ((await stat(path.join(gedFDir, rel))).mtimeMs !== beforeMtimes.get(rel)) unchanged = false;
+      }
+      check("27.brand.11 the scan is a DETECTOR — every input byte and mtime is untouched", unchanged);
+      check(
+        "27.brand.12 the scan finds the SVG surfaces AND the shipping slot value",
+        gedFReport.counts["svg-aria-label"] === 1 &&
+          gedFReport.counts["svg-symbol-id"] === 2 &&
+          gedFReport.counts["source-url"] === 1 &&
+          gedFReport.counts["visible-text"] === 1 &&
+          gedFReport.findings.find((finding) => finding.surface === "visible-text")?.slotKey ===
+            "home.hero.headline",
+        JSON.stringify(gedFReport.counts),
+      );
+      check(
+        "27.brand.13 an inline-SVG finding carries DOM identity from data-wr-node (no new attribute)",
+        gedFReport.findings.find((finding) => finding.surface === "svg-aria-label")?.nodeId === "n000017",
+      );
+    } finally {
+      await rm(gedFDir, { recursive: true, force: true });
+    }
+
   } finally {
     await rm(fixtureRoot, { recursive: true, force: true });
   }

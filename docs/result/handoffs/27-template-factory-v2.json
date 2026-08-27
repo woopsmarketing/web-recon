@@ -1,0 +1,350 @@
+{
+  "agent": "2A — Template Factory V2 + Route Scope Policy + Collection Foundation",
+  "task": 27,
+  "objective": "Stop unnecessarily slotizing thousands of repetitive pages: add a route scope policy as an INPUT to recon-template compilation applied at one narrow seam, and preserve the family/collection evidence the template boundary was losing — without touching the Selector, SiteSpec coverage, Exact Reconstruction, or release stage runners.",
+  "status": "PASS",
+  "policyVocabulary": {
+    "enum": [
+      "core-reconstruct",
+      "collection-index",
+      "collection-representative",
+      "structure-only",
+      "exclude"
+    ],
+    "schema": "src/recon-template/types.ts:125 (RouteScopeSchema, zod enum — closed vocabulary, no free text)",
+    "namingNote": "kebab-case to match every other classification enum in this repo (renderCoverage `exact-observed`, familyType `sibling-pattern`, surface `dynamic-template`). One-for-one with the brief's conceptual names: CORE_RECONSTRUCT=core-reconstruct, COLLECTION_INDEX=collection-index, COLLECTION_REPRESENTATIVE=collection-representative, STRUCTURE_ONLY=structure-only, EXCLUDE=exclude.",
+    "slotizedScopes": [
+      "core-reconstruct",
+      "collection-index",
+      "collection-representative"
+    ],
+    "default": "core-reconstruct (a compile without --route-policy is byte-for-byte the pre-Task-27 slot surface)"
+  },
+  "compileSeam": {
+    "file": "src/recon-template/compile.ts:100-121",
+    "detail": "resolveRoutePolicy() at compile.ts:109 → selectSlotizedPages() at compile.ts:116 → extractAllPages(slotizedPages) at compile.ts:119 (was extractAllPages(input.pagesById)). Policy narrows the EXTRACTOR'S PAGE SET and nothing else; generateTemplateApp still copies the exact app byte for byte later in the same function.",
+    "pageVsRouteRule": "routes are many-to-one with pages, so a page is extracted when AT LEAST ONE route serving it is slotized (src/recon-template/route-policy.ts:170-259). Verified live on stripe: /resources/more/virtual-credit-cards-for-businesses-explained is structure-only while its page p000012 stays slotized through the representative route /resources/more/arr-loans-explained."
+  },
+  "structureOnlyProof": {
+    "route": "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know",
+    "host": "stripe.com",
+    "templateRunId": "2026-08-26T17-16-46-409Z",
+    "slotsBefore": 747,
+    "slotsAfter": 0,
+    "stillInSiteMap": true,
+    "stillRenders": true,
+    "howVerified": [
+      "slotsBefore/slotsAfter are the per-route slotCount the compiler now writes on every site-map route: policy-free compile 747, policied compile 0 (data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z/report/route-policy-canary.json → policyFreeSlotCountsForThoseRoutes / structureOnlyRoutes).",
+      "stillInSiteMap: the route is present in site-map.json routes[] with scope=structure-only, pageId=p000015, renderCoverage=exact-observed, slotCount=0.",
+      "zero-slot claim is also proved negatively: slot-bindings.json of the policied run addresses only 10 pageIds (p000001-p000006, p000009-p000012); none of the 8 structure-only-only pages appears in ANY binding.",
+      "stillRenders (offline): the policied template app and the policy-free template app were hashed file by file outside template-data/ — 37 files, 0 missing, 0 extra, 0 differing. The structure-only pages' runtime data (reconstruction-data/pages/*.json) is present in the policied app for all 10 structure-only routes.",
+      "stillRenders (LIVE, the load-bearing one): scripts/smoke-recon-template.ts §19 runs the REAL parity QA (next build + next start + Chromium) on a policied template whose /about route is structure-only, and compares it against the Exact Reconstruction app: 'structure-only route: content + structure + geometry identical to the exact app' PASS, 'every route of the policied template still passes parity' PASS, hydration/introduced-runtime errors 0."
+    ]
+  },
+  "measuredSlotReduction": {
+    "host": "stripe.com",
+    "templateRunId": "2026-08-26T22-38-06-075Z",
+    "templateRunDir": "data/stripe.com/recon-templates/2026-08-26T22-38-06-075Z",
+    "policyFile": "data/stripe.com/recon-templates/2026-08-26T22-38-06-075Z/route-policy.json (the input, kept beside its output)",
+    "supersededTemplateRunId": "2026-08-26T17-16-46-409Z",
+    "supersededTemplateRunDir": "data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z",
+    "supersededWhy": "The first canary was compiled BEFORE the shared-page disclosure landed, so it is one compiler revision behind: p000012 is genuinely shared between /resources/more/arr-loans-explained (collection-representative, 433 slots) and /resources/more/virtual-credit-cards-for-businesses-explained (structure-only, 0 slots), and that run's artifacts carry neither the `structure-only-routes-sharing-a-slotized-page-do-render-slot-edits:1` limitation code nor site-map.routePolicy.structureOnlySharedPageRoutes. The superseded directory is left on disk untouched as a historical artifact.",
+    "recompileEvidence": "Recompiled by the Task 27 final-residuals agent from the SAME two immutable inputs (site-spec 2026-08-17T21-38-01-773Z, reconstruction 2026-08-17T21-38-04-901Z) and a byte-identical copy of route-policy.json. slots.json, slot-bindings.json, default-content.json, slot-overrides.example.json and report/slot-summary.json are IDENTICAL modulo the embedded run id; manifest.json and site-map.json differ ONLY by the two disclosure additions. Counts reproduce exactly: 4661 slots / 13680 bindings / 20 routes / 10 structure-only / 10 slotized pages.",
+    "policyFreeSlots": 9529,
+    "policiedSlots": 4661,
+    "reductionPct": 51.09,
+    "policyFreeBindings": 24518,
+    "policiedBindings": 13680,
+    "routes": 20,
+    "structureOnlyRoutes": 10,
+    "slotizedPages": "10 of 18",
+    "family": "URL scope `resources` — 6 SiteSpec families (f000007, f000008, f000012, f000013, f000014, f000015), 11 discovered members, 11 reconstructed routes. Policy keeps ONE member (/resources/more/arr-loans-explained, collection-representative) and marks the other 10 routes structure-only.",
+    "policyFreeBaselineNote": "The policy-free half of the measurement was compiled with the SAME compiler into a scratchpad directory (not retained) so the two numbers are comparable; it reproduced the historical 9,529 slots of data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z exactly.",
+    "honestCaveat": "51% is what THIS 20-route reconstruction can show, because only 10 of its routes belong to the repeated family. On a real 4,000-page blog the same policy removes the whole family minus one member, so the reduction tracks the family's share of the crawl, not this 51% figure."
+  },
+  "collectionsModel": {
+    "location": "site-map.json → collections[] (optional), built by src/recon-template/collections.ts:79",
+    "schema": "src/recon-template/types.ts:546 (CollectionSpecSchema, strict)",
+    "fields": [
+      "collectionId (c000001…, deterministic)",
+      "groupedBy (the grouping evidence verbatim: `scope:resources` or `pattern:/blog/<*>`)",
+      "routeScope (optional — the SiteSpec URL scope token)",
+      "semanticKind (closed enum: blog|docs|news|changelog|customers|careers|resources|other — a NAMING hint from the scope token, never a content claim)",
+      "sourceFamilyIds[]",
+      "detailPattern (SiteSpec inferredRoutePattern; null unless the families agree on exactly one)",
+      "indexRoute (a reconstructed route whose key is exactly /<scope>; null otherwise — never synthesized)",
+      "representativeRoutes[]",
+      "reconstructedRoutes[]",
+      "discoveredMemberCount",
+      "observedMemberCount",
+      "representedOnlyMemberCount",
+      "countIsFloor (z.literal(true))",
+      "estimatedTotalMembers (z.null())",
+      "countEvidence",
+      "fieldHints[] (slot roles observed on the representative detail page(s))",
+      "renderPolicy { slotizedRoutes, scopeCounts[{scope, routes}] }"
+    ],
+    "reusedNotRederived": "inferredRoutePattern, familyId, representativeUrl/representativePageId, memberCount, exactObservedMemberCount and representedOnlyMemberCount are read from the SiteSpec families verbatim; routes and representatives from the reconstruction route map; scopes from the applied policy. No crawling, no inference, no AI.",
+    "alsoAddedToSiteMap": [
+      "routes[].scope (RouteScope, optional)",
+      "routes[].slotCount (optional)",
+      "routePolicy { applied, policyFile?, defaultScope, scopeCounts[], slotizedRoutes, slotizedPages, structureOnlyPages, structureOnlySharedPageRoutes? } (optional; policyFile is repo-relative POSIX, structureOnlySharedPageRoutes emitted only when > 0)",
+      "excludedRoutes[] { route, url, pageId, reason? } (optional)"
+    ],
+    "notBuilt": "No blog engine, no article CRUD, no category UI, no publishing flow, no CMS, and no source blog/docs page is copied. Detection and representation only."
+  },
+  "countIsFloor": true,
+  "estimatedTotal": null,
+  "estimatedTotalNote": "estimatedTotalMembers is typed z.null() in the schema (src/recon-template/types.ts CollectionSpecSchema) — it cannot be filled in without new observation. This repo has no pagination detection; countEvidence says so verbatim: `sitespec-family-member-urls-crawl-capped-no-pagination-detection`.",
+  "oldArtifactsStillParse": {
+    "verifiedBy": "a one-off script that parsed each run's manifest.json, site-map.json, slots.json, slot-bindings.json and default-content.json with the NEW schemas",
+    "dirs": [
+      {
+        "dir": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z",
+        "compilerVersion": 2,
+        "routes": 8,
+        "routePolicy": "absent",
+        "collections": "absent",
+        "routeScope": "absent",
+        "result": "PARSES"
+      },
+      {
+        "dir": "data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z",
+        "compilerVersion": 2,
+        "routes": 20,
+        "routePolicy": "absent",
+        "collections": "absent",
+        "routeScope": "absent",
+        "result": "PARSES (read only — smoke:release lineage, untouched)"
+      },
+      {
+        "dir": "data/nextjs.org/recon-templates/2026-08-19T07-12-35-732Z",
+        "compilerVersion": 2,
+        "routes": 40,
+        "result": "PARSES"
+      },
+      {
+        "dir": "data/domainchecker.co.kr/recon-templates/2026-08-19T07-14-22-868Z",
+        "compilerVersion": 2,
+        "routes": 19,
+        "result": "PARSES"
+      },
+      {
+        "dir": "data/stripe.com/recon-templates/2026-08-18T07-59-02-437Z",
+        "compilerVersion": 1,
+        "routes": 20,
+        "result": "PARSES (oldest schema on disk)"
+      }
+    ],
+    "alsoInSuite": "scripts/smoke-recon-template.ts §18 parses a synthesized pre-Task-27 site-map (no scope / routePolicy / collections) and a compilerVersion 2 manifest (no routePolicy, no new counts) — both PASS.",
+    "downstreamConsumerChecked": "pnpm smoke:regions 67/67 PASS — src/regions/load-input.ts reads site-map.json routes and is unaffected by the additive fields."
+  },
+  "selectorTouched": false,
+  "siteSpecTouched": false,
+  "releaseStageRunnerAdded": false,
+  "discoveryCoverageTouched": false,
+  "newDomAttributesAdded": 0,
+  "parityRisk": {
+    "theRisk": "The audit flagged as UNVERIFIED whether filtering pagesById at the compile seam leaves qa:recon-template's parity green on a real multi-route site — if dropping a page from EXTRACTION also dropped it from RENDERING, Exact Reconstruction (frozen) would be broken.",
+    "whyItCannotHappenStructurally": "generateTemplateApp (src/recon-template/generate-template-app.ts:45-56) copies the Exact Reconstruction's app/ directory — route map, every runtime page, styles, interaction runtime — with no reference to pagesById; the only thing derived from extraction is template-data/{slots,slot-bindings,default-content}.json plus the two rewritten runtime files. Policy narrows extraction, so it can only empty the slot layer for a page, never remove the page.",
+    "measuredEvidence": [
+      "offline: policied vs policy-free stripe template apps hashed file by file outside template-data/ → 37 files, 0 differing (data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z/report/route-policy-canary.json → appDiff).",
+      "offline: same comparison inside the smoke fixture (§16 'policy changes NOTHING the app renders') PASS.",
+      "LIVE: §19 runs the real runParityQa (the same harness qa:recon-template drives) on a policied template — the structure-only /about route's parity pairs all PASS at 390 and 1440, all pairs of the policied template PASS, hydration errors 0, template-introduced runtime errors 0.",
+      "manifest.routes still lists every route (including excluded ones), so parity QA continues to compare every route the app serves."
+    ],
+    "residualRisk": "The live parity proof ran on the 2-page smoke fixture, not on the 20-route stripe canary (a full qa:recon-template on stripe means two next builds of a 52MB app and is the integrator's call). The stripe canary's evidence is the byte-identical app tree plus compile-time validation (13,680/13,680 bindings resolved, 13,680/13,680 defaults no-op)."
+  },
+  "smokeReconTemplateChecks": {
+    "before": 64,
+    "afterWave2": 98,
+    "afterHardening": 109,
+    "passed": 109,
+    "failed": 0,
+    "runtimeSeconds": 95
+  },
+  "filesCreated": [
+    "src/recon-template/route-policy.ts",
+    "src/recon-template/collections.ts",
+    "docs/result/handoffs/27-template-factory-v2.json",
+    "data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z/ (NEW run id — the required canary; includes route-policy.json and report/route-policy-canary.json)"
+  ],
+  "filesModified": [
+    "scripts/smoke-recon-template.ts",
+    "src/cli-compile-recon-template.ts",
+    "src/recon-template/compile.ts",
+    "src/recon-template/index.ts",
+    "src/recon-template/site-map.ts",
+    "src/recon-template/types.ts"
+  ],
+  "filesModifiedOutsideOwnership": [],
+  "historicalArtifactsModified": 0,
+  "changeRequests": [
+    {
+      "file": "src/release/prepare.ts (~126-145) and src/release/freshness.ts (~151-160)",
+      "owner": "Agent 2B",
+      "change": "add \"report\" to the template lineage hash excluded set (alongside node_modules/.next/out)",
+      "why": "RECORDED FOR THE INTEGRATOR TO CONFIRM, not newly filed — 2B was already told to do this. qa:recon-template writes report/parity-qa.json and report/mutation-qa.json (src/cli-qa-recon-template.ts ~96,~110), which invalidates an already-prepared frozen release project. Task 27 makes this more likely to bite: the canary run now also carries report/route-policy-canary.json."
+    },
+    {
+      "file": "package.json",
+      "owner": "wave Integrator",
+      "change": "no script change is required for Task 27 — `pnpm compile:recon-template … --route-policy <file>` is a new flag on the existing script, and smoke:recon-template is unchanged.",
+      "why": "Recorded so the Integrator does not go looking for one."
+    }
+  ],
+  "testsRun": [
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "checks": null,
+      "note": "clean"
+    },
+    {
+      "command": "pnpm smoke:recon-template (BASELINE, before any change)",
+      "exitCode": 0,
+      "checks": "64/64",
+      "note": "52s — the baseline the brief names"
+    },
+    {
+      "command": "pnpm smoke:recon-template (after)",
+      "exitCode": 0,
+      "checks": "98/98",
+      "note": "80s — +34 checks: §16 route policy at the seam (10 checks incl. the byte-identical app proof), §17 collections (8), §18 backward compatibility (2), §19 LIVE parity of a policied template (4), plus per-scope vocabulary checks"
+    },
+    {
+      "command": "pnpm smoke:regions",
+      "exitCode": 0,
+      "checks": "67/67",
+      "note": "downstream site-map consumer, run as insurance for the additive schema change"
+    },
+    {
+      "command": "canary: two full compiles of stripe.com (policy-free vs policied) + file-by-file app hash",
+      "exitCode": 0,
+      "checks": null,
+      "note": "9,529 → 4,661 slots; app trees byte-identical outside template-data/"
+    },
+    {
+      "command": "one-off: parse 5 on-disk recon-template runs (compilerVersion 1 and 2) with the new schemas",
+      "exitCode": 0,
+      "checks": "5/5 parse",
+      "note": "backward compatibility against real artifacts"
+    },
+    {
+      "command": "pnpm typecheck (after hardening)",
+      "exitCode": 0,
+      "checks": null,
+      "note": "clean"
+    },
+    {
+      "command": "pnpm smoke:recon-template (after hardening)",
+      "exitCode": 0,
+      "checks": "109/109",
+      "note": "98 → 109; +11 in the new §20 (4 path-spelling incl. 2 controls, 5 shared-page incl. 2 negative controls, 2 shadowed-rule incl. 1 positive control). §19's LIVE parity on a policied template still PASSes."
+    },
+    {
+      "command": "pnpm smoke:regions (after hardening)",
+      "exitCode": 0,
+      "checks": "67/67",
+      "note": "downstream site-map consumer, re-run because SiteMapRoutePolicySchema gained an optional field"
+    },
+    {
+      "command": "read-only re-resolution of the stripe canary policy against its real reconstruction (throwaway script, no run dir written)",
+      "exitCode": 0,
+      "checks": null,
+      "note": "scopeCounts unchanged 9/1/10 under deciding-only rule counting; structureOnlySharedPageRoutes = 1 = /resources/more/virtual-credit-cards-for-businesses-explained (p000012)"
+    }
+  ],
+  "evidence": [
+    "src/recon-template/types.ts:125 — RouteScopeSchema (the closed vocabulary)",
+    "src/recon-template/types.ts:546 — CollectionSpecSchema (countIsFloor z.literal(true), estimatedTotalMembers z.null())",
+    "src/recon-template/types.ts:592,602 — SiteMapExcludedRouteSchema, SiteMapRoutePolicySchema",
+    "src/recon-template/types.ts:637,706 — the optional routePolicy on SiteMap and on TemplateManifest",
+    "src/recon-template/route-policy.ts:170 — resolveRoutePolicy (first-match-wins rules, unmatched rule = TemplateInputError, zero-slotized-route policy = TemplateInputError)",
+    "src/recon-template/route-policy.ts:261 — selectSlotizedPages (the page narrowing)",
+    "src/recon-template/collections.ts:79 — buildCollections",
+    "src/recon-template/compile.ts:98-114 — THE SEAM",
+    "src/recon-template/site-map.ts:20-92 — routes[].scope/slotCount, routePolicy, collections, excludedRoutes",
+    "src/cli-compile-recon-template.ts:57-62 — the --route-policy flag",
+    "scripts/smoke-recon-template.ts:1235 §16, :1449 §17, :1535 §18, :1588 §19",
+    "data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z/site-map.json — the canary artifact (routePolicy, 3 collections, 10 structure-only routes at slotCount 0)",
+    "data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z/report/route-policy-canary.json — the before/after measurement and the app-tree hash diff",
+    "data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z/route-policy.json — the policy input, kept beside its output",
+    "src/recon-template/compile.ts:105-115 — policyFile read raw, RECORDED via portablePath() at compile.ts:114 (reused from src/reconstruction-qa/store.ts:165, not re-implemented)",
+    "src/recon-template/route-policy.ts:136-144 — ResolvedRoutePolicy.policyFile documented as repo-relative POSIX and why (lineage hash)",
+    "src/recon-template/route-policy.ts:212-222 — deciding-match-only rule counting (break on first match)",
+    "src/recon-template/route-policy.ts:236-247 — the guard's message now covers shadowing",
+    "src/recon-template/route-policy.ts:255-257 — structureOnlySharedPageRoutes",
+    "src/recon-template/route-policy.ts:286-310 — routePolicyLimitations(), the countable limitation codes compile.ts now spreads",
+    "src/recon-template/compile.ts:203-204 — limitations spread ...routePolicyLimitations(routePolicy)",
+    "src/recon-template/types.ts:615-620 — optional structureOnlySharedPageRoutes on SiteMapRoutePolicySchema (old artifacts still parse; omitted when 0)",
+    "src/recon-template/site-map.ts:80-84 — the count emitted only when > 0",
+    "scripts/smoke-recon-template.ts:1617 §20 — the 11 hardening checks"
+  ],
+  "designDecisions": [
+    "Vocabulary is kebab-case, matching every other enum in the repo. The brief's SCREAMING_SNAKE names map one-for-one.",
+    "TEMPLATE_COMPILER_VERSION bumped 2 → 3 because the compiler's output changed (every compile now emits routes[].scope/slotCount, routePolicy and collections). The manifest schema accepts 1..3, so old artifacts still parse; nothing in the repo pins the template compilerVersion to a literal.",
+    "structure-only keeps its route in site-map.routes[] with scope+slotCount 0. exclude REMOVES the route from routes[] and lists it in excludedRoutes[] with its reason — that is the 'not represented' distinction, and the manifest still lists it under routes[] because the copied exact app really does still serve it.",
+    "A rule that matches no route is a hard input error, and so is a policy that leaves no slotized route: a policy that silently does nothing is exactly the failure this stage exists to prevent.",
+    "The policy is a compile-time INPUT file only. No Selector change, no SiteSpec change, no discovery-coverage change, no new release StageRunner, no new DOM attribute."
+  ],
+  "limitations": [
+    "A structure-only page renders the ORIGINAL content for EVERYTHING on it, including the header/footer that a global slot edits elsewhere, because it carries no bindings at all. Recorded in the manifest as the limitation code `structure-only-pages-keep-original-content-including-global-slot-values`. For a blog member page this is usually right (the shell is original anyway) but it is a real semantic cost and an operator must know it.",
+    "Narrowing the extractor's page set also narrows the global-promotion pool (grouping.ts:434-484 requires a header/footer unit to cover every non-locale page it sees). A policied compile can therefore classify a slot page-scoped that a policy-free compile would have promoted to global. Slot KEYS can differ between the two compiles, so a slot-overrides file written against a policy-free compile is not automatically valid against a policied one.",
+    "`exclude` removes the route from the template's represented surface (site map + slots) but the copied exact app still serves it — pruning the app would edit the frozen Exact Reconstruction copy and break parity QA. Recorded as `excluded-routes-still-served-by-the-copied-exact-app`.",
+    "site-map routes[].slotCount attributes page-scoped slots to the page's CANONICAL route (the first route serving that page). A family-represented route that shares a slotized page therefore reads slotCount 0 even though it renders slotized content — visible in the canary at /resources/more/virtual-credit-cards-for-businesses-explained.",
+    "Collection grouping is by SiteSpec routeScope, falling back to inferredRoutePattern. A family with neither is never a collection member, and two different inferred patterns in one scope collapse detailPattern to null rather than guessing.",
+    "semanticKind is a lookup on the URL scope token (blog/docs/news/…): a site that calls its blog /journal gets `other`. It is a naming hint, never a content claim.",
+    "fieldHints are the slot roles observed on the representative detail page(s) — not a field schema, and empty when the representative is structure-only.",
+    "The LIVE parity proof for structure-only ran on the 2-page smoke fixture. The 20-route stripe canary was proved offline (byte-identical app tree + full binding validation), not through a full qa:recon-template run.",
+    "No auto-derivation of a policy exists: an operator writes the rules. Deriving a default policy from the collections model is deliberately left to a later task.",
+    "The path-spelling fix covers routePolicy.policyFile only. manifest.source.siteSpecFile and manifest.source.reconstructionManifestFile are still embedded at the caller's spelling, so an absolute-vs-relative invocation of those two arguments still perturbs manifest.json bytes inside the same hashed template dir. Left alone deliberately (out of the brief's scope); filed as a followUp.",
+    "portablePath is relative to process.cwd(), so a compile launched from a subdirectory records `../…`. Every pnpm script runs from the repo root, which is the same assumption src/sitespec/load-inputs.ts and src/reconstruction-qa/store.ts already make.",
+    "The shared-page count is emitted for `structure-only` routes only. An `exclude`d route sharing a slotized page is not counted separately — it is already declared as still-served by the copied exact app.",
+    "The existing canary run directory was NOT recompiled, so its on-disk manifest.limitations still lacks the companion code. The count was proved against the same inputs read-only."
+  ],
+  "followUps": [
+    "Auto-suggest a policy: the collections model now carries everything needed to PROPOSE `keep the index + one representative, structure-only the rest`. Emitting a suggested route-policy.json next to the site map would make the feature one-click without making it implicit.",
+    "Decide whether a structure-only page should still receive GLOBAL slot values (a header/footer-only binding pass). That is a real product question, not a bug: it would restore chrome editability at the cost of some bindings per page.",
+    "Collection-aware content injection: a later stage could write one representative and declare the rest as 'renders the representative's content', instead of leaving them at original content.",
+    "If a release ever needs an excluded route to actually 404/disappear, that belongs to the production build stage (src/production, src/release), not to the template compiler — the template must never edit the Exact Reconstruction copy.",
+    "Normalize manifest.source.siteSpecFile / source.reconstructionManifestFile through the same portablePath() so the whole template run dir is spelling-independent for the lineage hash — the two on-disk stripe and linear manifests already disagree on this (absolute vs repo-relative).",
+    "Consider a repo-wide check (one test, not a refactor) that no artifact under data/ embeds a string starting with the machine's home directory. That would catch the content-run and theme-run pointers the audit flagged, owned elsewhere.",
+    "If a future policy legitimately wants a documentation-only rule (a rule kept for a route set that this reconstruction does not contain), it now needs an explicit opt-out — today the guard refuses it, which is the intended strictness."
+  ],
+  "hardening": [
+    {
+      "finding": "1 — site-map.json bytes depended on how the operator SPELLED the --route-policy argument (src/recon-template/site-map.ts:71 embedded the raw CLI argument), so two logically identical compiles produced different bytes and therefore a spurious release lineage difference.",
+      "severity": "HIGH (lineage determinism)",
+      "fix": "The policy file is READ at the caller's spelling and RECORDED repo-relative POSIX — the convention src/sitespec/load-inputs.ts:139 and src/reconstruction-qa/store.ts:165 already use. Normalized once at the resolution boundary (src/recon-template/compile.ts:105-115, `portablePath(policyFile)` reused from ../reconstruction-qa/store.js, not re-written), so ResolvedRoutePolicy.policyFile is portable everywhere it lands: site-map.json routePolicy.policyFile AND manifest.json routePolicy.policyFile.",
+      "proof": "scripts/smoke-recon-template.ts §20 compiles the SAME fixture twice with the same policy file spelled absolutely and relatively and compares site-map.json / manifest.json / slots.json / slot-bindings.json byte for byte: identical. Two supporting checks keep it honest — 'the two spellings really are different strings' (the test could not pass vacuously) and a negative control proving policyFile IS load-bearing on site-map bytes (two buildSiteMap calls differing only in that field produce different JSON).",
+      "measured": "§20 4/4 spelling checks PASS (109/109 overall).",
+      "notDone": "The related repo-wide wart is untouched by design: manifest.source.siteSpecFile / source.reconstructionManifestFile are still recorded at the caller's spelling (visible as absolute paths in data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z/manifest.json and as repo-relative in data/linear.app/recon-templates/2026-08-25T21-53-26-980Z/manifest.json). They are in owned files but out of the brief's scope, and manifest.json sits in the same hashed template dir — so the lineage-spelling class is CLOSED for the policy path and STILL OPEN for the two lineage input paths. Filed as a followUp, not silently fixed."
+    },
+    {
+      "finding": "2 — manifest.limitations claimed `structure-only-routes-carry-no-slots:10` while ONE of those 10 stripe routes (/resources/more/virtual-credit-cards-for-businesses-explained, pageId p000012) shares its page with the collection-representative /resources/more/arr-loans-explained, so editing that page's slots DOES change what the 'structure-only' route renders. Prose disclosed it; the machine-readable record did not.",
+      "severity": "MEDIUM (honesty of the machine-readable record)",
+      "fix": "resolveRoutePolicy now computes `structureOnlySharedPageRoutes` (src/recon-template/route-policy.ts:255-257) and a new pure helper `routePolicyLimitations()` (src/recon-template/route-policy.ts:286-310) emits the companion code `structure-only-routes-sharing-a-slotized-page-do-render-slot-edits:<n>` beside the existing code. compile.ts spreads that helper instead of inlining the codes. The same count is also written to site-map.json / manifest.json routePolicy.structureOnlySharedPageRoutes so it is diffable, not only greppable — optional in the schema and OMITTED when 0, so a policy-free site map keeps the exact bytes it had.",
+      "proof": "Measured against the REAL canary inputs, read-only (a throwaway script re-resolving data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z/route-policy.json against the stripe reconstruction, no run directory written): scopeCounts unchanged (core-reconstruct 9 / collection-representative 1 / structure-only 10), structureOnlySharedPageRoutes = 1, and the single shared route is exactly '/resources/more/virtual-credit-cards-for-businesses-explained p000012' — the route the brief named. New codes: ['structure-only-routes-carry-no-slots:10','structure-only-pages-keep-original-content-including-global-slot-values','structure-only-routes-sharing-a-slotized-page-do-render-slot-edits:1'].",
+      "measured": "§20 adds a positive case (a fixture route map where /blog/one-alias shares p000002 with the representative /blog/one → count 1 of 3 structure-only routes), a site-map diffability check, and TWO negative controls (drop the alias → code absent and the site-map field omitted; the compiled 2-page fixture does not claim the code while still claiming structure-only-routes-carry-no-slots:1). 5/5 PASS.",
+      "notDone": "The canary run dir on disk (2026-08-26T17-16-46-409Z) still carries the pre-hardening manifest.limitations — it is an existing run directory and was NOT rewritten. Recompiling stripe into a NEW run id would embed the companion code; the brief said not to unless needed, and the count was proved against the same inputs without writing."
+    },
+    {
+      "finding": "3 — src/recon-template/route-policy.ts:196-204 incremented ruleHits[i] for EVERY rule that matched a route, including rules that lost the first-match-wins race, so a fully shadowed rule never tripped the unmatched-rule guard.",
+      "severity": "MEDIUM (weakened the stage's own stated guarantee)",
+      "fix": "The match loop now counts only the DECIDING match and breaks (src/recon-template/route-policy.ts:212-222). The guard's error message says what it now means: 'rule(s) that decide no route … (they match nothing, or every route they match was already decided by an earlier rule)'. The module doc above resolveRoutePolicy was corrected from 'matches no route' to 'DECIDES no route'.",
+      "proof": "scripts/smoke-recon-template.ts §20 compiles a policy whose second rule is fully shadowed ([{routePrefix:'/',scope:'core-reconstruct'},{route:'/about',scope:'structure-only'}]) and asserts a TemplateInputError naming /about. Positive control in the same section: an exception ABOVE its sweep is still accepted and still decides (matchedRuleIndex 0 for /blog/one, /blog/two structure-only). §16's pre-existing 'a rule that matches no route is refused' and §17's 'first matching rule wins' both still PASS.",
+      "measured": "§20 2/2 PASS; no existing check regressed.",
+      "regressionRisk": "Checked against the REAL canary policy before shipping: all 7 rules of data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z/route-policy.json still DECIDE at least one route, and the resolved scope counts are byte-for-byte what the canary recorded (9/1/10). A recompile of the canary would not newly fail."
+    }
+  ],
+  "hardeningFilesModified": [
+    "src/recon-template/route-policy.ts",
+    "src/recon-template/compile.ts",
+    "src/recon-template/site-map.ts",
+    "src/recon-template/types.ts",
+    "src/recon-template/index.ts",
+    "scripts/smoke-recon-template.ts",
+    "docs/result/handoffs/27-template-factory-v2.json"
+  ]
+}

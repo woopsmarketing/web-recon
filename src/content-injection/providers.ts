@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import type { TelemetryUsage } from "../telemetry/index.js";
 import {
   CONTENT_GENERATOR_CONTRACT_VERSION,
   CONTENT_SCHEMA_VERSION,
@@ -49,6 +50,13 @@ export interface ContentGenerationInput {
 export interface ContentGenerator {
   readonly name: string;
   generate(input: ContentGenerationInput): Promise<ContentGenerationResult>;
+  /**
+   * OPTIONAL provider-reported usage for the most recent `generate()` call
+   * (Task 27 §7). No provider in this repo reports any, so nothing implements
+   * it yet and the telemetry record simply omits `usage` — an absent
+   * measurement, never a fabricated zero.
+   */
+  lastUsage?(): TelemetryUsage | undefined;
 }
 
 // ---------------------------------------------------------------------------

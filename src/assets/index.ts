@@ -79,3 +79,10 @@ export {
   type FontQaOptions,
   type FontQaReport,
 } from "./font-qa.js";
+export {
+  buildResidualAssetReport,
+  normalizeResidualUrl,
+  resolveCensusRoutes,
+  type CensusRouteScopeOptions,
+  type ResidualReportOptions,
+} from "./residual-report.js";

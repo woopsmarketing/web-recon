@@ -18,14 +18,29 @@ import { productionBuildDir } from "../production/index.js";
 import { collectRequirements } from "./collect.js";
 import { deriveReleaseState } from "./gate.js";
 import { loadTechnicalDebtRegister } from "./debt.js";
-import { computeStageInputsHash } from "./freshness.js";
+import {
+  CONTENT_DERIVED_HASH_EXCLUSIONS,
+  FROZEN_TEMPLATE_HASH_EXCLUSIONS,
+  applyBlocking,
+  computeStageInputsHash,
+  refreshStageStatuses,
+} from "./freshness.js";
 import { STAGE_ORDER } from "./graph.js";
-import { buildRequirementsFile, mergeRequirements } from "./requirements.js";
+import { defaultSiteId, projectIdForSite } from "./instance.js";
+import {
+  buildRequirementsFile,
+  effectiveResolution,
+  mergeRequirements,
+  releaseBlockers,
+  sha256OfJson,
+} from "./requirements.js";
 import { renderOperatorChecklist } from "./checklist.js";
 import {
   CHECKLIST_FILE,
+  RELEASE_PROJECT_FILE,
   REQUIREMENTS_FILE,
   TECHNICAL_DEBT_FILE,
+  loadReleaseProject,
   loadRequirementsFile,
   newReleaseRunId,
   releaseProjectDir,
@@ -34,9 +49,16 @@ import {
   saveReleaseRun,
   saveRequirementsFile,
 } from "./store.js";
-import { RELEASE_PROJECT_SCHEMA_NAME, RELEASE_SCHEMA_VERSION } from "./types.js";
+import {
+  RELEASE_PROJECT_REVISION,
+  RELEASE_PROJECT_SCHEMA_NAME,
+  RELEASE_SCHEMA_VERSION,
+  emptyAuthoredState,
+} from "./types.js";
 import type {
+  AppliedResolution,
   ArtifactRef,
+  AuthoredState,
   ReleaseProject,
   ReleaseStage,
   StageStatus,
@@ -46,6 +68,13 @@ import { mkdir, writeFile } from "node:fs/promises";
 export interface PrepareOptions {
   /** production-spec run dir (or its production-spec.json). */
   productionSpecRef: string;
+  /**
+   * STABLE site identity. Operator-suppliable (`--site-id`); defaults to the
+   * host slug, which is identical on every prepare. Several distinct customer
+   * sites are produced from one template by giving each its own siteId.
+   */
+  siteId?: string;
+  /** Project directory name. Defaults to the siteId (not the spec run id). */
   projectId?: string;
   debtSourceFile?: string;
   log?: (line: string) => void;
@@ -56,6 +85,10 @@ export interface PrepareResult {
   projectDir: string;
   requirementsCount: number;
   releaseBlockingUnresolved: number;
+  /** True when an existing project was updated in place (authored preserved). */
+  reprepared: boolean;
+  /** What re-prepare carried forward untouched (empty on a first prepare). */
+  preserved: string[];
 }
 
 async function readJson<T>(file: string): Promise<T> {
@@ -95,8 +128,38 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
     throw new Error(`not a production-spec-v1 file: ${specFile}`);
   }
   const host = spec.sourceHost;
-  const projectId = options.projectId ?? `${host}-${spec.runId}`;
+  // ---- stable identity (Task 27) -------------------------------------------
+  // Task 25/26 derived the projectId from the production-spec RUN id, so every
+  // prepare minted a NEW identity for the SAME customer site (linear.app has
+  // two such projects on disk, 22 minutes apart). Identity now comes from the
+  // siteId, which does not move.
+  const requestedSiteId = options.siteId ?? defaultSiteId(host);
+  const projectId = options.projectId ?? projectIdForSite(requestedSiteId);
   const projectDir = releaseProjectDir(host, projectId);
+  // ---- non-destructive re-prepare ------------------------------------------
+  // REQUIREMENT RECALCULATION and AUTHORED-DATA PRESERVATION are DISTINCT
+  // operations: everything below is re-derived from the re-hashed lineage,
+  // while the operator's authored work is carried forward untouched.
+  const loadedExisting = existsSync(path.join(projectDir, RELEASE_PROJECT_FILE))
+    ? await loadReleaseProject(projectDir)
+    : null;
+  const existing = loadedExisting?.project ?? null;
+  const siteId = options.siteId ?? existing?.siteId ?? requestedSiteId;
+  const carriedResolutions: AppliedResolution[] = existing?.resolutions ?? [];
+  const carriedAuthored: AuthoredState = existing?.authored ?? emptyAuthoredState();
+  const carriedRuns = existing?.runs ?? [];
+  const preserved: string[] = [];
+  if (existing !== null) {
+    preserved.push(
+      `resolutions:${carriedResolutions.length}`,
+      `authored.slotValues:${Object.keys(carriedAuthored.slotValues).length}`,
+      `authored.theme.tokens:${Object.keys(carriedAuthored.theme.tokens ?? {}).length}`,
+      `runs:${carriedRuns.length}`,
+      `siteId:${siteId}`,
+      `createdAt:${existing.createdAt}`,
+    );
+    log(`[release:prepare] existing project found — preserving ${preserved.join(", ")}`);
+  }
   const specDir = path.dirname(specFile);
   const buildDir = productionBuildDir(host, spec.runId);
   if (!existsSync(buildDir)) {
@@ -129,12 +192,17 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
       reconstructionDir,
       ["node_modules", ".next", "out"],
     ),
+    // `report/` is excluded — qa:recon-template writes there, and a frozen-stage
+    // hash that moves when QA runs bricks release:build (freshness.ts).
     template: await hashRef(spec.lineage.template.templateId, spec.lineage.template.dir, [
-      "node_modules",
-      ".next",
-      "out",
+      ...FROZEN_TEMPLATE_HASH_EXCLUSIONS,
     ]),
-    content: await hashRef(spec.lineage.contentRun.contentRunId, spec.lineage.contentRun.dir),
+    // `report/` + `slot-accounting.json` are excluded for the same reason — a
+    // content QA / revalidation pass rewrites them, and drifting the content
+    // stage hash reruns content and every stage downstream of it (freshness.ts).
+    content: await hashRef(spec.lineage.contentRun.contentRunId, spec.lineage.contentRun.dir, [
+      ...CONTENT_DERIVED_HASH_EXCLUSIONS,
+    ]),
     theme: await hashRef(spec.lineage.theme.themeRunId, spec.lineage.theme.dir),
     seo: await hashRef(spec.lineage.seoPlan.seoPlanRunId, spec.lineage.seoPlan.dir),
     assets: await hashRef(spec.lineage.assets.materializationRunId, spec.lineage.assets.dir),
@@ -159,7 +227,10 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
   const previous = existsSync(path.join(projectDir, REQUIREMENTS_FILE))
     ? (await loadRequirementsFile(projectDir)).requirements
     : null;
-  const requirements = mergeRequirements(previous, collected.requirements, []);
+  // Requirements are RECOMPUTED from the re-hashed lineage — and matched
+  // against the CARRIED resolutions, so re-prepare never re-opens a gap the
+  // operator already closed.
+  const requirements = mergeRequirements(previous, collected.requirements, carriedResolutions);
 
   // ---- technical debt register (spec §30) -----------------------------------
   const debt = await loadTechnicalDebtRegister(options.debtSourceFile);
@@ -178,12 +249,35 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
   };
   const stageStatus = {} as Record<ReleaseStage, StageStatus>;
   for (const stage of STAGE_ORDER) {
-    const artifact =
+    const lineageArtifact =
       stage === "production" ? acceptedLineage.production.spec : acceptedLineage[stage];
+    const carried = existing?.stageStatus?.[stage];
+    // Frozen stages (reconstruction/template) are never re-run, so the freshly
+    // re-hashed accepted lineage IS their current artifact — that is also how a
+    // pre-Task-27 project picks up the new template `report/` exclusion.
+    const frozen = stage === "reconstruction" || stage === "template";
+    // For an EXECUTABLE stage the carried artifact is kept, because a
+    // release:build rerun advances the stage to a NEW run dir that the accepted
+    // lineage does not know about; adopting the lineage there would silently
+    // revert the project to the pre-rerun artifact (test 27.35).
+    //
+    // But when the carried artifact IS the lineage artifact — same path — the
+    // two refs describe the same bytes and differ only in HOW they were hashed.
+    // Discarding the freshly re-hashed ref in that case made the remedy printed
+    // by `staleExclusionSetWarnings` (freshness.ts) a lie for every non-frozen
+    // stage: content could never pick up CONTENT_DERIVED_HASH_EXCLUSIONS, so an
+    // operator who ran the re-prepare it told them to run saw the same warning
+    // forever. Adopting the lineage ref re-hashes the artifact IN PLACE (same
+    // id, same path, current `excluded`); `inputsHash` below is still the
+    // CARRIED one, so no per-stage derivation state is lost.
+    const samePath = carried?.artifact != null && carried.artifact.path === lineageArtifact.path;
+    const artifact = carried !== undefined && !frozen && !samePath ? carried.artifact : lineageArtifact;
     stageStatus[stage] = {
       status: "fresh",
       artifact,
-      inputsHash: computeStageInputsHash(stage, artifactHashes, emptyResolution, {}, intentHash),
+      inputsHash:
+        carried?.inputsHash ??
+        computeStageInputsHash(stage, artifactHashes, emptyResolution, {}, intentHash),
       reasons: [],
       blockedBy: [],
     };
@@ -192,6 +286,14 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
   const warnings = [
     ...collected.warnings,
     ...debt.warnings,
+    ...(loadedExisting?.adaptedFrom != null
+      ? [
+          `release project revision ${loadedExisting.adaptedFrom} adapted to ` +
+            `${RELEASE_PROJECT_REVISION}: siteId "${siteId}" adopted and the authored block ` +
+            `replayed from ${carriedResolutions.length} applied resolution(s) — the previous ` +
+            `document was NOT rewritten until this prepare saved it`,
+        ]
+      : []),
     "workspace-versioning: the pipeline source tree is a single foundation commit with extensive " +
       "uncommitted work — releases currently depend on this working tree (operational risk, Task 25 report §29)",
   ];
@@ -199,8 +301,10 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
   const project: ReleaseProject = {
     schemaVersion: RELEASE_SCHEMA_VERSION,
     schemaName: RELEASE_PROJECT_SCHEMA_NAME,
+    projectRevision: RELEASE_PROJECT_REVISION,
+    siteId,
     projectId,
-    createdAt: new Date().toISOString(),
+    createdAt: existing?.createdAt ?? new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     source: {
       host,
@@ -220,9 +324,10 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
     stageStatus,
     requirementsFile: REQUIREMENTS_FILE,
     checklistFile: CHECKLIST_FILE,
-    resolutions: [],
+    resolutions: carriedResolutions,
+    authored: carriedAuthored,
     releaseState: "DISCOVERED",
-    failure: null,
+    failure: existing?.failure ?? null,
     limitations: [
       "collections/blog: template routes are a CLOSED set from observation — no collection or blog " +
         "generation exists; new posts/pages of a family are out of scope (seam: content-route " +
@@ -235,11 +340,28 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
     ],
     warnings,
     technicalDebt: debt.entries,
-    runs: [],
+    runs: [...carriedRuns],
   };
+
+  // ---- freshness under the CARRIED authored state + resolutions ------------
+  // A first prepare adopts the accepted candidate as the fresh baseline (every
+  // recomputed hash equals the one just recorded). A re-prepare answers the
+  // honest question instead: given the carried authoring, what is still fresh?
+  const effective = effectiveResolution(carriedResolutions);
+  if (existing !== null) {
+    const refreshed = await refreshStageStatuses(project, effective, { log });
+    project.stageStatus = refreshed.stageStatus;
+    warnings.push(...refreshed.warnings);
+    project.target = {
+      mode: effective.productionBaseUrl === undefined ? "preview" : "indexable-production",
+      productionBaseUrl: effective.productionBaseUrl ?? null,
+    };
+    applyBlocking(project.stageStatus, releaseBlockers(requirements), project.target.mode);
+  }
+
   // releaseState is artifact-derived — compute it now.
   project.releaseState = deriveReleaseState({
-    stageStatus,
+    stageStatus: project.stageStatus,
     requirements,
     facts: collected.facts,
   });
@@ -271,7 +393,7 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
     projectId,
     createdAt: new Date().toISOString(),
     intentHash,
-    resolutionHash: null,
+    resolutionHash: carriedResolutions.length > 0 ? sha256OfJson(effective) : null,
     inputArtifactHashes: Object.fromEntries(
       Object.entries(artifactHashes).filter(([, hash]) => hash != null) as Array<[string, string]>,
     ),
@@ -306,5 +428,7 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
         requirement.status !== "resolved" &&
         requirement.status !== "not-applicable",
     ).length,
+    reprepared: existing !== null,
+    preserved,
   };
 }

@@ -1,4 +1,5 @@
-import { mkdir, rm, writeFile, readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir, readdir, rm, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 import {
   SiteSpecSchema,
@@ -17,10 +18,20 @@ import {
   resolveDependencyVersions,
 } from "../src/reconstruction/index.js";
 import {
+  buildSiteMap,
   compileReconTemplate,
+  resolveRoutePolicy,
+  routePolicyLimitations,
+  SiteMapSchema,
+  TemplateInputError,
+  TemplateManifestSchema,
   TemplateOverrideError,
   type CompiledReconTemplate,
+  type RouteScope,
+  type SlotDefinition,
 } from "../src/recon-template/index.js";
+import type { RuntimeRouteMap } from "../src/reconstruction/index.js";
+import type { LoadedSiteSpec } from "../src/sitespec/index.js";
 import { findIntroducedJsErrors, normalizeJsError, runParityQa } from "../src/recon-template/parity-qa.js";
 
 /**
@@ -36,6 +47,11 @@ import { findIntroducedJsErrors, normalizeJsError, runParityQa } from "../src/re
  * global promotion, page scope, image slots, aria-hidden exclusion, manual
  * overrides (exclude / merge / rename / role / scope), dynamic template
  * bindings, mobile/static shared bindings, determinism.
+ *
+ * Task 27 half (§16–§19): the route scope policy at the compile seam
+ * (`structure-only` yields zero slots while the route keeps its site-map entry
+ * AND its rendering), the collections model in the site map, and backward
+ * compatibility with pre-Task-27 artifacts.
  *
  * Live half (§12–§14): both apps are built with `next build`, served with
  * `next start`, and driven by real Chromium — default-content parity,
@@ -706,6 +722,113 @@ async function writeFixtureSiteSpec(dir: string): Promise<string> {
   return path.join(dir, "site-spec.json");
 }
 
+
+// ---------------------------------------------------------------------------
+// Task 27 helpers
+// ---------------------------------------------------------------------------
+
+/** sha256 of every file under `dir`, keyed by relative path. */
+async function hashTree(dir: string, skipRel: (rel: string) => boolean): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const walk = async (current: string, rel: string): Promise<void> => {
+    for (const entry of await readdir(current, { withFileTypes: true })) {
+      const relPath = rel ? `${rel}/${entry.name}` : entry.name;
+      if (skipRel(relPath)) continue;
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) await walk(full, relPath);
+      else if (entry.isFile())
+        out.set(relPath, createHash("sha256").update(await readFile(full)).digest("hex"));
+    }
+  };
+  await walk(dir, "");
+  return out;
+}
+
+/**
+ * A three-route blog fixture for the collections model — SiteSpec family facts
+ * only (`routeScope`, `inferredRoutePattern`, member counts), which is all
+ * `buildCollections` is allowed to read.
+ */
+function collectionFixture(): { siteSpec: LoadedSiteSpec; routeMap: RuntimeRouteMap } {
+  const families = [
+    {
+      familyId: "f000001",
+      familyType: "singleton",
+      representativeUrl: `${ROOT_URL}blog`,
+      representativePageId: "p000001",
+      observedVariantPageIds: ["p000001"],
+      memberUrls: [`${ROOT_URL}blog`],
+      memberCount: 1,
+      exactObservedMemberCount: 1,
+      representedOnlyMemberCount: 0,
+      routeScope: "blog",
+      limitations: [],
+    },
+    {
+      familyId: "f000002",
+      familyType: "sibling-pattern",
+      representativeUrl: `${ROOT_URL}blog/one`,
+      representativePageId: "p000002",
+      observedVariantPageIds: ["p000002"],
+      // 40 discovered members, 2 of them reconstructed: the floor case.
+      memberUrls: Array.from({ length: 40 }, (_, i) => `${ROOT_URL}blog/post-${i}`),
+      memberCount: 40,
+      exactObservedMemberCount: 2,
+      representedOnlyMemberCount: 38,
+      routeScope: "blog",
+      inferredRoutePattern: "/blog/<*>",
+      limitations: [],
+    },
+    {
+      familyId: "f000003",
+      familyType: "singleton",
+      representativeUrl: `${ROOT_URL}pricing`,
+      representativePageId: "p000004",
+      observedVariantPageIds: ["p000004"],
+      memberUrls: [`${ROOT_URL}pricing`],
+      memberCount: 1,
+      exactObservedMemberCount: 1,
+      representedOnlyMemberCount: 0,
+      routeScope: "pricing",
+      limitations: [],
+    },
+  ];
+  const pages = [
+    { pageId: "p000001", familyId: "f000001" },
+    { pageId: "p000002", familyId: "f000002" },
+    { pageId: "p000003", familyId: "f000002" },
+    { pageId: "p000004", familyId: "f000003" },
+  ];
+  const siteSpec = {
+    siteSpec: { rootUrl: ROOT_URL, families, pages },
+  } as unknown as LoadedSiteSpec;
+
+  const route = (key: string, pageSourceId: string): unknown => ({
+    routeId: `r${key}`,
+    key,
+    url: `${ROOT_URL}${key.slice(1)}`,
+    path: key,
+    pageFile: `pages/${pageSourceId}.json`,
+    pageSourceId,
+    renderCoverage: "exact-observed",
+    behaviorCoverage: "none",
+    observedOnThisExactUrl: true,
+    verifiedOnThisRoute: false,
+  });
+  const routeMap = {
+    schemaVersion: 1,
+    rootUrl: ROOT_URL,
+    breakpoint: 1024,
+    routes: [
+      route("/blog", "p000001"),
+      route("/blog/one", "p000002"),
+      route("/blog/two", "p000003"),
+      route("/pricing", "p000004"),
+    ],
+  } as unknown as RuntimeRouteMap;
+  return { siteSpec, routeMap };
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -1105,6 +1228,561 @@ async function main(): Promise<void> {
         ["Access to image at 'https://cdn.example/OTHER.svg' from origin 'http://127.0.0.1:41001' has been blocked by CORS policy"],
       ).length === 1,
     );
+
+    // -----------------------------------------------------------------------
+    // Task 27 — route scope policy, collections, backward compatibility
+    // -----------------------------------------------------------------------
+
+    section("§16 route scope policy at the compile seam");
+    const policyFreeMap = SiteMapSchema.parse(
+      JSON.parse(await readFile(path.join(templateDir, "site-map.json"), "utf8")),
+    );
+    check(
+      "§16 policy-free compile records an unapplied policy",
+      policyFreeMap.routePolicy?.applied === false &&
+        policyFreeMap.routePolicy.defaultScope === "core-reconstruct",
+      JSON.stringify(policyFreeMap.routePolicy),
+    );
+    check(
+      "§16 policy-free compile leaves every route core-reconstruct",
+      policyFreeMap.routes.length === 2 &&
+        policyFreeMap.routes.every((r) => r.scope === "core-reconstruct" && (r.slotCount ?? 0) > 0),
+      JSON.stringify(policyFreeMap.routes.map((r) => [r.route, r.scope, r.slotCount])),
+    );
+
+    interface PoliciedCompile {
+      dir: string;
+      compiled: CompiledReconTemplate;
+      siteMap: ReturnType<typeof SiteMapSchema.parse>;
+      slots: SlotDefinition[];
+    }
+    const compileWithPolicy = async (
+      name: string,
+      policy: unknown,
+      outDirName = `policy-${name}`,
+    ): Promise<PoliciedCompile> => {
+      const file = path.join(fixtureRoot, `route-policy-${name}.json`);
+      await writeFile(file, JSON.stringify(policy, null, 2) + "\n", "utf8");
+      const dir = path.join(fixtureRoot, "recon-templates", outDirName);
+      const result = await compileReconTemplate({
+        reconstructionManifestFile: manifestFile,
+        siteSpecFile,
+        runId: "2026-08-18T00-00-00-000Z",
+        outputDir: dir,
+        routePolicyFile: file,
+      });
+      const siteMap = SiteMapSchema.parse(
+        JSON.parse(await readFile(path.join(dir, "site-map.json"), "utf8")),
+      );
+      const slotsJson = JSON.parse(await readFile(path.join(dir, "slots.json"), "utf8")) as {
+        slots: SlotDefinition[];
+      };
+      return { dir, compiled: result, siteMap, slots: slotsJson.slots };
+    };
+    const aboutPolicy = (scope: RouteScope): unknown => ({
+      schemaVersion: 1,
+      rules: [{ route: "/about", scope, reason: `smoke ${scope}` }],
+    });
+
+    // Every value of the closed vocabulary, honored at the one seam.
+    const perScope = new Map<RouteScope, PoliciedCompile>();
+    for (const scope of [
+      "core-reconstruct",
+      "collection-index",
+      "collection-representative",
+      "structure-only",
+      "exclude",
+    ] as RouteScope[]) {
+      perScope.set(scope, await compileWithPolicy(scope, aboutPolicy(scope)));
+    }
+    const aboutSlots = (c: PoliciedCompile): number =>
+      c.slots.filter((slot) => slot.route === "/about").length;
+    for (const scope of [
+      "core-reconstruct",
+      "collection-index",
+      "collection-representative",
+    ] as RouteScope[]) {
+      const c = perScope.get(scope)!;
+      check(
+        `§16 ${scope} slotizes the route`,
+        c.siteMap.routes.find((r) => r.route === "/about")?.scope === scope && aboutSlots(c) > 0,
+        `${aboutSlots(c)} slots`,
+      );
+    }
+    const structureOnly = perScope.get("structure-only")!;
+    const structureOnlyRoute = structureOnly.siteMap.routes.find((r) => r.route === "/about");
+    check(
+      "§16 structure-only route is still IN the site map",
+      structureOnlyRoute !== undefined &&
+        structureOnlyRoute.scope === "structure-only" &&
+        structureOnlyRoute.pageId === "p000002" &&
+        structureOnlyRoute.renderCoverage === "exact-observed",
+      JSON.stringify(structureOnlyRoute),
+    );
+    check(
+      "§16 structure-only route yields ZERO slots (measured, was > 0 policy-free)",
+      aboutSlots(structureOnly) === 0 &&
+        (policyFreeMap.routes.find((r) => r.route === "/about")?.slotCount ?? 0) > 0,
+      `${aboutSlots(structureOnly)} after / ${policyFreeMap.routes.find((r) => r.route === "/about")?.slotCount} before`,
+    );
+    check(
+      "§16 structure-only route declares slotCount 0 in the site map",
+      structureOnlyRoute?.slotCount === 0,
+    );
+    const structureOnlyBindings = JSON.parse(
+      await readFile(path.join(structureOnly.dir, "slot-bindings.json"), "utf8"),
+    ) as { bindings: { pageId: string }[] };
+    check(
+      "§16 no binding anywhere addresses the structure-only page",
+      structureOnlyBindings.bindings.every((b) => b.pageId !== "p000002") &&
+        structureOnlyBindings.bindings.length > 0,
+    );
+    check(
+      "§16 the home route keeps its slots under the policy",
+      structureOnly.slots.filter((slot) => slot.route === "/").length > 0,
+    );
+    check(
+      "§16 slot count fell against the policy-free compile",
+      structureOnly.compiled.manifest.counts.slots < compiled.manifest.counts.slots,
+      `${structureOnly.compiled.manifest.counts.slots} < ${compiled.manifest.counts.slots}`,
+    );
+    check(
+      "§16 manifest records the policy honestly",
+      structureOnly.compiled.manifest.routePolicy?.applied === true &&
+        structureOnly.compiled.manifest.counts.structureOnlyRoutes === 1 &&
+        structureOnly.compiled.manifest.counts.slotizedPages === 1 &&
+        structureOnly.compiled.manifest.limitations.includes(
+          "structure-only-pages-keep-original-content-including-global-slot-values",
+        ),
+      JSON.stringify(structureOnly.compiled.manifest.routePolicy),
+    );
+
+    // RENDERING PROOF (offline half): the template app is the exact app copied
+    // byte for byte plus `template-data/`. If policy touched anything the
+    // browser renders, these trees would differ.
+    // `template-data/` is the slot layer (the thing policy is allowed to
+    // change); `.next` / `node_modules` are build products of the live half
+    // above, not artifact.
+    const skipTemplateData = (rel: string) =>
+      rel === "template-data" ||
+      rel.startsWith("template-data/") ||
+      rel === ".next" ||
+      rel.startsWith(".next/") ||
+      rel === "node_modules" ||
+      rel.startsWith("node_modules/") ||
+      rel === "next-env.d.ts" ||
+      rel === "tsconfig.tsbuildinfo";
+    const freeApp = await hashTree(path.join(templateDir, "app"), skipTemplateData);
+    const policiedApp = await hashTree(path.join(structureOnly.dir, "app"), skipTemplateData);
+    const appDiffs = [...freeApp.entries()].filter(
+      ([rel, hash]) => policiedApp.get(rel) !== hash,
+    );
+    check(
+      "§16 policy changes NOTHING the app renders (byte-identical outside template-data/)",
+      freeApp.size > 10 &&
+        freeApp.size === policiedApp.size &&
+        appDiffs.length === 0,
+      JSON.stringify(appDiffs.map(([rel]) => rel).slice(0, 5)),
+    );
+    check(
+      "§16 the structure-only page's runtime data is still in the template app",
+      policiedApp.has("reconstruction-data/pages/p000002.json"),
+      [...policiedApp.keys()].filter((k) => k.includes("p000002")).join(","),
+    );
+
+    const excluded = perScope.get("exclude")!;
+    check(
+      "§16 excluded route is dropped from site-map routes and listed with its reason",
+      excluded.siteMap.routes.every((r) => r.route !== "/about") &&
+        excluded.siteMap.excludedRoutes?.length === 1 &&
+        excluded.siteMap.excludedRoutes[0]!.route === "/about" &&
+        excluded.siteMap.excludedRoutes[0]!.reason === "smoke exclude" &&
+        aboutSlots(excluded) === 0,
+      JSON.stringify(excluded.siteMap.excludedRoutes),
+    );
+    check(
+      "§16 exclusion is declared as still-served by the copied exact app (honesty)",
+      excluded.compiled.manifest.routes.includes("/about") &&
+        excluded.compiled.manifest.limitations.includes(
+          "excluded-routes-still-served-by-the-copied-exact-app",
+        ),
+    );
+
+    let unmatchedRefused = false;
+    try {
+      await compileWithPolicy("unmatched", {
+        schemaVersion: 1,
+        rules: [{ route: "/does-not-exist", scope: "structure-only" }],
+      });
+    } catch (error) {
+      unmatchedRefused = error instanceof TemplateInputError;
+    }
+    check("§16 a rule that matches no route is refused, never silently ignored", unmatchedRefused);
+
+    let emptyRefused = false;
+    try {
+      await compileWithPolicy("empty", {
+        schemaVersion: 1,
+        defaultScope: "structure-only",
+        rules: [{ routePrefix: "/", scope: "structure-only" }],
+      });
+    } catch (error) {
+      emptyRefused = error instanceof TemplateInputError;
+    }
+    check("§16 a policy that leaves no slotized route is refused", emptyRefused);
+
+    const structureOnlyB = await compileWithPolicy(
+      "structure-only",
+      aboutPolicy("structure-only"),
+      "policy-structure-only-b",
+    );
+    let policyDeterministic = true;
+    for (const name of ["slots.json", "site-map.json", "slot-bindings.json"]) {
+      const a = await readFile(path.join(structureOnly.dir, name), "utf8");
+      const b = await readFile(path.join(structureOnlyB.dir, name), "utf8");
+      if (a !== b) policyDeterministic = false;
+    }
+    check(
+      "§16 same input + same policy → byte-identical slots.json / site-map.json",
+      policyDeterministic,
+    );
+
+    section("§17 collections in the site map (detection and representation only)");
+    const { siteSpec: colSpec, routeMap: colRoutes } = collectionFixture();
+    const colPolicy = resolveRoutePolicy(
+      colRoutes,
+      colSpec,
+      {
+        schemaVersion: 1,
+        rules: [
+          { route: "/blog", scope: "collection-index" },
+          { route: "/blog/one", scope: "collection-representative" },
+          { routePrefix: "/blog", scope: "structure-only" },
+        ],
+      },
+      "fixture://route-policy",
+    );
+    check(
+      "§17 first matching rule wins (the exception above the sweep)",
+      colPolicy.scopeByRoute.get("/blog") === "collection-index" &&
+        colPolicy.scopeByRoute.get("/blog/one") === "collection-representative" &&
+        colPolicy.scopeByRoute.get("/blog/two") === "structure-only" &&
+        colPolicy.scopeByRoute.get("/pricing") === "core-reconstruct",
+      JSON.stringify([...colPolicy.scopeByRoute]),
+    );
+    const colSiteMap = SiteMapSchema.parse(buildSiteMap(colRoutes, colSpec, [], colPolicy));
+    const blog = colSiteMap.collections?.[0];
+    check(
+      "§17 collections survive into a schema-valid site map",
+      colSiteMap.collections?.length === 1 && blog?.collectionId === "c000001",
+      JSON.stringify(colSiteMap.collections?.map((c) => c.collectionId)),
+    );
+    check(
+      "§17 collection reuses the family evidence the template boundary used to lose",
+      blog?.routeScope === "blog" &&
+        blog.semanticKind === "blog" &&
+        blog.groupedBy === "scope:blog" &&
+        blog.detailPattern === "/blog/<*>" &&
+        blog.indexRoute === "/blog" &&
+        blog.sourceFamilyIds.join(",") === "f000001,f000002" &&
+        blog.representativeRoutes.join(",") === "/blog,/blog/one",
+      JSON.stringify(blog),
+    );
+    check(
+      "§17 member count is a crawl-capped FLOOR, and says so",
+      blog?.discoveredMemberCount === 41 &&
+        blog.observedMemberCount === 3 &&
+        blog.representedOnlyMemberCount === 38 &&
+        blog.countIsFloor === true,
+      JSON.stringify([blog?.discoveredMemberCount, blog?.countIsFloor]),
+    );
+    check(
+      "§17 estimated total stays null (no pagination detection exists in this repo)",
+      blog?.estimatedTotalMembers === null &&
+        blog.countEvidence.includes("no-pagination-detection"),
+    );
+    check(
+      "§17 renderPolicy reports what the policy actually did to the members",
+      blog?.renderPolicy.slotizedRoutes === 2 &&
+        JSON.stringify(blog.renderPolicy.scopeCounts) ===
+          JSON.stringify([
+            { scope: "collection-index", routes: 1 },
+            { scope: "collection-representative", routes: 1 },
+            { scope: "structure-only", routes: 1 },
+          ]),
+      JSON.stringify(blog?.renderPolicy),
+    );
+    check(
+      "§17 a one-member family is a page, not a collection",
+      colSiteMap.collections?.every((c) => c.routeScope !== "pricing") === true,
+    );
+    const noIndexRoutes = {
+      ...colRoutes,
+      routes: colRoutes.routes.filter((r) => r.key !== "/blog"),
+    } as RuntimeRouteMap;
+    const noIndexPolicy = resolveRoutePolicy(noIndexRoutes, colSpec);
+    const noIndexMap = buildSiteMap(noIndexRoutes, colSpec, [], noIndexPolicy);
+    check(
+      "§17 no index route is observed → indexRoute is null, never synthesized",
+      noIndexMap.collections?.[0]?.indexRoute === null,
+      JSON.stringify(noIndexMap.collections?.[0]?.indexRoute),
+    );
+    check(
+      "§17 fieldHints restate observed slot roles, nothing more",
+      blog?.fieldHints.length === 0,
+      JSON.stringify(blog?.fieldHints),
+    );
+
+    section("§18 backward compatibility with pre-Task-27 artifacts");
+    const legacySiteMap = {
+      schemaVersion: 1,
+      root: ROOT_URL,
+      routes: [
+        {
+          route: "/",
+          url: ROOT_URL,
+          pageId: "p000001",
+          familyId: "f000001",
+          representative: true,
+          renderCoverage: "exact-observed",
+        },
+      ],
+      pageFamilies: [
+        {
+          familyId: "f000001",
+          familyType: "singleton",
+          representativeUrl: ROOT_URL,
+          memberCount: 1,
+        },
+      ],
+      representatives: ["p000001"],
+      internalLinks: ["/about"],
+    };
+    const legacyParsed = SiteMapSchema.safeParse(legacySiteMap);
+    check(
+      "§18 a Task 18/19 site-map.json (no scope, no routePolicy, no collections) still parses",
+      legacyParsed.success &&
+        legacyParsed.data.routes[0]!.scope === undefined &&
+        legacyParsed.data.collections === undefined,
+      legacyParsed.success ? "" : JSON.stringify(legacyParsed.error.issues.slice(0, 2)),
+    );
+    const legacyManifest = JSON.parse(JSON.stringify(compiled.manifest)) as Record<string, unknown>;
+    delete legacyManifest.routePolicy;
+    legacyManifest.compilerVersion = 2;
+    const legacyCounts = legacyManifest.counts as Record<string, unknown>;
+    for (const key of [
+      "slotizedPages",
+      "slotizedRoutes",
+      "structureOnlyRoutes",
+      "excludedRoutes",
+      "collections",
+    ]) {
+      delete legacyCounts[key];
+    }
+    const legacyManifestParsed = TemplateManifestSchema.safeParse(legacyManifest);
+    check(
+      "§18 a compilerVersion 2 manifest (no routePolicy, no new counts) still parses",
+      legacyManifestParsed.success,
+      legacyManifestParsed.success ? "" : JSON.stringify(legacyManifestParsed.error.issues.slice(0, 2)),
+    );
+
+    section("§19 live: a structure-only route still RENDERS the exact reconstruction");
+    const policiedParity = await runParityQa({
+      templateManifestFile: path.join(structureOnly.dir, "manifest.json"),
+      skipMutation: true,
+      log: (line) => console.log(`  ${line}`),
+    });
+    const aboutPairs = policiedParity.pairs.filter((p) => p.route === "/about");
+    check(
+      "§19 the structure-only route was actually compared",
+      aboutPairs.length >= 2,
+      String(aboutPairs.length),
+    );
+    check(
+      "§19 structure-only route: content + structure + geometry identical to the exact app",
+      aboutPairs.length > 0 && aboutPairs.every((p) => p.pass),
+      JSON.stringify(aboutPairs.filter((p) => !p.pass).map((p) => p.notes)),
+    );
+    check(
+      "§19 every route of the policied template still passes parity",
+      policiedParity.pairs.length >= 4 && policiedParity.pairs.every((p) => p.pass),
+      JSON.stringify(policiedParity.pairs.filter((p) => !p.pass).map((p) => p.route)),
+    );
+    check(
+      "§19 policied template stays hydration- and runtime-clean",
+      policiedParity.pairs.every(
+        (p) => p.templateHydrationErrors === 0 && p.templateIntroducedJsErrors === 0,
+      ),
+    );
+
+    section("§20 hardening: path-spelling determinism, shared pages, shadowed rules");
+
+    // (1) site-map.json bytes must not depend on HOW the operator spelled the
+    // policy path. The artifact feeds a release lineage hash, so a relative vs
+    // absolute spelling of the same file would read as a lineage difference.
+    const spellingPolicyFile = path.join(fixtureRoot, "route-policy-spelling.json");
+    await writeFile(
+      spellingPolicyFile,
+      JSON.stringify(aboutPolicy("structure-only"), null, 2) + "\n",
+      "utf8",
+    );
+    const relativeSpelling = path.relative(process.cwd(), spellingPolicyFile);
+    check(
+      "§20 the two spellings really are different strings (test is meaningful)",
+      path.isAbsolute(spellingPolicyFile) && !path.isAbsolute(relativeSpelling),
+      `${spellingPolicyFile} vs ${relativeSpelling}`,
+    );
+    const compileSpelledAs = async (
+      spelling: string,
+      outDirName: string,
+    ): Promise<CompiledReconTemplate> =>
+      compileReconTemplate({
+        reconstructionManifestFile: manifestFile,
+        siteSpecFile,
+        runId: "2026-08-18T00-00-00-000Z",
+        outputDir: path.join(fixtureRoot, "recon-templates", outDirName),
+        routePolicyFile: spelling,
+      });
+    const spelledAbsolute = await compileSpelledAs(spellingPolicyFile, "spelling-absolute");
+    const spelledRelative = await compileSpelledAs(relativeSpelling, "spelling-relative");
+    let spellingIdentical = true;
+    const spellingDiffs: string[] = [];
+    for (const name of ["site-map.json", "manifest.json", "slots.json", "slot-bindings.json"]) {
+      const a = await readFile(path.join(spelledAbsolute.runDir, name), "utf8");
+      const b = await readFile(path.join(spelledRelative.runDir, name), "utf8");
+      if (a !== b) {
+        spellingIdentical = false;
+        spellingDiffs.push(name);
+      }
+    }
+    check(
+      "§20 two compiles differing ONLY in path spelling are byte-identical",
+      spellingIdentical,
+      spellingDiffs.join(","),
+    );
+    const spelledMap = SiteMapSchema.parse(
+      JSON.parse(await readFile(path.join(spelledAbsolute.runDir, "site-map.json"), "utf8")),
+    );
+    check(
+      "§20 the recorded policyFile is repo-relative POSIX, never the raw argument",
+      spelledMap.routePolicy?.policyFile === relativeSpelling.split(path.sep).join("/") &&
+        !spelledMap.routePolicy.policyFile.startsWith("/"),
+      JSON.stringify(spelledMap.routePolicy?.policyFile),
+    );
+
+    // (2) `structure-only` is weaker than it sounds when a route SHARES its
+    // page with a slotized route: policy is per route, bindings are per page.
+    const { siteSpec: sharedSpec, routeMap: sharedBase } = collectionFixture();
+    const aliasOf = sharedBase.routes.find((r) => r.key === "/blog/one")!;
+    const sharedRoutes = {
+      ...sharedBase,
+      routes: [
+        ...sharedBase.routes,
+        { ...aliasOf, routeId: "r/blog/one-alias", key: "/blog/one-alias", path: "/blog/one-alias", url: `${ROOT_URL}blog/one-alias` },
+      ],
+    } as RuntimeRouteMap;
+    const sharedRules = [
+      { route: "/blog/one", scope: "collection-representative" as RouteScope },
+      { routePrefix: "/blog", scope: "structure-only" as RouteScope },
+    ];
+    const sharedPolicy = resolveRoutePolicy(sharedRoutes, sharedSpec, {
+      schemaVersion: 1,
+      rules: sharedRules,
+    });
+    check(
+      "§20 a structure-only route sharing a slotized page is counted",
+      sharedPolicy.structureOnlySharedPageRoutes === 1 &&
+        sharedPolicy.scopeCounts["structure-only"] === 3,
+      `${sharedPolicy.structureOnlySharedPageRoutes} shared / ${sharedPolicy.scopeCounts["structure-only"]} structure-only`,
+    );
+    check(
+      "§20 the machine-readable limitation says so, with the real count",
+      routePolicyLimitations(sharedPolicy).includes(
+        "structure-only-routes-sharing-a-slotized-page-do-render-slot-edits:1",
+      ) && routePolicyLimitations(sharedPolicy).includes("structure-only-routes-carry-no-slots:3"),
+      JSON.stringify(routePolicyLimitations(sharedPolicy)),
+    );
+    check(
+      "§20 the site map carries the same count for diffing",
+      buildSiteMap(sharedRoutes, sharedSpec, [], sharedPolicy).routePolicy
+        ?.structureOnlySharedPageRoutes === 1,
+    );
+    // Negative control for the spelling check above: policyFile really is
+    // load-bearing on site-map bytes, so those two compiles matched because of
+    // normalization, not because nothing embeds the path at all.
+    const spellingSensitive =
+      JSON.stringify(
+        buildSiteMap(sharedRoutes, sharedSpec, [], {
+          ...sharedPolicy,
+          policyFile: "/abs/route-policy.json",
+        }),
+      ) !==
+      JSON.stringify(
+        buildSiteMap(sharedRoutes, sharedSpec, [], {
+          ...sharedPolicy,
+          policyFile: "data/route-policy.json",
+        }),
+      );
+    check(
+      "§20 policyFile IS load-bearing on site-map bytes (negative control)",
+      spellingSensitive,
+    );
+
+    // Negative control: drop the alias and no route shares a slotized page.
+    const unsharedPolicy = resolveRoutePolicy(sharedBase, sharedSpec, {
+      schemaVersion: 1,
+      rules: sharedRules,
+    });
+    check(
+      "§20 no shared page → the code is absent and the site map omits the count",
+      unsharedPolicy.structureOnlySharedPageRoutes === 0 &&
+        routePolicyLimitations(unsharedPolicy).every(
+          (code) => !code.startsWith("structure-only-routes-sharing-a-slotized-page"),
+        ) &&
+        buildSiteMap(sharedBase, sharedSpec, [], unsharedPolicy).routePolicy
+          ?.structureOnlySharedPageRoutes === undefined,
+      JSON.stringify(routePolicyLimitations(unsharedPolicy)),
+    );
+    check(
+      "§20 the compiled 2-page fixture (no shared page) does NOT claim the code",
+      structureOnly.compiled.manifest.limitations.every(
+        (code) => !code.startsWith("structure-only-routes-sharing-a-slotized-page"),
+      ) &&
+        structureOnly.compiled.manifest.limitations.includes(
+          "structure-only-routes-carry-no-slots:1",
+        ),
+      JSON.stringify(structureOnly.compiled.manifest.limitations.slice(-3)),
+    );
+
+    // (3) A rule every match of which an earlier rule already decided changes
+    // nothing — it must be refused exactly like a rule that matches nothing.
+    let shadowedRefused = false;
+    let shadowedMessage = "";
+    try {
+      await compileWithPolicy("shadowed", {
+        schemaVersion: 1,
+        rules: [
+          { routePrefix: "/", scope: "core-reconstruct" },
+          { route: "/about", scope: "structure-only", reason: "fully shadowed by the sweep above" },
+        ],
+      });
+    } catch (error) {
+      shadowedRefused = error instanceof TemplateInputError;
+      shadowedMessage = error instanceof Error ? error.message : "";
+    }
+    check(
+      "§20 a fully shadowed rule is refused, never silently ignored",
+      shadowedRefused && shadowedMessage.includes("/about"),
+      shadowedMessage.slice(0, 160),
+    );
+    check(
+      "§20 first-match-wins still accepts an exception ABOVE its sweep (positive control)",
+      sharedPolicy.scopeByRoute.get("/blog/one") === "collection-representative" &&
+        sharedPolicy.scopeByRoute.get("/blog/two") === "structure-only" &&
+        sharedPolicy.decisions.find((d) => d.route === "/blog/one")?.matchedRuleIndex === 0,
+      JSON.stringify([...sharedPolicy.scopeByRoute]),
+    );
+
     void slotByKey;
     void compiledSanity(compiled);
   } finally {

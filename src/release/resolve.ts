@@ -4,13 +4,16 @@
  * dependency graph names (spec §12). Original artifacts are never mutated;
  * the pack is copied into a new release run for the audit trail.
  */
+import { existsSync } from "node:fs";
 import { copyFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
+import { isSafeThemeValue, isThemeToken } from "../theme/index.js";
 import { collectRequirements } from "./collect.js";
 import { deriveReleaseState } from "./gate.js";
 import { applyBlocking, refreshStageStatuses } from "./freshness.js";
 import { invalidatedStages } from "./graph.js";
+import { foldResolutionIntoAuthored, resolutionSlotValues } from "./instance.js";
 import { renderOperatorChecklist } from "./checklist.js";
 import {
   buildRequirementsFile,
@@ -96,6 +99,28 @@ export async function resolveRelease(
     }
   }
 
+  // ---- 2b. theme authoring stays INSIDE the Theme Contract -----------------
+  // The Task 20 token vocabulary is CLOSED and carries paint only, so a layout
+  // value has no token to land in; `isSafeThemeValue` additionally refuses any
+  // value that could escape a declaration or reference an asset.
+  const themeTokens = resolution.theme?.tokens ?? {};
+  const badTokens = Object.keys(themeTokens).filter((token) => !isThemeToken(token));
+  if (badTokens.length > 0) {
+    throw new Error(
+      `resolution theme references tokens outside theme-contract-v1: ${badTokens.join(", ")} ` +
+        "— a theme is a paint skin, never layout",
+    );
+  }
+  const unsafeTokens = Object.entries(themeTokens)
+    .filter(([, value]) => !isSafeThemeValue(value))
+    .map(([token]) => token);
+  if (unsafeTokens.length > 0) {
+    throw new Error(`resolution theme carries unsafe paint values for: ${unsafeTokens.join(", ")}`);
+  }
+  if (resolution.theme?.themeSourceFile !== undefined && !existsSync(resolution.theme.themeSourceFile)) {
+    throw new Error(`resolution theme.themeSourceFile not found: ${resolution.theme.themeSourceFile}`);
+  }
+
   // ---- 3. match to requirements + record ------------------------------------
   const { matches, acknowledgements, unmatchedFields } = matchResolutionToRequirements(
     requirementsFile.requirements,
@@ -108,15 +133,22 @@ export async function resolveRelease(
   const storedPackFile = path.join(runDirRel, "resolution.json");
   await copyFile(options.resolutionFile, storedPackFile);
 
+  const appliedAt = new Date().toISOString();
   project.resolutions.push({
     resolutionId,
-    appliedAt: new Date().toISOString(),
+    appliedAt,
     file: storedPackFile,
     resolutionHash: sha256OfJson(resolution),
     resolution,
     matched: [...matches, ...acknowledgements],
     unmatchedFields,
   });
+
+  // ---- 3b. fold authored values into the AUTHORITATIVE block ---------------
+  // `authored` is the one source for slot values and theme; the pack above
+  // stays as the immutable audit record of HOW each value arrived. Nothing is
+  // read back out of the pack as an independent truth.
+  project.authored = foldResolutionIntoAuthored(project.authored, resolution, appliedAt);
 
   // ---- 4. requirement statuses + stage invalidation -------------------------
   // No re-collection here (artifacts are unchanged) — the current requirement
@@ -133,11 +165,33 @@ export async function resolveRelease(
 
   const warnings = [...refreshed.warnings];
   if (unmatchedFields.length > 0) {
+    // Authoring is not only gap-filling, so an authored slot value that binds
+    // to no open requirement is normal and can arrive in bulk — the list is
+    // capped so one large pack cannot bury the rest of the operator screen.
+    // `matched` / `unmatchedFields` on the recorded pack stay complete.
+    const shown = unmatchedFields.slice(0, 12).join(", ");
+    const more = unmatchedFields.length > 12 ? `, … and ${unmatchedFields.length - 12} more` : "";
     warnings.push(
       `resolution ${resolutionId}: ${unmatchedFields.length} field(s) matched no open requirement ` +
-        `(recorded, still applied where consumable): ${unmatchedFields.join(", ")}`,
+        `(recorded, still applied where consumable): ${shown}${more}`,
     );
-    log(`[release:resolve] WARNING — unmatched fields: ${unmatchedFields.join(", ")}`);
+    log(`[release:resolve] WARNING — unmatched fields: ${shown}${more}`);
+  }
+  const authoredSlotCount = Object.keys(resolutionSlotValues(resolution)).length;
+  if (authoredSlotCount > 0) {
+    warnings.push(
+      `content write doctrine: ${authoredSlotCount} slot value(s) folded into the AUTHORITATIVE ` +
+        `authored.slotValues (project total ${Object.keys(project.authored.slotValues).length}). ` +
+        "content-runs/<run>/slot-values.json is a DERIVED, MATERIALIZED output — editing a " +
+        "historical content run's slot-values.json in place is NON-AUTHORITATIVE and will be " +
+        "replaced by the next release:build",
+    );
+  }
+  if (Object.keys(resolution.theme?.tokens ?? {}).length > 0) {
+    log(
+      `[release:resolve] theme: ${Object.keys(resolution.theme!.tokens!).length} contract token(s) ` +
+        "authored → theme + production stale (template/content/reconstruction untouched)",
+    );
   }
 
   // Route readiness + facts for the state derivation (read-only collect).

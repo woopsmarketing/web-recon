@@ -12,7 +12,10 @@ export interface NetworkQaOptions {
   /** Unmodified upstream app base URL — the BEFORE measurement. */
   upstreamBaseUrl: string;
   routes: string[];
-  /** Exact source asset/CDN/font hosts from the inventory. */
+  /**
+   * Exact source asset/CDN/font hosts from the inventory. A `host:port`
+   * entry also matches (real source hosts never carry a port; fixtures do).
+   */
   sourceHosts: string[];
   /** Apex domain of the source site (e.g. "stripe.com") — subdomain match. */
   sourceApex: string;
@@ -41,9 +44,12 @@ export interface NetworkQaReport {
 
 function classifyHost(
   host: string,
+  /** host:port form (URL.host) — a source host given WITH an explicit port wins over the loopback shortcut. */
+  hostWithPort: string,
   sourceHosts: Set<string>,
   sourceApex: string,
 ): "local" | "source" | "other" {
+  if (sourceHosts.has(hostWithPort)) return "source";
   if (host === "127.0.0.1" || host === "localhost") return "local";
   if (sourceHosts.has(host)) return "source";
   if (host === sourceApex || host.endsWith("." + sourceApex)) return "source";
@@ -85,12 +91,15 @@ async function measureRoute(
   };
   for (const url of requests) {
     let host = "";
+    let hostWithPort = "";
     try {
-      host = new URL(url).hostname;
+      const parsed = new URL(url);
+      host = parsed.hostname;
+      hostWithPort = parsed.host;
     } catch {
       continue;
     }
-    const cls = classifyHost(host, sourceHosts, sourceApex);
+    const cls = classifyHost(host, hostWithPort, sourceHosts, sourceApex);
     if (cls === "local") summary.local++;
     else if (cls === "source") {
       summary.sourceHost++;

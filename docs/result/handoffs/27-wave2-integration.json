@@ -1,0 +1,170 @@
+{
+  "agent": "Agent 2-Integrator — Task 27 Wave 2 Integration",
+  "objective": "Resolve the integration seams the three Wave-2 schema owners (2A Template Factory V2, 2B Release Authoring, 2C Content Generation V2) were forbidden to touch — package.json scripts, shared barrel exports, cross-owner interface mismatch — and prove every affected suite is green with no check lost.",
+  "status": "PASS",
+  "filesCreated": [
+    "docs/result/handoffs/27-wave2-integration.json"
+  ],
+  "filesModified": [
+    "src/release/stages.ts"
+  ],
+  "filesModifiedOutsideOwnership": [],
+  "integrationFindings": {
+    "packageJson": "NO EDIT WAS NEEDED. 2A explicitly filed 'no script change is required' (--route-policy is a flag on the existing compile:recon-template script). 2B filed changeRequests: []. 2C's two changeRequests both name src/release/stages.ts, not package.json. Verified independently: the only untracked src/cli-*.ts in the tree is src/cli-compile-regions.ts, and package.json already carries `compile:regions` and `smoke:regions` from the Wave-1 integrator (git diff package.json shows exactly those two added lines and nothing else).",
+    "barrels": "NO EDIT WAS NEEDED — every owner wired their own. Verified by grepping each new module's specifier out of its barrel: src/recon-template/index.ts re-exports ./route-policy.js and ./collections.js; src/content-injection/index.ts re-exports ./accounting.js, ./batching.js, ./truth-mode.js, ./region-plan.js, ./brief.js; src/release/index.ts re-exports ./instance.js; src/telemetry/index.ts exists and re-exports ./types.js + ./recorder.js; the Wave-1 modules (src/seo/escape-variants.ts, src/assets/residual-report.ts, src/regions/*) are reachable from their barrels. No deep-path import from a CLI or script remained.",
+    "ownershipOverlap": "The three owners' modified-file sets are disjoint (2A: src/recon-template/* + src/cli-compile-recon-template.ts + scripts/smoke-recon-template.ts; 2B: src/release/* + src/cli-release-prepare.ts + scripts/smoke-release.ts; 2C: src/content-injection/* + src/telemetry/* + four content CLIs + scripts/smoke-content-injection.ts), and disjoint from the Wave-1 set (src/regions, src/seo, src/assets, src/production). No lost update was possible and none was found.",
+    "typecheckOnArrival": "pnpm typecheck exited 0 on the merged tree BEFORE I made any edit — the mid-session cross-owner type errors both 2B and 2C reported in their handoffs were already resolved by their owners."
+  },
+  "changeRequestsApplied": [
+    {
+      "request": "2C → src/release/stages.ts (owner 2B): surface the new content slot accounting (outcome.accounting / manifest slotAccounting + truthMode) on the release run.",
+      "howApplied": "src/release/stages.ts:180-201 — contentStageRunner now logs `[release] content accounting: <inScopeSlots> in-scope slots, <ambiguousSlots> ambiguous, reconciled=<bool> (truth mode: <mode>)` from outcome.accounting, and pushes an operator-facing WARNING onto the release run ONLY when reconciliation.reconciled is false (naming missing/doubleCounted counts).",
+      "surfacingDecision": "Informational numbers go to the log; only a FAILED reconciliation is raised to `warnings`, because warnings land in the release run record and the operator checklist (src/release/build.ts:226, :383, :393) and an unconditional informational warning would make every release run noisy. Ambiguous slots are reported as their own number and are never folded into a success count, matching 2C's honesty rule."
+    },
+    {
+      "request": "2A → src/release/prepare.ts + src/release/freshness.ts (owner 2B): add \"report\" to the frozen-template lineage hash exclusions.",
+      "howApplied": "ALREADY DONE BY 2B before I arrived; I only confirmed it rather than re-applying it. src/release/freshness.ts:46-51 FROZEN_TEMPLATE_HASH_EXCLUSIONS = [node_modules, .next, out, report]; src/release/prepare.ts:22 imports it and :197 spreads it into the template hashRef. smoke:release 27.6/27.7/27.8 cover it."
+    },
+    {
+      "request": "2A → package.json (owner: wave Integrator): 'no script change is required for Task 27'.",
+      "howApplied": "Confirmed and closed with no edit — see integrationFindings.packageJson."
+    }
+  ],
+  "changeRequestsRefused": [],
+  "changeRequestsNoted": [
+    {
+      "request": "2C → src/release/stages.ts: BEHAVIOUR NOTE (explicitly not a request) — ingestGenerationResult now enforces the run's content truth mode (default verified-only) before validation, so an unbacked fact-shaped value in the MERGED base result is moved to `unresolved`. Values the release orchestrator marks source='user-provided' (every routeContent / urls / authored slot value, src/release/stages.ts:126-141) are backed by definition and are never touched.",
+      "action": "No code change. Recorded, and measured: smoke:release runs the REAL contentStageRunner through a full build (checks 27.22/27.24 assert the materialized slot-values.json and that authored values actually serve in the production package) and is 122/122 green under the new default mode."
+    }
+  ],
+  "interfaceDecisions": [
+    {
+      "seam": "Content V2 slot accounting → release run record (the one cross-owner surfacing decision left open by 2C)",
+      "chosen": "Release consumes it READ-ONLY from IngestOutcome.accounting at the existing ingest call site; log for the numbers, run-record warning only for a failed reconciliation. No new field on ReleaseProject, no second copy of the account.",
+      "why": "Preserves the settled architecture: release-project is authoritative for AUTHORED state only, and derived content facts stay owned by the content run (data/<host>/content-runs/<run>/slot-accounting.json). Copying the account into the project would create the exact duplicate-truth problem 2B's authored block was built to remove."
+    },
+    {
+      "seam": "Content truth mode (verified-only) vs the release orchestrator's operator resolution packs",
+      "chosen": "Keep 2C's user-provided exemption; make no release-side override.",
+      "why": "content-injection consumes release state read-only and must never be able to refuse an operator's own value. 2C already exempts source='user-provided', which is exactly what contentStageRunner stamps on every routeContent/urls/authored value, so the two owners' assumptions already agree. No mismatch to resolve."
+    },
+    {
+      "seam": "recon-template ↔ release: 2A bumped TEMPLATE_COMPILER_VERSION 2 → 3 and added optional site-map/manifest fields",
+      "chosen": "No release-side change; leave the compilerVersion unpinned.",
+      "why": "recon-template never learns about release, and nothing in src/release pins a literal template compilerVersion. Verified by the suites: smoke:release 122/122 loads the legacy compilerVersion-2 template lineages unchanged, and 2A's parse check covered compilerVersion 1 and 2 artifacts."
+    }
+  ],
+  "suiteResults": [
+    {
+      "suite": "pnpm smoke:recon-template",
+      "baseline": 64,
+      "actual": 98,
+      "delta": 34,
+      "failures": 0,
+      "note": "Baseline is the brief's pre-Task-27 value, matching 2A's own measured baseline. Includes the LIVE §19 parity run (next build + Chromium)."
+    },
+    {
+      "suite": "pnpm smoke:release",
+      "baseline": 84,
+      "actual": 122,
+      "delta": 38,
+      "failures": 0,
+      "note": "Run TWICE: 122/122 on arrival (before my edit) and 122/122 after the stages.ts surfacing edit. Baseline is the brief's Task 25/26 value."
+    },
+    {
+      "suite": "pnpm smoke:content-injection",
+      "baseline": 68,
+      "actual": 107,
+      "delta": 39,
+      "failures": 0,
+      "note": "Baseline is the brief's value, matching 2C's re-measured baseline."
+    },
+    {
+      "suite": "pnpm smoke:regions",
+      "baseline": 67,
+      "actual": 67,
+      "delta": 0,
+      "failures": 0,
+      "note": "Wave-1 suite; it exists (scripts/smoke-regions.ts, script entry already in package.json). Baseline taken from docs/result/handoffs/27-wave1-integration.json suiteResults (the Wave-1 post-integration value), since the suite did not exist pre-Task-27."
+    },
+    {
+      "suite": "pnpm smoke:production",
+      "baseline": 85,
+      "actual": 89,
+      "delta": 4,
+      "failures": 0,
+      "note": "The brief's baseline 85 is the PRE-Wave-1 value; the Wave-1 integrator left it at 89. Actual 89 is >= both."
+    },
+    {
+      "suite": "pnpm smoke:seo",
+      "baseline": 79,
+      "actual": 97,
+      "delta": 18,
+      "failures": 0,
+      "note": "The brief's baseline 79 is the PRE-Wave-1 value; the Wave-1 integrator left it at 97. Actual 97 is >= both."
+    },
+    {
+      "suite": "pnpm smoke:assets",
+      "baseline": 117,
+      "actual": 140,
+      "delta": 23,
+      "failures": 0,
+      "note": "The brief's baseline 117 is the PRE-Wave-1 value; the Wave-1 integrator left it at 140. Actual 140 is >= both."
+    },
+    {
+      "suite": "pnpm smoke:theme",
+      "baseline": 47,
+      "actual": 47,
+      "delta": 0,
+      "failures": 0,
+      "note": "Untouched by Wave 2; run as a blast-radius probe for 2B's theme authoring path."
+    }
+  ],
+  "editsOutsideIntegrationSeams": [],
+  "testsRun": [
+    { "command": "pnpm typecheck (on arrival, before any edit)", "exitCode": 0, "checks": null, "note": "tsc --noEmit clean on the merged three-owner tree." },
+    { "command": "pnpm smoke:recon-template", "exitCode": 0, "checks": 98, "note": "\"98/98 checks passed\"." },
+    { "command": "pnpm smoke:release (before my edit)", "exitCode": 0, "checks": 122, "note": "\"smoke:release — 122 checks, 0 failures\"." },
+    { "command": "pnpm smoke:content-injection", "exitCode": 0, "checks": 107, "note": "\"107/107 checks passed\"." },
+    { "command": "pnpm smoke:regions", "exitCode": 0, "checks": 67, "note": "\"67/67 checks passed\"." },
+    { "command": "pnpm smoke:production", "exitCode": 0, "checks": 89, "note": "\"smoke:production — 89 checks, 0 failures\"." },
+    { "command": "pnpm smoke:seo", "exitCode": 0, "checks": 97, "note": "\"97/97 checks passed\"." },
+    { "command": "pnpm smoke:assets", "exitCode": 0, "checks": 140, "note": "\"140/140 checks passed\"." },
+    { "command": "pnpm smoke:theme", "exitCode": 0, "checks": 47, "note": "\"47/47 checks passed\"." },
+    { "command": "pnpm typecheck (after the stages.ts edit)", "exitCode": 0, "checks": null, "note": "clean." },
+    { "command": "pnpm smoke:release (after the stages.ts edit)", "exitCode": 0, "checks": 122, "note": "\"smoke:release — 122 checks, 0 failures\" — same 122, nothing gained or lost by the surfacing edit." },
+    { "command": "git status --porcelain data/", "exitCode": 0, "checks": 0, "note": "EMPTY after all nine suite runs — historical artifacts modified 0, the audited invariant holds." },
+    { "command": "git status --porcelain docs/result/handoffs/24-aggregation-phase1.json", "exitCode": 0, "checks": 0, "note": "EMPTY — the runtime debt input (src/release/debt.ts:15) is untouched." }
+  ],
+  "evidence": [
+    "src/release/stages.ts:180-201 — the ONLY code edit of this integration: the content accounting surfacing (log line + reconciliation-failure warning), with the surfacing rationale in the comment.",
+    "src/release/build.ts:226 — where StageRunnerResult.warnings is pushed onto the release run; :383/:393 where warnings reach the run record and the operator checklist. This is why only a failed reconciliation is a warning.",
+    "src/content-injection/types.ts:984-1032 — SlotAccountingFileSchema: the exact fields read (totals.inScopeSlots, reconciliation.reconciled/missing/doubleCounted/inScopeSlots, scopeHonesty.ambiguousSlots, truthMode).",
+    "src/content-injection/run.ts:130-136 — IngestOutcome.accounting, the read-only seam the release side consumes.",
+    "src/release/freshness.ts:46-51 and src/release/prepare.ts:22,:197 — 2A's report/ exclusion change request, confirmed already applied by 2B.",
+    "git diff package.json — exactly two added lines (compile:regions, smoke:regions), both from the Wave-1 integrator; no Wave-2 script was required.",
+    "docs/result/handoffs/27-wave1-integration.json suiteResults — the source of the post-Wave-1 baselines for seo/assets/production/regions.",
+    "/private/tmp/claude-501/-Users-woops-projects-web-recon/65e5b51c-f951-45fb-bee7-f8e9da931b0d/scratchpad/{recon-template,release,release2,content-injection,regions,production,seo,assets,theme}.log — the full output of every suite run above."
+  ],
+  "changeRequests": [
+    {
+      "file": "src/release/prepare.ts (acceptedLineage.content hashRef, ~line 199)",
+      "owner": "src/release owner (2B or a later task)",
+      "change": "Consider giving the CONTENT lineage hashRef an exclusion set the way template got one — at minimum `report`, and decide whether `slot-accounting.json` belongs there too.",
+      "why": "The content stage artifact is hashed with NO exclusions. content:qa already wrote report/ into a content run dir before Task 27; Task 27 widens that surface (report/telemetry.jsonl, and revalidateSlotValues refreshes slot-accounting.json on every content:validate). Running content QA/validate against a release project's lineage content run therefore drifts the content stage hash. Unlike template this is NOT a hard refusal — content is an executable stage, so drift degrades to stale + a rerun — which is why I did not change it as an integration seam. Recorded, not fixed."
+    }
+  ],
+  "limitations": [
+    "The new accounting log line in contentStageRunner is NOT asserted by any check. smoke:release passes `log: () => {}` to buildRelease, so the text never appears in the suite output. What IS proven is that the statement executes without throwing: smoke:release 27.22/27.24 drive the real (non-stubbed) contentStageRunner through a full build, and an absent `accounting` field would have raised a TypeError on the very next line.",
+    "I ran only the nine suites the brief names plus typecheck. The remaining eight of the 17 suites (playwright, verifier, selector, multi-observer, interaction-detector/explorer/patterns, sitespec, reconstruction, reconstruction-qa, e2e) were NOT run — that is the orchestrator's full-regression job, per the brief.",
+    "The baselines for smoke:seo (79), smoke:assets (117) and smoke:production (85) in my brief predate Wave 1. I compared against BOTH those and the Wave-1 post-integration values (97/140/89) and the tree matches the higher, later value exactly — so no check was lost in either frame. I did not re-measure any baseline myself; every 'before' number here is sourced from a handoff.",
+    "I did not independently re-verify the owners' own canary measurements (2A's 9,529→4,661 slot reduction, 2C's linear.app 594-slot reconciliation, 2B's legacy project loads). Those rest on their handoffs and their suites; my scope was the seams and the suite counts.",
+    "No edit was needed for package.json or any barrel, so the two seams the brief expected to be the main work turned out to be already closed by the owners. The single real seam was 2C's accounting surfacing."
+  ],
+  "followUps": [
+    "Assert the accounting surfacing: add a smoke:release check that captures the build log (or reads slot-accounting.json from the produced content run) and asserts the in-scope/ambiguous numbers, so a future regression in IngestOutcome.accounting fails a check rather than only a type.",
+    "Decide the content lineage hash exclusion set (see changeRequests) before an operator is told to run content:qa against a prepared release project.",
+    "2B's follow-up stands and is the natural next operator action: `pnpm release:prepare <spec> --project-id <legacy-id>` once per legacy project, to migrate its template ArtifactRef onto the new report/ exclusion.",
+    "2C's RegionPlan still has no consumer and 2A's collections model still has no policy auto-suggester; both are cross-stage features that will need an integrator pass of their own when they get wired."
+  ]
+}

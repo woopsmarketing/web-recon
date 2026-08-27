@@ -409,3 +409,118 @@ export const ReplacementManifestSchema = z
   })
   .strict();
 export type ReplacementManifest = z.infer<typeof ReplacementManifestSchema>;
+
+/* ------------------------------------------------------------------ *
+ * Cross-route residual source-asset report (Task 27 GED-G)
+ *
+ * The census (report/network-qa.json) already measures per-route runtime
+ * requests; this schema is the JOIN of that measurement with the inventory
+ * (identity) and the replacement manifest (requirement), reported per FILE
+ * across every measured route.
+ *
+ * It adds RENDER PRIORITIZATION only — where a residual file actually shows
+ * up and how often. `replacement` is READ from replacement-manifest.json and
+ * cited by path; this artifact never derives a replacement verdict of its own.
+ * ------------------------------------------------------------------ */
+
+export const ASSET_RESIDUAL_REPORT_SCHEMA_NAME = "asset-residual-report-v1";
+
+/** Which routes a census covered, and where that route list came from. */
+export const CensusRouteScopeSchema = z
+  .object({
+    source: z.enum([
+      "explicit-routes", // operator passed --routes
+      "template-site-map", // <template-run>/site-map.json (the default)
+      "fallback-root", // site-map unreadable — honest single-route fallback
+    ]),
+    routes: z.array(z.string()),
+    siteMapFile: z.string().nullable(),
+    /** Routes the site map declared, before any --max-routes truncation. */
+    siteMapRouteCount: z.number().nullable(),
+    truncatedTo: z.number().nullable(),
+    /**
+     * The raw --routes value when it parsed to ZERO routes and was therefore
+     * NOT the scope. Null whenever the override was absent or was honoured —
+     * a discarded override must never leave the scope provenance reading as
+     * though the operator had said nothing.
+     */
+    discardedExplicitRoutes: z.string().nullable().default(null),
+    note: z.string(),
+  })
+  .strict();
+export type CensusRouteScope = z.infer<typeof CensusRouteScopeSchema>;
+
+export const ResidualRouteHitSchema = z
+  .object({ route: z.string(), occurrences: z.number() })
+  .strict();
+export type ResidualRouteHit = z.infer<typeof ResidualRouteHitSchema>;
+
+export const ResidualAssetFileSchema = z
+  .object({
+    /** Request URL with the fragment stripped; the query is KEPT (CDN transforms are distinct files). */
+    url: z.string(),
+    /** URL.hostname — no port, matching how the inventory records its hosts. */
+    host: z.string(),
+    /** Rendered routes this file was requested on, with per-route occurrence counts. */
+    routes: z.array(ResidualRouteHitSchema),
+    routeCount: z.number(),
+    occurrences: z.number(),
+    /** Exact-URL join into the inventory — null when no entry carries this URL (never guessed). */
+    inventoryId: z.string().nullable(),
+    assetId: z.string().nullable(),
+    slotKeys: z.array(z.string()),
+    /** Read from replacement-manifest.json, which stays authoritative. */
+    replacement: z
+      .object({
+        inManifest: z.boolean(),
+        classification: AssetClassificationSchema.nullable(),
+        status: z.enum(["awaiting-input", "provided"]).nullable(),
+        providedFile: z.string().nullable(),
+        note: z.string().nullable(),
+        manifestFile: z.string(),
+      })
+      .strict(),
+    /** Artifact path + record refs backing every field above. */
+    evidence: z.array(z.string()),
+  })
+  .strict();
+export type ResidualAssetFile = z.infer<typeof ResidualAssetFileSchema>;
+
+export const ResidualAssetReportSchema = z
+  .object({
+    schemaVersion: z.literal(ASSET_SCHEMA_VERSION),
+    schemaName: z.literal(ASSET_RESIDUAL_REPORT_SCHEMA_NAME),
+    createdAt: z.string(),
+    sourceHost: z.string(),
+    routeScope: CensusRouteScopeSchema,
+    inputs: z
+      .object({
+        networkQaFile: z.string(),
+        inventoryFile: z.string(),
+        replacementManifestFile: z.string(),
+      })
+      .strict(),
+    counts: z
+      .object({
+        routesMeasured: z.number(),
+        routesWithResidual: z.number(),
+        residualFiles: z.number(),
+        residualOccurrences: z.number(),
+        joinedToInventory: z.number(),
+        unjoinedToInventory: z.number(),
+        inReplacementManifest: z.number(),
+        notInReplacementManifest: z.number(),
+        /**
+         * Files a "/"-only census would never have seen — the GED-G defect,
+         * quantified. NULL when "/" was not itself measured: with no root
+         * measurement "no hit on /" is unobserved, not observed-absent.
+         */
+        invisibleAtRootOnly: z.number().nullable(),
+      })
+      .strict(),
+    byHost: z.record(z.string(), z.number()),
+    /** Prioritized: most-rendered first. */
+    files: z.array(ResidualAssetFileSchema),
+  })
+  .strict();
+export type ResidualAssetReport = z.infer<typeof ResidualAssetReportSchema>;

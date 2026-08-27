@@ -7,7 +7,10 @@
  * limits), inventory + conservative classification, font inventory +
  * license safety, content-hash materialization, rewrite map application,
  * the asset proxy, and a real-Chromium check that the served page loads its
- * image from /media with zero requests to the source asset origin.
+ * image from /media with zero requests to the source asset origin. Section 9
+ * (Task 27 GED-G) adds a MULTI-ROUTE census over a fixture site map plus the
+ * per-file residual report that joins it to inventory identity and to the
+ * replacement manifest's verdict.
  *
  * Local fixtures run on 127.0.0.1 and are admitted ONLY through the
  * explicit test-only `allowPrivateHostPorts` escape hatch — the same runs
@@ -21,6 +24,7 @@ import { chromium } from "playwright";
 
 import {
   applyRewrite,
+  buildResidualAssetReport,
   createAssetInventoryRun,
   createAssetMaterializationRun,
   extensionForMime,
@@ -32,9 +36,16 @@ import {
   loadAssetMaterializationRun,
   mediaContentType,
   mimeAllowed,
+  normalizeResidualUrl,
+  ResidualAssetReportSchema,
+  resolveCensusRoutes,
   rewriteVariants,
+  runNetworkQa,
   safeFetchAsset,
   startAssetProxy,
+  AssetInventorySchema,
+  type AssetInventory,
+  type ReplacementManifest,
   type RewriteMap,
   type SafeFetchPolicy,
 } from "../src/assets/index.js";
@@ -977,6 +988,373 @@ async function main(): Promise<void> {
     await new Promise<void>((resolve) => upstreamApp.server.close(() => resolve()));
     await new Promise<void>((resolve) => matFixture.server.close(() => resolve()));
     await new Promise<void>((resolve) => assetFixture.server.close(() => resolve()));
+
+    /* ============================================================ */
+    section("9. cross-route residual source-asset report (Task 27 GED-G)");
+    /* ============================================================ */
+    // Three origins: a SOURCE asset host, the app, and the asset proxy in
+    // front of it. The proxy rewrites exactly one of the source URLs, so the
+    // rest stay residual — and two of them render ONLY on a non-"/" route,
+    // which is precisely what a "/"-only census could never see.
+    const png = (_req: { url: string }, res: import("node:http").ServerResponse): void => {
+      res.writeHead(200, { "content-type": "image/png" });
+      res.end(PNG_BYTES);
+    };
+    const sourceFixture = await startFixture({
+      "/img/rewritten.png": png,
+      "/img/shared-residual.png": png,
+      "/img/deep-only.png": png,
+      "/img/deep-only-unknown.png": png,
+    });
+    const SRC = sourceFixture.baseUrl;
+    const routePage = (urls: string[]): string =>
+      `<!doctype html><html><head><title>fixture</title></head><body>` +
+      urls.map((url, index) => `<img id="i${index}" src="${url}">`).join("") +
+      `</body></html>`;
+    const routeApp = await startFixture({
+      "/": (_req, res) => {
+        res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+        res.end(routePage([`${SRC}/img/rewritten.png`, `${SRC}/img/shared-residual.png`]));
+      },
+      "/deep": (_req, res) => {
+        res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+        res.end(
+          routePage([
+            `${SRC}/img/shared-residual.png`,
+            `${SRC}/img/deep-only.png`,
+            `${SRC}/img/deep-only-unknown.png`,
+          ]),
+        );
+      },
+    });
+    const routeProxy = await startAssetProxy(routeApp.baseUrl, {
+      mediaDir: path.join(matRunDir, "media"),
+      rewriteMap: {
+        schemaVersion: 1,
+        entries: [
+          { sourceUrl: `${SRC}/img/rewritten.png`, localPath: localHero, contexts: ["html", "css"] },
+        ],
+      },
+    });
+
+    // -- route scope resolution ------------------------------------------
+    const templateFixtureDir = path.join(fixtureRoot, "template-run-ged-g");
+    await mkdir(templateFixtureDir, { recursive: true });
+    await writeFile(
+      path.join(templateFixtureDir, "site-map.json"),
+      JSON.stringify({
+        schemaVersion: 2,
+        root: "https://fixture.example/",
+        routes: [
+          { route: "/", url: "https://fixture.example/", pageId: "p000001" },
+          { route: "/deep", url: "https://fixture.example/deep", pageId: "p000002" },
+        ],
+        pageFamilies: [],
+        representatives: [],
+        internalLinks: [],
+      }),
+    );
+    const scopeDefault = await resolveCensusRoutes({ templateRunDir: templateFixtureDir });
+    check(
+      "route scope defaults to every site-map route (not just \"/\")",
+      scopeDefault.source === "template-site-map" &&
+        scopeDefault.routes.join(",") === "/,/deep" &&
+        scopeDefault.siteMapRouteCount === 2,
+      `${scopeDefault.source} ${scopeDefault.routes.join(",")}`,
+    );
+    const scopeExplicit = await resolveCensusRoutes({
+      templateRunDir: templateFixtureDir,
+      explicitRoutes: "/deep , /",
+    });
+    check(
+      "--routes still overrides the scope explicitly",
+      scopeExplicit.source === "explicit-routes" &&
+        scopeExplicit.routes.join(",") === "/,/deep" &&
+        scopeExplicit.siteMapFile === null,
+      scopeExplicit.routes.join(","),
+    );
+    const scopeEmptyOverride = await resolveCensusRoutes({
+      templateRunDir: templateFixtureDir,
+      explicitRoutes: " , ",
+    });
+    check(
+      "a --routes value that declares no route is RECORDED as discarded, never silently ignored",
+      scopeEmptyOverride.discardedExplicitRoutes === " , " &&
+        scopeEmptyOverride.note.includes("DISCARDED") &&
+        scopeEmptyOverride.source === "template-site-map" &&
+        scopeEmptyOverride.routes.join(",") === "/,/deep",
+      `${scopeEmptyOverride.source} discarded=${JSON.stringify(scopeEmptyOverride.discardedExplicitRoutes)} ${scopeEmptyOverride.note}`,
+    );
+    check(
+      "an honoured or absent --routes leaves discardedExplicitRoutes null",
+      scopeExplicit.discardedExplicitRoutes === null &&
+        scopeDefault.discardedExplicitRoutes === null,
+      `${JSON.stringify(scopeExplicit.discardedExplicitRoutes)} ${JSON.stringify(scopeDefault.discardedExplicitRoutes)}`,
+    );
+    const scopeEmptyOverrideNoMap = await resolveCensusRoutes({
+      templateRunDir: path.join(fixtureRoot, "template-run-does-not-exist"),
+      explicitRoutes: ",,",
+    });
+    check(
+      "the discarded override survives into the root fallback too",
+      scopeEmptyOverrideNoMap.source === "fallback-root" &&
+        scopeEmptyOverrideNoMap.discardedExplicitRoutes === ",," &&
+        scopeEmptyOverrideNoMap.note.includes("DISCARDED"),
+      scopeEmptyOverrideNoMap.note,
+    );
+    const scopeMissing = await resolveCensusRoutes({
+      templateRunDir: path.join(fixtureRoot, "template-run-does-not-exist"),
+    });
+    check(
+      "unreadable site map falls back to \"/\" and says so",
+      scopeMissing.source === "fallback-root" &&
+        scopeMissing.routes.join(",") === "/" &&
+        scopeMissing.note.includes("unreadable"),
+      scopeMissing.note,
+    );
+    const scopeCapped = await resolveCensusRoutes({
+      templateRunDir: templateFixtureDir,
+      maxRoutes: 1,
+    });
+    check(
+      "--max-routes truncates and records the truncation",
+      scopeCapped.routes.join(",") === "/" && scopeCapped.truncatedTo === 1,
+      JSON.stringify(scopeCapped.routes),
+    );
+
+    // -- the census itself -------------------------------------------------
+    const censusSourceHosts = [`127.0.0.1:${sourceFixture.port}`];
+    const censusArgs = {
+      servedBaseUrl: routeProxy.baseUrl,
+      upstreamBaseUrl: routeApp.baseUrl,
+      sourceHosts: censusSourceHosts,
+      sourceApex: "fixture.invalid",
+      settleMs: 200,
+    };
+    const rootOnlyCensus = await runNetworkQa({ ...censusArgs, routes: ["/"] });
+    const fullCensus = await runNetworkQa({ ...censusArgs, routes: scopeDefault.routes });
+    check(
+      "the old \"/\"-only default hides the deep-route residual assets",
+      rootOnlyCensus.independent.length === 1 &&
+        !rootOnlyCensus.totals.residualSourceUrls.some((url) => url.includes("deep-only")),
+      JSON.stringify(rootOnlyCensus.totals.residualSourceUrls),
+    );
+    check(
+      "the site-map-scoped census measures every route and finds them",
+      fullCensus.independent.length === 2 &&
+        fullCensus.totals.residualSourceUrls.some((url) => url.endsWith("/img/deep-only.png")) &&
+        fullCensus.totals.residualSourceUrls.some((url) =>
+          url.endsWith("/img/deep-only-unknown.png"),
+        ),
+      JSON.stringify(fullCensus.totals.residualSourceUrls),
+    );
+    check(
+      "the rewritten asset is not residual on any route",
+      !fullCensus.totals.residualSourceUrls.some((url) => url.includes("/img/rewritten.png")),
+      JSON.stringify(fullCensus.totals.residualSourceUrls),
+    );
+
+    // -- the join: inventory identity + replacement authority ---------------
+    const residualInventory: AssetInventory = AssetInventorySchema.parse({
+      schemaVersion: 1,
+      schemaName: "asset-inventory-v1",
+      runId: "2026-08-27T00-00-00-000Z",
+      createdAt: "2026-08-27T00:00:00.000Z",
+      sourceHost: "fixture.example",
+      inputs: {
+        siteSpecDir: "fixture/site-spec",
+        templateRunDir: templateFixtureDir,
+        contentRunDir: null,
+        observationRunDir: "fixture/observation",
+        generatedStylesFile: "fixture/generated-styles.css",
+      },
+      hosts: [{ host: `127.0.0.1:${sourceFixture.port}`, assetCount: 2 }],
+      counts: {
+        entries: 2,
+        urlEntries: 2,
+        inlineSvgEntries: 0,
+        truncatedEntries: 0,
+        catalogAssets: 2,
+        cssUrlRefs: 0,
+        headFavicons: 0,
+        headOgImages: 0,
+        fontPreloads: 0,
+        slotJoinedEntries: 1,
+        imageBriefJoinedEntries: 0,
+        byClassification: { "replacement-recommended": 1, "replacement-required": 1 },
+      },
+      entries: [
+        {
+          inventoryId: "ai000001",
+          origin: "asset-catalog",
+          kind: "image",
+          assetId: "a000001",
+          url: `${SRC}/img/shared-residual.png`,
+          host: "127.0.0.1",
+          mimeHint: "image/png",
+          usageCount: 2,
+          sourcePageIds: ["p000001", "p000002"],
+          truncated: false,
+          slotKeys: [],
+          imageBrief: null,
+        },
+        {
+          inventoryId: "ai000002",
+          origin: "asset-catalog",
+          kind: "image",
+          assetId: "a000002",
+          url: `${SRC}/img/deep-only.png`,
+          host: "127.0.0.1",
+          mimeHint: "image/png",
+          usageCount: 1,
+          sourcePageIds: ["p000002"],
+          truncated: false,
+          slotKeys: ["deep/img:hero/src"],
+          imageBrief: null,
+        },
+      ],
+    });
+    const residualReplacementManifest: ReplacementManifest = {
+      schemaVersion: 1,
+      schemaName: "asset-replacement-manifest-v1",
+      entries: [
+        {
+          inventoryId: "ai000002",
+          sourceUrl: `${SRC}/img/deep-only.png`,
+          classification: "replacement-required",
+          slotKeys: ["deep/img:hero/src"],
+          imageBrief: null,
+          replacement: { status: "awaiting-input", providedFile: null, providedBy: null },
+          note: "Source brand surface — never auto-fetched.",
+        },
+      ],
+    };
+    const residualReport = buildResidualAssetReport({
+      networkReport: fullCensus,
+      inventory: residualInventory,
+      replacementManifest: residualReplacementManifest,
+      routeScope: scopeDefault,
+      files: {
+        networkQa: "fixture/report/network-qa.json",
+        inventory: "fixture/asset-inventory.json",
+        replacementManifest: "fixture/replacement-manifest.json",
+      },
+      createdAt: "2026-08-27T00:00:00.000Z",
+    });
+    const byUrl = new Map(residualReport.files.map((file) => [file.url, file]));
+    const shared = byUrl.get(`${SRC}/img/shared-residual.png`);
+    const deepOnly = byUrl.get(`${SRC}/img/deep-only.png`);
+    const deepUnknown = byUrl.get(`${SRC}/img/deep-only-unknown.png`);
+    check(
+      "per-file route attribution: the shared file is reported on BOTH routes",
+      shared?.routeCount === 2 &&
+        shared.routes.map((hit) => hit.route).join(",") === "/,/deep" &&
+        shared.occurrences === 2,
+      JSON.stringify(shared?.routes),
+    );
+    check(
+      "per-file route attribution: the deep-only file is reported on /deep only",
+      deepOnly?.routeCount === 1 &&
+        deepOnly.routes[0].route === "/deep" &&
+        deepOnly.routes[0].occurrences === 1,
+      JSON.stringify(deepOnly?.routes),
+    );
+    check(
+      "files are prioritized by render weight (most occurrences first)",
+      residualReport.files[0].url === `${SRC}/img/shared-residual.png`,
+      residualReport.files.map((file) => `${file.url}:${file.occurrences}`).join(" "),
+    );
+    check(
+      "join: a known URL reports its inventory id, asset id and slot keys",
+      deepOnly?.inventoryId === "ai000002" &&
+        deepOnly.assetId === "a000002" &&
+        deepOnly.slotKeys.join(",") === "deep/img:hero/src",
+      `${deepOnly?.inventoryId} ${deepOnly?.assetId}`,
+    );
+    check(
+      "join: an unknown URL reports null rather than a guess",
+      deepUnknown !== undefined &&
+        deepUnknown.inventoryId === null &&
+        deepUnknown.assetId === null &&
+        deepUnknown.slotKeys.length === 0,
+      JSON.stringify(deepUnknown?.inventoryId),
+    );
+    check(
+      "replacement status is READ from the manifest and cites it",
+      deepOnly?.replacement.inManifest === true &&
+        deepOnly.replacement.classification === "replacement-required" &&
+        deepOnly.replacement.status === "awaiting-input" &&
+        deepOnly.replacement.manifestFile === "fixture/replacement-manifest.json",
+      JSON.stringify(deepOnly?.replacement),
+    );
+    check(
+      "an asset the manifest does not list is reported as such, not invented",
+      shared?.replacement.inManifest === false &&
+        shared.replacement.classification === null &&
+        shared.replacement.status === null,
+      JSON.stringify(shared?.replacement),
+    );
+    check(
+      "counts quantify what a \"/\"-only census would have missed",
+      residualReport.counts.residualFiles === 3 &&
+        residualReport.counts.invisibleAtRootOnly === 2 &&
+        residualReport.counts.routesMeasured === 2 &&
+        residualReport.counts.routesWithResidual === 2 &&
+        residualReport.counts.joinedToInventory === 2 &&
+        residualReport.counts.unjoinedToInventory === 1,
+      JSON.stringify(residualReport.counts),
+    );
+    check(
+      "evidence refs name the census artifact and the route record",
+      deepOnly?.evidence.includes("fixture/report/network-qa.json#independent[route=/deep].sourceUrls") ===
+        true &&
+        deepOnly.evidence.includes("fixture/asset-inventory.json#entries[ai000002]"),
+      JSON.stringify(deepOnly?.evidence),
+    );
+    check(
+      "the report round-trips through its own schema as a stored artifact",
+      ResidualAssetReportSchema.safeParse(JSON.parse(JSON.stringify(residualReport))).success,
+    );
+    // invisibleAtRootOnly is only observable when "/" itself was measured.
+    const deepScopedReport = buildResidualAssetReport({
+      networkReport: {
+        ...fullCensus,
+        independent: fullCensus.independent.filter((route) => route.route !== "/"),
+      },
+      inventory: residualInventory,
+      replacementManifest: residualReplacementManifest,
+      routeScope: await resolveCensusRoutes({
+        templateRunDir: templateFixtureDir,
+        explicitRoutes: "/deep",
+      }),
+      files: {
+        networkQa: "fixture/report/network-qa.json",
+        inventory: "fixture/asset-inventory.json",
+        replacementManifest: "fixture/replacement-manifest.json",
+      },
+      createdAt: "2026-08-27T00:00:00.000Z",
+    });
+    check(
+      "a census scoped away from \"/\" reports invisibleAtRootOnly null, not a fabricated count",
+      deepScopedReport.counts.invisibleAtRootOnly === null &&
+        deepScopedReport.counts.routesMeasured === 1 &&
+        deepScopedReport.counts.residualFiles === 3,
+      JSON.stringify(deepScopedReport.counts),
+    );
+    check(
+      "the root-scope-free report still round-trips through the schema",
+      ResidualAssetReportSchema.safeParse(JSON.parse(JSON.stringify(deepScopedReport))).success,
+    );
+    check(
+      "normalizeResidualUrl strips only the fragment (CDN query kept)",
+      normalizeResidualUrl("https://cdn.example/a.png?w=608&fm=webp#x") ===
+        "https://cdn.example/a.png?w=608&fm=webp",
+      normalizeResidualUrl("https://cdn.example/a.png?w=608&fm=webp#x"),
+    );
+
+    await routeProxy.stop();
+    await new Promise<void>((resolve) => routeApp.server.close(() => resolve()));
+    await new Promise<void>((resolve) => sourceFixture.server.close(() => resolve()));
 
     check("findTruncatedUrls: exact duplicates are not truncation", findTruncatedUrls(["https://a/x", "https://a/x"]).size === 0);
     check(

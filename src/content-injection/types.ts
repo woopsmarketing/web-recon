@@ -60,6 +60,16 @@ export const BRAND_LEAK_REPORT_FILE = "brand-leak.json";
 export const OPERATOR_REVIEW_MD_FILE = "operator-review.md";
 export const OPERATOR_REVIEW_JSON_FILE = "operator-review.json";
 export const LAYOUT_QA_REPORT_FILE = "layout-qa.json";
+/** Task 27 §2 sibling: the total slot account. NEVER folded into slot-values.json. */
+export const SLOT_ACCOUNTING_FILE = "slot-accounting.json";
+/** Task 27: the RegionPlan layer, emitted beside the content units. */
+export const REGION_PLAN_FILE = "region-plan.json";
+/** Task 27 §1: proof that the batches were executed, one record per call. */
+export const BATCH_EXECUTION_FILE = "batch-execution.json";
+/** Task 27 §7: append-only, provider-neutral. NEVER carries estimated usage. */
+export const TELEMETRY_FILE = "telemetry.jsonl";
+/** Task 27 §6 (GED-D): why the bounded repair loop stopped, machine-readable. */
+export const REPAIR_STOP_FILE = "repair-stop.json";
 export const SCREENSHOTS_DIR = "screenshots";
 export const REPAIR_DIR = "repair";
 
@@ -105,6 +115,74 @@ export const ProvidedFactSchema = z
   .strict();
 export type ProvidedFact = z.infer<typeof ProvidedFactSchema>;
 
+// ---------------------------------------------------------------------------
+// Content truth mode (Task 27 §4) — what the engine is allowed to state
+// ---------------------------------------------------------------------------
+
+/**
+ * `no-invented-facts` read as "never invent any business-like detail" is right
+ * for a real company's site and wrong for a fictional one, so the rule is now
+ * an EXPLICIT MODE recorded on the run:
+ *
+ *   verified-only      a verifiable claim the user did not provide stays
+ *                      UNRESOLVED. The engine refuses to state a fact it
+ *                      cannot support. (Default — the conservative reading,
+ *                      and the behaviour every Task 19 run already had.)
+ *   synthetic-allowed  the engine MAY invent fictional detail, and every such
+ *                      value carries SYNTHETIC provenance in the accounting
+ *                      artifact. Nothing is ever invented silently.
+ *
+ * Generic marketing copy is NOT a factual claim and stays
+ * `generated-marketing` in both modes; `derived-copy` (a value carried from
+ * the source, e.g. an internal route) stays distinct from both. Keeping those
+ * three separable is the whole point of the ORIGIN axis below.
+ */
+export const CONTENT_TRUTH_MODES = ["verified-only", "synthetic-allowed"] as const;
+export const ContentTruthModeSchema = z.enum(CONTENT_TRUTH_MODES);
+export type ContentTruthMode = z.infer<typeof ContentTruthModeSchema>;
+export const DEFAULT_CONTENT_TRUTH_MODE = "verified-only" as const;
+
+/** One engine decision the truth mode forced, recorded per slot. */
+export const TruthModeDecisionSchema = z
+  .object({
+    slotKey: z.string(),
+    /** Matched claim pattern id, or `declared-synthetic` when the generator said so. */
+    claim: z.string(),
+    decision: z.enum(["refused-unresolved", "marked-synthetic", "backed-by-user-fact"]),
+    detail: z.string(),
+  })
+  .strict();
+export type TruthModeDecision = z.infer<typeof TruthModeDecisionSchema>;
+
+// ---------------------------------------------------------------------------
+// Content brief (Task 27 §5) — ONE BRIEF → FIRST DRAFT
+// ---------------------------------------------------------------------------
+
+/**
+ * EVERY FIELD IS OPTIONAL — this is a brief, NOT an intake form (the same rule
+ * `src/release/checklist.ts` states for the release checklist). A missing
+ * non-essential field is REPORTED in the packet, never a question the operator
+ * has to answer before a first draft can be produced. The one thing a brief
+ * must carry is what the site is for, and even that arrives as free text.
+ */
+export const ContentBriefSchema = z
+  .object({
+    /** Free text. When absent the caller's raw intent is the goal. */
+    goal: z.string().optional(),
+    workingName: z.string().optional(),
+    category: z.string().optional(),
+    audience: z.string().optional(),
+    positioning: z.string().optional(),
+    primaryConversion: z.string().optional(),
+    tone: z.array(z.string()).optional(),
+    routes: z.array(z.string()).optional(),
+    includeReview: z.boolean().optional(),
+    truthMode: ContentTruthModeSchema.optional(),
+    facts: z.array(ProvidedFactSchema).optional(),
+  })
+  .strict();
+export type ContentBrief = z.infer<typeof ContentBriefSchema>;
+
 export const ContentIntentSchema = z
   .object({
     schemaVersion: z.literal(CONTENT_SCHEMA_VERSION),
@@ -124,9 +202,29 @@ export const ContentIntentSchema = z
     /** Operator-supplied structured preferences (optional, verbatim). */
     preferences: z.record(z.string(), z.string()),
     providedFacts: z.array(ProvidedFactSchema),
+    /**
+     * Task 27 §4. Optional so every Task 19-26 `intent.json` still parses.
+     * Absent is read as DEFAULT_CONTENT_TRUTH_MODE — which is STRICTER than
+     * what those runs actually had: Task 19's no-invented-facts rule bound
+     * only the prompt, so re-ingesting one of their results can now withhold
+     * a fact-shaped value it previously applied. See the decision record at
+     * the head of `truth-mode.ts`.
+     */
+    truthMode: ContentTruthModeSchema.optional(),
+    /** Task 27 §5: the operator's brief, verbatim, when one was supplied. */
+    brief: ContentBriefSchema.optional(),
   })
   .strict();
 export type ContentIntent = z.infer<typeof ContentIntentSchema>;
+
+/**
+ * Non-essential brief fields the packet noticed were absent. REPORTED, never
+ * asked: a first draft is produced regardless. (§5 — one brief, one draft.)
+ */
+export const BriefGapSchema = z
+  .object({ field: z.string(), consequence: z.string() })
+  .strict();
+export type BriefGap = z.infer<typeof BriefGapSchema>;
 
 // ---------------------------------------------------------------------------
 // Site / Page Content Plan — content strategy, NEVER layout strategy
@@ -260,9 +358,18 @@ export const GenerationRequestSchema = z
     /** The generator must produce a Site Content Plan BEFORE slot values. */
     steps: z.array(z.enum(["site-content-plan", "unit-values"])),
     batches: z.array(GenerationBatchSchema),
+    /**
+     * Task 27 §1: the bound each batch was cut at. Present so a consumer can
+     * see the contract the batches were built under without re-deriving it.
+     */
+    batchUnitLimit: z.number().int().positive().optional(),
+    /** Task 27 §4. Optional — absent means DEFAULT_CONTENT_TRUTH_MODE. */
+    truthMode: ContentTruthModeSchema.optional(),
     /** Compact operating instructions restated from the policy. */
     instructions: z.array(z.string()),
     allowedSources: z.array(z.string()),
+    /** Task 27 §5: what the brief did not say, and what it costs. Never a question. */
+    briefGaps: z.array(BriefGapSchema).optional(),
   })
   .strict();
 export type GenerationRequest = z.infer<typeof GenerationRequestSchema>;
@@ -328,6 +435,13 @@ export const ContentGenerationResultSchema = z
     sources: z.record(z.string(), SlotValueSourceSchema),
     unresolved: z.array(UnresolvedSlotSchema),
     imageBriefs: z.array(ImageBriefSchema),
+    /**
+     * Task 27 §4: slot keys whose value is an INVENTED fictional detail. Under
+     * `synthetic-allowed` these are kept and marked with synthetic provenance;
+     * under `verified-only` they are refused and become `unresolved`. Optional
+     * so every result written before Task 27 still parses.
+     */
+    synthetic: z.array(z.string()).optional(),
     notes: z.array(z.string()).optional(),
   })
   .strict();
@@ -551,6 +665,46 @@ export const RepairRequestSchema = z
 export type RepairRequest = z.infer<typeof RepairRequestSchema>;
 
 // ---------------------------------------------------------------------------
+// Repair stop reasons (Task 27 §6, GED-D)
+// ---------------------------------------------------------------------------
+
+/**
+ * Micro-slot repair does not converge: a slot whose source is <= 3 characters
+ * meets `Math.max(4, target)` in `providers.ts` and the repaired value is
+ * byte-identical every iteration, so the loop always burns
+ * MAX_REPAIR_ITERATIONS to no effect. Reproduced on disk at
+ * `data/domainchecker.co.kr/content-runs/2026-08-19T07-18-26-879Z/report/repair/`
+ * and `data/nextjs.org/content-runs/2026-08-19T07-13-56-376Z/report/repair/`
+ * (iteration 1 and 2 identical).
+ *
+ * This Task takes ONLY the no-progress guard; the provider length-awareness
+ * half of GED-D is deliberately out of scope, so `fakeText` is untouched.
+ */
+export const REPAIR_STOP_REASONS = [
+  "layout-qa-passed",
+  "no-repair-candidates",
+  "iteration-bound-reached",
+  "repair-values-identical",
+  "failure-signature-repeated",
+  "no-candidate-keys-changed",
+  "repair-validation-failed",
+] as const;
+export const RepairStopReasonSchema = z.enum(REPAIR_STOP_REASONS);
+export type RepairStopReason = z.infer<typeof RepairStopReasonSchema>;
+
+export const RepairStopSchema = z
+  .object({
+    reason: RepairStopReasonSchema,
+    /** Iterations actually executed when the loop stopped. */
+    iteration: z.number().int().min(0),
+    /** Machine-readable evidence: which keys were still unchanged, etc. */
+    detail: z.string(),
+    unchangedSlotKeys: z.array(z.string()),
+  })
+  .strict();
+export type RepairStop = z.infer<typeof RepairStopSchema>;
+
+// ---------------------------------------------------------------------------
 // Content run manifest — the audit trail
 // ---------------------------------------------------------------------------
 
@@ -578,6 +732,31 @@ export const ContentRunManifestSchema = z
      *  generator's result — the operator edited by hand (§29). */
     manualEdits: z.boolean(),
     repairIterations: z.number(),
+    /** Task 27 §4 — absent on every run prepared before Task 27. */
+    truthMode: ContentTruthModeSchema.optional(),
+    /** Task 27 §6 (GED-D) — why the repair loop stopped. */
+    repairStop: RepairStopSchema.optional(),
+    /** Task 27 §1 — one summary line per executed batch run. */
+    batching: z
+      .object({
+        executed: z.boolean(),
+        batches: z.number(),
+        calls: z.number(),
+        conflicts: z.number(),
+        batchUnitLimit: z.number(),
+      })
+      .strict()
+      .optional(),
+    /** Task 27 §2 — the sibling accounting artifact's headline numbers. */
+    slotAccounting: z
+      .object({
+        file: z.string(),
+        inScopeSlots: z.number(),
+        reconciled: z.boolean(),
+        ambiguousSlots: z.number(),
+      })
+      .strict()
+      .optional(),
     counts: z
       .object({
         units: z.number(),
@@ -601,6 +780,260 @@ export const ContentRunManifestSchema = z
   })
   .strict();
 export type ContentRunManifest = z.infer<typeof ContentRunManifestSchema>;
+
+// ---------------------------------------------------------------------------
+// Region plan (Task 27) — the missing layer between a page plan and a unit
+// ---------------------------------------------------------------------------
+
+/**
+ * Brief → SiteContentPlan → PageContentPlan → RegionPlan → ContentUnit →
+ * SlotValues. Everything but RegionPlan already existed; this is the one
+ * genuinely missing layer, and it is a GROUPING of existing content units,
+ * never a second unit vocabulary.
+ *
+ * The region identity comes from the Wave-1 PageRegion compiler, consumed
+ * through the SMALL STABLE CONTRACT below (`RegionContract`) — regionId, the
+ * slot keys the region owns, and its route/page ownership. Nothing in
+ * `src/regions/` is imported and no PageRegion internal is depended on, so a
+ * policy change over there moves ids and nothing else here.
+ */
+export const RegionContractSchema = z
+  .object({
+    regionId: z.string(),
+    scope: z.enum(["global", "page"]),
+    slotKeys: z.array(z.string()),
+    routes: z.array(z.string()),
+    pageSourceIds: z.array(z.string()),
+  })
+  .strict();
+export type RegionContract = z.infer<typeof RegionContractSchema>;
+
+export const RegionPlanSchema = z
+  .object({
+    regionId: z.string(),
+    scope: z.enum(["global", "page"]),
+    /** Every scoped route this region appears on, in packet order. */
+    routes: z.array(z.string()),
+    /** Content units whose slots this region owns, in unit order. */
+    unitIds: z.array(z.string()),
+    /** In-scope slot keys the region owns, in packet order. */
+    slotKeys: z.array(z.string()),
+    /** Unit kinds present, deduplicated — structural evidence, not semantics. */
+    unitKinds: z.array(ContentUnitKindSchema),
+    /** Derived from the unit kinds present. No AI, no similarity score. */
+    purpose: z.string(),
+  })
+  .strict();
+export type RegionPlan = z.infer<typeof RegionPlanSchema>;
+
+export const RegionPlanFileSchema = z
+  .object({
+    schemaVersion: z.literal(CONTENT_SCHEMA_VERSION),
+    schemaName: z.literal("content-region-plan-v1"),
+    runId: z.string(),
+    templateId: z.string(),
+    /** Where the region contract came from, verbatim, for audit. */
+    contractSource: z
+      .object({
+        kind: z.enum(["page-regions-artifact", "absent"]),
+        file: z.string().optional(),
+        regionsRead: z.number(),
+      })
+      .strict(),
+    plans: z.array(RegionPlanSchema),
+    /**
+     * Units no region claimed. Honest by construction: PageRegion granularity
+     * follows the markup and a template with no sectioning markup produces few
+     * regions, so this is expected to be non-empty rather than a defect.
+     */
+    unassignedUnitIds: z.array(z.string()),
+    provenance: z.literal("derived"),
+  })
+  .strict();
+export type RegionPlanFile = z.infer<typeof RegionPlanFileSchema>;
+
+// ---------------------------------------------------------------------------
+// Batch execution (Task 27 §1) — the batches are now actually EXECUTED
+// ---------------------------------------------------------------------------
+
+/**
+ * `buildBatches()` has always produced correctly shaped batches; until this
+ * Task nothing ran them — `src/cli-content-generate.ts` passed the whole unit
+ * set in ONE call, which contradicted `GenerationRequestSchema`'s own comment
+ * ("one request never carries the whole site"). These records are the proof
+ * that a run actually issued one call per batch.
+ */
+export const BatchCallRecordSchema = z
+  .object({
+    callIndex: z.number().int().nonnegative(),
+    batchId: z.string(),
+    scope: z.enum(["global", "page"]),
+    route: z.string().optional(),
+    unitCount: z.number().int().nonnegative(),
+    slotCount: z.number().int().nonnegative(),
+    assignedKeys: z.number().int().nonnegative(),
+    unresolvedKeys: z.number().int().nonnegative(),
+    imageBriefs: z.number().int().nonnegative(),
+    outcome: z.enum(["ok", "error"]),
+    error: z.string().optional(),
+  })
+  .strict();
+export type BatchCallRecord = z.infer<typeof BatchCallRecordSchema>;
+
+/**
+ * A key two batches both produced. NEVER resolved by last-write-wins: the
+ * first writer's value is kept so the merge stays deterministic, the conflict
+ * is recorded here, and the caller fails the run on it.
+ */
+export const BatchKeyConflictSchema = z
+  .object({
+    kind: z.enum([
+      "duplicate-slot-value",
+      "duplicate-unresolved",
+      "duplicate-image-brief",
+      "assigned-and-unresolved-across-batches",
+      "out-of-batch-key",
+    ]),
+    slotKey: z.string(),
+    batchIds: z.array(z.string()),
+    /** True when both batches produced the same value — still a conflict. */
+    identical: z.boolean(),
+    detail: z.string(),
+  })
+  .strict();
+export type BatchKeyConflict = z.infer<typeof BatchKeyConflictSchema>;
+
+export const BatchExecutionReportSchema = z
+  .object({
+    schemaVersion: z.literal(CONTENT_SCHEMA_VERSION),
+    schemaName: z.literal("content-batch-execution-v1"),
+    runId: z.string(),
+    executed: z.boolean(),
+    batchUnitLimit: z.number().int().positive(),
+    orderingRule: z.string(),
+    calls: z.array(BatchCallRecordSchema),
+    conflicts: z.array(BatchKeyConflictSchema),
+    /** The batch whose site content plan was kept (the first one to send one). */
+    sitePlanFromBatchId: z.string().optional(),
+    mergedSlotValues: z.number().int().nonnegative(),
+    mergedUnresolved: z.number().int().nonnegative(),
+    provenance: z.literal("derived"),
+  })
+  .strict();
+export type BatchExecutionReport = z.infer<typeof BatchExecutionReportSchema>;
+
+// ---------------------------------------------------------------------------
+// Slot accounting (Task 27 §2/§3) — two ORTHOGONAL axes, never one enum
+// ---------------------------------------------------------------------------
+
+/**
+ * ORIGIN answers "where did the value that renders here come from?".
+ * DISPOSITION answers "what happened to this slot in this run?".
+ *
+ * They are deliberately separate fields: a value can be
+ * `generated-marketing` + `applied`, `generated-marketing` + `preserved`
+ * (written identical to the default), or `source-preserved` + `unresolved`.
+ * One mixed enum cannot express that without losing information, which is why
+ * `sources` (origin only) and `unresolved` (disposition only) never lined up.
+ *
+ * `human-required` is NOT called "reviewed": `editability="review"` already
+ * exists on every slot and means something else entirely (the compiler was not
+ * confident the slot is safe to auto-write). Nothing here claims a human
+ * approved anything — the engine has no approval signal to record.
+ */
+export const SLOT_ORIGINS = [
+  "user-provided",
+  "derived-copy",
+  "generated-marketing",
+  "synthetic-fact",
+  "source-preserved",
+] as const;
+export const SlotOriginSchema = z.enum(SLOT_ORIGINS);
+export type SlotOrigin = z.infer<typeof SlotOriginSchema>;
+
+export const SLOT_DISPOSITIONS = [
+  "applied",
+  "preserved",
+  "removed",
+  "human-required",
+  "unresolved",
+] as const;
+export const SlotDispositionSchema = z.enum(SLOT_DISPOSITIONS);
+export type SlotDisposition = z.infer<typeof SlotDispositionSchema>;
+
+export const SlotAccountingEntrySchema = z
+  .object({
+    slotKey: z.string(),
+    scope: z.enum(["global", "page"]),
+    route: z.string().optional(),
+    type: z.enum(["text", "url", "image"]),
+    editability: z.enum(["editable", "review"]),
+    /** EXACTLY ONE origin. */
+    origin: SlotOriginSchema,
+    /** EXACTLY ONE disposition. */
+    disposition: SlotDispositionSchema,
+    /**
+     * §3 honesty: `confirmed` only where the template compiler was confident
+     * the slot is customer-facing (`editability="editable"`). A `review` slot
+     * is `ambiguous` and is counted in its own bucket, never folded into a
+     * success number.
+     */
+    customerFacing: z.enum(["confirmed", "ambiguous"]),
+    detail: z.string(),
+  })
+  .strict();
+export type SlotAccountingEntry = z.infer<typeof SlotAccountingEntrySchema>;
+
+export const SlotAccountingFileSchema = z
+  .object({
+    schemaVersion: z.literal(CONTENT_SCHEMA_VERSION),
+    schemaName: z.literal("content-slot-accounting-v1"),
+    runId: z.string(),
+    templateId: z.string(),
+    truthMode: ContentTruthModeSchema,
+    scopedRoutes: z.array(z.string()),
+    /** The closed vocabularies, restated in the artifact so a reader sees them. */
+    originValues: z.array(SlotOriginSchema),
+    dispositionValues: z.array(SlotDispositionSchema),
+    entries: z.array(SlotAccountingEntrySchema),
+    totals: z
+      .object({
+        inScopeSlots: z.number(),
+        byOrigin: z.record(z.string(), z.number()),
+        byDisposition: z.record(z.string(), z.number()),
+      })
+      .strict(),
+    /**
+     * The reconciliation is PROVEN in the artifact, not asserted in prose:
+     * every in-scope slot appears exactly once, and both axis totals equal the
+     * in-scope count.
+     */
+    reconciliation: z
+      .object({
+        inScopeSlots: z.number(),
+        uniqueSlotKeys: z.number(),
+        originTotal: z.number(),
+        dispositionTotal: z.number(),
+        missing: z.array(z.string()),
+        doubleCounted: z.array(z.string()),
+        reconciled: z.boolean(),
+      })
+      .strict(),
+    scopeHonesty: z
+      .object({
+        editableSlots: z.number(),
+        reviewSlots: z.number(),
+        ambiguousSlots: z.number(),
+        /** Candidates the template compiler's exclusions suppressed entirely. */
+        templateExcludedCandidates: z.number(),
+        note: z.string(),
+      })
+      .strict(),
+    truthDecisions: z.array(TruthModeDecisionSchema),
+    provenance: z.literal("derived"),
+  })
+  .strict();
+export type SlotAccountingFile = z.infer<typeof SlotAccountingFileSchema>;
 
 // ---------------------------------------------------------------------------
 // Errors

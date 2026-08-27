@@ -1,0 +1,234 @@
+{
+  "agent": "Wave-1 Integrator (Task 27)",
+  "objective": "Resolve the integration seams the three Wave-1 builders were forbidden to touch: wire the new modules through their public barrels, move the deep-path importers onto the barrels, remove the stale \"integrator wires this\" comments, and re-run the four Wave-1 suites with no check-count decrease.",
+  "status": "PASS",
+  "filesCreated": [
+    "docs/result/handoffs/27-wave1-integration.json"
+  ],
+  "filesModified": [
+    "src/seo/index.ts",
+    "src/assets/index.ts",
+    "src/cli-assets-qa.ts",
+    "scripts/smoke-seo.ts",
+    "scripts/smoke-assets.ts",
+    "scripts/smoke-production.ts"
+  ],
+  "filesModifiedOutsideOwnership": [],
+  "changeRequestsApplied": [
+    {
+      "source": "docs/result/handoffs/27-ged-e.json changeRequests[0]",
+      "file": "src/seo/index.ts",
+      "change": "Re-exported escapeVariants / substitutionVariants / applySubstitutionVariants / escapeForTitleText / ESCAPE_VARIANT_ENCODINGS from ./escape-variants.js, plus the three interfaces those signatures name (EscapeVariant, EscapeSubstitution, VariantSubstitutionResult) so a consumer can name the return types.",
+      "idiomMatched": "src/seo/index.ts enumerates named exports per module in a multi-line `export { ... } from \"./x.js\";` block, with types written as `type X` inside the same block (see :6-13 ProvidedBusinessFacts, :17-22 LoadedPlanRun). The new block sits immediately before the ./serve.js block because serve.ts is its only src consumer.",
+      "at": "src/seo/index.ts:23-32"
+    },
+    {
+      "source": "docs/result/handoffs/27-ged-g.json changeRequests[0]",
+      "file": "src/assets/index.ts",
+      "change": "Re-exported buildResidualAssetReport / normalizeResidualUrl / resolveCensusRoutes / type CensusRouteScopeOptions / type ResidualReportOptions from ./residual-report.js, exactly the symbol list the request named.",
+      "idiomMatched": "src/assets/index.ts also enumerates named exports (only line 1 is a wildcard, `export * from \"./types.js\"`, which already carries the ResidualAssetReport schemas/types as GED-G stated). Appended after the ./font-qa.js block, matching the file's module-per-block ordering.",
+      "at": "src/assets/index.ts:82-88"
+    },
+    {
+      "source": "docs/result/handoffs/27-ged-g.json changeRequests[1]",
+      "file": "src/production/index.ts",
+      "change": "NO EDIT NEEDED — the intent was already satisfied. src/production/index.ts:10 is `export * from \"./qa.js\";` (that barrel is wildcard-only, unlike the seo/assets barrels), so summarizeResidualRequests (src/production/qa.ts:186) and ResidualRequestFile (src/production/qa.ts:165) already reach consumers through the barrel. Only the importer needed moving; adding a redundant named re-export would have contradicted the file's own idiom.",
+      "idiomMatched": "src/production/index.ts:2-10 — ten `export *` lines, no named enumeration.",
+      "at": "src/production/index.ts:10 (unmodified)"
+    },
+    {
+      "source": "brief — deep-path importers with stale comments",
+      "file": "src/cli-assets-qa.ts, scripts/smoke-seo.ts, scripts/smoke-assets.ts, scripts/smoke-production.ts",
+      "change": "Each deep-path import folded into the file's existing barrel import (alphabetical position preserved) and the stale \"not re-exported by the barrel yet / see 27-ged-*.json changeRequests\" comments deleted. `grep -rn \"integrator|not re-exported|barrel yet\" src scripts package.json` now returns nothing.",
+      "idiomMatched": "Each of the four files already had a single multi-line barrel import sorted case-insensitively; the new symbols were inserted into that sort order rather than appended.",
+      "at": "src/cli-assets-qa.ts:30-38, scripts/smoke-seo.ts:5-28, scripts/smoke-assets.ts:25-50, scripts/smoke-production.ts:19-39"
+    }
+  ],
+  "changeRequestsRefused": [
+    {
+      "request": "docs/result/handoffs/27-ged-e.json changeRequests[1] — fold rewriteVariants(url) from src/assets/rewrite.ts into the generic encoder table in src/seo/escape-variants.ts (or a shared util module).",
+      "why": "REFUSED / DEFERRED, per the integrator brief and Agent 1A's own reasoning. rewriteVariants only varies on '&', which is correct and sufficient for URLs; unifying tonight would (a) broaden asset-rewrite behavior well beyond GED-E's scope — src/assets/rewrite.ts is covered by scripts/smoke-assets.ts, whose expectations were written against the three-encoding URL taxonomy — and (b) create an assets->seo module edge that does not exist anywhere in this repo (src/assets imports nothing from src/seo today). This is a refactor, not an integration seam. Left for a future wave that first introduces a shared util module neither side owns."
+    },
+    {
+      "request": "Implicit: route src/production/qa.ts:17 `import { normalizeResidualUrl } from \"../assets/residual-report.js\"` through the assets barrel now that the barrel exports it.",
+      "why": "NOT DONE — not a seam, and it would be a behavior-neutral but convention-breaking change. The repo's convention for cross-module src->src imports is the deep path, not the barrel: src/production/bake.ts:23 imports `applyRewrite` from \"../assets/rewrite.js\" and src/production/run.ts:16 imports RewriteMap from \"../assets/types.js\". The barrel convention that GED-G cited applies to CLI entrypoints and scripts. GED-G filed no request for this line and left no comment on it."
+    },
+    {
+      "request": "Implicit: route src/seo/serve.ts:4 `import { applySubstitutionVariants, escapeForTitleText } from \"./escape-variants.js\"` through src/seo/index.js.",
+      "why": "NOT DONE — a module must never import its own barrel (circular). This is intra-module and correct as written; Agent 1A filed no request for it."
+    },
+    {
+      "request": "package.json — anything further beyond the two Wave-1 script lines (compile:regions, smoke:regions) added by Agent 1C.",
+      "why": "Nothing was asked for. 27-page-region.json reports its package.json edit as exactly two added script lines and files no changeRequests at all; 27-ged-e.json and 27-ged-g.json file no package.json request. package.json was not opened for writing by me (`git status --porcelain` shows it modified by 1C only)."
+    }
+  ],
+  "barrelsWired": [
+    {
+      "barrel": "src/seo/index.ts",
+      "module": "./escape-variants.js",
+      "exports": [
+        "escapeVariants",
+        "substitutionVariants",
+        "applySubstitutionVariants",
+        "escapeForTitleText",
+        "ESCAPE_VARIANT_ENCODINGS",
+        "type EscapeVariant",
+        "type EscapeSubstitution",
+        "type VariantSubstitutionResult"
+      ]
+    },
+    {
+      "barrel": "src/assets/index.ts",
+      "module": "./residual-report.js",
+      "exports": [
+        "buildResidualAssetReport",
+        "normalizeResidualUrl",
+        "resolveCensusRoutes",
+        "type CensusRouteScopeOptions",
+        "type ResidualReportOptions"
+      ]
+    },
+    {
+      "barrel": "src/production/index.ts",
+      "module": "./qa.js",
+      "exports": [
+        "summarizeResidualRequests (already covered by the pre-existing `export * from \"./qa.js\"` at :10 — no edit made)",
+        "ResidualRequestFile (same)"
+      ]
+    }
+  ],
+  "deepPathImportsRemoved": [
+    {
+      "file": "src/cli-assets-qa.ts",
+      "was": "import { buildResidualAssetReport, resolveCensusRoutes } from \"./assets/residual-report.js\"; preceded by // Not re-exported by the assets barrel yet (see 27-ged-g.json changeRequests).",
+      "now": "buildResidualAssetReport and resolveCensusRoutes merged into the existing `from \"./assets/index.js\"` block (src/cli-assets-qa.ts:30-38); comment removed."
+    },
+    {
+      "file": "scripts/smoke-assets.ts",
+      "was": "import { buildResidualAssetReport, normalizeResidualUrl, resolveCensusRoutes } from \"../src/assets/residual-report.js\"; preceded by // Task 27 GED-G module — not re-exported by the barrel yet (see 27-ged-g.json).",
+      "now": "all three merged into the existing `from \"../src/assets/index.js\"` block (scripts/smoke-assets.ts:25-50); comment removed."
+    },
+    {
+      "file": "scripts/smoke-production.ts",
+      "was": "import { summarizeResidualRequests } from \"../src/production/qa.js\"; preceded by a two-line // Task 27 GED-G helper — not re-exported by the production barrel yet (see docs/result/handoffs/27-ged-g.json changeRequests).",
+      "now": "summarizeResidualRequests merged into the existing `from \"../src/production/index.js\"` block at its alphabetical position after SERVER_READY_PREFIX (scripts/smoke-production.ts:19-39); comment removed. The file's own header comment at :4 (\"Everything goes through the public barrel\") is now true again."
+    },
+    {
+      "file": "scripts/smoke-seo.ts",
+      "was": "import { ESCAPE_VARIANT_ENCODINGS, escapeVariants } from \"../src/seo/escape-variants.js\";",
+      "now": "both merged into the existing `from \"../src/seo/index.js\"` block after deriveForbiddenTerms (scripts/smoke-seo.ts:5-28)."
+    }
+  ],
+  "suiteResults": [
+    {
+      "suite": "pnpm smoke:seo",
+      "before": 97,
+      "after": 97,
+      "delta": 0,
+      "failures": 0,
+      "beforeSource": "brief / 27-ged-e.json smokeSeoChecks.after — the Wave-1 current value, not re-measured by me before the change"
+    },
+    {
+      "suite": "pnpm smoke:assets",
+      "before": 140,
+      "after": 140,
+      "delta": 0,
+      "failures": 0,
+      "beforeSource": "brief / 27-ged-g.json testsRun — Wave-1 current value, not re-measured by me before the change"
+    },
+    {
+      "suite": "pnpm smoke:production",
+      "before": 89,
+      "after": 89,
+      "delta": 0,
+      "failures": 0,
+      "beforeSource": "brief / 27-ged-g.json testsRun — Wave-1 current value, not re-measured by me before the change"
+    },
+    {
+      "suite": "pnpm smoke:regions",
+      "before": 67,
+      "after": 67,
+      "delta": 0,
+      "failures": 0,
+      "beforeSource": "brief / 27-page-region.json testsRun — Wave-1 current value, not re-measured by me before the change"
+    }
+  ],
+  "changeRequests": [],
+  "testsRun": [
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "checks": null,
+      "note": "tsc --noEmit, no output. Run after all six edits, with all three Wave-1 agents' changes present in the working tree."
+    },
+    {
+      "command": "pnpm smoke:seo",
+      "exitCode": 0,
+      "checks": 97,
+      "note": "\"97/97 checks passed\". No decrease from the Wave-1 value of 97."
+    },
+    {
+      "command": "pnpm smoke:assets",
+      "exitCode": 0,
+      "checks": 140,
+      "note": "\"140/140 checks passed\". No decrease from the Wave-1 value of 140."
+    },
+    {
+      "command": "pnpm smoke:production",
+      "exitCode": 0,
+      "checks": 89,
+      "note": "\"smoke:production — 89 checks, 0 failures\". No decrease from the Wave-1 value of 89."
+    },
+    {
+      "command": "pnpm smoke:regions",
+      "exitCode": 0,
+      "checks": 67,
+      "note": "\"67/67 checks passed\". No decrease from the Wave-1 value of 67. Run to prove the barrel edits did not disturb Agent 1C's independent module."
+    },
+    {
+      "command": "grep -rn \"integrator|not re-exported|barrel yet\" src scripts package.json",
+      "exitCode": 1,
+      "checks": null,
+      "note": "No matches — every stale \"until the integrator wires this\" comment is gone."
+    },
+    {
+      "command": "grep -rn \"residual-report.js|escape-variants.js|production/qa.js\" src scripts",
+      "exitCode": 0,
+      "checks": null,
+      "note": "Four hits remain, all correct: src/seo/index.ts:32 and src/assets/index.ts:88 are the new barrel re-exports themselves; src/seo/serve.ts:4 is intra-module (a module must not import its own barrel); src/production/qa.ts:17 is a cross-module src->src import matching the existing convention at src/production/bake.ts:23. No script or CLI entrypoint imports by deep path any more."
+    },
+    {
+      "command": "git status --porcelain (read-only)",
+      "exitCode": 0,
+      "checks": null,
+      "note": "Tracked modifications: package.json, src/assets/network-qa.ts, src/assets/types.ts, src/production/qa.ts, src/seo/serve.ts (all sibling agents', never opened for writing by me) plus my six. No git write operation was run; no file under data/<host>/<kind>/<run-id>/ was touched; docs/result/handoffs/24-aggregation-phase1.json untouched."
+    }
+  ],
+  "evidence": [
+    "src/seo/index.ts:23-32 — the new `export { escapeVariants, substitutionVariants, applySubstitutionVariants, escapeForTitleText, ESCAPE_VARIANT_ENCODINGS, type EscapeVariant, type EscapeSubstitution, type VariantSubstitutionResult } from \"./escape-variants.js\";` block, placed before the ./serve.js block.",
+    "src/assets/index.ts:82-88 — the new `export { buildResidualAssetReport, normalizeResidualUrl, resolveCensusRoutes, type CensusRouteScopeOptions, type ResidualReportOptions } from \"./residual-report.js\";` block.",
+    "src/production/index.ts:10 — pre-existing `export * from \"./qa.js\";`, the reason no edit was needed there; src/production/qa.ts:165 (export interface ResidualRequestFile) and :186 (export function summarizeResidualRequests) are the symbols it carries.",
+    "src/cli-assets-qa.ts:30-38 — single barrel import, buildResidualAssetReport and resolveCensusRoutes in alphabetical position, deep-path line and comment gone.",
+    "scripts/smoke-seo.ts:5-28 — single barrel import; ESCAPE_VARIANT_ENCODINGS and escapeVariants after deriveForbiddenTerms.",
+    "scripts/smoke-assets.ts:25-50 — single barrel import; buildResidualAssetReport after applyRewrite, normalizeResidualUrl after mimeAllowed, resolveCensusRoutes after ResidualAssetReportSchema (the file's case-insensitive sort).",
+    "scripts/smoke-production.ts:19-39 — single barrel import; summarizeResidualRequests between SERVER_READY_PREFIX and THEME_OVERLAY_HREF.",
+    "src/production/bake.ts:23 and src/production/run.ts:16 — the pre-existing cross-module deep-path imports that justify leaving src/production/qa.ts:17 alone.",
+    "docs/result/handoffs/27-ged-e.json changeRequests[0] (applied) and [1] (refused, reasoning quoted above).",
+    "docs/result/handoffs/27-ged-g.json changeRequests[0] (applied) and [1] (already satisfied by the wildcard barrel).",
+    "docs/result/handoffs/27-page-region.json changeRequests — empty array; nothing to integrate for Agent 1C beyond re-running its suite.",
+    "Suite tails captured this session: smoke:seo \"97/97 checks passed\"; smoke:assets \"140/140 checks passed\"; smoke:production \"smoke:production — 89 checks, 0 failures\"; smoke:regions \"67/67 checks passed\"."
+  ],
+  "limitations": [
+    "The four `before` counts were NOT measured by me on the pre-integration tree — I ran each suite only once, after the edits. They are the values the three builder handoffs and the brief state. The claim I can back with my own measurement is the `after` count and that every suite exits 0 with 0 failures.",
+    "Barrel re-exports are compile-time only; the strongest evidence that they are correct is that `tsc --noEmit` is clean and all four suites still resolve their imports and pass. No new check asserts the barrel surface itself — the suites exercise the symbols, not the export path they arrive by.",
+    "I did NOT run the other 14 suites. A cross-suite import regression caused by a barrel name collision would not be visible to me; the collision risk was checked statically instead (none of the ten newly exported names appeared anywhere in either barrel before my edit).",
+    "src/seo/index.ts now exports three interfaces (EscapeVariant, EscapeSubstitution, VariantSubstitutionResult) that GED-E's change request did not list. They are the declared return/element types of the requested functions, so omitting them would leave a consumer unable to name what escapeVariants() returns. This is a slightly wider surface than literally requested — flagged rather than assumed acceptable.",
+    "GED-E's follow-ups (re-running the domainchecker.co.kr SEO QA, attributing the second /blog brand leak) and GED-G's dry-run join are NOT part of integration and were not run; they need full template/content builds outside this lane."
+  ],
+  "followUps": [
+    "Orchestrator: run the full 18-suite regression next — this handoff only proves the four Wave-1 suites.",
+    "A future wave that introduces a shared string-encoding util module (owned by neither src/assets nor src/seo) can then fold rewriteVariants into it; see changeRequestsRefused[0]. Do not create an assets->seo edge to do it.",
+    "If src/production/index.ts is ever converted from wildcard to enumerated exports, summarizeResidualRequests and ResidualRequestFile must be named explicitly or scripts/smoke-production.ts breaks.",
+    "Consider whether src/assets/index.ts's mixed idiom (one wildcard line for ./types.js, named enumeration for everything else) is worth documenting at the top of the file — it is the reason GED-G's schemas flowed through while its functions did not."
+  ]
+}

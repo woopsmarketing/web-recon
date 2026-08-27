@@ -14,6 +14,14 @@ import os from "node:os";
 import path from "node:path";
 import { chromium, type Browser, type Page } from "playwright";
 
+import { normalizeResidualUrl } from "../assets/residual-report.js";
+import {
+  brandTokensFromHost,
+  firstBrandToken,
+  isSourceHostUrl,
+  scanBodyAnchorIdentity,
+  scanInlineSvgMarkup,
+} from "../content-injection/brand-surfaces.js";
 import { SERVER_READY_PREFIX } from "./static-server.js";
 import type { DeployManifest } from "./types.js";
 
@@ -40,11 +48,15 @@ export interface ProductionQaReport {
     status: number | null;
     titleOk: boolean;
     externalHosts: Record<string, number>;
+    /** Which external FILES this route requested, with occurrence counts (Task 27 GED-G). */
+    externalUrls: Record<string, number>;
     jsErrors: number;
     hydrationErrors: number;
   }>;
   externalRequestTotal: number;
   externalRequestsByHost: Record<string, number>;
+  /** Cross-route per-file view of the same requests — where each residual file actually renders. */
+  residualRequestFiles: ResidualRequestFile[];
   unexpectedExternalHosts: string[];
   internalLinks: {
     inTableChecked: number;
@@ -53,6 +65,20 @@ export interface ProductionQaReport {
     externalCount: number;
   };
   sourceHostMentionsInHtml: number;
+  /**
+   * Task 27 (audit finding BRAND-COUNT) — a per-surface census of the source
+   * brand in the SERVED html, so the number an operator reads means what it
+   * says. `sourceHostMentionsInHtml` counts one needle (the bare host) and has
+   * no consumer; this counts the surfaces independence actually cares about.
+   *
+   * It is a MEASUREMENT, not an assertion. There is deliberately no
+   * `=== 0` check over any of these fields: a source-brand mention in an
+   * uninjected body paragraph is already carried by the release layer's
+   * `content-route` blocker, and the honest gate on runtime source assets is
+   * the network-request path (`external-requests-only-known-residual` plus the
+   * replacement-image requirements) — not a blanket string count.
+   */
+  brandSurfaceCensus: BrandSurfaceCensus;
 }
 
 export interface LaunchedPackage {
@@ -156,6 +182,155 @@ export function parseThemeProbes(css: string): Array<{ className: string; expect
   return probes;
 }
 
+/** One external file the built site still requests, and where it renders. */
+export interface ResidualRequestFile {
+  url: string;
+  /**
+   * URL.host — INCLUDING the port, because it is compared against this file's
+   * externalHosts / knownResidualSourceHosts tallies, which are keyed the same
+   * way. The assets-layer twin (ResidualAssetFileSchema.host) stores the
+   * port-less hostname instead, matching the inventory's host records; the two
+   * views agree on every port-less real CDN host and differ only on a
+   * fixture/loopback origin that carries one.
+   */
+  host: string;
+  routes: Array<{ route: string; occurrences: number }>;
+  routeCount: number;
+  occurrences: number;
+}
+
+/**
+ * Cross-route per-file summary of a route census (Task 27 GED-G). A per-host
+ * tally hides which file to replace and which page shows it; this keeps the
+ * URL and attributes it to every route that requested it, most-rendered first.
+ */
+export function summarizeResidualRequests(
+  routeCensus: Array<{ route: string; externalUrls: Record<string, number> }>,
+): ResidualRequestFile[] {
+  const byUrl = new Map<string, ResidualRequestFile>();
+  for (const row of routeCensus) {
+    for (const [url, occurrences] of Object.entries(row.externalUrls)) {
+      let file = byUrl.get(url);
+      if (file === undefined) {
+        let host = "";
+        try {
+          host = new URL(url).host;
+        } catch {
+          host = "";
+        }
+        file = { url, host, routes: [], routeCount: 0, occurrences: 0 };
+        byUrl.set(url, file);
+      }
+      file.routes.push({ route: row.route, occurrences });
+      file.occurrences += occurrences;
+    }
+  }
+  const files = [...byUrl.values()];
+  for (const file of files) {
+    file.routes.sort((a, b) => a.route.localeCompare(b.route));
+    file.routeCount = file.routes.length;
+  }
+  files.sort(
+    (a, b) =>
+      b.occurrences - a.occurrences ||
+      b.routeCount - a.routeCount ||
+      a.url.localeCompare(b.url),
+  );
+  return files;
+}
+
+export interface BrandSurfaceCounts {
+  sourceUrl: number;
+  bodyAnchorIdentity: number;
+  visibleText: number;
+  imageAlt: number;
+  ariaLabel: number;
+  svgAriaLabel: number;
+  svgSymbolId: number;
+  svgText: number;
+}
+
+export interface BrandSurfaceCensus extends BrandSurfaceCounts {
+  brandTokens: string[];
+  routesMeasured: number;
+  byRoute: Array<BrandSurfaceCounts & { route: string }>;
+}
+
+const SVG_BLOCK = /<svg\b[\s\S]*?<\/svg>/gi;
+const ANY_ARIA_LABEL = /\baria-label\s*=\s*"([^"]*)"/g;
+const IMG_ALT = /<img\b[^>]*?\balt\s*=\s*"([^"]*)"/gi;
+const URL_ATTR = /\b(?:href|src|poster|action)\s*=\s*"([^"]*)"/gi;
+
+/**
+ * Census ONE served html document. Everything is derived from the document
+ * itself — no host list, no hardcoded brand (the tokens come from the
+ * deploy manifest's `sourceHost`).
+ */
+export function censusServedHtml(
+  html: string,
+  sourceHost: string,
+  brandTokens: readonly string[],
+): BrandSurfaceCounts {
+  const counts: BrandSurfaceCounts = {
+    sourceUrl: 0,
+    bodyAnchorIdentity: 0,
+    visibleText: 0,
+    imageAlt: 0,
+    ariaLabel: 0,
+    svgAriaLabel: 0,
+    svgSymbolId: 0,
+    svgText: 0,
+  };
+  const svgBlocks = html.match(SVG_BLOCK) ?? [];
+  for (const block of svgBlocks) {
+    for (const hit of scanInlineSvgMarkup(block, brandTokens)) {
+      if (hit.surface === "svg-aria-label") counts.svgAriaLabel += 1;
+      else if (hit.surface === "svg-symbol-id") counts.svgSymbolId += 1;
+      else counts.svgText += 1;
+    }
+  }
+  // aria-label OUTSIDE inline SVG (the SVG ones are counted on their own axis).
+  const outsideSvg = html.replace(SVG_BLOCK, "");
+  for (const match of outsideSvg.matchAll(ANY_ARIA_LABEL)) {
+    if (firstBrandToken(match[1], brandTokens) !== undefined) counts.ariaLabel += 1;
+  }
+  for (const match of html.matchAll(IMG_ALT)) {
+    if (firstBrandToken(match[1], brandTokens) !== undefined) counts.imageAlt += 1;
+  }
+  for (const match of html.matchAll(URL_ATTR)) {
+    if (isSourceHostUrl(match[1], sourceHost)) counts.sourceUrl += 1;
+  }
+  counts.bodyAnchorIdentity = scanBodyAnchorIdentity(html, sourceHost).length;
+  const text = outsideSvg.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<[^>]*>/g, " ");
+  for (const token of brandTokens) {
+    const matches = text.match(new RegExp(`(^|[^a-z0-9])${token}([^a-z0-9]|$)`, "gi"));
+    counts.visibleText += matches?.length ?? 0;
+  }
+  return counts;
+}
+
+/** Fold per-route counts into the report-level census. */
+export function summarizeBrandCensus(
+  brandTokens: readonly string[],
+  byRoute: BrandSurfaceCensus["byRoute"],
+): BrandSurfaceCensus {
+  const total = (pick: (row: BrandSurfaceCounts) => number): number =>
+    byRoute.reduce((sum, row) => sum + pick(row), 0);
+  return {
+    brandTokens: [...brandTokens],
+    routesMeasured: byRoute.length,
+    sourceUrl: total((row) => row.sourceUrl),
+    bodyAnchorIdentity: total((row) => row.bodyAnchorIdentity),
+    visibleText: total((row) => row.visibleText),
+    imageAlt: total((row) => row.imageAlt),
+    ariaLabel: total((row) => row.ariaLabel),
+    svgAriaLabel: total((row) => row.svgAriaLabel),
+    svgSymbolId: total((row) => row.svgSymbolId),
+    svgText: total((row) => row.svgText),
+    byRoute,
+  };
+}
+
 export interface QaOptions {
   packageDir: string;
   log?: (line: string) => void;
@@ -184,6 +359,8 @@ export async function runProductionQa(options: QaOptions): Promise<ProductionQaR
   const externalRequestsByHost: Record<string, number> = {};
   const internalLinks = { inTableChecked: 0, inTableBroken: [] as string[], outOfTableCount: 0, externalCount: 0 };
   let sourceHostMentionsInHtml = 0;
+  const brandTokens = brandTokensFromHost(manifest.sourceHost);
+  const brandByRoute: BrandSurfaceCensus["byRoute"] = [];
 
   let browser: Browser | null = null;
   try {
@@ -214,6 +391,7 @@ export async function runProductionQa(options: QaOptions): Promise<ProductionQaR
         "",
       );
       sourceHostMentionsInHtml += body.split(manifest.sourceHost).length - 1;
+      brandByRoute.push({ route: route.route, ...censusServedHtml(body, manifest.sourceHost, brandTokens) });
     }
     const robots = await fetch(launched.baseUrl + "/robots.txt");
     const robotsBody = await robots.text();
@@ -248,12 +426,17 @@ export async function runProductionQa(options: QaOptions): Promise<ProductionQaR
       const jsErrors: string[] = [];
       const hydrationErrors: string[] = [];
       const externalHosts: Record<string, number> = {};
+      const externalUrls: Record<string, number> = {};
       recordErrors(page, jsErrors, hydrationErrors);
       page.on("request", (request) => {
         const host = new URL(request.url()).host;
         if (host === localHost) return;
         externalHosts[host] = (externalHosts[host] ?? 0) + 1;
         externalRequestsByHost[host] = (externalRequestsByHost[host] ?? 0) + 1;
+        // Per-FILE, per-route: a host count alone cannot tell an operator
+        // which asset to replace, or which page it still renders on.
+        const url = normalizeResidualUrl(request.url());
+        externalUrls[url] = (externalUrls[url] ?? 0) + 1;
       });
       const response = await page.goto(launched.baseUrl + route.route, {
         waitUntil: "load",
@@ -297,6 +480,7 @@ export async function runProductionQa(options: QaOptions): Promise<ProductionQaR
         status: response?.status() ?? null,
         titleOk,
         externalHosts,
+        externalUrls,
         jsErrors: jsErrors.length,
         hydrationErrors: hydrationErrors.length,
       });
@@ -436,10 +620,31 @@ export async function runProductionQa(options: QaOptions): Promise<ProductionQaR
     const unexpectedExternalHosts = Object.keys(externalRequestsByHost).filter(
       (host) => !manifest.knownResidualSourceHosts.includes(host),
     );
+    const residualRequestFiles = summarizeResidualRequests(routeCensus);
     check(
       "external-requests-only-known-residual",
       unexpectedExternalHosts.length === 0,
-      `hosts=${JSON.stringify(externalRequestsByHost)}`,
+      `hosts=${JSON.stringify(externalRequestsByHost)}` +
+        (residualRequestFiles.length > 0
+          ? ` files=${residualRequestFiles
+              .slice(0, 5)
+              .map((file) => `${file.url} on ${file.routes.map((hit) => hit.route).join("|")}`)
+              .join(", ")}`
+          : ""),
+    );
+
+    // The census is REPORTED, never gated. The check below asserts only that
+    // the measurement actually ran — a route census of zero would mean the
+    // number in the report is vacuous, which is the failure mode the audit
+    // found in `external-requests-only-known-residual`.
+    const brandSurfaceCensus = summarizeBrandCensus(brandTokens, brandByRoute);
+    check(
+      "brand-surface-census-measured",
+      brandSurfaceCensus.routesMeasured === manifest.routes.length,
+      `routes=${brandSurfaceCensus.routesMeasured}/${manifest.routes.length} ` +
+        `source-url=${brandSurfaceCensus.sourceUrl} anchors=${brandSurfaceCensus.bodyAnchorIdentity} ` +
+        `visible-text=${brandSurfaceCensus.visibleText} svg-aria-label=${brandSurfaceCensus.svgAriaLabel} ` +
+        `svg-symbol-id=${brandSurfaceCensus.svgSymbolId}`,
     );
 
     const failed = checks.filter((entry) => !entry.ok).length;
@@ -454,9 +659,11 @@ export async function runProductionQa(options: QaOptions): Promise<ProductionQaR
       routeCensus,
       externalRequestTotal: Object.values(externalRequestsByHost).reduce((a, b) => a + b, 0),
       externalRequestsByHost,
+      residualRequestFiles,
       unexpectedExternalHosts,
       internalLinks,
       sourceHostMentionsInHtml,
+      brandSurfaceCensus,
     };
   } finally {
     await browser?.close();

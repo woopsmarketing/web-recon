@@ -1,0 +1,169 @@
+{
+  "agent": "Task 27 — Stretch Goal A: Authored-State Revision Foundation",
+  "objective": "A minimal immutable linear revision history over the release project's authoritative `authored` block, with restore, as the foundation for the next task's Visual Editor undo/history.",
+  "status": "PASS",
+  "filesCreated": [
+    "src/release/revisions.ts",
+    "scripts/smoke-revision.ts",
+    "docs/result/handoffs/27-revision.json"
+  ],
+  "filesModified": [
+    "src/release/store.ts (added REVISIONS_DIR + REVISION_FILE constants and one namespace doc line; no behavior change)",
+    "package.json (one script line: \"smoke:revision\")",
+    "src/release/revisions.ts (sortFix pass — numeric chain ordering; see `sortFix`. Created by this agent in the first pass, so it is also in filesCreated)",
+    "scripts/smoke-revision.ts (sortFix pass — one new section, 5 checks, 19 -> 24. Created by this agent in the first pass, so it is also in filesCreated)"
+  ],
+  "filesModifiedOutsideOwnership": [],
+  "changeRequests": [
+    {
+      "file": "src/release/index.ts",
+      "owner": "release-barrel owner (Wave 2/3)",
+      "change": "add `export * from \"./revisions.js\";` to the barrel",
+      "why": "revisions.ts is not exported from the public barrel, so external callers must deep-import src/release/revisions.js. No name in the module collides with an existing release export (checked: appendAuthoredRevision, appendAuthoredRevisionIfChanged, commitAuthoredState, restoreAuthoredRevision, loadRevisionChain, headRevision, getRevision, hashAuthoredState, diffAuthoredState, summarizeAuthoredChange, authoredChangeIsEmpty, revisionsDir, revisionDir, revisionIdForIndex, AuthoredRevisionSchema, AuthoredChangeSchema, RevisionOriginSchema, REVISION_ORIGINS, AUTHORED_REVISION_SCHEMA_NAME)."
+    },
+    {
+      "file": "src/release/resolve.ts",
+      "owner": "resolve owner (Wave 2)",
+      "change": "after `project.authored = foldResolutionIntoAuthored(...)` (resolve.ts:151) and the project save, call `appendAuthoredRevisionIfChanged(projectDir, { siteId: project.siteId, authored: project.authored, origin: \"resolve\", summary: `resolve: pack ${resolutionId}` })`",
+      "why": "resolve is today the only production write path into `authored`; until it is wired, packs applied through release:resolve leave no revision record. The library is deliberately standalone so this wiring is a 3-line additive change in a file this agent does not own."
+    },
+    {
+      "file": "src/release/prepare.ts",
+      "owner": "prepare owner (Wave 2)",
+      "change": "after the project is first written with the carried authored block (prepare.ts:328), call `appendAuthoredRevisionIfChanged(projectDir, { siteId, authored: project.authored, origin: \"prepare\" })`",
+      "why": "gives every project an r000 baseline so the first operator edit has a parent to diff against; harmless (no-op) on reprepare because the state has not moved."
+    }
+  ],
+  "recordShape": {
+    "schemaName": "authored-revision-v1",
+    "file": "data/<host>/release-projects/<projectId>/revisions/r000/revision.json",
+    "fields": {
+      "schemaVersion": "1 (RELEASE_SCHEMA_VERSION)",
+      "schemaName": "\"authored-revision-v1\"",
+      "revisionId": "r000 | r001 | … — position in the chain AND the directory name (/^r\\d{3,}$/)",
+      "siteId": "stable site identity from the project document",
+      "parentRevisionId": "previous revisionId, null on r000 only",
+      "createdAt": "ISO timestamp",
+      "authoredStateHash": "sha256 over the canonical (key-sorted) JSON of the EMBEDDED `authored` snapshot below, nothing else",
+      "origin": "prepare | resolve | edit | restore",
+      "summary": "one-line human summary (derived from `change` unless supplied)",
+      "change": "{ slotKeysAdded[], slotKeysChanged[], slotKeysRemoved[], themeChanged } vs the parent snapshot — keys only",
+      "restoredFrom": "revisionId re-applied when origin=restore, else null",
+      "authored": "FULL AuthoredState snapshot (slotValues, theme, updatedAt) — state, not a diff"
+    },
+    "storageModel": "plain snapshot storage. NOT content-addressed: nothing is deduplicated and the hash addresses nothing — it exists for comparison and for the on-read integrity check."
+  },
+  "branchingImplemented": false,
+  "mergeImplemented": false,
+  "restoreSupported": true,
+  "restoreAppendsRatherThanTruncates": true,
+  "storageLocation": "data/<host>/release-projects/<projectId>/revisions/r000..r00N/revision.json — a numbered append-only chain matching the src/reconstruction-qa/store.ts iterations/q000..q00N precedent. Constants live in src/release/store.ts:54-56 so the release-project namespace stays the single documented write surface.",
+  "legacyProjectWithoutRevisionsLoads": true,
+  "brandTypesPreserved": "src/release/types.ts was NOT edited by this agent at all (the revision schema lives entirely in the new src/release/revisions.ts), so Wave 3's additions are intact by construction. Confirmed by reading the current file — REQUIREMENT_KINDS at types.ts:93 including \"brand-leak\" at types.ts:105, SEVERITY_POLICY with its brand-leak escalation rationale at types.ts:558 — and by `pnpm smoke:release` passing all 27.brand.1–15 checks after this change.",
+  "newSuite": "smoke:revision (scripts/smoke-revision.ts)",
+  "checks": {
+    "smoke:revision": "24 checks, 0 failures (was 19 before the sortFix pass; +5 boundary checks, none removed)",
+    "smoke:release": "162 checks, 0 failures (brief cited a baseline of 84; the higher count is the mandatory waves' own additions, unchanged by this agent — smoke-release.ts was not edited here)"
+  },
+  "testsRun": [
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "checks": null,
+      "note": "tsc --noEmit clean, after the sortFix"
+    },
+    {
+      "command": "pnpm smoke:revision",
+      "exitCode": 0,
+      "checks": 24,
+      "note": "final line 'smoke:revision — 24 checks, 0 failures'; was 19 before the sortFix pass"
+    },
+    {
+      "command": "pnpm smoke:revision (NEGATIVE CONTROL, bare .sort() restored)",
+      "exitCode": 1,
+      "checks": 24,
+      "note": "'24 checks, 4 failures' — 27A.18/19/20/21 fail on 'position 101 is \"r101\"'. The fix was then restored byte-identically (md5 3b38f9fc35b43acc86436f53815f8689)"
+    },
+    {
+      "command": "pnpm smoke:release",
+      "exitCode": 0,
+      "checks": 162,
+      "note": "unchanged by this agent; still 162 checks, 0 failures after the sortFix — no drop"
+    }
+  ],
+  "evidence": [
+    "src/release/revisions.ts:1-28 — module doctrine: linear, no branching, no merges, append-only, wx-guarded, restore appends; storage follows the reconstruction-qa iterations/q000..q00N precedent",
+    "src/release/revisions.ts:87-108 — canonicalJson + hashAuthoredState; the hash is over the snapshot the record embeds",
+    "src/release/revisions.ts:165-168 — revisionIdForIndex, unchanged: three digits, widening past r999 rather than wrapping",
+    "src/release/revisions.ts:170-180 — NEW revisionIndexForId, the inverse, with the comment naming the r100/r1000/r101 failure a bare .sort() produces",
+    "src/release/revisions.ts:191-237 — loadRevisionChain: names are now ordered by revisionIndexForId (lines 196-203) before the same sequential-id, parent-linkage and per-record hash verification; a missing revisions/ directory still returns [] (legacy projects)",
+    "src/release/revisions.ts:262-291 — appendAuthoredRevision derives the parent from the CURRENT head and writes revision.json with flag 'wx' (line 289) so an existing record is never overwritten",
+    "src/release/revisions.ts:314-338 — commitAuthoredState: the record is written BEFORE the project save, so the chain can never be behind the document",
+    "src/release/revisions.ts:340-373 — restoreAuthoredRevision re-applies the target's snapshot verbatim as a NEW head with restoredFrom set",
+    "src/registry/scan.ts:168-180 — revisionPointer takes chain[chain.length - 1] from loadRevisionChain and sorts nothing itself, so it inherits the ordering fix; src/registry/scan.ts:53-61 listDirs sorts host/project names, not numbered ids",
+    "src/release/store.ts:9 and src/release/store.ts:54-56 — namespace doc line plus the REVISIONS_DIR/REVISION_FILE constants",
+    "scripts/smoke-revision.ts:85-121 — seedRevisionChain, with the doc comment stating plainly that r000..r998 are seeded straight to disk and why",
+    "scripts/smoke-revision.ts:305-400 — the r999/r1000 boundary section: 27A.17 widening appends, 27A.18 the chain loads in numeric order (positions 100/101/999/1000 asserted by id), 27A.19 head is r1000, 27A.20 the next append is r1001 with parent r1000, 27A.21 getRevision addresses both sides",
+    "scripts/smoke-revision.ts:133-153 — 27A.1 legacy revision-1 project loads (adaptedFrom=1) with an empty chain; 27A.2 its first append is r000 with a null parent",
+    "scripts/smoke-revision.ts:156-193 — 27A.4/27A.5 an authored edit appends r001 with parent r000 and the change names the edited slot key",
+    "scripts/smoke-revision.ts:196-230 — 27A.6-27A.9 hash equals the captured snapshot; equal state (reordered keys, JSON round-trip) hashes equal; a changed slot value or theme hashes differently; appendIfChanged writes nothing on a no-op",
+    "scripts/smoke-revision.ts:234-247 — 27A.10/27A.11 the chain and the project's authored state survive a reload from disk",
+    "scripts/smoke-revision.ts:250-283 — 27A.12-27A.15 restore reproduces r000 exactly, appends r002 (parent r001, restoredFrom r000), leaves every earlier record byte-identical, and is itself restorable (r003)",
+    "scripts/smoke-revision.ts:292-303 — 27A.16 a record edited behind its own hash is rejected on load",
+    "scripts/smoke-revision.ts:401-413 — 27A.22/27A.23 the two REAL projects under data/ used as fixtures are byte-identical afterwards and gained no revisions/ directory",
+    "fixtures (read-only, copied into a data/.smoke-revision-<pid> scratch removed at both ends): data/linear.app/release-projects/flowpilot-wr27 (projectRevision 2, authored content) and data/linear.app/release-projects/linear.app-2026-08-25T23-32-42-075Z (projectRevision absent = legacy 1). The boundary project is synthetic and lives only in that scratch.",
+    "scripts/smoke-revision.ts:415-421 — 27A.24 diffAuthoredState reports adds, removes and theme moves against a null parent (the shared summary helper's pinned contract)"
+  ],
+  "limitations": [
+    "NOT WIRED INTO ANY PRODUCTION WRITE PATH. resolve.ts:151 and prepare.ts:328 still update `authored` without appending a revision — both files are outside this agent's ownership, so the wiring is filed as changeRequests. Today the chain only grows when a caller invokes commitAuthoredState / appendAuthoredRevision explicitly (the smoke suite does).",
+    "Not exported from src/release/index.ts (barrel not owned) — callers must deep-import src/release/revisions.js until the changeRequest lands.",
+    "Full-snapshot storage: every revision embeds the entire authored state. Fine at today's sizes (tens of slot values); a site with thousands of authored slots and a long edit history will want a diff or content-addressed store, which this deliberately is NOT.",
+    "The hash covers the whole captured snapshot INCLUDING `updatedAt`. Content edits move updatedAt in lock step (instance.ts foldResolutionIntoAuthored only touches it when something changed), so this holds in practice — but a caller that bumps updatedAt alone would produce a new hash with an empty `change`.",
+    "No concurrency control beyond the `wx` write: two processes appending at the same instant produce one success and one EEXIST throw. There is no lock, retry, or queue.",
+    "No pruning/retention policy and no CLI surface (no `release:revisions` command); the chain grows without bound and is only reachable from code.",
+    "loadRevisionChain reads and parses every record to return the chain; a head-only read still costs O(chain).",
+    "The r999/r1000 boundary test seeds r000..r998 by writing records directly rather than through appendAuthoredRevision (quadratic otherwise). The crossing appends themselves use the public API, but the 999 seeded records are not proof that 999 real appends would succeed — only that a 1,001-long chain on disk loads and extends correctly.",
+    "The boundary is tested only at r999/r1000. The same widening happens again at r9999/r10000; the numeric sort handles it by construction (Number.parseInt has no digit ceiling here) but no test crosses that second boundary.",
+    "loadRevisionChain now reads and parses 1,001 records to answer headRevision at that chain length — the pre-existing O(chain) head read (already listed above) becomes a real cost exactly where this fix makes long chains possible."
+  ],
+  "followUps": [
+    "Land the three changeRequests (barrel export, resolve.ts, prepare.ts) so real operator edits are recorded.",
+    "Visual Editor undo/redo: undo = restoreAuthoredRevision(head.parentRevisionId); redo needs a session-level pointer, since the chain itself is deliberately linear and forward-only.",
+    "A `pnpm release:revisions --project-dir <dir> [--restore rN]` CLI once the editor needs operator-facing history.",
+    "Consider recording the release run id (or resolution id) on the record so a revision can be traced to the run that produced it.",
+    "Give headRevision a cheap path (read only the highest-index directory) before the Visual Editor makes thousand-revision chains ordinary — the fix removes the correctness wall, not the O(chain) read cost."
+  ],
+  "sortFix": {
+    "defect": "loadRevisionChain sorted revision directory names LEXICOGRAPHICALLY (a bare `.sort()`), then required `revision.revisionId === revisionIdForIndex(index)`. Because `revisionIdForIndex` deliberately WIDENS past r999 rather than wrapping, the moment r1000 exists the lexical order is \"... r099, r100, r1000, r101 ...\" and position 101 holds r1000 where r101 is expected. loadRevisionChain threw, and with it headRevision, appendAuthoredRevision, getRevision and restoreAuthoredRevision — the project's chain became permanently unloadable at exactly the point a Visual Editor undo history reaches 1,000 revisions.",
+    "fix": "Order NUMERICALLY. A new exported inverse, `revisionIndexForId` (src/release/revisions.ts:178-180), parses the index out of the id; loadRevisionChain sorts by that index (src/release/revisions.ts:196-203), with a name tie-break so a hand-written id that no `revisionIdForIndex` can emit (`r0001` beside `r001`) still fails the existing id check deterministically rather than nondeterministically.",
+    "notCappedNotWrapped": "The widening contract is untouched: `revisionIdForIndex` is byte-identical, no chain length cap was introduced, and no id wraps. Only the READ ordering changed.",
+    "existingIdsUnchanged": "No on-disk revision id changes. The fix reorders names after readdir and writes nothing; the two real release projects used as fixtures were byte-checked untouched by 27A.22/27A.23 in the same run.",
+    "otherLexicographicAssumptions": {
+      "checked": [
+        "src/release/revisions.ts — the bare `.sort()` at the old line 186 was the ONLY revision-name ordering in the module. `diffAuthoredState`'s three `.sort()` calls (revisions.ts:128-130) and `canonicalJson`'s key sort (revisions.ts:99) order SLOT KEYS and OBJECT KEYS, not revision ids; lexical is correct there and they were not touched.",
+        "src/registry/ — `revisionPointer` (src/registry/scan.ts:168-180) does no sorting of its own: it calls `loadRevisionChain` and takes `chain[chain.length - 1]`, so it inherits the fix and needed no change. The one `.sort()` in that file (`listDirs`, src/registry/scan.ts:53-61) orders HOST and PROJECT directory names, which are not numbered ids.",
+        "grep across src/ and scripts/ for REVISIONS_DIR / revisionIdForIndex / loadRevisionChain / headRevision / revisionDir found no other reader of the revisions/ directory."
+      ],
+      "conclusion": "One site had the assumption; it is fixed. No other fix was required."
+    },
+    "test": {
+      "where": "scripts/smoke-revision.ts:305-400, section \"a chain that crosses r999/r1000\"",
+      "checks": [
+        "27A.17 the 1000th and 1001st appends widen to r999 then r1000 with parent r999 (they do not wrap)",
+        "27A.18 the crossed chain LOADS and is in numeric order — chain[100]=r100, chain[101]=r101, chain[999]=r999, chain[1000]=r1000, length 1001",
+        "27A.19 headRevision past the boundary is r1000 — not r999, and not a throw",
+        "27A.20 an append after r1000 is r1001 parented to r1000, chain length 1002",
+        "27A.21 getRevision still addresses both sides distinctly (r100 -> its own record, r1000 -> its own record, r1002 -> null)"
+      ],
+      "isThisAComparatorUnitTest": "No. The test exercises the real on-disk path end to end: 1,001+ real revision directories exist under the scratch project and the assertions run through loadRevisionChain / headRevision / appendAuthoredRevision / getRevision, not through the comparator.",
+      "seedingHonesty": "r000..r998 are written STRAIGHT TO DISK by `seedRevisionChain` (scripts/smoke-revision.ts:85-121) instead of through appendAuthoredRevision, because that function re-reads the whole chain per call and 999 appends through it are quadratic. The seeded records are built with the module's own helpers and pass the same `AuthoredRevisionSchema.parse` the real writer uses, and the r999/r1000 CROSSING ITSELF — the appends that produce r999, r1000 and r1001 — goes through the public API. Runtime of the whole suite is ~1.4s.",
+      "negativeControl": {
+        "method": "The numeric sort was replaced by the original bare `.sort()` byte-for-byte, `pnpm smoke:revision` was run, then the fixed file was restored from a copy taken before the revert and its md5 re-checked.",
+        "withBareSort": "24 checks, 4 failures, exit 1 — 27A.18, 27A.19, 27A.20 and 27A.21 all failed with 'declares \"r1000\" but sits at \"r1000\" (position 101 is \"r101\") — the chain is linear and append-only'. 27A.17 still passed, which is correct: the WRITE path never had the defect.",
+        "withFix": "24 checks, 0 failures, exit 0.",
+        "restoredByteIdentical": "md5 of src/release/revisions.ts is 3b38f9fc35b43acc86436f53815f8689 both before the revert and after the restore."
+      }
+    },
+    "verifierFindingsLeftIntact": "The wx write guard (src/release/revisions.ts:289), the canonical-JSON hash (revisions.ts:87-108), restore-appends-rather-than-rewinds (revisions.ts:340-373) and every previously passing check 27A.1-27A.16 were not touched; only the read ordering changed."
+  }
+}

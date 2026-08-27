@@ -1,0 +1,309 @@
+{
+  "agent": "2C — Content Generation V2 Foundation",
+  "task": "27 — Overnight Authoring Foundation & Template Factory V2 (Wave 2)",
+  "objective": "Extend the existing Task 19/19.1 content engine — never fork a second one — with: real deterministic batch EXECUTION, total slot accounting on two orthogonal axes (origin × disposition), an explicit content truth mode, a non-blocking ONE-BRIEF UX, the missing RegionPlan layer over the Wave-1 PageRegion contract, the GED-D bounded no-progress guard in repair, and optional provider-neutral generation telemetry that never fabricates usage.",
+  "status": "PASS",
+  "secondEngineCreated": false,
+  "filesCreated": [
+    "src/content-injection/batching.ts",
+    "src/content-injection/accounting.ts",
+    "src/content-injection/truth-mode.ts",
+    "src/content-injection/region-plan.ts",
+    "src/content-injection/brief.ts",
+    "src/telemetry/types.ts",
+    "src/telemetry/recorder.ts",
+    "src/telemetry/index.ts",
+    "docs/result/handoffs/27-content-v2.json"
+  ],
+  "filesModified": [
+    "src/content-injection/types.ts (additive only: new file-name constants; ContentTruthMode + TruthModeDecision; ContentBrief + BriefGap; RepairStop/REPAIR_STOP_REASONS; RegionContract/RegionPlan/RegionPlanFile; BatchCallRecord/BatchKeyConflict/BatchExecutionReport; SLOT_ORIGINS/SLOT_DISPOSITIONS/SlotAccountingEntry/SlotAccountingFile. Existing schemas gained ONLY optional fields: ContentIntent.truthMode/.brief, GenerationRequest.batchUnitLimit/.truthMode/.briefGaps, ContentGenerationResult.synthetic, ContentRunManifest.truthMode/.repairStop/.batching/.slotAccounting. No existing field changed, so every Task 19-26 artifact on disk still parses. HARDENING: the intent.truthMode comment (:205-212) no longer claims absent == the behaviour Task 19 runs already had — it states the opposite, that the default is STRICTER, and points at the decision record in truth-mode.ts.)",
+    "src/content-injection/packet.ts (brief + truthMode + optional pageRegionsFile inputs; request now records batchUnitLimit/truthMode/briefGaps; RegionPlan emitted when a page-regions artifact is supplied; buildBatches itself UNCHANGED)",
+    "src/content-injection/run.ts (ingest applies the truth mode before validation; writeReviewArtifacts also emits slot-accounting.json; IngestOutcome gained `accounting`)",
+    "src/content-injection/providers.ts (ContentGenerator gained an OPTIONAL lastUsage() hook; fakeText and every generated literal untouched)",
+    "src/content-injection/repair.ts (appended the GED-D guard: failureSignatureOf, changedRepairKeys, RepairProgressGuard, repairStopFromLoop; existing functions untouched) HARDENING: added noRepairCandidatesStop(completedIterations) so `no-repair-candidates` distinguishes 'never started' (0) from 'stopped after N'.",
+    "src/content-injection/index.ts (barrel re-exports for the new modules)",
+    "src/cli-content-generate.ts (provider path now executes the packet's batches, writes report/batch-execution.json, records telemetry, fails on any key conflict; manual --result path preserved) HARDENING: prints the run's truth mode, the withheld/marked counts, and one line per withheld slot naming the claim shape and the flag that keeps it — the stricter default is never silent.",
+    "src/cli-content-prepare.ts (--brief, --truth-mode, --regions; brief gaps printed, never asked)",
+    "src/cli-content-qa.ts (repair loop wired to RepairProgressGuard; writes report/repair/repair-stop.json and manifest.repairStop; per-iteration telemetry) HARDENING: both `no-repair-candidates` sites route through noRepairCandidatesStop().",
+    "src/cli-content-validate.ts (prints the accounting summary; revalidation refreshes the sibling artifact)",
+    "scripts/smoke-content-injection.ts (six new offline sections, 39 new checks, none removed) HARDENING: 107 → 110 — two §4 checks on a Task-19-shaped historical result, one GED-D never-started check, and the vacuous §7 telemetry check replaced in place by a falsifiable raw-line assertion.",
+    "src/content-injection/truth-mode.ts (HARDENING, comment only: a DEFAULT DECISION block at :33-61 stating that verified-only is a stricter behaviour than Task 19 had, exactly what it demotes on re-ingest, who it can affect, and the three reasons the strict default is kept. No logic changed.)",
+    "src/content-injection/index.ts (HARDENING: barrel re-export of noRepairCandidatesStop.)"
+  ],
+  "filesModifiedOutsideOwnership": [],
+  "changeRequests": [
+    {
+      "file": "src/release/stages.ts",
+      "owner": "Agent 2B (Release Authoring)",
+      "change": "OPTIONAL surfacing only — no change is required for correctness. contentStageRunner's ingestGenerationResult() call now returns `outcome.accounting`, and the content run manifest carries `slotAccounting` {file, inScopeSlots, reconciled, ambiguousSlots} and `truthMode`. If the release run record should show how many in-scope slots a rerun accounted for (and how many stayed ambiguous), read them from there.",
+      "why": "2C is forbidden to touch src/release/*. The data is already persisted; only the surfacing decision belongs to 2B."
+    },
+    {
+      "file": "src/release/stages.ts",
+      "owner": "Agent 2B (Release Authoring)",
+      "change": "BEHAVIOUR NOTE, not a request: ingestGenerationResult now enforces the run's content truth mode (default verified-only) before validation. A merged base value that states an unbacked factual claim (a counted metric, price, percentage, phone number, certification, superlative social proof, founding date) is moved from slotValues to unresolved. Values the release orchestrator marks `user-provided` — every routeContent/urls resolution — are backed by definition and are NEVER touched.",
+      "why": "The exemption for user-provided values was added specifically so operator resolution packs cannot be refused."
+    }
+  ],
+  "batching": {
+    "executed": true,
+    "batchSize": 40,
+    "orderingRule": "global batches first (site-wide consistency), then page batches in packet route order; unit ids within a batch keep slots.json order; batch ids are assigned once at prepare time and the executor consumes generation-request.json rather than re-planning",
+    "callsObservedInTest": "8 calls for 8 batches on the real linear.app template (285 units, bound 40: 40/24 global + 40/40/40/40/40/21 page); 6 calls for 16 units at a deliberately small bound of 3 in the smoke fixture; 2 calls for the fixture's own 2 batches",
+    "duplicateKeyDetection": "mergeBatchResults() records a BatchKeyConflict for duplicate-slot-value / duplicate-unresolved / duplicate-image-brief / assigned-and-unresolved-across-batches / out-of-batch-key. The FIRST writer's value is kept so the merge stays deterministic, the conflict is persisted in report/batch-execution.json, and assertNoBatchConflicts() throws ContentValidationError — never last-write-wins, never silent.",
+    "deterministic": "PROVEN on real data: two executions of the linear packet produced byte-identical merged results AND byte-identical batch reports; two prepares at the same runId produced byte-identical generation-request.json and region-plan.json. BatchCallRecord deliberately carries no elapsed time so the report has no clock in it.",
+    "manualPathPreserved": "content:generate --result <json> still ingests one out-of-process file and does not batch, by design."
+  },
+  "slotAccounting": {
+    "artifactPath": "data/<host>/content-runs/<run>/slot-accounting.json (sibling of slot-values.json; written by ingestGenerationResult and refreshed by revalidateSlotValues)",
+    "originValues": [
+      "user-provided",
+      "derived-copy",
+      "generated-marketing",
+      "synthetic-fact",
+      "source-preserved"
+    ],
+    "dispositionValues": [
+      "applied",
+      "preserved",
+      "removed",
+      "human-required",
+      "unresolved"
+    ],
+    "reconciliationProof": "The artifact carries `reconciliation` {inScopeSlots, uniqueSlotKeys, originTotal, dispositionTotal, missing[], doubleCounted[], reconciled}. In-scope population = unit slot keys ∪ reviewSlotKeys (the whole set buildContentUnits saw), and the DENOMINATOR is that population, so a slot that fell out is a named `missing` entry rather than a smaller total. Measured on real linear.app data: inScopeSlots 594, uniqueSlotKeys 594, originTotal 594, dispositionTotal 594, missing 0, doubleCounted 0, reconciled true; byDisposition {applied 291, preserved 86, removed 0, human-required 213, unresolved 4} sums to 594 and byOrigin {derived-copy 67, generated-marketing 291, source-preserved 236} sums to 594.",
+    "customerFacingHonesty": "Each entry carries customerFacing: 'confirmed' only where the Slot V2 compiler classified the slot editable, 'ambiguous' where it flagged the slot for review. Ambiguous slots are their own bucket (linear: 213 of 594) and are never folded into a success number. scopeHonesty also records templateExcludedCandidates (linear: 1,435) — candidates the compiler's exclusions suppressed before slotting, which never reach this account at all — and says so in prose inside the artifact.",
+    "namingDeviation": "The brief suggested HUMAN_APPROVED; this ships `human-required` because the engine has NO approval signal and must not claim a human approved anything. 'REVIEWED' was avoided as instructed — editability='review' already means something else."
+  },
+  "originDispositionSeparate": true,
+  "factModes": [
+    "verified-only",
+    "synthetic-allowed"
+  ],
+  "defaultFactMode": "verified-only",
+  "syntheticProvenance": "Two ways in, one way out. (1) The generator may declare keys in the new optional ContentGenerationResult.synthetic[]. (2) The engine's own deterministic detector (src/content-injection/truth-mode.ts:35 FACT_CLAIM_PATTERNS) matches observable claim SHAPES in the produced value: counted-metric, price, percentage, phone-number, certification-or-award, superlative-social-proof, founding-date. A match that is not backed — sources[key] !== 'user-provided', no providedFacts entry contained in the value, and the value is not byte-identical to the source default — is refused under verified-only (moved to `unresolved` with reason 'needs factual input: unsupported <claim> claim (content truth mode: verified-only)') and kept-and-marked under synthetic-allowed. Marked values land in slot-accounting.json as origin 'synthetic-fact', and every decision is listed in the artifact's truthDecisions[] as refused-unresolved | marked-synthetic | backed-by-user-fact. generated-marketing and derived-copy stay separate origins and are never re-labelled.",
+  "slotValuesFormatChanged": false,
+  "gedD": {
+    "guardConditions": [
+      "no-candidate-keys-changed — the repaired values differ from the current overlay for ZERO candidate keys (fires at iteration 1 on the micro-slot reproduction)",
+      "repair-values-identical — the repaired values are byte-identical to the previous iteration's",
+      "failure-signature-repeated — the same sha256 failure signature (repair candidates + reasons + evidence + failing pages) with the same candidate set appears twice"
+    ],
+    "terminalReasonsAlsoRecorded": [
+      "layout-qa-passed",
+      "no-repair-candidates",
+      "iteration-bound-reached",
+      "repair-validation-failed"
+    ],
+    "reasonRecordedWhere": "data/<host>/content-runs/<run>/report/repair/repair-stop.json AND ContentRunManifest.repairStop — a validated RepairStop {reason, iteration, detail, unchangedSlotKeys[]}, not a log line. src/content-injection/repair.ts:182 RepairProgressGuard; src/cli-content-qa.ts:220 evaluates BEFORE applying, so a no-progress repair never consumes another browser QA pass.",
+    "fakeTextAltered": false,
+    "reproductionConfirmed": "The smoke reproduces the on-disk defect directly: a repair item with currentValue 'Fake' and no unit slot meets providers.ts:83 Math.max(4, target) and comes back as 'Fake'. The guard then stops at iteration 1, strictly below MAX_REPAIR_ITERATIONS (2), matching the byte-identical iteration pairs in data/domainchecker.co.kr/content-runs/2026-08-19T07-18-26-879Z/report/repair/ and data/nextjs.org/content-runs/2026-08-19T07-13-56-376Z/report/repair/ (both read-only, unmodified)."
+  },
+  "telemetry": {
+    "fieldsRecorded": [
+      "schemaVersion",
+      "schemaName",
+      "engine",
+      "runId",
+      "seamId",
+      "stage",
+      "callIndex",
+      "provider",
+      "model?",
+      "batchIds[]",
+      "unitCount",
+      "slotCount",
+      "routes[]",
+      "elapsedMs",
+      "retryCount",
+      "outcome",
+      "error?",
+      "usage?"
+    ],
+    "usageFields": [
+      "inputTokens",
+      "outputTokens",
+      "cacheReadInputTokens",
+      "cacheCreationInputTokens",
+      "costUsd"
+    ],
+    "usageAbsentWhenUnknown": true,
+    "fabricated": false,
+    "how": "src/telemetry/ is provider-neutral and has no SDK dependency. `usage` is written only when the provider implements the OPTIONAL ContentGenerator.lastUsage() hook; nothing in this repo does, so the key is OMITTED ENTIRELY — verified on the real linear run: 8 telemetry lines, `grep -c usage` = 0. The manual --result seam records a content.generate.manual event with no usage key. A stub provider that DOES report usage has it recorded verbatim, so the absence is a decision rather than an unimplemented path.",
+    "file": "data/<host>/content-runs/<run>/report/telemetry.jsonl — append-only JSONL, one object per call"
+  },
+  "regionPlan": {
+    "implemented": true,
+    "contractDependedOn": "The Wave-1 PageRegion compiler DID land (docs/result/handoffs/27-page-region.json status PASS). Content V2 depends on a SMALL STABLE CONTRACT of its artifact only: regionId, scope, slotKeys[], and pages[].{pageSourceId, routes[]}. src/content-injection/region-plan.ts:58 loadRegionContracts parses page-regions.json through a LOCAL non-strict zod view that ignores every other field (proven in the smoke with an artifact carrying an unknown key). NOTHING under src/regions/ is imported and nothing there was edited.",
+    "layer": "Brief → SiteContentPlan → PageContentPlan → RegionPlan → ContentUnit → SlotValues. RegionPlan groups EXISTING content units; a unit joins the region owning its first slot key, so a unit is never split and the assignment is a total function of the packet. Purpose is derived from the unit kinds present — no AI, no similarity score.",
+    "artifact": "data/<host>/content-runs/<run>/region-plan.json, emitted only when --regions is supplied; absent is normal and costs nothing.",
+    "measured": "linear.app homepage scope: 285 units → 12 region plans, 0 unassigned units, byte-identical across two prepares.",
+    "notWired": "RegionPlan does NOT influence batching. Batches stay unit-scoped and the batch ids persisted at prepare time are unchanged, so no existing packet moves."
+  },
+  "briefUx": {
+    "principle": "ONE BRIEF → FIRST DRAFT. src/content-injection/brief.ts — every field of ContentBriefSchema is optional, matching src/release/checklist.ts (~104-115) 'Every field optional — this is NOT an intake form'.",
+    "blocking": "Only the request text itself (via --intent, --intent-file, or the brief's `goal`). Everything else missing becomes a printed BriefGap {field, consequence} and is also persisted in generation-request.briefGaps. No question is ever asked back.",
+    "measured": "The real linear prepare with a 3-field brief printed 4 gaps and still produced the full packet (285 units, 8 batches, 12 region plans)."
+  },
+  "smokeContentInjectionChecks": 110,
+  "testsRun": [
+    {
+      "command": "pnpm smoke:content-injection (BASELINE, before any change)",
+      "exitCode": 0,
+      "checks": 68,
+      "note": "Measured at this tree before implementation, matching docs/result/handoffs/27-start.json declaredBaselineTable."
+    },
+    {
+      "command": "pnpm smoke:content-injection (AFTER)",
+      "exitCode": 0,
+      "checks": 107,
+      "note": "68 → 107, +39 checks, none removed. New sections: Task 27 §1 batch execution (12), §2/§3 slot accounting (7), §4 truth modes (7), §6 GED-D (5), §7 telemetry (4), RegionPlan (4)."
+    },
+    {
+      "command": "pnpm typecheck (tsc --noEmit)",
+      "exitCode": 0,
+      "checks": 0,
+      "note": "Whole-repo clean at the final hardening run (exit 0, no output). Earlier in the session the tree intermittently carried errors in src/recon-template/ and src/release/ from sibling agents mid-edit — including src/recon-template/route-policy.ts:265 during this hardening pass, which a sibling fixed before the final run. None were ever in this agent's files."
+    },
+    {
+      "command": "pnpm smoke:release (blast-radius probe — NOT this agent's suite)",
+      "exitCode": 0,
+      "checks": 130,
+      "note": "RE-MEASURED during hardening and it PASSES: 'smoke:release — 130 checks, 0 failures', exit 0. This supersedes the Wave-2 entry, which recorded exitCode 1 and claimed the suite does not pass on this tree — that was true only while Agent 2B was mid-edit in src/release/prepare.ts, and leaving it in the handoff was a false failure claim. Honest detail from the re-measurement: the FIRST of two attempts crashed in the suite's own teardown with ENOTEMPTY rmdir 'data/release-fixture.example' (a filesystem race on the shared fixture directory, unrelated to content injection); the second attempt ran clean end to end. The brief quoted 122 checks; the tree now yields 130."
+    },
+    {
+      "command": "pnpm content:prepare data/linear.app/recon-templates/2026-08-25T21-53-26-980Z/manifest.json --brief <brief> --routes / --regions data/linear.app/page-regions/2026-08-26T16-14-07-901Z/page-regions.json --out <scratch>",
+      "exitCode": 0,
+      "checks": 0,
+      "note": "Real-data CLI exercise. 285 units / 381 editable slots / 213 review slots → 8 batches at bound 40, truth mode verified-only, 12 region plans / 0 unassigned, 4 brief gaps printed and nothing blocked. Output written to the session scratchpad, NOT into data/."
+    },
+    {
+      "command": "pnpm content:generate <scratch>/linear-run --provider fake",
+      "exitCode": 0,
+      "checks": 0,
+      "note": "8 generator calls for 8 batches (40,24 global then 40,40,40,40,40,21 page), 0 conflicts, 358 slots assigned, 4 unresolved, accounting 594 in-scope / reconciled true / 213 ambiguous, telemetry 8 JSONL lines with zero `usage` occurrences."
+    },
+    {
+      "command": "npx tsx <scratch>/det.mts (determinism probe on real linear data)",
+      "exitCode": 0,
+      "checks": 4,
+      "note": "generation-request.json byte-identical across two prepares; region-plan.json byte-identical; batch report byte-identical across two executions; merged result byte-identical."
+    },
+    {
+      "command": "pnpm smoke:content-injection (AFTER HARDENING)",
+      "exitCode": 0,
+      "checks": 110,
+      "note": "107 → 110. +3 net: two new §4 checks pinning the historical-result demotion and the lossless synthetic-allowed escape hatch, and one new GED-D check pinning never-started vs stopped-after-N. The vacuous '§7 every recorded field is observed' check was REPLACED IN PLACE by a falsifiable one, so nothing was removed and the count did not drop."
+    },
+    {
+      "command": "pnpm typecheck (tsc --noEmit) — after hardening",
+      "exitCode": 0,
+      "checks": 0,
+      "note": "Whole-repo clean, no output."
+    }
+  ],
+  "evidence": [
+    "src/content-injection/batching.ts:1-52 — why this module exists: buildBatches was correct and never executed; cli-content-generate.ts passed the whole unit set in one call against GenerationRequestSchema's own comment.",
+    "src/content-injection/batching.ts:74 BATCH_ORDERING_RULE — the ordering contract, restated inside every report.",
+    "src/content-injection/batching.ts:94 mergeBatchResults — merge validation and the five conflict kinds; first-writer-wins for determinism, never for resolution.",
+    "src/content-injection/batching.ts:248 executeGenerationBatches — one narrowed request per batch, per-call records, optional telemetry.",
+    "src/content-injection/batching.ts:364 assertNoBatchConflicts — the failure a conflicting recombination must raise.",
+    "src/cli-content-generate.ts:107-133 — the provider path executes batches, persists report/batch-execution.json, updates manifest.batching, then fails on conflicts. The --result branch above it is untouched apart from its telemetry line.",
+    "src/content-injection/accounting.ts:1-42 — why two axes and not one enum, and why `sources` + `unresolved` could never answer the question.",
+    "src/content-injection/accounting.ts:44 inScopeSlotKeys — the denominator: unit slot keys ∪ reviewSlotKeys.",
+    "src/content-injection/accounting.ts:92 classify — the total, deterministic origin×disposition assignment.",
+    "src/content-injection/accounting.ts:135 buildSlotAccounting — totals, reconciliation and the scopeHonesty block that states what the account cannot see.",
+    "src/content-injection/types.ts:941 SLOT_ORIGINS / :951 SLOT_DISPOSITIONS — the two closed vocabularies, with the comment explaining why `human-required` is not called REVIEWED.",
+    "src/content-injection/types.ts:64 SLOT_ACCOUNTING_FILE — the sibling artifact name; slot-values.json is untouched.",
+    "src/content-injection/truth-mode.ts:35 FACT_CLAIM_PATTERNS — the seven observable claim shapes, each a pattern over the produced value, never a judgement about truth.",
+    "src/content-injection/truth-mode.ts:102 applyTruthMode — the three exemptions (user-provided source, providedFacts backing, value identical to the source default) and the refuse/mark split.",
+    "src/content-injection/run.ts:ingestGenerationResult — the truth mode runs BEFORE validation, so a refused claim can never become an overlay; slot-accounting.json is written on every ingest and revalidation.",
+    "src/content-injection/repair.ts:112-134 — the GED-D header quoting the two on-disk reproductions and stating that the provider half is deliberately out of scope.",
+    "src/content-injection/repair.ts:141 failureSignatureOf / :182 RepairProgressGuard — the three guard conditions in order of specificity.",
+    "src/cli-content-qa.ts:220 guard.evaluate — evaluated before merging, so a no-progress repair costs zero extra QA passes; :273 writes report/repair/repair-stop.json.",
+    "src/telemetry/types.ts:1-16 — the standing rule that nothing here fabricates a token or a dollar; :58 usage is optional.",
+    "src/telemetry/recorder.ts — append-only JSONL, optional everywhere, no file when no recorder is passed.",
+    "src/content-injection/region-plan.ts:1-45 — the dependency discipline paragraph and the two honest consequences of PageRegion granularity; :58 loadRegionContracts is the whole contract surface.",
+    "src/content-injection/brief.ts:1-25 — the anti-question-bombardment rule, citing src/release/checklist.ts as precedent.",
+    "scripts/smoke-content-injection.ts — six new sections, 39 new checks, 107/107 passing.",
+    "docs/result/handoffs/27-page-region.json — the Wave-1 handoff this layer's contract was read from.",
+    "src/content-injection/truth-mode.ts:33-61 — the DEFAULT DECISION record: what changed, who it affects, why the strict default is kept, and that the escape hatch is lossless.",
+    "src/content-injection/types.ts:205-212 — the corrected intent.truthMode comment (the previous wording claimed the default matched historical behaviour).",
+    "src/cli-content-generate.ts:143-153 — the withheld-claim surfacing: mode, counts, and one line per refused slot naming the claim shape and `--truth-mode synthetic-allowed`.",
+    "src/content-injection/repair.ts noRepairCandidatesStop — 'never started' vs 'stopped after N completed iteration(s)'; call sites src/cli-content-qa.ts:178 and :267.",
+    "scripts/smoke-content-injection.ts §4 — 're-ingesting a HISTORICAL Task-19 result DEMOTES its fact-shaped values' and 'the escape hatch is LOSSLESS: synthetic-allowed reproduces the Task 19 overlay byte-for-byte' (the latter compares against buildOverlayValues(historical)).",
+    "scripts/smoke-content-injection.ts §7 — 'a provider with no usage hook leaves `usage` off EVERY line' parses the raw JSONL text, so a zero-filled or estimated usage fails the check.",
+    "scripts/smoke-content-injection.ts GED-D — '`no-repair-candidates` distinguishes NEVER STARTED from stopped-after-N'."
+  ],
+  "limitations": [
+    "THE FACT DETECTOR MATCHES SHAPES, NOT TRUTH. It catches a counted metric, a price, a percentage, a phone number, a certification, a superlative social proof and a founding date. A fabricated claim expressed without any of those shapes ('our founder previously ran a national bank') passes straight through as generated-marketing. verified-only is therefore a strong guard against the common fabrications, NOT a proof of truthfulness, and the handoff must not be read as one.",
+    "THE SAME DETECTOR CAN OVER-TRIGGER. '24/7 support' matches percentage/metric shapes in some phrasings and would be withheld under verified-only. That is the conservative direction by design, but an operator will occasionally have to add a providedFacts entry for copy that is not really a claim.",
+    "THE TRUTH MODE IS ENFORCED AT INGEST ONLY. revalidateSlotValues (the §29 manual-edit path) does NOT re-run it: a value the operator typed by hand is theirs, and the accounting records it as user-provided. An operator can therefore hand-write a claim the mode would have refused.",
+    "GED-D IS WIRED INTO THE CLI REPAIR LOOP (src/cli-content-qa.ts) ONLY. Nothing else in the repo runs a repair loop today, so the release orchestrator never exercises the guard. The guard itself is a pure, exported class and is unit-tested independently of the CLI.",
+    "THE PROVIDER HALF OF GED-D IS NOT DONE, BY INSTRUCTION. providers.ts:83 `Math.max(4, target)` still produces a value shorter slots cannot use; the loop now stops instead of looping, but the micro-slot is still not repaired. It ends up in the operator report, which is the honest outcome.",
+    "BATCH EXECUTION IS ON THE PROVIDER PATH ONLY. The manual --result seam is one out-of-process file by design, so its telemetry event covers the whole packet and its batchIds list every batch rather than one.",
+    "NO REAL PROVIDER EXISTS, SO THE TELEMETRY USAGE FIELDS HAVE NEVER BEEN POPULATED BY A REAL SDK. They are exercised only by a stub in the smoke suite. Every real run in this repo leaves them absent.",
+    "REGIONPLAN HAS NO CONSUMER BEYOND ITS ARTIFACT. Nothing generates per-region, nothing batches per-region, nothing renders from it. It is the layer the hierarchy was missing, not yet a behaviour.",
+    "REGION GRANULARITY IS NOT UNIFORM and the PageRegion handoff says so: a page authored entirely in <div>s yields few, large regions. linear's homepage gave 12 plans with 0 unassigned units, but `unassignedUnitIds` is expected to be non-empty on such a template and is reported rather than papered over.",
+    "THE ACCOUNTING DENOMINATOR IS THE TEMPLATE'S IN-SCOPE SLOT SET, NOT 'every customer-facing thing on the page'. templateExcludedCandidates (1,435 on linear) counts candidates the Slot V2 compiler suppressed before slotting; they are named in the artifact but cannot be accounted for, because the engine never saw them.",
+    "TWO PREPARES AT THE SAME runId ARE BYTE-IDENTICAL, BUT A REPREPARE AFTER A TEMPLATE RECOMPILE IS NOT GUARANTEED TO BE: batch ids follow unit ids, which follow slots.json order. That was already true before Task 27; nothing here made it worse and nothing here fixed it.",
+    "THE TRUTH MODE HAS NEVER BEEN TRIPPED BY A REAL RUN. Its enforcement path is exercised positively ONLY by constructed fixtures in the smoke suite. The real linear.app exercise recorded truthDecisions = [] and 0 slots of origin `synthetic-fact`, because FakeContentGenerator emits 'Fake na…' strings that match none of the seven claim shapes. The mode is proven not-ignored end to end (a run persists its mode, and a constructed claim is demoted through the real ingest path), but no end-to-end run against real template data has ever produced a value that tripped it. Only a real provider will exercise that.",
+    "THREE NEW ContentRunManifest FIELDS ARE WRITTEN AND NEVER READ: `batching`, `repairStop` and `slotAccounting`. No code in the repo consumes them today — they are an audit trail for an operator or a later stage, not wired-up behaviour. Do not mistake their presence for a consumer. (`slotAccounting` and `truthMode` are offered to src/release in the changeRequests above, which is 2B's call.)",
+    "smoke:release IS RACE-PRONE ON A SHARED TREE. It begins by removing data/release-fixture.example and ends by removing it again; one of this agent's two probe runs crashed with ENOTEMPTY on that teardown while sibling agents were active. The suite itself is fine — the second run passed 130/130 — but a single red run of it on a multi-agent tree is not by itself evidence of a defect."
+  ],
+  "followUps": [
+    "Give RegionPlan a consumer. The obvious first one is region-aligned batching (one batch per region instead of a flat 40-unit chunk), which would make a generation call carry one coherent visual section. It was NOT done tonight because it would move every persisted batch id.",
+    "The fact detector's pattern list is the right place for a real provider to add per-locale shapes; it is currently English + a small Korean set, and a Japanese or German site would need entries.",
+    "Wire the provider half of GED-D (a length-aware fake generator) once the smoke suites that pin fakeText's literal output — smoke:seo, smoke:release, smoke:production — can be updated in the same change.",
+    "When a real SDK lands, implement ContentGenerator.lastUsage() and nothing else changes: the recorder, the schema and the CLI already carry usage through, and the absent-vs-zero rule is already tested.",
+    "Consider recording a per-slot `accountedAt` lineage so two consecutive runs' accounting artifacts can be diffed ('what changed disposition since last time?'). Everything needed is already persisted.",
+    "The truth mode currently lives on the run. A release project may want it on the PROJECT so a rerun cannot silently switch modes — that is a src/release decision, hence the changeRequest above rather than an edit.",
+    "Trip the truth mode with a REAL generator. Until a provider produces copy containing a percentage, a price or 'trusted by', the enforcement path's positive case is fixture-only; the first real provider run should be checked for over-triggering (see the '24/7 support' limitation) before the default is trusted on a customer site."
+  ],
+  "truthModeDefaultDecision": {
+    "question": "Is `verified-only` the right DEFAULT, given it can DEMOTE a value a Task 19 run already applied?",
+    "whatActuallyChanged": "A real, stricter ENGINE behaviour — NOT a no-op, and the earlier framing of it as 'the behaviour every Task 19 run already had' was WRONG. Task 19's no-invented-facts rule bound only the PROMPT (src/content-injection/truth-mode.ts:15-18 says so in its own words). With this module in the ingest path, re-ingesting a HISTORICAL generation result whose copy matches one of the seven claim shapes (percentage /\\b\\d[\\d.]*\\s?%/, price, superlative-social-proof 'trusted by', counted metric, phone number, certification, founding date — truth-mode.ts:65-82) now moves that value out of `slotValues` and into `unresolved`.",
+    "whoItCanAffect": "Anyone re-running `content:generate --result <archived.json>`, and any release rerun that re-ingests an archived result: a slot that used to be applied becomes an operator ask, so a project that read PRODUCTION_READY can read INPUTS_REQUIRED after a rerun. No artifact already on disk changes until it is re-ingested; nothing was rewritten by this wave.",
+    "decision": "KEEP `verified-only` as the default.",
+    "reasoning": [
+      "The demotion is LOUD, not silent. It is printed by content:generate (src/cli-content-generate.ts:143-153 prints the mode, the counts and every withheld slot key with its claim shape and the exact flag that keeps it), recorded per slot in slot-accounting.json truthDecisions[], and surfaced as a needs-input slot in the operator review. The failure mode of the other default — shipping an unbacked 'Trusted by 4,000 teams' on a customer's production site — is silent.",
+      "The escape hatch is LOSSLESS, so preserving history costs exactly one flag and loses nothing: under `--truth-mode synthetic-allowed` every value is kept verbatim and the resulting overlay is BYTE-IDENTICAL to what Task 19 produced; the only difference is that the invention is now recorded (origin `synthetic-fact`). This is measured, not asserted — the smoke compares the ingested overlay against buildOverlayValues(historicalResult) with JSON.stringify.",
+      "Defaulting to `synthetic-allowed` would leave `no-invented-facts` a prompt request forever, which is the exact Task 19 gap §4 was opened to close."
+    ],
+    "legibleInTheSuite": "scripts/smoke-content-injection.ts §4 — two new checks pin a Task-19-shaped historical result (a 'trusted by' hero and a '$19 a month, 99.9% uptime since 2019' footer): (1) 're-ingesting a HISTORICAL Task-19 result DEMOTES its fact-shaped values (a real behaviour change, not a no-op)' — both values leave the overlay, exactly 2 refused-unresolved decisions, both entries disposition `unresolved`; (2) 'the escape hatch is LOSSLESS: synthetic-allowed reproduces the Task 19 overlay byte-for-byte' — overlay JSON equals buildOverlayValues(historical) and both entries carry origin `synthetic-fact`.",
+    "recordedInCode": "src/content-injection/truth-mode.ts:33-61 (a DEFAULT DECISION block stating the change, who it affects and the three reasons) and src/content-injection/types.ts:205-212 (the intent.truthMode comment, which previously claimed absent == 'the behaviour those runs already had' and now says the opposite plainly)."
+  },
+  "hardening": [
+    {
+      "item": "1 — a real behaviour change was framed as a no-op",
+      "verdict": "CORRECTED, and a decision was made and recorded",
+      "what": "The handoff (and the types.ts comment it echoed) said the verified-only default was the behaviour Task 19 runs already had. It is not: re-ingesting a historical result whose copy carries a percentage, a price or 'trusted by' phrasing now demotes that value to `unresolved`. See the new `truthModeDefaultDecision` block above for the plain statement, who it can affect, the decision to KEEP the strict default, and the reasoning.",
+      "alsoDone": "The demotion is no longer silent on the CLI (src/cli-content-generate.ts:143-153) and is pinned by two new smoke checks on a Task-19-shaped historical result."
+    },
+    {
+      "item": "2 — coverage gap stated honestly",
+      "verdict": "RECORDED in limitations",
+      "what": "The truth-mode enforcement path is exercised positively ONLY by constructed fixtures. The real linear.app run recorded truthDecisions = [] and synthetic-fact origin = 0, because FakeContentGenerator emits 'Fake na…' strings that match none of the seven patterns. The mode is proven not-ignored end to end, but no real end-to-end run has ever tripped it."
+    },
+    {
+      "item": "3 — a check that asserts nothing an implementation could fail",
+      "verdict": "REPLACED in place (not removed — the count did not drop)",
+      "what": "'§7 every recorded field is observed, never fabricated' only typeof-checked fields the zod schema already guarantees. It is replaced by '§7 a provider with no usage hook leaves `usage` off EVERY line — never zero-filled, never estimated', which parses the RAW JSONL lines and asserts no line carries a `usage` key when the generator implements no lastUsage() hook. A zero-filled or token-estimating recorder fails it; the previous check could not fail.",
+      "note": "This is strictly stronger than the neighbouring manual-seam check, which inspects only the LAST line; the new one covers every batch-call line too."
+    },
+    {
+      "item": "4 — iteration 0 is not an iteration",
+      "verdict": "FIXED",
+      "what": "src/content-injection/repair.ts noRepairCandidatesStop(completedIterations) now writes 'never started: the first layout QA report produced no repairable slot …' when 0 iterations completed, and 'stopped after N completed iteration(s): no repairable slot remained …' otherwise. Both `no-repair-candidates` call sites in src/cli-content-qa.ts (:178 and :267) route through it. Pinned by 'GED-D `no-repair-candidates` distinguishes NEVER STARTED from stopped-after-N'."
+    },
+    {
+      "item": "5 — three manifest fields are written but never read",
+      "verdict": "RECORDED in limitations",
+      "what": "ContentRunManifest.batching, .repairStop and .slotAccounting are written by this wave and read by no code in the repo. They are an audit trail, not wired-up behaviour, and the limitation now says so."
+    },
+    {
+      "item": "ALSO — the stale smoke:release testsRun entry",
+      "verdict": "CORRECTED by re-measuring, not by copying the brief",
+      "what": "The old entry claimed exitCode 1 and 'smoke:release DOES NOT PASS ON THIS TREE'. This agent re-ran the suite twice: attempt 1 crashed on a filesystem race in the suite's own teardown (ENOTEMPTY rmdir 'data/release-fixture.example', nothing to do with content injection), attempt 2 ran clean — 'smoke:release — 130 checks, 0 failures', exit 0. Both the testsRun entry and the corresponding limitation now say that. Note the count is 130, not the 122 the brief quoted; siblings have added checks since."
+    }
+  ]
+}

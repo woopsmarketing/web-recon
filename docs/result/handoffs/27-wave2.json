@@ -1,0 +1,172 @@
+{
+  "schema": "task27-wave-gate-v1",
+  "wave": 2,
+  "gate": "PASS",
+  "baselineSha": "d33abb3",
+  "gitOperations": 0,
+  "agents": {
+    "builders": ["2A Template Factory V2", "2B Release Authoring", "2C Content V2"],
+    "freshVerifiers": 3,
+    "verifierVerdicts": "3/3 PASS",
+    "integrator": 1,
+    "additivityVerifier": 1,
+    "hardeningCorrectionAgents": 3,
+    "hardeningReverifier": "FAIL (2 MAJOR) -> correction agent -> reverifier PASS",
+    "totalAgents": 14
+  },
+  "templateFactoryV2": {
+    "handoff": "docs/result/handoffs/27-template-factory-v2.json",
+    "routeScopePolicy": {
+      "vocabulary": ["core-reconstruct", "collection-index", "collection-representative", "structure-only", "exclude"],
+      "schema": "src/recon-template/types.ts RouteScopeSchema (zod enum, closed vocabulary)",
+      "seam": "recon-template compile extraction input",
+      "default": "core-reconstruct — a compile without --route-policy is byte-for-byte the pre-Task-27 slot surface",
+      "selectorTouched": false,
+      "siteSpecTouched": false,
+      "templateStageRunnerAdded": false
+    },
+    "measuredSlotReduction": {
+      "host": "stripe.com",
+      "policyFreeSlots": 9529, "policiedSlots": 4661, "reductionPct": 51.09,
+      "policyFreeBindings": 24518, "policiedBindings": 13680,
+      "routes": 20, "structureOnlyRoutes": 10, "slotizedPages": "10 of 18",
+      "honestCaveat": "51% is what THIS 20-route reconstruction can show, because only 10 of its routes belong to the repeated family. On a real 4,000-page blog the same policy removes the whole family minus one member, so the reduction tracks the family's share of the crawl, NOT this 51% figure."
+    },
+    "structureOnlyProof": {
+      "route": "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know",
+      "slotsBefore": 747, "slotsAfter": 0, "stillInSiteMap": true, "stillRenders": true
+    },
+    "parityRiskResolved": {
+      "theAuditQuestion": "UNVERIFIED: whether filtering pagesById at the compile seam leaves qa:recon-template parity green on a real multi-route site",
+      "structuralAnswer": "generateTemplateApp copies the Exact Reconstruction's app/ directory (route map, every runtime page, styles, interaction runtime) with NO reference to pagesById; only template-data/{slots,slot-bindings,site-map}.json derive from extraction",
+      "empiricalAnswer": "the fresh verifier ran the REAL parity QA (pnpm qa:recon-template) on its own policied 20-route stripe compile across two structure-only routes plus a core route at 390/1440: 8/8 content equal, 8/8 structure equal, 0px max doc-height delta, 0px worst geometry p95, 0 hydration errors, 0 template-introduced runtime errors",
+      "verdict": "RESOLVED — frozen Exact Reconstruction is not affected by route policy"
+    },
+    "collections": { "implemented": true, "countIsFloor": true, "estimatedTotal": null, "consumersInRepo": 0, "note": "detection/representation only; no blog engine, CRUD, category UI or publishing flow" },
+    "checks": { "before": 64, "after": 109 }
+  },
+  "releaseAuthoring": {
+    "handoff": "docs/result/handoffs/27-release-authoring.json",
+    "parallelSiteInstanceCreated": false,
+    "approach": "pure extension of src/release/ — new src/release/instance.ts adds identity/adaptation/folding helpers only; ReleaseProject remains the single site-identity schema",
+    "stableSiteId": { "field": "ReleaseProject.siteId", "operatorSupplied": "pnpm release:prepare <spec> --site-id <id>", "defaults": "deterministic host slug", "survivesReprepare": true },
+    "nonDestructivePrepare": {
+      "fixed": "prepare.ts no longer hardcodes resolutions:[] / runs:[]; it carries resolutions, authored, runs, failure and stage artifacts for executable stages",
+      "recalculationStillHappens": "collectRequirements is unconditional; mergeRequirements matched against carried resolutions; refreshStageStatuses runs on re-prepare",
+      "tested": "prepare -> resolve -> build -> prepare, compared against a project RE-LOADED FROM DISK"
+    },
+    "authoredSlotValues": { "onSchema": true, "roundTrips": true, "authoritative": true, "appliedLast": true },
+    "themeInvalidation": { "staleStages": ["theme", "production"], "freshStages": ["reconstruction", "template", "content", "seo", "assets"], "hashSliceIncluded": true, "themeSelectionImpactsNowLive": true },
+    "templateReportHashExclusion": { "prepare": true, "freshness": true },
+    "contentDerivedHashExclusion": {
+      "constant": "CONTENT_DERIVED_HASH_EXCLUSIONS = [\"report\", \"slot-accounting.json\"]",
+      "appliedAt": ["src/release/prepare.ts", "src/release/stages.ts", "src/release/build.ts"],
+      "rehashedFromRecordedSet": true,
+      "deliberatelyKeptInHash": ["slot-values.json (AUTHORED INPUT baked by production)", "manifest.json", "generation-result.json", "content-units", "policy", "request", "intent.json", "region-plan.json"],
+      "why": "Task 27 itself added writes into content run dirs (report/telemetry.jsonl, slot-accounting.json), so content QA after release:prepare drifted a prepared project's content hash — the same defect shape as the template report/ landmine",
+      "bothDirectionsTested": true
+    },
+    "legacyExclusionSetHandling": {
+      "chosen": "warn (option b), not refresh-on-load (option a)",
+      "why": "re-hashing uses the RECORDED set, so swapping in the current set reinterprets a hash computed under the old one; all six recon-template dirs already contain report/, so adopting the new set would make three currently-building projects drift and hit the frozen-stage refusal at LOAD time",
+      "surfacedThrough": ["release:plan warnings", "release:build dry-run"],
+      "remedyNowActuallyWorks": "prepare.ts samePath guard — carried artifact is adopted from lineage when carried.artifact.path === lineageArtifact.path, so following the printed remedy CLEARS the warning for the content stage"
+    },
+    "routeOrRegionEnablementImplemented": false,
+    "legacyProjectsLoaded": ["linear.app-2026-08-25T23-32-42-075Z", "linear.app-2026-08-25T23-54-21-435Z", "stripe.com-2026-08-19T06-36-35-798Z"],
+    "checks": { "before": 84, "after": 136 }
+  },
+  "contentV2": {
+    "handoff": "docs/result/handoffs/27-content-v2.json",
+    "secondEngineCreated": false,
+    "batchingExecuted": {
+      "proven": "an independent verifier instrumented its own counting wrapper: 8 separate generate() invocations of at most 40 units each for a 285-unit linear.app packet — never one 285-unit call",
+      "order": "global batches first, then route-scoped",
+      "sizes": [40, 24, 40, 40, 40, 40, 40, 21],
+      "deterministic": "byte-identical outputs across two executions",
+      "duplicateKeyDetection": true,
+      "manualResultPathStillWorks": true
+    },
+    "slotAccounting": {
+      "artifact": "content-runs/<run>/slot-accounting.json",
+      "reDerivedByVerifier": "594 in-scope = 594 unique entries = 594 origin total = 594 disposition total, 0 missing, 0 double-counted",
+      "originDispositionSeparate": true,
+      "reviewedUsedAsDisposition": false
+    },
+    "slotValuesFormatChanged": false,
+    "factModes": ["verified-only", "synthetic-allowed"],
+    "truthModeDefaultDecision": {
+      "default": "verified-only",
+      "honestFraming": "This is STRICTER than every Task 19-26 run. Task 19's no-invented-facts rule bound only the PROMPT; FACT_CLAIM_PATTERNS now actively demotes a value containing a percentage, price or superlative-social-proof phrasing to `unresolved` on re-ingest. A project that read PRODUCTION_READY can read INPUTS_REQUIRED after a rerun.",
+      "correctedFrom": "the original handoff wrongly framed it as 'the behaviour every Task 19 run already had' — caught by the additivity verifier using the module's own docs",
+      "whyKept": ["the demotion is loud — content:generate prints one line per withheld slot naming the claim shape and the flag that keeps it", "the escape hatch is lossless — synthetic-allowed reproduces the Task 19 overlay byte-for-byte, measured", "on-disk additivity is unaffected — all 5 content runs still load"],
+      "coverageGap": "the enforcement path is exercised positively only by constructed fixtures; the real linear.app run recorded ZERO truth decisions because FakeContentGenerator emits strings matching none of the seven patterns"
+    },
+    "gedD": { "noProgressGuard": true, "reasonRecorded": "repair-stop.json", "fakeTextAltered": false, "blastRadiusProven": "smoke:seo 97, smoke:production 89, smoke:release 136 all green with zero deletions in their diffs" },
+    "telemetry": { "fabricated": false, "usageAbsentWhenUnknown": "manual --result seam produced a record with NO usage key at all (grep -c usage = 0 across 8 batch lines); a stub provider that DOES report usage has it recorded verbatim — absence is a decision, not an unimplemented path" },
+    "regionPlan": { "implemented": true, "dependsOnlyOnSmallContract": true },
+    "checks": { "before": 68, "after": 110 }
+  },
+  "additivityProof": {
+    "verifier": "fresh, independent",
+    "releaseProjectsLoaded": "3/3 (all revision-1 on disk, all adapted via the explicit adaptReleaseProject path, NONE rewritten)",
+    "reconTemplatesLoaded": "7/7 spanning compilerVersion 1, 2 and 3",
+    "contentRunsLoaded": "5/5",
+    "failures": 0,
+    "beyondBrief": [
+      "a policy-free recompile of the stripe lineage reproduces slots.json BYTE-IDENTICAL to the pre-Task-27 2026-08-18 artifact (9,529 slots / 24,518 bindings)",
+      "all 7 stage inputsHash values recorded in the three legacy release projects still recompute identically under the new freshness code — no phantom staleness",
+      "two policied template compiles produced 47/47 identical files; two pinned-run-id content generations produced a byte-identical run directory"
+    ]
+  },
+  "majorFindingsFoundAndFixed": [
+    {
+      "finding": "the new stale-exclusion warning printed an operator remedy that DOES NOT WORK for the content stage — prepare.ts kept the carried artifact for every non-frozen stage, discarding the freshly re-hashed lineage ref, so content never re-hashed and the warning would persist forever",
+      "fix": "samePath guard: carried artifact is adopted from lineage when carried.artifact.path === lineageArtifact.path. Equal paths mean the same bytes hashed two ways; a stage advanced to a NEW run dir is still protected (an unguarded 'always adopt lineage' makes both the new 27H.7f AND the pre-existing 27.35 fail).",
+      "disclosedTradeoff": "a re-prepare now re-baselines a same-path non-frozen artifact, so that stage's own drift signal resets. Verified by an independent probe that downstream theme/seo/production REMAIN stale, so a hand edit still propagates into the rebuild. A stricter drift-guard was designed and REJECTED with reasoning: a legacy content dir goes 'drifted' after one content:qa run, which would block the very re-hash the remedy promises."
+    },
+    {
+      "finding": "FAKE-PASS: check 27H.7 was named 'the freshness warning reaches the operator through release:plan' and asserted `warnings.length === 0`. Deleting the seeding line or either WARNINGS block left smoke:release at 130/130 green. grep for `.warnings` across the 2,300-line suite returned exactly ONE line.",
+      "fix": "removed and replaced with 27H.7a-27H.7g: builds a REAL legacy-shaped project on disk, drives it through refreshStageStatuses, planRelease (warnings[] AND rendered text) and buildRelease --dry-run, each asserting the warning is PRESENT and carries the CONTENT artifact path — then follows the printed remedy and asserts it clears while carried state survives",
+      "vacuityAudit": "8 checks in the 27H.* block inspected, 1 vacuous, 1 removed. 27H.6 kept but explicitly recorded as an absence-only assertion that stays PASS under its own negative control — weak alone, sound only because paired presence checks now exist.",
+      "negativeControls": "NC1-NC6 by the correction agent, two independently repeated by the re-verifier; every one restored byte-identical (diff -q) and re-run green"
+    }
+  ],
+  "regression": {
+    "logs": "docs/result/handoffs/27-regression-logs/wave2/",
+    "suites": 18,
+    "typecheck": "exit 0",
+    "totalChecks": 2045,
+    "wave1Checks": 1906,
+    "baselineChecks": 1794,
+    "deltaVsWave1": 139,
+    "deltaVsBaseline": 251,
+    "failures": 0,
+    "negativeCountDeltas": [],
+    "perSuite": {
+      "verifier": 81, "selector": 81, "multi-observer": 62, "interaction-detector": 92,
+      "interaction-explorer": 108, "interaction-patterns": 88, "sitespec": 257,
+      "reconstruction": 217, "reconstruction-qa": 134, "e2e": 130, "recon-template": 109,
+      "content-injection": 110, "theme": 47, "seo": 97, "assets": 140, "production": 89,
+      "release": 136, "regions": 67
+    }
+  },
+  "historicalIntegrity": {
+    "existingRunDirsModified": 0,
+    "evidence": "mtimes against docs/result/handoffs/27-start.json — 83 data/ entries newer, ALL of them NEW Task 27 run dirs (stripe recon-templates 2026-08-26T17-16-46-409Z, linear+stripe page-regions)",
+    "vacuousProofAvoided": "an earlier integrator 'proved' this with `git status --porcelain data/`, which is EMPTY for any tree state because data/ is gitignored. Caught by the additivity verifier; every subsequent proof uses mtimes.",
+    "task24AggregationHandoffTouched": false,
+    "task24AggregationMd5": "a4872ee8271f0ca7ce9c2f0fe878c6c8",
+    "headStillBaseline": true
+  },
+  "carriedLimitations": [
+    "collections[] is written into the template artifact but NO engine in the repo reads it yet — this is a foundation, not wired-up behavior (the count IS read back by the compiler and asserted by 8 smoke checks, so it is not the declared-but-never-read fake-pass pattern)",
+    "the `exclude` route scope removes a route from site-map.routes[] while the copied exact app still serves it; three downstream consumers treat site-map.routes[] as the route source of truth. No canary exercises exclude end to end (stripe canary has excludedRoutes: 0) — the cross-stage blast radius is asserted-by-design, not measured. Recorded as manifest limitation code excluded-routes-still-served-by-the-copied-exact-app.",
+    "the truth-mode enforcement path has never been tripped by a real-data run",
+    "content manifest.json stays in the lineage hash by design, so a legacy run's first revalidation can add a slotAccounting block and drift content ONCE (stale+rerun, never a refusal)",
+    "src/production/run.ts hashes the content dir with NO exclusions for the spec's own lineage — inconsistent with the release-side set but never compared; filed as a changeRequest (outside 2B ownership)",
+    "manifest.source.siteSpecFile / reconstructionManifestFile are still raw paths (absolute in the stripe manifest, repo-relative in linear) — same bug class as the policyFile path normalization that WAS fixed, but out of scope; filed as a followUp rather than silently changed",
+    "the stripe canary run dir on disk still carries its PRE-hardening manifest.limitations (the shared-page companion code was added after that run was compiled)",
+    "27H.6 and 27H.7g are absence-only assertions — correctly named and honestly disclosed as weak-alone"
+  ]
+}

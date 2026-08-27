@@ -43,9 +43,16 @@ export function matchResolutionToRequirements(
   resolution: ProductionResolution,
 ): { matches: ResolutionMatch[]; acknowledgements: ResolutionMatch[]; unmatchedFields: string[] } {
   const byId = new Map(requirements.map((requirement) => [requirement.requirementId, requirement]));
-  const bySlotKey = new Map<string, Requirement>();
+  // A MULTI-map: one slot can carry more than one requirement (Task 27 — a
+  // `brand-leak` finding and the `external-url`/`replacement-image` entry for
+  // the same slot are different gaps). A single-valued map silently dropped
+  // all but the last, so supplying the value resolved only one of them.
+  const bySlotKey = new Map<string, Requirement[]>();
   for (const requirement of requirements) {
-    if (requirement.slotKey) bySlotKey.set(requirement.slotKey, requirement);
+    if (!requirement.slotKey) continue;
+    const list = bySlotKey.get(requirement.slotKey) ?? [];
+    list.push(requirement);
+    bySlotKey.set(requirement.slotKey, list);
   }
   const matches: ResolutionMatch[] = [];
   const acknowledgements: ResolutionMatch[] = [];
@@ -69,8 +76,9 @@ export function matchResolutionToRequirements(
     }
   }
   for (const slotKey of Object.keys(resolution.urls ?? {})) {
-    const requirement = bySlotKey.get(slotKey);
-    take(requirement?.requirementId, `urls.${slotKey}`);
+    const bound = bySlotKey.get(slotKey) ?? [];
+    if (bound.length === 0) take(undefined, `urls.${slotKey}`);
+    for (const requirement of bound) take(requirement.requirementId, `urls.${slotKey}`);
   }
   for (const assetId of Object.keys(resolution.assets ?? {})) {
     const requirementId =
@@ -95,10 +103,17 @@ export function matchResolutionToRequirements(
       take(byId.has(requirementId) ? requirementId : undefined, `routeContent.${route}`);
     }
     for (const slotKey of Object.keys(content.slotValues ?? {})) {
-      const requirement = bySlotKey.get(slotKey);
-      if (requirement) {
-        matches.push({ requirementId: requirement.requirementId, field: `routeContent.${route}.slotValues.${slotKey}` });
-      }
+      const field = `routeContent.${route}.slotValues.${slotKey}`;
+      const bound = bySlotKey.get(slotKey) ?? [];
+      // An authored slot value that binds to NO open requirement is legitimate
+      // (authoring is not only gap-filling) but it must not VANISH: without
+      // this branch such a pack reported `matched: []` AND `unmatchedFields:
+      // []`, so the resolve summary mentioned the operator's value nowhere at
+      // all. `take(undefined, …)` records it as unmatched — which resolve.ts
+      // renders as "matched no open requirement (recorded, still applied where
+      // consumable)", the accurate description of what happened to it.
+      if (bound.length === 0) take(undefined, field);
+      for (const requirement of bound) take(requirement.requirementId, field);
     }
   }
   for (const acknowledgement of resolution.acknowledgements ?? []) {
@@ -272,6 +287,14 @@ export function effectiveResolution(applied: AppliedResolution[]): ProductionRes
         };
       }
     }
+    if (resolution.theme !== undefined) {
+      const tokens = { ...(merged.theme?.tokens ?? {}), ...(resolution.theme.tokens ?? {}) };
+      merged.theme = {
+        ...(merged.theme ?? {}),
+        ...resolution.theme,
+        ...(Object.keys(tokens).length > 0 ? { tokens } : {}),
+      };
+    }
     if (resolution.acknowledgements !== undefined) {
       merged.acknowledgements = [
         ...(merged.acknowledgements ?? []),
@@ -285,6 +308,7 @@ export function effectiveResolution(applied: AppliedResolution[]): ProductionRes
   if (Object.keys(merged.assets ?? {}).length === 0) delete merged.assets;
   if (Object.keys(merged.fontDecisions ?? {}).length === 0) delete merged.fontDecisions;
   if (Object.keys(merged.routeContent ?? {}).length === 0) delete merged.routeContent;
+  if (Object.keys(merged.theme ?? {}).length === 0) delete merged.theme;
   return merged;
 }
 

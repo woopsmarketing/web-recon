@@ -1,6 +1,7 @@
 import { createServer, type Server } from "node:http";
 import { createServer as createNetServer } from "node:net";
 import { buildApp, startApp } from "../recon-template/parity-qa.js";
+import { applySubstitutionVariants, escapeForTitleText } from "./escape-variants.js";
 import type { RenderedHead } from "./types.js";
 
 /**
@@ -70,13 +71,21 @@ export function rewriteHtmlHead(
   entry: { upstreamTitle: string | null; title: string; headHtml: string },
 ): string {
   let output = html;
-  // 1. head <title> element (whatever it currently contains).
-  output = output.replace(/<title>[^<]*<\/title>/, `<title>${entry.title}</title>`);
-  // 2. every remaining literal occurrence of the upstream title (RSC flight
-  //    payload) — literal split/join, never a regex over page bytes.
+  // 1. every occurrence of the upstream title (head element, SSR'd attributes,
+  //    RSC flight payload) — in EVERY encoding the response gives it, each
+  //    replaced by the plan title in that SAME encoding. A literal needle alone
+  //    misses an entity-bearing title (`&` → `&amp;` / `\u0026`) and the source
+  //    title then survives to hydration; a raw replacement into an escaped
+  //    occurrence would double-escape it. Runs before the <title> rewrite so
+  //    the string this step writes is never itself a substitution target.
   if (entry.upstreamTitle !== null && entry.upstreamTitle !== "" && entry.upstreamTitle !== entry.title) {
-    output = output.split(entry.upstreamTitle).join(entry.title);
+    output = applySubstitutionVariants(output, entry.upstreamTitle, entry.title).body;
   }
+  // 2. head <title> element (whatever it still contains), escaped for HTML text
+  //    exactly as the Task 23 bake escapes it. A function replacement keeps `$&`
+  //    and friends in the title literal.
+  const titleElement = `<title>${escapeForTitleText(entry.title)}</title>`;
+  output = output.replace(/<title>[^<]*<\/title>/, () => titleElement);
   // 3. the rendered head block, before </head>.
   const headClose = output.indexOf("</head>");
   if (headClose !== -1) {

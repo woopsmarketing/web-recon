@@ -14,6 +14,7 @@ import {
   type ContentGenerationResult,
 } from "../content-injection/index.js";
 import {
+  ThemeFileSchema,
   createThemeRun,
   loadAdapterFile,
   loadThemeFile,
@@ -24,7 +25,9 @@ import { loadReconTemplate } from "../content-injection/index.js";
 import { createProductionSeoPlanRun, type ProvidedBusinessFacts } from "../seo/index.js";
 import { productionBuildDir, runProductionCompile, runProductionQa } from "../production/index.js";
 import { applyAssetResolutions } from "./resolve-assets.js";
+import { CONTENT_DERIVED_HASH_EXCLUSIONS } from "./freshness.js";
 import { CANONICAL_FACT_KEYS, normalizeProductionDomain } from "./requirements.js";
+import { AUTHORED_DIR, AUTHORED_THEME_FILE, releaseProjectDir } from "./store.js";
 import type {
   ArtifactRef,
   ProductionResolution,
@@ -47,6 +50,8 @@ export interface StageRunnerResult {
   /** Subtrees excluded from the artifact hash (build byproducts). */
   excluded?: string[];
   detail?: string;
+  /** Operator-facing warnings recorded on the release run (build.ts). */
+  warnings?: string[];
 }
 
 export type StageRunner = (context: StageRunnerContext) => Promise<StageRunnerResult>;
@@ -59,7 +64,9 @@ function currentPath(context: StageRunnerContext, stage: ReleaseStage): string {
 
 // ---------------------------------------------------------------------------
 // content — prepare + ingest a MERGED generation result (previous run values
-// + resolution routeContent/urls), through the real Task 19 pipeline.
+// + resolution routeContent/urls + AUTHORED slot values), through the real
+// Task 19 pipeline. The new run's slot-values.json is the DERIVED,
+// MATERIALIZED output of `authored.slotValues` (store.ts write doctrine).
 // ---------------------------------------------------------------------------
 
 export const contentStageRunner: StageRunner = async (context) => {
@@ -70,12 +77,25 @@ export const contentStageRunner: StageRunner = async (context) => {
   ) as ContentGenerationResult;
   const baseManifest = JSON.parse(
     await readFile(path.join(baseRunDir, "manifest.json"), "utf8"),
-  ) as { scopedRoutes?: string[] };
+  ) as { scopedRoutes?: string[]; manualEdits?: boolean };
   const rawIntent = context.project.intent.rawIntent;
   if (rawIntent === null) throw new Error("release build: project has no recorded intent");
 
+  // AUTHORED IS AUTHORITATIVE (store.ts content write doctrine). The pack
+  // slices below are the derived legacy view of the SAME values; authored is
+  // applied last so a direct authored edit (the Visual Editor's write target)
+  // always wins over the pack that first introduced the value.
+  const authored = context.project.authored;
   const routeContent = context.effective.routeContent ?? {};
   const urls = context.effective.urls ?? {};
+  const warnings: string[] = [];
+  if (baseManifest.manualEdits === true) {
+    warnings.push(
+      `content run ${baseRunDir} carries in-place manual edits to slot-values.json. Those bytes ` +
+        "are NON-AUTHORITATIVE: this build materializes a NEW content run from " +
+        "authored.slotValues, so any edit not present there is not carried forward",
+    );
+  }
   const template = await loadReconTemplate(templateManifestFile);
   const templateRoutes = new Set(template.manifest.routes);
   const routes = [...new Set([...(baseManifest.scopedRoutes ?? []), ...Object.keys(routeContent).filter((route) => route !== "global")])];
@@ -107,6 +127,11 @@ export const contentStageRunner: StageRunner = async (context) => {
     void route;
   }
   for (const [slotKey, value] of Object.entries(urls)) {
+    slotValues[slotKey] = value;
+    sources[slotKey] = "user-provided";
+    providedKeys.add(slotKey);
+  }
+  for (const [slotKey, value] of Object.entries(authored.slotValues)) {
     slotValues[slotKey] = value;
     sources[slotKey] = "user-provided";
     providedKeys.add(slotKey);
@@ -144,16 +169,50 @@ export const contentStageRunner: StageRunner = async (context) => {
       `release rerun ${context.releaseRunId}: merged operator resolution (routes: ${routes.join(", ")})`,
     ],
   };
+  // ingestGenerationResult MATERIALIZES slot-values.json in the new run dir —
+  // the derived output of authored.slotValues. Its format is unchanged (a bare
+  // slot-key → value map), so every consumer, production included, is untouched.
   const outcome = await ingestGenerationResult(run, merged);
   context.log(
-    `[release] content run ${runId}: ${Object.keys(outcome.overlay).length} slot values, ` +
-      `${merged.unresolved.length} unresolved`,
+    `[release] content run ${runId}: ${Object.keys(outcome.overlay).length} slot values ` +
+      `(${Object.keys(authored.slotValues).length} authored), ${merged.unresolved.length} unresolved`,
   );
-  return { id: runId, path: runDir };
+  // Task 27 (Content V2 changeRequest): the ingest now writes a total account of
+  // every in-scope slot beside slot-values.json. Surface its headline numbers on
+  // the release run so an operator can see what a rerun actually accounted for —
+  // `ambiguous` are review-flagged slots that are NEVER folded into a success
+  // number. A failed reconciliation is an integrity signal, so that one — and
+  // only that one — is raised to an operator warning rather than a log line.
+  const accounting = outcome.accounting;
+  context.log(
+    `[release] content accounting: ${accounting.totals.inScopeSlots} in-scope slots, ` +
+      `${accounting.scopeHonesty.ambiguousSlots} ambiguous, ` +
+      `reconciled=${accounting.reconciliation.reconciled} (truth mode: ${accounting.truthMode})`,
+  );
+  if (!accounting.reconciliation.reconciled) {
+    warnings.push(
+      `content run ${runDir}: slot accounting did NOT reconcile — ` +
+        `${accounting.reconciliation.missing.length} missing, ` +
+        `${accounting.reconciliation.doubleCounted.length} double-counted of ` +
+        `${accounting.reconciliation.inScopeSlots} in-scope slots (slot-accounting.json)`,
+    );
+  }
+  for (const warning of warnings) context.log(`[release] WARNING — ${warning}`);
+  // The rerun artifact must be hashed under the SAME exclusion set prepare.ts
+  // records, or a build-produced content run would be the one project shape
+  // still exposed to the QA/revalidation drift this set exists to stop.
+  return {
+    id: runId,
+    path: runDir,
+    excluded: [...CONTENT_DERIVED_HASH_EXCLUSIONS],
+    ...(warnings.length > 0 ? { warnings } : {}),
+  };
 };
 
 // ---------------------------------------------------------------------------
-// theme — same theme + adapter as the current run, over the CURRENT content.
+// theme — the AUTHORED theme (base theme file + contract token overrides) and
+// the current run's adapter, over the CURRENT content. Reconstruction,
+// template and content are untouched: a theme is a paint overlay (Task 20).
 // ---------------------------------------------------------------------------
 
 export const themeStageRunner: StageRunner = async (context) => {
@@ -164,22 +223,48 @@ export const themeStageRunner: StageRunner = async (context) => {
   };
   const templateManifestFile = path.join(currentPath(context, "template"), "manifest.json");
   const template = await loadReconTemplate(templateManifestFile);
-  const theme = await loadThemeFile(baseManifest.themeSourceFile);
+  const authoredTheme = context.project.authored.theme;
+  const baseThemeFile = authoredTheme.themeSourceFile ?? baseManifest.themeSourceFile;
+  const baseTheme = await loadThemeFile(baseThemeFile);
   const adapter = await loadAdapterFile(baseManifest.adapterSourceFile);
   const runId = newThemeRunId();
   const runDir = themeRunDir(context.project.source.host, runId);
+
+  // Token overrides are validated against theme-contract-v1 at resolve time.
+  // The authored theme is written into the RELEASE PROJECT namespace so the
+  // theme run's provenance points at a real file that is not a lineage input.
+  const tokenOverrides = authoredTheme.tokens ?? {};
+  let theme = baseTheme;
+  let themeSourceFile = baseThemeFile;
+  if (Object.keys(tokenOverrides).length > 0) {
+    theme = ThemeFileSchema.parse({
+      ...baseTheme,
+      tokens: { ...baseTheme.tokens, ...tokenOverrides },
+    });
+    themeSourceFile = path.join(
+      releaseProjectDir(context.project.source.host, context.project.projectId),
+      AUTHORED_DIR,
+      AUTHORED_THEME_FILE,
+    );
+    await mkdir(path.dirname(themeSourceFile), { recursive: true });
+    await writeFile(themeSourceFile, JSON.stringify(theme, null, 2) + "\n", "utf8");
+  }
+
   await createThemeRun({
     template,
     templateManifestFile,
     adapter,
     adapterSourceFile: baseManifest.adapterSourceFile,
     theme,
-    themeSourceFile: baseManifest.themeSourceFile,
+    themeSourceFile,
     runId,
     runDir,
     contentRunDir: currentPath(context, "content"),
   });
-  context.log(`[release] theme run ${runId} (theme + adapter carried from ${baseRunDir})`);
+  context.log(
+    `[release] theme run ${runId} (adapter carried from ${baseRunDir}; ` +
+      `${Object.keys(tokenOverrides).length} authored contract token(s))`,
+  );
   return { id: runId, path: runDir };
 };
 

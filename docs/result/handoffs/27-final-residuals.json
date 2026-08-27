@@ -1,0 +1,164 @@
+{
+  "schema": "task27-handoff-v1",
+  "agent": "Task 27 final-residuals agent (fresh, isolated)",
+  "objective": "Close the three residuals named by the Task 27 final adjudicator plus the one incorrect programStartTime field: (1) state the content-write doctrine AT THE POINT OF EDIT in the content:validate CLI; (2) recompile the stale stripe canary template into a new run id carrying the shared-page disclosure; (3) correct two stale fields in 27-real-release-exercise.json; (4) correct programStartTime in 27-start.json.",
+  "status": "PASS",
+
+  "residual1_doctrineAtPointOfEdit": {
+    "problem": "The content-write doctrine warning fired only at release:resolve (src/release/resolve.ts:180-188) and release:build (src/release/stages.ts:91-97). src/cli-content-validate.ts — the CLI an operator actually uses to hand-edit and revalidate a content run — printed `manualEdits` and no warning at all, so an operator who never touches the release layer was never told the next build discards the edit.",
+    "fix": [
+      "src/content-injection/run.ts — added the exported constant CONTENT_WRITE_DOCTRINE_WARNING, in the same load-bearing words as src/release/resolve.ts:180-188 (\"DERIVED, MATERIALIZED\", \"NON-AUTHORITATIVE\", \"will be replaced by the next release:build\", \"authored.slotValues\"), plus the remedy sentence naming `pnpm release:resolve`.",
+      "src/content-injection/run.ts — retitled and expanded the revalidateSlotValues doc comment: it was \"§29 human override\"; it now opens \"Revalidate the CURRENT slot-values.json — a DERIVED, NON-AUTHORITATIVE overlay, not the site's source of truth\", states that authored.slotValues is authoritative and that the next release:build re-materializes from it, and instructs operator-facing callers to surface the constant.",
+      "src/cli-content-validate.ts — prints `[content:validate] WARNING — <doctrine>` immediately after the manualEdits line whenever manifest.manualEdits is true; the file header now states the doctrine too."
+    ],
+    "warningWording": "content write doctrine: content-runs/<run>/slot-values.json is a DERIVED, MATERIALIZED output — editing a historical content run's slot-values.json in place is NON-AUTHORITATIVE and will be replaced by the next release:build, which re-materializes a NEW content run from the project's AUTHORITATIVE authored.slotValues. To KEEP an edit, author it through `pnpm release:resolve` (it folds the value into authored.slotValues).",
+    "checksAdded": 5,
+    "checkSection": "scripts/smoke-content-injection.ts — new section \"Task 27 §29 — content write doctrine at the point of edit\", inserted between the §2/§3 accounting section and the §4 truth-mode section.",
+    "checks": [
+      "§29 the doctrine names the overlay DERIVED + NON-AUTHORITATIVE and gives the remedy",
+      "§29 the wording matches release:resolve — one operator message, not two dialects (asserts the three load-bearing phrases are present in src/release/resolve.ts's ACTUAL source as well as in the constant, so a reword there fails this check)",
+      "§29 revalidateSlotValues' own doc says the value is DERIVED, not authoritative (asserts the doc block immediately preceding the function)",
+      "§29 no manual edits → no warning (the doctrine is a signal, not noise)",
+      "§29 content:validate WARNS at the point of edit when manual edits are detected"
+    ],
+    "checkMethod": "The two CLI checks SPAWN the real CLI as an operator runs it (node_modules/.bin/tsx src/cli-content-validate.ts <dir>) against two COPIES of the fixture content run, so the section cannot perturb the sections after it. The unedited copy has slot-values.json restored to the stored generation-result.slotValues (manualEdits false); the edited copy is that same overlay with one headline rewritten by hand (manualEdits true). Both are asserted on exit code AND stdout.",
+    "notDone": "src/content-injection/index.ts does not re-export the constant (not an owned file) — both the CLI and the smoke import it from ../src/content-injection/run.js directly, with an inline comment saying why. See changeRequests[0]."
+  },
+
+  "residual2_staleCanaryArtifact": {
+    "problem": "data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z was compiled before the shared-page disclosure landed. p000012 is genuinely shared between /resources/more/arr-loans-explained (collection-representative, 433 slots) and /resources/more/virtual-credit-cards-for-businesses-explained (structure-only, 0 slots), so the limitation code and the site-map field should be present; they are not.",
+    "newTemplateRunId": "2026-08-26T22-38-06-075Z",
+    "newTemplateRunDir": "data/stripe.com/recon-templates/2026-08-26T22-38-06-075Z",
+    "supersededTemplateRunId": "2026-08-26T17-16-46-409Z",
+    "supersededDirTouched": false,
+    "recompileInputs": {
+      "reconstructionManifestFile": "/Users/woops/projects/web-recon/data/stripe.com/reconstructions/2026-08-17T21-38-04-901Z/reconstruction-manifest.json",
+      "siteSpecFile": "/Users/woops/projects/web-recon/data/stripe.com/site-specs/2026-08-17T21-38-01-773Z/site-spec.json",
+      "routePolicyFile": "a byte-identical copy of the superseded run's route-policy.json, placed in the new run dir before compiling so the recorded policyFile again points beside its output (verified `cmp` identical)",
+      "note": "Absolute input paths were used deliberately, matching the superseded run's recorded source spelling, so the two manifests differ in nothing but the disclosure."
+    },
+    "countsReproduced": {
+      "slots": 4661,
+      "bindings": 13680,
+      "routes": 20,
+      "pages": 18,
+      "slotizedRoutes": 10,
+      "slotizedPages": 10,
+      "structureOnlyRoutes": 10,
+      "excludedCandidates": 9384,
+      "collections": 3,
+      "verdict": "EXACT — every count matches the superseded run"
+    },
+    "disclosureNowPresent": {
+      "limitationCode": "structure-only-routes-sharing-a-slotized-page-do-render-slot-edits:1",
+      "siteMapField": "routePolicy.structureOnlySharedPageRoutes = 1",
+      "presentIn": ["manifest.json limitations[]", "site-map.json routePolicy"]
+    },
+    "diffVsSuperseded": {
+      "identicalModuloRunId": ["slots.json", "slot-bindings.json", "default-content.json", "slot-overrides.example.json", "report/slot-summary.json", "app/** (the 3 raw byte diffs are the embedded templateId only)"],
+      "manifest.json": "+ \"structureOnlySharedPageRoutes\": 1 and + the limitation code — nothing else",
+      "site-map.json": "+ \"structureOnlySharedPageRoutes\": 1 — nothing else",
+      "method": "sed-normalised the run id / templateId in both trees, then diffed file by file"
+    },
+    "handoffUpdated": "docs/result/handoffs/27-template-factory-v2.json measuredSlotReduction.{templateRunId,templateRunDir,policyFile} now point at the new run; supersededTemplateRunId, supersededTemplateRunDir, supersededWhy and recompileEvidence were added beside them. No other field of that file changed."
+  },
+
+  "residual3_staleHandoffFields": {
+    "file": "docs/result/handoffs/27-real-release-exercise.json",
+    "a_dependencyCascade": {
+      "was": "defectsFound[0] \"plan-omits-dependency-cascade\" marked notFixed, with changeRequests[0] open against src/release/plan.ts",
+      "now": "fixed:true, with fixedWhere / fixedVerifiedBy / changeRequestStatus, and changeRequests[0] carries status:\"DISCHARGED at HEAD\"",
+      "citedFix": "src/release/freshness.ts:367 `export function propagateStaleStages(stageStatus)` is called from inside refreshStageStatuses at src/release/freshness.ts:343; src/release/plan.ts:39 calls refreshStageStatuses; src/release/resolve.ts:160-163 persists the refreshed (cascaded) stageStatus; src/release/build.ts:113 records that build's former local call site was folded into the shared refresh",
+      "verificationStrength": "STATIC call-chain reading at HEAD. The original plan-vs-dry-run divergence was NOT re-executed against the linear.app project, and the handoff says so."
+    },
+    "b_requirementCount": {
+      "was": "step 1: \"378 requirements, 88 release-blocking unresolved\"",
+      "measuredMyself": {
+        "requirementsJsonCountsTotal": 380,
+        "requirementsJsonReleaseBlockingUnresolved": 88,
+        "requirementsJsonGeneratedAt": "2026-08-26T19:27:23.835Z",
+        "prepareCliPrintedAtStep1": 378,
+        "prepareRunRecordCreatedAt": "2026-08-26T19:23:06.727Z"
+      },
+      "finding": "BOTH numbers are true of different moments and the handoff now says so rather than silently swapping one for the other. The original step-1 prepare log survives at scratchpad/step01-prepare.log lines 5 and 10 and PROVES the CLI printed 378 at 19:23:06; requirements.json was re-derived at 19:27:23.835Z by a later step of the same exercise and now totals 380. The step now states 380 as the current on-disk figure a reader should quote, and 378 as what prepare printed at step 1.",
+      "notDiscoverable": "No artifact other than that log records what the total was at the 19:23:06 instant, and nothing on disk explains the +2; that was NOT investigated (out of scope)."
+    }
+  },
+
+  "residual4_programStartTime": {
+    "file": "docs/result/handoffs/27-start.json",
+    "was": "\"programStartTime\": \"2026-08-27T00:00:00Z\"  (= 2026-08-27 09:00 KST — after the program started, and in fact after this agent ran at 07:47 KST)",
+    "now": "\"programStartTime\": \"2026-08-26T23:55:31+09:00\"",
+    "derivation": "The baseline commit d33abb3, measured directly: `TZ=Asia/Seoul git log -1 --format='%h %cd' --date=iso-local d33abb3` → 2026-08-26 23:55:31 +0900. The earliest 27-* handoff mtime corroborates the window: 27-start.json at 2026-08-27 00:39:46 KST (44 minutes after the baseline commit).",
+    "timezone": "Asia/Seoul (KST, UTC+09:00) — carried explicitly in the value's offset so no future reader re-derives a wrong window.",
+    "otherFieldsChanged": 0
+  },
+
+  "filesCreated": [
+    "data/stripe.com/recon-templates/2026-08-26T22-38-06-075Z/ (48 files — manifest.json, site-map.json, slots.json, slot-bindings.json, default-content.json, slot-overrides.example.json, route-policy.json, report/, app/)",
+    "docs/result/handoffs/27-final-residuals.json"
+  ],
+  "filesModified": [
+    "src/cli-content-validate.ts",
+    "src/content-injection/run.ts",
+    "scripts/smoke-content-injection.ts",
+    "docs/result/handoffs/27-template-factory-v2.json",
+    "docs/result/handoffs/27-real-release-exercise.json",
+    "docs/result/handoffs/27-start.json"
+  ],
+  "filesModifiedOutsideOwnership": [],
+  "ownershipAudit": "`find src scripts docs data -newermt '2026-08-27 07:20' -type f`, excluding the new run dir, returned EXACTLY the six owned files above. data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z/manifest.json still carries its 02:16 KST mtime; docs/result/handoffs/24-aggregation-phase1.json still carries its 2026-08-19 16:40 mtime. Zero git operations were performed.",
+
+  "changeRequests": [
+    {
+      "file": "src/content-injection/index.ts",
+      "owner": "the src/content-injection/ owner",
+      "change": "Re-export CONTENT_WRITE_DOCTRINE_WARNING from the barrel, beside revalidateSlotValues in the existing `export { … } from \"./run.js\"` block, and add a line to the module doc.",
+      "why": "src/cli-content-validate.ts and scripts/smoke-content-injection.ts import it from ../src/content-injection/run.js directly because this agent does not own index.ts. Every other public symbol of the module goes through the barrel; this one should too."
+    },
+    {
+      "file": "src/release/resolve.ts and src/release/stages.ts",
+      "owner": "the src/release/ owner",
+      "change": "Import CONTENT_WRITE_DOCTRINE_WARNING (once it is on the barrel) and build the resolve/build warnings from it instead of restating the sentence inline.",
+      "why": "The three sites now agree word for word, but by convention and one smoke check, not by construction. A single constant makes a future reword impossible to do in only one place. The smoke check \"§29 the wording matches release:resolve\" is the interim guard and will fail loudly if resolve.ts is reworded — which is the intended signal, not a false alarm."
+    }
+  ],
+
+  "testsRun": [
+    { "command": "pnpm typecheck", "exitCode": 0, "checks": null, "note": "tsc --noEmit, clean" },
+    { "command": "pnpm smoke:content-injection", "exitCode": 0, "checks": 128, "note": "128/128 passed — was 123, +5 from the new §29 section. Full browser half executed." },
+    { "command": "pnpm smoke:recon-template", "exitCode": 0, "checks": 109, "note": "109/109 passed — unchanged, no drop." }
+  ],
+
+  "evidence": [
+    "src/content-injection/run.ts — `export const CONTENT_WRITE_DOCTRINE_WARNING` and the rewritten revalidateSlotValues doc block immediately above `export async function revalidateSlotValues`",
+    "src/cli-content-validate.ts:39-41 — `if (run.manifest.manualEdits) { console.log(\"[content:validate] WARNING — \" + CONTENT_WRITE_DOCTRINE_WARNING); }`",
+    "src/release/resolve.ts:180-188 — the release-time wording the constant matches",
+    "src/release/stages.ts:91-97 — the build-time wording",
+    "scripts/smoke-content-injection.ts — section \"Task 27 §29 — content write doctrine at the point of edit\" (5 checks)",
+    "data/stripe.com/recon-templates/2026-08-26T22-38-06-075Z/manifest.json — counts {slots:4661, bindings:13680, routes:20} and limitations[] containing structure-only-routes-sharing-a-slotized-page-do-render-slot-edits:1",
+    "data/stripe.com/recon-templates/2026-08-26T22-38-06-075Z/site-map.json — routePolicy.structureOnlySharedPageRoutes = 1; routes[] shows p000012 under BOTH /resources/more/arr-loans-explained (collection-representative, slotCount 433) and /resources/more/virtual-credit-cards-for-businesses-explained (structure-only, slotCount 0)",
+    "src/recon-template/route-policy.ts:255 / :295-298 — where structureOnlySharedPageRoutes is computed and where the limitation code is emitted",
+    "src/recon-template/site-map.ts:82-83 — where the field reaches site-map.json",
+    "src/release/freshness.ts:343 and :367 — propagateStaleStages called from inside refreshStageStatuses",
+    "src/release/plan.ts:39 — plan's call to refreshStageStatuses (so the cascade reaches the plan view)",
+    "data/linear.app/release-projects/flowpilot-wr27/requirements.json — counts.total 380, releaseBlockingUnresolved 88, generatedAt 2026-08-26T19:27:23.835Z",
+    "scratchpad/step01-prepare.log lines 5 and 10 — the CLI's own \"378 requirement(s)\" at step 1",
+    "`TZ=Asia/Seoul git log -1 --date=iso-local d33abb3` → 2026-08-26 23:55:31 +0900; earliest 27-* handoff mtime 27-start.json 2026-08-27 00:39:46 KST"
+  ],
+
+  "limitations": [
+    "The dependency-cascade fix is verified STATICALLY (call chain at HEAD), not by re-running release:plan vs release:build --dry-run against data/linear.app/release-projects/flowpilot-wr27. The handoff field says so in its own text.",
+    "The +2 drift in the linear.app requirement total (378 printed at step 1 → 380 in the current requirements.json) is REPORTED, not explained. Which later step re-derived it at 19:27:23.835Z, and which two requirements appeared, was not investigated.",
+    "The three doctrine sites agree word for word by convention plus one smoke check, not by a shared constant — src/release/** is outside this agent's ownership. See changeRequests[1].",
+    "CONTENT_WRITE_DOCTRINE_WARNING is not on the content-injection barrel; two files import it from run.js directly. See changeRequests[0].",
+    "The new canary run directory was never opened in a browser or put through `pnpm qa:recon-template`; its correctness rests on the compiler's own read-back validation (every binding resolves, default content is an exact no-op) and on the byte-level diff against the superseded run.",
+    "Only the two targeted suites were run. The full 17-suite regression is the integrator's job, as instructed."
+  ],
+
+  "followUps": [
+    "Integrator: the content-injection suite baseline moves 123 → 128. smoke:recon-template stays 109.",
+    "Anyone quoting the Task 27 slot-reduction measurement must now cite template run 2026-08-26T22-38-06-075Z. The superseded 2026-08-26T17-16-46-409Z stays on disk as a historical artifact and must not be deleted.",
+    "If the release layer ever gains a Visual Editor write path, it should surface the same constant at ITS point of edit — the lesson of this residual is that the warning belongs where the operator's hand is, not only where the pipeline notices."
+  ]
+}

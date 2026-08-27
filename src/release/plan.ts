@@ -11,7 +11,7 @@ import { effectiveResolution, releaseBlockers } from "./requirements.js";
 import { loadReleaseProject, loadRequirementsFile } from "./store.js";
 import { STAGE_ORDER } from "./graph.js";
 import { productionBuildDir } from "../production/index.js";
-import type { ReleaseProject, ReleaseStage, Requirement } from "./types.js";
+import { FROZEN_STAGES, type ReleaseProject, type ReleaseStage, type Requirement } from "./types.js";
 
 export interface PlanView {
   project: ReleaseProject;
@@ -22,6 +22,8 @@ export interface PlanView {
   needsInput: Requirement[];
   nextActions: string[];
   routeReadiness: RouteReadiness[];
+  /** Operator-facing integrity warnings from the freshness refresh. */
+  warnings: string[];
   text: string;
 }
 
@@ -59,6 +61,14 @@ export async function planRelease(
     else if (status.status === "blocked") blocked.push({ stage, blockedBy: status.blockedBy });
     else stale.push(stage);
   }
+  // A stale FROZEN stage is NOT a pending rerun: release:build files it as
+  // BLOCKED BY frozen-stage-input-drift and refuses the build (build.ts). The
+  // stage SET was always the same on both surfaces — only plan's WORDS ("will
+  // re-run on release:build") told the operator the opposite of what build
+  // does, so the split below is rendering + next-actions only and `stale`
+  // (the field the plan↔build agreement invariant compares) is untouched.
+  const staleFrozen = stale.filter((stage) => (FROZEN_STAGES as readonly string[]).includes(stage));
+  const staleRerun = stale.filter((stage) => !(FROZEN_STAGES as readonly string[]).includes(stage));
   const needsInput = requirements.filter((requirement) => requirement.status === "unresolved");
 
   const nextActions: string[] = [];
@@ -69,7 +79,8 @@ export async function planRelease(
     "og-image": 3,
     "content-route": 4,
     "replacement-image": 5,
-    "source-brand-asset": 6,
+    "brand-leak": 6,
+    "source-brand-asset": 7,
   };
   const blocking = needsInput
     .filter((requirement) => requirement.severity === "release-blocking")
@@ -80,8 +91,16 @@ export async function planRelease(
   if (blocking.length > 10) {
     nextActions.push(`… and ${blocking.length - 10} more release-blocking requirement(s) (operator-checklist.md)`);
   }
-  if (stale.length > 0) {
-    nextActions.push(`pnpm release:build ${projectDir}   (reruns: ${stale.join(", ")})`);
+  if (staleFrozen.length > 0) {
+    // build.ts refuses the WHOLE build while a frozen input has drifted, so
+    // offering "pnpm release:build" here would send the operator into a
+    // guaranteed refusal.
+    nextActions.push(
+      `release:build REFUSES — frozen stage input drift (${staleFrozen.join(", ")}); ` +
+        "restore the frozen artifact, or re-run the recon/template phase and release:prepare again",
+    );
+  } else if (staleRerun.length > 0) {
+    nextActions.push(`pnpm release:build ${projectDir}   (reruns: ${staleRerun.join(", ")})`);
   }
   if (nextActions.length === 0 && project.releaseState === "PRODUCTION_READY") {
     nextActions.push("nothing — PRODUCTION_READY (deploy the package when you choose)");
@@ -102,16 +121,35 @@ export async function planRelease(
   for (const stage of ready) lines.push(`  ${stage}`);
   if (ready.length === 0) lines.push("  (none)");
   lines.push("");
-  if (stale.length > 0) {
-    lines.push("STALE (will re-run on release:build)");
-    for (const stage of stale) {
-      lines.push(`  ${stage} — ${refreshed.stageStatus[stage].reasons.join("; ") || "inputs changed"}`);
-    }
+  const staleReason = (stage: ReleaseStage): string =>
+    refreshed.stageStatus[stage].reasons.join("; ") || "inputs changed";
+  if (staleRerun.length > 0) {
+    lines.push(
+      staleFrozen.length > 0
+        ? "STALE (blocked — release:build refuses while a frozen input has drifted)"
+        : "STALE (will re-run on release:build)",
+    );
+    for (const stage of staleRerun) lines.push(`  ${stage} — ${staleReason(stage)}`);
+    lines.push("");
+  }
+  if (staleFrozen.length > 0) {
+    // Same wording build.ts uses when it refuses, so the two screens cannot
+    // describe one state in opposite terms.
+    lines.push("BLOCKED BY frozen-stage-input-drift (release:build REFUSES — frozen roots are never re-run)");
+    for (const stage of staleFrozen) lines.push(`  ${stage} — ${staleReason(stage)}`);
     lines.push("");
   }
   if (blocked.length > 0) {
     lines.push("BLOCKED");
     for (const entry of blocked) lines.push(`  ${entry.stage} — by ${entry.blockedBy.join(", ")}`);
+    lines.push("");
+  }
+  if (refreshed.warnings.length > 0) {
+    // Integrity warnings (artifact drift, missing resolution assets, recorded
+    // hash-exclusion sets that predate a fix) are operator ACTIONS, so they
+    // belong on the one screen rather than only in a build log.
+    lines.push("WARNINGS");
+    for (const warning of refreshed.warnings) lines.push(`  ${warning}`);
     lines.push("");
   }
   lines.push("NEEDS INPUT");
@@ -153,6 +191,7 @@ export async function planRelease(
     needsInput,
     nextActions,
     routeReadiness: collected.routeReadiness,
+    warnings: refreshed.warnings,
     text: lines.join("\n"),
   };
 }

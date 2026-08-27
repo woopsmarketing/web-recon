@@ -1,5 +1,6 @@
 /** Public barrel for the Release Orchestrator (Task 25). */
 export * from "./types.js";
+export * from "./instance.js";
 export * from "./store.js";
 export * from "./graph.js";
 export * from "./collect.js";

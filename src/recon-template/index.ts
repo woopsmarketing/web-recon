@@ -65,6 +65,22 @@ export {
   type ConstraintContext,
 } from "./constraints.js";
 
+export {
+  familyIdByPageId,
+  loadRouteScopePolicy,
+  resolveRoutePolicy,
+  routePolicyLimitations,
+  selectSlotizedPages,
+  RouteScopePolicySchema,
+  RouteScopeRuleSchema,
+  type ResolvedRoutePolicy,
+  type RouteScopeDecision,
+  type RouteScopePolicy,
+  type RouteScopeRule,
+} from "./route-policy.js";
+
+export { buildCollections } from "./collections.js";
+
 export { buildSiteMap } from "./site-map.js";
 
 export { buildSlotSummary, type SlotSample, type SlotSummary } from "./report.js";

@@ -52,8 +52,13 @@ export const SLOT_SCHEMA_VERSION = 2 as const;
 /** Slot schema versions a reader accepts (writers always emit the current one). */
 export const ACCEPTED_SLOT_SCHEMA_VERSIONS = [1, 2] as const;
 
-/** Bumped when the compiler's output changes without a schema change. */
-export const TEMPLATE_COMPILER_VERSION = 2 as const;
+/**
+ * Bumped when the compiler's output changes without a schema change. Version 3
+ * (Task 27) emits the route-scope decision on every site-map route and the
+ * optional collections model; every field it adds is optional, so a version 1/2
+ * artifact on disk still parses unchanged.
+ */
+export const TEMPLATE_COMPILER_VERSION = 3 as const;
 
 /** Recorded in the manifest so a reader can tell what produced the artifact. */
 export const TEMPLATE_ENGINE = "deterministic-exact-to-recon-template";
@@ -96,6 +101,49 @@ export type SlotScope = z.infer<typeof SlotScopeSchema>;
  */
 export const EditabilitySchema = z.enum(["editable", "review"]);
 export type Editability = z.infer<typeof EditabilitySchema>;
+
+/**
+ * Route scope — how much of a route this template represents (Task 27).
+ *
+ * Blog / docs / article families can hold thousands of URLs. Slotizing every
+ * one of them produces thousands of slots nobody will ever open, so route scope
+ * is an INPUT to compilation (`--route-policy <file>`, see `route-policy.ts`)
+ * that decides per route whether it gets a customer-editable slot surface.
+ *
+ *   core-reconstruct           full slotization — the default, today's behavior
+ *   collection-index           the index/listing route of a family (slotized)
+ *   collection-representative  the member standing for a large family (slotized)
+ *   structure-only             structurally represented, ZERO customer slots —
+ *                              still in the site map, still rendered by the
+ *                              copied exact app, just not editable
+ *   exclude                    dropped from the template's represented surface
+ *                              (`site-map.excludedRoutes` records it and why)
+ *
+ * The load-bearing distinction is SLOTIZED vs NOT: the first three extract
+ * identically and differ only in what they declare.
+ */
+export const RouteScopeSchema = z.enum([
+  "core-reconstruct",
+  "collection-index",
+  "collection-representative",
+  "structure-only",
+  "exclude",
+]);
+export type RouteScope = z.infer<typeof RouteScopeSchema>;
+
+/** The scopes that produce a customer-editable slot surface. */
+export const SLOTIZED_ROUTE_SCOPES = [
+  "core-reconstruct",
+  "collection-index",
+  "collection-representative",
+] as const;
+
+/** Every route of a policy-free compile. */
+export const DEFAULT_ROUTE_SCOPE: RouteScope = "core-reconstruct";
+
+export function isSlotizedScope(scope: RouteScope): boolean {
+  return (SLOTIZED_ROUTE_SCOPES as readonly string[]).includes(scope);
+}
 
 /**
  * Where a binding's DOM occurrence lives.
@@ -466,6 +514,110 @@ export const SiteMapRouteSchema = z
     familyId: z.string().optional(),
     representative: z.boolean(),
     renderCoverage: z.string(),
+    /**
+     * Compiler v3+: the route scope this template compiled the route at.
+     * Optional so v1/v2 artifacts (which predate route policy and are all
+     * `core-reconstruct`) still parse unchanged.
+     */
+    scope: RouteScopeSchema.optional(),
+    /** Slots this route owns. `0` on a `structure-only` route, by construction. */
+    slotCount: z.number().int().nonnegative().optional(),
+  })
+  .strict();
+
+/**
+ * A repeated route family, restated where the template boundary used to lose
+ * it. See `collections.ts` — every field is a restatement of a SiteSpec family
+ * fact, a route-map fact or an applied route-scope decision. Nothing here is a
+ * claim about the live site beyond what one bounded crawl saw.
+ */
+export const CollectionSemanticKindSchema = z.enum([
+  "blog",
+  "docs",
+  "news",
+  "changelog",
+  "customers",
+  "careers",
+  "resources",
+  "other",
+]);
+export type CollectionSemanticKind = z.infer<typeof CollectionSemanticKindSchema>;
+
+export const CollectionSpecSchema = z
+  .object({
+    collectionId: z.string().regex(/^c\d{6}$/),
+    /** The grouping evidence verbatim: `scope:blog` or `pattern:/blog/<*>`. */
+    groupedBy: z.string(),
+    /** The SiteSpec URL scope token, when that is what grouped the families. */
+    routeScope: z.string().optional(),
+    /** A NAMING hint derived from the scope token — never a content claim. */
+    semanticKind: CollectionSemanticKindSchema,
+    sourceFamilyIds: z.array(z.string()).min(1),
+    /** SiteSpec `inferredRoutePattern`, only when the families agree on one. */
+    detailPattern: z.string().nullable(),
+    /** A reconstructed route whose key is exactly `/<scope>`, else null. */
+    indexRoute: z.string().nullable(),
+    representativeRoutes: z.array(z.string()),
+    /** Member routes this template actually reconstructed. */
+    reconstructedRoutes: z.array(z.string()),
+    /**
+     * Member URLs one bounded discovery run saw. A FLOOR, never a census —
+     * `countIsFloor` is `true` in the schema so no reader can round it up.
+     */
+    discoveredMemberCount: z.number().int().nonnegative(),
+    observedMemberCount: z.number().int().nonnegative(),
+    representedOnlyMemberCount: z.number().int().nonnegative(),
+    countIsFloor: z.literal(true),
+    /**
+     * ALWAYS null. This repo has no pagination detection, so the real member
+     * total is unknown and inventing an estimate would be a fabrication.
+     */
+    estimatedTotalMembers: z.null(),
+    countEvidence: z.string(),
+    /** Slot roles observed on the representative detail page(s). Not a schema. */
+    fieldHints: z.array(z.string()),
+    renderPolicy: z
+      .object({
+        slotizedRoutes: z.number().int().nonnegative(),
+        scopeCounts: z.array(
+          z.object({ scope: RouteScopeSchema, routes: z.number().int().nonnegative() }).strict(),
+        ),
+      })
+      .strict(),
+  })
+  .strict();
+export type CollectionSpec = z.infer<typeof CollectionSpecSchema>;
+
+/** A route the applied policy dropped from the represented surface. */
+export const SiteMapExcludedRouteSchema = z
+  .object({
+    route: z.string(),
+    url: z.string(),
+    pageId: z.string(),
+    reason: z.string().optional(),
+  })
+  .strict();
+
+/** What the applied route policy decided, summarized for a reader. */
+export const SiteMapRoutePolicySchema = z
+  .object({
+    /** False when no policy file was supplied (every route `core-reconstruct`). */
+    applied: z.boolean(),
+    policyFile: z.string().optional(),
+    defaultScope: RouteScopeSchema,
+    scopeCounts: z.array(
+      z.object({ scope: RouteScopeSchema, routes: z.number().int().nonnegative() }).strict(),
+    ),
+    slotizedRoutes: z.number().int().nonnegative(),
+    slotizedPages: z.number().int().nonnegative(),
+    /** Pages the extractor never read because no slotized route serves them. */
+    structureOnlyPages: z.number().int().nonnegative(),
+    /**
+     * `structure-only` routes whose page is slotized through ANOTHER route, so
+     * they do render slot edits. Optional: absent on a compile that predates
+     * the count, and omitted when it is 0.
+     */
+    structureOnlySharedPageRoutes: z.number().int().nonnegative().optional(),
   })
   .strict();
 
@@ -487,6 +639,12 @@ export const SiteMapSchema = z
     representatives: z.array(z.string()),
     /** Distinct internal link targets observed in URL slots, sorted. */
     internalLinks: z.array(z.string()),
+    /** Compiler v3+. Absent on v1/v2 artifacts, which had no route policy. */
+    routePolicy: SiteMapRoutePolicySchema.optional(),
+    /** Compiler v3+. Repeated route families, detected — not implemented. */
+    collections: z.array(CollectionSpecSchema).optional(),
+    /** Compiler v3+. Routes the policy dropped from `routes` above. */
+    excludedRoutes: z.array(SiteMapExcludedRouteSchema).optional(),
   })
   .strict();
 export type SiteMap = z.infer<typeof SiteMapSchema>;
@@ -538,8 +696,20 @@ export const TemplateManifestSchema = z
         svgTextBindings: z.number().optional(),
         excludedCandidates: z.number(),
         overridesApplied: z.number(),
+        /** v3 compiler only: pages the route policy handed to the extractor. */
+        slotizedPages: z.number().optional(),
+        /** v3 compiler only: routes with a customer-editable slot surface. */
+        slotizedRoutes: z.number().optional(),
+        /** v3 compiler only: routes represented with ZERO customer slots. */
+        structureOnlyRoutes: z.number().optional(),
+        /** v3 compiler only: routes dropped from the represented surface. */
+        excludedRoutes: z.number().optional(),
+        /** v3 compiler only: repeated route families detected in the site map. */
+        collections: z.number().optional(),
       })
       .strict(),
+    /** v3 compiler only: the route-scope decision, summarized. */
+    routePolicy: SiteMapRoutePolicySchema.optional(),
     limitations: z.array(z.string()),
     provenance: z.literal("derived"),
   })

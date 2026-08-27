@@ -18,6 +18,14 @@ import {
   type TemplateManifest,
 } from "./types.js";
 import { loadTemplateInput, type LoadTemplateInputOptions, type TemplateInput } from "./load-input.js";
+import {
+  loadRouteScopePolicy,
+  resolveRoutePolicy,
+  routePolicyLimitations,
+  selectSlotizedPages,
+  type ResolvedRoutePolicy,
+} from "./route-policy.js";
+import { portablePath } from "../reconstruction-qa/store.js";
 import { extractAllPages } from "./extract.js";
 import { compareLogicalSlots, groupOccurrences, sortBindings } from "./grouping.js";
 import { coBindPaintTwins, type TwinCoBindingStats } from "./twin-binding.js";
@@ -51,6 +59,11 @@ export interface CompileReconTemplateOptions extends LoadTemplateInputOptions {
   /** Defaults to `data/<host>/recon-templates/<runId>`. */
   outputDir?: string;
   slotOverridesFile?: string;
+  /**
+   * Route scope policy (`route-policy.ts`). Without one every route compiles
+   * at `core-reconstruct` — byte-for-byte the pre-Task-27 behavior.
+   */
+  routePolicyFile?: string;
 }
 
 export interface CompiledReconTemplate {
@@ -60,6 +73,7 @@ export interface CompiledReconTemplate {
   validation: TemplateValidation;
   input: TemplateInput;
   twinStats: TwinCoBindingStats;
+  routePolicy: ResolvedRoutePolicy;
 }
 
 const OVERRIDES_EXAMPLE = {
@@ -83,8 +97,26 @@ export async function compileReconTemplate(
 ): Promise<CompiledReconTemplate> {
   const input = await loadTemplateInput(options);
 
+  // 0. route scope policy — WHICH ROUTES GET A SLOT SURFACE.
+  // The only place route scope acts. It narrows the extractor's page set and
+  // nothing else: the template app below is still the exact app copied byte
+  // for byte (same route map, same runtime page data), so a `structure-only`
+  // route keeps its structure, its site-map evidence and its rendering, and
+  // contributes zero slots.
+  // The policy file is READ at the caller's spelling and RECORDED repo-relative:
+  // site-map.json feeds a release lineage hash, so two compiles that differ only
+  // in `./p.json` vs `/Users/…/p.json` must not read as a lineage difference.
+  const policyFile = options.routePolicyFile;
+  const routePolicy = resolveRoutePolicy(
+    input.routeMap,
+    input.siteSpec,
+    policyFile ? await loadRouteScopePolicy(policyFile) : undefined,
+    policyFile !== undefined ? portablePath(policyFile) : undefined,
+  );
+  const slotizedPages = selectSlotizedPages(input.pagesById, routePolicy);
+
   // 1–3. extract → group → paint-twin co-binding → keys
-  const extraction = extractAllPages(input.pagesById);
+  const extraction = extractAllPages(slotizedPages);
   const grouping = groupOccurrences(extraction, input.routeMap);
   const constraintCtx = buildConstraintContext(input.siteSpec);
   const twinStats: TwinCoBindingStats = coBindPaintTwins(grouping.slots, extraction, constraintCtx);
@@ -108,7 +140,7 @@ export async function compileReconTemplate(
   const artifacts = assembleArtifacts(keyedSlots, templateId, constraintCtx);
 
   // 6. site map + report + manifest
-  const siteMap = buildSiteMap(input.routeMap, input.siteSpec, artifacts.slots);
+  const siteMap = buildSiteMap(input.routeMap, input.siteSpec, artifacts.slots, routePolicy);
   const excludedTotal = [...extraction.excluded.values()].reduce((a, b) => a + b, 0);
   const summary = buildSlotSummary(artifacts.slots, artifacts.bindings, extraction.excluded);
 
@@ -149,7 +181,13 @@ export async function compileReconTemplate(
       svgTextBindings: artifacts.bindings.filter((b) => b.target === "svg-text").length,
       excludedCandidates: excludedTotal,
       overridesApplied,
+      slotizedPages: slotizedPages.size,
+      slotizedRoutes: siteMap.routePolicy!.slotizedRoutes,
+      structureOnlyRoutes: routePolicy.scopeCounts["structure-only"],
+      excludedRoutes: routePolicy.scopeCounts.exclude,
+      collections: siteMap.collections!.length,
     },
+    routePolicy: siteMap.routePolicy,
     limitations: [
       "document-title-not-slotted",
       // Task 19.1 narrowed the old `svg-internal-content-not-slotted`: rendered
@@ -162,6 +200,14 @@ export async function compileReconTemplate(
       "locale-prefixed-pages-excluded-from-automatic-global-promotion",
       "dynamic-template-value-growth-not-recapped-against-obs-transport-ceiling",
       ...(excludedByOverride > 0 ? [`slots-excluded-by-manual-override:${excludedByOverride}`] : []),
+      // Route policy honesty, countable (`route-policy.ts`).
+      ...routePolicyLimitations(routePolicy),
+      ...(siteMap.collections!.length > 0
+        ? [
+            "collection-member-counts-are-crawl-capped-floors",
+            "collection-total-member-count-unknown-no-pagination-detection",
+          ]
+        : []),
     ],
     provenance: "derived",
   };
@@ -191,5 +237,5 @@ export async function compileReconTemplate(
   // 9. validate what was written
   const validation = await validateTemplateArtifact(runDir);
 
-  return { runDir, manifest, summary, validation, input, twinStats };
+  return { runDir, manifest, summary, validation, input, twinStats, routePolicy };
 }

@@ -1,0 +1,109 @@
+{
+  "schema": "task27-wave-gate-v1",
+  "wave": 3,
+  "gate": "PASS",
+  "includes": ["Real-Data Release Exercise (mandatory)", "Brand Independence Foundation", "release:plan cascade fix", "resolve-surface closure fix"],
+  "baselineSha": "d33abb3",
+  "gitOperations": 0,
+  "realReleaseExercise": {
+    "handoff": "docs/result/handoffs/27-real-release-exercise.json",
+    "significance": "the accepted audit's single largest unknown — release:resolve and release:build had NEVER run on real data; all 5 run.json on disk were kind:'prepare' and every release write path was unexercised code",
+    "canary": "linear.app (smallest complete real lineage, 8 routes)",
+    "newProject": "data/linear.app/release-projects/flowpilot-wr27",
+    "siteId": "flowpilot-wr27 (operator-supplied, the Wave 2 path)",
+    "resolveExecuted": true,
+    "buildExecuted": true,
+    "nonPrepareRunRecords": { "resolve": 2, "build": 3, "verifiedIndependently": "the verifier located them on disk and confirmed kind !== 'prepare'; the only prepare-only lineages remaining are the two pre-existing linear projects and the stripe project, all untouched" },
+    "slotChosen": { "key": "global.footer.text.features", "value": "Features -> Capabilities27", "why": "editable cosmetic footer h3" },
+    "appliedVia": "release:resolve (the resolution path) — NOT a hand edit",
+    "repreparePreservedState": { "proven": true, "evidence": "re-prepare run sits BETWEEN the resolve and the build in runs[]; createdAt preserved; resolutions[0] survived; run history appended 2->3 with identical prefix; the build 27s later emitted the authored string" },
+    "authoredValueInOutput": { "found": true, "where": "all 8 rendered route .html files as <h3 data-wr-node=\"n002637\" class=\"wr-st002888\">Capabilities27</h3>", "sourceStringGone": "grep -c '>Features<' index.html = 0", "occurrencesInPackage": 80 },
+    "stagesRan": ["content", "theme", "seo", "production"],
+    "stagesReused": ["reconstruction", "template", "assets"],
+    "frozenStagesRerunUnexpectedly": [],
+    "frozenReuseProof": "run.json records reconstruction/template as status 'reused', elapsedMs 0, on their ORIGINAL lineage ids; DEFAULT_STAGE_RUNNERS has NO entry for either, so reuse is structural; both lineage dirs' newest mtimes predate the exercise by ~21h",
+    "frozenHashesUnchanged": { "reconstruction": "40c183bd…", "template": "d1b6027d…", "identicalAcross": "all seven run records" },
+    "productionQa": "75/75, 34,975 ms",
+    "dryRunMatchedRealBuild": true,
+    "blockedByExercised": "on a throwaway project with productionBaseUrl set -> target indexable-production, production BLOCKED by 88 ids and absent from WOULD RUN",
+    "themeScenario": { "staleStages": ["theme", "production"], "freshStages": ["reconstruction", "template", "content", "seo", "assets"], "evidence": "#3d5afe reached the shipped wr/theme-overlay.css" },
+    "retryResume": { "tested": true, "how": "BuildOptions.runners injection — no artifact corrupted, as instructed", "result": "failing run recorded lastSuccessfulStage=theme / failedStage=production / retryable=true; retry re-ran production ONLY and reused the theme run produced by the failed build" },
+    "historicalRunsWritten": [],
+    "defectsFound": [
+      { "severity": "medium", "defect": "release:plan omitted the dependency cascade — plan printed 'READY (fresh): theme, seo, production' while --dry-run said 'WOULD RUN content, theme, seo, production' for the same state, and the un-cascaded view was PERSISTED to stageStatus", "status": "FIXED (see planCascadeFix)" },
+      { "severity": "low", "defect": "a resolution pack whose routeContent matched no open requirement printed 'matched: 0' with no unmatched entry — a silently swallowed operator input", "status": "FIXED" }
+    ]
+  },
+  "brand": {
+    "handoff": "docs/result/handoffs/27-brand.json",
+    "requirementKind": "brand-leak",
+    "collectedFrom": "the existing content-run report/brand-leak.json plus the template runtime IR — NOT a new QA assertion",
+    "blanketQaAssertionAdded": false,
+    "blanketAssertionGuard": "a repo-wide check proves NO blanket zero-equality assertion over any source-host/brand census total exists in src/ or scripts/",
+    "newModules": ["src/content-injection/brand-surfaces.ts (14-surface vocabulary + pure detectors)", "src/release/brand-scan.ts (BRAND_SURFACE_POLICY, severity, scan, GED_F_NEUTRALIZATION_DEFAULT)"],
+    "svgDetection": { "ariaLabel": true, "symbolId": true, "camelHumpAware": "LinearAi matches; non-brand ChevronDown does not", "note": "nothing in the repo could detect these before Task 27" },
+    "measuredLinear": { "svg-aria-label": 48, "svg-symbol-id": 32, "visible-text": 88, "source-url": 101, "image-alt": 14, "aria-label": 2, "scope": "8 routes / 1,581 inline-SVG nodes / 18,918 element nodes, 37 ms" },
+    "measuredStripe": { "svg-text": 100, "aria-label": 77, "visible-text": 62, "image-alt": 10, "source-url": 8, "svg-aria-label": 8, "scope": "20 routes / 7,701 svg nodes" },
+    "blockingPolicy": "release-blocking ONLY when (a) the surface publishes source identity a person or crawler reads as this site's AND (b) an implemented resolution can clear it — exactly one case today: a shipping slot value still carrying a brand token, cleared via routeContent[...].slotValues / urls. Untouched defaults, engine-blocked slots, svg surfaces, source-urls and body anchors stay high-value, non-blocking.",
+    "gateDidNotMove": { "linear": "88 release-blocking, 0 of them brand-leak", "stripe": "74 release-blocking, 0 of them brand-leak" },
+    "gedF": { "detectorOnly": true, "neutralizationDefault": "OFF", "provenFourWays": ["the constant itself", "unset-option scan", "explicit opt-in", "every input byte+mtime unchanged"], "smokeProductionResidualAssertionIntact": "scripts/smoke-production.ts still asserts residualSourceUrlOccurrencesInSite === 1 and still passes" },
+    "resolutionReachability": "traced end to end and independently re-proved: a routeContent/urls entry matches the blocking brand-leak requirement, mergeRequirements flips it to resolved, and releaseBlockers() then contains no brand-leak entry",
+    "requirementsMultiMapFix": "requirements.ts bySlotKey became a multi-map — one slot value now clears EVERY requirement bound to that slot; it previously dropped all but the last",
+    "sourceBrandAssetDeadEnd": { "fixed": false, "why": "no bake-time rewriter exists, so no resolution can honestly clear it, and downgrading its severity would weaken the gate. Evidence improved only. CONSEQUENCE: any source with an inline-SVG logo still cannot reach PRODUCTION_READY — a named limitation, not a solved problem." },
+    "checks": { "release": "136 -> 151", "production": "89 -> 100", "contentInjection": "110 -> 123" }
+  },
+  "planCascadeFix": {
+    "defect": "release:plan never applied the dependency-cascade fixpoint that release:build applies, so the two operator surfaces disagreed and the un-cascaded view was written to disk",
+    "fix": "extracted the fixpoint into propagateStaleStages (src/release/freshness.ts) called inside refreshStageStatuses; the inline loop in build.ts was DELETED, not duplicated — plan/resolve/prepare get the cascade for free and the surfaces cannot structurally drift apart",
+    "singleSourceProof": "grep returns the definition, ONE call site and one comment reference; git diff shows the build.ts fixpoint deleted",
+    "persistedStageStatus": "now stores the CASCADED view — reasoned: gate.ts derives PRODUCTION_READY from production.status === 'fresh', which was dishonest under the raw view; a cascade-only stage stays discriminable by its reasons ('upstream stage X will be rebuilt')",
+    "negativeControls": "NC1 pre-fix divergence reproduced the symptom verbatim; NC2 unmatched branch; NC3 removed the cascade from BOTH surfaces and found the agreement check still passed — which is exactly why absolute-set checks 27P.3/27P.4 exist, and both failed. All restored byte-identical.",
+    "checks": "151 -> 157"
+  },
+  "resolveClosureFix": {
+    "defect": "a THIRD surface disagreed: release:resolve reported 'invalidated: content, seo, production' while plan and dry-run said four stages. RESOLUTION_FIELD_IMPACTS.routeContent omitted 'theme' even though STAGE_DEPENDENCIES.theme includes content — and the doc comment claiming 'the dependency closure is already encoded in RESOLUTION_FIELD_IMPACTS' was FALSE.",
+    "fix": "DERIVED, not hand-patched: invalidatedStages now unions each matched field's DIRECT impacts with the existing downstreamOf() fixpoint. The routeContent row was deliberately LEFT UNCHANGED at graph.ts:63 so the closure cannot silently rot again; the doc comment is now true of the code.",
+    "rowByRowMeasured": { "changed": ["facts", "urls", "routeContent"], "changeReason": "+theme, because theme depends on content", "unchanged": ["productionBaseUrl", "assets", "fontDecisions", "theme"] },
+    "idempotent": "downstreamOf's result is itself transitively closed, so a second closure pass is a byte-identical no-op (measured, not reasoned)",
+    "themeNotWidened": "THEME_SELECTION_IMPACTS still ['theme','production']; downstreamOf('theme') = ['production']; all five Wave 2 theme outcomes re-verified",
+    "frozenStageWordingFixed": "release:plan now renders a drifted frozen stage as 'BLOCKED BY frozen-stage-input-drift (release:build REFUSES ...)' and no longer offers a build that would be refused; build.ts untouched",
+    "honestScope": "invalidatedStages is REPORTING-ONLY inside release:resolve — it does not gate or mutate stage status. This fix aligned resolve's WORDS with an engine truth that was already correct; nothing about what actually gets rebuilt changed.",
+    "selfReportedWeakCheck": "the fixer disclosed that 27R.3 passes with or without the closure (the theme row was already hand-closed) and labelled it a non-regression guard, not a detector; the verifier independently confirmed this by reverting the closure and watching only 27R.1/27R.2 fail",
+    "checks": "157 -> 162"
+  },
+  "regression": {
+    "logs": "docs/result/handoffs/27-regression-logs/wave3/",
+    "suites": 18,
+    "typecheck": "exit 0",
+    "totalChecks": 2095,
+    "wave2Checks": 2045,
+    "baselineChecks": 1794,
+    "deltaVsWave2": 50,
+    "deltaVsBaseline": 301,
+    "failures": 0,
+    "negativeCountDeltas": [],
+    "perSuite": {
+      "verifier": 81, "selector": 81, "multi-observer": 62, "interaction-detector": 92,
+      "interaction-explorer": 108, "interaction-patterns": 88, "sitespec": 257,
+      "reconstruction": 217, "reconstruction-qa": 134, "e2e": 130, "recon-template": 109,
+      "content-injection": 123, "theme": 47, "seo": 97, "assets": 140, "production": 100,
+      "release": 162, "regions": 67
+    }
+  },
+  "historicalIntegrity": {
+    "existingRunDirsModified": 0,
+    "evidence": "every data/ run dir modified after 27-start.json was CREATED after it (birth times 01:14-04:26 local vs the 00:39 baseline)",
+    "stripeSmokeReleaseLineageUntouched": true,
+    "task24AggregationHandoffTouched": false,
+    "headStillBaseline": true
+  },
+  "carriedLimitations": [
+    "source-brand-asset remains an unclearable release blocker — no bake-time rewriter exists, so ANY source with an inline-SVG logo still cannot reach PRODUCTION_READY. Deliberately not papered over by downgrading severity.",
+    "dynamic-template-content is undetectable today (no artifact exists) — declared unavailable rather than reported as zero",
+    "IR-derived brand surfaces are pre-injection HINTS and are never gated on",
+    "the three-surface agreement check is state-dependent, not a universal invariant: resolve reports ONE pack's invalidation while plan reports whole-project staleness, so a project stale for an unrelated reason would legitimately make plan a superset",
+    "27R.3 is a non-regression guard, not a closure detector — it passes with the closure reverted (disclosed by the fixer, confirmed by the verifier)",
+    "the brand agent could not widen bake.ts's result (needs src/production/types.ts, not owned) — filed as a changeRequest",
+    "content-injection/types.ts's closed BrandLeakWarning kind enum blocks writing SVG surfaces into brand-leak.json — filed as a changeRequest"
+  ]
+}

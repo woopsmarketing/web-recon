@@ -1,15 +1,22 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
+  CONTENT_ENGINE,
   CONTENT_POLICY,
   CONTENT_REPORT_DIR,
   MAX_REPAIR_ITERATIONS,
   REPAIR_DIR,
+  REPAIR_STOP_FILE,
+  RepairProgressGuard,
   SLOT_VALUES_FILE,
+  TELEMETRY_FILE,
   buildRepairRequest,
+  failureSignatureOf,
   loadContentRun,
   mergeRepairValues,
+  noRepairCandidatesStop,
   recordLayoutQa,
+  repairStopFromLoop,
   resolveGenerator,
   revalidateSlotValues,
   runContentLayoutQa,
@@ -17,7 +24,9 @@ import {
   updateManifest,
   validateSlotAssignments,
   type LayoutQaReport,
+  type RepairStop,
 } from "./content-injection/index.js";
+import { TelemetryRecorder } from "./telemetry/index.js";
 
 /**
  * web-recon Content Injection — layout safety QA CLI (Task 19 §24–§27, §32–§34).
@@ -31,6 +40,11 @@ import {
  * dynamic templates), replays the pattern triggers on both apps, captures
  * screenshots, and (with --repair --provider …) runs the bounded content
  * repair loop (max 2 iterations, content rewrites only — never CSS).
+ *
+ * Task 27 §6 (GED-D): the repair loop now also stops on NO PROGRESS — the
+ * repaired values change nothing, repeat the previous iteration, or answer the
+ * same failure signature again — and RECORDS WHY, machine-readably, in
+ * `report/repair/repair-stop.json` and in the run manifest.
  */
 
 interface ParsedArgs {
@@ -143,14 +157,27 @@ async function main(): Promise<void> {
   let validation = outcome.validation;
   let overlay = outcome.overlay;
   let iterations = 0;
+  let repairStop: RepairStop | undefined;
 
   if (args.repair && args.provider) {
     const generator = resolveGenerator(args.provider);
+    const telemetry = new TelemetryRecorder({
+      file: path.join(run.runDir, CONTENT_REPORT_DIR, TELEMETRY_FILE),
+      engine: CONTENT_ENGINE,
+      runId: run.manifest.runId,
+    });
+    // GED-D: bounded no-progress detection, stateful across the loop.
+    const guard = new RepairProgressGuard();
     while (!report.pass && report.repairCandidates.length > 0 && iterations < MAX_REPAIR_ITERATIONS) {
       iterations++;
       const currentValues = new Map(Object.entries(overlay));
       const request = buildRepairRequest(run.manifest.runId, iterations, report, run.unitsFile, currentValues);
-      if (!request) break;
+      if (!request) {
+        // `iterations` was incremented for a round that never ran, so the
+        // COMPLETED count is one lower — and 0 means "never started".
+        repairStop = noRepairCandidatesStop(iterations - 1);
+        break;
+      }
       const repairDir = path.join(run.runDir, CONTENT_REPORT_DIR, REPAIR_DIR);
       await mkdir(repairDir, { recursive: true });
       await writeFile(
@@ -159,6 +186,7 @@ async function main(): Promise<void> {
         "utf8",
       );
       console.log(`[content:qa] repair iteration ${iterations}: ${request.items.length} slot(s)`);
+      const startedAt = Date.now();
       const repairResult = await generator.generate({
         mode: "repair",
         intent: run.intent,
@@ -167,11 +195,39 @@ async function main(): Promise<void> {
         request: run.request,
         repair: request,
       });
+      const usage = generator.lastUsage?.();
+      await telemetry.record({
+        seamId: "content.repair.iteration",
+        stage: "repair",
+        provider: generator.name,
+        batchIds: [],
+        unitCount: unitsForRepair(run.unitsFile, request).length,
+        slotCount: request.items.length,
+        routes,
+        elapsedMs: Date.now() - startedAt,
+        retryCount: iterations - 1,
+        outcome: "ok",
+        ...(usage !== undefined ? { usage } : {}),
+      });
       await writeFile(
         path.join(repairDir, `repair-result-${iterations}.json`),
         JSON.stringify(repairResult, null, 2) + "\n",
         "utf8",
       );
+      // GED-D §6: decide BEFORE applying. A repair that cannot change anything
+      // must not consume another browser QA pass.
+      const stop = guard.evaluate({
+        iteration: iterations,
+        candidateKeys: request.items.map((item) => item.slotKey).sort(),
+        failureSignature: failureSignatureOf(report),
+        repairedValues: repairResult.slotValues,
+        currentOverlay: overlay,
+      });
+      if (stop) {
+        repairStop = stop;
+        console.log(`[content:qa] repair stopped: ${stop.reason} — ${stop.detail}`);
+        break;
+      }
       const { merged, ignoredKeys } = mergeRepairValues(overlay, request, repairResult.slotValues);
       if (ignoredKeys.length > 0) {
         console.log(`[content:qa] repair wrote outside its scope; ignored: ${ignoredKeys.join(", ")}`);
@@ -186,6 +242,11 @@ async function main(): Promise<void> {
       );
       if (!repairedValidation.pass) {
         console.log(`[content:qa] repair result failed validation (${repairedValidation.errors.length} errors) — stopping loop`);
+        repairStop = repairStopFromLoop(
+          iterations,
+          "repair-validation-failed",
+          `repaired values failed the deterministic validator with ${repairedValidation.errors.length} error(s)`,
+        );
         break;
       }
       overlay = merged;
@@ -194,12 +255,32 @@ async function main(): Promise<void> {
       await updateManifest(run, (m) => ({ ...m, repairIterations: iterations }));
       report = await runContentLayoutQa(qaOptions);
     }
+    if (repairStop === undefined) {
+      repairStop = report.pass
+        ? repairStopFromLoop(iterations, "layout-qa-passed", "layout QA passed; no further repair needed")
+        : iterations >= MAX_REPAIR_ITERATIONS
+          ? repairStopFromLoop(
+              iterations,
+              "iteration-bound-reached",
+              `the bound of ${MAX_REPAIR_ITERATIONS} iteration(s) was reached with evidence still open`,
+            )
+          : noRepairCandidatesStop(iterations);
+    }
+    const repairDir = path.join(run.runDir, CONTENT_REPORT_DIR, REPAIR_DIR);
+    await mkdir(repairDir, { recursive: true });
+    await writeFile(
+      path.join(repairDir, REPAIR_STOP_FILE),
+      JSON.stringify(repairStop, null, 2) + "\n",
+      "utf8",
+    );
+    await updateManifest(run, (m) => ({ ...m, repairStop }));
   }
 
   await recordLayoutQa(run, report, validation, overlay);
   printSummary(report);
   console.log("");
   console.log(`[content:qa] ${report.pass ? "PASS" : "FAIL"} in ${Math.round((Date.now() - startedAt) / 1000)}s${iterations > 0 ? ` (repair iterations: ${iterations})` : ""}`);
+  if (repairStop) console.log(`  repair stop: ${repairStop.reason} at iteration ${repairStop.iteration}`);
   console.log(`  report: ${path.join(run.runDir, CONTENT_REPORT_DIR, "layout-qa.json")}`);
   if (!report.pass) process.exitCode = 1;
 }

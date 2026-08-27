@@ -1,4 +1,5 @@
 import type { SlotValue } from "../recon-template/types.js";
+import { brandTokensFromHost, containsBrandToken } from "./brand-surfaces.js";
 import type { LoadedReconTemplate } from "./load-template.js";
 import {
   BrandLeakReportSchema,
@@ -20,19 +21,11 @@ import {
  * silent rewrite.
  */
 
-/** `stripe.com` → ["stripe"]; `foo-bar.co.kr` → ["foo-bar", "foo", "bar"]. */
-export function brandTokensFromHost(host: string): string[] {
-  const first = host.toLowerCase().split(".")[0];
-  const tokens = new Set<string>([first]);
-  for (const part of first.split(/[-_]/)) {
-    if (part.length >= 4) tokens.add(part);
-  }
-  return [...tokens].filter((t) => t.length >= 3).sort();
-}
-
-function containsToken(value: string, token: string): boolean {
-  return new RegExp(`(^|[^a-z0-9])${token}([^a-z0-9]|$)`, "i").test(value);
-}
+/** The token primitives moved to `brand-surfaces.ts` (Task 27) so the wider
+ *  surface scan and this slot scan share ONE definition of "the source brand";
+ *  re-exported here because `brandTokensFromHost` is part of the public
+ *  content-injection barrel. */
+export { brandTokensFromHost };
 
 function textOf(value: SlotValue | undefined): string | undefined {
   if (typeof value === "string") return value;
@@ -81,7 +74,7 @@ export function detectSourceBrandLeaks(
         continue;
       }
 
-      const hitToken = brandTokens.find((token) => containsToken(text, token));
+      const hitToken = brandTokens.find((token) => containsBrandToken(text, token));
       if (hitToken !== undefined) {
         warnings.push({
           issue: "source-brand-leak",

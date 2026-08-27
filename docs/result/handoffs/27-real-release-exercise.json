@@ -1,0 +1,284 @@
+{
+  "agent": "Task 27 — Real-Data Release Exercise (implementation validation)",
+  "objective": "Execute the release orchestrator (prepare / resolve / build) end-to-end against a real accepted local lineage (linear.app), proving the SiteInstance write paths that the pre-overnight audit flagged as never having run on real data; report defects rather than repair them.",
+  "status": "PASS",
+  "canaryLineage": {
+    "confirmedFrom": "data/linear.app/release-projects/linear.app-2026-08-25T23-54-21-435Z/release-project.json (read-only)",
+    "reconstruction": "data/linear.app/reconstructions/2026-08-25T20-30-33-313Z",
+    "template": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z",
+    "content": "data/linear.app/content-runs/2026-08-25T21-54-40-120Z",
+    "theme": "data/linear.app/theme-runs/2026-08-25T22-24-00-120Z",
+    "seo": "data/linear.app/production-seo-plans/2026-08-25T23-27-49-099Z",
+    "assets": "data/linear.app/asset-materializations/2026-08-25T23-28-36-880Z",
+    "productionSpec": "data/linear.app/production-specs/2026-08-25T23-54-21-435Z",
+    "productionBuild": "data/linear.app/production-builds/2026-08-25T23-54-21-435Z",
+    "note": "No live crawl, no network access to any source host. Every input above was read-only."
+  },
+  "newProjectDir": "data/linear.app/release-projects/flowpilot-wr27",
+  "throwawayProjectDir": "data/linear.app/release-projects/flowpilot-wr27-blocked",
+  "siteId": "flowpilot-wr27",
+  "slotChosen": {
+    "key": "global.footer.text.features",
+    "slotId": "sl000064",
+    "type": "text",
+    "editability": "editable",
+    "role": "footer.text",
+    "sourceValue": "Features",
+    "authoredValue": "Capabilities27",
+    "why harmless": "A footer column heading (evidence tag:h3, landmark:footer) with editability=\"editable\" in the frozen template's slots.json. It carries no legal, factual, brand, pricing or contact claim, no URL, and no interaction binding; the source is a single 8-character word on one line (constraints.desktop.lineCount=1), so a short replacement cannot change layout. It is also globally scoped, so a single authored value is observable on all 8 route outputs — the cheapest honest proof that an authored value reaches the rendered site."
+  },
+  "steps": [
+    {
+      "step": "1. create/prepare a fresh release project",
+      "command": "pnpm release:prepare data/linear.app/production-specs/2026-08-25T23-54-21-435Z --site-id flowpilot-wr27",
+      "outcome": "PASS — new project created at data/linear.app/release-projects/flowpilot-wr27. release:prepare PRINTED 378 requirement(s) / 88 release-blocking unresolved AT THIS STEP; the project's requirements.json now carries counts.total 380 (releaseBlockingUnresolved 88), re-derived at 2026-08-26T19:27:23.835Z by a later step of this same exercise. 380 is the CURRENT figure a reader finds on disk — quote that, not 378, for the project's requirement count. State PRODUCTION_INPUTS_REQUIRED, projectRevision 2.",
+      "evidence": "data/linear.app/release-projects/flowpilot-wr27/release-project.json (projectRevision:2, createdAt 2026-08-26T19:23:06.721Z); data/linear.app/release-projects/flowpilot-wr27/requirements.json counts {\"total\":380,\"unresolved\":380,\"resolved\":0,\"releaseBlockingUnresolved\":88,\"highValueUnresolved\":291,\"optionalUnresolved\":1} with generatedAt 2026-08-26T19:27:23.835Z; scratchpad step01-prepare.log lines 5 and 10 (\"378 requirement(s)\" / \"requirements: 378 (88 release-blocking unresolved)\"). Both numbers were re-verified from these artifacts by the Task 27 final-residuals agent; no artifact other than that log records the total as it stood at the 19:23:06 instant."
+    },
+    {
+      "step": "2. set a stable siteId (operator-supplied Wave 2 path)",
+      "command": "same command, --site-id flowpilot-wr27",
+      "outcome": "PASS — siteId=flowpilot-wr27 and projectId=flowpilot-wr27 (projectIdForSite), i.e. the project dir is named by the operator siteId, NOT by the production-spec run id as in Task 25/26. A second prepare with the same --site-id resolved to the SAME directory (step 7).",
+      "evidence": "src/release/prepare.ts:126-133 (requestedSiteId / projectIdForSite); release-project.json siteId+projectId both \"flowpilot-wr27\""
+    },
+    {
+      "step": "3. choose ONE harmless existing customer-editable slot",
+      "command": "read data/linear.app/recon-templates/2026-08-25T21-53-26-980Z/slots.json",
+      "outcome": "PASS — global.footer.text.features (sl000064), editability=\"editable\", type=text. See slotChosen.why harmless.",
+      "evidence": "slots.json entry sl000064; current value in the lineage content run: data/linear.app/content-runs/2026-08-25T21-54-40-120Z/slot-values.json → \"Features\""
+    },
+    {
+      "step": "4. apply an authored value via the RELEASE RESOLUTION PATH",
+      "command": "pnpm release:resolve data/linear.app/release-projects/flowpilot-wr27 --resolution <scratchpad>/res-content.json   (pack: routeContent.global.slotValues[\"global.footer.text.features\"] = \"Capabilities27\")",
+      "outcome": "PASS — pack validated as production-resolution-v1, applied as res-2026-08-26T19-23-35-386Z, 3 stage(s) invalidated (content, seo, production). No file was hand-edited at any point.",
+      "evidence": "data/linear.app/release-projects/flowpilot-wr27/runs/2026-08-26T19-23-35-387Z/{run.json,resolution.json}; scratchpad step04-resolve.log"
+    },
+    {
+      "step": "5. reload the project from disk",
+      "command": "node -e \"JSON.parse(fs.readFileSync('data/linear.app/release-projects/flowpilot-wr27/release-project.json'))\" and pnpm release:plan <projectDir>",
+      "outcome": "PASS — the document reloads and re-validates (release-project-v1, revision 2) through the normal load path used by plan/resolve/build.",
+      "evidence": "scratchpad step06-authored.txt; scratchpad step06b-plan.log"
+    },
+    {
+      "step": "6. verify authored.slotValues persisted",
+      "command": "read release-project.json → authored",
+      "outcome": "PASS — authored.slotValues = {\"global.footer.text.features\":\"Capabilities27\"}, authored.updatedAt = 2026-08-26T19:23:35.387Z; resolutions[0].file points at the archived pack copy inside the project run dir.",
+      "evidence": "release-project.json authored block; resolutions[0].file = data/linear.app/release-projects/flowpilot-wr27/runs/2026-08-26T19-23-35-387Z/resolution.json"
+    },
+    {
+      "step": "7. run prepare AGAIN",
+      "command": "pnpm release:prepare data/linear.app/production-specs/2026-08-25T23-54-21-435Z --site-id flowpilot-wr27",
+      "outcome": "PASS — CLI reported \"existing project found — preserving resolutions:1, authored.slotValues:1, authored.theme.tokens:0, runs:2, siteId:flowpilot-wr27, createdAt:2026-08-26T19:23:06.721Z\" and updated the SAME project directory.",
+      "evidence": "scratchpad step07-reprepare.log"
+    },
+    {
+      "step": "8. verify NO authored state, resolution or run history was erased",
+      "command": "byte-diff of the pre-reprepare snapshot vs the rewritten document",
+      "outcome": "PASS — authored identical (true), resolutions identical (true, 1), createdAt preserved, siteId/projectId stable, run history strictly appended (2 → 3, prefix identical), content stage still correctly stale, frozen hashes unchanged.",
+      "evidence": "scratchpad step08-reprepare-preserved.txt; snapshot scratchpad/before-reprepare.json"
+    },
+    {
+      "step": "9. run release build DRY-RUN",
+      "command": "pnpm release:build data/linear.app/release-projects/flowpilot-wr27 --dry-run",
+      "outcome": "PASS — printed WOULD RUN content/theme/seo/production, WOULD REUSE reconstruction/template/assets, and mutated nothing (release-project.json md5 identical before and after: 96142f08a1a3321bfc09eb3a851dfb2d).",
+      "evidence": "scratchpad step09-dryrun.log"
+    },
+    {
+      "step": "10. verify the plan reports WOULD RUN / WOULD REUSE / BLOCKED BY correctly",
+      "command": "as step 9, plus (throwaway project) pnpm release:prepare … --site-id flowpilot-wr27-blocked; pnpm release:resolve … --resolution res-blocked.json (productionBaseUrl); pnpm release:build … --dry-run",
+      "outcome": "PASS — WOULD RUN/WOULD REUSE are exactly the dependency-graph closure of the authored change (content → theme+seo → production; assets depends only on template so it is reused). BLOCKED BY is empty under the preview target, which is correct (applyBlocking only gates indexable-production). Exercising the blocked path on the THROWAWAY project: after resolving productionBaseUrl the target flips to indexable-production and the dry run prints \"BLOCKED BY  production: font-license-berkeley-mono, …, source-brand-inline-svg\" (88 release-blocking ids \u2014 the same 88 reported everywhere else in this handoff) while production is correctly absent from WOULD RUN.",
+      "evidence": "scratchpad step09-dryrun.log; scratchpad blocked-{prepare,resolve,dryrun}.log; src/release/freshness.ts applyBlocking"
+    },
+    {
+      "step": "11. execute a REAL release:build",
+      "command": "pnpm release:build data/linear.app/release-projects/flowpilot-wr27",
+      "outcome": "PASS — exit 0, run 2026-08-26T19-24-33-803Z, verdict PRODUCTION_INPUTS_REQUIRED (honest: 88 release-blocking inputs still open). Production stage ran a real Next.js static export + isolated-package QA: 75/75 checks passed in 34,975 ms.",
+      "evidence": "data/linear.app/release-projects/flowpilot-wr27/runs/2026-08-26T19-24-33-803Z/run.json; scratchpad step11-build.log"
+    },
+    {
+      "step": "12. verify ONLY dependent stages ran",
+      "command": "read runs/2026-08-26T19-24-33-803Z/run.json",
+      "outcome": "PASS — rerunStages = [content, theme, seo, production]; reusedStages = [reconstruction, template, assets]; blockedStages = []; failure = null. This matches the dry-run plan exactly and matches STAGE_DEPENDENCIES (assets depends on template only, so an authored slot value does not touch it).",
+      "evidence": "run.json rerunStages/reusedStages; scratchpad step12-run.txt"
+    },
+    {
+      "step": "13. PROVE reconstruction and template were REUSED (not rebuilt)",
+      "command": "read run.json stageExecutions",
+      "outcome": "PASS — stageExecutions records reconstruction {status:\"reused\", elapsedMs:0, artifact.id:\"2026-08-25T20-30-33-313Z\"} and template {status:\"reused\", elapsedMs:0, artifact.id:\"linear.app-2026-08-25T21-53-26-980Z\"} — the ORIGINAL lineage run ids, unchanged, with zero elapsed time. Structurally they cannot run: DEFAULT_STAGE_RUNNERS (src/release/stages.ts:361-367) has no entry for either stage.",
+      "evidence": "run.json stageExecutions[0..1]; src/release/stages.ts:361-367; src/release/build.ts:171-179 (frozen-drift refusal)"
+    },
+    {
+      "step": "14. verify the OUTPUT ACTUALLY CONTAINS THE AUTHORED VALUE",
+      "command": "grep -rl \"Capabilities27\" data/linear.app/production-builds/2026-08-26T19-24-34-029Z/package/site",
+      "outcome": "PASS — the authored string is present in all 8 rendered route HTML files as the footer heading element, and the source value \">Features<\" is gone from index.html. It is present in the rendered static export, not only in a JSON field.",
+      "evidence": "see authoredValueInOutput"
+    },
+    {
+      "step": "15. verify frozen lineage hashes are UNCHANGED",
+      "command": "compare stageStatus.reconstruction/template artifact hashes across prepare → resolve → re-prepare → build → resolve → build → build",
+      "outcome": "PASS — reconstruction 40c183bd… and template d1b6027d… are byte-identical at every checkpoint, and `find -newermt` over all 7 lineage dirs plus both historical release projects reports 0 files modified during the exercise.",
+      "evidence": "see frozenHashesUnchanged and historicalRunsWritten"
+    }
+  ],
+  "resolveExecuted": true,
+  "buildExecuted": true,
+  "repreparePreservedState": true,
+  "stagesRan": ["content", "theme", "seo", "production"],
+  "stagesReused": ["reconstruction", "template", "assets"],
+  "frozenStagesRerunUnexpectedly": [],
+  "authoredValueInOutput": {
+    "string": "Capabilities27",
+    "foundAt": [
+      "data/linear.app/production-builds/2026-08-26T19-24-34-029Z/package/site/index.html",
+      "data/linear.app/production-builds/2026-08-26T19-24-34-029Z/package/site/changelog.html",
+      "data/linear.app/production-builds/2026-08-26T19-24-34-029Z/package/site/customers.html",
+      "data/linear.app/production-builds/2026-08-26T19-24-34-029Z/package/site/customers/automattic.html",
+      "data/linear.app/production-builds/2026-08-26T19-24-34-029Z/package/site/integrations.html",
+      "data/linear.app/production-builds/2026-08-26T19-24-34-029Z/package/site/plan.html",
+      "data/linear.app/production-builds/2026-08-26T19-24-34-029Z/package/site/pricing.html",
+      "data/linear.app/production-builds/2026-08-26T19-24-34-029Z/package/site/security.html",
+      "data/linear.app/production-builds/2026-08-26T19-26-48-957Z/package/site/*.html (8/8, after the theme rebuild)"
+    ],
+    "howGrepped": "grep -rl \"Capabilities27\" data/linear.app/production-builds/2026-08-26T19-24-34-029Z/package/site  → 32 files (8 .html + 8 .txt + 16 RSC payload .txt); grep -ro \"Capabilities27\" … | wc -l → 80 occurrences; grep -o \".\\{80\\}Capabilities27.\\{40\\}\" …/index.html → '<h3 data-wr-node=\"n002637\" class=\"wr-st002888\">Capabilities27</h3>'; grep -o \">Features<\" …/index.html → no match (source value replaced, not appended)",
+    "corroboration": "the production stage's own isolated-package QA emitted 'PASS  content-proof:global.footer.text.features — Capabilities27' (scratchpad step11-build.log); the derived materialization is data/linear.app/content-runs/2026-08-26T19-24-33-898Z/slot-values.json"
+  },
+  "frozenHashesUnchanged": {
+    "unchanged": true,
+    "reconstruction": {
+      "before": "40c183bdbf8364dcbcb12b40ecc7492300365ea92ac53fa54521398fe2373860",
+      "after": "40c183bdbf8364dcbcb12b40ecc7492300365ea92ac53fa54521398fe2373860"
+    },
+    "template": {
+      "before": "d1b6027dabc5d2d7041fbd62d550e88ecbf38489ac562a6e9c4c81ae886db288",
+      "after": "d1b6027dabc5d2d7041fbd62d550e88ecbf38489ac562a6e9c4c81ae886db288"
+    },
+    "note": "The template hash recorded by THIS project (d1b6027d…) differs from the one recorded by the pre-Task-27 project linear.app-2026-08-25T23-54-21-435Z (2558f2c0…) and the content hash likewise (a2af094b… vs 656fee57…). That is the expected effect of the new FROZEN_TEMPLATE_HASH_EXCLUSIONS / CONTENT_DERIVED_HASH_EXCLUSIONS sets (src/release/freshness.ts), not artifact drift: the underlying directories were verified unmodified (historicalRunsWritten)."
+  },
+  "themeScenario": {
+    "how": "pnpm release:resolve data/linear.app/release-projects/flowpilot-wr27 --resolution <scratchpad>/res-theme.json — pack field theme.tokens = {\"color.accent.primary\":\"#3d5afe\"}, applied AFTER the successful build of step 11 (so every stage started fresh).",
+    "staleStages": ["theme", "production"],
+    "freshStages": ["reconstruction", "template", "content", "seo", "assets"],
+    "evidence": [
+      "release:resolve printed: 'theme: 1 contract token(s) authored → theme + production stale (template/content/reconstruction untouched)' and 'invalidated: theme, production' (scratchpad theme-resolve.log)",
+      "release-project.json authored.theme = {tokens:{'color.accent.primary':'#3d5afe'}, note:…}; stageStatus.theme = stale, all others fresh (scratchpad theme-status.txt)",
+      "pnpm release:build --dry-run → WOULD RUN: theme, production; WOULD REUSE: reconstruction, template, content, seo, assets (scratchpad theme-dryrun.log)",
+      "the subsequent REAL build re-ran exactly theme + production and reused the rest — run 2026-08-26T19-26-48-726Z rerun=['theme'] (production failed by injection) and run 2026-08-26T19-26-48-9xxZ rerun=['production'] (scratchpad retry-resume.log)",
+      "the authored token reached the shipped artifacts: data/linear.app/release-projects/flowpilot-wr27/authored/theme.json, data/linear.app/theme-runs/2026-08-26T19-26-48-786Z/{selected-theme.json,theme-overlay.css} and data/linear.app/production-builds/2026-08-26T19-26-48-957Z/package/site/wr/theme-overlay.css all contain #3d5afe",
+      "content was NOT re-materialized by the theme change: the retry run reused content run 2026-08-26T19-24-33-898Z"
+    ],
+    "caveat": "production is reported STALE by release:build's dependency cascade, but the PERSISTED stageStatus.production (and therefore release:plan) still says fresh — see defectsFound[0]."
+  },
+  "retryResume": {
+    "tested": true,
+    "how": "Through the documented failure-injection seam BuildOptions.runners (src/release/build.ts:57-61) — the same seam scripts/smoke-release.ts:1840-1884 uses on its synthetic fixture, here driven against the REAL flowpilot-wr27 project while theme+production were stale from the theme scenario. Script: <scratchpad>/retry-resume.mts (scratchpad only, not added to the repo). NO artifact was corrupted to force the failure.",
+    "run1": "buildRelease with an injected throwing production runner → rerunStages ['theme'], reusedStages ['reconstruction','template','content','seo','assets'], stageExecutions [reused,reused,reused,rerun,reused,reused,failed], project.failure = {lastSuccessfulStage:'theme', failedStage:'production', retryable:true, failureArtifact:'data/linear.app/release-projects/flowpilot-wr27/runs/2026-08-26T19-26-48-726Z/failure.json'}",
+    "run2": "buildRelease with the REAL runners → rerunStages ['production'] only; reusedStages included theme with artifact id 2026-08-26T19-26-48-786Z — the theme run produced by the FAILED build, i.e. the crash-safe per-stage save (build.ts saveReleaseProject after each stage) let the retry resume rather than redo. project.failure cleared to null; verdict PRODUCTION_INPUTS_REQUIRED.",
+    "verdict": "PASS on real data — retry re-ran only the failed stage and never re-ran an earlier fresh stage."
+  },
+  "defectsFound": [
+    {
+      "id": "plan-omits-dependency-cascade",
+      "severity": "medium (operator-facing honesty, not data corruption)",
+      "summary": "release:plan under-reports what release:build will re-run: it refreshes per-stage freshness but never applies the STAGE_DEPENDENCIES cascade fixpoint that build.ts applies, so stages that WILL be rebuilt are listed under 'READY (fresh)'.",
+      "where": "src/release/plan.ts:39 (refreshStageStatuses, no propagation) vs src/release/build.ts:112-126 (the `while (propagated)` fixpoint); the misleading labels are src/release/plan.ts:103 ('READY (fresh)'), :107-112 ('STALE (will re-run on release:build)') and :86 ('(reruns: …)').",
+      "reproducedBy": "pnpm release:resolve data/linear.app/release-projects/flowpilot-wr27 --resolution res-content.json && pnpm release:plan data/linear.app/release-projects/flowpilot-wr27",
+      "observed": "After the content resolution, release:plan printed READY (fresh): reconstruction, template, theme, seo, assets, production / STALE: content / NEXT ACTION 12: 'pnpm release:build …   (reruns: content)'. release:build --dry-run on the very same state printed WOULD RUN: content, theme, seo, production. Same divergence in the theme scenario: plan said '(reruns: theme)' and listed production under READY, while the dry run said WOULD RUN theme, production — and the real build then re-ran both.",
+      "impact": "An operator using the documented one-screen view (spec §14/§20) is told a rebuild is cheaper and narrower than it is, and is told production is fresh when it is about to be recompiled. The persisted stageStatus written by release:resolve has the same gap, so the state file is the origin of the wrong answer, not just the renderer.",
+      "notFixed": "SUPERSEDED — see `fixed` below. (Original note: deliberately not fixed by this agent, which is validation, not construction; src/release/ was another agent's ownership. See changeRequests[0].)",
+      "fixed": true,
+      "fixedWhere": "src/release/freshness.ts:367 `export function propagateStaleStages(stageStatus)` — the STAGE_DEPENDENCIES cascade fixpoint — is called from inside refreshStageStatuses at src/release/freshness.ts:343, and src/release/plan.ts:39 calls refreshStageStatuses. The cascade is therefore applied to the plan's own view, not only to build's. src/release/build.ts:113 records that its former local call site was folded into the shared refresh, and freshness.ts:340-342 states the intent: \"The cascade is applied HERE, not at each call site: every consumer of a refresh (plan, build, resolve, prepare) must answer 'what will re-run?' identically, and the persisted stageStatus must carry that same answer.\" src/release/resolve.ts:160-163 persists that refreshed (cascaded) stageStatus, closing the \"the state file is the origin of the wrong answer\" half as well.",
+      "fixedVerifiedBy": "Task 27 final-residuals agent, by reading the call chain at HEAD (baseline d33abb3 + the uncommitted Task 27 work). STATIC verification only: the plan-vs-dry-run divergence was NOT re-executed against data/linear.app/release-projects/flowpilot-wr27, so this is a code-path claim, not a fresh reproduction.",
+      "changeRequestStatus": "changeRequests[0] is DISCHARGED — the shared cascade fixpoint it asked for exists and both surfaces reach it through refreshStageStatuses."
+    },
+    {
+      "id": "authored-slot-values-unreported-by-the-requirement-matcher",
+      "severity": "low (observation; no data loss — the value is fully traceable elsewhere)",
+      "summary": "A resolution pack carrying routeContent slot values that match no open requirement reports neither `matched` nor `unmatchedFields`, so the resolve CLI's summary shows '0 requirement(s) matched' with no mention of the authored value.",
+      "where": "src/release/resolve.ts:129-133 (matchResolutionToRequirements) + src/cli-release-resolve.ts (prints matched / unmatched only)",
+      "observed": "pnpm release:resolve with routeContent.global.slotValues['global.footer.text.features'] printed 'matched: 0 requirement(s)' and no unmatched line.",
+      "mitigation": "The value IS recorded and traceable: the run record carries the explicit warning 'content write doctrine: 1 slot value(s) folded into the AUTHORITATIVE authored.slotValues (project total 1)' (runs/2026-08-26T19-23-35-387Z/run.json) and the pack copy is archived beside it. Reported as a UX gap, not a correctness bug."
+    }
+  ],
+  "historicalRunsWritten": [],
+  "historicalRunsVerification": "find <7 lineage dirs> data/linear.app/production-builds/2026-08-25T23-54-21-435Z data/linear.app/release-projects/linear.app-2026-08-25T23-54-21-435Z data/linear.app/release-projects/linear.app-2026-08-25T23-32-42-075Z -newermt '2026-08-26 19:20' | wc -l → 0, run after every build in the exercise. docs/result/handoffs/24-aggregation-phase1.json was never opened for write. No stripe.com path was written or read for write.",
+  "filesCreated": [
+    "docs/result/handoffs/27-real-release-exercise.json",
+    "data/linear.app/release-projects/flowpilot-wr27/ (new release project — the exercise subject)",
+    "data/linear.app/release-projects/flowpilot-wr27-blocked/ (throwaway project used only to exercise the BLOCKED BY path)",
+    "data/linear.app/content-runs/2026-08-26T19-24-33-898Z/ (content stage rerun)",
+    "data/linear.app/theme-runs/2026-08-26T19-24-34-013Z/ (theme stage rerun, build 1)",
+    "data/linear.app/theme-runs/2026-08-26T19-26-48-786Z/ (theme stage rerun, theme scenario)",
+    "data/linear.app/production-seo-plans/2026-08-26T19-24-34-023Z/ (seo stage rerun)",
+    "data/linear.app/production-specs/2026-08-26T19-24-34-029Z/ + data/linear.app/production-builds/2026-08-26T19-24-34-029Z/ (production rerun, build 1)",
+    "data/linear.app/production-specs/2026-08-26T19-26-48-957Z/ + data/linear.app/production-builds/2026-08-26T19-26-48-957Z/ (production rerun, retry)"
+  ],
+  "filesModified": [],
+  "filesModifiedOutsideOwnership": [],
+  "changeRequests": [
+    {
+      "file": "src/release/plan.ts",
+      "status": "DISCHARGED at HEAD — verified by the Task 27 final-residuals agent. The shared cascade fixpoint exists as src/release/freshness.ts:367 `propagateStaleStages` and is applied inside refreshStageStatuses (freshness.ts:343), which plan.ts:39 calls; resolve.ts:160-163 persists the cascaded stageStatus. No further work is requested of the src/release/ owner. See defectsFound[0].fixedWhere.",
+      "owner": "the src/release/ (Wave 2 / correction) agent",
+      "change": "Apply the same STAGE_DEPENDENCIES cascade fixpoint that build.ts:112-126 applies before partitioning stages into ready/stale, or extract that fixpoint into a shared helper (e.g. src/release/graph.ts `propagateStaleness(stageStatus)`) and call it from both planRelease and buildRelease. Consider also persisting the propagated status in resolve.ts so release-project.json itself is not the origin of the wrong answer.",
+      "why": "release:plan is the documented one-screen operator view and currently contradicts release:build --dry-run on real data (defectsFound[0]): after a content resolution it lists theme/seo/production as READY (fresh) and says '(reruns: content)' while the build re-runs four stages. This agent owns no file in src/release/, so the divergence is reported, not repaired."
+    },
+    {
+      "file": "src/cli-release-resolve.ts / src/release/resolve.ts",
+      "owner": "the src/release/ (Wave 2 / correction) agent",
+      "change": "Echo the count of authored slot values / theme tokens folded by a pack in the resolve CLI summary (the data already exists in resolutionSlotValues and in the run warning), so a pack that matches no open requirement does not print a bare 'matched: 0 requirement(s)'.",
+      "why": "defectsFound[1] — authoring a customer-editable slot is the primary Wave 2 use case and it currently produces the least informative CLI output of any pack shape."
+    }
+  ],
+  "testsRun": [
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "checks": "tsc --noEmit, whole repo",
+      "note": "Run before the exercise (baseline) and after it — clean both times. This agent changed no source file, so this only confirms the tree it exercised compiles."
+    },
+    {
+      "command": "pnpm smoke:release",
+      "exitCode": 0,
+      "checks": "136 checks, 0 failures",
+      "note": "The targeted suite for the subsystem exercised. Its synthetic fixtures and the stripe lineage it hardcodes were untouched by this exercise. The full 17-suite regression was deliberately NOT run (integrator's job)."
+    },
+    {
+      "command": "pnpm release:build data/linear.app/release-projects/flowpilot-wr27 (real build, step 11)",
+      "exitCode": 0,
+      "checks": "production isolated-package QA 75/75 (includes content-proof, theme-computed-paint, hydration-clean, overflow and interaction checks on real routes)",
+      "note": "Real Next.js static export + QA against the real linear.app lineage; 34,975 ms for the production stage."
+    },
+    {
+      "command": "pnpm exec tsx <scratchpad>/retry-resume.mts (failure injection + retry, real project)",
+      "exitCode": 0,
+      "checks": "run1 failure record + run2 resume; production QA 75/75 on the retry",
+      "note": "Scratchpad-only script; not added to the repo (no permanent regression test was in this agent's scope)."
+    }
+  ],
+  "evidence": [
+    "data/linear.app/release-projects/flowpilot-wr27/release-project.json — siteId/projectId flowpilot-wr27, projectRevision 2, authored.slotValues{global.footer.text.features:Capabilities27}, authored.theme.tokens{color.accent.primary:#3d5afe}, runs [prepare, resolve, prepare, build, resolve, build, build]",
+    "data/linear.app/release-projects/flowpilot-wr27/runs/2026-08-26T19-23-35-387Z/{run.json,resolution.json} — the archived content pack + the content-write-doctrine warning",
+    "data/linear.app/release-projects/flowpilot-wr27/runs/2026-08-26T19-24-33-803Z/run.json — rerun [content,theme,seo,production], reused [reconstruction,template,assets], stageExecutions with reconstruction/template reused at 0 ms on their ORIGINAL lineage ids",
+    "data/linear.app/release-projects/flowpilot-wr27/runs/2026-08-26T19-26-48-726Z/failure.json — the injected-failure record (lastSuccessfulStage theme, failedStage production, retryable true)",
+    "data/linear.app/release-projects/flowpilot-wr27/authored/theme.json — the materialized authored theme written into the release-project namespace (never into a lineage dir)",
+    "data/linear.app/production-builds/2026-08-26T19-24-34-029Z/package/site/index.html — '<h3 data-wr-node=\"n002637\" class=\"wr-st002888\">Capabilities27</h3>'",
+    "data/linear.app/production-builds/2026-08-26T19-26-48-957Z/package/site/wr/theme-overlay.css — contains #3d5afe",
+    "data/linear.app/content-runs/2026-08-26T19-24-33-898Z/slot-values.json — the DERIVED materialization of authored.slotValues",
+    "src/release/stages.ts:361-367 — DEFAULT_STAGE_RUNNERS has no reconstruction/template entry (frozen stages structurally cannot run)",
+    "src/release/build.ts:112-126 vs src/release/plan.ts:39 — the cascade divergence behind defectsFound[0]",
+    "scratchpad (/private/tmp/claude-501/-Users-woops-projects-web-recon/65e5b51c-f951-45fb-bee7-f8e9da931b0d/scratchpad): step01-prepare.log, step01-baseline.txt, res-content.json, step04-resolve.log, step06-authored.txt, step06b-plan.log, before-reprepare.json, step07-reprepare.log, step08-reprepare-preserved.txt, step09-dryrun.log, step11-build.log, step12-run.txt, res-theme.json, theme-resolve.log, theme-status.txt, theme-dryrun.log, theme-plan.log, retry-resume.mts, retry-resume.log, res-blocked.json, blocked-*.log, smoke-release.log"
+  ],
+  "limitations": [
+    "PREVIEW TARGET ONLY on the main project. The real build ran with target mode 'preview' and finished at PRODUCTION_INPUTS_REQUIRED — 88 release-blocking requirements (font licences, 84 replacement images, production domain, source brand SVG) remain genuinely unresolved for linear.app, exactly as Task 26 reported. An indexable-production build was therefore never executed end-to-end; the indexable path was exercised only as far as the BLOCKED BY gate on the throwaway project.",
+    "ONE SLOT, ONE TOKEN. The authoring surface was validated with a single cosmetic text slot and a single paint token. Bulk authoring (hundreds of slots), per-route slot values, url slots and asset/font resolutions were not exercised by this agent.",
+    "ASSETS STAGE NEVER RAN. assets depends only on template and the resolution carried no assets/fontDecisions, so applyAssetResolutions (src/release/resolve-assets.ts) is still unexercised on real data by this exercise.",
+    "The retry/resume proof used the runners injection seam. A genuine mid-build crash (process kill between stage saves) was not simulated, and no historical artifact was corrupted to force a natural failure — as instructed.",
+    "linear.app only. stripe.com lineage was deliberately not touched (scripts/smoke-release.ts reads it unguarded).",
+    "Sibling agents were writing to the same tree during the exercise (e.g. data/linear.app/page-regions/2026-08-26T16-14-07-901Z appeared from another agent). The typecheck and smoke:release results above describe the tree as it stood at 2026-08-26T19:20-19:30Z."
+  ],
+  "followUps": [
+    "Fix the plan/build cascade divergence (changeRequests[0]) and add a regression check to scripts/smoke-release.ts asserting that planRelease's stale set equals buildRelease's dry-run wouldRun set for the same project state — the synthetic fixture would have caught this defect if that invariant were asserted.",
+    "Run the same 15-step exercise once against an indexable-production target on a lineage whose release-blocking requirements can actually be resolved, so the BLOCKED → resolved → built transition is proven end-to-end and not only up to the gate.",
+    "Exercise the assets stage runner on real data (one replacement image + one fontDecision) — it is the last executable stage with no real-data execution.",
+    "Consider promoting a trimmed version of <scratchpad>/retry-resume.mts into scripts/ as a real-lineage smoke, gated on the lineage being present, so the SiteInstance write paths are not fixture-only again after the next refactor."
+  ]
+}

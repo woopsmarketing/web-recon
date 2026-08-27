@@ -21,6 +21,16 @@ export {
   type LoadedPlanRun,
 } from "./run.js";
 export {
+  escapeVariants,
+  substitutionVariants,
+  applySubstitutionVariants,
+  escapeForTitleText,
+  ESCAPE_VARIANT_ENCODINGS,
+  type EscapeVariant,
+  type EscapeSubstitution,
+  type VariantSubstitutionResult,
+} from "./escape-variants.js";
+export {
   startSeoProxy,
   startSeoServedApp,
   rewriteHtmlHead,

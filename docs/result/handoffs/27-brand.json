@@ -1,0 +1,348 @@
+{
+  "agent": "Task 27 — Wave 3: Brand Independence Foundation",
+  "objective": "Turn source-brand leakage from a QA warning into a structured, artifact-derived release requirement kind; add the SVG aria-label / SVG symbol-id surfaces nothing detected before; ship GED-F as a DETECTOR with neutralization defaulted OFF.",
+  "status": "PASS",
+  "requirementKind": "brand-leak",
+  "blockingPolicy": {
+    "default": "high-value (SEVERITY_POLICY['brand-leak'] at src/release/types.ts:558)",
+    "escalationRule": "src/release/brand-scan.ts brandFindingSeverity — release-blocking ONLY when BOTH (a) BRAND_SURFACE_POLICY[surface].canBlock is true (the surface publishes the source identity where a person or crawler reads it as THIS site's identity) AND (b) the finding is bound to an editable slot AND its origin is 'injected-value' (the value that will actually SHIP still leaks).",
+    "blocksToday": "visible-text findings whose post-overlay slot value still carries a source brand token (content-run report/brand-leak.json kind=brand-token-in-value). One requirement PER SLOT, because a blocker must be individually resolvable.",
+    "doesNotBlock": [
+      "brand-token-in-untouched-default — an uninjected route is ALREADY carried by the release-blocking `content-route` requirement; double-blocking lengthens the checklist without making the site more independent",
+      "blocked-visible-source-content (engine-blocked) — the operator asked for the change and the ENGINE refused; no resolution pack can supply it, so blocking would be an impossible category",
+      "source-url — SEVERITY_POLICY already prices unresolved destinations as high-value: they keep source defaults but do not gate indexability",
+      "svg-aria-label / svg-symbol-id / svg-text / image-alt / aria-label — no write target exists today (no slot binding, no bake-time rewriter); blocking them would repeat the source-brand-asset dead end",
+      "body-anchor-identity — inherited body anchors are owned by content/asset independence, not invented away by the gate"
+    ],
+    "why": "The settled decision: release-blocking ONLY where production independence actually requires it, and never where no implemented resolution can clear it. Condition (b) is the direct lesson of the source-brand-asset bug the audit found.",
+    "measuredEffect": "linear.app collects 88 release-blocking requirements and stripe.com 74, of which ZERO are brand-leak (every brand-leak requirement on both real lineages came out high-value). The blocker set is therefore unchanged by this change, measured on the artifacts, not assumed."
+  },
+  "blanketQaAssertionAdded": false,
+  "detectionSurfaces": [
+    {
+      "surface": "visible-text",
+      "implemented": true,
+      "evidenceSource": "content-run report/brand-leak.json (effective post-overlay slot values)",
+      "orWhyNotAvailable": null,
+      "measured": {
+        "linear.app": 88,
+        "stripe.com": 62
+      }
+    },
+    {
+      "surface": "source-url",
+      "implemented": true,
+      "evidenceSource": "content-run report/brand-leak.json url slots + template runtime IR href/src/poster/action/srcset props",
+      "orWhyNotAvailable": null,
+      "measured": {
+        "linear.app": 101,
+        "stripe.com": 8
+      }
+    },
+    {
+      "surface": "title-meta",
+      "implemented": true,
+      "evidenceSource": "seo plan manifest.checks.brandIsolation — src/seo/run.ts:175 REFUSES to write a plan whose head surfaces leak",
+      "orWhyNotAvailable": "structurally zero: detection is owned by the SEO layer, so this scan reports 0 rather than re-deriving it",
+      "measured": {
+        "linear.app": 0,
+        "stripe.com": 0
+      }
+    },
+    {
+      "surface": "canonical",
+      "implemented": true,
+      "evidenceSource": "seo plan manifest.checks.brandIsolation + the `production-domain` requirement",
+      "orWhyNotAvailable": "domain-derived; already release-blocking via production-domain",
+      "measured": {
+        "linear.app": 0,
+        "stripe.com": 0
+      }
+    },
+    {
+      "surface": "open-graph",
+      "implemented": true,
+      "evidenceSource": "seo plan manifest.checks.brandIsolation",
+      "orWhyNotAvailable": "same brand-isolation gate as title/meta",
+      "measured": {
+        "linear.app": 0,
+        "stripe.com": 0
+      }
+    },
+    {
+      "surface": "json-ld",
+      "implemented": true,
+      "evidenceSource": "seo plan manifest.checks.brandIsolation + routes[].jsonLd.omittedNeedsInput",
+      "orWhyNotAvailable": "JSON-LD omits absent facts honestly rather than inheriting source ones",
+      "measured": {
+        "linear.app": 0,
+        "stripe.com": 0
+      }
+    },
+    {
+      "surface": "image-logo",
+      "implemented": false,
+      "evidenceSource": "asset replacement-manifest.json + inventory counts.inlineSvgEntries",
+      "orWhyNotAvailable": "owned by the existing `replacement-image` and `source-brand-asset` kinds; re-detecting it here would duplicate an existing blocker",
+      "measured": null
+    },
+    {
+      "surface": "image-alt",
+      "implemented": true,
+      "evidenceSource": "template runtime IR RuntimeElementNode.p.alt",
+      "orWhyNotAvailable": "the IR carries the PRE-injection default, so a hit may already be replaced by the content overlay — reported, never gated",
+      "measured": {
+        "linear.app": 14,
+        "stripe.com": 10
+      }
+    },
+    {
+      "surface": "aria-label",
+      "implemented": true,
+      "evidenceSource": "template runtime IR RuntimeElementNode.p['aria-label']",
+      "orWhyNotAvailable": "same pre-injection caveat as image-alt",
+      "measured": {
+        "linear.app": 2,
+        "stripe.com": 77
+      }
+    },
+    {
+      "surface": "svg-text",
+      "implemented": true,
+      "evidenceSource": "template runtime IR RuntimeElementNode.v — <text>/<title> inside inline SVG",
+      "orWhyNotAvailable": null,
+      "measured": {
+        "linear.app": 0,
+        "stripe.com": 100
+      }
+    },
+    {
+      "surface": "svg-aria-label",
+      "implemented": true,
+      "evidenceSource": "template runtime IR RuntimeElementNode.v — aria-label inside inline SVG (NEW: detected by nothing before Task 27)",
+      "orWhyNotAvailable": null,
+      "measured": {
+        "linear.app": 48,
+        "stripe.com": 8
+      }
+    },
+    {
+      "surface": "svg-symbol-id",
+      "implemented": true,
+      "evidenceSource": "template runtime IR RuntimeElementNode.v — <symbol id> (NEW: detected by nothing before Task 27)",
+      "orWhyNotAvailable": null,
+      "measured": {
+        "linear.app": 32,
+        "stripe.com": 0
+      }
+    },
+    {
+      "surface": "dynamic-template-content",
+      "implemented": false,
+      "evidenceSource": null,
+      "orWhyNotAvailable": "NO artifact records the source brand inside dynamically-mounted region content separately from its host route. Region/route enablement (a later task) is what creates that evidence; inventing a number here would be a fabricated surface. Declared statically as detection:'unavailable' in BRAND_SURFACE_POLICY so the gap is recorded, not silent."
+    },
+    {
+      "surface": "body-anchor-identity",
+      "implemented": true,
+      "evidenceSource": "production build report/qa.json brandSurfaceCensus.byRoute[].bodyAnchorIdentity (SERVED html) + src/seo/link-qa.ts sourceHostAbsoluteHrefs",
+      "orWhyNotAvailable": "only measurable once a production candidate exists; before that the scan records kind:'not-yet-measured' rather than 0",
+      "measured": null
+    }
+  ],
+  "svgDetection": {
+    "ariaLabel": true,
+    "symbolId": true,
+    "fixture": "scripts/smoke-content-injection.ts — SVG_FIXTURE in section 'Task 27 GED-F — source-brand SURFACE detection (detector only)'; carries aria-label=\"Linear Logo\", <symbol id=\"Linear\">, <symbol id=\"LinearAi\"> (camel-glued, which the plain word-boundary matcher misses), a non-brand <symbol id=\"ChevronDown\"> control, <title>Linear</title> and <text>Made by Linear</text>",
+    "countsOnLinearIfMeasured": {
+      "svgAriaLabel": 48,
+      "svgSymbolId": 32,
+      "svgText": 0,
+      "inlineSvgNodesScanned": 1581,
+      "elementNodesScanned": 18918,
+      "routesScanned": 8,
+      "lineage": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z + data/linear.app/content-runs/2026-08-25T21-54-40-120Z",
+      "note": "These are TEMPLATE runtime-IR counts (desktop+mobile trees, deduplicated by node), NOT the audit's baked-index.html counts (208 aria-label / 128 symbol id). The baked figures include the same marks repeated across routes and the hydration payload. Both are honest; they count different artifacts. Reported here is only what this scan measured."
+    },
+    "countsOnStripeIfMeasured": {
+      "svgAriaLabel": 8,
+      "svgSymbolId": 0,
+      "svgText": 100,
+      "inlineSvgNodesScanned": 7701,
+      "routesScanned": 20
+    }
+  },
+  "gedF": {
+    "detectorOnly": true,
+    "neutralizationDefault": "OFF",
+    "constant": "GED_F_NEUTRALIZATION_DEFAULT = false as const (src/release/brand-scan.ts)",
+    "testProvingDefault": "scripts/smoke-content-injection.ts checks 27.brand.8 (the constant is false), 27.brand.9 (a scan called with NO option records neutralization.enabled === false), 27.brand.10 (an EXPLICIT opt-in is recorded and still rewrites nothing) and 27.brand.11 (every input file's bytes AND mtime are unchanged after a scan). smoke:release 27.brand.14 additionally asserts neutralization.enabled === false on the real stripe lineage.",
+    "whyOff": "scripts/smoke-production.ts:269 asserts residualSourceUrlOccurrencesInSite === 1 EXACTLY; neutralization-on would break it. The audit also sequences neutralization AFTER Content V2 and AFTER region/route enablement, both of which change which routes are uninjected.",
+    "fixLocationForFutureConsumer": "at BAKE (src/production/bake.ts), never in the template compiler — src/recon-template/grouping.ts:625 is under frozen 46/46 parity."
+  },
+  "resolutionPaths": [
+    {
+      "kind": "brand-leak (release-blocking, per-slot)",
+      "resolutions": [
+        "routeContent[\"<route>\"].slotValues[\"<slotKey>\"]",
+        "urls[\"<slotKey>\"]"
+      ],
+      "reachable": true,
+      "proof": "smoke:release 27.brand.10 (matchResolutionToRequirements matches it) and 27.brand.11 (mergeRequirements flips it to `resolved` and releaseBlockers() then contains no brand-leak requirement)"
+    },
+    {
+      "kind": "brand-leak (high-value, grouped per surface)",
+      "resolutions": [
+        "the surface's suggestedResolution (authored replacement where a write target exists)",
+        "acknowledgements[{ requirementId: \"brand-leak-<surface>\" }] → accepted-limitation"
+      ],
+      "reachable": true,
+      "proof": "smoke:release 27.brand.12 — an acknowledgement records brand-leak-svg-aria-label as accepted-limitation; because the requirement is non-blocking, accepted-limitation genuinely clears the operator's queue rather than parking a permanent blocker"
+    }
+  ],
+  "sourceBrandAssetDeadEnd": {
+    "fixed": false,
+    "why": "The dead end is real and confirmed: `source-brand-asset` is release-blocking (src/release/types.ts SEVERITY_POLICY) and its only resolutions (src/release/collect.ts, the source-brand-inline-svg requirement) are an acknowledgement — which releaseBlockers() correctly still treats as blocking (src/release/requirements.ts releaseBlockers: accepted-limitation blocks) — and a future template-layer task. Nothing tonight can honestly clear it: an operator-supplied logo asset has NO consumer that bakes it into inline-SVG markup, so marking such a requirement `resolved` would assert a fix that did not happen. Downgrading its severity would weaken the gate, which the brief forbids. What was done instead, additively and honestly: the existing source-brand-inline-svg requirement now cites WHICH surfaces inside those marks carry the brand (brand-surface:svg-aria-label / svg-symbol-id / svg-text with measured counts and an example value) so the operator is not left guessing what the blocker is. See followUps[0] for the exact unblocking work."
+  },
+  "smokeChecks": {
+    "release": {
+      "before": 136,
+      "after": 151,
+      "added": 15,
+      "exitCode": 0,
+      "failures": 0
+    },
+    "production": {
+      "before": 89,
+      "after": 100,
+      "added": 11,
+      "exitCode": 0,
+      "failures": 0
+    },
+    "contentInjection": {
+      "before": 110,
+      "after": 123,
+      "added": 13,
+      "exitCode": 0,
+      "failures": 0
+    },
+    "note": "The brief quoted baselines 84 / 85 / 68; those are pre-Wave-1/2 numbers. The counts above are the actual pre-change baselines measured on this working tree at the start of this agent's run (smoke:release measured directly; production/content-injection derived by subtracting the checks this agent added, each individually named)."
+  },
+  "filesCreated": [
+    "src/content-injection/brand-surfaces.ts",
+    "src/release/brand-scan.ts",
+    "docs/result/handoffs/27-brand.json"
+  ],
+  "filesModified": [
+    "src/content-injection/brand-leak.ts",
+    "src/release/types.ts",
+    "src/release/collect.ts",
+    "src/release/plan.ts",
+    "src/release/requirements.ts",
+    "src/production/qa.ts",
+    "src/seo/link-qa.ts",
+    "scripts/smoke-release.ts",
+    "scripts/smoke-production.ts",
+    "scripts/smoke-content-injection.ts"
+  ],
+  "filesModifiedOutsideOwnership": [],
+  "changeRequests": [
+    {
+      "file": "src/release/index.ts",
+      "owner": "release-layer integrator",
+      "change": "add `export * from \"./brand-scan.js\";` to the public barrel",
+      "why": "brand-scan.ts is a new release-layer module; scripts/smoke-release.ts currently imports it by direct path because the barrel is outside this agent's ownership set."
+    },
+    {
+      "file": "src/production/index.ts",
+      "owner": "production-layer integrator",
+      "change": "re-export `censusServedHtml`, `summarizeBrandCensus`, `BrandSurfaceCensus` from ./qa.js",
+      "why": "scripts/smoke-production.ts documents that everything goes through the public barrel; the new census helpers are imported from ../src/production/qa.js directly because index.ts is outside this agent's ownership set."
+    },
+    {
+      "file": "src/content-injection/types.ts",
+      "owner": "content-injection owner",
+      "change": "extend BrandLeakWarningSchema.kind with the SVG surfaces (svg-aria-label / svg-symbol-id / svg-text), or add an optional `surface` field",
+      "why": "BrandLeakWarningSchema.kind is a CLOSED enum, so the new SVG surfaces cannot be written into a content run's report/brand-leak.json. They are therefore reported through the release-layer brand-surface report instead. Merging them into the content report would put them in the operator's content review too."
+    },
+    {
+      "file": "src/production/types.ts",
+      "owner": "production-layer owner",
+      "change": "widen PostProcessResult.assets to carry a per-surface census next to residualSourceUrlOccurrencesInSite",
+      "why": "audit finding BRAND-COUNT: src/production/bake.ts:263-269 counts only `https://<host>` for hosts derived from NETWORK REQUESTS. The census was added at QA time instead (src/production/qa.ts, over the SERVED html) because bake's return shape is declared in types.ts, outside this agent's ownership set. bake.ts was deliberately left untouched — its honest network-request path must not be disturbed."
+    }
+  ],
+  "testsRun": [
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "checks": null,
+      "note": "tsc --noEmit, clean"
+    },
+    {
+      "command": "pnpm smoke:release",
+      "exitCode": 0,
+      "checks": 151,
+      "note": "0 failures; 136 before this agent's changes. Includes 25.1 (historical stripe lineage byte-untouched by collection), which now also covers the new brand scan, and 22d (the synthetic fixture still reaches PRODUCTION_READY)."
+    },
+    {
+      "command": "pnpm smoke:production",
+      "exitCode": 0,
+      "checks": 100,
+      "note": "0 failures; 89 before. Includes the guard proving no blanket zero-equality assertion over any source-host / brand census total exists anywhere in src/ or scripts/."
+    },
+    {
+      "command": "pnpm smoke:content-injection",
+      "exitCode": 0,
+      "checks": 123,
+      "note": "0 failures; 110 before. Includes the SVG aria-label + symbol-id fixture and the four GED-F neutralization-default-OFF assertions."
+    }
+  ],
+  "evidence": [
+    "src/content-injection/brand-surfaces.ts — BRAND_SURFACES vocabulary, scanInlineSvgMarkup (aria-label / <symbol id> / <text>|<title>), scanElementProps, scanBodyAnchorIdentity, firstBrandTokenInIdentifier (camel-hump split, so `LinearAi` matches)",
+    "src/release/brand-scan.ts — BRAND_SURFACE_POLICY, brandFindingSeverity, scanBrandSurfaces, brandSurfaceRequirements, GED_F_NEUTRALIZATION_DEFAULT = false",
+    "src/release/types.ts:105 — \"brand-leak\" added to REQUIREMENT_KINDS; src/release/types.ts:558 — SEVERITY_POLICY['brand-leak'] with its basis",
+    "src/release/collect.ts:500-512 — section 8 runs the GED-F scan; :553 pushes brandSurfaceRequirements; :535-549 enriches the existing source-brand-inline-svg blocker's evidence with the measured SVG surfaces",
+    "src/release/requirements.ts:46-56 — bySlotKey became a MULTI-map: one slot can carry more than one requirement (a brand-leak finding and the external-url entry), and a single-valued map silently dropped all but the last",
+    "src/production/qa.ts — BrandSurfaceCensus / censusServedHtml / summarizeBrandCensus, wired into the per-route HTTP loop and returned on ProductionQaReport; the `brand-surface-census-measured` check asserts the measurement RAN, never that it is zero",
+    "src/seo/link-qa.ts:29-31 — RouteLinkAudit.sourceHostAbsoluteHrefs, so a body-anchor finding can cite the URL rather than only a count",
+    "measured, read-only, on data/linear.app/production-specs/2026-08-25T23-54-21-435Z: brand counts {visible-text 88, source-url 101, image-alt 14, aria-label 2, svg-aria-label 48, svg-symbol-id 32}, 8 routes / 1581 inline-SVG nodes / 18918 element nodes, release-blocking total 88 (unchanged)",
+    "measured, read-only, on data/stripe.com/production-specs/2026-08-19T06-36-35-798Z: brand counts {visible-text 62, source-url 8, image-alt 10, aria-label 77, svg-text 100, svg-aria-label 8}, 20 routes / 7701 inline-SVG nodes, release-blocking total 74 (unchanged)",
+    "scan cost on the linear lineage: 37 ms (measured) — the scan runs inside collectRequirements, i.e. on every release:prepare / release:plan",
+    "scripts/smoke-content-injection.ts checks 27.brand.1-13; scripts/smoke-release.ts checks 27.brand.1-15; scripts/smoke-production.ts sections 'served-html brand surface census' and 'no BLANKET source-host assertion was introduced'"
+  ],
+  "limitations": [
+    "Runtime-IR-derived surfaces (source-url, image-alt, aria-label) read the PRE-injection template default. A hit may already have been replaced by the content overlay, so those surfaces are reported as high-value hints and are never gated. Only the content run's brand-leak.json carries post-overlay truth, and only that path can escalate to release-blocking.",
+    "`dynamic-template-content` is NOT detected. No artifact records the source brand inside dynamically-mounted region content separately from its host route; the evidence only comes into existence with region/route enablement. Declared as detection:'unavailable' rather than reported as zero.",
+    "`source-url` counts differ from the audit's baked-html figures (this scan measured 101 on linear vs the audit's 782 URL occurrences in index.html). This scan walks the template runtime IR's href/src/poster/action/srcset props; the baked figure includes the hydration payload, CSS urls and inline style, which this scan does not read. Both numbers are honest measurements of different artifacts.",
+    "Findings are capped at 25 per surface (counts stay exact). On linear 169 findings fell past the cap; collect.ts emits an operator warning saying so rather than silently truncating.",
+    "src/production/bake.ts was deliberately NOT modified. Its residualSourceUrlOccurrencesInSite still counts only `https://<host>` for network-derived hosts (audit finding BRAND-COUNT). The fuller census lives at QA time instead, because widening bake's result requires src/production/types.ts, outside this agent's ownership set — see changeRequests.",
+    "`sourceHostMentionsInHtml` still has no consumer in src/. It was left in place (and is asserted still present) because removing it is a breaking change to a persisted report shape; the new brandSurfaceCensus is the number that means something.",
+    "The vacuous `external-requests-only-known-residual` assertion (src/production/qa.ts, filtering observed hosts against knownResidualSourceHosts which for linear IS the source host) was NOT changed. Tightening it would alter the honest network-request blocker path, which the brief explicitly protects.",
+    "No SVG path editor. Opaque <path> geometry remains a documented, unaddressed limitation."
+  ],
+  "followUps": [
+    {
+      "id": "GED-F-neutralize",
+      "what": "Bake-time brand neutralization (src/production/bake.ts): rewrite inline-SVG aria-label, <symbol id> and source anchors during the export post-process, behind an opt-in that defaults OFF until it is proven.",
+      "unblocks": "This is what finally gives `source-brand-asset` a reachable resolution: once a bake-time rewriter exists, an operator-supplied replacement (or an explicit 'neutralize' decision) can honestly flip the requirement to `resolved`.",
+      "sequencedAfter": "Content V2 and region/route enablement — both change which routes are uninjected.",
+      "willBreak": "scripts/smoke-production.ts:269 asserts residualSourceUrlOccurrencesInSite === 1 EXACTLY; that assertion must be re-derived, not deleted."
+    },
+    {
+      "id": "brand-leak-route-attribution",
+      "what": "Attach the template route to runtime-IR findings on GLOBAL units. Slot-linked findings already carry unit.route (or 'global'); IR findings carry the page route they were walked from, which over-attributes a header mark to every route.",
+      "why": "The per-surface counts are exact; the per-route attribution of a site-wide mark is not."
+    },
+    {
+      "id": "brand-surface-report-artifact",
+      "what": "Persist the BrandSurfaceReport as a file in the release project run dir (it is currently returned from collectRequirements and consumed in-memory).",
+      "why": "The requirements cite the underlying template/content artifacts directly, so nothing is unevidenced — but an operator cannot read the full capped finding list without re-running a collect."
+    },
+    {
+      "id": "post-injection-ir-surfaces",
+      "what": "Resolve runtime-IR alt / aria-label / href findings against the content run's slot-values via slot-bindings.json, so an already-replaced default stops being reported.",
+      "why": "Removes the pre-injection caveat and would let image-alt / aria-label become candidates for escalation under the same two-condition rule."
+    }
+  ]
+}

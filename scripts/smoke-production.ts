@@ -12,6 +12,7 @@
  * Fixture-only: no lineage run directory, no network. Chromium is used only
  * for the interaction-sampling fixtures (Task 24 GED-A).
  */
+import { readdir } from "node:fs/promises";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
@@ -35,8 +36,10 @@ import {
   routeHtmlFile,
   sampleInteractions,
   SERVER_READY_PREFIX,
+  summarizeResidualRequests,
   THEME_OVERLAY_HREF,
 } from "../src/production/index.js";
+import { censusServedHtml, summarizeBrandCensus } from "../src/production/qa.js";
 import type { RewriteMap } from "../src/assets/types.js";
 
 let checks = 0;
@@ -594,6 +597,140 @@ section("interaction sampling: mount-type AND static-target triggers (GED-A)");
   } finally {
     await browser.close();
   }
+}
+
+// ---------------------------------------------------------------------------
+section("cross-route per-file residual requests (GED-G)");
+{
+  // A per-HOST tally cannot tell an operator which file to replace, nor that
+  // the file only renders on a route other than "/".
+  const census: Array<{ route: string; externalUrls: Record<string, number> }> = [
+    {
+      route: "/",
+      externalUrls: { "https://cdn.example/shared.png": 1 },
+    },
+    {
+      route: "/newsroom/news/tour",
+      externalUrls: {
+        "https://cdn.example/shared.png": 2,
+        "https://cdn.example/newsroom-only.png": 1,
+      },
+    },
+  ];
+  const files = summarizeResidualRequests(census);
+  check("one row per FILE, not per host", files.length === 2, String(files.length));
+  check(
+    "most-rendered file first, attributed to every route it was requested on",
+    files[0].url === "https://cdn.example/shared.png" &&
+      files[0].occurrences === 3 &&
+      files[0].routeCount === 2 &&
+      files[0].routes.map((hit) => `${hit.route}:${hit.occurrences}`).join(",") ===
+        "/:1,/newsroom/news/tour:2",
+    JSON.stringify(files[0]),
+  );
+  const deepOnly = files.find((file) => file.url.endsWith("newsroom-only.png"));
+  check(
+    `a file that renders only off "/" is still reported, with its route`,
+    deepOnly?.routeCount === 1 &&
+      deepOnly.routes[0].route === "/newsroom/news/tour" &&
+      deepOnly.host === "cdn.example",
+    JSON.stringify(deepOnly),
+  );
+  check(
+    "an empty census summarizes to no files (no invention)",
+    summarizeResidualRequests([{ route: "/", externalUrls: {} }]).length === 0,
+  );
+}
+
+// ---------------------------------------------------------------------------
+section("Task 27 — served-html brand surface census (measurement, not a gate)");
+{
+  // One document carrying every surface once, so a miscount cannot hide behind
+  // a total. The <svg> aria-label must NOT also land on the plain aria-label
+  // axis — that double count is exactly what makes a brand number untrustworthy.
+  const html =
+    "<html><head><title>Newco</title></head><body>" +
+    '<a href="https://linear.app/pricing">Pricing</a>' +
+    '<a href="/local">Local</a>' +
+    '<img src="https://linear.app/hero.png" alt="Linear screenshot"/>' +
+    '<button aria-label="Open Linear menu">m</button>' +
+    '<svg aria-label="Linear Logo"><symbol id="LinearAi"><path d="M0 0h1v1H0z"/></symbol>' +
+    "<text>Linear</text></svg>" +
+    "<p>Built on Linear conventions.</p>" +
+    "</body></html>";
+  const counts = censusServedHtml(html, "linear.app", ["linear"]);
+  check(
+    "source-url counts href AND src on the source host",
+    counts.sourceUrl === 2,
+    JSON.stringify(counts),
+  );
+  check("body anchors are counted on their own axis", counts.bodyAnchorIdentity === 1, String(counts.bodyAnchorIdentity));
+  check("img alt is counted", counts.imageAlt === 1, String(counts.imageAlt));
+  check(
+    "an SVG aria-label is NOT also counted as a plain aria-label",
+    counts.svgAriaLabel === 1 && counts.ariaLabel === 1,
+    JSON.stringify({ svg: counts.svgAriaLabel, plain: counts.ariaLabel }),
+  );
+  check("svg <symbol id> is counted, camel humps included", counts.svgSymbolId === 1, String(counts.svgSymbolId));
+  check("svg text is counted", counts.svgText === 1, String(counts.svgText));
+  check(
+    "visible text ignores markup and counts the brand word",
+    counts.visibleText > 0,
+    String(counts.visibleText),
+  );
+  const clean = censusServedHtml("<html><body><p>Newco ships fast.</p></body></html>", "linear.app", ["linear"]);
+  check(
+    "an independent document censuses to zero on every surface (no invention)",
+    Object.values(clean).every((value) => value === 0),
+    JSON.stringify(clean),
+  );
+  const census = summarizeBrandCensus(["linear"], [
+    { route: "/", ...counts },
+    { route: "/pricing", ...clean },
+  ]);
+  check(
+    "the census folds per-route counts and records how many routes it measured",
+    census.routesMeasured === 2 && census.sourceUrl === counts.sourceUrl && census.byRoute.length === 2,
+    JSON.stringify({ routes: census.routesMeasured, sourceUrl: census.sourceUrl }),
+  );
+}
+
+// ---------------------------------------------------------------------------
+section("Task 27 — no BLANKET source-host assertion was introduced");
+{
+  // The audit's settled decision: release-blocking ONLY where production
+  // independence actually requires it. A zero-equality check over the
+  // source-host mention count (or any census total) would fail every honest preview
+  // build over uninjected body copy the `content-route` blocker already
+  // carries. This test is the guard rail, enforced over the real source tree.
+  const roots = ["src", "scripts"];
+  const files: string[] = [];
+  const walk = async (dir: string): Promise<void> => {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) await walk(full);
+      else if (entry.name.endsWith(".ts")) files.push(full);
+    }
+  };
+  for (const root of roots) await walk(root);
+  // Built from parts so this guard does not match its own source text.
+  const blanket = new RegExp(
+    "(sourceHostMentionsInHtml|visibleText|sourceUrl|bodyAnchorIdentity)" + "\\s*===\\s*" + "0",
+  );
+  const offenders = [] as string[];
+  for (const file of files) {
+    const body = await readFile(file, "utf8");
+    if (blanket.test(body)) offenders.push(file);
+  }
+  check(
+    "no blanket zero-equality assertion over a source-host / brand census total exists in src/ or scripts/",
+    offenders.length === 0,
+    offenders.join(", "),
+  );
+  check(
+    "the honest number is still REPORTED — sourceHostMentionsInHtml survives in the qa report",
+    (await readFile("src/production/qa.ts", "utf8")).includes("sourceHostMentionsInHtml,"),
+  );
 }
 
 // ---------------------------------------------------------------------------

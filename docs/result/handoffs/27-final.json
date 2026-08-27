@@ -1,0 +1,193 @@
+{
+  "schema": "task27-final-v1",
+  "task": "TASK 27 — OVERNIGHT AUTHORING FOUNDATION & TEMPLATE FACTORY V2",
+  "report": "docs/result/27-authoring-foundation-template-factory-v2-2026-08-27.md",
+  "baselineSha": "d33abb3",
+  "headAtCompletion": "d33abb3",
+  "verdict": "READY FOR VISUAL PRODUCTION WORKFLOW",
+  "verdictSource": "fresh 4-auditor panel + adjudicator, none of whom implemented anything; 37/37 mandatory points VERIFIED, 0 failed, 0 unverified",
+
+  "method": {
+    "orchestrator": 1,
+    "freshAgents": 44,
+    "isolation": "no agent inherited another's conversation; all transfer via source code, generated artifacts and compact JSON handoffs",
+    "verificationRule": "every major builder followed by a fresh independent verifier; failures routed to a fresh correction agent, never back to the original builder",
+    "verifierRejections": 1,
+    "correctionAgents": 11,
+    "ownershipViolations": 0
+  },
+
+  "implemented": [
+    "GED-E — SEO preview proxy entity-title rewrite across 6 encodings (new src/seo/escape-variants.ts); production bake untouched",
+    "GED-G — cross-route per-file residual asset report (new src/assets/residual-report.ts); site-map-derived route scope replacing the ?? ['/'] default",
+    "PageRegion compiler — new src/regions/, deterministic, consumer-free, joins via slot-bindings.json only",
+    "Template Factory V2 — route scope policy at the compile seam, structure-only routes, collection foundation",
+    "Release project extended into the authoritative customer-site authoring model (stable siteId, non-destructive prepare, authored.slotValues, theme authoring)",
+    "Content Generation V2 — real batch execution, two-axis slot accounting, fact truth modes, GED-D no-progress guard, non-fabricating telemetry",
+    "Brand independence foundation — brand-leak requirement kind, SVG aria-label/symbol-id detection, GED-F detector-only",
+    "release:plan dependency cascade single-sourced with build (propagateStaleStages)",
+    "release:resolve invalidation closure derived from STAGE_DEPENDENCIES instead of a hand-maintained table",
+    "content-stage lineage hash exclusion for Task-27-added derived outputs"
+  ],
+  "stretchGoalsCompleted": [
+    "Revision foundation — immutable append-only authored-state chain with restore (src/release/revisions.ts, 24 checks)",
+    "Registry foundation — filesystem-only template + site registry (src/registry/, 27 checks)"
+  ],
+
+  "releaseProject": {
+    "stableSiteId": true,
+    "nonDestructivePrepare": true,
+    "authoredSlotValues": true,
+    "themeAuthoring": true,
+    "parallelSiteInstanceCreated": false,
+    "evidence": {
+      "siteId": "src/release/types.ts:400 required under projectRevision 2; --site-id operator path; baseline was projectId = ${host}-${spec.runId}",
+      "nonDestructivePrepare": "hardcoded resolutions:[] / runs:[] removed; createdAt/resolutions/authored/runs all carried; recalculation stays unconditional",
+      "authoredSlotValues": "stages.ts:134-138 applies authored LAST with source user-provided; materialized into a NEW content run; production/run.ts:233-234,:375 consumes it",
+      "themeAuthoring": "THEME_SELECTION_IMPACTS now live at graph.ts:69 and freshness.ts:199-202; a theme edit stales EXACTLY {theme,production}, four other stages fresh — verified by running the real engine"
+    }
+  },
+
+  "templateFactory": {
+    "routeScopePolicy": true,
+    "structureOnly": true,
+    "collections": true,
+    "measuredSlotReduction": {
+      "host": "stripe.com",
+      "policyFreeSlots": 9529, "policiedSlots": 4661, "reductionPct": 51.09,
+      "policyFreeBindings": 24518, "policiedBindings": 13680,
+      "routes": 20, "structureOnlyRoutes": 10,
+      "canaryRun": "data/stripe.com/recon-templates/2026-08-26T22-38-06-075Z",
+      "supersededRun": "data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z (kept; lacked the shared-page disclosure the current compiler emits)",
+      "honestCaveat": "51% reflects THIS 20-route reconstruction, where only 10 routes belong to the repeated family. On a real large blog the reduction tracks the family's share of the crawl, not this figure."
+    },
+    "selectorTouched": false,
+    "siteSpecTouched": false,
+    "slotSchemaVersionUnchanged": true,
+    "templateStageRunnerAdded": false,
+    "parityRiskResolved": "audit-flagged UNVERIFIED risk closed both structurally (generateTemplateApp never references pagesById) and empirically (live parity QA over structure-only routes: 8/8 content, 8/8 structure, 0px deltas, 0 hydration errors)"
+  },
+
+  "pageRegion": {
+    "implemented": true,
+    "deterministic": true,
+    "slotSchemaModified": false,
+    "reconTemplateFilesOpened": 0,
+    "onOffImplemented": false,
+    "canaries": {
+      "linear": { "regions": 68, "slotsJoined": "3079/3079", "bindingsJoined": "9929/9929", "orphans": 0 },
+      "stripe": { "regions": 1014, "slotsJoined": "9529/9529", "bindingsJoined": "24518/24518", "orphans": 0, "sha256": "3aaf467a25b03a2685dbe30520126a14b7a5a933dff08fc1d4871c361e5f5880" }
+    },
+    "majorDefectFixed": "global-lift ignored rootTag while the grouping key included it — a responsive landmark tag swap on every page aborted the entire compile (exit 1, no artifact). Fixed with backward-compatible variant ranking; both canaries recompile byte-identical.",
+    "localityHonest": "downstream insert (the program's requirement): 0 of 68 ids lost. UPSTREAM insert: 45 of 68 repathed (66%) because pathSegment is a tag-scoped ordinal and region roots are overwhelmingly <div>. Quantified and pinned by the suite."
+  },
+
+  "contentV2": {
+    "batchingExecuted": true,
+    "slotAccounting": true,
+    "factModes": ["verified-only", "synthetic-allowed"],
+    "noProgressRepair": true,
+    "telemetry": true,
+    "secondEngineCreated": false,
+    "originDispositionSeparate": true,
+    "slotValuesFormatChanged": false,
+    "evidence": {
+      "batching": "a verifier's counting wrapper observed 8 generate() calls of <=40 units for a 285-unit packet; the adjudicator independently observed 36 calls for 36 batches on the full 1,202-unit linear packet",
+      "accounting": "re-derived from scratch: 594 in-scope = 594 entries = 594 origin = 594 disposition, 0 missing, 0 double-counted",
+      "telemetry": "manual result produces a record with NO usage key at all; a stub provider that reports usage has it recorded verbatim — absence is a decision, not an unimplemented path"
+    },
+    "truthModeDefaultCorrection": "the handoff originally framed verified-only as 'the behaviour every Task 19 run already had'. Disproved by the additivity verifier using the module's own docs — Task 19's rule bound only the PROMPT. The strict default was KEPT with reasons recorded; the framing was corrected."
+  },
+
+  "brand": {
+    "releaseRequirement": true,
+    "svgMetadataDetection": true,
+    "gedFNeutralizationEnabled": false,
+    "blanketQaAssertionAdded": false,
+    "gateDidNotMove": { "linear": "88 release-blocking, 0 brand-leak", "stripe": "74 release-blocking, 0 brand-leak" },
+    "sourceBrandAssetDeadEnd": "NOT fixed — no bake-time rewriter exists so no resolution can honestly clear it, and the severity was deliberately not downgraded to manufacture a passable gate. Any source with an inline-SVG logo still cannot reach PRODUCTION_READY."
+  },
+
+  "realReleaseExercise": {
+    "resolveExecuted": true,
+    "buildExecuted": true,
+    "repreparePreservedState": true,
+    "frozenStagesRerunUnexpectedly": [],
+    "canary": "linear.app",
+    "project": "data/linear.app/release-projects/flowpilot-wr27",
+    "nonPrepareRunRecords": 5,
+    "priorNonPrepareRunRecordsOnDisk": 0,
+    "stagesRan": ["content", "theme", "seo", "production"],
+    "stagesReused": ["reconstruction", "template", "assets"],
+    "authoredValueInOutput": "present in all 8 rendered route HTML files; grep -c '>Features<' index.html = 0",
+    "frozenHashesUnchanged": true,
+    "retryResumeTested": "via BuildOptions.runners injection — no artifact corrupted",
+    "historicalRunsWritten": [],
+    "defectsFound": [
+      { "id": "plan-omits-dependency-cascade", "severity": "medium", "status": "FIXED by a later agent (propagateStaleStages single-sourced)" },
+      { "id": "unmatched-resolution-field-invisible", "severity": "low", "status": "FIXED" }
+    ]
+  },
+
+  "regression": {
+    "baselineChecks": 1794,
+    "finalChecks": 2151,
+    "failures": 0,
+    "negativeCountDeltas": [],
+    "suites": 20,
+    "typecheck": "exit 0",
+    "logs": "docs/result/handoffs/27-regression-logs/{baseline,wave1,wave2,wave3,final,final-2}/",
+    "deliberateRemoval": "one check (27H.7) was removed as a proven fake-pass — it was named 'the freshness warning reaches the operator through release:plan' and asserted warnings.length === 0. Replaced by 7 real checks. The only intentional decrease in the program.",
+    "perSuite": {
+      "verifier": [81, 81], "selector": [81, 81], "multi-observer": [62, 62],
+      "interaction-detector": [92, 92], "interaction-explorer": [108, 108],
+      "interaction-patterns": [88, 88], "sitespec": [257, 257], "reconstruction": [217, 217],
+      "reconstruction-qa": [134, 134], "e2e": [130, 130], "recon-template": [64, 109],
+      "content-injection": [68, 128], "theme": [47, 47], "seo": [79, 97],
+      "assets": [117, 140], "production": [85, 100], "release": [84, 162],
+      "regions": [null, 67], "revision": [null, 24], "registry": [null, 27]
+    }
+  },
+
+  "historicalMutationCount": 0,
+  "historicalIntegrityEvidence": "every touched data/ run dir has a birth time of 01:14-04:28 on 2026-08-27 (created during the program); all 77 run ids referenced by handoffs 21-26 still exist; the 7 stripe smoke:release lineage dirs have 0 files newer than the baseline commit, checked before AND after running the suite; 24-aggregation-phase1.json is byte-identical to HEAD blob 0322639753518bb96f90f42d8e451bffda9aacd3",
+  "vacuousProofCaught": "an integrator initially proved the data/ invariant with `git status --porcelain data/`, which is empty for ANY tree state because data/ is gitignored. Caught by the additivity verifier; every subsequent proof uses mtimes and birth times.",
+
+  "gitOperations": 0,
+  "gitOperationsNote": "zero mutating git operations. One honest exception recorded: .git/FETCH_HEAD was written at 05:04 by an agent running `git fetch` — read-only, changed no ref, wrote no object, fetched SHA equals HEAD.",
+
+  "deferred": [
+    "Visual Editor UI (explicitly out of scope; audit already established feasibility)",
+    "Region ON/OFF and Route ON/OFF consumers",
+    "Full blog / collection engine (detection and representation only tonight)",
+    "GED-F anchor neutralization (detector-only; default OFF)",
+    "full production canary and a real indexable-production build"
+  ],
+
+  "remainingRisks": [
+    "THE ENTIRE PROGRAM IS AN UNCOMMITTED WORKING TREE — 44 modified tracked files, 68 untracked paths on d33abb3, zero stashes, zero branches. One stray git checkout/clean/stash destroys it. COMMIT FIRST.",
+    "source-brand-asset remains an unclearable release blocker; any inline-SVG-logo source cannot reach PRODUCTION_READY",
+    "the assets stage runner has never executed on real data (appears only in reusedStages across all three real builds) — a coverage hole, not a defect",
+    "no indexable-production build has run end to end; every real build finished at PRODUCTION_INPUTS_REQUIRED with 88 blockers",
+    "an unexplained +2 requirement drift: requirements.json reports 380, a surviving log proves the CLI printed 378 at step 1. Both recorded; the drift is reported, not explained.",
+    "GED-D loop-level behaviour verified by code read, not by driving the real cli-content-qa.ts loop into a no-progress stop",
+    "the three-surface agreement check is state-dependent, not a universal invariant",
+    "collections[] and both stretch modules (revisions, registry) are INERT — written and asserted, no engine reads them; six change requests filed and unapplied",
+    "PageRegion granularity is non-uniform and its global lift is strict enough to miss linear's footer (shared by 7 of 8 pages) — measured, deliberately not loosened without a consumer",
+    "revision append is O(n) per call (re-reads the whole chain) — size this before wiring an undo UI",
+    "no atomic writes or locking anywhere in the repo (pre-existing, repo-wide)"
+  ],
+
+  "openChangeRequests": [
+    "src/release/index.ts — barrel export for revisions.ts",
+    "src/release/resolve.ts and prepare.ts — call appendAuthoredRevision so the revision chain stops being inert",
+    "src/release/types.ts — displayName field for the site registry",
+    "src/release/prepare.ts — call registerSite",
+    "src/cli-compile-recon-template.ts — call registerTemplate",
+    "src/content-injection/index.ts — export CONTENT_WRITE_DOCTRINE_WARNING",
+    "src/production/types.ts — carry a brand-surface census through the bake result",
+    "src/content-injection/types.ts — closed BrandLeakWarning kind enum blocks writing SVG surfaces into brand-leak.json"
+  ],
+
+  "nextTask": "TASK 28 — VISUAL PRODUCTION WORKFLOW. Commit the tree first. Then wire the six filed change requests, exercise the assets stage on real data, and resolve the +2 requirement drift. Then Visual Editor V1 on the proven substrate: PageRegion is the deterministic consumer-free foundation an editor consumes, and authored.slotValues is the proven write target — stages.ts:134-138 applies it last and freshness.ts:190-198 stales content on an authored edit, so an editor writing there inherits correct invalidation for free. Then safe Region/Route ON-OFF, a real ContentGenerator provider, production-mode SEO validation, and a full production canary."
+}

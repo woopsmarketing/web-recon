@@ -1,0 +1,154 @@
+{
+  "agent": "27 Agent 1B — GED-G",
+  "objective": "Cross-route, per-file residual source-asset report: which specific external files the built/served site still requests, on which rendered routes, joined to inventory identity and to the replacement manifest's verdict — plus a route-scope default that covers the site instead of \"/\" alone.",
+  "status": "PASS",
+  "filesCreated": [
+    "src/assets/residual-report.ts",
+    "docs/result/handoffs/27-ged-g.json"
+  ],
+  "filesModified": [
+    "src/cli-assets-qa.ts",
+    "src/assets/network-qa.ts",
+    "src/assets/types.ts",
+    "src/production/qa.ts",
+    "scripts/smoke-assets.ts",
+    "scripts/smoke-production.ts"
+  ],
+  "filesModifiedOutsideOwnership": [],
+  "artifactPath": "<materialization-run-dir>/report/residual-source-assets.json (e.g. data/<host>/asset-materializations/<run-id>/report/residual-source-assets.json), schema asset-residual-report-v1, written by pnpm assets:qa alongside the existing report/network-qa.json. Per file it carries: normalized url, host, routes[] (route + occurrences), routeCount, occurrences, inventoryId, assetId, slotKeys, replacement{inManifest, classification, status, providedFile, note, manifestFile} and evidence[] (artifact path + record ref). Report-level: routeScope, inputs (the three joined artifacts), counts (incl. invisibleAtRootOnly), byHost, files[] sorted most-rendered first. A second, package-level per-file view (no inventory join available there) is now also carried on the production QA report as routeCensus[].externalUrls + residualRequestFiles[].",
+  "routeScopeDefault": {
+    "before": "['/']  — src/cli-assets-qa.ts:57, `value(\"--routes\")?.split(\",\")... ?? [\"/\"]`",
+    "after": "every route declared by <template-run-dir>/site-map.json, \"/\" first (source \"template-site-map\"); --routes still overrides explicitly (source \"explicit-routes\"); --max-routes N bounds a large site map and records truncatedTo; an unreadable/empty site map falls back to ['/'] and says so in routeScope.note (source \"fallback-root\"). Measured on the stripe template run 2026-08-18T10-45-40-007Z: 20 routes instead of 1."
+  },
+  "fixtureExpectationChanges": [],
+  "fixtureExpectationsInspected": [
+    {
+      "file": "scripts/smoke-production.ts",
+      "line": 266,
+      "expectation": "result.assets.residualSourceUrlOccurrencesInSite === 1",
+      "changed": false,
+      "why": "This is not a browser census number. src/production/bake.ts:263-270 computes it by string-scanning the EXPORTED html/flight/css files for `https://<residual-host>` needles after rewrite; the fixture leaves exactly one <a href> occurrence unrewritten. Route-scope of the runtime census cannot move it. Left untouched, not loosened."
+    },
+    {
+      "file": "scripts/smoke-production.ts",
+      "line": 423,
+      "expectation": "residualRenderedUrlCount: 5 (input to buildPreviewBlockers)",
+      "changed": false,
+      "why": "It is a synthetic INPUT to a pure function, not a derived measurement — the fixture asserts the blocker prose echoes whatever number it is given (line 442 does the same with 33 to prove nothing is hardcoded). The real value is read at src/production/run.ts:279 from networkQa.totals.residualSourceUrls.length; a wider census will legitimately raise that at build time, and the fixture must keep proving the prose follows the input. Changing 5 would have tested nothing new."
+    }
+  ],
+  "competingTruthAvoided": "The report never derives a replacement verdict: every `replacement` field is copied from the run's replacement-manifest.json (classification / status / providedFile / note) with `manifestFile` naming the artifact it was read from, and an asset the manifest does not list is reported as inManifest:false with null fields rather than an invented classification — the report only adds render prioritization (which routes, how many occurrences).",
+  "checks": {
+    "assets": {
+      "before": 117,
+      "afterInitialGedG": 135,
+      "afterCorrections": 140
+    },
+    "production": {
+      "before": 85,
+      "afterInitialGedG": 89,
+      "afterCorrections": 89
+    }
+  },
+  "testsRun": [
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "checks": null,
+      "note": "clean after the corrections (tsc --noEmit, no output)."
+    },
+    {
+      "command": "pnpm smoke:assets",
+      "exitCode": 0,
+      "checks": 140,
+      "note": "135 -> 140 (+5): 3 checks on the discarded --routes override, 2 on the null invisibleAtRootOnly. Every pre-existing check still passes with its original expectation."
+    },
+    {
+      "command": "pnpm smoke:production",
+      "exitCode": 0,
+      "checks": 89,
+      "note": "89 -> 89. The third correction is a doc comment only, so it adds no check and removes none; the count is unchanged rather than raised."
+    },
+    {
+      "command": "pnpm exec tsx <scratchpad>/dryrun.mts (READ-ONLY join of the historical stripe artifacts, output written to the scratchpad only)",
+      "exitCode": 0,
+      "checks": null,
+      "note": "From the original GED-G wave, not re-run for the corrections: 4 residual files, 4/4 joined to inventory ids ai000602/ai000611/ai000638/ai000707, 4/4 present in replacement-manifest.json as replacement-required / awaiting-input, all attributed to route \"/\"."
+    }
+  ],
+  "evidence": [
+    "src/cli-assets-qa.ts — route scope now comes from resolveCensusRoutes({templateRunDir, explicitRoutes: --routes, maxRoutes: --max-routes}); the old `?? [\"/\"]` default is gone. It logs `route scope: <source> — <note>` and writes report/residual-source-assets.json next to report/network-qa.json.",
+    "src/assets/residual-report.ts — resolveCensusRoutes(), buildResidualAssetReport(), normalizeResidualUrl(). No fetching: it joins report/network-qa.json (already per-route since network-qa.ts:21-40), asset-inventory.json and replacement-manifest.json.",
+    "src/assets/types.ts — new additive schemas CensusRouteScopeSchema / ResidualRouteHitSchema / ResidualAssetFileSchema / ResidualAssetReportSchema under ASSET_RESIDUAL_REPORT_SCHEMA_NAME = \"asset-residual-report-v1\"; ASSET_SCHEMA_VERSION stays 1 and every existing schema is untouched, so all on-disk asset artifacts still parse.",
+    "src/assets/network-qa.ts — classifyHost() now takes URL.host as well as hostname and returns \"source\" when sourceHosts contains the exact host:port. Real source hosts are recorded without a port, so real-run classification is byte-identical; the change exists so a loopback fixture can act as a source asset origin (previously any 127.0.0.1 request was unconditionally \"local\", which is why no multi-route census test could exist).",
+    "src/production/qa.ts — routeCensus rows gained externalUrls (per-file counts) and the report gained residualRequestFiles[] via the new exported summarizeResidualRequests(); the existing external-requests-only-known-residual check now names the offending files and their routes in its detail. No check id added or removed, so production QA's own check count is unchanged.",
+    "scripts/smoke-assets.ts section 9 — 18 checks: site-map default scope, --routes override, unreadable-site-map fallback, --max-routes truncation; a real Chromium census proving the \"/\"-only default hides two deep-route residual files while the site-map-scoped census finds them; per-route attribution and occurrence counts; prioritization order; inventory join returns ai000002/a000002/slotKeys, unjoinable URL returns null; replacement read from the manifest and cited; manifest-absent asset reported honestly; counts.invisibleAtRootOnly === 2; evidence refs; schema round-trip; fragment-only URL normalization.",
+    "scripts/smoke-production.ts section \"cross-route per-file residual requests (GED-G)\" — 4 checks on summarizeResidualRequests (one row per file, cross-route aggregation and ordering, a file that renders only off \"/\" still reported with its route, empty census invents nothing).",
+    "Defect provenance: docs/result/handoffs/pre-overnight-audit.json .ged[3].code[0] = \"src/cli-assets-qa.ts:57 (?? ['/'])\" and .doTonight[3].reason = \"data already captured at network-qa.ts:21-40; a scope+join gap\".",
+    "Reproduction that motivated it (read only, unmodified): data/stripe.com/asset-materializations/2026-08-19T05-54-55-204Z/report/network-qa.json — a 3-route census whose independent measurement lists 4 residual URLs, all on \"/\"."
+  ],
+  "changeRequests": [
+    {
+      "file": "src/assets/index.ts",
+      "owner": "unowned this wave (integrator)",
+      "change": "Re-export the new module: `export { buildResidualAssetReport, normalizeResidualUrl, resolveCensusRoutes, type CensusRouteScopeOptions, type ResidualReportOptions } from \"./residual-report.js\";` (the schemas/types already flow through the existing `export * from \"./types.js\"`).",
+      "why": "The barrel enumerates named exports, so the new functions do not reach consumers through it. src/cli-assets-qa.ts and scripts/smoke-assets.ts import ./assets/residual-report.js directly in the meantime, each with a comment pointing here."
+    },
+    {
+      "file": "src/production/index.ts",
+      "owner": "unowned this wave (integrator)",
+      "change": "Re-export `summarizeResidualRequests` and `type ResidualRequestFile` from \"./qa.js\".",
+      "why": "scripts/smoke-production.ts otherwise has to import ../src/production/qa.js directly, against that file's \"everything goes through the public barrel\" convention."
+    }
+  ],
+  "limitations": [
+    "No real `pnpm assets:qa` run was executed. Doing so requires a browser census over a live template app AND would write into an existing data/<host>/asset-materializations/<run-id>/report/ directory, which this wave forbids. The report is proven by the fixture census in smoke:assets plus a read-only dry run over the historical stripe artifacts (output kept in the scratchpad).",
+    "Route scope is only as complete as the template run's site-map.json — representative routes per page family, not every URL of the source site. A residual asset that renders only on a non-represented member page is still invisible; the artifact records its scope, source and any --max-routes truncation so the gap is legible rather than silent.",
+    "Cost: the census now loads 2 browser pages per route (baseline + independent). The stripe template run has 20 routes, i.e. ~40 page loads where it used to be 2. --max-routes bounds it and the truncation is recorded in the artifact.",
+    "The census sees what headless Chromium at 1440x900 requests after the existing settle + full-page scroll pass. Viewport-conditional or interaction-only assets can still be missed; this change widens ROUTE coverage only.",
+    "The inventory join is exact-URL (fragment stripped, query kept). A residual request whose CDN transform query differs from the URL the inventory recorded reports inventoryId null. That is deliberate — a path/basename fallback would be a guess — but it means unjoined does not always mean unknown-to-the-lineage.",
+    "The production-QA per-file view (residualRequestFiles) carries no inventory id or replacement status: the deployment package ships neither artifact. It is a locator, and the assets:qa report remains the joined one.",
+    "residualRenderedUrlCount, which feeds the replacement-required preview blocker (src/production/run.ts:279), is still totals.residualSourceUrls.length. With the wider census it will legitimately grow on the next real build; that is a truer number, not a regression, but it will move the blocker prose.",
+    "The `host` divergence between the assets-layer report (hostname) and the production-QA per-file view (host:port) is documented on both fields but NOT unified. Any consumer that joins the two views by host must normalize; in practice real source/CDN hosts carry no port and the two strings are identical, so no on-disk artifact currently differs.",
+    "invisibleAtRootOnly is now null when \"/\" was not measured, but it still says nothing about routes the census never covered at all. A file invisible on every measured route except one is not distinguished from a file the scope simply never looked for — routeScope (source, routes, truncatedTo, discardedExplicitRoutes) remains the only record of what was NOT measured.",
+    "The CLI refusal of an empty --routes is proven only at the library boundary (resolveCensusRoutes returns discardedExplicitRoutes, which is the exact condition src/cli-assets-qa.ts:80 branches on). No fixture spawns the assets:qa process itself — no smoke suite in this repo does — so the exit code 1 is asserted by reading, not by execution."
+  ],
+  "followUps": [
+    "Apply the two barrel changeRequests, then switch the direct imports in src/cli-assets-qa.ts and scripts/smoke-assets.ts / scripts/smoke-production.ts back to the barrels.",
+    "Teach src/release/collect.ts to read report/residual-source-assets.json (it already reads report/network-qa.json at line 161) so the release evidence and the operator requirement list carry per-file, per-route residual attribution instead of a bare count.",
+    "Run a real assets:qa on the linear.app pilot with the new default (its template run is data/linear.app/recon-templates/2026-08-25T21-53-26-980Z) into a NEW materialization run, then close the technical-debt entry for the route-scope defect with that artifact as evidence.",
+    "Consider extending the census beyond site-map routes (e.g. sampled family members) once the wall-clock cost of the 20-route default is measured on a real run.",
+    "If a consumer ever needs to join the assets-layer and production-QA per-file views by host, add one shared normalizer rather than changing either field in place — src/production/qa.ts's host keys are load-bearing for the external-requests-only-known-residual policy check."
+  ],
+  "corrections": [
+    {
+      "finding": "MINOR (independent verifier, post-PASS): an explicit --routes value that parses to ZERO routes was silently ignored — src/assets/residual-report.ts:96-109 guarded the explicit branch with `if (explicit.length > 0)` and fell through to the site-map branch, so `pnpm assets:qa … --routes \" , \"` measured 20 routes while the artifact recorded source=\"template-site-map\" with no trace of the discarded override.",
+      "fix": "BOTH halves of the option, because they answer different callers. (1) resolveCensusRoutes now records the raw discarded value on the scope as `discardedExplicitRoutes` and appends `(--routes \"…\" declared no route and was DISCARDED)` to routeScope.note on every fallback branch (site-map, empty-site-map, unreadable-site-map) — a programmatic caller that keeps running still gets honest provenance in the artifact. (2) src/cli-assets-qa.ts:80-87 REFUSES the run: it prints `--routes declared no route: \" , \" — pass routes as \"/,/pricing\", or omit --routes to use <siteMapFile>` and exits 1, before the template app is started.",
+      "whyRejectInTheCli": "That is the CLI's existing idiom for bad operator input, and the two neighbouring cases are literally adjacent: `--max-routes` non-positive (src/cli-assets-qa.ts:67-71) and a missing --content-run slot-values.json (lines 60-64) both print one `[assets:qa] …` line and set exitCode 1 rather than substituting a default. An operator who typed --routes wants THOSE routes; measuring 20 different ones and telling them afterwards is the wrong trade at a CLI. The library keeps the softer behaviour because resolveCensusRoutes is a pure resolver with a `note`/provenance contract and must stay total — it has no exit code to spend.",
+      "evidence": [
+        "src/assets/residual-report.ts:99-122 — discardedExplicitRoutes computed once, discardedSuffix appended to each fallback note",
+        "src/assets/residual-report.ts:139,150,164 — the field carried on all three fallback returns; the honoured-override return sets it null (line 113)",
+        "src/assets/types.ts:441-447 — CensusRouteScopeSchema.discardedExplicitRoutes: z.string().nullable().default(null) (defaulted, so any scope record written before this correction still parses)",
+        "src/cli-assets-qa.ts:77-87 — the refusal, with the comment naming --max-routes as the idiom it follows",
+        "scripts/smoke-assets.ts:1080-1108 — 3 new checks: the discarded value is recorded and the note says DISCARDED while the site map supplies the routes; an honoured or absent --routes leaves the field null; the discarded override survives into the unreadable-site-map root fallback"
+      ]
+    },
+    {
+      "finding": "NOTE (same verifier): counts.invisibleAtRootOnly was defined as \"no hit on '/'\" WITHOUT requiring that '/' had actually been measured, so a census scoped away from the root (e.g. --routes /pricing) labelled every residual file root-invisible.",
+      "fix": "FIXED — cheap and unambiguous. src/assets/residual-report.ts:305-309 now returns null when networkReport.independent contains no '/' row: with no root measurement, \"no hit on /\" is unobserved, not observed-absent. ResidualAssetReportSchema.counts.invisibleAtRootOnly is now z.number().nullable() (src/assets/types.ts:513-518) and the CLI prints `\"/\" not measured, so invisible to a \"/\"-only census` instead of a number (src/cli-assets-qa.ts:176-182). No residual-source-assets.json exists anywhere on disk yet (`find data docs -name residual-source-assets.json` → empty), so nothing stored had to be re-read under the widened type.",
+      "evidence": [
+        "src/assets/residual-report.ts:305-309",
+        "src/assets/types.ts:513-518",
+        "scripts/smoke-assets.ts:1321-1350 — 2 new checks: a /deep-only census over the SAME fixture measurement reports invisibleAtRootOnly null with routesMeasured 1 and residualFiles 3, and that report still round-trips through the schema. The original 2-route assertion (invisibleAtRootOnly === 2, line 1303) is unchanged and still passes."
+      ]
+    },
+    {
+      "finding": "NOTE (same verifier): the two per-file views disagree on what `host` means — the assets-layer report stores URL.hostname, the production-QA view stores URL.host (host:port).",
+      "fix": "DOCUMENTED, NOT UNIFIED. Each side is internally consistent with the list it is compared against, and changing either would move a comparison rather than a label: src/production/qa.ts keys externalHosts / externalRequestsByHost with URL.host and checks them against manifest.knownResidualSourceHosts (qa.ts:297-312, 495-499), while the assets report's byHost tally must line up with the inventory's own host records, which are hostnames (src/cli-assets-qa.ts:91-97 builds sourceHosts from inventory hosts + `new URL(s.url).hostname`). Both fields now carry a doc comment stating which they are and that they diverge only for an origin that carries an explicit port — i.e. a loopback fixture, never a real CDN host.",
+      "evidence": [
+        "src/assets/types.ts:462-463 — ResidualAssetFileSchema.host documented as the port-less hostname",
+        "src/production/qa.ts:164-175 — ResidualRequestFile.host documented as host-including-port, with the reason and the cross-reference"
+      ]
+    }
+  ]
+}

@@ -29,6 +29,7 @@ interface ParsedArgs {
   reconstructionManifestFile?: string;
   siteSpecFile?: string;
   slotOverridesFile?: string;
+  routePolicyFile?: string;
   outputDir?: string;
 }
 
@@ -53,6 +54,12 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
       i = next;
     } else if (arg.startsWith("--slot-overrides=")) {
       args.slotOverridesFile = arg.slice("--slot-overrides=".length);
+    } else if (arg === "--route-policy") {
+      const [value, next] = take(i, arg);
+      args.routePolicyFile = value;
+      i = next;
+    } else if (arg.startsWith("--route-policy=")) {
+      args.routePolicyFile = arg.slice("--route-policy=".length);
     } else if (arg === "--output" || arg === "--out") {
       const [value, next] = take(i, arg);
       args.outputDir = value;
@@ -76,6 +83,9 @@ function printUsage(): void {
   );
   console.log("  --site-spec <file>       the SiteSpec the reconstruction was generated from (required)");
   console.log("  --slot-overrides <file>  manual override file (exclude/merge/rename/role/scope/…)");
+  console.log("  --route-policy <file>    route scope policy — which routes get a slot surface");
+  console.log("                           (core-reconstruct / collection-index /");
+  console.log("                           collection-representative / structure-only / exclude)");
   console.log("  --output <dir>           write the template here instead of");
   console.log("                           data/<host>/recon-templates/<run-id>/");
   console.log("");
@@ -106,12 +116,16 @@ async function main(): Promise<void> {
   if (args.slotOverridesFile) {
     console.log(`[recon-template] slot overrides ${args.slotOverridesFile}`);
   }
+  if (args.routePolicyFile) {
+    console.log(`[recon-template] route policy ${args.routePolicyFile}`);
+  }
 
   const runId = newTemplateRunId();
   const compiled = await compileReconTemplate({
     reconstructionManifestFile: args.reconstructionManifestFile,
     siteSpecFile: args.siteSpecFile,
     slotOverridesFile: args.slotOverridesFile,
+    routePolicyFile: args.routePolicyFile,
     runId,
     outputDir: args.outputDir,
   });
@@ -133,6 +147,19 @@ async function main(): Promise<void> {
   console.log(`  cross-surface slots        ${summary.crossSurfaceSlots}`);
   console.log(`  excluded candidates        ${manifest.counts.excludedCandidates}`);
   console.log(`  overrides applied          ${manifest.counts.overridesApplied}`);
+  const routePolicy = manifest.routePolicy;
+  if (routePolicy) {
+    console.log(
+      `  route policy               ${routePolicy.applied ? (routePolicy.policyFile ?? "applied") : "none (all core-reconstruct)"}`,
+    );
+    console.log(
+      `    slotized routes / pages  ${routePolicy.slotizedRoutes}/${manifest.counts.routes} · ${routePolicy.slotizedPages}/${manifest.counts.pages}`,
+    );
+    for (const entry of routePolicy.scopeCounts) {
+      console.log(`    ${entry.scope.padEnd(25)}${entry.routes}`);
+    }
+  }
+  console.log(`  collections detected       ${manifest.counts.collections ?? 0}`);
   console.log("  role breakdown");
   printCounts(summary.roleBreakdown);
   console.log("  exclusion evidence");

@@ -1,0 +1,61 @@
+{
+  "schema": "task27-start-v1",
+  "task": "TASK 27 — OVERNIGHT AUTHORING FOUNDATION & TEMPLATE FACTORY V2",
+  "programStartTime": "2026-08-26T23:55:31+09:00",
+  "baselineSha": "d33abb3",
+  "baselineShaFull": "d33abb311d65eae2f8cb1a070d8099fbd09d1b50",
+  "baselineShaVerified": true,
+  "baselineShaCheck": "git rev-parse --short HEAD === d33abb3 (PASS, program permitted to continue)",
+  "workingTree": {
+    "branch": "main",
+    "trackedModified": 0,
+    "trackedDeleted": 0,
+    "untrackedPaths": 31,
+    "untrackedDetail": "docs/result/handoffs/26B-verification-screens/ and 26C-verification-screens/* — 93 evidence PNGs plus segs/ from Task 26; zero tracked-file modifications at program start",
+    "cleanForImplementation": true
+  },
+  "auditInputs": [
+    "docs/result/pre-overnight-architecture-audit-2026-08-26.md",
+    "docs/result/handoffs/pre-overnight-audit.json"
+  ],
+  "auditVerdict": "READY WITH ARCHITECTURE CHANGES",
+  "auditStopConditions": {
+    "A_siteInstanceDuplicatesExistingModel": "TRIGGERED — resolved by EXTENDING release-project (no parallel SiteInstance)",
+    "B_regionIdentityUnstable": "NOT_TRIGGERED",
+    "C_visualEditorNeedsRendererRewrite": "NOT_TRIGGERED",
+    "D_contentV2RequiresDestroyingArchitecture": "NOT_TRIGGERED",
+    "E_checkpointImpossible": "NOT_TRIGGERED",
+    "F_widespreadOwnershipConflict": "NOT_TRIGGERED_AS_PLANNED"
+  },
+  "gitPolicy": {
+    "operationsPermitted": 0,
+    "note": "d33abb3 already pushed by the user. Task 27 performs ZERO git operations; the working tree is intentionally left uncommitted for user review.",
+    "auditWave0GitCheckpointItem": "SUPERSEDED by prompt section 5 — the user already pushed the checkpoint"
+  },
+  "wave0": {
+    "gitCheckpoint": "SUPERSEDED (already pushed by user as d33abb3)",
+    "baselineRemeasure": "IN_PROGRESS — docs/result/handoffs/27-regression-logs/baseline/",
+    "reason": "audit measurementDefect NO-SUITE-SELF-VALIDATION: no smoke suite asserts its own check total, so per-suite counts must be measured at this exact tree before any builder starts"
+  },
+  "declaredBaselineTable": {
+    "verifier": 81, "selector": 81, "multi-observer": 62, "interaction-detector": 92,
+    "interaction-explorer": 108, "interaction-patterns": 88, "sitespec": 257,
+    "reconstruction": 217, "reconstruction-qa": 134, "e2e": 130, "recon-template": 64,
+    "content-injection": 68, "theme": 47, "seo": 79, "assets": 117, "production": 85,
+    "release": 84, "TOTAL": 1794
+  },
+  "doNotTouchAcknowledged": [
+    "docs/result/handoffs/24-aggregation-phase1.json (HIGHEST — runtime input read by src/release/debt.ts)",
+    "data/stripe.com/production-specs/2026-08-19T06-36-35-798Z (hardcoded in scripts/smoke-release.ts)",
+    "data/stripe.com/{recon-templates,content-runs,theme-runs,production-seo-plans,asset-materializations,asset-inventories}/<smoke:release lineage run ids>",
+    "all historical run dirs under data/<host>/<kind>/<run-id>/",
+    "docs/result/handoffs/*-regression-logs/",
+    "docs/result/*.md for tasks 01-26"
+  ],
+  "executionModel": {
+    "orchestrator": 1,
+    "waves": ["Wave 1 (GED-E, GED-G, PageRegion)", "Wave 2 (Template Factory V2, Release Authoring, Content V2)", "Real-Data Release Exercise", "Wave 3 (Brand Independence)", "Stretch A (Revision)", "Stretch B (Registry)", "Final Regression", "Final Independent Audit"],
+    "agentIsolation": "fresh isolated subagents; handoff via source code, generated artifacts and compact JSON — never conversation transcripts",
+    "verificationRule": "every major builder is followed by a fresh independent verifier; failures route to a fresh correction agent, not back to the original builder"
+  }
+}
