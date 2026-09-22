@@ -1,0 +1,101 @@
+package cd048406311f22b6… (interior-01-1.5.2-d87807590d64) · 156 files · 7390478 B
+mode: LIVE — read-only against https://interior-demo.boostweb.co.kr
+
+[live mode] BASE=https://interior-demo.boostweb.co.kr — read-only, no publish, no wrangler dev started
+  skip site:publish uploads + verifies every file, seals, then writes routing pointer
+       (live mode performs no writes)
+  skip republish of the same package → immutable skip, pointer unchanged
+       (live mode performs no writes)
+  skip _not-found.html (never addressable by URL) is stored byte-identical in R2
+       (live mode touches no store)
+
+[live mode] read-only against https://interior-demo.boostweb.co.kr — wrangler dev not started
+
+HTTP
+  FAIL every addressable package file: 200, stored content-type + cache-control, ETag, nosniff, bytes identical to the package
+       mismatches: ["/3d-portfolio 200 text/html; charset=utf-8 public, max-age=0, must-revalidate 20317B","/about 200 text/html; charset=utf-8 public, max-age=0, must-revalidate 27740B","/contact 200 text/html; charset=utf-8 public, max-age=0, must-revalidate 24259B","/ 200 text/html; charset=utf-8 public, max-age=0, must-revalidate 57793B","/portfolio 200 text/html; charset=utf-8 public, max-age=0, must-revalidate 44639B","/portfolio/buk-32py-kitchen-bathroom-renewal 200 text/html; charset=utf-8 public, max-age=0, must-revalidate 38712B","/portfolio/dalseo-24py-white-natural-newlywed-home 200 text/html; charset=utf-8 public, max-age=0, must-revalidate 35964B","/portfolio/dong-29py-bright-natural-remodeling 200 text/html; charset=utf-8 public, max-age=0, must-revalidate 34766B","/portfolio/gyeongsan-34py-entrance-living-remodeling 200 text/html; charset=utf-8 public, max-age=0, must-revalidate 35868B","/portfolio/jung-19py-compact-white-minimal-remodeling 200 text/html; charset=utf-8 public, max-age=0, must-revalidate 34826B","/portfolio/suseong-42py-family-storage-remodeling 200 text/html; charset=utf-8 public, max-age=0, must-revalidate 38026B","/portfolio/suseong-51py-new-apartment-home-styling 200 text/html; charset=utf-8 public, max-age=0, must-revalidate 34739B","/portfolio/suseong-white-34py-apartment-remodeling 200 text/html; charset=utf-8 public, max-age=0, must-revalidate 53108B"] ≠ []
+  ok   unknown path / .html spelled out / trailing slash → 404 with the package's 404.html bytes
+  FAIL HEAD → 200 + Content-Length, no body; conditional GET with ETag → 304; POST/PUT/DELETE → 405 Allow: GET, HEAD
+       HEAD /: [200,null,0] ≠ [200,"57793",0]
+  skip unknown Host → plain 404 (no fallback)
+       (needs a custom Host header — not meaningful against a real deployed host)
+  skip 127.0.0.1 (loopback) has no routing pointer → 404
+       (needs the loopback IP — not meaningful against a real deployed host)
+  ok   traversal / encoded separators → 400 (or 404, never leaking a non-site file)
+  ok   RSC names: literal "$" and "%24" spelling serve the same object
+
+SEO (HTTP, no browser)
+  ok   /: served head facts equal the package's (title, description, canonical, ld+json); exactly one <title>, a meta description
+  ok   /portfolio: served head facts equal the package's (title, description, canonical, ld+json); exactly one <title>, a meta description
+  ok   /portfolio/buk-32py-kitchen-bathroom-renewal: served head facts equal the package's (title, description, canonical, ld+json); exactly one <title>, a meta description
+  ok   /about: served head facts equal the package's (title, description, canonical, ld+json); exactly one <title>, a meta description
+  ok   canonical coverage of the package is exactly the known state for interior-01 1.5.2: pages without a canonical = [] (KNOWN TEMPLATE GAP, not a delivery defect)
+  ok   /robots.txt: 200, package content-type, contains a Sitemap: line
+  ok   /sitemap.xml: 200, package content-type, every <loc> path answers 200 through the Worker
+  ok   live mode: every canonical URL and every sitemap <loc> share BASE's origin
+
+browser (Playwright, chromium)
+  FAIL 390px /: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (46 requests, 15 images)
+       390 /: [200,[],[],["https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"],0,[]] ≠ [200,[],[],[],0,[]]
+  FAIL 390px /portfolio: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (41 requests, 10 images)
+       390 /portfolio: [200,[],[],["https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"],0,[]] ≠ [200,[],[],[],0,[]]
+  FAIL 390px /portfolio/buk-32py-kitchen-bathroom-renewal: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (30 requests, 13 images)
+       390 /portfolio/buk-32py-kitchen-bathroom-renewal: [200,[],[],["https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"],0,[]] ≠ [200,[],[],[],0,[]]
+  FAIL 390px /3d-portfolio: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (26 requests, 1 images)
+       390 /3d-portfolio: [200,[],[],["https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"],0,[]] ≠ [200,[],[],[],0,[]]
+  FAIL 390px /about: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (23 requests, 2 images)
+       390 /about: [200,[],[],["https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"],0,[]] ≠ [200,[],[],[],0,[]]
+  FAIL 390px /contact: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (17 requests, 1 images)
+       390 /contact: [200,[],[],["https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"],0,[]] ≠ [200,[],[],[],0,[]]
+  FAIL 390px /no-such-page: 404, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (21 requests, 1 images)
+       390 /no-such-page: [404,[],[],["https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"],0,[]] ≠ [404,[],[],[],0,[]]
+  FAIL 1440px /: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (57 requests, 15 images)
+       1440 /: [200,[],[],["https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"],0,[]] ≠ [200,[],[],[],0,[]]
+  FAIL 1440px /portfolio: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (55 requests, 10 images)
+       1440 /portfolio: [200,[],[],["https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"],0,[]] ≠ [200,[],[],[],0,[]]
+  FAIL 1440px /portfolio/buk-32py-kitchen-bathroom-renewal: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (38 requests, 13 images)
+       1440 /portfolio/buk-32py-kitchen-bathroom-renewal: [200,[],[],["https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"],0,[]] ≠ [200,[],[],[],0,[]]
+  FAIL 1440px /3d-portfolio: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (33 requests, 1 images)
+       1440 /3d-portfolio: [200,[],[],["https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"],0,[]] ≠ [200,[],[],[],0,[]]
+  FAIL 1440px /about: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (33 requests, 2 images)
+       1440 /about: [200,[],[],["https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"],0,[]] ≠ [200,[],[],[],0,[]]
+  FAIL 1440px /contact: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (33 requests, 1 images)
+       1440 /contact: [200,[],[],["https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"],0,[]] ≠ [200,[],[],[],0,[]]
+  FAIL 1440px /no-such-page: 404, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (33 requests, 1 images)
+       1440 /no-such-page: [404,[],[],["https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"],0,[]] ≠ [404,[],[],[],0,[]]
+  ok   client-cancelled requests (8 distinct URLs, Next link prefetches) are all same-origin URLs the runtime serves 200
+  ok   client-side navigation / → /portfolio → detail → /about → back: no document reload, RSC .txt fetches all 200, each page <title> applied
+
+interaction smokes
+  ok   A 390px: hamburger opens the dialog; Esc closes it and returns focus to the menu button; reopening and clicking the portfolio link navigates to /portfolio and closes it (0 console errors, 0 responses ≥ 400)
+  ok   B 1440px: header nav links navigate client-side to /portfolio, /3d-portfolio, /about, /contact (one document load, no console errors, 0 responses ≥ 400)
+  ok   C 390px: gallery photo viewer opens with a loaded same-origin image (200), next changes the counter, Escape closes it (0 console errors, 0 responses ≥ 400)
+  ok   C 1440px: gallery photo viewer opens with a loaded same-origin image (200), next changes the counter, Escape closes it (0 console errors, 0 responses ≥ 400)
+  ok   D 1440px: contact form — short message hands off a mailto: link with no success claim and no network request; a too-long message hands off nothing and shows the copy fallback (0 console errors)
+  ok   D 390px: contact form — short message hands off a mailto: link with no success claim and no network request; a too-long message hands off nothing and shows the copy fallback (0 console errors)
+
+JS disabled (javaScriptEnabled: false)
+  ok   F JS disabled /: 200, <h1> with text, body text > 200 chars, header nav present, a visible loaded <img>
+  ok   F JS disabled /portfolio: 200, <h1> with text, body text > 200 chars, header nav present
+  ok   F JS disabled /portfolio/buk-32py-kitchen-bathroom-renewal: 200, <h1> with text, body text > 200 chars, header nav present, a visible loaded <img>
+  ok   F JS disabled /about: 200, <h1> with text, body text > 200 chars, header nav present
+  ok   F JS disabled /contact: 200, <h1> with text, body text > 200 chars, header nav present
+  ok   published package directory under data/site-builds is byte-identical before/after
+
+25 passed, 16 failed, 5 skipped   (→ docs/result/static-deployment-foundation/proof/live-e2e.json)
+  FAILED: every addressable package file: 200, stored content-type + cache-control, ETag, nosniff, bytes identical to the package
+  FAILED: HEAD → 200 + Content-Length, no body; conditional GET with ETag → 304; POST/PUT/DELETE → 405 Allow: GET, HEAD
+  FAILED: 390px /: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (46 requests, 15 images)
+  FAILED: 390px /portfolio: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (41 requests, 10 images)
+  FAILED: 390px /portfolio/buk-32py-kitchen-bathroom-renewal: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (30 requests, 13 images)
+  FAILED: 390px /3d-portfolio: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (26 requests, 1 images)
+  FAILED: 390px /about: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (23 requests, 2 images)
+  FAILED: 390px /contact: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (17 requests, 1 images)
+  FAILED: 390px /no-such-page: 404, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (21 requests, 1 images)
+  FAILED: 1440px /: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (57 requests, 15 images)
+  FAILED: 1440px /portfolio: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (55 requests, 10 images)
+  FAILED: 1440px /portfolio/buk-32py-kitchen-bathroom-renewal: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (38 requests, 13 images)
+  FAILED: 1440px /3d-portfolio: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (33 requests, 1 images)
+  FAILED: 1440px /about: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (33 requests, 2 images)
+  FAILED: 1440px /contact: 200, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (33 requests, 1 images)
+  FAILED: 1440px /no-such-page: 404, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (33 requests, 1 images)

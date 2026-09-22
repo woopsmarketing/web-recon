@@ -1,0 +1,132 @@
+{
+  "capturedBy": "Cloudflare API GET (wrangler OAuth token, not printed)",
+  "before": {
+    "capturedAt": "2026-09-22T06:28Z",
+    "routes": [
+      {
+        "id": "f1cdedb181bb41fa8f03cb65be05dc6b",
+        "pattern": "*.boostweb.co.kr/*",
+        "script": "site-factory-next"
+      },
+      {
+        "id": "ffda4b9f635f4ca485a3243b5f51f7c4",
+        "pattern": "*/*",
+        "script": "site-factory-next"
+      },
+      {
+        "id": "072da4d0d1ed467880c99f6722b62235",
+        "pattern": "boostweb.co.kr/*",
+        "script": "boostweb"
+      }
+    ],
+    "scripts": [
+      {
+        "id": "boostweb",
+        "modified_on": "2026-09-14T04:06:18.828337Z"
+      },
+      {
+        "id": "site-factory-next",
+        "modified_on": "2026-08-28T15:11:05.253337Z"
+      }
+    ],
+    "customDomains": {
+      "count": 145,
+      "boostweb_zone": [
+        [
+          "boostweb.co.kr",
+          "boostweb"
+        ]
+      ],
+      "interior_demo": []
+    }
+  },
+  "afterRoute": {
+    "capturedAt": "2026-09-22T06:34Z",
+    "routes": [
+      {
+        "id": "f1cdedb181bb41fa8f03cb65be05dc6b",
+        "pattern": "*.boostweb.co.kr/*",
+        "script": "site-factory-next"
+      },
+      {
+        "id": "ffda4b9f635f4ca485a3243b5f51f7c4",
+        "pattern": "*/*",
+        "script": "site-factory-next"
+      },
+      {
+        "id": "072da4d0d1ed467880c99f6722b62235",
+        "pattern": "boostweb.co.kr/*",
+        "script": "boostweb"
+      },
+      {
+        "id": "79fc41457dd9479f81c4b8b0943b2245",
+        "pattern": "interior-demo.boostweb.co.kr/*",
+        "script": "recon-runtime-pilot"
+      }
+    ]
+  },
+  "final": {
+    "routes": [
+      {
+        "id": "f1cdedb181bb41fa8f03cb65be05dc6b",
+        "pattern": "*.boostweb.co.kr/*",
+        "script": "site-factory-next"
+      },
+      {
+        "id": "ffda4b9f635f4ca485a3243b5f51f7c4",
+        "pattern": "*/*",
+        "script": "site-factory-next"
+      },
+      {
+        "id": "072da4d0d1ed467880c99f6722b62235",
+        "pattern": "boostweb.co.kr/*",
+        "script": "boostweb"
+      },
+      {
+        "id": "79fc41457dd9479f81c4b8b0943b2245",
+        "pattern": "interior-demo.boostweb.co.kr/*",
+        "script": "recon-runtime-pilot"
+      }
+    ],
+    "scripts": [
+      {
+        "id": "boostweb",
+        "modified_on": "2026-09-14T04:06:18.828337Z"
+      },
+      {
+        "id": "recon-runtime-pilot",
+        "modified_on": "2026-09-22T06:33:48.343271Z"
+      },
+      {
+        "id": "site-factory-next",
+        "modified_on": "2026-08-28T15:11:05.253337Z"
+      }
+    ],
+    "customDomains": {
+      "count": 145,
+      "boostweb_zone": [
+        [
+          "boostweb.co.kr",
+          "boostweb"
+        ]
+      ],
+      "interior_demo": []
+    }
+  },
+  "diff": {
+    "unchanged": [
+      "*.boostweb.co.kr/*",
+      "*/*",
+      "boostweb.co.kr/*"
+    ],
+    "modified": [],
+    "deleted": [],
+    "added": [
+      {
+        "id": "79fc41457dd9479f81c4b8b0943b2245",
+        "pattern": "interior-demo.boostweb.co.kr/*",
+        "script": "recon-runtime-pilot"
+      }
+    ]
+  }
+}

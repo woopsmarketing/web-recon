@@ -22,7 +22,7 @@ consolidated           = 2026-09-22
 
 - `pnpm` 을 직접 돌리지 말고 `./node_modules/.bin/{tsc,tsx,wrangler}` 를 부른다 (`node_modules` 가 복사본이다).
 - crawl / fal 기능에는 `.env` 가 필요하다. 이 폴더에는 없다: `cp ../web-recon/.env .`
-- 아직 commit / push / 배포된 것은 없다.
+- 2026-09-22 에 live pilot 이 배포되었다: `https://interior-demo.boostweb.co.kr` → Worker `recon-runtime-pilot`, R2 `boost-sites-artifacts`, zone route `interior-demo.boostweb.co.kr/*`. 이 리소스는 이미 있으므로 다시 만들지 않는다. 근거: [`docs/result/cloudflare-live-pilot/00-summary.md`](docs/result/cloudflare-live-pilot/00-summary.md)
 - Claude 프로젝트 메모리(과거 Task 기록, 함정 목록)는 `/Users/woops/projects/web-recon` 경로에 묶여 있다. 이 폴더에서 직접 연 세션에는 자동으로 실리지 않는다: `~/.claude/projects/-Users-woops-projects-web-recon/memory/MEMORY.md`
 - raw crawl, `data/.registry`, `data/page-state-evidence`, `tmp/aco` 는 다른 폴더에만 있다. crawl / observer 를 돌릴 때는 그쪽 데이터가 필요하다.
 

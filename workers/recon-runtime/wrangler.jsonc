@@ -3,8 +3,8 @@
 //
 // Default (no --env): NO routes, NO custom domains, workers.dev and preview URLs OFF, so
 // `wrangler deploy` of this config alone would expose nothing. A hostname is attached only by
-// the explicit `pilot` environment below, whose route is left commented out until the live
-// deploy plan (docs/result/static-deployment-foundation/07-live-deploy-plan.md) is executed.
+// the explicit `pilot` environment below, whose single exact route went live on 2026-09-22
+// (docs/result/cloudflare-live-pilot/; plan: docs/result/static-deployment-foundation/07-live-deploy-plan.md).
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "recon-runtime",
@@ -38,6 +38,11 @@
       //     run first. Use an exact route instead — the most specific pattern wins — and create a
       //     proxied DNS record for the hostname by hand:
       // ,"routes": [ { "pattern": "<pilot-hostname>/*", "zone_name": "<zone>" } ]
+      //
+      // LIVE since 2026-09-22 (docs/result/cloudflare-live-pilot/): form (b). boostweb.co.kr carries
+      // "*.boostweb.co.kr/*" and "*/*" → site-factory-next; this exact route wins over both. No DNS
+      // record was created: the zone's existing proxied wildcard "*.boostweb.co.kr" AAAA 100:: covers it.
+      ,"routes": [ { "pattern": "interior-demo.boostweb.co.kr/*", "zone_name": "boostweb.co.kr" } ]
     }
   }
 }
