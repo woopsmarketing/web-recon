@@ -40,7 +40,10 @@ for (let i = 0; i < argv.length; i++) {
 const root = process.cwd();
 const outDir = path.resolve(outDirArg ?? "docs/result/recon-template-platform-ia-final/screens");
 const NEG_SITE = "fixture-empty";
-const EMAIL = "hello@boost-interior-demo.example";
+// the business address is Site Data (1.5.2 moved the demo's to the real outreach address)
+const EMAIL: string = JSON.parse(await readFile(path.join(root, "data/sites", SITE, "content/business.json"), "utf8")).data.contact.email;
+// …and so is the status copy (contact.page afterSubmit slot; the Template substitutes {email})
+const AFTER: string = JSON.parse(await readFile(path.join(root, "data/sites", SITE, "slots.json"), "utf8")).values["contact.page"].afterSubmit.replaceAll("{email}", EMAIL);
 const NAV = [
   { key: "portfolio", href: "/portfolio", label: "포트폴리오" },
   { key: "portfolio3d", href: "/3d-portfolio", label: "3D 포트폴리오" },
@@ -514,7 +517,7 @@ for (const width of [390, 1440]) {
   const status = (await page.textContent("[data-inquiry-status]")) ?? "";
   check(
     `${width}: status after the hand-off says nothing was sent yet and names the address — no success claim`,
-    status === `메일 앱에서 내용을 확인한 뒤 보내 주세요. 아직 전송된 것은 아닙니다. 메일 앱이 열리지 않으면 ${EMAIL}로 보내 주세요.` && !/접수되었|접수 완료|전송되었|전송 완료|완료되었/.test(status) && (await page.getAttribute("[data-inquiry-status]", "role")) === "status",
+    status === AFTER && status.includes(EMAIL) && !/접수되었|접수 완료|전송되었|전송 완료|완료되었/.test(status) && (await page.getAttribute("[data-inquiry-status]", "role")) === "status",
     status,
   );
   check(`${width}: no network request on submit, no console error`, problems.requests.length === requestsBefore && problems.console.length === 0, { requests: problems.requests.slice(requestsBefore), console: problems.console });

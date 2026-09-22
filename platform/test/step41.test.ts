@@ -38,6 +38,7 @@ import { canonical141 } from "./canonical-141";
 import { canonical142 } from "./canonical-142";
 import { canonical150Main, canonical150Routes, canonical150Sitemap, withoutIaPages } from "./canonical-150";
 import { filterToQuery, queryToFilter } from "../../templates/interior-01/v1/lib/filterQuery";
+import { releaseFileSealed } from "./git-checkout";
 
 const repoRoot = process.cwd();
 const SITES = ["fixture-large", "fixture-small", "fixture-empty"] as const;
@@ -432,15 +433,16 @@ const block = (h: string, re: RegExp) => re.exec(h)?.[0];
 await check("release: all three sites pin + were built with the SAME release ≥ 1.2.0 (verified); Step 4 release untouched", async () => {
   const pins = await Promise.all(SITES.map(pinOf));
   assert(new Set(pins.map((p) => `${p.releaseId}|${p.releaseHash}`)).size === 1, "pins differ");
-  assert(versionAtLeast(newPin.templateVersion, "1.2.0") && template.version === newPin.templateVersion && newPin.releaseId !== STEP4_RELEASE.id, newPin.releaseId);
+  // pins are per site and may lag the working-tree Template (1.5.2 re-pinned only the demo), never lead it
+  assert(versionAtLeast(newPin.templateVersion, "1.2.0") && versionAtLeast(template.version, newPin.templateVersion) && newPin.releaseId !== STEP4_RELEASE.id, newPin.releaseId);
   for (const s of SITES) assert(cur[s]!.record.template.releaseHash === newPin.releaseHash, `${s} built with ${cur[s]!.record.template.releaseId}`);
   await verifyRelease(repoRoot, await loadRelease(repoRoot, "interior-01", newPin.releaseId));
   const old = await loadRelease(repoRoot, "interior-01", STEP4_RELEASE.id);
   assert(old.releaseHash === STEP4_RELEASE.hash, "Step 4 releaseHash changed");
   await verifyRelease(repoRoot, old);
   assert(!old.files.some((f) => /project-filter|browser\.ts|PortfolioBrowser/.test(f.path)), "Step 4 release contains Step 4.1 files");
-  const st = await stat(path.join(repoRoot, "data/template-releases/interior-01", STEP4_RELEASE.id, "files/templates/interior-01/v1/template.ts"));
-  assert((st.mode & 0o222) === 0, "old release file is writable");
+  // read-only as cut, or (a Git checkout drops the mode) tracked + identical to the commit
+  assert(await releaseFileSealed(repoRoot, `data/template-releases/interior-01/${STEP4_RELEASE.id}/files/templates/interior-01/v1/template.ts`), "old release file is writable");
 });
 await check("rollback: each site's previous package = the package of the release before the current one (≥ 1.1.0), intact", async () => {
   const { packageIntact } = await import("../build/site-build");

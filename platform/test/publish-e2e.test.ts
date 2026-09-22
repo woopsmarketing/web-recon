@@ -516,7 +516,8 @@ try {
     { key: "about", href: "/about" },
     { key: "contact", href: "/contact" },
   ];
-  const EMAIL = "hello@boost-interior-demo.example";
+  // the business address is Site Data (1.5.2 moved the demo's to the real outreach address)
+  const EMAIL: string = JSON.parse(await readFile(path.join(repoRoot, "data/sites", SITE, "content/business.json"), "utf8")).data.contact.email;
   const SUCCESS = /접수되었|접수 완료|전송되었|전송 완료|완료되었/;
   // ~ 300 Korean characters: well under the 500-character textarea cap, far over the 2,000-character mailto limit once encoded
   const LONG_KO = Array.from({ length: 12 }, (_, i) => `${i + 1}번째 요청: 거실과 주방 수납을 늘리고 싶습니다.`).join("\n");

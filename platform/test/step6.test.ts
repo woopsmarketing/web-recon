@@ -17,8 +17,9 @@
  * After a newer release is cut and the sites are re-pinned (first: 1.4.1, Pre-Demo tiny polish)
  * the point-in-time half moves with it, never looser on the immutable part: the 1.4.0 release
  * and every baseline release must STILL verify and stay byte-identical (C), while "pins 1.4.0 /
- * live source = 1.4.0 / fixtures untouched" become "all four sites pin ONE newer verified
- * release / live source = that release (no drift) / platform tree still = baseline".
+ * live source = 1.4.0 / fixtures untouched" become "the demo pins ONE newer verified release,
+ * every fixture a verified release of its own (pins are per site: since 1.5.2 the fixtures may
+ * stay on an older one) / live source = the demo's release (no drift) / platform tree still = baseline".
  *
  * Run AFTER `pnpm site:build boost-interior-demo`:
  *   tsx --tsconfig platform/tsconfig.json platform/test/step6.test.ts
@@ -36,6 +37,7 @@ import { buildSiteSnapshot, loadSiteInstance } from "../site/load";
 import { resolveEffectiveTheme } from "../theme/theme";
 import { hashJson, sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
+import { gitDirtyPaths } from "./git-checkout";
 import { isPublishSurface } from "./publish-surface";
 
 const repoRoot = process.cwd();
@@ -121,14 +123,19 @@ const slots = await readJson(path.join(demoDir, "slots.json"));
 const settings = await readJson(path.join(demoDir, "settings.json"));
 /** The demo's pin. `later` = the sites moved past the 1.4.0 proof release (see the header). */
 const PIN = (await readJson(path.join(demoDir, "site.json"))).template as { templateId: string; templateVersion: string; releaseId: string; releaseHash: string };
+/** The demo's public origin and business address come from its Site Data (1.5.2 moved both to the real outreach values). */
+const ORIGIN = (await readJson(path.join(demoDir, "site.json"))).identity.publicOrigin as string;
+const EMAIL = (await readJson(path.join(demoDir, "content/business.json"))).data.contact.email as string;
 const later = versionAtLeast(PIN.templateVersion, "1.4.1");
+/** Every site's OWN pin: each Site Instance pins an exact release of its own (1.5.2 re-pinned only the demo). */
+const pinOf = async (s: string) => (await readJson(path.join(repoRoot, "data/sites", s, "site.json"))).template as typeof PIN;
 /**
  * `ia` = pinned ≥ 1.5.0 (information architecture): three more pages (/3d-portfolio, /about,
  * /contact) and every contact CTA → /contact (the page writes to the business mailto). Asserted
  * here as the new expectation, and in full by ia150.test.ts.
  */
 const ia = versionAtLeast(PIN.templateVersion, "1.5.0");
-const CONTACT_HREF = ia ? "/contact" : "mailto:hello@boost-interior-demo.example";
+const CONTACT_HREF = ia ? "/contact" : `mailto:${EMAIL}`;
 const htmlFiles = (await walkFiles(demo.site)).filter((f) => f.endsWith(".html"));
 const html = Object.fromEntries(await Promise.all(htmlFiles.map(async (f) => [f, await readFile(path.join(demo.site, f), "utf8")] as const)));
 
@@ -137,19 +144,24 @@ console.log("\n[site] a NEW site instance, pinned to the existing immutable rele
 await check("A boost-interior-demo exists as its own Site Instance (siteId, Korean identity, own origin); fixtures are separate directories", async () => {
   const site = await loadSiteInstance(repoRoot, DEMO);
   eq([site.siteId, site.identity.brandName, site.identity.locale], [DEMO, "부스트 인테리어", "ko-KR"], "identity");
-  assert(site.identity.publicOrigin === "https://boost-interior-demo.example", String(site.identity.publicOrigin));
+  // its own https origin, shared with no fixture (the value itself is Site Data; the package checks G / X hold the output to it)
+  assert(site.identity.publicOrigin === ORIGIN && new URL(ORIGIN).protocol === "https:", String(site.identity.publicOrigin));
+  for (const f of FIXTURES) assert((await loadSiteInstance(repoRoot, f)).identity.publicOrigin !== ORIGIN, `${f} shares the demo origin`);
   eq((await readdir(path.join(repoRoot, "data/sites"))).filter((d) => !d.startsWith(".")).sort(), [DEMO, ...FIXTURES].sort(), "data/sites");
 });
-await check(`B pins EXACTLY ${later ? "ONE newer verified release (the same one every fixture pins)" : RELEASE.id} (id + full hash), and the current package was built with it`, async () => {
+await check(`B pins EXACTLY ${later ? "ONE newer verified release (each fixture pins its own verified release)" : RELEASE.id} (id + full hash), and the current package was built with it`, async () => {
   const site = await loadSiteInstance(repoRoot, DEMO);
   if (!later) eq(site.template, { templateId: "interior-01", templateVersion: "1.4.0", releaseId: RELEASE.id, releaseHash: RELEASE.hash }, "pin");
   else {
-    // re-pinned: exactly ONE newer verified release, the same one every fixture pins
-    const rel = await loadRelease(repoRoot, "interior-01", PIN.releaseId);
-    await verifyRelease(repoRoot, rel);
-    eq(site.template, { templateId: "interior-01", templateVersion: rel.templateVersion, releaseId: rel.releaseId, releaseHash: rel.releaseHash }, "pin = a verified release");
-    assert(PIN.releaseId === `interior-01-${PIN.templateVersion}-${PIN.releaseHash.slice(0, 12)}`, `pin id/hash: ${PIN.releaseId}`);
-    for (const s of FIXTURES) eq((await readJson(path.join(repoRoot, "data/sites", s, "site.json"))).template, site.template, `${s} pin`);
+    // re-pinned: exactly ONE newer verified release. Pins are per site — a fixture may stay on an
+    // older release (1.5.2 moved only the demo) — so each fixture is held to a verified release of its own.
+    for (const [s, p] of [[DEMO, site.template], ...(await Promise.all(FIXTURES.map(async (f) => [f, await pinOf(f)] as const)))] as const) {
+      const rel = await loadRelease(repoRoot, "interior-01", p.releaseId);
+      await verifyRelease(repoRoot, rel);
+      eq(p, { templateId: "interior-01", templateVersion: rel.templateVersion, releaseId: rel.releaseId, releaseHash: rel.releaseHash }, `${s} pin = a verified release`);
+      assert(p.releaseId === `interior-01-${p.templateVersion}-${p.releaseHash.slice(0, 12)}`, `${s} pin id/hash: ${p.releaseId}`);
+      assert(versionAtLeast(p.templateVersion, "1.4.1"), `${s} pin ${p.templateVersion}: older than the first re-pin`);
+    }
   }
   eq([demo.record.template.releaseId, demo.record.template.releaseHash, demo.record.status, demo.record.qa.pass], [PIN.releaseId, PIN.releaseHash, "success", true], "build record");
 });
@@ -203,11 +215,16 @@ await check("D2 independent of the baseline: no Template / Platform implementati
   // re-pinned: the clock moves to the pinned release's cut (nothing may change after THAT either)
   const cut = Date.parse((await loadRelease(repoRoot, "interior-01", PIN.releaseId)).createdAt);
   assert(Number.isFinite(cut) && cut >= cut140, "pinned release cut");
+  // A Git checkout stamps every file it writes with the checkout time, so an mtime only means something
+  // for a file that differs from the commit (a local edit). Clean tracked files are held byte-for-byte by
+  // D (release record + baseline tree hashes); without Git, every file is judged by its mtime as before.
+  const dirty = gitDirtyPaths(repoRoot, ["templates/interior-01/v1", "platform"]);
   const late: string[] = [];
   for (const root of ["templates/interior-01/v1", "platform"]) {
     for (const f of await walkFiles(path.join(repoRoot, root))) {
       if (root === "platform" && (f.startsWith("test/") || isPublishSurface(f))) continue;
       if (/(^|\/)(node_modules|\.next|out)\//.test(f)) continue;
+      if (dirty && !dirty.has(`${root}/${f}`)) continue;
       if ((await stat(path.join(repoRoot, root, f))).mtimeMs > cut + 1000) late.push(`${root}/${f}`);
     }
   }
@@ -216,19 +233,27 @@ await check("D2 independent of the baseline: no Template / Platform implementati
 await check("E old fixture sites unchanged: data/sites/fixture-* and data/site-builds/fixture-* (pointers, history, packages) byte-identical", async () => {
   for (const s of FIXTURES) {
     if (later) {
-      // fixtures were re-pinned + rebuilt with the newer release (their byte identity was the 1.4.0-era claim)
+      // fixtures were re-pinned + rebuilt with a newer release (their byte identity was the 1.4.0-era claim);
+      // each current package is built with that fixture's OWN pin (not necessarily the demo's)
       const p = await pointer(s);
-      eq([p.record.template.releaseId, p.record.template.releaseHash, p.record.status, p.record.qa.pass], [PIN.releaseId, PIN.releaseHash, "success", true], `${s} build record`);
+      const own = await pinOf(s);
+      eq([p.record.template.releaseId, p.record.template.releaseHash, p.record.status, p.record.qa.pass], [own.releaseId, own.releaseHash, "success", true], `${s} build record`);
       continue;
     }
     eq(await treeHash(`data/sites/${s}`), baseline.trees[`data/sites/${s}`].hash, `data/sites/${s}`);
     eq(await treeHash(`data/site-builds/${s}`), baseline.trees[`data/site-builds/${s}`].hash, `data/site-builds/${s}`);
   }
 });
-await check("V same release, different site instances: 4 sites share releaseId + templateSourceHash; buildInputIds, snapshots and rendered homes all differ", async () => {
-  const all = await Promise.all([...FIXTURES, DEMO].map(async (s) => ({ s, p: await pointer(s) })));
-  const sourceHash = later ? (await loadRelease(repoRoot, "interior-01", PIN.releaseId)).templateSourceHash : baseline.liveTemplateSourceHash;
-  for (const { s, p } of all) eq([p.record.template.releaseId, p.record.template.templateSourceHash], [PIN.releaseId, sourceHash], `${s} release`);
+await check("V same release, different site instances: every site's package carries its own pin's releaseId + templateSourceHash, and ≥ 2 sites share one release; buildInputIds, snapshots and rendered homes all differ", async () => {
+  const all = await Promise.all([...FIXTURES, DEMO].map(async (s) => ({ s, p: await pointer(s), pin: later ? await pinOf(s) : PIN })));
+  for (const { s, p, pin } of all) {
+    const sourceHash = later ? (await loadRelease(repoRoot, "interior-01", pin.releaseId)).templateSourceHash : baseline.liveTemplateSourceHash;
+    eq([p.record.template.releaseId, p.record.template.templateSourceHash], [pin.releaseId, sourceHash], `${s} release`);
+  }
+  // the Step 6 question — ONE release, genuinely different sites — still needs a release shared by several sites
+  const perRelease = new Map<string, number>();
+  for (const { pin } of all) perRelease.set(pin.releaseId, (perRelease.get(pin.releaseId) ?? 0) + 1);
+  assert(Math.max(...perRelease.values()) >= 2, `no release is shared by two sites: ${JSON.stringify([...perRelease])}`);
   assert(new Set(all.map(({ p }) => p.record.buildInputId)).size === 4, "buildInputIds collide");
   assert(new Set(all.map(({ p }) => p.record.parts?.siteSnapshotHash ?? p.record.buildInputId)).size === 4, "snapshots collide");
   const homes = await Promise.all(all.map(async ({ p }) => sha256(mainOf(await readFile(path.join(p.site, "index.html"), "utf8")))));
@@ -265,7 +290,7 @@ await check("G no Apartmentary leakage: the release's frozen forbidden terms + t
   for (const t of texts) for (const term of terms) assert(!t.text.toLowerCase().includes(term), `${t.file}: "${term}"`);
   assert(demo.record.qa.pass === true && (demo.record.qa.failures ?? []).length === 0, "package QA");
   for (const [f, h] of Object.entries(html)) {
-    for (const m of h.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)) assert(m[1]!.startsWith("https://boost-interior-demo.example"), `${f}: ${m[1]}`);
+    for (const m of h.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)) assert(new URL(m[1]!).origin === ORIGIN, `${f}: ${m[1]}`);
   }
 });
 
@@ -296,7 +321,23 @@ await check("I no automatic 34 → 84: the area fact renders as authored (34평)
 });
 
 // -------------------------------------------------------------- assets --
+/**
+ * references/ (the customer's reference photos, the approved generations) stays out of Git, so K2 / K3 read
+ * its tracked record (file names + sha256, step6-references.json) — a plain checkout runs them. Where the
+ * folders exist (the authoring machine) the record must equal the disk, so it cannot go stale silently.
+ */
+type RefSet = { dir: string; files: { file: string; sha256: string }[] };
+const REFS = (await readJson(path.join(repoRoot, "platform/test/step6-references.json"))) as { referenceImages: RefSet; approvedGenerated: RefSet };
 console.log("\n[assets] registry, references, reference-image isolation");
+await check("K1b the tracked reference record equals references/ wherever that folder exists (skipped on a checkout without it)", async () => {
+  for (const [set, re] of [[REFS.referenceImages, /\.(png|jpe?g|webp)$/i], [REFS.approvedGenerated, /\.(jpg|png|webp)$/]] as const) {
+    const dir = path.join(repoRoot, set.dir);
+    const onDisk = await readdir(dir).catch((e: NodeJS.ErrnoException) => (e.code === "ENOENT" ? undefined : Promise.reject(e)));
+    if (!onDisk) continue;
+    const disk = await Promise.all(onDisk.filter((f) => re.test(f)).sort().map(async (f) => ({ file: f, sha256: sha256(await readFile(path.join(dir, f))) })));
+    eq(disk, set.files, `${set.dir} vs step6-references.json`);
+  }
+});
 const registry = AssetRegistryDocSchema.parse(await readJson(path.join(demoDir, "assets/registry.json")));
 const { snapshot } = await buildSiteSnapshot({ repoRoot, siteId: DEMO, mode: "public", at: demo.record.at });
 await check("J every referenced asset exists: registry entry + file on disk + content-addressed copy in the package", async () => {
@@ -315,10 +356,9 @@ await check("K no unreferenced public demo asset: registry = referenced set, no 
   eq((await readdir(path.join(demo.site, "assets"))).sort(), [...new Set(snapshot.assets.map((a) => path.basename(a.publicPath)))].sort(), "package assets");
 });
 await check("K2 reference images are reference-only: no site/package asset is byte-identical to a reference file, none is copied by name, and no demo asset is a PNG", async () => {
-  const refDir = path.join(repoRoot, "references/boost-interior/project-01-white-34p");
-  const refFiles = (await readdir(refDir)).filter((f) => /\.(png|jpe?g|webp)$/i.test(f));
+  const refFiles = REFS.referenceImages.files.map((f) => f.file);
   assert(refFiles.length >= 14, `reference files: ${refFiles.length}`);
-  const refHashes = new Set(await Promise.all(refFiles.map(async (f) => sha256(await readFile(path.join(refDir, f))))));
+  const refHashes = new Set(REFS.referenceImages.files.map((f) => f.sha256));
   for (const a of snapshot.assets) assert(!refHashes.has(a.sha256), `${a.id} is a copied reference image`);
   for (const i of registry.items) assert(!refFiles.includes(i.file) && i.mediaType !== "image/png", `${i.id}: ${i.file}`);
   // byte identity cannot see a raster embedded INSIDE an SVG stand-in, so forbid embedding outright
@@ -335,8 +375,7 @@ await check("K3 asset status is honest: 04-asset-status.json matches the registr
     assert(entry && (s.source === "approved-generated") === (entry.mediaType !== "image/svg+xml"), `${s.shotId}: ${s.source} vs ${entry?.mediaType}`);
   }
   eq(st.AI_PORTFOLIO_ASSETS, approved.length === st.shots ? "PASS" : approved.length === 0 ? "WAITING_FOR_GENERATION" : "PARTIAL", "verdict");
-  const onDisk = (await readdir(path.join(repoRoot, "references/boost-interior/generated-approved"))).filter((f) => /\.(jpg|png|webp)$/.test(f));
-  eq(onDisk.length, approved.length, "approved files vs ingested");
+  eq(REFS.approvedGenerated.files.length, approved.length, "approved files vs ingested");
 });
 
 // ------------------------------------------------------------- content --
@@ -455,10 +494,10 @@ await check("X <html lang=ko-KR>, brand title, Korean description, list/detail c
   assert(/<html[^>]*lang="ko-KR"/.test(home), "lang");
   assert(/<title>[^<]*부스트 인테리어[^<]*<\/title>/.test(home), "title");
   assert(/<meta name="description" content="생활에 맞춘 설계로[^"]*"/.test(home), "description");
-  // The Template emits a canonical on the pages that call pageMetadata (list + detail); the home page has
-  // none and no page has OG tags — recorded for the Pre-Demo Gate full SEO QA (06-open-items), not a Step 6 input.
-  assert(html["portfolio.html"]!.includes('<link rel="canonical" href="https://boost-interior-demo.example/portfolio"/>'), "list canonical");
-  for (const p of projects) assert(html[`portfolio/${p.slug}.html`]!.includes(`<link rel="canonical" href="https://boost-interior-demo.example/portfolio/${p.slug}"/>`), `${p.slug} canonical`);
+  // The Template emits a canonical on the pages that call pageMetadata (list + detail); before 1.5.2 the home
+  // page had none and no page had OG tags (06-open-items O4) — 1.5.2 adds both, asserted by ia152.test.ts.
+  assert(html["portfolio.html"]!.includes(`<link rel="canonical" href="${ORIGIN}/portfolio"/>`), "list canonical");
+  for (const p of projects) assert(html[`portfolio/${p.slug}.html`]!.includes(`<link rel="canonical" href="${ORIGIN}/portfolio/${p.slug}"/>`), `${p.slug} canonical`);
   assert(/<title>[^<]*수성 화이트 34평[^<]*부스트 인테리어<\/title>/.test(html[`portfolio/${projects.find((p) => p.id === FLAGSHIP)!.slug}.html`]!), "detail title");
   const sitemap = await readFile(path.join(demo.site, "sitemap.xml"), "utf8");
   eq((sitemap.match(/<loc>/g) ?? []).length, 2 + projects.length + (ia ? 3 : 0), "sitemap entries");

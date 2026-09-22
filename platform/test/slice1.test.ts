@@ -82,6 +82,17 @@ async function currentPackage(siteId: string) {
 // ------------------------------------------------------------------ units --
 console.log("\n[unit] settings");
 const pinOf = async (siteId: string) => (await readJson(path.join(repoRoot, "data/sites", siteId, "site.json"))).template;
+/**
+ * The release that describes the WORKING-TREE Template code (`template`). Pins are per site and may lag
+ * it (1.5.2 re-pinned only the demo), so unit checks that run `template` against a site snapshot give
+ * the snapshot this pin — the pairing a real build makes (it materializes the pinned release's code).
+ */
+const livePin = await (async () => {
+  const ids = (await readdir(path.join(repoRoot, "data/template-releases/interior-01"))).filter((d) => d.startsWith(`interior-01-${template.version}-`));
+  if (ids.length !== 1) throw new Error(`releases of the working-tree version ${template.version}: ${ids.join(", ")}`);
+  const r = await loadRelease(repoRoot, "interior-01", ids[0]!);
+  return { templateId: r.templateId, templateVersion: r.templateVersion, releaseId: r.releaseId, releaseHash: r.releaseHash };
+})();
 
 await check("H unknown section key → FAIL", () =>
   rejects(() => resolveEffectiveSettings(template, { schemaVersion: 1, templateId: "interior-01", overrides: { "home.faq": { title: "x" } } }), /unknown site settings key "home.faq"/),
@@ -286,6 +297,7 @@ await check("template code cannot read an undeclared slot", () =>
 console.log("\n[unit] site context / release pin");
 await check("I createSiteContext with a different release than the site pin → FAIL", async () => {
   const { snapshot } = await buildSiteSnapshot({ repoRoot, siteId: "fixture-small", mode: "public", at: "2026-09-18T00:00:00Z" });
+  snapshot.site.template = livePin;
   const pin = snapshot.site.template;
   await rejects(
     () => createSiteContext({ siteId: "fixture-small", template, mode: "public", at: "x", snapshot, templateRelease: { ...pin, releaseId: "interior-01-1.0.0-000000000000", releaseHash: "0".repeat(64) } }),
@@ -327,13 +339,15 @@ await check("I settings selecting an unknown category → FAIL (no silently empt
   const { snapshot } = await buildSiteSnapshot({ repoRoot, siteId: "fixture-small", mode: "public", at: "2026-09-18T00:00:00Z" });
   const bad = structuredClone(snapshot);
   (bad.settings.overrides["home.projects-a"] as { selection: unknown }).selection = { mode: "category", category: "residental" };
-  await rejects(() => createSiteContext({ siteId: "fixture-small", template, mode: "public", at: "x", snapshot: bad, templateRelease: snapshot.site.template }), /unknown category "residental"/);
+  bad.site.template = livePin;
+  await rejects(() => createSiteContext({ siteId: "fixture-small", template, mode: "public", at: "x", snapshot: bad, templateRelease: livePin }), /unknown category "residental"/);
 });
 await check("preview mode includes drafts + scheduled; public does not", async () => {
   const pub = await prepareSiteInput({ repoRoot, siteId: "fixture-large", mode: "public", at: "2026-09-18T00:00:00Z" });
   const pre = await prepareSiteInput({ repoRoot, siteId: "fixture-large", mode: "preview", at: "2026-09-18T00:00:00Z" });
   assert(pub.snapshot.content.projects.length === 173 && pre.snapshot.content.projects.length === 176, `${pub.snapshot.content.projects.length}/${pre.snapshot.content.projects.length}`);
-  const ctx = createSiteContext({ siteId: "fixture-large", template, mode: "preview", at: "x", snapshot: pre.snapshot, templateRelease: pre.snapshot.site.template });
+  pre.snapshot.site.template = livePin;
+  const ctx = createSiteContext({ siteId: "fixture-large", template, mode: "preview", at: "x", snapshot: pre.snapshot, templateRelease: livePin });
   const ids = ctx.content.list({ type: "projects", selection: { mode: "latest" }, limit: 3 }).items.map((p) => p.id);
   assert(ids[0] === "hp-0176", `preview latest ${ids.join()}`);
 });
@@ -542,8 +556,8 @@ await check("package assets are content-addressed and byte-identical to the snap
     }
   }
 });
-await check("pinned release == current working-tree template/platform runtime (no drift since release)", async () => {
-  const pin = await pinOf("fixture-large");
+await check("the release of the working-tree Template version == current working-tree template/platform runtime (no drift since release)", async () => {
+  const pin = livePin;
   const rel = await loadRelease(repoRoot, "interior-01", pin.releaseId);
   const { sources } = await collectReleaseSources(repoRoot, "interior-01", 1);
   const { sha256 } = await import("../util/hash");
@@ -778,12 +792,17 @@ try {
   });
 
   await check("release immutability: stored files read-only; tampering is detected", async () => {
-    const relId = (await pinOf("fixture-small")).releaseId;
-    const rel = await loadRelease(repoRoot, "interior-01", relId);
+    // the seal is proven on a release cut HERE: a Git checkout cannot carry the read-only mode of the
+    // stored releases (their bytes are held by verifyRelease + Git instead)
     const fakeRoot = path.join(tmpRoot, "fake-root");
+    await mkdir(fakeRoot, { recursive: true });
+    await cp(path.join(repoRoot, "templates"), path.join(fakeRoot, "templates"), { recursive: true });
+    await cp(path.join(repoRoot, "platform"), path.join(fakeRoot, "platform"), { recursive: true, filter: (src) => !src.includes("node_modules") });
+    const cut = await createRelease({ repoRoot: fakeRoot, templateId: "interior-01", major: 1, templateVersion: template.version, siteIds: SITES, now: "t0" });
+    const relId = cut.record.releaseId;
+    assert(relId === livePin.releaseId, `throwaway cut ${relId} ≠ ${livePin.releaseId}`);
+    const rel = await loadRelease(fakeRoot, "interior-01", relId);
     const dst = releaseDir(fakeRoot, "interior-01", relId);
-    await mkdir(path.dirname(dst), { recursive: true });
-    await cp(releaseDir(repoRoot, "interior-01", relId), dst, { recursive: true });
     const victim = path.join(dst, "files/templates/interior-01/v1/app/page.tsx");
     await rejects(() => writeFile(victim, "x"), /EACCES|permission/i);
     await chmod(victim, 0o644);
@@ -805,7 +824,7 @@ try {
     const a = await createRelease({ repoRoot: root, templateId: "interior-01", major: 1, templateVersion: template.version, siteIds: SITES, now: "t1" });
     const b = await createRelease({ repoRoot: root, templateId: "interior-01", major: 1, templateVersion: template.version, siteIds: SITES, now: "t2" });
     assert(a.created && !b.created && a.record.releaseId === b.record.releaseId && b.record.createdAt === "t1", "not idempotent");
-    assert(a.record.releaseId === (await pinOf("fixture-small")).releaseId, "throwaway release differs from pinned release");
+    assert(a.record.releaseId === livePin.releaseId, "throwaway release differs from the working-tree version's release");
   });
 } finally {
   await rm(tmpRoot, { recursive: true, force: true });

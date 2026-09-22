@@ -28,8 +28,10 @@ import { isPublishSurface } from "./publish-surface";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
-const EMAIL = "hello@boost-interior-demo.example";
-const ORIGIN = "https://boost-interior-demo.example";
+// the demo's business address and public origin are Site Data (1.5.2 moved both to the real outreach
+// values); the package must carry whatever the site declares
+const EMAIL: string = JSON.parse(await readFile(path.join(repoRoot, "data/sites", DEMO, "content/business.json"), "utf8")).data.contact.email;
+const ORIGIN: string = JSON.parse(await readFile(path.join(repoRoot, "data/sites", DEMO, "site.json"), "utf8")).identity.publicOrigin;
 const FROZEN = [
   { id: "interior-01-1.4.0-9e1ea20da947", hash: "9e1ea20da9472d3bb003a27ff5f7374c76fa350c5941beb79457441576130961", capture: "release140Files" },
   { id: "interior-01-1.4.1-59179ca20368", hash: "59179ca20368d0f48093eacbe3930ce3f3de9b21a65ba27d9bc63defb67933bd", capture: "release141Files" },

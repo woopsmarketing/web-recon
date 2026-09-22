@@ -31,6 +31,7 @@ import template from "../../templates/interior-01/v1/template";
 import { canonical141 } from "./canonical-141";
 import { canonical142 } from "./canonical-142";
 import { canonical150Main, canonical150Sitemap, withoutIaPages } from "./canonical-150";
+import { releaseFileSealed } from "./git-checkout";
 
 const repoRoot = process.cwd();
 const SITES = ["fixture-large", "fixture-small", "fixture-empty"] as const;
@@ -305,10 +306,11 @@ const home = Object.fromEntries(await Promise.all(SITES.map(async (s) => [s, awa
 const newPin = await pinOf("fixture-large");
 const stored = async <T>(s: string, doc: string) => ((await readJson(path.join(repoRoot, "data/sites", s, doc))).items ?? []) as T[];
 
-await check("B all three sites pin + were built with the SAME release ≥ 1.3.0 = the current template version (verified)", async () => {
+await check("B all three sites pin + were built with the SAME release ≥ 1.3.0, not newer than the current template version (verified)", async () => {
   const pins = await Promise.all(SITES.map(pinOf));
   assert(new Set(pins.map((p) => `${p.releaseId}|${p.releaseHash}`)).size === 1, "pins differ");
-  assert(versionAtLeast(newPin.templateVersion, "1.3.0") && template.version === newPin.templateVersion && newPin.releaseId !== OLD_RELEASE.id, newPin.releaseId);
+  // pins are per site and may lag the working-tree Template (1.5.2 re-pinned only the demo), never lead it
+  assert(versionAtLeast(newPin.templateVersion, "1.3.0") && versionAtLeast(template.version, newPin.templateVersion) && newPin.releaseId !== OLD_RELEASE.id, newPin.releaseId);
   assert(newPin.templateVersion !== "1.3.0" || (newPin.releaseId === STEP5_RELEASE.id && newPin.releaseHash === STEP5_RELEASE.hash), `1.3.0 pin ${newPin.releaseId}`);
   for (const s of SITES) assert(cur[s]!.record.template.releaseHash === newPin.releaseHash, `${s} built with ${cur[s]!.record.template.releaseId}`);
   await verifyRelease(repoRoot, await loadRelease(repoRoot, "interior-01", newPin.releaseId));
@@ -319,8 +321,8 @@ await check("C old 1.2.0 (and 1.1.0) releases: hash + every file unchanged, read
     assert(old.releaseHash === r.hash, `${r.id}: releaseHash changed`);
     await verifyRelease(repoRoot, old);
     if (r !== STEP5_RELEASE) assert(!old.files.some((f) => /HeroCarousel|HomeHero|HomeReviews|FloatingCta|SnapTrack/.test(f.path)), `${r.id} contains Step 5 files`);
-    const st = await stat(path.join(repoRoot, "data/template-releases/interior-01", r.id, "files/templates/interior-01/v1/template.ts"));
-    assert((st.mode & 0o222) === 0, `${r.id}: release file is writable`);
+    // read-only as cut, or (a Git checkout drops the mode) tracked + identical to the commit
+    assert(await releaseFileSealed(repoRoot, `data/template-releases/interior-01/${r.id}/files/templates/interior-01/v1/template.ts`), `${r.id}: release file is writable`);
   }
 });
 await check("rollback: each site's previous package = an older release (≥ 1.2.0, < current), intact", async () => {
@@ -503,7 +505,7 @@ await check("AD portfolio list/pages/details/filters/404 regression-free: every 
     }
   }
 });
-await check("AE sitemap.xml + robots.txt byte-identical to the previous package (no route-count drift); home stays un-canonicalised", async () => {
+await check("AE sitemap.xml + robots.txt byte-identical to the previous package (no route-count drift); home <title> unchanged (its canonical arrives with 1.5.2: ia152.test.ts)", async () => {
   for (const s of SITES) {
     for (const f of ["sitemap.xml", "robots.txt"]) {
       // sitemap: the 1.5.0 static pages' entries set aside on both sides (canonical-150.ts)

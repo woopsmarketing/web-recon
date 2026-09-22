@@ -121,11 +121,13 @@ await check("S1 Template ≥ 1.5.1, same routes as 1.5.0; three new optional con
 
 // -------------------------------------------------------------- release --
 console.log("\n[release] every earlier release immutable, a Template-only patch");
-await check("R1 every release dir captured before the cut (1.0.0 … 1.5.0) verifies and is byte-identical to the capture; the only new dir is one 1.5.1", async () => {
+await check("R1 every release dir captured before the cut (1.0.0 … 1.5.0) verifies and is byte-identical to the capture; the only new dirs are one 1.5.1 (+ later releases' own)", async () => {
   const dirs = (await readdir(path.join(repoRoot, "data/template-releases/interior-01"))).filter((d) => d.startsWith("interior-01-")).sort();
   const added = dirs.filter((d) => !before.releaseDirs.includes(d));
-  eq(added.length, 1, "new release dirs");
-  assert(added[0]!.startsWith("interior-01-1.5.1-"), added[0]!);
+  // later cuts add their own dir (1.5.2: ia152.test.ts R1 holds it to exactly one); none may be another 1.5.1 or older
+  const versionOf = (d: string) => d.split("-")[2]!;
+  eq(added.filter((d) => versionOf(d) === "1.5.1").length, 1, "new 1.5.1 release dirs");
+  for (const d of added) assert(versionAtLeast(versionOf(d), "1.5.1"), `${d}: an older version added after the capture`);
   for (const d of before.releaseDirs as string[]) {
     assert(dirs.includes(d), `${d} missing`);
     eq(await hashTree(path.join(repoRoot, "data/template-releases/interior-01", d)), before.releases[d], `${d} files`);
@@ -179,7 +181,8 @@ await check("D1 every demo site file is byte-identical to the pre-cut capture ex
 console.log("\n[package] the built demo pages");
 await check("P1 same page set and sitemap as the 1.5.0 package (the demo has a contact channel: /contact listed); every page's <main>, header and footer identical to 1.5.0 — except /contact's field caps", async () => {
   const sitemap = await readFile(path.join(pkg, "site/sitemap.xml"), "utf8");
-  eq(locsOf(sitemap).slice(-3), IA_PATHS.map((p) => `https://boost-interior-demo.example${p}`), "sitemap lists the three pages");
+  const origin = (await readJson(path.join(demoDir, "site.json"))).identity.publicOrigin as string; // Site Data (1.5.2 moved it)
+  eq(locsOf(sitemap).slice(-3), IA_PATHS.map((p) => `${origin}${p}`), "sitemap lists the three pages");
   if (pin.templateVersion !== "1.5.1") return; // point-in-time: compared with the 1.5.0 package (the 1.5.1 pin's rollback)
   const prevDir = path.join(repoRoot, before.currentPointer.packageDir);
   const prev = await pagesOf(prevDir);

@@ -18,6 +18,8 @@ import { formatArea, formatCount, formatPeriod, formatPricePerArea, groupDigits 
 import { pageWindow } from "../../templates/interior-01/v1/components/Pagination";
 import { IA_PATHS, withoutIaPages } from "./canonical-150";
 import { sitemapIaPaths } from "./canonical-151";
+import { homeHasCanonical } from "./canonical-152";
+import { releaseFileSealed } from "./git-checkout";
 
 const repoRoot = process.cwd();
 const SITES = ["fixture-large", "fixture-small", "fixture-empty"] as const;
@@ -351,15 +353,16 @@ await check("A all three sites pin + were built with the SAME new exact release 
   const pins = await Promise.all(SITES.map(pinOf));
   assert(new Set(pins.map((p) => `${p.releaseId}|${p.releaseHash}`)).size === 1, "pins differ");
   for (const s of SITES) assert(cur[s]!.record.template.releaseId === newPin.releaseId && cur[s]!.record.template.releaseHash === newPin.releaseHash, `${s} built with ${cur[s]!.record.template.releaseId}`);
-  assert(newPin.releaseId !== OLD_RELEASE.id && newPin.templateVersion === template.version, `${newPin.releaseId} / ${template.version}`);
+  // pins are per site and may lag the working-tree Template (1.5.2 re-pinned only the demo), never lead it
+  assert(newPin.releaseId !== OLD_RELEASE.id && versionAtLeast(template.version, newPin.templateVersion), `${newPin.releaseId} / ${template.version}`);
   await verifyRelease(repoRoot, await loadRelease(repoRoot, "interior-01", newPin.releaseId));
 });
 await check("B old release still exists, verifies, and is byte-for-byte unchanged (hash + read-only files)", async () => {
   const rel = await loadRelease(repoRoot, "interior-01", OLD_RELEASE.id);
   assert(rel.releaseHash === OLD_RELEASE.hash, "old releaseHash changed");
   await verifyRelease(repoRoot, rel);
-  const st = await stat(path.join(repoRoot, "data/template-releases/interior-01", OLD_RELEASE.id, "files/templates/interior-01/v1/template.ts"));
-  assert((st.mode & 0o222) === 0, "old release file is writable");
+  // read-only as cut, or (a Git checkout drops the mode) tracked + identical to the commit
+  assert(await releaseFileSealed(repoRoot, `data/template-releases/interior-01/${OLD_RELEASE.id}/files/templates/interior-01/v1/template.ts`), "old release file is writable");
   assert(!rel.files.some((f) => f.path.includes("portfolio")), "old release must not contain Step 4 routes");
   const all = (await readdir(path.join(repoRoot, "data/template-releases/interior-01"))).filter((d) => d !== newPin.releaseId && !d.startsWith("."));
   for (const id of all) await verifyRelease(repoRoot, await loadRelease(repoRoot, "interior-01", id));
@@ -537,7 +540,10 @@ await check("metadata: unique list titles incl. page number; detail = item title
   assert((await html("fixture-large", "/portfolio/page/2")).includes('<link rel="canonical" href="https://fixture-large.example/portfolio/page/2"/>'), "page canonical");
   const small = await html("fixture-small", "/portfolio");
   assert(small.includes("<title>프로젝트 | 마루 아틀리에 (가상)</title>"), "small list title (slot)");
-  assert(!(await html("fixture-large", "/")).includes('rel="canonical"'), "home behaviour changed (canonical added)");
+  // before 1.5.2 the home page has no canonical; from 1.5.2 exactly one, the origin (canonical-152.ts)
+  const homeCanonicals = [...(await html("fixture-large", "/")).matchAll(/<link rel="canonical" href="([^"]*)"\/>/g)].map((m) => m[1]);
+  const wantHome = homeHasCanonical(cur["fixture-large"]!.record.template.templateVersion) ? ["https://fixture-large.example"] : [];
+  assert(JSON.stringify(homeCanonicals) === JSON.stringify(wantHome), `home canonical: ${JSON.stringify(homeCanonicals)} ≠ ${JSON.stringify(wantHome)}`);
 });
 await check("404 page is the site's own (header/footer, localized slot copy, one <title>, noindex)", async () => {
   for (const [s, text] of [["fixture-large", "Page not found"], ["fixture-small", "페이지를 찾을 수 없습니다"], ["fixture-empty", "Page not found"]] as const) {

@@ -29,13 +29,16 @@ import { chromium, type Browser, type BrowserContext, type Page } from "playwrig
 const root = process.cwd();
 const outDir = path.resolve(process.argv[2] ?? "docs/result/static-deployment-foundation/proof-151");
 const SITE = "boost-interior-demo";
-const EMAIL = "hello@boost-interior-demo.example";
+// the business address is Site Data (1.5.2 moved the demo's to the real outreach address)
+const EMAIL: string = JSON.parse(await readFile(path.join(root, "data/sites", SITE, "content/business.json"), "utf8")).data.contact.email;
 const DETAIL = "/portfolio/suseong-white-34py-apartment-remodeling";
 const ROUTES = ["/", "/portfolio", DETAIL, "/3d-portfolio", "/about", "/contact"];
 const WIDTHS = [320, 390, 899, 900, 1440];
 const SUCCESS = /접수되었|접수 완료|전송되었|전송 완료|완료되었/;
-const TOO_LONG = `문의 내용이 길어 메일 앱으로 열 수 없습니다. 아직 전송된 것은 아닙니다. 아래 내용을 복사해 ${EMAIL}로 보내 주세요.`;
-const AFTER = `메일 앱에서 내용을 확인한 뒤 보내 주세요. 아직 전송된 것은 아닙니다. 메일 앱이 열리지 않으면 ${EMAIL}로 보내 주세요.`;
+// the status copy is Site Data too (contact.page slots; the Template substitutes {email} = the address)
+const CONTACT_SLOTS = JSON.parse(await readFile(path.join(root, "data/sites", SITE, "slots.json"), "utf8")).values["contact.page"] as Record<string, string>;
+const TOO_LONG = CONTACT_SLOTS.tooLong!.replaceAll("{email}", EMAIL);
+const AFTER = CONTACT_SLOTS.afterSubmit!.replaceAll("{email}", EMAIL);
 
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
