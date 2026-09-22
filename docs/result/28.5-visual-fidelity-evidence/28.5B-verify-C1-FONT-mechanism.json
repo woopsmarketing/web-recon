@@ -1,0 +1,173 @@
+{
+ "verifier": "C1-FONT / mechanism (adversarial)",
+ "producedAt": "2026-08-29",
+ "sourceTruth": "all A/B variants scored against the SAME historical ACCEPTED observation PNG (site-observations/2026-08-25T19-23-01-716Z). Injected InterVariable.woff2 is CURRENT_SOURCE (352,240 B, byte-size identical to a fresh fetch of static.linear.app/fonts/InterVariable.woff2?v=4.1 this session).",
+ "control": "variant A reproduced wave-1 changedRatio exactly on all 5 routes (0.2073/0.4953/0.0235/0.3831/0.0460)",
+ "confirmed": {
+  "zeroFontFaceInClone": "grep @font-face = 0 in generated-styles.css (11,267,135 B) and globals.css; 0 font binaries under the app",
+  "noEmitterInRepo": "no code path anywhere in src/ writes an @font-face into a generated app; src/reconstruction/style-generator.ts contains the substring 'font' zero times",
+  "observerStructurallyBlind": "live re-run of the exact collect-dom.ts loop on linear.app: 84 stylesheets, 54 SecurityError-blocked (all static.linear.app), 30 readable, 0 CSSFontFaceRule visible, fontUrls=[] while the browser had actually loaded 3 faces",
+  "assetCatalogHasNoFontKind": "site-specs/2026-08-25T20-30-27-653Z/asset-catalog.json kindCounts = audio/background-image/icon/image/inline-svg/mask-image/source/video/video-poster; 439 assets, no font kind",
+  "clonePaintsFallback": "CDP CSS.getPlatformFontsForNode on r000001: 293 nodes painted by '.SF NS', 90 by 'Menlo'; after injection 314 by 'Inter Variable' (isCustomFont)",
+  "injectionAlwaysHelps": "all 5 routes improved on both changedRatio and meanDelta; none regressed"
+ },
+ "refuted": {
+  "roundsUpAgainstStaticFallback": {
+   "claim": "font-weight:510/590 round UP against a static fallback",
+   "measured_advance_px_64px_production_stack": {
+    "300": 681.547,
+    "400": 692.313,
+    "450": 702.281,
+    "500": 712.344,
+    "505": 713.266,
+    "510": 714.266,
+    "520": 716.188,
+    "550": 722.281,
+    "590": 730.203,
+    "600": 732.188,
+    "650": 742.188,
+    "700": 752.328,
+    "800": 772.078
+   },
+   "finding": "the winning fallback is .SF NS, a macOS VARIABLE font; Chromium interpolates the wght axis continuously (500=712.344, 505=713.266, 510=714.266, 520=716.188, 600=732.188). 510 is NOT snapped to 600. No rounding occurs on the platform that produced every capture in this audit."
+  },
+  "narrowerAdvances": {
+   "claim": "1.9-3.8% narrower advances",
+   "measured": {
+    "matchedTextNodes": 403,
+    "meanAdvanceRatio_fallbackToInter": 1.00928,
+    "p05": 0.9748,
+    "median": 1.0073,
+    "p95": 1.0424
+   },
+   "finding": "mean effect is +0.93% (Inter WIDER than the fallback), ~2-4x smaller than the claimed band, and two-sided: 5% of text nodes are narrower in Inter, not wider"
+  },
+  "rewrappingNearlyEveryMultilineBlock": {
+   "claim": "re-wrapping on nearly every multi-line block",
+   "measured": {
+    "/": {
+     "matched": 403,
+     "multiLineInA": 64,
+     "anyLineCountChange": 22,
+     "multiLineBlocksThatReflowed": 22,
+     "multiLineBlocksUnchanged": 44,
+     "pctOfMultiLineBlocksReflowed": 34.4,
+     "reflowsAtFontSizeGTE15px": 1,
+     "examples": [
+      {
+       "t": "Initiatives are Linear's way to manage p",
+       "fs": 15,
+       "A": 8,
+       "B": 9
+      }
+     ]
+    },
+    "/pricing": {
+     "matched": 204,
+     "multiLineInA": 1,
+     "anyLineCountChange": 2,
+     "multiLineBlocksThatReflowed": 2,
+     "multiLineBlocksUnchanged": 1,
+     "pctOfMultiLineBlocksReflowed": 200,
+     "reflowsAtFontSizeGTE15px": 2,
+     "examples": [
+      {
+       "t": "15 pipelines",
+       "fs": 15,
+       "A": 1,
+       "B": 2
+      },
+      {
+       "t": "1 level",
+       "fs": 15,
+       "A": 1,
+       "B": 2
+      }
+     ]
+    },
+    "/security": {
+     "matched": 110,
+     "multiLineInA": 24,
+     "anyLineCountChange": 1,
+     "multiLineBlocksThatReflowed": 1,
+     "multiLineBlocksUnchanged": 24,
+     "pctOfMultiLineBlocksReflowed": 4.2,
+     "reflowsAtFontSizeGTE15px": 0,
+     "examples": []
+    }
+   },
+   "finding": "/security 24 of 24 multi-line blocks kept identical line counts (4.2% changed); / 44 of 64 unchanged (34.4% changed) and only 1 of those 22 reflows was at font-size >= 15px - the rest are <=14px labels inside the app mockup"
+  },
+  "nothingDownstreamCouldBindThem": {
+   "claim": "fonts were never observed at all, so nothing downstream could bind them",
+   "counterEvidence": "the accepted observation's stored rendered.html contains <link rel=preload as=font href=https://static.linear.app/fonts/InterVariable.woff2?v=4.1> and a second one for tiempos-headline-regular.woff2; src/assets/fonts.ts:143 already reads exactly this (head.fontPreloads). The primary font URL is recoverable from a stored artifact by grep, with no live fetch.",
+   "alsoMissed": "the claim's missingFamilies list omits Tiempos entirely"
+  },
+  "topWeightVisualCause": {
+   "claim": "top-weight visual cause",
+   "aggregate": {
+    "routes": 5,
+    "overlapPx": 55684800,
+    "changedRatio_A": 0.2232,
+    "changedRatio_B": 0.2153,
+    "pctOfDiffAREA_removedByFont": 3.56,
+    "weightedMeanDelta": [
+     5.3228,
+     3.8215
+    ],
+    "pctOfMeanDelta_removedByFont": 28.21
+   },
+   "perRoute": [
+    {
+     "route": "r000001",
+     "A": 0.2073,
+     "B": 0.1976,
+     "pctDiffAreaRemoved": 4.68,
+     "pctMeanDeltaRemoved": 32.83,
+     "fontTouchedPxAsPctOfDiff": 16.4
+    },
+    {
+     "route": "r000003",
+     "A": 0.4953,
+     "B": 0.4863,
+     "pctDiffAreaRemoved": 1.82,
+     "pctMeanDeltaRemoved": 17.94,
+     "fontTouchedPxAsPctOfDiff": 6.1
+    },
+    {
+     "route": "r000005",
+     "A": 0.0235,
+     "B": 0.0174,
+     "pctDiffAreaRemoved": 25.96,
+     "pctMeanDeltaRemoved": 69.01,
+     "fontTouchedPxAsPctOfDiff": 95.7
+    },
+    {
+     "route": "r000007",
+     "A": 0.3831,
+     "B": 0.3785,
+     "pctDiffAreaRemoved": 1.2,
+     "pctMeanDeltaRemoved": 17.88,
+     "fontTouchedPxAsPctOfDiff": 5.0
+    },
+    {
+     "route": "r000008",
+     "A": 0.046,
+     "B": 0.0333,
+     "pctDiffAreaRemoved": 27.61,
+     "pctMeanDeltaRemoved": 48.7,
+     "fontTouchedPxAsPctOfDiff": 89.6
+    }
+   ],
+   "finding": "restoring the primary webfont removes 3.56% of total changed-pixel AREA but 28.21% of mean channel delta. On the two WORST routes (r000003 0.4953, r000007 0.3831) the font can touch at most 6.1% and 5.0% of the diff and removes 1.82% and 1.20%. On the two BEST routes (r000005, r000008) the font accounts for 96% and 90% of the remaining diff area. Font is the dominant cause of RESIDUAL error on already-correct pages and a minor cause on the badly-broken pages."
+  }
+ },
+ "frozenGeometry": "element box widths are bit-identical between A and B on all 382 probed elements of r000001 (ratio 1.0000). The reconstruction pins geometry, so a font swap changes glyph paint inside fixed boxes and cannot restore layout.",
+ "lowerBoundCaveats": [
+  "Berkeley Mono (109 rules, 629 elements on r000001) is proprietary and was NOT restored; Menlo still paints those nodes in variant B",
+  "no font-feature-settings / font-optical-sizing / font-variation-settings were recovered",
+  "Inter italic face (present in source, 3 faces) not injected",
+  "variant B is therefore a LOWER BOUND on the font mechanism's true weight"
+ ],
+ "policyGate": "src/assets/fonts.ts hardcodes status 'license-needs-review' and selfHostApproved:false for EVERY family unconditionally. Even a perfect observer would not currently produce an @font-face in a clone. The remedy is not one fix but three: cross-origin-capable font discovery, a license decision, and a materialization step that does not exist."
+}

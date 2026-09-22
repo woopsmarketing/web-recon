@@ -1,0 +1,30 @@
+{
+  "schema": "task285b-code-gate-v1",
+  "producedAt": "2026-08-29T12:45:00Z",
+  "gate": "PASS",
+  "scope": "All six Task-28.5B changes implemented, independently verified, corrected where verifiers found defects, and re-verified on the final tree state.",
+  "changes": {
+    "1-pseudoVisibility": {"status": "VERIFIED", "build": "28.5B-build-vocab.json", "verify": "28.5B-verify-vocab.json PASS", "evidence": "PSEUDO_STYLE_WHITELIST 18->20 (opacity, visibility); negative control: removing opacity alone -> 18 real cross-stage failures incl. clone painting a source-suppressed pseudo"},
+    "2-typographyVocab": {"status": "VERIFIED", "build": "28.5B-build-vocab.json", "verify": "28.5B-verify-vocab.json PASS", "evidence": "STYLE_WHITELIST 111->114 (-webkit-font-smoothing, text-wrap-mode, text-wrap-style); text-wrap-style proven load-bearing; smoothing labeled darwin-only; no font binaries"},
+    "3-layoutSafety": {"status": "VERIFIED_AFTER_CORRECTION", "build": "28.5B-build-layout.json", "verify": "28.5B-verify-layout.json PASS_WITH_RISKS -> correction D3/D8 -> 28.5B-verify-final-corrections.json PASS_WITH_RISKS", "evidence": "containing-block guards (grid/flex-basis/abs/fixed, over-refusal-only failure direction); offline chromium post-emit truth check; geometry rules cannot ship unverified on any path except explicit disabled opt-out (no caller uses it); acceptedRegressed structurally 0; six-way truthCheckStatus; counters additive-optional, 34/34 historical manifests parse"},
+    "4-videoHonesty": {"status": "VERIFIED_AFTER_CORRECTION", "build": "28.5B-build-video.json", "verify": "28.5B-verify-video.json -> correction GAP-A/GAP-B -> 28.5B-verify-video2.json PASS_WITH_RISKS", "evidence": "video in PRIMARY kinds; truth table a-j measured through real resolver; counting at <source> child, exactly once; corpus-inert on img/picture; render improves 26/30 corpus videos (baselines will shift, expected)"},
+    "5-customProperties": {"status": "VERIFIED_AFTER_TWO_CORRECTIONS", "build": "28.5B-build-customprops.json", "verify": "28.5B-verify-customprops.json PASS_WITH_RISKS -> corrections (adoptedStyleSheets + reference-driven SVG var discovery) -> 28.5B-verify-final-corrections.json", "evidence": "per-viewport capture/emission scoped to [data-wr-page][data-wr-viewport]; live linear.app reach 151 names, 16/16 SVG var() names covered (was 0/16); mutation test decisive; determinism byte-identical; historical observations/sitespecs parse"},
+    "6-qaDecoupling": {"status": "VERIFIED_AFTER_INTEGRATION", "build": "28.5B-build-qa.json + 28.5B-build-qa-integration.json", "verify": "28.5B-verify-qa.json PASS_WITH_RISKS -> integration wiring -> 28.5B-verify-qa-integration.json PASS_WITH_RISKS", "evidence": "QA_STYLE_PROPERTIES independent literal 144 props (30 beyond observer), no STYLE_WHITELIST import in capture-page or interaction-qa; @1 untouched; @16 + dE76 added (dE76 reproduced to 1e-14); QA-only browser-to-browser comparison wired into qaOnePage default path (mutation test: unwiring fails 9 checks); blindness fixture proves QA catches observer-invisible differences"}
+  },
+  "finalTreeBattery": {
+    "typecheck": "exit 0 (run twice)",
+    "suites": {"smoke-layout-safety": "67/67", "smoke-e2e": "130/130 (serialized)", "smoke-reconstruction": "217/217", "smoke-custom-properties": "92/92", "smoke-video-honesty": "36/36", "smoke-qa-independence": "101/101", "smoke-visual-vocab": "88/88", "smoke-reconstruction-qa": "134/134"},
+    "newSuites": ["smoke-visual-vocab", "smoke-layout-safety", "smoke-video-honesty", "smoke-qa-independence", "smoke-custom-properties"]
+  },
+  "carriedRisks": [
+    "smoke-e2e is not concurrency-safe (resource contention) - final regression must serialize suites",
+    "cli-reconstruct.ts console print omits rejectedUnverifiable counter (manifest carries it)",
+    "truth-check guarantee is 'no worse than exact fallback +0.5px', not 'truth-accurate within 4px' - report wording must respect this",
+    "QA-only comparison yield on drifting live sites bounded by structural alignment (honest 'unavailable')",
+    "QA honest-zero corner (comparedProperties=0 records 'compared') unreachable with current vocabulary",
+    "double-generation byte-determinism verified on 6-candidate fixture, not yet on a full probed corpus",
+    "custom-prop discovery: :root/html + adopted sheets + SVG-reference channels only; style-attr/pseudo references out of scope"
+  ],
+  "gitMutatingOperations": 0,
+  "historicalMutationCount": 0
+}

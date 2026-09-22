@@ -1,0 +1,122 @@
+{
+  "provenance": {
+    "run": "data/seoultone.kr/responsive-qa/2026-09-05T18-17-56-681Z",
+    "pair": "/ @1440",
+    "recordedVerdict": "BLOCKER",
+    "recordedChannel": {
+      "channel": "blank-region-ratio",
+      "value": 0.5767,
+      "sourceValue": 4.2511,
+      "threshold": 0.25,
+      "firedAt": "BLOCKER",
+      "blankedAreaPx": 747360,
+      "displacedCount": 2,
+      "absentCount": 0
+    },
+    "humanGrade": "MAJOR",
+    "humanFinding": "docs/result/28.8/09-final-visual-audit.md §7 — 'The doctor biography section is fully present in the clone ... more complete than the source ... the clone's largest blank band at 1440 is 183px at y1580-1763 ... the grey band below the certificate carousel plus ordinary section padding ... There is no blank region at 1440 where meaningful content belongs.'",
+    "viewport": {
+      "innerWidth": 1440,
+      "innerHeight": 900
+    },
+    "note": "Both regions are verbatim from the run's blank-region-ratio note; boxes, paint ratios, leaf counts and ink ratios are the recorded numbers. The run artifact does NOT record the text/image split of a region's leaves, so every leaf is counted as a TEXT leaf here: that is the split most favourable to corroboration, so a fixture that fails to corroborate under it fails under every other split too."
+  },
+  "regions": [
+    {
+      "path": "div/footer",
+      "tag": "footer",
+      "box": {
+        "left": 0,
+        "right": 1440,
+        "top": 3425,
+        "bottom": 3826
+      },
+      "areaPx": 577440,
+      "viewportAreaRatio": 0.4456,
+      "aboveFold": false,
+      "correspondence": "path-suffix",
+      "clonePath": "wrap/div/footer",
+      "mechanism": "displaced",
+      "corroborated": true,
+      "evidence": "ink",
+      "source": {
+        "paintRatio": 0.12,
+        "leafCount": 17,
+        "textLeaves": 17,
+        "imageLeaves": 0,
+        "chars": 420
+      },
+      "clone": {
+        "paintRatio": 0.12,
+        "leafCount": 17,
+        "textLeaves": 17,
+        "imageLeaves": 0,
+        "chars": 420
+      },
+      "sourceInk": {
+        "available": true,
+        "samples": 40000,
+        "inkPixels": 18880,
+        "inkRatio": 0.472,
+        "stride": 6
+      },
+      "cloneInk": {
+        "available": true,
+        "samples": 40000,
+        "inkPixels": 1320,
+        "inkRatio": 0.033,
+        "stride": 6
+      },
+      "cloneVisibleDescendants": 34,
+      "cloneSubtreeTextChars": 420
+    },
+    {
+      "path": "div/header",
+      "tag": "header",
+      "box": {
+        "left": 0,
+        "right": 1440,
+        "top": 0,
+        "bottom": 118
+      },
+      "areaPx": 169920,
+      "viewportAreaRatio": 0.1311,
+      "aboveFold": true,
+      "correspondence": "path-suffix",
+      "clonePath": "wrap/div/header",
+      "mechanism": "displaced",
+      "corroborated": true,
+      "evidence": "ink",
+      "source": {
+        "paintRatio": 0.22,
+        "leafCount": 10,
+        "textLeaves": 10,
+        "imageLeaves": 0,
+        "chars": 96
+      },
+      "clone": {
+        "paintRatio": 0.19,
+        "leafCount": 10,
+        "textLeaves": 10,
+        "imageLeaves": 0,
+        "chars": 96
+      },
+      "sourceInk": {
+        "available": true,
+        "samples": 40000,
+        "inkPixels": 15200,
+        "inkRatio": 0.38,
+        "stride": 6
+      },
+      "cloneInk": {
+        "available": true,
+        "samples": 40000,
+        "inkPixels": 1720,
+        "inkRatio": 0.043,
+        "stride": 6
+      },
+      "cloneVisibleDescendants": 21,
+      "cloneSubtreeTextChars": 96
+    }
+  ]
+}

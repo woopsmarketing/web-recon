@@ -1,0 +1,21 @@
+{
+  "task": "28.5A",
+  "role": "capture harness builder (no findings; files only)",
+  "generatedAt": "2026-08-28T17:48:59.117Z",
+  "evidenceRoot": "docs/result/28.5-visual-fidelity-evidence",
+  "manifest": "docs/result/28.5-visual-fidelity-evidence/capture-manifest.json",
+  "pairsCaptured": 32,
+  "failures": [],
+  "notes": [
+    "Source truth for desktop+mobile is the ACCEPTED_OBSERVATION screenshot from data/linear.app/site-observations/2026-08-25T19-23-01-716Z (copied, originals untouched).",
+    "CURRENT_SOURCE captures are live captures taken on the audit date; they are NOT truth for desktop/mobile and exist only to separate 'the site changed' from 'the clone is wrong'. For wide(1920) no accepted source exists, so CURRENT_SOURCE is the only source side.",
+    "Band composites are [source | clone | diff] with an 8px white gutter, downscaled to <=2400px total width. Band height is 900 CSS px (x deviceScaleFactor in device pixels).",
+    "Band filename score is the band changedRatio over the FULL band rect (rows past one side's end count as changed); metrics.json also carries changedRatioCommonOnly for every band.",
+    "Top-level metrics follow src/reconstruction-qa/screenshot-diff.ts exactly: never resize, composite over white, a pixel differs when any R/G/B channel differs by >= 1, overlap area only.",
+    "overview.png is a whole-page THUMBNAIL only: scaled to <=1600px total width AND <=4000px height, so on very tall pages the panels get narrow. The bands/ composites are the high-resolution evidence; read those to judge paint.",
+    "diff.png is full resolution over the common area: changed pixels red (green channel scaled by the delta magnitude, so a 1-unit antialiasing edge looks dark red and a wholly different block looks orange/yellow), identical pixels a dim grey ghost of the source.",
+    "Where the clone and the source have different heights, band composites fill the missing side with flat slate grey (rgb 90,90,110) — that colour means 'this side's page ended here', not 'the page is grey there'.",
+    "CURRENT_SOURCE at mobile(390) was not requested and was not captured; mobile has an ACCEPTED_OBSERVATION pair only.",
+    "Two files in this directory were NOT written by this harness and were left untouched: 28.5A-stage3-generation-measurements.json and stage5-template-vs-recon-pixel-diff.json."
+  ]
+}

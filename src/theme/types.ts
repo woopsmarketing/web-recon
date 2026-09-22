@@ -249,7 +249,13 @@ export type ThemeFile = z.infer<typeof ThemeFileSchema>;
 export const PaintGroupStatusSchema = z.enum(["themeable", "preserved", "review"]);
 export type PaintGroupStatus = z.infer<typeof PaintGroupStatusSchema>;
 
-export const SelectorKindSchema = z.enum(["style-token", "doc-root", "node-scoped"]);
+export const SelectorKindSchema = z.enum([
+  "style-token",
+  "doc-root",
+  // Task 28.75 §CANVAS — the `html:has([data-wr-page=…])` document-canvas rule.
+  "document-canvas",
+  "node-scoped",
+]);
 export type SelectorKind = z.infer<typeof SelectorKindSchema>;
 
 /**

@@ -360,6 +360,24 @@ export const BrandIsolationResultSchema = z
   })
   .strict();
 
+/**
+ * Duplicate-<title> measurement (Task 28 Phase 10 correction).
+ *
+ * OPTIONAL on the manifest by construction: plan runs written before this
+ * field existed must keep loading (loadProductionSeoPlanRun re-parses them on
+ * every release build), so its absence means "not measured", never "zero".
+ */
+export const TitleUniquenessResultSchema = z
+  .object({
+    pass: z.boolean(),
+    routesMeasured: z.number().int().nonnegative(),
+    distinctTitles: z.number().int().nonnegative(),
+    duplicates: z.array(
+      z.object({ title: z.string(), routes: z.array(z.string()) }).strict(),
+    ),
+  })
+  .strict();
+
 export const ProductionSeoPlanManifestSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -386,12 +404,17 @@ export const ProductionSeoPlanManifestSchema = z
         knownDescriptions: z.number().int().nonnegative(),
         needsInputDescriptions: z.number().int().nonnegative(),
         needsInputValues: z.number().int().nonnegative(),
+        /** Routes whose <title> is shared with another route (optional: see above). */
+        duplicateTitleRoutes: z.number().int().nonnegative().optional(),
+        /** Routes whose title came from their OWN authored heading (optional). */
+        routeDerivedTitles: z.number().int().nonnegative().optional(),
       })
       .strict(),
     checks: z
       .object({
         forbiddenCopy: ForbiddenCopyResultSchema,
         brandIsolation: BrandIsolationResultSchema,
+        titleUniqueness: TitleUniquenessResultSchema.optional(),
       })
       .strict(),
     files: z
@@ -412,6 +435,7 @@ export type ProductionBusinessFacts = z.infer<typeof ProductionBusinessFactsSche
 export type ProductionRouteSeo = z.infer<typeof ProductionRouteSeoSchema>;
 export type ProductionSeoPlan = z.infer<typeof ProductionSeoPlanSchema>;
 export type ForbiddenCopyResult = z.infer<typeof ForbiddenCopyResultSchema>;
+export type TitleUniquenessResult = z.infer<typeof TitleUniquenessResultSchema>;
 export type BrandIsolationResult = z.infer<typeof BrandIsolationResultSchema>;
 export type ProductionSeoPlanManifest = z.infer<typeof ProductionSeoPlanManifestSchema>;
 

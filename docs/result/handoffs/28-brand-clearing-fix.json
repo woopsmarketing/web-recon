@@ -1,0 +1,524 @@
+{
+ "schema": "task28-brand-clearing-fix-v1",
+ "role": "BUILDER — sole writer on the brand clearing instrument (opus). Closes the ONE failing bar clause of Task 28: 'source-brand-asset resolution works'.",
+ "producedAt": "2026-08-28T14:40:00Z",
+ "headline": "DEFECT REPRODUCED, then CLOSED. A PRESERVE-everything decision on an image-logo lineage used to clear the release-blocking source-brand requirement as status='resolved' / clearedBy='output-proof' / 0 blockers while the source logotype was still in the shipped bytes. It now lands accepted-limitation / preserve-acceptance / 1 blocker. A genuine REPLACE still clears, and the linear canary's honest zero (74 hosts REPLACE, preservedAfter 0) is unchanged under a STRICTER instrument. Regression: 29 suites / 2,970 checks / 0 failures / typecheck exit 0 / 0 negative deltas (+22 vs the 2,948 baseline, all newly added).",
+ "reproduction": {
+  "why": "The contract required observing the defect before fixing it. It was observed, not assumed.",
+  "fixture": {
+   "shape": "A one-route runtime-IR app whose ONLY brand-carrying host is an <img> whose PATH names the brand. The alt deliberately carries NO brand token, so no other census axis can accidentally catch the mark and mask the blind spot.",
+   "node": "{ k:'e', n:'n000005', t:'img', p:{ src:'/static/AcmeLogo.svg', alt:'Company logo' } } plus one icon-only sprite that must never be touched",
+   "sourceHost": "acme.com",
+   "brandTokens": [
+    "acme"
+   ],
+   "decision": "PRESERVE on every detected host (reason recorded)",
+   "scratchScript": "/private/tmp/claude-501/-Users-woops-projects-web-recon/3edb72d5-85bc-4de0-8139-9583f439ecad/scratchpad/repro.mts (throwaway; the same fixture is now a PERMANENT suite section — smoke-brand-assets.ts §3d)",
+   "wroteIntoRepo": "a self-deleting data/.wr28-repro-<pid> directory only; nothing under a lineage run dir, nothing predating 2026-08-27"
+  },
+  "before": {
+   "detection": "1 host, surface=image-logo",
+   "bake": {
+    "hostsBefore": 1,
+    "applied": {
+     "preserved": 1,
+     "replaced": 0,
+     "removed": 0,
+     "refused": 0
+    },
+    "residual": {
+     "preservedAfter": 1,
+     "unexplainedAfter": []
+    }
+   },
+   "sourceStillShipping": "the built IR page file, re-read off disk AFTER the bake, still contains 'AcmeLogo.svg' (1 occurrence of the brand token); the rendered <img src> carries it too",
+   "census": {
+    "sourceUrl": 0,
+    "bodyAnchorIdentity": 0,
+    "visibleText": 0,
+    "imageAlt": 0,
+    "ariaLabel": 0,
+    "svgAriaLabel": 0,
+    "svgSymbolId": 0,
+    "svgText": 0
+   },
+   "markupBrandSurfaceTotal": 0,
+   "proof": {
+    "cleared": true,
+    "clearedBy": "output-proof",
+    "irClean": true,
+    "renderedClean": true,
+    "markupBrandSurfaces": 0,
+    "preservedAfter": 1
+   },
+   "requirementStatus": "resolved",
+   "releaseBlockers": 0,
+   "verdict": "CONFIRMED — the release-blocking requirement cleared as MEASURED-OUTPUT PROOF while the source's own logotype was shipping."
+  },
+  "after": {
+   "census": {
+    "sourceUrl": 0,
+    "bodyAnchorIdentity": 0,
+    "visibleText": 0,
+    "imageSrcPath": 1,
+    "imageAlt": 0,
+    "ariaLabel": 0,
+    "svgAriaLabel": 0,
+    "svgSymbolId": 0,
+    "svgText": 0
+   },
+   "markupBrandSurfaceTotal": 1,
+   "proof": {
+    "cleared": true,
+    "clearedBy": "preserve-acceptance",
+    "irClean": true,
+    "renderedClean": false,
+    "markupBrandSurfaces": 1,
+    "preservedAfter": 1
+   },
+   "requirementStatus": "accepted-limitation",
+   "releaseBlockers": 1,
+   "verdict": "CLOSED — the mark is measured, and the decision is named as an operator's acceptance rather than as proof of removal. accepted-limitation still counts in releaseBlockers(), so publishing stays gated."
+  }
+ },
+ "fixes": [
+  {
+   "id": "i+iv",
+   "title": "preservedAfter > 0 ALWAYS yields 'preserve-acceptance', never 'output-proof' — which is the same edit as the branch-order fix",
+   "file": "src/release/brand-scan.ts",
+   "function": "evaluateBrandOutputProof",
+   "was": "!irClean ? null : renderedClean ? 'output-proof' : preservedAfter > 0 ? 'preserve-acceptance' : null  (former lines 770-777)",
+   "now": "!irClean ? null : preservedAfter > 0 ? 'preserve-acceptance' : renderedClean ? 'output-proof' : null  (lines 789-795)",
+   "why": "The adjudicator listed (i) and (iv) separately, but in this code they are one expression: testing preservedAfter FIRST is exactly what makes it ALWAYS win. Stated as a deviation only in form, not in effect — both clauses are satisfied by the single reordering, and the ordering is the load-bearing half of this whole fix: it makes the verdict independent of whether some FUTURE surface is measured yet. An unmeasured axis can now only ever downgrade a build to preserve-acceptance, never upgrade one to proof.",
+   "honestyGuard": "preserve-acceptance was NOT quietly given another route to clear the blocker. It still maps to requirement.status='accepted-limitation', which releaseBlockers() still counts — verified by assertion, not by reading the code (smoke-brand-assets 28.X1, 28.X7)."
+  },
+  {
+   "id": "i-wording",
+   "title": "the detail string and statusNote no longer claim something false in the new co-occurring case",
+   "file": "src/release/brand-scan.ts",
+   "functions": [
+    "evaluateBrandOutputProof",
+    "sourceBrandAssetRequirement"
+   ],
+   "why": "preserve-acceptance can now co-occur with renderedClean===true. The old wording said 'the source mark still renders', which would be a fabricated claim in that case. When renderedClean is true the note now says every measured axis reads 0 AND that a preserved mark is an acceptance, never proof — 'the zero says only that no census axis measures that surface'. Asserted by 28.X1b."
+  },
+  {
+   "id": "ii",
+   "title": "a RENDERED image-src-path axis added to the census",
+   "file": "src/production/brand-census.ts",
+   "added": [
+    "BrandSurfaceCounts.imageSrcPath (markup census)",
+    "BrandFlightCounts.imageSrcPath (RSC flight census)",
+    "countBrandNamedImagePaths(markup, brandTokens) — exported",
+    "wired through censusServedHtml, censusFlightPayload, summarizeBrandCensus, emptyFlightCounts, addFlightCounts, markupBrandSurfaceTotal, flightBrandSurfaceTotal",
+    "read in src/release/brand-scan.ts at all THREE axes: brand.census, brand.flight, and the post-hydration census"
+   ],
+   "conventionsFollowed": "measured with the DETECTOR'S OWN scanImageLogo, so the census can never drift blinder than detection; ONE count per <img> element, exactly as detection raises one host per element; the axis is a MEASUREMENT and asserts nothing.",
+   "notSourceUrl": "sourceUrl stays excluded from markupBrandSurfaceTotal (it is the asset layer's axis) and could never have caught this anyway — a self-hosted /static/AcmeLogo.svg is not a source-host URL at all. Asserted directly through isSourceHostUrl (28.X5b).",
+   "scopeNote": "The adjudicator asked for the axis on 'the census'. It was added to BOTH encodings of the rendered output — the SSR markup census AND the RSC flight census — because imageAlt is already measured in both, and leaving the flight out would have left the instrument structurally blinder on exactly the surface at issue. Stated as a deliberate, measured extension, not a redesign.",
+   "notWidened": "the axis reads ONLY a true src/srcset attribute (leading-whitespace anchored, so ` data-src=` is NOT read), because the detector reads props.src / props.srcset and nothing else. Equal to detection, not wider. Asserted by 28.X9d."
+  },
+  {
+   "id": "iii",
+   "title": "the alt matcher aligned with the detector — the firstBrandToken / firstBrandTokenInIdentifier asymmetry removed",
+   "files": [
+    "src/content-injection/brand-surfaces.ts (scanElementProps, the `alt` branch)",
+    "src/production/brand-census.ts (imageAlt axis, markup AND flight, incl. the flight's JSON \"alt\" key form)"
+   ],
+   "findingCorrection": "The literal instruction was 'align the CENSUS with the DETECTOR'. Verified first: on `alt` they were ALREADY equal — both used firstBrandToken (brand-surfaces.ts:370 and brand-census.ts:81). The asymmetry the adjudicator's line references (301 vs 370) is INSIDE brand-surfaces.ts: the SAME <img>'s src PATH is read with the identifier matcher while its alt is read with the weaker word-boundary one. So the census was not blinder than detection — the two were blind TOGETHER, which is the same hole twice, not an alignment. Both were upgraded to firstBrandTokenInIdentifier.",
+   "measuredJustification": "firstBrandToken('NextjsLogotype', ['nextjs']) === undefined; firstBrandTokenInIdentifier(...) === 'nextjs'. nextjs.org ships alt=\"NextjsLogotype\" on its logotype <img> elements: the src path was detected as an image-logo host while the alt on the very same element was invisible to detection AND read as 0 by the census.",
+   "directionIsSafe": "This is a WIDENING. It can only raise MORE surfaces, never fewer, so it cannot manufacture a clean census — the opposite of the failure mode this program exists to fix.",
+   "measuredEffectOnRealLineages": {
+    "linear.app": "14 -> 14 alt surfaces (no churn)",
+    "stripe.com": "10 -> 10 (no churn)",
+    "domainchecker.co.kr": "0 -> 0 (no churn)",
+    "nextjs.org": "12 -> 132 alt surfaces; full-template host count 190 -> 510 (image-logo still exactly 160 over 40 routes)",
+    "acceptedLinearProductionBuild": "re-measured over the shipped bytes: 14 -> 14. Zero churn on the accepted lineage."
+   },
+   "downstreamHandled": "On nextjs.org the newly-detected image-alt hosts sit on the SAME <img> elements as the image-logo hosts, and the image-logo REPLACE already sets props.alt to the new brand name, so both the resolver and the §5e real double-build stay green with nothing refused."
+  }
+ ],
+ "proofs": {
+  "preserveDoesNotClear": "smoke-brand-assets §3d 28.X7 — the PRESERVE-everything image-logo build lands accepted-limitation with releaseBlockers()===1. §3b 28.X1 — a PRESERVED host never resolves even when every measured axis reads 0.",
+  "noFalsePositives": [
+   "smoke-brand-assets §3b 28.X2 — the SAME fixture decided REPLACE/REMOVE everywhere (preservedAfter=0, refused=0) with a clean census STILL clears by output-proof, status=resolved, 0 blockers.",
+   "smoke-brand-assets §5c — the REAL linear canary (real `next build`): markup=0 flight=0 blockers=0, clears by output-proof.",
+   "smoke-brand-assets §5e — the REAL nextjs.org image-logo lineage (two real `next build`s): 12 hosts, 12 replaced, 0 refused, markup=0 flight=0 blockers=0, clearedBy=output-proof."
+  ],
+  "linearHonestZeroUnchanged": {
+   "method": "The production-canary suite reads STORED artifacts and does NOT re-derive through the changed code, so its pass alone proves nothing here. The verdict was re-derived LIVE against the canary's own accepted build.",
+   "build": "data/linear.app/production-builds/2026-08-28T00-24-48-338Z (the build cited by the canary's requirements.json for source-brand-inline-svg)",
+   "storedFacts": {
+    "hostsBefore": 74,
+    "replaced": 74,
+    "preserved": 0,
+    "refused": 0,
+    "preservedAfter": 0,
+    "unexplainedAfter": 0
+   },
+   "reDerivedThroughNewCode": {
+    "cleared": true,
+    "clearedBy": "output-proof",
+    "markupBrandSurfaces": 0,
+    "flightBrandSurfaces": 0,
+    "hydratedBrandSurfaces": 0,
+    "preservedAfter": 0,
+    "requirementStatus": "resolved",
+    "releaseBlockers": 0
+   },
+   "reCensusedShippedBytes": "The package's 9 shipped HTML files were RE-CENSUSED with the NEW instrument (new imageSrcPath axis + widened alt matcher): imageSrcPath=0, imageAlt=0, svgAriaLabel=0, svgSymbolId=0, svgText=0, ariaLabel=0 => markupBrandSurfaceTotal=0.",
+   "conclusion": "74 hosts REPLACE, preservedAfter 0, still clears — and the zero survives a STRICTER instrument, which is the strongest form of the claim. Separately, the earlier accepted build data/linear.app/production-builds/2026-08-27T09-38-59-704Z was measured with the new axis across 436 <img> tags in 10 HTML files: imageSrcPath=0."
+  }
+ },
+ "falsifiability": {
+  "requirement": "prove at least TWO of the new checks can fail; three were proven",
+  "restoredByteIdentically": "verified by sha256 after each restore, against the pre-mutation hashes",
+  "hashes": {
+   "src/release/brand-scan.ts": "2a643fb21b11a5156375e626ac8c62d2d7454c6392cce5721293ee30b673df44",
+   "src/production/brand-census.ts": "2bd9662a7b5a303929fb9fc3f6dcfb5bf59ca22b76c4f6f98c4dbe91977c144c",
+   "src/content-injection/brand-surfaces.ts": "5fc7a68e89b61df0d678d47e7ba4241da066242d1ab51fa5ce4f701244e7ded7"
+  },
+  "mutations": [
+   {
+    "id": "M1",
+    "broke": "src/release/brand-scan.ts — restored the OLD branch order (renderedClean tested before preservedAfter)",
+    "result": "exit 1, 159 PASS / 3 FAIL",
+    "failed": [
+     "28.X1 a PRESERVED host NEVER resolves, not even when every measured axis reads 0",
+     "28.X1b and the statusNote SAYS the zero is not proof, rather than reading like a pass",
+     "28.X6 preservedAfter > 0 outranks a clean census: NEVER output-proof, even measuring nothing"
+    ],
+    "note": "28.X7 correctly SURVIVED M1: with the new axis present the real census reads 1, so renderedClean is false and the fall-through still reaches preserve-acceptance. The two sub-fixes guard the case independently, which is the point — X6 guards the ordering, X7 guards the outcome.",
+    "restoredHashMatches": true
+   },
+   {
+    "id": "M2",
+    "broke": "src/production/brand-census.ts — dropped imageSrcPath back out of markupBrandSurfaceTotal",
+    "result": "exit 1, 160 PASS / 2 FAIL",
+    "failed": [
+     "28.X5 the census now MEASURES the brand-named image path in the rendered output",
+     "28.X11 the refused <img> logo is now VISIBLE to the rendered census (it was not before)"
+    ],
+    "restoredHashMatches": true
+   },
+   {
+    "id": "M3",
+    "broke": "src/content-injection/brand-surfaces.ts — reverted the alt matcher to firstBrandToken",
+    "result": "exit 1, 158 PASS / 4 FAIL",
+    "failed": [
+     "28.X8b the DETECTOR now raises image-alt on that value",
+     "the REAL nextjs.org template ships its own logo as an <img> (the claim that none does was false)",
+     "28.X12 the aligned alt matcher SEES the camel-cased source alt on that same <img> lineage",
+     "the REAL image-logo lineage clears by OUTPUT PROOF, on both byte axes"
+    ],
+    "note": "The fourth failure is the property working in the honest direction: with the detector blinded again, the source alt goes undecided and SHIPS — and the (still-widened) census catches it, so the build refuses to clear instead of silently passing. That is exactly 'the census must never be blinder than detection'.",
+    "restoredHashMatches": true
+   }
+  ]
+ },
+ "testsAdded": {
+  "file": "scripts/smoke-brand-assets.ts",
+  "helper": "the suite's existing file-local check() — no new harness",
+  "newSection": "§3d TASK 28 CLOSE-OUT — the clearing instrument's own blind spots (the reproduction fixture, promoted from a scratch script into a permanent suite section)",
+  "checks": {
+   "28.X1": "a PRESERVED host NEVER resolves, not even when every measured axis reads 0 — REPLACES a check that asserted the OPPOSITE (the old 'the SAME preserved IR with a CLEAN measured output does resolve'). That old check encoded the defect; it is inverted, not deleted.",
+   "28.X1b": "the statusNote says the zero is not proof, rather than reading like a pass",
+   "28.X2": "NO FALSE POSITIVE: nothing preserved + a clean census STILL clears by output-proof (a fix that blocks everything is not a fix)",
+   "28.X3": "the fixture lineage's ONLY host is an image-logo, so no other axis can mask the blind spot",
+   "28.X4": "PRESERVE ships the source logotype: the path is still in the built IR, read back off disk after the bake",
+   "28.X5": "the census MEASURES the brand-named image path in the rendered output",
+   "28.X5b": "and it is NOT the sourceUrl axis — stated through isSourceHostUrl itself",
+   "28.X5c": "the OLD total (svg + alt + aria only) would still read 0 on this shipped output",
+   "28.X6": "preservedAfter > 0 outranks a clean census: NEVER output-proof, even measuring nothing (census: {} simulates a future unmeasured surface)",
+   "28.X7": "THE DEFECT IS CLOSED: the PRESERVE-everything image-logo build BLOCKS the release",
+   "28.X8": "the plain word-boundary matcher is BLIND to a camel-cased alt (the asymmetry itself, asserted)",
+   "28.X8b": "the DETECTOR now raises image-alt on alt=\"NextjsLogotype\"",
+   "28.X8c": "and the CENSUS sees it too — the two matchers agree, so neither is blinder",
+   "28.X9 / X9b / X9c / X9d / X9e": "the axis helper's edges: one count per <img> not per attribute; a path reachable only through srcset counts; a no-brand or third-party path does not; `data-src` is NOT read (equal to detection, not wider); a non-<img> element carrying a brand-named url is not an image-logo",
+   "28.X10": "the FLIGHT axis measures the same surface in the encoding the flight actually uses",
+   "28.X11 / X11b": "§5b — the refused <img> logo is now VISIBLE to the rendered census, and WITHOUT the new axis the census reads 0 (the old blind spot asserted explicitly, by subtracting the axis back out)",
+   "28.X12": "§5e — the aligned alt matcher SEES the camel-cased source alt on the real nextjs.org <img> lineage",
+   "28.P2.F9b": "scripts/smoke-production.ts — the image-logo surface is COUNTED in markupBrandSurfaceTotal and is not the same axis as sourceUrl"
+  },
+  "checksRewrittenNotWeakened": [
+   "§3b 'the SAME preserved IR with a CLEAN measured output does resolve' -> 28.X1, asserting the opposite, because the old assertion WAS the defect. Net check count for that hunk went UP (+2, gaining X1b and X2).",
+   "§5b 'the rendered census ALONE would have passed this build' -> 28.X11 + 28.X11b + a restated IR-proof check. The old claim became FALSE once the axis existed; the blind spot it described is now asserted explicitly instead of being lost. Net +2.",
+   "§5e 'the REAL nextjs.org template ships its own logo as an <img>' — the proxy (image-logo count === total host count) stopped holding once the alt matcher was aligned. Replaced with EXACT per-surface counts (image-logo===4, image-alt===8, total===12), which is STRONGER than the proxy, plus 28.X12. Net +1."
+  ],
+  "noCheckDeleted": true,
+  "noCheckWeakened": true,
+  "noDetectorNarrowed": "the only detector change is a WIDENING (the alt matcher). No severity was downgraded. No zero was reached by narrowing anything."
+ },
+ "guardRailRespected": {
+  "which": "scripts/smoke-production.ts 'Task 27 — no BLANKET source-host assertion was introduced' — a source-tree scan forbidding /(sourceHostMentionsInHtml|visibleText|sourceUrl|bodyAnchorIdentity)\\s*===\\s*0/ anywhere in src/ or scripts/",
+  "whatHappened": "A first draft of 28.X5b wrote `census.sourceUrl === 0` and TRIPPED the guard — smoke-production failed with exactly that finding.",
+  "resolution": "The guard was NOT weakened, disabled or exempted. The check was restated through isSourceHostUrl('/static/AcmeLogo.svg', 'acme.com') === false, which names the actual reason more directly. smoke-production then passed 133/133."
+ },
+ "typecheck": {
+  "command": "bash tmp/wr28/suite-lock.sh pnpm typecheck",
+  "exitCode": 0
+ },
+ "regression": {
+  "baseline": "docs/result/handoffs/28-final-regression.json — 29 suites / 2,948 checks / 0 failures",
+  "method": "Every suite invoked through bash tmp/wr28/suite-lock.sh, strictly one at a time. Counts RE-DERIVED from raw stdout with the anchored regexes /^  PASS  / and /^  FAIL  / (exactly two leading spaces), never read from a suite's own trailer.",
+  "invocation": "npx tsx scripts/smoke-<name>.ts (the Task-28 suites are deliberately absent from package.json; package.json was not edited)",
+  "note": "Suite logs live in the agent scratchpad, OUTSIDE the repo. This agent wrote exactly ONE file into the repo: this handoff, plus the source/test edits listed above.",
+  "perSuite": [
+   {
+    "suite": "brand-assets",
+    "baseline": 141,
+    "now": 162,
+    "delta": 21,
+    "failures": 0
+   },
+   {
+    "suite": "production",
+    "baseline": 132,
+    "now": 133,
+    "delta": 1,
+    "failures": 0
+   },
+   {
+    "suite": "assets",
+    "baseline": 140,
+    "now": 140,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "authoring-preview",
+    "baseline": 41,
+    "now": 41,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "content-generation",
+    "baseline": 50,
+    "now": 50,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "content-injection",
+    "baseline": 161,
+    "now": 161,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "create-site",
+    "baseline": 66,
+    "now": 66,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "e2e",
+    "baseline": 130,
+    "now": 130,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "editor-integration",
+    "baseline": 45,
+    "now": 45,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "enablement",
+    "baseline": 101,
+    "now": 101,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "first-draft",
+    "baseline": 34,
+    "now": 34,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "interaction-detector",
+    "baseline": 92,
+    "now": 92,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "interaction-explorer",
+    "baseline": 108,
+    "now": 108,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "interaction-patterns",
+    "baseline": 88,
+    "now": 88,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "multi-observer",
+    "baseline": 62,
+    "now": 62,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "production-canary",
+    "baseline": 46,
+    "now": 46,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "recon-template",
+    "baseline": 109,
+    "now": 109,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "reconstruction",
+    "baseline": 217,
+    "now": 217,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "reconstruction-qa",
+    "baseline": 134,
+    "now": 134,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "regions",
+    "baseline": 76,
+    "now": 76,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "registry",
+    "baseline": 35,
+    "now": 35,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "release",
+    "baseline": 275,
+    "now": 275,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "revision",
+    "baseline": 36,
+    "now": 36,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "selector",
+    "baseline": 81,
+    "now": 81,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "seo",
+    "baseline": 113,
+    "now": 113,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "sitespec",
+    "baseline": 257,
+    "now": 257,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "theme",
+    "baseline": 47,
+    "now": 47,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "verifier",
+    "baseline": 81,
+    "now": 81,
+    "delta": 0,
+    "failures": 0
+   },
+   {
+    "suite": "visual-editor",
+    "baseline": 50,
+    "now": 50,
+    "delta": 0,
+    "failures": 0
+   }
+  ],
+  "totals": {
+   "suites": 29,
+   "baselineChecks": 2948,
+   "nowChecks": 2970,
+   "delta": 22,
+   "failures": 0,
+   "negativeDeltas": 0
+  },
+  "deltaExplanation": [
+   "brand-assets 141 -> 162 (+21): the new §3d close-out section (16 checks), §3b +2 (28.X1b, 28.X2 — 28.X1 replaces the inverted check 1:1), §5b +2 (28.X11, 28.X11b — replacing one check with three), §5e +1 (28.X12).",
+   "production 132 -> 133 (+1): 28.P2.F9b.",
+   "All 27 other suites: delta 0. ZERO negative deltas. ZERO failures anywhere."
+  ],
+  "flakeObserved": {
+   "suite": "editor-integration",
+   "what": "First invocation exited 1 at 32 PASS / 0 FAIL with `page.waitForFunction: Timeout 120000ms exceeded` at scripts/smoke-editor-integration.ts:252 (waitForStatus), inside the real-browser operator journey. No check FAILED — the suite aborted.",
+   "rerun": "Re-run through the same mutex: exit 0, 45/45, matching baseline exactly. The suite reaped its own 2 surviving children.",
+   "assessment": "Treated as an environmental flake, not a regression: the timing-out step is a browser wait in the editor journey and touches no brand code. Reported rather than quietly dropped.",
+   "bothRunsCounted": "the 45/45 run is the one in the table"
+  }
+ },
+ "filesChanged": [
+  "src/release/brand-scan.ts — evaluateBrandOutputProof (branch order, the three axis literals, detail wording) + sourceBrandAssetRequirement (statusNote wording)",
+  "src/production/brand-census.ts — BrandSurfaceCounts.imageSrcPath, BrandFlightCounts.imageSrcPath, countBrandNamedImagePaths (new export), censusServedHtml, censusFlightPayload, summarizeBrandCensus, emptyFlightCounts, addFlightCounts, markupBrandSurfaceTotal, flightBrandSurfaceTotal, imageAlt matcher in both censuses",
+  "src/content-injection/brand-surfaces.ts — scanElementProps, the `alt` branch: firstBrandToken -> firstBrandTokenInIdentifier",
+  "scripts/smoke-brand-assets.ts — new §3d, plus §3b/§5b/§5e updates and the flight accumulators (which were silently under-reporting the new axis)",
+  "scripts/smoke-production.ts — 28.P2.F9 literal updated for the new field, plus new 28.P2.F9b",
+  "docs/result/handoffs/28-brand-clearing-fix.json — this file"
+ ],
+ "contractCompliance": {
+  "gitMutatingOperations": 0,
+  "gitCommandsUsed": [
+   "git status",
+   "git diff --stat",
+   "git --no-pager diff (read-only inspection)"
+  ],
+  "stashUsed": false,
+  "dependenciesInstalled": 0,
+  "packageJsonEdited": false,
+  "doNotTouchRespected": "docs/result/handoffs/24-aggregation-phase1.json untouched; no data/ run directory predating 2026-08-27 mutated (the only data/ writes were self-deleting .smoke-* / .wr28-repro-* fixture roots); Exact Reconstruction and Recon Template untouched; no data-wr-slot introduced",
+  "processesReaped": "One orphaned next-server (pid 84860) and its npm parent (84833) survived a smoke-e2e run that my own 10-minute tool timeout killed; both were reaped. No other preview/browser process survived."
+ },
+ "knownLimitationsCarried": [
+  "A bake report written BEFORE this fix carries no `imageSrcPath` field, so `brand.census?.imageSrcPath ?? 0` reads it as 0 — a stored pre-fix build cannot retroactively gain the axis and would still need a REBUILD to be measured on it. This is the repo's existing 'it clears on the REBUILT OUTPUT, never on the decision' rule and is not a new hole: the `preservedAfter > 0` ordering (fix i/iv) protects such a build regardless of what its stored census says, because it does not consult the census at all.",
+  "The alt matcher widening raises nextjs.org's full-template host count from 190 to 510. That lineage is a CANARY, not an accepted production lineage, and the extra hosts are real shipped `alt=\"NextjsLogotype\"` surfaces — but any future operator run against nextjs.org will now see 320 more decisions to make. This is the honest count, not a regression.",
+  "`countBrandNamedImagePaths` reads only `src` and `srcset` on `<img>` tags, matching the detector exactly. A brand-named logo delivered as a CSS `background-image`, an `<object>`, or an inline `<image href>` inside SVG is still unmeasured by this axis — as it is undetected by `scanImageLogo`. Detection and census stay equal; neither is blind alone."
+ ],
+ "verdict": {
+  "clauseAddressed": "source-brand-asset resolution works",
+  "state": "the four sub-fixes are implemented, each independently falsifiable, and the full 29-suite regression is green with zero negative deltas",
+  "escalation": "none — nothing in this task required a security / architecture / release-verdict judgement above the builder assignment",
+  "notMyCall": "whether this closes the Task-28 bar overall is the coordinator's verdict, not this agent's. This handoff reports measurements; it does not declare the program READY."
+ }
+}

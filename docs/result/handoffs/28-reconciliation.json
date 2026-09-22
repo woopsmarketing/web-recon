@@ -1,0 +1,191 @@
+{
+  "schema": "task28-reconciliation-v1",
+  "producedAt": "2026-08-28T03:10:00+09:00",
+  "producedBy": "reconciliation agent (SSH-resumed half; claude --resume pid 53915, started 2026-08-28T01:19:12+09:00)",
+
+  "headline": "THE TREE COMPILES AND EVERY SUITE I RAN PASSES, BUT THE PREMISE OF THIS TASK IS FALSE: THE OTHER HALF IS NOT STOOD OFF. It held the suite mutex, edited src/release/collect.ts and ran mutation batteries DURING my reconciliation. My numbers are a snapshot of a byte-state I pinned by sha256, not of a quiescent tree.",
+
+  "forkWindow": {
+    "from": "2026-08-28T01:22:00+09:00",
+    "to": "STILL OPEN at 2026-08-28T03:10 — NOT 02:05 as the contract states",
+    "evidenceThatItIsStillOpen": [
+      "ps: pid 47230 `bash tmp/wr28/suite-lock.sh npx tsx scripts/smoke-release.ts` started 2026-08-28T03:00:13, ancestry 47124 -> 17399 `claude --resume` (started 2026-08-27T21:44:48) -> Cursor.app local terminal. That is the other half.",
+      "The captured argv of pid 47124 shows it running a python3 heredoc that rewrites a brand-message string in src/release/collect.ts, then `suite-lock.sh pnpm typecheck`, then smoke-release.ts into tmp/wr28/fix56/release.log.",
+      "src/release/collect.ts mtime 2026-08-28T03:00:10 — 30 s before my first measurement.",
+      "The mutex was continuously re-acquired by the other half at pids 47230, 49693, 51454, 59292 between 03:00 and 03:08.",
+      "tmp/wr28/fix56/mutate.py (mtime 03:07) performs on/off mutation sabotage of src/release/enablement.ts; pre-sabotage.sha (03:05) is its restore ledger."
+    ],
+    "myOwnActivityWindow": "My session lineage wrote scratchpad logs 21:49-21:58 and 01:22-02:04, then was idle until my measurement at 03:03-03:06. Therefore every source mtime in 02:04-03:03 belongs to the other half.",
+    "filesByAuthor": {
+      "thisHalf_sshResumed": [
+        "src/editor/panels.ts (2026-08-28T01:32:29)",
+        "src/editor/region-enablement.ts (2026-08-28T01:32:29)",
+        "src/editor/runtime.ts (2026-08-28T01:32:51)",
+        "src/editor/server.ts (2026-08-28T01:33:21)",
+        "src/editor/catalog.ts (2026-08-28T00:14:54)",
+        "src/editor/session.ts (2026-08-28T00:25:43)",
+        "src/editor/index.ts (2026-08-28T00:25:43)",
+        "src/editor/ai-rewrite.ts (2026-08-28T00:19:13)",
+        "src/editor/assets.ts (2026-08-28T00:15:20)",
+        "src/editor/inspect.ts (2026-08-28T00:16:07)",
+        "scripts/smoke-visual-editor.ts (2026-08-28T00:45:56)",
+        "src/authoring-preview/bridge.ts (2026-08-28T00:50:56)",
+        "src/authoring-preview/session.ts (2026-08-28T01:26:45)",
+        "src/authoring-preview/{index,lineage,materialize,patch,serve,workspace}.ts (2026-08-27T20:55-21:21)",
+        "scripts/smoke-authoring-preview.ts (2026-08-27T21:18:24)",
+        "scripts/smoke-brand-assets.ts (2026-08-27T22:45:29)"
+      ],
+      "otherHalf_webRecon33": [
+        "src/editor/enablement.ts (2026-08-28T02:02:30)",
+        "src/editor/client.ts (2026-08-28T02:02:30)",
+        "scripts/smoke-editor-integration.ts (2026-08-28T01:58:58)",
+        "scripts/smoke-enablement.ts (2026-08-28T02:57:46) — grown AFTER its own 02:05 handoff",
+        "scripts/smoke-release.ts (2026-08-28T02:58:15)",
+        "src/release/collect.ts (2026-08-28T03:00:10)",
+        "src/release/enablement.ts, src/release/stages.ts, src/regions/enablement.ts, src/content-injection/{packet,types}.ts (all touched in the 02:04-03:03 window)"
+      ]
+    },
+    "ambiguous": [
+      {
+        "file": "src/editor/commit.ts",
+        "mtime": "2026-08-28T02:30:58",
+        "why": "The contract and the 28-editor-enablement handoff both call commit.ts 'the visual-editor builder's file — left untouched' (i.e. THIS half's). But it was modified at 02:30, inside a window when only the OTHER half was active. So a file this half owns was edited by the other half, and no handoff claims the edit.",
+        "resolution": "F1 semantics are INTACT — undoLastRevision still returns chain[chain.length - 2] (commit.ts:143). The edit did not change the documented behaviour."
+      },
+      {
+        "file": "src/editor/inversion.ts",
+        "mtime": "2026-08-28T02:30:32",
+        "why": "Same window, same reasoning: this half's Phase-4 file, edited at 02:30 by the other half, unclaimed by any handoff.",
+        "resolution": "No orphaned or dangling exports; typecheck exit 0; smoke:visual-editor 50/0 still passes over it."
+      }
+    ]
+  },
+
+  "typecheck": "exit 0",
+  "typecheckEvidence": "bash tmp/wr28/suite-lock.sh -> `$ tsc --noEmit`, no diagnostics, wrapper recorded TYPECHECK_EXIT=0. Raw log <scratchpad>/typecheck.log.",
+
+  "measurementIntegrity": {
+    "method": "typecheck + all five suites ran inside ONE mutex hold (acquired after 115 s) so the other half could not interleave a suite or an edit between them.",
+    "sha256Before": "hash of every src/**/*.ts and scripts/**/*.ts taken at lock acquisition",
+    "sha256After": "identical — diff empty. No source file changed during the measurement window.",
+    "sha256Now": "still identical at 03:07:38, i.e. the other half's mutation batteries were restored cleanly and my numbers describe the CURRENT bytes."
+  },
+
+  "suitesReDerived": [
+    { "suite": "smoke:visual-editor",      "checks": 50,  "failures": 0, "reportedByOtherHalf": 50, "reproduces": true,  "note": "50 unique ids 28.P4.1 … 28.P4.50, re-derived by grep -c on raw PASS lines." },
+    { "suite": "smoke:editor-integration", "checks": 25,  "failures": 0, "reportedByOtherHalf": 25, "reproduces": true,  "note": "25 unique ids. F1 (28.P8.19) and F2 (28.P8.11) both present and PASSING, asserting the honest semantics." },
+    { "suite": "smoke:enablement",         "checks": 101, "failures": 0, "reportedByOtherHalf": 88, "reproduces": false, "note": "NOT A DISCREPANCY, A GROWTH. My own lineage measured 88 at 01:22. The other half grew scripts/smoke-enablement.ts at 02:57:46 — after its 02:05 report — to 101 (64 ids under 28.P5, 33 under 28.P6). The other half's own tmp/wr28/fix56/results.tsv independently records `enablement 101 0 0 5s`, matching my re-derivation exactly. The 88 was true when written; 101 is true now." },
+    { "suite": "smoke:authoring-preview",  "checks": 41,  "failures": 0, "reportedByOtherHalf": 41, "reproduces": true,  "note": "41 unique ids." },
+    { "suite": "smoke:brand-assets",       "checks": 141, "failures": 0, "reportedByOtherHalf": null, "reproduces": true, "note": "No count was among the four disputed numbers; 141 matches the 28-gate-phase23 baseline and the other half's results2.tsv. This suite uses free-text check names, not numbered ids, so the count is the PASS-line count." }
+  ],
+  "suitesReDerivedTotal": { "checks": 358, "failures": 0, "exitCodes": "all 0" },
+
+  "seamCoherent": true,
+  "seamVerdict": "The seam COMPILES, RUNS and is FUNCTIONALLY CLOSED, but it carries one silent-widening hole and one redundant mechanism. Nothing here is broken; two things are untidy in a way that matters to this program's honesty standard.",
+  "seamFindings": [
+    {
+      "id": "route-field-never-forwarded",
+      "severity": "confirmed-as-described, workaround holds",
+      "status": "CONFIRMED exactly as the contract states",
+      "what": "src/editor/enablement.ts RegionToggleRequest declares `route?: string | null` ('the route the operator is looking at — the default disable scope'). src/editor/panels.ts RegionEnablementWriteRequest (lines 64-73) has NO `route` field. src/editor/server.ts (lines 471-481) forwards regionId/enabled/scope/routes/cascadeRegionIds/reason and NOT route. src/editor/region-enablement.ts (lines 100-109) cannot forward it because the field does not exist upstream. So request.route is ALWAYS undefined on every HTTP path.",
+      "workaround": "src/editor/client.ts:229 sends `{ regionId, enabled, route: S.route, routes: [S.route] }`. server.ts drops `route` and forwards `routes`. enablement.ts:390 uses request.routes when defined.",
+      "doesTheWorkaroundFullyCloseIt": "FOR SCOPE SELECTION, YES. The engine receives a single-route list, which is a PARTIAL route list, which is exactly the precondition rule 1 (shared-page-blast-radius) needs in order to fire. The refusal the design depends on is reachable. FOR THE WIDENING SIGNAL, NO — see the next finding."
+    },
+    {
+      "id": "widenedToBlastRadius-is-computed-but-no-consumer-can-read-it",
+      "severity": "honesty gap — a guard against silent widening that is itself silent",
+      "what": "enablement.ts:385 computes `widenedToBlastRadius = scope === 'routes' && request.routes === undefined && route === null && blastRadius.length > 1`, commented at :380 as existing 'because a silent widening is exactly the failure' to prevent, and returns it on RegionToggleResult (:284, :506). grep proves the identifier appears ONLY in src/editor/enablement.ts and nowhere else in src/ or scripts/.",
+      "consequence": "TWO independent reasons the operator can never be told: (a) RegionEnablementWriteResult in panels.ts has no such field and region-enablement.ts's write() does not copy it, so it is dropped at the adapter even if true; (b) because client.ts always sends `routes: [S.route]`, request.routes is never undefined on the UI path, so the flag can never BECOME true there anyway. The guard is unreachable through the shipped UI and unreadable through the port.",
+      "notAFailure": "No current behaviour is wrong: the UI always names a route, so no widening actually occurs today. The defect is that if a future caller omits routes, the widening would happen and the flag that exists to announce it would be discarded in silence.",
+      "recommendation": "Either add `widenedToBlastRadius` to RegionEnablementWriteResult and forward it in region-enablement.ts write(), or add `route` to RegionEnablementWriteRequest and have server.ts forward body.route so the field earns its comment. Do NOT delete the flag."
+    },
+    {
+      "id": "two-mechanisms-for-one-job",
+      "severity": "redundancy, currently harmless",
+      "what": "`route` (singular, on RegionToggleRequest) and `routes` (array, on both request types) both express disable scope. client.ts:229 populates BOTH from the same value S.route. Only `routes` survives the server boundary. client.ts:227-228 documents this honestly: 'the single route is sent alongside it for the same intent, and is ignored where unread.'",
+      "consequence": "A reader of enablement.ts reasonably assumes `route` is live; it is dead on every path that exists today. This is the residue of the two halves converging on the same requirement independently."
+    },
+    {
+      "id": "browser-client-is-outside-the-type-system",
+      "severity": "structural, by design, worth stating",
+      "what": "tsconfig include is ['src/**/*.ts','scripts/**/*.ts'], and the browser half lives in `export const EDITOR_CLIENT_JS = ` (client.ts:107) as a template string. So `pnpm typecheck` exit 0 says NOTHING about the correctness of the `routes: [S.route]` workaround.",
+      "whatActuallyProvesIt": "smoke:editor-integration's 25 Playwright checks — in particular the refusal assertions 28.P8.8-28.P8.11 — are the ONLY evidence that the client sends the right body. That evidence exists and passes; the point is that the typecheck-exit-0 line must not be read as covering it."
+    },
+    {
+      "id": "no-dead-code-from-the-clobbered-version",
+      "severity": "clean",
+      "what": "I scanned every `export` in src/editor/*.ts and counted references across src/ and scripts/ excluding only the declaration line itself. ZERO orphaned exports. UNWIRED_REGION_ENABLEMENT is live as the default parameter at runtime.ts:95; REGION_ENABLEMENT_SEAM is live at panels.ts:130/213/267 and is the 501 body; regionEnablementRows is live at region-enablement.ts:93/112. An earlier cruder scan of mine produced 40 false positives by excluding same-file uses — I discarded it.",
+      "note": "Every symbol client.ts and panels.ts assume exists does exist with a compatible signature — typecheck exit 0 over both files is the proof, and the adapter in region-enablement.ts is the only translation layer."
+    },
+    {
+      "id": "server-forwards-what-the-engine-needs-elsewhere",
+      "severity": "clean",
+      "what": "The route-enablement path (server.ts:495-510) reads body.route, body.enabled and body.reason and calls toggleRoute directly — no adapter, no dropped field. Both enablement handlers call runtime.refreshProject() and runtime.syncEnablement() only when result.changed, and return the sync alongside the result. Refusals return HTTP 200 with the refusal body, never an error status, so the client renders the engine's reason rather than 'failed'."
+    }
+  ],
+
+  "handoffAudit": [
+    { "file": "28-editor-enablement.json", "field": "measuredOnRealArtifacts.template — 8 routes, 3079 slots, 9929 bindings", "claimed": "8 / 3079 / 9929", "measured": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z: site-map.json routes=8, slots.json slots=3079, slot-bindings.json bindings=9929", "agrees": true },
+    { "file": "28-editor-enablement.json", "field": "measuredOnRealArtifacts.pageRegions — 68 regions, 25 on p000001", "claimed": "68 / 25", "measured": "data/linear.app/page-regions/2026-08-26T16-14-07-901Z: regions=68; regions whose pages[] contains p000001 = 25", "agrees": true },
+    { "file": "28-editor-enablement.json", "field": "regression.smoke:enablement", "claimed": "88 / 0 (unchanged)", "measured": "101 / 0", "agrees": false, "explanation": "STALE, NOT FALSE. True at 02:05; the same agent grew the suite at 02:57:46. Its own results.tsv now says 101." },
+    { "file": "28-editor-enablement.json", "field": "regression.smoke:editor-integration / visual-editor / authoring-preview / typecheck", "claimed": "25/0, 50/0, 41/0, exit 0", "measured": "25/0, 50/0, 41/0, exit 0", "agrees": true },
+    { "file": "28-region-enablement.json", "field": "safetyRules[1].measuredSlotSharing — 134 of 3,079 slot keys in >1 region; 84 global.footer.* keys", "claimed": "134 / 3079 / 84", "measured": "recomputed from page-regions.json slotKeys: shared=134, distinct=3079, global.footer.*=84", "agrees": true },
+    { "file": "28-region-enablement.json", "field": "testsAdded.newSuite — smoke-enablement.ts 88 checks", "claimed": "88 / 0", "measured": "101 / 0", "agrees": false, "explanation": "Same growth. This handoff (mtime 01:19:35) predates the 02:57 suite edit and was never revised." },
+    { "file": "28-visual-editor.json", "field": "tests.suite — 50 checks, ids 28.P4.1 … 28.P4.50", "claimed": "50, contiguous 1-50", "measured": "grep of scripts/smoke-visual-editor.ts: 50 unique ids, min 28.P4.1, max 28.P4.50; run yields 50 PASS / 0 FAIL", "agrees": true },
+    { "file": "28-visual-editor.json", "field": "tests.regressionRun.smokeAuthoringPreview", "claimed": "41 / 0", "measured": "41 / 0", "agrees": true },
+    { "file": "28-gate-phase23.json", "field": "22 suites / 2472 checks / 0 failures", "claimed": "2472 over 22 suites", "measured": "sum of the suites[] array = 2472 across 22 entries, failures sum 0 — internally consistent", "agrees": true, "caveat": "SUPERSEDED AS A TREE BASELINE. The gate list contains NONE of enablement, visual-editor or editor-integration, and several member counts have since moved (release 241 -> 274 per the other half's 03:01 run; regions 67 -> 76, content-injection 145 -> 152, production 123 -> 129, seo 97 -> 104 per its results.tsv). The tree now carries 25 suites, not 22." },
+    { "file": "28-gate-phase23.json", "field": "handoffSpotChecks[5] brand-assets 141 / handoffSpotChecks[10] authoring-preview 41", "claimed": "141 / 0 and 41 / 0", "measured": "141 / 0 and 41 / 0 in my own locked run", "agrees": true },
+    { "file": "28-gate-phase23.json", "field": "historicalMutationEvidence.flowpilotWr27 — no revisions/ directory", "claimed": "no revisions/", "measured": "ls data/linear.app/release-projects/flowpilot-wr27/ -> authored, operator-checklist.md, release-project.json, requirements.json, runs, technical-debt.json. No revisions/.", "agrees": true },
+    { "file": "28-brand-assets.json", "field": "addedByMe[0] 're-derived 109 checks' vs checksAreReal.mutations baseline '117 checks' vs current", "claimed": "109 and 117 in the same document", "measured": "141 / 0", "agrees": false, "explanation": "Internally inconsistent because it records three different moments without dating them. The NEWEST figure (gate, 141) matches the tree. Untraceable as written; not a fabrication, a versioning failure." },
+    { "file": "28-intel/pending-package-scripts.tsv", "field": "suite registrations (package.json must not be edited)", "claimed": "6 lines", "measured": "6 TAB-separated lines present: smoke:authoring-preview, smoke:brand-assets, editor, smoke:visual-editor, smoke:enablement, smoke:editor-integration. git status confirms package.json is NOT modified.", "agrees": true },
+    { "file": "28-editor-enablement.json", "field": "producedBy / author attribution", "claimed": "integration builder (session web-recon-33)", "measured": "Consistent with mtimes: enablement.ts and client.ts at 02:02:30, smoke-editor-integration.ts at 01:58:58, handoff at 02:05:33. It is the ONLY 28-*.json that names its author, and it is correct.", "agrees": true, "note": "Every other 28-*.json omits producedBy entirely, which is why cross-written attribution cannot be settled from the documents alone and had to be settled from mtimes plus process ancestry." }
+  ],
+  "handoffsUntraceableOrCrossWritten": [
+    "28-brand-assets.json carries 109, 117 and (via the gate) 141 for the same suite with no timestamps — the number is not traceable from the document alone.",
+    "28-region-enablement.json and 28-route-enablement.json share mtime 2026-08-28T01:19:35, and 28-intel/{build-phase4-editor,recon-editor-app,recon-enablement-safety}.json share 01:19:34 — a single batch write 22 s after my session started, so their mtimes are copy timestamps, not authorship timestamps. Their CONTENT spot-checks all pass, so I treat the content as sound and the mtimes as uninformative.",
+    "19 of the 20 28-*.json files declare no producedBy. Author attribution for those rests entirely on the contract's statement plus my mtime/process reconstruction."
+  ],
+
+  "historicalMutationCount": 0,
+  "historicalMutationEvidence": {
+    "method": "Walked all 338 timestamped run directories under data/. For each, parsed the UTC run id and compared it against the LATEST mtime of any file inside it. Grouped by containing run directory, never by `git status data/` (vacuous — data/ is gitignored) and never by birth time (APFS clonefile preserves the source's).",
+    "falseAlarmResolved": "Four run dirs named 2026-08-26T* contained files with 2026-08-27 mtimes: linear.app/production-builds/2026-08-26T19-26-48-957Z and 2026-08-26T19-24-34-029Z, stripe.com/recon-templates/2026-08-26T17-16-46-409Z and 2026-08-26T22-38-06-075Z. NOT mutations: run ids are UTC and mtimes are KST (+9). 19:26:48Z = 04:26:48 KST, and all 440 files fall inside a 35 s write window starting exactly there. Same for the other three.",
+    "remainingSpread": "Six pre-2026-08-27 run dirs have a latest mtime more than 30 min after their run id, all between +0.69 h and +1.64 h, all long-running Aug-13 site-observation crawls and one Aug-25 content run. None has a single file modified on Aug 27 or Aug 28.",
+    "conclusion": "No data/ run directory predating 2026-08-27 was mutated.",
+    "doNotTouchFile": "docs/result/handoffs/24-aggregation-phase1.json is byte-identical to its committed blob: working-tree sha256 09e3745e3041d9018640e7027c1fb6ec60617f04d2cbcbd4e421a48b7c8d1c30 == `git show HEAD:...` sha256, and `git status --porcelain` reports it unmodified."
+  },
+
+  "gitMutatingOperations": 0,
+  "gitEvidence": {
+    "log": "git log --oneline -3 -> 6c2e723 '0827 morning' / d33abb3 'checkpoint: web-recon MVP preview-ready baseline' / 2777b41 'chore: initialize web-recon foundation (Phase 1)'. Still starts at 6c2e723.",
+    "stash": "git stash list -> empty",
+    "reflog": "git reflog -20 -> exactly three entries, HEAD@{0} commit 6c2e723, HEAD@{1} commit d33abb3, HEAD@{2} commit (initial) 2777b41. No reset, no checkout, no rebase, no new commit.",
+    "workingTree": "71 porcelain entries, all modifications and untracked additions. package.json is NOT among them.",
+    "byMe": "I performed read-only git inspection only, and wrote exactly one file: this report."
+  },
+
+  "leakedProcesses": [
+    { "pid": 28068, "child": 28088, "command": "npm exec next start -p 61590 -> next-server (v16.3.0)", "ppid": 1, "started": "2026-08-28T02:35:07+09:00", "ageAtReport": "~35 min", "port": 61590, "listening": true, "assessment": "ORPHANED LEAK from a finished preview run — orphaned before my session's measurement began." },
+    { "pid": 29284, "child": 29304, "command": "npm exec next start -p 61930 -> next-server (v16.3.0)", "ppid": 1, "started": "2026-08-28T02:36:07+09:00", "ageAtReport": "~34 min", "port": 61930, "listening": true, "assessment": "ORPHANED LEAK, same class." },
+    { "pid": 30000, "child": 30020, "command": "npm exec next start -p 62026 -> next-server (v16.3.0)", "ppid": 1, "started": "2026-08-28T02:37:04+09:00", "ageAtReport": "~33 min", "port": 62026, "listening": true, "assessment": "ORPHANED LEAK, same class." }
+  ],
+  "leakedProcessesAction": "NOT KILLED, DELIBERATELY. My role is to change nothing but this report, and the other half is running preview-spawning suites RIGHT NOW (battery2.sh covering authoring-preview and brand-assets at 03:05-03:07). Killing a listening next-server while a concurrent agent is mid-suite could fail its run and be misread as a regression. They are reported for the operator or for a later agent to reap once the other half is genuinely stood off.",
+  "processesISpawned": "My measurement spawned one tsx run per suite plus their Playwright/next children, all inside a single mutex hold. All exited. I verified no PPID-1 orphan exists with a start time inside my window (03:03-03:07) — the only three orphans predate it by ~26 min.",
+
+  "carriedFindingsStillHonest": [
+    { "id": "F1", "state": "INTACT AND ASSERTED", "evidence": "src/editor/commit.ts:143 still `const target = chain[chain.length - 2]`. smoke:editor-integration 28.P8.19 'Undo is a ONE-STEP toggle, not an undo stack' PASSES. commit.ts was edited at 02:30 by the other half but the semantics were not changed and the finding was not quietly closed." },
+    { "id": "F2", "state": "INTACT AND ASSERTED", "evidence": "smoke:editor-integration 28.P8.11 'the cascade is NOT a rubber stamp: taking it re-adjudicates the whole transaction' PASSES. The uncomfortable non-zero refusal count is still the asserted behaviour." },
+    { "id": "F3", "state": "INTACT AND CORRECTLY SCOPED", "evidence": "smoke:enablement 28.P5.56/57/58 all PASS at ENGINE level ('disabling a region for ONE route of a shared page is refused' / 'the refusal NAMES the other route' / 'explains WHY it cannot be isolated'). 28-editor-enablement.json limitations[0] still states plainly that on linear the UI-level refusal comes from a multi-page GLOBAL region, not from a many-to-one route->page mapping. Nothing proves the many-to-one case through the UI, and nothing claims to." }
+  ],
+
+  "blockers": [],
+
+  "limitations": [
+    "THE HEADLINE LIMITATION: this reconciliation was performed against a LIVE tree. The other half held the mutex, edited src/release/collect.ts at 03:00:10 and ran mutation sabotage of src/release/enablement.ts at 03:07. I bounded this by taking a sha256 of every src/ and scripts/ .ts file at lock acquisition and again at release (identical), and once more at 03:07:38 (still identical) — so my numbers describe a real, currently-present byte-state. They are NOT a guarantee about the tree one minute from now. Any later agent MUST re-derive rather than cite me, exactly as I was told not to cite the contract.",
+    "I ran five suites (visual-editor, editor-integration, enablement, authoring-preview, brand-assets) plus typecheck — 358 checks total, the set I was asked for. I did NOT re-run the other 20 suites, so I cannot personally confirm the whole-tree total. The 22-suite / 2472-check gate baseline is stale in both directions (three suites missing from it, at least five member counts since moved) and should not be quoted as the current tree state by anyone.",
+    "smoke:brand-assets uses free-text check names rather than numbered ids, so its 141 is a PASS-line count with no id cross-check available. The other four suites had unique-id counts exactly equal to their PASS counts, which is a stronger guarantee.",
+    "`pnpm typecheck` does not cover src/editor/client.ts's browser JavaScript, which lives in a template string outside the type system. The client-side half of the enablement seam is proven only by smoke:editor-integration's Playwright assertions.",
+    "Author attribution for 19 of 20 handoff files rests on mtimes plus process ancestry, because only 28-editor-enablement.json declares producedBy. Five handoffs share batch-write mtimes (01:19:34/35) that are copy timestamps and carry no authorship information; I relied on their content spot-checks instead, all of which passed.",
+    "I did not reap the three orphaned next-server processes, for the reason recorded under leakedProcessesAction. They hold ports 61590, 61930 and 62026."
+  ]
+}

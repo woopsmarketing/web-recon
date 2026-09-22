@@ -39,6 +39,13 @@ export {
 export { AssetCatalogBuilder, sanitizeSvgMarkup, type SanitizedSvg } from "./asset-catalog.js";
 
 export {
+  computeAuthoredBreakpoints,
+  type AuthoredLayoutBearingNode,
+  type AuthoredLayoutScope,
+  type ComputeAuthoredBreakpointsOptions,
+} from "./authored-breakpoints.js";
+
+export {
   compileViewport,
   type CompiledViewport,
   type CompileViewportInput,
@@ -94,3 +101,24 @@ export {
   type LoadedSiteSpec,
   type LoadSiteSpecOptions,
 } from "./load-sitespec.js";
+
+export {
+  DEVICE_WIDTH_POLICY,
+  MEDIA_CONDITION_DEFAULT_ROOT_FONT_SIZE_PX,
+  MEDIA_CONDITION_MAX_LENGTH_PX,
+  MEDIA_CONDITION_MIN_WIDTH_PX,
+  foldMediaBreakpoints,
+  parseMediaCondition,
+  type MediaBreakpointEntry,
+  type MediaBreakpointHistogram,
+  type MediaConditionAlternative,
+  type MediaConditionResult,
+  type MediaConditionStatus,
+  type MediaConditionTally,
+  type MediaLengthUnit,
+  type MediaWidthBound,
+  type MediaWidthBoundKind,
+  type MediaWidthBoundary,
+  type MediaWidthInterval,
+  type ParseMediaConditionOptions,
+} from "./media-condition.js";

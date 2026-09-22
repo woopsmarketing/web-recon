@@ -1,0 +1,55 @@
+
+[site] a NEW site instance, pinned to the existing immutable release
+  ok   A boost-interior-demo exists as its own Site Instance (siteId, Korean identity, own origin); fixtures are separate directories
+  ok   B pins EXACTLY ONE newer verified release (the same one every fixture pins) (id + full hash), and the current package was built with it
+
+[unchanged] Template source, releases and fixtures against the pre-Step-6 baseline
+  ok   C0 the baseline itself is the one captured at 2026-09-19T11:08:42Z (sha256 pinned): re-capturing it after a change fails here
+  ok   C release hash unchanged: the 1.4.0 release verifies, NO release was added or removed, every release tree is byte-identical
+  FAIL D Template source unchanged: live templateSourceHash = baseline = the release record; live release sources have no drift; raw template + platform trees identical
+       platform tree (test/ excluded): "315cdd6c73c33fb55c760eeee0abb64be581e04bfde2fec5107a6904e5500eac" ≠ "f392bb80800057d653c371a31003c6016882cfd0f346d96fb830cd0964a37f7d"
+  ok   D2 independent of the baseline: no Template / Platform implementation file (test/ excluded) was modified after the 1.4.0 release was cut
+  ok   E old fixture sites unchanged: data/sites/fixture-* and data/site-builds/fixture-* (pointers, history, packages) byte-identical
+  ok   V same release, different site instances: 4 sites share releaseId + templateSourceHash; buildInputIds, snapshots and rendered homes all differ
+
+[leakage] the demo package carries no fixture identity and no source-site material
+  ok   F no fixture identity anywhere in the demo package or its site documents: fixed patterns + every fixture's own brand, legal name, e-mail, origin, project ids and titles (read from the fixtures)
+  ok   G no Apartmentary leakage: the release's frozen forbidden terms + the source brand (ko/en) are absent; package QA passed; no absolute URL leaves the site origin
+
+[area] Korean area-basis contract
+  ok   H the 34평 flagship is { 34, pyeong, basis: supply }; EVERY project states a basis (none unknown); the 공급면적 label is true for every project
+  ok   I no automatic 34 → 84: the area fact renders as authored (34평) — no ㎡/112/84 derived beside it; 84㎡ appears only as the separately authored 전용면적 sentence; no '34평 = 84' anywhere
+
+[assets] registry, references, reference-image isolation
+  ok   J every referenced asset exists: registry entry + file on disk + content-addressed copy in the package
+  ok   K no unreferenced public demo asset: registry = referenced set, no stray file in assets/, package /assets = referenced set
+  ok   K2 reference images are reference-only: no site/package asset is byte-identical to a reference file, none is copied by name, and no demo asset is a PNG
+  ok   K3 asset status is honest: 04-asset-status.json matches the registry (approved-generated = raster, stand-in = SVG) and its verdict follows the counts
+
+[content] one canonical projects collection, Korean, linked
+  ok   L all published project slugs (and ids) are unique; ≥ 6 projects; every project has the Step 6 data-quality fields
+  ok   M every internal link of every generated page resolves inside the package; every project has its detail page
+  ok   Z header navigation exposes only real routes (home, /portfolio, /3d-portfolio, /about, /contact — each an emitted page): no Service / FAQ / Journal
+  ok   Q+R the demo uses the ONE canonical projects collection: content/ holds only the platform documents, home A and B are two selections of projects.json, no second collection anywhere
+
+[filter] the unchanged filter contract against Korean demo content
+  ok   N keyword / type / area / style / price / sort / combined / zero-result, evaluated by the platform evaluator with the site's own scales (pyeong, krw-pyeong)
+
+[cta] the site-wide floating seat
+  ok   O exactly one floating CTA on EVERY generated page (home, portfolio, 8 details, 404, 3D, about, contact), Korean label, → /contact
+
+[models] banners@1 (provisional) and reviews@1 carry the demo unchanged
+  ok   S banners@1 unchanged and sufficient: 3 slides = image + headline + text + closed CTA (2 project targets, 1 contact); all render with live destinations
+  ok   T reviews@1 unchanged: 6 published reviews, none attributed to a personal name, all rendered on the home page in stored order
+
+[identity] Korean identity, SEO data and theme through declared inputs only
+  ok   X <html lang=ko-KR>, brand title, Korean description, list/detail canonicals on the demo origin, sitemap lists every page
+  ok   W theme = declared tokens only: every site token is consumed by the Template, resolves, and reaches the package stylesheet/markup
+  ok   Y every demo document is declared fictional (origin synthetic-fixture), never 'customer' or 'reference-fixture'
+
+[integration] throwaway-root builds (reproducibility, seat off)
+  ok   U reproducible: same release + snapshot + settings + theme + assets → same buildInputId (twice, and = current), and an independent rebuild gives the same packageHash
+  ok   P no CTA when the configuration disables it: site.floating-cta.enabled = false → no seat on ANY page, nothing else about the pages' count changes
+
+step6: 28 passed, 1 failed
+  - D Template source unchanged: live templateSourceHash = baseline = the release record; live release sources have no drift; raw template + platform trees identical

@@ -1,0 +1,77 @@
+Already up to date
+Done in 158ms using pnpm v11.21.0
+$ tsx scripts/smoke-multi-observer.ts
+[smoke:multi-observer] Task 09 — multi-page deep observation
+
+Page plan (pure)
+  PASS  page ids are a dense p000001… sequence
+  PASS  representatives are numbered in lexical URL order
+  PASS  the validation sample is appended after every representative
+  PASS  sample is the URL after the representative in lexical order
+  PASS  sample carries family provenance
+  PASS  every page carries family provenance
+  PASS  determinism: reversed pages[] + unselected[] → identical plan
+  PASS  singleton families produce no validation samples
+  PASS  families smaller than 3 are not sampled
+  PASS  at most 3 validation samples per site
+  PASS  families skipped by the cap are counted, not hidden
+  PASS  cap keeps total pages = representatives + samples
+  PASS  sampling prefers the largest families
+  PASS  disabling sampling does not renumber representatives
+
+Input validation (fail-fast)
+  PASS  a valid selection loads
+  PASS  missing siblings are reported, not fatal
+  PASS  rejects a wrong schemaVersion
+  PASS  rejects selectedCount != pages.length
+  PASS  rejects a duplicate familyId
+  PASS  rejects a duplicate selected URL
+  PASS  rejects an unselected URL naming an unknown family
+  PASS  rejects an unselected URL claiming the wrong representative
+  PASS  rejects verifiedUrlCount that does not cover selected + unselected
+  PASS  rejects memberCount that disagrees with the listed members
+  PASS  rejects an empty selection
+  PASS  rejects a sibling page-families.json from another site
+
+Orchestration (real Chromium, local fixture server)
+  PASS  6 pages attempted (5 representatives + 1 validation sample)
+  PASS  5 pages succeeded
+  PASS  1 page failed
+  PASS  run status is completed-with-errors, not a thrown run
+  PASS  the failure is /error and is classified as a navigation error
+  PASS  the failed page records name/message/phase and no stack trace
+  PASS  the failed page has no artifact reference
+  PASS  an HTTP 500 page that renders is still observed (Observer sees no status)
+  PASS  manifest pages are sorted by pageId regardless of completion order
+  PASS  page ids follow lexical URL order for representatives
+  PASS  every successful page has both viewports fully persisted
+  PASS  artifact paths are relative to the run directory
+  PASS  each page directory keeps the Task 05 single-page layout (schema v3)
+  PASS  one validation sample was taken (only f000002 qualifies)
+  PASS  the sample pairs /a with /a2
+  PASS  the sampled page is stored with role validation-sample
+  PASS  the comparison is present and covers both viewports
+  PASS  comparison ratios are finite measurements, not a verdict
+  PASS  /a2 has more elements than /a (the fixture's real difference is measured)
+  PASS  coverage: 7 verified URLs
+  PASS  coverage: 5 families
+  PASS  coverage: 4 representatives observed (the failed one is not claimed)
+  PASS  coverage: 6 verified URLs represented (3+1+1+1, /error excluded)
+  PASS  coverage: reduction counts the validation sample as a real cost
+  PASS  stats: desktop + mobile observation counts match successes
+  PASS  stats: byte totals are consistent (screenshots + json/html = page bytes)
+  PASS  stats: average page size is the measured mean
+  PASS  stats: per-page timestamps differ (no atomic-snapshot claim)
+  PASS  site-observation.json passes Zod after reload
+  PASS  the manifest records its own true byte size
+  PASS  the manifest embeds no DOM/style bulk data
+  PASS  the manifest holds no absolute local path
+
+Prepare-scroll ↔ layout-probe parity (real Chromium, /lazy fixture)
+  PASS  the lazy page observed successfully
+  PASS  prepare-scroll mounted the lazy element into the deep observation
+  PASS  …and into the layout probe (the probe mirrors the observation's scroll)
+  PASS  …so the probe walk aligns with dom.json exactly
+
+62/62 checks passed
+[smoke:multi-observer] OK

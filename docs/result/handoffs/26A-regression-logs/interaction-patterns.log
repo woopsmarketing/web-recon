@@ -1,0 +1,96 @@
+Already up to date
+Done in 154ms using pnpm v11.21.0
+$ tsx scripts/smoke-interaction-patterns.ts
+[smoke:interaction-patterns] offline fixture — no browser, no network, no AI credential
+
+  PASS  §7 real Task 11 schemas validate the fixture run
+  PASS  §13 two rules sharing a specificity are rejected at load
+  PASS  §13 the shipped registry passes its own integrity check
+  PASS  §79 native <details> → disclosure / native-details / closed-to-open
+  PASS  §80 aria-expanded + target hidden→visible → disclosure
+  PASS  §15 aria-expanded with no declared target is still a disclosure
+  PASS  §15 …and says so in limitations rather than implying a region
+  PASS  §81 role=tab + aria-selected false→true + panel visibility → tabs
+  PASS  §82 tabs still confirmed when aria-controls is self-referential and drifts
+  PASS  §82 …and the drift is recorded as a limitation, not as a failure
+  PASS  §83 aria-haspopup=menu + mount of role=menu → menu
+  PASS  §72 combobox with NO aria-haspopup opening role=listbox → menu/listbox
+  PASS  §84 dialog-trigger + role=dialog mount → dialog
+  PASS  §85/§77 checkbox → selection (one policy, one instance)
+  PASS  §20 aria-pressed → toggle
+  PASS  §20 role=switch + aria-checked → toggle (not selection)
+  PASS  §86 self-removal with no navigation → dismiss
+  PASS  §22 …and refuses to claim what was dismissed
+  PASS  §23 a stateful ARIA flip no rule owns → generic-state-toggle
+  PASS  §94 disclosure + menu both match → the result is menu
+  PASS  §94 …and exactly ONE pattern instance is produced (no duplicate)
+  PASS  §94 …with the outranked rule recorded rather than hidden
+  PASS  §13 no equal-specificity conflicts on the fixture corpus
+  PASS  §87 url-change → navigation-tainted, and NO pattern
+  PASS  §25 …with the before/after URLs preserved for future SPA modeling
+  PASS  §88 class/style mutation with no semantic diff → style-only-change
+  PASS  §89 aria-selected already true → already-in-target-state
+  PASS  §31 …and recommends a better probe state for a future run
+  PASS  §30 aria-checked already true → already-in-target-state
+  PASS  §90 navigation-blocked with no transition → blocked-navigation
+  PASS  §91 actionability-error → execution-error
+  PASS  §34 click ran, nothing observable moved → opaque-action
+  PASS  §120 unbalanced node churn → unsupported-dynamic-region
+  PASS  §93 a verified transition no rule explains → unmatched-transition
+  PASS  §48 …and it is AI eligible
+  PASS  §74 an aria-label-only transition is NOT forced into generic-state-toggle
+  PASS  §27 container-only evidence → insufficient-evidence
+  PASS  §48 already-in-target-state / blocked-navigation / execution-error are AI-excluded
+  PASS  §48 navigation-tainted is conditional, never plain eligible
+  PASS  §43 patterns + unknowns account for every planned action
+  PASS  §68 every `changed` action is either a pattern or an unknown, exactly once
+  PASS  §67 every `no-change` action lands in exactly one unknown reason
+  PASS  §67 the reason counts sum back to the unknown total
+  PASS  §26 the no-change results did NOT collapse into one reason
+  PASS  §37 pattern ids are dense and ordered
+  PASS  §45 unknown ids are dense and ordered
+  PASS  §37 pattern ids follow (pageId, viewport, actionId)
+  PASS  §10 every pattern is provenance=derived
+  PASS  §10 no pattern evidence is `inferred`
+  PASS  §39 every pattern records the registry version it was built with
+  PASS  §95 reversing the input order changes nothing logically
+  PASS  §95 the same run modeled twice is byte-identical
+  PASS  §95 no timestamp is embedded in either deterministic artifact
+  PASS  §105 no DOM / HTML is copied into the artifacts
+  PASS  §8 the artifacts never name an absolute filesystem path
+  PASS  artifacts round-trip through their own zod schemas
+  PASS  §55 no configured provider → a message, not a failure
+  PASS  §55 an unimplemented provider also degrades to a message
+  PASS  §47/§112 AI sees one case per eligible signature group, not one per occurrence
+  PASS  §58 AI is never called for a confirmed pattern
+  PASS  §96 already-in-target-state / blocked-navigation / execution-error are never sent
+  PASS  §96 unmatched-transition IS sent
+  PASS  §50 every AI result is provenance=inferred
+  PASS  §97 the AI payload contains none of the forbidden fields
+  PASS  §52 the AI payload carries a page PATH, never a full URL
+  PASS  §47 each payload states how many occurrences it represents
+  PASS  §98 the fake provider really did return carousel/high
+  PASS  §98 …and `interaction-patterns.json` contains ZERO carousels
+  PASS  §56 …the confident AI answer exists only in the AI artifact
+  PASS  §56 the registry itself is unchanged by the AI pass
+  PASS  §70 the style-only case stays style-only deterministically while AI may call it a theme switch
+  PASS  §114 a suggested next probe is always from the closed enum
+  PASS  §57 the promotion policy travels with the AI artifact
+  PASS  ai-analysis.json round-trips through its schema
+  PASS  §13 an equal-specificity tie yields a recorded conflict and NO pattern
+  PASS  §7 a missing action artifact fails fast
+  PASS  §7 a result whose viewport disagrees with the plan fails fast
+  PASS  §7 a duplicate actionId fails fast
+  PASS  §7 a status contradicting diff.meaningfulChange fails fast
+  PASS  the fixture corpus exercises every pattern type in the taxonomy
+  PASS  the fixture corpus exercises every unknown reason in the taxonomy
+  PASS  every rule in the registry matched at least one fixture action
+  PASS  §118 the page index lists desktop/mobile pattern ids per page
+  PASS  §118 …and indexes every pattern exactly once
+  PASS  §42 patterns stay viewport-local (no desktop↔mobile merging)
+  PASS  §59 the import graph reaches no browser / crawler / network module
+  PASS  every unknown case preserves Task 11's own action status
+  PASS  every recorded diff category is Task 11 vocabulary
+
+88/88 checks passed
+[smoke:interaction-patterns] OK

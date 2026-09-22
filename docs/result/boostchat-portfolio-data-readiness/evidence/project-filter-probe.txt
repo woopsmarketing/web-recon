@@ -1,0 +1,24 @@
+vocab groups ["keyword","type","area","style","price"] area buckets lt20,20,30,40,50plus price buckets lt180,180,250,300 styles ["화이트","간접조명","모던","미니멀","수납 특화","그레이지","내추럴","우드 포인트"]
+Q1 keyword full sentence                             {"kw":"34평 아파트인데 깔끔한 화이트톤","type":[],"area":[],"style":[],"price":[]} => (none)
+Q1 keyword '34평 화이트'                                 {"kw":"34평 화이트","type":[],"area":[],"style":[],"price":[]} => bi-01,bi-06
+Q1 area 30 + style 화이트                               {"kw":"","type":[],"area":["30"],"style":["화이트"],"price":[]} => bi-01,bi-04,bi-06
+Q2 keyword full sentence                             {"kw":"24평에 2천만원 정도","type":[],"area":[],"style":[],"price":[]} => (none)
+Q2 area 20 + price lt180                             {"kw":"","type":[],"area":["20"],"style":[],"price":["lt180"]} => (none)
+Q3 keyword full sentence                             {"kw":"30평대 모던한 느낌","type":[],"area":[],"style":[],"price":[]} => (none)
+Q3 area 30 + style 모던                                {"kw":"","type":[],"area":["30"],"style":["모던"],"price":[]} => bi-04
+Q3 style '모던한' (unnormalized)                        {"kw":"","type":[],"area":[],"style":[],"price":[]} => bi-01,bi-02,bi-03,bi-04,bi-05,bi-06,bi-07,bi-08
+Q4 keyword full sentence                             {"kw":"욕실이랑 주방만 하고 싶어요","type":[],"area":[],"style":[],"price":[]} => (none)
+Q4 keyword '욕실 주방'                                   {"kw":"욕실 주방","type":[],"area":[],"style":[],"price":[]} => bi-01,bi-02,bi-04,bi-07
+Q4 type kitchen-bath                                 {"kw":"","type":["kitchen-bath"],"area":[],"style":[],"price":[]} => bi-04
+전체 리모델링 keyword                                      {"kw":"전체 리모델링","type":[],"area":[],"style":[],"price":[]} => bi-01,bi-05,bi-07
+전체 리모델링 type full-remodel                            {"kw":"","type":["full-remodel"],"area":[],"style":[],"price":[]} => bi-01,bi-02,bi-03,bi-05,bi-07
+리모델링 keyword                                         {"kw":"리모델링","type":[],"area":[],"style":[],"price":[]} => bi-01,bi-02,bi-03,bi-05,bi-06,bi-07
+areaIn 34 pyeong -> m2 112.40 (bi-01 body says 전용 약 84㎡ -> 25.41 평)
+seam: keyword '아파트'                                  {"kw":"아파트","type":[],"area":[],"style":[],"price":[]} => bi-01,bi-03,bi-05,bi-07,bi-08
+seam Q1: area 30 + keyword '아파트 화이트'                 {"kw":"아파트 화이트","type":[],"area":["30"],"style":[],"price":[]} => bi-01
+seam Q1: area 30 + style 화이트 + keyword 아파트           {"kw":"아파트","type":[],"area":["30"],"style":["화이트"],"price":[]} => bi-01
+style 화이트톤 (unnormalized)                            {"kw":"","type":[],"area":[],"style":[],"price":[]} => bi-01,bi-02,bi-03,bi-04,bi-05,bi-06,bi-07,bi-08
+keyword 화이트톤                                         {"kw":"화이트톤","type":[],"area":[],"style":[],"price":[]} => bi-01
+keyword 부분                                           {"kw":"부분","type":[],"area":[],"style":[],"price":[]} => bi-04,bi-06
+type partial-remodel                                 {"kw":"","type":["partial-remodel"],"area":[],"style":[],"price":[]} => bi-06
+price 250+300 (평당 250만+)                             {"kw":"","type":[],"area":[],"style":[],"price":["250","300"]} => bi-01,bi-03,bi-05,bi-07

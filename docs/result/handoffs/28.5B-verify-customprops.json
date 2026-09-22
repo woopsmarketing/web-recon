@@ -1,0 +1,132 @@
+{
+  "schema": "task285b-verify-customprops-v1",
+  "producedAt": "2026-08-29",
+  "verdict": "PASS_WITH_RISKS",
+  "historicalParses": {
+    "method": "independent tsx script (tmp/wr285b/verify-customprops/hist-parse.ts), not the builder's suite",
+    "observationsParsed": "8/8 page observation.json from data/linear.app/site-observations/2026-08-25T19-23-01-716Z via current PageObservationSchema",
+    "observationViewportsWithInventedRecord": 0,
+    "pageSpecsParsed": "8/8 from data/linear.app/site-specs/2026-08-25T20-30-27-653Z via current PageSpecSchema",
+    "siteSpecParsed": true,
+    "siteObservationJson": "readable JSON; no site-level zod schema exists in src/observer/types.ts, so nothing to break there",
+    "result": "PASS — both new fields are genuinely .optional(); historical artifacts report undefined, not an invented empty map"
+  },
+  "emissionSafe": {
+    "result": "PASS",
+    "nameRegex": "/^--[-A-Za-z0-9_]*$/ (case preserved; --Brand and --brand emitted as distinct)",
+    "scopeRegex": "/^[A-Za-z0-9_-]+$/ on pageId and viewportId before they reach a selector string",
+    "valueGate": "existing isSafeCssValue — rejects ; { } newlines </style and unbalanced quotes",
+    "hostileProbe": "tmp/wr285b/verify-customprops/determinism.ts — 4 hostile values, 1 hostile name, 1 hostile pageId all rejected and COUNTED (rejectedValues 4 / rejectedNames 1 / rejectedScopes 1); survivor in the same scope still emitted; brace balance 4/4; no ':root', no '</style', no injected declaration",
+    "noPlainRoot": true,
+    "ordering": "scopes pageId->viewportId, declarations by name; emitting the same scopes in REVERSED input order produced a byte-identical stylesheet (sha256 5a8739fe7b4c3fdd both ways)",
+    "target": "[data-wr-page][data-wr-viewport] is a real attribute pair — runtime-template.ts:325/336 puts both on the .wr-variant wrapper; same scope prefix as interaction-bindings.ts and pseudo-generator.ts",
+    "truthCheckWiring": "generate-app.ts ~:212 inserts the block into baseStylesheet, and baseStylesheet is passed whole into verifyLayoutRules({ css: `${globals}\\n${baseStylesheet}` }). The layout truth check therefore renders WITH the custom properties, which is the correct direction. Counters and refusal logic untouched."
+  },
+  "browserProofReal": {
+    "result": "REAL",
+    "suiteRun": "npx tsx scripts/smoke-custom-properties.ts -> 47/47 passed, 0 failed",
+    "svgProvenance": "desktopV.assets.find(type === 'inline-svg').markup — the outerHTML the REAL observer captured from the fixture in real Chromium, asserted to still contain the literal unresolved var(--brand). Not hand-planted.",
+    "cssProvenance": "generateCustomPropertyCss() fed from mobileSpec/desktopSpec.customProperties, i.e. the output of the REAL compileViewport over the REAL observation. Scopes handed in deliberately out of order.",
+    "resolvedColors": "asserted from getComputedStyle(rect).fill inside the rendered page: desktop rgb(17, 34, 51), mobile rgb(68, 85, 102), same name, two coexisting subtrees, one document",
+    "controls": "(a) same page WITHOUT the block -> both subtrees identical and not the desktop colour (the 28.5A defect reproduced); (b) the same emitted CSS rendered under pageId p000002 -> both subtrees fall back to the control values, proving the pageId scope does not leak"
+  },
+  "linearReach": {
+    "measuredAt": "2026-08-29, https://linear.app/ , playwright chromium 1440x900, networkidle + 2.5s, read-only",
+    "shippedDiscoveryCount": 0,
+    "shippedResolvingCount": 0,
+    "broadenedCount": 155,
+    "broadenedResolvingOnDocumentElement": 0,
+    "svgVarRefs": 183,
+    "svgCount": 240,
+    "distinctSvgVarNames": 16,
+    "svgVarNamesResolvingOnDocumentElement": 11,
+    "allVarRefsInDocumentHtml": 80,
+    "allVarRefsResolvingOnDocumentElement": 13,
+    "sheetsReadable": "30 of 84 (54 throw on cssRules — the CSS is served from static.linear.app, cross-origin to linear.app, so the whole <link> tier is unobservable)",
+    "adoptedStyleSheets": {
+      "count": 1,
+      "namesDeclared": 135,
+      "namesDeclaredOnRootPartSelector": 135,
+      "namesResolvingOnDocumentElement": 135,
+      "walkedByShippedCode": false
+    },
+    "interpretation": "On linear.app the shipped channel emits NOTHING. Broadening the SELECTOR filter does not help either: the 155 names reachable in document.styleSheets are declared on component selectors and none of them resolve on the document element. The site's real root tokens live in cross-origin sheets whose rules cannot be read at all, plus one adoptedStyleSheet the code never walks. The VALUES are available (getComputedStyle resolves 11 of the 16 names linear's inline SVGs reference, e.g. --color-text-primary #f7f8f8, --color-bg-primary #08090a, --color-indigo #5e6ad2) — only NAME discovery fails.",
+    "cheapestFixes": [
+      "walk document.adoptedStyleSheets with the same visitor: 0 -> 135 names on linear, all resolving, no new failure mode",
+      "reference-driven discovery: harvest var(--name) from captured inline-SVG outerHTML and from observed computed values, then resolve each on documentElement — recovers 11/16 SVG-referenced names and 13/80 document-wide, which is exactly the 28.5A consumer this change was built for"
+    ]
+  },
+  "reRuns": {
+    "npx tsc --noEmit": "PASS (clean, exit 0, whole repo)",
+    "scripts/smoke-custom-properties.ts": "47/47 PASS",
+    "scripts/smoke-sitespec.ts": "257/257 PASS",
+    "scripts/smoke-multi-observer.ts": "62/62 PASS",
+    "scripts/smoke-visual-vocab.ts": "88 passed / 0 failed PASS"
+  },
+  "captureReview": {
+    "sameOriginTryCatchPerSheet": "YES — per-sheet try/catch around document.styleSheets[i].cssRules, same shape as the font harvest",
+    "groupingRuleRecursion": "YES for @media/@supports (else-if branch on rule.cssRules)",
+    "selectorListAcceptance": "A rule qualifies when ANY comma-separated part is exactly ':root' or (case-insensitively) 'html'. So ':root, .foo' DOES qualify. This is safe and is the right choice: the rule genuinely applies to the root, and the value step reads getComputedStyle(documentElement), so a name harvested from a non-root part of the list simply resolves to '' and is dropped. Documented in the build handoff's capture.nameDiscovery.",
+    "subtreeMode": "CONFIRMED — the bounded-subtree early return emits { properties: [], discoveredCount: 0, countCapped: false, valueCappedCount: 0 }",
+    "determinism": "CONFIRMED — names sorted by code point in-browser BEFORE the count cap slices, so the kept set and its order are a function of the page",
+    "capsRecorded": "CONFIRMED — discoveredCount (pre-cap), countCapped, valueCappedCount; over-long values are DROPPED not truncated, matching the LAYOUT_RULE_VALUE_MAX_LEN convention"
+  },
+  "defects": [
+    {
+      "id": "D1",
+      "severity": "MATERIAL — escalate before the linear rerun, not a code defect",
+      "title": "Zero reach on linear.app",
+      "detail": "Shipped discovery finds 0 names on linear.app, so the linear rerun will emit an empty custom-property section and all 183 var() references inside its 240 inline SVGs stay unresolved. The failure direction is the documented one (under-report, never invent), so this is not a correctness bug — but the change buys nothing on the actual pilot site unless discovery is widened.",
+      "evidence": "tmp/wr285b/verify-customprops/linear-reach.json, linear-probe2.json"
+    },
+    {
+      "id": "D2",
+      "severity": "MEDIUM",
+      "title": "document.adoptedStyleSheets is never walked",
+      "detail": "document.styleSheets does not include constructed/adopted sheets. On linear.app that one adopted sheet holds 135 custom properties, ALL declared on :root-part selectors and ALL resolving on documentElement. One extra loop over document.adoptedStyleSheets through the same visitCustomRules would take the shipped result from 0 to 135 with no new failure mode."
+    },
+    {
+      "id": "D3",
+      "severity": "LOW",
+      "title": "CSS-nesting children of a style rule are not recursed",
+      "detail": "visitCustomRules uses `if (selectorText && style) { ... } else if (cssRules)`. In Chromium a CSSStyleRule now carries nested cssRules, so `:root { --a: 1; @media … { --b: 2 } }` never reaches the nested block. Under-report only."
+    },
+    {
+      "id": "D4",
+      "severity": "LOW",
+      "title": "':root' matched case-sensitively",
+      "detail": "part === ':root' is exact while 'html' is lowercased first. ':ROOT' (legal CSS) is missed. Trivial, under-report only."
+    },
+    {
+      "id": "D5",
+      "severity": "LOW",
+      "title": "Names discovered but not resolving are dropped without their own counter",
+      "detail": "`if (value === '') continue` has no counter; the loss is only inferable from discoveredCount minus properties.length. On linear that would be the single most diagnostic number (155 discovered / 0 resolving under a broadened filter). Worth an explicit unresolvedCount if discovery is widened."
+    },
+    {
+      "id": "D6",
+      "severity": "INFO",
+      "title": "Emitter sorts with localeCompare, observer sorts by code point",
+      "detail": "generateCustomPropertyCss uses localeCompare for scopes and names while collect-dom sorts by code point, so the emitted order differs from the captured order (e.g. --brand before --Brand) and is in principle ICU/locale dependent. Measured STABLE across LC_ALL=en-US / sv-SE / C.UTF-8 on this machine, and declaration order inside a block is semantically irrelevant because duplicates are deduped. Note only; the rest of the file uses plain .sort()."
+    },
+    {
+      "id": "D7",
+      "severity": "INFO",
+      "title": "No manifest counter for customProperties",
+      "detail": "Self-reported by the builder and confirmed: the plan carries GeneratedCustomProperties but generate-app surfaces no blockCount/declarationCount in the manifest, so a release gate cannot see that the section was empty. Given D1 that matters more than it looks — an empty section would otherwise be invisible."
+    },
+    {
+      "id": "D8",
+      "severity": "INFO (pre-existing, unrelated)",
+      "title": "NUL byte in src/reconstruction/style-generator.ts",
+      "detail": "Confirmed at HEAD, inside isSafeCssValue's character class. grep treats the file as binary; use grep -a. Not introduced by this change."
+    }
+  ],
+  "notes": [
+    "Nothing outside tmp/wr285b/verify-customprops/ and this handoff file was modified. No git operations were run.",
+    "src/reconstruction-qa/* and src/cli-qa-reconstruction.ts were dirty from the concurrent QA builder and were ignored, as instructed. tsc --noEmit was clean WITH those edits present.",
+    "The storage decision (embedded .optional() field rather than a sibling file under ViewportFilesSchema, whose keys are all required) is verified sound — independently reproduced 8/8 historical observations and 8/8 historical PageSpecs parsing unchanged.",
+    "PageSpecSchema requires BOTH desktop and mobile viewports, so plan-reconstruction's page.viewports[viewportId] indexing cannot throw.",
+    "Verdict is PASS_WITH_RISKS solely because of D1/D2 reach, not because of any defect in what was built. The mechanism is correct, safe, deterministic, additive and genuinely proven end-to-end in a browser."
+  ]
+}

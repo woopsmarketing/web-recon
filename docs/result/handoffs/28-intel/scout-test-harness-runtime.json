@@ -1,0 +1,334 @@
+{
+ "area": "Test harness, preview runtime and data layout (read-only scout for Task 28)",
+ "files": [
+  {
+   "path": "/Users/woops/projects/web-recon/package.json",
+   "role": "Declares all 21 smoke scripts (20 offline-capable + smoke:playwright) plus every pipeline CLI. A new suite needs exactly one line here.",
+   "keySymbols": [
+    "scripts.smoke:revision = \"tsx scripts/smoke-revision.ts\"",
+    "scripts.typecheck = \"tsc --noEmit\"",
+    "scripts.content:preview",
+    "scripts.theme:preview",
+    "scripts.seo:preview",
+    "scripts.assets:preview",
+    "scripts.production:compile",
+    "scripts.release:build"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/tsconfig.json",
+   "role": "include is [\"src/**/*.ts\", \"scripts/**/*.ts\"] — a new scripts/smoke-*.ts is typechecked automatically, no config change.",
+   "keySymbols": [
+    "include",
+    "noEmit:true",
+    "strict:true",
+    "module: NodeNext"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/scripts/smoke-revision.ts",
+   "role": "CANONICAL TEMPLATE for a new suite (437 lines, cheapest style). Copies two REAL release projects into a scratch namespace, byte-checks the sources untouched at the end.",
+   "keySymbols": [
+    "let checks = 0; let failures = 0",
+    "function check(name: string, ok: boolean | undefined, detail = \"\"): void  (line 45)",
+    "function section(title: string): void  (line 53)",
+    "snapshotTree(dir) -> Record<path, \"size:mtimeMs\">",
+    "console.log(`\\nsmoke:revision — ${checks} checks, ${failures} failures`)  (line 430)",
+    "if (failures > 0) process.exit(1)  (line 431)",
+    "main().catch(err => { console.error(...); process.exit(1); })"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/scripts/smoke-registry.ts",
+   "role": "Second-cheapest suite (426 lines). Same helper, same tail format. Scans the real data root read-only.",
+   "keySymbols": [
+    "check() line 70",
+    "section() line 78",
+    "REGISTRY_DIR usage",
+    "console.log(`\\nsmoke:registry — ${checks} checks, ${failures} failures`) line 419"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/scripts/smoke-regions.ts",
+   "role": "751 lines; pure-function suite over compilePageRegions. Uses the OTHER tail format and adds a NOTE channel that is NOT counted as a check. Its §7 canary is hard-pinned to a linear.app template dir and SKIPs (lowering the count) if that dir is deleted.",
+   "keySymbols": [
+    "check() line 50 / section() line 58",
+    "console.log(`  NOTE  ...`) lines 635, 641 — not counted",
+    "const canaryDir = path.join(\"data\",\"linear.app\",\"recon-templates\",\"2026-08-25T21-53-26-980Z\")  (line 547)",
+    "console.log(`  SKIP  §7 canary not on disk: ${canaryDir}`)  (line 555)",
+    "console.log(`${checks - failures}/${checks} checks passed`)  (line 741)",
+    "process.exitCode = 1  (line 743)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/scripts/smoke-playwright.ts",
+   "role": "The ONLY suite that touches the public internet (page.goto(\"https://example.com\")). 31 lines, no check() helper, no check count — excluded from the 20-suite / 2151-check baseline.",
+   "keySymbols": [
+    "chromium.launch()",
+    "page.goto(\"https://example.com\")",
+    "process.exitCode = 1"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/recon-template/parity-qa.ts",
+   "role": "THE preview runtime. Every authoring preview (content/theme/seo/assets) funnels through buildApp + startApp here. Also the parity/mutation QA driver.",
+   "keySymbols": [
+    "export async function buildApp(appDir, force, log): Promise<number>  (line 112) — `npx --no-install next build`, skipped when .next/BUILD_ID exists",
+    "export async function startApp(appDir, extraEnv = {}): Promise<RunningApp>  (line 128)",
+    "spawn(\"npx\", [\"--no-install\", \"next\", \"start\", \"-p\", String(port)], { cwd: appDir, env: {...process.env, NEXT_TELEMETRY_DISABLED:\"1\", ...extraEnv} })  (line 130)",
+    "findFreePort() — listen(0, \"127.0.0.1\")  (line 57)",
+    "READY_TIMEOUT_MS = 120_000; BUILD_TIMEOUT_MS = 600_000",
+    "readiness probe: fetch(`${baseUrl}/__wr_probe__`)  (line 151)",
+    "WR_SLOT_VALUES_FILE injected as env at line 749"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/recon-template/app-templates.ts",
+   "role": "SOURCE OF THE MEMOIZATION. Exports SLOT_CONTENT_TS / LOAD_PAGE_TS as template literals written verbatim into every generated template app as src/runtime/slot-content.ts and src/runtime/load-page.ts.",
+   "keySymbols": [
+    "let contractPromise: Promise<Map<string, ResolvedOp[]>> | null = null;  (line 109)",
+    "const overlayFile = process.env.WR_SLOT_VALUES_FILE;  (line 123)",
+    "function getContract() { if (!contractPromise) contractPromise = buildContract(); return contractPromise; }  (lines 155-157)",
+    "const cache = new Map<string, Promise<RuntimePage>>();  (line 390)",
+    "loadPage(): cache.set(pageFile, readFile(...).then(JSON.parse).then(applySlotContent))  (lines 410-419)",
+    "doc comment line 35: \"change a value, restart the server\""
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/reconstruction/runtime-template.ts",
+   "role": "Same memoization for the Exact Reconstruction app (route map + page cache), emitted as src/runtime/load-route.ts / load-page.ts.",
+   "keySymbols": [
+    "let routeMapPromise: Promise<RuntimeRouteMap> | null = null;  (line 165)",
+    "let routeIndex: Map<string, RuntimeRoute> | null = null",
+    "loadRouteMap() — \"One parse per server process instead of one per request\"",
+    "const cache = new Map<string, Promise<RuntimePage>>();  (line 222)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/reconstruction/app-template.ts",
+   "role": "Emits app/layout.tsx and app/[[...slug]]/page.tsx. Confirms Next's own caching is disabled — so ONLY the module-level caches freeze content.",
+   "keySymbols": [
+    "export const dynamic = \"force-dynamic\";  (line 200)",
+    "LAYOUT_TSX with <link rel=\"stylesheet\" href={GENERATED_STYLES_HREF} precedence=\"wr-generated\" />",
+    "CATCH_ALL_PAGE_TSX",
+    "generated package.json line 42: dev: \"next dev\" (never invoked by any repo code)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/cli-content-preview.ts",
+   "role": "pnpm content:preview <content-run-dir> [--default]. Simplest preview: buildApp + startApp with WR_SLOT_VALUES_FILE, blocks on SIGINT.",
+   "keySymbols": [
+    "await buildApp(run.template.appDir, false, log)",
+    "startApp(run.template.appDir, useDefault ? {} : { WR_SLOT_VALUES_FILE: path.resolve(overlayFile) })  (lines 36-39)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/theme/serve.ts",
+   "role": "Theme serve boundary: an appending reverse proxy in front of next start. Overlay CSS is captured into a Buffer once at proxy construction.",
+   "keySymbols": [
+    "export const GENERATED_STYLES_PATH = \"/wr/generated-styles.css\"",
+    "export async function startOverlayProxy(upstreamBaseUrl, overlayCss)  (line 58)",
+    "const overlayBytes = Buffer.from(\"\\n\" + overlayCss, \"utf8\");  (line 64) — memoized for proxy lifetime",
+    "HOP_HEADERS set; headers[\"accept-encoding\"] = \"identity\"",
+    "export async function startThemedApp({appDir, overlayCss, slotValuesFile, forceBuild, log})  (line 119)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/seo/serve.ts",
+   "role": "SEO serve boundary: proxy rewrites <title> in head AND the RSC flight payload, splices headHtml before </head>, answers /robots.txt and /sitemap.xml. Can also append theme CSS.",
+   "keySymbols": [
+    "export function rewriteHtmlHead(html, entry)  (line 68)",
+    "const headByRoute = new Map(options.renderedHead.routes.map(...))  (line 111) — built once per proxy",
+    "const overlayBytes = ...  (line 112)",
+    "export async function startSeoProxy(upstreamBaseUrl, options)  (line 106)",
+    "export async function startSeoServedApp({appDir, proxy, slotValuesFile, forceBuild, log})  (line 204)",
+    "normalizeRequestPath()"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/assets/serve.ts",
+   "role": "Asset serve boundary: serves /media/<sha256>.<ext> from the materialization run dir and rewrites source asset URLs in HTML, RSC flight (text/x-component) and CSS. The ONLY per-request disk read at any serve boundary.",
+   "keySymbols": [
+    "const MEDIA_FILE = /^\\/media\\/([a-f0-9]{64}\\.[a-z0-9]{1,5})$/  (line 60)",
+    "const body = await readFile(path.join(options.mediaDir, mediaMatch[1]));  (line 85) — NOT memoized, per request",
+    "const overlayBytes = ...  (line 74) — memoized",
+    "options.rewriteMap held by reference for proxy lifetime",
+    "export async function startAssetProxy / startAssetServedApp  (lines 68, 171)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/reconstruction-qa/start-clone.ts",
+   "role": "A SECOND, independent copy of the build+serve logic used by reconstruction QA (not shared with parity-qa.ts). Same shape, different probe path.",
+   "keySymbols": [
+    "export async function startClone(options): Promise<RunningClone>  (line 126)",
+    "spawn(\"npx\", [\"--no-install\", \"next\", \"start\", \"-p\", String(port)])  (line 141)",
+    "fetch(`${baseUrl}/__wr_qa_probe__`)",
+    "export async function findFreePort()",
+    "READY_TIMEOUT_MS = 120_000; BUILD_TIMEOUT_MS = 600_000; STOP_GRACE_MS = 5_000"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/static-server.ts",
+   "role": "The production package's dependency-free server, emitted as a STRING into package/server.mjs. node:http + node:fs only, serves ./site next to itself.",
+   "keySymbols": [
+    "export const SERVER_READY_PREFIX = \"wr-production-server listening on \"",
+    "export function renderServerMjs(): string",
+    "port = Number(argValue(\"--port\", process.env.PORT ?? \"3000\")); host default 127.0.0.1",
+    "cacheControl(): immutable for /_next/static/ and /media/, no-cache otherwise",
+    "/path → site/path.html, /path/ → 308, unknown → 404 site/404.html"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/bake.ts",
+   "role": "Converts the template app copy into a static export: bakes content, theme, SEO titles, then runs next build. This is where the WR_SLOT_VALUES_FILE seam is REMOVED for production.",
+   "keySymbols": [
+    "bakeContent(appDir, slotValuesFile) — writes template-data/slot-values.baked.json  (line 79)",
+    "bakeTheme(appDir, themeOverlayCssFile) — public/wr/theme-overlay.css  (line 90)",
+    "bakeSeoTitles(appDir, routes) — patches reconstruction-data/route-map.json",
+    "convertToStaticExport(appDir) — patches page.tsx + next.config.mjs  (line 110)",
+    "buildStaticExport(appDir, log) — spawn(\"npx\", [\"--no-install\",\"next\",\"build\"])  (line 133)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/patch.ts",
+   "role": "Anchored, guarded patches. patchSlotContent replaces the env lookup with a read of template-data/slot-values.baked.json — the module-level contractPromise memoization SURVIVES the bake.",
+   "keySymbols": [
+    "export function patchSlotContent(source: string): string  (line 97)",
+    "anchor = \"  const overlayFile = process.env.WR_SLOT_VALUES_FILE;\\n...\"  (line 99)",
+    "export function patchPageTsx — requires `export const dynamic = \"force-dynamic\";`, forbids generateStaticParams",
+    "export const THEME_OVERLAY_HREF = \"/wr/theme-overlay.css\"",
+    "export function patchLayout"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/run.ts",
+   "role": "Orchestrates the production compile: buildDir = data/<host>/production-builds/<runId>, appDir = <buildDir>/app, static export at <appDir>/out, package at <buildDir>/package.",
+   "keySymbols": [
+    "const buildDir = productionBuildDir(options.host, runId)  (line 184)",
+    "const appDir = path.join(buildDir, \"app\")  (line 370)",
+    "copyTemplateApp(path.join(options.templateRunDir, \"app\"), appDir)  (line 373)",
+    "const outDir = path.join(appDir, \"out\")  (line 381)",
+    "assemblePackage({ buildDir, ... })  (line 438)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/store.ts",
+   "role": "Only two path constants for production artifacts.",
+   "keySymbols": [
+    "export function productionSpecDir(host, runId) => data/<host>/production-specs/<runId>",
+    "export function productionBuildDir(host, runId) => data/<host>/production-builds/<runId>",
+    "export function newProductionRunId(now = new Date())"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/qa.ts",
+   "role": "Isolated-package QA: copies package/ to an os.tmpdir() mkdtemp and launches server.mjs with a minimal env (PATH only) to prove zero repo dependency.",
+   "keySymbols": [
+    "export async function launchPackageIsolated(packageDir): Promise<LaunchedPackage>  (line 92)",
+    "const env: Record<string,string> = { PATH: process.env.PATH ?? \"\" }  (line 95)",
+    "spawn(process.execPath, [path.join(isolatedDir,\"server.mjs\"), \"--port\", \"0\"])"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/config/env.ts",
+   "role": "The ONLY env schema in the repo. FIRECRAWL_API_KEY, optional. No LLM key exists anywhere — content generation is `--provider fake` or a manually authored --result JSON.",
+   "keySymbols": [
+    "const envSchema = z.object({ FIRECRAWL_API_KEY: z.string().min(1).optional() })",
+    "export const hasFirecrawlKey"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/store.ts",
+   "role": "Release project layout: data/<host>/release-projects/<projectId>/ with release-project.json, authored/, revisions/, runs/.",
+   "keySymbols": [
+    "RELEASE_PROJECT_FILE = \"release-project.json\"",
+    "AUTHORED_DIR = \"authored\"; AUTHORED_THEME_FILE = \"theme.json\"",
+    "REVISIONS_DIR = \"revisions\"; REVISION_FILE = \"revision.json\"",
+    "releaseProjectDir(host, projectId)  (line 58)",
+    "newReleaseRunId()  (line 63)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/regions/store.ts",
+   "role": "PageRegion artifact paths — data/<host>/page-regions/<runId>/page-regions.json plus report/.",
+   "keySymbols": [
+    "pageRegionRunDir(rootUrl, runId)  (line 35)",
+    "newRegionRunId(now = new Date())  (line 40)",
+    "serializeArtifact(artifact)  (line 52) — the exact bytes page-regions.json receives"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/registry/store.ts",
+   "role": "Registry namespace. data/.registry/ is a HIDDEN dir so the host scan never treats it as a host. Not present on disk yet.",
+   "keySymbols": [
+    "export const REGISTRY_DIR = \".registry\"  (line 48)",
+    "registryDir(options)  (line 52)",
+    "TEMPLATE_REGISTRY_FILE / SITE_REGISTRY_FILE"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/data/linear.app/release-projects/flowpilot-wr27/release-project.json",
+   "role": "The Task-27 authoring canary. projectRevision 2, releaseState PRODUCTION_INPUTS_REQUIRED, authored.slotValues has 1 key, authored.theme has 1 token. NO revisions/ dir (smoke:revision asserts this).",
+   "keySymbols": [
+    "siteId/projectId = \"flowpilot-wr27\"",
+    "source = { host: \"linear.app\", rootUrl: \"https://linear.app/\" }",
+    "target = { mode: \"preview\", productionBaseUrl: null }",
+    "acceptedLineage.{reconstruction,template,content,theme,seo,assets,production}",
+    "stageStatus — all 7 stages \"fresh\"",
+    "authored = { slotValues, theme: { tokens: { \"color.accent.primary\": \"#3d5afe\" } }, updatedAt }",
+    "7 runs, 2 resolutions, 3 limitations, 3 warnings, 4 technicalDebt"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/docs/result/handoffs/27-final.json",
+   "role": "Authoritative accepted baseline. regression.perSuite gives the [before, after] check count for all 20 counted suites; the 'after' column sums to exactly 2151.",
+   "keySymbols": [
+    "regression.suites = 20",
+    "regression.perSuite.regions = [null, 67]",
+    "regression.perSuite.revision = [null, 24]",
+    "regression.perSuite.registry = [null, 27]",
+    "regression.perSuite.sitespec = [257, 257] (largest)"
+   ]
+  }
+ ],
+ "findings": [
+  "CHECK HELPER — there is no shared module. Every suite declares its own file-local copy of the identical three-part idiom: `let checks = 0; let failures = 0;` plus `function check(name: string, ok: boolean | undefined, detail = \"\"): void { checks++; if (ok) console.log(`  PASS  ${name}`); else { failures++; console.log(`  FAIL  ${name}${detail ? ` — ${detail}` : \"\"}`); } }` and `function section(title: string): void { console.log(`\\n== ${title}`); }`. Verified byte-identical in scripts/smoke-regions.ts:50, scripts/smoke-registry.ts:70, scripts/smoke-revision.ts:45. Four older suites use `ok: boolean` (non-optional) instead of `boolean | undefined` (verifier:162, selector:157, multi-observer:93, interaction-explorer:68) and smoke-e2e.ts:58 uses `check(label, ok, detail?)` with separate passed/failed counters. There is no assertion library, no test framework, and no runner — each suite is a standalone `tsx` program.",
+  "CHECK COUNTING IS A SIDE EFFECT OF CALLING check(). The count is whatever number of check() calls the code path made, so a suite that SKIPs a block silently reports a lower total (smoke-regions §7 is exactly this: it prints `  SKIP  §7 canary not on disk` and drops ~11 checks if data/linear.app/recon-templates/2026-08-25T21-53-26-980Z is missing). Nothing in any suite asserts its own expected check count — the pre-overnight audit's finding still holds, and docs/result/handoffs/27-final.json regression.perSuite is the only place the per-suite numbers are pinned.",
+  "TWO TAIL FORMATS, both derived from the same counters. Format A (newer, 4 suites: production:738, registry:419, release:2871, revision:430): `console.log(`\\nsmoke:<name> — ${checks} checks, ${failures} failures`); if (failures > 0) process.exit(1);`. Format B (older, 16 suites): `console.log(`${checks - failures}/${checks} checks passed`); if (failures > 0) { ...; process.exitCode = 1; }`. Format A calls `process.exit(1)` (immediate); Format B sets `process.exitCode = 1` (lets the event loop drain — required when a browser or child server must still close). Every suite also wraps `main().catch(err => { console.error(...); process.exit(1) | process.exitCode = 1 })`, so a crash is also non-zero.",
+  "NON-ZERO EXIT is caused by exactly two things: at least one `check(..., false)` (failures > 0), or an uncaught throw from main(). Nothing else. A suite prints PASS/FAIL lines to stdout and the harness (the human or the orchestrator) reads the final tail line. NOTE and SKIP lines exist in smoke-regions (lines 555, 635, 641) and are deliberately NOT counted as checks — I confirmed this empirically: regions printed 67 PASS + 2 NOTE and reported 67/67.",
+  "ADDING A NEW SUITE is two steps and nothing more: (1) write `scripts/smoke-<name>.ts` as a standalone ESM program — copy scripts/smoke-revision.ts (437 lines, the cleanest modern example: it copies real data/ artifacts into a scratch namespace, does all its writes inside the copy, and byte-checks the sources untouched in a `finally`); (2) add `\"smoke:<name>\": \"tsx scripts/smoke-<name>.ts\"` to package.json scripts. No tsconfig change is needed — `include` is already `[\"src/**/*.ts\", \"scripts/**/*.ts\"]`, so `pnpm typecheck` picks it up automatically. Also update docs/result/handoffs/<task>-final.json regression.perSuite if you want the count pinned.",
+  "MEASURED CHECK COUNTS AND WALL CLOCK (run twice, second run reported here; PASS-line count re-derived from raw output and matched the reported total in all three cases): `pnpm smoke:revision` → exit 0, 24 checks, 0 failures, 24 PASS lines, 1.33 s. `pnpm smoke:registry` → exit 0, 27 checks, 0 failures, 27 PASS lines, 0.64 s. `pnpm smoke:regions` → exit 0, 67/67 checks passed, 67 PASS lines + 2 NOTE lines, 0.89 s. All three exactly match docs/result/handoffs/27-final.json regression.perSuite ([null,24], [null,27], [null,67]). Total for the three: 118 checks in 2.86 s.",
+  "OFFLINE vs BROWSER — exactly ONE suite touches the public internet: `pnpm smoke:playwright` (scripts/smoke-playwright.ts:15, `page.goto(\"https://example.com\")`). It has no check() helper and no check count, which is why the accepted baseline is 20 suites, not 21. Every other suite is network-isolated: any HTTP is a `createServer(...).listen(0, \"127.0.0.1\")` fixture or a `next start` on 127.0.0.1, and any browser drives only those.",
+  "PURELY OFFLINE, NO BROWSER AT ALL (7 suites, all fast): selector, interaction-detector, interaction-patterns, sitespec, regions, revision, registry. Their headers state it explicitly (e.g. smoke-sitespec: \"Completely offline: no HTTP server, no Playwright, no network, no browser, no AI\"). smoke-regions, smoke-revision and smoke-registry additionally READ real data/ artifacts (regions §7 pins the linear.app template; revision copies two real linear.app release projects; registry scans the whole real data root) but write only into throwaway scratch namespaces.",
+  "NEED CHROMIUM (playwright launched locally, all against 127.0.0.1): verifier, multi-observer, interaction-explorer, reconstruction, reconstruction-qa, e2e, recon-template, content-injection, theme, seo, assets, production. Of these, production uses Chromium only via `page.setContent()` (no server at all — pure in-memory fixtures, lines 512-587). The rest drive a local http fixture or a `next start` app.",
+  "NEED A FULL `next build` + `next start` (the expensive tier, minutes each): reconstruction, reconstruction-qa, e2e, recon-template, content-injection, theme, release. They generate a real app under data/ (smoke-recon-template's header explains why: \"The fixture lives under data/ (not /tmp) because a generated app resolves next/react by walking up from its own directory\") and build it. smoke-release additionally runs the entire reconstruction→template→content→theme→seo→assets→production chain on a 2-route fixture PLUS a read-only stripe canary.",
+  "ENV VARS AND FIXTURES — the repo's ONLY env schema is src/config/env.ts and it declares exactly one optional variable: `FIRECRAWL_API_KEY`. No suite requires it. Grepping `process.env.` across src/ (excluding the two files that emit generated-app source) returns only `PORT` in the emitted static server and `PATH` in the isolated-package QA. Suite-visible env: `WR_SEO_FIXTURE_OUT` (scripts/smoke-seo.ts:578, an optional debug dump), `NEXT_TELEMETRY_DISABLED=1` (set by the harness on every spawn), and `WR_SLOT_VALUES_FILE` (the content overlay seam, set by the harness). CRITICAL: there is NO LLM API key anywhere — content generation runs via `--provider fake` or by ingesting a manually authored `--result <generation-result.json>` (src/cli-content-generate.ts). smoke-assets uses a test-only `allowPrivateHostPorts` escape hatch to let its 127.0.0.1 fixtures past the SSRF guard.",
+  "PREVIEW RUNTIME — THERE IS EXACTLY ONE. Every authoring preview is `npx --no-install next start -p <ephemeral-port>` on a PRE-BUILT `.next`, spawned from src/recon-template/parity-qa.ts:130. NOT `next dev`. `next dev` appears only as an unused script line in the generated app's package.json (src/reconstruction/app-template.ts:42) and is never invoked by any code in the repo. Port is always OS-assigned via `listen(0, \"127.0.0.1\")`, host is always 127.0.0.1. Readiness is a `fetch(baseUrl + \"/__wr_probe__\")` that accepts a 404 as \"the server answered\" (parity-qa.ts:151); reconstruction QA has its own duplicate copy of this logic in src/reconstruction-qa/start-clone.ts using `/__wr_qa_probe__` (line 168).",
+  "THE FOUR PREVIEW ENTRYPOINTS, all built on the same startApp + an optional appending reverse proxy. (1) `pnpm content:preview <content-run-dir> [--default]` (src/cli-content-preview.ts) — startApp only, no proxy, injects `WR_SLOT_VALUES_FILE`. (2) `pnpm theme:preview <template-manifest> --theme <f> --adapter <f> [--content-run <d>]` (src/cli-theme-preview.ts → src/theme/serve.ts startThemedApp) — proxy appends overlay CSS to exactly one response, `/wr/generated-styles.css`; prints BOTH urls (themed proxy + unthemed upstream). (3) `pnpm seo:preview <plan-run-dir> [--content-run <d>]` (src/cli-seo-preview.ts → src/seo/serve.ts startSeoServedApp) — proxy rewrites <title> in head AND in the RSC flight payload, splices headHtml before </head>, serves /robots.txt, 404s /sitemap.xml in preview. (4) `pnpm assets:preview <materialization-run-dir> --template <d> [--content-run <d>] [--theme-overlay <css>]` (src/cli-assets-preview.ts → src/assets/serve.ts startAssetServedApp) — proxy serves /media/<sha256>.<ext> and rewrites source asset URLs in HTML, RSC (text/x-component) and CSS. All four block on SIGINT/SIGTERM and then `await app.stop()`.",
+  "WHERE THE GENERATED APPS LIVE ON DISK. Exact Reconstruction app: `data/<host>/reconstructions/<runId>/app/` (siblings: reconstruction-manifest.json). Template app (what every preview serves): `data/<host>/recon-templates/<runId>/app/` containing app/, src/runtime/, reconstruction-data/{route-map.json, pages/}, template-data/{slots.json, slot-bindings.json, default-content.json}, public/, next.config.mjs, package.json. Production: `data/<host>/production-builds/<runId>/` with `app/` (the patched copy), `app/out/` (the static export), `package/` (server.mjs + site/ + deploy-manifest.json + RUN.md + sitemap.preview.xml), `report/`, `manifest.json`. Paths come from src/production/store.ts productionBuildDir/productionSpecDir and src/production/run.ts:184,370,381,438. The whole `data/` tree is gitignored.",
+  "MEMOIZATION AT THE SERVE BOUNDARY — THIS IS THE DECISIVE FINDING FOR A FAST AUTHORING PREVIEW. The content contract is read ONCE and memoized for the entire server process lifetime. In src/recon-template/app-templates.ts (the string written verbatim into every template app as src/runtime/slot-content.ts): line 109 `let contractPromise: Promise<Map<string, ResolvedOp[]>> | null = null;` and lines 155-157 `function getContract(): Promise<Map<string, ResolvedOp[]>> { if (!contractPromise) contractPromise = buildContract(); return contractPromise; }`. `buildContract()` is what reads slots.json, slot-bindings.json, default-content.json AND `process.env.WR_SLOT_VALUES_FILE` (line 123). I verified the identical code on disk in the real served artifact at data/linear.app/recon-templates/2026-08-25T21-53-26-980Z/app/src/runtime/slot-content.ts lines 92 and 138-141. The generated file's own doc comment (line 18 on disk, line 35 in source) states the consequence plainly: \"change a value, restart the server\".",
+  "SECOND LAYER OF MEMOIZATION: the parsed page tree is cached WITH the slot values already applied. app-templates.ts:390 `const cache = new Map<string, Promise<RuntimePage>>();` and loadPage() (lines 410-419) does `pending = readFile(file).then(JSON.parse).then(page => applySlotContent(page)); cache.set(pageFile, pending);`. So even if the contract were invalidated, every already-rendered page would still serve its stale applied tree. The Exact Reconstruction has the same pair (src/reconstruction/runtime-template.ts:165 routeMapPromise, :222 page cache), with the comment \"One parse per server process instead of one per request. No queue, no LRU, no external cache.\"",
+  "NEXT'S OWN CACHING IS NOT THE PROBLEM: the generated page declares `export const dynamic = \"force-dynamic\"` (src/reconstruction/app-template.ts:200) and patchPageTsx requires that anchor and forbids generateStaticParams (src/production/patch.ts:88-93). Every request re-renders. The staleness is purely the two module-level caches above. CONSEQUENCE for Task 28: a fast authoring preview that edits slot values CANNOT reuse the current serve path as-is — writing a new WR_SLOT_VALUES_FILE has zero effect on a running server. The options are (a) restart the next start worker per edit (~seconds, plus the ~31 MB .next is already built so no rebuild), (b) add overlay indirection that bypasses getContract()/loadPage() caching, or (c) do the substitution at a proxy in front, the way theme/seo/assets already do.",
+  "PROXY-LEVEL MEMOIZATION IS ALSO PROCESS-LIFETIME, WITH ONE EXCEPTION. theme/serve.ts:64 `const overlayBytes = Buffer.from(\"\\n\" + overlayCss, \"utf8\")` captures the CSS once at startOverlayProxy(). seo/serve.ts:111-112 builds `headByRoute` and `overlayBytes` once at startSeoProxy(). assets/serve.ts:74 captures overlayBytes once and holds `options.rewriteMap` by reference. THE EXCEPTION: assets/serve.ts:85 reads each media file from disk PER REQUEST (`const body = await readFile(path.join(options.mediaDir, mediaMatch[1]))`), so replacing a file in the media dir IS picked up live without a restart. That is the only hot path in the whole serve stack today, and it is the existing precedent for a live-edit seam.",
+  "PRODUCTION HAS NO SERVE-BOUNDARY INDIRECTION AT ALL. src/production/patch.ts:97-111 patchSlotContent replaces the `process.env.WR_SLOT_VALUES_FILE` block with a read of `template-data/slot-values.baked.json`, so the production artifact has no external run-directory dependency — but the surrounding `contractPromise` memoization is untouched and survives the bake. The final production output is a fully static export served by a generated dependency-free `package/server.mjs` (src/production/static-server.ts) with no dynamic content path whatsoever. Production QA copies the package to an `os.tmpdir()` mkdtemp and launches it with `env = { PATH }` only (src/production/qa.ts:92-99).",
+  "DATA LAYOUT — linear.app (host dir also holds 6 loose top-level observation dirs): reconstructions 6, newest 2026-08-25T20-30-33-313Z. recon-templates 1, newest 2026-08-25T21-53-26-980Z. page-regions 1, newest 2026-08-26T16-14-07-901Z. content-runs 2, newest 2026-08-26T19-24-33-898Z. theme-extractions 1, newest 2026-08-25T22-16-41-774Z. theme-runs 4, newest 2026-08-26T19-26-48-786Z. source-seo-snapshots 1, newest 2026-08-25T23-15-08-566Z. production-seo-plans 3, newest 2026-08-26T19-24-34-023Z. asset-inventories 1, newest 2026-08-25T23-19-27-365Z. asset-materializations 2, newest 2026-08-25T23-28-36-880Z. production-specs 4 and production-builds 4, both newest 2026-08-26T19-26-48-957Z. release-projects 4: flowpilot-wr27, flowpilot-wr27-blocked, linear.app-2026-08-25T23-32-42-075Z, linear.app-2026-08-25T23-54-21-435Z (newest by mtime is flowpilot-wr27-blocked at 2026-08-27T04:28:03Z). Supporting: reconstruction-qa 6, site-specs 3, site-observations 3, interaction-models 2, interaction-explorations 2.",
+  "DATA LAYOUT — stripe.com (host dir also holds 13 loose top-level observation dirs + e2e-runs): reconstructions 21, newest 2026-08-17T21-38-04-901Z. recon-templates 5, newest 2026-08-26T22-38-06-075Z. page-regions 1, newest 2026-08-26T16-14-08-675Z. content-runs 2, newest 2026-08-18T10-46-26-129Z. theme-extractions 1, newest 2026-08-18T12-07-22-308Z. theme-runs 3, newest 2026-08-18T12-07-35-609Z. source-seo-snapshots 1, newest 2026-08-18T19-25-49-810Z. production-seo-plans 1, newest 2026-08-18T19-26-12-572Z. asset-inventories 1, newest 2026-08-19T05-54-47-361Z. asset-materializations 1, newest 2026-08-19T05-54-55-204Z. production-specs 2 and production-builds 2, both newest 2026-08-19T07-57-26-869Z. release-projects 1: stripe.com-2026-08-19T06-36-35-798Z. Supporting: reconstruction-qa 17, site-specs 16, site-observations 14 (newest 2026-08-17T21-23-54-037Z-augmented), interaction-models 13, interaction-explorations 13.",
+  "LINEAGE PICKER — THE TWO TEMPLATE FAMILIES ARE NOT INTERCHANGEABLE. Only the two newest stripe templates carry the Task-27 Template Factory V2 metadata (manifest key `routePolicy` plus counts.slotizedRoutes/structureOnlyRoutes/collections): stripe 2026-08-26T17-16-46-409Z and 2026-08-26T22-38-06-075Z — both 20 routes, 4661 slots / 13680 bindings, 10 slotized + 10 structure-only routes, 3 collections — and NEITHER has a built `.next`. The linear template 2026-08-25T21-53-26-980Z has NO routePolicy (pre-Task-27: 8 routes, 3079 slots / 9929 bindings, 131 global slots) but DOES have a built `.next` (31 MB, BUILD_ID present) and is the accepted lineage for flowpilot-wr27 AND the hard-pinned smoke:regions §7 canary. The three older stripe templates (2026-08-18T*) are also pre-Task-27 and all built.",
+  "flowpilot-wr27 DETAIL (data/linear.app/release-projects/flowpilot-wr27/): files are release-project.json, requirements.json, operator-checklist.md, technical-debt.json, authored/theme.json, runs/ (7 run dirs). schemaVersion 1 / schemaName release-project-v1 / projectRevision 2. siteId = projectId = \"flowpilot-wr27\". source {host: linear.app, rootUrl: https://linear.app/}. target {mode: \"preview\", productionBaseUrl: null}. releaseState PRODUCTION_INPUTS_REQUIRED, failure null. All 7 stageStatus entries are \"fresh\". authored.slotValues has exactly 1 key; authored.theme is {tokens: {\"color.accent.primary\": \"#3d5afe\"}, note: \"exercise-only accent swap; paint only, no layout\"}, updatedAt 2026-08-26T19:25:53.375Z. 2 resolutions, 3 limitations, 3 warnings, 4 technicalDebt entries. There is NO revisions/ directory — smoke:revision check 27A.23 explicitly asserts its absence, so any Task-28 code that writes revisions into this project WILL break that suite. acceptedLineage points at reconstruction 2026-08-25T20-30-33-313Z, template 2026-08-25T21-53-26-980Z, content 2026-08-25T21-54-40-120Z, theme 2026-08-25T22-24-00-120Z, seo 2026-08-25T23-27-49-099Z, assets 2026-08-25T23-28-36-880Z, production spec+build 2026-08-25T23-54-21-435Z — note stageStatus points at NEWER content/theme/seo/production artifacts than acceptedLineage does.",
+  "data/ RESIDUE AND HIDDEN NAMESPACES: `data/.gitkeep`, plus two leftover scratch dirs from crashed/interrupted runs — `data/.smoke-reconstruction-qa-3qXqF8/` (contains a full built reconstruction/app/.next) and `data/.smoke-release-52098/`. The registry namespace `data/.registry/` (src/registry/store.ts:48 REGISTRY_DIR) does NOT exist yet — smoke:registry check 27B.8 covers \"a registry with no index file lists nothing instead of throwing\", which is the current on-disk state."
+ ],
+ "risks": [
+  "A fast authoring preview cannot be built on the existing serve path without a decision about the process-lifetime memoization. `contractPromise` (app-templates.ts:155-157) plus the slot-applied page cache (app-templates.ts:390, 410-419) mean writing a new WR_SLOT_VALUES_FILE has literally zero effect on a running `next start`. Restarting the worker is the honest baseline cost; the .next is already built so the restart is `next start` boot time only (parity-qa.ts allows up to READY_TIMEOUT_MS = 120_000, but a warm boot is far faster) — I did NOT measure that boot time and it must be measured before any latency claim is made.",
+  "smoke:regions §7 is hard-pinned to the literal string `data/linear.app/recon-templates/2026-08-25T21-53-26-980Z` (scripts/smoke-regions.ts:547). If that directory is moved, renamed, rebuilt or excluded, the suite silently drops to a lower check count and still exits 0 — a vacuous pass. Any Task-28 lineage reshuffle must leave that path intact, and the 67 must be re-verified as 67, not just 'exit 0'.",
+  "smoke:revision and smoke:registry read the REAL data/ tree and assert byte-identity of their sources at the end (27A.22, 27B.26, 27B.27). smoke:revision specifically asserts no `revisions/` directory exists in data/linear.app/release-projects/flowpilot-wr27 or .../linear.app-2026-08-25T23-32-42-075Z. Any Task-28 feature that writes a revision chain into an existing real project breaks two suites at once. Write revisions only into new Task-28 namespaces.",
+  "smoke:registry check 27B.7 exists because siteId collisions among adapted legacy projects are REPORTED, not deduplicated. With flowpilot-wr27 and flowpilot-wr27-blocked both present under linear.app, a Task-28 registry consumer that assumes siteId uniqueness will pick an arbitrary project. 27B.13 pins the correct behavior (an ambiguous siteId resolves to nothing).",
+  "No suite validates its own expected check count, and the two tail formats differ, so an aggregate regression number can only be produced by running all 20 and summing the printed totals. `exit 0` alone proves nothing — a SKIPped block, a helper that stopped being called, or a suite that returned early all exit 0. Always re-derive by counting PASS lines (I verified PASS-line count == reported count for all three suites I ran).",
+  "The two Task-27 Template Factory V2 stripe templates have NO built `.next`. A first preview against either costs a full `next build` on a 20-route / 13,680-binding app (BUILD_TIMEOUT_MS is 600_000 for a reason). If a Task-28 phase picks the routePolicy-bearing lineage for its canary, budget that build; if it picks the linear template for speed, it gets a pre-Task-27 artifact with no route-scope or collection metadata.",
+  "`buildApp(appDir, force=false)` decides to skip the build purely on `.next/BUILD_ID` existing (parity-qa.ts:105-110, start-clone.ts:41-47). A stale `.next` from an older artifact version will be served silently against newer template-data. If a Task-28 change touches anything the build bakes in, force the rebuild explicitly rather than trusting BUILD_ID.",
+  "Generated apps under data/ resolve `next`/`react` by walking UP to the repo's node_modules — next.config.mjs deliberately does not pin the workspace root, and every spawn uses `npx --no-install`. So the preview runtime silently depends on the repo's node_modules being intact. Since the program contract forbids `pnpm install`, a corrupted or partially-installed node_modules cannot be repaired mid-program and would take out every browser/serve suite at once.",
+  "There are TWO independent copies of the build-and-serve logic (src/recon-template/parity-qa.ts startApp and src/reconstruction-qa/start-clone.ts startClone) with different probe paths and slightly different options. A Task-28 change to serving behavior applied to only one of them will produce a QA/preview divergence that no current suite would catch.",
+  "Two leftover scratch namespaces sit in data/ (`data/.smoke-reconstruction-qa-3qXqF8/`, `data/.smoke-release-52098/`), one holding a full built .next. They are residue from interrupted suite runs, not accepted artifacts. Do not treat them as lineage, and be aware that a suite crash leaves this kind of debris behind (the cleanup lives in a `finally` that a SIGKILL bypasses).",
+  "stageStatus in flowpilot-wr27 points at newer content/theme/seo/production artifacts than acceptedLineage does. Any Task-28 code that reads 'the current artifact for this project' must be explicit about which of the two it means — they genuinely disagree in the one real authoring canary we have.",
+  "I did not run any of the expensive suites, so every number above for suites other than revision/registry/regions comes from docs/result/handoffs/27-final.json (accepted evidence), not from a run in this session. I also did not measure `next start` warm-boot time, `next build` time for any real template, or preview first-paint latency — those are unmeasured and must not be quoted as if they were observed."
+ ]
+}

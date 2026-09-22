@@ -1,0 +1,100 @@
+Already up to date
+Done in 147ms using pnpm v11.21.0
+$ tsx scripts/smoke-interaction-detector.ts
+web-recon — smoke:interaction-detector (offline fixture, no network / no browser)
+
+  PASS  §72 disclosure trigger is P1
+  PASS  §72 disclosure capabilities: click + state-toggle + disclosure-trigger
+  PASS  §72 aria-controls resolved to the target element id
+  PASS  §72 target records the hidden BEFORE state
+  PASS  §72 aria-expanded value is stored as evidence (not just presence)
+  PASS  §73 menu trigger is P1
+  PASS  §73 menu-trigger capability from aria-haspopup=menu
+  PASS  §73 menu target resolved
+  PASS  §74 dialog trigger is P1
+  PASS  §74 dialog-trigger capability from aria-haspopup=dialog
+  PASS  §74 role=dialog target is in the inventory
+  PASS  §75 tab trigger is P1
+  PASS  §75 tab-trigger capability from role=tab
+  PASS  §75 tabpanel relation resolved
+  PASS  §84 unresolved aria-controls is kept, not dropped
+  PASS  §84 unresolved control is not an error
+  PASS  §84 unresolved count is reported
+  PASS  §85 aria-controls with two ids yields two resolved relations
+  PASS  §44 an unreferenced <dialog> still enters the target inventory
+  PASS  §43 aria-owns is evidence only, never a control relation
+  PASS  §76 <summary> is a candidate
+  PASS  §76 <summary> is P1 (native disclosure)
+  PASS  §76 <summary> carries the native-disclosure relation to its <details>
+  PASS  §76 <details> open state is recorded as evidence
+  PASS  §76 <details> itself is NOT a duplicate candidate
+  PASS  §76 <details> IS in the target inventory
+  PASS  §77 input[type=text] → P2 edit+focus
+  PASS  §77 input[type=checkbox] → P2 toggle
+  PASS  §77 input[type=range] → P2 range-adjust
+  PASS  §77/§29 input[type=file] → P2 with a file-input guard
+  PASS  §12 input[type=hidden] is never a candidate
+  PASS  §77 textarea → P2 edit
+  PASS  §77/§21 select → P2 select + open-options
+  PASS  §11 <option> is not an independent candidate
+  PASS  §78 typeless <button> inside a form is submit-capable
+  PASS  §78 the implicit-submit derivation is recorded as DERIVED evidence
+  PASS  §52 the form ancestor is recorded
+  PASS  §78 <button type=button> in a form has NO submit guard
+  PASS  §28 input[type=submit] is submit-capable
+  PASS  §79 an ordinary <a href> is NOT a candidate
+  PASS  §79 an ordinary external <a href> is NOT a candidate either
+  PASS  §79 <a href=# role=button aria-expanded> IS a candidate (P1)
+  PASS  §27 javascript: href is a candidate, and only the scheme is stored
+  PASS  §27 a redundant role=link never admits a navigation anchor
+  PASS  §80 visible div with cursor:pointer → P3 generic-pointer
+  PASS  §80/§33 cursor:pointer + pointer-events:none and nothing else → excluded
+  PASS  §81 inline onclick → P2 click
+  PASS  §26 only the handler NAME is stored, never the source
+  PASS  §82/§55 a hidden <button> is PRESERVED as a candidate
+  PASS  §82 hidden candidate records the invisible initial state
+  PASS  §83 disabled <button> is preserved with disabled state + guard
+  PASS  §20/§30 readonly input is preserved and marked non-operable
+  PASS  §30 aria-disabled=true counts as disabled
+  PASS  §86 a data-* state hint ALONE never creates a candidate
+  PASS  §35 data-* hint + tabindex>=0 → P3 candidate
+  PASS  §35 only the data-* attribute NAME is stored, never its value
+  PASS  §87 five overlapping signals produce exactly ONE candidate
+  PASS  §40 the highest priority wins (P1)
+  PASS  §87 every signal is kept as evidence
+  PASS  §24 contenteditable=true → edit + focus
+  PASS  §24 contenteditable=false is excluded
+  PASS  §23 draggable=true → drag capability (P2)
+  PASS  §25 popovertarget → P1 popover-trigger
+  PASS  §25 popover target is resolved into the inventory
+  PASS  §30 an inert ANCESTOR is detected and blocks operability
+  PASS  §32 inherited cursor:pointer does NOT multiply candidates (root only)
+  PASS  §34 transition/animation alone never creates a candidate
+  PASS  stats: candidate count matches the array
+  PASS  stats: priority counts add up
+  PASS  stats: visible + hidden = total
+  PASS  §63 candidateDensity is candidates / effective-visible elements
+  PASS  §67 no cap: every rule-based candidate is stored
+  PASS  candidate ids are ic000001… in element order
+  PASS  candidates are sorted by elementId (document order)
+  PASS  targets are sorted by elementId
+  PASS  §88 re-running on the same input is byte-identical
+  PASS  §88 reversed style-table and attribute key order → identical output
+  PASS  §89 the same element id means different things per viewport
+  PASS  §89 each viewport numbers its candidates from ic000001
+  PASS  §7 a failed Task 09 page is skipped, not fatal
+  PASS  §8 desktop and mobile are analyzed independently
+  PASS  §57 each page gets its own interaction-candidates.json
+  PASS  §91 interaction-candidates.json passes Zod after reload
+  PASS  §91 reloaded page keeps every candidate
+  PASS  §91 interaction-analysis.json passes Zod after reload
+  PASS  §59 the site manifest references pages by path, never embeds candidates
+  PASS  §109 recorded byte totals match the real files
+  PASS  §64 validation pair comparison is computed from stored candidates only
+  PASS  §58 the original observation artifacts are untouched
+  PASS  §88 re-analyzing the same run rewrites identical bytes
+  PASS  §90 a dangling styleId fails fast with InteractionInputError
+  PASS  §6 dom.json disagreeing with observation.json fails fast
+
+92/92 checks passed
+[smoke:interaction-detector] OK

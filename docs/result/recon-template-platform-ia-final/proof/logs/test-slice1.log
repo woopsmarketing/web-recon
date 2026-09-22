@@ -1,0 +1,94 @@
+
+[unit] settings
+  ok   H unknown section key → FAIL
+  ok   H unknown field inside a declared section → FAIL
+  ok   H copy is not a setting: title in settings → FAIL (it is a slot)
+  ok   H out-of-range value → FAIL
+  ok   I settings for another template → FAIL
+  ok   defaults + sparse override = effective; selection REPLACES (no deep merge)
+  ok   selection with an extra key (mode latest + category) → FAIL
+  ok   SettingsError type is used
+
+[unit] content reader
+  ok   latest: publishedAt desc, id asc tie-breaker, drafts never served
+  ok   latest orders by INSTANT, not string (offsets, fractional seconds)
+  ok   manual ids must be unique
+  ok   category + limit
+  ok   J manual: order kept, missing/unpublished ids skipped AND reported
+  ok   unknown collection type → FAIL (closed descriptors)
+
+[unit] theme
+  ok   site theme token the template does not consume → FAIL
+  ok   unknown token / unsafe value → FAIL
+  ok   per-token grammar keeps every curated library theme + template default valid
+
+[unit] assets / QA scanners
+  ok   SVG assets must be inert + self-contained
+  ok   package QA catches remote refs in inline <style>, style=, @import, look-alike origins
+
+[unit] slots
+  ok   slot fallback: site value → binding → neutral default → hide
+  ok   slot fallback: required slot with no value → needs-input (build fails, nothing invented)
+  ok   unknown slot section / unknown slot key / other template → FAIL
+  ok   slot value types are narrow: wrong type, markup, over-length, arbitrary JSON, per-item arrays → FAIL
+  ok   link/media slot schemas: safe hrefs only; media = asset ref + alt
+  ok   neutral defaults and bound content are validated against the slot contract
+  ok   prototype keys in site JSON are refused at the store boundary
+  ok   template code cannot read an undeclared slot
+
+[unit] site context / release pin
+  ok   I createSiteContext with a different release than the site pin → FAIL
+  ok   BLOCKER fix: releaseId is an id, never a path (traversal / id≠hash refused)
+  ok   I settings selecting an unknown category → FAIL (no silently empty section)
+  ok   preview mode includes drafts + scheduled; public does not
+  ok   I site:build with an explicit different release → FAIL (no silent upgrade)
+
+[static] template source rules (L, M, N)
+  ok   templates/ contains exactly one Template major (no per-site forks)
+  ok   L/M/N no fs/Supabase/DB/legacy imports, no siteId literals, no wall clock, no env reads
+  ok   scanner self-test catches each violation class
+  ok   Q templates/**: forbidden source terms only in provenance.json
+  ok   platform/ + templates/ never import the legacy src/ pipeline
+
+[integration] three fixture packages
+  ok   A all three sites pin and were built with the SAME exact release
+  ok   B all three used the SAME Template source (templateSourceHash)
+  ok   C fixture-large renders the default count (8) of the latest 173 visible projects
+  ok   D fixture-small renders 4 residential projects + custom title
+  ok   E fixture-empty: NO projects section, NO wrapper, NO anchor, NO fake card
+  ok   F theme differs where expected (small overrides; large/empty = template default)
+  ok   G identity/content differ where expected
+  ok   header/footer/card links are real <a href> and all resolve (no dead links)
+  ok   Q packages: no source host/API/brand/assets/runtime (all emitted files) + no remote refs
+  ok   package assets are content-addressed and byte-identical to the snapshot
+  ok   pinned release == current working-tree template/platform runtime (no drift since release)
+  ok   SLOT override proof: same Template code renders different slot copy per site
+
+[integration] build identity
+  ok   O same inputs → same buildInputId (and = recorded package id)
+  ok   mode is part of the identity (public ≠ preview)
+  ok   visibility time only matters through content: scheduled item appears after its date
+
+[integration] lifecycle (throwaway repo root)
+  ok   P changed content → changed snapshot/buildInputId
+  ok   P changed settings → changed buildInputId
+  ok   P changed theme → changed buildInputId
+  ok   P changed slot value → changed buildInputId
+  ok   P changed asset bytes → changed buildInputId
+  ok   K reference-fixture origin under data/sites → FAIL
+  ok   placement fields are rejected by the content model (isMainBannerDisplay)
+  ok   missing asset reference → FAIL
+  ok   build #1 in throwaway root succeeds
+  ok   O rebuild with identical inputs → up-to-date, no new package
+  ok   H unknown settings key → build FAILS and current package is untouched
+  ok   previous successful package retained when a new build replaces it
+  ok   forced rebuild with the same id keeps a valid current package (atomic swap)
+  ok   rollback-style rebuild back to the previous input (A→B→A) keeps both packages
+  ok   third build prunes the oldest; keeps current + previous only
+  ok   concurrent build of the same site is refused (per-site lock held by a live pid)
+  ok   stale lock (dead pid) + leftover staging dir from a crashed build are recovered
+  ok   damaged current package is rebuilt, never reported up-to-date, never made the rollback target
+  ok   release immutability: stored files read-only; tampering is detected
+  ok   release re-run is idempotent in a throwaway root: same code → same release, verified, not overwritten
+
+slice1: 72 passed, 0 failed

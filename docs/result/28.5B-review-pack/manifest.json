@@ -1,0 +1,1086 @@
+{
+  "schema": "task285b-review-pack-v1",
+  "task": "28.5B - human / external-reviewer visual evidence pack",
+  "producedAt": "2026-08-30T16:57:35.893927Z",
+  "compositionTool": "python3 + Pillow 12.2.0 (crop / paste / LANCZOS resize); labels in Arial Bold + Arial. No ImageMagick, no browser rendering. Full-page primaries are byte copies, never scaled.",
+  "howToRead": "Read @16 and dE76>10 (dE76AboveVisibleRatio), never @1 on its own - @1 counts any 1/255 change and is dominated by sub-perceptual noise, which is why /pricing @1 falls 0.3914 -> 0.0266 while the amplitude-gated @16 falls only 0.0295 -> 0.0158. In every route family, SOURCE is the live page, OLD is the pre-28.5B reconstruction, HARDENED is the post-28.5B reconstruction, and a DIFF paints changed pixels red against a washed-out copy of the page, so a smaller and fainter red field is better. Both diffs in a family are measured against the identical live-original bytes, so old-vs-new is a fair comparison; the old build was generated from a five-day-older source, which disadvantages it, so every improvement shown is a lower bound. Images 19-22 and diagnostics 02 and 03 are the exception to all of the above: they document a KNOWN UNFIXED responsive defect that 28.5B did not address and that is carried forward to 28.5C - do not read them as evidence of an improvement.",
+  "conventions": {
+    "changedRatioAt1": "fraction of overlapping pixels where ANY channel differs by >=1/255. Noise-dominated; never the verdict on its own.",
+    "changedRatioAt16": "fraction of overlapping pixels where the max channel delta is >=16/255. Amplitude-gated; this is the primary visible-regression channel.",
+    "dE76AboveJndRatio": "fraction of overlapping pixels with CIE dE76 > 2.3, the just-noticeable difference. THIS is the field reported as 'dE76' in the 28.5B verdict tables.",
+    "dE76AboveVisibleRatio": "fraction of overlapping pixels with CIE dE76 > 10, i.e. clearly different side by side. Read this together with @16.",
+    "dE76Mean": "mean CIE dE76 over the overlapping area.",
+    "heightDelta": "clone full-page height minus source full-page height, in CSS pixels. 0 is exact parity.",
+    "commonAreaRatio": "fraction of the union area that both images actually cover. Below 1 means the two pages are different sizes and part of the comparison is undefined.",
+    "diffRendering": "red pixels = changed pixels, drawn over a lightened copy of the source. Bigger and denser red = worse.",
+    "nullMetrics": "null means the channel is not applicable to that image (a source or clone capture is not itself a measurement) or was not recorded by that QA run - it never means zero."
+  },
+  "comparability": "SAME_REFERENCE_COMPARABLE between old and new diffs; old clone built from 2026-08-25 source (drift caveat)",
+  "comparabilityDetail": "SAME_REFERENCE_COMPARABLE between old and new diffs: both sides are diffed against the IDENTICAL live-original PNG bytes captured in the 2026-08-30T15-57-54-926Z QA session, so the reference is held fixed and old-vs-new channel deltas are attributable to the clone. CAVEAT: the old clone was generated from the 2026-08-25 observation/site-spec source, five days older than the reference capture, so any real linear.app drift in that window is charged to the old clone. The comparison therefore DISADVANTAGES the old build; improvements it shows are a lower bound, and any place where the old build wins is not explainable by drift.",
+  "referenceFamily": "data/linear.app/reconstruction-qa/2026-08-30T15-57-54-926Z originals (same-session)",
+  "verdictNumbersSummary": {
+    "note": "old -> new, both diffed against the identical live-original capture. Arrays are [old, new].",
+    "rows": [
+      {
+        "route": "/pricing",
+        "viewport": "desktop 1440",
+        "changedRatioAt1": [
+          0.3914,
+          0.0266
+        ],
+        "changedRatioAt16": [
+          0.0295,
+          0.0158
+        ],
+        "dE76AboveJndRatio": [
+          0.3794,
+          0.0172
+        ],
+        "dE76AboveVisibleRatio": [
+          0.0279,
+          0.0146
+        ],
+        "dE76Mean": [
+          3.0826,
+          0.7039
+        ],
+        "heightDelta": [
+          -12,
+          0
+        ],
+        "commonAreaRatio": [
+          0.9981,
+          1
+        ],
+        "verdictNumbers": "at1 0.3914\u21920.0266 (-0.3648), at16 0.0295\u21920.0158 (-0.0137), dE76>JND 0.3794\u21920.0172 (-0.3622), dE76>10 0.0279\u21920.0146 (-0.0133), dE76mean 3.0826\u21920.7039 (-2.3787), meanMaxDelta 8.1354\u21921.7595 (-6.3759), common 0.9981\u21921, heightDelta -12\u21920"
+      },
+      {
+        "route": "/changelog",
+        "viewport": "desktop 1440",
+        "changedRatioAt1": [
+          0.0885,
+          0.0746
+        ],
+        "changedRatioAt16": [
+          0.0471,
+          0.0417
+        ],
+        "dE76AboveJndRatio": [
+          0.0641,
+          0.0533
+        ],
+        "dE76AboveVisibleRatio": [
+          0.041,
+          0.0343
+        ],
+        "dE76Mean": [
+          2.3744,
+          1.7572
+        ],
+        "heightDelta": [
+          1,
+          1
+        ],
+        "commonAreaRatio": [
+          1,
+          1
+        ],
+        "verdictNumbers": "at1 0.0885\u21920.0746 (-0.0139), at16 0.0471\u21920.0417 (-0.0054), dE76>JND 0.0641\u21920.0533 (-0.0108), dE76>10 0.041\u21920.0343 (-0.0067), dE76mean 2.3744\u21921.7572 (-0.6172), meanMaxDelta 6.0068\u21924.457 (-1.5498), common 1\u21921, heightDelta 1\u21921"
+      },
+      {
+        "route": "/security",
+        "viewport": "desktop 1440",
+        "changedRatioAt1": [
+          0.0462,
+          0.0418
+        ],
+        "changedRatioAt16": [
+          0.0382,
+          0.0346
+        ],
+        "dE76AboveJndRatio": [
+          0.0422,
+          0.0383
+        ],
+        "dE76AboveVisibleRatio": [
+          0.0348,
+          0.0316
+        ],
+        "dE76Mean": [
+          1.6138,
+          1.3871
+        ],
+        "heightDelta": [
+          0,
+          0
+        ],
+        "commonAreaRatio": [
+          1,
+          1
+        ],
+        "verdictNumbers": "at1 0.0462\u21920.0418 (-0.0044), at16 0.0382\u21920.0346 (-0.0036), dE76>JND 0.0422\u21920.0383 (-0.0039), dE76>10 0.0348\u21920.0316 (-0.0032), dE76mean 1.6138\u21921.3871 (-0.2267), meanMaxDelta 4.0139\u21923.4428 (-0.5711), common 1\u21921, heightDelta 0\u21920"
+      },
+      {
+        "route": "/pricing",
+        "viewport": "mobile 390 DSF3",
+        "changedRatioAt1": [
+          0.3345,
+          0.0355
+        ],
+        "changedRatioAt16": [
+          0.0343,
+          0.027
+        ],
+        "dE76AboveJndRatio": [
+          0.3308,
+          0.0283
+        ],
+        "dE76AboveVisibleRatio": [
+          0.0325,
+          0.0257
+        ],
+        "dE76Mean": [
+          3.1605,
+          1.452
+        ],
+        "heightDelta": [
+          -6,
+          0
+        ],
+        "commonAreaRatio": [
+          0.9997,
+          1
+        ],
+        "verdictNumbers": "at1 0.3345\u21920.0355 (-0.299), at16 0.0343\u21920.027 (-0.0073), dE76>JND 0.3308\u21920.0283 (-0.3025), dE76>10 0.0325\u21920.0257 (-0.0068), dE76mean 3.1605\u21921.452 (-1.7085), meanMaxDelta 8.2981\u21923.6417 (-4.6564), common 0.9997\u21921, heightDelta -6\u21920"
+      }
+    ],
+    "secondSite": {
+      "note": "stripe.com, a DIFFERENT site and a different QA run (2026-08-30T16-17-33-405Z). No old-build counterpart exists, so these are absolute fidelity numbers, not improvements. Only @16 and heightDelta are recorded by that run.",
+      "rows": [
+        {
+          "route": "https://stripe.com/",
+          "viewport": "desktop 1440",
+          "changedRatioAt16": 0.0492,
+          "heightDelta": 0
+        },
+        {
+          "route": "https://stripe.com/",
+          "viewport": "mobile 390 DSF3",
+          "changedRatioAt16": 0.0176,
+          "heightDelta": 0
+        },
+        {
+          "route": "https://stripe.com/industries/media-entertainment",
+          "viewport": "desktop 1440",
+          "changedRatioAt16": 0.035,
+          "heightDelta": 0
+        },
+        {
+          "route": "https://stripe.com/industries/media-entertainment",
+          "viewport": "mobile 390 DSF3",
+          "changedRatioAt16": 0.1976,
+          "heightDelta": 924,
+          "flag": "OUTLIER - see diagnostic-04"
+        }
+      ]
+    }
+  },
+  "knownUnfixed": [
+    "Responsive variant coverage: only 390px and 1440px viewports were observed, so every width in between renders one of those two variants. At 914px the clone still serves the 390px column (diagnostic-03, heightDelta +724, commonAreaRatio 0.9061).",
+    "The /pricing comparison table appears in the clone only at >=1232px while the live source shows it by 1100px, losing the header row, three of four value columns and 286 characters of visible text inside that band (images 21-22, diagnostic-02).",
+    "stripe.com/industries/media-entertainment on MOBILE is the corpus outlier at @16 0.1976 / heightDelta +924 (diagnostic-04), driven by horizontal box metrics rather than missing content.",
+    "/changelog is +1px taller than the live source in BOTH the old and the hardened build - pre-existing, unchanged by 28.5B."
+  ],
+  "images": [
+    {
+      "index": 1,
+      "file": "01-pricing-source-1440.png",
+      "route": "/pricing",
+      "viewport": 1440,
+      "kind": "source",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "whatToInspect": [
+        "pricing plan cards and their prices",
+        "comparison-table header row and four value columns",
+        "check + cross glyph weight and contrast",
+        "row shading and column x-positions",
+        "full-page height parity (old build was 12px short)"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": null,
+        "changedRatioAt16": null,
+        "dE76AboveJndRatio": null,
+        "dE76AboveVisibleRatio": null,
+        "dE76Mean": null,
+        "heightDelta": null,
+        "commonAreaRatio": null
+      },
+      "description": "The live linear.app /pricing page as captured in the QA session. This is the ground truth every other /pricing image is measured against."
+    },
+    {
+      "index": 2,
+      "file": "02-pricing-old-reconstruction-1440.png",
+      "route": "/pricing",
+      "viewport": 1440,
+      "kind": "old",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        1,
+        3,
+        4
+      ],
+      "whatToInspect": [
+        "pricing plan cards and their prices",
+        "comparison-table header row and four value columns",
+        "check + cross glyph weight and contrast",
+        "row shading and column x-positions",
+        "full-page height parity (old build was 12px short)"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": null,
+        "changedRatioAt16": null,
+        "dE76AboveJndRatio": null,
+        "dE76AboveVisibleRatio": null,
+        "dE76Mean": null,
+        "heightDelta": null,
+        "commonAreaRatio": null
+      },
+      "description": "The OLD (pre-28.5B, 2026-08-25) reconstruction rendered and captured with the same QA capture path.",
+      "comparabilityCaveat": "old clone built from 2026-08-25 source - SAME_REFERENCE_COMPARABLE to hardened diff, drift disadvantages old (lower-bound improvement)"
+    },
+    {
+      "index": 3,
+      "file": "03-pricing-hardened-reconstruction-1440.png",
+      "route": "/pricing",
+      "viewport": 1440,
+      "kind": "hardened",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        1,
+        2,
+        5
+      ],
+      "whatToInspect": [
+        "pricing plan cards and their prices",
+        "comparison-table header row and four value columns",
+        "check + cross glyph weight and contrast",
+        "row shading and column x-positions",
+        "full-page height parity (old build was 12px short)"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": null,
+        "changedRatioAt16": null,
+        "dE76AboveJndRatio": null,
+        "dE76AboveVisibleRatio": null,
+        "dE76Mean": null,
+        "heightDelta": null,
+        "commonAreaRatio": null
+      },
+      "description": "The HARDENED (post-28.5B, 2026-08-30) reconstruction. Compare against 01 for absolute fidelity and against 02 for the improvement."
+    },
+    {
+      "index": 4,
+      "file": "04-pricing-old-diff-1440.png",
+      "route": "/pricing",
+      "viewport": 1440,
+      "kind": "diff",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        1,
+        2,
+        5
+      ],
+      "whatToInspect": [
+        "size and density of the red field, especially over the comparison table",
+        "whether the red is broad-and-faint (sub-perceptual) or tight-and-solid (visible)"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": 0.3914,
+        "changedRatioAt16": 0.0295,
+        "dE76AboveJndRatio": 0.3794,
+        "dE76AboveVisibleRatio": 0.0279,
+        "dE76Mean": 3.0826,
+        "heightDelta": -12,
+        "commonAreaRatio": 0.9981
+      },
+      "description": "SOURCE (01) vs OLD reconstruction (02). Red marks changed pixels.",
+      "comparabilityCaveat": "old clone built from 2026-08-25 source - SAME_REFERENCE_COMPARABLE to hardened diff, drift disadvantages old (lower-bound improvement)"
+    },
+    {
+      "index": 5,
+      "file": "05-pricing-hardened-diff-1440.png",
+      "route": "/pricing",
+      "viewport": 1440,
+      "kind": "diff",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        1,
+        3,
+        4
+      ],
+      "whatToInspect": [
+        "what red remains after hardening and where it is concentrated",
+        "direct area comparison against image 04 at the same scale"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": 0.0266,
+        "changedRatioAt16": 0.0158,
+        "dE76AboveJndRatio": 0.0172,
+        "dE76AboveVisibleRatio": 0.0146,
+        "dE76Mean": 0.7039,
+        "heightDelta": 0,
+        "commonAreaRatio": 1
+      },
+      "description": "SOURCE (01) vs HARDENED reconstruction (03). Red marks changed pixels. Compare side by side with 04."
+    },
+    {
+      "index": 6,
+      "file": "06-pricing-table-triptych-1440.png",
+      "route": "/pricing",
+      "viewport": 1440,
+      "kind": "triptych",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        1,
+        3,
+        5
+      ],
+      "whatToInspect": [
+        "pricing plan cards and their prices",
+        "comparison-table header row and four value columns",
+        "check + cross glyph weight and contrast",
+        "row shading and column x-positions",
+        "full-page height parity (old build was 12px short)"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": 0.0266,
+        "changedRatioAt16": 0.0158,
+        "dE76AboveJndRatio": 0.0172,
+        "dE76AboveVisibleRatio": 0.0146,
+        "dE76Mean": 0.7039,
+        "heightDelta": 0,
+        "commonAreaRatio": 1
+      },
+      "description": "Composed SOURCE | HARDENED | DIFF panels cropped to y 1400-2300 of the full-page capture - the plan-comparison table.",
+      "cropBand": "x 0-1440, y 1400-2300 of the 1440x6360 full-page capture, identical band in all three panels",
+      "metricsNote": "metricSummary describes the DIFF panel shown (source vs hardened, whole page)."
+    },
+    {
+      "index": 7,
+      "file": "07-changelog-source-1440.png",
+      "route": "/changelog",
+      "viewport": 1440,
+      "kind": "source",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "whatToInspect": [
+        "left date column and its timeline rail",
+        "entry heading and where it wraps",
+        "embedded video poster frame and player chrome",
+        "body paragraph line breaks",
+        "the +1px page-height difference present in BOTH builds"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": null,
+        "changedRatioAt16": null,
+        "dE76AboveJndRatio": null,
+        "dE76AboveVisibleRatio": null,
+        "dE76Mean": null,
+        "heightDelta": null,
+        "commonAreaRatio": null
+      },
+      "description": "The live linear.app /changelog page (25342px tall) as captured in the QA session. Ground truth for images 08-12."
+    },
+    {
+      "index": 8,
+      "file": "08-changelog-old-reconstruction-1440.png",
+      "route": "/changelog",
+      "viewport": 1440,
+      "kind": "old",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        7,
+        9,
+        10
+      ],
+      "whatToInspect": [
+        "left date column and its timeline rail",
+        "entry heading and where it wraps",
+        "embedded video poster frame and player chrome",
+        "body paragraph line breaks",
+        "the +1px page-height difference present in BOTH builds"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": null,
+        "changedRatioAt16": null,
+        "dE76AboveJndRatio": null,
+        "dE76AboveVisibleRatio": null,
+        "dE76Mean": null,
+        "heightDelta": null,
+        "commonAreaRatio": null
+      },
+      "description": "The OLD (2026-08-25) reconstruction of /changelog.",
+      "comparabilityCaveat": "old clone built from 2026-08-25 source - SAME_REFERENCE_COMPARABLE to hardened diff, drift disadvantages old (lower-bound improvement)"
+    },
+    {
+      "index": 9,
+      "file": "09-changelog-hardened-reconstruction-1440.png",
+      "route": "/changelog",
+      "viewport": 1440,
+      "kind": "hardened",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        7,
+        8,
+        11
+      ],
+      "whatToInspect": [
+        "left date column and its timeline rail",
+        "entry heading and where it wraps",
+        "embedded video poster frame and player chrome",
+        "body paragraph line breaks",
+        "the +1px page-height difference present in BOTH builds"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": null,
+        "changedRatioAt16": null,
+        "dE76AboveJndRatio": null,
+        "dE76AboveVisibleRatio": null,
+        "dE76Mean": null,
+        "heightDelta": null,
+        "commonAreaRatio": null
+      },
+      "description": "The HARDENED (2026-08-30) reconstruction of /changelog. This is the least-improved route in the pack."
+    },
+    {
+      "index": 10,
+      "file": "10-changelog-old-diff-1440.png",
+      "route": "/changelog",
+      "viewport": 1440,
+      "kind": "diff",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        7,
+        8,
+        11
+      ],
+      "whatToInspect": [
+        "density of red over entry body text vs over headings and the date column",
+        "red over the video poster regions"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": 0.0885,
+        "changedRatioAt16": 0.0471,
+        "dE76AboveJndRatio": 0.0641,
+        "dE76AboveVisibleRatio": 0.041,
+        "dE76Mean": 2.3744,
+        "heightDelta": 1,
+        "commonAreaRatio": 1
+      },
+      "description": "SOURCE (07) vs OLD reconstruction (08).",
+      "comparabilityCaveat": "old clone built from 2026-08-25 source - SAME_REFERENCE_COMPARABLE to hardened diff, drift disadvantages old (lower-bound improvement)"
+    },
+    {
+      "index": 11,
+      "file": "11-changelog-hardened-diff-1440.png",
+      "route": "/changelog",
+      "viewport": 1440,
+      "kind": "diff",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        7,
+        9,
+        10
+      ],
+      "whatToInspect": [
+        "how little the red field shrank compared with image 10 - this route improved least",
+        "residue concentrated in body text and video posters"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": 0.0746,
+        "changedRatioAt16": 0.0417,
+        "dE76AboveJndRatio": 0.0533,
+        "dE76AboveVisibleRatio": 0.0343,
+        "dE76Mean": 1.7572,
+        "heightDelta": 1,
+        "commonAreaRatio": 1
+      },
+      "description": "SOURCE (07) vs HARDENED reconstruction (09). Honest result: @16 moved only 0.0471 -> 0.0417."
+    },
+    {
+      "index": 12,
+      "file": "12-changelog-column-triptych-1440.png",
+      "route": "/changelog",
+      "viewport": 1440,
+      "kind": "triptych",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        7,
+        9,
+        11
+      ],
+      "whatToInspect": [
+        "left date column and its timeline rail",
+        "entry heading and where it wraps",
+        "embedded video poster frame and player chrome",
+        "body paragraph line breaks",
+        "the +1px page-height difference present in BOTH builds"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": 0.0746,
+        "changedRatioAt16": 0.0417,
+        "dE76AboveJndRatio": 0.0533,
+        "dE76AboveVisibleRatio": 0.0343,
+        "dE76Mean": 1.7572,
+        "heightDelta": 1,
+        "commonAreaRatio": 1
+      },
+      "description": "Composed SOURCE | HARDENED | DIFF panels cropped to y 300-1100 - the date column, its neighbouring entry heading, the body heading and the embedded video region.",
+      "cropBand": "x 0-1440, y 300-1100 of the 1440x25342 full-page capture, identical band in all three panels",
+      "metricsNote": "metricSummary describes the DIFF panel shown (source vs hardened, whole page)."
+    },
+    {
+      "index": 13,
+      "file": "13-security-source-1440.png",
+      "route": "/security",
+      "viewport": 1440,
+      "kind": "source",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "whatToInspect": [
+        "hero headline line break ('Safe, secure, / and private.')",
+        "headline glyph weight and letter-spacing",
+        "the 'Security' eyebrow above the headline",
+        "two-line sub-headline wrap",
+        "feature-card grid alignment below the hero"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": null,
+        "changedRatioAt16": null,
+        "dE76AboveJndRatio": null,
+        "dE76AboveVisibleRatio": null,
+        "dE76Mean": null,
+        "heightDelta": null,
+        "commonAreaRatio": null
+      },
+      "description": "The live linear.app /security page as captured in the QA session. Ground truth for images 14-18.",
+      "sourceDriftNote": "This route has 0.0022 @16 of live-source drift inside the QA session itself, so about 5% of each absolute number below is site movement rather than clone error. The drift is identical on both sides and cancels out of the old-vs-new comparison."
+    },
+    {
+      "index": 14,
+      "file": "14-security-old-reconstruction-1440.png",
+      "route": "/security",
+      "viewport": 1440,
+      "kind": "old",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        13,
+        15,
+        16
+      ],
+      "whatToInspect": [
+        "hero headline line break ('Safe, secure, / and private.')",
+        "headline glyph weight and letter-spacing",
+        "the 'Security' eyebrow above the headline",
+        "two-line sub-headline wrap",
+        "feature-card grid alignment below the hero"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": null,
+        "changedRatioAt16": null,
+        "dE76AboveJndRatio": null,
+        "dE76AboveVisibleRatio": null,
+        "dE76Mean": null,
+        "heightDelta": null,
+        "commonAreaRatio": null
+      },
+      "description": "The OLD (2026-08-25) reconstruction of /security.",
+      "comparabilityCaveat": "old clone built from 2026-08-25 source - SAME_REFERENCE_COMPARABLE to hardened diff, drift disadvantages old (lower-bound improvement)",
+      "notableFinding": "The OLD build breaks the hero headline as 'Safe, secure, and / private.' The source and the hardened build both break it as 'Safe, secure, / and private.' This is a real typographic fix that the @16 number (-0.0036) badly understates - compare 13, 14 and 15 directly."
+    },
+    {
+      "index": 15,
+      "file": "15-security-hardened-reconstruction-1440.png",
+      "route": "/security",
+      "viewport": 1440,
+      "kind": "hardened",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        13,
+        14,
+        17
+      ],
+      "whatToInspect": [
+        "hero headline line break ('Safe, secure, / and private.')",
+        "headline glyph weight and letter-spacing",
+        "the 'Security' eyebrow above the headline",
+        "two-line sub-headline wrap",
+        "feature-card grid alignment below the hero"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": null,
+        "changedRatioAt16": null,
+        "dE76AboveJndRatio": null,
+        "dE76AboveVisibleRatio": null,
+        "dE76Mean": null,
+        "heightDelta": null,
+        "commonAreaRatio": null
+      },
+      "description": "The HARDENED (2026-08-30) reconstruction of /security.",
+      "notableFinding": "The hero headline break now matches the source. Two residuals remain and are visible in image 18: the headline is still rendered slightly heavier and tighter than the source, and the two-line sub-headline still wraps at a different word ('...safe and secure. Because / your business...' vs the source's '...safe and secure. / Because your business...')."
+    },
+    {
+      "index": 16,
+      "file": "16-security-old-diff-1440.png",
+      "route": "/security",
+      "viewport": 1440,
+      "kind": "diff",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        13,
+        14,
+        17
+      ],
+      "whatToInspect": [
+        "red over the hero headline vs over the feature-card grid",
+        "whether any red traces a layout shift rather than a colour shift"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": 0.0462,
+        "changedRatioAt16": 0.0382,
+        "dE76AboveJndRatio": 0.0422,
+        "dE76AboveVisibleRatio": 0.0348,
+        "dE76Mean": 1.6138,
+        "heightDelta": 0,
+        "commonAreaRatio": 1
+      },
+      "description": "SOURCE (13) vs OLD reconstruction (14).",
+      "comparabilityCaveat": "old clone built from 2026-08-25 source - SAME_REFERENCE_COMPARABLE to hardened diff, drift disadvantages old (lower-bound improvement)"
+    },
+    {
+      "index": 17,
+      "file": "17-security-hardened-diff-1440.png",
+      "route": "/security",
+      "viewport": 1440,
+      "kind": "diff",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        13,
+        15,
+        16
+      ],
+      "whatToInspect": [
+        "the small residual red field after hardening",
+        "direct area comparison against image 16 at the same scale"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": 0.0418,
+        "changedRatioAt16": 0.0346,
+        "dE76AboveJndRatio": 0.0383,
+        "dE76AboveVisibleRatio": 0.0316,
+        "dE76Mean": 1.3871,
+        "heightDelta": 0,
+        "commonAreaRatio": 1
+      },
+      "description": "SOURCE (13) vs HARDENED reconstruction (15). Smallest absolute error field of the three linear routes."
+    },
+    {
+      "index": 18,
+      "file": "18-security-headline-triptych-1440.png",
+      "route": "/security",
+      "viewport": 1440,
+      "kind": "triptych",
+      "sourceTruth": "same-session (QA live original 2026-08-30T15-57-54-926Z)",
+      "comparableTo": [
+        13,
+        15,
+        17
+      ],
+      "whatToInspect": [
+        "hero headline line break ('Safe, secure, / and private.')",
+        "headline glyph weight and letter-spacing",
+        "the 'Security' eyebrow above the headline",
+        "two-line sub-headline wrap",
+        "feature-card grid alignment below the hero"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": 0.0418,
+        "changedRatioAt16": 0.0346,
+        "dE76AboveJndRatio": 0.0383,
+        "dE76AboveVisibleRatio": 0.0316,
+        "dE76Mean": 1.3871,
+        "heightDelta": 0,
+        "commonAreaRatio": 1
+      },
+      "description": "Composed SOURCE | HARDENED | DIFF panels cropped to y 120-520 - the hero headline, chosen to expose typography and line wrapping at full resolution.",
+      "cropBand": "x 0-1440, y 120-520 of the 1440x3231 full-page capture, identical band in all three panels",
+      "metricsNote": "metricSummary describes the DIFF panel shown (source vs hardened, whole page).",
+      "notableFinding": "The DIFF panel shows a ghosted, doubled headline rather than a clean one. That is the honest residual: the hardened build matches the source's LINE BREAK but not its exact glyph weight and letter-spacing, so every headline glyph sits a hair off its source position. The sub-headline still wraps at a different word than the source."
+    },
+    {
+      "index": 19,
+      "file": "19-pricing-source-700.png",
+      "route": "/pricing",
+      "viewport": 700,
+      "kind": "source",
+      "sourceTruth": "current-live (sweep capture 2026-08-30)",
+      "comparableTo": [
+        20,
+        21,
+        22
+      ],
+      "whatToInspect": [
+        "which viewport variant the clone chose at this width",
+        "whether the plan-comparison table header row and all four value columns are present",
+        "horizontal content extent vs the canvas width",
+        "total page height vs the source"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": null,
+        "changedRatioAt16": null,
+        "dE76AboveJndRatio": null,
+        "dE76AboveVisibleRatio": null,
+        "dE76Mean": null,
+        "heightDelta": null,
+        "commonAreaRatio": null
+      },
+      "description": "Live linear.app /pricing at a 700px viewport, from the 28.5B responsive sweep. Reference for image 20.",
+      "knownDefect": "Images 19-22 document a KNOWN UNFIXED responsive defect. They are evidence carried to 28.5C, not evidence of an improvement."
+    },
+    {
+      "index": 20,
+      "file": "20-pricing-hardened-700.png",
+      "route": "/pricing",
+      "viewport": 700,
+      "kind": "hardened",
+      "sourceTruth": "current-live (sweep capture 2026-08-30)",
+      "comparableTo": [
+        19,
+        22
+      ],
+      "whatToInspect": [
+        "which viewport variant the clone chose at this width",
+        "whether the plan-comparison table header row and all four value columns are present",
+        "horizontal content extent vs the canvas width",
+        "total page height vs the source"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": 0.0881,
+        "changedRatioAt16": 0.0446,
+        "dE76AboveJndRatio": 0.0671,
+        "dE76AboveVisibleRatio": 0.0413,
+        "dE76Mean": 2.469,
+        "heightDelta": -81,
+        "commonAreaRatio": 0.9896
+      },
+      "description": "HARDENED reconstruction of /pricing at a 700px viewport. The clone is still serving its 390px mobile variant here.",
+      "knownDefect": "KNOWN UNFIXED. At 700px the clone is 81px shorter than the source and commonAreaRatio drops to 0.9896.",
+      "metricsNote": "metrics are live-source vs hardened-clone at this width; there is no old-build counterpart in this sweep."
+    },
+    {
+      "index": 21,
+      "file": "21-pricing-source-1100.png",
+      "route": "/pricing",
+      "viewport": 1100,
+      "kind": "source",
+      "sourceTruth": "current-live (sweep capture 2026-08-30)",
+      "comparableTo": [
+        19,
+        20,
+        22
+      ],
+      "whatToInspect": [
+        "which viewport variant the clone chose at this width",
+        "whether the plan-comparison table header row and all four value columns are present",
+        "horizontal content extent vs the canvas width",
+        "total page height vs the source"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": null,
+        "changedRatioAt16": null,
+        "dE76AboveJndRatio": null,
+        "dE76AboveVisibleRatio": null,
+        "dE76Mean": null,
+        "heightDelta": null,
+        "commonAreaRatio": null
+      },
+      "description": "Live linear.app /pricing at a 1100px viewport. The source's full comparison table (header row + four value columns) IS present here.",
+      "knownDefect": "Images 19-22 document a KNOWN UNFIXED responsive defect."
+    },
+    {
+      "index": 22,
+      "file": "22-pricing-hardened-1100.png",
+      "route": "/pricing",
+      "viewport": 1100,
+      "kind": "hardened",
+      "sourceTruth": "current-live (sweep capture 2026-08-30)",
+      "comparableTo": [
+        20,
+        21
+      ],
+      "whatToInspect": [
+        "which viewport variant the clone chose at this width",
+        "whether the plan-comparison table header row and all four value columns are present",
+        "horizontal content extent vs the canvas width",
+        "total page height vs the source"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": 0.0667,
+        "changedRatioAt16": 0.043,
+        "dE76AboveJndRatio": 0.0532,
+        "dE76AboveVisibleRatio": 0.0409,
+        "dE76Mean": 2.4533,
+        "heightDelta": 37,
+        "commonAreaRatio": 0.9942
+      },
+      "description": "HARDENED reconstruction of /pricing at a 1100px viewport. The comparison table has NO header row and only its first value column.",
+      "knownDefect": "KNOWN UNFIXED. The clone's table appears only at >=1232px while the source's appears by 1100px; 286 characters of visible text are missing at 1100. See diagnostic-02.",
+      "metricsNote": "metrics are live-source vs hardened-clone at this width; there is no old-build counterpart in this sweep."
+    },
+    {
+      "index": 23,
+      "file": "23-secondsite-source-representative.png",
+      "route": "https://stripe.com/",
+      "viewport": 1440,
+      "kind": "source",
+      "sourceTruth": "same-session (stripe QA 2026-08-30T16-17-33-405Z)",
+      "comparableTo": [
+        24
+      ],
+      "whatToInspect": [
+        "overall layout and section order against the source",
+        "hero, navigation and footer fidelity",
+        "whether the pipeline generalises off linear.app at all"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": null,
+        "changedRatioAt16": null,
+        "dE76AboveJndRatio": null,
+        "dE76AboveVisibleRatio": null,
+        "dE76Mean": null,
+        "heightDelta": null,
+        "commonAreaRatio": null
+      },
+      "description": "Live stripe.com root page, desktop, from the second-site QA run - the representative source for the generalisation check.",
+      "pageId": "p000001",
+      "note": "Different site and different QA run from images 01-22. Never compare these numbers with the linear.app numbers."
+    },
+    {
+      "index": 24,
+      "file": "24-secondsite-hardened-representative.png",
+      "route": "https://stripe.com/",
+      "viewport": 1440,
+      "kind": "hardened",
+      "sourceTruth": "same-session (stripe QA 2026-08-30T16-17-33-405Z)",
+      "comparableTo": [
+        23
+      ],
+      "whatToInspect": [
+        "overall layout and section order against the source",
+        "hero, navigation and footer fidelity",
+        "whether the pipeline generalises off linear.app at all"
+      ],
+      "metricSummary": {
+        "changedRatioAt1": null,
+        "changedRatioAt16": 0.0492,
+        "dE76AboveJndRatio": null,
+        "dE76AboveVisibleRatio": null,
+        "dE76Mean": null,
+        "heightDelta": 0,
+        "commonAreaRatio": 1
+      },
+      "description": "HARDENED reconstruction of the stripe.com root page, desktop, matching image 23.",
+      "pageId": "p000001",
+      "metricsNote": "@16 0.0492 and heightDelta 0 for the original-clone pair; the stripe QA run does not record the @1 or dE76 channels, so those are null rather than zero.",
+      "note": "Different site and different QA run from images 01-22. Never compare these numbers with the linear.app numbers."
+    }
+  ],
+  "diagnostics": [
+    {
+      "file": "diagnostic-01-pricing-glyph-field.png",
+      "route": "/pricing",
+      "viewport": 1440,
+      "panels": [
+        "SOURCE",
+        "OLD CLONE",
+        "HARDENED CLONE",
+        "OLD DIFF",
+        "HARDENED DIFF"
+      ],
+      "cropBand": "x 0-1000, y 1800-2300 of the 1440-wide full-page captures - the densest part of the old build's error field",
+      "relatesTo": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "whatToInspect": [
+        "check and cross glyph weight: OLD renders them dim and low-contrast, HARDENED at source weight",
+        "the old build's 12px vertical offset - the 'Core' heading sits at a different y",
+        "OLD DIFF is nearly solid red across this band; HARDENED DIFF is nearly clean",
+        "panel-fill lightness of the table body"
+      ],
+      "why": "This is the visual cause of the /pricing @1 collapse 0.3914 -> 0.0266 and dE76>JND 0.3794 -> 0.0172."
+    },
+    {
+      "file": "diagnostic-02-responsive-table-visibility-hole.png",
+      "route": "/pricing",
+      "viewport": 1100,
+      "panels": [
+        "SOURCE @ 1100px",
+        "HARDENED CLONE @ 1100px"
+      ],
+      "cropBand": "y 1380-1780 of each full-page 1100px-wide capture",
+      "relatesTo": [
+        21,
+        22
+      ],
+      "whatToInspect": [
+        "SOURCE has a header row 'Features | Free | Basic | Business | Enterprise' and four populated value columns",
+        "CLONE has NO header row and only the first value column; Basic / Business / Enterprise are absent",
+        "the empty background where the missing columns should be"
+      ],
+      "why": "KNOWN UNFIXED DEFECT. The clone's comparison table appears only at >=1232px, the source's by 1100px; 286 characters of visible text are missing at 1100. Carried to 28.5C.",
+      "status": "KNOWN_UNFIXED"
+    },
+    {
+      "file": "diagnostic-03-responsive-390-914-dead-zone.png",
+      "route": "/pricing",
+      "viewport": 914,
+      "panels": [
+        "SOURCE @ 914px",
+        "HARDENED CLONE @ 914px"
+      ],
+      "cropBand": "hero region of each full-page 914px-wide capture",
+      "relatesTo": [
+        19,
+        20,
+        21,
+        22
+      ],
+      "whatToInspect": [
+        "the clone's content stays locked in a ~390px column with the rest of the 914px canvas empty",
+        "the source has already reflowed to fill the 914px viewport (two plan cards side by side)",
+        "the clone's collapsed hamburger nav vs the source's full nav bar"
+      ],
+      "why": "KNOWN UNFIXED DEFECT. Only two viewport variants were observed (390 and 1440), so every width between them renders one of the two. At 914 the clone is 724px TALLER than the source and commonAreaRatio falls to 0.9061. Carried to 28.5C.",
+      "status": "KNOWN_UNFIXED"
+    },
+    {
+      "file": "diagnostic-04-secondsite-stripe-mobile-reflow.png",
+      "route": "https://stripe.com/industries/media-entertainment",
+      "viewport": "mobile 390 DSF3 (1170px PNG)",
+      "panels": [
+        "SOURCE",
+        "HARDENED CLONE"
+      ],
+      "cropBand": "x 0-1170, y 5200-6200 of the full-page mobile captures",
+      "relatesTo": [
+        23,
+        24
+      ],
+      "whatToInspect": [
+        "the clone's wider left/right padding, so the same copy wraps onto more lines",
+        "all text is present - this is box metrics, not missing content",
+        "the accumulating vertical offset between the two panels"
+      ],
+      "why": "Second-site regression candidate and the corpus outlier: @16 0.1976 and heightDelta +924px (clone 41745 vs source 40821) on MOBILE, against @16 0.0350 and heightDelta 0 for the same route on DESKTOP.",
+      "status": "REGRESSION_CANDIDATE"
+    },
+    {
+      "file": "diagnostic-05-changelog-old-vs-hardened.png",
+      "route": "/changelog",
+      "viewport": 1440,
+      "panels": [
+        "OLD CLONE",
+        "HARDENED CLONE",
+        "OLD DIFF",
+        "HARDENED DIFF"
+      ],
+      "cropBand": "x 0-1440, y 300-1100 - the same band as image 12, so the two can be read together",
+      "relatesTo": [
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "whatToInspect": [
+        "the two DIFF panels are the point: the red field barely shrinks between OLD and HARDENED",
+        "residue is concentrated in entry body text and the video poster, not the date column or heading",
+        "both builds are +1px taller than the source - pre-existing and unchanged by 28.5B"
+      ],
+      "why": "Image 12 shows the hardened state only. This shows the old-vs-hardened delta on the least-improved route (@16 0.0471 -> 0.0417, just -0.0054), so a reviewer can see how modest that gain actually is."
+    }
+  ],
+  "contactSheets": [
+    {
+      "file": "contact-sheet-01-pricing-changelog.png",
+      "covers": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "note": "Supplemental, not one of the 24. Thumbnail grid of images 01-12. Pages taller than 2500px are shown as a top crop, marked in each panel label."
+    },
+    {
+      "file": "contact-sheet-02-security-responsive.png",
+      "covers": [
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "note": "Supplemental, not one of the 24. Thumbnail grid of images 13-24. Pages taller than 2500px are shown as a top crop, marked in each panel label."
+    }
+  ],
+  "sources": {
+    "attributionImages": "docs/result/28.5B-attribution/ (copied, never moved)",
+    "responsiveSweepImages": "docs/result/28.5B-attribution/ and docs/result/28.5B-attribution/sweep/ (copied, never moved)",
+    "secondSiteImages": "data/stripe.com/reconstruction-qa/2026-08-30T16-17-33-405Z/artifacts/screenshots/ (read-only copies)",
+    "handoffs": [
+      "docs/result/handoffs/28.5B-attribution.json",
+      "docs/result/handoffs/28.5B-responsive-residual.json",
+      "docs/result/handoffs/28.5B-linear-run.json",
+      "docs/result/handoffs/28.5B-stripe-run.json"
+    ]
+  },
+  "evidenceUnavailable": []
+}

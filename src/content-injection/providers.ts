@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { TelemetryUsage } from "../telemetry/index.js";
+import { BriefContentGenerator } from "./brief-writer.js";
 import {
   CONTENT_GENERATOR_CONTRACT_VERSION,
   CONTENT_SCHEMA_VERSION,
@@ -246,7 +247,11 @@ export async function loadManualGenerationResult(file: string): Promise<ContentG
 
 export function resolveGenerator(name: string): ContentGenerator {
   if (name === "fake") return new FakeContentGenerator();
+  // Task 28 Phase 10: the brief-driven writer. Deterministic and offline like
+  // `fake`, but it writes copy for the business the BRIEF describes instead of
+  // filler — see `brief-writer.ts` for why that is a composed draft and not a
+  if (name === "brief" || name === "brief-writer") return new BriefContentGenerator();
   throw new ContentInputError(
-    `unknown provider "${name}" — available: fake (or pass --result <json> for the manual seam)`,
+    `unknown provider "${name}" — available: fake, brief (or pass --result <json> for the manual seam)`,
   );
 }

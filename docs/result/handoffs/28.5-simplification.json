@@ -1,0 +1,508 @@
+{
+ "schema": "task28.5-simplification-v1",
+ "producedAt": "2026-08-29",
+ "agent": "Agent D — Wave-2 synthesizer (Task 28.5A)",
+ "role": "Merge four architecture experiments (B full-stylesheet, C hybrid, D full-computed, E targeted-fix ladder) measured against one self-consistent reference set, and place the targeted-fix number next to the architecture number without editorialising past the evidence.",
+ "sourceTruthPolicy": "TWO reference families were used and they are NOT interchangeable. (1) Variants B, C and D were scored against the CURRENT_SOURCE substrate captured in ONE browser session on 2026-08-28 (chromium 151.0.7922.34), 6 route/viewport PNGs, tmp/wr-visual-fidelity-investigation/substrate/. Agent C additionally re-scored the ACCEPTED reconstruction against those same PNGs in the same session, which is the only apples-to-apples A_current baseline that exists for the architecture comparison. (2) Variant E (the targeted-fix ladder) was scored against the ACCEPTED_OBSERVATION of 2026-08-25, because it is an injection simulation over the already-built accepted reconstruction; its harness reproduced the wave-1 baseline EXACTLY on all four pairs (0.3831 / 0.3292 / 0.0460 / 0.0676 changedRatio, identical meanDelta to 4dp), which validates it. BRIDGE, stated so no reader silently mixes the scales: the same accepted artifact scores 0.0460 vs ACCEPTED and 0.0461 vs CURRENT_SOURCE on /security desktop, and 0.3831 vs ACCEPTED and 0.3914 vs CURRENT_SOURCE on /pricing desktop. The reference switch is worth <=0.0001 on /security and <=0.0083 on /pricing, so BASELINES are comparable across the two families. RESIDUALS are not equally comparable: measured accepted-vs-current drift is 0.0023 on /security desktop and 0.0343 on /pricing desktop, so a /pricing residual of 0.0104 (E, vs ACCEPTED) and 0.0003 (C, vs CURRENT_SOURCE) cannot be differenced directly. Each variant was scored against its own natural truth and each is reported against its own session noise floor instead.",
+ "evidenceRead": [
+  "docs/result/handoffs/28.5-raw-visual-audit.json (wave-1 Agent B: 19-pair matrix, 23 cluster families, 111 clusters, assetAndNetwork)",
+  "docs/result/handoffs/28.5-reconstruction-pipeline.json (wave-1 Agent A: 36 loss risks LR-01..LR-36 with file:line, firstStageThatCanAlterPaint)",
+  "docs/result/handoffs/28.5-substrate.json + tmp/wr-visual-fidelity-investigation/substrate/ (Agent capture harness)",
+  "docs/result/handoffs/28.5-variant-B-full-stylesheet.json",
+  "docs/result/handoffs/28.5-variant-C-hybrid.json + docs/result/28.5-visual-fidelity-evidence/variant-C-hybrid/variant-C-pixel-summary.json (read directly)",
+  "docs/result/handoffs/28.5-variant-D-full-computed.json + docs/result/28.5-visual-fidelity-evidence/agentD-full-computed/geometry-r000007.json (read directly)",
+  "docs/result/handoffs/28.5-variantE-targeted-ladder.json + docs/result/28.5-visual-fidelity-evidence/variantE-targeted-ladder/metrics.json (read directly: 48 result rows, rungs[], residualAfterFullLadder)"
+ ],
+ "variants": {
+  "A_current": {
+   "what": "The shipped pipeline: Observer captures a closed 111-property STYLE_WHITELIST and an 18-property PSEUDO_STYLE_WHITELIST per node, SiteSpec is an IR, src/reconstruction re-derives CSS from those tokens plus a layout-inference tier, both viewport trees mounted in one document.",
+   "built": true,
+   "measuredBy": "wave-1 (19 pairs vs ACCEPTED_OBSERVATION/CURRENT_SOURCE) and re-measured in-session by Agent C on 6 pairs vs the CURRENT_SOURCE substrate.",
+   "pixel": {
+    "wave1_19pair_verdicts": {
+     "obviously-different": 17,
+     "unusable": 1,
+     "minor-visible-differences": 1
+    },
+    "wave1_changedRatio_range": "0.0235 (/integrations desktop) .. 0.4953 (/customers desktop); median 0.1679",
+    "inSessionBaseline_vs_CURRENT_SOURCE": {
+     "r000008_desktop": 0.0461,
+     "r000008_mobile": 0.0678,
+     "r000008_wide": 0.0388,
+     "r000007_desktop": 0.3914,
+     "r000007_mobile": 0.3347,
+     "r000007_wide": 0.2982
+    },
+    "note": "r000008 wide has no wave-1 row; 0.0388 is Agent C's in-session measurement of the accepted artifact and is the only baseline that exists for that pair."
+   },
+   "geometry": "Document heights match to 0-1px on 15 of 19 wave-1 pairs. Against CURRENT_SOURCE the accepted artifact is -12px on /pricing desktop and wide, -2px on /pricing mobile, commonAreaRatio 0.9981-0.9997 there.",
+   "strengths": [
+    "Only variant with a semantic model: 9,929 slot bindings, named nodes, a theme token contract, content injection accounting.",
+    "Only variant where JS-driven interaction still exists: clicking the first <button> on /pricing changes document.body.innerHTML in the accepted reconstruction and does not in variants B/C/D.",
+    "Regenerable: an artifact can be re-derived from the IR after a source change; B/C/D artifacts can only be re-captured.",
+    "Redistributes no source stylesheet bytes and no third-party font binaries as shipped today (document.fonts.size = 0 on all four measured pairs)."
+   ],
+   "weaknesses": [
+    "document.fonts.size = 0 on every measured pair: no @font-face is captured or emitted anywhere. FONT_NEVER_MATERIALIZED, 33 occurrences, all 8 routes, wave-1 rank 1.",
+    "Hover styling lost entirely: 7 of 8 header elements change on hover in the live source, 0 of 8 in the accepted reconstruction.",
+    "Pseudo allowlist omits opacity and visibility, so suppressed pseudos paint at full strength: 56 of 60 renderable pseudos on /pricing desktop, 91.6% of all changed pixels.",
+    "layout-inference is net-negative at the observed viewport (measured twice) and deletes 274 characters of the plan-comparison table at every width from 1024 to 1231.98px.",
+    "All 504 (/pricing) and 42 (/security) fill/stroke var(--...) references compute to rgb(0,0,0); zero custom properties are defined on the clone root."
+   ]
+  },
+  "B_fullStylesheet": {
+   "what": "Settled source DOM verbatim + self-hosted stylesheets/fonts/images. No computed style, no generated classes. Built in two forms: B-naive (as briefed) and B-plus (B-naive + ~20 lines that serialise the CSSOM-only stylesheet back into its own empty <style> node).",
+   "built": true,
+   "buildDirs": [
+    "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-B-full-stylesheet/site",
+    "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-B-full-stylesheet/site-plus"
+   ],
+   "changedRatio_vs_CURRENT_SOURCE": {
+    "B_plus": {
+     "r000008_desktop": 0.0025,
+     "r000008_wide": 0.0018,
+     "r000008_mobile": 0.0021,
+     "r000007_desktop": 0.0003,
+     "r000007_wide": 0.0002,
+     "r000007_mobile": 0.0019
+    },
+    "B_naive": {
+     "r000008_desktop": 0.063,
+     "r000008_wide": 0.0474,
+     "r000008_mobile": 0.1273,
+     "r000007_desktop": 0.0604,
+     "r000007_wide": 0.0478,
+     "r000007_mobile": 0.102
+    }
+   },
+   "geometry": "B-plus: commonAreaRatio 1.0 and scrollHeight EXACT on 6/6; 150/150 largest visible elements within 1px in both dy and dh on all six pairs; 0 font-family, 0 font-size, 0 colour, 0 background mismatches. B-naive: scrollHeight wrong on 6/6 (+125, +843, -132 ...), commonAreaRatio 0.9445-0.9942, dy within 1px 17/148 on /security desktop.",
+   "decisiveResult": "B AS LITERALLY BRIEFED IS WORSE THAN THE CURRENT PIPELINE on /security (0.0630 vs 0.0461 desktop, 0.1273 vs 0.0678 mobile), because styled-components v6 injects production rules via CSSOM insertRule and they are not in outerHTML. ~20 lines of CSSOM serialisation move it to 0.0002-0.0025.",
+   "lines": "276 lines total (build.mjs 178, harvest-cssom.mjs 53, build-plus.mjs 20, serve.mjs 25)."
+  },
+  "C_hybrid": {
+   "what": "Source DOM + source stylesheets + self-hosted fonts/images as the paint baseline, PLUS data-wr-node identity on every element and ONE override stylesheet linked last. No per-node computed style, no layout inference.",
+   "built": true,
+   "buildDir": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-C-hybrid/",
+   "changedRatio_vs_CURRENT_SOURCE": {
+    "r000008_desktop": 0.0025,
+    "r000008_mobile": 0.0022,
+    "r000008_wide": 0.0018,
+    "r000007_desktop": 0.0003,
+    "r000007_mobile": 0.0019,
+    "r000007_wide": 0.0002
+   },
+   "sessionNoiseFloor_liveVsLive": {
+    "r000008_desktop": 0.0019,
+    "r000008_mobile": 0.0017,
+    "r000008_wide": 0.0013,
+    "r000007_desktop": 0.0,
+    "r000007_mobile": 0.0008,
+    "r000007_wide": 0.0
+   },
+   "geometry": "scrollHeight EXACT on 6/6 (0px) where the accepted artifact is -12/-12/-2 on /pricing; scrollWidth exact 6/6; commonAreaRatio 1.0000 on 6/6; visible element count exact on /security (384/384 desktop, 376/376 mobile) and +2 on /pricing (a hidden JS-toggled price twin).",
+   "ablation": "C0 (identical build, CSSOM harvest disabled): 0.0474-0.1273 changedRatio, scrollHeight off by up to +281px, commonAreaRatio down to 0.9445. 20x-300x worse.",
+   "independentReplication": "THREE agents built this artifact shape independently and got the SAME numbers to 4 decimal places. Agent B (B-plus): 0.0025 / 0.0018 / 0.0021 and 0.0003 / 0.0002 / 0.0019. Agent C: 0.0025 / 0.0018 / 0.0022 (0.0021 with the one-DOM build) and 0.0003 / 0.0002 / 0.0019. Agent D's CONTROL (substrate DOM + its own source stylesheets, no computed-style layer): 0.0025 and 0.0003. This is the single most reproducible result in the audit, and it also proves C's added identity attributes and override layer cost ZERO pixels.",
+   "lines": "322 lines (10-harvest-cssom.mjs 101, 20-build.mjs 221) + a 15-line static server; one dependency (parse5, already present)."
+  },
+  "D_fullComputed": {
+   "what": "Substrate DOM tagged with data-dfc, every property of the full CSSStyleDeclaration (752 properties/element in Chromium 151) emitted as one rule per node plus ::before/::after/::marker, harvested at desktop 1440 only, served with NO source stylesheet. D1-pure = strictly no @font-face; D2-fonts = + the 4 @font-face blocks and the substrate's font files.",
+   "built": true,
+   "atCaptureViewport": {
+    "r000007_desktop_D2": {
+     "changedRatio": 0.0008,
+     "nodesWithin1px": "100.00% of 2676",
+     "scrollHeight": "6360 = 6360"
+    },
+    "r000008_desktop_D2": {
+     "changedRatio": 0.0038,
+     "nodesWithin1px": "96.03% of 1260",
+     "scrollHeight": "3231 = 3231",
+     "residual": "all 50 offenders in one band, the customer-logo marquee frozen at transform matrix(1,0,0,1,-75.29,0); the 80px vertical offset was NOT fully isolated"
+    },
+    "fontAblation": {
+     "r000008": "D1 0.0418 vs D2 0.0038 (11x)",
+     "r000007": "D1 0.0183 vs D2 0.0008 (23x)",
+     "reading": "the strict 'no source stylesheet' reading of this variant is dominated by a FONT problem, not a style problem"
+    }
+   },
+   "offCaptureViewport": {
+    "r000008_wide_1920": {
+     "changedRatio": 0.0501,
+     "nodesWithin1px": "68.57%",
+     "scrollWidth": "1440 vs 1920",
+     "meanAbsDx": 73.1,
+     "maxDx": 252
+    },
+    "r000007_wide_1920": {
+     "changedRatio": 0.0422,
+     "nodesWithin1px": "36.02%",
+     "scrollWidth": "1440 vs 1920",
+     "meanAbsDx": 152.5,
+     "maxDx": 240
+    },
+    "r000008_mobile_390": {
+     "changedRatio": 0.0802,
+     "commonAreaRatio": 0.2708,
+     "scrollHeight": "3231 vs 4783",
+     "displayNoneMismatches": 18
+    },
+    "r000007_mobile_390": {
+     "changedRatio": 0.0959,
+     "commonAreaRatio": 0.2708,
+     "scrollHeight": "6360 vs 7714",
+     "displayNoneMismatches": 203,
+     "fontSizeMismatches": 10
+    },
+    "reading": "13x (r000008) and 53x (r000007) degradation from 1440 to 1920. At 390 it is not a degraded page, it is the wrong page."
+   },
+   "whatItSettles": "D is the upper-bound control and it settles the question it was built to settle: at the viewport it was captured at, a 752-property capture reproduces the page essentially exactly. Therefore the wave-1 damage attributable to 'the 111-property allowlist is too narrow' is REAL and LARGE, and the current gap is NOT evidence that per-node computed style is the wrong idea. It is equally decisive in the other direction: freezing used px values destroys responsiveness (0 @media / 0 @container generated against the source's 805/16 and 938/17), editability (an h1 text swap moved the frozen clone by exactly 0px while the source page grew 203px) and theming (0 var() generated; all 5,719-6,242 source var() uses resolved away).",
+   "artifactSize": "31.6MB and 65.6MB of CSS for ONE route at ONE viewport (1,049,528 and 2,184,224 declarations); 466KB / 1.04MB gzipped. Today's whole pipeline ships 11.3MB covering 8 routes x 2 viewports."
+  },
+  "E_targetedLadder": {
+   "what": "Not an architecture — the control that measures how much of the wave-1 gap SMALL TARGETED FIXES close. Playwright injection over the ALREADY-BUILT accepted reconstruction, scored against ACCEPTED_OBSERVATION. Harness validated: baseline reproduced wave-1 exactly on all four pairs.",
+   "built": true,
+   "scope": "2 routes x 2 viewports (r000007 /pricing, r000008 /security; desktop + mobile), 12 variants, 48 runs.",
+   "endpoint_changedRatio": {
+    "r000007_desktop": "0.3831 -> 0.0104",
+    "r000007_mobile": "0.3292 -> 0.0080",
+    "r000008_desktop": "0.0460 -> 0.0037",
+    "r000008_mobile": "0.0676 -> 0.0041"
+   },
+   "endpoint_meanDelta": {
+    "r000007_desktop": "6.7632 -> 0.1720",
+    "r000007_mobile": "7.6563 -> 0.3412",
+    "r000008_desktop": "3.9086 -> 0.4828",
+    "r000008_mobile": "7.6026 -> 0.6064"
+   },
+   "geometry": "ZERO geometry movement across all 48 runs: heightDelta 0, widthDelta 0, commonAreaRatio 1.0000 everywhere. Every rung is paint-only by construction.",
+   "simulationCaveat": "F2, F3 and F6 read their answers from a live CURRENT_SOURCE probe of linear.app on 2026-08-29, so every number is an UPPER BOUND; a real pipeline must derive the same facts from the observation. For F2 and F6 the derivation is trivial (getComputedStyle already runs on every node; the properties are simply absent from the list). For F3 it is a new subsystem."
+  }
+ },
+ "comparisonTable": [
+  {
+   "axis": "pixel fidelity at the OBSERVED viewport (changedRatio, best measured)",
+   "A_current": "0.0461 /security desktop, 0.3914 /pricing desktop (vs CURRENT_SOURCE, in-session)",
+   "B_full": "B-plus 0.0025 / 0.0003. B-naive 0.0630 / 0.0604 — WORSE than A on /security.",
+   "C_hybrid": "0.0025 / 0.0003, against a session noise floor of 0.0019 / 0.0000",
+   "D_computed": "0.0038 / 0.0008 with fonts; 0.0418 / 0.0183 without",
+   "E_ladder": "0.0037 / 0.0104 (vs ACCEPTED; different reference, see sourceTruthPolicy)"
+  },
+  {
+   "axis": "document scroll extent",
+   "A_current": "exact on /security; -12px /pricing desktop+wide, -2px mobile; commonAreaRatio 0.9981-0.9997 there",
+   "B_full": "B-plus exact 6/6. B-naive wrong 6/6 (+125 to +843px).",
+   "C_hybrid": "exact 6/6, scrollWidth exact 6/6, commonAreaRatio 1.0000 6/6",
+   "D_computed": "exact at the capture viewport; 3231 vs 4783 and 6360 vs 7714 at mobile; scrollWidth 1440 at every viewport",
+   "E_ladder": "unchanged from A — heightDelta 0 in all 48 runs; the ladder cannot move geometry"
+  },
+  {
+   "axis": "responsive behaviour at UNOBSERVED widths",
+   "A_current": "BROKEN and actively harmful: at 914px a 390px column strands on a 914px canvas (clone scrollHeight 7712 vs live 6990, commonAreaRatio 0.9064); at 1024-1231px 709 inferred rules delete 274 characters of the plan-comparison table (2,360 chars vs the live source's 2,634)",
+   "B_full": "FREE AND CORRECT: 805 media queries + 16 container queries ship live. One desktop artifact scores 0.0018 at 1920 and 0.0021 at 390 — identical to serving per-viewport snapshots.",
+   "C_hybrid": "FREE AND CORRECT, same mechanism: 0.0025/0.0018/0.0021 and 0.0003/0.0002/0.0019 from ONE desktop-captured DOM; a text swap reflowed independently at 1440 (2->4 lines) and 390 (2->5 lines)",
+   "D_computed": "ABSENT BY CONSTRUCTION: 0 @media, 0 @container generated; 36.0-68.6% of nodes within 1px at 1920; 18/203 wrong display:none states at 390",
+   "E_ladder": "CLOSES 0% OF THIS GAP. F5 (delete layout-inference) stops the module destroying content and improves the observed viewport, but does not make the clone responsive."
+  },
+  {
+   "axis": "fonts",
+   "A_current": "document.fonts.size = 0 on all four measured pairs; no @font-face anywhere in 11.3MB of generated CSS. Worth 82.8%/87.6% of the /security gap.",
+   "B_full": "PASS: 4 woff2 self-hosted, document.fonts census identical to source, 0 external font requests, 0/150 font-family and font-size mismatches on all six pairs",
+   "C_hybrid": "PASS: document.fonts reports byte-identical strings to the source on both routes; 4 woff2 per route served locally",
+   "D_computed": "Computed font PROPERTIES perfect, but computed style contains no @font-face, so the strict form has no font FILES. Fonts must be solved outside this family.",
+   "E_ladder": "F1 fixes it inside the existing pipeline: document.fonts.size 0 -> 4, all self-hosted; 82.8% of the /security desktop gap alone"
+  },
+  {
+   "axis": "pseudo-elements",
+   "A_current": "18-property allowlist omits opacity/visibility; 56 of 60 renderable pseudos on /pricing desktop paint at opacity 1 where the source suppresses them = 91.6% of all changed pixels. Dual-viewport DOM also doubles the count (6 vs 3, 122 vs 61).",
+   "B_full": "Nothing is re-derived so nothing is lost: 229 ::before + 223 ::after rules on /security and 253 + 270 on /pricing ship verbatim, plus 78-81 ::placeholder/::selection/::marker rules",
+   "C_hybrid": "EXACT census against live: 3/0 on /security and 61/0 on /pricing, both sides identical",
+   "D_computed": "Only the pseudos you enumerate, in one state: 0 ::selection, 0 ::placeholder, 0 ::-webkit-scrollbar, 0 ::view-transition generated against 8 / 9-11 / 34-35 / 5 in the source",
+   "E_ladder": "F2 = add two strings to PSEUDO_STYLE_WHITELIST. 60/60 matched, 56 suppressed, 0.3831 -> 0.0321 on /pricing desktop. Exactly 0.0% on /security, where the source suppresses nothing."
+  },
+  {
+   "axis": "SVG paint",
+   "A_current": "504/504 and 42/42 fill/stroke var(--...) references compute to rgb(0,0,0); zero custom properties on the clone root. SVG interiors never walked (collect-dom.ts:665-671 returns at <svg>).",
+   "B_full": "306 <symbol> definitions and all inline <svg> carry through byte-for-byte with no parse/re-serialise round trip; icon-dense bands diff at 0.0000",
+   "C_hybrid": "<svg> count exact (45/45, 338/338); a theme override recoloured 260 <svg> and 695 <path> nodes, so currentColor propagation survives and is theme-addressable",
+   "D_computed": "Genuinely strong: presentation attributes appear in CSSStyleDeclaration as real properties and are re-emitted per node. But SVGs referenced through <img> or CSS url() are untouched by this mechanism.",
+   "E_ladder": "F3 fixes it (410 :root custom properties resolve 504/504 and 42/42), but is worth only 0.4-1.5% of changedRatio — small icons, few pixels, each maximally wrong (1.9-6.7% of meanDelta)"
+  },
+  {
+   "axis": "asset / runtime source independence",
+   "A_current": "NOT independent site-wide: 79 request failures across 9 of 24 wave-1 captures (73 webassets.linear.app, 6 static.linear.app); the clone hotlinks the origin CDN successfully. Independent on the two audited routes only (8/8 same-origin).",
+   "B_full": "0 external requests on all 10 measured pairs, 0 requestFailures, 0 consoleErrors. Caveat: neither route has a single <img> in its settled DOM, so stripping JS costs no image paint HERE.",
+   "C_hybrid": "0 external requests on all 6 captures — after fixing a leak caused by handling srcset but not imagesrcset. image-set(), @import, <use href>, content:url() and xlink:href remain unhandled and untested.",
+   "D_computed": "3-4 requests total at runtime, 0 unmapped, on all 8 shots",
+   "E_ladder": "Neutral: 8/8 same-origin before, 9/9 after (the extra one is the self-hosted font). Does not touch the 79 asset failures on r000002/r000003/r000006."
+  },
+  {
+   "axis": "interaction",
+   "A_current": "JS ALIVE (a button click changes body.innerHTML), CSS HOVER DEAD (0 of 8 header elements change on hover vs 7 of 8 in the live source)",
+   "B_full": "CSS ALIVE (hover repaints 53-60% of a nav element's pixels; 381 :hover / 63 :focus / 76 @keyframes ship), JS DEAD (the /pricing billing toggle and the mobile menu both repaint 0 pixels)",
+   "C_hybrid": "Same split, measured the same way: hover changes the SAME 7 of 8 elements as the live source; a button click changes nothing (all 260/139 <script> stripped)",
+   "D_computed": "NONE, and worse than none: 0 :hover / 0 :focus / 0 :active generated against 381-404 / 63-64 / 62-67; 0 @keyframes against 76-90; running animations baked in mid-flight",
+   "E_ladder": "Neutral and measured: 6 triggers found, 6 clicked, 1 DOM change, 0 console errors — byte-identical to the unfixed clone"
+  },
+  {
+   "axis": "editability — content",
+   "A_current": "The only variant with a real model: 9,929 slots / 24,512 bindings, named nodes, content-injection accounting",
+   "B_full": "Works but blind: a Korean h1 swap kept font-size 64px and document height 3231, diff 0.0057 confined to the heading. Structural edits mean hand-editing opaque hashes (sc-KOGVz iSOwhx, _5mGmSq_root).",
+   "C_hybrid": "Works via data-wr-node identity: a text swap grew the h1 136->271px (2->4 lines) at 1440 and 88->220px (2->5 lines) at 390, page 3231->3366 and 4783->4915, 0 overlaps, text-wrap:balance honoured. But 1373/2830 node ids are anonymous — no semantic model.",
+   "D_computed": "EFFECTIVELY NIL, measured: the same swap moved the frozen clone by exactly 0px in every dimension while the source page grew 203px. Text does not occupy space.",
+   "E_ladder": "Neutral — nothing in the ladder touches the node/slot/binding model"
+  },
+  {
+   "axis": "editability — theme",
+   "A_current": "21 tokens reverse-engineered from 293 anonymous paint groups (Task 20); an 11-property CSS override",
+   "B_full": "One appended <style> overriding 3 tokens repainted 99.78% of pixels with layout untouched, because 80.7% of colour-valued declarations already resolve through var(--token). UNGUIDED: the first, reasonable-looking override moved exactly 1 element.",
+   "C_hybrid": "5 :root overrides reached 2266 elements (583 div, 260 svg, 695 path, 28 a, body, html), recoloured 99.36% of /pricing with heightDelta exactly 0, beating the source's own [data-theme=dark] block on document order alone — no !important, no specificity escalation",
+   "D_computed": "IMPOSSIBLE: 0 var() and 0 @supports in the generated CSS; a colour change means rewriting a resolved literal in up to 2,184,224 declarations",
+   "E_ladder": "F3's custom-property half is a net POSITIVE for theming — it puts the source's 410 NAMED design tokens into the artifact instead of 21 reverse-engineered ones. F3's SVG-inlining half hurts and should be built as a style-table walk instead."
+  },
+  {
+   "axis": "regenerability after a source redeploy",
+   "A_current": "YES — the IR can be re-rendered; slots survive; a diff against a new SiteSpec is expressible",
+   "B_full": "NO — welded to the source's private class hashes; every hash changes on redeploy and the artifact can only be re-captured",
+   "C_hybrid": "NO, same reason. data-wr-node ids are assigned at capture and are positional, not semantic.",
+   "D_computed": "NO — every defect must be fixed by re-harvesting rather than by editing a rule",
+   "E_ladder": "Unchanged — the ladder preserves A's regenerability entirely"
+  },
+  {
+   "axis": "licensing / redistribution exposure",
+   "A_current": "LOWEST as shipped: no source stylesheet bytes, no font binaries (document.fonts.size 0)",
+   "B_full": "HIGH: redistributes the source's minified stylesheets and font binaries verbatim, including Berkeley Mono and Tiempos (commercial faces)",
+   "C_hybrid": "HIGH, identical exposure; Agent C named this as the one axis where the current selective approach is arguably safer and could not resolve it by measurement",
+   "D_computed": "MEDIUM: no source stylesheet redistributed, but D2 (the only usable form) still ships the same four woff2 files",
+   "E_ladder": "F1 inherits the SAME font exposure — Inter Variable / Berkeley Mono / Tiempos harvested from static.linear.app. Task 22 already classified fonts license-needs-review. This is cross-cutting, not a differentiator."
+  },
+  {
+   "axis": "code volume on the generation path",
+   "A_current": "src/reconstruction 7,650 + src/recon-template 6,166 = 13,816 lines; ~28,000 lines counting sitespec/theme/assets whose reason for existing is largely to re-derive style",
+   "B_full": "276 lines + ~40 lines that must be added to the Observer for CSSOM harvest + a route-map rewriter",
+   "C_hybrid": "322 lines + a 15-line server; roughly a 40x reduction for a 95-99.9% reduction in pixel error",
+   "D_computed": "~60 lines of real emitter logic, but it needs N frozen documents per route plus a switcher, a CSSOM harvester and a separate @font-face path; artifact ~69x bigger per route-viewport pair",
+   "E_ladder": "~400-800 lines added inside existing modules and ~500 DELETED (layout-inference). No new architecture."
+  },
+  {
+   "axis": "generality beyond linear.app",
+   "A_current": "Designed to be generic; wave-1 found 36 loss risks that are all generic mechanisms, not site hacks",
+   "B_full": "Build code contains zero linear.app selectors; the one framework-shaped rule ('serialise every <style> whose textContent is empty') generalises to styled-components v6, Emotion speedy mode, JSS, Stitches and Goober, all of which fail identically and silently",
+   "C_hybrid": "grep for 'linear' returns 0 hits in the builder and the harness. But URL rewriting is attribute-by-attribute and already leaked once; each gap is a silent call home and each fix is one more special case.",
+   "D_computed": "Emitter is source-agnostic by construction. The risk migrates into the capture harness: per-site fix-ups become per-site harvest scripts.",
+   "E_ladder": "LOW for F1/F2/F5/F6 (unconditional allowlist edits and one deletion), MODERATE for F3 (a single :root snapshot freezes media-scoped tokens) and F4 (per-subtree scoping left 12/8 references still ambiguous; must be document-wide)"
+  }
+ ],
+ "targetedFixLadder": [
+  {
+   "fix": "F1 fonts",
+   "individualGapClosedPct": {
+    "r000007_desktop": 3.1,
+    "r000007_mobile": 6.0,
+    "r000008_desktop": 82.8,
+    "r000008_mobile": 87.6
+   },
+   "cumulativeGapClosedPct": {
+    "r000007_desktop": 3.1,
+    "r000007_mobile": 6.0,
+    "r000008_desktop": 82.8,
+    "r000008_mobile": 87.6
+   },
+   "changedRatioAfter": {
+    "r000007_desktop": 0.3711,
+    "r000007_mobile": 0.3096,
+    "r000008_desktop": 0.0079,
+    "r000008_mobile": 0.0084
+   },
+   "whereTheRealChangeWouldLive": "src/observer/collect-dom.ts:741-750 (the same-origin-only @font-face harvest; `catch { continue; }` drops all 132 cross-origin sheets so fontUrls is empty) + a 'font' asset kind in src/observer/types.ts + an at-rule emit channel at src/reconstruction/style-generator.ts:176. Wave-1 LR-02.",
+   "cheaperGenericPath": "The Observer's network log already sees every font response (the substrate harvested all four woff2 with source 'network-response'); descriptors can come from document.fonts, which is readable cross-origin.",
+   "size": "~200-400 lines plus a licensing gate. No new subsystem.",
+   "risk": "LICENSING, not technical. Inter Variable, Berkeley Mono and Tiempos Headline are third-party licensed faces on static.linear.app; Task 22 already classified fonts license-needs-review. Self-hosting a customer's OWN licensed fonts is unaffected. Also: document.fonts.check('16px \"Inter Variable\"') returned TRUE both with 0 faces loaded and with 4, so the existing font health signal is worthless as a gate."
+  },
+  {
+   "fix": "F2 pseudo suppression (add opacity + visibility)",
+   "individualGapClosedPct": {
+    "r000007_desktop": 91.6,
+    "r000007_mobile": 88.0,
+    "r000008_desktop": 0.0,
+    "r000008_mobile": 0.0
+   },
+   "cumulativeGapClosedPct": {
+    "r000007_desktop": 96.3,
+    "r000007_mobile": 96.7,
+    "r000008_desktop": 82.8,
+    "r000008_mobile": 87.6
+   },
+   "changedRatioAfter": {
+    "r000007_desktop": 0.0321,
+    "r000007_mobile": 0.0395,
+    "r000008_desktop": 0.046,
+    "r000008_mobile": 0.0676
+   },
+   "whereTheRealChangeWouldLive": "src/observer/types.ts:484-519 PSEUDO_STYLE_WHITELIST — add two strings; consumed unchanged at src/reconstruction/pseudo-generator.ts:84. Wave-1 LR-01.",
+   "size": "TWO LINES. The largest single measured win anywhere in this audit.",
+   "risk": "PAGE-SHAPED, NOT UNIVERSAL: 91.6% on /pricing, exactly 0.0% on /security, whose source suppresses no pseudo at all. Wave-1's own census (2,258 pseudo records, 1,128 painting, concentrated 385/385 on /changelog) predicts the same lumpiness. The repo comment at src/observer/types.ts:515-516 says these were omitted because 'no measurement has asked for them yet' — this is that measurement, and it falsifies the assumption."
+  },
+  {
+   "fix": "F3 SVG paint (custom properties + SVG interior walk)",
+   "individualGapClosedPct": {
+    "r000007_desktop": 0.4,
+    "r000007_mobile": 0.8,
+    "r000008_desktop": 1.1,
+    "r000008_mobile": 1.5
+   },
+   "cumulativeGapClosedPct": {
+    "r000007_desktop": 97.0,
+    "r000007_mobile": 97.6,
+    "r000008_desktop": 83.9,
+    "r000008_mobile": 89.0
+   },
+   "changedRatioAfter": {
+    "r000007_desktop": 0.0117,
+    "r000007_mobile": 0.008,
+    "r000008_desktop": 0.0074,
+    "r000008_mobile": 0.0074
+   },
+   "whereTheRealChangeWouldLive": "custom properties: src/observer/collect-dom.ts:394-403 (closed allowlist iteration) and src/observer/types.ts ATTR_WHITELIST (no `style`), then src/sitespec/safe-attributes.ts:131-137. SVG interior paint: src/observer/collect-dom.ts:665-671 (the walk RETURNS at <svg>) and src/reconstruction/asset-resolver.ts:240-249. Wave-1 LR-18 and LR-13.",
+   "size": "~50 lines for custom-property capture + ~150-300 lines for the SVG interior walk. The ONE genuinely new subsystem in the ladder.",
+   "risk": "A single :root snapshot of 410 properties is ALREADY LOSSY: linear.app redefines --homepage-outer-padding at three breakpoints and --border-hairline under a device-pixel-ratio query, so a naive implementation silently freezes media-scoped tokens — the same class of bug as layout-inference. Needs a per-viewport capture policy. Also: the correct form walks SVG interiors into the SHARED STYLE TABLE (the walk src/recon-template/extract.ts:285-318 currently refuses with svg-opaque), NOT inlining computed fill/stroke onto individual shapes, which is what the simulation did and which would hard-code paint where a slot should be."
+  },
+  {
+   "fix": "F4 SVG fragment-id scoping",
+   "individualGapClosedPct": {
+    "r000007_desktop": 0.0,
+    "r000007_mobile": 0.0,
+    "r000008_desktop": 0.0,
+    "r000008_mobile": 0.0
+   },
+   "cumulativeGapClosedPct": {
+    "r000007_desktop": 97.0,
+    "r000007_mobile": 97.6,
+    "r000008_desktop": 83.9,
+    "r000008_mobile": 89.0
+   },
+   "changedRatioAfter": {
+    "r000007_desktop": 0.0117,
+    "r000007_mobile": 0.008,
+    "r000008_desktop": 0.0074,
+    "r000008_mobile": 0.0074
+   },
+   "whereTheRealChangeWouldLive": "src/reconstruction/asset-resolver.ts:224-254 annotateSvgRoot, with both viewport trees mounted by src/runtime/PageRenderer.tsx. Wave-1 LR-12.",
+   "size": "~40 lines — exactly the reasoning already documented at pseudo-generator.ts:14-19 but never applied to SVG interiors.",
+   "risk": "BOUGHT LITERALLY NOTHING MEASURABLE. 642/638 duplicated ids and 32/46 ambiguous references were rewritten and the screenshots came back BIT-IDENTICAL on all four pairs, because these routes' desktop and mobile paint servers happen to be identical. The defect is real and latent; this experiment provides ZERO pixel evidence for it. And the simulated fix was itself incomplete: 12 (/pricing) and 8 (/security) references stayed ambiguous because they sit outside any [data-wr-viewport] subtree — a real implementation must rename document-wide."
+  },
+  {
+   "fix": "F5 delete the layout-recovery override",
+   "individualGapClosedPct": {
+    "r000007_desktop": 0.3,
+    "r000007_mobile": 0.0,
+    "r000008_desktop": 0.0,
+    "r000008_mobile": 0.0
+   },
+   "cumulativeGapClosedPct": {
+    "r000007_desktop": 97.3,
+    "r000007_mobile": 97.6,
+    "r000008_desktop": 83.9,
+    "r000008_mobile": 89.0
+   },
+   "changedRatioAfter": {
+    "r000007_desktop": 0.0104,
+    "r000007_mobile": 0.008,
+    "r000008_desktop": 0.0074,
+    "r000008_mobile": 0.0074
+   },
+   "whereTheRealChangeWouldLive": "src/reconstruction/layout-inference.ts:38 TRUTH_WIDTH=1440, :163-187 + :430-453 responsive-hidden, and generateLayoutCss's (0,3,0) selector `[data-wr-page][data-wr-viewport=desktop] [data-wr-node]` which OUTRANKS the exact observed .wr-stXXXXXX class (0,1,0). Wave-1 LR-07, LR-08, LR-09.",
+   "size": "A NET DELETION: ~500 lines removed, 230,625 bytes removed from generated-styles.css.",
+   "risk": "NET-NEGATIVE MODULE, CONFIRMED TWICE. Alone: 0.3831 -> 0.3818, meanDelta 6.7632 -> 6.5506. Cumulatively (C4->C5): 0.0117 -> 0.0104 and meanDelta 0.3846 -> 0.1720, i.e. deleting it HALVES the remaining colour error at 1440. Off-viewport it actively destroys content: its 709 responsive-hidden rules delete ~274 characters of the plan-comparison table at every width from 1024 to 1231.98px (clone 2,360 chars vs live 2,634; stripped 2,684). Deleting it does NOT make the clone responsive — it only stops the module doing harm."
+  },
+  {
+   "fix": "F6 text-wrap (added by the experimenter after tracing the F5 residual; NOT in the brief)",
+   "individualGapClosedPct": {
+    "r000007_desktop": 0.0,
+    "r000007_mobile": 0.0,
+    "r000008_desktop": 3.0,
+    "r000008_mobile": 2.5
+   },
+   "cumulativeGapClosedPct": {
+    "r000007_desktop": 97.3,
+    "r000007_mobile": 97.6,
+    "r000008_desktop": 92.0,
+    "r000008_mobile": 93.9
+   },
+   "changedRatioAfter": {
+    "r000007_desktop": 0.0104,
+    "r000007_mobile": 0.008,
+    "r000008_desktop": 0.0037,
+    "r000008_mobile": 0.0041
+   },
+   "whereTheRealChangeWouldLive": "src/observer/types.ts:260-388 STYLE_WHITELIST — `white-space` is already present at :335; `text-wrap-mode` and `text-wrap-style` are not.",
+   "size": "TWO LINES.",
+   "risk": "Lowest risk in the ladder. Its significance is not its size: it is the evidence that the residual after the five briefed rungs was A LONG TAIL OF THE SAME KIND, not a wall. The /security residual was traced to greedy vs balanced line breaking (text-wrap: balance on the h1 and h3, absent from a 111-property allowlist that already contains white-space), and one more allowlist entry removed HALF of what was left."
+  }
+ ],
+ "ladderVsArchitecture_sideBySide": {
+  "statement": "This is the decisive comparison the brief asked for. Both columns are real measurements; they are on different references and both are stated against their own session noise floor.",
+  "rows": [
+   {
+    "pair": "r000007 /pricing desktop",
+    "A_current_baseline": "0.3831 (vs ACCEPTED) / 0.3914 (vs CURRENT_SOURCE)",
+    "afterTargetedFixLadder": "0.0104 vs ACCEPTED — 97.3% of the gap closed by ~4 lines of allowlist + 1 deletion + 1 new subsystem",
+    "afterArchitectureChange_C": "0.0003 vs CURRENT_SOURCE — 99.9%, at a session noise floor of 0.0000",
+    "afterArchitectureChange_D": "0.0008 at 1440; 0.0422 at 1920 with 36.0% of nodes within 1px",
+    "honestRead": "Both reach 'not obviously different'. The ladder's remaining 0.0104 is only 0.17% of the frame at a perceptible threshold (maxChannel>=24), and 35% of that perceptible remainder is ONE unreachable defect (shadow DOM). The architecture change reaches the noise floor. The difference between them is real but small and is NOT the axis on which to decide."
+   },
+   {
+    "pair": "r000008 /security desktop",
+    "A_current_baseline": "0.0460 (vs ACCEPTED) / 0.0461 (vs CURRENT_SOURCE)",
+    "afterTargetedFixLadder": "0.0037 vs ACCEPTED — 92.0%",
+    "afterArchitectureChange_C": "0.0025 vs CURRENT_SOURCE — 94.6%, at a session noise floor of 0.0019",
+    "afterArchitectureChange_D": "0.0038 at 1440; 0.0501 at 1920 with 68.6% of nodes within 1px — WORSE than the unfixed current pipeline",
+    "honestRead": "The ladder and the hybrid land within 0.0012 changedRatio of each other, which is inside the accepted-vs-current drift for this route (0.0023). On this route the two approaches are NOT DISTINGUISHABLE BY PIXELS."
+   },
+   {
+    "pair": "responsive widths the Observer never visited (700/914/1024/1100/1231)",
+    "A_current_baseline": "clone strands a 390px column on a 914px canvas (scrollHeight 7712 vs live 6990, commonAreaRatio 0.9064); deletes 274 chars of content at 1024-1231px",
+    "afterTargetedFixLadder": "0% of this gap closed — every one of the 48 runs had heightDelta 0 and commonAreaRatio 1.0; the ladder is paint-only by construction",
+    "afterArchitectureChange_C": "SOLVED FOR FREE — the source's own 805 @media and 16 @container rules are preserved and live; one desktop artifact scores 0.0018 at 1920 and 0.0021 at 390",
+    "afterArchitectureChange_D": "WORSE THAN A — the frozen document cannot respond to width at all",
+    "honestRead": "THIS IS THE ONLY AXIS WHERE THE ARCHITECTURE CHANGE IS DECISIVELY BETTER AND TARGETED FIXES CANNOT COMPETE. If the product definition of 'exact' must hold at widths the Observer never captured, no allowlist widening reaches it."
+   }
+  ]
+ },
+ "residualAfterFullLadder": "AFTER F1..F6 (2 routes x 2 viewports, vs ACCEPTED_OBSERVATION): /pricing desktop 0.0104, /pricing mobile 0.0080, /security desktop 0.0037, /security mobile 0.0041 changedRatio; meanDelta 0.1720 / 0.3412 / 0.4828 / 0.6064; heightDelta 0 and commonAreaRatio 1.0 on all four. At a PERCEPTIBLE threshold (any channel >= 24) the residual is 0.1675% of the /pricing desktop frame and 0.1841% of /pricing mobile. It decomposes into four named parts, three of which are unreachable by any allowlist. (1) SHADOW DOM — 35% of all perceptible remaining pixels on /pricing desktop is one transition, rgb(208,214,224)->rgb(98,102,109): the reference renders 'US$10 per user/month' with a dim suffix, the clone renders '$10 per user/month' all-bright, because the <price> custom element paints inside a shadow root and the clone shows the light-DOM SSR fallback. The Observer never enters shadow roots (src/observer/collect-dom.ts:654-675; wave-1 LR-32, SHADOW_DOM_NOT_OBSERVED, 3 occurrences). No style allowlist, custom property or font can reach it. (2) ANIMATION PHASE — /pricing mobile's worst band (y2500-2800, mean magnitude ~198) is a horizontally scrolling logo marquee captured at a different phase, and /security's is a scroll-reveal sitting ~75px higher in the clone. The SAME marquee is the entire residual of variants B, C and D as well, and the substrate's own live-vs-live drift probe flags the same band (0.0267 at y2400-2600). This is not fixable by any variant and must be frozen or excluded from the metric. (3) A LONG TAIL OF ALLOWLIST GAPS OF THE SAME KIND AS F2/F6 — this is the load-bearing finding. The experimenter did not report the post-F5 residual, he traced it: /security's remainder was greedy vs balanced line breaking, one missing property (text-wrap: balance) in a 111-property list that already contains white-space, and adding it removed half of what was left. (4) SOURCE DRIFT — /pricing desktop drifts 0.0343 accepted-vs-current on its own, which is 3x the entire post-ladder residual and means the /pricing residual number is at the edge of what this reference can resolve. CONCLUSION ON THE BRIEF'S OWN DECISION RULE: the residual is not a wall. It is one structural hole (shadow DOM), one un-measurable class (animation phase), and a cheap long tail.",
+ "answers": {
+  "areWeRebuildingCssBehaviourThatCouldBePreserved": "YES, DEMONSTRABLY, AND IN THREE SPECIFIC PLACES — but 'rebuilding' is not by itself the defect; UNDER-SPECIFIED rebuilding is. The evidence that rebuilding is not inherently wrong is variant D's capture-viewport control: a 752-property per-node capture reproduces the page at 0.0008 changedRatio with 100.00% of 2,676 nodes within 1px on /pricing and 0.0038 / 96.03% on /security, both with exact scrollHeight. So per-node style re-derivation CAN be exact; the current 111-property allowlist is simply too narrow, and four missing properties (opacity, visibility, text-wrap-mode, text-wrap-style) were worth 92-97% of the visible gap on the two measured routes. The three things we rebuild that could be preserved instead, each with a measured cost: (a) RESPONSIVE RULES. layout-inference.ts re-derives layout from a single 1440px probe bit; the source ships 805 @media and 16 @container rules that are simply thrown away (src/observer/collect-dom.ts:319-326 swallows the cross-origin failure, LR-10). The re-derivation is measurably NET-NEGATIVE at the observed viewport (0.3831->0.3818 alone, 0.0117->0.0104 cumulatively, meanDelta halved) and destroys 274 characters of real content at 1024-1231.98px. Preserving the source's own rules gives correct behaviour at 390, 1440 and 1920 from ONE artifact for free. (b) @font-face. We rebuild nothing here — we lose it entirely (document.fonts.size 0 everywhere) because the harvest is same-origin-only and 132 cross-origin sheets die in a `catch { continue; }` at collect-dom.ts:748-750. Worth 82.8-87.6% of the /security gap. (c) DESIGN TOKENS. Task 20 reverse-engineers 21 tokens from 293 anonymous paint groups by clustering computed colours, while the source ships 410 NAMED custom properties that we never capture (collect-dom.ts:394-403 iterates a closed allowlist). All 504/504 and 42/42 fill/stroke var() references consequently compute to rgb(0,0,0) in the clone. Preserving the names would give theming a better contract than the one we synthesise. COUNTER-EVIDENCE, stated because it is real: preserved-stylesheet variants lose EVERY JS-driven state (measured: a button click changes body.innerHTML in the live source and in the accepted reconstruction, and not in variant C), have no semantic model (1373/2830 anonymous node ids), cannot be regenerated after a redeploy, and redistribute the source's minified CSS and commercial font binaries verbatim.",
+  "wouldHybridEliminateMajorMismatchClasses": "YES FOR SIX OF THE TOP EIGHT WAVE-1 FAMILIES, NO FOR THE REST, AND IT INTRODUCES TWO NEW ONES. ELIMINATED, each verified by a census rather than a pixel number: FONT_NEVER_MATERIALIZED (rank 1, 33 occurrences, all 8 routes) — variant C's document.fonts reports byte-identical strings to the source on both routes against the accepted reconstruction's fontFaceCount 0. PSEUDO_ELEMENT_PAINT_MODEL_INCOMPLETE (rank 3, 9 occurrences) — exact census 3/0 and 61/0 both sides, against the reconstruction's 6/0 and 122/0 (exactly double, from the dual-viewport DOM). SVG_PAINT_NEVER_OBSERVED (rank 2, 12 occurrences) — <svg> counts exact 45/45 and 338/338 with 513 and 933 paint children rendered, and currentColor propagation still theme-addressable. FROZEN_PIXEL_GEOMETRY (rank 4, 10 occurrences) — nothing is frozen; a text swap reflowed 2->4 lines at 1440 and 2->5 at 390. CSS_TEXT_FEATURE_LOSS (rank 6) — no allowlist exists to lose features through. LAYOUT_RECOVERY_RULE_OVERRIDE (rank 7) — the module does not exist in the hybrid. UNOBSERVED_VIEWPORT_PIXEL_FREEZE and VARIANT_SUBTREE_COLLISION also disappear (one DOM, one viewport tree). NOT ELIMINATED: ASSET_REFERENCE_MODE_FAILURE (rank 5, 22 severity weight, 79 request failures on r000002/r000003/r000006) is NOT addressed — variant C reached 0 external requests only after fixing a leak it had shipped (srcset handled, imagesrcset not), and image-set(), @import, <use href>, content:url() and inline xlink:href remain unhandled and untested. SOURCE_DRIFT is made MORE visible, not less. ANIMATION_CAPTURE_VARIANCE is unchanged and is the entire measured residual of B, C and D alike. SHADOW_DOM_NOT_OBSERVED is arguably WORSE, since no JS runs to populate a shadow root at all. NEW FAILURE CLASSES THE HYBRID CREATES: (i) CSSOM_ONLY_STYLESHEET_LOSS — silent, no error, no console warning, no failed request; it made the naive build WORSE than the current pipeline (0.0630 vs 0.0461 desktop, 0.1273 vs 0.0678 mobile on /security). (ii) FROZEN RUNTIME NONDETERMINISM AS CONTENT — ScrambleText's random glyphs baked in as literal text ('g2uc 2tli.'), a duplicated clipped price node on /pricing (206 text lines vs 204), and hidden alternate-state content leaking into the accessible text tree ('$10 per user/month' and '$16 per user/month', the inactive half of the billing toggle: zero visible pixel cost, wrong for screen readers and for content-injection accounting).",
+  "doesFullStylesheetPreservationMateriallyImproveFidelity": "YES, MATERIALLY AND REPRODUCIBLY — BUT ONLY WITH A CSSOM HARVEST, AND THE NAIVE FORM IS WORSE THAN WHAT WE SHIP TODAY. THE STRONGEST RESULT IN THE WHOLE AUDIT: three agents built this artifact shape independently and got the same numbers to four decimal places. Agent B (B-plus): 0.0025 / 0.0018 / 0.0021 on /security and 0.0003 / 0.0002 / 0.0019 on /pricing. Agent C: 0.0025 / 0.0018 / 0.0021 and 0.0003 / 0.0002 / 0.0019. Agent D's control: 0.0025 and 0.0003. Against the accepted artifact's in-session 0.0461 / 0.0388 / 0.0678 and 0.3914 / 0.2982 / 0.3347, that is a 94.6-99.9% reduction, with scrollHeight EXACT on 6/6 (the accepted artifact is -12px on /pricing desktop and wide), commonAreaRatio 1.0000 on 6/6, and 150/150 of the largest visible elements within 1px in both y and height on every pair. The residual is not reconstruction error: band analysis and cropping localise it to the CustomerMarquee at a different @keyframes phase, in the same band where the substrate's own live-vs-live drift probe reports 0.0267. Variant C sits at 1.3-1.4x the session noise floor on /security and AT the floor on /pricing. IT ALSO PROVES A CHEAPER THING THAN ITSELF: identity attributes on every element plus one override stylesheet linked last cost EXACTLY ZERO pixels (B-plus and C are numerically identical), so an editability layer is free on top of preserved paint. THE FATAL CAVEAT: preservation as literally briefed FAILS. document.documentElement.outerHTML does not carry rules inserted through CSSOM insertRule(); linear.app's <style data-styled=\"active\" data-styled-version=\"6.1.24\"> serialises with an EMPTY text node, losing 61 rules / 7,202 bytes on /security and 78 / 9,490 on /pricing — including the rule that sizes the <h1> (64px -> 16px, 486 sc-* class references unstyled, document height off by +125px desktop and +843px mobile). Ablations agree across two agents: 0.0474-0.1273 changedRatio, up to +281px height error. This is a GENERAL property of every CSS-in-JS runtime in production mode (styled-components, Emotion speedy, JSS, Stitches, Goober) and it fails SILENTLY. AND THE TWO HARVEST PATHS ARE COMPLEMENTARY, NOT ALTERNATIVE: HTTP download cannot see the CSSOM sheet (0 bytes in outerHTML), and CSSOM reading cannot see 28 (/security) and 30 (/pricing) cross-origin static.linear.app sheets, which throw SecurityError on .cssRules. Both, in the same live session, or the artifact is silently wrong. NOT IMPROVED BY PRESERVATION: every JS-driven after-state (the /pricing billing toggle and the mobile menu both repaint 0 pixels), internal navigation (hrefs stay root-relative and 404 against a static server), regenerability, and the licensing position.",
+  "whatDoesEachVariantCostInComplexityAndIndependence": "COMPLEXITY (generation path). A_current: 13,816 lines (src/reconstruction 7,650 + src/recon-template 6,166), ~28,000 counting the sitespec/theme/asset modules whose reason for existing is largely to re-derive style; src/reconstruction-qa (11,835) is needed under every option. B: 276 lines. C: 322 lines + a 15-line static server, one existing dependency. D: ~60 lines of emitter, but it needs N frozen documents per route plus a switcher, a CSSOM harvester and a separate @font-face path, and still cannot interpolate between captured widths. E: ~400-800 lines added INSIDE existing modules and ~500 DELETED (layout-inference), no new architecture. WHAT B AND C DO NOT COUNT, and must be counted before anyone quotes '40x': (1) a CSSOM/adoptedStyleSheets harvest wired into src/observer at capture time — mandatory, this is the whole ballgame; (2) a cross-route content-addressed resource pool (352 files / 6.57MB per route becomes 189 / 3.50MB); (3) a URL-rewrite pass that is COMPLETE rather than attribute-by-attribute — the shipped imagesrcset leak says the current shape will keep leaking; (4) a licence/provenance gate over redistributed stylesheets and font binaries; (5) a route-map rewriter for root-relative hrefs; (6) whatever restores JS-driven interaction, which is genuinely new work and is where a large part of the 13,000 saved lines would go back. ARTIFACT SIZE: A ~11.3MB for 8 routes x 2 viewports. B ~10MB for 2 routes (~7MB without redundant per-viewport DOMs). C 4.6MB + 6.1MB, 3.5MB deduped. D 31.6MB and 65.6MB of CSS for ONE route at ONE viewport (466KB / 1.04MB gzipped) — shippable, not maintainable. RUNTIME INDEPENDENCE: B, C and D are all measurably ZERO — every non-localhost request aborted and counted, 0 on 10 (B), 6 (C) and 8 (D) captures. A is NOT independent site-wide: 79 request failures across 9 of 24 wave-1 captures, and the 15 clean captures are clean because the clone hotlinks Linear's CDN successfully. E leaves that unchanged (8/8 -> 9/9 same-origin on the two audited routes). CAPTURE-TIME DEPENDENCE MOVES THE OPPOSITE WAY AND GETS STRICTER: B and C need a LIVE browser session on the origin that can read document.styleSheets[i].cssRules AND download the cross-origin sheets, in the same session. Plain HTTP archiving is insufficient. REGENERABILITY: only A survives a source redeploy; B, C and D artifacts are welded to the source's private class hashes and can only be re-captured. LEGAL INDEPENDENCE: B and C redistribute the source's minified stylesheets and commercial font binaries verbatim — the one axis on which the current selective approach is arguably safer, and the one axis no experiment could resolve by measurement. Note that the ladder's F1 rung carries the SAME font exposure, so this is a cross-cutting gate, not a reason to prefer A."
+ },
+ "recommendationWithEvidence": "KEEP THE CURRENT ARCHITECTURE AND FIX IT; ADOPT PRESERVED SOURCE STYLESHEETS FOR THE ONE THING TARGETED FIXES PROVABLY CANNOT DO. The evidence does not support a rewrite motivated by pixel fidelity, and it does support one motivated by responsive behaviour. 1. THE PIXEL ARGUMENT FOR A REWRITE IS NOT MADE. Four lines of allowlist (F2 + F6) and one deletion (F5) close 92.0% of the /security desktop gap and 97.3% of /pricing desktop, taking 0.3831 -> 0.0104 and 0.0460 -> 0.0037. Variant C reaches 0.0003 and 0.0025. On /security those two endpoints differ by 0.0012, which is INSIDE that route's own accepted-vs-current drift of 0.0023 — they are not distinguishable by pixels. On /pricing the ladder's residual is 0.17% of the frame at a perceptible threshold and 35% of that is one structural hole (shadow DOM) that no architecture in this audit fixes either. 2. THE RESPONSIVE ARGUMENT FOR PRESERVATION IS MADE, DECISIVELY. All 48 ladder runs had heightDelta 0 and commonAreaRatio 1.0: the ladder is paint-only and closes 0% of the off-viewport gap. Today the clone strands a 390px column on a 914px canvas (scrollHeight 7712 vs live 6990) and DELETES 274 characters of the plan-comparison table at every width from 1024 to 1231.98px. Preserved source stylesheets fix this for free — 805 @media + 16 @container rules live, one desktop artifact scoring 0.0018 at 1920 and 0.0021 at 390. 3. DO THE CHEAP FIXES FIRST, IN THIS ORDER, BECAUSE THEY ARE ALSO PREREQUISITES:   (a) F2 — add `opacity` and `visibility` to PSEUDO_STYLE_WHITELIST (src/observer/types.ts:484-519). TWO LINES. 91.6% / 88.0% of the /pricing gap. The repo's own comment says these were omitted because 'no measurement has asked for them yet'; this is that measurement.   (b) F6 — add `text-wrap-mode` and `text-wrap-style` to STYLE_WHITELIST (src/observer/types.ts:260-388, beside white-space at :335). TWO LINES. Halves the remaining /security residual.   (c) F5 — DELETE the emit path of src/reconstruction/layout-inference.ts. A NET REMOVAL of ~500 lines and 230,625 bytes that improves the observed viewport (measured twice: 0.3831->0.3818 alone, 0.0117->0.0104 cumulative with meanDelta halved) and stops the module destroying content off-viewport. Do this BEFORE any preservation work, because preserved @media rules are its correct replacement and its (0,3,0) selector would outrank them too.   (d) F1 — the font channel: replace the same-origin-only harvest at src/observer/collect-dom.ts:741-750 with the network-response channel the Observer already has, add a `font` asset kind and an at-rule emit channel at src/reconstruction/style-generator.ts:176. 82.8% / 87.6% of the /security gap. GATE IT ON LICENSING FIRST — Task 22 already classified fonts license-needs-review and F1 and variants B/C all redistribute the same commercial faces.   (e) F3's CUSTOM-PROPERTY HALF ONLY — capture the source's named custom properties (src/observer/collect-dom.ts:394-403). It resolves 504/504 and 42/42 black SVG references AND replaces Task 20's 21 reverse-engineered tokens with the source's own 410 named ones. Capture them PER VIEWPORT: a single :root snapshot already freezes --homepage-outer-padding (3 breakpoints) and --border-hairline (a DPR query), which is the same bug as layout-inference. Build F3's SVG half as a walk into the SHARED STYLE TABLE (src/recon-template/extract.ts:285-318, which currently refuses with svg-opaque), NOT as inlined per-shape paint.   (f) F4 — ship it as cheap insurance (~40 lines at src/reconstruction/asset-resolver.ts:224-254), document-wide rather than per-subtree, and claim NO pixel win: it produced bit-identical screenshots on all four pairs. 4. THEN CHANGE THE CAPTURE, NOT THE GENERATOR. The one architectural change the evidence demands is at OBSERVATION, and every experimenter hit it independently: harvest every stylesheet whose ownerNode serialises EMPTY but whose CSSOM has rules, in the same live session as the cross-origin HTTP downloads, because neither path alone is sufficient (28-30 cross-origin sheets throw SecurityError; the CSSOM sheet is 0 bytes in outerHTML). Store the source's @media/@container rules alongside the per-node tokens and let them govern widths the Observer never visited, with per-node tokens governing the observed widths. This is additive to the current IR, keeps slots, keeps regenerability, and is the only way to get responsive behaviour without a rewrite. 5. FIX THE MEASUREMENT BEFORE TRUSTING ANY OF IT. Wave-1 LR-14: changedRatio is the only signal that can see paint and it is structurally unrepresentable as a QA finding. Variant D nearly fell into the trap in the other direction — on a page that is 95% one flat colour, changedRatio saturates and scored a 1440px page rendered at 1920 as an '86% improvement'. Any gate needs commonAreaRatio and per-node geometry alongside changedRatio, a perceptible-delta threshold, and an animation-freeze step: the marquee residual is the entire remaining error of B, C and D and it also appears in the live source's own drift probe, so a zero-diff gate can never pass. 6. WHAT WOULD CHANGE THIS RECOMMENDATION. If re-running the ladder on /changelog (wave-1 verdict: unusable) and /customers (0.4953, 24 CORS-blocked mask images, 4 silently src-less <video> elements) shows that no allowlist widening touches those pages — which wave-1's family breakdown predicts, since their dominant defects are ASSET_REFERENCE_MODE_FAILURE and LAYOUT_RECOVERY_RULE_OVERRIDE, not style loss — then the targeted-fix case rests on two easy routes and the preservation case gets materially stronger. RUN THAT BEFORE COMMITTING.",
+ "thingsWeShouldNotBuild": [
+  "A single-viewport frozen computed-style artifact (variant D as briefed). Measured: 13x worse at 1920 on /security and 53x on /pricing; at 390 it is the wrong page (commonAreaRatio 0.2708, 203 wrong display:none states, horizontal scroll). An h1 text swap moves it by exactly 0px while the source page grows 203px. 0 var(), 0 @supports, 0 @keyframes, 0 :hover.",
+  "A naive DOM-snapshot archiver with no CSSOM harvest (variant B as literally briefed). It is WORSE than what we ship today on /security (0.0630 vs 0.0461 desktop, 0.1273 vs 0.0678 mobile) and it fails SILENTLY — no error, no console warning, no failed request.",
+  "More layout inference. src/reconstruction/layout-inference.ts is measurably net-negative at the observed viewport in both individual and cumulative measurement, and off-viewport its 709 responsive-hidden rules delete 274 characters of real content. Deleting it is a ~500-line net removal that improves the numbers. Do not extend it; replace it with the source's own preserved @media rules.",
+  "A layout engine, AI CSS repair, or any per-site selector patching. No experiment produced evidence that any of these is needed: the top four defects are two allowlist properties, one missing at-rule channel, and one module that should be deleted.",
+  "Per-viewport duplicate DOM trees. Measured three times independently: serving ONE desktop-captured DOM at 1920 and 390 scores identically to serving per-viewport snapshots (0.0018 vs 0.0018; 0.0021 vs 0.0022). The current dual-viewport document is unnecessary weight and is the direct cause of the doubled pseudo counts (6 vs 3, 122 vs 61), the doubled <svg> counts (90 vs 45, 682 vs 338) and the whole VARIANT_SUBTREE_COLLISION / SVG-fragment-id ambiguity class.",
+  "A zero-diff pixel QA gate. The residual of EVERY variant, including the live source measured against itself, is a running marquee at a different animation phase (0.0013-0.0019 live-vs-live). A gate at 0 can never pass; it needs an animation-freeze step or per-band tolerance.",
+  "A per-shape inlined SVG paint fix (F3's second half as simulated). It hard-codes paint onto 58-116 individual shapes where a slot should be. The correct form is a walk into the shared style table at src/recon-template/extract.ts:285-318.",
+  "Per-subtree SVG fragment-id scoping (F4 as simulated). It left 12 and 8 references still ambiguous because they sit outside any [data-wr-viewport] subtree. If built, build it document-wide.",
+  "A single global :root custom-property snapshot. Already lossy on the measured site: --homepage-outer-padding is redefined at three breakpoints and --border-hairline under a device-pixel-ratio query. Capture per viewport or reproduce the layout-inference class of bug.",
+  "Any font pipeline that ships before a licensing gate. F1 and variants B and C all redistribute Inter Variable, Berkeley Mono and Tiempos Headline harvested from static.linear.app. Task 22 already classified these license-needs-review.",
+  "Continued reliance on document.fonts.check() as a font health signal. It returned TRUE both with 0 faces loaded and with 4 — it is worthless as a gate and currently hides the rank-1 defect family."
+ ],
+ "experimentLimitations": [
+  "EVIDENCE BASE IS TWO ROUTES OF ONE SITE. Every wave-2 experiment ran on r000007 /pricing and r000008 /security only. Both are static marketing pages and both were chosen for the substrate BECAUSE they are the lowest-drift routes in the lineage. Wave-1's worst pages were not touched: /changelog desktop (verdict: unusable), /customers (0.4953 changedRatio, 24 CORS-blocked mask images, 4 <video> elements with no src at all), /plan and / (home).",
+  "THE LADDER AND THE ARCHITECTURE VARIANTS USED DIFFERENT REFERENCES. E scored against ACCEPTED_OBSERVATION (2026-08-25); B, C and D scored against the CURRENT_SOURCE substrate (2026-08-28). Baselines are comparable (0.0460 vs 0.0461 and 0.3831 vs 0.3914 for the same artifact), but residuals are not directly differenceable, because accepted-vs-current drift is 0.0023 on /security and 0.0343 on /pricing — 3x the ladder's entire post-fix residual on /pricing desktop.",
+  "EVERY LADDER RUNG IS AN INJECTION SIMULATION AND THEREFORE AN UPPER BOUND. F2, F3 and F6 read the correct answer from a live probe of linear.app on 2026-08-29; a real pipeline must derive the same facts from the observation, which can only be worse. For F2 and F6 the derivation is trivial (getComputedStyle already runs on every node). For F3 it is a new subsystem and the gap between simulation and implementation is real.",
+  "F2's 91.6% is page-shaped, not universal: exactly 0.0% on /security, whose source suppresses no pseudo at all. Wave-1's own census (2,258 pseudo records, 1,128 painting, 385/385 concentrated on /changelog) predicts the same lumpiness elsewhere. The headline '92-97% of the gap' is a two-route result, not a site result.",
+  "F4 produced ZERO measurable pixel evidence — bit-identical screenshots on all four pairs. The defect is real and latent; the fix is cheap insurance and nothing more.",
+  "NO INTERACTION AFTER-STATE HAS A REFERENCE. The substrate captured the default settled state only — no menu open, no accordion expanded, no pricing toggle switched, no hover. The product definition of fidelity includes 'interactive after-state', and NO variant was measured against it. Wave-1 LR-31 also notes dynamic templates carry no geometry and no pseudo-elements at all.",
+  "THE MARQUEE RESIDUAL IS UNRESOLVABLE BY CONSTRUCTION. It is the entire remaining error of B, C and D, it appears in the live source's own drift probe at 0.0267 in the same band, and no fix can frame-match two independent captures of a running animation. Every residual number in this handoff carries it.",
+  "changedRatio SATURATES ON DARK PAGES. Both audited routes are 94.7-95.6% one flat colour, so a single-number changedRatio gate scored variant D's 1440px page rendered at 1920 as an 86% improvement. Where an off-viewport or structural claim is made in this handoff, it rests on commonAreaRatio and per-node geometry, not on changedRatio.",
+  "AGENT D (full computed) ACKNOWLEDGED MIXING BASELINE SOURCES: r000008-wide has no wave-1 counterpart and the desktop row was substituted. Agent C independently measured that pair in-session (0.0388) and that is the number used in this handoff's comparison table.",
+  "AGENT D COULD NOT FULLY EXPLAIN ONE RESIDUAL: the 80px vertical offset of the /security marquee block at the capture viewport has no ancestor or preceding sibling with a >10px height delta, so the mechanism was not isolated. /pricing had zero such nodes, so it is not systemic.",
+  "NO EXPERIMENT FAILED TO BUILD. All four variants (B in two forms, C, D in two forms, E as 12 injected configurations) built and produced measurements, so no absence in this synthesis is a silent argument for or against anything. The one thing that DID fail, and was fixed rather than hidden, is B as literally briefed.",
+  "THE LICENSING QUESTION IS UNRESOLVED AND UNRESOLVABLE BY MEASUREMENT. It is the strongest remaining argument for the current selective architecture and no experiment could address it.",
+  "SHADOW DOM WAS MEASURED BUT NOT ATTEMPTED. It is 35% of the perceptible residual on /pricing desktop after the full ladder and no variant reaches it: the Observer never enters shadow roots (src/observer/collect-dom.ts:654-675) and the snapshot variants run no JS to populate one."
+ ],
+ "scopeCompliance": "READ-ONLY. This agent wrote exactly one file: docs/result/handoffs/28.5-simplification.json. No file under src/, scripts/, package.json, themes/ or data/ was read-modified or written; no git command of any kind was run; no build was executed; no server was started; no live capture was taken. All numbers were read from the four experiment handoffs and verified against the on-disk evidence files named in evidenceRead."
+}

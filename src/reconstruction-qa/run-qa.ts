@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium, type Browser } from "playwright";
 import {
@@ -8,7 +9,12 @@ import {
 } from "../observer/types.js";
 import { resolveViewportProfiles } from "../observer/observe-page.js";
 import { clonePathFor } from "../reconstruction/route-plan.js";
-import { probeBreakpoint } from "./capture-clone.js";
+import {
+  planBreakpointProbeTargets,
+  probeBreakpoint,
+  type BreakpointProbeResult,
+  type BreakpointProbeTarget,
+} from "./capture-clone.js";
 import { DiffCollector } from "./classify-diff.js";
 import { attachDiffIds } from "./emit-diffs.js";
 import { loadQaInputs } from "./load-inputs.js";
@@ -79,7 +85,7 @@ import {
  *                        snapshot ↔ live    (source drift)
  *                        live ↔ clone       (canary, drift-free pages only)
  *   route QA           every verified route answers 200 in the clone
- *   breakpoint probe   clone-only consistency at 914 / 915 / 916
+ *   breakpoint probe   clone-only consistency at served−1 / served / served+1, per route
  *   interaction QA     every verified pattern, replayed on BOTH sides
  *   unknown QA         one representative per Task 12 signature
  *   family audit       a bounded sample of family-represented routes
@@ -123,6 +129,17 @@ export interface QaRunResult {
   rejected: RejectedCorrection[];
   iterations: number;
   routeCheck: { checked: number; rendered: number; failures: string[] };
+  /**
+   * Responsive Core P0 — where the breakpoint probe looked and what it found.
+   * `fallbackTargets` counts routes probed at the fallback constant because the
+   * manifest carried no usable served switch.
+   */
+  breakpointProbe: {
+    targets: BreakpointProbeTarget[];
+    fallbackTargets: number;
+    results: BreakpointProbeResult[];
+    failures: number;
+  };
   timings: Record<string, number>;
   storageBytes: number;
 }
@@ -328,21 +345,61 @@ export async function runReconstructionQa(
 
     // --- clone-only breakpoint probe (items 59, 60) -------------------------
     const probeStarted = Date.now();
-    const probePath = work.length > 0 ? work[0]!.clonePath : "/";
-    const probes = await probeBreakpoint({
-      browser,
-      baseUrl: clone.baseUrl,
-      clonePath: probePath,
-      desktopProfile: profileFor("desktop"),
+    /*
+     * Responsive Core P0 — probe the SERVED switch of every route: the site
+     * value from the manifest, a route's own value from the generated route
+     * map's `pageBreakpoints` (the same map globals.css scopes from).
+     */
+    let pageBreakpoints: Record<string, unknown> | undefined;
+    try {
+      const routeMapRaw = JSON.parse(
+        await readFile(path.join(inputs.appDir, "reconstruction-data", "route-map.json"), "utf8"),
+      ) as { pageBreakpoints?: Record<string, unknown> };
+      pageBreakpoints = routeMapRaw.pageBreakpoints;
+    } catch {
+      pageBreakpoints = undefined;
+    }
+    const probePlan = planBreakpointProbeTargets({
+      siteBreakpoint: inputs.manifest.config?.inferredBreakpoint?.value,
+      ...(pageBreakpoints !== undefined ? { pageBreakpoints } : {}),
+      routes: work.map((entry) => ({ pageId: entry.page.pageId, clonePath: entry.clonePath })),
     });
+    if (probePlan.fallbackTargets > 0) {
+      log(
+        `[qa] breakpoint probe: ${probePlan.fallbackTargets} route(s) have no served switch in the manifest; probing the fallback widths`,
+      );
+    }
+    const probes: BreakpointProbeResult[] = [];
+    for (const target of probePlan.targets) {
+      probes.push(
+        ...(await probeBreakpoint({
+          browser,
+          baseUrl: clone.baseUrl,
+          clonePath: target.clonePath,
+          desktopProfile: profileFor("desktop"),
+          target,
+        })),
+      );
+    }
     timings.breakpointProbeMs = Date.now() - probeStarted;
+    const breakpointProbe = {
+      targets: probePlan.targets,
+      fallbackTargets: probePlan.fallbackTargets,
+      results: probes,
+      failures: probes.filter((probe) => !probe.ok).length,
+    };
     for (const probe of probes) {
       if (probe.ok) continue;
+      const probePath = probe.clonePath ?? "/";
       collector.add({
         dimension: "responsive",
         classification: "inferred-breakpoint-runtime-defect",
         route: probePath,
-        cloneActual: `width ${probe.width}: desktop=${probe.desktopVisible} mobile=${probe.mobileVisible} elements=${probe.elementCount} errors=${probe.runtimeErrors}`,
+        cloneActual:
+          `width ${probe.width}: desktop=${probe.desktopVisible} mobile=${probe.mobileVisible} elements=${probe.elementCount} errors=${probe.runtimeErrors}` +
+          (probe.expectedVariant !== undefined
+            ? ` expected=${probe.expectedVariant} (switch ${probe.breakpoint}, ${probe.source})`
+            : ` (${probe.source ?? "fallback-constant"})`),
         evidence: [
           {
             kind: "clone-breakpoint-probe",
@@ -633,6 +690,10 @@ export async function runReconstructionQa(
           appliedCorrections: applied.length,
           rejectedCorrections: rejected.length,
           iterations,
+          breakpointProbeTargets: breakpointProbe.targets.length,
+          breakpointProbeFallbackTargets: breakpointProbe.fallbackTargets,
+          breakpointProbeSamples: breakpointProbe.results.length,
+          breakpointProbeFailures: breakpointProbe.failures,
         },
         diffs,
         timings,
@@ -654,6 +715,7 @@ export async function runReconstructionQa(
       rejected,
       iterations,
       routeCheck,
+      breakpointProbe,
       timings,
       storageBytes,
     };

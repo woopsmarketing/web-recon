@@ -17,8 +17,11 @@ import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 
 import { hashDirectory, hashFile } from "../production/hash.js";
+import { mergedAssetResolutions } from "./authored.js";
 import { STAGE_DEPENDENCIES, STAGE_ORDER } from "./graph.js";
-import { CANONICAL_FACT_KEYS, normalizeProductionDomain } from "./requirements.js";
+import { CANONICAL_FACT_KEYS, normalizeProductionDomain,
+  blockersGatingProduction,
+} from "./requirements.js";
 import { FROZEN_STAGES } from "./types.js";
 import type {
   AuthoredState,
@@ -162,15 +165,83 @@ function sha256(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value), "utf8").digest("hex");
 }
 
+/**
+ * Content-hash every asset the ASSETS STAGE WILL ACTUALLY APPLY.
+ *
+ * Task 28 Phase 2 widened the input from "the pack's assets" to "the pack's
+ * assets with `authored.assets` merged over them" — the exact set
+ * `assetsStageRunner` passes to `applyAssetResolutions`. That is what makes an
+ * editor's "replace this image" stale the assets stage: the authored entry is
+ * a NEW key (or a different file at an existing key), so its bytes change this
+ * map and therefore the stage's inputsHash.
+ *
+ * BACKWARD COMPATIBILITY IS STRUCTURAL, not a special case: when
+ * `authored.assets` is absent the merged map IS the pack map, key order
+ * included, so every inputsHash recorded before this change still recomputes
+ * identically. And when a resolve has FOLDED a pack's assets into `authored`
+ * (instance.ts `foldResolutionAssets`), the two halves name the same files, so
+ * the merge is again a no-op rather than a phantom change.
+ *
+ * The bytes are hashed, not the path: swapping the file's contents in place is
+ * a change (`hashFile`), and a path that does not exist is recorded as
+ * `missing:<path>` so it is loud instead of silently equal to every other
+ * missing file.
+ */
 export async function resolutionAssetContentHashes(
   resolution: ProductionResolution,
+  authored?: AuthoredState,
 ): Promise<Record<string, string>> {
   const out: Record<string, string> = {};
-  for (const [assetId, value] of Object.entries(resolution.assets ?? {})) {
+  const assets =
+    authored === undefined
+      ? (resolution.assets ?? {})
+      : mergedAssetResolutions(resolution.assets, authored);
+  for (const [assetId, value] of Object.entries(assets)) {
     const file = typeof value === "string" ? value : value.file;
     out[assetId] = existsSync(file) ? await hashFile(file) : `missing:${file}`;
   }
   return out;
+}
+
+/**
+ * The slice of `authored.brand` the PRODUCTION stage consumes.
+ *
+ * Reduced to one sha256 over a key-sorted canonicalisation so the value is
+ * insertion-order independent: the same decisions reached by an in-memory edit
+ * and by a reload from disk must hash identically, exactly as
+ * `hashAuthoredState` requires of the whole authored block.
+ *
+ * ABSENT WHEN EMPTY — see `resolutionSliceFor`.
+ */
+/**
+ * The ENABLEMENT slice (Task 28 Phases 5 + 6), reduced to one key-sorted
+ * canonicalisation so an in-memory edit and a reload from disk hash the same.
+ *
+ * `updatedAt` is DELIBERATELY KEPT. Unlike a brand decision, re-affirming an
+ * enablement decision is not the thing being guarded against here — the
+ * authored write API already refuses a no-op before any write happens, so a
+ * timestamp only ever moves when the decision itself moved.
+ */
+export function authoredEnablementSlice(
+  authored: AuthoredState,
+): { disabledRoutes?: string[]; disabledRegions?: Array<[string, unknown]> } {
+  const routes = Object.keys(authored.disabledRoutes ?? {}).sort();
+  const regions = authored.disabledRegions ?? {};
+  const regionEntries = Object.keys(regions)
+    .sort()
+    .map((regionId) => [regionId, regions[regionId]] as [string, unknown]);
+  return {
+    ...(routes.length > 0 ? { disabledRoutes: routes } : {}),
+    ...(regionEntries.length > 0 ? { disabledRegions: regionEntries } : {}),
+  };
+}
+
+export function authoredBrandSliceHash(authored: AuthoredState): string {
+  const brand = authored.brand ?? {};
+  const sorted = Object.keys(brand)
+    .sort()
+    .map((surfaceId) => [surfaceId, brand[surfaceId]] as const);
+  return createHash("sha256").update(JSON.stringify(sorted), "utf8").digest("hex");
 }
 
 /** The slice of the cumulative resolution one stage consumes. */
@@ -195,6 +266,10 @@ export function resolutionSliceFor(
         // Editor edit that never passes through a resolution pack must still
         // make the content stage stale.
         ...(Object.keys(authoredSlotValues).length > 0 ? { authoredSlotValues } : {}),
+        // Enablement changes the content SCOPE (a disabled route leaves
+        // scopedRoutes) and the slot population's dispositions, so the content
+        // stage is a DIRECT consumer, not merely a downstream one.
+        ...(authored === undefined ? {} : authoredEnablementSlice(authored)),
       };
     case "theme":
       // Wires THEME_SELECTION_IMPACTS live: a theme edit changes the theme
@@ -211,15 +286,34 @@ export function resolutionSliceFor(
             (CANONICAL_FACT_KEYS as readonly string[]).includes(key),
           ),
         ),
+        // A disabled ROUTE removes a per-route title/description/canonical/og/
+        // twitter/jsonLd block and a sitemap <url>. Regions do not reach here.
+        ...(authored === undefined || Object.keys(authored.disabledRoutes ?? {}).length === 0
+          ? {}
+          : { disabledRoutes: Object.keys(authored.disabledRoutes ?? {}).sort() }),
       };
     case "assets":
       return {
         assets: assetHashes,
         fontDecisions: resolution.fontDecisions ?? {},
+        // `assets/inventory.ts` computes usageCount as pageIds.length, so a
+        // disabled route or region genuinely changes what the inventory joins.
+        ...(authored === undefined ? {} : authoredEnablementSlice(authored)),
       };
     case "production":
       return {
         targetMode: resolution.productionBaseUrl === undefined ? "preview" : "indexable-production",
+        // `authored.brand` is consumed at BAKE — the brand plan is an input to
+        // the production compile and to nothing upstream (the template is
+        // frozen; content/theme/seo/assets never read it). Folded in ONLY when
+        // non-empty, so a project with no brand decisions hashes exactly as it
+        // did before this field existed.
+        ...(Object.keys(authored?.brand ?? {}).length > 0
+          ? { authoredBrand: authoredBrandSliceHash(authored!) }
+          : {}),
+        // The BAKE is where a disable becomes physical (route table filtered,
+        // region roots removed, nav hosts removed) — a direct input.
+        ...(authored === undefined ? {} : authoredEnablementSlice(authored)),
       };
     default:
       return {};
@@ -270,7 +364,7 @@ export async function refreshStageStatuses(
   const verify = options.verifyArtifacts ?? true;
   const log = options.log ?? ((): void => {});
   const warnings: string[] = [...staleExclusionSetWarnings(project)];
-  const assetHashes = await resolutionAssetContentHashes(resolution);
+  const assetHashes = await resolutionAssetContentHashes(resolution, project.authored);
   for (const [assetId, hash] of Object.entries(assetHashes)) {
     if (hash.startsWith("missing:")) {
       warnings.push(`resolution asset "${assetId}" file not found: ${hash.slice("missing:".length)}`);
@@ -394,11 +488,16 @@ export function applyBlocking(
   targetMode: "preview" | "indexable-production",
 ): void {
   if (targetMode !== "indexable-production" || blockers.length === 0) return;
+  // Task 28 Phase 2: a requirement the PRODUCTION STAGE ITSELF resolves must
+  // not gate that stage, or it can never clear (see
+  // PRODUCTION_STAGE_RESOLVED_KINDS). It still blocks the release STATE.
+  const gating = blockersGatingProduction(blockers);
+  if (gating.length === 0) return;
   const production = stageStatus.production;
   production.status = "blocked";
-  production.blockedBy = blockers.map((requirement) => requirement.requirementId);
+  production.blockedBy = gating.map((requirement) => requirement.requirementId);
   production.reasons = [
     ...production.reasons,
-    `indexable production is gated: ${blockers.length} release-blocking requirement(s) unresolved`,
+    `indexable production is gated: ${gating.length} release-blocking requirement(s) unresolved`,
   ];
 }

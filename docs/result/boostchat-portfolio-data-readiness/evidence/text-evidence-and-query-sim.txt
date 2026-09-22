@@ -1,0 +1,56 @@
+아파트      6/8 bi-01[title,summary,body] bi-02[body] bi-03[title,summary] bi-05[title,summary] bi-07[title,summary,alt] bi-08[title,summary,body]
+모던       3/8 bi-03[keywords] bi-04[keywords] bi-08[keywords]
+미니멀      3/8 bi-01[keywords] bi-06[keywords] bi-07[title,keywords]
+깔끔       0/8 
+화이트톤     1/8 bi-01[summary,alt,quote]
+화이트      6/8 bi-01[title,summary,body,alt,quote,keywords] bi-02[title,summary,body,alt,keywords] bi-04[alt,keywords] bi-05[summary,body] bi-06[body,keywords] bi-07[title,summary,body,alt,keywords]
+웜 화이트    1/8 bi-05[summary,body]
+우드 포인트   3/8 bi-01[quote] bi-02[keywords] bi-05[keywords]
+오크       4/8 bi-01[body,alt] bi-02[summary,body,alt] bi-05[summary,body,alt] bi-06[alt]
+월넛       1/8 bi-08[body]
+전체 리모델링  3/8 bi-01[summary] bi-05[summary] bi-07[summary]
+리뉴얼      1/8 bi-04[title,summary]
+부분       2/8 bi-04[summary] bi-06[summary]
+살면서      1/8 bi-04[summary,quote]
+확장       1/8 bi-05[body,alt]
+신혼       1/8 bi-02[title,summary,quote]
+가족       3/8 bi-01[quote] bi-03[title,quote] bi-04[quote]
+부부       2/8 bi-02[title,quote] bi-06[quote]
+전용       1/8 bi-01[body]
+공급       1/8 bi-01[body]
+약        1/8 bi-01[body]
+
+Q1 34평 깔끔한 화이트톤
+ area==34                                                  bi-01,bi-06
+ + naive literal keyword '화이트톤'                            (none)
+ + keyword 화이트 (strip 톤)                                   bi-01,bi-06
+ + naive literal '깔끔' anywhere                             (none)
+ + 깔끔→{미니멀} keyword                                        bi-01,bi-06
+ +/-3평 & 화이트                                               bi-01,bi-04,bi-06
+
+Q2 24평 2천만원 정도 (budget 20,000,000)
+ area==24                                                  bi-02
+  bi-01 full-remodel     34평 ppa=2900000 est=98600000 ratio_to_20M=4.93 at24=6960만
+  bi-02 full-remodel     24평 ppa=2400000 est=57600000 ratio_to_20M=2.88 at24=5760만
+  bi-03 full-remodel     42평 ppa=3200000 est=134400000 ratio_to_20M=6.72 at24=7680만
+  bi-04 kitchen-bath     32평 ppa=- est=- ratio_to_20M=- at24=-
+  bi-05 full-remodel     29평 ppa=2600000 est=75400000 ratio_to_20M=3.77 at24=6240만
+  bi-06 partial-remodel  34평 ppa=- est=- ratio_to_20M=- at24=-
+  bi-07 full-remodel     19평 ppa=2700000 est=51300000 ratio_to_20M=2.56 at24=6480만
+  bi-08 move-in-styling  51평 ppa=1600000 est=81600000 ratio_to_20M=4.08 at24=3840만
+ est total within ±30% of 20M                              (none)
+ ppa*24 within ±30% of 20M                                 (none)
+  implied ppa for 20M/24평 = 833333
+
+Q3 30평대 모던한 느낌
+ 30<=area<40                                               bi-01,bi-04,bi-06
+ + keyword 모던                                              bi-04
+ + literal '모던' in narrative text                          (none)
+ keyword 모던 any area                                       bi-03,bi-04,bi-08
+ 30평대 + 모던∪미니멀 (loose style map)                           bi-01,bi-04,bi-06
+
+Q4 욕실이랑 주방만
+ category kitchen-bath                                     bi-04
+ scope(normalized) ⊆ {주방,욕실}                               bi-04
+ naive exact scope ⊆ {주방,욕실}                               (none)
+ scope ⊇ {주방,욕실} (superset, not 'only')                    bi-01,bi-02,bi-04,bi-07

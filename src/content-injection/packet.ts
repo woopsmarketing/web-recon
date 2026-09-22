@@ -3,11 +3,13 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { CONTENT_POLICY } from "./policy.js";
 import { briefFacts, briefGaps, briefPreferences } from "./brief.js";
+import { buildAuthoringPlan } from "./plan.js";
 import { buildRegionPlanFile, loadRegionContracts } from "./region-plan.js";
 import { buildContentUnits, type BuiltUnits } from "./units.js";
 import { loadReconTemplate, type LoadedReconTemplate } from "./load-template.js";
 import { contentRunDir, createdAtFromRunId, newContentRunId } from "./store.js";
 import {
+  AUTHORING_PLAN_FILE,
   CONTENT_ENGINE,
   CONTENT_GENERATOR_CONTRACT_VERSION,
   CONTENT_POLICY_FILE,
@@ -28,6 +30,7 @@ import {
   REGION_PLAN_FILE,
   SLOT_VALUE_SOURCES,
   TEMPLATE_SUMMARY_FILE,
+  type AuthoringPlanFile,
   type BriefGap,
   type ContentBrief,
   type ContentIntent,
@@ -57,6 +60,13 @@ export interface PrepareOptions {
   rawIntent: string;
   routes?: string[];
   includeReview?: boolean;
+  /**
+   * Task 28 Phase 11: review-flagged slot keys the OPERATOR wrote by hand
+   * (Visual Editor `authored.slotValues`, or a resolution pack's
+   * routeContent/urls). Each named key joins the units for this run; every
+   * other review slot stays out. Recorded on the manifest.
+   */
+  operatorReviewSlotKeys?: string[];
   preferences?: Record<string, string>;
   providedFacts?: { kind: string; value: string }[];
   /** Task 27 §5: the operator's brief. Every field optional, nothing blocking. */
@@ -69,6 +79,29 @@ export interface PrepareOptions {
    * template that was never region-compiled still prepares exactly as before.
    */
   pageRegionsFile?: string;
+  /**
+   * Task 28 Phases 5 + 6 — the ENABLEMENT this run is prepared under, recorded
+   * on the manifest so `buildSlotAccounting` (which sees the manifest, never
+   * the release project) can account for every disabled slot. The CALLER has
+   * already removed disabled routes from `routes`; this records what was
+   * removed and why, so the slots do not vanish from the denominator.
+   */
+  enablement?: {
+    disabledRoutes: string[];
+    disabledSlots: Array<{
+      slotKey: string;
+      disposition: "disabled-region" | "disabled-route";
+      detail: string;
+    }>;
+    disabledRegionIds?: string[];
+    /** Values withheld with a disabled route, so a re-enable is lossless. */
+    withheld?: Array<{
+      slotKey: string;
+      value?: unknown;
+      source?: string;
+      unresolvedReason?: string;
+    }>;
+  };
   /** Output directory override (tests); default data/<host>/content-runs/<id>. */
   outputDir?: string;
   runId?: string;
@@ -84,6 +117,8 @@ export interface PreparedContentRun {
   template: LoadedReconTemplate;
   /** Emitted only when a page-regions artifact was supplied. */
   regionPlan?: RegionPlanFile;
+  /** Task 28 Phase 9: the brief → site → page → region → unit → slot chain. */
+  authoringPlan: AuthoringPlanFile;
   briefGaps: BriefGap[];
 }
 
@@ -270,7 +305,26 @@ export async function prepareContentRun(options: PrepareOptions): Promise<Prepar
     ...(options.brief !== undefined ? { brief: options.brief } : {}),
   });
 
-  const units = buildContentUnits(template, routes, intent.requestedScope.includeReview);
+  // Narrowed to review slots that are actually IN SCOPE for this run, so a
+  // stale key from another route can never widen anything.
+  const inScopeReviewKeys = new Set(
+    template.slotsFile.slots
+      .filter(
+        (slot) =>
+          slot.editability === "review" &&
+          (slot.scope === "global" || (slot.route !== undefined && routes.includes(slot.route))),
+      )
+      .map((slot) => slot.key),
+  );
+  const operatorReviewSlotKeys = [...new Set(options.operatorReviewSlotKeys ?? [])]
+    .filter((key) => inScopeReviewKeys.has(key))
+    .sort();
+  const units = buildContentUnits(
+    template,
+    routes,
+    intent.requestedScope.includeReview,
+    new Set(operatorReviewSlotKeys),
+  );
   if (units.units.length === 0) {
     throw new ContentInputError(`no editable content units in scope for routes ${routes.join(", ")}`);
   }
@@ -304,9 +358,11 @@ export async function prepareContentRun(options: PrepareOptions): Promise<Prepar
     intentHash: intentHash(intent.rawIntent),
     scopedRoutes: routes,
     includeReview: intent.requestedScope.includeReview,
+    ...(operatorReviewSlotKeys.length > 0 ? { operatorReviewSlotKeys } : {}),
     manualEdits: false,
     repairIterations: 0,
     truthMode,
+    ...(options.enablement !== undefined ? { enablement: options.enablement } : {}),
     counts: {
       units: units.units.length,
       editableSlots: units.editableSlotCount,
@@ -359,6 +415,26 @@ export async function prepareContentRun(options: PrepareOptions): Promise<Prepar
     await write(REGION_PLAN_FILE, regionPlan);
   }
 
+  // THE HIERARCHY IS AN ARTIFACT, NOT A CLAIM (Task 28 Phase 9). Always
+  // emitted — a template with no region layer still produces a complete
+  // brief → site → page → unit → slot chain, and the plan says so explicitly
+  // rather than leaving the absence to be inferred.
+  const authoringPlan = buildAuthoringPlan({
+    runId,
+    templateId: template.manifest.templateId,
+    scopedRoutes: routes,
+    intent,
+    briefGaps: gaps,
+    unitsFile: ContentUnitsFileSchema.parse({
+      schemaVersion: CONTENT_SCHEMA_VERSION,
+      templateId: template.manifest.templateId,
+      units: units.units,
+      reviewSlotKeys: units.reviewSlotKeys,
+    }),
+    ...(regionPlan !== undefined ? { regionPlan } : {}),
+  });
+  await write(AUTHORING_PLAN_FILE, authoringPlan);
+
   return {
     runDir,
     runId,
@@ -368,6 +444,7 @@ export async function prepareContentRun(options: PrepareOptions): Promise<Prepar
     request,
     template,
     ...(regionPlan !== undefined ? { regionPlan } : {}),
+    authoringPlan,
     briefGaps: gaps,
   };
 }

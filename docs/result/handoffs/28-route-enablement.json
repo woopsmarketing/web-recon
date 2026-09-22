@@ -1,0 +1,527 @@
+{
+ "schema": "task28-route-enablement-v1",
+ "phase": "Task 28 Phase 6 — SAFE ROUTE ENABLEMENT",
+ "role": "BUILDER (Phases 5 and 6). Companion to docs/result/handoffs/28-region-enablement.json, which carries the shared model, the write API, the freshness wiring and the falsifiability battery.",
+ "producedAt": "2026-08-28 (local, darwin 25.2.0, Node 22, pnpm 11)",
+ "model": {
+  "statement": "The operator turns a page OFF. It is recorded as authored.disabledRoutes[routeKey], never as a template edit, and becomes physical only in the BUILD COPY: the route leaves reconstruction-data/route-map.json and, when no remaining route reaches it, its page TREE is deleted from the copy.",
+  "authoredField": "authored.disabledRoutes?: Record<routeKey, { reason?, note?, updatedAt }> — optional, absent-when-empty, deleted when the last entry goes (smoke:enablement 28.P5.1 / 28.P5.4).",
+  "writeApi": "setAuthoredRouteDisabled / removeAuthoredRouteDisabled plus the `disable-route` / `enable-route` AuthoredEdit ops; idempotent, reporting whether anything changed (28.P5.2 / 28.P5.3 / 28.P5.5).",
+  "sharedPages": "Disabling one route of a MANY-TO-ONE page group removes only the route-map entry; the page stays because its sibling route still needs it, and it is reported as `sharedWithEnabledPageSourceIds` rather than orphaned (smoke:enablement 28.P6.16, measured on the real stripe p000012 group).",
+  "refusals": "Disabling EVERY route is refused (`last-route`) both in the analysis (28.P6.6) and again in the applier, which throws rather than exporting a site with no page (28.P6.14). An unknown route key is refused (`unknown-route`, 28.P6.7). The SEO plan generator refuses the same case (smoke:seo 28.P6.S6)."
+ },
+ "productionRemoval": {
+  "claim": "A disabled route is not exported, not in the sitemap, not a canonical target, not an OG page, and not counted by release accounting.",
+  "mechanism": "ONE filter in src/seo/production-plan.ts, applied to template.routes BEFORE the route loop — which is the single place title, description, robots meta, canonical, the whole openGraph block, twitter and JSON-LD are produced. robots-sitemap.ts builds the urlset from plan.routes and render-head.ts iterates plan.routes, so one filter removes the route from all of them. The route table is filtered in the build copy, so convertToStaticExport, `next build`, routeHtmlFile, the head splice, the per-route brand census and production QA all see the enabled set.",
+  "measuredOnTheRealFixtureBuild": {
+   "seoPlanRoutes": "2 -> 1; the disabled route has no title/description/canonical/og/twitter/jsonLd block (smoke:release 28.P6.23)",
+   "sitemap": "exactly 1 <url>, and it is not the disabled route (28.P6.24)",
+   "renderedHead": "1 head block, not 2 (28.P6.25)",
+   "export": "index.html present, pricing.html ABSENT from the shipped package (28.P6.27)",
+   "deployManifest": "1 route (28.P6.29)",
+   "buildReport": "report/enablement.json records routesRemoved, regionNodesRemoved, navNodesRemoved and the deleted orphan page tree (28.P6.26)",
+   "productionQa": "0 failures, and the package's OWN site-wide link audit reports no anchor resolving to the disabled route (28.P6.30)",
+   "reEnable": "re-enabling restores 2 SEO routes and pricing.html is exported again (28.P6.37)"
+  }
+ },
+ "navigationCascade": {
+  "rule": "A link to a disabled route is auto-removed ONLY when the removal is DETERMINISTIC: the binding's surface is `static` (so its nodeId IS the anchor) AND the anchor's subtree contains no slot outside that url slot's own `groupId`. Everything else becomes an ACTIONABLE requirement.",
+  "whyGroupId": "src/recon-template/types.ts: 'Related slots (e.g. a CTA's label + href) share a groupId'. Removing the anchor takes the paired LABEL with it, so a label is never left orphaned pointing at nothing.",
+  "measuredOnLinear": "Disabling /pricing on linear.app produces 2 deterministic nav groups (global.header.nav.pricing and global.footer.link.pricing), 28 anchor nodes = 7 ENABLED pages x 2 viewports (the disabled page's own anchors are not touched — its tree is deleted), each group removing exactly its href + its label, and 0 dead-link findings. After the cascade, ZERO anchors anywhere in the rewritten trees still point at /pricing (smoke:enablement 28.P6.2 / 28.P6.3 / 28.P6.4 / 28.P6.13).",
+  "neverRedirected": "There is no code path that rewrites a link to `/`. The exported HTML of the real fixture build carries no href=\"/pricing\" at all (smoke:release 28.P6.28), and the alternative is always an operator requirement."
+ },
+ "deadInternalLinks": {
+  "requirementKind": "dead-internal-link (NEW), severity release-blocking. Basis: a link that answers 404 is a broken production site, and it is blocking rather than high-value because the alternative — silently pointing it at the homepage — is the one thing this engine must never do.",
+  "grouping": "One requirement per (disabled target route, linking route). An operator acts on a page, not on a node id; the nodes are carried as evidence with pointer `<pageSourceId>/<viewport>/<nodeId>` and the href, so the requirement names the route, the linking page and the slot.",
+  "reasons": [
+   "slot-host-carries-unrelated-slots — the anchor hosting the url slot also hosts slots outside its group; removing it would delete unrelated content",
+   "anchor-has-no-slot — a hardcoded anchor with no url slot at all; the engine cannot tell an intentionally-dangling link from a newly-broken one",
+   "dynamic-template-host — the binding's surface is `dynamic-template`, whose nodeId is the TRIGGER, not the anchor (slot-bindings schema: 'Static: the element owning the text/attribute. Dynamic: the trigger.'). The link itself lives inside the captured `data-wr-dyn-template` string, which is FROZEN reconstruction output",
+   "paint-twin-host — the binding addresses a second painted copy of the same content",
+   "serialized-markup-host (NEW, 2026-08-28 correction) — the link is not an anchor in the static tree at all: it is TEXT inside a serialized markup prop (a captured `data-wr-dyn-template`, an inline-SVG `v` string). No element walk can see it. A finding of this class carries slotKey null; when the carrier prop is a `data-wr-dyn-*` template the reason stays `dynamic-template-host` so the existing vocabulary keeps its meaning."
+  ],
+  "realFindingOnTheFixtureBuild": {
+   "what": "MEASURED, and it is the finding that justifies the whole rule. The release fixture's header carries a disclosure button whose CAPTURED DYNAMIC TEMPLATE contains its own copy of the /pricing anchor. The static-anchor cascade removed the real anchors — the exported HTML has no href=\"/pricing\" — but the captured template's copy survives into the RSC flight payload (6 occurrences across 6 flight documents, every one inside a `data-wr-dyn-node` template string: smoke:release 28.P5.71).",
+   "engineResponse": "The engine REFUSES to rewrite frozen reconstruction output and raises `dead-internal-link-/-to-/pricing`: release-blocking, unresolved, route '/', slotKey global.header.nav.pricing.href, message naming the CAPTURED DYNAMIC TEMPLATE and offering both 'change the destination' and 're-enable /pricing' (smoke:release 28.P6.33).",
+   "clearingRule": "It clears ONLY on evidence that can see the channel the link lives in. `siteLinks` parses ANCHORS out of the served HTML: complete evidence for a static anchor, structurally BLIND to a link carried in a serialized template attribute. So the requirement stays UNRESOLVED even though the served anchor audit reports zero, with statusNote 'NOT cleared by the served link audit: dynamic-template-host link(s) are carried in a serialized template attribute, which the anchor audit cannot see — a zero there is not evidence that this link is gone' (smoke:release 28.P6.33b). Clearing on that zero would be exactly the 'narrow the detector until the gate passes' failure this program was corrected for once already.",
+   "linearComparison": "CORRECTED 2026-08-28. The 7 findings originally cited here came from a SYNTHETIC authoredSlotValues repoint (smoke:enablement 28.P6.8, labelled 'non-deterministic repoint' in the code), NOT from a natural route disable — the verifier was right to call that out. A NATURAL disable of /pricing on the real linear template used to return deadLinks.length === 0 while 7 captured mobile-nav templates each carried a live `\"href\":\"/pricing\"`. After the correction it returns 7 findings, one per ENABLED page (p000001..p000006, p000008), all on the mobile viewport, all on trigger node n000057, all slotKey null, reason dynamic-template-host — and the nav cascade is unchanged at 2 groups / 28 anchor nodes (smoke:enablement 28.P6.40 / 28.P6.41 / 28.P6.42)."
+  },
+  "newServedEvidence": "src/production/qa.ts now runs a SITE-WIDE link audit over every served route through src/seo/link-qa.ts `auditAnchors` (reused, not re-implemented) and reports `siteLinks { routesAudited, anchors, routeResolves, brokenInternal, brokenInternalTargets }` in report/qa.json. On the fixture it honestly reports the pre-existing dangling /signup CTA, which this feature neither creates nor clears (smoke:release 28.P6.30).",
+  "serializedMarkupPass": {
+   "why": "The detector was two ELEMENT walks — url-slot BINDINGS, then `node.p.href`. A link reconstruction captured as TEXT inside a `data-wr-dyn-template` prop is neither: it carries no binding, and it is a string, not an element. Both passes were structurally blind to it, and production QA's anchor audit is blind to it too, so nothing in the chain caught it.",
+   "whatItDoes": "evaluateRouteDisable now runs a third pass over every ENABLED page tree, reading every string prop other than `href` (and the inline-SVG `v` string) through `hrefsInSerializedMarkup`, which parses BOTH encodings — JSON IR (`\"href\":\"/x\"`) and HTML markup (`href=\"/x\"` / `href='/x'`) — plus the once-escaped form (`\\\"href\\\":\\\"/x\\\"`). It never rewrites frozen reconstruction output; it raises the requirement. Nodes the nav cascade removes are skipped with their subtree, and findings are deduped per (page, viewport, node, target).",
+   "measuredOnRealLinear": "7 findings for /pricing (was 0). Disabling /security instead produces none of this class, so the scan is not a blanket (smoke:enablement 28.P6.44).",
+   "measuredOnARealBuild": "release project data/linear.app/release-projects/wr28-fix-p56, route-off build run 2026-08-27T17-47-57-525Z (package data/linear.app/production-builds/2026-08-27T17-47-58-095Z). requirements.json carries SEVEN release-blocking `dead-internal-link` requirements, one per enabled linking route (/, /changelog, /customers, /customers/automattic, /integrations, /plan, /security), every one `unresolved` with the blind-channel statusNote — while report/qa.json's own site-wide anchor audit is clean and the exported HTML carries ZERO `href=\"/pricing\"`. Census of the shipped package: 35 raw '/pricing' occurrences across 28 documents, and every single one is the SAME captured template link (node t000037) in one of three encodings (raw JSON in the flight, HTML-escaped in the HTML, backslash-escaped in the RSC payload) — i.e. the requirement covers 100% of the surviving references.",
+   "stillTrue": "Nothing is redirected to the homepage, the engine still refuses to rewrite the frozen template, and the requirement still does NOT clear on the served anchor audit's zero (collect.ts treats dynamic-template-host, paint-twin-host and serialized-markup-host as blind channels)."
+  }
+ },
+ "accounting": {
+  "disposition": "disabled-route — for a slot whose EVERY rendering route is disabled, and for a navigation slot removed because it linked to a disabled route. Origin stays `source-preserved`.",
+  "notRemoved": "`removed` means an empty value in a still-rendered node and is NOT reused (smoke:release 28.P5.74; smoke:enablement 28.P5.54).",
+  "denominatorIsPreserved": "A route leaving the content scope would take its slots out of the unit population entirely — 'mysteriously absent'. `inScopeSlotKeys(unitsFile, disabledSlotKeys)` adds them back, so the in-scope total GROWS by exactly the disabled slots the units no longer carry and both axis totals still equal it (smoke:enablement 28.P6.15: 3 -> 4 in scope, unresolved 2 -> 0, disabled-region 2, disabled-route 1).",
+  "doesNotBlockProduction": "A `disabled-route` slot is never `unresolved`, so it raises no content requirement; and the disabled route's own per-route requirements disappear because the SEO PLAN no longer names it, not because a flag filtered the collector.",
+  "requirementRetention": "A requirement that stops being detected is RETAINED and marked `not-applicable` with 'no longer detected in current artifacts' (mergeRequirements), never silently deleted. Measured: content-route-/pricing survives as not-applicable and is not in releaseBlockers (smoke:release 28.P6.32)."
+ },
+ "freshness": {
+  "impacts": "AUTHORED_DISABLED_ROUTE_IMPACTS = [content, seo, assets, production]; the DAG closure adds theme, giving [content, theme, seo, assets, production] — everything but the frozen roots.",
+  "eachRowFromARealConsumer": {
+   "content": "contentStageRunner computes its routes from the content manifest's scopedRoutes and a disabled route must leave that scope",
+   "seo": "production-plan.ts loops the route table; robots-sitemap.ts builds the urlset from plan.routes",
+   "assets": "assets/inventory.ts joins by slotKey + pageId and its usageCount IS pageIds.length",
+   "production": "the bake, the static export, the head splice, the brand census and QA are all per-route"
+  },
+  "predictionAndMeasurementAgree": "The graph PREDICTION (authoredInvalidatedStages) and the AUTHORITATIVE hash (computeStageInputsHash over resolutionSliceFor) were updated in the same change. Measured on the real fixture build: release:plan wouldRun = [content, theme, seo, assets, production] (smoke:release 28.P6.21) and run.json rerunStages = the SAME list with reconstruction and template in reusedStages (28.P6.22).",
+  "stability": "With nothing further changed the next build reruns NOTHING — the enablement slice is stable across a reload (28.P6.35). An empty authored state contributes nothing to any slice, so every inputsHash recorded before this feature recomputes identically (smoke:enablement 28.P5.18 / 28.P5.20)."
+ },
+ "revision": {
+  "fields": "routesDisabled / routesReEnabled / regionsDisabled / regionsChanged / regionsReEnabled — all OPTIONAL, because AuthoredChangeSchema is .strict() and loadRevisionChain parses every record on disk.",
+  "naming": "A route APPEARING in the map is a disable; DISAPPEARING is a re-enable. The names say what happened to the SITE, not to the map.",
+  "measured": "One batch of a route disable + a region disable appends exactly ONE revision naming both, whose authoredStateHash matches the saved project (smoke:release 28.P5.69); re-enabling both deletes BOTH fields and records the reverse movement (28.P6.36); the one-line summary reads 'edit: -1 route off, -1 region off' (smoke:enablement 28.P5.26)."
+ },
+ "preview": {
+  "claim": "PREVIEW: the disabled route is removed from Site navigation/list.",
+  "howProven": "The REAL Phase-3 authoring preview (startAuthoringPreview) on the linear template, in a NEW workspace data/linear.app/authoring-previews/wr28-p56. Session 1 is the baseline; the plan is then applied to the workspace's app/reconstruction-data; session 2 is a warm start over the same build. The template app is `dynamic = \"force-dynamic\"` and reads the route table and the page trees per request, so no rebuild is needed.",
+  "measured": [
+   "BASELINE: the region root and the /pricing nav anchor are both served, /pricing answers 200 (28.P5.62 / 28.P6.17)",
+   "AFTER: the disabled region root is GONE from the served homepage and the page still renders (28.P5.63 / 28.P5.64)",
+   "AFTER: /pricing answers 404 — never a redirect to the homepage (28.P6.18)",
+   "AFTER: the navigation item is gone and no href=\"/pricing\" is served at all (28.P6.19)"
+  ],
+  "gap": "src/authoring-preview/ was not edited (it is another builder's file), so the preview does not resolve enablement on its own — a caller must apply the plan to the workspace. Named, not claimed."
+ },
+ "testsAdded": "See docs/result/handoffs/28-region-enablement.json `testsAdded` — the same battery covers both phases. Route-specific ids: 28.P6.1–28.P6.19 (smoke:enablement), 28.P6.20–28.P6.37 (smoke:release), 28.P6.S1–S7 (smoke:seo), 28.P6.PR3/PR5/PR6 (smoke:production), 28.P6.CI5 (smoke:content-injection).",
+ "falsifiability": "See docs/result/handoffs/28-region-enablement.json `falsifiability` — 4 mutations, each observed FAILING the checks it covers, each restored byte-identically (sha256 verified against tmp/wr28/p56/pre-sabotage.sha).",
+ "limitations": [
+  "A link captured inside a `data-wr-dyn-template` string SURVIVES a route disable. The engine detects it, refuses to rewrite frozen reconstruction output, raises a release-blocking requirement and refuses to clear it on served-anchor evidence — but the shipped preview package does contain a mounted menu whose link answers 404 until the operator acts. That is the honest state, not a solved problem.",
+  "The served link audit measures ANCHORS in the served HTML. It cannot see a link inside a serialized template attribute, an `href` built by client JS, or a link that only exists after a mount. `brokenInternalTargets` is therefore a floor.",
+  "`dead-internal-link` is release-blocking, so a project that disables a route linked from a dynamic template cannot reach indexable production until the operator resolves it. That is deliberate; it is also a real cost and an operator surface must explain it.",
+  "The nav cascade reads the EFFECTIVE url value as `authored.slotValues[key] ?? slot.defaultValue`. A link whose destination is set by a resolution pack that has not yet been folded into authored state would not be seen. Every current path folds packs into authored at resolve time, so this is a latent gap rather than an observed one.",
+  "A route disabled while its page is shared leaves the page in the build copy (its sibling route needs it). Nothing prunes content that was only reachable through the disabled route within that shared page — the page renders identically for the sibling, which is the correct behaviour, but no per-route content isolation exists inside a shared page and none can, for the reasons recorded in the region handoff.",
+  "Requirement retention makes a disabled route's old requirements `not-applicable` rather than absent. A reader counting `requirements.length` will still see them; the honest reading is `releaseBlockers(requirements)`.",
+  "No route enablement has been exercised on a real customer lineage (linear or stripe) through a production build; the end-to-end evidence is the 2-route release fixture. The analysis half IS exercised on both real templates.",
+  "CORRECTED, was limitation 2: the earlier claim that the engine 'detects it ... raises a release-blocking dead-internal-link requirement' for a link inside a captured dynamic template was TRUE ONLY on the release fixture, whose copy happens to be slot-bound. On real linear a natural /pricing disable returned 0 findings. It now returns 7. The SHIPPED consequence is unchanged and still honest: the package still contains a mounted menu whose link answers 404 until the operator acts, and the requirement refuses to clear on the served anchor audit — that is a named, release-blocking state, not a solved problem.",
+  "The serialized-markup scan reads href-shaped text out of ANY string prop and out of the inline-SVG `v` string. It cannot see a destination that only exists after client JS runs, and it cannot see a link expressed as something other than an href (a router push, a data attribute the runtime reads). It is a strictly wider floor than before, not a ceiling.",
+  "The content-scope filter drops ONLY keys that are both out of the units scope for a disabled route and accounted as disabled slots. A key that leaves the scope for any other reason still fails validation loudly, with a warning naming it. On the real linear template that residual set is empty (140 leave the scope, 140 accounted, 0 unaccounted — smoke:enablement 28.P6.50); on a template where it is not empty a route disable will still fail the content stage, and that is deliberate.",
+  "`enablement.withheld` on the content-run manifest makes a disable/re-enable round trip lossless for values the CHAIN carried. A value that never entered the chain (never generated, never authored) is unaffected, and `authored.slotValues` still wins over a restored value. The withheld block is data about one run — it is not authored truth and is not hashed as such.",
+  "The correction round did not exercise stripe region enablement through a production build (stripe still has no accepted release project), and did not re-drive the sequence at the 390 px viewport in the authoring preview. The 7 serialized-markup findings are on the MOBILE viewport and were confirmed in the shipped package's bytes (35 occurrences, all the same captured link in three encodings), not by a fresh Chromium click — the verifier already proved the click case on the pre-correction package.",
+  "Ten gate-scope suites were not re-run (verifier, selector, multi-observer, interaction-detector, interaction-explorer, interaction-patterns, sitespec, reconstruction, reconstruction-qa, e2e). Each imports nothing from src/release or src/content-injection, which is measured (grep count 0), not assumed from the file names — but it is still a carried number rather than a re-measured one."
+ ],
+ "regression": {
+  "invocation": "Every suite and every typecheck went through bash tmp/wr28/suite-lock.sh, ONE AT A TIME, in a single sequential battery (tmp/wr28/p56/battery.sh). smoke:playwright and smoke:visual-editor were not run (the first touches the public internet and is uncounted; the second is another builder's in-flight suite).",
+  "countDerivation": "Every `checks` value was re-derived with `grep -cE '^  PASS '` and `failures` with `grep -cE '^  FAIL '` over each suite's captured raw stdout, never read from a suite's own summary line. The `^  ` anchor is what keeps content-injection's two `[content:qa]   FAIL —` diagnostic lines (emitted INSIDE intentional negative fixtures) out of the failure count.",
+  "typecheck": "exit 0 (bash tmp/wr28/suite-lock.sh pnpm typecheck, run last, after every source edit)",
+  "baseline": "docs/result/handoffs/28-gate-phase23.json — 22 suites / 2,472 checks / 0 failures",
+  "result": "23 suites / 2,619 checks / 0 failures / all rc=0",
+  "suites": [
+   {
+    "suite": "verifier",
+    "checks": 81,
+    "failures": 0,
+    "baseline": 81,
+    "delta": 0,
+    "seconds": 7
+   },
+   {
+    "suite": "selector",
+    "checks": 81,
+    "failures": 0,
+    "baseline": 81,
+    "delta": 0,
+    "seconds": 0
+   },
+   {
+    "suite": "multi-observer",
+    "checks": 62,
+    "failures": 0,
+    "baseline": 62,
+    "delta": 0,
+    "seconds": 27
+   },
+   {
+    "suite": "interaction-detector",
+    "checks": 92,
+    "failures": 0,
+    "baseline": 92,
+    "delta": 0,
+    "seconds": 1
+   },
+   {
+    "suite": "interaction-explorer",
+    "checks": 108,
+    "failures": 0,
+    "baseline": 108,
+    "delta": 0,
+    "seconds": 93
+   },
+   {
+    "suite": "interaction-patterns",
+    "checks": 88,
+    "failures": 0,
+    "baseline": 88,
+    "delta": 0,
+    "seconds": 0
+   },
+   {
+    "suite": "sitespec",
+    "checks": 257,
+    "failures": 0,
+    "baseline": 257,
+    "delta": 0,
+    "seconds": 0
+   },
+   {
+    "suite": "reconstruction",
+    "checks": 217,
+    "failures": 0,
+    "baseline": 217,
+    "delta": 0,
+    "seconds": 7
+   },
+   {
+    "suite": "reconstruction-qa",
+    "checks": 134,
+    "failures": 0,
+    "baseline": 134,
+    "delta": 0,
+    "seconds": 145
+   },
+   {
+    "suite": "recon-template",
+    "checks": 109,
+    "failures": 0,
+    "baseline": 109,
+    "delta": 0,
+    "seconds": 80
+   },
+   {
+    "suite": "regions",
+    "checks": 76,
+    "failures": 0,
+    "baseline": 67,
+    "delta": 9,
+    "seconds": 0
+   },
+   {
+    "suite": "content-injection",
+    "checks": 152,
+    "failures": 0,
+    "baseline": 145,
+    "delta": 7,
+    "seconds": 58
+   },
+   {
+    "suite": "theme",
+    "checks": 47,
+    "failures": 0,
+    "baseline": 47,
+    "delta": 0,
+    "seconds": 35
+   },
+   {
+    "suite": "seo",
+    "checks": 104,
+    "failures": 0,
+    "baseline": 97,
+    "delta": 7,
+    "seconds": 2
+   },
+   {
+    "suite": "assets",
+    "checks": 140,
+    "failures": 0,
+    "baseline": 140,
+    "delta": 0,
+    "seconds": 5
+   },
+   {
+    "suite": "production",
+    "checks": 129,
+    "failures": 0,
+    "baseline": 123,
+    "delta": 6,
+    "seconds": 3
+   },
+   {
+    "suite": "release",
+    "checks": 271,
+    "failures": 0,
+    "baseline": 241,
+    "delta": 30,
+    "seconds": 90
+   },
+   {
+    "suite": "revision",
+    "checks": 36,
+    "failures": 0,
+    "baseline": 36,
+    "delta": 0,
+    "seconds": 2
+   },
+   {
+    "suite": "registry",
+    "checks": 35,
+    "failures": 0,
+    "baseline": 35,
+    "delta": 0,
+    "seconds": 0
+   },
+   {
+    "suite": "authoring-preview",
+    "checks": 41,
+    "failures": 0,
+    "baseline": 41,
+    "delta": 0,
+    "seconds": 23
+   },
+   {
+    "suite": "brand-assets",
+    "checks": 141,
+    "failures": 0,
+    "baseline": 141,
+    "delta": 0,
+    "seconds": 15
+   },
+   {
+    "suite": "enablement",
+    "checks": 88,
+    "failures": 0,
+    "baseline": null,
+    "delta": "NEW",
+    "seconds": 5
+   },
+   {
+    "suite": "e2e",
+    "checks": 130,
+    "failures": 0,
+    "baseline": 130,
+    "delta": 0,
+    "seconds": 622
+   }
+  ],
+  "negativeDeltas": [],
+  "deltaExplanation": "+59 across five existing suites (regions +9, content-injection +7, seo +7, production +6, release +30) and +88 in the new smoke:enablement suite. No suite decreased, so no decrease had to be adjudicated as replacement-vs-regression.",
+  "wallClockCaveat": "Single-machine, one run per suite, under the mutex with other Task-28 agents active. The 5 s for smoke:enablement includes TWO real authoring-preview sessions (the workspace is rm -rf'd and re-materialized first), so it is a real number but not a benchmark.",
+  "gitMutatingOperations": 0,
+  "gitEvidence": "HEAD is still 6c2e723 ('0827 morning'); `git stash list` is empty; the only git commands run were log / status / diff-free inspection. Task-28 results stay uncommitted.",
+  "dataWrites": "Only NEW 2026-08-27/28 run ids and wr28- namespaces. The one namespace this phase created is data/linear.app/authoring-previews/wr28-p56. `find data -type f -newer src/regions/enablement.ts`, grouped by containing run directory, touched ZERO run directory whose id predates 2026-08-27. data/linear.app/release-projects/flowpilot-wr27 still has NO revisions/ directory, so smoke:revision 27A.23 is honestly satisfied (that suite passed 36/36 in this battery).",
+  "dataWrSlot": "`grep -rn data-wr-slot src scripts` matches 2 lines from this phase: a doc comment in src/regions/enablement.ts stating that membership is derived by walking the tree rather than from an attribute, and a NEGATIVE assertion in scripts/smoke-regions.ts §9 that would FAIL if one were minted. Zero emission sites were added."
+ },
+ "contentStageScope": {
+  "finding": "VERIFIER FAIL (2026-08-27), reproduced on two independent routes: `turn this page off` could not complete a real release build. contentStageRunner narrowed `routes` by the disabled set but carried baseResult.slotValues / sources / unresolved forward unfiltered, and validateGenerationResult then rejected every one of them as `out-of-scope-slot`. On a project prepared from the accepted linear production spec: /pricing → 62 errors, /security → 76. The 2-route release fixture never hit the shape.",
+  "fix": "src/release/stages.ts contentStageRunner now drops a key from the merged result ONLY when it (a) leaves the units scope because its route is disabled AND (b) is ACCOUNTED FOR in the resolved enablement as a disabled slot. Anything else out of scope is still a real validation error and still fails the build loudly, with a warning naming the keys — filtering by scope alone would be the 'widen the filter until the gate passes' move this program refuses. Image briefs for dropped keys are filtered with them.",
+  "invariantMeasured": "smoke:enablement 28.P6.50: on the real linear template a /pricing disable takes 140 page slots out of the units scope and ALL 140 are accounted as disabled slots (0 unaccounted). 28.P6.51: the accounting is WIDER than the scope drop (142 rows — it also carries the removed nav anchors' slot keys).",
+  "withholdingIsNotDeletion": "A second defect the fix would otherwise have created: the disabled route's 60 slot values + 2 needs-input entries would have vanished from the chain, so re-enabling the route would silently return the page to its SOURCE defaults while reporting a clean build. The content-run manifest's `enablement` block gained an optional `withheld` array carrying value/source/unresolvedReason per dropped key, and the next build restores every entry whose key is back in scope. `authored.slotValues` still wins over a restored value.",
+  "scopeIsRecoverable": "A build under a disable narrows the run's `scopedRoutes`. The next build now reads `scopedRoutes ∪ manifest.enablement.disabledRoutes`, so the narrowing is not permanent (smoke:release 28.P6.38 / 28.P6.38b / 28.P6.38c).",
+  "measuredRoundTrip": {
+   "project": "data/linear.app/release-projects/wr28-fix-p56b (prepared from data/linear.app/production-specs/2026-08-25T23-54-21-435Z)",
+   "disable": "run 2026-08-27T17-53-55-*: content run 2026-08-27T17-53-55-178Z — validation PASS (0 errors, was 62), 3,079 accounted slots / 3,079 unique keys, dispositions {preserved 873, applied 532, unresolved 117, human-required 1415, disabled-route 142}, reconciled=true with 0 missing and 0 invented against the template's own 3,079-key universe; manifest.enablement.withheld = 62 entries (60 with a value, 2 needs-input). Production QA 70/70 on 7 routes; no pricing.html; sitemap 7 <loc> and 0 '/pricing'; production-seo-plan.json 7 routes and the string '/pricing' appears 0 times in the WHOLE plan (so no title, description, canonical, og:url, twitter or jsonLd); deploy manifest 7 routes.",
+   "reEnable": "run 2026-08-27T17-54-34-*: '[release] content restores 62 value(s) withheld by an earlier disable', content run 2026-08-27T17-54-34-677Z carries 60 pricing.* values and 2 pricing.* needs-input entries again, 3,079 accounted slots with disabled-route 0 and unresolved back to 119, reconciled=true; pricing.html is exported again; production QA 77/77.",
+   "counterfactualPreserved": "The verifier's failing evidence is untouched on disk: data/linear.app/content-runs/2026-08-27T17-16-16-532Z/report/validation.json still records the 62 `out-of-scope-slot` errors, and their project wr28-vfy-p56 is not modified by this correction."
+  }
+ },
+ "corrections": [
+  {
+   "finding": "VERIFIER FAIL (2026-08-27): a route disable left a LIVE 404 link in the shipped package and raised NO requirement (7 captured `data-wr-dyn-template` strings each carrying `href=\"/pricing\"`; a real Chromium click mounted a visible anchor whose GET was 404).",
+   "fixedIn": "src/release/enablement.ts — new `hrefsInSerializedMarkup` + a third pass in evaluateRouteDisable; new reason `serialized-markup-host`; src/release/collect.ts treats it as a blind channel for clearing.",
+   "measuredAfter": "7 release-blocking, unresolved dead-internal-link requirements on a real build (see deadInternalLinks.serializedMarkupPass.measuredOnARealBuild). Detector WIDENED, never narrowed."
+  },
+  {
+   "finding": "VERIFIER FAIL (2026-08-27): a route disable could not complete a real release build (62 / 76 out-of-scope-slot validation errors).",
+   "fixedIn": "src/release/stages.ts contentStageRunner (narrow, accounted scope drop + withheld carry-forward + recoverable scope); src/content-injection/types.ts + packet.ts (optional `enablement.withheld` on the content-run manifest).",
+   "measuredAfter": "See contentStageScope.measuredRoundTrip — disable builds clean at QA 70/70 and re-enable restores 62 withheld entries at QA 77/77."
+  }
+ ],
+ "regressionAfterCorrection": {
+  "role": "FRESH CORRECTION AGENT re-run, 2026-08-28 (local UTC+9). Only the suites the correction can reach were re-run; the ten listed under `notRerun` import nothing from src/release or src/content-injection (grep -cE 'release/|content-injection/' = 0 for each), so their gate counts are carried, not re-measured.",
+  "invocation": "Every invocation went through bash tmp/wr28/suite-lock.sh, ONE AT A TIME. Counts re-derived with grep -cE '^  PASS ' / '^  FAIL ' over each captured raw log (tmp/wr28/fix56/logs/*.log), never from a suite's own summary line.",
+  "typecheck": "exit 0 (run after every source edit; final run after the last restore)",
+  "baseline": "docs/result/handoffs/28-gate-phase23.json (22 suites / 2,472) and the builder's post-Phase-5/6 23-suite / 2,619 figure, which an independent verifier re-derived and confirmed.",
+  "rerun": [
+   {
+    "suite": "enablement",
+    "checks": 101,
+    "failures": 0,
+    "previous": 88,
+    "delta": 13
+   },
+   {
+    "suite": "release",
+    "checks": 274,
+    "failures": 0,
+    "previous": 271,
+    "delta": 3
+   },
+   {
+    "suite": "content-injection",
+    "checks": 152,
+    "failures": 0,
+    "previous": 152,
+    "delta": 0
+   },
+   {
+    "suite": "production",
+    "checks": 129,
+    "failures": 0,
+    "previous": 129,
+    "delta": 0
+   },
+   {
+    "suite": "seo",
+    "checks": 104,
+    "failures": 0,
+    "previous": 104,
+    "delta": 0
+   },
+   {
+    "suite": "regions",
+    "checks": 76,
+    "failures": 0,
+    "previous": 76,
+    "delta": 0
+   },
+   {
+    "suite": "revision",
+    "checks": 36,
+    "failures": 0,
+    "previous": 36,
+    "delta": 0
+   },
+   {
+    "suite": "registry",
+    "checks": 35,
+    "failures": 0,
+    "previous": 35,
+    "delta": 0
+   },
+   {
+    "suite": "theme",
+    "checks": 47,
+    "failures": 0,
+    "previous": 47,
+    "delta": 0
+   },
+   {
+    "suite": "assets",
+    "checks": 140,
+    "failures": 0,
+    "previous": 140,
+    "delta": 0
+   },
+   {
+    "suite": "recon-template",
+    "checks": 109,
+    "failures": 0,
+    "previous": 109,
+    "delta": 0
+   },
+   {
+    "suite": "authoring-preview",
+    "checks": 41,
+    "failures": 0,
+    "previous": 41,
+    "delta": 0
+   },
+   {
+    "suite": "brand-assets",
+    "checks": 141,
+    "failures": 0,
+    "previous": 141,
+    "delta": 0
+   }
+  ],
+  "notRerun": [
+   {
+    "suite": "verifier",
+    "checks": 81,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "selector",
+    "checks": 81,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "multi-observer",
+    "checks": 62,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "interaction-detector",
+    "checks": 92,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "interaction-explorer",
+    "checks": 108,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "interaction-patterns",
+    "checks": 88,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "sitespec",
+    "checks": 257,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "reconstruction",
+    "checks": 217,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "reconstruction-qa",
+    "checks": 134,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "e2e",
+    "checks": 130,
+    "reason": "imports nothing from src/release or src/content-injection"
+   }
+  ],
+  "gateTotalAfterCorrection": 2635,
+  "gateTotalDerivation": "2,619 (verified 23-suite total) + 13 (enablement 88 -> 101) + 3 (release 271 -> 274) = 2,635 checks / 0 failures across 23 suites. No suite decreased.",
+  "nonGateSuites": [
+   {
+    "suite": "visual-editor",
+    "checks": 50,
+    "failures": 0
+   },
+   {
+    "suite": "editor-integration",
+    "checks": 25,
+    "failures": 0
+   }
+  ],
+  "notRun": "smoke:playwright (touches the public internet, uncounted by standing instruction)."
+ },
+ "falsifiabilityAfterCorrection": {
+  "method": "Three independent mutations, each run alone through the mutex, then restored and PROVEN byte-identical with shasum -a 256 -c (tmp/wr28/fix56/pre-sabotage.sha, 7 files, all OK) with `grep -rn MUTANT src scripts` = 0 afterwards. A whole-tree git diff is not valid evidence here — other Task-28 agents write the same working tree concurrently.",
+  "mutations": [
+   {
+    "id": "MUTANT-A",
+    "what": "src/release/enablement.ts — the serialized-markup pass collects no carriers (`carriers.length = 0`)",
+    "result": "smoke:enablement 99 PASS / 2 FAIL, rc 1 — 28.P6.40 and 28.P6.41"
+   },
+   {
+    "id": "MUTANT-B",
+    "what": "src/release/enablement.ts — the region-accounting guard is bypassed (`survivors` forced empty), i.e. the pre-correction behaviour",
+    "result": "smoke:enablement 98 PASS / 3 FAIL, rc 1 — 28.P6.45, 28.P6.46, 28.P6.47"
+   },
+   {
+    "id": "MUTANT-C",
+    "what": "src/release/stages.ts — the previous run's disabled routes are not read back, i.e. the scope narrowing becomes permanent",
+    "result": "smoke:release 272 PASS / 2 FAIL, rc 1 — 28.P6.38b and 28.P6.38c"
+   }
+  ],
+  "restoreProof": "shasum -a 256 -c OK for src/release/enablement.ts, src/release/collect.ts, src/release/stages.ts, src/content-injection/types.ts, src/content-injection/packet.ts, scripts/smoke-enablement.ts, scripts/smoke-release.ts; smoke:enablement back to 101/0 and smoke:release back to 274/0, typecheck exit 0."
+ },
+ "disableabilityCensusAfterCorrection": {
+  "why": "The correction must not turn a safety rule into a blanket refusal. Re-measured with my own probe (tmp/wr28/fix56/census.ts) AFTER the fixes, calling the product's own evaluateRegionDisable / evaluateRouteDisable over every region and every route.",
+  "linear": "68 regions / 8 routes — scope 'global' ALLOWED 66/68 (97.1%), scope 'routes' at full blast radius ALLOWED 42/68, refused under BOTH scopes 2/68, single-route disable ALLOWED 8/8.",
+  "stripe": "1,014 regions / 20 routes — scope 'global' ALLOWED 996/1,014 (98.2%), scope 'routes' at full radius ALLOWED 97/1,014, refused under BOTH scopes 18/1,014, single-route disable ALLOWED 20/20.",
+  "agreement": "Identical to the independent verifier's pre-correction census, which is the point: the corrections widen DETECTION and narrow one ACCOUNTING claim; they change no refusal."
+ }
+}

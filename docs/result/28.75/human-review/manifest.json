@@ -1,0 +1,1387 @@
+{
+  "generatedAt": "2026-09-05T18:20:09.609683+00:00",
+  "wave": "28.75",
+  "excludedRuns": {
+    "2026-09-03T11-42-06-649Z": "seoultone.kr \u2014 INVALID. A shell pipeline swallowed a failed `pnpm reconstruct` (no `set -o pipefail`), so this run graded the PREVIOUS DAY's reconstruction against a freshly captured source. The 28.6 and 28.7 packs already exclude it; carried forward here unchanged."
+  },
+  "sites": {
+    "linear": {
+      "host": "linear.app",
+      "required": 1,
+      "pinnedRun": "2026-09-05T12-46-21-873Z",
+      "runsUsed": [
+        {
+          "runId": "2026-09-05T12-46-21-873Z",
+          "pairsContributed": 10,
+          "widths": [
+            390,
+            700,
+            1024,
+            1100,
+            1440
+          ],
+          "routes": [
+            "/",
+            "/pricing"
+          ],
+          "dir": "data/linear.app/responsive-qa/2026-09-05T12-46-21-873Z"
+        }
+      ],
+      "selectedCount": 10,
+      "measuredCount": 10,
+      "failedCount": 0,
+      "notSelectedMeasuredCount": 0,
+      "pairs": [
+        {
+          "route": "/",
+          "width": 390,
+          "runId": "2026-09-05T12-46-21-873Z",
+          "verdict": "BLOCKER",
+          "floorVerdict": "PASS",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "BLOCKER",
+              "channel": "offscreen-text-excess-chars",
+              "summary": "200 more characters than the source begin past the right edge (threshold 80)",
+              "value": 200,
+              "sourceValue": 427,
+              "threshold": 80
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "missing-text-ratio",
+              "summary": "2.29% of the source's visible text is missing from the clone (threshold 2.00%)",
+              "value": 0.0229,
+              "sourceValue": null,
+              "threshold": 0.02
+            },
+            {
+              "severity": "MINOR",
+              "channel": "overlap-excess-ratio",
+              "summary": "visible boxes overlap over 0.24% more of the viewport than the source's do (threshold 0.10%)",
+              "value": 0.0024,
+              "sourceValue": 0.01,
+              "threshold": 0.001
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "6.02% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 75% of it sits on source edges",
+              "value": 0.060224,
+              "sourceValue": null,
+              "threshold": 0.01
+            }
+          ],
+          "files": {
+            "source": "linear/shots/2026-09-05T12-46-21-873Z-root-390-01-linear-app-root-390-source.png",
+            "final": "linear/shots/2026-09-05T12-46-21-873Z-root-390-01-linear-app-root-390-final.png",
+            "diff": "linear/shots/2026-09-05T12-46-21-873Z-root-390-01-linear-app-root-390-diff.png",
+            "composite": "linear/shots/2026-09-05T12-46-21-873Z-root-390-01-linear-app-root-390-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              390,
+              5876
+            ],
+            "final": [
+              390,
+              5876
+            ],
+            "diff": [
+              390,
+              5876
+            ],
+            "composite": [
+              532,
+              3772
+            ]
+          }
+        },
+        {
+          "route": "/",
+          "width": 700,
+          "runId": "2026-09-05T12-46-21-873Z",
+          "verdict": "BLOCKER",
+          "floorVerdict": "MINOR",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "BLOCKER",
+              "channel": "blank-region-ratio",
+              "summary": "5 region(s) the source fills are empty in the clone, covering 164% of a viewport (threshold 25%): div/div/main/div[1]/div[29] (700\u00d7366 at y=8019, 41% of a viewport, absent, seen by dom+ink, source paint 43%/8 leaves \u2192 clone 0%/0, source ink 57.2% \u2192 clone ink 0.0%); div/div/main/div[1]/section[1]/div (644\u00d7302 at y=3620, 31% of a viewport, displaced, seen by dom, source paint 22%/3 leaves \u2192 clone 0%/0, source ink 6.6% \u2192 clone ink 7.1%); div/div/main/div[1]/section[2]/div (644\u00d7302 at y=4861, 31% of a viewport, displaced, seen by dom, source paint 21%/3 leaves \u2192 clone 0%/0, source ink 6.0% \u2192 clone ink 4.7%)",
+              "value": 1.6405,
+              "sourceValue": 10.6522,
+              "threshold": 0.25
+            },
+            {
+              "severity": "BLOCKER",
+              "channel": "footer-clipped",
+              "summary": "the footer extends past the viewport's right edge (clone max right 1390 > 700) while the source's does not",
+              "value": 1,
+              "sourceValue": 0,
+              "threshold": 1
+            },
+            {
+              "severity": "BLOCKER",
+              "channel": "missing-text-ratio",
+              "summary": "15.74% of the source's visible text is missing from the clone (threshold 10.00%)",
+              "value": 0.1574,
+              "sourceValue": null,
+              "threshold": 0.1
+            },
+            {
+              "severity": "BLOCKER",
+              "channel": "offscreen-text-excess-chars",
+              "summary": "1010 more characters than the source begin past the right edge (threshold 80)",
+              "value": 1010,
+              "sourceValue": 1419,
+              "threshold": 80
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "empty-band-excess-ratio",
+              "summary": "an empty vertical band covers 16.5% more of the page than the source's largest (threshold 12.5%)",
+              "value": 0.1649,
+              "sourceValue": 0.0359,
+              "threshold": 0.125
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "horizontal-overflow-excess-px",
+              "summary": "the clone scrolls 162px further horizontally than the source (threshold 16px)",
+              "value": 162,
+              "sourceValue": 0,
+              "threshold": 16
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "landmark-wide-element-excess",
+              "summary": "2 more box(es) inside the clone's header or footer are wider than 1.5\u00d7 the 700px viewport than in the source (widest 1282px)",
+              "value": 2,
+              "sourceValue": 1,
+              "threshold": 1
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "position-delta-p90-px",
+              "summary": "9 in 10 of the 311 on-viewport matched boxes land within 716px of their source edge and the rest are worse, up to 1040px (threshold 48px; left p90 714px, right p90 716px \u2014 these two move together on a displaced block and are ONE finding)",
+              "value": 716,
+              "sourceValue": null,
+              "threshold": 48
+            },
+            {
+              "severity": "MINOR",
+              "channel": "column-container-mode-delta",
+              "summary": "a matched container lays its children out as 1 row(s) of 6 where the source uses 1 row(s) of 7 (delta 1, threshold 1) \u2014 a different responsive layout mode",
+              "value": 1,
+              "sourceValue": 7,
+              "threshold": 1
+            },
+            {
+              "severity": "MINOR",
+              "channel": "overlap-excess-ratio",
+              "summary": "visible boxes overlap over 0.45% more of the viewport than the source's do (threshold 0.10%)",
+              "value": 0.0045,
+              "sourceValue": 0.0396,
+              "threshold": 0.001
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "27.41% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 17% of it sits on source edges",
+              "value": 0.274101,
+              "sourceValue": null,
+              "threshold": 0.01
+            }
+          ],
+          "files": {
+            "source": "linear/shots/2026-09-05T12-46-21-873Z-root-700-02-linear-app-root-700-source.png",
+            "final": "linear/shots/2026-09-05T12-46-21-873Z-root-700-02-linear-app-root-700-final.png",
+            "diff": "linear/shots/2026-09-05T12-46-21-873Z-root-700-02-linear-app-root-700-diff.png",
+            "composite": "linear/shots/2026-09-05T12-46-21-873Z-root-700-02-linear-app-root-700-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              700,
+              9587
+            ],
+            "final": [
+              862,
+              9960
+            ],
+            "diff": [
+              700,
+              9587
+            ],
+            "composite": [
+              619,
+              3884
+            ]
+          }
+        },
+        {
+          "route": "/",
+          "width": 1024,
+          "runId": "2026-09-05T12-46-21-873Z",
+          "verdict": "BLOCKER",
+          "floorVerdict": "PASS",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "BLOCKER",
+              "channel": "blank-region-ratio",
+              "summary": "1 region(s) the source fills are empty in the clone, covering 41% of a viewport (threshold 25%): div/div/main/div[1]/div[29] (1024\u00d7366 at y=8403, 41% of a viewport, absent, seen by dom+ink, source paint 41%/12 leaves \u2192 clone 0%/0, source ink 70.9% \u2192 clone ink 0.0%)",
+              "value": 0.4067,
+              "sourceValue": 11.2567,
+              "threshold": 0.25
+            },
+            {
+              "severity": "BLOCKER",
+              "channel": "footer-clipped",
+              "summary": "the footer extends past the viewport's right edge (clone max right 1390 > 1024) while the source's does not",
+              "value": 1,
+              "sourceValue": 0,
+              "threshold": 1
+            },
+            {
+              "severity": "BLOCKER",
+              "channel": "missing-text-ratio",
+              "summary": "12.11% of the source's visible text is missing from the clone (threshold 10.00%)",
+              "value": 0.1211,
+              "sourceValue": null,
+              "threshold": 0.1
+            },
+            {
+              "severity": "BLOCKER",
+              "channel": "offscreen-text-excess-chars",
+              "summary": "916 more characters than the source begin past the right edge (threshold 80)",
+              "value": 916,
+              "sourceValue": 600,
+              "threshold": 80
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "empty-band-excess-ratio",
+              "summary": "an empty vertical band covers 15.9% more of the page than the source's largest (threshold 12.5%)",
+              "value": 0.1589,
+              "sourceValue": 0.0419,
+              "threshold": 0.125
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "position-delta-p90-px",
+              "summary": "9 in 10 of the 529 on-viewport matched boxes land within 538px of their source edge and the rest are worse, up to 1040px (threshold 48px; left p90 538px, right p90 538px \u2014 these two move together on a displaced block and are ONE finding)",
+              "value": 538,
+              "sourceValue": null,
+              "threshold": 48
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "25.85% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 15% of it sits on source edges",
+              "value": 0.258498,
+              "sourceValue": null,
+              "threshold": 0.01
+            }
+          ],
+          "files": {
+            "source": "linear/shots/2026-09-05T12-46-21-873Z-root-1024-03-linear-app-root-1024-source.png",
+            "final": "linear/shots/2026-09-05T12-46-21-873Z-root-1024-03-linear-app-root-1024-final.png",
+            "diff": "linear/shots/2026-09-05T12-46-21-873Z-root-1024-03-linear-app-root-1024-diff.png",
+            "composite": "linear/shots/2026-09-05T12-46-21-873Z-root-1024-03-linear-app-root-1024-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              1024,
+              10131
+            ],
+            "final": [
+              1024,
+              9960
+            ],
+            "diff": [
+              1024,
+              9960
+            ],
+            "composite": [
+              782,
+              3755
+            ]
+          }
+        },
+        {
+          "route": "/",
+          "width": 1100,
+          "runId": "2026-09-05T12-46-21-873Z",
+          "verdict": "BLOCKER",
+          "floorVerdict": "PASS",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "BLOCKER",
+              "channel": "footer-clipped",
+              "summary": "the footer extends past the viewport's right edge (clone max right 1390 > 1100) while the source's does not",
+              "value": 1,
+              "sourceValue": 0,
+              "threshold": 1
+            },
+            {
+              "severity": "BLOCKER",
+              "channel": "offscreen-text-excess-chars",
+              "summary": "689 more characters than the source begin past the right edge (threshold 80)",
+              "value": 689,
+              "sourceValue": 499,
+              "threshold": 80
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "missing-text-ratio",
+              "summary": "5.56% of the source's visible text is missing from the clone (threshold 2.00%)",
+              "value": 0.0556,
+              "sourceValue": null,
+              "threshold": 0.02
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "position-delta-p90-px",
+              "summary": "9 in 10 of the 583 on-viewport matched boxes land within 300px of their source edge and the rest are worse, up to 1100px (threshold 48px; left p90 296px, right p90 300px \u2014 these two move together on a displaced block and are ONE finding)",
+              "value": 300,
+              "sourceValue": null,
+              "threshold": 48
+            },
+            {
+              "severity": "MINOR",
+              "channel": "empty-band-excess-ratio",
+              "summary": "an empty vertical band covers 4.7% more of the page than the source's largest (threshold 2.0%)",
+              "value": 0.0474,
+              "sourceValue": 0.0297,
+              "threshold": 0.02
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "24.96% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 16% of it sits on source edges",
+              "value": 0.24956,
+              "sourceValue": null,
+              "threshold": 0.01
+            }
+          ],
+          "files": {
+            "source": "linear/shots/2026-09-05T12-46-21-873Z-root-1100-04-linear-app-root-1100-source.png",
+            "final": "linear/shots/2026-09-05T12-46-21-873Z-root-1100-04-linear-app-root-1100-final.png",
+            "diff": "linear/shots/2026-09-05T12-46-21-873Z-root-1100-04-linear-app-root-1100-diff.png",
+            "composite": "linear/shots/2026-09-05T12-46-21-873Z-root-1100-04-linear-app-root-1100-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              1100,
+              9710
+            ],
+            "final": [
+              1100,
+              9960
+            ],
+            "diff": [
+              1100,
+              9710
+            ],
+            "composite": [
+              850,
+              3757
+            ]
+          }
+        },
+        {
+          "route": "/",
+          "width": 1440,
+          "runId": "2026-09-05T12-46-21-873Z",
+          "verdict": "MAJOR",
+          "floorVerdict": "PASS",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "MAJOR",
+              "channel": "missing-text-ratio",
+              "summary": "4.69% of the source's visible text is missing from the clone (threshold 2.00%)",
+              "value": 0.0469,
+              "sourceValue": null,
+              "threshold": 0.02
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "position-delta-p90-px",
+              "summary": "9 in 10 of the 651 on-viewport matched boxes land within 63px of their source edge and the rest are worse, up to 1286px (threshold 48px; left p90 63px, right p90 63px \u2014 these two move together on a displaced block and are ONE finding)",
+              "value": 63,
+              "sourceValue": null,
+              "threshold": 48
+            },
+            {
+              "severity": "MINOR",
+              "channel": "blank-region-ratio",
+              "summary": "1 region(s) the source fills are empty in the clone, covering 3% of a viewport (threshold 2%): div/div/main/div[1]/section[2]/div[1]/div[1]/div/div[2]/div/div/div/div/div/div[1]/div[3] (386\u00d7115 at y=5823, 3% of a viewport, absent, seen by dom+ink, source paint 73%/9 leaves \u2192 clone 0%/0, source ink 11.7% \u2192 clone ink 0.0%)",
+              "value": 0.0343,
+              "sourceValue": 11.0667,
+              "threshold": 0.02
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "7.92% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 34% of it sits on source edges",
+              "value": 0.079185,
+              "sourceValue": null,
+              "threshold": 0.01
+            }
+          ],
+          "files": {
+            "source": "linear/shots/2026-09-05T12-46-21-873Z-root-1440-05-linear-app-root-1440-source.png",
+            "final": "linear/shots/2026-09-05T12-46-21-873Z-root-1440-05-linear-app-root-1440-final.png",
+            "diff": "linear/shots/2026-09-05T12-46-21-873Z-root-1440-05-linear-app-root-1440-diff.png",
+            "composite": "linear/shots/2026-09-05T12-46-21-873Z-root-1440-05-linear-app-root-1440-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              1440,
+              9960
+            ],
+            "final": [
+              1440,
+              9960
+            ],
+            "diff": [
+              1440,
+              9960
+            ],
+            "composite": [
+              1094,
+              3750
+            ]
+          }
+        },
+        {
+          "route": "/pricing",
+          "width": 390,
+          "runId": "2026-09-05T12-46-21-873Z",
+          "verdict": "MINOR",
+          "floorVerdict": "PASS",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "MINOR",
+              "channel": "missing-text-ratio",
+              "summary": "0.41% of the source's visible text is missing from the clone (threshold 0.01%)",
+              "value": 0.0041,
+              "sourceValue": null,
+              "threshold": 0.0001
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "3.58% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 93% of it sits on source edges",
+              "value": 0.035802,
+              "sourceValue": null,
+              "threshold": 0.01
+            }
+          ],
+          "files": {
+            "source": "linear/shots/2026-09-05T12-46-21-873Z-pricing-390-06-linear-app-pricing-390-source.png",
+            "final": "linear/shots/2026-09-05T12-46-21-873Z-pricing-390-06-linear-app-pricing-390-final.png",
+            "diff": "linear/shots/2026-09-05T12-46-21-873Z-pricing-390-06-linear-app-pricing-390-diff.png",
+            "composite": "linear/shots/2026-09-05T12-46-21-873Z-pricing-390-06-linear-app-pricing-390-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              390,
+              7714
+            ],
+            "final": [
+              390,
+              7714
+            ],
+            "diff": [
+              390,
+              7714
+            ],
+            "composite": [
+              418,
+              3771
+            ]
+          }
+        },
+        {
+          "route": "/pricing",
+          "width": 700,
+          "runId": "2026-09-05T12-46-21-873Z",
+          "verdict": "MAJOR",
+          "floorVerdict": "PASS",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "MAJOR",
+              "channel": "column-container-mode-delta",
+              "summary": "a matched container lays its children out as 3 row(s) of 2 where the source uses 2 row(s) of 4 (delta 2, threshold 2) \u2014 a different responsive layout mode",
+              "value": 2,
+              "sourceValue": 4,
+              "threshold": 2
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "position-delta-p90-px",
+              "summary": "9 in 10 of the 168 on-viewport matched boxes land within 320px of their source edge and the rest are worse, up to 507px (threshold 48px; left p90 320px, right p90 320px \u2014 these two move together on a displaced block and are ONE finding)",
+              "value": 320,
+              "sourceValue": null,
+              "threshold": 48
+            },
+            {
+              "severity": "MINOR",
+              "channel": "missing-text-ratio",
+              "summary": "1.01% of the source's visible text is missing from the clone (threshold 0.01%)",
+              "value": 0.0101,
+              "sourceValue": null,
+              "threshold": 0.0001
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "6.19% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 38% of it sits on source edges",
+              "value": 0.061947,
+              "sourceValue": null,
+              "threshold": 0.01
+            }
+          ],
+          "files": {
+            "source": "linear/shots/2026-09-05T12-46-21-873Z-pricing-700-07-linear-app-pricing-700-source.png",
+            "final": "linear/shots/2026-09-05T12-46-21-873Z-pricing-700-07-linear-app-pricing-700-final.png",
+            "diff": "linear/shots/2026-09-05T12-46-21-873Z-pricing-700-07-linear-app-pricing-700-diff.png",
+            "composite": "linear/shots/2026-09-05T12-46-21-873Z-pricing-700-07-linear-app-pricing-700-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              700,
+              7795
+            ],
+            "final": [
+              700,
+              7714
+            ],
+            "diff": [
+              700,
+              7714
+            ],
+            "composite": [
+              700,
+              3750
+            ]
+          }
+        },
+        {
+          "route": "/pricing",
+          "width": 1024,
+          "runId": "2026-09-05T12-46-21-873Z",
+          "verdict": "BLOCKER",
+          "floorVerdict": "PASS",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "BLOCKER",
+              "channel": "blank-region-ratio",
+              "summary": "5 region(s) the source fills are empty in the clone, covering 30% of a viewport (threshold 25%): div/div/footer/div/div/div[2] (242\u00d7282 at y=6305, 7% of a viewport, absent, seen by dom+ink, source paint 34%/9 leaves \u2192 clone 0%/0, source ink 4.6% \u2192 clone ink 0.0%); div/div/footer/div/div/div[3] (242\u00d7252 at y=6305, 7% of a viewport, absent, seen by dom+ink, source paint 25%/8 leaves \u2192 clone 0%/0, source ink 3.2% \u2192 clone ink 0.0%); div/div/footer/div/div/div[4] (242\u00d7251 at y=6635, 7% of a viewport, absent, seen by ink, source paint 32%/8 leaves \u2192 clone 6%/1, source ink 4.3% \u2192 clone ink 0.1%)",
+              "value": 0.2986,
+              "sourceValue": 7.7667,
+              "threshold": 0.25
+            },
+            {
+              "severity": "BLOCKER",
+              "channel": "nav-link-ratio",
+              "summary": "the clone shows 3 of the source's 6 visible header/nav links (50%, threshold 50%)",
+              "value": 0.5,
+              "sourceValue": 6,
+              "threshold": 0.5
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "column-container-mode-delta",
+              "summary": "a matched container lays its children out as 3 row(s) of 2 where the source uses 2 row(s) of 4 (delta 2, threshold 2) \u2014 a different responsive layout mode",
+              "value": 2,
+              "sourceValue": 4,
+              "threshold": 2
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "column-mode-delta",
+              "summary": "the clone's widest row holds 2 items where the source's holds 7 (delta 5, threshold 2) \u2014 a different responsive layout mode",
+              "value": 5,
+              "sourceValue": 7,
+              "threshold": 2
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "position-delta-p90-px",
+              "summary": "9 in 10 of the 168 on-viewport matched boxes land within 551px of their source edge and the rest are worse, up to 930px (threshold 48px; left p90 551px, right p90 551px \u2014 these two move together on a displaced block and are ONE finding)",
+              "value": 551,
+              "sourceValue": null,
+              "threshold": 48
+            },
+            {
+              "severity": "MINOR",
+              "channel": "empty-band-excess-ratio",
+              "summary": "an empty vertical band covers 7.8% more of the page than the source's largest (threshold 2.0%)",
+              "value": 0.0783,
+              "sourceValue": 0.0389,
+              "threshold": 0.02
+            },
+            {
+              "severity": "MINOR",
+              "channel": "missing-text-ratio",
+              "summary": "0.99% of the source's visible text is missing from the clone (threshold 0.01%)",
+              "value": 0.0099,
+              "sourceValue": null,
+              "threshold": 0.0001
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "6.02% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 31% of it sits on source edges",
+              "value": 0.060226,
+              "sourceValue": null,
+              "threshold": 0.01
+            },
+            {
+              "severity": "MINOR",
+              "channel": "scroll-height-ratio-high",
+              "summary": "the clone's page is 1.10\u00d7 the source's height (threshold 1.1\u00d7) \u2014 content that should sit side by side is stacked",
+              "value": 1.1036,
+              "sourceValue": 6990,
+              "threshold": 1.1
+            }
+          ],
+          "files": {
+            "source": "linear/shots/2026-09-05T12-46-21-873Z-pricing-1024-08-linear-app-pricing-1024-source.png",
+            "final": "linear/shots/2026-09-05T12-46-21-873Z-pricing-1024-08-linear-app-pricing-1024-final.png",
+            "diff": "linear/shots/2026-09-05T12-46-21-873Z-pricing-1024-08-linear-app-pricing-1024-diff.png",
+            "composite": "linear/shots/2026-09-05T12-46-21-873Z-pricing-1024-08-linear-app-pricing-1024-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              1024,
+              6990
+            ],
+            "final": [
+              1024,
+              7714
+            ],
+            "diff": [
+              1024,
+              6990
+            ],
+            "composite": [
+              1010,
+              3754
+            ]
+          }
+        },
+        {
+          "route": "/pricing",
+          "width": 1100,
+          "runId": "2026-09-05T12-46-21-873Z",
+          "verdict": "BLOCKER",
+          "floorVerdict": "PASS",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "BLOCKER",
+              "channel": "footer-clipped",
+              "summary": "the footer extends past the viewport's right edge (clone max right 1390 > 1100) while the source's does not",
+              "value": 1,
+              "sourceValue": 0,
+              "threshold": 1
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "offscreen-text-excess-chars",
+              "summary": "70 more characters than the source begin past the right edge (threshold 10)",
+              "value": 70,
+              "sourceValue": 0,
+              "threshold": 10
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "position-delta-p90-px",
+              "summary": "9 in 10 of the 204 on-viewport matched boxes land within 212px of their source edge and the rest are worse, up to 302px (threshold 48px; left p90 212px, right p90 212px \u2014 these two move together on a displaced block and are ONE finding)",
+              "value": 212,
+              "sourceValue": null,
+              "threshold": 48
+            },
+            {
+              "severity": "MINOR",
+              "channel": "missing-text-ratio",
+              "summary": "0.29% of the source's visible text is missing from the clone (threshold 0.01%)",
+              "value": 0.0029,
+              "sourceValue": null,
+              "threshold": 0.0001
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "5.51% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 43% of it sits on source edges",
+              "value": 0.055146,
+              "sourceValue": null,
+              "threshold": 0.01
+            }
+          ],
+          "files": {
+            "source": "linear/shots/2026-09-05T12-46-21-873Z-pricing-1100-09-linear-app-pricing-1100-source.png",
+            "final": "linear/shots/2026-09-05T12-46-21-873Z-pricing-1100-09-linear-app-pricing-1100-final.png",
+            "diff": "linear/shots/2026-09-05T12-46-21-873Z-pricing-1100-09-linear-app-pricing-1100-diff.png",
+            "composite": "linear/shots/2026-09-05T12-46-21-873Z-pricing-1100-09-linear-app-pricing-1100-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              1100,
+              6323
+            ],
+            "final": [
+              1100,
+              6360
+            ],
+            "diff": [
+              1100,
+              6323
+            ],
+            "composite": [
+              1300,
+              3755
+            ]
+          }
+        },
+        {
+          "route": "/pricing",
+          "width": 1440,
+          "runId": "2026-09-05T12-46-21-873Z",
+          "verdict": "MINOR",
+          "floorVerdict": "PASS",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "MINOR",
+              "channel": "missing-text-ratio",
+              "summary": "0.29% of the source's visible text is missing from the clone (threshold 0.01%)",
+              "value": 0.0029,
+              "sourceValue": null,
+              "threshold": 0.0001
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "1.52% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 87% of it sits on source edges",
+              "value": 0.015184,
+              "sourceValue": null,
+              "threshold": 0.01
+            }
+          ],
+          "files": {
+            "source": "linear/shots/2026-09-05T12-46-21-873Z-pricing-1440-10-linear-app-pricing-1440-source.png",
+            "final": "linear/shots/2026-09-05T12-46-21-873Z-pricing-1440-10-linear-app-pricing-1440-final.png",
+            "diff": "linear/shots/2026-09-05T12-46-21-873Z-pricing-1440-10-linear-app-pricing-1440-diff.png",
+            "composite": "linear/shots/2026-09-05T12-46-21-873Z-pricing-1440-10-linear-app-pricing-1440-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              1440,
+              6360
+            ],
+            "final": [
+              1440,
+              6360
+            ],
+            "diff": [
+              1440,
+              6360
+            ],
+            "composite": [
+              1684,
+              3753
+            ]
+          }
+        }
+      ]
+    },
+    "hobbang": {
+      "host": "hobbang.net",
+      "required": 1,
+      "pinnedRun": "2026-09-05T11-13-31-951Z",
+      "runsUsed": [
+        {
+          "runId": "2026-09-05T11-13-31-951Z",
+          "pairsContributed": 3,
+          "widths": [
+            390,
+            1100,
+            1440
+          ],
+          "routes": [
+            "/"
+          ],
+          "dir": "data/hobbang.net/responsive-qa/2026-09-05T11-13-31-951Z"
+        }
+      ],
+      "selectedCount": 3,
+      "measuredCount": 3,
+      "failedCount": 0,
+      "notSelectedMeasuredCount": 0,
+      "pairs": [
+        {
+          "route": "/",
+          "width": 390,
+          "runId": "2026-09-05T11-13-31-951Z",
+          "verdict": "MINOR",
+          "floorVerdict": "PASS",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "MINOR",
+              "channel": "overlap-excess-ratio",
+              "summary": "visible boxes overlap over 1.81% more of the viewport than the source's do (threshold 0.10%)",
+              "value": 0.0181,
+              "sourceValue": 0.7407,
+              "threshold": 0.001
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "8.89% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 83% of it sits on source edges",
+              "value": 0.088871,
+              "sourceValue": null,
+              "threshold": 0.01
+            }
+          ],
+          "files": {
+            "source": "hobbang/shots/2026-09-05T11-13-31-951Z-root-390-01-hobbang-net-root-390-source.png",
+            "final": "hobbang/shots/2026-09-05T11-13-31-951Z-root-390-01-hobbang-net-root-390-final.png",
+            "diff": "hobbang/shots/2026-09-05T11-13-31-951Z-root-390-01-hobbang-net-root-390-diff.png",
+            "composite": "hobbang/shots/2026-09-05T11-13-31-951Z-root-390-01-hobbang-net-root-390-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              390,
+              17167
+            ],
+            "final": [
+              390,
+              17167
+            ],
+            "diff": [
+              390,
+              17167
+            ],
+            "composite": [
+              320,
+              3831
+            ]
+          }
+        },
+        {
+          "route": "/",
+          "width": 1100,
+          "runId": "2026-09-05T11-13-31-951Z",
+          "verdict": "MAJOR",
+          "floorVerdict": "PASS",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "MAJOR",
+              "channel": "overlap-excess-ratio",
+              "summary": "visible boxes overlap over 2.42% more of the viewport than the source's do (threshold 2.00%)",
+              "value": 0.0242,
+              "sourceValue": 0.2335,
+              "threshold": 0.02
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "25.11% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 26% of it sits on source edges",
+              "value": 0.251126,
+              "sourceValue": null,
+              "threshold": 0.01
+            },
+            {
+              "severity": "MINOR",
+              "channel": "position-delta-p90-px",
+              "summary": "9 in 10 of the 449 on-viewport matched boxes land within 13px of their source edge and the rest are worse, up to 31px (threshold 8px; left p90 3px, right p90 13px \u2014 these two move together on a displaced block and are ONE finding)",
+              "value": 13,
+              "sourceValue": null,
+              "threshold": 8
+            }
+          ],
+          "files": {
+            "source": "hobbang/shots/2026-09-05T11-13-31-951Z-root-1100-02-hobbang-net-root-1100-source.png",
+            "final": "hobbang/shots/2026-09-05T11-13-31-951Z-root-1100-02-hobbang-net-root-1100-final.png",
+            "diff": "hobbang/shots/2026-09-05T11-13-31-951Z-root-1100-02-hobbang-net-root-1100-diff.png",
+            "composite": "hobbang/shots/2026-09-05T11-13-31-951Z-root-1100-02-hobbang-net-root-1100-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              1100,
+              10928
+            ],
+            "final": [
+              1100,
+              10863
+            ],
+            "diff": [
+              1100,
+              10863
+            ],
+            "composite": [
+              778,
+              3750
+            ]
+          }
+        },
+        {
+          "route": "/",
+          "width": 1440,
+          "runId": "2026-09-05T11-13-31-951Z",
+          "verdict": "MINOR",
+          "floorVerdict": "PASS",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "MINOR",
+              "channel": "overlap-excess-ratio",
+              "summary": "visible boxes overlap over 1.89% more of the viewport than the source's do (threshold 0.10%)",
+              "value": 0.0189,
+              "sourceValue": 0.1886,
+              "threshold": 0.001
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "5.00% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 67% of it sits on source edges",
+              "value": 0.050004,
+              "sourceValue": null,
+              "threshold": 0.01
+            }
+          ],
+          "files": {
+            "source": "hobbang/shots/2026-09-05T11-13-31-951Z-root-1440-03-hobbang-net-root-1440-source.png",
+            "final": "hobbang/shots/2026-09-05T11-13-31-951Z-root-1440-03-hobbang-net-root-1440-final.png",
+            "diff": "hobbang/shots/2026-09-05T11-13-31-951Z-root-1440-03-hobbang-net-root-1440-diff.png",
+            "composite": "hobbang/shots/2026-09-05T11-13-31-951Z-root-1440-03-hobbang-net-root-1440-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              1440,
+              10863
+            ],
+            "final": [
+              1440,
+              10863
+            ],
+            "diff": [
+              1440,
+              10863
+            ],
+            "composite": [
+              1008,
+              3752
+            ]
+          }
+        }
+      ]
+    },
+    "severance": {
+      "host": "gs.severance.healthcare",
+      "required": 1,
+      "pinnedRun": "2026-09-05T10-23-24-422Z",
+      "runsUsed": [
+        {
+          "runId": "2026-09-05T10-23-24-422Z",
+          "pairsContributed": 3,
+          "widths": [
+            390,
+            1100,
+            1440
+          ],
+          "routes": [
+            "/gs/index.do"
+          ],
+          "dir": "data/gs.severance.healthcare/responsive-qa/2026-09-05T10-23-24-422Z"
+        }
+      ],
+      "selectedCount": 3,
+      "measuredCount": 3,
+      "failedCount": 0,
+      "notSelectedMeasuredCount": 0,
+      "pairs": [
+        {
+          "route": "/gs/index.do",
+          "width": 390,
+          "runId": "2026-09-05T10-23-24-422Z",
+          "verdict": "MAJOR",
+          "floorVerdict": "MAJOR",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "MAJOR",
+              "channel": "position-delta-p90-px",
+              "summary": "9 in 10 of the 81 on-viewport matched boxes land within 357px of their source edge and the rest are worse, up to 703px (threshold 48px; left p90 357px, right p90 357px \u2014 these two move together on a displaced block and are ONE finding)",
+              "value": 357,
+              "sourceValue": null,
+              "threshold": 48
+            },
+            {
+              "severity": "MINOR",
+              "channel": "overlap-excess-ratio",
+              "summary": "visible boxes overlap over 1.56% more of the viewport than the source's do (threshold 0.10%)",
+              "value": 0.0156,
+              "sourceValue": 0.3207,
+              "threshold": 0.001
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "6.12% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 42% of it sits on source edges",
+              "value": 0.061163,
+              "sourceValue": null,
+              "threshold": 0.01
+            }
+          ],
+          "files": {
+            "source": "severance/shots/2026-09-05T10-23-24-422Z-gs_index_do-390-01-gs-severance-healthcare-gs-index-do-390-source.png",
+            "final": "severance/shots/2026-09-05T10-23-24-422Z-gs_index_do-390-01-gs-severance-healthcare-gs-index-do-390-final.png",
+            "diff": "severance/shots/2026-09-05T10-23-24-422Z-gs_index_do-390-01-gs-severance-healthcare-gs-index-do-390-diff.png",
+            "composite": "severance/shots/2026-09-05T10-23-24-422Z-gs_index_do-390-01-gs-severance-healthcare-gs-index-do-390-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              390,
+              3925
+            ],
+            "final": [
+              390,
+              3925
+            ],
+            "diff": [
+              390,
+              3925
+            ],
+            "composite": [
+              770,
+              3756
+            ]
+          }
+        },
+        {
+          "route": "/gs/index.do",
+          "width": 1100,
+          "runId": "2026-09-05T10-23-24-422Z",
+          "verdict": "MAJOR",
+          "floorVerdict": "MINOR",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "MAJOR",
+              "channel": "pixel-uncompared-band-ink-ratio",
+              "summary": "the two captures are 1280px and 1100px wide, so a 180px band was never pixel-compared, and it carries 339321 ink pixels \u2014 11.42% of the compared area (threshold 1%). The pixel verdict on this pair covers 85.9% of the larger capture, not the page",
+              "value": 0.114249,
+              "sourceValue": 0.859375,
+              "threshold": 0.01
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "position-delta-p90-px",
+              "summary": "9 in 10 of the 99 on-viewport matched boxes land within 430px of their source edge and the rest are worse, up to 432px (threshold 48px; left p90 430px, right p90 430px \u2014 these two move together on a displaced block and are ONE finding)",
+              "value": 430,
+              "sourceValue": null,
+              "threshold": 48
+            },
+            {
+              "severity": "MINOR",
+              "channel": "overlap-excess-ratio",
+              "summary": "visible boxes overlap over 0.16% more of the viewport than the source's do (threshold 0.10%)",
+              "value": 0.0016,
+              "sourceValue": 0.2105,
+              "threshold": 0.001
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "52.42% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 28% of it sits on source edges",
+              "value": 0.524212,
+              "sourceValue": null,
+              "threshold": 0.01
+            }
+          ],
+          "files": {
+            "source": "severance/shots/2026-09-05T10-23-24-422Z-gs_index_do-1100-02-gs-severance-healthcare-gs-index-do-1100-source.png",
+            "final": "severance/shots/2026-09-05T10-23-24-422Z-gs_index_do-1100-02-gs-severance-healthcare-gs-index-do-1100-final.png",
+            "diff": "severance/shots/2026-09-05T10-23-24-422Z-gs_index_do-1100-02-gs-severance-healthcare-gs-index-do-1100-diff.png",
+            "composite": "severance/shots/2026-09-05T10-23-24-422Z-gs_index_do-1100-02-gs-severance-healthcare-gs-index-do-1100-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              1280,
+              2700
+            ],
+            "final": [
+              1100,
+              2700
+            ],
+            "diff": [
+              1100,
+              2700
+            ],
+            "composite": [
+              2434,
+              2910
+            ]
+          }
+        },
+        {
+          "route": "/gs/index.do",
+          "width": 1440,
+          "runId": "2026-09-05T10-23-24-422Z",
+          "verdict": "MAJOR",
+          "floorVerdict": "MINOR",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "MAJOR",
+              "channel": "position-delta-p90-px",
+              "summary": "9 in 10 of the 110 on-viewport matched boxes land within 510px of their source edge and the rest are worse, up to 512px (threshold 48px; left p90 510px, right p90 510px \u2014 these two move together on a displaced block and are ONE finding)",
+              "value": 510,
+              "sourceValue": null,
+              "threshold": 48
+            },
+            {
+              "severity": "MINOR",
+              "channel": "overlap-excess-ratio",
+              "summary": "visible boxes overlap over 0.12% more of the viewport than the source's do (threshold 0.10%)",
+              "value": 0.0012,
+              "sourceValue": 0.1616,
+              "threshold": 0.001
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "10.81% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 28% of it sits on source edges",
+              "value": 0.108077,
+              "sourceValue": null,
+              "threshold": 0.01
+            }
+          ],
+          "files": {
+            "source": "severance/shots/2026-09-05T10-23-24-422Z-gs_index_do-1440-03-gs-severance-healthcare-gs-index-do-1440-source.png",
+            "final": "severance/shots/2026-09-05T10-23-24-422Z-gs_index_do-1440-03-gs-severance-healthcare-gs-index-do-1440-final.png",
+            "diff": "severance/shots/2026-09-05T10-23-24-422Z-gs_index_do-1440-03-gs-severance-healthcare-gs-index-do-1440-diff.png",
+            "composite": "severance/shots/2026-09-05T10-23-24-422Z-gs_index_do-1440-03-gs-severance-healthcare-gs-index-do-1440-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              1440,
+              2700
+            ],
+            "final": [
+              1440,
+              2700
+            ],
+            "diff": [
+              1440,
+              2700
+            ],
+            "composite": [
+              2934,
+              2853
+            ]
+          }
+        }
+      ]
+    },
+    "seoultone": {
+      "host": "seoultone.kr",
+      "required": 1,
+      "pinnedRun": "2026-09-05T18-17-56-681Z",
+      "runsUsed": [
+        {
+          "runId": "2026-09-05T18-17-56-681Z",
+          "pairsContributed": 2,
+          "widths": [
+            390,
+            1440
+          ],
+          "routes": [
+            "/"
+          ],
+          "dir": "data/seoultone.kr/responsive-qa/2026-09-05T18-17-56-681Z"
+        }
+      ],
+      "selectedCount": 2,
+      "measuredCount": 2,
+      "failedCount": 0,
+      "notSelectedMeasuredCount": 0,
+      "pairs": [
+        {
+          "route": "/",
+          "width": 390,
+          "runId": "2026-09-05T18-17-56-681Z",
+          "verdict": "BLOCKER",
+          "floorVerdict": "MINOR",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "BLOCKER",
+              "channel": "overlap-excess-ratio",
+              "summary": "visible boxes overlap over 31.73% more of the viewport than the source's do (threshold 10.00%)",
+              "value": 0.3173,
+              "sourceValue": 2.1991,
+              "threshold": 0.1
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "column-container-mode-delta",
+              "summary": "a matched container lays its children out as 1 row(s) of 5 where the source uses 1 row(s) of 3 (delta 2, threshold 2) \u2014 a different responsive layout mode",
+              "value": 2,
+              "sourceValue": 3,
+              "threshold": 2
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "47.42% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 30% of it sits on source edges",
+              "value": 0.47416,
+              "sourceValue": null,
+              "threshold": 0.01
+            },
+            {
+              "severity": "MINOR",
+              "channel": "position-delta-p90-px",
+              "summary": "9 in 10 of the 93 on-viewport matched boxes land within 13px of their source edge and the rest are worse, up to 525px (threshold 8px; left p90 11px, right p90 13px \u2014 these two move together on a displaced block and are ONE finding)",
+              "value": 13,
+              "sourceValue": null,
+              "threshold": 8
+            }
+          ],
+          "files": {
+            "source": "seoultone/shots/2026-09-05T18-17-56-681Z-root-390-01-seoultone-kr-root-390-source.png",
+            "final": "seoultone/shots/2026-09-05T18-17-56-681Z-root-390-01-seoultone-kr-root-390-final.png",
+            "diff": "seoultone/shots/2026-09-05T18-17-56-681Z-root-390-01-seoultone-kr-root-390-diff.png",
+            "composite": "seoultone/shots/2026-09-05T18-17-56-681Z-root-390-01-seoultone-kr-root-390-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              390,
+              5679
+            ],
+            "final": [
+              390,
+              5632
+            ],
+            "diff": [
+              390,
+              5632
+            ],
+            "composite": [
+              548,
+              3767
+            ]
+          }
+        },
+        {
+          "route": "/",
+          "width": 1440,
+          "runId": "2026-09-05T18-17-56-681Z",
+          "verdict": "BLOCKER",
+          "floorVerdict": "PASS",
+          "failed": false,
+          "error": "",
+          "findings": [
+            {
+              "severity": "BLOCKER",
+              "channel": "blank-region-ratio",
+              "summary": "2 region(s) the source fills are empty in the clone, covering 58% of a viewport (threshold 25%): div/footer (1440\u00d7401 at y=3425, 45% of a viewport, displaced, seen by ink, source paint 12%/17 leaves \u2192 clone 12%/17, source ink 47.2% \u2192 clone ink 3.3%); div/header (1440\u00d7118 at y=0, 13% of a viewport, displaced, seen by ink, source paint 22%/10 leaves \u2192 clone 19%/10, source ink 38.0% \u2192 clone ink 4.3%)",
+              "value": 0.5767,
+              "sourceValue": 4.2511,
+              "threshold": 0.25
+            },
+            {
+              "severity": "BLOCKER",
+              "channel": "overlap-excess-ratio",
+              "summary": "visible boxes overlap over 18.27% more of the viewport than the source's do (threshold 10.00%)",
+              "value": 0.1827,
+              "sourceValue": 1.2865,
+              "threshold": 0.1
+            },
+            {
+              "severity": "MAJOR",
+              "channel": "column-container-mode-delta",
+              "summary": "a matched container lays its children out as 1 row(s) of 5 where the source uses 1 row(s) of 3 (delta 2, threshold 2) \u2014 a different responsive layout mode",
+              "value": 2,
+              "sourceValue": 3,
+              "threshold": 2
+            },
+            {
+              "severity": "MINOR",
+              "channel": "pixel-residual-difference-ratio",
+              "summary": "27.03% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 18% of it sits on source edges",
+              "value": 0.270297,
+              "sourceValue": null,
+              "threshold": 0.01
+            },
+            {
+              "severity": "MINOR",
+              "channel": "position-delta-p90-px",
+              "summary": "9 in 10 of the 145 on-viewport matched boxes land within 11px of their source edge and the rest are worse, up to 708px (threshold 8px; left p90 10px, right p90 11px \u2014 these two move together on a displaced block and are ONE finding)",
+              "value": 11,
+              "sourceValue": null,
+              "threshold": 8
+            }
+          ],
+          "files": {
+            "source": "seoultone/shots/2026-09-05T18-17-56-681Z-root-1440-02-seoultone-kr-root-1440-source.png",
+            "final": "seoultone/shots/2026-09-05T18-17-56-681Z-root-1440-02-seoultone-kr-root-1440-final.png",
+            "diff": "seoultone/shots/2026-09-05T18-17-56-681Z-root-1440-02-seoultone-kr-root-1440-diff.png",
+            "composite": "seoultone/shots/2026-09-05T18-17-56-681Z-root-1440-02-seoultone-kr-root-1440-composite.png"
+          },
+          "actualDimensions": {
+            "source": [
+              1440,
+              4892
+            ],
+            "final": [
+              1440,
+              4892
+            ],
+            "diff": [
+              1440,
+              4892
+            ],
+            "composite": [
+              2174,
+              3754
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "contactSheetChoice": "Each selected site's own run-level contact-sheet.png is copied to <slug>/contact-sheet.png; the top-level contact-sheet.png is a copy of the largest one \u2014 linear.app (3845264 bytes). Same policy as the 28.6/28.7 packs.",
+  "widthMismatchPairs": 2
+}

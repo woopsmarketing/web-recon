@@ -1,0 +1,303 @@
+{
+  "schema": "task285b-build-customprops-v1",
+  "producedAt": "2026-08-29",
+  "filesChanged": [
+    {
+      "path": "src/observer/types.ts",
+      "change": "ADDITIVE: MAX_ROOT_CUSTOM_PROPERTIES / ROOT_CUSTOM_PROPERTY_VALUE_MAX_LEN constants (after LAYOUT_RULE_VALUE_MAX_LEN, ~:486); RootCustomPropertySchema + RootCustomPropertiesSchema (before ViewportObservationSchema); ViewportObservationSchema.customProperties optional; ObservedViewport.customProperties optional. Whitelist entries added by the other builder untouched."
+    },
+    {
+      "path": "src/observer/collect-dom.ts",
+      "change": "CollectConfig.maxRootCustomProperties / rootCustomPropertyValueMaxLen; RawRootCustomProperty + RawRootCustomProperties types; RawCollectResult.customProperties (required); subtree-mode early return emits the empty record; the harvest itself sits after the @font-face URL loop and before the metadata block."
+    },
+    {
+      "path": "src/observer/observe-page.ts",
+      "change": "COLLECT_CONFIG carries both caps; observeViewport attaches raw.customProperties to the returned ObservedViewport (per viewport, never merged)."
+    },
+    {
+      "path": "src/observer/store.ts",
+      "change": "saveViewport spreads customProperties into the ViewportObservation it returns; PageObservationSchema.parse validates it on write and read."
+    },
+    {
+      "path": "src/sitespec/types.ts",
+      "change": "imports RootCustomPropertiesSchema; ViewportPageSpecSchema.customProperties optional."
+    },
+    {
+      "path": "src/sitespec/compile-viewport.ts",
+      "change": "CompileViewportInput.customProperties optional; carried verbatim onto the emitted ViewportPageSpec."
+    },
+    {
+      "path": "src/sitespec/compile-page.ts",
+      "change": "passes observation.viewports[viewportId].customProperties into compileViewport when present."
+    },
+    {
+      "path": "src/reconstruction/style-generator.ts",
+      "change": "NEW emitter section after generateStylesheet: CUSTOM_PROPERTY_NAME / SCOPE_ID shapes, isSafeCustomPropertyName(), CustomPropertyScope, GeneratedCustomProperties, generateCustomPropertyCss(). Reuses the existing isSafeCssValue for values."
+    },
+    {
+      "path": "src/reconstruction/plan-reconstruction.ts",
+      "change": "ReconstructionPlan.customProperties; scopes built from routes.usedPageIds x {desktop,mobile} just before the layout-rule section; emitted into the plan alongside styles/pseudoStyles."
+    },
+    {
+      "path": "src/reconstruction/generate-app.ts",
+      "change": "ONE additive line in the baseStylesheet assembly (~:218) — the custom-property CSS goes in right after the header comment, before plan.styles.css. The layout builder's truth-check wiring and counters were not touched."
+    },
+    {
+      "path": "scripts/smoke-custom-properties.ts",
+      "change": "NEW proof suite."
+    }
+  ],
+  "storage": {
+    "choice": "embedded optional field on ViewportObservationSchema (and on ViewportPageSpecSchema), NOT a sibling file",
+    "justification": "The record is small and hard-bounded (<=500 names x <=200 chars), so it costs a few KB in observation.json at worst. A sibling file would need a new key in ViewportFilesSchema, whose keys are all required — adding one there would stop every historical observation.json from parsing, which is exactly the compatibility the task forbids breaking. Both new fields are .optional(); a pre-28.5B observation and a pre-28.5B PageSpec parse unchanged and report `undefined` rather than an invented empty map (proved in the suite against data/linear.app/site-observations/2026-08-25T19-23-01-716Z and site-specs/2026-08-25T20-30-27-653Z).",
+    "perViewport": "Desktop and mobile each keep their own record. Nothing merges, dedups or diffs them — the fixture's --brand is #112233 at 1440 and #445566 at 390 and both survive to the generated CSS."
+  },
+  "caps": {
+    "MAX_ROOT_CUSTOM_PROPERTIES": 500,
+    "ROOT_CUSTOM_PROPERTY_VALUE_MAX_LEN": 200,
+    "recording": "Never silent. The record carries discoveredCount (names found before any cap), countCapped (true when the count cap truncated the harvest) and valueCappedCount (names dropped for an over-long value — dropped, never truncated, matching the LAYOUT_RULE_VALUE_MAX_LEN convention)."
+  },
+  "capture": {
+    "nameDiscovery": "same-origin document.styleSheets walked with the font-harvest's try/catch-per-sheet shape, recursing into grouping rules so a name that only appears inside an @media block is still found. A rule qualifies when any comma-separated selector part is exactly `:root` or `html` (case-insensitive for `html`).",
+    "valueResolution": "getComputedStyle(document.documentElement).getPropertyValue(name) — the CASCADE is the authority, not the last rule visited, which is what makes the media-query override show up at 390 and not at 1440.",
+    "relevanceChoice": "ALL root custom properties are captured, including ones nothing references. 'Referenced' is not decidable at capture time — a reference can live inside opaque inline-SVG markup, a pseudo-element, or a rule that only matches after a click — so guessing would drop real values. Non-root customs (e.g. one declared on .badge) are NOT captured: they do not resolve on the document element, and emitting them on the variant wrapper would invent an inherited value the source subtree never had.",
+    "subtreeMode": "returns the empty record, like icons/fontUrls — a region capture is not a stylesheet observation.",
+    "determinism": "names sorted ascending by code point in-browser before values are read."
+  },
+  "emission": {
+    "selector": "[data-wr-page=\"<pageId>\"][data-wr-viewport=\"<viewportId>\"] { --name: value; }",
+    "whyNotRoot": "PageRenderer renders both observed viewports into ONE document as sibling .wr-variant divs, so there is a single :root for two viewports and a per-viewport difference would be unrepresentable. Custom properties inherit, so declaring them on the variant wrapper reaches that subtree and only that subtree.",
+    "dedup": "none — desktop and mobile each get their own block even when identical. A merge layer would be the first place a per-viewport difference could quietly disappear.",
+    "ordering": "scopes sorted pageId -> viewportId, declarations sorted by property name (generateLayoutCss conventions). Emitting twice is byte-identical.",
+    "safety": "values go through the existing isSafeCssValue; names through /^--[-A-Za-z0-9_]*$/ (case PRESERVED — nothing is lowercased, --Brand and --brand are different properties); pageId/viewportId through /^[A-Za-z0-9_-]+$/ before they reach a selector string. Every rejection is counted (rejectedNames / rejectedValues / rejectedScopes), never silent.",
+    "placement": "first in the generated stylesheet, before the computed-style classes, so every rule below and every var() surviving inside captured inline-SVG markup resolves against it."
+  },
+  "suite": {
+    "name": "scripts/smoke-custom-properties.ts",
+    "checks": 47,
+    "passed": 47,
+    "failed": 0,
+    "sections": [
+      "§1 capture — real observePage in real Chromium, per-viewport values, ordering, caps, non-root exclusion",
+      "§2 storage — saveObservationIntoDir + reparse, records verbatim and NOT flattened",
+      "§3 SiteSpec — real compileViewport per viewport, schema round-trip, historical observation.json and PageSpec still parse",
+      "§4 emission — scoped blocks, sorting, values intact, NO plain :root, hostile-name/value/scope rejection, byte-identical re-emit",
+      "§5 browser — the REAL captured <svg> outerHTML (still holding fill=\"var(--brand)\") rendered in Chromium: desktop subtree computes rgb(17, 34, 51), mobile subtree rgb(68, 85, 102), plus a control run without the block and a wrong-pageId scope-leak check"
+    ]
+  },
+  "reranSuites": [
+    {
+      "name": "scripts/smoke-visual-vocab.ts",
+      "result": "PASS",
+      "checks": "88 passed, 0 failed"
+    },
+    {
+      "name": "scripts/smoke-sitespec.ts",
+      "result": "PASS",
+      "checks": "257/257"
+    },
+    {
+      "name": "scripts/smoke-multi-observer.ts",
+      "result": "PASS",
+      "checks": "62/62"
+    },
+    {
+      "name": "npx tsc --noEmit",
+      "result": "PASS",
+      "checks": "clean, whole repo"
+    }
+  ],
+  "risks": [
+    "Root-selector discovery is deliberately narrow: only selector parts that are exactly `:root` or `html`. A site declaring its variables on `:root:where(...)`, `html.dark`, `body`, or `*` contributes no NAME, so nothing is emitted for it even though getComputedStyle would have resolved a value. This is a discovery gap, not a wrong value — it under-reports, never invents. Widening it is a follow-up decision, not a bug fix.",
+    "Values are read at the observed viewport only. A custom property whose value depends on something other than width (hover, prefers-color-scheme, a class the page toggles) is captured in the state the observer saw, exactly like every other computed value in the pipeline.",
+    "Emission is scoped to the .wr-variant wrapper. Anything rendered OUTSIDE that wrapper (portals mounted on document.body by the interaction runtime, if any ever are) would not inherit these variables. Not observed in this fixture; worth a check if a future portal escapes the wrapper.",
+    "No manifest counter was added for customProperties — the plan carries the GeneratedCustomProperties record but generate-app does not surface blockCount/declarationCount in the manifest. Additive follow-up if the release gate wants it.",
+    "Pre-existing, unrelated: src/reconstruction/style-generator.ts contains a literal NUL byte inside the isSafeCssValue character class (present in the committed blob at HEAD), which makes grep treat the file as binary. Untouched by this change; flagged because it silently hides grep results for anyone working in that file."
+  ],
+  "correction": {
+    "producedAt": "2026-08-29",
+    "fixes": [
+      "adopted-sheets",
+      "D3",
+      "D4",
+      "D5",
+      "D7"
+    ],
+    "filesChanged": [
+      {
+        "path": "src/observer/collect-dom.ts",
+        "change": "RawRootCustomProperties.unresolvedCount added (~:205). Discovery rewritten (~:855-935): isRootSelector now lowercases the whole selector part so ':ROOT'/'HTML' match (D4); new isSelfSelector + harvestDeclarations helpers; visitCustomRules takes an `inRoot` flag and now (a) recurses into a style rule's OWN cssRules instead of `else if` (D3 — CSS nesting), (b) harvests a CSSNestedDeclarations rule (style, no selectorText, no cssRules) when the enclosing context is root, (c) passes the context through grouping rules unchanged. New loop over document.adoptedStyleSheets with the same visitor, same per-sheet try/catch, same caps (THE reach fix). Resolution loop counts value==='' as unresolvedCount instead of dropping silently (D5). Subtree-mode early return emits unresolvedCount: 0."
+      },
+      {
+        "path": "src/observer/types.ts",
+        "change": "ADDITIVE: RootCustomPropertiesSchema.unresolvedCount as .optional() int (~:1000) so any record written before this correction still parses."
+      },
+      {
+        "path": "src/reconstruction/types.ts",
+        "change": "ADDITIVE: ManifestStatsSchema gains customPropertyBlocks / customPropertyDeclarations / customPropertyRejected, all .optional() (D7). Historical manifests parse unchanged."
+      },
+      {
+        "path": "src/reconstruction/generate-app.ts",
+        "change": "statsFrom() exported and given the three custom-property counters (~:114-160). Strictly additive, in the stats-assembly region only — the layoutVerification / truth-check region was not touched (a concurrent agent owned it)."
+      },
+      {
+        "path": "scripts/smoke-custom-properties.ts",
+        "change": "ADDED a second fixture route (/adopted) and sections §6 (reach) and §7 (manifest), plus 2 checks in §1. 47 -> 74 checks. No existing check removed or weakened; the original fixture and every §1-§5 assertion are byte-identical."
+      }
+    ],
+    "linearReachAfter": {
+      "measuredAt": "2026-08-29, https://linear.app/ , playwright chromium 1440x900, load + networkidle + 2.5s, read-only",
+      "method": "the REAL shipped collectPageInBrowser with the REAL COLLECT_CONFIG via page.evaluate (not a replica)",
+      "namesCaptured": 135,
+      "namesCapturedBefore": 0,
+      "discoveredCount": 135,
+      "unresolvedCount": 0,
+      "countCapped": false,
+      "valueCappedCount": 0,
+      "inlineSvgCount": 239,
+      "svgVarRefs": 183,
+      "distinctSvgVarNames": 16,
+      "svgNamesCovered": 0,
+      "svgNamesResolvableButStillUndiscovered": 11,
+      "evidence": "tmp/wr285b/customprops-fix/linear-reach-after.json",
+      "interpretation": "The discovery gap is closed on the channel it was measured on: 0 -> 135 names, every one resolving, no cap hit. But the 16 distinct names linear's 239 inline SVGs reference are DISJOINT from those 135 — they live in the cross-origin static.linear.app sheets whose cssRules cannot be read at all. 11 of the 16 still RESOLVE on the document element, so the values are there for the taking; only reference-driven discovery reaches them. The linear rerun will therefore ship a real, non-empty custom-property section (135 x 2 viewports x pages), and the inline-SVG consumer 28.5A named remains at 0/16 until the deferred lever lands."
+    },
+    "suite": {
+      "name": "scripts/smoke-custom-properties.ts",
+      "checks": 74,
+      "passed": 74,
+      "failed": 0,
+      "newSections": [
+        "§6 reach — a second fixture whose tokens live ONLY in a constructed sheet on document.adoptedStyleSheets (invisible to document.styleSheets), with an @media INSIDE that sheet giving --ad-brand #a10000 at 1440 and #00a100 at 390; nested `&` and nested-@media blocks in BOTH the adopted sheet and a plain <style>; UPPERCASE `HTML` and `:ROOT` selectors; and --ad-never / --doc-never-nested declared under :root inside @media (min-width: 9999px), asserted DROPPED and counted as unresolvedCount 2 at both viewports, with discovered = kept + unresolved + valueCapped closing exactly",
+        "§7 manifest — the real exported statsFrom() over the real emitter output: blocks 2 / declarations 6 / rejected 0; an EMPTY section reports 0/0 so the zero-reach case is diagnosable from the manifest alone; hostile-input refusals sum into customPropertyRejected; a stats block without the three fields still parses"
+      ]
+    },
+    "reranSuites": [
+      {
+        "name": "npx tsc --noEmit",
+        "result": "PASS",
+        "checks": "clean, whole repo, exit 0"
+      },
+      {
+        "name": "scripts/smoke-custom-properties.ts",
+        "result": "PASS",
+        "checks": "74/74"
+      },
+      {
+        "name": "scripts/smoke-visual-vocab.ts",
+        "result": "PASS",
+        "checks": "88 passed, 0 failed"
+      },
+      {
+        "name": "scripts/smoke-multi-observer.ts",
+        "result": "PASS",
+        "checks": "62/62"
+      },
+      {
+        "name": "scripts/smoke-sitespec.ts",
+        "result": "PASS",
+        "checks": "257/257"
+      }
+    ],
+    "notes": [
+      "DEFERRED, and now the ONLY remaining lever on linear.app: reference-driven discovery — harvest var(--name) out of captured inline-SVG outerHTML (and out of observed computed values), then resolve each against getComputedStyle(documentElement). Measured payoff on this run: 11 of the 16 SVG-referenced names, none of which any sheet-walking approach can ever discover because the declaring sheets are cross-origin. Not implemented here by instruction.",
+      "LIMITATION (new, documented in collect-dom.ts): adoptedStyleSheets is walked at the DOCUMENT level only. Sheets adopted onto a shadow root are not traversed; their variables would not resolve on the document element anyway, so this is an under-report by construction, not a wrong value.",
+      "D4 is defensive rather than observable in Chromium: the CSSOM NORMALISES `HTML` to `html` and `:ROOT` to `:root` in selectorText (probed live, tmp/wr285b/customprops-fix/probe-cssom.ts). The fixture still asserts the end-to-end requirement; the matcher's case-insensitivity protects against a serialization that does not normalise.",
+      "D3 shapes confirmed live in Chromium: a nested `&` block is a CSSStyleRule with selectorText '&'; a nested @media's bare declarations are a CSSNestedDeclarations rule (type 0, no selectorText, no cssRules). Both are handled. Every CSSStyleRule carries a (usually empty) cssRules, which is exactly why the old `else if (rule.cssRules)` never recursed.",
+      "D6 (localeCompare vs code-point ordering) NOT changed — note-only in the verification, semantically irrelevant, and touching it would change emitted bytes for no gain.",
+      "D8 (NUL byte in style-generator.ts) NOT touched — pre-existing and unrelated.",
+      "No git operation was run. src/reconstruction/layout-truth-check.ts, src/e2e/run-reconstruction.ts and the truth-check region of generate-app.ts belong to the concurrent correction agent and were not edited; tsc --noEmit is clean with their work present.",
+      "Temp artifacts under tmp/wr285b/customprops-fix/ only."
+    ]
+  },
+  "correction2": {
+    "producedAt": "2026-08-29",
+    "title": "Reference-driven custom-property discovery — the channel no sheet walk can reach",
+    "why": "correction 1 took linear.app from 0 to 135 names, but the 16 distinct names its 239 inline SVGs reference through 183 var() calls are declared ONLY in cross-origin sheets (cssRules throws), so name discovery could never see them and the 28.5A consumer defect this change exists for would have shipped at 0/16.",
+    "mechanism": "during the DOM walk the collector now keeps the live <svg> roots behind inlineSvgs (same index, document order). After the sheet harvest, every `var(--name)` token is extracted from each captured SVG's outerHTML with /var\\(\\s*(--[-A-Za-z0-9_]+)/g (case PRESERVED, never lowercased) and each name is resolved at the CONSUMING element via getComputedStyle(svgRoot).getPropertyValue(name) — the value the source paint actually used. Resolved names are merged into the SAME per-viewport record, re-sorted by code point, and emitted on the variant wrapper, from which they inherit down to the same consumers in the clone.",
+    "precedenceRule": "SHEET WINS. A name already discovered from a stylesheet keeps its sheet/root-resolved value and is not element-resolved at all. Rationale: the sheet channel is the one whose scope is PROVEN root-level, so its value is the honest one to declare on a wrapper standing in for :root; element resolution exists only to reach names no readable sheet revealed. The overlap is never silent — it is counted in referenceSheetKnownCount (linear: 0; fixture 1: 1).",
+    "conflictRule": "FIRST CONSUMING ELEMENT IN DOCUMENT ORDER WINS. The walk is depth-first from documentElement, so 'first' is a function of the page, not of timing. Every later element resolving the same name to a DIFFERENT non-empty value increments referenceResolutionConflicts — wrapper-level emission can carry only one value per name, so that counter is the honesty channel for the value that was not carried. linear: 0 conflicts.",
+    "unresolvedRule": "a referenced name is only counted unresolved once EVERY consuming element resolved it to \"\" (a later consumer can still resolve what the first could not). Counted in its own referenceUnresolvedCount rather than the sheet channel's unresolvedCount, so the two discovery channels stay separately diagnosable. Reference names dropped by the value cap fold into the shared valueCappedCount (same drop-never-truncate convention); reference names dropped by the count cap set countCapped.",
+    "scope": "INLINE SVG MARKUP ONLY. var() references living in element `style` attributes, in pseudo-element content, or in observed computed values are NOT harvested — inline SVG is the proven 28.5A consumer and the only channel measured. Widening it stays a separate, separately-measured decision. Documented in collect-dom.ts.",
+    "filesChanged": [
+      {
+        "path": "src/observer/collect-dom.ts",
+        "change": "inlineSvgElements parallel array (declared next to inlineSvgs, pushed in the same svg branch of the walk — never returned); RawRootCustomProperties gains referenceDiscoveredCount / referenceResolvedCount / referenceSheetKnownCount / referenceUnresolvedCount / referenceResolutionConflicts; subtree-mode early return emits all five as 0; countCapped became `let`; the reference pass sits between the root-resolution loop and the record assembly, merging + re-sorting customProperties."
+      },
+      {
+        "path": "src/observer/types.ts",
+        "change": "ADDITIVE: the same five counters on RootCustomPropertiesSchema, all .optional() — records written before this correction (and before correction 1) still parse."
+      },
+      {
+        "path": "scripts/smoke-custom-properties.ts",
+        "change": "ADDED a third fixture route (/hidden) and section §8. 74 -> 92 checks. No existing check removed, weakened or renumbered."
+      }
+    ],
+    "linearReachAfter": {
+      "measuredAt": "2026-08-29T12:32:10.791Z, https://linear.app/ , playwright chromium 1440x900, load + networkidle + 2.5s, read-only",
+      "method": "the REAL shipped collectPageInBrowser with the REAL COLLECT_CONFIG via page.evaluate (not a replica)",
+      "namesCaptured": 151,
+      "namesCapturedBefore": 135,
+      "sheetDiscoveredCount": 135,
+      "sheetUnresolvedCount": 0,
+      "countCapped": false,
+      "valueCappedCount": 0,
+      "inlineSvgCount": 239,
+      "svgVarRefs": 183,
+      "distinctSvgVarNames": 16,
+      "svgNamesCovered": 16,
+      "svgNamesCoveredBefore": 0,
+      "svgNamesUnresolved": 0,
+      "referenceDiscoveredCount": 16,
+      "referenceResolvedCount": 16,
+      "referenceSheetKnownCount": 0,
+      "referenceUnresolvedCount": 0,
+      "referenceResolutionConflicts": 0,
+      "evidence": "tmp/wr285b/customprops-fix2/linear-reach-after2.json",
+      "interpretation": "16 of 16, not the 11 forecast. The forecast counted only the names resolving on document.documentElement; resolving at the CONSUMING element additionally reaches 5 locally-scoped names (--hero-line #2e2e32, --icon-color #62666d, --label-faint #585a5c, --plan-icon-car #2e2f2e, --plan-icon-robot #55cdff) that documentElement gives nothing for. Element resolution is therefore strictly stronger than root resolution on this site, and every one of the 183 var() references inside linear's 239 inline SVGs now has a value to resolve against. Zero conflicts and zero unresolved on this page, so the honesty counters have nothing to report — a real result, not a suppressed one."
+    },
+    "suite": {
+      "name": "scripts/smoke-custom-properties.ts",
+      "checks": 92,
+      "passed": 92,
+      "failed": 0,
+      "newSection": "§8 reference-driven discovery — a third fixture where EVERY name is declared on a NON-ROOT selector, the observable shape of a cross-origin sheet: name discovery finds literally nothing (discoveredCount asserted 0 at both viewports), so anything captured can only have come from the reference channel. --hidden-brand is declared on .wrap and made #b00020 at 1440 / #0020b0 at 390 by an @media on that same non-root rule (proving element resolution is per viewport); --clash-tone is declared on .zone-a and .zone-b with an SVG in each (proving the document-order winner #010203 and referenceResolutionConflicts 1); --never-anywhere is referenced and declared nowhere (dropped, referenceUnresolvedCount 1). The reference accounting is asserted to close exactly. The captured SVG markup is then rendered in real Chromium around the REAL emitted CSS: control paints the fallback in both subtrees (the 28.5A defect), the emitted block paints rgb(176, 0, 32) desktop and rgb(0, 32, 176) mobile in one document. Fixture 1 additionally asserts the PRECEDENCE rule end to end (--brand is SVG-referenced AND sheet-discovered: counted 1/1 sheet-known, 0 re-resolved, no duplicate, value still #112233)."
+    },
+    "reranSuites": [
+      {
+        "name": "npx tsc --noEmit",
+        "result": "PASS",
+        "checks": "clean, whole repo, exit 0"
+      },
+      {
+        "name": "scripts/smoke-custom-properties.ts",
+        "result": "PASS",
+        "checks": "92/92 (74 pre-existing + 18 new)"
+      },
+      {
+        "name": "scripts/smoke-visual-vocab.ts",
+        "result": "PASS",
+        "checks": "88 passed, 0 failed"
+      },
+      {
+        "name": "scripts/smoke-multi-observer.ts",
+        "result": "PASS",
+        "checks": "62/62"
+      },
+      {
+        "name": "scripts/smoke-sitespec.ts",
+        "result": "PASS",
+        "checks": "257/257"
+      }
+    ],
+    "notes": [
+      "The deferred lever named in correction 1's notes is now implemented; the 28.5A inline-SVG consumer goes from 0/16 to 16/16 on linear.app.",
+      "Determinism: reference names are sorted by code point before the cap slices, the merged properties array is re-sorted by code point, and the conflict winner is chosen by document order — emitting the same page twice is byte-identical.",
+      "The five new schema fields are .optional(); historical observations and PageSpecs (and records written by correction 1) parse unchanged.",
+      "LIMITATION (documented in code): only inline-SVG outerHTML is scanned. style attributes, pseudo-element content and observed computed values are out of scope.",
+      "LIMITATION carried from correction 1: adoptedStyleSheets is walked at the document level only.",
+      "No git operation was run. src/reconstruction/layout-truth-check.ts, src/reconstruction/generate-app.ts (truth-check region), src/e2e/run-reconstruction.ts and scripts/smoke-layout-safety.ts belong to the concurrent agent and were NOT touched; tsc --noEmit is clean with their work present.",
+      "Temp artifacts under tmp/wr285b/customprops-fix2/ only."
+    ]
+  }
+}

@@ -1,0 +1,1183 @@
+{
+ "task": "28.5C",
+ "agent": "D (strategy experimenter)",
+ "generatedAt": "2026-08-31T15:16:14.890Z",
+ "target": {
+  "site": "linear.app",
+  "route": "/pricing",
+  "widths": [
+   390,
+   700,
+   1024,
+   1100,
+   1440
+  ],
+  "source": "https://linear.app/pricing"
+ },
+ "decisionRule": "simplest strategy achieving BLOCKER=0 at all five widths; prefer A > B > C at comparable quality; do not reward sophistication",
+ "headline": "NO strategy achieved BLOCKER=0. All three leave 1100 blocked. Strategy C is the winner on quality-per-unit-complexity; Strategy A produced results byte-identical to the cheapest C fix; Strategy B regressed a previously-correct width and is rejected.",
+ "correctionsToEstablishedFacts": [
+  {
+   "claim": "Original hashed classes (PDOlRq_row), data-plan, data-header-row survive verbatim in the observed AND reconstructed DOM, so preserved source rules WILL match the clone DOM.",
+   "finding": "FALSE for the reconstructed DOM. They survive in the observation (dom.json: PDOlRq 429, data-plan 228, data-header-row 2) but the SiteSpec compiler empties `attributes` ({}), and the shipped clone carries only data-wr-node + wr-stNNNNNN style-atom classes. Verified: 0 occurrences of PDOlRq/data-plan/data-header-row/hide-laptop in the served /pricing HTML. Strategy B therefore needs an offline selector->node translation layer (built here via ElementSpecNode.sourceElementId -> dom.json element -> class attributes).",
+   "evidence": "tmp/wr-responsive-investigation/agent-d/out/clone-pricing.html"
+  },
+  {
+   "claim": "authoredLayout[].media carries condition text like \"(max-width: 1024px)\" that the generator can snap band edges to.",
+   "finding": "FALSE for this site. Only 34 of 2726 elements on p000007 carry ANY authoredLayout, and the ONLY media condition present is \"(max-width: 640px)\". The load-bearing 1024 breakpoint is absent from the IR entirely. Cause is the CORS trap: 30/81 stylesheets throw SecurityError on cssRules in-page, and the observer reads authored rules off document.styleSheets. grid-template-columns IS in LAYOUT_RULE_PROPERTIES (src/observer/types.ts:414-460), so the fluid track declaration would have been captured had the sheet been readable. Strategy C option \"snap to authored breakpoints\" is therefore not implementable on the current observation.",
+   "evidence": "measured from data/linear.app/site-specs/2026-08-30T15-56-23-933Z/pages/p000007.json"
+  },
+  {
+   "claim": "The 1100 failure is essentially the synthetic hidden band.",
+   "finding": "INCOMPLETE. Removing the band is necessary but reveals a second, larger defect: the desktop subtree is frozen at 1440px exact-computed pixels for ~5.9k nodes, so EVERY width in [breakpoint, 1440) clips. Baseline 1024 is also a BLOCKER for this reason (Enterprise card, right nav and a footer column fully offscreen), which the brief classified only as the 390-column residual."
+  }
+ ],
+ "strategies": [
+  {
+   "id": "A",
+   "name": "Extra observation only",
+   "label": "A-extraprobe",
+   "implementationSummary": "Re-observed https://linear.app/pricing with observePage(url,{probeExtraWidths:[700,1100]}) giving probe widths [390,700,768,1024,1100,1440,1920]. The probe DOM walk came back byte-identical to the stored run (tags and parents arrays equal, 1363 elements, 0 nodes drifted at 1440), so the 7-width arrays were spliced into a COPY of the SiteSpec and reconstructed with cli-reconstruct --output. This isolates the extra truth samples as the only variable.",
+   "whatWasPatched": "nothing in the app; a full regenerate from a SiteSpec copy carrying 7 probe widths instead of 5",
+   "perWidth": {
+    "390": {
+     "width": 390,
+     "visibleChars": 2186,
+     "sourceVisibleChars": 2186,
+     "visibleCharsDelta": 0,
+     "scrollHeight": 7714,
+     "sourceScrollHeight": 7714,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1289,
+     "innerWidth": 390,
+     "offscreenNodes": 32,
+     "offscreenTextChars": 0,
+     "overflowingNodes": 7,
+     "sourceOffscreenNodes": 35,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 1,
+      "sourceHeaderRowsVisible": 1,
+      "cloneAttributesPresent": false
+     }
+    },
+    "700": {
+     "width": 700,
+     "visibleChars": 2186,
+     "sourceVisibleChars": 2195,
+     "visibleCharsDelta": -9,
+     "scrollHeight": 7714,
+     "sourceScrollHeight": 7795,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1289,
+     "innerWidth": 700,
+     "offscreenNodes": 25,
+     "offscreenTextChars": 0,
+     "overflowingNodes": 1,
+     "sourceOffscreenNodes": 25,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 1,
+      "sourceHeaderRowsVisible": 1,
+      "cloneAttributesPresent": false
+     }
+    },
+    "1024": {
+     "width": 1024,
+     "visibleChars": 2173,
+     "sourceVisibleChars": 2234,
+     "visibleCharsDelta": -61,
+     "scrollHeight": 6360,
+     "sourceScrollHeight": 6990,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1440,
+     "innerWidth": 1024,
+     "offscreenNodes": 73,
+     "offscreenTextChars": 305,
+     "overflowingNodes": 108,
+     "sourceOffscreenNodes": 0,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 1,
+      "sourceHeaderRowsVisible": 1,
+      "cloneAttributesPresent": false
+     }
+    },
+    "1100": {
+     "width": 1100,
+     "visibleChars": 2461,
+     "sourceVisibleChars": 2461,
+     "visibleCharsDelta": 0,
+     "scrollHeight": 6360,
+     "sourceScrollHeight": 6323,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1440,
+     "innerWidth": 1100,
+     "offscreenNodes": 269,
+     "offscreenTextChars": 362,
+     "overflowingNodes": 202,
+     "sourceOffscreenNodes": 0,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 4,
+      "sourceHeaderRowsVisible": 2,
+      "cloneAttributesPresent": false
+     }
+    },
+    "1440": {
+     "width": 1440,
+     "visibleChars": 2461,
+     "sourceVisibleChars": 2461,
+     "visibleCharsDelta": 0,
+     "scrollHeight": 6360,
+     "sourceScrollHeight": 6360,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1440,
+     "innerWidth": 1440,
+     "offscreenNodes": 0,
+     "offscreenTextChars": 0,
+     "overflowingNodes": 0,
+     "sourceOffscreenNodes": 0,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 4,
+      "sourceHeaderRowsVisible": 2,
+      "cloneAttributesPresent": false
+     }
+    }
+   },
+   "classification": {
+    "390": "MINOR",
+    "700": "MAJOR",
+    "1024": "BLOCKER",
+    "1100": "BLOCKER",
+    "1440": "MINOR"
+   },
+   "notes": {
+    "1024": "unchanged from baseline: extra probe widths do not affect the frozen geometry tier.",
+    "1100": "band now correct (comparison table restored, visibleChars 2461 == source exactly) but the desktop subtree is still frozen at 1440px, so revealing the table pushed MORE content offscreen (362 chars unreachable vs 250 before)."
+   },
+   "blockers": 2,
+   "majors": 1,
+   "keyResult": "Every measured field at every width is IDENTICAL to C1 (the 10-line band clamp). The extra samples changed exactly one thing - the interpolated hidden band - and nothing else, because the geometry tier is gated by containing-block guards, not by sample count.",
+   "does700GetFixed": false,
+   "why700NotFixed": "confirmed by measurement: 700 is below the 915 breakpoint so it never enters desktopIdx (layout-inference.ts:326), and the mobile subtree receives zero inferred responsive rules. Identical metrics to baseline at 700.",
+   "newProductionComplexity": "probeExtraWidths exists but is not forwarded by src/multi-observer/observe-selected-pages.ts:287 and no CLI exposes it; needs plumbing through ObserveSiteOptions + cli-observe-site. Re-observation cost ~1.5-2.2 min/site, and each extra width adds a full-page relayout pass. Artifact size grows linearly in probe widths (x/w/v arrays per node).",
+   "complexity": {
+    "productionComplexity": "medium",
+    "changedConcepts": [
+     "probe width set becomes a tuned input rather than a constant"
+    ],
+    "schemaChanges": [
+     "none - layoutProbe.widths is already variable-length"
+    ],
+    "runtimeDeps": []
+   },
+   "viable": false,
+   "verdict": "REJECTED AS A STANDALONE FIX. It buys nothing that C1 does not buy for free. BUT one of its samples is indispensable to the winner - see winnerRationale."
+  },
+  {
+   "id": "B",
+   "name": "Selective responsive rule preservation",
+   "label": "B-preserved",
+   "implementationSummary": "Fetched all 81 linear.app stylesheets directly (bypassing the CORS trap - 30 are unreadable in-page but all 81 fetch fine), parsed them through a same-origin <style> CSSOM, kept 621 rules (all width-conditioned @media rules declaring layout properties, plus unconditional rules whose layout values are fluid: fr/%/minmax/clamp/calc/auto/repeat), then translated every selector to [data-wr-node=\"...\"] by rebuilding the observed DOM (dom.json, which retains the original class attributes) in a blank page and letting querySelectorAll do the matching, mapping e-id -> nodeId via ElementSpecNode.sourceElementId. 220 rules emitted (110 per subtree, 78KB), 511 kept rules matched no observed element, 0 selectors unsupported.",
+   "whatWasPatched": "disposable app copy: deleted the 738 (min-width:1024px)and(max-width:1231.98px) blocks from generated-styles.css and appended the translated preserved-rules sheet with !important",
+   "perWidth": {
+    "390": {
+     "width": 390,
+     "visibleChars": 2246,
+     "sourceVisibleChars": 2186,
+     "visibleCharsDelta": 60,
+     "scrollHeight": 7714,
+     "sourceScrollHeight": 7714,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1297,
+     "innerWidth": 390,
+     "offscreenNodes": 36,
+     "offscreenTextChars": 8,
+     "overflowingNodes": 7,
+     "sourceOffscreenNodes": 35,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 1,
+      "sourceHeaderRowsVisible": 1,
+      "cloneAttributesPresent": false
+     }
+    },
+    "700": {
+     "width": 700,
+     "visibleChars": 2242,
+     "sourceVisibleChars": 2195,
+     "visibleCharsDelta": 47,
+     "scrollHeight": 7714,
+     "sourceScrollHeight": 7795,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1297,
+     "innerWidth": 700,
+     "offscreenNodes": 25,
+     "offscreenTextChars": 0,
+     "overflowingNodes": 1,
+     "sourceOffscreenNodes": 25,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 1,
+      "sourceHeaderRowsVisible": 1,
+      "cloneAttributesPresent": false
+     }
+    },
+    "1024": {
+     "width": 1024,
+     "visibleChars": 2525,
+     "sourceVisibleChars": 2234,
+     "visibleCharsDelta": 291,
+     "scrollHeight": 6360,
+     "sourceScrollHeight": 6990,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1440,
+     "innerWidth": 1024,
+     "offscreenNodes": 249,
+     "offscreenTextChars": 131,
+     "overflowingNodes": 150,
+     "sourceOffscreenNodes": 0,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 1,
+      "sourceHeaderRowsVisible": 1,
+      "cloneAttributesPresent": false
+     }
+    },
+    "1100": {
+     "width": 1100,
+     "visibleChars": 2543,
+     "sourceVisibleChars": 2461,
+     "visibleCharsDelta": 82,
+     "scrollHeight": 6360,
+     "sourceScrollHeight": 6323,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1440,
+     "innerWidth": 1100,
+     "offscreenNodes": 249,
+     "offscreenTextChars": 128,
+     "overflowingNodes": 176,
+     "sourceOffscreenNodes": 0,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 4,
+      "sourceHeaderRowsVisible": 2,
+      "cloneAttributesPresent": false
+     }
+    },
+    "1440": {
+     "width": 1440,
+     "visibleChars": 2543,
+     "sourceVisibleChars": 2461,
+     "visibleCharsDelta": 82,
+     "scrollHeight": 6360,
+     "sourceScrollHeight": 6360,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1440,
+     "innerWidth": 1440,
+     "offscreenNodes": 0,
+     "offscreenTextChars": 0,
+     "overflowingNodes": 0,
+     "sourceOffscreenNodes": 0,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 4,
+      "sourceHeaderRowsVisible": 2,
+      "cloneAttributesPresent": false
+     }
+    }
+   },
+   "classification": {
+    "390": "MINOR",
+    "700": "MAJOR",
+    "1024": "BLOCKER",
+    "1100": "BLOCKER",
+    "1440": "MAJOR"
+   },
+   "notes": {
+    "1024": "shows desktop-only content the source hides at this width (2525 vs 2234 chars) and clips 249 nodes.",
+    "1100": "severe overlap: duplicated/stacked CTA buttons, plan cards colliding with the trusted-by strip. Preserved fluid rules fight the frozen exact-computed px they cannot fully override.",
+    "1440": "REGRESSION of a previously-correct width: visibleChars 2543 vs source 2461 - the .hide-laptop/.show-laptop pair both render because only layout properties were preserved."
+   },
+   "blockers": 2,
+   "majors": 2,
+   "ruleAccounting": {
+    "sheets": 81,
+    "corsBlockedInPage": 30,
+    "parsedRules": 3531,
+    "keptRules": 621,
+    "emitted": 220,
+    "unmatched": 0,
+    "unsupportedSelectors": 0,
+    "byViewport": {
+     "desktop": {
+      "emitted": 110,
+      "unmatched": 511,
+      "unsupported": 0
+     },
+     "mobile": {
+      "emitted": 110,
+      "unmatched": 511,
+      "unsupported": 0
+     }
+    }
+   },
+   "keyResult": "Source rules CAN be replayed against the reconstructed DOM - the translation works and 0 selectors failed. But the result is worse than the baseline: it REGRESSES 1440 (the one width that was previously exact) from 2461 to 2543 visible chars because preserving only layout properties lets both .hide-laptop and .show-laptop render, and it produces severe overlap at 1100 (duplicated stacked CTAs, plan cards colliding with the trusted-by strip) because the preserved fluid rules only override the handful of properties they declare while the surrounding ~5.9k nodes keep 1440-resolved frozen px.",
+   "does700GetFixed": false,
+   "selectorAndRuntimeDependencies": [
+    "requires a persistent offline selector->nodeId translation table (or re-emitting original class names into the clone, which the SiteSpec compiler currently strips)",
+    "depends on the LIVE source stylesheets being fetchable at build time - breaks asset independence, the property Task 22 established",
+    "to be correct it needs the FULL sheet (visibility, content, pseudo-element rules), not the layout subset: the layout-only subset is what caused the 1440 regression",
+    "@layer order must be replayed; here it was bypassed with !important, which is why the frozen tier could not be cleanly re-cascaded"
+   ],
+   "howMuchOfTheSheetWasNeeded": "621 of 3531 parsed rules qualified; 220 emitted after translation; 78KB. A correct version would need materially more (the full cascade), not less.",
+   "complexity": {
+    "productionComplexity": "high",
+    "changedConcepts": [
+     "a second CSS provenance tier (verbatim source rules) alongside the exact-computed tier",
+     "selector->node identity mapping preserved into the build",
+     "cascade-layer replay",
+     "clone stops being independent of the source origin"
+    ],
+    "schemaChanges": [
+     "persist original class/attribute identity through SiteSpec (currently attributes:{})",
+     "new preserved-rules artifact + provenance"
+    ],
+    "runtimeDeps": [
+     "build-time fetch of the live source stylesheets"
+    ]
+   },
+   "viable": false,
+   "verdict": "REJECTED. Worst visual result of the three, regresses a previously-correct width, and carries the highest complexity plus a loss of source independence."
+  },
+  {
+   "id": "C",
+   "name": "Current inference with minimal correction",
+   "label": "AC3-probe1100-unfreeze",
+   "implementationSummary": "Three independent minimal corrections, each emulated by writing the CSS a corrected generator would have emitted. C1: clamp every synthetic hidden band to the probe widths actually observed hidden (band closes at lastHiddenSample+0.98 instead of the floored midpoint toward the next visible sample) - 738 bands rewritten. C2: set the subtree breakpoint to the source-authored 1025 instead of the inferred 915 - this needs NO new code, plan-reconstruction.ts already accepts breakpointOverride via cli-reconstruct --breakpoint. C3: unfreeze widths the probe PROVES are not frozen - for a node visible at two probe widths that both sit above the source's top layout switch, w(wider) > w(narrower)+1 proves fluidity, so emit width:auto/max-width:none instead of the frozen exact-computed px, and for such a node that is a grid container whose computed grid-template-columns is all-px, re-express the tracks as proportional fr (ratio observed, unit inferred). 506 nodes unfrozen, 60 grids converted.",
+   "whatWasPatched": "disposable app copies: generated-styles.css band conditions rewritten (C1); the built globals CSS breakpoint media queries (C2); per-node unfreeze/fr override rules appended (C3)",
+   "variantsMeasured": {
+    "C1-bandclamp": {
+     "perWidth": {
+      "390": {
+       "width": 390,
+       "visibleChars": 2186,
+       "sourceVisibleChars": 2186,
+       "visibleCharsDelta": 0,
+       "scrollHeight": 7714,
+       "sourceScrollHeight": 7714,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1289,
+       "innerWidth": 390,
+       "offscreenNodes": 32,
+       "offscreenTextChars": 0,
+       "overflowingNodes": 7,
+       "sourceOffscreenNodes": 35,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 1,
+        "sourceHeaderRowsVisible": 1,
+        "cloneAttributesPresent": false
+       }
+      },
+      "700": {
+       "width": 700,
+       "visibleChars": 2186,
+       "sourceVisibleChars": 2195,
+       "visibleCharsDelta": -9,
+       "scrollHeight": 7714,
+       "sourceScrollHeight": 7795,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1289,
+       "innerWidth": 700,
+       "offscreenNodes": 25,
+       "offscreenTextChars": 0,
+       "overflowingNodes": 1,
+       "sourceOffscreenNodes": 25,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 1,
+        "sourceHeaderRowsVisible": 1,
+        "cloneAttributesPresent": false
+       }
+      },
+      "1024": {
+       "width": 1024,
+       "visibleChars": 2173,
+       "sourceVisibleChars": 2234,
+       "visibleCharsDelta": -61,
+       "scrollHeight": 6360,
+       "sourceScrollHeight": 6990,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1440,
+       "innerWidth": 1024,
+       "offscreenNodes": 73,
+       "offscreenTextChars": 305,
+       "overflowingNodes": 108,
+       "sourceOffscreenNodes": 0,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 1,
+        "sourceHeaderRowsVisible": 1,
+        "cloneAttributesPresent": false
+       }
+      },
+      "1100": {
+       "width": 1100,
+       "visibleChars": 2461,
+       "sourceVisibleChars": 2461,
+       "visibleCharsDelta": 0,
+       "scrollHeight": 6360,
+       "sourceScrollHeight": 6323,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1440,
+       "innerWidth": 1100,
+       "offscreenNodes": 269,
+       "offscreenTextChars": 362,
+       "overflowingNodes": 202,
+       "sourceOffscreenNodes": 0,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 4,
+        "sourceHeaderRowsVisible": 2,
+        "cloneAttributesPresent": false
+       }
+      },
+      "1440": {
+       "width": 1440,
+       "visibleChars": 2461,
+       "sourceVisibleChars": 2461,
+       "visibleCharsDelta": 0,
+       "scrollHeight": 6360,
+       "sourceScrollHeight": 6360,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1440,
+       "innerWidth": 1440,
+       "offscreenNodes": 0,
+       "offscreenTextChars": 0,
+       "overflowingNodes": 0,
+       "sourceOffscreenNodes": 0,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 4,
+        "sourceHeaderRowsVisible": 2,
+        "cloneAttributesPresent": false
+       }
+      }
+     },
+     "classification": {
+      "390": "MINOR",
+      "700": "MAJOR",
+      "1024": "BLOCKER",
+      "1100": "BLOCKER",
+      "1440": "MINOR"
+     },
+     "notes": {
+      "1100": "identical in every measured field to Strategy A - the band clamp reproduces A's entire benefit with no re-observation."
+     },
+     "blockers": 2
+    },
+    "C2-bandclamp-bp1025": {
+     "perWidth": {
+      "390": {
+       "width": 390,
+       "visibleChars": 2186,
+       "sourceVisibleChars": 2186,
+       "visibleCharsDelta": 0,
+       "scrollHeight": 7714,
+       "sourceScrollHeight": 7714,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1289,
+       "innerWidth": 390,
+       "offscreenNodes": 32,
+       "offscreenTextChars": 0,
+       "overflowingNodes": 7,
+       "sourceOffscreenNodes": 35,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 1,
+        "sourceHeaderRowsVisible": 1,
+        "cloneAttributesPresent": false
+       }
+      },
+      "700": {
+       "width": 700,
+       "visibleChars": 2186,
+       "sourceVisibleChars": 2195,
+       "visibleCharsDelta": -9,
+       "scrollHeight": 7714,
+       "sourceScrollHeight": 7795,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1289,
+       "innerWidth": 700,
+       "offscreenNodes": 25,
+       "offscreenTextChars": 0,
+       "overflowingNodes": 1,
+       "sourceOffscreenNodes": 25,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 1,
+        "sourceHeaderRowsVisible": 1,
+        "cloneAttributesPresent": false
+       }
+      },
+      "1024": {
+       "width": 1024,
+       "visibleChars": 2186,
+       "sourceVisibleChars": 2234,
+       "visibleCharsDelta": -48,
+       "scrollHeight": 7714,
+       "sourceScrollHeight": 6990,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1289,
+       "innerWidth": 1024,
+       "offscreenNodes": 6,
+       "offscreenTextChars": 0,
+       "overflowingNodes": 5,
+       "sourceOffscreenNodes": 0,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 1,
+        "sourceHeaderRowsVisible": 1,
+        "cloneAttributesPresent": false
+       }
+      },
+      "1100": {
+       "width": 1100,
+       "visibleChars": 2461,
+       "sourceVisibleChars": 2461,
+       "visibleCharsDelta": 0,
+       "scrollHeight": 6360,
+       "sourceScrollHeight": 6323,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1440,
+       "innerWidth": 1100,
+       "offscreenNodes": 269,
+       "offscreenTextChars": 362,
+       "overflowingNodes": 202,
+       "sourceOffscreenNodes": 0,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 4,
+        "sourceHeaderRowsVisible": 2,
+        "cloneAttributesPresent": false
+       }
+      },
+      "1440": {
+       "width": 1440,
+       "visibleChars": 2461,
+       "sourceVisibleChars": 2461,
+       "visibleCharsDelta": 0,
+       "scrollHeight": 6360,
+       "sourceScrollHeight": 6360,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1440,
+       "innerWidth": 1440,
+       "offscreenNodes": 0,
+       "offscreenTextChars": 0,
+       "overflowingNodes": 0,
+       "sourceOffscreenNodes": 0,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 4,
+        "sourceHeaderRowsVisible": 2,
+        "cloneAttributesPresent": false
+       }
+      }
+     },
+     "classification": {
+      "390": "MINOR",
+      "700": "MAJOR",
+      "1024": "MAJOR",
+      "1100": "BLOCKER",
+      "1440": "MINOR"
+     },
+     "notes": {
+      "1024": "now uses the mobile subtree like the source: content complete, only 6 offscreen nodes and 0 chars lost, but the mobile subtree is partly frozen at 390 so plan cards are ~360px wide against 1024px feature rows."
+     },
+     "blockers": 1
+    },
+    "AC3-probe1100-unfreeze": {
+     "perWidth": {
+      "390": {
+       "width": 390,
+       "visibleChars": 2186,
+       "sourceVisibleChars": 2186,
+       "visibleCharsDelta": 0,
+       "scrollHeight": 7714,
+       "sourceScrollHeight": 7714,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1289,
+       "innerWidth": 390,
+       "offscreenNodes": 32,
+       "offscreenTextChars": 0,
+       "overflowingNodes": 7,
+       "sourceOffscreenNodes": 35,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 1,
+        "sourceHeaderRowsVisible": 1,
+        "cloneAttributesPresent": false
+       }
+      },
+      "700": {
+       "width": 700,
+       "visibleChars": 2186,
+       "sourceVisibleChars": 2195,
+       "visibleCharsDelta": -9,
+       "scrollHeight": 7714,
+       "sourceScrollHeight": 7795,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1289,
+       "innerWidth": 700,
+       "offscreenNodes": 25,
+       "offscreenTextChars": 0,
+       "overflowingNodes": 1,
+       "sourceOffscreenNodes": 25,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 1,
+        "sourceHeaderRowsVisible": 1,
+        "cloneAttributesPresent": false
+       }
+      },
+      "1024": {
+       "width": 1024,
+       "visibleChars": 2173,
+       "sourceVisibleChars": 2234,
+       "visibleCharsDelta": -61,
+       "scrollHeight": 6360,
+       "sourceScrollHeight": 6990,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1436,
+       "innerWidth": 1024,
+       "offscreenNodes": 0,
+       "offscreenTextChars": 0,
+       "overflowingNodes": 78,
+       "sourceOffscreenNodes": 0,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 1,
+        "sourceHeaderRowsVisible": 1,
+        "cloneAttributesPresent": false
+       }
+      },
+      "1100": {
+       "width": 1100,
+       "visibleChars": 2461,
+       "sourceVisibleChars": 2461,
+       "visibleCharsDelta": 0,
+       "scrollHeight": 6360,
+       "sourceScrollHeight": 6323,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1436,
+       "innerWidth": 1100,
+       "offscreenNodes": 236,
+       "offscreenTextChars": 105,
+       "overflowingNodes": 151,
+       "sourceOffscreenNodes": 0,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 4,
+        "sourceHeaderRowsVisible": 2,
+        "cloneAttributesPresent": false
+       }
+      },
+      "1440": {
+       "width": 1440,
+       "visibleChars": 2461,
+       "sourceVisibleChars": 2461,
+       "visibleCharsDelta": 0,
+       "scrollHeight": 6360,
+       "sourceScrollHeight": 6360,
+       "hOverflow": false,
+       "sourceHOverflow": false,
+       "contentMaxRight": 1440,
+       "innerWidth": 1440,
+       "offscreenNodes": 0,
+       "offscreenTextChars": 0,
+       "overflowingNodes": 0,
+       "sourceOffscreenNodes": 0,
+       "comparisonTable": {
+        "sourceVisiblePlanColumns": 4,
+        "sourceHeaderRowsVisible": 2,
+        "cloneAttributesPresent": false
+       }
+      }
+     },
+     "classification": {
+      "390": "MINOR",
+      "700": "MAJOR",
+      "1024": "MINOR",
+      "1100": "BLOCKER",
+      "1440": "MINOR"
+     },
+     "notes": {
+      "700": "unchanged - the mobile subtree receives zero inferred responsive rules (generateLayoutCss hardcodes desktop, layout-inference.ts:701), so no strategy tested here moves 700.",
+      "1024": "clean: 0 offscreen nodes, 0 chars unreachable.",
+      "1100": "all four plan cards and the full nav now fit; comparison table Enterprise column and the closing headline still clip (105 chars unreachable) because frozen px survives deeper in the tree (flex-item content sizing re-pins ancestors)."
+     },
+     "blockers": 1
+    }
+   },
+   "perWidth": {
+    "390": {
+     "width": 390,
+     "visibleChars": 2186,
+     "sourceVisibleChars": 2186,
+     "visibleCharsDelta": 0,
+     "scrollHeight": 7714,
+     "sourceScrollHeight": 7714,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1289,
+     "innerWidth": 390,
+     "offscreenNodes": 32,
+     "offscreenTextChars": 0,
+     "overflowingNodes": 7,
+     "sourceOffscreenNodes": 35,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 1,
+      "sourceHeaderRowsVisible": 1,
+      "cloneAttributesPresent": false
+     }
+    },
+    "700": {
+     "width": 700,
+     "visibleChars": 2186,
+     "sourceVisibleChars": 2195,
+     "visibleCharsDelta": -9,
+     "scrollHeight": 7714,
+     "sourceScrollHeight": 7795,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1289,
+     "innerWidth": 700,
+     "offscreenNodes": 25,
+     "offscreenTextChars": 0,
+     "overflowingNodes": 1,
+     "sourceOffscreenNodes": 25,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 1,
+      "sourceHeaderRowsVisible": 1,
+      "cloneAttributesPresent": false
+     }
+    },
+    "1024": {
+     "width": 1024,
+     "visibleChars": 2173,
+     "sourceVisibleChars": 2234,
+     "visibleCharsDelta": -61,
+     "scrollHeight": 6360,
+     "sourceScrollHeight": 6990,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1436,
+     "innerWidth": 1024,
+     "offscreenNodes": 0,
+     "offscreenTextChars": 0,
+     "overflowingNodes": 78,
+     "sourceOffscreenNodes": 0,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 1,
+      "sourceHeaderRowsVisible": 1,
+      "cloneAttributesPresent": false
+     }
+    },
+    "1100": {
+     "width": 1100,
+     "visibleChars": 2461,
+     "sourceVisibleChars": 2461,
+     "visibleCharsDelta": 0,
+     "scrollHeight": 6360,
+     "sourceScrollHeight": 6323,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1436,
+     "innerWidth": 1100,
+     "offscreenNodes": 236,
+     "offscreenTextChars": 105,
+     "overflowingNodes": 151,
+     "sourceOffscreenNodes": 0,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 4,
+      "sourceHeaderRowsVisible": 2,
+      "cloneAttributesPresent": false
+     }
+    },
+    "1440": {
+     "width": 1440,
+     "visibleChars": 2461,
+     "sourceVisibleChars": 2461,
+     "visibleCharsDelta": 0,
+     "scrollHeight": 6360,
+     "sourceScrollHeight": 6360,
+     "hOverflow": false,
+     "sourceHOverflow": false,
+     "contentMaxRight": 1440,
+     "innerWidth": 1440,
+     "offscreenNodes": 0,
+     "offscreenTextChars": 0,
+     "overflowingNodes": 0,
+     "sourceOffscreenNodes": 0,
+     "comparisonTable": {
+      "sourceVisiblePlanColumns": 4,
+      "sourceHeaderRowsVisible": 2,
+      "cloneAttributesPresent": false
+     }
+    }
+   },
+   "classification": {
+    "390": "MINOR",
+    "700": "MAJOR",
+    "1024": "MINOR",
+    "1100": "BLOCKER",
+    "1440": "MINOR"
+   },
+   "notes": {
+    "700": "unchanged - the mobile subtree receives zero inferred responsive rules (generateLayoutCss hardcodes desktop, layout-inference.ts:701), so no strategy tested here moves 700.",
+    "1024": "clean: 0 offscreen nodes, 0 chars unreachable.",
+    "1100": "all four plan cards and the full nav now fit; comparison table Enterprise column and the closing headline still clip (105 chars unreachable) because frozen px survives deeper in the tree (flex-item content sizing re-pins ancestors)."
+   },
+   "blockers": 1,
+   "majors": 1,
+   "keyResult": "Best result measured. 1024 goes from BLOCKER (73 offscreen nodes, 305 chars unreachable) to clean (0 offscreen, 0 chars). 1100 goes from \"comparison table deleted + Enterprise card clipped\" to \"all four plan cards and the full nav fit\", with unreachable text down from 250/362 to 105 chars. 1440 and 390 unchanged and still exact.",
+   "criticalDependency": "C3 CANNOT run on the current 5-width probe. Fluidity is detected by comparing two widths that are both on the source's desktop side of its own 1024 breakpoint. With widths [390,768,1024,1440,1920] the only such pair is 1440/1920, and linear caps its layout near 1440, so that pair detects just 9 fluid nodes out of 1264. Adding a single sample at 1100 detects 508 of 1264. This is the one place Strategy A's extra observation is genuinely load-bearing.",
+   "complexity": {
+    "productionComplexity": "low",
+    "changedConcepts": [
+     "a hidden band never extends past the widths observed hidden",
+     "a frozen width is only emitted when the probe shows the width is actually frozen",
+     "observed px track ratios may be re-expressed in fr"
+    ],
+    "schemaChanges": [
+     "none"
+    ],
+    "runtimeDeps": []
+   },
+   "viable": "partial",
+   "verdict": "WINNER on quality-per-unit-complexity, but it does NOT reach BLOCKER=0: 1100 remains blocked and 700 is untouched."
+  }
+ ],
+ "winner": "C",
+ "winnerRationale": "No strategy met the BLOCKER=0 bar, so the decision falls to best result per unit of complexity, and C wins on both axes at once. C produces the best measured page at every width (the only variant that makes 1024 clean, and the only one where all four plan cards fit at 1100) while being the smallest change: roughly 55 lines inside one file (src/reconstruction/layout-inference.ts), no schema change, no new runtime dependency, and no loss of source independence. A is rejected as a standalone fix because its output was identical in every measured field to C1, a ten-line change - more observation alone buys nothing, because the geometry tier is gated by containing-block guards rather than by sample count. B is rejected outright: it regressed 1440, the one width that was previously exact, produced the worst visual result at 1100 (duplicated stacked CTAs and colliding cards), and would require persisting source selector identity, replaying cascade layers and fetching the live source stylesheets at build time - surrendering the asset independence Task 22 established. The one piece of A that IS indispensable is a single extra probe width at ~1100: C3 detects 508 fluid nodes with it and only 9 without it, because linear caps its layout near 1440 and 1024 is already in the source's mobile mode. So the winner is C plus a one-line widening of the probe width set, not C plus a re-observation programme.",
+ "remainingBlockers": [
+  {
+   "width": 1100,
+   "why": "The desktop subtree still carries 1440-resolved frozen px deeper in the tree. Unfreezing a node is not enough when its parent is a flex item that content-sizes to still-frozen descendants: n000290/n000339 stay 1436px wide even under width:auto !important because their children re-pin them. 105 chars (the comparison table Enterprise column and the closing headline) remain unreachable."
+  },
+  {
+   "width": 700,
+   "why": "Untouched by all three strategies. generateLayoutCss hardcodes the desktop subtree (src/reconstruction/layout-inference.ts:701), so the mobile subtree receives ZERO inferred responsive rules and stays frozen at its 390 capture. Plan cards render ~360px wide against feature rows that stretch to 700. Fixing this needs the inference to run for the mobile subtree too, using the probe widths below the breakpoint - which is exactly where an extra 700 sample would become load-bearing, the same way 1100 is for the desktop side."
+  }
+ ],
+ "productionChangeImpliedByWinner": {
+  "summary": "Three edits, two files, no schema change, no new runtime dependency.",
+  "steps": [
+   {
+    "file": "src/observer/layout-probe.ts",
+    "change": "Widen LAYOUT_PROBE_WIDTHS so at least two samples fall strictly inside each layout band the site actually uses - concretely add 700 and 1100 to [390,768,1024,1440,1920]. Alternatively plumb the existing probeExtraWidths through src/multi-observer/observe-selected-pages.ts:287 and the observe:site CLI, which currently drop it.",
+    "size": "~1-10 lines"
+   },
+   {
+    "file": "src/reconstruction/layout-inference.ts (hiddenRanges, :661-684)",
+    "change": "Stop extrapolating a responsive-hidden band past the widths actually observed hidden. Close the band at lastHiddenSample+0.98 rather than at the floored midpoint toward the next visible sample. Removes all 738 wrong blocks on this site (503 on /pricing).",
+    "size": "~5-10 lines"
+   },
+   {
+    "file": "src/reconstruction/layout-inference.ts (new tier)",
+    "change": "Before falling back to the frozen exact-computed width, check the probe: if the node is visible at two widths both above the site's top layout switch and w(wider) > w(narrower)+1, the node is provably fluid - emit width:auto/max-width:none instead of the frozen px. If such a node is a grid container whose computed grid-template-columns is all-px, emit the tracks as proportional fr. Gate it behind the same truth check the other tiers use so the 1440 truth viewport cannot regress.",
+    "size": "~40 lines"
+   },
+   {
+    "file": "src/reconstruction/plan-reconstruction.ts",
+    "change": "NO CHANGE NEEDED - breakpointOverride already exists and cli-reconstruct already exposes --breakpoint. Snapping linear to 1025 measurably improves 1024 (offscreen 73 -> 6). Worth surfacing to operators, not worth new code.",
+    "size": "0 lines"
+   }
+  ],
+  "separateHighValueBug": {
+   "title": "Observer CORS trap silently empties authoredLayout",
+   "detail": "src/observer reads authored declarations off document.styleSheets, but 30 of linear.app's 81 sheets throw SecurityError on cssRules because the <link> lacks crossorigin - and they are the load-bearing ones (Comparison, index, Layout, Grid, Flex, utils). Result: only 34 of 2726 elements on /pricing carry any authoredLayout, and the only media condition captured is (max-width:640px); the 1024 breakpoint that governs the entire pricing table is absent from the IR. The server sends ACAO:*, so fetching each sheet href directly recovers 81/81 (verified here: 3531 rules parsed). Fixing this would give the generator the authored breakpoints and the authored `2fr repeat(4,1fr)` directly - strictly better input than probe interpolation, and it would let the band edges snap to real breakpoints instead of midpoints. Independent of the winner, and probably worth more than any of the three strategies."
+  }
+ },
+ "reusableNotesForStripeGeneralization": {
+  "purpose": "exact mechanism steps to repeat this experiment on a second site",
+  "steps": [
+   "1. Baseline: serve the existing reconstruction (next start on a free port; symlink the repo node_modules into the generated app - the emitted package.json pins next 16.3.0 / react 19.2.8 which the repo already has) and run scripts/eval.mjs <label> <baseUrl> plus scripts/eval.mjs source <sourceOrigin>. Compare visibleChars, scrollHeight and the clip metric, not screenshots alone.",
+   "2. Find the site's real breakpoints BEFORE choosing probe widths: fetch every stylesheet href directly (do NOT trust in-page cssRules - expect a CORS trap) and histogram the @media width conditions. scripts/b-build.mjs does the fetch+parse and prints corsBlockedInPage.",
+   "3. Choose extra probe widths so that at least two samples sit strictly INSIDE each band between consecutive authored breakpoints, and check the site does not cap its layout below your widest sample. The failure mode to avoid is the one measured here: 1440/1920 detected 9 fluid nodes because the layout caps near 1440, while a single 1100 sample detected 508.",
+   "4. Re-observe one route only with observePage(url,{probeExtraWidths:[...]}) - it is the one function with no crawl semantics. Verify the probe walk is stable (tags and parents arrays equal to the stored layout-probe.json) then splice the wider x/w/v arrays into a COPY of the SiteSpec page; this avoids re-running the whole discovery -> selection -> interaction provenance chain that compileSiteSpec requires. scripts/a-splice.mjs asserts index alignment and reports drift at the truth width - insist on 0 drift or the comparison is not controlled.",
+   "5. Emulate the inference fixes as CSS rewrites on a disposable app copy before writing any production code: scripts/patch-c.mjs (band clamp + breakpoint) and scripts/patch-c3.mjs <appDir> <specDir> <narrowWidth> <wideWidth> (unfreeze + proportional fr). Each maps to a named production edit.",
+   "6. Score with scripts/clip-metric.mjs: offscreenTextChars (content made unreachable) is the metric that separates BLOCKER from MAJOR. Take the source's own offscreen count at each width as the noise floor - linear reports 35 offscreen/0 chars at 390 from its logo carousel.",
+   "7. Expect the same two residuals to reappear on any desktop-first site: every width in [breakpoint, truthWidth) clips because the desktop subtree is frozen at the truth width, and the mobile subtree is frozen at its capture width because generateLayoutCss never runs for it."
+  ],
+  "gotchas": [
+   "The shipped clone strips original classes and data-* attributes; only data-wr-node and wr-stNNNNNN survive. Any source-rule replay needs ElementSpecNode.sourceElementId -> dom.json to recover identity.",
+   "Node ids are reused across the two viewport subtrees, so every injected selector must be scoped by [data-wr-viewport=\"...\"].",
+   "Frozen styles live in SHARED style-atom classes (.wr-stNNNNNN), never per node, so a per-node override must be emitted as its own rule.",
+   "app/globals.css is compiled into .next/static/chunks/*.css; patching the source file alone does nothing without a rebuild. generated-styles.css lives in public/ and is served straight from disk, and it loads AFTER the globals chunk.",
+   "width:auto !important does not always unpin a node: if it is a flex item whose children are still frozen, it content-sizes back to the frozen width. Unfreezing must reach the leaves."
+  ]
+ },
+ "artifacts": {
+  "screenshots": "tmp/wr-responsive-investigation/agent-d/shots/{source,current,A-extraprobe,B-preserved,C1-bandclamp,C2-bandclamp-bp1025,AC3-probe1100-unfreeze,best}-{390,700,1024,1100,1440}.png",
+  "winnerScreenshots": "tmp/wr-responsive-investigation/agent-d/shots/best-{390,700,1024,1100,1440}.png (= AC3-probe1100-unfreeze)",
+  "metrics": "tmp/wr-responsive-investigation/agent-d/out/metrics-*.json, clip-metric.json, b-report.json, diag-pin-1100.json",
+  "scripts": "tmp/wr-responsive-investigation/agent-d/scripts/{eval,diag-pin,clip-metric,patch-c,patch-c3,patch-b,b-build,a-splice,write-handoff}.mjs + a-observe.ts",
+  "apps": "tmp/wr-responsive-investigation/agent-d/{app,app-a,app-ac3,app-b,app-c1,app-c2,app-c3} (disposable copies; ports 4652-4657)",
+  "splicedSiteSpec": "tmp/wr-responsive-investigation/agent-d/sitespec-a",
+  "productionSourceUnchanged": true
+ },
+ "ac4Correction": {
+  "what": "AC4 = AC3 with the unfreeze rule emitting width:auto ONLY (the max-width:none !important half removed from all 506 rules), per Agent E's Stripe finding that max-width:none destroys authored max-width caps.",
+  "app": "tmp/wr-responsive-investigation/agent-d/app-ac4 (port 4661)",
+  "result": "Confirms E's finding on Linear: the CTA closing headline returns to two lines at 1024/1100/1440 (AC3 flattened/clipped it). The customer-logo row jam is NOT fixed by this (different mechanism). Coarse metrics identical to AC3; offscreenText unchanged (1100 still 105).",
+  "perWidthClip": {
+   "390": {
+    "offscreenText": 0
+   },
+   "700": {
+    "offscreenText": 0
+   },
+   "1024": {
+    "offscreenText": 0,
+    "overflowing": 78
+   },
+   "1100": {
+    "offscreenText": 105,
+    "overflowing": 149
+   },
+   "1440": {
+    "offscreenText": 0
+   }
+  },
+  "classification": {
+   "390": "PASS",
+   "700": "MAJOR",
+   "1024": "MAJOR",
+   "1100": "BLOCKER",
+   "1440": "MAJOR"
+  },
+  "metrics": {
+   "390": {
+    "visibleChars": 2186,
+    "hiddenNodes": 228,
+    "totalNodes": 5963,
+    "scrollHeight": 7714,
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "hOverflow": false,
+    "headerRows": 0,
+    "headerRowsVisible": 0,
+    "visiblePlans": [],
+    "visiblePlanCount": 0,
+    "headerTextFound": true,
+    "topGridSignatures": [],
+    "contentMaxRight": 1289,
+    "contentMinLeft": -112,
+    "rightGutter": -899
+   },
+   "700": {
+    "visibleChars": 2186,
+    "hiddenNodes": 228,
+    "totalNodes": 5963,
+    "scrollHeight": 7714,
+    "scrollWidth": 700,
+    "innerWidth": 700,
+    "hOverflow": false,
+    "headerRows": 0,
+    "headerRowsVisible": 0,
+    "visiblePlans": [],
+    "visiblePlanCount": 0,
+    "headerTextFound": true,
+    "topGridSignatures": [],
+    "contentMaxRight": 1289,
+    "contentMinLeft": -112,
+    "rightGutter": -589
+   },
+   "1024": {
+    "visibleChars": 2173,
+    "hiddenNodes": 731,
+    "totalNodes": 5963,
+    "scrollHeight": 6360,
+    "scrollWidth": 1024,
+    "innerWidth": 1024,
+    "hOverflow": false,
+    "headerRows": 0,
+    "headerRowsVisible": 0,
+    "visiblePlans": [],
+    "visiblePlanCount": 0,
+    "headerTextFound": true,
+    "topGridSignatures": [],
+    "contentMaxRight": 1436,
+    "contentMinLeft": 0,
+    "rightGutter": -412
+   },
+   "1100": {
+    "visibleChars": 2461,
+    "hiddenNodes": 228,
+    "totalNodes": 5963,
+    "scrollHeight": 6360,
+    "scrollWidth": 1100,
+    "innerWidth": 1100,
+    "hOverflow": false,
+    "headerRows": 0,
+    "headerRowsVisible": 0,
+    "visiblePlans": [],
+    "visiblePlanCount": 0,
+    "headerTextFound": true,
+    "topGridSignatures": [],
+    "contentMaxRight": 1436,
+    "contentMinLeft": 0,
+    "rightGutter": -336
+   },
+   "1440": {
+    "visibleChars": 2461,
+    "hiddenNodes": 228,
+    "totalNodes": 5963,
+    "scrollHeight": 6360,
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "hOverflow": false,
+    "headerRows": 0,
+    "headerRowsVisible": 0,
+    "visiblePlans": [],
+    "visiblePlanCount": 0,
+    "headerTextFound": true,
+    "topGridSignatures": [],
+    "contentMaxRight": 1440,
+    "contentMinLeft": 0,
+    "rightGutter": 0
+   }
+  }
+ },
+ "ac5Correction": {
+  "what": "AC5 = AC4 + (i) transitive width:auto for frozen descendants of fluid containers (756 rules \u2014 measured contribution: NONE) + (ii) single-track px grid -> minmax(0,1fr) for fluid grid containers (2 rules \u2014 decisive). patch-c3's fr conversion required tracks.length>1, so single-track frozen grids (e.g. n000291 grid-template-columns:1344px) were skipped; that one track was the min-content pin that kept ancestors at 1436px and clipped the Enterprise column at 1100.",
+  "app": "tmp/wr-responsive-investigation/agent-d/app-ac5 (port 4662); ablation AC5c (+97 flex:1 1 auto rules for fluid flex items) at app-ac5c measured identical \u2014 flex rules bought nothing, excluded from the recommendation.",
+  "result": "1100 offscreenText 105 -> 0, offscreen nodes 236 -> 0, comparison table complete with all five columns laid out inside the viewport; 1024 overflowing 78 -> 0. Remaining defects are MAJORs from ONE mechanism: other frozen box properties (margins 349px on n000290, footer track widths) still stretch/pin content the unfreeze exposes \u2014 the customer-logo row stays jammed at 1024/1100/1440 and the footer Connect column truncates at 1100.",
+  "perWidthClip": {
+   "390": {
+    "offscreenText": 0
+   },
+   "700": {
+    "offscreenText": 0
+   },
+   "1024": {
+    "offscreenText": 0,
+    "overflowing": 0
+   },
+   "1100": {
+    "offscreenText": 0,
+    "overflowing": 12
+   },
+   "1440": {
+    "offscreenText": 0,
+    "overflowing": 0
+   }
+  },
+  "classification": {
+   "390": "PASS",
+   "700": "MAJOR",
+   "1024": "MAJOR",
+   "1100": "MAJOR",
+   "1440": "MAJOR"
+  },
+  "blockerCount": 0,
+  "newBestVariant": "AC5 \u2014 pack best-* images and docs/result/28.5C-responsive-review/{03,06,09,12,15} refreshed to AC5 screenshots",
+  "chainOfExposedFrozenProps": "width -> max-width (AC4) -> single-track grid tracks (AC5b) -> margins/footer tracks (open). Each unfreeze exposes the next frozen property; the production fix must treat frozen-px emission for PROVABLY-FLUID subtrees as a coherent set (width, max-width, grid tracks, margins), not property-by-property.",
+  "metrics": {
+   "390": {
+    "visibleChars": 2186,
+    "hiddenNodes": 228,
+    "totalNodes": 5963,
+    "scrollHeight": 7714,
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "hOverflow": false,
+    "headerRows": 0,
+    "headerRowsVisible": 0,
+    "visiblePlans": [],
+    "visiblePlanCount": 0,
+    "headerTextFound": true,
+    "topGridSignatures": [],
+    "contentMaxRight": 1289,
+    "contentMinLeft": -112,
+    "rightGutter": -899
+   },
+   "700": {
+    "visibleChars": 2186,
+    "hiddenNodes": 228,
+    "totalNodes": 5963,
+    "scrollHeight": 7714,
+    "scrollWidth": 700,
+    "innerWidth": 700,
+    "hOverflow": false,
+    "headerRows": 0,
+    "headerRowsVisible": 0,
+    "visiblePlans": [],
+    "visiblePlanCount": 0,
+    "headerTextFound": true,
+    "topGridSignatures": [],
+    "contentMaxRight": 1289,
+    "contentMinLeft": -112,
+    "rightGutter": -589
+   },
+   "1024": {
+    "visibleChars": 2173,
+    "hiddenNodes": 731,
+    "totalNodes": 5963,
+    "scrollHeight": 6360,
+    "scrollWidth": 1024,
+    "innerWidth": 1024,
+    "hOverflow": false,
+    "headerRows": 0,
+    "headerRowsVisible": 0,
+    "visiblePlans": [],
+    "visiblePlanCount": 0,
+    "headerTextFound": true,
+    "topGridSignatures": [],
+    "contentMaxRight": 1024,
+    "contentMinLeft": 0,
+    "rightGutter": 0
+   },
+   "1100": {
+    "visibleChars": 2461,
+    "hiddenNodes": 228,
+    "totalNodes": 5963,
+    "scrollHeight": 6360,
+    "scrollWidth": 1100,
+    "innerWidth": 1100,
+    "hOverflow": false,
+    "headerRows": 0,
+    "headerRowsVisible": 0,
+    "visiblePlans": [],
+    "visiblePlanCount": 0,
+    "headerTextFound": true,
+    "topGridSignatures": [],
+    "contentMaxRight": 1157,
+    "contentMinLeft": 0,
+    "rightGutter": -57
+   },
+   "1440": {
+    "visibleChars": 2461,
+    "hiddenNodes": 228,
+    "totalNodes": 5963,
+    "scrollHeight": 6360,
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "hOverflow": false,
+    "headerRows": 0,
+    "headerRowsVisible": 0,
+    "visiblePlans": [],
+    "visiblePlanCount": 0,
+    "headerTextFound": true,
+    "topGridSignatures": [],
+    "contentMaxRight": 1440,
+    "contentMinLeft": 0,
+    "rightGutter": 0
+   }
+  }
+ }
+}

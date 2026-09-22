@@ -1,0 +1,260 @@
+{
+  "schema": "task285b-linear-run-v1",
+  "generatedAt": "2026-08-30T16:08:41Z",
+  "rootUrl": "https://linear.app/",
+  "runNote": "Full 7-stage pipeline restarted and completed in one continuous same-session run per coordinator plan-change. An earlier split-attempt (stage 1 on Aug 29, stages 2-3 on Aug 30) was abandoned mid-pipeline because the same-session gap would have injected multi-day source drift into the QA live-original comparison. Its namespaces are preserved untouched on disk and recorded below for provenance only; none of its outputs feed the accepted run.",
+  "abandonedSplitFamily": {
+    "reason": "stage-1 observation dated 2026-08-29T13:13:12.793Z; stages 2-3 ran 2026-08-30T14:42-14:44Z after session suspension — same-session tightness broken, would have skewed QA live-drift comparison",
+    "namespaces": {
+      "siteObservation": "data/linear.app/site-observations/2026-08-29T13-13-12-793Z/ (stage 1 + stage-2 interaction-analysis.json written into it on 2026-08-30)",
+      "interactionExploration": "data/linear.app/interaction-explorations/2026-08-30T14-42-36-086Z/"
+    },
+    "furtherStagesRun": "none (stages 4-7 never run against this namespace)"
+  },
+  "namespaces": {
+    "pilotScope": "data/linear.app/2026-08-29T12-34-53-000Z-285b-pilot/",
+    "siteObservation": "data/linear.app/site-observations/2026-08-30T15-52-54-381Z/",
+    "interactionAnalysis": "data/linear.app/site-observations/2026-08-30T15-52-54-381Z/interaction-analysis.json",
+    "interactionExploration": "data/linear.app/interaction-explorations/2026-08-30T15-54-23-656Z/",
+    "interactionModel": "data/linear.app/interaction-models/2026-08-30T15-56-18-871Z/",
+    "siteSpec": "data/linear.app/site-specs/2026-08-30T15-56-23-933Z/",
+    "reconstruction": "data/linear.app/reconstructions/2026-08-30T15-56-29-877Z/",
+    "reconstructionQa": "data/linear.app/reconstruction-qa/2026-08-30T15-57-54-926Z/"
+  },
+  "environment": {
+    "viewportProfiles": [
+      { "id": "desktop", "width": 1440, "height": 900, "deviceScaleFactor": 1, "isMobile": false, "hasTouch": false },
+      { "id": "mobile", "width": 390, "height": 844, "deviceScaleFactor": 3, "isMobile": true, "hasTouch": true, "userAgent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.34 Mobile Safari/537.36" }
+    ],
+    "locale": "ko-KR",
+    "timezone": "Asia/Seoul",
+    "colorScheme": "light",
+    "reducedMotion": "no-preference",
+    "browser": "chromium",
+    "browserBuildVersion": "151.0.7922.34",
+    "playwrightPackageVersion": "1.62.1",
+    "captureStartedAt": "2026-08-30T15:52:54.381Z",
+    "captureCompletedAt": "2026-08-30T15:54:15.634Z"
+  },
+  "durations": {
+    "stage1_observeSite": { "wallSeconds": 81.3, "source": "site-observation.json stats.totalElapsedMs=81253" },
+    "stage2_detectInteractions": { "wallSeconds": 0.364, "source": "script-reported Elapsed" },
+    "stage3_exploreInteractions": { "wallSeconds": 111.198, "source": "script-reported Timing wall (158.739s spent in page loads within it)" },
+    "stage4_modelInteractions": { "wallSeconds": 0.091, "source": "script-reported elapsed" },
+    "stage5_compileSitespec": { "wallSeconds": 2.169, "source": "script-reported elapsed" },
+    "stage6_reconstruct": { "wallSeconds": 11, "source": "measured start (15:56:28Z) to .next BUILD_ID mtime (15:56:39Z); internal generation 7.709s + next build PASS 2.924s" },
+    "stage7_qaReconstruction": { "wallSeconds": 646.524, "source": "qa-manifest.json timings.totalMs", "breakdownMs": {
+      "loadInputsMs": 296, "cloneBuildMs": 0, "cloneStartMs": 568, "pageQaMs": 177888,
+      "routeCheckMs": 344, "breakpointProbeMs": 7076, "interactionQaMs": 94811, "unknownQaMs": 59614,
+      "familyAuditMs": 1, "correctionLoopMs": 305689, "totalMs": 646524
+    } },
+    "pipelineTotalWallSeconds_approx": 852.6
+  },
+  "observation": {
+    "routes": [
+      { "routeId": "p000001", "familyId": "f000001", "url": "https://linear.app/" },
+      { "routeId": "p000002", "familyId": "f000002", "url": "https://linear.app/changelog" },
+      { "routeId": "p000003", "familyId": "f000003", "url": "https://linear.app/customers" },
+      { "routeId": "p000004", "familyId": "f000004", "url": "https://linear.app/customers/automattic" },
+      { "routeId": "p000005", "familyId": "f000005", "url": "https://linear.app/integrations" },
+      { "routeId": "p000006", "familyId": "f000006", "url": "https://linear.app/plan" },
+      { "routeId": "p000007", "familyId": "f000007", "url": "https://linear.app/pricing" },
+      { "routeId": "p000008", "familyId": "f000008", "url": "https://linear.app/security" }
+    ],
+    "allRouteStatus": "success (8/8), no failures",
+    "customPropertiesPerPageViewport": [
+      { "page": "p000001", "vp": "desktop", "discoveredCount": 135, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 0, "referenceDiscoveredCount": 16, "referenceResolvedCount": 16, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000001", "vp": "mobile",  "discoveredCount": 135, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 0, "referenceDiscoveredCount": 16, "referenceResolvedCount": 16, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000002", "vp": "desktop", "discoveredCount": 172, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 5, "referenceDiscoveredCount": 2, "referenceResolvedCount": 2, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000002", "vp": "mobile",  "discoveredCount": 172, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 5, "referenceDiscoveredCount": 2, "referenceResolvedCount": 2, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000003", "vp": "desktop", "discoveredCount": 172, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 5, "referenceDiscoveredCount": 2, "referenceResolvedCount": 2, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000003", "vp": "mobile",  "discoveredCount": 172, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 5, "referenceDiscoveredCount": 2, "referenceResolvedCount": 2, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000004", "vp": "desktop", "discoveredCount": 172, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 5, "referenceDiscoveredCount": 2, "referenceResolvedCount": 2, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000004", "vp": "mobile",  "discoveredCount": 172, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 5, "referenceDiscoveredCount": 2, "referenceResolvedCount": 2, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000005", "vp": "desktop", "discoveredCount": 172, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 5, "referenceDiscoveredCount": 3, "referenceResolvedCount": 3, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000005", "vp": "mobile",  "discoveredCount": 172, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 5, "referenceDiscoveredCount": 3, "referenceResolvedCount": 3, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000006", "vp": "desktop", "discoveredCount": 172, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 5, "referenceDiscoveredCount": 3, "referenceResolvedCount": 3, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000006", "vp": "mobile",  "discoveredCount": 172, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 5, "referenceDiscoveredCount": 3, "referenceResolvedCount": 3, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000007", "vp": "desktop", "discoveredCount": 172, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 5, "referenceDiscoveredCount": 3, "referenceResolvedCount": 3, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000007", "vp": "mobile",  "discoveredCount": 172, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 5, "referenceDiscoveredCount": 3, "referenceResolvedCount": 3, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000008", "vp": "desktop", "discoveredCount": 172, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 5, "referenceDiscoveredCount": 3, "referenceResolvedCount": 3, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 },
+      { "page": "p000008", "vp": "mobile",  "discoveredCount": 172, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 5, "referenceDiscoveredCount": 3, "referenceResolvedCount": 3, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 0 }
+    ],
+    "capHits": "none — countCapped=false and valueCappedCount=0 on every page/viewport",
+    "detectInteractions": {
+      "candidates": 488, "desktop": 244, "mobile": 244,
+      "priority": { "P1": 134, "P2": 320, "P3": 34 },
+      "visible": 331, "hidden": 157, "operable": 319, "nonOperable": 169,
+      "targets": 68, "controlRelations": 121, "controlRelationsResolved": 68, "controlRelationsUnresolved": 53
+    },
+    "exploreInteractions": {
+      "planned": 31, "executed": 27, "changed": 25, "noChange": 2, "actionabilityError": 4,
+      "changeRate": 0.9259,
+      "byViewport": { "desktop": { "planned": 18, "executed": 17, "changed": 15 }, "mobile": { "planned": 13, "executed": 10, "changed": 10 } },
+      "locatorResolutionRate": 1,
+      "locatorStrategy": { "idExact": 14, "semanticExact": 2, "structuralPath": 15 },
+      "mutationCapReachedOnActions": 3
+    },
+    "modelInteractions": {
+      "plannedActions": 31, "executedActions": 27, "changedActions": 25,
+      "confirmedPatterns": 21, "unknownCases": 10,
+      "coverageOfChanged": 0.84, "coverageOfExecuted": 0.778,
+      "patternTypes": { "disclosure": 13, "dialog": 7, "selection": 1 },
+      "unknownReasons": { "styleOnlyChange": 1, "alreadyInTargetState": 1, "executionError": 4, "insufficientEvidence": 4 }
+    }
+  },
+  "reconstruction": {
+    "generatedStylesheetPath": "data/linear.app/reconstructions/2026-08-30T15-56-29-877Z/app/public/wr/generated-styles.css",
+    "generatedStylesheetBytes": 11949169,
+    "layout": {
+      "candidateRules": 1757,
+      "acceptedRules": 1752,
+      "rejectedByGuard": 145,
+      "rejectedByTruthCheck": 5,
+      "rejectedUnverifiable": 0,
+      "acceptedUnchecked": 738,
+      "acceptedRegressed": 0,
+      "truthCheckStatus": "verified",
+      "truthCheckable": 1019,
+      "truthCheckRounds": 9,
+      "truthCheckPagesRendered": 8,
+      "truthCheckConverged": true,
+      "guardRefusalsByReason": {
+        "abs-containing-block-is-padding-box": 17,
+        "fixed-position": 16,
+        "flex-item-basis-governed": 41,
+        "grid-item": 71
+      },
+      "note": "acceptedRules(1752)+rejectedByGuard(145)+rejectedByTruthCheck(5)=1902 exceeds candidateRules(1757); manifest reports these as-is (categorization axes overlap, not reconciled here)."
+    },
+    "customProperties": { "blocks": 16, "declarations": 2676, "rejected": 0 },
+    "unresolvedElementAssets": 0,
+    "pseudoRules": 2259,
+    "styleRules": 4387,
+    "styleDeclarations": 499923,
+    "otherCounters": {
+      "runtimeElementNodes": 18485, "runtimeTextNodes": 7279, "styledNodes": 18475, "missingStyleRefs": 0,
+      "generatedDomIds": 635, "rewrittenIdrefTokens": 182, "unresolvedIdrefTokens": 53,
+      "patternBindings": 21, "nativeBindings": 0, "scriptedBindings": 21, "unknownBindings": 10,
+      "dynamicTargets": 15, "dynamicTargetsWithContent": 15,
+      "elementAssetsRequested": 2216, "resolvedImageSrc": 422, "resolvedSrcset": 0,
+      "inlineSvgRendered": 1744, "remoteAssetUrls": 326, "assetDownloads": 0,
+      "internalLinksRewritten": 174, "unresolvedInternalLinks": 1104, "externalLinks": 80,
+      "nextBuild": "PASS in 2924 ms"
+    }
+  },
+  "qa": {
+    "summary": {
+      "snapshotFidelity": {
+        "pairs": 16, "completed": 16, "contentExactRatio": 1, "contentMismatchedNodes": 0,
+        "stylePropertiesCompared": 1338702, "styleMismatches": 209, "styleSubLayoutUnitMismatches": 1811,
+        "geometryMedianOfMedians": 0.01, "geometryMedianOfP95": 0.095, "geometryMaxDelta": 98,
+        "documentHeightDeltaMedian": 0.26, "documentHeightDeltaMax": 0.5,
+        "changedRatioAt1_median": 0.0684, "changedRatioAt16_median": 0.0438,
+        "deltaE76AboveJndRatio_median": 0.0538, "deltaE76AboveVisibleRatio_median": 0.0376,
+        "deltaE76Mean_median": 2.3239, "screenshotMeanDelta_median": 5.5196,
+        "assetFailures": 163, "runtimeErrors": 0, "blockedAssetMessages": 26, "unstablePages": 0
+      },
+      "liveFidelity": {
+        "comparablePairs": 9, "contentExactRatio": 1, "styleMismatches": 111,
+        "changedRatioAt1_median": 0.0744, "changedRatioAt16_median": 0.0417,
+        "deltaE76AboveJndRatio_median": 0.0533,
+        "qaOnlyStyleComparedPairs": 14, "qaOnlyStyleUnavailablePairs": 2,
+        "qaOnlyStyleMismatchTotal": 18616, "qaOnlyStyleMismatchMedian": 1240
+      },
+      "behavior": {
+        "sourcePatternInstances": 21, "attempted": 21,
+        "triggerStateEquivalent": 21, "triggerStateMismatch": 0,
+        "visibleTargetEquivalent": 20, "visibleTargetMismatch": 1,
+        "behaviorEquivalent": 20, "behaviorMismatch": 1,
+        "byPatternType": { "dialog": 7, "disclosure": 13, "selection": 1 },
+        "verdictByPatternType": { "dialog|equivalent": 7, "disclosure|equivalent": 12, "disclosure|mismatch": 1, "selection|equivalent": 1 },
+        "dynamicTargetsCompared": 15
+      },
+      "unknownInteractions": { "signatureGroups": 8, "sampled": 8, "gapsDetected": 2, "cloneNoOp": 8, "autoFixed": 0 },
+      "routes": { "rendered": "8/8" },
+      "familyAudit": { "routesAudited": 0, "majorContentMismatch": 0, "majorStructureMismatch": 0 }
+    },
+    "autoFix": {
+      "iterations": 2, "enabled": true,
+      "proposedCorrections": 2, "appliedCorrections": 1, "rejectedCorrections": 2,
+      "corrections": [
+        { "id": "qc000001", "kind": "document-canvas-background", "verdict": "ACCEPTED" },
+        { "id": "qc000002", "kind": "interaction-target-state-style", "verdict": "REJECTED", "reason": "target-metric-not-improved" },
+        { "id": "qc000003", "kind": "interaction-target-state-style", "verdict": "REJECTED", "reason": "unsafe-value" }
+      ]
+    },
+    "perPage": [
+      { "page": "p000001", "url": "https://linear.app/", "vp": "desktop", "status": "source-drift", "changedRatio1": 0.2596, "changedRatioAt16": 0.0459, "deltaE76AboveJndRatio": 0.0847, "deltaE76AboveVisibleRatio": 0.0414, "deltaE76Mean": 2.3467, "meanMaxChannelDelta": 5.9472, "commonAreaRatio": 1, "srcHeight": 9960, "cloneHeight": 9960, "heightDelta": 0, "qaOnlyStyleMismatches": null, "qaOnlyStyleComparison": "unavailable (source-not-aligned)" },
+      { "page": "p000001", "url": "https://linear.app/", "vp": "mobile", "status": "source-drift", "changedRatio1": 0.1505, "changedRatioAt16": 0.0465, "deltaE76AboveJndRatio": 0.0542, "deltaE76AboveVisibleRatio": 0.0446, "deltaE76Mean": 2.7923, "meanMaxChannelDelta": 6.9888, "commonAreaRatio": 1, "srcHeight": 17628, "cloneHeight": 17628, "heightDelta": 0, "qaOnlyStyleMismatches": null, "qaOnlyStyleComparison": "unavailable (source-not-aligned)" },
+      { "page": "p000002", "url": "https://linear.app/changelog", "vp": "desktop", "status": "complete", "changedRatio1": 0.0746, "changedRatioAt16": 0.0417, "deltaE76AboveJndRatio": 0.0533, "deltaE76AboveVisibleRatio": 0.0343, "deltaE76Mean": 1.7572, "meanMaxChannelDelta": 4.457, "commonAreaRatio": 1, "srcHeight": 25342, "cloneHeight": 25343, "heightDelta": 1, "qaOnlyStyleMismatches": 1965, "qaOnlyStyleComparison": "compared" },
+      { "page": "p000002", "url": "https://linear.app/changelog", "vp": "mobile", "status": "complete", "changedRatio1": 0.1276, "changedRatioAt16": 0.0894, "deltaE76AboveJndRatio": 0.102, "deltaE76AboveVisibleRatio": 0.0808, "deltaE76Mean": 5.3547, "meanMaxChannelDelta": 13.6482, "commonAreaRatio": 1, "srcHeight": 73446, "cloneHeight": 73446, "heightDelta": 0, "qaOnlyStyleMismatches": 1907, "qaOnlyStyleComparison": "compared" },
+      { "page": "p000003", "url": "https://linear.app/customers", "vp": "desktop", "status": "complete", "changedRatio1": 0.0744, "changedRatioAt16": 0.036, "deltaE76AboveJndRatio": 0.0454, "deltaE76AboveVisibleRatio": 0.0321, "deltaE76Mean": 1.753, "meanMaxChannelDelta": 4.3039, "commonAreaRatio": 1, "srcHeight": 4886, "cloneHeight": 4886, "heightDelta": 0, "qaOnlyStyleMismatches": 1190, "qaOnlyStyleComparison": "compared" },
+      { "page": "p000003", "url": "https://linear.app/customers", "vp": "mobile", "status": "complete", "changedRatio1": 0.0359, "changedRatioAt16": 0.0338, "deltaE76AboveJndRatio": 0.0348, "deltaE76AboveVisibleRatio": 0.0327, "deltaE76Mean": 2.301, "meanMaxChannelDelta": 5.672, "commonAreaRatio": 0.5804, "srcHeight": 24147, "cloneHeight": 24147, "heightDelta": 0, "qaOnlyStyleMismatches": 1044, "qaOnlyStyleComparison": "compared", "note": "commonAreaRatio 0.5804 is the lowest of all 16 pairs — worth checking on next pass" },
+      { "page": "p000004", "url": "https://linear.app/customers/automattic", "vp": "desktop", "status": "complete", "changedRatio1": 0.0624, "changedRatioAt16": 0.0556, "deltaE76AboveJndRatio": 0.0589, "deltaE76AboveVisibleRatio": 0.0523, "deltaE76Mean": 2.793, "meanMaxChannelDelta": 7.0215, "commonAreaRatio": 1, "srcHeight": 5242, "cloneHeight": 5242, "heightDelta": 0, "qaOnlyStyleMismatches": 475, "qaOnlyStyleComparison": "compared" },
+      { "page": "p000004", "url": "https://linear.app/customers/automattic", "vp": "mobile", "status": "complete", "changedRatio1": 0.1103, "changedRatioAt16": 0.1038, "deltaE76AboveJndRatio": 0.107, "deltaE76AboveVisibleRatio": 0.1003, "deltaE76Mean": 6.8084, "meanMaxChannelDelta": 17.2941, "commonAreaRatio": 1, "srcHeight": 18960, "cloneHeight": 18960, "heightDelta": 0, "qaOnlyStyleMismatches": 451, "qaOnlyStyleComparison": "compared" },
+      { "page": "p000005", "url": "https://linear.app/integrations", "vp": "desktop", "status": "complete", "changedRatio1": 0.0221, "changedRatioAt16": 0.017, "deltaE76AboveJndRatio": 0.0195, "deltaE76AboveVisibleRatio": 0.0154, "deltaE76Mean": 0.5668, "meanMaxChannelDelta": 1.3923, "commonAreaRatio": 1, "srcHeight": 11059, "cloneHeight": 11059, "heightDelta": 0, "qaOnlyStyleMismatches": 2350, "qaOnlyStyleComparison": "compared" },
+      { "page": "p000005", "url": "https://linear.app/integrations", "vp": "mobile", "status": "complete", "changedRatio1": 0.035, "changedRatioAt16": 0.0313, "deltaE76AboveJndRatio": 0.0335, "deltaE76AboveVisibleRatio": 0.0297, "deltaE76Mean": 1.4149, "meanMaxChannelDelta": 3.5062, "commonAreaRatio": 1, "srcHeight": 46866, "cloneHeight": 46866, "heightDelta": 0, "qaOnlyStyleMismatches": 2174, "qaOnlyStyleComparison": "compared" },
+      { "page": "p000006", "url": "https://linear.app/plan", "vp": "desktop", "status": "complete", "changedRatio1": 0.3483, "changedRatioAt16": 0.2328, "deltaE76AboveJndRatio": 0.3177, "deltaE76AboveVisibleRatio": 0.0817, "deltaE76Mean": 3.6337, "meanMaxChannelDelta": 8.467, "commonAreaRatio": 1, "srcHeight": 14771, "cloneHeight": 14771, "heightDelta": 0, "qaOnlyStyleMismatches": 1290, "qaOnlyStyleComparison": "compared", "note": "worst page overall by @1 changed ratio" },
+      { "page": "p000006", "url": "https://linear.app/plan", "vp": "mobile", "status": "complete", "changedRatio1": 0.205, "changedRatioAt16": 0.0499, "deltaE76AboveJndRatio": 0.1193, "deltaE76AboveVisibleRatio": 0.0408, "deltaE76Mean": 2.7703, "meanMaxChannelDelta": 6.8842, "commonAreaRatio": 1, "srcHeight": 39150, "cloneHeight": 39150, "heightDelta": 0, "qaOnlyStyleMismatches": 871, "qaOnlyStyleComparison": "compared" },
+      { "page": "p000007", "url": "https://linear.app/pricing", "vp": "desktop", "status": "complete", "changedRatio1": 0.0266, "changedRatioAt16": 0.0158, "deltaE76AboveJndRatio": 0.0172, "deltaE76AboveVisibleRatio": 0.0146, "deltaE76Mean": 0.7039, "meanMaxChannelDelta": 1.7595, "commonAreaRatio": 1, "srcHeight": 6360, "cloneHeight": 6360, "heightDelta": 0, "qaOnlyStyleMismatches": 2299, "qaOnlyStyleComparison": "compared" },
+      { "page": "p000007", "url": "https://linear.app/pricing", "vp": "mobile", "status": "complete", "changedRatio1": 0.0359, "changedRatioAt16": 0.0274, "deltaE76AboveJndRatio": 0.0288, "deltaE76AboveVisibleRatio": 0.0261, "deltaE76Mean": 1.4919, "meanMaxChannelDelta": 3.7419, "commonAreaRatio": 1, "srcHeight": 23142, "cloneHeight": 23142, "heightDelta": 0, "qaOnlyStyleMismatches": 1334, "qaOnlyStyleComparison": "compared" },
+      { "page": "p000008", "url": "https://linear.app/security", "vp": "desktop", "status": "complete", "changedRatio1": 0.0417, "changedRatioAt16": 0.0345, "deltaE76AboveJndRatio": 0.0382, "deltaE76AboveVisibleRatio": 0.0316, "deltaE76Mean": 1.3893, "meanMaxChannelDelta": 3.4485, "commonAreaRatio": 1, "srcHeight": 3231, "cloneHeight": 3231, "heightDelta": 0, "qaOnlyStyleMismatches": 643, "qaOnlyStyleComparison": "compared" },
+      { "page": "p000008", "url": "https://linear.app/security", "vp": "mobile", "status": "complete", "changedRatio1": 0.0621, "changedRatioAt16": 0.0563, "deltaE76AboveJndRatio": 0.0593, "deltaE76AboveVisibleRatio": 0.0536, "deltaE76Mean": 2.8335, "meanMaxChannelDelta": 7.0824, "commonAreaRatio": 1, "srcHeight": 14349, "cloneHeight": 14349, "heightDelta": 0, "qaOnlyStyleMismatches": 623, "qaOnlyStyleComparison": "compared" }
+    ],
+    "rootCauses": {
+      "sourceStructuralDrift": { "occurrences": 2, "affectedNodes": 4443, "autoFixEligible": 0 },
+      "sourceContentDrift": { "occurrences": 45, "affectedNodes": 48, "autoFixEligible": 0 },
+      "sourceStyleDrift": { "occurrences": 5, "affectedNodes": 30, "autoFixEligible": 0 },
+      "geometryMismatch": { "occurrences": 205, "affectedNodes": 693, "autoFixEligible": 0 },
+      "layoutCascade": { "occurrences": 7, "affectedNodes": 149, "autoFixEligible": 0 },
+      "styleMismatch": { "occurrences": 166, "affectedNodes": 284, "autoFixEligible": 0 },
+      "assetLoadFailure": { "occurrences": 11, "affectedNodes": 11, "autoFixEligible": 0 },
+      "assetHotlinkBlocked": { "occurrences": 2, "affectedNodes": 26, "autoFixEligible": 0 },
+      "canvasBackgroundMismatch": { "occurrences": 16, "affectedNodes": 16, "autoFixEligible": 16 },
+      "interactionVisibleTargetMismatch": { "occurrences": 1, "affectedNodes": 1, "autoFixEligible": 0 },
+      "interactionTargetStyleMismatch": { "occurrences": 2, "affectedNodes": 2, "autoFixEligible": 2 },
+      "unknownBehaviorGap": { "occurrences": 2, "affectedNodes": 2, "autoFixEligible": 0 },
+      "environmentUnstable": { "occurrences": 7, "affectedNodes": 333, "autoFixEligible": 0 }
+    }
+  },
+  "verify": {
+    "allEightRoutesPresent": true,
+    "routesRendered": "8/8",
+    "redirectsOrSubstitutions": "none",
+    "detail": "p000001..p000008 all present across observation, exploration, modeling, sitespec, reconstruction, and QA stages; identical route set as the pilot's selected-pages.json (f000001..f000008, all singleton families)."
+  },
+  "anomalies": [
+    {
+      "type": "source-drift",
+      "page": "p000001 (homepage, https://linear.app/)",
+      "detail": "Both viewports flagged status=source-drift with alignmentFailure=element-count-mismatch (desktop live=2186 vs snapshot=2231; mobile live=2231 vs snapshot=2212). The live homepage changed between the site-observation snapshot (~15:53Z) and QA's live-original capture (~10 min later, mid-stage-7). This is expected marketing-site churn (Linear's homepage has rotating/dynamic elements), not a clone defect — but it made qaOnlyStyleComparison 'unavailable (source-not-aligned)' for both homepage rows, the only 2 of 16 pairs unavailable."
+    },
+    {
+      "type": "worst-fidelity-page",
+      "page": "p000006 desktop (https://linear.app/plan)",
+      "detail": "Highest visual delta of all 16 pairs: changedRatio@1=0.3483, deltaE76AboveJndRatio=0.3177. Root-cause breakdown attributes most non-drift mismatches globally to geometryMismatch (205 occ / 693 nodes, width/grid-template-columns/min-height leading) and styleMismatch (166 occ / 284 nodes), none auto-fix eligible."
+    },
+    {
+      "type": "low-common-area",
+      "page": "p000003 mobile (https://linear.app/customers)",
+      "detail": "commonAreaRatio=0.5804, the only pair below 1.0 out of 16 — indicates a document-height or scroll-state mismatch between clone and snapshot screenshots for this pair specifically."
+    },
+    {
+      "type": "correction-rejections",
+      "detail": "3 correction attempts across 2 auto-fix iterations: qc000001 (document-canvas-background) accepted; qc000002 rejected as target-metric-not-improved; qc000003 rejected as unsafe-value. Both rejections were interaction-target-state-style corrections."
+    },
+    {
+      "type": "asset-failures",
+      "detail": "163 asset failures and 26 blocked-asset console messages recorded in snapshotFidelity — consistent with known reference-mode (0-download) asset handling; not a JS runtime error (0 clone JS runtime errors)."
+    },
+    {
+      "type": "layout-counter-non-reconciliation",
+      "detail": "reconstruction-manifest.json layout block: acceptedRules(1752) + rejectedByGuard(145) + rejectedByTruthCheck(5) = 1902 exceeds candidateRules(1757) by 145 — the guard-rejection and candidate-pool counters appear to be on overlapping/different axes. Recorded as-is without reconciliation; flagged for whoever reviews Task 28.5B numbers next."
+    },
+    {
+      "type": "no-crashes-or-cap-hits",
+      "detail": "No process crashes, no retries needed, all stages completed on first attempt. No customProperties.countCapped=true anywhere across 16 page/viewport records. truthCheckStatus=verified (not no-candidates or responsive-hidden-only)."
+    }
+  ]
+}

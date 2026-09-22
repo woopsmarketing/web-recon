@@ -1,0 +1,153 @@
+{
+  "schema": "task285b-build-qa-v1",
+  "producedAt": "2026-08-29T00:00:00.000Z",
+  "change": "Task 28.5B change 6 — QA vocabulary decoupling + multi-channel pixel metrics",
+  "filesChanged": [
+    {
+      "file": "src/reconstruction-qa/capture-page.ts",
+      "edits": [
+        "import of STYLE_WHITELIST removed (observer/types.js import now SKIP_TAGS + environment constants + ViewportProfile only)",
+        "L45-79 rationale comment; L80-263 QA_STYLE_PROPERTIES is now an INDEPENDENT literal list (144 properties)",
+        "L268-299 QA_ONLY_STYLE_PROPERTIES — the 30-property curated tail, literal, not computed by subtraction",
+        "L840-960 browser-to-browser comparison: unverifiableFromSpecProperties (L862) and compareCapturedStyles (L908) + result types"
+      ]
+    },
+    {
+      "file": "src/reconstruction-qa/screenshot-diff.ts",
+      "edits": [
+        "L29-41 module doc: no single scalar is visual truth; @1 kept unchanged for artifact continuity",
+        "L82-87 exported thresholds CHANGED_PIXEL_AMPLITUDE_THRESHOLD=16, DELTA_E76_JND_THRESHOLD=2.3, DELTA_E76_VISIBLE_THRESHOLD=10",
+        "L89-137 sRGB→linear LUT (256 entries), srgbToLab (D65) and deltaE76 implemented in-repo, no new dependency",
+        "L139-176 ImageComparison extended with the new channels",
+        "compareImages loop now also accumulates @16 counts, mean max-channel delta and ΔE76 (Lab computed only for pixels that actually differ, so full-page screenshots stay affordable); alpha handling unchanged (composite over white, mirroring the existing overWhite)",
+        "measurePair copies every new channel into the ScreenshotMetric"
+      ]
+    },
+    {
+      "file": "src/reconstruction-qa/types.ts",
+      "edits": [
+        "L549-580 ScreenshotMetricSchema extended ADDITIVELY — every new field .optional() so pre-28.5B QA artifacts still parse"
+      ]
+    },
+    {
+      "file": "src/reconstruction-qa/summarize.ts",
+      "edits": [
+        "SnapshotFidelitySchema + LiveFidelitySchema: optional @16 / ΔE76 medians",
+        "summarizeSnapshotFidelity and summarizeLiveFidelity accumulate them; a channel nothing measured is left ABSENT, never defaulted to 0",
+        "worstPages visual detail (L611) now prints @1 · @16 · ΔE76>2.3 · ΔE76>10 · mean ΔE76 · mean Δ · mean maxΔ · common area · height Δ side by side; the rank value stays the historical @1 ratio for cross-run comparability"
+      ]
+    },
+    {
+      "file": "src/reconstruction-qa/index.ts",
+      "edits": [
+        "additive re-exports: QA_ONLY_STYLE_PROPERTIES, compareCapturedStyles, unverifiableFromSpecProperties (+ types), srgbToLab, deltaE76, and the three threshold constants"
+      ]
+    },
+    {
+      "file": "scripts/smoke-qa-independence.ts",
+      "edits": ["NEW — the proof suite"]
+    },
+    {
+      "file": "docs/result/handoffs/28.5B-build-qa.json",
+      "edits": ["NEW — this handoff"]
+    }
+  ],
+  "qaPropertyCount": 144,
+  "beyondObserverCount": 30,
+  "observerWhitelistCountAtWriting": 114,
+  "beyondObserverProperties": [
+    "-webkit-background-clip",
+    "-webkit-text-fill-color",
+    "-webkit-text-stroke-color",
+    "-webkit-text-stroke-width",
+    "accent-color",
+    "appearance",
+    "background-blend-mode",
+    "background-clip",
+    "border-image-source",
+    "direction",
+    "fill",
+    "font-feature-settings",
+    "font-variation-settings",
+    "outline-color",
+    "outline-offset",
+    "outline-style",
+    "outline-width",
+    "rotate",
+    "scale",
+    "stroke",
+    "stroke-width",
+    "text-decoration-color",
+    "text-decoration-line",
+    "text-decoration-style",
+    "text-decoration-thickness",
+    "text-indent",
+    "text-shadow",
+    "text-underline-offset",
+    "translate",
+    "word-spacing"
+  ],
+  "note285AProperties": "opacity, visibility, -webkit-font-smoothing, text-wrap-mode and text-wrap-style were all already present in STYLE_WHITELIST when this change was written (the observer builder had landed them); they are in the QA list as literals and asserted by the suite regardless of the observer's state.",
+  "degradeDesign": {
+    "problem": "QA now captures properties no SiteSpec style token contains. diffStyles compares spec-expected vs captured, so those properties have nothing to compare against.",
+    "behaviour": "diffStyles is UNCHANGED and iterates the spec's own property keys, so an extra captured property is never compared, never crashes it and never manufactures a mismatch (asserted).",
+    "honesty": "Silence is not equality, so two mechanisms name the gap instead: (1) unverifiableFromSpecProperties(specVocabulary) returns the sorted QA properties the spec cannot adjudicate, so a report can say un-verifiable-from-spec rather than imply equal; (2) compareCapturedStyles(original, clone) compares two LIVE captures browser-to-browser — that axis needs no observer data at all, so the QA-only tail is fully verifiable there. The mandated fixture exercises exactly that path.",
+    "consumersChecked": "style-diff.ts (spec-driven, safe), classify-diff.ts / propose-corrections.ts / emit-diffs.ts read style mismatch records only; nothing in the repo assumed QA properties are a subset of the observer's."
+  },
+  "newMetricFields": [
+    "changedPixelsAt16",
+    "changedRatioAt16",
+    "meanMaxChannelDelta",
+    "deltaE76Mean",
+    "deltaE76Max",
+    "deltaE76AboveJndPixels",
+    "deltaE76AboveJndRatio",
+    "deltaE76AboveVisiblePixels",
+    "deltaE76AboveVisibleRatio",
+    "screenshotChangedRatioAt16Median (summary)",
+    "screenshotDeltaE76AboveJndRatioMedian (summary)",
+    "screenshotDeltaE76AboveVisibleRatioMedian (summary)",
+    "screenshotDeltaE76MeanMedian (summary)"
+  ],
+  "unchangedForContinuity": [
+    "changedPixels",
+    "changedPixelRatio",
+    "meanAbsoluteRgbDelta",
+    "maxChannelDelta",
+    "commonAreaRatio",
+    "renderDiffImage output"
+  ],
+  "suite": {
+    "name": "scripts/smoke-qa-independence.ts",
+    "command": "npx tsx scripts/smoke-qa-independence.ts",
+    "checks": 62,
+    "passed": 62,
+    "failed": 0,
+    "cases": [
+      "1 static decoupling — no STYLE_WHITELIST import in capture-page.ts (source parsed), not reference-equal, 30 properties beyond the observer, every observer property retained, no duplicates",
+      "1b honest degradation — un-verifiable properties named; diffStyles does not crash and invents no mismatch on QA-only properties",
+      "2 observer-blindness fixture — real playwright captureOriginal on two locally served pages that differ ONLY in background-clip / -webkit-background-clip / -webkit-text-fill-color / text-shadow: observer-vocabulary comparison finds 0 mismatches (the blind spot reproduced), QA's own vocabulary names all of them, and the pixel channels confirm a real @16 + ΔE76>2.3 difference",
+      "3 @16 gate — 8/255 counted at @1 and not at @16, 20/255 counted by both, boundary 16 in / 15 out, mixed-amplitude image 1.0 at @1 vs 0.5 at @16, exact ratios and counts",
+      "4 ΔE76 — white=0, black↔white=100, sRGB red/blue Lab triples vs published reference values and ΔE76 ≈ 176.31, grey 200↔208 ≈ 2.92 with the hand computation in a comment",
+      "5 all-channels reporting — one metric carries @1, @16, both ΔE76 fractions, both means, common area, heights and every count at once; a pre-28.5B metric still parses with the new channels absent (not 0)"
+    ]
+  },
+  "validation": {
+    "typecheck": "npx tsc --noEmit — clean, whole repo, exit 0",
+    "regression": "scripts/smoke-reconstruction-qa.ts offline half PASS (0 FAIL, including its screenshot-metric checks which pin the unchanged @1 semantics). Its LIVE half aborts before any QA code runs with 'page.evaluate: ReferenceError: __name is not defined' from src/reconstruction/layout-truth-check.ts:353 (verifyLayoutRules → generateApp) — an untracked, concurrently-authored file owned by the layout-inference builder, missing the tsx keepNames __name shim. Unrelated to this change."
+  },
+  "invalidatedExistingChecks": [],
+  "risks": [
+    "The QA list is a literal snapshot of STYLE_WHITELIST (114 properties) as of this change. If the observer builder adds further properties after this, the suite's 'QA keeps every property the Observer records' check will fail until the new property is copied into QA_STYLE_PROPERTIES. That failure is the intended alarm, not a bug — but it is a real coupling in maintenance, and the fix is a one-line literal addition.",
+    "Capture cost: 30 extra getPropertyValue calls per element per capture, and most of them (direction, fill, outline-*, text-indent, word-spacing…) return a value on every element, so each captured element's style map grows by roughly a quarter. Raw captures are in-memory only (not persisted), but a very large page's QA run now holds more. Not measured on a real site here.",
+    "ΔE76 adds ~6 cbrt + 2 matrix multiplies per DIFFERING pixel (identical pixels are short-circuited to 0, and sRGB→linear is a 256-entry LUT). On a page where the @1 ratio really is ~1.0 — exactly the 28.5A case — that short-circuit does not fire and a full-page pair gets measurably slower. No timing was taken on a real full-page screenshot; worth watching on the first real run.",
+    "compareCapturedStyles matches elements by capture key. Original-mode keys are document-order indices, so it is only meaningful between two captures of the same DOM shape (the fixture's case, and original-vs-clone where the clone walk emits SiteSpec node ids). It reports unmatchedKeys / tagMismatchKeys rather than guessing when the shapes differ; it is NOT a general alignment algorithm and should not be used as one.",
+    "src/cli-qa-reconstruction.ts still prints only the @1 median (lines 153 and 173) — outside this builder's ownership. The new medians are in the summary object and in worstPages detail, but the CLI's headline still shows one scalar until someone extends it.",
+    "The curated 30 are a judgement call about what paints. Properties deliberately left out include caret-color (pointless per brief), will-change, perspective, backface-visibility, shape-outside, text-emphasis and the border-image longhands beyond border-image-source."
+  ],
+  "followUps": [
+    "Extend src/cli-qa-reconstruction.ts to print @1 / @16 / ΔE76 side by side (owner of that file).",
+    "Consider promoting recurring QA-only mismatches into STYLE_WHITELIST — that is the feedback loop this decoupling exists to create.",
+    "Consider wiring compareCapturedStyles into qa-page.ts's live-original path so the QA-only tail is verified on every real run, not only in the proof suite (qa-page.ts is outside this builder's ownership)."
+  ]
+}

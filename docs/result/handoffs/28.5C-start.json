@@ -1,0 +1,34 @@
+{
+  "task": "28.5C — Responsive Root-Cause & Simplest-Path Decision",
+  "baselineSha": "6c2e723601a0d76431c96a48bbdb4726c02063e7",
+  "branch": "main",
+  "gitStatus": {
+    "dirtyEntries": 179,
+    "note": "Repo intentionally uncommitted since Task 17 era; all modifications are pre-existing working-tree state. Task 28.5C performs zero mutating git operations and zero production src/ modifications."
+  },
+  "task285B": {
+    "verdict": "WAVE 1 HARDENING ACCEPTED — READY FOR RESPONSIVE/FONT DECISION",
+    "finalCheckCount": { "suites": 34, "checks": 3354, "failures": 0, "unexplainedNegativeDeltas": 0 },
+    "responsiveResidualHandoff": "docs/result/handoffs/28.5B-responsive-residual.json"
+  },
+  "lineage": {
+    "linear": {
+      "observation": "data/linear.app/site-observations/2026-08-30T15-52-54-381Z",
+      "siteSpec": "data/linear.app/site-specs/2026-08-30T15-56-23-933Z",
+      "reconstruction": "data/linear.app/reconstructions/2026-08-30T15-56-29-877Z",
+      "qa": "data/linear.app/reconstruction-qa/2026-08-30T15-57-54-926Z"
+    },
+    "stripe": {
+      "observation": "data/stripe.com/site-observations/2026-08-30T16-15-30-966Z",
+      "reconstruction": "data/stripe.com/reconstructions/2026-08-30T16-16-41-190Z"
+    }
+  },
+  "scope": {
+    "mode": "EVIDENCE-FIRST INVESTIGATION, NO PRODUCTION IMPLEMENTATION",
+    "requiredWidths": [390, 700, 1024, 1100, 1440],
+    "primaryTarget": "linear.app /pricing @ 1100px",
+    "disposableExperimentDir": "tmp/wr-responsive-investigation/",
+    "productionSrcMustRemainByteUnchanged": true
+  },
+  "startedAt": "2026-08-31T23:59:00+09:00"
+}

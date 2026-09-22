@@ -1,0 +1,465 @@
+{
+  "schema": "task28-brand-assets-v1",
+  "phase": "Task 28 Phase 2 — source brand asset resolution",
+  "status": "COMPLETE AFTER CORRECTION — Task 27's dead end is closed on real data, and the three honesty failures an independent verifier returned FAIL on are fixed in code, not in wording",
+  "writtenBy": "builder (2nd) — then corrected by a FRESH CORRECTION AGENT (3rd) who did not write the original code, after an independent verifier returned FAIL",
+  "resolutions": [
+    "REPLACE",
+    "REMOVE",
+    "PRESERVE"
+  ],
+  "resolverPath": {
+    "module": "src/production/brand-bake.ts",
+    "entryPoint": "bakeBrand()",
+    "seam": "src/production/run.ts — between bakeSeoTitles and convertToStaticExport, mutating the BUILD COPY's <appDir>/reconstruction-data/pages/*.json; the immutable template run is never written",
+    "whyThisSeam": "the head, the SSR HTML, the inlined self.__next_f.push flight chunks and the exported .txt flight ALL derive from the page IR, so ONE write reaches every encoding. A post-export byte rewrite would have to handle three escapings of the same markup and recompute the flight's T<hexlen> byte-length prefixes; a length-changing substitution there corrupts the route's flight parse.",
+    "noSvgPathEditor": true,
+    "wholeAssetOnly": true
+  },
+  "surfacesCovered": [
+    {
+      "surface": "image-logo",
+      "op": "REPLACE (src rewritten to a self-hosted /wr/brand/<sha>.<ext>, srcset dropped); REMOVE is REFUSED as not structurally safe",
+      "detectedBy": "scanImageLogo — a brand token in the image FILE path, only on an <img> element",
+      "realDataNote": "CORRECTED. The earlier claim here — 'MEASURED ZERO on every accepted template … every src value was grepped' — was FALSE and is preserved as an error rather than deleted. Running this phase's own scanner over data/nextjs.org/recon-templates/2026-08-19T07-12-35-732Z/app returns 160 image-logo hosts over 40 routes on TWO source logotype files (nextjs-logotype-light.00-_80jv8_dct.svg / -dark.3h4a2z2v_dkod.svg, alt=\"NextjsLogotype\", nodes n000015/n000016). linear.app, stripe.com and domainchecker.co.kr DO measure zero on this surface. The surface now runs on the real nextjs.org lineage in smoke-brand-assets §5e through two real `next build`s: before, the source logotype still ships and the requirement blocks (hosts=4 unexplained=4 blockers=1); after, replaced=4 refused=0 unexplained=0 markup=0 flight=0 blockers=0, the logotype file is gone, the src is a self-hosted /wr/brand/<sha>.svg and no srcset survives to re-introduce it.",
+      "realDataProof": "smoke-brand-assets §5e (2 real next builds, buildMs 2691 / 2671) + §5f (full-template scan: 160 image-logo hosts / 40 routes / 2 distinct source files)"
+    },
+    {
+      "surface": "svg-aria-label",
+      "op": "REPLACE (whole host markup swapped, box + class + style + data-wr-node re-stamped) / REMOVE (inert aria-hidden mark keeping the box) / PRESERVE",
+      "detectedBy": "scanInlineSvgMarkup over RuntimeElementNode.v"
+    },
+    {
+      "surface": "svg-text",
+      "op": "same whole-host REPLACE / REMOVE / PRESERVE — this is the accessible <title>/<text> attached to a logo",
+      "detectedBy": "scanInlineSvgMarkup"
+    },
+    {
+      "surface": "svg-symbol-id",
+      "op": "the brand-named <symbol id> is renamed in place to a content-addressed wr-sym-<10 hex>, together with EVERY <use href=\"#id\">/xlink:href that references it — including references in other nodes and other page files (renameSymbolsAcrossPages)",
+      "detectedBy": "scanInlineSvgMarkup"
+    },
+    {
+      "surface": "image-alt",
+      "op": "REPLACE with authored text (or the site's own name); REMOVE sets alt=\"\" rather than deleting the attribute, because an unlabelled <img> is an accessibility regression, not a brand fix",
+      "detectedBy": "scanElementProps"
+    },
+    {
+      "surface": "aria-label",
+      "op": "REPLACE with authored text; REMOVE deletes the attribute outright",
+      "detectedBy": "scanElementProps"
+    }
+  ],
+  "surfacesNotCovered": [
+    {
+      "surface": "visible-text",
+      "owner": "slot-bound — authored.slotValues / routeContent[*].slotValues is the write path"
+    },
+    {
+      "surface": "source-url",
+      "owner": "asset layer — the RewriteMap replaces source URLs keyed by sourceUrl"
+    },
+    {
+      "surface": "title-meta",
+      "owner": "SEO plan (brandIsolation gate) — the head is not in the page IR"
+    },
+    {
+      "surface": "canonical",
+      "owner": "SEO plan + the production-domain requirement"
+    },
+    {
+      "surface": "open-graph",
+      "owner": "SEO plan (brandIsolation gate)"
+    },
+    {
+      "surface": "json-ld",
+      "owner": "SEO plan — omits absent facts rather than inheriting source ones"
+    },
+    {
+      "surface": "body-anchor-identity",
+      "owner": "content/asset independence — an anchor href is a url surface"
+    },
+    {
+      "surface": "dynamic-template-content",
+      "owner": "UNOWNED: no artifact records brand inside dynamically-mounted region content separately from its host route"
+    },
+    {
+      "surface": "icon-SPRITE host, non-symbol brand surfaces",
+      "owner": "REFUSED as non-deterministic and left an honest requirement. The accepted linear sprite is 184 KB with 264 <symbol> definitions of which 2 are brand-named; replacing the whole host would destroy every icon on the page. Only the brand-named symbol ids are deterministically resolvable there; an svg-aria-label or svg-text on a sprite host can be cleared ONLY by an explicit PRESERVE with a recorded reason."
+    },
+    {
+      "surface": "arbitrary SVG <path> geometry that draws a brand shape without naming it",
+      "owner": "OUT OF SCOPE BY DESIGN — a mark is a whole asset. A path that draws the source logo and carries no brand token is not detected, and this is a named limitation, not a claim of coverage."
+    },
+    {
+      "surface": "attribute-value-text (e.g. placeholder=…)",
+      "owner": "UNOWNED and UNCOUNTED — found by the verifier in this phase's OWN proof build and re-measured by me: data/linear.app/production-builds/2026-08-27T12-36-06-105Z/package/site/index.html ships placeholder=\"Tell Linear what to do next…\" twice (title=0, value=0 on the same package). `placeholder` is not in BRAND_SURFACES, so no detector raises it, and censusServedHtml strips tags before reading visible text, which an attribute VALUE never survives. Now DECLARED in the product's own bake report (SURFACES_NOT_RESOLVED['attribute-value-text']) with a suite check asserting the declaration, so a zero census cannot be read as covering this class."
+    }
+  ],
+  "clearingRule": "source-brand-inline-svg clears ONLY on OUTPUT PROOF, evaluated by evaluateBrandOutputProof (src/release/brand-scan.ts) over a build's OWN measurements. (a) brand.bake.residual.unexplainedAfter must be EMPTY — that array is re-derived by RE-READING the mutated page files from disk after the rewrite, never from the in-memory objects the rewrite produced, so it means: every brand-carrying host still in the built app's IR is covered by an explicit PRESERVE. (b) when nothing is preserved, the RENDERED output must agree — the exported route-HTML census AND the RSC flight census (both .txt flight files and the self.__next_f.push chunks inlined in each HTML) must be zero. (c) and when the build carries a POST-HYDRATION census (the QA run's brandSurfaceCensusHydrated, taken over the live DOM of every route in Chromium), that must be zero too; a build with no hydrated census reports the axis as UNMEASURED rather than counting it clean. A decision alone never clears it; a REPLACE the resolver REFUSED, or one the census still sees, leaves it standing with a statusNote saying exactly that. CORRECTION (this pass): WHAT cleared a build is now separated from WHETHER the rule accepted it. BrandOutputProof.clearedBy is 'output-proof' when every MEASURED axis is zero — the only value that earns status=resolved — and 'preserve-acceptance' when the IR is explained only because a host was explicitly PRESERVED while the output is NOT clean. A preserve-acceptance build lands as status='accepted-limitation', which releaseBlockers() STILL COUNTS, so PRESERVE-everything is not a path to PRODUCTION_READY and the requirement never reads 'resolved' while the source mark is shipping. Severity and its basis text were not touched.",
+  "negativeTest": {
+    "description": "smoke-brand-assets.ts §5b — a REAL next build of a 1-route copy of the accepted linear.app template in which EVERY brand host carries a decision, but the <img> logo's REPLACE names replacement.assetId 'wr28-asset-that-does-not-exist'. The operator asked; the resolver refused (applied.refused=1, with a stated reason); the source logo shipped.",
+    "requirementCleared": false,
+    "measured": {
+      "decisionsUndecided": 0,
+      "applied": {
+        "replaced": 7,
+        "removed": 4,
+        "refused": 1
+      },
+      "unexplainedAfter": 1,
+      "exportedHtmlBrandSurfaces": 0,
+      "rscFlightBrandSurfaces": 0,
+      "blockers": 1,
+      "sourceLogoStillInShippedHtml": "LinearLogo.svg present in out/index.html"
+    },
+    "sharpestPoint": "this build's RENDERED census is 0/0 — the rendered axis ALONE would have passed it. The IR-set proof (unexplainedAfter) is what catches it, and there is a check asserting exactly that ('the rendered census ALONE would have passed this build — the IR set proof is what catches it')."
+  },
+  "canary": {
+    "synthetic": {
+      "fixture": "scripts/smoke-brand-assets.ts §5 — three REAL `next build`s of a 1-route copy of the accepted linear.app template (data/linear.app/recon-templates/2026-08-25T21-53-26-980Z/app), plus a SYNTHETIC <img> source logo pushed into the route (linear.app ships none — but nextjs.org DOES, and §5e now builds that real one; the earlier 'no accepted template ships one' was false), served over http and hydrated in Chromium",
+      "brandCarryingHosts": 12,
+      "blockersBefore": 1,
+      "blockersNegative": 1,
+      "blockersAfter": 0,
+      "beforeMarkupBrandSurfaces": 13,
+      "beforeFlightBrandSurfaces": 40,
+      "afterMarkupBrandSurfaces": 0,
+      "afterFlightBrandSurfaces": 0,
+      "afterPostHydrationBrandSurfaces": 0,
+      "hydrationErrors": 0,
+      "buildMsPerCanary": [
+        2459,
+        2448,
+        2569
+      ]
+    },
+    "realLineage": {
+      "fixture": "linear.app 8-route production release — release project data/linear.app/release-projects/wr28-brand-assets",
+      "blockersBefore": 1,
+      "blockersAfter": 0,
+      "brandCarryingHosts": 80,
+      "hostsBySurface": {
+        "svg-aria-label": 48,
+        "svg-symbol-id": 16,
+        "image-alt": 14,
+        "aria-label": 2
+      },
+      "authoredDecisions": {
+        "REPLACE": 64,
+        "REMOVE": 16,
+        "PRESERVE": 0
+      },
+      "applied": {
+        "replaced": 64,
+        "removed": 16,
+        "preserved": 0,
+        "refused": 0,
+        "nodesRewritten": 80,
+        "pagesRewritten": 8,
+        "symbolIdsRenamed": 32,
+        "symbolReferencesRenamed": 0
+      },
+      "residual": {
+        "hostsAfter": 0,
+        "preservedAfter": 0,
+        "unexplainedAfter": 0
+      },
+      "exportedHtmlBrandSurfaces": 0,
+      "rscFlightBrandSurfaces": 0,
+      "rscFlightDocumentsMeasured": 46,
+      "rscFlightLengthPrefixedChunks": 1083,
+      "postHydrationBrandSurfaces": 0,
+      "postHydrationRoutesMeasured": 8,
+      "servedVsHydratedDivergentRoutes": 0,
+      "requirementStatus": "resolved",
+      "requirementStatusNote": "cleared by MEASURED OUTPUT: hosts before=80; applied replaced=64 removed=16 preserved=0 refused=0; unexplained after=0; exported-html brand surfaces=0; rsc-flight brand surfaces=0; post-hydration brand surfaces=0",
+      "provenance": "the release run + build were produced by the INTERRUPTED builder; I re-derived every number above from the artifacts on disk, and independently re-measured the post-hydration axis myself (see verification.postHydrationOnRealLineage)"
+    },
+    "runIds": [
+      "data/linear.app/release-projects/wr28-brand-assets (release project)",
+      "2026-08-27T12-36-06-105Z (release run id AND production build id)",
+      "data/linear.app/production-builds/2026-08-27T12-36-06-105Z",
+      "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z (accepted template the canary copies)",
+      "data/linear.app/production-builds/2026-08-27T09-38-59-704Z (accepted build the §4 flight census reads, read-only)"
+    ],
+    "realImageLogoLineage": {
+      "fixture": "scripts/smoke-brand-assets.ts §5e — TWO REAL `next build`s of a 1-route copy of the real accepted nextjs.org template data/nextjs.org/recon-templates/2026-08-19T07-12-35-732Z/app. Nothing synthetic: the <img> logo, its src, its srcset and its alt are the source's own.",
+      "why": "the phase's weakest surface class was declared 'never run on real data' while 160 real hosts sat in this repo",
+      "before": {
+        "hosts": 4,
+        "allSurface": "image-logo",
+        "replaced": 0,
+        "unexplainedAfter": 4,
+        "markupBrandSurfaces": 0,
+        "flightBrandSurfaces": 0,
+        "blockers": 1,
+        "buildMs": 2699,
+        "note": "the source logotype FILE is still in the shipped index.html, and the rendered census alone reads 0 — the IR-set axis is again what refuses"
+      },
+      "after": {
+        "hosts": 4,
+        "replaced": 4,
+        "refused": 0,
+        "unexplainedAfter": 0,
+        "markupBrandSurfaces": 0,
+        "flightBrandSurfaces": 0,
+        "blockers": 0,
+        "buildMs": 2676,
+        "clearedBy": "output-proof",
+        "note": "source logotype gone; src is a self-hosted /wr/brand/<sha>.svg; no srcset re-introduces the source file"
+      },
+      "fullTemplateScan": "160 image-logo hosts over 40 routes on 2 distinct source logotype files (measured in §5f without building)",
+      "buildMsNote": "from the FINAL suite run through the mutex; the preceding run of the same two builds measured 2691 / 2671, so ~2.7 s each"
+    }
+  },
+  "noLogoFallback": {
+    "kind": "generated SVG mark — a text wordmark for a wide host box, a rounded-square monogram (up to two initials on a hash-chosen palette colour) for a roughly-square one; the shape is chosen from the HOST's own geometry, not from a preference",
+    "deterministic": true,
+    "module": "src/production/brand-mark.ts",
+    "determinismProof": "wordmarkSvg/monogramSvg are pure functions of (name, box); the monogram colour is MONOGRAM_PALETTE[sha256(name)[0] % 8]. Asserted byte-identical across two calls in smoke-brand-assets §2.",
+    "noUserInterrogation": "an operator who records REPLACE with no payload gets the generated mark drawn from the site's OWN name (releaseProject.displayName -> CompileOptions.brand.brandName). Every use is recorded on the bake report as applied.generatedMarks[{id,kind,name}] so the operator checklist can say a placeholder shipped.",
+    "nameDerivation": "normalizeBrandName drops a trailing parenthetical qualifier, collapses whitespace, caps at 40 chars, and returns null when nothing usable is left — a null name generates NO mark and the REPLACE is REFUSED, rather than drawing 'undefined'",
+    "paint": "fill=\"currentColor\" deliberately, so the replacement stays theme-adaptive like the source marks it replaces (currentColor / var(--hds-color-…)); the host's width/height/class/style and its existing data-wr-node identity are re-stamped so the box and the QA/regions join survive"
+  },
+  "rscFlightPayloadHandled": true,
+  "rscFlightDetail": "Two encodings the markup census is structurally blind to are measured on their own axis (BakeReport.brand.flight): the exported .txt flight files (text/x-component) and the self.__next_f.push(...) chunks inlined in every route HTML, which are double-escaped. On the accepted linear build the markup regex over the raw flight sees 2 of the 5 surfaces the flight axis measures — a markup-only reader UNDERCOUNTS, which is the asserted reason the axis exists. The rewrite itself never touches flight bytes: it rewrites the page IR before `next build`, so every encoding is regenerated from one write and no T<hexlen> length prefix has to be recomputed.",
+  "hydrationErrors": 0,
+  "verification": {
+    "typecheck": "pnpm typecheck — exit 0 (run 4x through the mutex during the correction pass, including the final state)",
+    "suites": [
+      {
+        "suite": "smoke-brand-assets",
+        "checks": 141,
+        "failures": 0,
+        "command": "npx tsx scripts/smoke-brand-assets.ts",
+        "note": "117 inherited from the 2nd builder + 24 added by the correction pass (§5e real image-logo canary, §5f detection basis, the PRESERVE/accepted-limitation checks, the attribute-value-text declaration)",
+        "countsReDerived": "grep -c '  PASS ' = 141, grep -c '  FAIL' = 0 on the raw log"
+      },
+      {
+        "suite": "smoke:release",
+        "checks": 241,
+        "failures": 0,
+        "note": "unchanged by the correction pass"
+      },
+      {
+        "suite": "smoke:production",
+        "checks": 123,
+        "failures": 0,
+        "note": "unchanged"
+      },
+      {
+        "suite": "smoke:content-injection",
+        "checks": 145,
+        "failures": 0,
+        "note": "unchanged; the 2 raw 'FAIL' greps are [content:qa] lines inside intentional negative fixtures, and the suite prints '145/145 checks passed'"
+      },
+      {
+        "suite": "smoke:assets",
+        "checks": 140,
+        "failures": 0,
+        "note": "unchanged"
+      },
+      {
+        "suite": "smoke:seo",
+        "checks": 97,
+        "failures": 0,
+        "note": "run because src/production/bake.ts changed"
+      },
+      {
+        "suite": "smoke:theme",
+        "checks": 47,
+        "failures": 0,
+        "note": "run because src/production/bake.ts changed"
+      }
+    ],
+    "allSuitesRunThroughTheMutex": "bash tmp/wr28/suite-lock.sh",
+    "postHydrationOnRealLineage": {
+      "what": "I ran runProductionQa myself against the real accepted package data/linear.app/production-builds/2026-08-27T12-36-06-105Z/package",
+      "measured": "QA 77/77 passed; brandSurfaceCensusHydrated routesMeasured=8, svgAriaLabel=0, svgSymbolId=0, svgText=0, imageAlt=0, ariaLabel=0; brandCensusHydrationDivergence=[] (no route where the served bytes and the live DOM disagree)",
+      "script": "tmp/wr28/verify-hydrated-qa.mts"
+    },
+    "collectPlumbingOnRealLineage": {
+      "what": "collectRequirements() over the REAL wr28-brand-assets lineage with productionBuildDir pointed at a scratch copy of the build's report/ carrying the freshly-measured qa.json (nothing under data/ was written)",
+      "positive": "source-brand-inline-svg -> status=resolved, statusNote '... exported-html brand surfaces=0; rsc-flight brand surfaces=0; post-hydration brand surfaces=0'",
+      "negative": "with ONE brand surface injected into the hydrated census -> status=unresolved, statusNote 'output measured and the surface is STILL present: ... post-hydration brand surfaces=1'",
+      "script": "tmp/wr28/verify-collect-hydrated.mts"
+    },
+    "correctionPassRegression": "no suite lost a check against the counts the 2nd builder reported and the verifier re-derived (brand-assets 117 -> 141, release 241 = 241, production 123 = 123, content-injection 145 = 145, assets 140 = 140, seo 97 = 97, theme 47 = 47). I did not run all 20 suites, so I do not state a full-program total.",
+    "realLineageAfterCorrection": "collectRequirements() re-run over the REAL wr28-brand-assets lineage with the widened tokens: source-brand-inline-svg still status=resolved, count still 80, statusNote 'cleared by MEASURED OUTPUT: hosts before=80; applied replaced=64 removed=16 preserved=0 refused=0; unexplained after=0; exported-html brand surfaces=0; rsc-flight brand surfaces=0; post-hydration brand surfaces=0'; and with one live-DOM surface injected it goes back to unresolved 'post-hydration brand surfaces=1'. QA on that real package: 77/77, hydrated routes=8, every brand axis 0, divergent routes 0. (tmp/wr28/verify-collect-hydrated.mts, through the mutex.)"
+  },
+  "checksAreReal": {
+    "method": "for each of the three checks that matter most, break the PRODUCT code it covers, run the suite through the mutex, observe FAIL, restore, and prove the restore is byte-exact with sha256 (brand-bake.ts and smoke-brand-assets.ts are untracked, so `git diff` alone would be vacuous for them)",
+    "mutations": [
+      {
+        "target": "THE NEGATIVE TEST",
+        "mutation": "src/production/brand-bake.ts replacementAssetUrl(): `return null` -> `return \"/wr/brand/MUTANT.svg\"` — an unresolvable REPLACE payload silently 'succeeds' instead of being refused",
+        "result": "117 checks, 8 FAILURES, including 'the ineffective REPLACE was REFUSED, with a reason', 'REQUESTED IS NOT RESOLVED: the requirement refuses to clear' (cleared became true), 'BLOCKERS after an ineffective replacement are still > 0' (0), 'and the source logo file is still in the shipped HTML', and 'and the ineffective request in between did NOT move it'"
+      },
+      {
+        "target": "THE INLINE-SVG REPLACEMENT",
+        "mutation": "src/production/brand-bake.ts applyHostDecision(): `node.v = stampReplacementMark(...)` -> `void stampReplacementMark(...)` — the replacement is computed and thrown away, and the branch still reports 'applied'",
+        "result": "117 checks, 17 FAILURES, including 'inline-SVG logo replaced by the generated wordmark', 'the source aria-label is GONE from the mark', 'IR residual is EMPTY after resolving every host' (unexplainedAfter=1), 'EXPORTED HTML brand surfaces = 0' (6), 'RSC FLIGHT brand surfaces = 0' (20), 'BLOCKERS AFTER = 0' (1), and 'the canary moved the blocker from 1 to 0 through OUTPUT'"
+      },
+      {
+        "target": "THE POST-HYDRATION CENSUS",
+        "mutation": "src/release/brand-scan.ts evaluateBrandOutputProof(): force the hydrated axis to null so the clearing rule ignores it",
+        "result": "117 checks, 4 FAILURES, including 'REVERTS ON HYDRATION: exported bytes clean, LIVE DOM still branded -> does NOT clear' and 'and ONE brand surface surviving in the live DOM would have refused to clear it' (both fed by the REAL browser-measured census in §5d)",
+        "note": "mutation 2 independently failed 'the POST-HYDRATION DOM censuses zero brand surfaces (the flight did not revert it)' with svgAriaLabel=6, and 'no live element announces the source brand' with the live DOM still reading 'Linear|Linear logo' — so that check is real too"
+      }
+    ],
+    "restoreProof": "sha256 of src/production/brand-bake.ts, src/release/brand-scan.ts, scripts/smoke-brand-assets.ts, src/production/qa.ts and src/release/collect.ts is IDENTICAL before and after all three mutations; `grep -rn 'MUTANT|true || hydrated|void stampReplacementMark' src scripts` finds nothing; `git diff --stat src/release/brand-scan.ts` shows only the Phase-2 work.",
+    "mutationsByTheCorrectionAgent": {
+      "method": "same method, on the code I changed: mutate PRODUCT code inside a single suite-lock acquisition, run smoke-brand-assets, restore, prove byte-exact with sha256 over src/content-injection/brand-surfaces.ts, src/release/brand-scan.ts and src/production/brand-bake.ts",
+      "mutations": [
+        {
+          "target": "THE DECLARED-NAME WIDENING",
+          "mutation": "src/content-injection/brand-surfaces.ts declaredBrandNamesFromTitles(): return [] — the detector falls back to host-only tokens, i.e. the exact blindness the verifier found",
+          "result": "141-check suite ran as 136 PASS / 4 FAIL: 'a declared name that IS the host label adds nothing', 'a one-off trailing phrase is NOT a declared name', 'the declared-name widening SEES it — the Korean brand aria-label is now a counted host' (0 hosts, 0 carrying 도메인체커), and 'widened: the blocker is raised on that lineage instead of going silent' (0 requirements — NOT EMITTED AT ALL)"
+        },
+        {
+          "target": "THE PRESERVE / OUTPUT-PROOF SPLIT",
+          "mutation": "src/release/brand-scan.ts evaluateBrandOutputProof(): force clearedBy='output-proof' whenever irClean && preservedAfter>0 — i.e. restore the old, failing behaviour verbatim",
+          "result": "137 PASS / 3 FAIL: 'a PRESERVE-only build is cleared by ACCEPTANCE, not by output proof' (clearedBy=output-proof, markup=1 flight=1), 'a PRESERVE-only build lands as accepted-limitation, never resolved' (status became resolved with exported-html brand surfaces=1 and rsc-flight brand surfaces=1), and 'and it STILL BLOCKS the release (PRESERVE is not a route to PRODUCTION_READY)' (0 blockers)"
+        },
+        {
+          "target": "THE IMAGE-LOGO REWRITE ON REAL DATA",
+          "mutation": "src/production/brand-bake.ts image-logo branch: `props.src = url` -> `void url` — the replacement url is computed and discarded",
+          "result": "122 PASS / 18 FAIL, including the REAL nextjs.org checks 'the source logotype FILE is gone from the shipped HTML', 'replaced by a self-hosted, served brand asset url' (none) and 'the REAL image-logo lineage clears by OUTPUT PROOF, on both byte axes' (clearedBy=null, blockers=1) — note markup=0 flight=0 on that failing build, so once again only the IR-set axis catches it"
+        }
+      ],
+      "restoreProof": "shasum -a 256 of src/content-injection/brand-surfaces.ts, src/release/brand-scan.ts and src/production/brand-bake.ts identical before and after every mutation (diff of the sha files exits 0: RESTORE-BYTE-EXACT-OK); `grep -rn MUTANT src scripts` finds nothing; the clean re-run is 141 checks / 0 failures"
+    }
+  },
+  "inheritedFromInterruptedBuilder": [
+    "src/production/brand-bake.ts (836 lines) — the whole-asset resolver: host scan over the runtime IR, REPLACE/REMOVE/PRESERVE, sprite refusal, symbol+use rename across pages, residual re-read from disk, publicBrandAssetCopier",
+    "src/production/brand-mark.ts (163 lines) — the deterministic no-logo fallback (wordmark/monogram, name normalization, initials, hash palette)",
+    "scripts/smoke-brand-assets.ts — 109 checks across §1 detection / §2 marks / §3+§3b+§3c resolver+refusals+helpers / §4 flight census on real bytes / §5 the three-build canary with hydration",
+    "brandSurfaceIdOf() in src/content-injection/brand-surfaces.ts — one id derivation shared by the release write API and the bake resolver, so a decision cannot silently address nothing",
+    "scanImageLogo() + the tag-aware scanElementProps overload",
+    "scanRuntimeTemplateSurfaces() extraction so the release scan and the content brand-leak report see the same surfaces through the same code",
+    "sourceBrandAssetRequirement() + evaluateBrandOutputProof() (axes (a) and (b)) in src/release/brand-scan.ts",
+    "BakeReport.brand (census + flight + bake) in src/production/types.ts, measured in postProcessExport",
+    "CompileOptions.brand plumbed from productionStageRunner (authored.brand + displayName) into bakeBrand",
+    "the brand-carrying-host count replacing inventory.counts.inlineSvgEntries in buildPreviewBlockers and in the requirement (207 -> 80 on linear: the old blocker overstated the brand surface ~2.6x)",
+    "PRODUCTION_STAGE_RESOLVED_KINDS / blockersGatingProduction — source-brand-asset no longer gates the production STAGE from compiling (otherwise it could never clear: you need a build to prove it, and the blocker forbade the build) while still counting in releaseBlockers",
+    "the real linear.app pilot: release project wr28-brand-assets, run 2026-08-27T12-36-06-105Z, 80 decisions, blocker cleared by output",
+    "the 28.P2B.1-28.P2B.8 end-to-end flow in scripts/smoke-release.ts",
+    "docs/result/handoffs/28-intel/pending-package-scripts.tsv already carries `smoke:brand-assets`"
+  ],
+  "addedByMe": [
+    "AUDIT: read every new/changed file, re-ran the suite through the mutex and re-derived 109 checks / 0 failures from raw output, and re-derived the real-lineage numbers from the artifacts on disk rather than trusting the draft's console line",
+    "GAP CLOSED — the post-hydration census was proven only inside the smoke suite; the PRODUCT measured raw served bytes. src/production/qa.ts now censuses the LIVE DOM of every route (document.documentElement.outerHTML after settle) with the identical census function, and reports brandSurfaceCensusHydrated + brandCensusHydrationDivergence (routes where served bytes and live DOM disagree — the 'reverted on hydration' signal). One new QA check, brand-surface-census-hydrated-measured, asserting the measurement RAN on every route (same non-gating stance as the served census).",
+    "src/release/brand-scan.ts: evaluateBrandOutputProof gained the post-hydration axis (c) as an optional third argument, with hydratedBrandSurfaces: number|null so an UNMEASURED axis is named as unmeasured in the detail string instead of being scored as a clean zero",
+    "src/release/collect.ts: readBrandOutputProof now reads the same build's report/qa.json alongside report/bake-report.json and feeds the hydrated census into the clearing rule",
+    "8 new checks in scripts/smoke-brand-assets.ts (109 -> 117): the no-logo fallback is RECORDED on the report with kind+name; the report DECLARES surfacesNotResolved (silence is not coverage); an unmeasured hydrated axis is named not zeroed; a measured zero hydrated axis clears; REVERTS ON HYDRATION (clean bytes + branded live DOM) does NOT clear; and in §5d the REAL browser-measured census is fed through the REAL rule, both clearing and — with one surface added — refusing",
+    "1 new check in scripts/smoke-release.ts (240 -> 241): 28.P2B.7b asserts the persisted requirement's statusNote carries 'post-hydration brand surfaces=0', i.e. the third axis reaches the operator-facing artifact through the real release engine",
+    "MUTATION TESTING of the three checks that matter most, with byte-exact restore proven by sha256 (see checksAreReal)",
+    "verified the whole product path on the REAL linear lineage without writing anything into data/ (see verification.postHydrationOnRealLineage and verification.collectPlumbingOnRealLineage)"
+  ],
+  "testsAdded": [
+    "scripts/smoke-brand-assets.ts §3 — 'the NO-LOGO fallback is recorded on the report, with its kind and the name it drew'",
+    "scripts/smoke-brand-assets.ts §3 — 'the report DECLARES the surfaces this resolver does not own (silence is not coverage)'",
+    "scripts/smoke-brand-assets.ts §3 — 'with every measured axis clean the requirement clears'",
+    "scripts/smoke-brand-assets.ts §3 — 'an UNMEASURED post-hydration axis is named as unmeasured, never scored as a zero'",
+    "scripts/smoke-brand-assets.ts §3 — 'a MEASURED, zero post-hydration census clears it'",
+    "scripts/smoke-brand-assets.ts §3 — 'REVERTS ON HYDRATION: exported bytes clean, LIVE DOM still branded -> does NOT clear'",
+    "scripts/smoke-brand-assets.ts §5d — 'the requirement clears with the REAL post-hydration census as the third axis'",
+    "scripts/smoke-brand-assets.ts §5d — 'and ONE brand surface surviving in the live DOM would have refused to clear it'",
+    "scripts/smoke-release.ts — '28.P2B.7b the POST-HYDRATION census is part of the proof — what renders, not raw bytes'",
+    "src/production/qa.ts — new served-package QA check 'brand-surface-census-hydrated-measured' (runs on every real production build)",
+    "scripts/smoke-brand-assets.ts §5e — 'the REAL nextjs.org template ships its own logo as an <img> (the claim that none does was false)'",
+    "scripts/smoke-brand-assets.ts §5e — 'undecided, the SOURCE logotype file still ships in the built HTML' + 'and the requirement BLOCKS on the real image-logo lineage'",
+    "scripts/smoke-brand-assets.ts §5e — 'every REAL image-logo host is REPLACED, none refused', 'the source logotype FILE is gone from the shipped HTML', 'replaced by a self-hosted, served brand asset url', 'no source srcset survived to re-introduce the source file', 'the REAL image-logo lineage clears by OUTPUT PROOF, on both byte axes'",
+    "scripts/smoke-brand-assets.ts §5f — the declared-name rule: host-label dedupe, majority recurrence, the ASCII hyphen exclusion, and regex escaping ('next.js' must not match 'nextXjs')",
+    "scripts/smoke-brand-assets.ts §5f — 'the host-only detector was BLIND on domainchecker.co.kr (0 hosts, so NO requirement at all)', 'the declared-name widening SEES it', 'host-only: the blocker is not merely smaller, it is NOT EMITTED AT ALL', 'widened: the blocker is raised on that lineage instead of going silent'",
+    "scripts/smoke-brand-assets.ts §5f — 'widening did NOT churn the verified linear.app count' (80 -> 80) and the full nextjs.org template counts (160 image-logo hosts / 40 routes / 2 source files)",
+    "scripts/smoke-brand-assets.ts §3b — 'a PRESERVE-only build is cleared by ACCEPTANCE, not by output proof', 'a PRESERVE-only build lands as accepted-limitation, never resolved', 'and it STILL BLOCKS the release (PRESERVE is not a route to PRODUCTION_READY)', 'the SAME preserved IR with a CLEAN measured output does resolve (acceptance is the only difference)'",
+    "scripts/smoke-brand-assets.ts §3 — 'including the attribute-value gap found in this phase's OWN proof build (placeholder=…)'"
+  ],
+  "limitations": [
+    "CORRECTED — the previous text of this limitation was FALSE. It asserted, with a named grep as its evidence, that an <img> source logo 'does not exist in ANY accepted template in this repo'. Running this phase's own scanner over data/nextjs.org/recon-templates/2026-08-19T07-12-35-732Z/app returns 160 image-logo hosts over 40 routes on two source logotype files. The surface now runs on that real lineage (smoke-brand-assets §5e, two real `next build`s). What remains true and narrower: linear.app, stripe.com and domainchecker.co.kr ship no <img> source logo, so the REFUSAL paths on that surface (a text-only REPLACE on an <img>, REMOVE on an <img>) are still exercised only on the synthetic fixture.",
+    "An icon SPRITE host (a host that defines <symbol>s) refuses whole-host REPLACE/REMOVE. Only its brand-named symbol ids are resolvable. A brand svg-aria-label or svg-text ON a sprite host can therefore be cleared only by an explicit PRESERVE with a recorded reason — it is an honest standing requirement otherwise. On the accepted linear template no such case exists (the sprite's brand surfaces are all symbol ids), so this refusal path is exercised only on the fixture.",
+    "Arbitrary SVG <path> geometry that draws the source mark without naming the brand anywhere is NOT detected and NOT resolved. This is a detection limit, not a resolver limit, and it is out of scope by the settled 'no SVG path editor' constraint. A source logo that is pure unlabelled path data will pass every axis of the clearing rule while still being the source's mark.",
+    "REMOVE on an <img> host is refused unconditionally (the element carries layout the surrounding flex/grid depends on). The operator must REPLACE. There is no structural-safety analysis that would let a genuinely safe <img> removal through.",
+    "dynamic-template-content is UNOWNED: no artifact records brand inside dynamically-mounted region content separately from its host route, so brand carried only by a portal/overlay region is not separately censused.",
+    "The clearing rule's post-hydration axis is optional by construction: a production build that carries no report/qa.json (or an older one without brandSurfaceCensusHydrated) clears on the two byte-level axes alone, with the detail string saying 'post-hydration brand surfaces=not measured'. This is deliberate — an unmeasured axis must not be scored as clean — but it does mean an operator reading only `status: resolved` should read the statusNote to know how many axes proved it.",
+    "The persisted requirements.json of the real wr28-brand-assets project still shows the TWO-axis statusNote, because its build (2026-08-27T12-36-06-105Z) predates the hydrated census. I did NOT rewrite that historical build's artifacts. I re-measured the third axis on that exact package myself (8/8 routes, 0 brand surfaces, 0 divergent routes) and proved collectRequirements consumes it, over a scratch copy — see verification.collectPlumbingOnRealLineage. The next real build of that project will persist all three axes.",
+    "The canary's `next build`s run on a 1-ROUTE copy of the accepted template (route-map filtered to '/'), to keep each build at ~2.5 s. The 8-route proof is the real wr28-brand-assets lineage, not the canary.",
+    "brandSurfaceCensus and brandSurfaceCensusHydrated remain REPORTED, never gated, inside production QA. The gate that consumes them is the release layer's evaluateBrandOutputProof. This preserves the Task-27 stance that a blanket zero-equality assertion over a brand string count is not an honest gate.",
+    "DETECTION IS STILL TOKEN-DERIVED. Tokens are the host label plus the brand name the source declares in its own recurring title suffix. A brand string derivable from neither — an alternate spelling, a logotype with no accessible name, a site that does not append its name to its titles — raises NOTHING, and because the blocker's trigger is brandCarryingHostCount > 0 the requirement is then absent rather than merely small. Measured: this is exactly what happened on domainchecker.co.kr before the widening (794 inline SVGs, 0 hosts, no requirement, while aria-label=\"도메인체커 홈\" shipped). The widening closes that case; it does not close the class. Mitigation, not a fix: src/release/collect.ts now emits a warning whenever a template has inline-SVG entries and ZERO detected brand hosts, so the zero is stated rather than silent.",
+    "THE DECLARED-NAME WIDENING CAN OVER-INCLUDE. It is a brand-NAME match, not a brand-MARK match: on nextjs.org it takes the count from 160 to 190 by catching alt/aria-label prose that merely mentions the product ('Hydration error message improved in Next.js 15'). Those are genuine source-brand mentions and each still needs an operator decision, but an operator should expect the count to include prose mentions, not only marks. Over-inclusion is the deliberate direction: under-detection makes a blocker vanish, over-detection only makes it longer.",
+    "PRESERVE NOW LANDS AS accepted-limitation, WHICH STILL BLOCKS — so there is no path from a PRESERVE decision to PRODUCTION_READY. The consequence to be aware of is the mirror image: a lineage where the operator legitimately may ship a source mark (a licensed placement, an icon sprite whose brand aria-label cannot be safely rewritten) can no longer reach a clean release state through this kind at all — it stays blocked, visibly, with the reason recorded. That is intended under the policy basis 'visible source-brand content must be 0', but it means PRESERVE is an acknowledgement, never a resolution.",
+    "ATTRIBUTE-VALUE PROSE IS UNOWNED AND UNCOUNTED. Measured in this phase's own proof build: data/linear.app/production-builds/2026-08-27T12-36-06-105Z/package/site/index.html ships placeholder=\"Tell Linear what to do next…\" twice (title=0, value=0 on the same package). `placeholder` is not in BRAND_SURFACES, no detector raises it, and no census axis counts it — censusServedHtml strips tags before reading visible text, so an attribute value never reaches it. It is now DECLARED in the bake report (SURFACES_NOT_RESOLVED['attribute-value-text']) and asserted by a check, so the gap is recorded rather than silent — but a zero census still does NOT mean this class is clean.",
+    "STALE-PROOF NUANCE (verified NOT a gate hole, recorded anyway): readBrandOutputProof reads the current production artifact's report regardless of freshness, so a requirement can read its status from a build that predates a later authored.brand change. It cannot reach PRODUCTION_READY that way — deriveReleaseState additionally requires stageStatus.production.status==='fresh', and authored.brand is folded into the production stage's inputsHash, so any decision change stales the stage.",
+    "SCOPE OF THIS CORRECTION PASS: I ran typecheck plus seven suites (brand-assets, release, production, content-injection, assets, seo, theme), not all 20, so no full-program regression total is stated here. Other agents were running in parallel under the same mutex. Zero mutating git operations; nothing was written under data/ except the suites' own pid-scoped fixture roots, which they delete."
+  ],
+  "correctionPass": {
+    "verifierVerdict": "FAIL",
+    "verifierVerifiedClean": [
+      "severity integrity (SEVERITY_POLICY['source-brand-asset'] unedited, still release-blocking)",
+      "the 207 -> 80 detection narrowing is principled (re-derived two independent ways)",
+      "the negative test refuses an ineffective replacement",
+      "the positive path is clean in the real bytes (47 HTML + .txt flight documents censused by hand)",
+      "the RSC flight is reached and does not revert on hydration; 0 hydration errors over 8 real routes",
+      "the observation-evidence exclusion is principled (0.535% of flight bytes; one non-rendering hit)",
+      "the no-logo fallback is deterministic across processes and interrogates nobody",
+      "two checks the builder had not mutation-tested do fail when mutated and restore byte-exact",
+      "regression: no suite lost a check",
+      "no historical data/ mutation"
+    ],
+    "failuresFixed": [
+      {
+        "failure": "HANDOFF CARRIES A FALSE MEASURED CLAIM — the handoff (surfacesCovered[image-logo].realDataNote and limitations[0]) and the product's own doc comments asserted, as a measured fact with a named grep as evidence, that no accepted template in this repo ships its own logo as an <img>.",
+        "verifierEvidence": "scanAppBrandHosts('data/nextjs.org/recon-templates/2026-08-19T07-12-35-732Z/app','nextjs.org') returns 160 image-logo hosts across 40 routes on two source logotype files.",
+        "iReproducedIt": "YES. My own run of the phase's own scanner: nextjs.org routes=40 hosts=160 {image-logo:160}, 2 distinct values (nextjs-logotype-dark.3h4a2z2v_dkod.svg and nextjs-logotype-light.00-_80jv8_dct.svg), alt=\"NextjsLogotype\", nodes n000015/n000016 of pages/p000001.json onward. The claim was false by 160 hits.",
+        "fix": [
+          "The false claim is corrected — and preserved as an error, not erased — in src/content-injection/brand-surfaces.ts (scanImageLogo doc), scripts/smoke-brand-assets.ts (file header + fixture comment) and this handoff.",
+          "The surface now RUNS ON THAT REAL LINEAGE: scripts/smoke-brand-assets.ts §5e builds a 1-route copy of the real nextjs.org accepted template TWICE with `next build`."
+        ],
+        "measuredAfter": "nextjs before: hosts=4 (all image-logo) replaced=0 unexplained=4 markup=0 flight=0 blockers=1 buildMs=2691, and the source logotype file IS still in the shipped index.html. nextjs after: hosts=4 replaced=4 refused=0 unexplained=0 markup=0 flight=0 blockers=0 buildMs=2671, the source logotype file is GONE, the <img> src is a self-hosted /wr/brand/<sha>.svg, no srcset re-introduces the source file, and the proof's clearedBy is 'output-proof'."
+      },
+      {
+        "failure": "THE BLOCKER CAN GO SILENT ON A REAL BRANDED LINEAGE, UNNAMED — replacing the trigger inlineSvgEntries>0 with brandCarryingHostCount>0 means a lineage the token detector cannot see raises NO source-brand requirement at all, and that consequence was recorded nowhere.",
+        "verifierEvidence": "data/domainchecker.co.kr/recon-templates/2026-08-19T07-14-22-868Z: 794 inline-SVG nodes, 0 brand-carrying hosts, requirement NOT EMITTED — while that template's home link ships aria-label=\"도메인체커 홈\", the site's own brand in Korean, on a surface RESOLVABLE_BRAND_SURFACES claims to own.",
+        "iReproducedIt": "YES. Host-only scan of that template: 0 hosts. Raw grep of pages/p000001.json: 2x aria-label=\"도메인체커 홈\".",
+        "fix": [
+          "NOT just named — CLOSED. Detection tokens are now the host label WIDENED by the brand name the SOURCE ITSELF declares in its own route-map titles (declaredBrandNamesFromTitles + brandTokensFrom in src/content-injection/brand-surfaces.ts; appBrandTokens in src/production/brand-bake.ts). A candidate is the trailing segment of a separated title and is accepted only when it recurs across >=2 titles AND a MAJORITY of titled routes — evidence from the source's own artifact, never a hardcoded or operator-supplied name.",
+          "The SAME token set is used by the requirement scanner and by the bake-time resolver (both call scanAppBrandHosts on the app dir with no explicit tokens), so the resolver can never be blind to a host the blocker counted.",
+          "The census axes were widened with it, or they would disagree with the resolver: postProcessExport takes the resolver's tokens from run.ts, and runProductionQa recovers them from the build's own report/bake-report.json (falling back to host tokens, which it records on the census).",
+          "containsBrandToken now REGEX-ESCAPES the token: a declared name like `Next.js` would otherwise have matched `nextXjs`.",
+          "The residual blindness is still named (limitations) AND is now surfaced at runtime: src/release/collect.ts emits a warning when a template has inline-SVG entries but ZERO detected brand hosts, so an operator cannot read the absence of a requirement as proof of absence."
+        ],
+        "measuredAfter": "domainchecker.co.kr host-only=0 -> widened=38 hosts (tokens [\"domainchecker\",\"도메인체커\"], all 38 carrying 도메인체커), so the blocker is RAISED there instead of silent. nextjs.org 160 -> 190 (+30 genuine brand mentions in alt/aria-label, e.g. 'Hydration error message improved in Next.js 15'). NO CHURN on the verified lineages: linear.app 80 -> 80 and stripe.com 195 -> 195, because their declared name IS their host label and the dedupe drops it."
+      },
+      {
+        "failure": "PRESERVE CLEARS A BLOCKER WHOSE STATED BASIS IS 'MUST BE 0', UNNAMED — evaluateBrandOutputProof set cleared = irClean && (preservedAfter > 0 || renderedClean), so a preserve-only build reached status=resolved (dropping the kind out of releaseBlockers) with the source mark still rendering, routing around accepted-limitation, the status this repo already has for a deliberately accepted gap and which still blocks.",
+        "verifierEvidence": "The suite's own check confirmed a preserve-only build cleared with exported-html brand surfaces=1 and rsc-flight brand surfaces=1, while SEVERITY_POLICY['source-brand-asset'].basis (src/release/types.ts:697) still reads 'visible source-brand content must be 0'.",
+        "iReproducedIt": "YES — and I kept the exact reproduction as a mutation. Forcing clearedBy back to 'output-proof' when preservedAfter>0 reproduces the old behaviour verbatim: 'resolved — cleared by MEASURED OUTPUT: ... exported-html brand surfaces=1; rsc-flight brand surfaces=1 ...' with 0 blockers.",
+        "fix": [
+          "BrandOutputProof now carries clearedBy: 'output-proof' | 'preserve-acceptance' | null, separating WHAT cleared a build from WHETHER the rule accepted it.",
+          "Only 'output-proof' (every measured axis zero) earns status=resolved. 'preserve-acceptance' (the IR is explained only because a host was explicitly PRESERVED and the output is NOT clean) earns status='accepted-limitation', which releaseBlockers() still counts — so PRESERVE-everything is no longer a path to PRODUCTION_READY, and the decision plus its required reason stay visible.",
+          "Severity was NOT touched: still release-blocking, basis text unedited."
+        ],
+        "measuredAfter": "The preserve-only fixture now measures clearedBy=preserve-acceptance, renderedClean=false, markup=1 flight=1, status=accepted-limitation, releaseBlockers=1. The SAME preserved IR with a clean measured output still resolves with 0 blockers — acceptance is the only difference."
+      }
+    ],
+    "verifierNotesAlsoActedOn": [
+      "UNOWNED SURFACE IN THE PHASE'S OWN PROOF BUILD: placeholder=\"Tell Linear what to do next…\" ships twice in data/linear.app/production-builds/2026-08-27T12-36-06-105Z/package/site/index.html. I re-measured it (placeholder 2 hits; title 0; value 0) and recorded it in the PRODUCT's own report — SURFACES_NOT_RESOLVED now carries an 'attribute-value-text' entry stating it is not in BRAND_SURFACES and not counted by any census axis, with a suite check asserting the declaration. It is NOT resolved and is named in limitations.",
+      "STALE-PROOF NUANCE: confirmed not a gate hole — deriveReleaseState additionally requires stageStatus.production.status==='fresh' and authored.brand is folded into the production stage's inputsHash, so a decision change stales the stage. Recorded as a limitation, unchanged."
+    ],
+    "verifierFindingsIDisputed": []
+  },
+  "detectionBasis": {
+    "tokens": "host label (brandTokensFromHost) WIDENED by the name the SOURCE DECLARES in its own route-map titles (declaredBrandNamesFromTitles -> brandTokensFrom -> appBrandTokens)",
+    "rule": "a candidate is the trailing segment of a title separated by | · • – — (the ASCII hyphen is deliberately NOT a separator: 'Next.js by Vercel - The React Framework' would manufacture a name the site never declared); accepted only when it recurs across >=2 titles AND >=50% of titled routes; lowercased; dropped when an existing host token already matches it",
+    "consistency": "the requirement scanner (src/release/collect.ts) and the bake-time resolver (bakeBrand) both derive tokens from the SAME app dir, and the exported-HTML / RSC-flight / post-hydration censuses run with the resolver's tokens (postProcessExport param from run.ts; runProductionQa recovers them from report/bake-report.json)",
+    "measuredEffect": {
+      "linear.app": "80 -> 80 (declared name 'Linear' is the host label; dedupe drops it)",
+      "stripe.com": "195 -> 195 (same)",
+      "domainchecker.co.kr": "0 -> 38 (declared name 도메인체커; the aria-label=\"도메인체커 홈\" home link is now counted, so the blocker is raised instead of absent)",
+      "nextjs.org": "160 -> 190 (declared name 'Next.js'; +30 alt/aria-label brand mentions)"
+    },
+    "stillBlind": "a brand string derivable from NEITHER the host label NOR a recurring declared title name raises nothing. That is a detection limit, it is named in limitations, and src/release/collect.ts now WARNS when a template has inline-SVG entries but zero detected brand hosts so the zero is never silent."
+  }
+}

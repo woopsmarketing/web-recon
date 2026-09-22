@@ -21,7 +21,17 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-import { brandSurfaceRequirements, scanBrandSurfaces, type BrandSurfaceReport } from "./brand-scan.js";
+import { scanAppBrandHosts } from "../production/index.js";
+import {
+  brandSurfaceRequirements,
+  evaluateBrandOutputProof,
+  scanBrandSurfaces,
+  sourceBrandAssetRequirement,
+  type BrandOutputProof,
+  type BrandBakeSection,
+  type HydratedBrandCensus,
+  type BrandSurfaceReport,
+} from "./brand-scan.js";
 import {
   SEVERITY_POLICY,
   type Requirement,
@@ -39,6 +49,34 @@ export interface LineagePaths {
   inventoryRunDir?: string;
   productionSpecFile?: string | null;
   productionBuildDir?: string | null;
+  /**
+   * The project's resolved ENABLEMENT (Task 28 Phases 5 + 6).
+   *
+   * Two effects, both deliberately narrow:
+   *   - `disabledRoutes` filters the ROUTE POPULATION every per-route number is
+   *     counted over. It does NOT filter any requirement list: the per-route
+   *     SEO requirements are derived from the SEO PLAN's own
+   *     `report/needs-input.json`, so a disabled route stops producing them
+   *     because the plan no longer names it — the artifact is the evidence, not
+   *     this flag. Filtering the collector instead would be exactly the defect
+   *     a verifier already caught once in this program.
+   *   - `deadLinks` ADDS `dead-internal-link` requirements. They clear only on
+   *     the served build's own link audit (`report/qa.json` siteLinks).
+   */
+  enablement?: {
+    disabledRoutes: string[];
+    deadLinks: Array<{
+      targetRoute: string;
+      linkingRoute: string;
+      pageSourceId: string;
+      viewport: string;
+      nodeId: string;
+      href: string;
+      slotKey: string | null;
+      groupId: string | null;
+      reason: string;
+    }>;
+  };
 }
 
 export interface RouteReadiness {
@@ -62,6 +100,9 @@ export interface ArtifactFacts {
   residualRenderedUrlCount: number;
   fontFamiliesUndecided: string[];
   inlineSvgEntryCount: number;
+  /** Template hosts that actually CARRY the brand (Task 28 Phase 2) — the
+   *  number the source-brand blocker is counted from. */
+  brandCarryingHostCount: number;
   brandLeakWarnings: number;
   /** GED-F surface census (artifact-derived, never hardcoded). */
   brandSurfaceCounts: Record<string, number>;
@@ -109,6 +150,38 @@ function req(partial: {
 
 function slugify(value: string): string {
   return value.replace(/[^a-zA-Z0-9._/-]+/g, "-");
+}
+
+/**
+ * Read a build's own reports and evaluate the clearing rule over them.
+ *
+ * TWO artifacts of the SAME build: `report/bake-report.json` carries what the
+ * resolver did and what the exported bytes census, and `report/qa.json`
+ * carries the POST-HYDRATION census taken over the served package in a real
+ * browser. Both are this build's own measurements — nothing is inherited from
+ * another run, and a build with no qa.json reports the hydrated axis as
+ * unmeasured instead of assuming it clean.
+ *
+ * The RULE itself lives in brand-scan.ts so a canary can evaluate the
+ * identical function over a report it just produced in memory.
+ */
+async function readBrandOutputProof(productionBuildDir: string | null): Promise<BrandOutputProof | null> {
+  if (productionBuildDir === null) return null;
+  const file = path.join(productionBuildDir, "report", "bake-report.json");
+  if (!existsSync(file)) return null;
+  const report = await readJson<{ brand?: BrandBakeSection }>(file);
+  const qaFile = path.join(productionBuildDir, "report", "qa.json");
+  let hydrated: HydratedBrandCensus | null = null;
+  if (existsSync(qaFile)) {
+    const qa = await readJson<{
+      brandSurfaceCensusHydrated?: { routesMeasured?: number } & Record<string, unknown>;
+    }>(qaFile);
+    const census = qa.brandSurfaceCensusHydrated;
+    if (census !== undefined && typeof census.routesMeasured === "number") {
+      hydrated = { counts: census as Record<string, number>, routesMeasured: census.routesMeasured };
+    }
+  }
+  return evaluateBrandOutputProof(file, report.brand, hydrated);
 }
 
 export async function collectRequirements(paths: LineagePaths): Promise<CollectResult> {
@@ -190,7 +263,7 @@ export async function collectRequirements(paths: LineagePaths): Promise<CollectR
     : {};
   const brandLeakFile = path.join(paths.contentRunDir, "report", "brand-leak.json");
   const brandLeak = existsSync(brandLeakFile)
-    ? await readJson<{ warnings: Array<{ slotKey: string }> }>(brandLeakFile)
+    ? await readJson<{ warnings: Array<{ slotKey: string | null }> }>(brandLeakFile)
     : { warnings: [] };
   const themeCompatFile = path.join(paths.themeRunDir, "compatibility.json");
   const themeCompat = existsSync(themeCompatFile)
@@ -207,9 +280,19 @@ export async function collectRequirements(paths: LineagePaths): Promise<CollectR
     ? path.join(paths.productionBuildDir, "report", "qa.json")
     : null;
   const qaReport =
-    qaFile && existsSync(qaFile) ? await readJson<{ failed: number; passed: number }>(qaFile) : null;
+    qaFile && existsSync(qaFile)
+      ? await readJson<{
+          failed: number;
+          passed: number;
+          siteLinks?: { brokenInternalTargets?: string[]; routesAudited?: number };
+        }>(qaFile)
+      : null;
 
-  const routes = templateManifest.routes;
+  // The ROUTE POPULATION every per-route number below is counted over. A
+  // disabled route is not a route of this site any more, so counting it would
+  // report a readiness row and a routeCount for a page that is not exported.
+  const disabledRoutes = new Set(paths.enablement?.disabledRoutes ?? []);
+  const routes = templateManifest.routes.filter((route) => !disabledRoutes.has(route));
   const injectedRoutes = contentManifest.scopedRoutes ?? [];
   const injected = new Set(injectedRoutes);
 
@@ -345,6 +428,101 @@ export async function collectRequirements(paths: LineagePaths): Promise<CollectR
         })),
       }),
     );
+  }
+
+  // ---- 3b. dead internal links to a DISABLED route (Task 28 Phase 6) ------
+  //
+  // One requirement per (disabled target route, linking route): an operator
+  // acts on a page, not on a node id, and the nodes are carried as evidence.
+  // CLEARING IS MEASURED, never requested: the status flips to `resolved` only
+  // when the SERVED package's own link audit reports no broken internal link
+  // whose target is this route. A build with no qa.json leaves it unresolved
+  // rather than assuming it clean.
+  const servedBrokenTargets = new Set(qaReport?.siteLinks?.brokenInternalTargets ?? []);
+  const linkAuditRan = (qaReport?.siteLinks?.routesAudited ?? 0) > 0;
+  type CollectedDeadLink = NonNullable<LineagePaths["enablement"]>["deadLinks"][number];
+  const deadLinkGroups = new Map<string, CollectedDeadLink[]>();
+  for (const finding of paths.enablement?.deadLinks ?? []) {
+    const key = `${finding.targetRoute}|${finding.linkingRoute}`;
+    const list = deadLinkGroups.get(key) ?? [];
+    list.push(finding);
+    deadLinkGroups.set(key, list);
+  }
+  for (const [key, findings] of [...deadLinkGroups].sort(([a], [b]) => (a < b ? -1 : 1))) {
+    const [targetRoute, linkingRoute] = key.split("|");
+    const stillServed = servedBrokenTargets.has(targetRoute);
+    const requirement = req({
+      requirementId: `dead-internal-link-${slugify(linkingRoute)}-to-${slugify(targetRoute)}`,
+      kind: "dead-internal-link",
+      sourceStage: "content",
+      route: linkingRoute,
+      count: findings.length,
+      ...(findings[0].slotKey !== null ? { slotKey: findings[0].slotKey } : {}),
+      message:
+        `${linkingRoute} links to ${targetRoute}, which is DISABLED — ${findings.length} link site(s) the ` +
+        "engine will not remove on its own " +
+        `(${[...new Set(findings.map((finding) => finding.reason))].join(", ")}). ` +
+        (findings.some((finding) => finding.reason === "dynamic-template-host")
+          ? "At least one of them lives inside a CAPTURED DYNAMIC TEMPLATE (a menu the runtime mounts): " +
+            "its markup is frozen reconstruction output, so the engine will not rewrite it and the link " +
+            "survives into the RSC flight payload AND into the mounted DOM — MEASURED on a real package, " +
+            "clicking the trigger mounts a visible anchor whose GET is 404. "
+          : "") +
+        (findings.some((finding) => finding.reason === "serialized-markup-host")
+          ? "At least one of them lives inside another SERIALIZED MARKUP string (an inline SVG, a captured " +
+            "attribute) that no element walk can see. "
+          : "") +
+        "Change the destination, remove the link, or re-enable the route. It is never silently " +
+        "redirected to the homepage.",
+      resolutionOptions: [
+        findings[0].slotKey !== null
+          ? `authored.slotValues["${findings[0].slotKey}"] = a live destination`
+          : "edit the linking section (the anchor carries no url slot)",
+        `authored.disabledRoutes: re-enable ${targetRoute}`,
+      ],
+      evidence: findings.slice(0, 10).map((finding) => ({
+        file: path.join(paths.templateRunDir, "app", "reconstruction-data", "route-map.json"),
+        pointer: `${finding.pageSourceId}/${finding.viewport}/${finding.nodeId}`,
+        detail: `href=${finding.href}${finding.slotKey === null ? "" : ` slot=${finding.slotKey}`}`,
+      })),
+    });
+    // CLEARING IS MEASURED, and only on evidence that can actually see the
+    // channel the link lives in.
+    //
+    // `siteLinks` parses ANCHORS out of the served HTML. That is complete
+    // evidence for a static anchor and structurally BLIND to a link captured
+    // inside a `data-wr-dyn-template` attribute (or a paint twin): the runtime
+    // mounts that markup from a serialized string, so no <a> exists in the
+    // served bytes to audit and the audit reports zero for a link that will
+    // still render. Clearing on it would be exactly the "narrow the detector
+    // until the gate passes" failure this program was corrected for once
+    // already, so a requirement carrying such a finding stays UNRESOLVED and
+    // says why.
+    const blindChannels = [
+      ...new Set(
+        findings
+          .filter(
+            (finding) =>
+              finding.reason === "dynamic-template-host" ||
+              finding.reason === "paint-twin-host" ||
+              finding.reason === "serialized-markup-host",
+          )
+          .map((finding) => finding.reason),
+      ),
+    ].sort();
+    if (linkAuditRan && !stillServed && blindChannels.length === 0) {
+      requirement.status = "resolved";
+      requirement.statusNote =
+        `cleared by MEASURED OUTPUT: the served package's link audit (report/qa.json siteLinks, ` +
+        `${qaReport?.siteLinks?.routesAudited} route(s) audited) reports no internal link resolving to ` +
+        `${targetRoute}`;
+    } else if (linkAuditRan && !stillServed) {
+      requirement.statusNote =
+        `NOT cleared by the served link audit: ${blindChannels.join(", ")} link(s) are carried in a ` +
+        "serialized template attribute, which the anchor audit cannot see — a zero there is not " +
+        "evidence that this link is gone";
+    }
+    requirements.push(requirement);
   }
 
   // ---- 4. organization logo (jsonLd omissions on injected routes) ---------
@@ -510,42 +688,60 @@ export async function collectRequirements(paths: LineagePaths): Promise<CollectR
     productionBuildDir: paths.productionBuildDir ?? null,
   });
 
-  // ---- 9. inline-SVG source-brand marks (template-layer limitation) -------
+  // ---- 9. source-brand ASSETS (Task 28 Phase 2) --------------------------
+  //
+  // WHAT CHANGED, and why it is not a downgrade.
+  //
+  //   COUNT. The blocker used to carry `inventory.counts.inlineSvgEntries` —
+  //   EVERY inline SVG, icons included (207 on the accepted linear lineage,
+  //   against 64 hosts that actually carry the brand). It now carries the
+  //   BRAND-CARRYING HOST count, measured on the template's own runtime IR by
+  //   the same walker the bake-time resolver uses. Fewer, but each one is real.
+  //
+  //   CLEARING. It clears ONLY on OUTPUT PROOF: the production build's own
+  //   bake report must show that every brand-carrying host left in the built
+  //   app's IR is covered by an explicit PRESERVE decision, and — when nothing
+  //   is preserved — that the exported HTML *and* the RSC flight both census
+  //   zero brand surfaces. A decision alone never clears it; a REPLACE that
+  //   the resolver refused, or that the census still sees, leaves it standing.
+  //
+  //   DETECTION BASIS, and where it is still blind. Tokens are the host LABEL
+  //   widened by the name the SOURCE DECLARES in its own route-map titles
+  //   (`appBrandTokens`). The widening is what stops the count going silent on
+  //   a brand that is not spelled the way its domain is: measured,
+  //   domainchecker.co.kr goes 0 -> 38 hosts (its header ships
+  //   aria-label="도메인체커 홈"), nextjs.org 160 -> 190, while linear.app
+  //   (80) and stripe.com (195) do not move. It is STILL a token detector: a
+  //   brand string derivable from neither the host label nor a declared title
+  //   name raises nothing, so the zero case is reported as a WARNING below
+  //   rather than passing in silence.
+  const templateBrandHosts = await scanAppBrandHosts(
+    path.join(paths.templateRunDir, "app"),
+    paths.host,
+  );
+  const brandCarryingHostCount = templateBrandHosts.hosts.length;
   const inlineSvgEntryCount = inventoryManifest.counts.inlineSvgEntries ?? 0;
-  if (inlineSvgEntryCount > 0) {
+  if (brandCarryingHostCount === 0 && inlineSvgEntryCount > 0) {
+    // NOT a blocker: raising one over icon SVGs is the ~3.2x overstatement
+    // Task 28 replaced. But a template with inline SVGs and ZERO detected
+    // brand hosts is exactly the shape a token detector can be wrong about,
+    // and an operator must be told the axis measured nothing rather than
+    // reading the absence of a requirement as proof of absence.
+    warnings.push(
+      `brand: ${inlineSvgEntryCount} inline-SVG entry/entries but ZERO brand-carrying host(s) ` +
+        "detected — detection is token-derived (host label + the name the source declares in its " +
+        "own titles), so a source brand spelled some other way would raise no requirement here",
+    );
+  }
+  if (brandCarryingHostCount > 0) {
     requirements.push(
-      req({
-        requirementId: "source-brand-inline-svg",
-        kind: "source-brand-asset",
-        sourceStage: "template",
-        count: inlineSvgEntryCount,
-        message:
-          `${inlineSvgEntryCount} inline-SVG entries are outside the asset layer — source brand marks ` +
-          "(incl. any source logo) remain in template markup (Task 22 limitation)",
-        resolutionOptions: [
-          "acknowledgements (records accepted-limitation; does NOT unlock indexable production)",
-          "template-layer SVG replacement (future task seam — spec §37 forbids SVG restoration here)",
-        ],
-        evidence: [
-          {
-            file: path.join(inventoryRunDir, "manifest.json"),
-            pointer: "counts.inlineSvgEntries",
-            detail: String(inlineSvgEntryCount),
-          },
-          // WHICH surfaces inside those marks carry the brand (Task 27). The
-          // blocker itself stays unreachable until GED-F neutralization ships
-          // — this only stops the operator from having to guess what it is.
-          ...(["svg-aria-label", "svg-symbol-id", "svg-text"] as const)
-            .filter((surface) => brandSurfaces.counts[surface] > 0)
-            .map((surface) => ({
-              file: brandSurfaces.findings.find((finding) => finding.surface === surface)
-                ?.evidenceFile ?? path.join(paths.templateRunDir, "manifest.json"),
-              pointer: `brand-surface:${surface}`,
-              detail: `${brandSurfaces.counts[surface]} occurrence(s) — e.g. ${
-                brandSurfaces.findings.find((finding) => finding.surface === surface)?.value ?? ""
-              }`,
-            })),
-        ],
+      sourceBrandAssetRequirement({
+        hosts: templateBrandHosts.hosts,
+        routes: templateBrandHosts.routes,
+        templateRunDir: paths.templateRunDir,
+        inlineSvgEntryCount,
+        productionBuildDir: paths.productionBuildDir ?? null,
+        proof: await readBrandOutputProof(paths.productionBuildDir ?? null),
       }),
     );
   }
@@ -566,9 +762,14 @@ export async function collectRequirements(paths: LineagePaths): Promise<CollectR
 
   // ---- warnings (never blockers) ------------------------------------------
   if (brandLeak.warnings.length > 0) {
+    // Split so the count the operator reads matches what it means: slot-scoped
+    // findings have a write target, surface-scoped ones (Task 28 CR8) do not.
+    const slotScoped = brandLeak.warnings.filter((warning) => warning.slotKey !== null).length;
+    const surfaceScoped = brandLeak.warnings.length - slotScoped;
     warnings.push(
-      `content: ${brandLeak.warnings.length} source-brand-leak warning(s) on untouched defaults ` +
-        `(${brandLeakFile})`,
+      `content: ${brandLeak.warnings.length} source-brand-leak warning(s) ` +
+        `(${slotScoped} slot-scoped on untouched defaults, ${surfaceScoped} markup-surface, ` +
+        `detection only) (${brandLeakFile})`,
     );
   }
   if (themeCompat && themeCompat.result !== "compatible") {
@@ -614,6 +815,7 @@ export async function collectRequirements(paths: LineagePaths): Promise<CollectR
       .filter((license) => license.status === "license-needs-review" && !fontDecisions[license.family])
       .map((license) => license.family),
     inlineSvgEntryCount,
+    brandCarryingHostCount,
     brandLeakWarnings: brandLeak.warnings.length,
     brandSurfaceCounts: brandSurfaces.counts,
     unresolvedSlotCount: (generationResult.unresolved ?? []).length,

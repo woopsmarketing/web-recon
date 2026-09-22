@@ -1,0 +1,388 @@
+{
+  "schema": "task28-gate-phase23-v1",
+  "role": "FRESH GATE AGENT for Task-28 Phases 2 (source brand asset resolution) and 3 (fast authoring preview). Implemented nothing; verified the tree as it stands.",
+  "producedAt": "2026-08-27T14:39Z (local 23:39, darwin 25.2.0, Node 22, pnpm 11)",
+  "typecheck": "exit 0",
+  "typecheckEvidence": "bash tmp/wr28/suite-lock.sh pnpm typecheck -> `$ tsc --noEmit`, no diagnostics, wrapper recorded rc=0. Raw log: <scratchpad>/gate/logs/typecheck.log",
+  "countDerivation": "Every `checks` value below was re-derived by me with `grep -c '  PASS '` on the suite's captured raw stdout, and `failures` with `grep -c '  FAIL '` — never read from the suite's own summary line (which I recorded separately and found to agree in every case except content-injection, explained in limitations). `seconds` is wall clock measured by my own driver around each locked invocation; every suite reported `wr28-lock: acquired after 0s`, so no lock-wait time is folded into any figure.",
+  "invocation": "All 23 invocations (typecheck + 20 existing counted suites + 2 new Task-28 suites) went through bash tmp/wr28/suite-lock.sh, ONE AT A TIME, sequentially, in a single battery. smoke:playwright was skipped as instructed (uncounted, touches the public internet).",
+  "suites": [
+    {
+      "suite": "verifier",
+      "checks": 81,
+      "failures": 0,
+      "seconds": 7,
+      "exitCode": 0,
+      "phase1Count": 81,
+      "delta": 0
+    },
+    {
+      "suite": "selector",
+      "checks": 81,
+      "failures": 0,
+      "seconds": 1,
+      "exitCode": 0,
+      "phase1Count": 81,
+      "delta": 0
+    },
+    {
+      "suite": "multi-observer",
+      "checks": 62,
+      "failures": 0,
+      "seconds": 28,
+      "exitCode": 0,
+      "phase1Count": 62,
+      "delta": 0
+    },
+    {
+      "suite": "interaction-detector",
+      "checks": 92,
+      "failures": 0,
+      "seconds": 1,
+      "exitCode": 0,
+      "phase1Count": 92,
+      "delta": 0
+    },
+    {
+      "suite": "interaction-explorer",
+      "checks": 108,
+      "failures": 0,
+      "seconds": 93,
+      "exitCode": 0,
+      "phase1Count": 108,
+      "delta": 0
+    },
+    {
+      "suite": "interaction-patterns",
+      "checks": 88,
+      "failures": 0,
+      "seconds": 1,
+      "exitCode": 0,
+      "phase1Count": 88,
+      "delta": 0
+    },
+    {
+      "suite": "sitespec",
+      "checks": 257,
+      "failures": 0,
+      "seconds": 1,
+      "exitCode": 0,
+      "phase1Count": 257,
+      "delta": 0
+    },
+    {
+      "suite": "reconstruction",
+      "checks": 217,
+      "failures": 0,
+      "seconds": 7,
+      "exitCode": 0,
+      "phase1Count": 217,
+      "delta": 0
+    },
+    {
+      "suite": "reconstruction-qa",
+      "checks": 134,
+      "failures": 0,
+      "seconds": 147,
+      "exitCode": 0,
+      "phase1Count": 134,
+      "delta": 0
+    },
+    {
+      "suite": "e2e",
+      "checks": 130,
+      "failures": 0,
+      "seconds": 616,
+      "exitCode": 0,
+      "phase1Count": 130,
+      "delta": 0
+    },
+    {
+      "suite": "recon-template",
+      "checks": 109,
+      "failures": 0,
+      "seconds": 82,
+      "exitCode": 0,
+      "phase1Count": 109,
+      "delta": 0
+    },
+    {
+      "suite": "regions",
+      "checks": 67,
+      "failures": 0,
+      "seconds": 1,
+      "exitCode": 0,
+      "phase1Count": 67,
+      "delta": 0
+    },
+    {
+      "suite": "content-injection",
+      "checks": 145,
+      "failures": 0,
+      "seconds": 59,
+      "exitCode": 0,
+      "phase1Count": 138,
+      "delta": 7
+    },
+    {
+      "suite": "theme",
+      "checks": 47,
+      "failures": 0,
+      "seconds": 37,
+      "exitCode": 0,
+      "phase1Count": 47,
+      "delta": 0
+    },
+    {
+      "suite": "seo",
+      "checks": 97,
+      "failures": 0,
+      "seconds": 1,
+      "exitCode": 0,
+      "phase1Count": 97,
+      "delta": 0
+    },
+    {
+      "suite": "assets",
+      "checks": 140,
+      "failures": 0,
+      "seconds": 6,
+      "exitCode": 0,
+      "phase1Count": 140,
+      "delta": 0
+    },
+    {
+      "suite": "production",
+      "checks": 123,
+      "failures": 0,
+      "seconds": 4,
+      "exitCode": 0,
+      "phase1Count": 106,
+      "delta": 17
+    },
+    {
+      "suite": "release",
+      "checks": 241,
+      "failures": 0,
+      "seconds": 75,
+      "exitCode": 0,
+      "phase1Count": 202,
+      "delta": 39
+    },
+    {
+      "suite": "revision",
+      "checks": 36,
+      "failures": 0,
+      "seconds": 2,
+      "exitCode": 0,
+      "phase1Count": 29,
+      "delta": 7
+    },
+    {
+      "suite": "registry",
+      "checks": 35,
+      "failures": 0,
+      "seconds": 0,
+      "exitCode": 0,
+      "phase1Count": 35,
+      "delta": 0
+    },
+    {
+      "suite": "authoring-preview",
+      "checks": 41,
+      "failures": 0,
+      "seconds": 24,
+      "exitCode": 0,
+      "phase1Count": null,
+      "delta": null
+    },
+    {
+      "suite": "brand-assets",
+      "checks": 141,
+      "failures": 0,
+      "seconds": 16,
+      "exitCode": 0,
+      "phase1Count": null,
+      "delta": null
+    }
+  ],
+  "newSuitesNote": "authoring-preview (scripts/smoke-authoring-preview.ts, Phase 3) and brand-assets (scripts/smoke-brand-assets.ts, Phase 2) did not exist at Phase 1, so phase1Count and delta are null rather than 0. Both are listed in docs/result/handoffs/28-intel/pending-package-scripts.tsv and were run with `npx tsx` through the mutex. A glob of scripts/smoke-*.ts found 23 files: the 20 counted suites, these 2, and smoke-playwright.ts (skipped by instruction) — no uncovered suite exists.",
+  "totalChecks": 2472,
+  "totalFailures": 0,
+  "totalChecksBreakdown": "2290 across the 20 existing counted suites (Phase 1 total was 2220, so +70) plus 182 across the 2 new Task-28 suites (41 + 141).",
+  "negativeDeltas": [],
+  "deltaExplanations": [
+    "content-injection 138 -> 145 (+7): raised by the Phase-2 brand work; no check lost (spot-checked the log for the Phase-1-era negative-fixture and paint-twin checks).",
+    "production 106 -> 123 (+17): Phase-2 added the brand census and the post-hydration census QA checks.",
+    "release 202 -> 241 (+39): authored-state substrate (authored.assets / authored.brand through prepare/resolve/revisions/freshness) plus the Phase-2 28.P2B.* output-proof checks.",
+    "revision 29 -> 36 (+7): authored-state substrate revision-chain checks (28.P2.R*).",
+    "All other 16 existing suites are delta 0. No suite decreased, so no decrease had to be adjudicated as replacement-vs-regression."
+  ],
+  "gitMutatingOperations": 0,
+  "gitEvidence": {
+    "logOneline3": "6c2e723 0827 morning / d33abb3 checkpoint: web-recon MVP preview-ready baseline / 2777b41 chore: initialize web-recon foundation (Phase 1)",
+    "headUnchanged": "HEAD is still 6c2e723, exactly as the session-start snapshot recorded",
+    "stashList": "empty (0 lines)",
+    "reflog": "exactly 3 entries, all commits predating this session: HEAD@{0} commit: 0827 morning, HEAD@{1} commit: checkpoint, HEAD@{2} commit (initial). No reset / checkout / rebase / merge / stash entry exists.",
+    "statusPorcelainLines": 51,
+    "statusShape": "37 ' M ' modified tracked files + 14 '?? ' untracked paths. No staged, renamed, deleted or conflicted entry. It was 50 lines throughout the battery — byte-identical in shape to the session-start snapshot — and became 51 only when I wrote this file (?? docs/result/handoffs/28-gate-phase23.json). All 51 entries are Task-28 working-tree changes.",
+    "operationsIPerformed": "read-only only: git log, git stash list, git reflog, git status --porcelain, git diff --stat, git diff --quiet, git show HEAD:<path>",
+    "mutationResidue": "`grep -rn 'MUTANT|SABOTAGE' src scripts` returns no matches, so no earlier agent's mutation battery left code behind."
+  },
+  "aggregationPhase1Intact": {
+    "file": "docs/result/handoffs/24-aggregation-phase1.json",
+    "worktreeSha256": "09e3745e3041d9018640e7027c1fb6ec60617f04d2cbcbd4e421a48b7c8d1c30",
+    "committedBlobSha256": "09e3745e3041d9018640e7027c1fb6ec60617f04d2cbcbd4e421a48b7c8d1c30",
+    "bytes": 22107,
+    "gitDiffQuiet": "exit 0 (byte-identical to the committed blob), re-checked after the whole suite battery"
+  },
+  "historicalMutationCount": 0,
+  "historicalMutationMethod": "find data -type f -newermt '2026-08-27 17:29:00' (local UTC+9 == 2026-08-27T08:29Z) returned 10,987 files. I grouped every one by its containing run directory (the first path segment matching the run-id pattern ####-##-##T##-##-##-###Z) and inspected every distinct group. Birth times were not used and `git status data/` was not used (data/ is gitignored).",
+  "historicalMutationEvidence": {
+    "runDirectoriesTouched": 84,
+    "runDirectoriesTouchedDatedBefore20260827": 0,
+    "oldestRunIdTouched": "2026-08-27T09-34-19-774Z",
+    "filesUnderAnyRunIdOlderThan20260827": 0,
+    "nonRunDirPathsTouched": [
+      "data/.registry/sites.json (1 file — a live index, not a run directory)",
+      "data/domainchecker.co.kr/authoring-previews (726 — Phase 3's new namespace)",
+      "data/linear.app/authoring-previews (182 — Phase 3's new namespace)",
+      "data/linear.app/release-projects (40 project-level files; the only projects touched are wr28-assets-runner, wr28-assets-stage, wr28-brand-assets, wr28-verifier-authored, wr28-verifier-packonly — all wr28- prefixed)",
+      "data/linear.app/wr28-brand-assets-input (1), data/linear.app/wr28-operator-assets (3), data/linear.app/wr28-verifier-assets (1)"
+    ],
+    "flowpilotWr27": "data/linear.app/release-projects/flowpilot-wr27 still has NO revisions/ directory (contents: authored, operator-checklist.md, release-project.json, requirements.json, runs, technical-debt.json), so smoke:revision check 27A.23 is honestly satisfied — and that suite passed 36/36 in this battery."
+  },
+  "dataWrSlotOccurrences": 0,
+  "dataWrSlotEvidence": "`grep -rn data-wr-slot src scripts` returns 4 lines and ZERO of them is an emission site: src/authoring-preview/bridge.ts:16 is a doc comment stating there is no such attribute; scripts/smoke-brand-assets.ts:391, scripts/smoke-authoring-preview.ts:276 and scripts/smoke-regions.ts:351 are all NEGATIVE assertions (!/data-wr-slot/, !includes(...)) that would fail if one were minted. No code writes, serializes or reads the attribute.",
+  "editorBridgeInProductionPackage": 0,
+  "editorBridgeEvidence": {
+    "packageChecked": "data/domainchecker.co.kr/production-builds/2026-08-27T14-38-28-435Z — the MOST RECENT production build under data/*/production-builds/, produced by scripts/smoke-authoring-preview.ts §7 DURING this battery (i.e. immediately after a full preview session)",
+    "scope": "whole build tree (482 files) and the shipped package (198 files), grep -ral including binary-safe matching",
+    "markersSearched": [
+      "wr-authoring-bridge",
+      "WR_AUTHORING_HOT",
+      "WR_AUTHORING_EPOCH_FILE",
+      "__wrAuthoringBridge",
+      "slotContentEpoch",
+      "loadPageHot",
+      "wr-authoring-editor"
+    ],
+    "hits": "0 files for every marker, in both the 482-file build tree and the 198-file package",
+    "corroboration": "Same grep over four earlier packages named by the Phase-3 handoff (12-13-10-354Z, 12-13-14-490Z, 12-13-18-332Z, 12-20-42-447Z): 0 marker hits each, 198 files each. Structurally, `grep -rln WR_AUTHORING src scripts` matches only src/authoring-preview/patch.ts and its own suite, and src/production/run.ts:427 copies the IMMUTABLE template run (copyTemplateApp(templateRunDir/app, appDir)), never the patched preview dir. src/production/patch.ts is unmodified in git status."
+  },
+  "handoffSpotChecks": [
+    {
+      "file": "docs/result/handoffs/28-brand-assets.json",
+      "field": "canary.realLineage.brandCarryingHosts + hostsBySurface",
+      "claimed": "80 hosts {svg-aria-label:48, svg-symbol-id:16, image-alt:14, aria-label:2}",
+      "measured": "data/linear.app/production-builds/2026-08-27T12-36-06-105Z/report/bake-report.json brand.bake.hostsBefore=80, hostsBeforeBySurface={svg-symbol-id:16, svg-aria-label:48, aria-label:2, image-alt:14}; independently re-derived by me by calling the product scanner scanAppBrandHosts on data/linear.app/recon-templates/2026-08-25T21-53-26-980Z/app -> 8 routes, 80 hosts, identical split",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-brand-assets.json",
+      "field": "canary.realLineage.applied + residual",
+      "claimed": "replaced 64, removed 16, preserved 0, refused 0, nodesRewritten 80, pagesRewritten 8, symbolIdsRenamed 32; residual hostsAfter 0 / preservedAfter 0 / unexplainedAfter 0",
+      "measured": "same bake-report brand.bake.applied = {replaced:64, removed:16, preserved:0, refused:0, nodesRewritten:80, pagesRewritten:8, symbolIdsRenamed:32, symbolReferencesRenamed:0}; brand.bake.residual = {hostsAfter:0, preservedAfter:0, unexplainedAfter:[], bySurfaceAfter:{}}; refusals:[]",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-brand-assets.json",
+      "field": "canary.realLineage.rscFlightDocumentsMeasured / rscFlightLengthPrefixedChunks / rscFlightBrandSurfaces / exportedHtmlBrandSurfaces",
+      "claimed": "46 flight documents, 1083 length-prefixed chunks, flight brand surfaces 0, exported-HTML brand surfaces 0",
+      "measured": "bake-report brand.flight = {documents:46, lengthPrefixedChunks:1083, svgAriaLabel:0, svgSymbolId:0, svgText:0, imageAlt:0, ariaLabel:0, sourceUrl:0, txtFiles:36, htmlDocuments:10}. I corroborated the document count myself: the package ships 37 .txt + 10 .html, of which robots.txt is not a flight document -> 36+10=46. I also ran my OWN census (python, both raw and backslash-unescaped encodings) over all 47 HTML+txt documents: aria-label 0, <symbol id> 0, <img alt> 0, <text> 0, <title> 0 containing 'linear'",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-brand-assets.json",
+      "field": "detectionBasis.measuredEffect (host-only tokens vs declared-name-widened tokens)",
+      "claimed": "linear.app 80 -> 80, nextjs.org 160 -> 190, domainchecker.co.kr 0 -> 38",
+      "measured": "my own script calling the product functions brandTokensFromHost / appBrandTokens / scanAppBrandHosts on the three real accepted templates: linear.app 8 routes ['linear'] 80 -> ['linear'] 80; nextjs.org 40 routes ['nextjs'] 160 -> ['next.js','nextjs'] 190 with image-logo=160; domainchecker.co.kr 19 routes ['domainchecker'] 0 -> ['domainchecker','도메인체커'] 38, all 38 on the aria-label surface",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-brand-assets.json",
+      "field": "canary.synthetic (linear 1-route canary, three real next builds)",
+      "claimed": "brandCarryingHosts 12; before markup 13 / flight 40 / blockers 1; negative blockers 1 with refused 1 and unexplained 1 while rendered census is 0/0; after markup 0 / flight 0 / blockers 0; post-hydration 0; hydrationErrors 0",
+      "measured": "my own run of the suite through the mutex, raw [measured] lines: 'before: hosts=12 replaced=0 removed=0 preserved=0 refused=0 unexplained=12 markup=13 flight=40 blockers=1 buildMs=2755'; 'negative: hosts=12 replaced=7 removed=4 preserved=0 refused=1 unexplained=1 markup=0 flight=0 blockers=1 buildMs=2736'; 'after: hosts=12 replaced=8 removed=4 preserved=0 refused=0 unexplained=0 markup=0 flight=0 blockers=0 buildMs=2561'; 'hydrated DOM: svgAriaLabel=0 svgSymbolId=0 imageAlt=0 ariaLabel=0; console errors=0; hydration errors=0'",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-brand-assets.json",
+      "field": "verification.suites[smoke-brand-assets].checks",
+      "claimed": "141 checks, 0 failures",
+      "measured": "my own locked run: grep -c '  PASS ' = 141, grep -c '  FAIL ' = 0, suite prints '141 checks, 0 failures', rc 0, 16 s wall (five real `next build`s summing to 13.3 s of the 16)",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-brand-assets.json",
+      "field": "canary.realLineage.requirementStatusNote",
+      "claimed": "'cleared by MEASURED OUTPUT: ... exported-html brand surfaces=0; rsc-flight brand surfaces=0; post-hydration brand surfaces=0' (three axes)",
+      "measured": "the PERSISTED data/linear.app/release-projects/wr28-brand-assets/requirements.json carries status=resolved, severity=release-blocking, count=80, and a TWO-axis statusNote ending 'exported-html brand surfaces=0; rsc-flight brand surfaces=0' — no post-hydration clause. The three-axis string is what collectRequirements returns when re-run against a freshly measured qa.json, not what is on disk for that historical build.",
+      "agrees": false,
+      "note": "Traceable, and the handoff DISCLOSES exactly this in its own limitations[10] ('the persisted requirements.json ... still carries the TWO-axis statusNote because its build predates the hydrated census; I did not rewrite that historical build's artifacts'). Scored agrees=false because the quoted string is not the string on disk; not a gate blocker — the disagreement is self-declared and the direction is conservative (fewer axes persisted than quoted)."
+    },
+    {
+      "file": "docs/result/handoffs/28-preview-runtime.json",
+      "field": "performance.site (fixture shape)",
+      "claimed": "domainchecker.co.kr recon-template 2026-08-19T07-14-22-868Z — 19 routes, 6 pages, 1957 slots, 4832 bindings",
+      "measured": "app/reconstruction-data/route-map.json routes = 19; app/reconstruction-data/pages contains 6 files; slots.json slots = 1957; slot-bindings.json bindings = 4832",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-preview-runtime.json",
+      "field": "productionBakeEvidence (the §7 bake package)",
+      "claimed": "198 files, 22,042,083 bytes, 0 occurrences of the bridge marker / the authoring patch marker / WR_AUTHORING_EPOCH_FILE",
+      "measured": "data/domainchecker.co.kr/production-builds/2026-08-27T12-20-42-447Z/package: find -type f = 198 files, summed stat size = 22,042,083 bytes exactly; grep -ral for wr-authoring-bridge / WR_AUTHORING_HOT / WR_AUTHORING_EPOCH_FILE = 0 files each",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-preview-runtime.json",
+      "field": "productionBakeEvidence (3 further compiles reproduced 0/0/0)",
+      "claimed": "runs 2026-08-27T12-13-10-354Z / 12-13-14-490Z / 12-13-18-332Z, all 0/0/0",
+      "measured": "all three run directories exist under data/domainchecker.co.kr/production-builds/ with 198-file packages, and my own grep of the three bridge/patch markers over each package returns 0 hits in all three",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-preview-runtime.json",
+      "field": "regression.newSuite['smoke:authoring-preview']",
+      "claimed": "41 checks, 0 failures, ~25 s wall clock",
+      "measured": "my own locked run: grep -c '  PASS ' = 41, grep -c '  FAIL ' = 0, suite prints 'smoke:authoring-preview — 41 checks, 0 failures', rc 0, 24 s wall",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-preview-runtime.json",
+      "field": "editorBridge.occurrencesInPackage",
+      "claimed": "0",
+      "measured": "0 across 7 markers in the newest production package (2026-08-27T14-38-28-435Z, 198 package files / 482 build files) which was produced by the preview suite during MY battery, and 0 in four earlier packages",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-preview-runtime.json",
+      "field": "performance.textEditMs (144 ms median / 150 ms max)",
+      "claimed": "6 reps, median 144, max 150, min 142, samples [150,142,142,150,145,143]",
+      "measured": "traceable byte-for-byte to the builder's raw artifact tmp/wr28/preview-scratch/bench-final.json (same samples). I did NOT re-run that specific cross-origin Playwright measurement. Phase 3's independent verifier re-measured the same metric with its own harness and got median 180 / max 211 / min 170, every sample above the claimed maximum; a later re-verifier measured the HTTP-served path instead (median 28.5 ms) and did not re-test this figure.",
+      "agrees": false,
+      "note": "The number IS traceable to an artifact, so it does not trip the untraceable-number gate criterion. It is recorded as an open, twice-unreproduced performance figure — see limitations."
+    }
+  ],
+  "handoffUntraceableNumbers": [],
+  "verdict": "PASS",
+  "blockers": [],
+  "limitations": [
+    "PHASE 3 HAS AN OPEN, UNCORRECTED PERFORMANCE FINDING. 28-preview-runtime.json performance.textEditMs claims 144 ms median / 150 ms max for a text edit becoming visible in a real browser. It traces exactly to the builder's raw bench-final.json, but Phase 3's independent verifier could not reproduce it (180 / 211 / 170 over 6 reps, every sample above the claimed max) and no correction agent ever ran on Phase 3. I did not re-measure it in this gate. The engineering conclusion it supports (a text edit is browser-visible far inside interaction latency, against a ~3.3-4.0 s production bake) is corroborated by three independent parties; the specific pair 144/150 should be replaced with a range or re-measured before it is quoted as a result.",
+    "28-brand-assets.json canary.realLineage.requirementStatusNote quotes a THREE-axis clearing note, while the persisted requirements.json of that release project carries the TWO-axis note (its build predates the post-hydration census). The handoff names this itself in limitations[10]; the next real build of that project will persist all three axes. I did not rewrite the historical artifact.",
+    "`grep -rn data-wr-slot src scripts` matches 4 lines. I report dataWrSlotOccurrences as 0 because zero of them is an emission site: one is a doc comment saying the attribute does not exist and three are negative assertions inside smoke suites that would FAIL if it were minted. A reader counting raw grep lines will see 4, not 0.",
+    "content-injection's raw log contains 2 lines matching '  FAIL ' — both are `[content:qa]   FAIL — unslotted duplicate text desync: ...` diagnostic lines emitted INSIDE intentional negative fixtures (log lines 90 and 92), not check failures. The suite prints '145/145 checks passed'. My failures count for that suite is therefore 0 by inspection, not by the raw grep.",
+    "No suite asserts its own total check count (the pre-overnight audit recorded this repo-wide). A suite that silently stopped emitting a check would show up here only as a negative delta against Phase 1 — which is exactly the comparison I ran, and there were none — but within a single suite a replaced check is indistinguishable from a lost-plus-added pair without reading the diff, which I did not do exhaustively.",
+    "I verified the two new Task-28 suites PASS and that their checks exist; I did NOT re-run this gate's own mutation battery against them. Falsifiability of Phase-2 and Phase-3 checks rests on the mutation evidence recorded by their verifiers (Phase 2: three mutations by the correction agent plus three more by the re-verifier, 4/3/18 and 2/2/18 failures, restores proven by sha256; Phase 3: two sabotages by the builder and two by its verifier, 1/6 and 1/2 failures, restores proven by sha256). I confirmed no mutation residue survives: `grep -rn 'MUTANT\\|SABOTAGE' src scripts` finds nothing and the suites pass clean.",
+    "Wall-clock seconds are single-machine and single-run (one rep per suite), measured with zero lock contention — every invocation reported `wr28-lock: acquired after 0s`, so no other Task-28 agent was running suites during this battery. They are not comparable to figures taken under contention.",
+    "The historical-mutation scan uses a local-clock cutoff of 2026-08-27 17:29:00 (= 2026-08-27T08:29Z on this UTC+9 machine). It groups by containing run directory as instructed and ignores birth times. It cannot detect an edit made to a pre-Task-28 file BEFORE that cutoff, and it cannot detect a mutation that preserved the original mtime.",
+    "I did not independently re-derive every number in either handoff — 7 fields in 28-brand-assets.json and 6 in 28-preview-runtime.json were spot-checked against artifacts, as the brief required (>=4 each). Unchecked fields are neither endorsed nor disputed here.",
+    "This gate ran no `pnpm install`, edited no package.json, and performed ZERO mutating git operations. The two new suites remain registered only in docs/result/handoffs/28-intel/pending-package-scripts.tsv; `pnpm smoke:authoring-preview` and `pnpm smoke:brand-assets` are still not real package scripts, so a future runner must invoke them with `npx tsx`."
+  ],
+  "evidenceOnDisk": {
+    "logs": "/private/tmp/claude-501/-Users-woops-projects-web-recon/3edb72d5-85bc-4de0-8139-9583f439ecad/scratchpad/gate/logs/*.log (23 raw suite logs, one per locked invocation)",
+    "driver": "<scratchpad>/gate/run.sh (the sequential locked battery) and <scratchpad>/gate/results.tsv (name / exit code / wall seconds, written by the driver)",
+    "scripts": "<scratchpad>/gate/hosts.mts (per-template brand-host counts through the product scanner, host-only vs widened tokens) and <scratchpad>/gate/hist.sh (the mtime scan grouped by run directory)"
+  }
+}

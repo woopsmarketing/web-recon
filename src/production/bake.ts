@@ -21,6 +21,16 @@ import { cp, mkdir, readdir, readFile, writeFile, stat } from "node:fs/promises"
 import path from "node:path";
 
 import { applyRewrite } from "../assets/rewrite.js";
+import { brandTokensFromHost } from "../content-injection/brand-surfaces.js";
+import {
+  addFlightCounts,
+  censusFlightPayload,
+  censusServedHtml,
+  emptyFlightCounts,
+  extractInlineFlightChunks,
+  summarizeBrandCensus,
+  type BrandSurfaceCensus,
+} from "./brand-census.js";
 import type { RewriteMap } from "../assets/types.js";
 import {
   bakeRouteTitles,
@@ -177,6 +187,7 @@ async function walkFiles(root: string, relDir = ""): Promise<string[]> {
 export interface PostProcessResult {
   seo: BakeReport["seo"];
   assets: Omit<BakeReport["assets"], "mediaFilesCopied" | "mediaBytes">;
+  brand: BakeReport["brand"];
   routeHtmlFiles: number;
 }
 
@@ -187,6 +198,20 @@ export async function postProcessExport(
   rewriteMap: RewriteMap,
   robotsTxt: string,
   residualHosts: string[],
+  /** Source host the template was reconstructed from — the brand census is
+   *  derived from it, never from a hardcoded brand (Task 28 CR7). */
+  sourceHost: string,
+  /**
+   * The token set the brand RESOLVER ran with (Task 28 Phase 2 correction).
+   *
+   * The resolver's tokens are the host label WIDENED by the name the source
+   * declares in its own titles (`appBrandTokens`). If the census below used
+   * host-only tokens the two would disagree: a declared-name brand string the
+   * resolver was asked to remove could survive in the exported bytes and this
+   * census would report zero. Optional so every existing caller is unchanged,
+   * and the tokens actually used are recorded on the census itself.
+   */
+  brandTokens?: readonly string[],
 ): Promise<PostProcessResult> {
   const files = await walkFiles(outDir);
   const htmlFiles = files.filter((file) => file.endsWith(".html"));
@@ -269,6 +294,54 @@ export async function postProcessExport(
     }
   }
 
+  // E: source-brand census over the FINAL exported route HTML (Task 28 CR7).
+  // Measured HERE, after the head splice and the asset rewrite, so the numbers
+  // describe the bytes this bake actually produced. Nothing is inherited from a
+  // previous run's QA report: the only HTML that exists at bake time is the
+  // static export, and that is exactly what is counted.
+  const censusTokens = brandTokens ?? brandTokensFromHost(sourceHost);
+  const brandByRoute: BrandSurfaceCensus["byRoute"] = [];
+  for (const planRoute of planRoutes) {
+    const filePath = path.join(outDir, routeHtmlFile(planRoute.route));
+    let html: string;
+    try {
+      html = await readFile(filePath, "utf8");
+    } catch {
+      // A route with no exported file is already reported by headSpliceFailures;
+      // censusing a file that does not exist would invent a zero.
+      continue;
+    }
+    brandByRoute.push({
+      route: planRoute.route,
+      ...censusServedHtml(html, sourceHost, censusTokens),
+    });
+  }
+  const brandCensus = summarizeBrandCensus([...censusTokens], brandByRoute);
+
+  // E (part 2): the RSC FLIGHT census (Task 28 Phase 2). Two encodings the
+  // markup census above is structurally blind to — the exported `.txt` flight
+  // files, and the same flight inlined in `self.__next_f.push(...)` chunks
+  // inside each route HTML. Measured over EVERY exported html/txt file, so a
+  // brand rewrite that reached only the markup cannot report a clean census.
+  let flight = emptyFlightCounts();
+  let flightTxtFiles = 0;
+  let flightHtmlDocuments = 0;
+  for (const file of flightFiles) {
+    const body = await readFile(path.join(outDir, file), "utf8");
+    flight = addFlightCounts(flight, censusFlightPayload(body, sourceHost, censusTokens));
+    flightTxtFiles += 1;
+  }
+  for (const file of htmlFiles) {
+    const body = await readFile(path.join(outDir, file), "utf8");
+    const chunks = extractInlineFlightChunks(body);
+    if (chunks.length === 0) continue;
+    flightHtmlDocuments += 1;
+    for (const chunk of chunks) {
+      flight = addFlightCounts(flight, censusFlightPayload(chunk, sourceHost, censusTokens));
+    }
+  }
+  flight.documents = flightTxtFiles + flightHtmlDocuments;
+
   // C: robots.txt (preview policy). No /sitemap.xml is written in preview —
   // the path-only sitemap plan is a package artifact, never a served sitemap.
   await writeFile(path.join(outDir, "robots.txt"), robotsTxt, "utf8");
@@ -287,6 +360,17 @@ export async function postProcessExport(
     assets: {
       rewrite: rewriteTotals,
       residualSourceUrlOccurrencesInSite,
+    },
+    brand: {
+      measuredOn: "static-export-route-html",
+      flight: { ...flight, txtFiles: flightTxtFiles, htmlDocuments: flightHtmlDocuments },
+      bake: null,
+      measurementNote:
+        "counted on this bake's exported route HTML after the SEO head splice and the asset " +
+        "rewrite. It is a MEASUREMENT of the bake output, not an assertion that the site is " +
+        "brand-free, and it is not the served-package census (production QA measures that over " +
+        "real HTTP and writes it to report/qa.json).",
+      census: brandCensus,
     },
     routeHtmlFiles: htmlFiles.length,
   };

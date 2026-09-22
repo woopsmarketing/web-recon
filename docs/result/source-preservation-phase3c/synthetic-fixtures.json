@@ -1,0 +1,693 @@
+{
+  "kind": "SyntheticResponseFixtureSet",
+  "status": "DIAGNOSTIC — deterministic fictional data; not source content, not a production snapshot",
+  "contract": "docs/result/source-preservation-phase3c/data-contract.json",
+  "imageServePrefix": "/__synthetic__/",
+  "fixtures": [
+    {
+      "fixtureId": "fixture-main-banners-v1",
+      "diagnosticName": "mainBanners",
+      "itemCount": 9,
+      "cardinalityReason": "9 = captured unique slide count (data-swiper-slide-index 0..8, no loop duplicates). Code minimum for loop/autoplay/dots to act is 2; matching capture keeps hero dot count and loop comparable.",
+      "fieldsIncluded": [
+        "isPcVideo",
+        "isMobileVideo",
+        "pcUrl",
+        "mobileUrl",
+        "text",
+        "subText",
+        "type",
+        "linkUrl"
+      ],
+      "fieldsOmitted": {
+        "portfolio": "optional (?. guarded); only used as image fallback and non-GENERAL click target",
+        "textColor": "optional truthiness only; real type unproven → omitted (white text branch)"
+      },
+      "body": {
+        "data": [
+          {
+            "isPcVideo": false,
+            "isMobileVideo": false,
+            "pcUrl": "/__synthetic__/fixture-hero-01-pc.png",
+            "mobileUrl": "/__synthetic__/fixture-hero-01-mobile.png",
+            "text": "",
+            "subText": "",
+            "type": "GENERAL",
+            "linkUrl": ""
+          },
+          {
+            "isPcVideo": false,
+            "isMobileVideo": false,
+            "pcUrl": "/__synthetic__/fixture-hero-02-pc.png",
+            "mobileUrl": "/__synthetic__/fixture-hero-02-mobile.png",
+            "text": "",
+            "subText": "",
+            "type": "GENERAL",
+            "linkUrl": ""
+          },
+          {
+            "isPcVideo": false,
+            "isMobileVideo": false,
+            "pcUrl": "/__synthetic__/fixture-hero-03-pc.png",
+            "mobileUrl": "/__synthetic__/fixture-hero-03-mobile.png",
+            "text": "",
+            "subText": "",
+            "type": "GENERAL",
+            "linkUrl": ""
+          },
+          {
+            "isPcVideo": false,
+            "isMobileVideo": false,
+            "pcUrl": "/__synthetic__/fixture-hero-04-pc.png",
+            "mobileUrl": "/__synthetic__/fixture-hero-04-mobile.png",
+            "text": "",
+            "subText": "",
+            "type": "GENERAL",
+            "linkUrl": ""
+          },
+          {
+            "isPcVideo": false,
+            "isMobileVideo": false,
+            "pcUrl": "/__synthetic__/fixture-hero-05-pc.png",
+            "mobileUrl": "/__synthetic__/fixture-hero-05-mobile.png",
+            "text": "",
+            "subText": "",
+            "type": "GENERAL",
+            "linkUrl": ""
+          },
+          {
+            "isPcVideo": false,
+            "isMobileVideo": false,
+            "pcUrl": "/__synthetic__/fixture-hero-06-pc.png",
+            "mobileUrl": "/__synthetic__/fixture-hero-06-mobile.png",
+            "text": "",
+            "subText": "",
+            "type": "GENERAL",
+            "linkUrl": ""
+          },
+          {
+            "isPcVideo": false,
+            "isMobileVideo": false,
+            "pcUrl": "/__synthetic__/fixture-hero-07-pc.png",
+            "mobileUrl": "/__synthetic__/fixture-hero-07-mobile.png",
+            "text": "",
+            "subText": "",
+            "type": "GENERAL",
+            "linkUrl": ""
+          },
+          {
+            "isPcVideo": false,
+            "isMobileVideo": false,
+            "pcUrl": "/__synthetic__/fixture-hero-08-pc.png",
+            "mobileUrl": "/__synthetic__/fixture-hero-08-mobile.png",
+            "text": "테스트 배너 문구 08\n가상 헤드라인 문장",
+            "subText": "가상 서브 텍스트입니다. 실제 내용이 아닙니다 08",
+            "type": "GENERAL",
+            "linkUrl": ""
+          },
+          {
+            "isPcVideo": false,
+            "isMobileVideo": false,
+            "pcUrl": "/__synthetic__/fixture-hero-09-pc.png",
+            "mobileUrl": "/__synthetic__/fixture-hero-09-mobile.png",
+            "text": "테스트 배너 문구 09\n가상 헤드라인 문장",
+            "subText": "가상 서브 텍스트입니다. 실제 내용이 아닙니다 09",
+            "type": "GENERAL",
+            "linkUrl": ""
+          }
+        ]
+      },
+      "bodySha256": "204fcdb02a128256553ec07f0a99f6afda1cd2497a5dd61b144acfd73111c001"
+    },
+    {
+      "fixtureId": "fixture-portfolios-area1-v1",
+      "diagnosticName": "portfoliosArea1",
+      "itemCount": 10,
+      "cardinalityReason": "10 = captured area-1 card count = request count=10. ≥4 needed for a valid moving md progress bar (width/(n-2)); >3 exercises prev/next with slidesPerView 3.",
+      "fieldsIncluded": [
+        "uuid",
+        "title",
+        "description",
+        "pcThumbnailImageUrl",
+        "mobileThumbnailImageUrl",
+        "pricePerSize"
+      ],
+      "body": {
+        "data": {
+          "data": [
+            {
+              "uuid": "synthetic-portfolio-a01",
+              "title": "테스트 리모델링 A01",
+              "description": "가상 설명 문장입니다 · 구조 검증용 데이터 A01 · 실제 사례 아님",
+              "pcThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a01-pc.png",
+              "mobileThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a01-mobile.png",
+              "pricePerSize": 150
+            },
+            {
+              "uuid": "synthetic-portfolio-a02",
+              "title": "테스트 리모델링 A02",
+              "description": "가상 설명 문장입니다 · 구조 검증용 데이터 A02 · 실제 사례 아님",
+              "pcThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a02-pc.png",
+              "mobileThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a02-mobile.png",
+              "pricePerSize": 200
+            },
+            {
+              "uuid": "synthetic-portfolio-a03",
+              "title": "테스트 리모델링 A03",
+              "description": "가상 설명 문장입니다 · 구조 검증용 데이터 A03 · 실제 사례 아님",
+              "pcThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a03-pc.png",
+              "mobileThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a03-mobile.png",
+              "pricePerSize": 270
+            },
+            {
+              "uuid": "synthetic-portfolio-a04",
+              "title": "테스트 리모델링 A04",
+              "description": "가상 설명 문장입니다 · 구조 검증용 데이터 A04 · 실제 사례 아님",
+              "pcThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a04-pc.png",
+              "mobileThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a04-mobile.png",
+              "pricePerSize": 320
+            },
+            {
+              "uuid": "synthetic-portfolio-a05",
+              "title": "테스트 리모델링 A05",
+              "description": "가상 설명 문장입니다 · 구조 검증용 데이터 A05 · 실제 사례 아님",
+              "pcThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a05-pc.png",
+              "mobileThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a05-mobile.png",
+              "pricePerSize": 150
+            },
+            {
+              "uuid": "synthetic-portfolio-a06",
+              "title": "테스트 리모델링 A06",
+              "description": "가상 설명 문장입니다 · 구조 검증용 데이터 A06 · 실제 사례 아님",
+              "pcThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a06-pc.png",
+              "mobileThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a06-mobile.png",
+              "pricePerSize": 200
+            },
+            {
+              "uuid": "synthetic-portfolio-a07",
+              "title": "테스트 리모델링 A07",
+              "description": "가상 설명 문장입니다 · 구조 검증용 데이터 A07 · 실제 사례 아님",
+              "pcThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a07-pc.png",
+              "mobileThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a07-mobile.png",
+              "pricePerSize": 270
+            },
+            {
+              "uuid": "synthetic-portfolio-a08",
+              "title": "테스트 리모델링 A08",
+              "description": "가상 설명 문장입니다 · 구조 검증용 데이터 A08 · 실제 사례 아님",
+              "pcThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a08-pc.png",
+              "mobileThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a08-mobile.png",
+              "pricePerSize": 320
+            },
+            {
+              "uuid": "synthetic-portfolio-a09",
+              "title": "테스트 리모델링 A09",
+              "description": "가상 설명 문장입니다 · 구조 검증용 데이터 A09 · 실제 사례 아님",
+              "pcThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a09-pc.png",
+              "mobileThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a09-mobile.png",
+              "pricePerSize": 150
+            },
+            {
+              "uuid": "synthetic-portfolio-a10",
+              "title": "테스트 리모델링 A10",
+              "description": "가상 설명 문장입니다 · 구조 검증용 데이터 A10 · 실제 사례 아님",
+              "pcThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a10-pc.png",
+              "mobileThumbnailImageUrl": "/__synthetic__/fixture-portfolio-a10-mobile.png",
+              "pricePerSize": 200
+            }
+          ],
+          "totalCount": 10
+        }
+      },
+      "bodySha256": "1a61e04dfa77e3bc0884691fb14e47142f9a69029a3cc74497c7dcf766ffd94a"
+    },
+    {
+      "fixtureId": "fixture-portfolios-area2-v1",
+      "diagnosticName": "portfoliosArea2",
+      "itemCount": 4,
+      "cardinalityReason": "4 = captured area-2 card count; also the smallest count with a valid, moving md progress bar.",
+      "fieldsIncluded": [
+        "uuid",
+        "title",
+        "description",
+        "pcThumbnailImageUrl",
+        "mobileThumbnailImageUrl",
+        "pricePerSize"
+      ],
+      "body": {
+        "data": {
+          "data": [
+            {
+              "uuid": "synthetic-portfolio-b01",
+              "title": "테스트 리모델링 B01",
+              "description": "가상 설명 문장입니다 · 구조 검증용 데이터 B01 · 실제 사례 아님",
+              "pcThumbnailImageUrl": "/__synthetic__/fixture-portfolio-b01-pc.png",
+              "mobileThumbnailImageUrl": "/__synthetic__/fixture-portfolio-b01-mobile.png",
+              "pricePerSize": 150
+            },
+            {
+              "uuid": "synthetic-portfolio-b02",
+              "title": "테스트 리모델링 B02",
+              "description": "가상 설명 문장입니다 · 구조 검증용 데이터 B02 · 실제 사례 아님",
+              "pcThumbnailImageUrl": "/__synthetic__/fixture-portfolio-b02-pc.png",
+              "mobileThumbnailImageUrl": "/__synthetic__/fixture-portfolio-b02-mobile.png",
+              "pricePerSize": 200
+            },
+            {
+              "uuid": "synthetic-portfolio-b03",
+              "title": "테스트 리모델링 B03",
+              "description": "가상 설명 문장입니다 · 구조 검증용 데이터 B03 · 실제 사례 아님",
+              "pcThumbnailImageUrl": "/__synthetic__/fixture-portfolio-b03-pc.png",
+              "mobileThumbnailImageUrl": "/__synthetic__/fixture-portfolio-b03-mobile.png",
+              "pricePerSize": 270
+            },
+            {
+              "uuid": "synthetic-portfolio-b04",
+              "title": "테스트 리모델링 B04",
+              "description": "가상 설명 문장입니다 · 구조 검증용 데이터 B04 · 실제 사례 아님",
+              "pcThumbnailImageUrl": "/__synthetic__/fixture-portfolio-b04-pc.png",
+              "mobileThumbnailImageUrl": "/__synthetic__/fixture-portfolio-b04-mobile.png",
+              "pricePerSize": 320
+            }
+          ],
+          "totalCount": 4
+        }
+      },
+      "bodySha256": "7a00fe1c50296d372cbb6649e31c9592e71235829dd66fb013c9b3058f47cf1f"
+    },
+    {
+      "fixtureId": "fixture-reviews-v1",
+      "diagnosticName": "reviews",
+      "itemCount": 6,
+      "cardinalityReason": "6 = captured review slide count = request count=6; ≥4 for a valid md progress bar; 6 gives 3 two-card slides below md.",
+      "fieldsIncluded": [
+        "text",
+        "customerName"
+      ],
+      "fieldsOmitted": {
+        "totalCount": "never read by the homepage (unproven) → omitted from the envelope"
+      },
+      "body": {
+        "data": {
+          "data": [
+            {
+              "text": "가상 후기 01 — 레이아웃 검증을 위한 임의의 문장입니다. 실제 고객 후기가 아닙니다.",
+              "customerName": "테스트A"
+            },
+            {
+              "text": "가상 후기 02 — 레이아웃 검증을 위한 임의의 문장입니다. 실제 고객 후기가 아닙니다.",
+              "customerName": "테스트B"
+            },
+            {
+              "text": "가상 후기 03 — 레이아웃 검증을 위한 임의의 문장입니다. 실제 고객 후기가 아닙니다.",
+              "customerName": "테스트C"
+            },
+            {
+              "text": "가상 후기 04 — 레이아웃 검증을 위한 임의의 문장입니다. 실제 고객 후기가 아닙니다.",
+              "customerName": "테스트D"
+            },
+            {
+              "text": "가상 후기 05 — 레이아웃 검증을 위한 임의의 문장입니다. 실제 고객 후기가 아닙니다.",
+              "customerName": "테스트E"
+            },
+            {
+              "text": "가상 후기 06 — 레이아웃 검증을 위한 임의의 문장입니다. 실제 고객 후기가 아닙니다.",
+              "customerName": "테스트F"
+            }
+          ]
+        }
+      },
+      "bodySha256": "6cd51b4389993242af0602fe5f1ae9f79a6424ddd41b22d4bacf2047d590c0f4"
+    }
+  ],
+  "images": [
+    {
+      "name": "fixture-hero-01-pc",
+      "file": "fixture-hero-01-pc.png",
+      "servedPath": "/__synthetic__/fixture-hero-01-pc.png",
+      "width": 1920,
+      "height": 1075,
+      "label": "FIXTURE HERO 01 (PC)"
+    },
+    {
+      "name": "fixture-hero-01-mobile",
+      "file": "fixture-hero-01-mobile.png",
+      "servedPath": "/__synthetic__/fixture-hero-01-mobile.png",
+      "width": 750,
+      "height": 1550,
+      "label": "FIXTURE HERO 01 (MOBILE)"
+    },
+    {
+      "name": "fixture-hero-02-pc",
+      "file": "fixture-hero-02-pc.png",
+      "servedPath": "/__synthetic__/fixture-hero-02-pc.png",
+      "width": 1920,
+      "height": 1075,
+      "label": "FIXTURE HERO 02 (PC)"
+    },
+    {
+      "name": "fixture-hero-02-mobile",
+      "file": "fixture-hero-02-mobile.png",
+      "servedPath": "/__synthetic__/fixture-hero-02-mobile.png",
+      "width": 750,
+      "height": 1550,
+      "label": "FIXTURE HERO 02 (MOBILE)"
+    },
+    {
+      "name": "fixture-hero-03-pc",
+      "file": "fixture-hero-03-pc.png",
+      "servedPath": "/__synthetic__/fixture-hero-03-pc.png",
+      "width": 1920,
+      "height": 1075,
+      "label": "FIXTURE HERO 03 (PC)"
+    },
+    {
+      "name": "fixture-hero-03-mobile",
+      "file": "fixture-hero-03-mobile.png",
+      "servedPath": "/__synthetic__/fixture-hero-03-mobile.png",
+      "width": 750,
+      "height": 1550,
+      "label": "FIXTURE HERO 03 (MOBILE)"
+    },
+    {
+      "name": "fixture-hero-04-pc",
+      "file": "fixture-hero-04-pc.png",
+      "servedPath": "/__synthetic__/fixture-hero-04-pc.png",
+      "width": 1920,
+      "height": 1075,
+      "label": "FIXTURE HERO 04 (PC)"
+    },
+    {
+      "name": "fixture-hero-04-mobile",
+      "file": "fixture-hero-04-mobile.png",
+      "servedPath": "/__synthetic__/fixture-hero-04-mobile.png",
+      "width": 750,
+      "height": 1550,
+      "label": "FIXTURE HERO 04 (MOBILE)"
+    },
+    {
+      "name": "fixture-hero-05-pc",
+      "file": "fixture-hero-05-pc.png",
+      "servedPath": "/__synthetic__/fixture-hero-05-pc.png",
+      "width": 1920,
+      "height": 1075,
+      "label": "FIXTURE HERO 05 (PC)"
+    },
+    {
+      "name": "fixture-hero-05-mobile",
+      "file": "fixture-hero-05-mobile.png",
+      "servedPath": "/__synthetic__/fixture-hero-05-mobile.png",
+      "width": 750,
+      "height": 1550,
+      "label": "FIXTURE HERO 05 (MOBILE)"
+    },
+    {
+      "name": "fixture-hero-06-pc",
+      "file": "fixture-hero-06-pc.png",
+      "servedPath": "/__synthetic__/fixture-hero-06-pc.png",
+      "width": 1920,
+      "height": 1075,
+      "label": "FIXTURE HERO 06 (PC)"
+    },
+    {
+      "name": "fixture-hero-06-mobile",
+      "file": "fixture-hero-06-mobile.png",
+      "servedPath": "/__synthetic__/fixture-hero-06-mobile.png",
+      "width": 750,
+      "height": 1550,
+      "label": "FIXTURE HERO 06 (MOBILE)"
+    },
+    {
+      "name": "fixture-hero-07-pc",
+      "file": "fixture-hero-07-pc.png",
+      "servedPath": "/__synthetic__/fixture-hero-07-pc.png",
+      "width": 1920,
+      "height": 1075,
+      "label": "FIXTURE HERO 07 (PC)"
+    },
+    {
+      "name": "fixture-hero-07-mobile",
+      "file": "fixture-hero-07-mobile.png",
+      "servedPath": "/__synthetic__/fixture-hero-07-mobile.png",
+      "width": 750,
+      "height": 1550,
+      "label": "FIXTURE HERO 07 (MOBILE)"
+    },
+    {
+      "name": "fixture-hero-08-pc",
+      "file": "fixture-hero-08-pc.png",
+      "servedPath": "/__synthetic__/fixture-hero-08-pc.png",
+      "width": 1920,
+      "height": 1075,
+      "label": "FIXTURE HERO 08 (PC)"
+    },
+    {
+      "name": "fixture-hero-08-mobile",
+      "file": "fixture-hero-08-mobile.png",
+      "servedPath": "/__synthetic__/fixture-hero-08-mobile.png",
+      "width": 750,
+      "height": 1550,
+      "label": "FIXTURE HERO 08 (MOBILE)"
+    },
+    {
+      "name": "fixture-hero-09-pc",
+      "file": "fixture-hero-09-pc.png",
+      "servedPath": "/__synthetic__/fixture-hero-09-pc.png",
+      "width": 1920,
+      "height": 1075,
+      "label": "FIXTURE HERO 09 (PC)"
+    },
+    {
+      "name": "fixture-hero-09-mobile",
+      "file": "fixture-hero-09-mobile.png",
+      "servedPath": "/__synthetic__/fixture-hero-09-mobile.png",
+      "width": 750,
+      "height": 1550,
+      "label": "FIXTURE HERO 09 (MOBILE)"
+    },
+    {
+      "name": "fixture-portfolio-a01-pc",
+      "file": "fixture-portfolio-a01-pc.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a01-pc.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A01"
+    },
+    {
+      "name": "fixture-portfolio-a01-mobile",
+      "file": "fixture-portfolio-a01-mobile.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a01-mobile.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A01 (M)"
+    },
+    {
+      "name": "fixture-portfolio-a02-pc",
+      "file": "fixture-portfolio-a02-pc.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a02-pc.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A02"
+    },
+    {
+      "name": "fixture-portfolio-a02-mobile",
+      "file": "fixture-portfolio-a02-mobile.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a02-mobile.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A02 (M)"
+    },
+    {
+      "name": "fixture-portfolio-a03-pc",
+      "file": "fixture-portfolio-a03-pc.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a03-pc.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A03"
+    },
+    {
+      "name": "fixture-portfolio-a03-mobile",
+      "file": "fixture-portfolio-a03-mobile.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a03-mobile.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A03 (M)"
+    },
+    {
+      "name": "fixture-portfolio-a04-pc",
+      "file": "fixture-portfolio-a04-pc.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a04-pc.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A04"
+    },
+    {
+      "name": "fixture-portfolio-a04-mobile",
+      "file": "fixture-portfolio-a04-mobile.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a04-mobile.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A04 (M)"
+    },
+    {
+      "name": "fixture-portfolio-a05-pc",
+      "file": "fixture-portfolio-a05-pc.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a05-pc.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A05"
+    },
+    {
+      "name": "fixture-portfolio-a05-mobile",
+      "file": "fixture-portfolio-a05-mobile.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a05-mobile.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A05 (M)"
+    },
+    {
+      "name": "fixture-portfolio-a06-pc",
+      "file": "fixture-portfolio-a06-pc.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a06-pc.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A06"
+    },
+    {
+      "name": "fixture-portfolio-a06-mobile",
+      "file": "fixture-portfolio-a06-mobile.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a06-mobile.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A06 (M)"
+    },
+    {
+      "name": "fixture-portfolio-a07-pc",
+      "file": "fixture-portfolio-a07-pc.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a07-pc.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A07"
+    },
+    {
+      "name": "fixture-portfolio-a07-mobile",
+      "file": "fixture-portfolio-a07-mobile.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a07-mobile.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A07 (M)"
+    },
+    {
+      "name": "fixture-portfolio-a08-pc",
+      "file": "fixture-portfolio-a08-pc.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a08-pc.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A08"
+    },
+    {
+      "name": "fixture-portfolio-a08-mobile",
+      "file": "fixture-portfolio-a08-mobile.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a08-mobile.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A08 (M)"
+    },
+    {
+      "name": "fixture-portfolio-a09-pc",
+      "file": "fixture-portfolio-a09-pc.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a09-pc.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A09"
+    },
+    {
+      "name": "fixture-portfolio-a09-mobile",
+      "file": "fixture-portfolio-a09-mobile.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a09-mobile.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A09 (M)"
+    },
+    {
+      "name": "fixture-portfolio-a10-pc",
+      "file": "fixture-portfolio-a10-pc.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a10-pc.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A10"
+    },
+    {
+      "name": "fixture-portfolio-a10-mobile",
+      "file": "fixture-portfolio-a10-mobile.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-a10-mobile.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO A10 (M)"
+    },
+    {
+      "name": "fixture-portfolio-b01-pc",
+      "file": "fixture-portfolio-b01-pc.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-b01-pc.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO B01"
+    },
+    {
+      "name": "fixture-portfolio-b01-mobile",
+      "file": "fixture-portfolio-b01-mobile.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-b01-mobile.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO B01 (M)"
+    },
+    {
+      "name": "fixture-portfolio-b02-pc",
+      "file": "fixture-portfolio-b02-pc.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-b02-pc.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO B02"
+    },
+    {
+      "name": "fixture-portfolio-b02-mobile",
+      "file": "fixture-portfolio-b02-mobile.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-b02-mobile.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO B02 (M)"
+    },
+    {
+      "name": "fixture-portfolio-b03-pc",
+      "file": "fixture-portfolio-b03-pc.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-b03-pc.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO B03"
+    },
+    {
+      "name": "fixture-portfolio-b03-mobile",
+      "file": "fixture-portfolio-b03-mobile.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-b03-mobile.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO B03 (M)"
+    },
+    {
+      "name": "fixture-portfolio-b04-pc",
+      "file": "fixture-portfolio-b04-pc.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-b04-pc.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO B04"
+    },
+    {
+      "name": "fixture-portfolio-b04-mobile",
+      "file": "fixture-portfolio-b04-mobile.png",
+      "servedPath": "/__synthetic__/fixture-portfolio-b04-mobile.png",
+      "width": 580,
+      "height": 360,
+      "label": "FIXTURE PORTFOLIO B04 (M)"
+    }
+  ]
+}

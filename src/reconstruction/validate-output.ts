@@ -12,7 +12,7 @@ import {
   type RuntimePage,
   type RuntimeRouteMap,
 } from "./types.js";
-import { styleClassName } from "./style-generator.js";
+import { OWNERSHIP_MARKER_CLASSES, styleClassName } from "./style-generator.js";
 import { NESTING_CONTAINER_CLASS, detectNestingRepair } from "./nesting.js";
 
 /**
@@ -148,6 +148,18 @@ export async function validateGeneratedApp(
   for (const match of css.matchAll(/^\.([A-Za-z0-9_-]+)\{/gm)) {
     styleClasses.add(match[1]!);
   }
+  /*
+   * TASK 28.8 A3 — the text-box relief variants are COMPOUND selectors
+   * (`.wr-st000162.wr-tx{…}`), which the single-class pattern above cannot see.
+   * They are collected rather than exempted: a tree whose nodes wear `wr-tx`
+   * while the stylesheet carries no `.wr-stNNN.wr-tx` rule at all is still a
+   * dangling class, and this check still catches it.
+   */
+  for (const match of css.matchAll(/^\.[A-Za-z0-9_-]+((?:\.[A-Za-z0-9_-]+)+)\{/gm)) {
+    for (const part of match[1]!.split(".")) {
+      if (part !== "") styleClasses.add(part);
+    }
+  }
 
   const pageFiles = [...new Set(routeMap.routes.map((route) => route.pageFile))].sort();
   let elementNodes = 0;
@@ -184,7 +196,14 @@ export async function validateGeneratedApp(
         const className = props["className"];
         if (typeof className === "string") {
           for (const cls of className.split(/\s+/)) {
-            if (cls !== "" && cls !== "wr-svg-host" && cls !== NESTING_CONTAINER_CLASS) {
+            // REC-I2 §C2.4 — ownership MARKER classes carry no rule of their own;
+            // they are referenced only inside `.wr-stNNN:where(:not(.wr-ow-*))`.
+            if (
+              cls !== "" &&
+              cls !== "wr-svg-host" &&
+              cls !== NESTING_CONTAINER_CLASS &&
+              !OWNERSHIP_MARKER_CLASSES.includes(cls)
+            ) {
             referencedClasses.add(cls);
           }
           }
@@ -242,6 +261,15 @@ export async function validateGeneratedApp(
          * repairs by throwing the server tree away. Assert on what was WRITTEN,
          * not on what the compiler believed it wrote.
          */
+        // TASK 28.8 FAST (Phase F correction 1) — a demoted node must carry a
+        // layout-neutral tag; anything else means the demotion table drifted.
+        const demotedFrom = node.p?.["data-wr-demoted"];
+        if (demotedFrom !== undefined && node.t !== "span" && node.t !== "div") {
+          problems.push(
+            `${page.pageId}/${viewport.id}: <${node.t}> (${node.n}) is marked data-wr-demoted=` +
+              `${String(demotedFrom)} but is not a layout-neutral span/div`,
+          );
+        }
         const nextAncestors = [...ancestors, node.t];
         if (node.v === undefined) {
           for (const child of node.c ?? []) {

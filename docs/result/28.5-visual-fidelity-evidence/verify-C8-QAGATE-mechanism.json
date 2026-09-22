@@ -1,0 +1,77 @@
+{
+  "evidenceId": "28.5B-C8-QAGATE-mechanism",
+  "role": "adversarial verifier (mechanism lens)",
+  "producedAt": "2026-08-29",
+  "claimUnderTest": "C8-QAGATE: (1) template compilation is paint-neutral so the entire delta is inherited from RECONSTRUCTION GENERATION; (2) the QA schema cannot represent a paint difference at all; (3) the accepted artifact ships without its own QA's one correction.",
+  "verdict": "PARTIALLY REFUTED",
+  "experiments": [
+    {
+      "id": "E1-template-boundary-remaining-routes",
+      "question": "Wave 1 tested 4 of 8 routes at the template boundary. Do the other 4 (+ /customers/automattic) break paint-neutrality, under the OBSERVATION policy rather than wave-1's reducedMotion=reduce / mobile DSF1?",
+      "method": "next start on both prebuilt apps; chromium 1440x900 DSF1 and 390x844 DSF3 + Android UA + touch; locale ko-KR TZ Asia/Seoul reducedMotion=no-preference colorScheme=light; load -> networkidle(8s) -> fonts.ready -> 1200ms -> 2 rAF; fullPage PNG; md5 + per-channel diff",
+      "script": "tmp/wr-visual-fidelity-investigation/verify-C8-QAGATE-mechanism/tpl-boundary-untested-routes.mjs",
+      "result": "10/10 pairs MD5-IDENTICAL (changedRatio 0, meanDelta 0, maxDelta 0) across /changelog, /customers/automattic, /integrations, /plan, /security. Combined with wave 1: 18/18 pairs, all 8 routes. CLAIM PART 1 SURVIVES AND IS STRONGER THAN STATED.",
+      "caveat": "Served HTML is NOT byte-identical between the two apps (htmlMd5 differs on all 10 pairs while htmlLen is equal). Paint-neutrality is empirical, not structural."
+    },
+    {
+      "id": "E2-binding-noop-recheck",
+      "question": "Are all 9,929 bindings really no-ops at default content?",
+      "method": "independent join of slot-bindings.json x slots.json x default-content.json, comparing expectedValue to the projected default value",
+      "result": "9,929 bindings, 9,929 checked, 0 mismatches. CONFIRMED."
+    },
+    {
+      "id": "E3-pseudo-opacity-counterfactual",
+      "question": "Would removing the NAMED cause (reconstruction generation) change the pixels, or is the mover a property that never reached the generator?",
+      "method": "serve the accepted baseline reconstruction; screenshot /pricing and /customers desktop 1440 fullPage; diff against the AUGUST observation snapshot; then Playwright addStyleTag('*::before,*::after{opacity:0 !important}') and re-diff",
+      "script": "tmp/wr-visual-fidelity-investigation/verify-C8-QAGATE-mechanism/counterfactual.mjs",
+      "result": {
+        "p000007_pricing_desktop": {"baselineChangedRatio": 0.383053, "afterInjection": 0.041026, "reduction": "89.3% of changed pixels removed"},
+        "p000003_customers_desktop": {"baselineChangedRatio": 0.495608, "afterInjection": 0.076358, "reduction": "84.6% of changed pixels removed"}
+      },
+      "supporting": [
+        "SiteSpec pseudo records resolve to EXACTLY the 18 PSEUDO_STYLE_WHITELIST properties; 'opacity' and 'visibility' are absent from the IR (verified over p000007's 122 pseudo records via style-catalog.json).",
+        "The shipped public/wr/generated-styles.css contains 2,258 ::before/::after rules and ZERO carrying opacity or visibility.",
+        "No compensating path exists: opacity does not inherit, its UA default is 1 (exactly the wrong value), and no recovered rule supplies it."
+      ],
+      "conclusion": "The dominant mover is a property that never existed in the reconstruction generator's input. No change confined to src/reconstruction could produce those pixels. Part 1's 'therefore the entire visual delta is inherited from RECONSTRUCTION GENERATION' is causally wrong."
+    },
+    {
+      "id": "E4-canvas-correction-counterfactual",
+      "question": "Part 3 says the shipped artifact lacks its own QA's one correction. What does that cost in pixels?",
+      "method": "inject the exact applied.json payload (html{background-color:rgb(8, 9, 10);...}) into the served baseline clone; re-screenshot and diff clone-to-clone and clone-to-snapshot",
+      "result": "clone-to-clone changedRatio 0 / meanDelta 0 on BOTH worst pages; clone-vs-snapshot changedRatio unchanged to 6dp (0.383053 and 0.495608). htmlBg verified to flip rgba(0,0,0,0) -> rgb(8, 9, 10).",
+      "conclusion": "Part 3's FACTS hold (globals.css has no correction block; no correctionSet key in qa-manifest.json; the correction lives only in iterations/q001/reconstruction/app/app/globals.css; final-summary.json is byte-equal to iterations/q001/summary.json). Its implied SEVERITY does not: the missing correction is worth exactly zero pixels in the audited full-page captures. It also explains, benignly, why q000 and q001 report identical screenshot medians."
+    },
+    {
+      "id": "E5-visual-dimension-is-a-suppressor",
+      "question": "Is the sole dimension:'visual' emission an inert terminating leaf?",
+      "method": "read emit-diffs.ts control flow, then count diffs per page/viewport in the shipped qa-manifest.json",
+      "result": "emit-diffs.ts:77 computes `unstable`; :90 emits the visual/environment-unstable row; :235 wraps the ENTIRE geometry emission block in `if (!unstable)`; :346 rewrites the document-geometry classification to environment-unstable. In the shipped run the 5 pairs marked environment-unstable (p000001 mobile, p000006 desktop, p000007 mobile, p000008 desktop, p000008 mobile) have EXACTLY ZERO geometry diffs; 10 of 16 pairs carry geometry diffs.",
+      "conclusion": "The visual dimension is not inert. It suppresses the whole geometry family on 5 of 16 audited page/viewport pairs (31% of the audited surface)."
+    },
+    {
+      "id": "E6-number-provenance",
+      "question": "Where do '519 of 732' come from?",
+      "result": "Not from the shipped artifact. qa-manifest.json (the baseline, matching the shipped app) has counts.diffs = 680 with recommendation {none 460, requires-reobserve 141, requires-asset-materialization 74, requires-new-interaction-observation 3, requires-pattern-modeling 2}. 732 = the sum of final-summary.json's rootCause occurrences, i.e. iteration q001 - the THROWAWAY CORRECTED APP that the claim's own Part 3 disavows. 519 = 324 geometry-mismatch + 181 style-mismatch + 14 layout-cascade, all q001 figures. The q001 set also contains ZERO canvas-background-mismatch and ZERO visual rows.",
+      "conclusion": "Part 2 sources its headline numbers from the same throwaway measurement Part 3 correctly rejects. Shipped figures: 460 of 680."
+    },
+    {
+      "id": "E7-schema-vocabulary",
+      "question": "Does no code name a paint difference?",
+      "result": "QaClassificationSchema has 27 codes (confirmed). 'canvas-background-mismatch' names a PURELY PAINTED difference and is not hypothetical: it fired 16 times in the shipped run and produced the only correction the loop ever proposed. 'style-mismatch' carries paint-only properties (background-*, box-shadow, opacity, filter, backdrop-filter, mix-blend-mode, mask-*, clip-path, color, visibility) - ~35 of the 111 whitelisted properties are non-geometric paint. 'asset-missing' / 'asset-load-failure' / 'font-binding-missing' also name paint outcomes.",
+      "conclusion": "'None names a paint difference' is FALSE. The correct, narrower statement: no code names a paint difference that is NOT attributable to a whitelisted computed-style property."
+    },
+    {
+      "id": "E8-pixel-metric-representation",
+      "question": "Is the pixel metric unrepresentable, or merely severed?",
+      "result": "changedPixelRatio is a first-class schema field (types.ts:544), is computed for all 16 pairs, is materialized as 45 diff PNGs under artifacts/diffs/, and drives the summary's worst.visual ranking (summarize.ts:278, :339, :527). Its ONLY other consumer is screenshot retention (qa-page.ts:546). It never becomes a QaDiff, a classification, a recommendation, an upstream owner, a correction, or a gate.",
+      "conclusion": "'Ungated' is TRUE and well-evidenced. 'UNREPRESENTABLE' is FALSE - the metric is represented, ranked and rendered; it is severed from the classification/recommendation graph."
+    },
+    {
+      "id": "E9-scope-understatement",
+      "question": "Is 'QA can never exceed capture' scoped correctly?",
+      "result": "pngjs - the only pixel comparison in the entire repo - appears in exactly ONE file: src/reconstruction-qa/screenshot-diff.ts. The Recon Template's own parity QA (report/parity-qa.json: contentEqual, structureEqual, comparedNodes, docHeightDelta, JS/hydration errors) and src/production/qa.ts perform NO pixel comparison at all.",
+      "conclusion": "The claim UNDERSTATES here. Reconstruction QA at least measures pixels and does not act on them; the template and production gates have no pixel measurement to ignore."
+    }
+  ]
+}

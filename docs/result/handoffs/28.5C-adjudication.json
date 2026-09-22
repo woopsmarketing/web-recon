@@ -1,0 +1,267 @@
+{
+  "schema": "task285c-adjudication-v1",
+  "task": "28.5C — Responsive Root-Cause & Simplest-Path Decision",
+  "role": "Fresh Final Adjudicator (implemented nothing; independently verified)",
+  "adjudicatedAt": "2026-09-01",
+  "scopeOfMyOwnWork": {
+    "wrote": ["docs/result/handoffs/28.5C-adjudication.json"],
+    "readOnlyElsewhere": true,
+    "gitOperations": "none",
+    "serversStarted": [
+      "next start on tmp/wr-responsive-investigation/agent-d/app @ 127.0.0.1:4680 (shipped copy)",
+      "next start on tmp/wr-responsive-investigation/agent-d/app-ac5 @ 127.0.0.1:4681 (final best)"
+    ],
+    "serversKilled": true,
+    "scratchScriptsWritten": [
+      "tmp/wr-responsive-investigation/adj-check.mjs",
+      "tmp/wr-responsive-investigation/adj-locate.mjs",
+      "tmp/wr-responsive-investigation/adj-result.json",
+      "tmp/wr-responsive-investigation/adj-clone.html",
+      "tmp/wr-responsive-investigation/nav1440.png",
+      "tmp/wr-responsive-investigation/table1100.png"
+    ],
+    "note": "All scratch output is inside the disposable investigation dir, per the task's allowance. Nothing under src/, data/ or docs/ (other than this file) was written."
+  },
+
+  "verifiedClaims": [
+    {
+      "claim": "The shipped linear reconstruction's generated-styles.css contains 738 @media blocks, ALL at one single condition, with 503 on p000007 (/pricing).",
+      "method": "grep -c '@media' plus `grep -o '@media [^{]*' | sort | uniq -c` and a per-page awk tally over data/linear.app/reconstructions/2026-08-30T15-56-29-877Z/app/public/wr/generated-styles.css (16,366 lines / 11.9 MB).",
+      "verdict": "CONFIRMED EXACTLY. 738 total; one distinct condition '(min-width: 1024px) and (max-width: 1231.98px)'; per-page 38/11/52/8/70/48/503/8 for p000001..p000008 — byte-identical to Agent B's stage4 countAtThisBand table."
+    },
+    {
+      "claim": "hiddenRanges() invents both band edges by flooring the midpoint of adjacent probe widths (layout-inference.ts:661-684, decisive lines 674 and 677-678).",
+      "method": "Read src/reconstruction/layout-inference.ts:650-711 verbatim and recomputed the arithmetic by hand against the shipped string.",
+      "verdict": "CONFIRMED EXACTLY. Line 674 `start = previous ? Math.floor((previous.width + entry.width) / 2) : entry.width`; line 677 `boundary = Math.floor((sorted[i-1]!.width + entry.width) / 2)`; line 678 pushes `(min-width: ${start}px) and (max-width: ${boundary - 0.02}px)`. With desktopIdx [1024,1440,1920] and hidden {1024}: start=1024 (no previous), boundary=floor((1024+1440)/2)=1232 → '(min-width: 1024px) and (max-width: 1231.98px)'. That is character-for-character the only condition in the shipped sheet. generateLayoutCss at :687-711 emits the (0,3,0) selector and the @media wrapper at :708 as described."
+    },
+    {
+      "claim": "LAYOUT_PROBE_WIDTHS = [390, 768, 1024, 1440, 1920] at src/observer/types.ts:1103.",
+      "method": "Read src/observer/types.ts:1096-1113.",
+      "verdict": "CONFIRMED at the exact line, with LAYOUT_PROBE_HEIGHT=900 (:1104), MAX_LAYOUT_PROBE_ELEMENTS=8000 (:1106), LAYOUT_PROBE_SETTLE_MS=250 (:1108). 1100 is not sampled; the gap 1024→1440 is 416px."
+    },
+    {
+      "claim": "At 1100 the shipped clone hides the /pricing comparison-table header row and plan columns; the AC5 best variant shows them fully inside the viewport.",
+      "method": "LIVE BROWSER. Served both disposable apps (ports 4680/4681) and ran my own playwright chromium probe at 390/700/1024/1100/1440: per-node effective visibility and ancestor display chain for n000357/n000358/n000359/n000365, per-label in-viewport test for Features/Free/Basic/Business/Enterprise, plus innerWidth/scrollWidth/visibleChars/offscreenNodes/offscreenTextChars/overflowing.",
+      "verdict": "CONFIRMED, AND THE BEST VARIANT'S GAIN IS REAL. Shipped @1100: n000357 hidden by its OWN display:none, all five header labels unreachable, visibleChars 2348, offscreenTextChars 250, overflowing 174. AC5 @1100: n000357 display:grid and effectively visible, all five labels fully inside the 1100px frame (Enterprise right edge 1022 < 1100), visibleChars 2672 (= the 1440 value), offscreenNodes 0, offscreenTextChars 0, overflowing 12. @1024 AC5 goes 305→0 offscreen chars and 186→0 overflowing. @390 and @700 the two builds are metric-identical (chars 2366, scrollHeight 7714, offscreen 33/26, overflowing 40/27) — AC5 is provably inert on the mobile subtree."
+    },
+    {
+      "claim": "src/ was not modified during Task 28.5C; all experiment code lives under tmp/.",
+      "method": "find src -type f with stat mtimes (no git used); grep of layout-inference.ts for experiment markers (minmax|unfreeze|lastHidden|0.98|1100|fluidUnfreeze); ls of tmp/wr-responsive-investigation/.",
+      "verdict": "CONFIRMED. The NEWEST mtime anywhere under src/ is 2026-08-29T21:38:18 (src/observer/collect-dom.ts); layout-inference.ts is 2026-08-29T20:42:30 and observer/types.ts 2026-08-29T21:29:53 — all predate the task window (2026-08-31 → 09-01) by two days, so zero files were touched during the task. The one grep hit (`meanRatio <= 0.98`, line 609) is the pre-existing percentage-width gate, not an experiment edit. All experiment apps/scripts are under tmp/wr-responsive-investigation/{agent-b,agent-c,agent-d,agent-e,pack}."
+    },
+    {
+      "claim": "The shipped clone strips the original class/data-* identity that any source-rule replay would need (Agent D's correction #1 to Agent C).",
+      "method": "curl the served /pricing HTML from the shipped copy (2.78 MB) and count marker strings; same counts against the observation dom.json.",
+      "verdict": "CONFIRMED. Served clone: PDOlRq 0, data-plan 0, data-header-row 0, hide-laptop 0 — versus wr-st 5,776 and data-wr-node 5,452. Observation dom.json (p000007/desktop): PDOlRq 429, data-plan 228, hide-laptop 3. Agent C's 'preserved rules would still match a frozen reconstruction' is FALSE for the shipped clone; Agent D's correction stands."
+    },
+    {
+      "claim": "The source's real responsive information is absent from the current IR because of the observer CORS trap (Agent D's correction #2).",
+      "method": "Walked data/linear.app/site-specs/2026-08-30T15-56-23-933Z/pages/p000007.json myself and histogrammed authoredLayout media conditions.",
+      "verdict": "CONFIRMED. 34 of 3,254 nodes carry any authoredLayout; the media-condition histogram is {'(none)': 636, '(max-width: 640px)': 18}. The 1024 breakpoint that governs the entire pricing table does not exist anywhere in the IR."
+    },
+    {
+      "claim": "responsive-hidden rules ship unverified by design, and the band-clamp half is a provable no-op on stripe.",
+      "method": "Parsed both reconstruction-manifest.json files; grep '@media' on stripe's 9.0 MB generated-styles.css.",
+      "verdict": "CONFIRMED. linear: responsiveHidden 738 and acceptedUnchecked 738 (identical — every single one shipped without a render), rejectedByTruthCheck 5. stripe: responsiveHidden 0, acceptedUnchecked 0, and 0 occurrences of '@media' in its entire stylesheet. Agent E's bandsClamped=0 is right."
+    },
+    {
+      "claim": "The best variant (AC5) introduces MAJOR-class defects where it acts, including at 1440 where the shipped build was faithful.",
+      "method": "LIVE GEOMETRY plus my own PNG crops. Measured the nav's 'Sign up' / 'Log in' leaf rects at 1440 in both served apps; built native-resolution 3-up crops (source | current | best) of the 1440 nav band and the 1100 comparison-table band from the review pack and viewed them.",
+      "verdict": "CONFIRMED INDEPENDENTLY. At 1440 the shipped build right-anchors 'Sign up' at x=1288..1361 (source ≈1360); AC5 puts it at x=1009..1081 — the whole bar collapses ~280px into a centred cluster with large empty margins, plainly visible in the crop. The clip metric reports 0 offscreen chars at 1440 for BOTH builds, so this defect is invisible to the metric that produced 'BLOCKER=0'. The 1100 table crop confirms the other direction: source = full 5-column table, shipped = no header row and a single Free column, AC5 = full header + all four plan columns inside 1100 (with the faint background band behind 'Business'/'Enterprise' the audit noted)."
+    },
+    {
+      "claim": "FACTUAL CORRECTION to the handoffs: AC5's shipped band is NOT 'lastHiddenSample + 0.98'.",
+      "method": "grep -o '@media [^{]*' on tmp/wr-responsive-investigation/agent-d/app-ac5/public/wr/generated-styles.css.",
+      "verdict": "CORRECTED. app-ac5 emits 503 blocks at '(min-width: 1024px) and (max-width: 1061.98px)' and 235 left at the old '(min-width: 1024px) and (max-width: 1231.98px)'. 1061.98 = floor((1024+1100)/2) - 0.02, i.e. still a MIDPOINT, just between 1024 and the spliced 1100 sample — not the 1024.98 clamp the experiments handoff describes. The measured AC5 result therefore DEPENDS on the extra 1100 probe sample; a production 'clamp only' without it would emit a different band (1024.98) covering 1025..1061 differently. The implementer must not conflate the two."
+    }
+  ],
+
+  "elevenAnswers": {
+    "q1_whyAreWidthBandsFrozen": {
+      "answer": "Because the clone's CSS makes exactly ONE width-dependent decision and everything else is a pixel snapshot. Two subtrees ship in one document (.wr-variant data-wr-viewport desktop|mobile, runtime-template.ts:313-346); a single inferred breakpoint of 915 = floor((390+1440)/2) (responsive-plan.ts:74-81) switches between them via (max-width: 914.98px) / (min-width: 915px) (app-template.ts:298-308). Inside each subtree every box carries the computed style resolved at ONE observation width — 1440 for desktop, 390 for mobile — emitted verbatim as px including width/min-width/max-width and resolved grid-template-columns; only <html>/<body> are exempted (style-generator.ts:115-122). The single escape hatch, the recovered fluid tier, is desktop-only (the selector hardcodes data-wr-viewport=\"desktop\" at layout-inference.ts:701), needs >= 2 desktop probe samples including 1440 (:323-329), needs BLOCKISH_DISPLAY (:388-391) and refuses grid items and basis-governed flex items (:230-289). So 0..914.98 is 100% frozen at 390 values and 915..infinity is frozen at 1440 values except for the minority of nodes that clear that funnel. There is no continuous reflow mechanism, only a two-position switch.",
+      "confidence": "very high",
+      "verifiedVsOnFile": "VERIFIED: the shipped sheet contains exactly one distinct @media condition beyond the variant switcher (738 blocks, one condition); my own live run shows 390 and 700 metric-identical (chars 2366, scrollHeight 7714) and 1024 and 1100 metric-identical in the shipped build (chars 2348), i.e. the page changes only where a @media boundary sits. ON FILE: the individual line-number attributions in app-template.ts / style-generator.ts / responsive-plan.ts (taken from Agent A, spot-checked only where they intersect layout-inference.ts and observer/types.ts, both of which checked out exactly)."
+    },
+    "q2_whyDoPricingColumnsDisappearAt1100": {
+      "answer": "A synthesized per-node display:none band that is 207px too wide on its upper edge. The probe measures the comparison table hidden at 1024 (CORRECT — the source hides it at <= 1024) and does not measure again until 1440, where it is visible. hiddenRanges() interpolates the transition at the arithmetic midpoint floor((1024+1440)/2) = 1232, producing '(min-width: 1024px) and (max-width: 1231.98px)', emitted once per node at specificity (0,3,0), which outranks the node's own exact-computed class (0,1,0). 503 such blocks land on /pricing. The source's real switch is 1025 (@media (max-width:1024px){.hide-laptop{display:none!important}} paired with @media (min-width:1025px){.show-laptop{display:none!important}}), so across 1025..1231.98 the clone hides what the source shows. Two further facts matter: (a) the band's LOWER edge is wrong in the opposite direction — because 1024 is the first desktop sample, line 674's `previous ? midpoint : entry.width` pins the start to 1024 exactly, so across 915..1023.98 the clone SHOWS the table the source hides; both edges must move, not just the upper one; (b) the band is not the only defect at 1100 — even with it removed, the desktop subtree's 1440-pinned px clips content (I measured 250 offscreen chars and 174 overflowing nodes in the shipped build at 1100).",
+      "confidence": "very high",
+      "verifiedVsOnFile": "VERIFIED: the band string and the 503 count from the shipped CSS; the arithmetic from the source lines; live at 1100 the header row n000357 is display:none by its own rule with all five labels unreachable and visibleChars 2348 vs 2672 at 1440; the source's full 5-column table at 1100 seen in the review-pack PNG. ON FILE: the exact 1025 boundary and the .hide-laptop/.show-laptop rule text (Agent B's CDP read, independently corroborated by Agent C's direct sheet fetch and by the source screenshot), and the lower-edge 915..1023.98 measurement, which I did not re-run but which follows deductively from line 674 that I did verify."
+    },
+    "q3_whichCodePathGeneratesTheDestructiveRule": {
+      "answer": "src/reconstruction/layout-inference.ts, one function and one arithmetic convention: (1) sample grid from src/observer/types.ts:1103 LAYOUT_PROBE_WIDTHS = [390,768,1024,1440,1920]; (2) narrowed at layout-inference.ts:323-327 by `width >= input.breakpoint` (915) to [1024,1440,1920], which silently discards the 768 row; (3) emitted at :362-380 when the node is visible at the 1440 truth width and hidden at >= 1 but not all desktop samples, with declarations { display: 'none' }; (4) THE RULE-CREATING LINES are hiddenRanges() at :661-684, decisively line 674 (`start = previous ? Math.floor((previous.width + entry.width)/2) : entry.width`) and lines 677-678 (`boundary = Math.floor(...); ranges.push('(min-width: ${start}px) and (max-width: ${boundary - 0.02}px)')`); (5) rendered by generateLayoutCss() at :687-711 — selector `[data-wr-page=\"P\"][data-wr-viewport=\"desktop\"] [data-wr-node=\"N\"]` at :700-702, @media wrapper at :708; (6) entering the shipped sheet at generate-app.ts:248-262; and (7) NEVER verified — layout-truth-check.ts:107 exempts kind === 'responsive-hidden' with media !== undefined because the only truth render is at 1440, outside every band the function can produce.",
+      "confidence": "very high",
+      "verifiedVsOnFile": "VERIFIED end to end: I read :650-711 verbatim, recomputed the arithmetic, matched the emitted string character-for-character against the shipped sheet, and confirmed from the manifest that responsiveHidden (738) equals acceptedUnchecked (738), i.e. every one of these rules shipped without a render. ON FILE: the generate-app.ts and layout-truth-check.ts line numbers (Agent A/B), consistent with the manifest counters I did read."
+    },
+    "q4_whatDoesTheSourceActuallyDo": {
+      "answer": "linear.app's responsiveness is 100% declarative CSS with zero runtime dependency. The /pricing comparison table pivots on ONE desktop-first breakpoint: @media (max-width:1024px) hides the 5-column header row via the generic utility ([data-hide=\"laptop\"], .hide-laptop { display:none !important }) and reshapes .PDOlRq_row to flex; @media (min-width:1025px) hides the complementary mobile plan picker. Above 1024 the row's UNCONDITIONAL base rule is `grid-template-columns: 2fr repeat(4,1fr); display:grid` — fluid fr, resolving to '448px 224px x4' at 1440 and '360px 180px x4' at 1100. Same rule, different pixels: that is why the source is correct at 1100 with no extra breakpoint. Site-wide there are 381 media rules across 81 sheets (436 KB), of which 226 are width-conditioned (26 KB); design-system breakpoints are 640/768/1024/1280; 6 media-conditioned :root token rules (461 bytes) carry --homepage-padding-inset / --homepage-outer-padding / --header-height / --grid-columns / --page-padding-y; 10 hide/show utilities (968 bytes) drive EVERY desktop/mobile DOM swap on the site. Container queries exist but only in a video player and a chart axis — not on any page layout. Not one width-based matchMedia call, 0 ResizeObservers, and element count is exactly 3,246 at every width: nothing is conditionally rendered, both parallel subtrees coexist permanently. With JS disabled the table behaves identically at all five widths, and even the mobile plan switcher still works because it is :has(option[value=X]:checked).",
+      "confidence": "high",
+      "verifiedVsOnFile": "VERIFIED: that the source shows the complete 5-column table at 1100 (review-pack source PNG, viewed at native resolution) and that the 1025 boundary is independently reported by two agents using two different methods (CDP matched-rules vs direct sheet fetch). ON FILE: the rule texts, the 381/226/81/436KB accounting, the JS-off runs, the matchMedia/ResizeObserver census and the container-query inventory — all Agent C, which I did not re-run against the live site."
+    },
+    "q5_isSourceResponsiveInfoAvailableToPreserve": {
+      "answer": "On the wire YES and cheaply; in the current IR essentially NO; and even what survives is deliberately discarded before CSS generation; and a fourth blocker means it could not be replayed as-is anyway. (1) AVAILABLE: all 81 linear sheets and all 8 stripe sheets fetch cleanly by <link href> (ACAO: *); 0 stylesheets are truly unrecoverable. The full pricing-table subset is 28 rules / 3.2 KB = 0.73% of the page's CSS; every width-conditioned rule on the page is 226 rules / 26 KB = 6%. (2) NOT CAPTURED: the observer reads authored rules off document.styleSheets (collect-dom.ts:389-397) and 30 of 81 sheets throw SecurityError because the SSR <link> tags carry no crossorigin — and they are exactly the load-bearing ones (Comparison, index, Layout, Grid, Flex, utils). I verified the consequence directly in the IR: p000007 carries authoredLayout on 34 of 3,254 nodes and the only media condition present anywhere is (max-width: 640px). The 1024 breakpoint never entered the pipeline. Reproduced on stripe (0 of 8 sheets readable in page; authoredLayout on 0 of 2,280 elements). (3) DISCARDED BY DESIGN: layout-inference.ts:463 and :541 are the only two reads of authoredLayout[].media and both use `rule.media === undefined` to EXCLUDE media-conditioned declarations; authoredLayout's contract (sitespec/types.ts:654-657) says it is evidence, 'never merged into the exact-computed style catalog'. Zero authored responsive semantics reach generated CSS. (4) NOT REPLAYABLE AS-IS: the shipped clone strips the identity the source selectors need — I verified 0 occurrences of PDOlRq / data-plan / data-header-row / hide-laptop in the served HTML versus 429 / 228 / 2 / 3 in the observation dom.json.",
+      "confidence": "very high",
+      "verifiedVsOnFile": "VERIFIED myself: the IR histogram (34/3254, only max-width:640px), the identity stripping (0 vs 429/228), and the exclusion predicates in layout-inference.ts. ON FILE: the 81/81 and 8/8 fetch successes and the byte accounting (Agents C and E)."
+    },
+    "q6_doesAdditionalObservationAloneSolveIt": {
+      "answer": "NO — and the experiment is decisive. Strategy A re-observed /pricing with probeExtraWidths [700,1100] (7 widths, 0 node drift at the truth width) and spliced the arrays into a SiteSpec copy, isolating extra samples as the only variable. Every measured field at every width came back IDENTICAL to C1, a ten-line band clamp: 1024 still BLOCKER, 1100 still BLOCKER (band now correct, but revealing the table pushes MORE content offscreen — 362 unreachable chars vs 250 before), 700 bit-identical to baseline. The reason is structural: the geometry tier is gated by containing-block guards, BLOCKISH_DISPLAY and the parent-probe requirement, not by sample count, so extra samples change exactly one thing — the interpolated hidden band. HOWEVER, one extra sample is INDISPENSABLE as an input to the correction that does work: fluidity detection needs two probe widths both above the site's top authored switch, and on linear the shipped pair (1440,1920) finds 9 fluid nodes of 1,264 because the layout caps near 1440, while adding a single 1100 sample finds 508. So: more observation alone buys nothing; one well-chosen extra sample is load-bearing for the fix that works.",
+      "confidence": "high",
+      "verifiedVsOnFile": "VERIFIED indirectly and importantly: app-ac5's actual shipped band is (min-width:1024px) and (max-width:1061.98px) = midpoint(1024,1100), which PROVES the winning variant consumed the extra 1100 sample rather than a pure clamp. ON FILE: the A-vs-C1 field-by-field identity and the 9-vs-508 fluid-node counts (Agent D), which I did not re-run."
+    },
+    "q7_doesSelectiveRulePreservationSolveIt": {
+      "answer": "NO. It is the only strategy that made a previously-correct width worse, and it is the most expensive. The mechanism works: 81 sheets fetched past the CORS trap, 3,531 rules parsed, 621 kept, 220 emitted after translating every selector to [data-wr-node] by rebuilding the observed DOM offline and mapping sourceElementId -> nodeId — 0 unmatched selectors, 0 unsupported selectors. The RESULT is worse than baseline: 1440 REGRESSED from exact (2,461 chars) to 2,543 because preserving only LAYOUT properties lets both .hide-laptop and .show-laptop paint; 1100 produced the worst visual of the three (duplicated stacked CTAs, plan cards colliding with the trusted-by strip) because preserved fluid rules override only the handful of properties they declare while ~5.9k surrounding nodes keep 1440-resolved px; 1024 and 1100 both stayed BLOCKER. To be correct it would need the FULL cascade (visibility, content, pseudo-elements) plus @layer replay — materially more, not less — and structurally it needs (a) source class/data-* identity persisted through the SiteSpec, which today is emptied to {} (I verified 0 occurrences in the served clone), and (b) build-time fetch of the LIVE source stylesheets, surrendering the asset independence Task 22 established.",
+      "confidence": "high",
+      "verifiedVsOnFile": "VERIFIED myself: the identity stripping that forces the translation layer (0 source classes in the served HTML). ON FILE: the rule accounting and the per-width metrics for variant B (Agent D). I did not re-serve app-b; I note that its rejection rests on Agent D's measurement alone, but the 1440 regression has a clean mechanical explanation (layout-only subset breaks the hide/show utility pair) that I find credible on the code."
+    },
+    "q8_doesMinimalInferenceCorrectionSolveIt": {
+      "answer": "PARTIALLY. It clears every BLOCKER on the clip metric — I reproduced that live — but it is not shippable in its current form, and it does not touch the largest single gap. AC5 = hidden-band correction (using an extra ~1100 probe) + fluid-unfreeze emitting width:auto ONLY + px grid tracks re-expressed as fr / minmax(0,1fr) including single-track grids. Measured by me at all five widths against the shipped build: @1100 the header row and all five columns Features/Free/Basic/Business/Enterprise are visible and fully inside the frame (Enterprise right edge 1022), visibleChars 2348 -> 2672 (= source), offscreenNodes 269->0, offscreenTextChars 250->0, overflowing 174->12; @1024 offscreenTextChars 305->0 and overflowing 186->0; @390 and @700 metric-identical to the shipped build. That gain is real and large. BUT: (a) it introduces a defect class everywhere it acts, with one shared signature — lost flex justification and lost row gaps. I verified the clearest instance myself: at 1440 the shipped build right-anchors 'Sign up' ending at x=1361 (source ~1360) while AC5 ends at x=1081, the whole nav collapsing ~280px into a centred cluster; the independent visual audit adds the customer-logo row physically overlapping at 1024/1100/1440, wrapped feature/table rows colliding, and the 'Billed yearly' toggle rendering as a 4px sliver. (b) At 1440 — a width the shipped build reproduced faithfully — that is a straight regression, and the audit says do not ship it there as-is. (c) 700 is untouched, because generateLayoutCss hardcodes the desktop subtree; the visual audit calls it the largest single fidelity gap in the set. (d) Its own band edge still depends on an extra probe sample, and its probe-pair input cannot be read from the IR.",
+      "confidence": "very high on the measured gain; high on the defects",
+      "verifiedVsOnFile": "VERIFIED myself: all five widths live in both builds, the header-distribution regression by direct geometry, and two native-resolution PNG comparisons. ON FILE: the logo-row overlap, the row-gap collisions and the toggle sliver (independent visual auditor) — I did not re-crop those specific regions, but the one defect I did measure is from the same mechanism and matches the audit exactly, which raises my confidence in the rest."
+    },
+    "q9_whichSolutionHasSmallestProductionComplexity": {
+      "answer": "Strategy C, decisively, and it is also the best-performing. C is roughly 55 lines inside ONE file (src/reconstruction/layout-inference.ts) plus a 1-10 line probe-width change: no schema change, no new runtime dependency, no loss of source independence, no persisted identity, no cascade replay. A is medium: probeExtraWidths exists on ObserveOptions but is forwarded by no CLI and not by src/multi-observer/observe-selected-pages.ts:287, so it needs plumbing through ObserveSiteOptions + observe:site, plus ~1.5-2.2 min/site of re-observation and probe artifacts that grow linearly in width count — and it buys nothing C1 does not buy for free. B is high: a second CSS provenance tier alongside the exact-computed tier, selector->node identity persisted through the SiteSpec (today attributes:{}), @layer replay, and a build-time fetch of the live source origin. Ranking on complexity AND on measured quality: C > A > B.",
+      "confidence": "high",
+      "verifiedVsOnFile": "VERIFIED: that all the C-side edits fall inside layout-inference.ts (I read the functions), that --breakpoint is the only responsive CLI knob, and that the clone carries no source identity (making B's translation layer mandatory). ON FILE: the line-count estimates and the re-observation timings (Agent D)."
+    },
+    "q10_doesTheWinnerGeneralizeToStripe": {
+      "answer": "YES for the mechanism, only AFTER a mandatory correction, and with two residuals that do not generalize away. The generic algorithm ran on stripe.com/ with ZERO code edits and zero assumption failures (1,906 nodes unfrozen, 78 grids converted to fr, 0 unmatched selectors): 1100 improved BLOCKER -> MAJOR (scrollWidth 1440->1271, overflowing 142->79, and the only normal-flow content loss — the cookie banner's 'Reject all'/'manage cookies' — recovered from 37 chars to 0), 700 bit-identical (still BLOCKER: a 390px column in a 700px viewport). As agent D originally emitted it, the unfreeze ALSO regressed 1440 from MINOR to MAJOR by emitting `max-width:none`, which discards the source's own computed cap and collapses stripe's centered shell's gutters; linear masked this because its detection pair (1440,1920) had the cap already binding at both samples. Dropping `max-width:none` and emitting `width:auto` only removes the 1440 regression completely and is slightly better at 1100 — measured, not argued. Two hard dependencies remain: the band-clamp half is a provable NO-OP on stripe (I verified: manifest responsiveHidden 0, acceptedUnchecked 0, and 0 '@media' in its 9.0 MB stylesheet), so the fluid-unfreeze is the half that carries the generalization; and the probe-pair choice needs the site's top AUTHORED layout switch (stripe 940 -> pair (1024,1440) finds 782 on the homepage, where (1440,1920) would find 28), which cannot be read from the IR and therefore depends on fixing the same CORS trap.",
+      "confidence": "medium-high",
+      "verifiedVsOnFile": "VERIFIED myself: the band-clamp no-op on stripe (manifest counters + 0 @media in the sheet), and the max-width correction's effect on linear indirectly (AC4/AC5 emit width:auto only and 1440's clip metrics stay 0/0/0). ON FILE: all stripe per-width metrics and the 940 breakpoint histogram (Agent E). I did not serve the stripe apps; that is the largest single item I am taking on file."
+    },
+    "q11_canWeMeetTheFiveRequiredWidths": {
+      "answer": "YES as FIVE VERIFIED WIDTHS; NO as continuous responsive equivalence; and not yet with anything tested. The architecture and the requirement are compatible in principle: the clone is a discrete band switch, the user asked for five discrete widths, and nothing about that requires implementing a CSS layout engine — it requires only that each named width lands in a band whose styles were MEASURED (or provably fluid) at that width, and that each width is RENDERED and compared rather than inferred. Concretely: (i) 1024 and 1100 are already demonstrably reachable — I measured AC5 at offscreenTextChars 0 / overflowing 0 and 12 respectively; (ii) 390 and 1440 are already exact in the shipped build and must be treated as regression-protected, which is precisely where AC5 currently fails; (iii) 700 is the one required width no strategy has moved, and its fix is identified but UNTESTED — run the inference for the mobile subtree too by lifting the hardcoded data-wr-viewport=\"desktop\" at layout-inference.ts:701 and using the probe widths BELOW the breakpoint, which needs a ~700 sample the way the desktop side needed 1100; (iv) the newly-exposed defect class (lost flex justification / row gaps) must be fixed, since it is currently the price of every gain and it lands at 1440 too. What is NOT realistically available on this architecture is arbitrary-width fidelity: every width between samples remains interpolation, and the responsive-hidden tier still ships unverified because the only truth render is at 1440 — so the truth check must gain in-band render widths, otherwise 'five widths' is still five guesses. The honest deliverable is 'verified at 390/700/1024/1100/1440', explicitly not 'responsive'.",
+      "confidence": "medium-high (the 700 fix is the untested part)",
+      "verifiedVsOnFile": "VERIFIED: 1024/1100 reachability and 390/1440 exactness in my own five-width run; that AC5 is byte-inert on the mobile subtree (390/700 metric-identical), so 700 is genuinely untouched; and that the desktop-only selector at layout-inference.ts:701 is the cause. ON FILE: nothing load-bearing — the 700 fix is nobody's measurement, it is a code-derived prediction, and I am labelling it as such."
+    }
+  },
+
+  "principleAdjudication": {
+    "principleAsProposed": "PRESERVE when safe → OBSERVE when preservation unavailable → INFER only as fallback (for RESPONSIVE semantics specifically)",
+    "verdict": "ADOPT IN A NARROWED FORM — as a CAPTURE and IR principle, and as a CONSTRAINT on inference. REJECT the literal reading in which 'preserve' means emitting source rules into the shipped stylesheet. Add a fourth, non-optional clause: VERIFY.",
+    "evidenceFor": [
+      "The entire failure chain is an information-loss chain, not a reasoning failure. The source's real boundary (1025) and its authored fluid track (2fr repeat(4,1fr)) both exist and are cheap — 28 rules / 3.2 KB for the whole pricing table, 6% of the page for every width-conditioned rule.",
+      "That information is thrown away TWICE. First at capture, by the CORS trap: the observer walks document.styleSheets and 30 of 81 sheets throw, and they are the load-bearing ones. I verified the consequence in the IR myself: authoredLayout on 34 of 3,254 nodes on /pricing, and the ONLY media condition anywhere is (max-width: 640px). The 1024 breakpoint governing the entire table is simply absent. Reproduced on a second site (stripe: 0 of 8 readable, authoredLayout on 0 of 2,280 elements).",
+      "Second by an explicit design decision: layout-inference.ts:463 and :541 are the only two consumers of authoredLayout[].media and both use `rule.media === undefined` to EXCLUDE media-conditioned declarations, demoting what survives into provenance prose. Zero authored responsive semantics reach generated CSS by construction.",
+      "Inference then invents what it was never told: a boundary 207px off the truth, shipped 738 times, 503 of them on one page. Preserved information would have snapped that edge to a measured 1025 instead of a guessed 1232.",
+      "The winning mechanism's ONE external input — which two probe widths to compare — is exactly a preserved-source fact (the site's top authored layout switch: 1024 on linear, 940 on stripe). Agent E showed it cannot be recovered from the IR. Without preservation, the best available fix is un-parameterizable and has to be hand-tuned per site."
+    ],
+    "evidenceAgainst": [
+      "Strategy B is a direct, measured refutation of 'preserve → emit'. Preserving real source rules and replaying them produced the WORST result of the three and REGRESSED 1440, the one width that was exact.",
+      "The reason is structural, not a bug in B: preservation is not composable with a frozen exact-computed tier. A partial subset (layout properties only) lets both halves of a hide/show utility pair paint; the full cascade would be needed, plus @layer replay, which B bypassed with !important and could therefore not cleanly re-cascade.",
+      "The clone has already destroyed the identity preserved rules need — I verified 0 occurrences of the source's classes and data-* attributes in the served HTML — so 'preserve' at the CSS layer implies a second preservation programme at the DOM layer.",
+      "And 'preserve' at build time means fetching the LIVE source origin, surrendering the asset independence Task 22 established and making builds non-reproducible against a site that has since redeployed."
+    ],
+    "adoptedFormulation": {
+      "capture": "PRESERVE — fetch every stylesheet by <link href> (never trust in-page cssRules) and record authored width-conditioned rules, condition text and authored fluid values into the IR. This is the single highest-value change identified in 28.5C and it is independent of every strategy.",
+      "ir": "PRESERVE — carry authored breakpoint numbers and authored fluid declarations as first-class IR facts, not as evidence prose. Stop excluding media-conditioned declarations with `rule.media === undefined`.",
+      "observe": "OBSERVE — choose probe widths FROM the preserved breakpoint histogram so at least two samples sit strictly inside each authored band, instead of a hardcoded global grid.",
+      "infer": "INFER — keep ONE generated CSS tier, but let preserved facts CONSTRAIN it: snap band edges to authored breakpoints instead of midpoints; prefer an authored fr/%/clamp value over a resolved px when the probe already proves the node fluid; refuse rather than extrapolate where no authored fact and no bracketing sample exist.",
+      "verify": "VERIFY — the missing fourth clause the evidence demands. The one rule kind that ships without a render (responsive-hidden: 738 rules, all acceptedUnchecked, verified in the manifest) is exactly the kind that shipped a 207px error to release. Any width the product promises must be rendered and compared, not inferred."
+    },
+    "netAdjudication": "The evidence supports adopting the principle for WHERE INFORMATION IS ACQUIRED AND STORED, and refutes it for HOW CSS IS EMITTED. 'Preserve → emit verbatim' is measurably worse than what we ship today. 'Preserve → inform inference → verify by render' is supported by every strand of evidence in the task, including the strand that killed Strategy B."
+  },
+
+  "verdict": "RESPONSIVE ROOT CAUSE KNOWN — MORE EXPERIMENT NEEDED",
+
+  "verdictRationale": {
+    "whyNotSimpleFixReadyToImplement": "The candidate is not shippable as-is and I confirmed the reason from the pixels, not from a report. BLOCKER=0 at five widths is real but METRIC-RELATIVE: the clip metric that produced it reads 0 offscreen chars at 1440 for BOTH the shipped build and AC5, while AC5's nav has collapsed ~280px out of position there ('Sign up' right edge 1361 -> 1081, verified live and in a native-resolution crop). Shipping it would trade two BLOCKER widths for a systemic MAJOR-class regression at a width that is currently faithful, with one shared unexplained signature (lost flex justification and row gaps) that nobody has root-caused. Two further gaps are load-bearing: 700 — a REQUIRED width and the largest single fidelity gap in the set — is byte-untouched by every strategy and its fix is identified but never run; and the mechanism's probe-pair input cannot be read from the IR at all, so it is not yet parameterizable per site. Stripe generalized only after a correction that linear's probe pair happened to mask, which is itself evidence that one more site can still surface a new mandatory correction.",
+    "whyNotArchitectureRequiresRedesign": "The root cause is fully identified, localized and reproducible: one function (hiddenRanges, layout-inference.ts:661-684), one constant (LAYOUT_PROBE_WIDTHS, observer/types.ts:1103), one hardcoded selector (:701), one filter (:323-327) and one verification hole (layout-truth-check.ts:107). A ~55-line change in a single file, with no schema change, no new runtime dependency and no loss of source independence, already converted both broken widths from structurally-broken to structurally-correct, and ran unmodified on a second, unrelated site. Nothing in the evidence shows the two-subtree band architecture must be replaced; it shows that frozen-px emission and one interpolation function are wrong, and that a capture bug starves the whole thing of the facts it needs. Calling for redesign here would discard a working, cheap, generalizing direction.",
+    "whyMoreExperimentIsExactlyRight": "Three questions remain open and each is an experiment, not an implementation detail: (1) WHAT is the lost-flex-justification/row-gap defect class? It is introduced by the unfreeze wherever it acts, including at 1440; the audit believes the logo row, the header bar, the wrapped rows and the collapsed toggle are ONE fix, and that hypothesis has never been tested. Until it is, every gain carries a regression. (2) DOES the mobile-subtree fix work? Lifting the desktop-only selector at :701 and running inference below the breakpoint is the identified production fix for 700; it has not been emulated once. (3) CAN the probe pair and band edges be driven by preserved authored breakpoints instead of hand-picked widths? That needs the CORS-trap capture fix first, and it is the difference between a per-site tuning exercise and a general mechanism. All three are cheap to answer with exactly the disposable-app method 28.5C already established, and answering them converts this into a genuinely simple implementation task."
+  },
+
+  "dissents": [
+    {
+      "target": "28.5C-source-responsive.json (Agent C) — headline and mediaRules.summary.note",
+      "claim": "'The table's 1100px failure in the reconstruction is therefore not a missing breakpoint — it is a baked fixed-px substitution for a fluid fr-based grid.'",
+      "myPosition": "WRONG AS STATED about the clone, and dangerously so. I verified live that at 1100 in the shipped build the header row n000357 is display:none by its OWN synthesized band rule with all five column labels unreachable and visibleChars 2348 vs 2672 — the columns are ABSENT, not clipped. Agent C is describing the SOURCE's rule set (where 1100 and 1440 genuinely share rules) and generalizing it to the clone, where a synthetic band the source does not have is the proximate cause. Both causes are real and orthogonal — Agent B has this right. An implementer following C's framing would go straight past the 738-block band."
+    },
+    {
+      "target": "28.5C-source-responsive.json (Agent C) — recommendedApproach step 6",
+      "claim": "'adding widths is NOT the fix'",
+      "myPosition": "Right about the source, wrong about the pipeline. An extra sample strictly inside the source's top band is precisely what raises fluid-node detection from 9 to 508 on linear, and the winning variant's shipped band edge (1061.98 = midpoint(1024,1100)) proves it consumed that sample. C and D disagree here; D is correct. The defensible version of C's point is narrower: extra widths alone fix nothing (Strategy A proved that), but one well-chosen extra width is a required input."
+    },
+    {
+      "target": "28.5C-source-responsive.json (Agent C) — capabilityFindings.classNamePreservationInObservation.conclusion",
+      "claim": "'Every load-bearing selector would still match. Nothing in the capture blocks this approach.'",
+      "myPosition": "False for the shipped clone, and I verified it: 0 occurrences of PDOlRq / data-plan / data-header-row / hide-laptop in the served /pricing HTML, versus 429 / 228 / 2 / 3 in the observation dom.json. The capture preserves them; the SiteSpec compiler empties `attributes` and the reconstruction ships only data-wr-node + wr-stNNNNNN. Agent D caught this; it should be carried forward loudly, because it is a large part of why Strategy B is expensive."
+    },
+    {
+      "target": "28.5C-experiments.json (Agent D) — productionChangeImpliedByWinner, and the pack manifest's description of the band correction",
+      "claim": "'Close the band at lastHiddenSample+0.98 rather than at the floored midpoint.'",
+      "myPosition": "That is not what the measured best variant ships. I read app-ac5's stylesheet: 503 blocks at '(min-width: 1024px) and (max-width: 1061.98px)' = floor((1024+1100)/2) - 0.02 — still a MIDPOINT, between 1024 and the spliced 1100 sample — plus 235 blocks left at the old 1231.98 on pages that were not re-probed. So AC5's headline result is not attributable to a pure clamp; it is attributable to clamp-with-an-extra-sample. A production implementation of the clamp alone would emit 1024.98 and behave differently across 1025..1061. The next task must not conflate the two."
+    },
+    {
+      "target": "28.5C-experiments.json ac5Correction (blockerCount 0) and 28.5C-responsive-review/manifest.json ('0 blockers at all five widths')",
+      "claim": "BLOCKER=0 as a summary of the best variant's quality.",
+      "myPosition": "True but metric-relative, and it should never be quoted without its qualifier. The clip metric that produced it is blind to the defect class the variant introduces: it reports 0 offscreen chars at 1440 for BOTH the shipped build and AC5, while AC5's nav is collapsed ~280px out of position at that width (measured: 'Sign up' right edge 1361 -> 1081). A responsive scoring metric that cannot see a lost flex justification cannot gate this work. The next task needs a distribution/alignment metric (per-node x/right delta vs source, and gap/justification checks) alongside the clip metric."
+    },
+    {
+      "target": "28.5C-visual-audit.json — widths[].1100.improvement prose",
+      "claim": "'so 1100 remains a BLOCKER at both, just far less broken.'",
+      "myPosition": "Stale and internally contradicted. The same document's bestReaudit and bestBlockerWidths ([]) say 1100 is MAJOR under AC5, and my own live run agrees (offscreenTextChars 0, all five columns inside the frame). The audit flags the staleness in its notes, but leaving contradictory prose in the shipped artifact invites a misread. Treat bestReaudit as authoritative."
+    },
+    {
+      "target": "28.5B-responsive-residual.json pricingTableProbe.verdict, as carried into 28.5C",
+      "claim": "'the band's LOWER edge is right.'",
+      "myPosition": "Wrong, and Agent B is right to correct it. The 914/1024 sample pair straddles the error rather than bracketing it; line 674's no-previous fallback pins the band start to 1024, so across 915..1023.98 the clone SHOWS the table the source hides. Any band fix must move BOTH edges."
+    },
+    {
+      "target": "Scope framing carried from 28.5B into 28.5C-start.json",
+      "claim": "1024 was characterized as a 390-column residual rather than a blocking width.",
+      "myPosition": "Agent D's correction #3 is right and I confirmed it: the shipped build at 1024 loses 305 chars offscreen with 186 overflowing nodes (whole Enterprise card, right nav, footer columns). Every width in [breakpoint, 1440) clips for the same reason; 1024 was blocking all along."
+    }
+  ],
+
+  "recommendedNextTask": {
+    "id": "28.5D — Responsive Correction: root-cause the exposed defect class, unfreeze the mobile subtree, and preserve authored breakpoints into the IR",
+    "mode": "EXPERIMENT-FIRST on disposable copies, then ONE production implementation pass. Same discipline as 28.5C: src/ stays byte-unchanged until the three experiments below have answers.",
+    "workPackages": [
+      {
+        "wp": "D1 — Root-cause the lost-justification/row-gap defect class (BLOCKING; do this first)",
+        "why": "It is the price of every gain the winner produces, it lands at 1440 where the shipped build is faithful, and nobody has diagnosed it. The visual audit's hypothesis — that the collapsed logo row, the centred header bar, the colliding wrapped rows and the 4px toggle are ONE fix, not five — is untested.",
+        "how": "On tmp app-ac5, bisect the injected override set (width:auto rules, transitive descendant rules, fr/minmax track rules) against the four named symptoms. Start with the strong suspects: unfreezing a flex container's width removes the basis its justify-content/space-between distribution was resolving against, and re-expressing px tracks as fr discards the gap/row-gap contribution baked into the original track sum. Confirm on the customer-logo row and the nav bar, whose geometry I measured (shipped 'Sign up' right edge 1361 vs AC5 1081).",
+        "exitCriterion": "A named mechanism plus a candidate rule-set change that restores 1440 to byte-comparable-with-shipped on the nav and logo row, WITHOUT giving back the 1024/1100 gains.",
+        "model": "strong (this is the ambiguous one)"
+      },
+      {
+        "wp": "D2 — Emulate the mobile-subtree unfreeze at 700 (BLOCKING for the required-widths promise)",
+        "why": "700 is a required width, is the largest single fidelity gap in the set, and is byte-untouched by every strategy tested. Its fix is identified and has never been run once.",
+        "how": "Emulate what a generator that ran inference for the mobile subtree would emit: lift the hardcoded data-wr-viewport=\"desktop\" in generateLayoutCss (layout-inference.ts:701), and select probe samples BELOW the breakpoint (which requires a ~700 sample the way the desktop side required 1100 — splice it into a SiteSpec copy exactly as Strategy A did). Measure at 390 and 700; 390 must not regress.",
+        "exitCriterion": "700 improves measurably (dead right gutter closes) with 390 unchanged — or a documented reason it cannot, which would change the answer to Q11.",
+        "model": "medium"
+      },
+      {
+        "wp": "D3 — Fix the observer CORS trap and land authored breakpoints in the IR (highest standalone value)",
+        "why": "It is the root of the information loss, it is confirmed on two unrelated sites, and it supplies the winner's one un-derivable input. Verified impact today: /pricing carries authoredLayout on 34 of 3,254 nodes and the only captured media condition is (max-width: 640px); stripe carries it on 0 of 2,280.",
+        "how": "In the observer, stop relying on document.styleSheets alone: enumerate <link rel=stylesheet> hrefs plus <style> textContent and FETCH each href (both sites return ACAO: *; 81/81 and 8/8 recovered in 28.5C). Parse into the existing authoredLayout channel. Fix the adjacent correctness hazard while in there: collect-dom.ts only treats CSSRule.type === 4 as conditional, so @container / @supports declarations are currently recorded as UNCONDITIONAL — that is a wrong-value bug, not a gap. Then expose a per-page authored width-breakpoint histogram in the SiteSpec.",
+        "exitCriterion": "linear /pricing's IR carries (max-width: 1024px) and (min-width: 1025px), and the authored `2fr repeat(4,1fr)`; stripe's carries its 940 switch. No change to generated CSS yet.",
+        "model": "medium-strong (observer is shared surface — single writer)"
+      },
+      {
+        "wp": "D4 — Production implementation, once D1-D3 have answers",
+        "scope": "Three edits, two files, no schema change, no new runtime dependency, no loss of source independence: (a) hiddenRanges (layout-inference.ts:661-684) — stop extrapolating; snap band edges to a PRESERVED authored breakpoint when D3 supplies one, else to the nearest bracketing measured sample, else REFUSE to emit the rule. Both edges, not just the upper one. (b) A fluid-unfreeze tier before the frozen-px fallback: when the probe proves w(wider) > w(narrower)+1 for two samples both above the site's top authored switch, emit width:auto — NEVER max-width:none (mandatory correction from the Stripe check) — and re-express all-px grid tracks as proportional fr / minmax(0,1fr) INCLUDING single-track grids, plus whatever D1 determines is needed to keep justification and gaps intact. (c) Probe width selection driven by D3's histogram (at least two samples strictly inside each authored band), replacing the hardcoded LAYOUT_PROBE_WIDTHS; plumb the existing probeExtraWidths through src/multi-observer/observe-selected-pages.ts:287 and the observe:site CLI, which currently drop it.",
+        "model": "strong"
+      },
+      {
+        "wp": "D5 — Close the verification hole (do not ship D4 without it)",
+        "scope": "layout-truth-check.ts:107 currently exempts every responsive-hidden rule because the only truth render is 1440. That is how a 207px error shipped 738 times. Add in-band render widths to the truth check — minimally one render per distinct emitted band, and one per REQUIRED width (390/700/1024/1100/1440) — so acceptedUnchecked trends to 0. Extend the QA scoring with a DISTRIBUTION metric (per-node x/right delta vs source, plus gap and justification checks) alongside the clip metric: the current metric reports 0 offscreen chars at 1440 for a build whose nav is 280px out of position, and it must not be allowed to certify the next change.",
+        "model": "strong"
+      }
+    ],
+    "acceptanceBarForD": [
+      "All five required widths (390/700/1024/1100/1440) RENDERED and compared against source — never inferred.",
+      "No regression at 390 or 1440 on either the clip metric OR the new distribution metric (this is the bar AC5 fails today).",
+      "1024 and 1100: offscreen normal-flow text 0, horizontal overflow at or below the source's own noise floor.",
+      "700: the mobile-subtree freeze measurably improved or formally declared out of scope with evidence.",
+      "acceptedUnchecked = 0 for any rule kind that can affect a required width.",
+      "Re-run on BOTH linear and stripe with no per-site code edits; any per-site value must come from the preserved authored-breakpoint histogram, not from a hand-picked constant.",
+      "Independent fresh-context visual audit at all five widths on both sites before acceptance — the 28.5C evidence shows coarse metrics alone certified a build the eye rejects."
+    ],
+    "carryForwards": [
+      "AC5's shipped band is midpoint(1024,1100) = 1061.98, NOT the 1024.98 clamp the handoffs describe. Do not conflate clamp-alone with clamp-plus-extra-sample.",
+      "NEVER emit max-width:none in the unfreeze tier (Stripe-verified mandatory correction).",
+      "The clone strips all source class/data-* identity (0 occurrences in the served HTML) — any future preservation work must decide whether to restore identity BEFORE it can replay selectors.",
+      "The probe's 390 row is DPR1/non-touch/desktop-UA while the deep mobile observation is DPR3/touch/mobile-UA; mobile-side inference (D2) must not assume they are the same page state.",
+      "@container and @supports declarations are currently recorded as unconditional (collect-dom.ts type===4 test) — a correctness hazard, not a gap; fix alongside D3."
+    ]
+  }
+}

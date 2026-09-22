@@ -1,0 +1,2542 @@
+{
+  "schemaNote": "Phase 3A INVESTIGATION OUTPUT. Not a production schema contract. Nothing here was executed; every executionClass is a static-analysis CANDIDATE, never a proven capability.",
+  "source": {
+    "phase1Run": "data/apartmentary.com/2026-09-16T05-27-10-722Z",
+    "phase2Clone": "data/apartmentary.com/preservation-clones/2026-09-16T06-42-28-282Z",
+    "page": "/",
+    "viewports": [
+      "desktop",
+      "mobile"
+    ],
+    "buildId": "yMHNQjHujDVTgIp539WqR",
+    "note": "Desktop and mobile ship BYTE-IDENTICAL chunks. They are two runtime states of one program, not two builds."
+  },
+  "frameworkEvidence": {
+    "bundler": {
+      "name": "webpack",
+      "major": 5,
+      "evidence": "sc0022:~4500 `self.webpackChunk_N_E` push protocol (webpack 5, not webpack 4 `webpackJsonp`)",
+      "confidence": "HIGH"
+    },
+    "framework": {
+      "name": "Next.js",
+      "version": "12.3.4",
+      "router": "pages",
+      "evidence": "sc0024:13983 `t.version=\"12.3.4\",t.router=p`; `window.__NEXT_P` at sc0028:~60",
+      "confidence": "HIGH"
+    },
+    "view": {
+      "name": "React/ReactDOM",
+      "version": "17.0.2",
+      "root": "legacy",
+      "evidence": "sc0023:116598,:118580,:125456; sc0024:20658 `ee?(L.hydrate(n,e),ee=!1):L.render(n,e)`; zero hits for react-dom/client|createRoot|hydrateRoot",
+      "confidence": "HIGH"
+    },
+    "cssInJs": {
+      "name": "Emotion",
+      "version": ">=11.9",
+      "evidence": "sc0025:822 `setAttribute(\"data-emotion\",…)`; sc0025:14536 `__emotion_styles`; sc0025:23161 useInsertionEffect shim",
+      "confidence": "HIGH"
+    },
+    "renderingMode": {
+      "value": "SSR only, zero SSG",
+      "evidence": "_ssgManifest = `self.__SSG_MANIFEST=new Set` (empty); __NEXT_DATA__.gssp=true, __N_SSP=true",
+      "confidence": "HIGH"
+    },
+    "publicPath": {
+      "value": "/_next/",
+      "originBound": false,
+      "evidence": "sc0022:4080 `r.p=\"/_next/\"` — hard-coded root-relative literal; not from document.currentScript.src; __NEXT_DATA__ has no assetPrefix",
+      "constraint": "Root-relative means the replay MUST be served from a server root. A subdirectory or file:// breaks chunk resolution.",
+      "confidence": "HIGH"
+    }
+  },
+  "scripts": [
+    {
+      "id": "inline:sha256:57b7cc0162871b15d619d1809762705d349f3bbb05345d6b7b35a5b649888b9f",
+      "viewportLocalIds": {
+        "desktop": "sc0017",
+        "mobile": "sc0016"
+      },
+      "url": null,
+      "inline": true,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0017.57b7cc016287.js",
+      "clonePath": "scripts/57b7cc0162871b15d619d1809762705d349f3bbb05345d6b7b35a5b649888b9f.js",
+      "sha256": "57b7cc0162871b15d619d1809762705d349f3bbb05345d6b7b35a5b649888b9f",
+      "bytes": 139,
+      "kind": "classic",
+      "async": false,
+      "defer": false,
+      "declaredIn": "initial-document",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 16,
+        "mobile": 15
+      },
+      "initiatorEvidence": null,
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "Naver Analytics account config (wa id s_3c2d5272828f) + inflow domain + fires wcs_do() to log the pageview."
+    },
+    {
+      "id": "inline:sha256:954162e5cbfbd8223f6786fca17b639bb2263ae9a39c468f276c3f950881f7fc",
+      "viewportLocalIds": {
+        "desktop": "sc0020",
+        "mobile": "sc0019"
+      },
+      "url": null,
+      "inline": true,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0020.954162e5cbfb.js",
+      "clonePath": "scripts/954162e5cbfbd8223f6786fca17b639bb2263ae9a39c468f276c3f950881f7fc.js",
+      "sha256": "954162e5cbfbd8223f6786fca17b639bb2263ae9a39c468f276c3f950881f7fc",
+      "bytes": 165,
+      "kind": "classic",
+      "async": false,
+      "defer": false,
+      "declaredIn": "initial-document",
+      "role": "THIRD_PARTY_WIDGET",
+      "executionClass": "EXTERNAL",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 19,
+        "mobile": 18
+      },
+      "initiatorEvidence": null,
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "Boots the ChannelTalk widget with pluginKey dcb43423-ec3c-40a4-b8ca-e92b0e9cbcb7. Depends on the ChannelIO stub defined by inline:sha:974f0565..."
+    },
+    {
+      "id": "inline:sha256:974f05659546950692fa89ae2e0b3fa3e7c3a1dd9785914831f6d62dc27a6b36",
+      "viewportLocalIds": {
+        "desktop": "sc0019",
+        "mobile": "sc0018"
+      },
+      "url": null,
+      "inline": true,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0019.974f05659546.js",
+      "clonePath": "scripts/974f05659546950692fa89ae2e0b3fa3e7c3a1dd9785914831f6d62dc27a6b36.js",
+      "sha256": "974f05659546950692fa89ae2e0b3fa3e7c3a1dd9785914831f6d62dc27a6b36",
+      "bytes": 738,
+      "kind": "classic",
+      "async": false,
+      "defer": false,
+      "declaredIn": "initial-document",
+      "role": "THIRD_PARTY_WIDGET",
+      "executionClass": "EXTERNAL",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 18,
+        "mobile": 17
+      },
+      "initiatorEvidence": null,
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "ChannelTalk (Channel.io) official install snippet. Defines the ChannelIO command-queue stub, then loads ch-plugin-web.js on window load (or immediately if document already complete). Guards against double-inclusion."
+    },
+    {
+      "id": "inline:sha256:a952af9e3f97baa089c45558d897d151de99b7553491be8386f929e57e74da54",
+      "viewportLocalIds": {
+        "desktop": "sc0010",
+        "mobile": "sc0009"
+      },
+      "url": null,
+      "inline": true,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0010.a952af9e3f97.js",
+      "clonePath": "scripts/a952af9e3f97baa089c45558d897d151de99b7553491be8386f929e57e74da54.js",
+      "sha256": "a952af9e3f97baa089c45558d897d151de99b7553491be8386f929e57e74da54",
+      "bytes": 413,
+      "kind": "classic",
+      "async": false,
+      "defer": false,
+      "declaredIn": "initial-document",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 9,
+        "mobile": 8
+      },
+      "initiatorEvidence": null,
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "Standard Google Tag Manager (GTM) bootstrap snippet. Creates dataLayer, injects <script src=gtm.js?id=GTM-M8JGCP6> before the first <script> on the page. This is what fires url:www.googletagmanager.com/gtm.js."
+    },
+    {
+      "id": "inline:sha256:c2cdacdd1666fd2e05d35bc6b70ab1d2292c4a877665f56d90439349330f4bd6",
+      "viewportLocalIds": {
+        "desktop": "sc0014",
+        "mobile": "sc0013"
+      },
+      "url": null,
+      "inline": true,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0014.c2cdacdd1666.js",
+      "clonePath": "scripts/c2cdacdd1666fd2e05d35bc6b70ab1d2292c4a877665f56d90439349330f4bd6.js",
+      "sha256": "c2cdacdd1666fd2e05d35bc6b70ab1d2292c4a877665f56d90439349330f4bd6",
+      "bytes": 50,
+      "kind": "classic",
+      "async": false,
+      "defer": false,
+      "declaredIn": "initial-document",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 13,
+        "mobile": 12
+      },
+      "initiatorEvidence": null,
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "Initializes the Karrot pixel with account id 1739844334050600001."
+    },
+    {
+      "id": "inline:sha256:c4b0c12ea59812361068168b4f304d8da548e10174f6613e4bedb6de6885f4c5",
+      "viewportLocalIds": {
+        "desktop": "sc0018",
+        "mobile": "sc0017"
+      },
+      "url": null,
+      "inline": true,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0018.c4b0c12ea598.js",
+      "clonePath": "scripts/c4b0c12ea59812361068168b4f304d8da548e10174f6613e4bedb6de6885f4c5.js",
+      "sha256": "c4b0c12ea59812361068168b4f304d8da548e10174f6613e4bedb6de6885f4c5",
+      "bytes": 595,
+      "kind": "classic",
+      "async": false,
+      "defer": false,
+      "declaredIn": "initial-document",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 17,
+        "mobile": 16
+      },
+      "initiatorEvidence": null,
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "Standard Meta/Facebook Pixel boilerplate loader. Injects fbevents.js, then fbq('init','1150125956125068') + fbq('track','PageView'). This is the ONLY inline script that directly names a pixel id (1150125956125068); the second pixel (1680760198639545) is initialized by GTM/fbevents.js internals, not visible in any captured inline script."
+    },
+    {
+      "id": "inline:sha256:defd42286227983b6088df0ea9759eec8892c95cb1da4aff865160ccf6aa0e87",
+      "viewportLocalIds": {
+        "desktop": "sc0012",
+        "mobile": "sc0011"
+      },
+      "url": null,
+      "inline": true,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0012.defd42286227.js",
+      "clonePath": "scripts/defd42286227983b6088df0ea9759eec8892c95cb1da4aff865160ccf6aa0e87.js",
+      "sha256": "defd42286227983b6088df0ea9759eec8892c95cb1da4aff865160ccf6aa0e87",
+      "bytes": 45,
+      "kind": "classic",
+      "async": false,
+      "defer": false,
+      "declaredIn": "initial-document",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 11,
+        "mobile": 10
+      },
+      "initiatorEvidence": null,
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "Fires a Kakao Ads Pixel pageView event with pixel id 6488840723959691705."
+    },
+    {
+      "id": "url:apartmentary.com/_next/static/chunks/2924-2d8edfe2e564207a.js",
+      "viewportLocalIds": {
+        "desktop": "sc0026",
+        "mobile": "sc0025"
+      },
+      "url": "https://apartmentary.com/_next/static/chunks/2924-2d8edfe2e564207a.js",
+      "inline": false,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0026.8ee1e431b3de.js",
+      "clonePath": "scripts/8ee1e431b3de6cc779456a607fb1473590e392b30dc0c2d268956e17171fedda.js",
+      "sha256": "8ee1e431b3de6cc779456a607fb1473590e392b30dc0c2d268956e17171fedda",
+      "bytes": 166826,
+      "kind": "classic",
+      "async": false,
+      "defer": true,
+      "declaredIn": "initial-document",
+      "role": "UI_LIBRARY",
+      "executionClass": "LOCAL_EXECUTABLE_WITH_DEPENDENCIES",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 25,
+        "mobile": 24
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0012",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0012",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [],
+      "confidence": "HIGH",
+      "notes": "Webpack-numbered shared vendor chunk, first-party."
+    },
+    {
+      "id": "url:apartmentary.com/_next/static/chunks/7925-44556921d193a2a3.js",
+      "viewportLocalIds": {
+        "desktop": "sc0027",
+        "mobile": "sc0026"
+      },
+      "url": "https://apartmentary.com/_next/static/chunks/7925-44556921d193a2a3.js",
+      "inline": false,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0027.f3f2a3778df4.js",
+      "clonePath": "scripts/f3f2a3778df4027c618cfc1332ae4220220696bc442a9091b5ea97a56f39edfd.js",
+      "sha256": "f3f2a3778df4027c618cfc1332ae4220220696bc442a9091b5ea97a56f39edfd",
+      "bytes": 274186,
+      "kind": "classic",
+      "async": false,
+      "defer": true,
+      "declaredIn": "initial-document",
+      "role": "APP_RUNTIME",
+      "executionClass": "SOURCE_BOUND",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 26,
+        "mobile": 25
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0013",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0013",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [
+        "EFFECTIVE API base URL: sc0027@260409 `var c=\"https://dev-api.apartmentary.com\",l=(0,a.PEn)(void 0,c,o)` passes c as basePath to all 12 generated service clients on one axios instance with an Authorization interceptor (review M6)"
+      ],
+      "confidence": "HIGH",
+      "notes": "Webpack-numbered shared vendor chunk, first-party."
+    },
+    {
+      "id": "url:apartmentary.com/_next/static/chunks/framework-a070cbfff3c750c5.js",
+      "viewportLocalIds": {
+        "desktop": "sc0023",
+        "mobile": "sc0022"
+      },
+      "url": "https://apartmentary.com/_next/static/chunks/framework-a070cbfff3c750c5.js",
+      "inline": false,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0023.33dc89018fe5.js",
+      "clonePath": "scripts/33dc89018fe5aed90ddd9f9615cba7412569abfad7d4995d81001e532aac79c9.js",
+      "sha256": "33dc89018fe5aed90ddd9f9615cba7412569abfad7d4995d81001e532aac79c9",
+      "bytes": 129980,
+      "kind": "classic",
+      "async": false,
+      "defer": true,
+      "declaredIn": "initial-document",
+      "role": "FRAMEWORK_RUNTIME",
+      "executionClass": "LOCAL_EXECUTABLE_CANDIDATE",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 22,
+        "mobile": 21
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0009",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0009",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [],
+      "confidence": "HIGH",
+      "notes": "React/framework vendor chunk, first-party."
+    },
+    {
+      "id": "url:apartmentary.com/_next/static/chunks/main-58aeb610bf878a93.js",
+      "viewportLocalIds": {
+        "desktop": "sc0024",
+        "mobile": "sc0023"
+      },
+      "url": "https://apartmentary.com/_next/static/chunks/main-58aeb610bf878a93.js",
+      "inline": false,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0024.85c8c1164b2e.js",
+      "clonePath": "scripts/85c8c1164b2edb6144c9aa952bb00d50eada1c41b4e9c41d8a0acfdff57de558.js",
+      "sha256": "85c8c1164b2edb6144c9aa952bb00d50eada1c41b4e9c41d8a0acfdff57de558",
+      "bytes": 105636,
+      "kind": "classic",
+      "async": false,
+      "defer": true,
+      "declaredIn": "initial-document",
+      "role": "BOOTSTRAP_RUNTIME",
+      "executionClass": "LOCAL_EXECUTABLE_WITH_DEPENDENCIES",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 23,
+        "mobile": 22
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0010",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0010",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [
+        "references /_next/image (sc0024:16480,:48641) and /_next/data/ (sc0024:25240,:74808,:76686) — both need a live Next server; neither is required to boot"
+      ],
+      "confidence": "HIGH",
+      "notes": "Next.js main runtime chunk, first-party."
+    },
+    {
+      "id": "url:apartmentary.com/_next/static/chunks/pages/_app-9c2508f77b107208.js",
+      "viewportLocalIds": {
+        "desktop": "sc0025",
+        "mobile": "sc0024"
+      },
+      "url": "https://apartmentary.com/_next/static/chunks/pages/_app-9c2508f77b107208.js",
+      "inline": false,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0025.e6a0597718ac.js",
+      "clonePath": "scripts/e6a0597718ac22f86128707ccb7ae7b527a9496aa9afa4b92839133299d668f0.js",
+      "sha256": "e6a0597718ac22f86128707ccb7ae7b527a9496aa9afa4b92839133299d668f0",
+      "bytes": 306476,
+      "kind": "classic",
+      "async": false,
+      "defer": true,
+      "declaredIn": "initial-document",
+      "role": "APP_RUNTIME",
+      "executionClass": "SOURCE_BOUND",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 24,
+        "mobile": 23
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0011",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0011",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [
+        "holds the generated OpenAPI Configuration DEFAULT basePath literal at sc0025:257488 `var w=\"https://dev-api.apartmentary.com:443\"` — the default only; the effective base URL is passed in from chunk 7925 (review M6). Also contains the axios XHR adapter and generated client."
+      ],
+      "confidence": "HIGH",
+      "notes": "Next.js _app page bundle, first-party, largest chunk in the dataset."
+    },
+    {
+      "id": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "viewportLocalIds": {
+        "desktop": "sc0028",
+        "mobile": "sc0027"
+      },
+      "url": "https://apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "inline": false,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+      "clonePath": "scripts/dba4c3c5f36697454e4a510622ab5bba3d4fec51fd109827a185b1135779d3ef.js",
+      "sha256": "dba4c3c5f36697454e4a510622ab5bba3d4fec51fd109827a185b1135779d3ef",
+      "bytes": 21146,
+      "kind": "classic",
+      "async": false,
+      "defer": true,
+      "declaredIn": "initial-document",
+      "role": "PAGE_CHUNK",
+      "executionClass": "LOCAL_EXECUTABLE_WITH_DEPENDENCIES",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 27,
+        "mobile": 26
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0014",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0014",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [
+        "DIRECT CALLER of all four content endpoints: binds reviewService (sc0028@1932), portfolioService (@4723) and mainBannerService (@4747) from the chunk-7925 service registry and calls getPortfoliosByPagingUsingGET1 / getReviewsByPagingUsingGET1. Holds no origin literal and no fetch primitive itself — the origin arrives through SOURCE_BOUND chunk 7925. Classified WITH_DEPENDENCIES because it will execute; it renders nothing without the API data (uiDataCoupling=RUNTIME_COUPLED). Corrected after independent review M6."
+      ],
+      "confidence": "HIGH",
+      "notes": "Next.js homepage ('/') page bundle, first-party."
+    },
+    {
+      "id": "url:apartmentary.com/_next/static/chunks/polyfills-c67a75d1b6f99dc8.js",
+      "viewportLocalIds": {
+        "desktop": null,
+        "mobile": null
+      },
+      "url": "https://apartmentary.com/_next/static/chunks/polyfills-c67a75d1b6f99dc8.js",
+      "inline": false,
+      "localFile": null,
+      "clonePath": null,
+      "sha256": null,
+      "bytes": null,
+      "kind": "nomodule",
+      "async": false,
+      "defer": true,
+      "declaredIn": "initial-document",
+      "role": "BOOTSTRAP_RUNTIME",
+      "executionClass": "UNKNOWN",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": "UNKNOWN",
+      "domOrder": {
+        "desktop": 20,
+        "mobile": 19
+      },
+      "initiatorEvidence": null,
+      "bodyCaptureStatus": "unavailable",
+      "sourceBoundReasons": [
+        "body never captured (UNAVAILABLE); carries `nomodule` (response.html:28416) so a module-capable browser never fetches or executes it — structurally absent, not a capture defect"
+      ],
+      "confidence": "HIGH",
+      "notes": "nomodule polyfill chunk. NEVER REQUESTED in either viewport capture -- consistent with a modern/evergreen capture browser: any browser that understands <script type=module> (all current Chrome/Firefox/Safari/Edge) skips <script nomodule> entirely without even issuing the request, so a modern browser would NEVER execute this file. Its body is therefore structurally uncapturable from a modern-browser observation session; recovering it would require either a legacy-UA fetch or a direct HTTP GET of the URL (both out of scope here, read-only)."
+    },
+    {
+      "id": "url:apartmentary.com/_next/static/chunks/webpack-3d4d997a6d82a026.js",
+      "viewportLocalIds": {
+        "desktop": "sc0022",
+        "mobile": "sc0021"
+      },
+      "url": "https://apartmentary.com/_next/static/chunks/webpack-3d4d997a6d82a026.js",
+      "inline": false,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0022.9d7e660aed50.js",
+      "clonePath": "scripts/9d7e660aed50e7505700f8f529ba4ed6ae880b297830a03c5bd1e3edc25d882e.js",
+      "sha256": "9d7e660aed50e7505700f8f529ba4ed6ae880b297830a03c5bd1e3edc25d882e",
+      "bytes": 4961,
+      "kind": "classic",
+      "async": false,
+      "defer": true,
+      "declaredIn": "initial-document",
+      "role": "BUNDLER_RUNTIME",
+      "executionClass": "LOCAL_EXECUTABLE_CANDIDATE",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 21,
+        "mobile": 20
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0008",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0008",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [],
+      "confidence": "HIGH",
+      "notes": "Next.js/webpack runtime chunk, first-party."
+    },
+    {
+      "id": "url:apartmentary.com/_next/static/yMHNQjHujDVTgIp539WqR/_buildManifest.js",
+      "viewportLocalIds": {
+        "desktop": "sc0029",
+        "mobile": "sc0028"
+      },
+      "url": "https://apartmentary.com/_next/static/yMHNQjHujDVTgIp539WqR/_buildManifest.js",
+      "inline": false,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0029.c5d1208261e3.js",
+      "clonePath": "scripts/c5d1208261e311524b7ba31dcade18209ec686f84e9fd20df249dd6f5747d8fb.js",
+      "sha256": "c5d1208261e311524b7ba31dcade18209ec686f84e9fd20df249dd6f5747d8fb",
+      "bytes": 3230,
+      "kind": "classic",
+      "async": false,
+      "defer": true,
+      "declaredIn": "initial-document",
+      "role": "RUNTIME_CONFIG",
+      "executionClass": "LOCAL_EXECUTABLE_CANDIDATE",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 28,
+        "mobile": 27
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0015",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0015",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [
+        "contains the buildId path segment; the replay must reproduce buildId yMHNQjHujDVTgIp539WqR exactly"
+      ],
+      "confidence": "HIGH",
+      "notes": "Next.js build manifest. Build id yMHNQjHujDVTgIp539WqR identical across viewports, confirming both captures hit the same deployed build."
+    },
+    {
+      "id": "url:apartmentary.com/_next/static/yMHNQjHujDVTgIp539WqR/_ssgManifest.js",
+      "viewportLocalIds": {
+        "desktop": "sc0030",
+        "mobile": "sc0029"
+      },
+      "url": "https://apartmentary.com/_next/static/yMHNQjHujDVTgIp539WqR/_ssgManifest.js",
+      "inline": false,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0030.6f5b4aa00d2f.js",
+      "clonePath": "scripts/6f5b4aa00d2f8d6aed9935b471806bf7acef464d0c1d390260e5fe27f800c67e.js",
+      "sha256": "6f5b4aa00d2f8d6aed9935b471806bf7acef464d0c1d390260e5fe27f800c67e",
+      "bytes": 77,
+      "kind": "classic",
+      "async": false,
+      "defer": true,
+      "declaredIn": "initial-document",
+      "role": "RUNTIME_CONFIG",
+      "executionClass": "LOCAL_EXECUTABLE_CANDIDATE",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 29,
+        "mobile": 28
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0016",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0016",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [],
+      "confidence": "HIGH",
+      "notes": "Next.js SSG manifest, smallest captured file (77 bytes), same build id both viewports."
+    },
+    {
+      "id": "url:cdn.channel.io/plugin/ch-plugin-web.js",
+      "viewportLocalIds": {
+        "desktop": "sc0001",
+        "mobile": "sc0001"
+      },
+      "url": "https://cdn.channel.io/plugin/ch-plugin-web.js",
+      "inline": false,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0001.b7ed020e4adf.js",
+      "clonePath": "scripts/b7ed020e4adfee1017990a823e968a99ad0ebe9e99877c4c63099bbfeee5a514.js",
+      "sha256": "b7ed020e4adfee1017990a823e968a99ad0ebe9e99877c4c63099bbfeee5a514",
+      "bytes": 1802,
+      "kind": "classic",
+      "async": true,
+      "defer": false,
+      "declaredIn": "runtime-injected",
+      "role": "THIRD_PARTY_WIDGET",
+      "executionClass": "EXTERNAL",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 0,
+        "mobile": 0
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0079",
+          "type": "script",
+          "stackTopUrl": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0076",
+          "type": "script",
+          "stackTopUrl": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [],
+      "confidence": "HIGH",
+      "notes": "Loaded via the inline ChannelIO bootstrap loader snippet (inline:sha:974f0565..., loads on window 'load' event)."
+    },
+    {
+      "id": "url:connect.facebook.net/en_US/fbevents.js",
+      "viewportLocalIds": {
+        "desktop": null,
+        "mobile": null
+      },
+      "url": "https://connect.facebook.net/en_US/fbevents.js",
+      "inline": false,
+      "localFile": null,
+      "clonePath": null,
+      "sha256": null,
+      "bytes": null,
+      "kind": "classic",
+      "async": true,
+      "defer": false,
+      "declaredIn": "runtime-injected",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": "UNKNOWN",
+      "domOrder": {
+        "desktop": [
+          2,
+          6
+        ],
+        "mobile": [
+          2,
+          5
+        ]
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0022",
+          "type": "script",
+          "stackTopUrl": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0022",
+          "type": "script",
+          "stackTopUrl": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "skipped-by-policy",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "DOM contains 2 <script src=fbevents.js> tags per viewport (desktop sc0003+sc0007 orders 2&6, mobile sc0003+sc0006 orders 2&5) but the browser makes only ONE network fetch per viewport (both script entries share network requestId n0022) due to same-URL request coalescing/cache. Same analysisId used for both DOM occurrences; domOrder lists both positions. viewportLocalIds below reflects only the first (lower-order) occurrence -- see viewportLocalIdsAll for both."
+    },
+    {
+      "id": "url:connect.facebook.net/signals/config/1150125956125068",
+      "viewportLocalIds": {
+        "desktop": null,
+        "mobile": null
+      },
+      "url": "https://connect.facebook.net/signals/config/1150125956125068?...(query varies, see notes)",
+      "inline": false,
+      "localFile": null,
+      "clonePath": null,
+      "sha256": null,
+      "bytes": null,
+      "kind": "classic",
+      "async": true,
+      "defer": false,
+      "declaredIn": "runtime-injected",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": "UNKNOWN",
+      "domOrder": {
+        "desktop": 5,
+        "mobile": 4
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0037",
+          "type": "script",
+          "stackTopUrl": "https://connect.facebook.net/en_US/fbevents.js",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0037",
+          "type": "script",
+          "stackTopUrl": "https://connect.facebook.net/en_US/fbevents.js",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "skipped-by-policy",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "First FB pixel config request (pixel id 1150125956125068, this is the pixel initialized in the inline fbq snippet inline:sha:c4b0c12e...). Same mobile-only '&im=1' query diff as the sibling pixel above."
+    },
+    {
+      "id": "url:connect.facebook.net/signals/config/1680760198639545",
+      "viewportLocalIds": {
+        "desktop": null,
+        "mobile": null
+      },
+      "url": "https://connect.facebook.net/signals/config/1680760198639545?...(query varies, see notes)",
+      "inline": false,
+      "localFile": null,
+      "clonePath": null,
+      "sha256": null,
+      "bytes": null,
+      "kind": "classic",
+      "async": true,
+      "defer": false,
+      "declaredIn": "runtime-injected",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": "UNKNOWN",
+      "domOrder": {
+        "desktop": 1,
+        "mobile": 1
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0057",
+          "type": "script",
+          "stackTopUrl": "https://connect.facebook.net/en_US/fbevents.js",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0059",
+          "type": "script",
+          "stackTopUrl": "https://connect.facebook.net/en_US/fbevents.js",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "skipped-by-policy",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "Second FB pixel config request (pixel id 1680760198639545). QUERY STRING DIFFERS BY VIEWPORT: mobile URL adds '&im=1' that desktop's does not have (both otherwise identical incl. hme/ex_m payload). Content not captured either viewport so byte-level diff cannot be verified, only the URL diff is observed."
+    },
+    {
+      "id": "url:developers.kakao.com/sdk/js/kakao.js",
+      "viewportLocalIds": {
+        "desktop": "sc0009",
+        "mobile": "sc0008"
+      },
+      "url": "https://developers.kakao.com/sdk/js/kakao.js",
+      "inline": false,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0009.5f72808823d1.js",
+      "clonePath": "scripts/5f72808823d1dd43cbbf702195ea8e6d54baf3573c6e28bc901a031a67768521.js",
+      "sha256": "5f72808823d1dd43cbbf702195ea8e6d54baf3573c6e28bc901a031a67768521",
+      "bytes": 205743,
+      "kind": "classic",
+      "async": false,
+      "defer": true,
+      "declaredIn": "initial-document",
+      "role": "THIRD_PARTY_WIDGET",
+      "executionClass": "EXTERNAL",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 8,
+        "mobile": 7
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0019",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "actualNetworkUrl": "https://t1.kakaocdn.net/kakao_js_sdk/v1/kakao.js",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0019",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "actualNetworkUrl": "https://t1.kakaocdn.net/kakao_js_sdk/v1/kakao.js",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [
+        "declared src redirects to t1.kakaocdn.net per network initiator evidence"
+      ],
+      "confidence": "HIGH",
+      "notes": "REDIRECT: declared src is developers.kakao.com/sdk/js/kakao.js but the network manifest entry for this requestId shows the actual served URL is https://t1.kakaocdn.net/kakao_js_sdk/v1/kakao.js (redirect target). analysisId keyed on the DECLARED src per the stated rule."
+    },
+    {
+      "id": "url:karrot-pixel.business.daangn.com/0.4/karrot-pixel.umd.js",
+      "viewportLocalIds": {
+        "desktop": "sc0013",
+        "mobile": "sc0012"
+      },
+      "url": "https://karrot-pixel.business.daangn.com/0.4/karrot-pixel.umd.js",
+      "inline": false,
+      "localFile": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0013.317734ad0bda.js",
+      "clonePath": "scripts/317734ad0bda7c5c06c6a8b0ed1d590f441acaa27dfacbca4e261ae27ca9cab1.js",
+      "sha256": "317734ad0bda7c5c06c6a8b0ed1d590f441acaa27dfacbca4e261ae27ca9cab1",
+      "bytes": 17860,
+      "kind": "classic",
+      "async": false,
+      "defer": false,
+      "declaredIn": "initial-document",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": false,
+      "domOrder": {
+        "desktop": 12,
+        "mobile": 11
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0004",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0004",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "captured",
+      "sourceBoundReasons": [],
+      "confidence": "HIGH",
+      "notes": "Karrot (Daangn Market) pixel SDK. Initialized by inline:sha:c2cdacdd... (window.karrotPixel.init(...))."
+    },
+    {
+      "id": "url:ssl.pstatic.net/melona/libs/gfp-nac-module/synchronizer.js",
+      "viewportLocalIds": {
+        "desktop": null,
+        "mobile": null
+      },
+      "url": "https://ssl.pstatic.net/melona/libs/gfp-nac-module/synchronizer.js",
+      "inline": false,
+      "localFile": null,
+      "clonePath": null,
+      "sha256": null,
+      "bytes": null,
+      "kind": "classic",
+      "async": true,
+      "defer": false,
+      "declaredIn": "runtime-injected",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": "UNKNOWN",
+      "domOrder": {
+        "desktop": 15,
+        "mobile": 14
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0020",
+          "type": "script",
+          "stackTopUrl": "https://wcs.naver.net/wcslog.js",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0020",
+          "type": "script",
+          "stackTopUrl": "https://wcs.naver.net/wcslog.js",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "skipped-by-policy",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "Runtime-injected by wcslog.js itself (Naver GFP sync pixel). NOT present in response.html or as an authored tag; only appears in runtime.html, confirming declaredIn=runtime-injected."
+    },
+    {
+      "id": "url:t1.daumcdn.net/kas/static/kp.js",
+      "viewportLocalIds": {
+        "desktop": null,
+        "mobile": null
+      },
+      "url": "https://t1.daumcdn.net/kas/static/kp.js",
+      "inline": false,
+      "localFile": null,
+      "clonePath": null,
+      "sha256": null,
+      "bytes": null,
+      "kind": "classic",
+      "async": false,
+      "defer": false,
+      "declaredIn": "initial-document",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": "UNKNOWN",
+      "domOrder": {
+        "desktop": 10,
+        "mobile": 9
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0003",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0003",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "skipped-by-policy",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "Kakao Ads Pixel (kp.js). Initialized by inline:sha:defd4228... (kakaoPixel(...).pageView())."
+    },
+    {
+      "id": "url:wcs.naver.net/wcslog.js",
+      "viewportLocalIds": {
+        "desktop": null,
+        "mobile": null
+      },
+      "url": "https://wcs.naver.net/wcslog.js",
+      "inline": false,
+      "localFile": null,
+      "clonePath": null,
+      "sha256": null,
+      "bytes": null,
+      "kind": "classic",
+      "async": false,
+      "defer": false,
+      "declaredIn": "initial-document",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": "UNKNOWN",
+      "domOrder": {
+        "desktop": 14,
+        "mobile": 13
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0005",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0005",
+          "type": "parser",
+          "url": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "skipped-by-policy",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "Naver Web Contact Statistics (wcslog.js). Configured by inline:sha:57b7cc01... (wcs_add/wcs_do). Also runtime-injects url:ssl.pstatic.net/.../synchronizer.js."
+    },
+    {
+      "id": "url:www.googleoptimize.com/optimize.js",
+      "viewportLocalIds": {
+        "desktop": null,
+        "mobile": null
+      },
+      "url": "https://www.googleoptimize.com/optimize.js?id=OPT-PL9W69J",
+      "inline": false,
+      "localFile": null,
+      "clonePath": null,
+      "sha256": null,
+      "bytes": null,
+      "kind": "classic",
+      "async": true,
+      "defer": false,
+      "declaredIn": "runtime-injected",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": "UNKNOWN",
+      "domOrder": {
+        "desktop": 31,
+        "mobile": 30
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0042",
+          "type": "script",
+          "stackTopUrl": "https://www.googletagmanager.com/gtm.js?id=GTM-M8JGCP6",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0051",
+          "type": "script",
+          "stackTopUrl": "https://www.googletagmanager.com/gtm.js?id=GTM-M8JGCP6",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "skipped-by-policy",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "Google Optimize, injected by GTM at runtime. Last script tag in DOM order in both viewports (appears AFTER __NEXT_DATA__)."
+    },
+    {
+      "id": "url:www.googletagmanager.com/gtag/js",
+      "viewportLocalIds": {
+        "desktop": null,
+        "mobile": null
+      },
+      "url": "https://www.googletagmanager.com/gtag/js?id=G-37HT928R4X&cx=c&gtm=4e69e1",
+      "inline": false,
+      "localFile": null,
+      "clonePath": null,
+      "sha256": null,
+      "bytes": null,
+      "kind": "classic",
+      "async": true,
+      "defer": false,
+      "declaredIn": "runtime-injected",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": "UNKNOWN",
+      "domOrder": {
+        "desktop": 4,
+        "mobile": 3
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0040",
+          "type": "script",
+          "stackTopUrl": "https://www.googletagmanager.com/gtm.js?id=GTM-M8JGCP6",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0050",
+          "type": "script",
+          "stackTopUrl": "https://www.googletagmanager.com/gtm.js?id=GTM-M8JGCP6",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "skipped-by-policy",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": null
+    },
+    {
+      "id": "url:www.googletagmanager.com/gtm.js",
+      "viewportLocalIds": {
+        "desktop": null,
+        "mobile": null
+      },
+      "url": "https://www.googletagmanager.com/gtm.js?id=GTM-M8JGCP6",
+      "inline": false,
+      "localFile": null,
+      "clonePath": null,
+      "sha256": null,
+      "bytes": null,
+      "kind": "classic",
+      "async": true,
+      "defer": false,
+      "declaredIn": "runtime-injected",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop",
+        "mobile"
+      ],
+      "bytesDifferByViewport": "UNKNOWN",
+      "domOrder": {
+        "desktop": 7,
+        "mobile": 6
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0018",
+          "type": "script",
+          "stackTopUrl": "https://apartmentary.com/",
+          "status": 200
+        },
+        "mobile": {
+          "requestId": "n0017",
+          "type": "script",
+          "stackTopUrl": "https://apartmentary.com/",
+          "status": 200
+        }
+      },
+      "bodyCaptureStatus": "skipped-by-policy",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "The real GTM container bootstrap load, triggered by the inline gtm.start snippet (inline:sha:a952af9e...). This is the standard load; distinguish from url:www.googletagmanager.com/gtm.js#is_td (desktop-only diagnostic variant, different query/status)."
+    },
+    {
+      "id": "url:www.googletagmanager.com/gtm.js#is_td",
+      "viewportLocalIds": {
+        "desktop": null,
+        "mobile": null
+      },
+      "url": "https://www.googletagmanager.com/gtm.js?id=GTM-M8JGCP6&is_td=1&v=3&t=t&pid=1928197091&gtm=45He69e1v890694286za200zd890694286&seq=1&exp=...&dl=apartmentary.com%2F&tdp=GTM-M8JGCP6;90694286;0;0;0&frm=0&rtg=90694286&slo=13&hlo=4&lst=1&bt=0&ct=3&mde=G-37HT928R4X;0_1&z=0",
+      "inline": false,
+      "localFile": null,
+      "clonePath": null,
+      "sha256": null,
+      "bytes": null,
+      "kind": "classic",
+      "async": true,
+      "defer": false,
+      "declaredIn": "runtime-injected",
+      "role": "ANALYTICS",
+      "executionClass": "TRACKER",
+      "usedByViewports": [
+        "desktop"
+      ],
+      "bytesDifferByViewport": "UNKNOWN",
+      "domOrder": {
+        "desktop": 3,
+        "mobile": null
+      },
+      "initiatorEvidence": {
+        "desktop": {
+          "requestId": "n0041",
+          "type": "script",
+          "stackTopUrl": "https://www.googletagmanager.com/gtm.js?id=GTM-M8JGCP6",
+          "status": 204
+        },
+        "mobile": null
+      },
+      "bodyCaptureStatus": "skipped-by-policy",
+      "sourceBoundReasons": [],
+      "confidence": "MEDIUM",
+      "notes": "**THE DESKTOP-ONLY SCRIPT.** GTM's own self-diagnostic/telemetry beacon: gtm.js loads itself again with is_td=1 (tracking-diagnostics) plus a large exp= experiment-bucket payload. Confirmed present as an actual runtime <script> DOM node (desktop runtime.html tag #4) as well as a network request (status 204, initiator stackTopUrl = gtm.js itself). Absent from BOTH mobile runtime.html DOM and mobile network manifest -- not merely uncaptured, genuinely never fired on mobile in this capture. This is what shifts every subsequent desktop id +1 relative to mobile from sc0005(desktop)/sc0004(mobile) onward."
+    }
+  ],
+  "edges": [
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/2924-2d8edfe2e564207a.js",
+      "to": "url:apartmentary.com/_next/static/chunks/pages/_app-9c2508f77b107208.js",
+      "edgeType": "DOM_ORDER",
+      "evidence": "document/response.html — both carry `defer`, so DOM order is execution order",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/2924-2d8edfe2e564207a.js",
+      "to": "url:apartmentary.com/_next/static/chunks/webpack-3d4d997a6d82a026.js",
+      "edgeType": "BUNDLER_RUNTIME_REQUIRED",
+      "evidence": "registers via self.webpackChunk_N_E.push, whose push is replaced by sc0022; cannot register before sc0022 runs",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/7925-44556921d193a2a3.js",
+      "to": "url:apartmentary.com/_next/static/chunks/2924-2d8edfe2e564207a.js",
+      "edgeType": "DOM_ORDER",
+      "evidence": "document/response.html — both carry `defer`, so DOM order is execution order",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/7925-44556921d193a2a3.js",
+      "to": "url:apartmentary.com/_next/static/chunks/pages/_app-9c2508f77b107208.js",
+      "edgeType": "MODULE_IMPORT",
+      "evidence": "sc0027@260409 `(0,a.PEn)(void 0,c,o)` constructs generated clients whose factories live in _app (generated OpenAPI client @270791)",
+      "confidence": "MEDIUM"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/7925-44556921d193a2a3.js",
+      "to": "url:apartmentary.com/_next/static/chunks/webpack-3d4d997a6d82a026.js",
+      "edgeType": "BUNDLER_RUNTIME_REQUIRED",
+      "evidence": "registers via self.webpackChunk_N_E.push, whose push is replaced by sc0022; cannot register before sc0022 runs",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/framework-a070cbfff3c750c5.js",
+      "to": "url:apartmentary.com/_next/static/chunks/webpack-3d4d997a6d82a026.js",
+      "edgeType": "BUNDLER_RUNTIME_REQUIRED",
+      "evidence": "sc0022:~4500 installs __webpack_require__ and replaces .push on self.webpackChunk_N_E; no later chunk can register without it",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/framework-a070cbfff3c750c5.js",
+      "to": "url:apartmentary.com/_next/static/chunks/webpack-3d4d997a6d82a026.js",
+      "edgeType": "DOM_ORDER",
+      "evidence": "document/response.html — both carry `defer`, so DOM order is execution order",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/main-58aeb610bf878a93.js",
+      "to": "url:apartmentary.com/_next/static/chunks/framework-a070cbfff3c750c5.js",
+      "edgeType": "DOM_ORDER",
+      "evidence": "document/response.html — both carry `defer`, so DOM order is execution order",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/main-58aeb610bf878a93.js",
+      "to": "url:apartmentary.com/_next/static/chunks/webpack-3d4d997a6d82a026.js",
+      "edgeType": "BUNDLER_RUNTIME_REQUIRED",
+      "evidence": "registers via self.webpackChunk_N_E.push, whose push is replaced by sc0022; cannot register before sc0022 runs",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/_app-9c2508f77b107208.js",
+      "to": "url:apartmentary.com/_next/static/chunks/main-58aeb610bf878a93.js",
+      "edgeType": "DOM_ORDER",
+      "evidence": "document/response.html — both carry `defer`, so DOM order is execution order",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/_app-9c2508f77b107208.js",
+      "to": "url:apartmentary.com/_next/static/chunks/webpack-3d4d997a6d82a026.js",
+      "edgeType": "BUNDLER_RUNTIME_REQUIRED",
+      "evidence": "registers via self.webpackChunk_N_E.push, whose push is replaced by sc0022; cannot register before sc0022 runs",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "to": "UNKNOWN",
+      "edgeType": "DATA_FETCH",
+      "evidence": "sc0028 is the direct caller: mainBannerService @4747 → dev-api /api/v1/main-banners/action/get-displays; base URL supplied by chunk 7925 (sc0027@260409); response body NEVER captured (bodyPolicy.json=false). Desktop network n0030–n0033, mobile n0032–n0035.",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "to": "UNKNOWN",
+      "edgeType": "DATA_FETCH",
+      "evidence": "sc0028 is the direct caller: portfolioService @4723 → getPortfoliosByPagingUsingGET1 @~5300 → dev-api /api/v1/portfolios/action/get-by-paging (bottomArea1); base URL supplied by chunk 7925 (sc0027@260409); response body NEVER captured (bodyPolicy.json=false). Desktop network n0030–n0033, mobile n0032–n0035.",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "to": "UNKNOWN",
+      "edgeType": "DATA_FETCH",
+      "evidence": "sc0028 is the direct caller: portfolioService @4723 → getPortfoliosByPagingUsingGET1 @~5300 → dev-api /api/v1/portfolios/action/get-by-paging (bottomArea2); base URL supplied by chunk 7925 (sc0027@260409); response body NEVER captured (bodyPolicy.json=false). Desktop network n0030–n0033, mobile n0032–n0035.",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "to": "UNKNOWN",
+      "edgeType": "DATA_FETCH",
+      "evidence": "sc0028 is the direct caller: reviewService @1932 → getReviewsByPagingUsingGET1 @2084 → dev-api /api/v1/reviews/action/get-by-paging?count=6; base URL supplied by chunk 7925 (sc0027@260409); response body NEVER captured (bodyPolicy.json=false). Desktop network n0030–n0033, mobile n0032–n0035.",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "to": "url:apartmentary.com/_next/static/chunks/2924-2d8edfe2e564207a.js",
+      "edgeType": "CHUNK_REGISTRY",
+      "evidence": "sc0028 tail gate `e.O(0,[2924,7925,9774,2888,179],…)` names chunk 2924 as a prerequisite",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "to": "url:apartmentary.com/_next/static/chunks/7925-44556921d193a2a3.js",
+      "edgeType": "CHUNK_REGISTRY",
+      "evidence": "sc0028 tail gate `e.O(0,[2924,7925,9774,2888,179],…)` names chunk 7925",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "to": "url:apartmentary.com/_next/static/chunks/7925-44556921d193a2a3.js",
+      "edgeType": "DOM_ORDER",
+      "evidence": "document/response.html — both carry `defer`, so DOM order is execution order",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "to": "url:apartmentary.com/_next/static/chunks/7925-44556921d193a2a3.js",
+      "edgeType": "MODULE_IMPORT",
+      "evidence": "sc0028 binds services from registry z.ZP (module 9267 in chunk 7925): reviewService @1932, portfolioService @4723, mainBannerService @4747 (review M6)",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "to": "url:apartmentary.com/_next/static/chunks/framework-a070cbfff3c750c5.js",
+      "edgeType": "CHUNK_REGISTRY",
+      "evidence": "sc0028 tail gate names chunk 9774 (framework)",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "to": "url:apartmentary.com/_next/static/chunks/main-58aeb610bf878a93.js",
+      "edgeType": "CHUNK_REGISTRY",
+      "evidence": "sc0028 tail gate names chunk 179 (main)",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "to": "url:apartmentary.com/_next/static/chunks/pages/_app-9c2508f77b107208.js",
+      "edgeType": "CHUNK_REGISTRY",
+      "evidence": "sc0028 tail gate names chunk 2888 (_app)",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "to": "url:apartmentary.com/_next/static/chunks/webpack-3d4d997a6d82a026.js",
+      "edgeType": "BUNDLER_RUNTIME_REQUIRED",
+      "evidence": "registers via self.webpackChunk_N_E.push, whose push is replaced by sc0022; cannot register before sc0022 runs",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "to": "url:apartmentary.com/_next/static/yMHNQjHujDVTgIp539WqR/_buildManifest.js",
+      "edgeType": "ROUTE_MANIFEST",
+      "evidence": "_buildManifest maps route \"/\" to [2924, 7925, css/d7c08271dabb56dd, pages/index]",
+      "confidence": "HIGH"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/yMHNQjHujDVTgIp539WqR/_buildManifest.js",
+      "to": "url:apartmentary.com/_next/static/chunks/main-58aeb610bf878a93.js",
+      "edgeType": "CHUNK_REGISTRY",
+      "evidence": "__BUILD_MANIFEST_CB callback is installed by chunk 179 (main); ordering is otherwise unconstrained",
+      "confidence": "MEDIUM"
+    },
+    {
+      "from": "url:apartmentary.com/_next/static/yMHNQjHujDVTgIp539WqR/_ssgManifest.js",
+      "to": "url:apartmentary.com/_next/static/chunks/main-58aeb610bf878a93.js",
+      "edgeType": "CHUNK_REGISTRY",
+      "evidence": "__SSG_MANIFEST_CB callback is installed by chunk 179 (main)",
+      "confidence": "MEDIUM"
+    }
+  ],
+  "features": {
+    "carousel": {
+      "library": "Swiper (core mod 2544) + swiper/react (mod 2546, exports tq=Swiper, o5=SwiperSlide)",
+      "implementedBy": [
+        "sc0026.8ee1e431b3de.js (chunk 2924) - Swiper LIBRARY: core 2544 + react bindings 2546",
+        "sc0027.f3f2a3778df4.js (chunk 7925) - app `Carousel` wrapper module 3640 (props: totalCount/swiperRef/spaceBetween/slidesPerView/indicatorPadding/paddingX/indicator/animation)",
+        "sc0028.dba4c3c5f366.js (pages/index) - 4 call sites: 1 raw <Swiper> banner + 3 <Carousel>"
+      ],
+      "evidence": [
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0026.8ee1e431b3de.js",
+          "offset": 92292,
+          "snippet": "2546:function(e,t,r){\"use strict\";r.d(t,{tq:function(){return x},o5:function(){return E}});var n=r(7294),i=r(2544);",
+          "note": "swiper/react module: exports tq(Swiper)/o5(SwiperSlide); requires react (7294) and swiper core (2544)"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0026.8ee1e431b3de.js",
+          "offset": 104980,
+          "snippet": "2544:function(e,t,r){\"use strict\"; ... r.d(t,{pt:function(){return Q},ZP:function(){return J}})",
+          "note": "swiper CORE module, framework-agnostic; exports ZP=Swiper class, pt=Autoplay-style module"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0026.8ee1e431b3de.js",
+          "offset": 95196,
+          "snippet": "function f(e){return e.type&&e.type.displayName&&e.type.displayName.includes(\"SwiperSlide\")}function m(e){const t=[];return n.Children.toArray(e)...",
+          "note": "React-only child scanning: slides are discovered via React.Children, not via DOM"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0026.8ee1e431b3de.js",
+          "offset": 98936,
+          "snippet": "n.forwardRef)((function(e,t){let{className:r,tag:f=\"div\",wrapperTag:m=\"div\",children:b,onSwiper:x,...S}...const[Z,T]=(0,n.useState)(\"swiper\"),[P,C]=(0,n.useState)(null)",
+          "note": "Swiper React component = forwardRef + useState/useRef; it RENDERS the .swiper/.swiper-wrapper/.swiper-slide DOM itself (tag/wrapperTag defaults \"div\")"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0026.8ee1e431b3de.js",
+          "offset": 93697,
+          "snippet": "spaceBetween ... slidesPerView ... slidesPerGroup ... virtualTranslate (93653)",
+          "note": "swiper param surface present in chunk 2924"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0027.f3f2a3778df4.js",
+          "offset": 41897,
+          "snippet": "3640:function(...)  -> e.Z=function(A){var e=A.totalCount,i=A.children,s=A.swiperRef,d=A.swiperIdx,h=A.center,E=A.spaceBetween,I=void 0===E?50:E,Q=A.slidesPerView,...}",
+          "note": "the app-level Carousel wrapper consumed as B.Z by pages/index"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0027.f3f2a3778df4.js",
+          "offset": 42952,
+          "snippet": "(0,a.BX)(r.Z,(0,n.Z)((0,t.Z)({},m?{\"data-aos\":\"fade-up\"}:{}),{children:[(0,a.tZ)(g.tq,{centeredSlides:M,spaceBetween:I,slidesPerView:Q||(y?3:1),...",
+          "note": "Carousel emits <Swiper> with slidesPerView computed from useMediaQuery result y: desktop 3, mobile 1; also injects data-aos"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+          "offset": 6665,
+          "snippet": "N.length>0&&(0,r.BX)(u.Z,{className:\"swiper-container\",position:\"relative\",lineHeight:0,children:[(0,r.tZ)(b.tq,{onSwiper:function(e){l&&(l.current=e)},onAfterInit:...",
+          "note": "main banner Swiper, gated on fetched N.length>0"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+          "offset": 8002,
+          "snippet": "autoplay:{delay:5e3,disableOnInteraction:!0},loop:!0,onSlideChangeTransitionEnd:...,children:N.map((function(e,t){return (0,r.tZ)(b.o5,...",
+          "note": "banner config is React PROPS (autoplay 5000ms, loop true); slides .map()ed from fetched state"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+          "offset": 3486,
+          "snippet": "totalCount:t?o.length:Math.ceil(o.length/2),swiperRef:i",
+          "note": "review Carousel"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+          "offset": 11514,
+          "snippet": "totalCount:z.length,swiperRef:a,paddingX:m?\"50px\":\"20px\"",
+          "note": "portfolio carousel #1"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+          "offset": 14541,
+          "snippet": "totalCount:E.length,swiperRef:d,paddingX:m?\"50px\":\"20px\"",
+          "note": "portfolio carousel #2"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/document/runtime.html",
+          "offset": null,
+          "snippet": "class=\"swiper swiper-initialized swiper-horizontal swiper-backface-hidden\" x4 ; class=\"swiper-wrapper\" x4 ; class=\"swiper-slide\" x29",
+          "note": "feature IS present on homepage: 4 initialized Swiper instances, 38 swiper-classed nodes"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/document/response.html",
+          "offset": null,
+          "snippet": "(zero occurrences of the substring \"swiper\" in the entire SSR response)",
+          "note": "DECISIVE: server HTML contains NO swiper markup - 100% client-React-created"
+        }
+      ],
+      "instancesOnHomepage": 4,
+      "sectionMapping": [
+        {
+          "instance": "main banner (hero)",
+          "chunk": "sc0028 @6665-8100",
+          "dataSource": "mainBannerService.getDisplayMainBannersUsingGET()",
+          "guard": "N.length>0 &&",
+          "config": "autoplay{delay:5000,disableOnInteraction:true}, loop:true, onAfterInit/onSlideChange drive <video> play + mobx activeMainBannerIdx"
+        },
+        {
+          "instance": "reviews carousel",
+          "chunk": "sc0028 @1852-3900 (component X)",
+          "dataSource": "reviewService.getReviewsByPagingUsingGET1(6,...)",
+          "guard": "o.length ? ... : null",
+          "config": "via Carousel 3640, animation:false, prev/next buttons call swiperRef.current.slidePrev()/slideNext()"
+        },
+        {
+          "instance": "portfolio carousel #1",
+          "chunk": "sc0028 @11514",
+          "dataSource": "portfolioService.getPortfoliosByPagingUsingGET1(10,...,true,...)",
+          "guard": "z.length (totalCount)",
+          "config": "via Carousel 3640"
+        },
+        {
+          "instance": "portfolio carousel #2",
+          "chunk": "sc0028 @14541",
+          "dataSource": "portfolioService.getPortfoliosByPagingUsingGET1(10,...,true,...)",
+          "guard": "E.length (totalCount)",
+          "config": "via Carousel 3640"
+        }
+      ],
+      "confidence": "HIGH"
+    },
+    "animation": {
+      "library": "AOS (Animate On Scroll), bundled verbatim",
+      "implementedBy": [
+        "sc0025.e6a0597718ac.js (pages/_app) @~90833-94381 = AOS library + init",
+        "sc0027.f3f2a3778df4.js (consumer: data-aos props)",
+        "sc0028.dba4c3c5f366.js (consumer: data-aos props @10504,@13539)"
+      ],
+      "evidence": [
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0025.e6a0597718ac.js",
+          "offset": 92450,
+          "snippet": "selectorAll(\"[data-aos]\");return Array.prototype.map.call(e,(function(e){return{node:e}}))},oe=[],ie=!1,ae={offset:120,delay:0,easing:\"ease\",duration:400,disable:!1,once:!1,mirror:!1,anchorPlacement:\"top-bottom\",startEvent:\"DOMContentLoaded\",animatedClassName:\"aos-animate\",initClassName:\"aos-init\",...}",
+          "note": "verbatim AOS default options object - unambiguous library fingerprint"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0025.e6a0597718ac.js",
+          "offset": 93592,
+          "snippet": "aos: MutationObserver is not supported on this browser, code mutations observing has been disabled. You may have to call \"refreshHard()\" by yourself.",
+          "note": "verbatim AOS console.info string; refreshHard also at @94381"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0027.f3f2a3778df4.js",
+          "offset": 42952,
+          "snippet": "m?{\"data-aos\":\"fade-up\"}:{}",
+          "note": "Carousel wrapper injects data-aos=fade-up when animation prop true"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/document/runtime.html",
+          "offset": null,
+          "snippet": "17 element nodes carry data-aos; 16 have class aos-init; 16 have aos-animate",
+          "note": "AOS actually ran on the homepage"
+        }
+      ],
+      "notes": "AOS uses MutationObserver + a scroll/throttle loop (startEvent DOMContentLoaded), NOT IntersectionObserver. The 2 IntersectionObserver hits in sc0025 (@209432,@210209) belong to other code (not AOS).",
+      "confidence": "HIGH"
+    },
+    "responsive": {
+      "mechanism": "MUI useMediaQuery (window.matchMedia + MediaQueryList.addListener) driving React ternaries; NO separate mobile bundle",
+      "implementedBy": [
+        "sc0025.e6a0597718ac.js (MUI useMediaQuery mod 8396 @55059; theme breakpoint table @58406,@64856)",
+        "sc0027.f3f2a3778df4.js (20+ breakpoints.up call sites)",
+        "sc0028.dba4c3c5f366.js (3 breakpoints.up(\"md\") call sites @2002,@4168,@4867 + one raw @media (min-width:1920px) @5088)"
+      ],
+      "evidence": [
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0025.e6a0597718ac.js",
+          "offset": 55059,
+          "snippet": "8396:function(e,t,n){... const a=\"undefined\"!==typeof window&&\"undefined\"!==typeof window.matchMedia,[u,c]=o.useState((()=>i&&a?n(e).matches:...)); ... r.addListener(o)",
+          "note": "MUI useMediaQuery implementation - THIS is the desktop/mobile decision primitive"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+          "offset": 4867,
+          "snippet": "var Z=(0,p.Z)(),m=(0,h.Z)(Z.breakpoints.up(\"md\")),y=(0,w.fv)((function(){return new M.default}))",
+          "note": "THE decision point in pages/index: m = useMediaQuery(theme.breakpoints.up(\"md\")). Every desktop-vs-mobile subtree on the homepage is `m ? <Desktop/> : <Mobile/>`"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+          "offset": 8047,
+          "snippet": "children:m?(0,r.tZ)(W,{mainBanner:e,bannerSwiperRef:l}):(0,r.tZ)(V,{mainBanner:e,bannerSwiperRef:l})",
+          "note": "two entirely different slide components W (PC) / V (mobile) chosen by m"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0025.e6a0597718ac.js",
+          "offset": 58406,
+          "snippet": "xs:0,sm:600,md:900,lg:1200,xl:1536",
+          "note": "DIAGNOSTIC ONLY: MUI breakpoint value table found adjacent to the theme factory; identical table repeated @64856"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+          "offset": 5088,
+          "snippet": "min-width:1920px",
+          "note": "DIAGNOSTIC ONLY: an extra useMediaQuery(\"@media (min-width:1920px)\") is called in pages/index (result is discarded in this minified form)"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0027.f3f2a3778df4.js",
+          "offset": 237113,
+          "snippet": "min-width:900px  (also min-width:1280px @206528, min-width:1920px @214647,@237267)",
+          "note": "DIAGNOSTIC ONLY: raw media-query literals present in the shared UI chunk"
+        }
+      ],
+      "breakpointLiteralsFound": {
+        "muiTable": [
+          0,
+          600,
+          900,
+          1200,
+          1536
+        ],
+        "rawMediaLiterals": [
+          900,
+          1280,
+          1920
+        ],
+        "caveat": "Reported as diagnostic evidence only. Which literal governs any given element is a runtime resolution of theme.breakpoints.up('md') against the (possibly customized) theme object; static analysis did not prove the theme is unmodified."
+      },
+      "noSeparateMobileBundle": {
+        "proof": "mobile/source-package/scripts contains the SAME content hashes as desktop (dba4c3c5f366, 8ee1e431b3de, f3f2a3778df4, e6a0597718ac) under different sc-ids. Byte-identical page chunk (md5 a43083e2baffb6ef5f17f8d4032eaa3e).",
+        "implication": "the desktop/mobile DOM difference (38 vs 35 swiper nodes, 32 vs 21 buttons) is produced purely at runtime by matchMedia."
+      },
+      "confidence": "HIGH"
+    },
+    "navigation": {
+      "mechanism": "next/router useRouter().push() inside onClick handlers on MUI Box/Button. There are NO <a href> anchors anywhere in the rendered homepage.",
+      "implementedBy": [
+        "sc0025.e6a0597718ac.js (next/router module 1163 @295827)",
+        "sc0028.dba4c3c5f366.js (8 router.push call sites)",
+        "sc0027.f3f2a3778df4.js (shared layout/footer nav)"
+      ],
+      "evidence": [
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+          "offset": 5054,
+          "snippet": "S=(y.isMainBannerMultiLineTitle,(0,D.useRouter)())",
+          "note": "router handle in pages/index; D=i(1163)=next/router"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+          "offset": 11078,
+          "snippet": "(0,r.tZ)(s.zx,{contained:!0,onClick:function(){S.push(\"/portfolio?page=\".concat(0,\"&spaceSizes=40\"))},children:...}",
+          "note": "navigation is an onClick->router.push, rendered as a <button>, no href"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+          "offset": 13146,
+          "snippet": "onClick:function(){S.push(\"/portfolio?page=\".concat(0,\"&spaceSizes=40\"))}",
+          "note": "second push site (mobile branch)"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0027.f3f2a3778df4.js",
+          "offset": 34975,
+          "snippet": "onClickInquiry:function(){var A=window.open(\"https://ersatz.kr/works/029/012/\",\"_blank\",\"noopener,noreferrer\");A&&(A.opener=null)}",
+          "note": "external navigation uses window.open, still not an anchor"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/document/runtime.html",
+          "offset": null,
+          "snippet": "0 <a> elements, 0 href attributes on anchors, 32 <button> elements, 6 inline cursor:pointer",
+          "note": "VERIFIED: the zero-anchor claim is true in desktop AND mobile runtime.html AND both Phase-2 clones"
+        }
+      ],
+      "pushCallSitesInIndex": [
+        11078,
+        11714,
+        13146,
+        14107,
+        14741,
+        16181,
+        18316,
+        19700
+      ],
+      "confidence": "HIGH"
+    },
+    "menuModal": {
+      "implementedBy": [
+        "sc0026.8ee1e431b3de.js (chunk 2924) - MUI Modal/Portal/Backdrop primitives incl. ReactDOM.createPortal and body aria-hidden/scroll-lock",
+        "sc0023.33dc89018fe5.js (react-dom createPortal itself @117518,@118300)",
+        "sc0027.f3f2a3778df4.js - app-level popup/banner/footer layout consuming pageProps.popupData"
+      ],
+      "evidence": [
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0026.8ee1e431b3de.js",
+          "offset": 37658,
+          "snippet": "...(0,m.jsx)(o.Fragment,{children:a?u.createPortal(r,a):a})})),...function b(e,t){t?e.setAttribute(\"aria-hidden\",\"true\"):e.removeAttribute(\"aria-hidden\")}function w(e){return parseInt((0,v.Z)(e).getComputedStyle(e).paddin...",
+          "note": "MUI Portal + ModalManager (aria-hidden marking and scrollbar-padding body lock) live in chunk 2924"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0026.8ee1e431b3de.js",
+          "offset": 2985,
+          "snippet": "Backdrop (8 occurrences @2985..6299)",
+          "note": "MUI Backdrop component in chunk 2924"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0027.f3f2a3778df4.js",
+          "offset": 240214,
+          "snippet": "var rA=Y.isPcDisplay,sA=Y.isMobileDisplay,dA=Y.imagePcUrl,hA=Y.imageMobileUrl,MA=Y.widthPcInPx,...",
+          "note": "popup modal render branch driven by pageProps.popupData (SSR data, not a client fetch)"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0027.f3f2a3778df4.js",
+          "offset": 34975,
+          "snippet": "tA.getLayout=function(A,e){var i=e.bannerData,t=e.popupData,n=e.footerData,...}",
+          "note": "Next.js per-page getLayout consuming the three pageProps objects"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/document/runtime.html",
+          "offset": null,
+          "snippet": "<div aria-hidden=\"true\" class=\"MuiBackdrop-root css-xuaqpw\" style=\"opacity:0;visibility:hidden\"> ; 0 MuiModal-root ; 0 MuiDrawer-root",
+          "note": "on this capture the popup is CLOSED (popupData.isPcDisplay=false, isMobileDisplay=false) - only the inert Backdrop is in the DOM"
+        }
+      ],
+      "notes": "No hamburger/drawer/GNB component strings matched in the shipped chunks. The header is a row of <button>s. The only modal surface reaching the homepage DOM is the (disabled) promo popup's Backdrop, which is present in the SSR response.html too.",
+      "confidence": "MEDIUM"
+    },
+    "dataFetch": {
+      "mechanism": "axios (XMLHttpRequest adapter) wrapped by a generated swagger/OpenAPI client, exposed via a mobx service registry",
+      "implementedBy": [
+        "sc0025.e6a0597718ac.js (pages/_app) = axios library (@94608 XHR adapter, module 1609 axios entry) AND the generated API client methods (getDisplayMainBannersUsingGET @270791,@272608,@272758,@273370)",
+        "sc0027.f3f2a3778df4.js = service registry module 9267 @260142 exposing portfolioService/reviewService/mainBannerService (ZP)",
+        "sc0028.dba4c3c5f366.js (pages/index) = the CALL SITES only (no fetch/axios/XHR primitive of its own)"
+      ],
+      "evidence": [
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0025.e6a0597718ac.js",
+          "offset": 94608,
+          "snippet": "new Promise((function(t,n){... var y=new XMLHttpRequest; ... y.open(e.method.toUpperCase(),a(_,e.params,e.paramsSerializer),!0) ... y.send(h)}))",
+          "note": "axios xhr adapter - the actual transport, in the _app chunk"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0025.e6a0597718ac.js",
+          "offset": 270791,
+          "snippet": "getDisplayMainBannersUsingGET",
+          "note": "generated API client method definitions live in _app chunk"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0027.f3f2a3778df4.js",
+          "offset": 260142,
+          "snippet": "9267:function(...)",
+          "note": "service registry module (imported by pages/index as z=i(9267))"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+          "offset": 4728,
+          "snippet": "var U=z.ZP.portfolioService,R=z.ZP.mainBannerService",
+          "note": "pages/index only holds service handles"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+          "offset": 1852,
+          "snippet": "A=z.ZP.reviewService, ... (0,c.useEffect)((function(){A.getReviewsByPagingUsingGET1(6,void 0,void 0,void 0,void 0,void 0).then((function(e){var t=e.data.data.data;(0,I.z)((function(){n.reviews=t||[]}))}))}),[])",
+          "note": "review fetch in useEffect writing into a mobx store"
+        },
+        {
+          "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+          "offset": 5233,
+          "snippet": "useEffect(()=>{T();k();A()},[])  where T/k = getPortfoliosByPagingUsingGET1(10,...), A = getDisplayMainBannersUsingGET()",
+          "note": "three fetches kicked off on mount in the main page component G"
+        }
+      ],
+      "noFetchPrimitiveInPageChunk": "rg found 0 matches for fetch(/axios/XMLHttpRequest/swr/react-query/graphql in sc0028",
+      "confidence": "HIGH"
+    }
+  },
+  "swiperSeparability": {
+    "verdict": "B",
+    "verdictDetail": "Embedded inside the shared vendor chunk sc0026.8ee1e431b3de.js = webpack chunk 2924. Both swiper core (module 2544 @104980) and swiper/react (module 2546 @92292) are modules inside that chunk, which also contains ~37 other unrelated modules (MUI Modal/Portal/Backdrop etc). There is no standalone swiper.js file in the capture. A secondary consumer layer is split across sc0027 (Carousel wrapper 3640) and sc0028 (call sites), so if you count consumers the shape is B-with-D-flavoured consumers; the LIBRARY itself is squarely B.",
+    "rationale": "Chunk-header proof: sc0026 begins `(self.webpackChunk_N_E=...).push([[2924],{8442:function(...)` and module ids 2544/2546 are defined at offsets 104980/92292 within it. Extracting Swiper would mean carving two webpack module factories out of a 166KB chunk and re-providing their `r(7294)` React dependency plus the webpack `r.d`/`r.n` runtime.",
+    "independentOfReact": "NO",
+    "independentOfReactRationale": "Swiper is consumed exclusively through its React wrapper, and the wrapper is what creates the DOM. (1) The only Swiper entry points referenced by app code are `b.tq`/`b.o5` = the forwardRef React components from module 2546; module 2546 requires react (7294) and uses useState/useRef/useEffect/Children.toArray. (2) Module 2546 RENDERS the .swiper / .swiper-wrapper / .swiper-slide elements itself (`tag=\"div\", wrapperTag=\"div\"`) - it does not attach to pre-existing markup. (3) Every Swiper option that defines the behaviour (loop:true, autoplay{delay:5000,disableOnInteraction:true}, centeredSlides, spaceBetween, slidesPerView) is passed as React PROPS and appears nowhere in the rendered DOM - there is no data-swiper-* config attribute to recover them from. (4) slidesPerView is computed at render time from MUI useMediaQuery (`Q||(y?3:1)`), so it is React-state-derived. (5) The instance handles are captured via `onSwiper` into React refs and then used by sibling React components (prev/next buttons, the progress-indicator width useEffect, the hero <video> orchestration) and written into a mobx store (`y.activeMainBannerIdx`). (6) The slide CONTENT is `.map()`ed from mobx observable arrays populated by axios. Reviving Swiper vanilla over the Phase-2 DOM would produce sliding pixels but would NOT restore the source behaviour: the indicator bar, prev/next buttons, keyboard arrows, video-driven advance and the active-index store binding all live in React.",
+    "partialPathCaveat": "One honest nuance, stated without optimism: the Phase-2 preservation clone DOES already contain the full expected markup (4x .swiper + 4x .swiper-wrapper + 29x .swiper-slide, 38 swiper-classed nodes), and swiper core (module 2544) is itself framework-agnostic. So a NEW vanilla Swiper could be constructed over that captured DOM. That is a re-implementation with hand-guessed parameters, not a restoration of the source's Swiper behavior, and it recovers only the slide-to-slide motion of a frozen slide set. The evidence shows no clean separation.",
+    "evidence": [
+      {
+        "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0026.8ee1e431b3de.js",
+        "offset": 63,
+        "snippet": "(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[2924],{8442:function(e,t){",
+        "note": "chunk id 2924; 37+ module factories follow, swiper is two of them"
+      },
+      {
+        "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0026.8ee1e431b3de.js",
+        "offset": 92292,
+        "snippet": "2546:function(e,t,r){\"use strict\";r.d(t,{tq:function(){return x},o5:function(){return E}});var n=r(7294),i=r(2544);",
+        "note": "swiper/react requires React module 7294"
+      },
+      {
+        "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0026.8ee1e431b3de.js",
+        "offset": 98936,
+        "snippet": "n.forwardRef)((function(e,t){let{className:r,tag:f=\"div\",wrapperTag:m=\"div\",children:b,onSwiper:x,...S}=void 0===e?{}:e,E=!1;const[Z,T]=(0,n.useState)(\"swiper\"),[P,C]=(0,n.useState)(null),[k,M]=(0,n.useState)(!1)",
+        "note": "the React component owns the swiper root/wrapper element creation and the \"swiper\" className state"
+      },
+      {
+        "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+        "offset": 8002,
+        "snippet": "autoplay:{delay:5e3,disableOnInteraction:!0},loop:!0,onSlideChangeTransitionEnd:function(e){...(0,I.z)((function(){y.activeMainBannerIdx=e.realIndex%N.length}))...}",
+        "note": "config + behaviour are React props writing into a mobx store; none of this is in the DOM"
+      },
+      {
+        "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0027.f3f2a3778df4.js",
+        "offset": 42952,
+        "snippet": "(0,a.tZ)(g.tq,{centeredSlides:M,spaceBetween:I,slidesPerView:Q||(y?3:1),onSlideChange:function(A){var e=A.activeIndex,i=b.current;i&&(i.style.transform=\"translate3d(\".concat(U*e,\"px, 0, 0)\"))...}",
+        "note": "slidesPerView derived from useMediaQuery; the progress indicator is driven by a React ref in onSlideChange"
+      },
+      {
+        "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/document/response.html",
+        "offset": null,
+        "snippet": "zero occurrences of \"swiper\" in the SSR HTML (28,118 chars / 109 divs inside #__next, all header/backdrop shell)",
+        "note": "the markup Swiper needs does not exist until React runs"
+      }
+    ]
+  },
+  "uiDataCoupling": {
+    "verdict": "RUNTIME_COUPLED",
+    "summary": "pages/index contains the carousel/UI init AND the fetch call sites, and every one of the 4 carousels is rendered inside a guard on an array that is only ever populated by a client-side axios call in useEffect. With no API response, zero carousels exist in the DOM.",
+    "evidence": [
+      {
+        "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+        "offset": 4728,
+        "snippet": "var U=z.ZP.portfolioService,R=z.ZP.mainBannerService,G=function(e){...var y=(0,w.fv)((function(){return new M.default})),z=y.firstPortfolios,E=y.secondPortfolios,N=y.mainBanners,P=y.activeMainBannerIdx...",
+        "note": "UI component and data handles in the same function"
+      },
+      {
+        "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+        "offset": 5233,
+        "snippet": "T=async()=>{...getPortfoliosByPagingUsingGET1(10,...,!0,...);(0,I.z)((function(){y.firstPortfolios=n||[]}))}; k=...y.secondPortfolios=n||[]; A=async()=>{await R.getDisplayMainBannersUsingGET();...y.mainBanners=t}; (0,c.useEffect)((function(){T(),k(),A()}),[])",
+        "note": "the three homepage fetches fire on mount and write the mobx arrays"
+      },
+      {
+        "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+        "offset": 6665,
+        "snippet": "N.length>0&&(0,r.BX)(u.Z,{className:\"swiper-container\",...,children:[(0,r.tZ)(b.tq,{...",
+        "note": "PROOF: hero Swiper subtree is gated on N.length>0, N = fetched mainBanners"
+      },
+      {
+        "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+        "offset": 8002,
+        "snippet": "children:N.map((function(e,t){return(0,r.tZ)(b.o5,{children:m?...W:...V},t)}))",
+        "note": "slides are .map()ed directly from the fetched array"
+      },
+      {
+        "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+        "offset": 1852,
+        "snippet": "A.getReviewsByPagingUsingGET1(6,...).then(...n.reviews=t||[]...)}),[]),o.length?(0,r.BX)(u.Z,{display:\"flex\",...",
+        "note": "PROOF: reviews section returns null unless o.length (fetched) is truthy"
+      },
+      {
+        "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+        "offset": 11514,
+        "snippet": "totalCount:z.length ... children:z.map((function(e,t){return(0,r.tZ)(b.o5,...",
+        "note": "portfolio carousel #1 slides mapped from fetched z"
+      },
+      {
+        "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts/sc0028.dba4c3c5f366.js",
+        "offset": 14541,
+        "snippet": "totalCount:E.length ... children:E.map(...",
+        "note": "portfolio carousel #2 slides mapped from fetched E"
+      },
+      {
+        "file": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/document/response.html",
+        "offset": null,
+        "snippet": "__NEXT_DATA__.props.pageProps keys = [\"bannerData\",\"popupData\",\"footerData\"] only (1,725 bytes total; gssp:true, buildId yMHNQjHujDVTgIp539WqR)",
+        "note": "DECISIVE CROSS-CHECK: getServerSideProps supplies ONLY the band-banner, promo popup and footer. It does NOT carry mainBanners, portfolios or reviews. The carousel data has no SSR source."
+      }
+    ],
+    "nextDataFinding": {
+      "gssp": true,
+      "pageProps": [
+        "bannerData",
+        "popupData",
+        "footerData"
+      ],
+      "bytes": 1725,
+      "carriesCarouselData": false,
+      "interpretation": "The Phase-2 handoff hope that '__NEXT_DATA__ may already carry the banner/portfolio/review data so no live API is needed' is FALSE for this page. pageProps carries only layout chrome (band banner text/url, promo popup image config - currently disabled with isPcDisplay=false/isMobileDisplay=false - and footer company details). All four carousels are live-API-dependent."
+    },
+    "whatIsNotCoupled": "The layout chrome IS SSR-backed and not coupled: getLayout(page,{bannerData,popupData,footerData}) at sc0027 @35213 renders the band banner, popup and footer straight from pageProps."
+  },
+  "domFacts": {
+    "anchorHrefCount": 0,
+    "anchorTagCount": 0,
+    "swiperNodeCount": 38,
+    "dataAosCount": 17,
+    "buttonCount": 32,
+    "measuredOn": "desktop runtime.html (identical numbers in preservation-clone desktop/index.html)",
+    "perTarget": {
+      "desktop-runtime.html": {
+        "swiperNodes": 38,
+        "dataAosNodes": 17,
+        "aTags": 0,
+        "aWithHref": 0,
+        "buttons": 32
+      },
+      "mobile-runtime.html": {
+        "swiperNodes": 35,
+        "dataAosNodes": 17,
+        "aTags": 0,
+        "aWithHref": 0,
+        "buttons": 21
+      },
+      "clone-desktop/index.html": {
+        "swiperNodes": 38,
+        "dataAosNodes": 17,
+        "aTags": 0,
+        "aWithHref": 0,
+        "buttons": 32
+      },
+      "clone-mobile/index.html": {
+        "swiperNodes": 35,
+        "dataAosNodes": 17,
+        "aTags": 0,
+        "aWithHref": 0,
+        "buttons": 21
+      }
+    },
+    "swiperClassBreakdownDesktop": {
+      "swiper swiper-initialized swiper-horizontal swiper-backface-hidden": 4,
+      "swiper-wrapper": 4,
+      "swiper-slide": 20,
+      "swiper-slide swiper-slide-next": 4,
+      "swiper-slide swiper-slide-active": 4,
+      "swiper-slide swiper-slide-prev": 1,
+      "swiper-container MuiBox-root css-u0wu5t": 1
+    },
+    "ssrResponseHtml": {
+      "swiperNodes": 0,
+      "dataAosRawOccurrences": 2,
+      "divsInsideNextRoot": 109,
+      "charsInsideNextRoot": 28118
+    },
+    "note": "data-aos raw substring count is 19 in runtime.html but only 17 ELEMENTS carry a data-aos attribute; the extra 2 are AOS's own data-aos-easing / data-aos-duration style attributes written onto <body>. 16 of the 17 carry aos-init/aos-animate."
+  },
+  "externalDependencies": [
+    {
+      "provider": "Channel Talk (채널톡)",
+      "bucket": "VISIBLE_THIRD_PARTY_WIDGET",
+      "urls": [
+        "https://cdn.channel.io/plugin/ch-plugin-web.js",
+        "https://cdn.channel.io/plugin/*.js (4 chunks)",
+        "https://api.channel.io/front/v8/elastic/plugins/dcb43423-ec3c-40a4-b8ca-e92b0e9cbcb7*"
+      ],
+      "scriptIds": [
+        "sc0001",
+        "sc0019",
+        "sc0020"
+      ],
+      "networkIds": [
+        "n0079",
+        "n0080",
+        "n0081",
+        "n0082",
+        "n0082",
+        "n0083",
+        "n0084"
+      ],
+      "captureStatus": "sc0001 body captured; api.channel.io response bodies skipped-by-policy (child-frame CORS json)",
+      "notes": "Chat bubble widget rendered on-page; boot call returned 401 at capture time (plugin key may be env/session-restricted), pluginKey=dcb43423-ec3c-40a4-b8ca-e92b0e9cbcb7"
+    },
+    {
+      "provider": "Kakao JS SDK",
+      "bucket": "VISIBLE_THIRD_PARTY_WIDGET",
+      "urls": [
+        "https://developers.kakao.com/sdk/js/kakao.js (301)",
+        "https://t1.kakaocdn.net/kakao_js_sdk/v1/kakao.js"
+      ],
+      "scriptIds": [
+        "sc0009"
+      ],
+      "networkIds": [
+        "n0002",
+        "n0019"
+      ],
+      "captureStatus": "sc0009 body captured",
+      "notes": "Initialized with Kakao.init(\"c2f0861cc222e40edccbe70716b9a594\") in sc0027; used for Kakao.Share.sendDefault({...}) share-dialog UI (a visible share button flow), NOT used for tracking on this page. Verified DISTINCT from Kakao Pixel below - different domain, different SDK, different role (login/share widget vs ad pixel)."
+    },
+    {
+      "provider": "Kakao Pixel (Kakao AdFit / KAS)",
+      "bucket": "TRACKER",
+      "urls": [
+        "https://t1.daumcdn.net/kas/static/kp.js",
+        "https://bc.ad.daum.net/bc",
+        "https://t1.kakaocdn.net/kas/static/third-party/cookie/ct2.html"
+      ],
+      "scriptIds": [
+        "sc0011",
+        "sc0012"
+      ],
+      "networkIds": [
+        "n0003",
+        "n0035",
+        "n0023"
+      ],
+      "captureStatus": "sc0011 skipped-by-policy(?)/EXTERNAL_EMBED; bc.ad.daum.net body skipped-by-policy, streamAborted; ct2.html captured (third-party cookie sync iframe)",
+      "notes": "Pixel id 6488840723959691705, fired via inline sc0012: kakaoPixel('6488840723959691705').pageView(). Verified DISTINCT from Kakao JS SDK above - t1.daumcdn.net (ad/pixel infra) vs developers.kakao.com/t1.kakaocdn.net/kakao_js_sdk (SDK infra); different providerHint in manifest (\"kakao-pixel\" vs none/JS_CHUNK)."
+    },
+    {
+      "provider": "Google Tag Manager",
+      "bucket": "TRACKER",
+      "urls": [
+        "https://www.googletagmanager.com/gtm.js?id=GTM-M8JGCP6",
+        "https://www.googletagmanager.com/gtag/js?id=G-37HT928R4X",
+        "ns.html noscript iframe (residual-ledger neutralized)"
+      ],
+      "scriptIds": [
+        "sc0004",
+        "sc0005",
+        "sc0008",
+        "sc0010"
+      ],
+      "networkIds": [
+        "n0017",
+        "n0018",
+        "n0040",
+        "n0041",
+        "n0043"
+      ],
+      "captureStatus": "captured (script bodies); beacons/pixels 204 no body",
+      "notes": "Container GTM-M8JGCP6, GA4 measurement id G-37HT928R4X. GTM is the orchestrator that likely also fires the ad.doubleclick.net and second Facebook pixel (1680760198639545) beacons at runtime."
+    },
+    {
+      "provider": "Google Analytics / Google Ads",
+      "bucket": "TRACKER",
+      "urls": [
+        "https://analytics.google.com/g/collect",
+        "https://ad.doubleclick.net/ccm/s/collect",
+        "https://stats.g.doubleclick.net/j/collect",
+        "https://www.google.com/ccm/collect (fetch)"
+      ],
+      "scriptIds": [],
+      "networkIds": [
+        "n0065",
+        "n0044",
+        "n0045",
+        "n0064",
+        "n0066",
+        "n0078"
+      ],
+      "captureStatus": "204/302, bodies skipped-by-policy (analytics)",
+      "notes": "Fired by GTM container, not by first-party apartmentary code directly"
+    },
+    {
+      "provider": "Google Optimize",
+      "bucket": "TRACKER",
+      "urls": [
+        "https://www.googleoptimize.com/optimize.js?id=OPT-PL9W69J"
+      ],
+      "scriptIds": [
+        "sc0031"
+      ],
+      "networkIds": [
+        "n0042"
+      ],
+      "captureStatus": "captured/EXTERNAL_EMBED",
+      "notes": "A/B testing tool, id OPT-PL9W69J; does not itself render visible UI (it swaps DOM the page already defines), classified as TRACKER/experimentation infra, not a widget"
+    },
+    {
+      "provider": "Meta / Facebook Pixel",
+      "bucket": "TRACKER",
+      "urls": [
+        "https://connect.facebook.net/en_US/fbevents.js",
+        "https://connect.facebook.net/signals/config/1680760198639545",
+        "https://connect.facebook.net/signals/config/1150125956125068",
+        "https://www.facebook.com/tr?id=1150125956125068&ev=PageView&noscript=1 (residual-ledger neutralized)"
+      ],
+      "scriptIds": [
+        "sc0002",
+        "sc0003",
+        "sc0006",
+        "sc0007",
+        "sc0018"
+      ],
+      "networkIds": [
+        "n0022",
+        "n0037",
+        "n0057"
+      ],
+      "captureStatus": "captured (script bodies); noscript img neutralized in clone",
+      "notes": "TWO pixel ids present: 1150125956125068 has an explicit inline fbq('init', ...) in sc0018 / document; 1680760198639545 is only observed via a signals/config network request (likely injected by GTM at runtime) - not found as a literal fbq('init',...) inside the captured static scripts."
+    },
+    {
+      "provider": "Naver Analytics (wcslog / GFP-NAC)",
+      "bucket": "TRACKER",
+      "urls": [
+        "https://wcs.naver.net/wcslog.js",
+        "https://wcs.naver.com/wcs.js (ping)",
+        "https://ssl.pstatic.net/melona/libs/gfp-nac-module/synchronizer.js",
+        "https://nam.veta.naver.com/nac/2"
+      ],
+      "scriptIds": [
+        "sc0015",
+        "sc0016",
+        "sc0017"
+      ],
+      "networkIds": [
+        "n0005",
+        "n0020",
+        "n0021",
+        "n0036"
+      ],
+      "captureStatus": "captured (script bodies); pings 204 no body",
+      "notes": "wcs account id \"s_3c2d5272828f\" hardcoded in sc0017 (matches CONFIG_DERIVED fallback in sc0025: `te.env.NEXT_PUBLIC_NAVER_ACCOUNT_ID||\"s_3c2d5272828f\"` - env var not set at build, so the literal fallback is what actually ships)"
+    },
+    {
+      "provider": "Karrot (당근마켓) Pixel",
+      "bucket": "TRACKER",
+      "urls": [
+        "https://karrot-pixel.business.daangn.com/0.4/karrot-pixel.umd.js",
+        "https://collect.daangn.com/... (ping)"
+      ],
+      "scriptIds": [
+        "sc0013",
+        "sc0014"
+      ],
+      "networkIds": [
+        "n0004",
+        "n0038"
+      ],
+      "captureStatus": "captured (sc0013 body); ping 200 no body",
+      "notes": "Pixel id 1739844334050600001, fired via inline sc0014: window.karrotPixel.init('1739844334050600001')"
+    }
+  ],
+  "sourceBoundDependencies": [
+    "dev-api.apartmentary.com/api/v1/main-banners/action/get-displays",
+    "dev-api.apartmentary.com/api/v1/portfolios/action/get-by-paging (x2, isBottomArea1Display / isBottomArea2Display)",
+    "dev-api.apartmentary.com/api/v1/reviews/action/get-by-paging",
+    "dev-api.apartmentary.com generated service surface (12 services total: bandService, popupService, footerService, newsService, brandService, reviewService, journalService, portfolioService, termsService, mainBannerService, storeService, loggingService) - only 4 of 12 fire on the captured homepage route",
+    "apartmentary-static.s3.ap-northeast-2.amazonaws.com/main-introduce.mp4 (98MB hero video, over size budget)",
+    "accessToken read from client storage for Authorization header on every dev-api call (auth-bound, not just origin-bound)"
+  ],
+  "apiEndpoints": [
+    {
+      "url": "https://dev-api.apartmentary.com/api/v1/main-banners/action/get-displays",
+      "origin": "dev-api.apartmentary.com",
+      "originClass": "dev-api subdomain",
+      "method": "GET",
+      "resourceType": "xhr",
+      "scripts": [
+        "sc0025 (pages/_app-9c2508f77b107208.js)"
+      ],
+      "networkIds": [
+        "n0033"
+      ],
+      "mechanism": "axios (generated OpenAPI/typescript-axios client, MainBannerService)",
+      "urlConstruction": "LITERAL_PATH_ON_CONSTRUCTED_URL",
+      "evidence": "sc0025.e6a0597718ac.js byteOffset~257... : `n=new URL(\"/api/v1/main-banners/action/get-displays\",S)` where S resolves to base var w=\"https://dev-api.apartmentary.com:443\"",
+      "uiDependence": "HIGH - not present in __NEXT_DATA__ pageProps, so hero banner carousel has no SSR fallback; must be fetched client-side",
+      "confidence": "HIGH"
+    },
+    {
+      "url": "https://dev-api.apartmentary.com/api/v1/portfolios/action/get-by-paging?count=10&isBottomArea1Display=true&page=0",
+      "origin": "dev-api.apartmentary.com",
+      "originClass": "dev-api subdomain",
+      "method": "GET",
+      "resourceType": "xhr",
+      "scripts": [
+        "sc0025 (portfolio service client)",
+        "sc0027 (chunk 7925, portfolioStore + portfolioService instantiation)"
+      ],
+      "networkIds": [
+        "n0031"
+      ],
+      "mechanism": "axios (generated OpenAPI client, PortfolioService)",
+      "urlConstruction": "LITERAL_PATH_ON_CONSTRUCTED_URL",
+      "evidence": "sc0025: `b=new URL(\"/api/v1/portfolios/action/get-by-paging\",S)`; sc0027: `r=(0,a.xvx)(void 0,c,o)` where c=\"https://dev-api.apartmentary.com\"",
+      "uiDependence": "HIGH - portfolio grid section (bottom area 1) has no SSR fallback data",
+      "confidence": "HIGH"
+    },
+    {
+      "url": "https://dev-api.apartmentary.com/api/v1/portfolios/action/get-by-paging?count=10&isBottomArea2Display=true&page=0",
+      "origin": "dev-api.apartmentary.com",
+      "originClass": "dev-api subdomain",
+      "method": "GET",
+      "resourceType": "xhr",
+      "scripts": [
+        "sc0025",
+        "sc0027"
+      ],
+      "networkIds": [
+        "n0032"
+      ],
+      "mechanism": "axios (generated OpenAPI client, PortfolioService)",
+      "urlConstruction": "LITERAL_PATH_ON_CONSTRUCTED_URL",
+      "evidence": "same generated call site as get-by-paging above, distinguished only by query param isBottomArea2Display",
+      "uiDependence": "HIGH - portfolio grid section (bottom area 2)",
+      "confidence": "HIGH"
+    },
+    {
+      "url": "https://dev-api.apartmentary.com/api/v1/reviews/action/get-by-paging?count=6",
+      "origin": "dev-api.apartmentary.com",
+      "originClass": "dev-api subdomain",
+      "method": "GET",
+      "resourceType": "xhr",
+      "scripts": [
+        "sc0025",
+        "sc0027 (reviewService)",
+        "sc0028 (pages/index, review component consumer)"
+      ],
+      "networkIds": [
+        "n0030"
+      ],
+      "mechanism": "axios (generated OpenAPI client, ReviewService)",
+      "urlConstruction": "LITERAL_PATH_ON_CONSTRUCTED_URL",
+      "evidence": "sc0025: `l=new URL(\"/api/v1/reviews/action/get-by-paging\",S)`; sc0028: `k=function e(){...this.reviews=[]...}` store consumed by review section component",
+      "uiDependence": "HIGH - review carousel section, no SSR fallback",
+      "confidence": "HIGH"
+    },
+    {
+      "url": "https://api.channel.io/front/v8/elastic/plugins/dcb43423-ec3c-40a4-b8ca-e92b0e9cbcb7 (preflight) and .../boot",
+      "origin": "api.channel.io",
+      "originClass": "third-party SaaS API (Channel Talk), not apartmentary.com/dev-api",
+      "method": "GET (preflight/plugin config), POST (boot, returned 401)",
+      "resourceType": "fetch (CORS preflight + xhr)",
+      "scripts": [
+        "sc0001/sc0019/sc0020 (Channel Talk loader + boot snippet)",
+        "cdn.channel.io plugin bundles (not in source-package, third-party)"
+      ],
+      "networkIds": [
+        "n0082",
+        "n0083",
+        "n0084"
+      ],
+      "mechanism": "fetch, called from Channel Talk's own vendor bundle (ch-plugin-core.660424bb.vendor-datadog.js), not apartmentary code",
+      "urlConstruction": "CONFIG_DERIVED",
+      "evidence": "sc0020: `window.ChannelIO('boot',{\"pluginKey\":\"dcb43423-ec3c-40a4-b8ca-e92b0e9cbcb7\"})` — plugin key literal, passed into third-party SDK which builds the api.channel.io URL internally",
+      "uiDependence": "HIGH for chat widget bubble/UI, but this is a third-party embed, not first-party site content",
+      "confidence": "HIGH"
+    },
+    {
+      "url": "https://bc.ad.daum.net/bc",
+      "origin": "bc.ad.daum.net",
+      "originClass": "third-party ad platform (Kakao/Daum), not apartmentary.com",
+      "method": "GET",
+      "resourceType": "fetch",
+      "scripts": [
+        "t1.daumcdn.net/kas/static/kp.js (external, Kakao Pixel SDK)"
+      ],
+      "networkIds": [
+        "n0035"
+      ],
+      "mechanism": "fetch, internal to Kakao Pixel SDK; apartmentary only supplies the pixel id literal `kakaoPixel('6488840723959691705').pageView()` (sc0012)",
+      "urlConstruction": "NOT_IN_APARTMENTARY_BUNDLE (constructed inside third-party kp.js, not observable in source-package scripts)",
+      "uiDependence": "NONE - tracking beacon, no UI",
+      "confidence": "MEDIUM"
+    },
+    {
+      "url": "https://nam.veta.naver.com/nac/2",
+      "origin": "nam.veta.naver.com",
+      "originClass": "third-party ad measurement (Naver), not apartmentary.com",
+      "method": "GET",
+      "resourceType": "xhr",
+      "scripts": [
+        "ssl.pstatic.net/melona/libs/gfp-nac-module/synchronizer.js (external)"
+      ],
+      "networkIds": [
+        "n0036"
+      ],
+      "mechanism": "internal to Naver's synchronizer.js, not apartmentary code",
+      "urlConstruction": "NOT_IN_APARTMENTARY_BUNDLE",
+      "uiDependence": "NONE - tracking",
+      "confidence": "MEDIUM"
+    }
+  ],
+  "residualLedgerCrossCheck": {
+    "recorded": [
+      "https://www.facebook.com/tr?id=1150125956125068&ev=PageView&noscript=1 (analytics-neutralized, noscript img)",
+      "https://www.googletagmanager.com/ns.html?id=GTM-M8JGCP6 (analytics-neutralized, noscript iframe)",
+      "https://apartmentary-static.s3.ap-northeast-2.amazonaws.com/main-introduce.mp4 (over-size-budget, 97,941,978 bytes captured Content-Length vs 8,388,608 byte cap; stillRequestedFromSource=true; confirmed same URL as 4 range-request/206 network entries n0028/n0039/n0058/n0059)"
+    ],
+    "gaps": [
+      "The 4 dev-api.apartmentary.com JSON API endpoints (main-banners, portfolios x2, reviews) are ORIGIN_BOUND per source-package reasons but are NOT listed in residual-dependencies.json at all - the ledger only tracks bodyPolicy-neutralized analytics and over-size-budget media, not API_DATA class dependencies.",
+      "Channel Talk (widget + api.channel.io calls), Kakao JS SDK, Kakao Pixel, Naver wcs/synchronizer, Karrot pixel, Google Optimize, GTM main script (non-noscript), Facebook pixel main script (non-noscript), doubleclick/analytics.google.com beacons - none of these third-party runtimes appear in residual-dependencies.json; the ledger is scoped to only the two neutralized noscript trackers plus the one oversized media file, not a general third-party inventory.",
+      "CONFIRMED per Phase-2 review note: <link rel=manifest> content is only partially localized. The href itself WAS rewritten to a local asset (assets/310b869434f0ee9d99a110e5ef6bfb41eac115bce2428f562ff5df14378519ff.bin, verified present in desktop/index.html), but the JSON body of that manifest file contains unrewritten root-relative icon paths ('/android-chrome-192x192.png', '/android-chrome-512x512.png') that were not parsed or localized - these still implicitly resolve against whatever origin serves the clone, not against apartmentary.com, and are not recorded anywhere in residual-dependencies.json.",
+      "NEW gap (same class, not previously flagged): the __NEXT_DATA__ JSON blob embedded in the clone's document (desktop/index.html) still contains two absolute, unrewritten media-landing.apartmentary.com URLs inside popupData (imagePcUrl, imageMobileUrl) - JSON-embedded-URL values are not parsed/localized in general, of which the manifest icon issue is one instance and this is a second, independent instance. Currently dormant (isPcDisplay=false, isMobileDisplay=false at capture) but not recorded in the residual ledger."
+    ]
+  },
+  "minimumReplaySet": [
+    {
+      "step": 1,
+      "id": "url:apartmentary.com/_next/static/chunks/webpack-3d4d997a6d82a026.js",
+      "role": "BUNDLER_RUNTIME",
+      "why": "defines __webpack_require__ + publicPath"
+    },
+    {
+      "step": 2,
+      "id": "url:apartmentary.com/_next/static/chunks/framework-a070cbfff3c750c5.js",
+      "role": "FRAMEWORK_RUNTIME",
+      "why": "React/ReactDOM 17.0.2"
+    },
+    {
+      "step": 3,
+      "id": "url:apartmentary.com/_next/static/chunks/main-58aeb610bf878a93.js",
+      "role": "BOOTSTRAP_RUNTIME",
+      "why": "Next 12.3.4 client runtime; installs manifest callbacks"
+    },
+    {
+      "step": 4,
+      "id": "url:apartmentary.com/_next/static/chunks/pages/_app-9c2508f77b107208.js",
+      "role": "APP_RUNTIME",
+      "why": "app shell, Emotion, generated API client"
+    },
+    {
+      "step": 5,
+      "id": "url:apartmentary.com/_next/static/chunks/2924-2d8edfe2e564207a.js",
+      "role": "UI_LIBRARY",
+      "why": "shared vendor: Swiper core+react, MUI Portal/ModalManager"
+    },
+    {
+      "step": 6,
+      "id": "url:apartmentary.com/_next/static/chunks/7925-44556921d193a2a3.js",
+      "role": "APP_RUNTIME",
+      "why": "shared vendor: Carousel wrapper, 12 service clients"
+    },
+    {
+      "step": 7,
+      "id": "url:apartmentary.com/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+      "role": "PAGE_CHUNK",
+      "why": "homepage; registers module 2937 via window.__NEXT_P"
+    },
+    {
+      "step": 8,
+      "id": "url:apartmentary.com/_next/static/yMHNQjHujDVTgIp539WqR/_buildManifest.js",
+      "role": "RUNTIME_CONFIG",
+      "why": "route→chunk table; must follow main"
+    },
+    {
+      "step": 9,
+      "id": "url:apartmentary.com/_next/static/yMHNQjHujDVTgIp539WqR/_ssgManifest.js",
+      "role": "RUNTIME_CONFIG",
+      "why": "empty SSG set; must follow main"
+    }
+  ],
+  "replayClassification": {
+    "OPTIONAL": [
+      "url:apartmentary.com/_next/static/yMHNQjHujDVTgIp539WqR/_buildManifest.js",
+      "url:apartmentary.com/_next/static/yMHNQjHujDVTgIp539WqR/_ssgManifest.js"
+    ],
+    "BLOCKED": [
+      "url:apartmentary.com/_next/static/chunks/pages/_app-9c2508f77b107208.js",
+      "url:apartmentary.com/_next/static/chunks/7925-44556921d193a2a3.js"
+    ],
+    "EXTERNAL": [
+      "inline:sha256:954162e5cbfbd8223f6786fca17b639bb2263ae9a39c468f276c3f950881f7fc",
+      "inline:sha256:974f05659546950692fa89ae2e0b3fa3e7c3a1dd9785914831f6d62dc27a6b36",
+      "url:cdn.channel.io/plugin/ch-plugin-web.js",
+      "url:developers.kakao.com/sdk/js/kakao.js"
+    ],
+    "TRACKER": [
+      "inline:sha256:57b7cc0162871b15d619d1809762705d349f3bbb05345d6b7b35a5b649888b9f",
+      "inline:sha256:a952af9e3f97baa089c45558d897d151de99b7553491be8386f929e57e74da54",
+      "inline:sha256:c2cdacdd1666fd2e05d35bc6b70ab1d2292c4a877665f56d90439349330f4bd6",
+      "inline:sha256:c4b0c12ea59812361068168b4f304d8da548e10174f6613e4bedb6de6885f4c5",
+      "inline:sha256:defd42286227983b6088df0ea9759eec8892c95cb1da4aff865160ccf6aa0e87",
+      "url:connect.facebook.net/en_US/fbevents.js",
+      "url:connect.facebook.net/signals/config/1150125956125068",
+      "url:connect.facebook.net/signals/config/1680760198639545",
+      "url:karrot-pixel.business.daangn.com/0.4/karrot-pixel.umd.js",
+      "url:ssl.pstatic.net/melona/libs/gfp-nac-module/synchronizer.js",
+      "url:t1.daumcdn.net/kas/static/kp.js",
+      "url:wcs.naver.net/wcslog.js",
+      "url:www.googleoptimize.com/optimize.js",
+      "url:www.googletagmanager.com/gtag/js",
+      "url:www.googletagmanager.com/gtm.js",
+      "url:www.googletagmanager.com/gtm.js#is_td"
+    ],
+    "UNKNOWN": [
+      "url:apartmentary.com/_next/static/chunks/polyfills-c67a75d1b6f99dc8.js"
+    ]
+  },
+  "swiperSeparabilityCorrection": {
+    "verdict": "B — Swiper embedded in shared vendor chunk 2924 (unchanged)",
+    "independentOfReactRuntime": "NO (unchanged), but on corrected grounds",
+    "retracted": "The claim that Swiper 'never looks at the document to find its slides' is FALSE. Swiper core queries the wrapper's DOM children by `.${slideClass}, swiper-slide` (sc0026@114250, @121382, @123683), and app code calls e.el.getElementsByClassName(\"swiper-slide\") (sc0028@6887). Configuration is NOT guessed: it is present as bundle literals (sc0028@7124 autoplay delay 5e3 + loop; sc0027@43035 slidesPerView Q||(y?3:1); sc0027@42153 spaceBetween default 50).",
+    "survivingGrounds": "Source behaviour still depends on a mobx store and React callbacks: onSwiper/onAfterInit/onSlideChange write refs + store (sc0028@8002); slidesPerView is chosen by useMediaQuery (sc0027@43035); progress bar, prev/next, keyboard and hero-video advance reach swiperRef.current from React siblings.",
+    "consequence": "A vanilla Swiper over the frozen Phase 2 DOM is more viable than first reported — core can discover the preserved slides and parameters are recoverable as literals. It would still omit store-driven behaviour, so it is a reconstruction, not preservation."
+  },
+  "replayStrategies": {
+    "recommendation": "A_FIRST",
+    "revisedFrom": "B_FIRST — reversed after independent review (M1–M4), see 08-independent-review.md",
+    "A": {
+      "name": "Phase 2 runtime DOM + localized source JS (on a COPY of the accepted clone)",
+      "feasibility": "HIGH relative to B: reuses the existing data-preservation-* activation channel; trackers stay neutralized by construction; no new transform system",
+      "blockers": [
+        "Phase 2 preview server sends `content-security-policy: script-src 'none'` (src/preservation-clone/serve.ts) — must be relaxed for the experiment",
+        "variants served at /desktop/ and /mobile/, not a server root; publicPath /_next/ is root-relative",
+        "API calls go to an absolute cross-origin host; needs browser-level request routing (e.g. automation request interception), not a same-origin server or service worker",
+        "hydration over post-fetch DOM with empty stores: React 17 legacy hydrate deletes unclaimed DOM and inserts missing nodes but does not repair attribute/className mismatches — expected result is a MIXED DOM (carousel subtrees removed, stale swiper-slide-active / aos-animate / Swiper inline styles on surviving nodes)"
+      ],
+      "proves": "executionIndependence (boot signals) AND hydration survival, as two separately instrumented observables in one run"
+    },
+    "B": {
+      "name": "initial response document + localized CSS/assets + source JS",
+      "feasibility": "LOWER: response.html carries live third-party tags (kakao.js, kp.js, karrot-pixel.umd.js, inline GTM/fbq/ChannelIO/Naver) and zero data-preservation-* attributes, so it needs a SECOND neutralize-and-localize pass — a second transform system",
+      "blockers": [
+        "second transform system (conflicts with no-second-system rule)",
+        "same CSP, server-root and browser-level routing needs as A"
+      ],
+      "remainingAdvantage": "separates boot failure from hydration damage by construction — but A can instrument the two separately",
+      "note": "SSR document is not empty chrome: it holds hero copy, CTAs, portfolio headings rendering count '0', and the full footer — the server rendered the empty-array state"
+    },
+    "sourceCsp": "NONE. Document response n0001 carries no content-security-policy header (the header is on the Phase 1 capture allowlist) and response.html has 0 CSP meta tags. The only CSP in play is the project's own preview server."
+  },
+  "missingFromCapture": {
+    "homepageRequiredChunks": [],
+    "note": "No chunk required by the homepage is missing. polyfills-* is nomodule (never executed by a module-capable browser). 32 other route chunks and shared chunks 3824/6310/7579 were never captured, so client-side <Link> navigation would 404 under replay — a route-scope limit, not a capture defect.",
+    "apiResponseBodies": "ALL FOUR content endpoints. Phase 1 bodyPolicy.json=false (§12) means no API/data body is ever kept. This is the dominant Phase 3B blocker."
+  }
+}

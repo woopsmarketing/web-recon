@@ -1,0 +1,299 @@
+--- generated-styles.before.css	2026-09-14 15:42:49
++++ /Users/woops/projects/web-recon/data/apartmentary.com/reconstructions/2026-09-14T05-01-12-931Z/app/public/wr/generated-styles.css	2026-09-14 16:32:09
+@@ -2627,7 +2627,7 @@
+ }
+ [data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000170"] {
+   max-width: 100%;
+-  width: 100%;
++  width: auto; /* layout-modes: was width:100% (fluid-desktop pass) - broke centered content-sized group */
+ }
+ @media (max-width: 899.98px) {
+ [data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000173"] {
+@@ -3332,7 +3332,7 @@
+ }
+ [data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000528"] {
+   max-width: 100%;
+-  width: 100%;
++  width: 85%; /* layout-modes: was width:100% (fluid-desktop pass) - source is 85% + 40px right gutter */
+ }
+ [data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000529"] {
+   width: auto;
+@@ -12473,5 +12473,278 @@
+  * 313px at 1920) from internal text reflow this clone does not reconstruct. */
+ [data-wr-page="p000006"][data-wr-viewport="desktop"] [data-wr-node="n000053"] {
+   left: 60%;
++  right: auto;
++}
++
++/* ==========================================================================
++ * LAYOUT-MODE PROTOTYPE (apartmentary.com "/" desktop, 2026-09-14)
++ * Source-specific manual rules, derived from live-source geometry at
++ * 1024/1100/1440/1920/2560. Modes:
++ *   A viewport full-bleed | B centered max-width (1920 cap) | C fluid grid
++ *   inside bounded container | D container-edge anchored | E viewport-edge fixed
++ * ======================================================================== */
++
++/* --- B: page content wrapper + footer cap at 1920 and center beyond it --- */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000166"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000623"] {
++  margin-left: auto;
++  margin-right: auto;
++}
++
++/* --- A: header row tracks viewport (was frozen 1440px) --- */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000008"] {
++  width: auto;
++}
++
++/* --- C/D: portfolio sections (pf1 = n000189.., pf2 = n000415..) ---
++ * source: heading row = container width (40px side padding), CTA at the row's
++ * right edge (space-between); swiper = 50px side padding, 3 slides per view,
++ * 50px gap => slide = (wrapper - 100px) / 3. */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000192"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000418"] {
++  width: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000206"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000432"] {
++  height: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000207"] > *,
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000433"] > * {
++  width: calc((100% - 100px) / 3);
++}
++/* card image: keep captured aspect-ratio, drive height from fluid width */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000207"] > * > * > * > :first-child,
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000433"] > * > * > * > :first-child {
++  height: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000207"] > * > * > * > :first-child > img,
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000433"] > * > * > * > :first-child > img {
++  width: 100%;
++  height: auto;
++}
++/* progress rail + thumb */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000400"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000512"] {
++  width: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000401"] {
++  width: calc((100% - 100px) * 0.125);
++  right: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000513"] {
++  width: calc((100% - 100px) * 0.5);
++  right: auto;
++}
++/* D: next arrow anchored to the carousel container's right edge (65px) */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000407"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000519"] {
++  left: auto;
++  right: 65px;
++}
++
++/* --- B/C: testimonial section ---
++ * source: flex-end row = [content 85%] + [40px gutter]; banner fills content;
++ * track 3 slides per view, 50px gap. */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000617"] {
++  flex-shrink: 0;
++  height: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000530"] {
++  width: 100%;
++  height: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000545"] {
++  height: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000546"] > * {
++  width: calc((100% - 100px) / 3);
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000546"] > * > * {
++  width: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000616"] {
++  width: 25%;
+   right: auto;
+ }
++
++/* --- A: bottom media full-bleed --- */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000620"] {
++  height: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000621"] {
++  width: 100%;
++  height: auto;
++}
++
++/* --- C: release 1440-capture text min-heights inside fluid cards (text reflows
++ * to fewer lines when cards widen; captured min-height kept them too tall) --- */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000207"] > * .wr-tx,
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000433"] > * .wr-tx,
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000546"] > * .wr-tx,
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000207"] > *.wr-tx,
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000433"] > *.wr-tx,
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000546"] > *.wr-tx {
++  min-height: 0;
++}
++/* testimonial slide text column had literal 374.656px widths */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000546"] > * > * > :last-child,
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000546"] > * > * > :last-child > * {
++  width: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000544"] {
++  min-height: 0;
++}
++
++/* --- A: hero. Capture froze the swiper mid-autoplay (translateX -6820.31px at
++ * 1440 = 4.74 slides) with 1440px slides => two stitched slides at a fixed
++ * 813px height at every width. Static pin of the captured active slide
++ * (index 3, n000081 - the only slide at full 813px, like source's
++ * .swiper-slide-active) at viewport width; height from source ratio 1.7712.
++ * No autoplay/navigation behavior is added. --- */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000051"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000052"] {
++  height: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000053"] {
++  width: auto;
++  height: auto;
++  transform: translateX(-300%);
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000053"] > * {
++  width: 100%;
++  height: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000053"] > * > * {
++  width: auto;
++  height: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000053"] > * > * > img {
++  display: block;
++  width: 100%;
++  height: auto;
++  aspect-ratio: 1440 / 813;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000053"] > * > * > :not(img) {
++  left: 60%;
++  right: auto;
++}
++/* D: hero arrows / pagination anchored to the hero box, not frozen px */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000135"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000140"] {
++  top: calc(50% - 17.5px);
++  bottom: auto;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000140"] {
++  left: auto;
++  right: 40px;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000145"] {
++  top: auto;
++  bottom: 43px;
++  margin-left: auto;
++  margin-right: auto;
++}
++/* swiper wrappers carried the 1440 slide height as min-height (stretches slides) */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000207"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000433"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000546"] {
++  min-height: 0;
++}
++
++/* --- C: footer link grid - 3 equal MUI Grid columns (flex 0 1 33.33%) at every
++ * desktop width; generator's max-width 50%/100% let the 3rd column's min-content
++ * (email address) wrap it onto a 2nd row below 1440 --- */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000628"] > * {
++  max-width: 33.3333%;
++}
++/* footer side columns stretch to the row height (captured 567px froze them) */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000624"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000768"] {
++  height: auto;
++}
++
++/* --- source typography breakpoint < 1200px (MUI lg) inside portfolio cards,
++ * measured on live source at 1024/1100: title 24/36 -> 16/28, body 16/28 ->
++ * 14/23, spacer 20 -> 16. Never observed by the 1440-only capture. --- */
++@media (max-width: 1199.98px) {
++[data-wr-page="p000001"][data-wr-viewport="desktop"] :is([data-wr-node="n000207"], [data-wr-node="n000433"]) > * > * > * > :nth-child(3) > * > * > :first-child > p {
++  font-size: 16px;
++  line-height: 28px;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] :is([data-wr-node="n000207"], [data-wr-node="n000433"]) > * > * > * > :nth-child(3) > * > * > :nth-child(2) > p {
++  font-size: 14px;
++  line-height: 23px;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] :is([data-wr-node="n000207"], [data-wr-node="n000433"]) > * > * > * > :nth-child(3) > * > * > :nth-child(2) > :nth-child(3) {
++  height: 16px;
++}
++}
++
++/* --- E: floating 상담 button follows the viewport bottom edge. Captured at a
++ * 900px-tall viewport it carried top:684px (= 900-50-166) alongside the correct
++ * bottom:50px; source resolves bottom:50px at every viewport height. Class is
++ * shared by the same desktop floating button on every page (see left:auto
++ * rule above), so fixed at class level too. --- */
++.wr-st000132 {
++  top: auto;
++}
++
++/* --- section ancestors carried 1440-capture min-heights (.wr-tx text-box
++ * relief), so sections could grow (1920) but never shrink (1024/1100) --- */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000001"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000002"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000003"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000005"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000049"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000166"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000189"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000190"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000204"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000205"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000415"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000416"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000430"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000431"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000527"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000528"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000529"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000619"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000622"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000623"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000626"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000627"],
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000628"] {
++  min-height: 0;
++}
++/* mobile floating 상담 button: same frozen-top bug (top:683px from an 844px-tall
++ * capture); source is bottom:50px / right:0 at every viewport height */
++.wr-st000131 {
++  top: auto;
++  left: auto;
++}
++
++/* --- header breakpoints never observed by the 1440 capture (measured on live
++ * source): logo->nav spacer 100px -> 30px below 1200px; nav button side
++ * padding 25px -> 20px at >= 1920px (probed 1536/1700/1800/1900/1919/1920) --- */
++@media (max-width: 1199.98px) {
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000013"] {
++  width: 30px;
++}
++}
++@media (min-width: 1920px) {
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000014"] > button {
++  padding-left: 20px;
++  padding-right: 20px;
++}
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000014"] {
++  width: auto;
++}
++/* source-measured widths (width:auto would expose clone glyph-width drift) */
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000015"] { width: 113.609px; }
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000020"] { width: 117.188px; }
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000025"] { width: 98.891px; }
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000030"] { width: 147.641px; }
++[data-wr-page="p000001"][data-wr-viewport="desktop"] [data-wr-node="n000014"] > button > span {
++  width: 100%;
++}
++}

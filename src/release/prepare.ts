@@ -35,6 +35,8 @@ import {
   sha256OfJson,
 } from "./requirements.js";
 import { renderOperatorChecklist } from "./checklist.js";
+import { enablementCollectInput, resolveEnablementForProject } from "./enablement.js";
+import { appendAuthoredRevisionIfChanged } from "./revisions.js";
 import {
   CHECKLIST_FILE,
   RELEASE_PROJECT_FILE,
@@ -76,7 +78,29 @@ export interface PrepareOptions {
   siteId?: string;
   /** Project directory name. Defaults to the siteId (not the spec run id). */
   projectId?: string;
+  /**
+   * Human-facing name for the site (Task 28 CR3). OPTIONAL and carried, never
+   * invented: with none recorded the registry keeps deriving the display name
+   * from `siteId`, which is what every pre-Task-28 project has.
+   */
+  displayName?: string;
   debtSourceFile?: string;
+  /**
+   * page-regions run dir (or its page-regions.json) for this template — Task 28
+   * Phase 5. OPTIONAL and CARRIED, exactly like `displayName`: a later prepare
+   * that omits it keeps the recorded one, and a project that never had one
+   * refuses every region edit with `regions-not-compiled` instead of silently
+   * ignoring it.
+   */
+  pageRegionsDir?: string;
+  /**
+   * Cache this project in the site registry index after it is written
+   * (Task 28 CR4). Default true. The index is a CACHE — `rebuildRegistry`
+   * re-derives it from the artifacts — so registration never gates a prepare.
+   */
+  register?: boolean;
+  /** Registry data root override (tests). Defaults to the registry's own. */
+  registryDataRoot?: string;
   log?: (line: string) => void;
 }
 
@@ -89,6 +113,11 @@ export interface PrepareResult {
   reprepared: boolean;
   /** What re-prepare carried forward untouched (empty on a first prepare). */
   preserved: string[];
+  /** Site-registry key this project was cached under, or null when the index
+   *  write was skipped or failed (never fatal — see `registryWarnings`). */
+  registeredSiteKey: string | null;
+  /** Non-fatal index / history problems worth showing the operator. */
+  registryWarnings: string[];
 }
 
 async function readJson<T>(file: string): Promise<T> {
@@ -145,17 +174,30 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
     : null;
   const existing = loadedExisting?.project ?? null;
   const siteId = options.siteId ?? existing?.siteId ?? requestedSiteId;
+  // Carried like siteId: an operator names the site once and a later prepare
+  // that omits `--display-name` keeps the recorded name.
+  const displayName = options.displayName ?? existing?.displayName;
   const carriedResolutions: AppliedResolution[] = existing?.resolutions ?? [];
   const carriedAuthored: AuthoredState = existing?.authored ?? emptyAuthoredState();
   const carriedRuns = existing?.runs ?? [];
+  const pageRegionsDir = options.pageRegionsDir ?? existing?.auxiliary.pageRegionsDir;
   const preserved: string[] = [];
   if (existing !== null) {
     preserved.push(
       `resolutions:${carriedResolutions.length}`,
       `authored.slotValues:${Object.keys(carriedAuthored.slotValues).length}`,
       `authored.theme.tokens:${Object.keys(carriedAuthored.theme.tokens ?? {}).length}`,
+      // Task 28 Phase 2 — carried by the SAME whole-object carry as the rest of
+      // `authored`; counted here so a re-prepare states what it preserved
+      // instead of leaving the operator to infer it.
+      `authored.assets:${Object.keys(carriedAuthored.assets ?? {}).length}`,
+      `authored.brand:${Object.keys(carriedAuthored.brand ?? {}).length}`,
+      // Task 28 Phases 5 + 6 — enablement rides the same whole-object carry.
+      `authored.disabledRoutes:${Object.keys(carriedAuthored.disabledRoutes ?? {}).length}`,
+      `authored.disabledRegions:${Object.keys(carriedAuthored.disabledRegions ?? {}).length}`,
       `runs:${carriedRuns.length}`,
       `siteId:${siteId}`,
+      ...(displayName !== undefined ? [`displayName:${displayName}`] : []),
       `createdAt:${existing.createdAt}`,
     );
     log(`[release:prepare] existing project found — preserving ${preserved.join(", ")}`);
@@ -213,6 +255,22 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
   };
 
   // ---- collect requirements (normalization, spec §8) ------------------------
+  const collectedFromStages: Record<string, string> = {
+    template: spec.lineage.template.dir,
+    content: spec.lineage.contentRun.dir,
+    theme: spec.lineage.theme.dir,
+    seo: spec.lineage.seoPlan.dir,
+    assets: spec.lineage.assets.dir,
+    production: specDir,
+  };
+  // Task 28 Phases 5 + 6: a re-prepare CARRIES the authored enablement, so the
+  // requirements it recomputes must be counted over the enabled routes too.
+  const carriedEnablementCollect = enablementCollectInput(
+    await resolveEnablementForProject(
+      { authored: carriedAuthored, auxiliary: { ...(pageRegionsDir !== undefined ? { pageRegionsDir } : {}) } },
+      spec.lineage.template.dir,
+    ),
+  );
   const collected = await collectRequirements({
     host,
     templateRunDir: spec.lineage.template.dir,
@@ -223,6 +281,7 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
     inventoryRunDir: spec.lineage.assets.inventoryRunDir,
     productionSpecFile: specFile,
     productionBuildDir: buildDir,
+    ...(carriedEnablementCollect !== undefined ? { enablement: carriedEnablementCollect } : {}),
   });
   const previous = existsSync(path.join(projectDir, REQUIREMENTS_FILE))
     ? (await loadRequirementsFile(projectDir)).requirements
@@ -304,6 +363,7 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
     projectRevision: RELEASE_PROJECT_REVISION,
     siteId,
     projectId,
+    ...(displayName !== undefined ? { displayName } : {}),
     createdAt: existing?.createdAt ?? new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     source: {
@@ -315,6 +375,7 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
       seoSourceSnapshotDir: seoManifest.inputs.sourceSnapshotDir,
       assetInventoryDir: spec.lineage.assets.inventoryRunDir,
       siteSpecDir: null,
+      ...(pageRegionsDir !== undefined ? { pageRegionsDir } : {}),
     },
     intent: {
       rawIntent: contentIntent.rawIntent ?? null,
@@ -370,7 +431,16 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
   project.runs.push({ runId, kind: "prepare" });
 
   await mkdir(projectDir, { recursive: true });
-  await saveRequirementsFile(projectDir, buildRequirementsFile(projectId, requirements));
+  // ONE requirements file object: it is saved, its `counts.total` is what the
+  // release run records, and its `counts.total` is what this call REPORTS.
+  // A number the operator reads can therefore never describe a different
+  // collection than the number on disk (Task 28 §1B).
+  const requirementsFile = buildRequirementsFile(projectId, requirements, {
+    releaseRunId: runId,
+    releaseRunKind: "prepare",
+    stageArtifacts: collectedFromStages,
+  });
+  await saveRequirementsFile(projectDir, requirementsFile);
   await saveChecklist(
     projectDir,
     renderOperatorChecklist(project, requirements, collected.routeReadiness, warnings),
@@ -384,7 +454,56 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
     ) + "\n",
     "utf8",
   );
+  // ---- authored-state revision (Task 28 CR2) -------------------------------
+  // `release:prepare` is a TRANSACTION BOUNDARY too: a first prepare records
+  // r000 (the baseline the Visual Editor's undo history starts from) and a
+  // re-prepare records nothing unless the CARRIED authored block actually
+  // moved — `…IfChanged` compares against the head snapshot's hash, so running
+  // prepare twice cannot grow the chain. Written BEFORE the project document
+  // (revisions.ts states the ordering rule).
+  const registryWarnings: string[] = [];
+  try {
+    const revision = await appendAuthoredRevisionIfChanged(projectDir, {
+      siteId: project.siteId,
+      authored: project.authored,
+      origin: "prepare",
+    });
+    if (revision !== null) {
+      log(`[release:prepare] authored revision ${revision.revisionId}: ${revision.summary}`);
+    }
+  } catch (err) {
+    const message =
+      `authored revision NOT recorded: ${(err as Error).message} — the authored state in ` +
+      "release-project.json is still authoritative; the undo history is incomplete";
+    registryWarnings.push(message);
+    warnings.push(message);
+  }
+
   await saveReleaseProject(projectDir, project);
+
+  // ---- site registry index (Task 28 CR4) -----------------------------------
+  // AFTER the document is on disk: `registerSite` re-derives its entry with
+  // `siteEntryFromDisk`, so it must read the bytes this prepare just wrote.
+  // Imported lazily — src/registry already imports src/release, and a static
+  // import here would close that cycle at module-init time. Upsert-by-siteKey,
+  // so preparing twice replaces the row instead of duplicating it.
+  let registeredSiteKey: string | null = null;
+  if (options.register !== false) {
+    try {
+      const { registerSite } = await import("../registry/store.js");
+      const entry = await registerSite(
+        projectDir,
+        options.registryDataRoot !== undefined ? { dataRoot: options.registryDataRoot } : undefined,
+      );
+      registeredSiteKey = entry.siteKey;
+      log(`[release:prepare] site registry: ${entry.siteKey} (${entry.name})`);
+    } catch (err) {
+      // The index is a cache; a failed cache write must not fail a prepare that
+      // already produced a valid project on disk.
+      registryWarnings.push(`site registry not updated: ${(err as Error).message}`);
+    }
+  }
+
   await saveReleaseRun(projectDir, {
     schemaVersion: 1,
     schemaName: "release-run-v1",
@@ -410,25 +529,23 @@ export async function prepareReleaseProject(options: PrepareOptions): Promise<Pr
           requirement.status !== "not-applicable",
       )
       .map((requirement) => requirement.requirementId),
+    requirementsTotal: requirementsFile.counts.total,
     finalVerdict: project.releaseState,
     stageExecutions: [],
     failure: null,
   });
 
   log(
-    `[release:prepare] ${projectId}: ${requirements.length} requirement(s), state ${project.releaseState}`,
+    `[release:prepare] ${projectId}: ${requirementsFile.counts.total} requirement(s), state ${project.releaseState}`,
   );
   return {
     project,
     projectDir,
-    requirementsCount: requirements.length,
-    releaseBlockingUnresolved: requirements.filter(
-      (requirement) =>
-        requirement.severity === "release-blocking" &&
-        requirement.status !== "resolved" &&
-        requirement.status !== "not-applicable",
-    ).length,
+    requirementsCount: requirementsFile.counts.total,
+    releaseBlockingUnresolved: requirementsFile.counts.releaseBlockingUnresolved,
     reprepared: existing !== null,
     preserved,
+    registeredSiteKey,
+    registryWarnings,
   };
 }

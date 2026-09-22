@@ -3,7 +3,9 @@ import path from "node:path";
 import { z } from "zod";
 import {
   AssetObservationSchema,
+  DOCUMENT_RESPONSE_FILE,
   ElementObservationSchema,
+  InitialDocumentSchema,
   FrameObservationSchema,
   LayoutProbeSchema,
   LinkObservationSchema,
@@ -20,6 +22,12 @@ import {
   type ViewportSizeReport,
 } from "./types.js";
 import { assertStyleReferencesResolve } from "./dedupe-styles.js";
+import {
+  SOURCE_PACKAGE_DIR,
+  makeSourcePackagePointer,
+  writeSourcePackage,
+  type SourcePackagePointer,
+} from "../source-package/index.js";
 
 /**
  * Persist a single-page RESPONSIVE observation (Phase 3; responsive in Task 05).
@@ -188,6 +196,47 @@ async function saveViewport(
   await writeFile(path.join(vpDir, "links.json"), linksJson, "utf8");
   await writeFile(path.join(vpDir, "frames.json"), framesJson, "utf8");
   await writeFile(path.join(vpDir, "screenshot.png"), observed.screenshot);
+  // Responsive Core P0 §C1.1 — the main-document response as served. Written
+  // only when it was captured; the record says why when it was not.
+  const initialDocument =
+    observed.initialDocument !== undefined
+      ? InitialDocumentSchema.parse(observed.initialDocument)
+      : undefined;
+  let documentResponseBytes: number | undefined;
+  let textFallbackWritten = false;
+  if (initialDocument?.status === "captured" && observed.documentResponseBody !== undefined) {
+    // Review fix m1 — the RAW bytes as served, so `bytes` / `sha256` describe
+    // the file exactly (a non-UTF-8 page is not re-encoded, a BOM is kept).
+    await writeFile(path.join(vpDir, DOCUMENT_RESPONSE_FILE), observed.documentResponseBody);
+    documentResponseBytes = observed.documentResponseBody.byteLength;
+  } else if (
+    initialDocument?.status === "captured" &&
+    observed.documentResponseHtml !== undefined
+  ) {
+    // An in-memory observation built without the bytes (pre-fix callers):
+    // decoded text is all there is.
+    await writeFile(
+      path.join(vpDir, DOCUMENT_RESPONSE_FILE),
+      observed.documentResponseHtml,
+      "utf8",
+    );
+    documentResponseBytes = Buffer.byteLength(observed.documentResponseHtml, "utf8");
+    textFallbackWritten = true;
+  }
+
+  // Source Preservation V2 Phase 1 — the Source Package for THIS load, written
+  // as a self-contained directory beside the viewport's files. Absent (and no
+  // directory is created) unless the observation captured one.
+  let sourcePackagePointer: SourcePackagePointer | undefined;
+  let sourcePackageBytes: number | undefined;
+  if (observed.sourcePackage !== undefined) {
+    const written = await writeSourcePackage(
+      path.join(vpDir, SOURCE_PACKAGE_DIR),
+      observed.sourcePackage,
+    );
+    sourcePackagePointer = makeSourcePackagePointer(written, `viewports/${id}/${SOURCE_PACKAGE_DIR}`);
+    sourcePackageBytes = written.bytes;
+  }
 
   const renderedHtmlBytes = Buffer.byteLength(observed.renderedHtml, "utf8");
   const domJsonBytes = Buffer.byteLength(domJson, "utf8");
@@ -207,7 +256,11 @@ async function saveViewport(
     screenshotBytes,
     domPlusStylesBytes: domJsonBytes + stylesJsonBytes,
     inlineStylesDomBytes: measureInlineStylesDomBytes(elements, styleTable),
+    ...(documentResponseBytes !== undefined ? { documentResponseBytes } : {}),
+    ...(sourcePackageBytes !== undefined ? { sourcePackageBytes } : {}),
     viewportTotalBytes:
+      (documentResponseBytes ?? 0) +
+      (sourcePackageBytes ?? 0) +
       renderedHtmlBytes +
       domJsonBytes +
       stylesJsonBytes +
@@ -236,6 +289,65 @@ async function saveViewport(
       frames: rel("frames.json"),
       screenshot: rel("screenshot.png"),
     },
+    // Task 28.5B §5 — embedded (not a sibling file): the record is small and a
+    // new required key in `files` would break every historical observation.
+    // Absent on a pre-28.5B in-memory observation, and absent from the JSON.
+    ...(observed.customProperties !== undefined
+      ? { customProperties: observed.customProperties }
+      : {}),
+    // Task 28.6 W1 — the authored-CSS reachability record for this viewport.
+    // Embedded for the same reason (fixed size; a new `files` key would break
+    // every historical observation) and absent when the collector produced none.
+    ...(observed.stylesheetCoverage !== undefined
+      ? { stylesheetCoverage: observed.stylesheetCoverage }
+      : {}),
+    // Source Preservation V2 Phase 1 — the pointer, only when a package exists.
+    ...(sourcePackagePointer !== undefined ? { sourcePackage: sourcePackagePointer } : {}),
+    // Task 28.6 C2 B4/B5 — embedded for the same reason: fixed-size records, and
+    // a new `files` key would break every historical observation. Absent when
+    // the collector produced none (pre-C2 in-memory observation) and, for
+    // `scrollReveal`, when no preparation scroll ran on this load.
+    ...(observed.paintSuppression !== undefined
+      ? { paintSuppression: observed.paintSuppression }
+      : {}),
+    ...(observed.scrollReveal !== undefined
+      ? { scrollReveal: observed.scrollReveal }
+      : {}),
+    ...(observed.overlayCensus !== undefined
+      ? { overlayCensus: observed.overlayCensus }
+      : {}),
+    // Task 28.7 A4 — the counted reveal-regression correction. Absent when the
+    // load carried no marks, so a site that animates once is byte-identical to
+    // the way it was before 28.7.
+    ...(observed.screenshotDegraded !== undefined
+      ? { screenshotDegraded: observed.screenshotDegraded }
+      : {}),
+    ...(observed.revealRegressionPolicy !== undefined
+      ? { revealRegressionPolicy: observed.revealRegressionPolicy }
+      : {}),
+    // Task 28.7 B1 — the mark on a capture that is not the source page. Absent
+    // on every healthy viewport, so a clean observation is byte-identical to
+    // the way it was before B1.
+    ...(observed.sourceIntegrity !== undefined
+      ? { sourceIntegrity: observed.sourceIntegrity }
+      : {}),
+    // Responsive Core P0 §C1.1 — `file` is kept only when the file was written
+    // (a captured record whose text is missing in memory is downgraded).
+    ...(initialDocument !== undefined
+      ? {
+          initialDocument:
+            initialDocument.status === "captured" && documentResponseBytes === undefined
+              ? {
+                  ...initialDocument,
+                  status: "error" as const,
+                  reason: "captured-text-missing",
+                  file: undefined,
+                }
+              : textFallbackWritten
+                ? { ...initialDocument, charset: "utf-8" }
+                : initialDocument,
+        }
+      : {}),
   };
 }
 
@@ -277,6 +389,40 @@ export async function saveObservationIntoDir(
       widths: observed.layoutProbe.widths.map((entry) => entry.width),
       elementCount: observed.layoutProbe.tags.length,
       truncated: observed.layoutProbe.truncated,
+      // Task 28.75 §07 — coverage travels with the pointer, so the collapse a
+      // reader is looking for is visible in observation.json itself.
+      ...(observed.layoutProbe.coverage
+        ? { coverage: observed.layoutProbe.coverage }
+        : {}),
+      ...(observed.layoutProbe.documentResponse
+        ? { documentStatus: observed.layoutProbe.documentResponse.status }
+        : {}),
+    };
+  }
+
+  // Task 28.6 W1.4 — the MOBILE-context probe, when it ran. A SEPARATE sibling
+  // file with its own pointer: its walk parked mobile elements, so mixing its
+  // arrays with the desktop probe's would mix two element identities.
+  let mobileProbePointer: PageObservation["layoutProbeMobile"];
+  if (observed.layoutProbeMobile) {
+    const probeJson =
+      JSON.stringify(LayoutProbeSchema.parse(observed.layoutProbeMobile), null, 2) +
+      "\n";
+    await writeFile(path.join(dir, "layout-probe-mobile.json"), probeJson, "utf8");
+    mobileProbePointer = {
+      file: "layout-probe-mobile.json",
+      widths: observed.layoutProbeMobile.widths.map((entry) => entry.width),
+      elementCount: observed.layoutProbeMobile.tags.length,
+      truncated: observed.layoutProbeMobile.truncated,
+      ...(observed.layoutProbeMobile.profile
+        ? { profileId: observed.layoutProbeMobile.profile.id }
+        : {}),
+      ...(observed.layoutProbeMobile.coverage
+        ? { coverage: observed.layoutProbeMobile.coverage }
+        : {}),
+      ...(observed.layoutProbeMobile.documentResponse
+        ? { documentStatus: observed.layoutProbeMobile.documentResponse.status }
+        : {}),
     };
   }
 
@@ -299,6 +445,9 @@ export async function saveObservationIntoDir(
     responsiveSummary,
     sizes: { observationJsonBytes: 0, runTotalBytes: 0 },
     ...(layoutProbePointer ? { layoutProbe: layoutProbePointer } : {}),
+    ...(mobileProbePointer ? { layoutProbeMobile: mobileProbePointer } : {}),
+    // Task 28.7 B1 — the page-level roll-up of the per-viewport marks.
+    ...(observed.sourceIntegrity ? { sourceIntegrity: observed.sourceIntegrity } : {}),
   };
 
   // observation.json records its own byte size AND the run total (which includes

@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>web-recon 28.7 — human review pack</title>
+<style>
+:root { --bg:#fff; --fg:#16181d; --mut:#6b7280; --line:#e4e6eb; --b:#b91c1c; --m:#b45309; --mi:#4b5563; --p:#047857; }
+* { box-sizing:border-box }
+body { margin:0; font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif; color:var(--fg); background:var(--bg) }
+.wrap { max-width:1500px; margin:0 auto; padding:24px }
+h1 { font-size:22px; margin:0 0 4px }
+h2 { font-size:19px; margin:40px 0 6px; padding-top:12px; border-top:2px solid var(--line) }
+h3 { font-size:15px; margin:0; font-weight:600 }
+a { color:#1d4ed8 }
+.sub { color:var(--mut); margin:0 0 18px }
+.nav { position:sticky; top:0; background:var(--bg); border-bottom:1px solid var(--line); padding:8px 0; margin-bottom:16px; font-size:13px; z-index:5 }
+.instr { background:#f7f8fa; border:1px solid var(--line); border-radius:8px; padding:14px 18px; margin:16px 0 }
+.tag { font-size:11px; font-weight:600; background:#eef1f5; color:#374151; border-radius:10px; padding:2px 8px; margin-left:8px; vertical-align:middle }
+.meta { margin:2px 0; color:var(--mut); font-size:12.5px }
+.warn { color:var(--b); font-weight:600 }
+.cov-none { color:var(--mut); font-style:italic }
+article.pair { border:1px solid var(--line); border-radius:8px; padding:12px; margin:14px 0 }
+article.pair > header { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px }
+.w { color:var(--mut); font-weight:500 }
+.v { font-size:11px; font-weight:700; border-radius:4px; padding:2px 7px; color:#fff }
+.v-failed { background:#111827 }
+.v-blocker { background:var(--b) } .v-major { background:var(--m) } .v-minor { background:var(--mi) } .v-pass { background:var(--p) }
+.floor { font-size:12px; color:var(--mut) }
+ul.findings { margin:0 0 10px; padding-left:18px; font-size:13px }
+ul.findings li { margin:2px 0 }
+.findings.none { color:var(--p); font-size:13px; margin:0 0 10px }
+b.s-blocker { color:var(--b) } b.s-major { color:var(--m) } b.s-minor { color:var(--mi) }
+code { font:12px ui-monospace,SFMono-Regular,Menlo,monospace; background:#f3f4f6; padding:1px 4px; border-radius:3px }
+.cmp { display:grid; grid-template-columns:1fr 1fr; gap:10px }
+.cmp figure { margin:0; min-width:0 }
+figcaption { font-size:11.5px; font-weight:700; letter-spacing:.03em; color:var(--mut); margin-bottom:4px }
+.pane { height:70vh; overflow:auto; border:1px solid var(--line); border-radius:5px; background:#fafafa }
+.pane img { display:block; width:100%; height:auto }
+@media (max-width:900px) { .cmp { grid-template-columns:1fr } .pane { height:50vh } }
+table.sum { border-collapse:collapse; width:100%; margin:14px 0 8px; font-size:13px }
+table.sum th, table.sum td { border:1px solid var(--line); padding:6px 9px; text-align:left }
+table.sum th { background:#f7f8fa; font-weight:600 }
+td.num { text-align:right; font-variant-numeric:tabular-nums }
+</style></head><body><div class="wrap">
+<h1>web-recon Task 28.7 — human review pack</h1>
+<p class="sub">Generated 2026-09-05 03:24. 20 pairs selected across 4 sites (budget 20).
+Every grade and number here is read from a responsive-qa.json artifact.</p>
+
+<div class="nav"><a href="#linear">linear.app</a> · <a href="#hobbang">hobbang.net</a> · <a href="#severance">gs.severance.healthcare</a> · <a href="#seoultone">seoultone.kr</a></div>
+
+<div class="instr">
+<h2 style="border:0;margin-top:0">Reviewer instructions</h2>
+<p><b>Do NOT grade as MAJOR:</b> 1px/2px differences, minor font or font-weight differences,
+minor anti-aliasing, small shadow or border differences, video frame timing.</p>
+<p><b>DO focus on:</b> structure, content presence, major images, hero, navigation, responsive
+mode, large whitespace, overflow, footer, controls.</p>
+<p>The machine verdict and floor verdict shown are the responsive-QA rubric's output — a floor,
+not a ceiling. Your eye overrides the grade.</p>
+</div>
+
+
+<h2 style="border:0;margin-top:0">Runs excluded from this pack</h2>
+<p class="meta"><code>2026-09-03T11-42-06-649Z</code> — seoultone.kr — INVALID. A shell pipeline swallowed a failed `pnpm reconstruct` (no `set -o pipefail`), so this run graded the PREVIOUS DAY&#x27;s reconstruction against a freshly captured source. The 28.6 pack already excludes it; carried forward here unchanged.</p>
+
+
+<table class="sum">
+<thead><tr><th>site</th><th>required</th><th>selected</th><th>measured</th><th>failed</th><th>not included (budget)</th></tr></thead>
+<tbody><tr><td><a href="#linear">linear.app</a></td><td class="num">10</td><td class="num">10</td><td class="num">10</td><td class="num">0</td><td class="num">0</td></tr><tr><td><a href="#hobbang">hobbang.net</a></td><td class="num">3</td><td class="num">3</td><td class="num">3</td><td class="num">0</td><td class="num">3</td></tr><tr><td><a href="#severance">gs.severance.healthcare</a></td><td class="num">3</td><td class="num">5</td><td class="num">5</td><td class="num">0</td><td class="num">1</td></tr><tr><td><a href="#seoultone">seoultone.kr</a></td><td class="num">2</td><td class="num">2</td><td class="num">2</td><td class="num">0</td><td class="num">0</td></tr></tbody></table>
+
+<section id="linear"><h2>linear.app <span class="tag">required 10, selected 10</span></h2>
+<p class="meta">coverage (run <code>2026-09-04T17-25-07-319Z</code>): pairsTotal=10, pairsGraded=10, pairsCloneRouteMissing=0, pairsSourceCaptureUnstable=0, pairsMeasurementFailed=0, pairsAccountedFor=10, conserved=True, pairsVerdicted=10, pairsStabilityUntested=4, duplicateImageStackPairsDemoted=0, failedImageLayerOverlapPairsDemoted=0, overlapFindingsDemoted=0, unstableFindingsDemoted=0</p>
+<article class="pair" data-v="BLOCKER">
+<header><h3>/ <span class="w">@390</span></h3><span class="v v-blocker">BLOCKER</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T17-25-07-319Z</code></span></header>
+<ul class="findings"><li><b class="s-blocker">BLOCKER</b> <code>offscreen-text-excess-chars</code> value=200 threshold=80 — 200 more characters than the source begin past the right edge (threshold 80)</li><li><b class="s-major">MAJOR</b> <code>missing-text-ratio</code> value=0.0229 threshold=0.02 — 2.29% of the source&#x27;s visible text is missing from the clone (threshold 2.00%)</li><li><b class="s-minor">MINOR</b> <code>overlap-excess-ratio</code> value=0.0024 threshold=0.001 — visible boxes overlap over 0.24% more of the viewport than the source&#x27;s do (threshold 0.10%)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-root-390-01-linear-app-root-390-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-root-390-01-linear-app-root-390-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="BLOCKER">
+<header><h3>/ <span class="w">@700</span></h3><span class="v v-blocker">BLOCKER</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T17-25-07-319Z</code></span></header>
+<ul class="findings"><li><b class="s-blocker">BLOCKER</b> <code>footer-clipped</code> value=1 threshold=1 — the footer extends past the viewport&#x27;s right edge (clone max right 1390 &gt; 700) while the source&#x27;s does not</li><li><b class="s-blocker">BLOCKER</b> <code>missing-text-ratio</code> value=0.1071 threshold=0.1 — 10.71% of the source&#x27;s visible text is missing from the clone (threshold 10.00%)</li><li><b class="s-blocker">BLOCKER</b> <code>offscreen-text-excess-chars</code> value=1127 threshold=80 — 1127 more characters than the source begin past the right edge (threshold 80)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-root-700-02-linear-app-root-700-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-root-700-02-linear-app-root-700-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="BLOCKER">
+<header><h3>/ <span class="w">@1024</span></h3><span class="v v-blocker">BLOCKER</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T17-25-07-319Z</code></span></header>
+<ul class="findings"><li><b class="s-blocker">BLOCKER</b> <code>footer-clipped</code> value=1 threshold=1 — the footer extends past the viewport&#x27;s right edge (clone max right 1390 &gt; 1024) while the source&#x27;s does not</li><li><b class="s-blocker">BLOCKER</b> <code>offscreen-text-excess-chars</code> value=918 threshold=80 — 918 more characters than the source begin past the right edge (threshold 80)</li><li><b class="s-major">MAJOR</b> <code>empty-band-excess-ratio</code> value=0.1589 threshold=0.125 — an empty vertical band covers 15.9% more of the page than the source&#x27;s largest (threshold 12.5%)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-root-1024-03-linear-app-root-1024-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-root-1024-03-linear-app-root-1024-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="BLOCKER">
+<header><h3>/ <span class="w">@1100</span></h3><span class="v v-blocker">BLOCKER</span><span class="floor">floor: <span class="v v-minor">MINOR</span></span><span class="meta">run <code>2026-09-04T17-25-07-319Z</code></span></header>
+<ul class="findings"><li><b class="s-blocker">BLOCKER</b> <code>footer-clipped</code> value=1 threshold=1 — the footer extends past the viewport&#x27;s right edge (clone max right 1390 &gt; 1100) while the source&#x27;s does not</li><li><b class="s-blocker">BLOCKER</b> <code>offscreen-text-excess-chars</code> value=733 threshold=80 — 733 more characters than the source begin past the right edge (threshold 80)</li><li><b class="s-major">MAJOR</b> <code>position-delta-p90-px</code> value=300 threshold=48 — 9 in 10 of the 592 on-viewport matched boxes land within 300px of their source edge and the rest are worse, up to 1415px (threshold 48px; left p90 300px, right p90 300px — these two move together on a displaced block and are ONE finding)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-root-1100-04-linear-app-root-1100-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-root-1100-04-linear-app-root-1100-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MAJOR">
+<header><h3>/ <span class="w">@1440</span></h3><span class="v v-major">MAJOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T17-25-07-319Z</code></span></header>
+<ul class="findings"><li><b class="s-major">MAJOR</b> <code>position-delta-p90-px</code> value=63 threshold=48 — 9 in 10 of the 669 on-viewport matched boxes land within 63px of their source edge and the rest are worse, up to 1286px (threshold 48px; left p90 56px, right p90 63px — these two move together on a displaced block and are ONE finding)</li><li><b class="s-minor">MINOR</b> <code>missing-text-ratio</code> value=0.0062 threshold=0.0001 — 0.62% of the source&#x27;s visible text is missing from the clone (threshold 0.01%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.07769 threshold=0.01 — 7.77% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 35% of it sits on source edges</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-root-1440-05-linear-app-root-1440-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-root-1440-05-linear-app-root-1440-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MINOR">
+<header><h3>/pricing <span class="w">@390</span></h3><span class="v v-minor">MINOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T17-25-07-319Z</code></span></header>
+<ul class="findings"><li><b class="s-minor">MINOR</b> <code>missing-text-ratio</code> value=0.0041 threshold=0.0001 — 0.41% of the source&#x27;s visible text is missing from the clone (threshold 0.01%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.03583 threshold=0.01 — 3.58% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 92% of it sits on source edges</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-pricing-390-06-linear-app-pricing-390-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-pricing-390-06-linear-app-pricing-390-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MAJOR">
+<header><h3>/pricing <span class="w">@700</span></h3><span class="v v-major">MAJOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T17-25-07-319Z</code></span></header>
+<ul class="findings"><li><b class="s-major">MAJOR</b> <code>column-container-mode-delta</code> value=2 threshold=2 — a matched container lays its children out as 3 row(s) of 2 where the source uses 2 row(s) of 4 (delta 2, threshold 2) — a different responsive layout mode</li><li><b class="s-major">MAJOR</b> <code>position-delta-p90-px</code> value=320 threshold=48 — 9 in 10 of the 168 on-viewport matched boxes land within 320px of their source edge and the rest are worse, up to 507px (threshold 48px; left p90 320px, right p90 320px — these two move together on a displaced block and are ONE finding)</li><li><b class="s-minor">MINOR</b> <code>missing-text-ratio</code> value=0.0101 threshold=0.0001 — 1.01% of the source&#x27;s visible text is missing from the clone (threshold 0.01%)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-pricing-700-07-linear-app-pricing-700-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-pricing-700-07-linear-app-pricing-700-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="BLOCKER">
+<header><h3>/pricing <span class="w">@1024</span></h3><span class="v v-blocker">BLOCKER</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T17-25-07-319Z</code></span></header>
+<ul class="findings"><li><b class="s-blocker">BLOCKER</b> <code>nav-link-ratio</code> value=0.5 threshold=0.5 — the clone shows 3 of the source&#x27;s 6 visible header/nav links (50%, threshold 50%)</li><li><b class="s-major">MAJOR</b> <code>column-container-mode-delta</code> value=2 threshold=2 — a matched container lays its children out as 3 row(s) of 2 where the source uses 2 row(s) of 4 (delta 2, threshold 2) — a different responsive layout mode</li><li><b class="s-major">MAJOR</b> <code>column-mode-delta</code> value=5 threshold=2 — the clone&#x27;s widest row holds 2 items where the source&#x27;s holds 7 (delta 5, threshold 2) — a different responsive layout mode</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-pricing-1024-08-linear-app-pricing-1024-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-pricing-1024-08-linear-app-pricing-1024-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="BLOCKER">
+<header><h3>/pricing <span class="w">@1100</span></h3><span class="v v-blocker">BLOCKER</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T17-25-07-319Z</code></span></header>
+<ul class="findings"><li><b class="s-blocker">BLOCKER</b> <code>footer-clipped</code> value=1 threshold=1 — the footer extends past the viewport&#x27;s right edge (clone max right 1390 &gt; 1100) while the source&#x27;s does not</li><li><b class="s-blocker">BLOCKER</b> <code>offscreen-text-excess-chars</code> value=175 threshold=80 — 175 more characters than the source begin past the right edge (threshold 80)</li><li><b class="s-major">MAJOR</b> <code>position-delta-p90-px</code> value=256 threshold=48 — 9 in 10 of the 204 on-viewport matched boxes land within 256px of their source edge and the rest are worse, up to 302px (threshold 48px; left p90 256px, right p90 256px — these two move together on a displaced block and are ONE finding)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-pricing-1100-09-linear-app-pricing-1100-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-pricing-1100-09-linear-app-pricing-1100-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MINOR">
+<header><h3>/pricing <span class="w">@1440</span></h3><span class="v v-minor">MINOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T17-25-07-319Z</code></span></header>
+<ul class="findings"><li><b class="s-minor">MINOR</b> <code>missing-text-ratio</code> value=0.0029 threshold=0.0001 — 0.29% of the source&#x27;s visible text is missing from the clone (threshold 0.01%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.01519 threshold=0.01 — 1.52% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 87% of it sits on source edges</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-pricing-1440-10-linear-app-pricing-1440-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="linear/shots/2026-09-04T17-25-07-319Z-pricing-1440-10-linear-app-pricing-1440-final.png" alt=""></div></figure></div>
+</article>
+</section><section id="hobbang"><h2>hobbang.net <span class="tag">required 3, selected 3</span></h2>
+<p class="meta">coverage (run <code>2026-09-04T18-17-44-481Z</code>): pairsTotal=6, pairsGraded=6, pairsCloneRouteMissing=0, pairsSourceCaptureUnstable=0, pairsMeasurementFailed=0, pairsAccountedFor=6, conserved=True, pairsVerdicted=6, pairsStabilityUntested=4, duplicateImageStackPairsDemoted=0, failedImageLayerOverlapPairsDemoted=0, overlapFindingsDemoted=0, unstableFindingsDemoted=0</p>
+<p class="meta">Also measured but not included in this pack (budget): /@1440 (MINOR), /%EB%A7%81%ED%81%AC%EB%AA%A8%EC%9D%8C/%EA%B2%80%EC%83%89/@390 (MINOR), /%EB%A7%81%ED%81%AC%EB%AA%A8%EC%9D%8C/%EA%B2%80%EC%83%89/@1440 (MINOR)</p>
+<article class="pair" data-v="MINOR">
+<header><h3>/ <span class="w">@390</span></h3><span class="v v-minor">MINOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T18-17-44-481Z</code></span></header>
+<ul class="findings"><li><b class="s-minor">MINOR</b> <code>overlap-excess-ratio</code> value=0.0129 threshold=0.001 — visible boxes overlap over 1.29% more of the viewport than the source&#x27;s do (threshold 0.10%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.1849 threshold=0.01 — 18.49% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 47% of it sits on source edges</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="hobbang/shots/2026-09-04T18-17-44-481Z-root-390-01-hobbang-net-root-390-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="hobbang/shots/2026-09-04T18-17-44-481Z-root-390-01-hobbang-net-root-390-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MAJOR">
+<header><h3>/ <span class="w">@1100</span></h3><span class="v v-major">MAJOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T18-17-44-481Z</code></span></header>
+<ul class="findings"><li><b class="s-major">MAJOR</b> <code>overlap-excess-ratio</code> value=0.0556 threshold=0.02 — visible boxes overlap over 5.56% more of the viewport than the source&#x27;s do (threshold 2.00%)</li><li><b class="s-minor">MINOR</b> <code>column-container-mode-delta</code> value=1 threshold=1 — a matched container lays its children out as 2 row(s) of 12 where the source uses 2 row(s) of 11 (delta 1, threshold 1) — a different responsive layout mode</li><li><b class="s-minor">MINOR</b> <code>column-mode-delta</code> value=1 threshold=1 — the clone&#x27;s widest row holds 12 items where the source&#x27;s holds 11 (delta 1, threshold 1) — a different responsive layout mode</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="hobbang/shots/2026-09-04T18-17-44-481Z-root-1100-02-hobbang-net-root-1100-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="hobbang/shots/2026-09-04T18-17-44-481Z-root-1100-02-hobbang-net-root-1100-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MAJOR">
+<header><h3>/%EB%A7%81%ED%81%AC%EB%AA%A8%EC%9D%8C/%EA%B2%80%EC%83%89/ <span class="w">@1100</span></h3><span class="v v-major">MAJOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T18-17-44-481Z</code></span></header>
+<ul class="findings"><li><b class="s-major">MAJOR</b> <code>horizontal-overflow-excess-px</code> value=28 threshold=16 — the clone scrolls 28px further horizontally than the source (threshold 16px)</li><li><b class="s-minor">MINOR</b> <code>overlap-excess-ratio</code> value=0.0021 threshold=0.001 — visible boxes overlap over 0.21% more of the viewport than the source&#x27;s do (threshold 0.10%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.07407 threshold=0.01 — 7.41% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 71% of it sits on source edges</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="hobbang/shots/2026-09-04T18-17-44-481Z-_EB_A7_81_ED_81_AC_EB_AA_A8_EC_9D_8C__EA_B2_80_EC_83_89-1100-05-hobbang-net-eb-a7-81-ed-81-ac-eb-aa-a8-ec-9d-8c-ea-b2-80-ec-83-89-1100-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="hobbang/shots/2026-09-04T18-17-44-481Z-_EB_A7_81_ED_81_AC_EB_AA_A8_EC_9D_8C__EA_B2_80_EC_83_89-1100-05-hobbang-net-eb-a7-81-ed-81-ac-eb-aa-a8-ec-9d-8c-ea-b2-80-ec-83-89-1100-final.png" alt=""></div></figure></div>
+</article>
+</section><section id="severance"><h2>gs.severance.healthcare <span class="tag">required 3, selected 5</span></h2>
+<p class="meta">coverage (run <code>2026-09-04T18-15-04-161Z</code>): pairsTotal=6, pairsGraded=6, pairsCloneRouteMissing=0, pairsSourceCaptureUnstable=0, pairsMeasurementFailed=0, pairsAccountedFor=6, conserved=True, pairsVerdicted=6, pairsStabilityUntested=4, duplicateImageStackPairsDemoted=0, failedImageLayerOverlapPairsDemoted=0, overlapFindingsDemoted=0, unstableFindingsDemoted=0</p>
+<p class="meta">Also measured but not included in this pack (budget): /gs/news/news/notice.do@390 (MINOR)</p>
+<article class="pair" data-v="MAJOR">
+<header><h3>/gs/index.do <span class="w">@390</span></h3><span class="v v-major">MAJOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T18-15-04-161Z</code></span></header>
+<ul class="findings"><li><b class="s-major">MAJOR</b> <code>position-delta-p90-px</code> value=550 threshold=48 — 9 in 10 of the 80 on-viewport matched boxes land within 550px of their source edge and the rest are worse, up to 1269px (threshold 48px; left p90 550px, right p90 550px — these two move together on a displaced block and are ONE finding)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.1133 threshold=0.01 — 11.33% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 30% of it sits on source edges</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="severance/shots/2026-09-04T18-15-04-161Z-gs_index_do-390-01-gs-severance-healthcare-gs-index-do-390-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="severance/shots/2026-09-04T18-15-04-161Z-gs_index_do-390-01-gs-severance-healthcare-gs-index-do-390-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="BLOCKER">
+<header><h3>/gs/index.do <span class="w">@1100</span></h3><span class="v v-blocker">BLOCKER</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T18-15-04-161Z</code></span></header>
+<ul class="findings"><li><b class="s-blocker">BLOCKER</b> <code>overlap-excess-ratio</code> value=0.4484 threshold=0.1 — visible boxes overlap over 44.84% more of the viewport than the source&#x27;s do (threshold 10.00%)</li><li><b class="s-major">MAJOR</b> <code>pixel-visible-difference-ratio</code> value=0.5269 threshold=0.5 — 52.7% of the compared pixels differ by more than the clearly-visible ΔE*76 threshold (threshold 50%)</li><li><b class="s-major">MAJOR</b> <code>position-delta-p90-px</code> value=1205 threshold=48 — 9 in 10 of the 99 on-viewport matched boxes land within 1205px of their source edge and the rest are worse, up to 1555px (threshold 48px; left p90 1205px, right p90 1205px — these two move together on a displaced block and are ONE finding)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="severance/shots/2026-09-04T18-15-04-161Z-gs_index_do-1100-02-gs-severance-healthcare-gs-index-do-1100-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="severance/shots/2026-09-04T18-15-04-161Z-gs_index_do-1100-02-gs-severance-healthcare-gs-index-do-1100-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="BLOCKER">
+<header><h3>/gs/index.do <span class="w">@1440</span></h3><span class="v v-blocker">BLOCKER</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T18-15-04-161Z</code></span></header>
+<ul class="findings"><li><b class="s-blocker">BLOCKER</b> <code>overlap-excess-ratio</code> value=0.3425 threshold=0.1 — visible boxes overlap over 34.25% more of the viewport than the source&#x27;s do (threshold 10.00%)</li><li><b class="s-major">MAJOR</b> <code>position-delta-p90-px</code> value=1308 threshold=48 — 9 in 10 of the 110 on-viewport matched boxes land within 1308px of their source edge and the rest are worse, up to 1962px (threshold 48px; left p90 1308px, right p90 1308px — these two move together on a displaced block and are ONE finding)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.3345 threshold=0.01 — 33.45% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 27% of it sits on source edges</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="severance/shots/2026-09-04T18-15-04-161Z-gs_index_do-1440-03-gs-severance-healthcare-gs-index-do-1440-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="severance/shots/2026-09-04T18-15-04-161Z-gs_index_do-1440-03-gs-severance-healthcare-gs-index-do-1440-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MAJOR">
+<header><h3>/gs/news/news/notice.do <span class="w">@1100</span></h3><span class="v v-major">MAJOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T18-15-04-161Z</code></span></header>
+<ul class="findings"><li><b class="s-major">MAJOR</b> <code>position-delta-p90-px</code> value=362 threshold=48 — 9 in 10 of the 56 on-viewport matched boxes land within 362px of their source edge and the rest are worse, up to 567px (threshold 48px; left p90 362px, right p90 362px — these two move together on a displaced block and are ONE finding)</li><li><b class="s-minor">MINOR</b> <code>overlap-excess-ratio</code> value=0.0083 threshold=0.001 — visible boxes overlap over 0.83% more of the viewport than the source&#x27;s do (threshold 0.10%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.09874 threshold=0.01 — 9.87% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 52% of it sits on source edges</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="severance/shots/2026-09-04T18-15-04-161Z-gs_news_news_notice_do-1100-05-gs-severance-healthcare-gs-news-news-notice-do-1100-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="severance/shots/2026-09-04T18-15-04-161Z-gs_news_news_notice_do-1100-05-gs-severance-healthcare-gs-news-news-notice-do-1100-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MAJOR">
+<header><h3>/gs/news/news/notice.do <span class="w">@1440</span></h3><span class="v v-major">MAJOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T18-15-04-161Z</code></span></header>
+<ul class="findings"><li><b class="s-major">MAJOR</b> <code>position-delta-p90-px</code> value=442 threshold=48 — 9 in 10 of the 59 on-viewport matched boxes land within 442px of their source edge and the rest are worse, up to 1114px (threshold 48px; left p90 442px, right p90 442px — these two move together on a displaced block and are ONE finding)</li><li><b class="s-minor">MINOR</b> <code>overlap-excess-ratio</code> value=0.0065 threshold=0.001 — visible boxes overlap over 0.65% more of the viewport than the source&#x27;s do (threshold 0.10%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.06463 threshold=0.01 — 6.46% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 61% of it sits on source edges</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="severance/shots/2026-09-04T18-15-04-161Z-gs_news_news_notice_do-1440-06-gs-severance-healthcare-gs-news-news-notice-do-1440-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="severance/shots/2026-09-04T18-15-04-161Z-gs_news_news_notice_do-1440-06-gs-severance-healthcare-gs-news-news-notice-do-1440-final.png" alt=""></div></figure></div>
+</article>
+</section><section id="seoultone"><h2>seoultone.kr <span class="tag">required 2, selected 2</span></h2>
+<p class="meta">coverage (run <code>2026-09-04T18-18-47-244Z</code>): pairsTotal=2, pairsGraded=2, pairsCloneRouteMissing=0, pairsSourceCaptureUnstable=0, pairsMeasurementFailed=0, pairsAccountedFor=2, conserved=True, pairsVerdicted=2, pairsStabilityUntested=2, duplicateImageStackPairsDemoted=0, failedImageLayerOverlapPairsDemoted=0, overlapFindingsDemoted=0, unstableFindingsDemoted=0</p>
+<article class="pair" data-v="BLOCKER">
+<header><h3>/ <span class="w">@390</span></h3><span class="v v-blocker">BLOCKER</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-04T18-18-47-244Z</code></span></header>
+<ul class="findings"><li><b class="s-blocker">BLOCKER</b> <code>missing-text-ratio</code> value=0.3054 threshold=0.1 — 30.54% of the source&#x27;s visible text is missing from the clone (threshold 10.00%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.4604 threshold=0.01 — 46.04% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 25% of it sits on source edges</li><li><b class="s-minor">MINOR</b> <code>position-delta-p90-px</code> value=13 threshold=8 — 9 in 10 of the 73 on-viewport matched boxes land within 13px of their source edge and the rest are worse, up to 340px (threshold 8px; left p90 12px, right p90 13px — these two move together on a displaced block and are ONE finding)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="seoultone/shots/2026-09-04T18-18-47-244Z-root-390-01-seoultone-kr-root-390-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="seoultone/shots/2026-09-04T18-18-47-244Z-root-390-01-seoultone-kr-root-390-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="BLOCKER">
+<header><h3>/ <span class="w">@1440</span></h3><span class="v v-blocker">BLOCKER</span><span class="floor">floor: <span class="v v-minor">MINOR</span></span><span class="meta">run <code>2026-09-04T18-18-47-244Z</code></span></header>
+<ul class="findings"><li><b class="s-blocker">BLOCKER</b> <code>missing-text-ratio</code> value=0.2777 threshold=0.1 — 27.77% of the source&#x27;s visible text is missing from the clone (threshold 10.00%)</li><li><b class="s-minor">MINOR</b> <code>overlap-excess-ratio</code> value=0.013 threshold=0.001 — visible boxes overlap over 1.30% more of the viewport than the source&#x27;s do (threshold 0.10%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.2303 threshold=0.01 — 23.03% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 15% of it sits on source edges</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE</figcaption><div class="pane"><img loading="lazy" src="seoultone/shots/2026-09-04T18-18-47-244Z-root-1440-02-seoultone-kr-root-1440-source.png" alt=""></div></figure><figure><figcaption>CLONE (FINAL)</figcaption><div class="pane"><img loading="lazy" src="seoultone/shots/2026-09-04T18-18-47-244Z-root-1440-02-seoultone-kr-root-1440-final.png" alt=""></div></figure></div>
+</article>
+</section>
+</div>
+</body></html>

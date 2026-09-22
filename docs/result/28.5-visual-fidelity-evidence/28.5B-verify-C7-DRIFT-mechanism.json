@@ -1,0 +1,97 @@
+{
+  "claim": "C7-DRIFT",
+  "lens": "MECHANISM",
+  "verdict": "REFUTED_IN_PART",
+  "scratch": "tmp/wr-visual-fidelity-investigation/verify-C7-DRIFT-mechanism/",
+  "reproducedFromClaim": {
+    "clone_vs_ACCEPTED_vs_clone_vs_CURRENT": {
+      "r000002_desktop": [5441178, 5441210],
+      "r000004_desktop": [491293, 491445],
+      "r000005_desktop": [374420, 374572],
+      "r000008_desktop": [214116, 214251]
+    },
+    "note": "Re-derived independently with the src/reconstruction-qa/screenshot-diff.ts rule (composite over white, any channel != 0, no resize). Exact match on all four."
+  },
+  "part1_directSourceVsSourceDiff_neverRunByTheClaim": {
+    "rule": "same metric, ACCEPTED vs CURRENT_SOURCE, desktop 1440",
+    "r000002": {"driftPx": 9725, "ofOverlap": 36492480, "maskedByExistingCloneError": 0.5799, "netScoreChange": 32},
+    "r000004": {"driftPx": 1655, "ofOverlap": 7548480, "maskedByExistingCloneError": 0.8, "netScoreChange": 152},
+    "r000005": {"driftPx": 1655, "ofOverlap": 15924960, "maskedByExistingCloneError": 0.8, "netScoreChange": 152},
+    "r000008": {"driftPx": 12049, "ofOverlap": 4652640, "maskedByExistingCloneError": 0.6676, "netScoreChange": 135},
+    "r000007": {"driftPx": 313662, "ofOverlap": 9141120, "maskedByExistingCloneError": 0.6882, "netScoreChange": 75875},
+    "r000003": {"driftPx": 269027, "ofOverlap": 7035840, "maskedByExistingCloneError": 0.9762, "netScoreChange": -16703},
+    "r000006": {"driftPx": 4388264, "ofOverlap": 15357600, "maskedByExistingCloneError": 0.524, "netScoreChange": 1994601},
+    "r000001": {"driftPx": 6484213, "ofOverlap": 14342400, "maskedByExistingCloneError": 0.4141, "netScoreChange": 3652860}
+  },
+  "part1_mechanismDefect": {
+    "finding": "Near-equal clone scores against two references do NOT imply the two references are near-equal. Two masking mechanisms cancel drift out of the metric: (a) 41-98% of drifted pixels land where the clone was already wrong under the first reference, so they were already counted as changed; (b) the unmasked remainder splits almost evenly between newly-wrong and newly-right.",
+    "counterexampleInsideThisDataset": [
+      "r000003 desktop: 269,027 genuinely drifted pixels produce a net score change of only -16,703 (94% cancelled).",
+      "r000008 desktop: 12,049 genuinely drifted pixels produce a net score change of 135 (99% cancelled).",
+      "Applying the claim's own inference rule to these two routes would conclude 'no drift'; both are measurably drifted."
+    ],
+    "selectionBias": "The four cited routes are exactly the four the wave-1 audit had already classified as non-drifted; the three confirmed-drifted routes (r000001, r000003, r000006) are excluded from the comparison the claim uses to generalise."
+  },
+  "part1_falsifiedGeneralisation": {
+    "statement_under_test": "drift explains almost none of the delta / drift is not what the audit is measuring",
+    "true_for": "16 of the 19 audited pairs, which are scored against ACCEPTED_OBSERVATION and therefore cannot contain drift by construction; plus r000004 wide and r000007 wide.",
+    "false_for": "r000001 wide, an audited pair (changedRatio 0.404, verdict obviously-different) that has ONLY a CURRENT_SOURCE side. On the desktop analogue of the same route, 3,798,961 of the 6,863,307 clone-vs-live changed pixels (55.4%) are pixels where the clone MATCHES the accepted August truth and differs only from the redesigned live page. Drift is therefore the majority of that audited pair's measured delta, not 'almost none'.",
+    "sizeOfError": "clone-vs-ACCEPTED 0.2073 vs clone-vs-CURRENT 0.4785 on r000001 desktop = 2.31x inflation."
+  },
+  "part1_driftLocalisation": {
+    "r000004_desktop": "5 row-runs, rows 4916-5049, x 304-779, 1,655 px",
+    "r000005_desktop": "5 row-runs, rows 10733-10866, x 304-779, 1,655 px",
+    "note": "bit-identical drift on two different pages: the shared footer label change ('Diffs'/'Monitor'/'Blog' -> 'AI'/'Now'). This is direct positive evidence for the claim's conclusion on those routes - evidence the claim itself never produced.",
+    "r000008_desktop": "same 5 footer runs (1,655 px) plus an 8,888 px block at rows 2436-2464, which is the per-load letter-scramble the audit already flagged, not drift."
+  },
+  "part2_blankReference_CONFIRMED": {
+    "file": "data/linear.app/site-observations/2026-08-25T19-23-01-716Z/pages/p000002/viewports/mobile/screenshot.png",
+    "md5": "116a9b8299bd55ccbb0a095a6c028882",
+    "evidenceCopyByteIdentical": true,
+    "dimensions": [1170, 73446],
+    "inkRows_myThreshold": 848,
+    "inkRowFraction": 0.01155,
+    "inkPixelFraction": 0.00424,
+    "inkRunCount": 32,
+    "onlyPaintedRegions": "rows 48-194 (sticky header), rows 474-521, five 36-row date strips, one 425-row poster at rows 37903-38327",
+    "changedPixelDecomposition": {
+      "total": 19084481,
+      "whereSourceIsExactlyRgb8_9_10": 18491151,
+      "fractionOverBlankReference": 0.969,
+      "whereSourcePaintedAnything": 593330
+    }
+  },
+  "part2_correction_bytesOutlier": {
+    "claimed": "sole size outlier among 16 accepted screenshots (others 1,287,126-4,957,611)",
+    "actual": "FALSE as stated. p000008/desktop is 388,563 bytes and p000007/desktop is 451,705 bytes - both SMALLER in raw bytes than p000002/mobile's 487,863. The stated floor of 1,287,126 is the minimum over the 8 MOBILE screenshots only; 5 of the 15 others fall below it.",
+    "correctStatistic": "bytes per megapixel: p000002 mobile 5,677 vs 47,816-150,050 for the other 15 - an 8.4x outlier on the normalised metric."
+  },
+  "part2_mechanismExtension_reproducibleNotAOneOff": {
+    "experiment": "Live capture of https://linear.app/changelog at the accepted mobile profile (390x844 DSF3) TODAY, using the wave-1 harness verbatim (chromium 151.0.7922.34).",
+    "result": {"bytes": 449564, "dimensions": [1170, 73446], "scrollHeight": 24482, "inkRows": 489, "inkRowFraction": 0.00666, "bytesPerMpx": 5232},
+    "control": "https://linear.app/integrations at the same profile captured normally the same session: 3,334,770 bytes, 46,866 px tall, inkRowFraction 0.74879.",
+    "finding": "The blank reference is NOT an accident of the August run. The observer's own capture policy deterministically produces a near-blank fullPage screenshot for this page at this viewport, today. Re-running the observer would not fix it. It is a standing capture-policy defect, not a corrupt historical artifact.",
+    "notAHeightLimit": "The clone at the identical 73,446 device-px height captures fully painted (inkRowFraction 0.464), and the live 46,866 px /integrations page captures fine. The live /changelog page gates paint in a way that fullPage capture defeats; the static clone has no such gating."
+  },
+  "part2_correction_whatThe0p2221Measures": {
+    "claimed": "its 0.2221 changedRatio measures a broken reference, not a broken clone",
+    "experiment": "Scroll-tile capture at the mobile profile at y = 0/3000/6000/10000/16000/22000 CSS px, live linear.app/changelog and the served clone, SAME SESSION, both painted (266KB-657KB per tile). Same diff rule.",
+    "result": {"changedRatioByTile": [0.0779, 0.1094, 0.1051, 0.0967, 0.1177, 0.1117], "mean": 0.1031, "ratioOfPixelsDifferingByMoreThan32": [0.034, 0.0814, 0.0703, 0.0512, 0.0814, 0.0591]},
+    "finding": "Against a PAINTED reference the clone still differs on ~10.3% of pixels, with 3-8% differing by more than 32/255. Roughly 53% of the reported 0.2221 is the blank reference; the other ~47% is a real clone delta of the same order as other mobile pairs (r000001 mobile 0.1113, r000004 mobile 0.1131). So the pair does not show 'a correct clone against a broken reference' - it shows an unusable reference hiding an ordinary-sized clone defect.",
+    "residualDefectSeen": "tile y=3000: the clone re-wraps changelog body copy ('...company level, but / teams carry it forward' live vs '...company level, but teams / carry it forward' clone), so every subsequent line is displaced; type is the heavier fallback face. This is the FONT_NEVER_MATERIALIZED family, invisible on this pair as scored.",
+    "consequence": "The wave-1 cluster VC-21's assertion that the clone renders 'correct positions and sizes' at r000002 mobile is unverified by any artifact in the evidence tree, and is wrong about line breaking."
+  },
+  "whatSurvives": [
+    "linear.app has genuinely changed on r000001, r000003, r000006 and site-wide footer labels - CONFIRMED and independently quantified.",
+    "On r000002/r000004/r000005/r000008 desktop, drift is real but tiny (9,725 / 1,655 / 1,655 / 12,049 px, all <= 0.27% of page area) and does not explain the clone deltas - the claim's CONCLUSION for those four routes is correct, though my direct source-vs-source diff, not the claim's inference, is what establishes it.",
+    "The p000002 mobile reference is effectively blank and byte-identical to the stored observation - CONFIRMED, 96.9% of its changed pixels sit where the reference painted nothing.",
+    "The clone IS the more correct side of that pair - CONFIRMED against a painted same-session live reference."
+  ],
+  "whatFails": [
+    "'the two scores differ by under 0.1%, so drift is not what the audit is measuring' is a non-sequitur; demonstrated non-identifiable on r000003 and r000008 inside this same dataset.",
+    "The four-route comparison is circular: those are the routes already classified as non-drifted.",
+    "'drift explains almost none of the delta' is false for r000001 wide, an audited pair whose 0.404 is ~55% drift.",
+    "The byte-size outlier statement is factually wrong; two accepted screenshots are smaller in raw bytes.",
+    "'its 0.2221 changedRatio measures a broken reference, not a broken clone' is ~53% true; ~0.103 of it is a genuine clone delta."
+  ]
+}

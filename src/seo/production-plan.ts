@@ -74,6 +74,105 @@ export interface ContentRunForSeo {
   providedFacts: unknown[];
   /** BCP-47-ish language of the injected content, from the intent (e.g. "ko"). */
   language: string | null;
+  /**
+   * Per-route AUTHORED heading, keyed by route key (Task 28 Phase 10
+   * correction). Derived by `deriveRouteHeadings` from the content run's own
+   * units + slot values — never from the source site. Absent for a route with
+   * no authored heading, in which case the site-level title is used and the
+   * route is reported by `checkTitleUniqueness` if that makes it a duplicate.
+   */
+  routeHeadings: Record<string, RouteHeading>;
+}
+
+/** One route's authored heading and the slot key it came from. */
+export interface RouteHeading {
+  value: string;
+  /** The content-run slot key this heading was read from — the basis. */
+  slotKey: string;
+  /** Which derivation rule produced it. */
+  rule: "hero-headline" | "nav-label";
+}
+
+interface ContentUnitForHeadings {
+  route?: string | null;
+  kind?: string;
+  slots?: { key: string; role?: string | null }[];
+}
+
+/**
+ * Per-route title source derivation (Task 28 Phase 10 correction).
+ *
+ * BEFORE this function existed every route carried the IDENTICAL site-level
+ * title `<brand> | <category>` — a real SEO defect on an indexable site (8
+ * identical <title>s), and the shipped Phase-10 handoff wrongly described that
+ * single string as "per-route". Titles must stay derived from the CUSTOMER'S
+ * authored content: the source site's own titles are forbidden copy, so the
+ * only admissible per-route strings are ones the content run itself authored.
+ *
+ * Two rules, in precedence order, both pure lookups — nothing is invented,
+ * truncated or reworded:
+ *   1. `hero-headline` — the route's own hero unit headline slot
+ *      (`kind === "hero"`, slot role `hero.headline`).
+ *   2. `nav-label` — an authored navigation/link label whose sibling `.href`
+ *      slot VALUE is exactly this route key (e.g. `…nav.changelog.href` = -
+ *      "/changelog" → `…nav.changelog.label` = "Changelog").
+ *
+ * A candidate is rejected (leaving the route on the site-level title) when it
+ * is empty, when it is not head-safe, or when it is longer than
+ * MAX_ROUTE_HEADING_CHARS — a bounded heading, not a paragraph. Ties are broken
+ * by sorted slot key so the derivation is deterministic.
+ *
+ * The home route is deliberately NOT given a heading by callers: `<brand> |
+ * <category>` is the correct homepage title.
+ */
+export const MAX_ROUTE_HEADING_CHARS = 70;
+
+export function deriveRouteHeadings(
+  units: readonly ContentUnitForHeadings[],
+  slotValues: Record<string, string>,
+): Record<string, RouteHeading> {
+  const headings: Record<string, RouteHeading> = {};
+  const admissible = (value: string | undefined): value is string => {
+    if (typeof value !== "string") return false;
+    const trimmed = value.trim();
+    if (trimmed === "" || trimmed.length > MAX_ROUTE_HEADING_CHARS) return false;
+    return isHeadSafeText(trimmed);
+  };
+
+  // ---- rule 1: the route's own authored hero headline ---------------------
+  const heroCandidates: { route: string; key: string; value: string }[] = [];
+  for (const unit of units) {
+    const route = unit.route ?? null;
+    if (route === null || unit.kind !== "hero") continue;
+    for (const slot of unit.slots ?? []) {
+      if ((slot.role ?? "") !== "hero.headline") continue;
+      const value = slotValues[slot.key];
+      if (!admissible(value)) continue;
+      heroCandidates.push({ route, key: slot.key, value: value.trim() });
+    }
+  }
+  for (const candidate of heroCandidates.sort((a, b) => a.key.localeCompare(b.key))) {
+    if (headings[candidate.route] !== undefined) continue;
+    headings[candidate.route] = { value: candidate.value, slotKey: candidate.key, rule: "hero-headline" };
+  }
+
+  // ---- rule 2: an authored nav/link label pointing at the route -----------
+  const navCandidates: { route: string; key: string; value: string }[] = [];
+  for (const key of Object.keys(slotValues).sort((a, b) => a.localeCompare(b))) {
+    if (!key.endsWith(".href")) continue;
+    const target = (slotValues[key] ?? "").trim();
+    if (!target.startsWith("/")) continue;
+    const route = target.split("?")[0].split("#")[0].replace(/\/+$/, "") || "/";
+    const prefix = key.slice(0, -".href".length);
+    const value = slotValues[`${prefix}.label`];
+    if (!admissible(value)) continue;
+    navCandidates.push({ route, key: `${prefix}.label`, value: value.trim() });
+  }
+  for (const candidate of navCandidates) {
+    if (headings[candidate.route] !== undefined) continue;
+    headings[candidate.route] = { value: candidate.value, slotKey: candidate.key, rule: "nav-label" };
+  }
+  return headings;
 }
 
 export async function loadContentRunForSeo(runDirRef: string): Promise<ContentRunForSeo> {
@@ -89,6 +188,19 @@ export async function loadContentRunForSeo(runDirRef: string): Promise<ContentRu
     };
   };
   const slotValues = JSON.parse(await readFile(path.join(runDir, "slot-values.json"), "utf8")) as Record<string, string>;
+  // content-units.json carries the route each authored unit belongs to — the
+  // ONLY route↔slot map available here. Optional: a content run written before
+  // this file existed (or a minimal fixture) simply yields no route headings,
+  // and every route keeps the site-level title.
+  let routeHeadings: Record<string, RouteHeading> = {};
+  try {
+    const units = JSON.parse(await readFile(path.join(runDir, "content-units.json"), "utf8")) as {
+      units?: ContentUnitForHeadings[];
+    };
+    routeHeadings = deriveRouteHeadings(units.units ?? [], slotValues);
+  } catch {
+    // content-units.json optional — no per-route headings, site-level title
+  }
   let providedFacts: unknown[] = [];
   let language: string | null = null;
   try {
@@ -113,6 +225,7 @@ export async function loadContentRunForSeo(runDirRef: string): Promise<ContentRu
     slotValues,
     providedFacts,
     language,
+    routeHeadings,
   };
 }
 
@@ -140,8 +253,12 @@ function needsInput(basis: string, previewFallback?: string): PlannedValue {
 }
 
 /** Titles cross a JS-string boundary at the serve proxy — keep them splice-safe. */
+export function isHeadSafeText(value: string): boolean {
+  return !/["\\<>&]/.test(value) && !/[\u0000-\u001f]/.test(value);
+}
+
 export function assertHeadSafeText(value: string, field: string): void {
-  if (/["\\<>&]/.test(value) || /[\u0000-\u001f]/.test(value)) {
+  if (!isHeadSafeText(value)) {
     throw new Error(`${field} contains characters unsafe for head splicing: ${value}`);
   }
 }
@@ -153,6 +270,20 @@ export interface BuildPlanOptions {
   sourceSnapshot: SourceSeoSnapshot;
   productionDomain?: string;
   facts?: ProvidedBusinessFacts;
+  /**
+   * Routes the operator turned OFF (Task 28 Phase 6).
+   *
+   * Filtered out of `template.routes` BEFORE the route loop below, which is the
+   * single place every per-route SEO surface is produced: title, description,
+   * robots meta, canonical, the whole openGraph block, twitter and JSON-LD. The
+   * sitemap urlset (`robots-sitemap.ts`) and the rendered head blocks
+   * (`render-head.ts`) both iterate `plan.routes`, so one filter removes the
+   * route from all of them — and, because `collect.ts` builds its per-route
+   * requirements from THIS plan's `report/needs-input.json`, the requirements
+   * disappear because the artifact no longer names the route, never because a
+   * disable was requested.
+   */
+  disabledRoutes?: readonly string[];
 }
 
 export function buildProductionSeoPlan(options: BuildPlanOptions): ProductionSeoPlan {
@@ -169,17 +300,40 @@ export function buildProductionSeoPlan(options: BuildPlanOptions): ProductionSeo
   const scoped = new Set(contentRun.scopedRoutes);
   const planByRoute = new Map(contentRun.pagePlans.map((p) => [p.route, p]));
 
-  const routes: ProductionRouteSeo[] = template.routes.map((route) => {
+  const disabledRoutes = new Set(options.disabledRoutes ?? []);
+  const planRoutes = template.routes.filter((route) => !disabledRoutes.has(route.key));
+  if (disabledRoutes.size > 0 && planRoutes.length === 0) {
+    throw new Error(
+      "production seo plan: every route is disabled — a site with no route has no SEO plan to build",
+    );
+  }
+  const routes: ProductionRouteSeo[] = planRoutes.map((route) => {
     const injected = scoped.has(route.key);
     const pagePlan = planByRoute.get(route.key);
     let title: PlannedValue;
     let description: PlannedValue;
     if (injected && pagePlan !== undefined) {
-      const titleValue = `${brand} | ${identity.category}`;
+      // Per-route title (Task 28 Phase 10 correction). The homepage keeps the
+      // site-level `<brand> | <category>`; every other route prefers its OWN
+      // authored heading (`<heading> | <brand>`), so an indexable site does not
+      // ship one identical <title> on every page. A route with no authored
+      // heading falls back to the site-level title — recorded in the basis and
+      // counted by `checkTitleUniqueness`, never silently.
+      const heading = route.key === "/" ? undefined : contentRun.routeHeadings[route.key];
+      const siteLevelTitle = `${brand} | ${identity.category}`;
+      const headingTitle = heading === undefined ? null : `${heading.value} | ${brand}`;
+      const useHeading = headingTitle !== null && isHeadSafeText(headingTitle);
+      const titleValue = useHeading ? (headingTitle as string) : siteLevelTitle;
+      const titleBasis =
+        useHeading && heading !== undefined
+          ? `content-run:${heading.rule} (${heading.slotKey}) + siteIdentity.workingName`
+          : route.key === "/"
+            ? "content-run:sitePlan.siteIdentity (workingName + category) — site-level title, correct for the home route"
+            : "content-run:sitePlan.siteIdentity (workingName + category) — site-level fallback: this route has no authored heading";
       const descriptionValue = `${pagePlan.primaryMessage ?? identity.positioning} — ${identity.positioning}`;
       assertHeadSafeText(titleValue, `title(${route.key})`);
       assertHeadSafeText(descriptionValue, `description(${route.key})`);
-      title = known(titleValue, "content-run:sitePlan.siteIdentity (workingName + category)");
+      title = known(titleValue, titleBasis);
       description = known(
         descriptionValue,
         "content-run:sitePlan pagePlan.primaryMessage + siteIdentity.positioning",
@@ -348,6 +502,44 @@ function buildRouteJsonLd(input: {
     ],
   };
   return { emitted: true, json, omittedNeedsInput: omitted };
+}
+
+/**
+ * Duplicate-<title> detector (Task 28 Phase 10 correction).
+ *
+ * Two indexable routes that serve the same <title> are a real SEO defect, and
+ * before this detector existed NO check in the program asserted title
+ * uniqueness — which is how a plan whose every route carried one identical
+ * string shipped described as "per-route". The detector never invents a title
+ * to fix a duplicate and never removes one: it MEASURES, names every duplicate
+ * group with its routes, and the number travels in the plan-run manifest and in
+ * the isolated-package QA report. Preview-mode plans are measured the same way;
+ * only the consequence differs (a preview is noindex, so a duplicate there is
+ * informational).
+ */
+export function checkTitleUniqueness(plan: ProductionSeoPlan): {
+  pass: boolean;
+  routesMeasured: number;
+  distinctTitles: number;
+  duplicates: { title: string; routes: string[] }[];
+} {
+  const byTitle = new Map<string, string[]>();
+  for (const route of plan.routes) {
+    const effective = route.title.value ?? route.title.previewFallback ?? null;
+    if (effective === null) continue;
+    const routes = byTitle.get(effective);
+    if (routes === undefined) byTitle.set(effective, [route.route]);
+    else routes.push(route.route);
+  }
+  const duplicates = [...byTitle.entries()]
+    .filter(([, routes]) => routes.length > 1)
+    .map(([title, routes]) => ({ title, routes }));
+  return {
+    pass: duplicates.length === 0,
+    routesMeasured: plan.routes.length,
+    distinctTitles: byTitle.size,
+    duplicates,
+  };
 }
 
 /**

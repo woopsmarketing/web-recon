@@ -25,6 +25,7 @@ import {
  * pnpm e2e:reconstruct https://example.com \
  *   [--max-urls N] [--concurrency N] [--auto-fix]
  *   [--max-fix-iterations N] [--family-escalation N] [--prepare-scroll]
+ *   [--no-normalize-page-state]
  * ```
  *
  * A THIN wrapper (item 31). Everything below parses flags, prints a report and
@@ -42,6 +43,8 @@ interface ParsedArgs {
   maxFixIterations: number;
   familyEscalation: number;
   prepareScroll: boolean;
+  /** Task 28.7 A2 — bounded page-state normalization (default ON). */
+  normalizePageState: boolean;
   help: boolean;
 }
 
@@ -52,7 +55,10 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
     autoFix: false,
     maxFixIterations: DEFAULT_MAX_FIX_ITERATIONS,
     familyEscalation: DEFAULT_FAMILY_ESCALATION,
-    prepareScroll: false,
+    // Task 28.6 W8 RC2 — ON by default; --no-prepare-scroll opts out.
+    prepareScroll: true,
+    // Task 28.7 A2 — ON by default; --no-normalize-page-state opts out.
+    normalizePageState: true,
     help: false,
   };
 
@@ -86,6 +92,15 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
         break;
       case "--prepare-scroll":
         args.prepareScroll = true;
+        break;
+      case "--no-prepare-scroll":
+        args.prepareScroll = false;
+        break;
+      case "--normalize-page-state":
+        args.normalizePageState = true;
+        break;
+      case "--no-normalize-page-state":
+        args.normalizePageState = false;
         break;
       default:
         if (token.startsWith("-")) throw new Error(`unknown flag: ${token}`);
@@ -144,6 +159,9 @@ function printUsage(): void {
     `  --family-escalation N    exactly observe up to N badly-represented routes (0-${MAX_FAMILY_ESCALATION}, default ${DEFAULT_FAMILY_ESCALATION})`,
   );
   console.log("  --prepare-scroll         read-only auto-scroll to trigger lazy content");
+  console.log(
+    "  --no-normalize-page-state  do NOT dismiss entry popups before collection",
+  );
   console.log("");
   console.log("Pipeline:");
   for (const stage of STAGE_REGISTRY) {
@@ -302,6 +320,7 @@ async function main(): Promise<void> {
       maxFixIterations: args.maxFixIterations,
       familyEscalation: args.familyEscalation,
       prepareScroll: args.prepareScroll,
+      normalizePageState: args.normalizePageState,
       ...(env.FIRECRAWL_API_KEY ? { firecrawlApiKey: env.FIRECRAWL_API_KEY } : {}),
       onLog: (message) => console.log(message),
     });

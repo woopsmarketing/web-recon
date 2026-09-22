@@ -1,0 +1,236 @@
+{
+ "status": "DONE",
+ "summary": "Task 28 Phase 4 — Visual Editor V1 shipped as a new src/editor/ module: a dependency-free node:http operator app on its OWN 127.0.0.1 origin (src/cli-editor.ts), embedding a real authoring preview in an iframe and talking to the Phase-3 bridge over origin+source-validated postMessage. Site/Page navigation, canonical Desktop 1440x900 / Mobile 390x844 viewports against the template's own breakpoint (915), hover highlight with a MEASURED max geometry delta of EXACTLY 0, click->slot inversion through slot-bindings.json with mandatory dynamic-trigger recovery, and Slot / grouped-CTA / Image / Logo / Theme / Region inspectors — all writing through src/release/authored.ts with Save as the transaction boundary and Undo appending a restored revision. AI Rewrite runs on the existing ContentGenerator seam (no LLM key, no vendor SDK) and returns keyed structured slot values, refusing out-of-scope keys and applying nothing. bridge.ts was extended additively (dynTrigger, highlight, select-mode, scroll/resize geometry ticks) and re-proven inert in a REAL production package. 50/50 checks in scripts/smoke-visual-editor.ts, typecheck exit 0, three injected breaks proven to fail and restored byte-identically (sha256), zero mutating git operations.",
+ "filesChanged": [
+  "/Users/woops/projects/web-recon/src/editor/index.ts",
+  "/Users/woops/projects/web-recon/src/editor/inversion.ts",
+  "/Users/woops/projects/web-recon/src/editor/catalog.ts",
+  "/Users/woops/projects/web-recon/src/editor/assets.ts",
+  "/Users/woops/projects/web-recon/src/editor/inspect.ts",
+  "/Users/woops/projects/web-recon/src/editor/panels.ts",
+  "/Users/woops/projects/web-recon/src/editor/region-enablement.ts",
+  "/Users/woops/projects/web-recon/src/editor/commit.ts",
+  "/Users/woops/projects/web-recon/src/editor/ai-rewrite.ts",
+  "/Users/woops/projects/web-recon/src/editor/runtime.ts",
+  "/Users/woops/projects/web-recon/src/editor/server.ts",
+  "/Users/woops/projects/web-recon/src/editor/session.ts",
+  "/Users/woops/projects/web-recon/src/editor/client.ts",
+  "/Users/woops/projects/web-recon/src/cli-editor.ts",
+  "/Users/woops/projects/web-recon/scripts/smoke-visual-editor.ts",
+  "/Users/woops/projects/web-recon/src/authoring-preview/bridge.ts",
+  "/Users/woops/projects/web-recon/docs/result/handoffs/28-visual-editor.json",
+  "/Users/woops/projects/web-recon/docs/result/handoffs/28-intel/pending-package-scripts.tsv"
+ ],
+ "items": [
+  {
+   "id": "ed.location",
+   "resolution": "IMPLEMENTED",
+   "evidence": "New src/editor/ (13 modules, 3,141 lines) + src/cli-editor.ts, run as `npx tsx src/cli-editor.ts --project <dir>`. Installed deps only (node:http + node:net, the same shape src/authoring-preview/serve.ts, src/theme/serve.ts, src/seo/serve.ts and src/assets/serve.ts already use). No UI framework, no bundler, no new dependency, package.json unedited. Separate from production output: the editor reads the IMMUTABLE template run and writes only release-project.json + revisions/ (through src/release) and the preview's own overlay; it never rewrites a generated customer app. Re-proven this phase — scripts/smoke-authoring-preview.ts 28.P3.34/35/36 baked a REAL production package after a preview session: bridge marker 0 occurrences, authoring patch 0 occurrences. A second Next app under src/ was REJECTED with a measured reason: `next dev`/`next build` rewrites the SHARED root tsconfig.json and drops .next/types/*.ts inside src/, which `tsc --noEmit` over src/**/*.ts would then typecheck, breaking the gate for every concurrent agent."
+  },
+  {
+   "id": "ed.layout",
+   "resolution": "IMPLEMENTED",
+   "evidence": "Top bar (Site select | Page select | Desktop/Mobile | Preview/QA | Select-mode | status | Undo) / left rail (Pages, Regions) / centre (real preview iframe, or the QA report) / right (Inspector tabs Slot | Region | Theme | Logo). 28.P4.14 asserts #wr-left, #wr-center iframe#wr-frame, #wr-right .tabs, 8 page rows and that the iframe URL starts with the preview origin. Functional, undecorated: one 2,984-byte stylesheet, no images, no animation."
+  },
+  {
+   "id": "ed.siteRouteNav",
+   "resolution": "IMPLEMENTED",
+   "evidence": "GET /api/bootstrap lists every release project on disk via scanSites() and every template route from <templateRun>/app/reconstruction-data/route-map.json; POST /api/select-site re-opens a full runtime (and only stops the old preview after the new one answers, so the iframe never points at a dead port). 28.P4.12 measured 8 routes and 11 sites indexed with the scratch project present. Route switch measured at 22 ms median / 658 ms max (the max is the first visit to an un-warmed route)."
+  },
+  {
+   "id": "ed.viewport",
+   "resolution": "IMPLEMENTED",
+   "evidence": "Desktop 1440x900 / Mobile 390x844 — the observed profiles frozen in src/observer/types.ts and the widths every QA suite uses — with the template's OWN inferred breakpoint (915 for linear.app) read from route-map.json. The toggle is an iframe WIDTH change plus a transform:scale to fit, not device emulation and not a URL parameter. 28.P4.13 asserts the exact widths, the breakpoint, and that the bootstrap payload states in words that Mobile does NOT reproduce deviceScaleFactor 3 or hasTouch — that limitation is printed to the operator, not hidden."
+  },
+  {
+   "id": "ed.hover",
+   "resolution": "IMPLEMENTED",
+   "evidence": "Hover outlines the element via ONE <style data-wr-editor-style=\"1\"> in <head> whose textContent is rewritten per hover, keyed on the EXISTING data-wr-node (28.P4.16). The role/type indicator is drawn in the EDITOR document from the reported rect and follows iframe scroll via new bridge geometry ticks (28.P4.17 measured 'navigation.href · url'). 28.P4.19: exactly 1 editor attribute exists in the whole preview document (the <style>'s own), 0 on customer elements, and the style lives in <head>, not in the customer subtree."
+  },
+  {
+   "id": "ed.domToSlot",
+   "resolution": "IMPLEMENTED",
+   "evidence": "Server-side, identity-based: static/paint-twin keyed on pageId|viewport|nodeId, dynamic-template on pageId|viewport|RECOVERED-TRIGGER|templateNodeId. 28.P4.1 — 9,929 bindings produce 9,929 distinct full occurrence keys, 0 keys spanning two slots. 28.P4.2 — of 262 dynamic bindings, the trigger-keyed set is sound 262/262, and 22 would get a STRICTLY WIDER candidate set (slots not on that element) without it, while 94 would be merely AMBIGUOUS [figure corrected 2026-08-27T20:21:56.224779Z; see corrections[] in 28-visual-editor.json]; single-slot resolution 168/262 -> 182/262. 28.P4.4 — when recovery fails the resolver returns EVERY candidate with triggerRecovered:false and says so; it does not guess. 28.P4.21 — a real 2-slot anchor (n000027) shows both navigation.href and navigation.label. NO data-wr-slot was added: 28.P4.45 measures 0 such elements in the live DOM and 0 occurrences in the served HTML."
+  },
+  {
+   "id": "ed.multiBinding",
+   "resolution": "IMPLEMENTED",
+   "evidence": "plan.main.text.projects (static desktop n000086 + n000098, static mobile n000086 + n000098, dynamic-template desktop trigger n000094/t000014). 28.P4.5/24 — the inspector shows '5 rendered bindings' site-wide AND '3 in this view', with the surface breakdown {static:4, dynamic-template:1} and a per-binding table marking in-view rows. 28.P4.25 — ONE Save took the served /plan from 0 occurrences of the new value to 5+; 28.P4.26 — a real browser rendered it in both the desktop and the mobile tree; 28.P4.27 — that Save appended exactly one revision."
+  },
+  {
+   "id": "ed.textInspector",
+   "resolution": "IMPLEMENTED",
+   "evidence": "Shows slot key, canonical role, type, scope, page/route, editability, urlKind, current value, default, constraints (the ORIGINAL's character/word count and rendered width/height/lineCount per viewport), evidence tags, the full binding table, and origin/disposition/customerFacing/detail from slot-accounting.json. 28.P4.8 asserts the payload has NO maxCharacters, NO x/y, NO approval state, and that `fieldsNotAvailable` names each absent field — the compiler's own refusal to invent a maximum is surfaced rather than papered over, and the panel states that opening or editing a review slot records nothing about human approval. Save writes through commitAuthoredEdits; 28.P4.40 proves the saved text is visible in a real browser."
+  },
+  {
+   "id": "ed.urlInspector",
+   "resolution": "IMPLEMENTED",
+   "evidence": "groupId grouping is REAL on this data and was not faked: 1,553 of 3,079 linear slots across 635 groups. The form renders 'Button label' fields + one 'Destination' field. 28.P4.6/29 — home.main.cta.new-loops is a genuine 3-member group (1 href + label.01 'New' + label.02 'Loops →'), so the UI renders 1 href + N labels and never assumes a pair. 28.P4.7 — a groupId with ONE member (194 such groups exist, 190 of them image.content) degrades to the single-slot form. 28.P4.28 — the destination edit is written as href=\"...\" in the served HTML AND lands on the href slot, not on its label sibling: the group is a view, the slots stay independent."
+  },
+  {
+   "id": "ed.imageInspector",
+   "resolution": "IMPLEMENTED",
+   "evidence": "Shows the current image served from the preview's /media path, the source URL, the composed assetId with materialization status/mime/size, the /media names, alt text and the current authored replacement — plus an explicit UNJOINED note when the assetId cannot be composed (a slot has no assetId field; the join is manifest inventoryId->sourceUrl composed with the rewrite map). Replacement goes through setAuthoredAsset keyed by the materialization's own assetId — the same key the resolution pack uses. 28.P4.30 — authored.assets[ai000047].file written, one revision appended; 28.P4.31 — the preview immediately serves the replacement BYTES with no stage rerun and no rebuild. Measured 23.5 ms median / 126 ms max end-to-end including the commit."
+  },
+  {
+   "id": "ed.logoInspector",
+   "resolution": "IMPLEMENTED",
+   "evidence": "Uses the Phase-2 resolver: scanBrandSurfaces() over the template runtime IR + content run, each finding keyed by brandSurfaceId() — the SAME id src/production/brand-bake.ts derives — recorded through setAuthoredBrandDecision. WHOLE brand HOST replacement only; there is no SVG path editor. The panel prints RESOLVABLE_BRAND_SURFACES and SURFACES_NOT_RESOLVED verbatim. 28.P4.34 — a REPLACE on a real svg-aria-label surface written to authored.brand with one revision; 28.P4.35 — the response says plainly the decision is applied by the PRODUCTION BAKE and will NOT change the preview iframe; 28.P4.36 — a PRESERVE with no reason is refused by the authored-state schema (HTTP 400), not silently accepted."
+  },
+  {
+   "id": "ed.themePanel",
+   "resolution": "IMPLEMENTED",
+   "evidence": "theme-contract-v1 ONLY: the closed 24-token vocabulary, each row showing the base theme value, the SITE's original painted value from the theme adapter, the operator override, and how many paint groups the token drives (0 = editing it will show nothing here). The themes/library/*.theme.json files are offered as a base. There is no raw-CSS field and margin/padding/width/grid/flex are not representable. 28.P4.9 — validateThemeTokens accepts 1 of 4 inputs, rejecting a url() value, a non-token id (layout.padding) and a smuggled declaration. 28.P4.32 — a token override repaints the live preview with no navigation and no rebuild (829 ms median browser-visible); 28.P4.33 — Save writes authored.theme.tokens and appends exactly one revision."
+  },
+  {
+   "id": "ed.regionPanel",
+   "resolution": "IMPLEMENTED",
+   "evidence": "Panel shows regionId, scope + scopeKey, landmark kind/key/source, rootTag, childPath, element/binding/dynamic-binding counts, slot count, every route reaching the region ON THIS PAGE, every pageSourceId it appears on (shared-page ownership) and the per-viewport occurrence nodeIds — joined back to the DOM on data-wr-node. 28.P4.37 measured 25 regions on p000001 with at least one shared across pages. The enablement TOGGLE is behind RegionEnablementPort (read/write), and because the enablement builder's API landed mid-phase it is WIRED to it: src/editor/region-enablement.ts calls evaluateRegionDisable for the decision, commitAuthoredEdits({op:'disable-region'|'enable-region'}) to record it, and resolveEnablement for state. Honesty rule: a recorded disable the resolver REFUSES reports enabled:null (UNKNOWN) with the refusal verbatim, never 'disabled'. UNWIRED_REGION_ENABLEMENT remains exported and /api/region-enablement answers 501 with the seam text when a port reports wired:false, so substituting a different API is one line. ROUTE disable is NOT wired — recorded as a gap, not claimed."
+  },
+  {
+   "id": "ed.revision",
+   "resolution": "IMPLEMENTED",
+   "evidence": "A keystroke calls POST /api/preview-value (debounced 250 ms) which writes the preview overlay ONLY — no project write, no revision. 28.P4.38: 7 keystrokes produced 0 revisions while the typed value WAS already served by the preview and was NOT in the project's authoritative authored state. 28.P4.39: the single Save that followed appended exactly 1 revision. 28.P4.41: re-saving the identical value wrote nothing and appended no revision (commitAuthoredEdits' `changed` contract). Save transaction measured at 21 ms median / 31 ms max."
+  },
+  {
+   "id": "ed.undo",
+   "resolution": "IMPLEMENTED",
+   "evidence": "Undo calls restoreAuthoredRevision, which APPENDS the earlier snapshot as a new head. 28.P4.42 asserts the chain grew by exactly one, the new head's origin is 'restore', restoredFrom equals the target revisionId, authoredStateHash equals the target's, and every pre-existing revision record is byte-identical afterwards (JSON comparison of the full prefix). 28.P4.43 asserts the undone value is actually gone from the authoritative authored state. No previous revision is ever mutated."
+  },
+  {
+   "id": "ed.aiRewrite",
+   "resolution": "IMPLEMENTED",
+   "evidence": "POST /api/ai-rewrite {scope:{kind:'slot'|'region'}, route, provider, resultFile?} runs on the EXISTING ContentGenerator seam — `fake` (deterministic, offline) or `result` (loadManualGenerationResult of an operator-authored generation-result.json, same schema, same validator). No vendor SDK, no secret, no credential. 28.P4.48 — the request carries the customer brief verbatim (content run intent.json, else project.intent.rawIntent, else an explicit REFUSAL rather than an invented brief), the SiteContentPlan, the route, the selected Region, the contained Content Units and each slot's recorded constraints, plus content-policy-v1 and the run's own instructions. 28.P4.49 — the response is KEYED STRUCTURED SLOT VALUES: every proposed key is in scope, every value is a string, out-of-scope keys are refused (never split or reassigned), unresolved entries stay unresolved, and the revision count is unchanged by the call. 28.P4.50 — a PageRegion rewrite is scoped by that region's own slot keys. Applying goes through the ordinary Save path, so an AI rewrite is one revision like any other edit."
+  },
+  {
+   "id": "ed.postMessageSecurity",
+   "resolution": "IMPLEMENTED",
+   "evidence": "Editor and preview are on DIFFERENT 127.0.0.1 origins (28.P4.11), which is what keeps the bridge's guards non-vacuous. Outbound: the bridge posts only to explicitly allowlisted origins, never '*'. Inbound: origin allowlist AND event.source === window.parent/opener AND the protocol tag AND the version. The editor client mirrors it — it drops any message whose event.origin !== the preview origin or whose event.source !== the iframe's contentWindow. 28.P4.44 — a ROGUE editor harness on its own un-allowlisted port embedding the same preview received 0 messages and its highlight command produced 0 highlight styles. 28.P4.10 re-asserts every Phase-3 property on the extended bridge (no '*', origin+source guards, data-wr-node/data-wr-dyn-node reported, no data-wr-slot)."
+  },
+  {
+   "id": "ed.noLayoutImpact",
+   "resolution": "IMPLEMENTED",
+   "evidence": "Method: getBoundingClientRect{x,y,width,height} for EVERY element in the preview document plus 6 document metrics, the injected <style> filtered out of both snapshots, max absolute delta over ~32,000 numbers. Noise floor measured at 0 (baseline vs baseline, 8,010 elements). 28.P4.18 — max delta EXACTLY 0 at 1440x900 across 13 probes, one per tag kind (main, section, nav, div, ul, li, p, h1, h2, a, span, button, img). 28.P4.20 — EXACTLY 0 at 390x844 across the same 13 kinds. The probe design is itself measured, not assumed: the first version hovered ONE inline anchor and read 0 even with the highlight deliberately changed from `outline` to `border` (the template's boxes are border-box), so the check was strengthened; re-injecting the same break then produced 4.0001220703125 px at section#n000004 on desktop and 4 px on mobile. The zero is therefore a measurement with a demonstrated ability to fail."
+  }
+ ],
+ "testsAdded": [
+  "scripts/smoke-visual-editor.ts — 50 checks (28.P4.1 … 28.P4.50), 0 failures, driving the REAL editor UI with Playwright against a REAL authoring preview on the real 3,079-slot / 9,929-binding linear.app Recon Template. §1 inversion on the real bindings file; §2 two origins + bootstrap + viewport semantics; §3 hover highlight and its geometry cost; §4 click->slot, multi-binding, one-edit-updates-all; §5 url/CTA/image/logo/theme/region inspectors; §6 debounce, save boundary, no-op save, undo; §7 rogue-origin rejection, no data-wr-slot, 0 runtime + 0 hydration errors; §8 the AI rewrite contract.",
+  "Failure-injection proof (three independent breaks, restored byte-identically via sha256 — git was never used): run 1 broke bridge.ts (outline->border), inversion.ts (no-trigger fallback silently picks the first candidate and claims recovery) and server.ts (/api/preview-value also commits) and produced FAIL on 28.P4.4, 28.P4.16, 28.P4.20 and 28.P4.38; that run also EXPOSED that 28.P4.18 was too weak, so the check was strengthened to 13 probe kinds and run 2 re-injected the same bridge break, producing FAIL on 28.P4.16/18/20 with a 4.0001220703125 px delta. sha256 of all three files identical to pre-injection after each restore; the suite then re-ran 50/50."
+ ],
+ "measurements": [
+  {
+   "metric": "editor initial startup (COLD: copy + patch + next build + preview + editor server)",
+   "reps": 5,
+   "medianMs": 3239,
+   "maxMs": 3322,
+   "method": "wall clock around startVisualEditor() with the preview workspace deleted first; includes every setup step, nothing excluded"
+  },
+  {
+   "metric": "preview startup (COLD, inside the above)",
+   "reps": 5,
+   "medianMs": 3169,
+   "maxMs": 3241,
+   "method": "AuthoringPreviewSession start, measured inside the cold editor startup"
+  },
+  {
+   "metric": "next build (COLD, inside the above)",
+   "reps": 5,
+   "medianMs": 2556,
+   "maxMs": 2611,
+   "method": "materializeMs.build reported by the preview session"
+  },
+  {
+   "metric": "editor initial startup (WARM: existing preview workspace)",
+   "reps": 5,
+   "medianMs": 604,
+   "maxMs": 641,
+   "method": "wall clock around startVisualEditor() reusing the built preview app; includes the 5.8 MB slots+bindings load and the editor server bind"
+  },
+  {
+   "metric": "preview startup (WARM, inside the above)",
+   "reps": 5,
+   "medianMs": 556,
+   "maxMs": 557,
+   "method": "AuthoringPreviewSession start, measured inside the warm editor startup"
+  },
+  {
+   "metric": "release project + template index load (inside the above)",
+   "reps": 5,
+   "medianMs": 45,
+   "maxMs": 82,
+   "method": "loadEditorSite(): release-project.json + slots.json + slot-bindings.json + route-map + page-regions + slot accounting"
+  },
+  {
+   "metric": "route switch (operator picks a page, the new route is rendered)",
+   "reps": 6,
+   "medianMs": 22,
+   "maxMs": 658,
+   "method": "selectOption on #wr-route until the iframe src moved, [data-wr-viewport] is present and document.readyState is complete; the max is the first visit to an un-warmed route"
+  },
+  {
+   "metric": "text edit visible in the browser",
+   "reps": 6,
+   "medianMs": 911.5,
+   "maxMs": 932,
+   "method": "fill() on the inspector textarea until the value is in the preview DOM; INCLUDES the editor's 250 ms debounce, the overlay write and a full iframe document re-fetch"
+  },
+  {
+   "metric": "url edit visible in the browser",
+   "reps": 6,
+   "medianMs": 901.5,
+   "maxMs": 918,
+   "method": "fill() on the group's Destination field until an <a href> with the new value exists in the preview DOM; includes the 250 ms debounce"
+  },
+  {
+   "metric": "theme token edit visible in the browser",
+   "reps": 6,
+   "medianMs": 829,
+   "maxMs": 927,
+   "method": "fill() on a theme-contract token field until the CSS custom property has the new value; includes the 250 ms debounce and the stylesheet <link> swap"
+  },
+  {
+   "metric": "image replacement visible in the browser",
+   "reps": 6,
+   "medianMs": 23.5,
+   "maxMs": 126,
+   "method": "POST /api/asset (commit + authored.assets revision + bytes into the preview media override) then refresh-media, until the RENDERED PIXEL is the new colour"
+  },
+  {
+   "metric": "text edit ENGINE-only (no browser, no debounce)",
+   "reps": 6,
+   "medianMs": 137,
+   "maxMs": 171,
+   "method": "POST /api/preview-value until the next GET of the route already carries the new value; isolates the overlay write + epoch re-parse from the editor's 250 ms debounce and the iframe reload"
+  },
+  {
+   "metric": "Save transaction (commit + revision + preview refresh)",
+   "reps": 6,
+   "medianMs": 21,
+   "maxMs": 31,
+   "method": "POST /api/save until commitAuthoredEdits reports changed with a new revision id and the preview overlay has been rewritten"
+  }
+ ],
+ "commandsRun": [
+  "bash tmp/wr28/suite-lock.sh pnpm typecheck  → exit 0 (run 5 times across the phase, including the final state)",
+  "bash tmp/wr28/suite-lock.sh npx tsx scripts/smoke-visual-editor.ts  → 50 checks, 0 failures (final run tmp/wr28/p4/final.log)",
+  "bash tmp/wr28/suite-lock.sh npx tsx scripts/smoke-authoring-preview.ts  → 41 checks, 0 failures (re-run because this phase extended src/authoring-preview/bridge.ts; includes 28.P3.34/35/36, the real production package with 0 bridge occurrences)",
+  "bash tmp/wr28/suite-lock.sh npx tsx tmp/wr28/p4/measure.mts  → startup + route-switch + text/url/theme/image latency, 5–6 reps each (tmp/wr28/p4/measurements.json)",
+  "bash tmp/wr28/suite-lock.sh npx tsx tmp/wr28/p4/measure2.mts  → engine-only text edit and Save transaction, 6 reps each (tmp/wr28/p4/measurements2.json)",
+  "bash tmp/wr28/suite-lock.sh npx tsx scripts/smoke-visual-editor.ts (with 3 injected breaks)  → 4 FAILs, then again with 1 injected break against the strengthened check → 3 FAILs (tmp/wr28/p4/injected.log, injected2.log)",
+  "shasum -a 256 src/authoring-preview/bridge.ts src/editor/inversion.ts src/editor/server.ts  → identical before and after every injection/restore cycle"
+ ],
+ "limitations": [
+  "The browser-side asset is NOT covered by `tsc --noEmit` (include is src/**/*.ts and the client is a TS-emitted string). It is deliberately kept to wiring — iframe plumbing, postMessage, one <style> rewrite, form rendering — with every decision behind the typed JSON API, but a client-side regression can only be caught by the Playwright suite, not by the type system.",
+  "Text / URL / theme edits are browser-visible in ~0.83–0.91 s because the editor debounces 250 ms and then reloads the preview document. The engine alone is 137 ms median and a Save is 21 ms. The gap is UI policy, not engine cost; it is reported rather than tuned away.",
+  "The Mobile toggle reproduces the mobile TREE and its CSS layout at 390 CSS px. It does NOT reproduce the observation's deviceScaleFactor 3 or hasTouch:true — only the Playwright QA suites do, with real contexts. The bootstrap payload states this and a check asserts the sentence is present.",
+  "ROUTE enablement is NOT wired. evaluateRouteDisable exists and the Pages rail is the obvious home for it; this phase shipped region enablement only, and the Pages list is navigation.",
+  "A brand (logo) decision is recorded but is NOT visible in the preview — it is applied by the production bake. The panel says so; the operator cannot see the result until a build.",
+  "The image inspector takes a server-side file PATH. There is no upload endpoint, no thumbnail browser and no media library — out of scope by contract.",
+  "svg-text bindings are schema-supported but UNEXERCISED on this fixture: the linear.app template has 0 of 9,929. Any coverage claim for that path here would be unfounded; domainchecker.co.kr / stripe.com are where those cases live. Paint-twin bindings ARE covered (3 slots / 4 bindings) as ordinary rows written by the same single value.",
+  "authored.theme has no `set-theme` AuthoredEdit op, so src/editor/commit.ts composes that one state transition itself and hands it to the same commitAuthoredState with a no-op guard re-derived from hashAuthoredState. It is the one write path that does not go through applyAuthoredEdit — recorded as a requested seam for src/release.",
+  "The geometry-zero result is measured on ONE template. It is structural (outline never participates in layout; no node or attribute is added to the customer subtree) and the failure mode of a border-based technique was measured too — but 'exactly 0' is a statement about linear.app's 8,010-element document at two viewports, not a proof for every site.",
+  "Site switching re-opens a full runtime. For a site on a DIFFERENT template that costs a cold materialize (~3.2 s measured); for a site on the same template the warm preview workspace is reused (~0.6 s).",
+  "The editor picks the newest page-regions run whose templateId matches. A project whose region compile predates a template recompile simply has no region panel — reported as unavailable, never approximated.",
+  "src/authoring-preview/bridge.ts was modified (additively) even though it is Phase 3's module. The cross-origin iframe makes an in-page highlight and dynamic-trigger recovery impossible from the parent document, and the alternative — a second editor-owned splicing proxy — would have added a hop per request and duplicated the serve boundary. Non-regression was proven by re-running smoke:authoring-preview (41/41), including the real production-package inertness proof."
+ ]
+}

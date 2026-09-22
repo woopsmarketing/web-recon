@@ -1,0 +1,121 @@
+{
+  "schema": "task285b-verify-vocab-v1",
+  "producedAt": "2026-08-29",
+  "verdict": "PASS",
+  "verifier": "fresh independent verifier (implemented nothing)",
+  "platform": "darwin 25.2.0, chromium via playwright",
+  "checksRun": 624,
+  "suitesRun": [
+    { "suite": "scripts/smoke-visual-vocab.ts", "checks": 88, "passed": 88, "failed": 0, "result": "PASS", "note": "run twice (before and after the negative control); identical both times" },
+    { "suite": "scripts/smoke-sitespec.ts", "checks": 257, "passed": 257, "result": "PASS", "note": "regression check — style catalog path" },
+    { "suite": "scripts/smoke-reconstruction.ts", "checks": 217, "passed": 217, "result": "PASS", "note": "regression check — style/pseudo generator path" },
+    { "suite": "scripts/smoke-multi-observer.ts", "checks": 62, "passed": 62, "result": "PASS", "note": "regression check — real observation path" }
+  ],
+  "claimsVerified": [
+    { "claim": "STYLE_WHITELIST 111 -> 114 with text-wrap-mode, text-wrap-style, -webkit-font-smoothing", "verified": true, "evidence": "git diff src/observer/types.ts shows exactly those 3 entries appended after \"color\" in the Typography group; runtime import reports STYLE_WHITELIST.length === 114 with 0 duplicates." },
+    { "claim": "PSEUDO_STYLE_WHITELIST 18 -> 20 with opacity, visibility", "verified": true, "evidence": "diff shows exactly those 2 entries appended after \"pointer-events\"; runtime import reports length === 20, 0 duplicates. LAYOUT_RULE_PROPERTIES still 62 (untouched)." },
+    { "claim": "no font binaries / @font-face / src / font-display added", "verified": true, "evidence": "the entire diff is 21 added lines: 16 comment lines and 5 property-name strings. No font-face, no src, no font-display, no binary, no url()." },
+    { "claim": "additions are generic, no site-specific selector or value", "verified": true, "evidence": "all five additions are standard CSS property names; the fixture in the new suite uses generic class names (.card, .headline, .smoothed) and the generic `monospace` family. No brand or domain string anywhere in either file." },
+    { "claim": "additions follow the existing convention", "verified": true, "evidence": "appended inside the existing grouped-literal lists with a rationale comment, the same style as the Task 16 grid and list-marker additions; -webkit-font-smoothing has the same shape as pre-existing -webkit-mask-* entries and passes style-generator's PROPERTY_NAME regex." },
+    { "claim": "the proof chain is real (real observePage / compileViewport / generateStylesheet / real chromium)", "verified": true, "evidence": "scripts/smoke-visual-vocab.ts imports observePage from src/observer, compileViewport + StyleCatalogBuilder + AssetCatalogBuilder from src/sitespec, generateStylesheet/generatePseudoStyles/styleClassName/documentRootClassName/pseudoSelector from src/reconstruction, and launches real chromium against a local node:http fixture. There is NO hand-built observation JSON and no hand-built style token anywhere in the file." },
+    { "claim": "88/88 PASS", "verified": true, "evidence": "`npx tsx scripts/smoke-visual-vocab.ts` from repo root printed `smoke-visual-vocab: 88 passed, 0 failed`, reproduced twice." },
+    { "claim": "browser-stage assertions are meaningful, not tautological", "verified": true, "evidence": "the negative control below made 6 browser-stage checks fail with real wrong values (clone pseudo opacity `got 1` against a source of `0`). The wrap assertions compare Range.getClientRects() line boxes clone-vs-source AND balanced-vs-plain, so a lost text-wrap-style would collapse balanced onto plain and fail." },
+    { "claim": "no hardcoded whitelist-count assumption exists in src/ or scripts/", "verified": true, "evidence": "independent grep of src and scripts for WHITELIST.length, `=== <number>` comparisons on the lists, and the literals 111/18 found no count assertion. The only whitelist assertion outside the new suite is scripts/smoke-e2e.ts:751, `STYLE_WHITELIST.includes(property)` over 9 Task-16 grid properties — membership only, additions cannot invalidate it. Confirmed by running smoke-sitespec / smoke-reconstruction / smoke-multi-observer green." },
+    { "claim": "white-space sorts after text-wrap-mode and resets it; text-wrap-style is the load-bearing property", "verified": true, "evidence": "src/sitespec/style-catalog.ts:101 re-emits token properties with Object.keys(source).sort(), and src/reconstruction/style-generator.ts declarations() sorts again before emitting. Empirical dump of a real generateStylesheet() call: `.wr-st000001{-webkit-font-smoothing:antialiased;color:rgb(0,0,0);text-wrap-mode:wrap;text-wrap-style:balance;white-space:normal}` — white-space is LAST. Since `white-space` is the shorthand for white-space-collapse + text-wrap-mode, the emitted text-wrap-mode is indeed overwritten; `text-wrap-style` is NOT part of that shorthand, so `balance` survives. The suite's browser-stage line-box assertions therefore do prove wrapping is carried by text-wrap-style. Risk assessed BENIGN — see defect VV-05." }
+  ],
+  "typecheck": {
+    "command": "npx tsc --noEmit, filtered to the two owned files",
+    "errorsInOwnedFiles": 0,
+    "note": "other files were not evaluated; src/reconstruction/layout-inference.ts, src/reconstruction/asset-resolver.ts and src/reconstruction-qa/* are being edited concurrently by other builders and are out of this verification's scope."
+  },
+  "defects": [
+    {
+      "id": "VV-01",
+      "severity": "low",
+      "description": "Near-tautological guard: `check(\"no font binary / @font-face property was added\", !STYLE_WHITELIST.some(p => p.startsWith(\"font-face\") || p === \"src\"))` (scripts/smoke-visual-vocab.ts:471-474). No CSS property name can ever begin with \"font-face\", so that clause can never fail, and the check does not look for `font-display`, `@font-face`, or url()/binary values. The underlying CLAIM is true — I verified it directly from the diff — but this check does not meaningfully guard it.",
+      "evidence": "scripts/smoke-visual-vocab.ts:471-474; the 21-line diff of src/observer/types.ts contains no font-face, src, font-display or url() token.",
+      "blocking": false,
+      "suggestedFix": "assert against `font-display`, `src`, and any value containing `url(` in the emitted CSS, or drop the check and rely on the diff review."
+    },
+    {
+      "id": "VV-02",
+      "severity": "low",
+      "description": "Label/assertion mismatch: `check(\"pseudo rules were emitted for all five fixture pseudos\", pseudoStyles.ruleCount >= 5)` claims exactness but asserts a lower bound, so a spurious sixth rule would pass silently.",
+      "evidence": "scripts/smoke-visual-vocab.ts, §4.",
+      "blocking": false,
+      "suggestedFix": "`=== 5`, or keep `>=` and retitle the check."
+    },
+    {
+      "id": "VV-03",
+      "severity": "informational",
+      "description": "One link of the chain is NOT production code: the clone's DOM comes from the suite's own `renderCompiledTree()` serializer rather than from src/reconstruction/compile-node.ts / generate-app.ts. This is disclosed honestly in the file header, and it is a reasonable substitution (the real emitter produces a React app requiring a build). The substitution stays faithful where it matters — class names come from the REAL styleClassName()/documentRootClassName() and the pseudo selectors are asserted against the REAL pseudoSelector() — and the five new properties travel through style TOKENS, not through DOM emission, so this stage cannot mask the change under test. It does mean the suite would not catch a divergence in real DOM emission.",
+      "evidence": "scripts/smoke-visual-vocab.ts renderCompiledTree(); header comment documents the substitution explicitly.",
+      "blocking": false
+    },
+    {
+      "id": "VV-04",
+      "severity": "informational",
+      "description": "Five checks are labeled `[darwin measurement]` but the suite has NO platform guard (no process.platform reference). If Chromium on a Linux CI runner computes `-webkit-font-smoothing` to anything other than `antialiased`, the suite hard-fails rather than skipping. Blink registers the property unconditionally, so it most likely computes identically on Linux — but that is unverified: this verification ran on Darwin only.",
+      "evidence": "grep for process.platform in scripts/smoke-visual-vocab.ts returns nothing; the five labeled checks are at lines 551, 598, 624, 767, 772.",
+      "blocking": false,
+      "suggestedFix": "gate the smoothing checks on process.platform === \"darwin\", or verify once on Linux and drop the label."
+    },
+    {
+      "id": "VV-05",
+      "severity": "informational",
+      "description": "`text-wrap-mode` is INERT in the generated CSS: alphabetical declaration ordering always emits the `white-space` shorthand after it, resetting it. The builder named this hazard and the assessment is correct — the two can only disagree for white-space-collapse/text-wrap-mode combinations that have no single white-space keyword (e.g. preserve-breaks + nowrap), and in that case Chromium's computed white-space serialization degrades rather than lying. `text-wrap-style` is unaffected by the white-space shorthand and is the property actually carrying balance. Recorded so a future change to declaration ordering or to either property is not assumed safe.",
+      "evidence": "empirical generateStylesheet() output: `.wr-st000001{-webkit-font-smoothing:antialiased;color:rgb(0,0,0);text-wrap-mode:wrap;text-wrap-style:balance;white-space:normal}`; sorting at src/sitespec/style-catalog.ts:101 and src/reconstruction/style-generator.ts declarations().",
+      "blocking": false
+    },
+    {
+      "id": "VV-06",
+      "severity": "informational",
+      "description": "Handoff staleness, NOT a code defect and NOT owned by this change: the build handoff's `derived-constant` hazard states that src/reconstruction-qa/capture-page.ts:46 QA_STYLE_PROPERTIES is an `= STYLE_WHITELIST` alias that widens automatically. In the current working tree that constant has already been rewritten by a concurrent builder (28.5B change 6) into an INDEPENDENT literal list. The three new typography properties are present in that literal (capture-page.ts:151-153), so no coverage was lost, but the handoff's stated hazard no longer describes the tree.",
+      "evidence": "src/reconstruction-qa/capture-page.ts:44-79 (rewritten doc comment) and :151-153 (text-wrap-mode / text-wrap-style / -webkit-font-smoothing present). File shows as modified in git status. Out of scope for this verification per instructions.",
+      "blocking": false
+    }
+  ],
+  "negativeControl": {
+    "ran": true,
+    "method": "deleted ONLY line 539 (`\"opacity\",`) from PSEUDO_STYLE_WHITELIST in src/observer/types.ts, leaving the STYLE_WHITELIST `opacity` at line 365 untouched; confirmed PSEUDO_STYLE_WHITELIST.length dropped 20 -> 19 and .includes(\"opacity\") became false; re-ran the suite.",
+    "failuresObserved": 18,
+    "resultWithControl": "70 passed, 18 failed",
+    "failuresSpanAllFourStages": true,
+    "representativeFailures": [
+      "§1 PSEUDO_STYLE_WHITELIST names opacity",
+      "§2 observation: #pseudo-opacity ::before carries opacity=0 — got undefined (real observation genuinely stopped recording it)",
+      "§3 SiteSpec: #pseudo-opacity ::before token has opacity/visibility — undefined / visible",
+      "§4 generated pseudo CSS contains opacity:0",
+      "§5 clone #pseudo-opacity pseudo opacity matches source (0) — got 1 (the clone really did paint a decoration the source suppressed)",
+      "§5 clone #pseudo-both pseudo paints nothing (opacity 0)",
+      "§5 clone #pseudo-after pseudo paints nothing (opacity 0)"
+    ],
+    "conclusion": "the assertions are load-bearing, not tautological — removing one whitelist entry breaks the suite at the observation, SiteSpec, generated-CSS and real-browser stages, including the browser assertion showing the clone painting at opacity 1 against a source at 0.",
+    "restored": true,
+    "restorationEvidence": {
+      "method": "byte-for-byte restore from a scratchpad copy taken before the edit",
+      "sha256Before": "2c0f40f280956f1ec0b01e16f0b0e71e729acec25035a993efe0b33141c933a9",
+      "sha256After": "2c0f40f280956f1ec0b01e16f0b0e71e729acec25035a993efe0b33141c933a9",
+      "identical": true,
+      "grepOpacityCountBefore": 2,
+      "grepOpacityCountAfter": 2,
+      "opacityLinesAfter": [365, 539],
+      "gitDiffStatAfter": "src/observer/types.ts | 21 +++++++++++++++++++++ (1 file changed, 21 insertions)",
+      "suiteAfterRestore": "88 passed, 0 failed"
+    }
+  },
+  "filesModifiedByVerifier": [
+    "docs/result/handoffs/28.5B-verify-vocab.json (this file — the deliverable)",
+    "src/observer/types.ts (TEMPORARY negative-control edit only; restored byte-identically, sha256 confirmed equal to pre-state)"
+  ],
+  "notes": [
+    "Changes 1 and 2 are real, minimal, generic and convention-following. The diff is 21 added lines: 16 lines of rationale comment and 5 property-name strings. Nothing else in src/observer/types.ts changed.",
+    "The proof chain is genuine end to end. No hand-built observation JSON, no hand-built style token, no hand-built CSS. The one hand-written link is the clone's DOM serialization, disclosed in the file header and unable to mask the change under test (VV-03).",
+    "The negative control is the strongest evidence: 18 failures across all four stages, with real wrong values rather than assertion-shape errors.",
+    "The three defects that are more than informational are two LOW cosmetic weaknesses in guard checks (VV-01, VV-02). Neither weakens the proof of the change under test; both are worth tidying but neither blocks.",
+    "The builder's white-space / text-wrap-mode ordering hazard is real, correctly diagnosed, and benign; text-wrap-style is load-bearing and the suite does prove wrapping through it (VV-05).",
+    "Fonts remain honestly out of scope: nothing font-binary or @font-face related was added, and the smoothing assertions are computed-value assertions with an explicit Darwin label rather than a cross-platform rendering claim.",
+    "Adjacent regression: smoke-sitespec 257/257, smoke-reconstruction 217/217, smoke-multi-observer 62/62 all green after the change, and tsc reports 0 errors in the two owned files.",
+    "Not verified here, by instruction: src/reconstruction/layout-inference.ts, src/reconstruction/asset-resolver.ts, src/reconstruction-qa/* (concurrent builders). Behavioural note carried forward from the build handoff and still true: widening the pseudo channel by 2 properties means any pre-existing QA baseline artifact under data/ was computed over a narrower property set and is stale for comparison purposes."
+  ]
+}

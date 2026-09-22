@@ -1,0 +1,319 @@
+{
+  "schema": "task285b-adversarial-audit-v1",
+  "producedAt": "2026-08-31T03:05:00Z",
+  "auditor": "FRESH FINAL ADVERSARIAL AUDITOR — implemented nothing, authored no report. Every verdict below rests on evidence gathered first-hand (code read, artifacts opened, suites re-run, independent math checks). Handoffs were used as maps, never as proof.",
+  "scopeDiscipline": {
+    "filesModified": ["docs/result/handoffs/28.5B-adversarial-audit.json", "tmp/wr285b/final-audit/*"],
+    "gitOperations": 0,
+    "headAtAudit": "6c2e723601a0d76431c96a48bbdb4726c02063e7",
+    "headUnchangedFromBaseline": true,
+    "stashCount": 0,
+    "suitesReRun": ["video-honesty", "visual-vocab", "layout-safety", "qa-independence", "custom-properties"],
+    "suiteExecution": "serial, one at a time"
+  },
+
+  "questions": {
+    "q1": {
+      "verdict": "YES",
+      "evidence": [
+        "C1 src/observer/types.ts:558-559 — 'opacity','visibility' appended to PSEUDO_STYLE_WHITELIST",
+        "C2 src/observer/types.ts:347-349 — 'text-wrap-mode','text-wrap-style','-webkit-font-smoothing' in STYLE_WHITELIST",
+        "C3 src/reconstruction/layout-inference.ts:230 containingBlockGuard, called at :422, refusals at :578/:617; src/reconstruction/layout-truth-check.ts:484 real Chromium setContent + :576-585 confirming measurement",
+        "C4 src/reconstruction/asset-resolver.ts:37,270-282 + src/reconstruction/compile-node.ts:382-441",
+        "C5 src/observer/collect-dom.ts:986-987 adoptedStyleSheets, :1142 rootCustomProperties, :1211 customProperties",
+        "C6 src/reconstruction-qa/capture-page.ts:80 QA_STYLE_PROPERTIES / :268 QA_ONLY_STYLE_PROPERTIES; src/reconstruction-qa/screenshot-diff.ts:82 CHANGED_PIXEL_AMPLITUDE_THRESHOLD=16, :116 srgbToLab, :130 deltaE76"
+      ],
+      "method": "Read every code site directly, then confirmed each change is present in SHIPPED OUTPUT, not just source: data/linear.app/reconstructions/2026-08-30T15-56-29-877Z/app/public/wr/generated-styles.css carries 232 pseudo rules at opacity:0, 28 at visibility:hidden, 41 text-wrap-style:balance + 12 :pretty, 4371 -webkit-font-smoothing:antialiased, and 4051 [data-wr-viewport]-scoped selectors. All six changes are real in code and observable in artifacts."
+    },
+
+    "q2": {
+      "verdict": "NO — no site-specific patching",
+      "evidence": [
+        "Zero literal assignments of \"linear.app\" or \"stripe.com\" anywhere in src/",
+        "Zero literal /changelog, /pricing, /security route comparisons in src/",
+        "All hostname comparisons compare against a computed variable: src/observer/collect-links.ts:59 (host===pageHost), src/recon-template/grouping.ts:134,147 (url.hostname===rootHost), src/content-injection/brand-surfaces.ts:258, src/seo/link-qa.ts:75, src/production/qa.ts:469",
+        "src/reconstruction/layout-inference.ts:269 names the /changelog defect in a COMMENT; the code beneath it is the fully generic `parentDisplay === \"grid\" || parentDisplay === \"inline-grid\"`",
+        "The only selectors emitted are the engine's own wr-/data-wr-* namespace"
+      ],
+      "method": "Full grep sweep of src/ and scripts/ for site names, route literals, hash-prefixed class selectors and hostname branching, with each hit classified as engine-logic vs doc-comment vs test fixture. Every one of ~90 site-name hits in src/ is a doc comment citing the measurement that justified a generic fix. Hardcoded site names in scripts/smoke-*.ts are canary fixtures pointing at prior pilot runs — expected test infrastructure, not engine behavior."
+    },
+
+    "q3": {
+      "verdict": "NO — historical artifacts untouched (0 mutations)",
+      "evidence": [
+        ".gitignore:14 — data/ is gitignored; `git status --porcelain data/` returns 0 lines, so mtime/birthtime is the only available evidence and git-based 'clean' claims prove nothing on their own",
+        "5,123 files under data/ have mtime >= 2026-08-29T00:00:00Z; only 11 of them sit inside a run-dir whose NAME predates 2026-08-29",
+        "All 11 are inside three project dirs whose filesystem BIRTH time is 2026-08-31: data/linear.app/release-projects/wr28-editor-integration, wr28-visual-editor, data/stripe.com/release-projects/wr28-int-stripe — new smoke fixtures that reuse historical runIds for realism",
+        "The canonical originals are provably untouched: stripe.com-2026-08-19T06-36-35-798Z/runs/2026-08-25T*/run.json and wr28-brand-assets/runs/2026-08-27T12-28-04-440Z/run.json all have birth == mtime at their original dates",
+        "HEAD still 6c2e723 (the recorded baseline), branch main, 0 stashes"
+      ],
+      "method": "Birth-time (crtime) forensics, not mtime alone. A naive `find -newermt 2026-08-29` in the box's local KST timezone falsely flags 2,978 files across 25 pre-08-29-named dirs, because run-dir names are UTC (Z-suffixed) and local time is UTC+9; re-running against a true UTC boundary collapses that to 11, and birthtime then clears all 11. The start handoff's '121 dirty paths' refers to tracked src/scripts/docs, not data/, which git cannot see at all.",
+      "note": "Non-blocking hygiene observation: new fixture directories that reuse historical runIds will make every future mtime-based audit re-derive this same false positive. Worth a naming convention, not a blocker."
+    },
+
+    "q4": {
+      "verdict": "YES — genuinely decoupled, and the real run path uses it",
+      "evidence": [
+        "src/reconstruction-qa/capture-page.ts:268-299 — QA_ONLY_STYLE_PROPERTIES is a LITERAL list of 30 properties, with the docstring at :262-266 stating it is deliberately NOT computed by subtracting the Observer's list, because computing it would re-introduce the coupling",
+        "Measured, not assumed: STYLE_WHITELIST=114, QA_STYLE_PROPERTIES=144, QA_ONLY=30; QA_ONLY ∩ STYLE_WHITELIST = [] (empty); observed properties QA does NOT check = 0. QA is a strict superset by exactly the 30-property tail",
+        "FRESH RUN, not a fixture: data/linear.app/reconstruction-qa/2026-08-30T15-57-54-926Z — 14 of 16 page/viewport pairs report qaOnlyStyleComparison='compared' with real per-page mismatch counts (p000005 desktop 2350, p000007 desktop 2299, p000002 desktop 1965 …); final-summary.json .summary.liveFidelity.qaOnlyStyleMismatchTotal = 18616, qaOnlyStyleComparedPairs = 14, qaOnlyStyleUnavailablePairs = 2",
+        "The 2 unavailable pairs record qaOnlyStyleUnavailableReason='source-not-aligned' rather than a silent 0 — the honest-unavailable path is live, not decorative"
+      ],
+      "method": "Read the constant and its rationale, then imported the real production constants and computed the set relations myself (tmp/wr285b/final-audit/vocab-check.ts) rather than trusting the claim; then opened all 16 fresh QA page JSONs to confirm the channel actually fires in the accepted run."
+    },
+
+    "q5": {
+      "verdict": "YES",
+      "evidence": [
+        "Implementation: src/reconstruction-qa/screenshot-diff.ts:82 CHANGED_PIXEL_AMPLITUDE_THRESHOLD = 16; :216 `if (pixelMax >= CHANGED_PIXEL_AMPLITUDE_THRESHOLD) changedPixelsAt16++`; :249 ratio over overlapPixels",
+        "Independent tests: scripts/smoke-qa-independence.ts re-run by me — 101/101 checks passed",
+        "Fresh artifacts carry it: data/linear.app/reconstruction-qa/2026-08-30T15-57-54-926Z/pages/p000001/desktop.json screenshots[0].changedPixelsAt16=658254, changedRatioAt16=0.0459; final-summary .summary.liveFidelity.screenshotChangedRatioAt16Median=0.0417",
+        "Propagated to summaries and CLI: src/reconstruction-qa/summarize.ts:330-331,367-368; src/cli-qa-reconstruction.ts:174,197"
+      ],
+      "method": "Read the implementation, re-ran the suite serially, and opened the fresh QA artifacts to confirm the field is populated on real captures rather than only in fixtures."
+    },
+
+    "q6": {
+      "verdict": "YES — executes, and the math is correct",
+      "evidence": [
+        "src/reconstruction-qa/screenshot-diff.ts:96 SRGB_TO_LINEAR LUT, :111 labF, :116 srgbToLab, :130 deltaE76, :222 per-pixel invocation",
+        "INDEPENDENT MATH VALIDATION against published CIELAB references (tmp/wr285b/final-audit/de76-check.ts): Lab(white)=[100,0.005,-0.010] (expect [100,0,0]); Lab(black)=[0,0,0]; dE76(black,white)=100.000 (expect 100); Lab(red)=[53.23,80.11,67.22] (expect [53.24,80.09,67.20]); Lab(green)=[87.74,-86.18,83.18] (expect [87.74,-86.18,83.18]); dE76(x,x)=0. This is real CIELAB, not a stub or a renamed RGB distance",
+        "Nonzero plausible values in fresh artifacts: p000001 desktop deltaE76Mean=2.3467, deltaE76Max=126.8308, deltaE76AboveJndRatio=0.0847, deltaE76AboveVisibleRatio=0.0414; the same page's snapshot-vs-original drift row reads 0.0019/0.0001 — the channel discriminates, it does not emit a constant"
+      ],
+      "method": "Rather than accept 'it produces numbers', I imported srgbToLab/deltaE76 and checked them against known CIELAB values for white, black, pure red and pure green. Agreement to 2 decimal places confirms a correct sRGB→linear→XYZ→Lab pipeline."
+    },
+
+    "q7": {
+      "verdict": "YES",
+      "evidence": [
+        "data/linear.app/reconstructions/2026-08-30T15-56-29-877Z/reconstruction-manifest.json .layout: rejectedByTruthCheck=5, truthCheckStatus='verified', truthCheckable=1019, truthCheckRounds=9, truthCheckPagesRendered=8, truthCheckConverged=true",
+        "data/stripe.com/reconstructions/2026-08-30T16-16-41-190Z/reconstruction-manifest.json .layout: rejectedByTruthCheck=25, truthCheckStatus='verified', truthCheckable=726, truthCheckRounds=4, truthCheckPagesRendered=2, truthCheckConverged=true",
+        "The rejection is a REAL re-render: src/reconstruction/layout-truth-check.ts:484 sets the candidate CSS into a live Chromium page and :526-552 iteratively drops regressors until the set settles; a page that will not settle has ALL its remaining candidates dropped (:556-570), and a page that fails to render has all its candidates rejected as unverifiable (:585-598)"
+      ],
+      "method": "Opened both manifests directly (not the handoffs) and read the truth-check implementation to confirm rejection is driven by browser measurement rather than static heuristics."
+    },
+
+    "q8": {
+      "verdict": "YES — zero, and it is a measurement rather than an assertion",
+      "evidence": [
+        "linear .layout.acceptedRegressed = 0; stripe .layout.acceptedRegressed = 0",
+        "src/reconstruction/layout-truth-check.ts:571-586 — after the set settles, a CONFIRMING measurement is taken over exactly the surviving rules, and acceptedRegressed increments when `errorWith > TRUTH_SANITY_TOLERANCE_PX && errorWith > errorWithout + REGRESSION_EPSILON_PX`",
+        "src/reconstruction/types.ts:508-511 documents that acceptedRegressed 'is the claim the old docstring made for free and could not support — it is now a measurement, and it must be 0'",
+        "Full rule ledger reconciles exactly in BOTH runs — linear: truthCheckable 1019 + acceptedUnchecked 738 = candidateRules 1757; 1757 − 5 = acceptedRules 1752 = recoveredRules. stripe: 726 + 0 = 726; 726 − 25 = 701. rejectedUnverifiable = 0 in both"
+      ],
+      "method": "Read both manifests and the confirming-measurement code. Note the guarantee's true shape: a rule is rejected only when it is WORSE than the exact-computed fallback beyond epsilon — i.e. 'no worse than fallback', not 'truth-accurate'. The final report must use that wording."
+    },
+
+    "q9": {
+      "verdict": "NO — video cannot disappear silently (QUALIFIED by two named, zero-occurrence residuals)",
+      "evidence": [
+        "I re-ran scripts/smoke-video-honesty.ts myself: 36/36 checks passed, including the both-directions pins (GAP-B is proven not to be a blanket amnesty — a non-media ref with no <source> child still counts 1)",
+        "Path spot-verified in code: src/reconstruction/asset-resolver.ts:243-250 (video with only non-media refs → noOwnMediaAsset, resolver abstains) hands the verdict to src/reconstruction/compile-node.ts:431-441, the only place that can see <source> children; :438 counts on `resolved.unresolved || videoMediaMissingAndNoSourceChild`",
+        "src/reconstruction/asset-resolver.ts:270-271 — videoContentUnresolved fires when a poster stands in for missing media, so a video that still renders SOMETHING is counted anyway",
+        "src/reconstruction/asset-resolver.ts:196 — a <source> with zero assetRefs now counts, closing the both-ends-silent hole",
+        "Residual RES-1 (dangling own ref + good <source> children → overcounts 1 at the parent) and RES-2 (N broken <source> children count N, not 1): both are OVERcounts, never undercounts, and both measure 0 occurrences corpus-wide",
+        "Named out-of-scope limitation: <audio> media is still silently dropped (2 corpus occurrences), documented in code rather than only in a handoff"
+      ],
+      "method": "Read the corrected resolver and compile-node logic end to end, traced the two-sided counting point, and re-ran the video suite serially. The qualification is that the invariant holds in the honest direction — the remaining defects over-report, and the one genuinely silent path (<audio>) is out of scope and named."
+    },
+
+    "q10": {
+      "verdict": "YES — proven in the shipped stylesheet, not merely in the observation",
+      "evidence": [
+        "data/linear.app/reconstructions/2026-08-30T15-56-29-877Z/app/public/wr/generated-styles.css lines 3/156/309/480/… — one [data-wr-page=\"pNNNNNN\"][data-wr-viewport=\"desktop|mobile\"] custom-property block per page per viewport, 16 blocks for 8 routes",
+        "VALUES GENUINELY DIFFER: for p000001, desktop and mobile each carry 151 root custom properties and 9 of them differ — --sx-1ele6il '1px' vs '0.5px' (a DPR-3 hairline), --sx-15wwovl '#28292e' vs '#303136', --sx-1ikf7kw '#ffffff22' vs '#ffffff45', --sx-9pdekr '#8f9197' vs '#b5b7bd', --sx-1o1lnwn, --sx-1jmjcvw, --sx-1urpf9d, --sx-9jlh1t, --sx-w1p5jj",
+        "Observation side corroborates per-page/per-viewport capture with discovery and reference-resolution counters (28.5B-linear-run.json .observation.customPropertiesPerPageViewport: 135 props/16 references on p000001, 172/2 on p000002+, 0 capped)",
+        "scripts/smoke-custom-properties.ts re-run by me: 92/92 passed, ending on '…both subtrees, one document, the same name, different values'"
+      ],
+      "method": "Parsed the two p000001 viewport blocks out of the 11.9 MB generated stylesheet and diffed them key-by-key. A same-value-twice emission would have been indistinguishable from a working one in the handoff's counters; the 9 real differences are what makes the change load-bearing rather than cosmetic."
+    },
+
+    "q11": {
+      "verdict": "NO REGRESSION — the industries-mobile outlier is PRE-EXISTING, and marginally BETTER after hardening",
+      "evidence": [
+        "DIRECT OLD-VS-NEW COMPARABLE, which the builders' own handoff said it would not compute: the same page (stripe.com/industries/media-entertainment), same viewport (mobile, PNG width 1170), same pair type (snapshot-clone) exists in the pre-28.5B lineage.",
+        "2026-08-17 (PRE-28.5B) data/stripe.com/reconstruction-qa/2026-08-17T21-38-08-701Z/pages/p000009/mobile.json screenshots[0]: changedPixelRatio=0.4672, meanAbsoluteRgbDelta=27.0038, heightDelta=+3, commonAreaRatio=0.9999",
+        "2026-08-30 (POST-28.5B) data/stripe.com/reconstruction-qa/2026-08-30T16-17-33-405Z/pages/p000002/mobile.json screenshots[0]: changedPixelRatio=0.4588, meanAbsoluteRgbDelta=26.2648, heightDelta=+3, commonAreaRatio=0.9999",
+        "Identical height delta, identical common area, and the @1 channel is 0.0084 BETTER after hardening. The same outlier is present at the same magnitude thirteen days and six changes earlier",
+        "It reads as new only because @16 (0.2008) and dE76Mean (11.2994) did not exist on 2026-08-17 — change 6 gave a pre-existing defect a sharper vocabulary, which is precisely its purpose",
+        "Separately: the clone matches its own same-session SNAPSHOT height to +3px while the live page reflowed −921px before the re-check, so this is not drift-manufactured either — it is a genuine, pre-existing, stripe-side reconstruction defect"
+      ],
+      "method": "Rather than accept the handoff's 'source has drifted, no old-vs-new is computable', I searched every historical stripe QA run for the same URL and found ten prior captures of it. The @1 channel and the geometry fields ARE comparable across the lineage even though @16/dE76 are not, and they exonerate the six changes. This is a stronger and more favorable finding than the builders themselves claimed.",
+      "otherStripeDefects": "The three visible stripe defects the visual auditor named (missing WebGL hero gradient, background-clip:text rendered as opaque blocks, low-contrast Sign in control) are all pre-existing classes. Notably background-clip / -webkit-background-clip / -webkit-text-fill-color sit in QA_ONLY_STYLE_PROPERTIES — the Observer never captured them, so the clone could never reproduce the knockout. Change 6 newly MEASURES that defect; it did not cause it."
+    },
+
+    "q12": {
+      "verdict": "YES — fonts correctly excluded",
+      "evidence": [
+        "src/reconstruction/asset-resolver.ts:37 PRIMARY_IMAGE_KINDS = [\"image\",\"source\",\"video\",\"video-poster\"] and :40 SRCSET_KINDS = [\"image-srcset\",\"picture-source\"]; MEDIA_ASSET_KINDS (:60-63) is their union. Neither contains a font kind; the doc comment at :47-50 names `font` explicitly as part of the COMPLEMENT that takes the generic fall-through",
+        "src/reconstruction/asset-resolver.ts:17 — 'no binary was ever downloaded and this Task downloads none either… materialization is a later, separate decision'",
+        "Zero hits for woff/woff2/ttf/otf/FontFace-construction/materializ* across all thirteen changed files",
+        "Fresh runs materialize nothing: 0 .woff*/.ttf/.otf files under either the linear or the stripe reconstruction; 0 occurrences of @font-face in the 11.9 MB generated-styles.css; manifest counter assetDownloads=0",
+        "font-family values are plain name stacks referencing system/remote faces (e.g. 'Inter Variable', 'SF Pro Display', -apple-system, …) — no data: URIs, no local binary paths",
+        "-webkit-font-smoothing is a computed-style STRING copied through the same generic emitter as every other whitelisted property (src/reconstruction/style-generator.ts:36-61 builds ALLOWED_CSS_PROPERTIES from STYLE_WHITELIST ∪ PSEUDO_STYLE_WHITELIST with no special case). It changes rasterization weight, not which font file is used"
+      ],
+      "method": "Grepped the six changes' files for every font-materialization spelling, read both asset-kind constants verbatim, and searched the two fresh reconstruction trees for font binaries and @font-face rules.",
+      "reportingCaveat": "28.5B-attribution.json contains no engineering-only/font-assisted split label. That is acceptable here only because the font-assisted side is empty by construction — 0 binaries, 0 @font-face — so every reported number is engineering-only. The final report should state that explicitly rather than leave it implicit, since -webkit-font-smoothing is the single largest driver of the pricing improvement and a careless reader could mistake a glyph-weight fix for a font fix."
+    },
+
+    "q13": {
+      "verdict": "NO — nobody claimed responsive reconstruction is fixed",
+      "evidence": [
+        "docs/result/handoffs/28.5B-responsive-residual.json .notClaimedFixed = true, and .purpose = 'This sweep does NOT fix anything and does NOT claim anything is fixed'",
+        ".comparisonWith285A['391-914 dead zone'] = 'same-defect', worseCheck 'NOT worse', improvedCheck 'NOT improved. There is still zero continuous reflow anywhere between 390 and 914 on any of the 8 routes'",
+        ".comparisonWith285A['1024-1231 pricing band'] = 'same-defect', improvedCheck 'PARTIALLY REFRAMED, not improved… This is a sharper description of the SAME defect, not a reduction of it' — an explicit refusal to bank a sharper measurement as progress",
+        ".stylesheetResidual — 738 @media blocks all at the single synthetic band (min-width:1024px)and(max-width:1231.98px): 'Wave-1 did not remove, narrow or widen this mechanism — it is intact'",
+        "The raw sweep corroborates: at 390/500/700/914 the clone's scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL on all 8 routes",
+        "The visual auditor's defectChecklist independently reports 'Same defect, same mechanism, not new and not worse than described', and the review-pack manifest labels images 19-22 and diagnostics 02/03 as knownDefect, excluded from improvement framing"
+      ],
+      "method": "Read the residual handoff end to end including its raw per-width rows, cross-checked against the visual audit's independent image-only reading and the review-pack manifest's framing labels. This document is the strongest piece of honesty in the pack — it also volunteers a process anomaly (two foreign processes disappearing) that nobody asked about."
+    },
+
+    "q14": {
+      "verdict": "QUALIFIED NO — the comparison design is correct and no improvement leaks in from incompatible screenshots, BUT the stated direction of the drift bias is INVERTED and must be corrected before the report ships",
+      "evidence": [
+        "DESIGN IS SOUND: 28.5B-attribution.json .comparabilityDetail — both the old and the new clone are diffed against the IDENTICAL live-original PNG bytes from the 2026-08-30T15-57-54-926Z session. The reference is held fixed, which is exactly the control that prevents an old-source-vs-new-source comparison from masquerading as improvement",
+        "NO RECOMPUTATION ASYMMETRY: anomaly 'no-recompute' — every new-side channel was read from the stored QA page JSONs and the diff PNGs were copied, not regenerated, so the new side got no fresh-measurement advantage",
+        "SELF-LIMITING DISCLOSURE: anomaly 'at1-noise' explicitly warns that @1 (0.3914 → 0.0266 on pricing) overstates the win and that @16 (0.0295 → 0.0158) and dE76>10 are the channels to read. Volunteering that your headline number is inflated is the opposite of overclaiming",
+        "ROUTE MAP VERIFIED, NOT ASSUMED (.routeMapVerified), so no route was compared against a different route",
+        "THE DEFECT: .comparabilityDetail states 'The comparison therefore DISADVANTAGES the old build; improvements it shows are a lower bound.' The first clause is right and the second does not follow from it. The old clone was built from a 2026-08-25 source and diffed against a 2026-08-30 reference, so old_error = old_engineering_error + drift. Measured improvement = (old_eng − new_eng) + drift, which makes the reported improvement an UPPER bound on the engineering gain, not a lower bound"
+      ],
+      "method": "Read the methodology, then re-derived the direction of bias from first principles against the route numbers. The error is in the interpretive sentence, not in the measurements: every number in the file is correctly computed and independently cross-checks against the review-pack manifest.",
+      "materiality": "Low-to-moderate and bounded, not fatal. The 5-day drift is empirically small (the responsive sweep measures /pricing height drift at ~2px over the same window), the @16 improvements are consistent across all four route families in every channel, and the dominant mechanism is independently proven in the artifact (4,371 -webkit-font-smoothing:antialiased declarations now emitted where the clone previously reverted to `auto`). The improvement is real; only its claimed conservatism is wrong.",
+      "requiredCorrection": "The final report must NOT repeat 'improvements it shows are a lower bound'. Correct phrasing: the old build carries up to five days of source drift, so the measured old→new gain is an upper bound on the engineering gain; the surviving clause — 'any place where the old build wins is not explainable by drift' — remains valid and should be kept."
+    },
+
+    "q15": {
+      "verdict": "YES",
+      "evidence": [
+        "Exactly 24 numbered PNGs, 01..24, no gaps and no duplicates, in docs/result/28.5B-review-pack/ (plus 2 contact sheets, 5 diagnostics, manifest.json = 32 files)",
+        "All manifest images[] (24), diagnostics[] (5) and contactSheets[] (2) entries resolve to existing files; 0 missing, 0 orphaned",
+        "Spot-check 01 — 1440x6360, matches attribution routes.pricing.old.originalHeight=6360",
+        "Spot-check 02 — 1440x6348, matches routes.pricing.old.cloneHeight=6348 → heightDelta −12",
+        "Spot-check 03 — 1440x6360, matches routes.pricing.new.cloneHeight=6360 → heightDelta 0",
+        "Spot-check 05 (metric-bearing) — all 7 metricSummary values match routes.pricing.new exactly: at1 0.0266, at16 0.0158, dE76jnd 0.0172, dE76visible 0.0146, dE76mean 0.7039, heightDelta 0, commonArea 1",
+        "Spot-check 06 (triptych) — 4440x1226, i.e. ~3x1440 plus gutters, consistent with a 3-panel composition over the declared crop band y1400-2300 plus label bars",
+        "Cross-checks against 28.5B-attribution.json, all EXACT: pricing dE76Mean [3.0826, 0.7039]; changelog changedRatioAt16 [0.0471, 0.0417]; security dE76AboveVisibleRatio [0.0348, 0.0316]; pricingMobile heightDelta [−6, 0]",
+        "No entry claims improvement while its own numbers contradict it; images 19-22 and diagnostics 02/03 are labelled knownDefect and explicitly excluded from improvement framing, and the stripe mobile pair is labelled REGRESSION_CANDIDATE/OUTLIER rather than a win"
+      ],
+      "method": "Enumerated the directory, validated manifest↔disk in both directions programmatically, then measured actual pixel dimensions with sips for five entries and cross-checked four independent metric values field-by-field against the attribution handoff."
+    }
+  },
+
+  "rulings": {
+    "changelogVideo": {
+      "question": "Is the /changelog first-video mid-playback capture a BLOCKER-CLASS regression, failing 'visual auditor finds no new blocker-class regression'?",
+      "ruling": "NON-BLOCKING KNOWN ISSUE — with a mandatory carry-forward. It is a measurement-harness determinism defect, not a reconstruction-fidelity loss.",
+      "mechanismEstablished": [
+        "Pre-28.5B, PRIMARY_IMAGE_KINDS ordering let a poster or <source> asset win the <video>'s src, so a video frequently reconstructed as a STILL POSTER IMAGE. Independently measured in 28.5B-verify-video2.json: 26 of the corpus's 30 <video> elements now get a different src than under the pre-28.5B ordering",
+        "Post-28.5B the element resolves its real video-kind media, so the clone now loads and autoplays actual video, exactly as the source does",
+        "I CONFIRMED THE AUDITOR'S UNVERIFIED HYPOTHESIS DIRECTLY: there is no video frame pinning anywhere in the QA capture path. grep for HTMLVideoElement / querySelectorAll(\"video\") / pause / currentTime across src/reconstruction-qa/ returns nothing, and src/reconstruction-qa/capture-page.ts:826-836 states the policy outright — 'fullPage: true, PNG, no clip, no animation freezing… because that is exactly what produced the saved snapshot the clone is being compared against'",
+        "So both sides autoplay unpinned; the source capture happened to land near 00:00 and the clone's landed mid-playback"
+      ],
+      "rationale": [
+        "The ARTIFACT got more faithful, not less. A real video element playing real media is a better reconstruction than a still poster frozen in a <video> tag; the old build's apparent win was an accident of showing a still image that could not advance",
+        "Nothing structural is lost: the visual auditor confirms box geometry is pixel-correct in all three images, media is present, and there is no layout, content or column loss",
+        "Containment is measured: one ~500px band out of 51 spanning a 25,342px page, on one route. Equivalent band sweeps over /pricing and /security found no band where hardened is worse than old at a +0.5pp threshold",
+        "DECISIVE: the route-level metric IMPROVED while carrying this penalty — /changelog @16 went 0.0471 → 0.0417 and dE76Mean 2.3744 → 1.7572. The acceptance evidence is not rescued by the artifact; it survives in spite of it. A regression that cannot flip its own route's verdict is not blocker-class",
+        "The genuinely serious aspect is forward-looking, not retrospective: unpinned autoplaying video injects irreproducible noise into the pixel channels of any future video-bearing page, which degrades the trustworthiness of the very metrics used to accept work. That is a harness debt to be paid, not a reason to reject Wave 1"
+      ],
+      "dissentAcknowledged": "The visual auditor labelled this a 'minor-blocker candidate' and said the hardened build is 'genuinely worse than the old build here'. Both statements are true at the band level. I am overruling the blocker classification, not the observation, and the acceptance criterion should be recorded as QUALIFIED rather than cleanly met.",
+      "mandatoryCarryForward": "Pin video state before capture on BOTH sides (pause + currentTime=0, or equivalently freeze media), or exclude video bounding boxes from the pixel channels and report them separately. Until then, any QA number on a page with autoplaying video carries irreproducible variance and must not be quoted to 4 decimal places as if it were stable."
+    },
+
+    "layoutCounters": {
+      "question": "accepted + rejectedByGuard + rejectedByTruthCheck > candidateRules in both runs — bookkeeping bug or two denominators?",
+      "ruling": "TWO DENOMINATORS. Not a bug, and not an honesty problem. No severity.",
+      "evidence": [
+        "The RULE ledger reconciles EXACTLY in both runs, with no residue. linear: truthCheckable 1019 + acceptedUnchecked 738 = candidateRules 1757; 1757 − rejectedByTruthCheck 5 = acceptedRules 1752 = recoveredRules; rejectedUnverifiable 0. stripe: 726 + 0 = 726; 726 − 25 = 701; rejectedUnverifiable 0",
+        "rejectedByGuard is a NODE counter from an earlier stage, not a rule counter. src/reconstruction/generate-app.ts:348 sources it from `plan.layout.counters.guardRefusals`, incremented in src/reconstruction/layout-inference.ts:307-311 at the two refusal sites :578 and :617, each immediately followed by `continue` — the node never emits a rule, so it never enters candidateRules to begin with",
+        "Each refusal site is followed by `continue`, so a node is refused at most once per page-node pass; the by-reason breakdown sums exactly to the total in both runs (linear 17+16+41+71=145; stripe 4+31+3+14+173=225), confirming no double counting",
+        "The schema already says this in words: src/reconstruction/types.ts:519 documents rejectedByGuard as 'Nodes a containing-block guard refused BEFORE any rule was emitted', against :515 'Rules inference proposed, before the browser truth check'"
+      ],
+      "rationale": "Guard refusals and candidate rules count different populations at different pipeline stages — nodes refused pre-candidacy versus rules proposed post-inference. Summing them is a category error committed by the reader, not by the code. The manifest reports each counter correctly against its own denominator, and the schema names both.",
+      "wordingDefect": "MINOR, non-blocking. 28.5B-stripe-run.json .reconstruction.layout.note explains the non-reconciliation as 'categorization axes overlap'. That is imprecise and slightly misleading — the axes do not overlap, they are sequential stages over different populations (nodes vs rules). The final report should say: guard refusals are counted at the node level before candidacy; the rule ledger reconciles exactly as candidateRules − rejectedByTruthCheck = acceptedRules."
+    }
+  },
+
+  "acceptCriteria": {
+    "allSixChangesImplemented": true,
+    "pseudoSuppressionProven": true,
+    "textWrapCaptureProven": true,
+    "acceptedRegressedLayoutRuleCountZero": true,
+    "videoCannotFailSilently": "qualified",
+    "perViewportCustomPropertiesProven": true,
+    "qaVocabularyDecoupled": true,
+    "at16ImplementedAndTested": true,
+    "de76ImplementedAndTested": true,
+    "freshLinearEndToEndRerunCompleted": true,
+    "secondSiteRerunCompleted": true,
+    "noSiteSpecificPatching": true,
+    "noHistoricalMutation": true,
+    "fullRegressionPasses": true,
+    "visualAuditorFindsNoNewBlockerClassRegression": "qualified",
+    "qualificationNotes": {
+      "videoCannotFailSilently": "Holds in the honest direction. Two named residuals (RES-1 dangling-ref parent overcount, RES-2 N-broken-children granularity) are OVER-counts with 0 corpus occurrences, and <audio> remains a silently-dropped path — out of scope and named in code, not hidden.",
+      "visualAuditorFindsNoNewBlockerClassRegression": "Exactly one old-vs-hardened regression was found across the entire pack (the /changelog video frame). Ruled non-blocking per rulings.changelogVideo, but the criterion is recorded QUALIFIED rather than cleanly met, and the capture-determinism fix is a mandatory carry-forward.",
+      "fullRegressionPasses": "34 suites / 3,354 checks / 0 failures / typecheck exit 0 / 0 negative deltas. I independently re-ran all five NEW suites serially and reproduced their counts exactly: video-honesty 36/36, visual-vocab 88/88, layout-safety 67/67, qa-independence 101/101, custom-properties 92/92 (384 total, matching both the regression and code-gate handoffs). The two positive deltas (production +1, brand-assets +21) trace by file mtime to before 28.5B's start."
+    }
+  },
+
+  "recommendedVerdict": "WAVE 1 HARDENING ACCEPTED — READY FOR RESPONSIVE/FONT DECISION",
+
+  "verdictRationale": [
+    "All six changes are present in code AND observable in shipped artifacts — not merely asserted. The strongest single piece of evidence is the generated stylesheet itself: 232 pseudo rules at opacity:0, 41 text-wrap-style:balance, 4,371 -webkit-font-smoothing:antialiased, and 9 genuinely differing custom-property values between the desktop and mobile scoped blocks.",
+    "The two claims most likely to be hollow both survive independent testing: dE76 is real CIELAB (validated against published reference values for white/black/red/green), and the QA vocabulary is genuinely decoupled (30 QA-only properties, zero intersection with the Observer whitelist, 14 of 16 fresh page pairs actually compared, 18,616 real mismatches surfaced).",
+    "The layout tier is honestly gated: acceptedRegressed=0 is a measured confirming re-render, the rule ledger reconciles to the unit in both runs, and unsettled or unrenderable pages drop their candidates rather than shipping them.",
+    "No site-specific patching, no historical mutation (established by birth-time forensics after disproving a 2,978-file timezone false positive), no font materialization, and no git mutation — HEAD is still the recorded baseline.",
+    "The second site did not regress, and I established this more strongly than the builders did: the stripe industries-mobile outlier is directly comparable to its 2026-08-17 pre-28.5B capture on the @1 channel and is 0.0084 BETTER after hardening, with identical height delta and common area. It looks new only because @16 and dE76 did not exist before change 6.",
+    "Nothing was overclaimed on the one defect that remains unfixed: the responsive residual is explicitly notClaimedFixed, is called 'same-defect / NOT worse / NOT improved', and even refuses to bank a sharper measurement as progress.",
+    "Full regression passes and I reproduced every new suite's count myself."
+  ],
+
+  "dissent": [
+    {
+      "id": "D1",
+      "severity": "must-fix-before-report-ships",
+      "item": "Inverted direction of drift bias in 28.5B-attribution.json .comparabilityDetail",
+      "detail": "It states 'improvements it shows are a lower bound.' Because the old clone carries five days of source drift charged against a fixed new reference, the measured old→new gain is an UPPER bound on the engineering gain. The measurements are correct; the interpretive sentence is backwards. Do not repeat it. The companion clause — 'any place where the old build wins is not explainable by drift' — is valid and should be kept.",
+      "affectsVerdict": false
+    },
+    {
+      "id": "D2",
+      "severity": "carry-forward",
+      "item": "QA capture path pins nothing for video, so video-bearing pages now carry irreproducible pixel-channel noise",
+      "detail": "src/reconstruction-qa/capture-page.ts:826-836 deliberately does no animation freezing, and there is no video handling anywhere in src/reconstruction-qa/. Change 4 made videos actually play, so this previously-latent nondeterminism is now live. It did not flip any verdict in this wave (the /changelog route improved while carrying the penalty), but it will corrupt future comparisons on video-bearing pages. Pin video state on both sides, or exclude video boxes from the pixel channels.",
+      "affectsVerdict": false
+    },
+    {
+      "id": "D3",
+      "severity": "wording",
+      "item": "Two counter-description imprecisions",
+      "detail": "(a) 28.5B-stripe-run.json calls the layout non-reconciliation 'categorization axes overlap'; they do not overlap, they are sequential stages over different populations (nodes refused pre-candidacy vs rules proposed post-inference). (b) The truth-check guarantee is 'no worse than the exact-computed fallback beyond epsilon', NOT 'truth-accurate within N px' — src/reconstruction/layout-truth-check.ts:576-585. The code-gate handoff already flags (b); the report must respect both.",
+      "affectsVerdict": false
+    },
+    {
+      "id": "D4",
+      "severity": "informational",
+      "item": "Attribution numbers carry no explicit engineering-only label",
+      "detail": "The word 'font' does not appear in 28.5B-attribution.json. This is materially safe — 0 font binaries and 0 @font-face rules exist, so the font-assisted side is empty by construction — but -webkit-font-smoothing is the largest single driver of the pricing improvement, and a reader could mistake a glyph-weight capture for a font-materialization win. State the engineering-only framing explicitly.",
+      "affectsVerdict": false
+    },
+    {
+      "id": "D5",
+      "severity": "hygiene",
+      "item": "New smoke fixtures reuse historical runIds",
+      "detail": "data/linear.app/release-projects/wr28-editor-integration, wr28-visual-editor and data/stripe.com/release-projects/wr28-int-stripe were born 2026-08-31 but contain run-subdirectories named with 2026-08-25/27 runIds. Every future mtime-based mutation audit will re-derive this same false positive and have to disprove it with birth-time forensics. A fixture naming convention would retire the cost permanently.",
+      "affectsVerdict": false
+    }
+  ],
+
+  "notes": [
+    "No dissent item affects the verdict. D1 is a correction to a sentence, not to a measurement; D2 is a harness debt that did not change any acceptance number in this wave.",
+    "Two findings came out MORE favorable than the builders' own handoffs claimed, and both were reached by going past the handoffs to the artifacts: the stripe outlier is pre-existing and slightly improved (q11), and the layout counter non-reconciliation is a clean two-denominator design whose rule ledger reconciles exactly (rulings.layoutCounters).",
+    "One finding came out LESS favorable: the attribution handoff's direction-of-bias sentence is inverted (q14/D1).",
+    "Independent replication performed rather than assumed: all five new suites re-run serially with exact count reproduction; CIELAB math validated against published reference values; QA/Observer vocabulary set relations computed from the real production constants; per-viewport custom-property divergence parsed out of the 11.9 MB shipped stylesheet; the stripe pre/post comparable located across ten historical QA runs; historical-mutation cleared by birth-time after disproving a timezone false positive.",
+    "Reader guidance to carry into the report: read @16 and dE76>10, never @1 alone — the attribution handoff's own at1-noise anomaly and the responsive residual's closing note both say so, and the pricing @1 figure (0.3914 → 0.0266) would badly overstate the win.",
+    "Scope discipline held: HEAD unchanged at 6c2e723, 0 git operations, 0 stashes, data/ untouched by this audit, and the only files written were this handoff and scratch scripts under tmp/wr285b/final-audit/."
+  ]
+}

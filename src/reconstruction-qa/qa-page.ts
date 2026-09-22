@@ -7,7 +7,12 @@ import { alignLiveOriginal, elementNodesOf } from "./align-original.js";
 import { diffAssets, type AssetFinding } from "./asset-diff.js";
 import { captureClone } from "./capture-clone.js";
 import { captureOriginal } from "./capture-original.js";
-import type { QaCapturedElement } from "./capture-page.js";
+import {
+  compareCapturedStyles,
+  QA_ONLY_STYLE_PROPERTIES,
+  type QaCapturedElement,
+  type QaRawCapture,
+} from "./capture-page.js";
 import type { DiffCollector } from "./classify-diff.js";
 import { diffContent } from "./content-diff.js";
 import { diffGeometry } from "./geometry-diff.js";
@@ -17,13 +22,23 @@ import { emitPageDiffs, collectDataImageCandidates } from "./emit-diffs.js";
 import type { QaInputs } from "./load-inputs.js";
 import { mapCloneNodes } from "./map-clone-nodes.js";
 import { compareAssetOccurrence, compareScrollState } from "./state-diff.js";
-import { encodePng, measurePair, renderDiffImage } from "./screenshot-diff.js";
+import {
+  encodePng,
+  measurePair,
+  readPngDimensions,
+  renderDiffImage,
+} from "./screenshot-diff.js";
 import type { CanvasCandidate, DataImageCandidate } from "./propose-corrections.js";
 import {
+  buildScreenshotCoverage,
   CANVAS_BACKGROUND_PROPERTIES,
+  QA_ONLY_STYLE_SAMPLE_LIMIT,
   SCHEMA_VERSION,
+  type QaOnlyStyleSample,
+  type QaOnlyStyleUnavailableReason,
   type QaPageResult,
   type QaPageStatus,
+  type ScreenshotCoverage,
   type ScreenshotMetric,
 } from "./types.js";
 
@@ -48,6 +63,13 @@ export interface PageWork {
 export interface StoredOriginal {
   elementByNodeId: Map<string, QaCapturedElement>;
   screenshot?: Buffer;
+  /**
+   * Task 28.6 C5 — the coverage of `screenshot`, carried with it. A correction
+   * iteration reuses the baseline's original image, so it has to reuse the
+   * baseline's honesty about that image too; recomputing it later is impossible
+   * because the live page is not visited again.
+   */
+  screenshotCoverage?: ScreenshotCoverage;
   documentGeometry?: QaPageResult["documentGeometry"]["liveOriginal"];
 }
 
@@ -203,6 +225,124 @@ export async function readSnapshotScreenshot(
   }
 }
 
+/**
+ * Browser-to-browser QA-only style comparison (Task 28.5B change 6, integration).
+ *
+ * ## Why this exists
+ *
+ * `diffStyles` compares the clone against the SiteSpec's stored style token. That
+ * token contains exactly what the OBSERVER recorded, so the 30 properties in
+ * `QA_ONLY_STYLE_PROPERTIES` — the gradient-knockout pair, `text-shadow`, the
+ * `outline-*` and `text-decoration-*` families, `rotate` / `scale` / `translate`,
+ * `fill` / `stroke`, … — have nothing on the expected side and are skipped
+ * without a word. Silence there is not equality: it is the 28.5A blind spot.
+ *
+ * The live original and the clone are two LIVE captures, so on that axis those
+ * properties are fully verifiable with no observer data at all. This is that
+ * comparison.
+ *
+ * ## The pairing is REUSED, not invented
+ *
+ * Both sides are already keyed by SiteSpec node id, by two different existing
+ * mechanisms, and `diffAssets` already pairs them exactly this way:
+ *
+ *   CLONE     `mapCloneNodes()` → `mapping.byNodeId`. A lookup, not an
+ *             inference: Task 14 stamps every emitted element with
+ *             `data-wr-node="<nodeId>"` and the clone capture is scoped to the
+ *             active viewport variant.
+ *   ORIGINAL  `alignLiveOriginal()` → `alignment.byNodeId`. Index-for-index
+ *             against the SiteSpec's document-order element list, admitted ONLY
+ *             after the same three conditions Task 13 used (element count, tag
+ *             sequence, parent relation) all hold exactly. A tree that does not
+ *             align exactly produces no pairing at all.
+ *
+ * No new matcher is introduced here, and none is wanted: a fuzzy pairing would
+ * turn a structural difference into a fake style finding. When the alignment
+ * fails the caller records `"unavailable"` rather than zero mismatches.
+ *
+ * The node set is `mapping.comparableNodeIds` — the same set the snapshot style
+ * and geometry diffs use — so a QA-only finding sits on a node the rest of the
+ * report already talks about.
+ *
+ * ## Why it re-enters `compareCapturedStyles`
+ *
+ * That function (capture-page.ts) is the repo's one browser-to-browser style
+ * comparison, with its own tag-mismatch and one-sided-property handling. It keys
+ * off `element.key`, which is a document-order index on the original side and a
+ * node id on the clone side — two different id spaces. The two element maps are
+ * therefore re-presented as captures whose keys are the SiteSpec node id both
+ * sides were paired by. Nothing else is transformed.
+ */
+export function compareQaOnlyStyles(input: {
+  /** Comparable SiteSpec element nodes, document order. */
+  nodes: readonly ElementSpecNode[];
+  originalByNodeId: ReadonlyMap<string, QaCapturedElement>;
+  cloneByNodeId: ReadonlyMap<string, QaCapturedElement>;
+  properties?: readonly string[];
+  sampleLimit?: number;
+}): {
+  comparedNodes: number;
+  comparedProperties: number;
+  mismatches: number;
+  tagMismatchedNodes: number;
+  byProperty: Record<string, number>;
+  samples: QaOnlyStyleSample[];
+} {
+  const limit = input.sampleLimit ?? QA_ONLY_STYLE_SAMPLE_LIMIT;
+  const originalElements: QaCapturedElement[] = [];
+  const cloneElements: QaCapturedElement[] = [];
+  for (const node of input.nodes) {
+    const original = input.originalByNodeId.get(node.nodeId);
+    const clone = input.cloneByNodeId.get(node.nodeId);
+    if (!original || !clone) continue;
+    // Re-key onto the shared identity. The rest of the record is untouched.
+    originalElements.push({ ...original, key: node.nodeId });
+    cloneElements.push({ ...clone, key: node.nodeId });
+  }
+
+  const asCapture = (elements: QaCapturedElement[]): QaRawCapture => ({
+    url: "",
+    title: "",
+    documentGeometry: {
+      viewportWidth: 0,
+      viewportHeight: 0,
+      documentWidth: 0,
+      documentHeight: 0,
+      scrollWidth: 0,
+      scrollHeight: 0,
+    },
+    elements,
+    textSequence: [],
+  });
+
+  const comparison = compareCapturedStyles(
+    asCapture(originalElements),
+    asCapture(cloneElements),
+    {
+      properties: input.properties ?? QA_ONLY_STYLE_PROPERTIES,
+      maxMismatches: limit,
+    },
+  );
+
+  // `mismatches` is capped at `limit`; `byProperty` is not, so the TOTAL is read
+  // off the uncapped counter and the capped list is only ever evidence.
+  const total = Object.values(comparison.byProperty).reduce((sum, n) => sum + n, 0);
+  return {
+    comparedNodes: comparison.comparedElements,
+    comparedProperties: comparison.comparedProperties,
+    mismatches: total,
+    tagMismatchedNodes: comparison.tagMismatchKeys.length,
+    byProperty: comparison.byProperty,
+    samples: comparison.mismatches.map((mismatch) => ({
+      nodeId: mismatch.key,
+      tagName: mismatch.tagName,
+      property: mismatch.property,
+      original: mismatch.a,
+      clone: mismatch.b,
+    })),
+  };
+}
+
 export async function qaOnePage(input: QaOnePageInput): Promise<QaPageResult> {
   const { item, inputs, collector } = input;
   const { page, viewport } = item;
@@ -315,11 +455,41 @@ export async function qaOnePage(input: QaOnePageInput): Promise<QaPageResult> {
       input.storedOriginals.set(key, {
         elementByNodeId: alignment.byNodeId,
         ...(originalCapture?.screenshot ? { screenshot: originalCapture.screenshot } : {}),
+        ...(originalCapture?.screenshotCoverage
+          ? { screenshotCoverage: originalCapture.screenshotCoverage }
+          : {}),
         ...(originalCapture?.capture
           ? { documentGeometry: originalCapture.capture.documentGeometry }
           : {}),
       });
     }
+  }
+
+  // --- QA-only style, browser vs browser (Task 28.5B change 6) -------------
+  // The one axis that can adjudicate the 30 properties no SiteSpec style token
+  // contains. Reuses the alignment pairing established above; when that pairing
+  // does not exist the page records "unavailable", never zero mismatches.
+  let qaOnlyStyle:
+    | { comparison: "unavailable"; reason: QaOnlyStyleUnavailableReason }
+    | ({ comparison: "compared" } & ReturnType<typeof compareQaOnlyStyles>);
+  if (!cloneCapture.capture) {
+    qaOnlyStyle = { comparison: "unavailable", reason: "no-clone-capture" };
+  } else if (!alignment.aligned) {
+    qaOnlyStyle = {
+      comparison: "unavailable",
+      reason:
+        alignment.failure === "no-live-capture" ? "no-live-original" : "source-not-aligned",
+    };
+  } else {
+    const measured = compareQaOnlyStyles({
+      nodes: comparable,
+      originalByNodeId: alignment.byNodeId,
+      cloneByNodeId: mapping.byNodeId,
+    });
+    qaOnlyStyle =
+      measured.comparedNodes === 0
+        ? { comparison: "unavailable", reason: "no-comparable-nodes" }
+        : { comparison: "compared", ...measured };
   }
 
   // --- assets (after alignment, so the live original can be compared too) --
@@ -338,6 +508,47 @@ export async function qaOnePage(input: QaOnePageInput): Promise<QaPageResult> {
   // --- screenshots ---------------------------------------------------------
   const snapshotScreenshot = await readSnapshotScreenshot(inputs, page.pageId, viewport);
   const originalScreenshot = originalCapture?.screenshot ?? stored?.screenshot;
+
+  /*
+   * Task 28.6 C5 — coverage for all three sides.
+   *
+   * The clone and the live original measured their own document at capture
+   * time. The stored snapshot PNG cannot: it was written by an earlier
+   * Observer run and no live page is available to ask. Its expected size is
+   * therefore reconstructed from the two numbers the observation DID record —
+   * the observed document dimensions and this viewport's device scale factor —
+   * and compared against the PNG's IHDR. That is exactly the check that catches
+   * an observation whose own screenshot was clipped, which is the case a
+   * clone-side-only check would report as a clone height defect.
+   */
+  const snapshotDimensions = snapshotScreenshot
+    ? readPngDimensions(snapshotScreenshot)
+    : undefined;
+  const snapshotCoverage: ScreenshotCoverage | undefined = snapshotScreenshot
+    ? buildScreenshotCoverage({
+        side: "snapshot",
+        // The observation measured this document at capture time and persisted
+        // the numbers; they are a real measurement from an earlier run, not a
+        // fallback, so the denominator here is known.
+        documentMeasured: true,
+        documentHeightCss: viewportSpec.documentDimensions.documentHeight,
+        documentWidthCss: viewportSpec.documentDimensions.documentWidth,
+        deviceScaleFactor: item.profile.deviceScaleFactor,
+        ...(snapshotDimensions ? { captured: snapshotDimensions } : {}),
+        ...(snapshotDimensions
+          ? {}
+          : { reason: "stored snapshot bytes are not a readable PNG" }),
+      })
+    : undefined;
+  const originalCoverage =
+    originalCapture?.screenshotCoverage ?? stored?.screenshotCoverage;
+  const cloneCoverage = cloneCapture.screenshotCoverage;
+  const screenshotCoverage: ScreenshotCoverage[] = [
+    snapshotCoverage,
+    originalCoverage,
+    cloneCoverage,
+  ].filter((entry): entry is ScreenshotCoverage => entry !== undefined);
+
   const screenshots: ScreenshotMetric[] = [];
   const diffImages: Array<{ pair: string; image: Buffer }> = [];
   const pairs: Array<{
@@ -346,6 +557,8 @@ export async function qaOnePage(input: QaOnePageInput): Promise<QaPageResult> {
     b?: Buffer;
     aLabel: string;
     bLabel: string;
+    aCoverage?: ScreenshotCoverage;
+    bCoverage?: ScreenshotCoverage;
   }> = [
     {
       pair: "snapshot-clone",
@@ -353,6 +566,8 @@ export async function qaOnePage(input: QaOnePageInput): Promise<QaPageResult> {
       b: cloneCapture.screenshot,
       aLabel: "snapshot",
       bLabel: "clone",
+      ...(snapshotCoverage ? { aCoverage: snapshotCoverage } : {}),
+      ...(cloneCoverage ? { bCoverage: cloneCoverage } : {}),
     },
     {
       pair: "snapshot-original",
@@ -360,6 +575,8 @@ export async function qaOnePage(input: QaOnePageInput): Promise<QaPageResult> {
       b: originalScreenshot,
       aLabel: "snapshot",
       bLabel: "live original",
+      ...(snapshotCoverage ? { aCoverage: snapshotCoverage } : {}),
+      ...(originalCoverage ? { bCoverage: originalCoverage } : {}),
     },
     {
       pair: "original-clone",
@@ -367,6 +584,8 @@ export async function qaOnePage(input: QaOnePageInput): Promise<QaPageResult> {
       b: cloneCapture.screenshot,
       aLabel: "live original",
       bLabel: "clone",
+      ...(originalCoverage ? { aCoverage: originalCoverage } : {}),
+      ...(cloneCoverage ? { bCoverage: cloneCoverage } : {}),
     },
   ];
   for (const entry of pairs) {
@@ -458,6 +677,17 @@ export async function qaOnePage(input: QaOnePageInput): Promise<QaPageResult> {
           : {}),
     },
     screenshots,
+    ...(screenshotCoverage.length > 0 ? { screenshotCoverage } : {}),
+    ...(cloneCapture.stabilization
+      ? {
+          stabilization: {
+            clone: cloneCapture.stabilization,
+            ...(originalCapture?.stabilization
+              ? { liveOriginal: originalCapture.stabilization }
+              : {}),
+          },
+        }
+      : {}),
     sourceDrift: {
       attempted: input.useLiveOriginal,
       structurallyAligned: alignment.aligned,
@@ -491,6 +721,20 @@ export async function qaOnePage(input: QaOnePageInput): Promise<QaPageResult> {
           },
         }
       : {}),
+    qaOnlyStyleComparison: qaOnlyStyle.comparison,
+    ...(qaOnlyStyle.comparison === "unavailable"
+      ? { qaOnlyStyleUnavailableReason: qaOnlyStyle.reason }
+      : {
+          qaOnlyStyleOriginalSource: input.useLiveOriginal
+            ? ("live" as const)
+            : ("stored" as const),
+          qaOnlyStyleComparedNodes: qaOnlyStyle.comparedNodes,
+          qaOnlyStyleComparedProperties: qaOnlyStyle.comparedProperties,
+          qaOnlyStyleMismatches: qaOnlyStyle.mismatches,
+          qaOnlyStyleTagMismatchedNodes: qaOnlyStyle.tagMismatchedNodes,
+          qaOnlyStyleByProperty: qaOnlyStyle.byProperty,
+          qaOnlyStyleSamples: qaOnlyStyle.samples,
+        }),
     diffIds: [],
     errors,
     timings,

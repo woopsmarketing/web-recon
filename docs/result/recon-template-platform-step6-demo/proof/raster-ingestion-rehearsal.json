@@ -1,0 +1,44 @@
+{
+  "schema": "step6-raster-ingestion-rehearsal@1",
+  "date": "2026-09-20",
+  "RASTER_INGESTION_REHEARSAL": "PASS",
+  "REAL_APPROVED_RASTER_INGESTION": "NOT_YET_RUN",
+  "where": "scratch devroot outside the repository (platform/templates/node_modules/scripts symlinked, data/{template-releases,sites,site-builds} COPIED). Nothing was written to the repository's data/ or references/.",
+  "input": "synthetic test pattern drawn with sharp (blue→orange gradient, text 'INGESTION REHEARSAL · TEST PATTERN - NOT AN APPROVED IMAGE'). Not an approved image, not a photo, never placed in the repository.",
+  "provenScope": ["synthetic raster input", "step6-assets ingestion", "centre crop / resize", "JPEG output", "registry update", "site build (same pinned release)", "package asset reference", "browser rendering"],
+  "singleImage": {
+    "shotId": "bi01-living-01",
+    "source": "3000x2000 jpg",
+    "ingested": "1600x1200 progressive JPEG (3:2 → 4:3 centre crop)",
+    "registryEntry": { "id": "bi01-living-01", "file": "bi01-living-01.jpg", "mediaType": "image/jpeg", "width": 1600, "height": 1200 },
+    "assetStatus": { "approvedGenerated": 1, "illustratedStandIns": 50, "AI_PORTFOLIO_ASSETS": "PARTIAL" },
+    "build": { "status": "built", "releaseId": "interior-01-1.4.0-9e1ea20da947", "templateSourceHash": "93d7da0fc06e1583d30af6aa40dd0e95297ab3b7a5e83bd73fea95fd82b8ea83", "buildInputId": "c3b0682ba296f8968014306d589a608923e528d8e8a8490c474174a963af253f", "packageHash": "ca889aff7434dd92f898a81a6f40af934b2d79f334db820d8a66e99737b569c3", "qaPass": true, "warnings": 0, "htmlPages": 12 },
+    "package": { "asset": "site/assets/48e537a029eee712f927.jpg", "sha256EqualsSiteAsset": true, "referencedBy": ["site/index.html", "site/portfolio.html", "site/portfolio/suseong-white-34py-apartment-remodeling.html"] },
+    "visualSmoke": { "checks": 237, "passed": 237, "failed": 0, "visits": 18 },
+    "browser": [
+      { "route": "/", "viewport": 1440, "natural": "1600x1200", "shown": "420x275", "objectFit": "cover", "errors": 0 },
+      { "route": "/", "viewport": 390, "natural": "1600x1200", "shown": "294x193", "objectFit": "cover", "errors": 0 },
+      { "route": "/portfolio", "viewport": 1440, "natural": "1600x1200", "shown": "432x324", "objectFit": "cover", "errors": 0 },
+      { "route": "/portfolio/suseong-white-34py-apartment-remodeling", "viewport": 1440, "natural": "1600x1200", "shown": "678x678", "objectFit": "cover", "errors": 0 },
+      { "route": "/portfolio/suseong-white-34py-apartment-remodeling", "viewport": 390, "natural": "1600x1200", "shown": "390x390", "objectFit": "cover", "errors": 0 }
+    ]
+  },
+  "edgeCases": [
+    { "input": "portrait 1500x2000 .png", "result": "ingested 1600x1200 JPEG", "guard": ["upscaled", "heavy-crop (56% kept)"] },
+    { "input": "2400x1800 .webp", "result": "ingested 1600x1200 JPEG", "guard": [] },
+    { "input": "EXIF-rotated jpg (orientation 8, stored 1800x2400)", "result": "auto-oriented, ingested 1600x1200 JPEG, upright", "guard": [] },
+    { "input": "400x300 jpg", "result": "ingested, upscaled ×4 (blurry)", "guard": ["upscaled"] },
+    { "input": "bi01-living-03.jpeg", "result": "NOT ingested — stand-in kept", "guard": ["unmatched: extension .jpeg is not accepted (jpg/png/webp)"] },
+    { "input": "living-room-final.jpg", "result": "NOT ingested", "guard": ["unmatched: file name is not a shotId"] },
+    { "input": "bi01-kitchen-01.png + bi01-kitchen-01.webp", "result": ".png ingested, .webp ignored", "guard": ["unmatched: shadowed by another extension of the same shot"] },
+    { "input": "BI01-BATHROOM-01.JPG (case-insensitive volume)", "result": "ingested as bi01-bathroom-01", "guard": [] }
+  ],
+  "leakCheck": {
+    "repoApprovedFolderRasters": 0,
+    "repoSiteInstanceRasters": 0,
+    "repoSiteBuildRasters": 0,
+    "repoSiteInstanceSha256VsPreRun": "identical (62 files)",
+    "rehearsalBuildIdOrAssetHashFoundInRepoData": false,
+    "rehearsalScreenshotsKeptInRepo": false
+  }
+}

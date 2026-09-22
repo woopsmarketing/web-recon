@@ -1,0 +1,95 @@
+{
+  "baselineSha": "6c2e723601a0d76431c96a48bbdb4726c02063e7",
+
+  "verdict": "RESPONSIVE ROOT CAUSE KNOWN — MORE EXPERIMENT NEEDED",
+
+  "rootCause": {
+    "frozenBands": "Only two deep observation viewports (1440 desktop / 390 mobile) + a 5-width geometry probe [390,768,1024,1440,1920]. The clone ships both subtrees switched at an inferred 915px midpoint; the mobile subtree receives ZERO inferred rules (generateLayoutCss hardcodes data-wr-viewport='desktop', src/reconstruction/layout-inference.ts:701) so 0-914.98px is frozen at 390px-resolved values, and the desktop subtree is frozen at 1440px-resolved values because authored fluid forms (fr/clamp/vw/%) are captured then discarded for resolved px; the fluid tier barely fires (3 usable samples, blockish-display gate, containing-block guards refuse grid/flex-basis items).",
+    "pricing1100": "The probe never samples between 1024 and 1440; the source's real switch is exactly 1025 (@media max-width:1024 hide-laptop / min-width:1025 show-laptop). hiddenRanges() interpolates per-node hidden bands to floored midpoints, emitting (min-width:1024px) and (max-width:1231.98px){display:none} for 503 nodes on /pricing — wrong at BOTH edges (clone also wrongly shows desktop content at 950-1023). Independent second cause: 1344px of frozen 1440-resolved grid track inside an 1100px viewport with no overflow management (250 chars offscreen even with the band removed). 1024 was already a BLOCKER at baseline.",
+    "firstLossStage": "observation (missing sample inside the 1024-1440 probe gap); the defect MATERIALIZES in reconstruction (hiddenRanges midpoint interpolation, layout-inference.ts:674,677-678); it SHIPS because layout-truth-check renders only at 1440 where the band can never apply, so all responsive-hidden rules are acceptedUnchecked (layout-truth-check.ts:46-51,107) — adjudicator-confirmed 738/738",
+    "generatedRuleEvidence": "app/public/wr/generated-styles.css:13541-13545: @media (min-width: 1024px) and (max-width: 1231.98px) { [data-wr-page=\"p000007\"][data-wr-viewport=\"desktop\"] [data-wr-node=\"n000359\"] { display: none; } } — 738 @media blocks in the sheet, ALL at this single condition, 503 on /pricing; specificity (0,3,0) outranks the node's own style. Adjudicator recomputed the midpoint math character-for-character and reproduced the failure live."
+  },
+
+  "sourceResponsive": {
+    "mediaRulesPresent": true,
+    "containerRulesPresent": true,
+    "runtimeDriven": false,
+    "selectivelyPreservable": false,
+    "notes": "Source responsiveness is 100% declarative CSS (verified identical with JS disabled at all 5 widths; container rules exist only in video player/charts, not page layout). 'selectivelyPreservable: false' refers to RENDER-TIME rule replay: Strategy B preserved 621 genuine source rules and produced the worst result (regressed 1440, duplicate CTAs, surrenders asset independence). The INFORMATION is preservable and high-value at capture/IR time: authored breakpoints (1025) and fluid track lists (2fr repeat(4,1fr)) are recoverable — 30/81 linear sheets (8/8 stripe) are CORS-blocked from CSSOM but 100% recoverable by direct fetch; today authoredLayout reaches only 34/3254 linear nodes and 0/2280 stripe nodes."
+  },
+
+  "strategies": {
+    "A_extraObservation": {
+      "blockersAtRequiredWidths": 2,
+      "majorsAtRequiredWidths": 1,
+      "productionComplexity": "medium",
+      "viable": false,
+      "note": "Output identical in every measured field to a ten-line band clamp; more truth samples alone change nothing while the geometry tier is guard-gated and 700 < the 915 breakpoint. One indispensable piece survives: a single extra probe width near 1100 (fluid detection finds 508 nodes with it vs 9 without)."
+    },
+    "B_selectivePreservation": {
+      "blockersAtRequiredWidths": 2,
+      "majorsAtRequiredWidths": 2,
+      "productionComplexity": "high",
+      "viable": false,
+      "note": "Regressed the one previously-exact width (1440: hide-laptop AND show-laptop both render), duplicated CTAs at 1100, requires build-time source stylesheet fetching + selector translation (shipped clone strips original classes — SiteSpec empties attributes), surrenders Task-22 asset independence."
+    },
+    "C_minimalInference": {
+      "blockersAtRequiredWidths": 0,
+      "majorsAtRequiredWidths": 4,
+      "productionComplexity": "low",
+      "viable": true,
+      "note": "Final AC5 form: hidden-band correction + width:auto-ONLY unfreeze (max-width:none destroyed authored caps — found by the Stripe check, confirmed on Linear) + px→fr conversion including single-track grids (the 1344px single track was the 1100 Enterprise pin) + 1100 probe width. 0 blockers at all 5 widths; 1100 offscreen 105→0; 1024 305→0 offscreen. Caveats (adjudicator): shipped bands end at 1061.98 = midpoint(1024,1100), not the claimed clamp — result depends on the probe sample; and everywhere the unfreeze acts it introduces one shared MAJOR-class signature (lost flex justification / row gaps: jammed logo row, nav cluster ~280px off at 1440 invisible to the clip metric, colliding cells at 1024, 4px toggle sliver) — the unfreeze must emit the frozen property SET coherently, which is the open experiment."
+    }
+  },
+
+  "winner": "C (minimal inference correction, AC5 form: corrected hidden bands + width:auto-only fluid unfreeze + complete px→fr track conversion + one extra probe width) — chosen after A and B were experimentally eliminated per the A>B>C preference order; NOT yet production-ready pending the coherent-property-set unfreeze, the untested mobile-subtree fix for 700, and authored-breakpoint capture",
+
+  "requiredWidths": {
+    "390": { "blockers": 0, "majors": 0 },
+    "700": { "blockers": 0, "majors": 1 },
+    "1024": { "blockers": 0, "majors": 1 },
+    "1100": { "blockers": 0, "majors": 1 },
+    "1440": { "blockers": 0, "majors": 1 }
+  },
+  "requiredWidthsNote": "Final best variant AC5 per the independent PNG re-audit (baseline current: blockers at 1024 and 1100, major at 700). 1440's MAJOR is a REGRESSION from a currently-faithful width and is the reason the verdict is not READY TO IMPLEMENT.",
+
+  "stripeGeneralization": {
+    "tested": true,
+    "regression": false,
+    "note": "Zero code edits, zero selector-assumption failures; 1,906 nodes unfrozen, 78 grids converted; stripe 1100 BLOCKER→MAJOR. regression:false holds for the corrected (width:auto-only) form — the initial max-width:none form DID regress stripe 1440, which is how the mandatory correction was found. Band-clamp is a provable no-op on stripe (zero @media in its generated sheet). CORS trap and frozen-mobile-subtree residual both reproduced on stripe."
+  },
+
+  "recommendedPrinciple": {
+    "preserveWhenSafe": true,
+    "observeAsFallback": true,
+    "inferLast": true,
+    "note": "ADOPT NARROWED for responsive semantics, per the fresh adjudicator: PRESERVE as a capture/IR principle and as a constraint on inference (never infer an edge the source declares) — but NOT as a rendering principle (Strategy B refutes render-time rule replay). Plus a mandatory fourth clause: VERIFY — no responsive rule may ship without being rendered at the widths where it applies (today 738/738 responsive-hidden rules ship acceptedUnchecked)."
+  },
+
+  "productionSourceModified": false,
+  "historicalMutationCount": 0,
+  "gitMutatingOperations": 0,
+  "integrityNote": "HEAD unchanged at baseline; working-tree delta since start is exactly the 9 new untracked docs paths this task created (8 handoffs incl. adjudication + review-pack dir + this file); adjudicator independently verified src/ mtimes all predate the task window and layout-inference.ts carries no experiment edits; all experiment code under tmp/wr-responsive-investigation/ (~500MB, disposable).",
+
+  "reviewPack": {
+    "primaryImages": 15,
+    "contactSheets": 1,
+    "dir": "docs/result/28.5C-responsive-review/",
+    "manifest": "docs/result/28.5C-responsive-review/manifest.json"
+  },
+
+  "nextImplementationTask": "28.5D — Responsive production implementation + closing experiments. WP1: hiddenRanges correction (never extrapolate hidden bands past observed-hidden samples; authored breakpoints as edge input; ~10 lines). WP2: probe-width plumbing (surface probeExtraWidths through CLI/multi-observer — observe-selected-pages.ts:287 currently drops it; include acceptance widths 700/1100; pick the fluid-detection pair from the site's top authored layout switch). WP3 [OPEN EXPERIMENT]: coherent fluid-unfreeze emission — width:auto-only + fr tracks incl. single-track + the frozen property set (margins, justification-bearing props, footer tracks) as one unit per fluid subtree; must clear the lost-justification/row-gap signature WITHOUT regressing 390/1440. WP4: authored-breakpoint capture — direct-fetch fallback when CSSOM cssRules throws (CORS trap; 81/81 recoverable); populate authoredLayout for real; highest leverage per line. WP5: close the verification hole — layout truth check renders at every promised width; responsive-hidden can never ship acceptedUnchecked. WP6 [OPEN EXPERIMENT]: lift hardcoded desktop at layout-inference.ts:701 and generate mobile-subtree rules — the only required width (700) with zero experimental evidence. Acceptance bar: at 390/700/1024/1100/1440 rendered-and-compared: 0 blockers AND no MAJOR regression at currently-faithful widths (AC5 as-is fails this at 1440, by design of the bar). Full scope: docs/result/handoffs/28.5C-adjudication.json.",
+
+  "handoffs": [
+    "docs/result/handoffs/28.5C-start.json",
+    "docs/result/handoffs/28.5C-responsive-pipeline.json",
+    "docs/result/handoffs/28.5C-pricing-1100-trace.json",
+    "docs/result/handoffs/28.5C-source-responsive.json",
+    "docs/result/handoffs/28.5C-experiments.json",
+    "docs/result/handoffs/28.5C-generalization.json",
+    "docs/result/handoffs/28.5C-visual-audit.json",
+    "docs/result/handoffs/28.5C-adjudication.json"
+  ],
+  "report": "docs/result/28.5C-responsive-root-cause-decision-2026-08-31.md",
+  "completedAt": "2026-09-01T01:20:00+09:00"
+}

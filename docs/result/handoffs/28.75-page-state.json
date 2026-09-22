@@ -1,0 +1,397 @@
+{
+  "task": "28.75 — page-state gate, shared page-state API, evidence root, plus two folded-in content-loss fixes",
+  "lane": "src/observer/**, src/multi-observer/**, src/cli-observe*.ts, scripts/smoke-multi-observer.ts (+ one mirror-only edit in src/reconstruction-qa/capture-page.ts)",
+  "generatedAt": "2026-09-05",
+  "gateBefore": {
+    "tiers": [
+      "cover"
+    ],
+    "cover": {
+      "minWidthCoverage": 0.5,
+      "minHeightCoverage": 0.5,
+      "minAreaCoverage": 0.5
+    },
+    "predicate": "coverShaped AND strongSignals >= 1 AND signals >= 2",
+    "strongSignals": [
+      "declared-dialog",
+      "appeared-after-initial-paint",
+      "close-control-inside"
+    ],
+    "weakSignals": [
+      "page-scroll-locked",
+      "stacked-above-page"
+    ],
+    "knownBlindSpot": "a centered desktop modal narrower than half a wide viewport was dropped before any evidence was read, and was not even counted in headerLikeRefused"
+  },
+  "gateAfter": {
+    "tiers": [
+      "cover",
+      "panel"
+    ],
+    "cover": {
+      "minWidthCoverage": 0.5,
+      "minHeightCoverage": 0.5,
+      "minAreaCoverage": 0.5,
+      "unchanged": true,
+      "sharedWith": "the collector's read-only overlay census"
+    },
+    "panel": {
+      "minWidthCoverage": 0.2,
+      "minHeightCoverage": 0.25,
+      "minAreaCoverage": 0.08,
+      "minAxisInset": 0.06,
+      "maxFullBleedWidth": 0.85,
+      "alsoRequires": "position: fixed OR an explicit positive z-index (lifted)",
+      "appliesOnlyTo": "elements the cover tier did not admit"
+    },
+    "predicate": "(coverShaped OR panelShaped) AND strongSignals >= 1 AND signals >= 2",
+    "evidenceBarChanged": false,
+    "newStrongSignals": [],
+    "newWeakSignals": [
+      "backdrop-behind"
+    ],
+    "newRecordFields": [
+      "panelMatches",
+      "initialPaintCensusStatus",
+      "attempts[].shapeClass",
+      "attempts[].widthCoverage",
+      "attempts[].heightCoverage"
+    ],
+    "domDeletionPath": "none — asserted on the source text with comments stripped"
+  },
+  "seoultoneDesktopBefore": {
+    "run": "data/seoultone.kr/site-observations/2026-09-04T18-13-50-161Z",
+    "page": "p000001",
+    "url": "http://seoultone.kr/",
+    "viewport": "1440x900",
+    "structuralMatches": 0,
+    "panelMatches": null,
+    "headerLikeRefused": 6,
+    "qualified": 0,
+    "dismissed": 0,
+    "evidenceDirs": [],
+    "overlay": {
+      "fingerprint": "section#popup_slider",
+      "widthCoverage": 0.347,
+      "heightCoverage": 0.904,
+      "areaCoverage": 0.314,
+      "refusedBy": "widthCoverage 0.347 < OVERLAY_SHAPE.minWidthCoverage 0.5"
+    },
+    "mobileSameRun": {
+      "structuralMatches": 1,
+      "qualified": 1,
+      "dismissed": 1,
+      "evidenceDir": "docs/result/28.7/evidence/page-state/seoultone.kr/p000001-mobile-1"
+    }
+  },
+  "seoultoneDesktopAfter": {
+    "run": "data/seoultone.kr/site-observations/2026-09-04T22-16-43-848Z",
+    "page": "p000001",
+    "url": "http://seoultone.kr/",
+    "viewport": "1440x900",
+    "structuralMatches": 0,
+    "panelMatches": 1,
+    "headerLikeRefused": 6,
+    "qualified": 1,
+    "dismissed": 1,
+    "initialPaintCensusStatus": "available",
+    "attempt": {
+      "fingerprint": "section#popup_slider",
+      "shapeClass": "panel",
+      "widthCoverage": 0.347,
+      "heightCoverage": 0.904,
+      "signals": [
+        "close-control-inside",
+        "stacked-above-page"
+      ],
+      "method": "close-control",
+      "closeControlLabel": "닫기",
+      "closeControlLabelSource": "text",
+      "outcome": "dismissed",
+      "overlayCoverageBefore": 0.314,
+      "overlayCoverageAfter": 0,
+      "evidenceDir": "docs/result/28.75/evidence/page-state/seoultone.kr/p000001-desktop-1"
+    },
+    "mobileSameRun": {
+      "structuralMatches": 1,
+      "panelMatches": 0,
+      "qualified": 1,
+      "dismissed": 1,
+      "shapeClass": "cover",
+      "widthCoverage": 0.9,
+      "evidenceDir": "docs/result/28.75/evidence/page-state/seoultone.kr/p000001-mobile-1"
+    },
+    "demonstrationRoute": "live-site",
+    "demonstrationNote": "Observed against the live http://seoultone.kr/ on 2026-09-04 22:16 KST. As of 2026-09-05 07:2x KST the site answers HTTP 200 with a Cafe24 daily-traffic-cap interstitial (title 오늘 일일 방문 한도에 도달했습니다 | Cafe24, documentHeight 937, no #popup_slider), so a fresh load today cannot exercise the popup. Neither an artifact replay nor a fixture-only demonstration was needed."
+  },
+  "symmetryAsserted": {
+    "fixture": "scripts/smoke-multi-observer.ts — every fixture route answers the same at 1440 and 390",
+    "realSites": "scripts/smoke-multi-observer.ts::testRealSiteNormalizationSymmetry — walks the LATEST site-observation run of every host under data/ and fails on any comparable pair whose `dismissed > 0` disagrees across viewports",
+    "notComparableRule": "skipped, with a reason, when either viewport did not run the phase or the two viewports landed on different final URLs",
+    "establishedNonVacuous": "against the pre-fix data it fails on seoultone.kr p000001 (desktop 0 / mobile 1) — the only asymmetric pair in the whole data/ tree; against the post-fix data it passes",
+    "postFixAsymmetries": 0
+  },
+  "falsePositiveSites": [
+    {
+      "site": "linear.app",
+      "run": "data/linear.app/site-observations/2026-09-04T22-34-32-296Z",
+      "pagesXViewports": 8,
+      "panelMatches": 0,
+      "qualified": 0,
+      "dismissed": 0
+    },
+    {
+      "site": "hobbang.net",
+      "run": "data/hobbang.net/site-observations/2026-09-04T22-39-01-787Z",
+      "pagesXViewports": 20,
+      "panelMatches": 0,
+      "qualified": 0,
+      "dismissed": 0
+    },
+    {
+      "site": "gs.severance.healthcare",
+      "run": "data/gs.severance.healthcare/site-observations/2026-09-04T22-33-34-567Z",
+      "pagesXViewports": 4,
+      "panelMatches": 0,
+      "qualified": 0,
+      "dismissed": 0
+    },
+    {
+      "site": "seoultone.kr (12 non-home pages)",
+      "run": "data/seoultone.kr/site-observations/2026-09-04T22-16-43-848Z",
+      "pagesXViewports": 24,
+      "panelMatches": 0,
+      "qualified": 0,
+      "dismissed": 0
+    }
+  ],
+  "falsePositiveCount": 0,
+  "newCandidatesAdmittedAcrossAllSites": 1,
+  "knownMiss": "gs.severance.healthcare /gs/index.do carries an entry popup (accessible text includes 오늘하루 열지않기 Close) which the phase does NOT dismiss at either viewport, before or after this wave. Not a regression; recorded because the gate is still narrower than 'every entry popup'.",
+  "evidenceRootFixed": {
+    "before": "PAGE_STATE_EVIDENCE_ROOT = \"docs/result/28.7/evidence/page-state\" — hardcoded into permanently-enabled production code, writing into a frozen wave's artifact directory",
+    "after": "PAGE_STATE_EVIDENCE_ROOT_DEFAULT = \"data/page-state-evidence\"",
+    "overrides": [
+      "normalizePageState(page, { evidenceRoot })",
+      "observeSelectedPages(sel, { pageStateEvidenceRoot })",
+      "pnpm observe <url> --page-state-evidence-root=DIR",
+      "pnpm observe:site <file> --page-state-evidence-root=DIR"
+    ],
+    "thisWaveWroteTo": "docs/result/28.75/evidence/page-state",
+    "guardCheck": "the default must not start with docs/result/ and must not contain 28.7/, and src/observer/types.ts must carry no hardcoded docs/result/28.7/evidence path",
+    "frozen287Untouched": true,
+    "frozen287Contents": [
+      "docs/result/28.7/evidence/page-state/seoultone.kr/p000001-mobile-1"
+    ]
+  },
+  "apiContractPath": "docs/result/28.75/page-state-api-contract.md",
+  "apiExports": {
+    "module": "src/observer/index.ts",
+    "call1": "markInitialPaintCensus(page, { maxElements? }) — immediately after goto(waitUntil: 'load'), before any settling",
+    "call2": "normalizePageState(page, { observationUrl, viewportId, pageId, evidenceRoot?, onLog? }) — after your settle, before capture",
+    "also": [
+      "installBrowserNameShim",
+      "pageStateNormalizationSkipped",
+      "type NormalizePageStateOptions",
+      "type InitialPaintCensusResult"
+    ],
+    "sharedImplementation": "src/observer/initial-paint-census.ts — the census was extracted from observe-page.ts so the observer and an external caller run the SAME code",
+    "skippingCall1": "does not throw; `appeared-after-initial-paint` cannot fire; the record carries initialPaintCensusStatus 'absent' and a limitation naming markInitialPaintCensus",
+    "censusStatusValues": [
+      "available",
+      "absent",
+      "partial",
+      "unreadable"
+    ],
+    "consumerPending": "src/responsive-qa/capture.ts (a different lane) has not been wired yet; until it is, the QA source capture still renders entry popups the observer removed"
+  },
+  "contentLossFixes": {
+    "styleWhitelist": {
+      "added": [
+        "float",
+        "clear",
+        "text-indent"
+      ],
+      "observerFile": "src/observer/types.ts (STYLE_WHITELIST)",
+      "mirrorFile": "src/reconstruction-qa/capture-page.ts (QA_STYLE_PROPERTIES)",
+      "mirrorNote": "float and clear were added; text-indent was ALREADY present (typography tail + QA_ONLY_STYLE_PROPERTIES), and adding it again made the list carry it twice and turned two smoke-qa-independence checks red. The duplicate was removed. QA_ONLY_STYLE_PROPERTIES keeps text-indent, per that constant's own documented contract.",
+      "supersetInvariant": "STYLE_WHITELIST (122) ⊆ QA_STYLE_PROPERTIES (151), asserted in BOTH smoke suites",
+      "measured": {
+        "site": "gs.severance.healthcare /gs/index.do desktop",
+        "preFixRun": "2026-09-04T18-13-50-154Z",
+        "postFixRun": "2026-09-04T22-33-34-567Z",
+        "floatInStylesBefore": false,
+        "floatInStylesAfter": {
+          "none": 348,
+          "left": 24,
+          "right": 2
+        },
+        "slickSlideElements": 68,
+        "slickSlidesCarryingFloatLeftBefore": 0,
+        "slickSlidesCarryingFloatLeftAfter": 68,
+        "slickArrowsCarryingTextIndentAfter": 4,
+        "visibleSlideXAfter": [
+          176,
+          433,
+          690,
+          947
+        ]
+      }
+    },
+    "scrollPass": {
+      "file": "src/observer/layout-probe.ts (runScrollPass)",
+      "cause": "window.scrollBy + a SYNCHRONOUS window.scrollY read, breaking on the first moved <= 0. Under html { scroll-behavior: smooth } scrollBy is asynchronous, so the read always saw 0 and the Observer never scrolled the page at all.",
+      "fix": [
+        "window.scrollTo({ top, left: 0, behavior: 'instant' }) — overrides the page's own scroll-behavior",
+        "progress measured from a SECOND evaluate taken AFTER the settle wait",
+        "SCROLL_NO_PROGRESS_TOLERANCE = 3 consecutive stalls instead of breaking on the first"
+      ],
+      "constants": {
+        "SCROLL_STEP_FRACTION": "0.85 -> 0.5",
+        "SCROLL_STEP_SETTLE_MS": "250 -> 700",
+        "SCROLL_MAX_STEPS": "40 -> 70 (60 was tried and the suite's own reach inequality caught it: 60 x 0.5 = 30 vh < the pre-28.75 40 x 0.85 = 34 vh)",
+        "SCROLL_MAX_TOTAL_MS": "15000 -> 60000 (must not bind before the step cap: 70 x 700 = 49,000)",
+        "SCROLL_NO_PROGRESS_TOLERANCE": "new, 3"
+      },
+      "defectOnRealArtifacts": [
+        {
+          "site": "seoultone.kr /",
+          "viewport": "desktop",
+          "documentHeight": 4892,
+          "steps": 1,
+          "distancePx": 0
+        },
+        {
+          "site": "seoultone.kr /",
+          "viewport": "mobile",
+          "documentHeight": 5632,
+          "steps": 1,
+          "distancePx": 0
+        },
+        {
+          "site": "hobbang.net /",
+          "viewport": "desktop",
+          "documentHeight": 10863,
+          "steps": 1,
+          "distancePx": 0
+        },
+        {
+          "site": "hobbang.net /",
+          "viewport": "mobile",
+          "documentHeight": 17230,
+          "steps": 1,
+          "distancePx": 0
+        },
+        {
+          "site": "gs.severance /gs/index.do",
+          "viewport": "desktop",
+          "documentHeight": 2700,
+          "steps": 3,
+          "distancePx": 1800,
+          "note": "scroll-behavior: auto — not affected"
+        }
+      ],
+      "fixOnRealSite": {
+        "site": "hobbang.net",
+        "scrollBehavior": "smooth",
+        "desktop": {
+          "documentHeight": 10863,
+          "before": {
+            "steps": 1,
+            "distancePx": 0
+          },
+          "after": {
+            "steps": 23,
+            "distancePx": 9963
+          }
+        },
+        "mobile": {
+          "documentHeight": 17167,
+          "before": {
+            "steps": 1,
+            "distancePx": 0
+          },
+          "after": {
+            "steps": 39,
+            "distancePx": 16323
+          }
+        },
+        "reachedBottom": "10863 - 900 = 9963 and 17167 - 844 = 16323 — exactly the bottom at both viewports"
+      },
+      "throughputCost": "hobbang.net / went from 28.3s to 120.4s per page (both viewports plus probes). Correctness over throughput, but the closure canary should budget for it.",
+      "notMeasured": "zeroOpacityNodes / opacityHiddenTextChars on seoultone.kr — those counters are produced by src/responsive-qa/probe.ts (a different lane), and seoultone.kr became unreachable (traffic cap) before it could be re-observed with this fix.",
+      "fixtureFadeSplit": "Raising the dwell to 700ms also broke two PRE-EXISTING scroll-reveal checks: revealedOpacity is the MAXIMUM opacity sampled, and at 0.5 vh steps a block is on screen for 3 samples (~2,100ms) instead of 2, so any fade the ordering pin admits (< 2,000ms) had already completed and the sampling-floor check went vacuous. The fixture now carries two durations - a CSS transition is taken from the after-change style, so .rv.is-in governs the fade IN (SLOW_FADE_IN_MS 2,600ms) and .rv governs the fade OUT (SLOW_FADE_MS 1,300ms, the ordering pin). A new check asserts the fade-in arithmetic against the fixture's own geometry."
+    }
+  },
+  "smokeChecksBefore": 263,
+  "smokeChecksAfter": 298,
+  "smokeQaIndependenceBefore": 101,
+  "smokeQaIndependenceAfter": 101,
+  "prefixFailureCount": 10,
+  "prefixFailureBreakdown": {
+    "panelTier": 5,
+    "scrollPass": 4,
+    "styleWhitelist": 1
+  },
+  "prefixMethod": "tmp/wr2875/page-state/revert-all.py off — all three fixes reverted in place; suite re-run; restored; verified with shasum -a 256 -c (3/3 OK)",
+  "typecheckExit": 0,
+  "typecheckNote": "tsc --noEmit is clean for every file in this lane. Transient errors observed during the session came from src/responsive-qa/** while another agent was mid-edit.",
+  "observationRunIds": {
+    "wave2_useThese": {
+      "gs.severance.healthcare": "data/gs.severance.healthcare/site-observations/2026-09-04T22-33-34-567Z",
+      "linear.app": "data/linear.app/site-observations/2026-09-04T22-34-32-296Z",
+      "hobbang.net": "data/hobbang.net/site-observations/2026-09-04T22-39-01-787Z"
+    },
+    "wave1_popupGateOnly": {
+      "seoultone.kr": "data/seoultone.kr/site-observations/2026-09-04T22-16-43-848Z",
+      "linear.app": "data/linear.app/site-observations/2026-09-04T22-20-02-199Z",
+      "hobbang.net": "data/hobbang.net/site-observations/2026-09-04T22-22-16-108Z"
+    },
+    "seoultoneOutstanding": {
+      "status": "NOT re-observed with the two content-loss fixes",
+      "reason": "http://seoultone.kr/ began serving a Cafe24 daily-traffic-cap interstitial (resets at midnight KST) before the scope addition was implemented",
+      "newestRun": "data/seoultone.kr/site-observations/2026-09-04T22-16-43-848Z",
+      "carries": [
+        "popup-gate fix"
+      ],
+      "missing": [
+        "float/clear/text-indent",
+        "scroll-pass fix"
+      ],
+      "actionRequired": "re-run `npx tsx src/cli-observe-site.ts data/seoultone.kr/2026-09-02T23-12-19-842Z/selected-pages.json --concurrency 2 --page-state-evidence-root=docs/result/28.75/evidence/page-state` once the cap resets, BEFORE the closure canary rebuilds seoultone"
+    },
+    "superseded_preFix": {
+      "seoultone.kr": "data/seoultone.kr/site-observations/2026-09-04T18-13-50-161Z",
+      "linear.app": "data/linear.app/site-observations/2026-09-04T17-21-07-726Z",
+      "hobbang.net": "data/hobbang.net/site-observations/2026-09-04T18-13-50-162Z",
+      "gs.severance.healthcare": "data/gs.severance.healthcare/site-observations/2026-09-04T18-13-50-154Z"
+    }
+  },
+  "reports": [
+    "docs/result/28.75/04-popup-capture-consistency.md",
+    "docs/result/28.75/page-state-api-contract.md"
+  ],
+  "filesChanged": [
+    "src/observer/types.ts",
+    "src/observer/normalize-page-state.ts",
+    "src/observer/initial-paint-census.ts (new)",
+    "src/observer/observe-page.ts",
+    "src/observer/layout-probe.ts",
+    "src/observer/index.ts",
+    "src/cli-observe.ts",
+    "src/cli-observe-site.ts",
+    "src/reconstruction-qa/capture-page.ts (mirror only)",
+    "scripts/smoke-multi-observer.ts"
+  ],
+  "finalVerification": {
+    "smokeMultiObserver": "298/298 PASS, 0 FAIL",
+    "smokeQaIndependence": "101/101 PASS, 0 FAIL",
+    "typecheck": "tsc --noEmit -p tsconfig.json — exit 0, whole repo",
+    "prefixDenominatorNote": "the pre-fix revert run is recorded at 287/297: it predates check 35 and the two constant corrections, which were themselves consequences of the POST-fix suite going red. The 10 attributed failures are unaffected.",
+    "shippedHashes": {
+      "src/observer/normalize-page-state.ts": "442acbd7b84266f808292c4bb03274eb039692af8f7f6b6df0de1f01269b8f91",
+      "src/observer/types.ts": "46e197d483a04a8058673d5e3467b732233a4c13a75961e109ee1a917fe8f2c4",
+      "src/observer/layout-probe.ts": "8f1d3f93ccfc93e82ca184f6475e2ea0e9fc75895dd6f831bcfc4c31b728a135"
+    }
+  }
+}

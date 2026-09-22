@@ -1,0 +1,305 @@
+{
+  "task": "28.75 §07 — probe coverage regression",
+  "verdict": "BOTH DEFECTS CLOSED — both were PRE-EXISTING, not introduced by wave 28.75",
+  "collapseRootCause": "src/observer/layout-probe.ts:989 (pre-fix) — probeLayout's own page load called page.goto() and DISCARDED the response, so the main document's HTTP status was never read. page.goto does not throw on 4xx/5xx, so a transient upstream error body (text/plain, wrapped by Chrome in <pre>) was walked and recorded as a legitimate 3-element layout probe. The Task 28.7 B1 document gate (isOkStatus + navigateMainDocument + non-2xx retry + sourceIntegrity mark) already existed but was private to observe-page.ts and applied only to the DEEP observation's load; the pipeline makes four loads per URL and the probe's two got none of it.",
+  "collapseProvenance": "PRE-EXISTING; trigger site-side and transient. NOT caused by this wave's three observer changes. Proof: the identical 3-element html/body/pre shape struck the DESKTOP DEEP observation of p000001 AND p000002 in run 2026-09-04T15-30-50-831Z — the 28.7 PRE-LANE run — where rendered.html preserves the body verbatim: 'upstream connect error or disconnect/reset before headers. retried and the latest reset reason: remote connection failure'. The brief's stale-parked-list hypothesis is DISPROVEN by the artifact: disconnected==0 at all 16 widths and tags.length==3 (the collapse is in the WALK, before any resize), plus documentWidth 980 = Chrome's no-viewport-meta default.",
+  "alignmentRootCause": "src/sitespec/compile-page.ts computeProbeAttachment (pre-fix) — probe-to-tree attachment was a LEADING INDEX PREFIX from 0, requiring tag AND parent-INDEX equality at every position. The probe is a separate page load, so one element-count difference in a dynamically-mounted subtree shifts every parent index after it and terminates attachment. Measured on linear.app / mobile (healthy pre-lane run 2026-09-04T17-21-07-726Z): probe walk 2283 vs deep walk 2306 — a 23-element/1.0% difference — first mismatch at walk index 311 (both tag 'div'; probe parent 292 vs deep parent 303, an 11-element offset in the animated hero card region q1lnWq_responseText / uPPvIq_cardWrap) discarded 1995 of 2306 nodes = 86.5%.",
+  "alignmentProvenance": "PRE-EXISTING BY CONSTRUCTION — the Task 17 design as narrowed by the Task 26 revision. Present and identical (311/2306 = 13.5%) in EVERY run back to 2026-09-03T11-40-19-339Z including all four pre-lane runs, and already recorded verbatim in src/reconstruction/tree-switch.ts:701-709. The brief's '927 nodes / 40.2%' is the POST-lane desktop figure (1379/2306) and is load-to-load nondeterminism in linear's hero: the desktop column flips between 100% and 12-60% across runs with no code change between several of them.",
+  "fix": {
+    "collapse": [
+      "NEW src/observer/navigate-document.ts — isOkStatus, navigateMainDocument and pause MOVED (not reimplemented) out of observe-page.ts into a module both load paths can depend on. layout-probe.ts cannot import observe-page.ts (observe-page.ts already imports autoScrollPrepare from layout-probe.ts), so a shared module is what makes ONE policy reachable from both loads.",
+      "src/observer/layout-probe.ts probeLayout — gate 1: navigateMainDocument replaces the bare page.goto, giving the probe the same non-2xx bounded retry the deep load has; the full documentResponse (every attempt + status) is written into the probe artifact.",
+      "src/observer/layout-probe.ts probeLayout — gate 2: a STARVATION gate, because a soft error page answers HTTP 200 and no status check can catch it. The probe compares its walk against the deep walk of the SAME viewport in the SAME run and, when starved, retries the whole probe from a clean browser CONTEXT (MAX_PROBE_ATTEMPTS=2), keeping the better pass.",
+      "src/observer/observe-page.ts — applyProbeIntegrity marks the viewport 'probe-starved'; the page-level roll-up was MOVED to after the probes run (it ran before them, so a starved probe could not have marked anything even if it had noticed). Marking, never dropping: the deep observation stays usable."
+    ],
+    "alignment": [
+      "src/sitespec/compile-page.ts computeProbeAttachment — identity stops being a POSITION and becomes a STRUCTURAL PATH: each element's chain of tag[nth-of-that-tag-among-its-parent's-children] from the root, interned across both walks so comparison is an integer compare. Two elements correspond when their paths are equal — the same identity a CSS selector uses. An inserted node renames only its own later siblings; the rest of the document keeps its identity.",
+      "Conservative by construction: an element whose path differs attaches NOTHING (every later sibling of an inserted node, every descendant of a changed ancestor). A node either carries its own measurement or none, and can never carry someone else's.",
+      "attachProbeToViewport writes per MATCHED PAIR, since probe index and element index are no longer the same number.",
+      "A diff-with-resynchronization was implemented and measured FIRST, then rejected: it recovers the same coverage but must GUESS which side to skip at a divergence, and among identical siblings every choice satisfies tag-and-parent equally — guessing wrong shifts the tail by one sibling and attaches each node its neighbour's box, silently. Two candidate orderings were measured; each was correct on one synthetic fixture and silently wrong on the other. Path identity measured equal-or-better on all 172 real page/viewport probes."
+    ],
+    "generic": "No host, path, page or site is named anywhere in the fix. The starvation denominator is the run's own control (the same principle CROSS_VIEWPORT_STARVATION_RATIO already established), and PROBE_DOCUMENT_STARVATION_RATIO is DEFINED AS that existing constant rather than a second tuned number. With no denominator the probe reports no ratio rather than inventing one."
+  },
+  "coverageBefore": {
+    "linear.app/p000001.mobile@2026-09-04T22-34-32-296Z": {
+      "probeWalk": 3,
+      "deepWalk": 2291,
+      "ratio": 0.0013,
+      "marked": false,
+      "note": "THE COLLAPSE — recorded as an ordinary success"
+    },
+    "linear.app/p000001.desktop@2026-09-04T22-34-32-296Z": {
+      "probeWalk": 2291,
+      "deepWalk": 2306,
+      "ratio": 0.9935,
+      "marked": false
+    },
+    "gs.severance.healthcare": "100% on every row (8 rows), byte-identical 28.7 -> 28.75",
+    "hobbang.net": "100% on every row (60 rows), byte-identical 28.7 -> 28.75"
+  },
+  "coverageAfter": {
+    "p000001.desktop": {
+      "probeWalk": 2291,
+      "deepWalk": 2291,
+      "ratio": 1,
+      "starved": false,
+      "documentStatus": 200,
+      "attempts": 1
+    },
+    "p000001.mobile": {
+      "probeWalk": 2306,
+      "deepWalk": 2263,
+      "ratio": 1.019,
+      "starved": false,
+      "documentStatus": 200,
+      "attempts": 1
+    },
+    "p000002.desktop": {
+      "probeWalk": 2230,
+      "deepWalk": 2230,
+      "ratio": 1,
+      "starved": false,
+      "documentStatus": 200,
+      "attempts": 1
+    },
+    "p000002.mobile": {
+      "probeWalk": 2230,
+      "deepWalk": 2230,
+      "ratio": 1,
+      "starved": false,
+      "documentStatus": 200,
+      "attempts": 1
+    },
+    "p000003.desktop": {
+      "probeWalk": 1363,
+      "deepWalk": 1363,
+      "ratio": 1,
+      "starved": false,
+      "documentStatus": 200,
+      "attempts": 1
+    },
+    "p000003.mobile": {
+      "probeWalk": 1363,
+      "deepWalk": 1363,
+      "ratio": 1,
+      "starved": false,
+      "documentStatus": 200,
+      "attempts": 1
+    },
+    "p000004.desktop": {
+      "probeWalk": 364,
+      "deepWalk": 364,
+      "ratio": 1,
+      "starved": false,
+      "documentStatus": 200,
+      "attempts": 1
+    },
+    "p000004.mobile": {
+      "probeWalk": 364,
+      "deepWalk": 364,
+      "ratio": 1,
+      "starved": false,
+      "documentStatus": 200,
+      "attempts": 1
+    }
+  },
+  "alignmentBefore": {
+    "p000001.desktop": {
+      "aligned": false,
+      "attached": 1379,
+      "nodeCount": null,
+      "alignmentRatio": null,
+      "refusedReason": null
+    },
+    "p000001.mobile": {
+      "aligned": false,
+      "attached": 0,
+      "nodeCount": null,
+      "alignmentRatio": null,
+      "refusedReason": "tag-walk-mismatch"
+    },
+    "p000002.desktop": {
+      "aligned": true,
+      "attached": 2230,
+      "nodeCount": null,
+      "alignmentRatio": null,
+      "refusedReason": null
+    },
+    "p000002.mobile": {
+      "aligned": true,
+      "attached": 2230,
+      "nodeCount": null,
+      "alignmentRatio": null,
+      "refusedReason": null
+    },
+    "p000003.desktop": {
+      "aligned": true,
+      "attached": 1363,
+      "nodeCount": null,
+      "alignmentRatio": null,
+      "refusedReason": null
+    },
+    "p000003.mobile": {
+      "aligned": true,
+      "attached": 1363,
+      "nodeCount": null,
+      "alignmentRatio": null,
+      "refusedReason": null
+    },
+    "p000004.desktop": {
+      "aligned": true,
+      "attached": 364,
+      "nodeCount": null,
+      "alignmentRatio": null,
+      "refusedReason": null
+    },
+    "p000004.mobile": {
+      "aligned": true,
+      "attached": 364,
+      "nodeCount": null,
+      "alignmentRatio": null,
+      "refusedReason": null
+    }
+  },
+  "alignmentAfter": {
+    "p000001.desktop": {
+      "aligned": true,
+      "attached": 2291,
+      "nodeCount": 2291,
+      "alignmentRatio": 1,
+      "refusedReason": null
+    },
+    "p000001.mobile": {
+      "aligned": false,
+      "attached": 2261,
+      "nodeCount": 2263,
+      "alignmentRatio": 0.9991,
+      "refusedReason": null
+    },
+    "p000002.desktop": {
+      "aligned": true,
+      "attached": 2230,
+      "nodeCount": 2230,
+      "alignmentRatio": 1,
+      "refusedReason": null
+    },
+    "p000002.mobile": {
+      "aligned": true,
+      "attached": 2230,
+      "nodeCount": 2230,
+      "alignmentRatio": 1,
+      "refusedReason": null
+    },
+    "p000003.desktop": {
+      "aligned": true,
+      "attached": 1363,
+      "nodeCount": 1363,
+      "alignmentRatio": 1,
+      "refusedReason": null
+    },
+    "p000003.mobile": {
+      "aligned": true,
+      "attached": 1363,
+      "nodeCount": 1363,
+      "alignmentRatio": 1,
+      "refusedReason": null
+    },
+    "p000004.desktop": {
+      "aligned": true,
+      "attached": 364,
+      "nodeCount": 364,
+      "alignmentRatio": 1,
+      "refusedReason": null
+    },
+    "p000004.mobile": {
+      "aligned": true,
+      "attached": 364,
+      "nodeCount": 364,
+      "alignmentRatio": 1,
+      "refusedReason": null
+    }
+  },
+  "alignmentSteadyStateBefore": {
+    "linear.app/p000001.mobile": "311 of 2306 = 0.135 on EVERY healthy run since 2026-09-03 (13.5%)",
+    "recomputedUnderPathIdentity": "2283 of 2306 = 0.990"
+  },
+  "instrumentation": {
+    "probeArtifact": "LayoutProbe.coverage { walked, measured, documentElements, ratio, starved, attempts } + LayoutProbe.documentResponse (status + every attempt)",
+    "observationJson": "layoutProbe / layoutProbeMobile pointers now carry `coverage` and `documentStatus` — the collapse is visible without opening the probe file",
+    "siteSpec": "PageSpec.layoutProbe / layoutProbeMobile now carry `nodeCount` and `alignmentRatio` — alignedElementCount finally has a denominator",
+    "sourceIntegrity": "new reason `probe-starved`, per viewport and rolled up to the page",
+    "permanentChecks": "scripts/smoke-multi-observer.ts testProbeCoverage (real Chromium, 16 checks incl. the floor asserted on a real observation); scripts/smoke-sitespec.ts probeAttachmentChecks (13 checks, pure/offline)"
+  },
+  "floor": {
+    "PROBE_DOCUMENT_STARVATION_RATIO": 0.1,
+    "PROBE_DOCUMENT_STARVATION_RATIO_where": "src/observer/types.ts — DEFINED AS CROSS_VIEWPORT_STARVATION_RATIO, reusing an already-justified constant rather than adding a second tuned number",
+    "PROBE_ALIGNMENT_MIN_RATIO": 0.5,
+    "PROBE_ALIGNMENT_MIN_RATIO_where": "src/sitespec/compile-page.ts",
+    "sizing": "Over all 172 page/viewport probes on disk recomputed under path identity: 161 at 1.0000, 8 between 0.9800-0.9910 (linear.app / hero), 3 at 0.0000 (every one a PROVEN capture failure). The whole distribution is >=0.98 or 0.00 — nothing in between — so 0.5 sits mid-gap with an order of magnitude of margin either way."
+  },
+  "scrollBenefitPreserved": {
+    "preserved": true,
+    "how": "By construction, not by re-measurement: runScrollPass and autoScrollPrepare were NOT edited by this lane. Edits to layout-probe.ts are confined to the import block, ProbeLayoutOptions, and the body of probeLayout.",
+    "valuesStillInPlace": {
+      "SCROLL_STEP_FRACTION": 0.5,
+      "SCROLL_MAX_STEPS": 70,
+      "SCROLL_STEP_SETTLE_MS": 700,
+      "SCROLL_MAX_TOTAL_MS": 60000,
+      "SCROLL_NO_PROGRESS_TOLERANCE": 3,
+      "behavior": "instant"
+    },
+    "regressionCoverageGreen": [
+      "testScrollPassTraversal",
+      "testScrollRevealAndOverlayCensus",
+      "testPrepareScrollProbeParity",
+      "testPrepareScrollNavigationSafety"
+    ],
+    "seoultone": "SOURCE_UNAVAILABLE (406-byte Cafe24 over-traffic stub, TLS handshake failure) — NOT attempted, no acceptance claimed",
+    "conflictWithProbeFix": "NONE. The scroll change is not implicated in either defect: Defect A is a missing HTTP-response gate proven by an error body captured in a PRE-LANE run on a DEEP observation the probe scroll never touched; Defect B is index-based attachment present identically in every run back to 2026-09-03. Nothing was traded."
+  },
+  "smokeChecksBefore": {
+    "smoke-multi-observer": 293,
+    "smoke-sitespec": 466
+  },
+  "smokeChecksAfter": {
+    "smoke-multi-observer": 318,
+    "smoke-sitespec": 474
+  },
+  "prefixFailureCount": {
+    "smoke-sitespec": {
+      "failures": 1,
+      "total": 474,
+      "detail": "an INSERTED element no longer discards the page after it (the 28.75 defect) — attached 150 of 400, prefix 150"
+    },
+    "smoke-multi-observer": {
+      "failures": 14,
+      "total": 318,
+      "detail": "probeLayout reverted to a bare page.goto with the starvation gate disabled"
+    },
+    "restoreVerified": "shasum -a 256 -c OK on layout-probe.ts, navigate-document.ts, compile-page.ts, observe-page.ts"
+  },
+  "typecheckExit": 0,
+  "observationRunIds": {
+    "linear.app": "2026-09-05T11-51-47-573Z",
+    "note": "gs.severance.healthcare and hobbang.net deliberately NOT re-observed per coordinator instruction; their closure-canary runs remain valid and the artifact comparison is the proof they are unaffected"
+  },
+  "siteSpecRunIds": {
+    "linear.app": "2026-09-05T12-07-20-025Z",
+    "comparedAgainst": "2026-09-04T23-34-15-786Z"
+  },
+  "acceptance": {
+    "1_linear_reobserved": "PASS — p000001 mobile probe 3 -> 2306, desktop 2291; desktop spec aligned=true 2291/2291 ratio 1.0000; mobile ratio 0.9991, both far above the 0.5 floor",
+    "2_other_hosts_unaffected": "PASS — verified from artifacts, not re-observed: severance and hobbang probe element counts byte-identical 28.7 -> 28.75 on every page, 100% coverage and 100% alignment on all 68 rows",
+    "3_scroll_benefit_preserved": "PASS — scroll code untouched; seoultone SOURCE_UNAVAILABLE and not attempted",
+    "4_suites": "PASS — smoke-multi-observer 318 (>=298), smoke-sitespec 474 (>=466), typecheck exit 0",
+    "5_prefix_failure_count": "PASS — established by revert-in-place, restored and verified with shasum -a 256 -c"
+  },
+  "hobbangOverlapHypothesis": "ANSWERED IN THE NEGATIVE. All 60 hobbang.net page/viewport rows sit at 100% coverage and 100% alignment, before and after, on both mechanisms — every descendant already carries a probe record. There is no measurement gap on hobbang, so its min-width:0px overlap trade (0.0333 -> 0.1195 at 640) is a genuine mechanism trade, not a coverage artefact.",
+  "remainingRisk": [
+    "The trigger is still out there: the fix converts a transient upstream error into a retry and, failing that, into a loud mark. It does not make linear.app's edge reliable. A run where BOTH probe attempts fail now yields a marked, refused probe — honest, but still no width evidence for that viewport.",
+    "MAX_PROBE_ATTEMPTS=2 costs a second full probe pass on a starved page (~90s on linear /). Bounded to one extra pass for that reason.",
+    "Path identity is stricter than a prefix in one direction: an element whose ancestry legitimately differs between the two loads now attaches nothing where a prefix might by luck have covered it. Measured cost across 172 real probes: none — every row equal or better.",
+    "The alignment floor is asserted in the SUITES, not enforced by the compiler — a page that genuinely changes between loads must still compile. The floor's job is to make a collapse fail loudly in a lane, which is where the last one got through.",
+    "p000001's desktop DEEP walk moved 2306 -> 2291 between the pre-lane and these runs. That is linear's own hero nondeterminism, visible since 2026-09-02, unaffected by this lane."
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "schema": "task285b-verify-qa-integration-v1",
+  "producedAt": "2026-08-29T12:20:00.000Z",
+  "verdict": "PASS_WITH_RISKS",
+  "wiringReal": true,
+  "wiringEvidence": {
+    "invocationSite": "src/reconstruction-qa/qa-page.ts — inside qaOnePage, unconditional, between the live-original alignment block and diffAssets. No option flag gates it; every page x viewport that run-qa.ts drives reaches it.",
+    "nodeSet": "compareQaOnlyStyles({ nodes: comparable, ... }) where `comparable = mapping.expected.filter(n => mapping.comparableNodeIds.has(n.nodeId))` — the same set diffStyles/diffGeometry use. Confirmed by reading, not by claim.",
+    "pairing": "originalByNodeId = alignment.byNodeId (alignLiveOriginal or the stored-original synthesis), cloneByNodeId = mapping.byNodeId (mapCloneNodes). Identical to the pair diffAssets consumes at the next statement. No new matcher.",
+    "degradeWins": "Order is: !cloneCapture.capture -> no-clone-capture; !alignment.aligned -> no-live-original (alignment.failure === 'no-live-capture') else source-not-aligned; comparedNodes === 0 -> no-comparable-nodes. On every unavailable branch the result spreads ONLY qaOnlyStyleUnavailableReason, so qaOnlyStyleMismatches is absent, never 0. Verified by running qaOnePage with useLiveOriginal:false and an empty storedOriginals map: qaOnlyStyleMismatches === undefined.",
+    "samplesDeterministicAndCapped": "compareCapturedStyles iterates a.elements in the document order compareQaOnlyStyles pushed them, and properties via [...set].sort(). maxMismatches = QA_ONLY_STYLE_SAMPLE_LIMIT (50). Probe with 60 nodes x 3 differing QA-only properties: samples.length === 50, mismatches === 180 (uncapped, read off byProperty), and two identical invocations produced byte-identical JSON. Sample order observed: n0:fill, n0:rotate, n0:text-shadow, n1:fill."
+  },
+  "interactionAxis": {
+    "styleWhitelistImportRemoved": true,
+    "observerImport": "src/reconstruction-qa/interaction-qa.ts:4 — `import { SKIP_TAGS, type ViewportProfile } from \"../observer/types.js\"`. grep over src/ + scripts/ confirms the only remaining STYLE_WHITELIST references in interaction-qa.ts are prose in comments.",
+    "targetStateVocabulary": "TARGET_STATE_STYLE_PROPERTIES === QA_STYLE_PROPERTIES (reference-equal, checked at runtime).",
+    "noCoverageLoss": "STYLE_WHITELIST (114) is a strict subset of QA_STYLE_PROPERTIES (144); QA_ONLY_STYLE_PROPERTIES (30) is a subset of QA and disjoint from STYLE_WHITELIST. Verified independently of the suite.",
+    "storedBaselineSafety": "SAFE. ReplayState.computed is z.record(string,string).optional() — an open map, so a wider vocabulary cannot break parsing of an old artifact. compareOpenStateStyle (compare-behavior.ts:362-379) iterates the ORIGINAL side's keys and skips any property the clone side lacks (`actual !== undefined` guard), so a mixed-vocabulary pair degrades to fewer comparisons, never to a false mismatch. Both replay sides are captured live in the same process with the same constant, so no asymmetry arises in practice."
+  },
+  "mutationTest": {
+    "failedWhenUnwired": true,
+    "restored": true,
+    "sha256Match": true,
+    "sha256": "a15be9bd4c496c47d54225dda6c89d18d330478db5404c10b300ae78e93314f8",
+    "mutation": "Commented out ONLY the compareQaOnlyStyles({...}) call in qaOnePage and substituted a zeroed literal of the same shape (comparedNodes = comparable.length, comparedProperties = 1, mismatches = 0, empty byProperty/samples). The helper itself, its export, the schema and the suite were untouched.",
+    "result": "smoke-qa-independence dropped 101/101 -> 92/101, exit 1, 9 FAILs, all inside the new sections: 'the run REPORTS QA-only mismatches the SiteSpec axis cannot see', the three property-name assertions, the whitelist-exclusion assertion, the sample-list assertions, and the summary median / per-property assertions. This proves the suite exercises the WIRING through qaOnePage, not the pure helper. Note the zeroed-literal shape still satisfied the shape-only checks (schema parse, verdict === 'compared', comparedNodes >= 2, source === 'live'), which is expected: those are not the wiring detectors.",
+    "restoreProof": "src/reconstruction-qa/qa-page.ts restored from a pre-mutation byte copy; sha256 before === sha256 after. Suite re-run after restore: 101/101, exit 0."
+  },
+  "suites": {
+    "qaIndependence": { "command": "npx tsx scripts/smoke-qa-independence.ts", "result": "101/101 PASS", "exit": 0, "matchesClaim": true },
+    "reconstructionQa": { "command": "npx tsx scripts/smoke-reconstruction-qa.ts", "result": "134/134 PASS (offline half + 'Live half — real observer -> real SiteSpec -> real clone -> real QA')", "exit": 0, "matchesClaim": true }
+  },
+  "section6Scrutiny": {
+    "drivesQaOnePageEndToEnd": true,
+    "detail": "runIntegrationPage() calls qaOnePage directly with a real chromium browser, useLiveOriginal:true, page.url = <fixture>/original and clonePath = /integration/clone served by the same fixture server. Both captures are real browser captures; nothing is stubbed except the SiteSpec/QaInputs shells. sourceDrift.structurallyAligned === true is asserted, so the pairing is genuinely established rather than assumed.",
+    "bothPathsFromSameEntryPoint": true,
+    "mismatchPath": "22 checks: verdict 'compared', comparedNodes >= 2, comparedProperties > 0, originalSource 'live', mismatches > 0 naming -webkit-text-fill-color / text-shadow / the background-clip pair, every named property outside STYLE_WHITELIST and inside QA_ONLY_STYLE_PROPERTIES, samples bounded by the 50 cap and keyed by real SiteSpec node ids with both differing sides, total === sum(byProperty), and the cross-check that the SiteSpec-driven style axis reports none of those properties on the SAME run.",
+    "unavailablePath": "A second qaOnePage call on the same entry point with useLiveOriginal:false and an empty storedOriginals: asserts comparison === 'unavailable', reason === 'no-live-original', and qaOnlyStyleMismatches === undefined (absent, not 0).",
+    "summaryAndPrinting": "Section 7 feeds both real results into summarizeLiveFidelity and worstPages, asserting the compared/unavailable denominators, the total, the median, the per-property breakdown, the pre-28.5B absent-not-zero rule (fields stripped -> counters undefined), and that the printed detail line carries both 'QA-only style' and 'unavailable'."
+  },
+  "historicalParses": {
+    "pageResults": { "scope": "data/linear.app/reconstruction-qa/2026-08-25*/pages/*/*.json", "files": 96, "parsed": 96, "failed": 0, "note": "6 runs x 16 page results; the claim of 16 was one run. None carries a qaOnlyStyle* field, so all nine new fields read as ABSENT on historical artifacts, never as 0." },
+    "liveFidelitySummaries": { "scope": "data/*/reconstruction-qa/*/{baseline,final}-summary.json -> summary.liveFidelity", "files": 62, "parsed": 62, "failed": 0, "note": "All five new summary fields absent on every historical summary." }
+  },
+  "typecheck": { "command": "npx tsc --noEmit", "exit": 0, "output": "clean", "runs": 2, "note": "Run twice — once mid-verification and once after observing concurrent src/ churn; clean both times." },
+  "cliHeadlines": {
+    "naNeverZero": true,
+    "detail": "channel() (cli-qa-reconstruction.ts:124-134) returns 'n/a' for undefined and String(value) otherwise; it is applied to every new optional channel (@16, dE76>2.3, dE76 mean, and all four QA-only counters).",
+    "at1Continuity": true,
+    "at1Detail": "`changed pixel ratio median @1` still prints fidelity.screenshotChangedRatioMedian and baseline.liveFidelity.screenshotChangedRatioMedian unconditionally (no channel() wrapper — the field is required, so it cannot go n/a). The new channels are printed BESIDE it, not instead of it.",
+    "denominatorPrinted": "The QA-only line prints total, median, compared-pair count and unavailable count together, so '0 mismatches over 0 pairs' cannot be misread as a pass. worstPages prints per page as 'QA-only style <n> of <m>' where m is comparedProperties, or 'unavailable (<reason>)', or 'n/a' for a pre-28.5B page."
+  },
+  "defects": [
+    {
+      "id": "D1",
+      "severity": "low",
+      "title": "comparedProperties === 0 is reported as 'compared' with 0 mismatches",
+      "where": "src/reconstruction-qa/qa-page.ts — the honest-zero guard tests only `measured.comparedNodes === 0`.",
+      "detail": "Probed directly: compareQaOnlyStyles over 60 paired nodes whose captured style maps contain none of the 30 QA-only properties returns comparedNodes 60, comparedProperties 0, mismatches 0 — and the wiring then writes qaOnlyStyleComparison:'compared', qaOnlyStyleMismatches:0. compareCapturedStyles routes a property present on only one side into oneSidedProperties and skips it, so a vocabulary drift between the two captures degrades silently toward this state rather than raising it.",
+      "impactToday": "None observed. Both captures go through runCapture with styleProperties = QA_STYLE_PROPERTIES, of which QA_ONLY is a verified subset, so comparedProperties is > 0 whenever any element compares. The integration section asserts comparedProperties > 0 on a real run.",
+      "mitigation": "worstPages already prints '<n> of <m>' with m = comparedProperties, so a 0-of-0 page is visible in the per-page detail. The CLI headline is the weaker surface: it prints compared PAIRS, not compared properties, so a site-wide 0-of-0 would read as a clean 0.",
+      "suggestedFix": "Extend the guard to `measured.comparedNodes === 0 || measured.comparedProperties === 0` with a fifth reason (e.g. no-comparable-properties), or surface a comparedProperties denominator in LiveFidelity."
+    },
+    {
+      "id": "D2",
+      "severity": "informational",
+      "title": "The stored-original path inherits whatever vocabulary the baseline capture used",
+      "where": "src/reconstruction-qa/qa-page.ts — the `stored` branch synthesises `aligned: true` from StoredOriginal.elementByNodeId.",
+      "detail": "A correction iteration compares against elements captured in an earlier pass. Those are in-process objects from the same run today, so the vocabulary matches; the result is correctly labelled qaOnlyStyleOriginalSource:'stored'. Should StoredOriginal ever be rehydrated from a persisted artifact written before 28.5B, it would land in D1's silent-zero state rather than in an unavailable verdict.",
+      "impactToday": "None — StoredOriginal is never serialised."
+    },
+    {
+      "id": "D3",
+      "severity": "informational",
+      "title": "Concurrent src/ churn observed during verification",
+      "where": "src/reconstruction/generate-app.ts, src/reconstruction/layout-truth-check.ts, src/reconstruction/types.ts, src/observer/collect-dom.ts, src/observer/types.ts",
+      "detail": "Files were being written at 21:18 local while this verification was running — i.e. a writer other than 28.5B's builder is active in the tree. None of them is a file this change touches, and I re-ran the vocabulary probe and `npx tsc --noEmit` after the churn: STYLE_WHITELIST is still 114 entries and still a strict subset of QA_STYLE_PROPERTIES, and the typecheck is still clean. Flagged per instruction, not as a defect in change 6.",
+      "reverifiedAfterChurn": true
+    }
+  ],
+  "notes": [
+    "Verdict is PASS_WITH_RISKS solely because of D1, which is a latent honesty gap rather than an observed wrong number. Everything the handoff claims about changes A, B and C reproduced exactly.",
+    "The mutation test is the decisive evidence and it came back the right way: unwiring the single call reduced smoke-qa-independence from 101 to 92, and the file was restored to the identical sha256 (a15be9bd...) with the suite back at 101/101.",
+    "The claim that the pairing is REUSED rather than invented is accurate. compareQaOnlyStyles introduces no matching logic at all: it looks both maps up by SiteSpec nodeId, re-keys the records onto that shared id (the only transformation), and delegates to compareCapturedStyles. The rekeying is genuinely necessary — the original side's element.key is a document-order index while the clone side's is a node id.",
+    "Historical compatibility is stronger than claimed: 96 page results and 62 summaries across six sites parse under the current schemas, all with the new fields absent.",
+    "smoke-reconstruction-qa.ts is unmodified by this change (mtime 2026-08-14); its 134/134 is a regression signal, not new coverage. All new coverage lives in smoke-qa-independence.ts sections 6-8 (62 -> 101 checks, additive).",
+    "Only file modified outside tmp/wr285b/verify-qa-int/ was src/reconstruction-qa/qa-page.ts during the mutation test, restored byte-identically, plus this handoff. No git operations were run."
+  ]
+}

@@ -1,0 +1,1244 @@
+{
+  "schema": "task28.5-reconstruction-pipeline-v1",
+  "producedAt": "2026-08-29",
+  "agent": "Agent A synthesizer (merge of five stage-group archaeology reports, spot-verified against current code and the accepted artifacts)",
+  "lineage": {
+    "site": "linear.app",
+    "pilot": "data/linear.app/2026-08-25T18-28-28-180Z-pilot/",
+    "siteObservation": "data/linear.app/site-observations/2026-08-25T19-23-01-716Z/",
+    "interactionExplorations": "data/linear.app/interaction-explorations/2026-08-25T19-30-59-785Z/",
+    "interactionModels": "data/linear.app/interaction-models/2026-08-25T19-33-19-974Z/",
+    "siteSpec": "data/linear.app/site-specs/2026-08-25T20-30-27-653Z/",
+    "exactReconstruction": "data/linear.app/reconstructions/2026-08-25T20-30-33-313Z/",
+    "reconstructionQa": "data/linear.app/reconstruction-qa/2026-08-25T20-30-41-209Z/",
+    "reconTemplate": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z/",
+    "authoredCustomerSite": "data/linear.app/release-projects/wr28-switchyard/ (NOT used as evidence)",
+    "routes": 8,
+    "viewports": "desktop 1440x900 DSF1; mobile 390x844 DSF3",
+    "headlineNumbers": {
+      "contentExactRatio": 1,
+      "geometryMedianOfMedians": 0.01,
+      "geometryMedianOfP95": 0.085,
+      "geometryMaxDelta": 108.75,
+      "styleMismatchedProperties": 627,
+      "screenshotChangedRatioMedian": 0.1679,
+      "screenshotMeanDeltaMedian": 7.6295,
+      "assetFailures": 202,
+      "blockedAssetMessages": 26,
+      "worstPage": "p000003 /customers desktop changedPixelRatio 0.4956"
+    }
+  },
+  "headline": "The 16.79% changed-pixel median is fully explained and is NOT primarily a font problem. On the two worst pages the single dominant defect is the pseudo-element style allowlist: 1,128 of 2,258 ::before/::after records paint a background, and PSEUDO_STYLE_WHITELIST omits opacity and visibility, so pseudos the source suppresses paint at full strength in the clone. On /pricing desktop that one omission accounts for 91.6% of all changed pixels; on /customers desktop 84.5%. Source drift is definitively excluded (snapshot-vs-live changedRatio 0.0000 and 0.0007).",
+  "pipeline": [
+    {
+      "stage": "1. Discovery + Verifier + Selector",
+      "entryPoint": "src/discovery/firecrawl.ts:21",
+      "in": "A URL list only. The Firecrawl Map endpoint returns no HTML and no rendering (src/discovery/firecrawl.ts:16).",
+      "stored": "discovery.json {rootUrl, provider, rawCount 8, normalizedCount 8, links[]}; verification.json (status/redirects/fingerprints); selected-pages.json.",
+      "discarded": [
+        "Everything visual - nothing is rendered at discovery",
+        "The verifier renders each candidate in Chromium and throws away every pixel, style and box (src/verifier/verify-candidate.ts:1)",
+        "Every non-representative URL in a structural family is never observed"
+      ],
+      "inferredLater": [
+        "Which routes 'the site' consists of is fixed here forever; no later stage rediscovers pages"
+      ],
+      "preservedVerbatim": [
+        "Normalized URL strings",
+        "Final URL, redirect chain, HTTP status"
+      ],
+      "capsAndAllowlists": [
+        "DEFAULT_MAX_URLS = 100 (src/discovery/types.ts:24)",
+        "STRUCTURE_MAX_ELEMENTS 8000 / TEXT_HASH_MAX_LEN 500000 (src/verifier/types.ts:70,73)"
+      ],
+      "viewportSpecific": "None.",
+      "knownLossy": [
+        "For this lineage the stage was a pass-through of a curated 8-URL list (rawCount 8, normalizedCount 8, duplicateCount 0). The 'site' is 8 routes by construction.",
+        "Family reduction was inert here: familyCount 8, largestFamilySize 1, reductionCount 0."
+      ]
+    },
+    {
+      "stage": "2. Browser observation - context, stabilization, screenshot",
+      "entryPoint": "src/observer/observe-page.ts:209",
+      "in": "A live Chromium render of one URL at one ViewportProfile.",
+      "stored": "observation.json (loadStrategy, environment, observationProfile), screenshot.png per viewport, rendered.html from page.content().",
+      "discarded": [
+        "Dark mode - colorScheme hard-pinned 'light' (src/observer/types.ts:154, applied observe-page.ts:225 and layout-probe.ts:229)",
+        "prefers-reduced-motion variants (types.ts:155)",
+        "Pre-hydration markup - page.content() serializes the LIVE post-hydration DOM (observe-page.ts:247)"
+      ],
+      "inferredLater": [
+        "src/theme re-derives a dark palette that was never observed"
+      ],
+      "preservedVerbatim": [
+        "userAgent, deviceScaleFactor, viewport, browserVersion 151.0.7922.34, timings",
+        "Full-page PNG at the observed DPR"
+      ],
+      "capsAndAllowlists": [
+        "OBSERVATION_LOCALE 'ko-KR' / OBSERVATION_TIMEZONE 'Asia/Seoul' (types.ts:152-153) - VERIFIED present verbatim in types.ts and recorded in observation.json for all 8 pages",
+        "NAV_TIMEOUT_MS 45000 / NETWORK_IDLE_TIMEOUT_MS 8000 / FONTS_READY_TIMEOUT_MS 5000 / SETTLE_MS 1200 (types.ts:158,165,172,175)",
+        "Auto-scroll: SCROLL_MAX_STEPS 40, SCROLL_MAX_TOTAL_MS 15000, SCROLL_MAX_DISTANCE_PX 120000 (types.ts:189-197)",
+        "VIEWPORT_PROFILES = exactly 2 (types.ts:110-140); src/cli-observe-site.ts:36-56 exposes only --concurrency and --prepare-scroll"
+      ],
+      "viewportSpecific": "Only 1440x900 DSF1 and 390x844 DSF3 receive a deep observation. No CLI flag can change them.",
+      "knownLossy": [
+        "Every page is captured as a Korean-locale, Seoul-timezone, light-mode, no-reduced-motion visitor, for every site.",
+        "Geometry is recorded at scroll 0 AFTER a full auto-scroll (observe-page.ts:184 then layout-probe.ts:61 window.scrollTo(0,0)), so scroll-linked transforms are drawn at a different offset than the boxes recorded beside them.",
+        "getComputedStyle returns the value of a running animation or in-flight transition as if it were static."
+      ]
+    },
+    {
+      "stage": "3. DOM walk + computed-style capture (the decisive boundary)",
+      "entryPoint": "src/observer/collect-dom.ts:494 (walk) / :394 (collectStyles)",
+      "in": "getComputedStyle(el) - the browser's final used value for every CSS property.",
+      "stored": "dom.json (id, parentId, tagName, attributes, text, localVisible, effectiveVisible, boundingBox, styleId, scrollState?, pseudo?, hasShadowRoot?, layoutRules?) + styles.json deduped style table.",
+      "discarded": [
+        "Every computed property outside STYLE_WHITELIST. collectStyles iterates the ALLOWLIST, never the CSSStyleDeclaration (collect-dom.ts:398), so an unlisted property is structurally unemittable.",
+        "All CSS custom properties (0 '--*' keys in any styles.json; linear.app's CSS defines 613)",
+        "The `style` attribute - not in ATTR_WHITELIST (VERIFIED: 25 names, no 'style'). 562 inline style= attributes on p000001 set 39 custom properties incl. --grid-areas-desktop/--grid-areas-mobile.",
+        "The entire <head> via SKIP_TAGS (VERIFIED 9 tags incl. HEAD, STYLE, LINK) - no <style> CSS text and no <link> URL reaches dom.json",
+        "Direct text beyond TEXT_MAX_LEN 200 (98 nodes sit at exactly 200 chars)"
+      ],
+      "inferredLater": [
+        "Any un-whitelisted property must be re-guessed or is absent forever",
+        "Truncated text is expected to be backfilled from rendered.html by SiteSpec compilation (collect-dom.ts:407-409)"
+      ],
+      "preservedVerbatim": [
+        "The 111 STYLE_WHITELIST computed values (VERIFIED count = 111, src/observer/types.ts:260-388)",
+        "ATTR_WHITELIST attributes plus every aria-* and data-*, capped at ATTR_MAX_LEN 500",
+        "boundingBox from getBoundingClientRect at scroll 0"
+      ],
+      "capsAndAllowlists": [
+        "STYLE_WHITELIST = 111 properties, closed (VERIFIED)",
+        "PSEUDO_STYLE_WHITELIST = 18 properties, closed (VERIFIED)",
+        "ATTR_WHITELIST = 25 names + aria-*/data-* (VERIFIED)",
+        "SKIP_TAGS = 9 tags, skips element AND subtree (VERIFIED)",
+        "TEXT_MAX_LEN 200, ATTR_MAX_LEN 500"
+      ],
+      "viewportSpecific": "One independent walk per viewport; no correspondence between them is ever computed.",
+      "knownLossy": [
+        "The allowlist is CLOSED and is reused verbatim by the QA meant to catch the loss (src/reconstruction-qa/capture-page.ts:46, VERIFIED), so no style check can ever surface it.",
+        "Only ::before and ::after are ever queried (collect-dom.ts:600,608), each with 18 of 111 properties."
+      ]
+    },
+    {
+      "stage": "4. Authored layout-rule recovery off document.styleSheets",
+      "entryPoint": "src/observer/collect-dom.ts:243-362",
+      "in": "CSSOM rule text for the 62 LAYOUT_RULE_PROPERTIES (VERIFIED count = 62), matched with el.matches(selectorText).",
+      "stored": "element.layoutRules[{property,value,media?,selector,important?}] + layoutRulesTruncated.",
+      "discarded": [
+        "Every rule in a stylesheet whose cssRules access throws - swallowed by a bare catch with no counter and no artifact field (collect-dom.ts:323-326, text VERIFIED)",
+        "Cascade/specificity/layer order - collectMatchedLayoutRules appends every match in index order with only an `important` boolean (collect-dom.ts:331-362)",
+        "@supports / @container / @layer conditions - only CSSRule.type === 4 (MEDIA_RULE) carries conditionText (collect-dom.ts:305-307, VERIFIED)",
+        "@keyframes bodies, @property registrations, @import-ed sheets",
+        "Declarations whose value exceeds LAYOUT_RULE_VALUE_MAX_LEN 200 - dropped outright, never truncated",
+        "Rules gated on :hover/:focus/:active/:disabled/:checked - el.matches is false at capture"
+      ],
+      "inferredLater": [
+        "This channel is what src/regions and src/reconstruction/layout-inference are supposed to consume to recover responsive intent; when empty they fall back to the layout probe."
+      ],
+      "preservedVerbatim": [
+        "Authored value text incl. %, vw/vh, calc(), clamp(), min()/max(), auto",
+        "@media condition text"
+      ],
+      "capsAndAllowlists": [
+        "LAYOUT_RULE_PROPERTIES = 62 (VERIFIED); purely layout - no colour, typography, background, mask or filter is ever recovered in authored form",
+        "MAX_LAYOUT_RULES 2000 - SILENT, no counter or flag anywhere in any artifact",
+        "MAX_MATCHED_RULES_PER_ELEMENT 32 - binding and recorded as layoutRulesTruncated",
+        "LAYOUT_RULE_VALUE_MAX_LEN 200 (dropped, not truncated); LAYOUT_RULE_SELECTOR_MAX_LEN 200 (display only)"
+      ],
+      "viewportSpecific": "Captured per viewport; the media condition text is kept but never evaluated.",
+      "knownLossy": [
+        "MEASURED: p000001 desktop recovers 8 distinct selectors and only 35 of 2,024 elements carry any layoutRules; 598 declarations of which 301 (50.3%) are bare var() references that resolve to nothing because 0 custom-property definitions exist anywhere in the system.",
+        "VERIFIED cause: 132 stylesheets, ALL on cross-origin static.linear.app, 81 with a crossorigin attribute and 51 without. The 51 are unreadable by construction. The 8 recovered selectors appear in NONE of p000001's 3 inline <style> blocks (0 of 8), so the readable 81 did contribute - CORS is not globally broken, but half the CSS is invisible and nothing records that."
+      ]
+    },
+    {
+      "stage": "5. @font-face / font-URL capture",
+      "entryPoint": "src/observer/collect-dom.ts:745-772",
+      "in": "src descriptor url() tokens and font-family from CSSFontFaceRule.",
+      "stored": "RawFontUrl -> src/observer/collect-assets.ts:228 -> AssetObservation {url, type:'font'}.",
+      "discarded": [
+        "The `family` field is dropped at collect-assets.ts:228-231; AssetObservationSchema has no family, weight, style, unicode-range, format or font-display field",
+        "@font-face rules nested inside @media/@supports/@layer - VERIFIED: the loop iterates each sheet's TOP-LEVEL rules only and does not recurse, unlike the layout-rule visitor 480 lines earlier which does",
+        "All font metrics - document.fonts is only awaited for readiness (observe-page.ts:137), never enumerated",
+        "The font FILES - assetMode is reference; zero bytes are downloaded"
+      ],
+      "inferredLater": [
+        "src/assets/fonts.ts:4-8 recovers @font-face by a LIVE re-fetch of source stylesheets at a much later stage - an inference from a re-fetch, not an observation, and absent from this frozen lineage."
+      ],
+      "preservedVerbatim": [
+        "Nothing, for linear.app"
+      ],
+      "capsAndAllowlists": [
+        "Font asset fields = {url, type:'font'} only",
+        "@font-face scan depth = top-level rules of each sheet"
+      ],
+      "viewportSpecific": "None.",
+      "knownLossy": [
+        "PROVEN END-TO-END. VERIFIED: linear.app's @font-face rules live in index.CtQdVDoA.css, whose <link> tag carries NO crossorigin attribute, so sheet.cssRules throws and the catch at collect-dom.ts:748-750 skips it. Chain: 0 type='font' assets across all 16 observations (VERIFIED); asset-catalog kindCounts has no 'font' key; generated-styles.css has 0 '@font-face' against 4,188 'font-family:\"Inter Variable\"' and 109 '\"Berkeley Mono\"' (all VERIFIED by direct count).",
+        "TWO INDEPENDENT DEFECTS stack here: the cross-origin catch (proximate cause for this site) and the non-recursive harvester (would still lose an @font-face nested in @layer even in a readable sheet; linear.app's CSS uses @layer 167 times)."
+      ]
+    },
+    {
+      "stage": "6. Asset derivation, inline SVG, shadow/iframe/canvas",
+      "entryPoint": "src/observer/collect-assets.ts:92 / src/observer/collect-dom.ts:665-671 / :628-658",
+      "in": "img/source/video/audio attributes, img.currentSrc, background-image and mask-image computed values, <link rel=*icon*>, @font-face src; the <svg> root's outerHTML.",
+      "stored": "assets.json occurrence list; AssetObservation {type:'inline-svg', elementId, markup, width, height}; record.hasShadowRoot + shadowHostIds; frames.json.",
+      "discarded": [
+        "data: and blob: URIs - resolve() returns null for any non-http(s) protocol (collect-assets.ts:50-61)",
+        "<source media=...> conditions - `media` is not in ATTR_WHITELIST, so <picture> art direction is unrecoverable",
+        "The entire SVG subtree - the walk RETURNS at collect-dom.ts:670; no <path>/<g>/<stop> ever gets a styleId or a box, and fill/stroke/stroke-width/stop-color are in no whitelist",
+        "ALL shadow-root content - walk() iterates el.children only (collect-dom.ts:673-675); closed roots are not even counted",
+        "ALL iframe document content; canvas pixels (no channel exists anywhere); video frames beyond the poster URL",
+        "adoptedStyleSheets / constructed stylesheets - referenced NOWHERE in src/"
+      ],
+      "inferredLater": [
+        "src/assets (Task 22) fetches the URLs much later; this lineage records assetMode 'reference', remoteAssetUrls 404, assetDownloads 0."
+      ],
+      "preservedVerbatim": [
+        "Absolute resolved URLs, alt, width/height, currentSrc, naturalWidth/Height, srcset descriptors, inline-svg outerHTML (so presentation attributes and inline style= inside the SVG survive)"
+      ],
+      "capsAndAllowlists": [
+        "Asset URL protocol filter: http/https only",
+        "SCROLLABLE_OVERFLOW_VALUES ['auto','scroll'] - 5 scroll containers site-wide"
+      ],
+      "viewportSpecific": "Asset occurrence lists are per viewport.",
+      "knownLossy": [
+        "VERIFIED occurrence census across 16 observations: image 436, inline-svg 1581, icon 48, mask-image 24, video 22, video-poster 12, background-image 10, source 6, audio 2, FONT 0. background-image is only 10 for a visually rich site because linear's backgrounds are declared in unreadable external CSS.",
+        "image-srcset 0 and picture-source 0 - responsive images are dead from here on.",
+        "4 open shadow roots on this site are recorded as existing and nothing more."
+      ]
+    },
+    {
+      "stage": "7. Multi-width layout probe",
+      "entryPoint": "src/observer/layout-probe.ts:215",
+      "in": "A SECOND page load at 1440, then setViewportSize to each of LAYOUT_PROBE_WIDTHS [390,768,1024,1440,1920].",
+      "stored": "layout-probe.json {tags[], parents[], widths:[{width,x[],w[],v[],disconnected,documentWidth}], truncated}.",
+      "discarded": [
+        "y and height - measureInBrowser records ONLY rect.x, rect.width and a visibility bit (layout-probe.ts:125-158). Vertical responsive behaviour is unknowable at every probe width.",
+        "All styles, attributes, text and screenshots at probe widths"
+      ],
+      "inferredLater": [
+        "This is the only remaining responsive evidence once the authored-rule channel fails, and the sole input to src/reconstruction/layout-inference."
+      ],
+      "preservedVerbatim": [
+        "x/width to 0.01px per element per width, plus the walk's tag sequence for alignment"
+      ],
+      "capsAndAllowlists": [
+        "LAYOUT_PROBE_WIDTHS 5 values",
+        "LAYOUT_PROBE_HEIGHT 900 for every width",
+        "MAX_LAYOUT_PROBE_ELEMENTS 8000 (not hit)",
+        "LAYOUT_PROBE_SETTLE_MS 250 + 2 rAF"
+      ],
+      "viewportSpecific": "The 390 probe row is a DESKTOP-UA, DSF1, non-touch render (layout-probe.ts:222-231), so it does NOT describe the mobile observation of the same width. Two different 390px renders exist in one artifact set.",
+      "knownLossy": [
+        "ALIGNMENT FAILS ON 2 OF 8 PAGES: p000001 probe 1,994 tags vs dom 2,024; p000003 probe 1,208 vs dom 1,206; truncated is false on both, so it is a genuinely different DOM from a second page load. The code invites a consumer to 'align by exact comparison - or refuse to' (layout-probe.ts:79-83).",
+        "Nothing is probed between 390-768 or 1024-1440."
+      ]
+    },
+    {
+      "stage": "8. SiteSpec compilation",
+      "entryPoint": "src/sitespec/compile-viewport.ts:93 -> compile-page.ts:164 -> compile-site.ts:150 -> store.ts:81",
+      "in": "The Observer bundles for 8 pages x 2 viewports plus rendered.html as a second content channel.",
+      "stored": "site-spec.json, style-catalog.json (17.4MB, 4,452 tokens), asset-catalog.json (439 assets), interaction-spec.json, pages/p00000N.json. 18,918 element nodes, 7,794 text nodes.",
+      "discarded": [
+        "class (16,081 occurrences), style, id (-> sourceHtmlId), every data-* (~2,300 occurrences of LIVE VISUAL STATE: data-state 276, data-theme 100, data-active 80, data-show/hide 128, data-loaded 290, data-orientation 114), src/srcset/sizes/poster (re-expressed as asset refs), on* handlers - src/sitespec/safe-attributes.ts:131-137. 19,773 of 33,191 attribute occurrences (59.6%) die here and NO limitation code covers it.",
+        "currentSrc (382 observed, 0 in the catalog) and alt on the asset record - src/sitespec/asset-catalog.ts:192-207",
+        "ElementObservation.hasShadowRoot - no counterpart on ElementSpecNodeSchema, so zod's default strip deletes it silently (src/sitespec/store.ts:108; 47 z.object, 0 .strict(), 0 .passthrough())",
+        "Comments and doctype (content-tree.ts:176); everything inside <svg> (content-tree.ts:161); the whole <head>"
+      ],
+      "inferredLater": [
+        "Boolean attribute presence for the 27 SUPPLEMENTAL_ATTRIBUTES is re-derived from the parse tree, not live DOM properties (150 recovered on 142 elements)",
+        "mimeHint is guessed from the URL extension only (187 of 439 assets; every extensionless Cloudflare imagedelivery URL gets none)"
+      ],
+      "preservedVerbatim": [
+        "Every whitelisted computed value byte-for-byte; the style catalog dedup is exact-equality on a sorted JSON key with no rounding and no thresholds - provably lossless within the allowlist (style-catalog.ts:55-58)",
+        "boundingBox at full observed precision; scrollState carried verbatim; authoredLayout verbatim incl. media condition text",
+        "Text node values RAW from parse5 when aligned (16/16 viewports aligned; 96 long texts recovered above the 200-char cap)",
+        "Inline SVG markup: 205 of 207 catalog markups byte-identical to an observed outerHTML, sanitized=false and removed=[] for all 207"
+      ],
+      "capsAndAllowlists": [
+        "SAFE_ATTRIBUTES 19 names + aria-*",
+        "SUPPLEMENTAL_ATTRIBUTES 27 names, closed",
+        "PROBE_PREFIX_MIN_ELEMENTS 100",
+        "zod default 'strip' object mode on all 47 schemas"
+      ],
+      "viewportSpecific": "Desktop and mobile are two independent trees sharing only the global catalogs (compile-viewport.ts:51-55). `cross-viewport-node-matching-not-performed` is added unconditionally (compile-page.ts:318). The layout probe attaches to DESKTOP nodes only (compile-page.ts:300-312).",
+      "knownLossy": [
+        "responsiveDifferences is EIGHT SCALARS PER PAGE (compile-site.ts:348-358) - it cannot say which nodes differ, appeared, disappeared or moved. p000001 = 2024/1994 elements, 1759/658 effectiveVisible, 10898/6382 height.",
+        "inferredBreakpoints is a literal [] (compile-site.ts:433).",
+        "Probe coverage: p000001 attaches 267 of 2,024 desktop nodes (13%); site total 7,716 of 9,473.",
+        "validateSiteSpec checks REFERENTIAL TRUTH only (validate-sitespec.ts:19-20). No invariant looks at paint, so a SiteSpec that lost every webfont and every @keyframes passes cleanly - which is exactly what happened."
+      ]
+    },
+    {
+      "stage": "9. Reconstruction generation (the first stage whose OUTPUT can render differently from the source)",
+      "entryPoint": "src/reconstruction/plan-reconstruction.ts:175 -> src/reconstruction/generate-app.ts:142; styles at src/reconstruction/style-generator.ts:176",
+      "in": "The whole SiteSpec plus the interaction spec. The generator is offline: 0 network calls (src/cli-reconstruct.ts:29-33).",
+      "stored": "A prebuilt Next 16 app. app/public/wr/generated-styles.css is 11,267,135 bytes: one flat `.wr-stNNNNNN{...}` rule per token (4,265) + 32 doc-root rules + 2,258 pseudo rules + observed open-state rules + 1,910 recovered layout rules. Page trees in app/reconstruction-data/pages/*.json (7.4MB).",
+      "discarded": [
+        "Every property outside ALLOWED_CSS_PROPERTIES = STYLE_WHITELIST + PSEUDO_STYLE_WHITELIST (style-generator.ts:40,62). VERIFIED absent from the 11MB output: @font-face 0, @keyframes 0, @import 0, @supports 0, background-clip 0, outline 0, mask-composite 0, color-scheme 0.",
+        "The source <head>: SKIPPED_TAGS is a wall (react-attributes.ts:111). Only route.title survives. No preload, no favicon (3 icon assets never emitted), no meta description/OG/canonical.",
+        "video and audio asset kinds - PRIMARY_IMAGE_KINDS is ['image','source','video-poster'] (VERIFIED at src/reconstruction/asset-resolver.ts:25). All 11 real .mp4 URLs in the catalog are dropped.",
+        "On an inline-SVG root, every prop except className/id/data-wr-node (compile-node.ts:460-477)",
+        "On <html>/<body>, every attribute except lang/dir, plus all pseudo-elements and scrollState (compile-node.ts:521-550)"
+      ],
+      "inferredLater": [
+        "BREAKPOINT = 915 = floor((390+1440)/2), provenance 'inferred' (responsive-plan.ts:75)",
+        "The entire recovered-layout tier: 1,910 rules synthesized from pixel measurements, only four kinds and five declarations (width:auto 1,106; centered max-width 42; width:N% 52; display:none 710)",
+        "`hidden` is always emitted boolean true with the enumerated value restored after hydration (68 of 70 are hidden='until-found')"
+      ],
+      "preservedVerbatim": [
+        "Every whitelisted property/value byte for byte, including 4,188 'Inter Variable' and 109 'Berkeley Mono' font-family declarations that nothing can resolve",
+        "tagName, child order and text content, never trimmed",
+        "The observed absolute asset URLs, query strings included"
+      ],
+      "capsAndAllowlists": [
+        "ALLOWED_CSS_PROPERTIES (111 + 18, closed)",
+        "DOCUMENT_ROOT_DROPPED_PROPERTIES = width,height,min-*,max-* on html/body classes (style-generator.ts:115) - correct for width/height, silently deletes an authored body{max-width}",
+        "TRUTH_WIDTH = 1440 hardcoded (layout-inference.ts:38); a desktop observation at any other width yields ZERO recovered rules",
+        "BLOCKISH_DISPLAY gate excludes inline/inline-block/inline-flex/list-item/table-cell from recovery",
+        "isSafeCssValue/isSafeCssProperty rejections are counted but NOT surfaced in the manifest"
+      ],
+      "viewportSpecific": "BOTH viewport trees are rendered into ONE document (src/runtime/PageRenderer.tsx) and CSS hides one. The recovered-layout tier is desktop-ONLY (layout-inference.ts:136 reads page.viewports.desktop; :470 hardcodes the desktop selector), so 391-914px renders a 390px column on a wide canvas.",
+      "knownLossy": [
+        "assetMode 'reference', assetDownloads 0 hardcoded (generate-app.ts:133): every image is a live hotlink to the origin CDN. 404 remote URLs; QA measured 202 asset failures and 26 blocked-asset messages.",
+        "validateGeneratedApp (validate-output.ts:82-320) checks only structural self-consistency. It does not check that a src is a plausible media type, that an SVG fragment ref is unambiguous, that a named animation has keyframes, or that a font-family can resolve - all four defects ship with a clean manifest.",
+        "709 of 710 responsive-hidden rules share ONE media condition, (min-width:1024px) and (max-width:1231.98px), derived from a single probe bit."
+      ]
+    },
+    {
+      "stage": "10. Reconstruction QA",
+      "entryPoint": "src/reconstruction-qa/run-qa.ts / qa-page.ts:214; capture at capture-page.ts:46",
+      "in": "Three renders per page/viewport: the stored Observer screenshot (S), the live original now (O), the clone (C); plus a DOM/CSSOM walk of the clone and (when enabled) of the live original.",
+      "stored": "final-summary.json / baseline-summary.json, per-page pages/*/*.json, 732 QaDiff rows, 48 retained PNGs, corrections/, iterations/.",
+      "discarded": [
+        "WHERE and WHAT differs in pixels. The metric is scalar; the red-overlay diff PNG is written to disk and never read back by any code.",
+        "Every computed property outside STYLE_WHITELIST - VERIFIED: QA_STYLE_PROPERTIES = STYLE_WHITELIST (capture-page.ts:46). Measured 1,381,062/12,442 = exactly 111.0 properties per node.",
+        "Inline SVG interiors - the walk returns at <svg> (capture-page.ts:278); 1,581 inline SVGs are verified by nothing but the ungated pixel number.",
+        "Everything that is not an <img> in the asset dimension (asset-diff.ts:147, VERIFIED). /pricing and /security report snapshotImages 0, so their asset dimension is a no-op.",
+        "6,476 of 18,918 nodes (34.2%) excluded from BOTH geometry and style because the snapshot recorded them hidden (map-clone-nodes.ts:80); effectiveVisible is captured on both sides and compared nowhere.",
+        "At site level, every geometry axis except y (VERIFIED at summarize.ts:259-263)."
+      ],
+      "inferredLater": [
+        "Canvas background is re-derived in JS from html->body->UA-default rather than sampled from pixels (qa-page.ts:100-183)",
+        "Asset cause attribution: when the live original also fails to decode, the finding is relabelled source-content-drift (128 of 202)"
+      ],
+      "preservedVerbatim": [
+        "Raw text on both sides",
+        "The 111 computed values as strings",
+        "Boxes to 2 decimals",
+        "Verbatim CORS/network error text"
+      ],
+      "capsAndAllowlists": [
+        "GEOMETRY_EPSILON_PX 0.5; LENGTH_TOLERANCE_PX 2/64 = 0.03125",
+        "MAX_NODE_DIFFS_PER_DIMENSION 25 - 11 truncation rows stand for 1,777 unrecorded node differences",
+        "BREAKPOINT_PROBE_WIDTHS [914,915,916] on ONE route - the only non-observed widths ever rendered",
+        "MAX_UNKNOWN_QA_PER_SITE 8 (10 signature groups existed, 2 never probed); MAX_FAMILY_AUDIT_ROUTES_PER_SITE 4"
+      ],
+      "viewportSpecific": "Mobile is measured at DSF3, so glyph antialiasing contributes ~9x more differing pixels than desktop - the two changedPixelRatios are not on the same scale.",
+      "knownLossy": [
+        "VERIFIED: the accepted final-summary was measured with the live original OFF (run-correction-loop.ts:308 useLiveOriginal:false). final reports sourceDrift.attempted 0 and unstablePages 0; baseline for the SAME run reports attempted 16, structuralDrift 2, styleDriftProperties 404 (cursor 352), unstablePages 5.",
+        "The pixel metric is not merely ungated - it is UNREPRESENTABLE: QaClassificationSchema has 27 codes and none names a paint difference; the only dimension:'visual' emission in the codebase (emit-diffs.ts:93, VERIFIED as the sole occurrence) is classified environment-unstable."
+      ]
+    },
+    {
+      "stage": "11. Recon Template compilation (provably paint-neutral)",
+      "entryPoint": "src/recon-template/generate-template-app.ts:45; slot application at src/recon-template/app-templates.ts:291",
+      "in": "The entire Exact Reconstruction app directory plus the extracted slot model.",
+      "stored": "A byte copy of the reconstruction app (excluding node_modules/.next/next-env.d.ts) plus slots.json (3,079 slots), slot-bindings.json (9,929 bindings), default-content.json, a rewritten load-page.ts and a new slot-content.ts.",
+      "discarded": [
+        "Nothing visual. diff -rq between the two app dirs reports exactly THREE differing paths: package.json, src/runtime/load-page.ts, src/runtime/slot-content.ts. reconstruction-data/ is byte-identical.",
+        "For the SLOT MODEL only: everything inside aria-hidden (66 exclusions), role=presentation (10), inline-SVG interiors (1,359 svg-opaque), CSS background-image URLs, the document <title>"
+      ],
+      "inferredLater": [
+        "section/role/hero.headline are inferred structurally, never visually",
+        "editability='review' iff maxRepetition >= 16 (1,493 of 3,079 slots)"
+      ],
+      "preservedVerbatim": [
+        "The complete style layer, all 8 runtime page trees, 18,918 element nodes, 1,581 inline-SVG markup strings, route-map.json incl. breakpoint 915"
+      ],
+      "capsAndAllowlists": [
+        "MAX_ANCESTOR_DISTANCE 4 and MIN_OVERLAP_RATIO 0.5 for paint twins (only 4 co-bound against 66 aria-hidden exclusions)",
+        "REVIEW_REPETITION_THRESHOLD 16",
+        "Merge keys are conjunctions of EXACT equality, never similarity"
+      ],
+      "viewportSpecific": "296 of 3,079 slots bind only one viewport (189 desktop-only, 107 mobile-only). The reconstruction's viewport-scoped fragment ids split 53 real anchors into desktop+mobile slot pairs.",
+      "knownLossy": [
+        "EVIDENCE: docs/result/28.5-visual-fidelity-evidence/stage5-template-vs-recon-pixel-diff.json - 8/8 full-page screenshot pairs MD5-IDENTICAL (changedRatio 0, meanDelta 0, maxDelta 0). All 9,929 bindings have expectedValue byte-equal to the default, so every write is gated off.",
+        "Parity QA measures innerText, node-id sequence, getBoundingClientRect and scrollHeight - and NO pixels and NO computed style. The mutation canary asserts only the node-id sequence (parity-qa.ts:802-804), so a slot edit that reflows or clips the page passes by construction."
+      ]
+    },
+    {
+      "stage": "12. Downstream paint-altering edges (content / theme / production)",
+      "entryPoint": "src/content-injection/overlay.ts:18; src/theme/overlay.ts:65 + src/theme/serve.ts:89; src/production/bake.ts + brand-bake.ts",
+      "in": "The immutable template app plus an accepted content overlay, a theme token map, an SEO plan and the Task-22 asset rewrite map.",
+      "stored": "slot-values.json; public/wr/theme-overlay.css linked after the generated stylesheet; a static-export directory with local /media copies.",
+      "discarded": [
+        "Any theme property outside the 11-entry THEMEABLE_PROPERTIES allowlist (a layout property throws)",
+        "Query-string route variants under output:'export'"
+      ],
+      "inferredLater": [
+        "The theme overlay's cascade position is inferred from React precedence semantics (patch.ts:117-119); nothing reads the exported HTML back to confirm link order."
+      ],
+      "preservedVerbatim": [
+        "Border shorthands substitute only the colour component, copying the observed width/style prefix byte-for-byte",
+        "Every slot left at needs-input keeps the SOURCE SITE's value verbatim"
+      ],
+      "capsAndAllowlists": [
+        "THEMEABLE_PROPERTIES = 11",
+        "isSafeThemeValue refuses url(, @, javascript:, braces - a theme can never introduce an asset, font or selector",
+        "Production theme QA regex matches ONLY `.class{color:var(--wr-theme-color-*)}` and samples 5 classes (src/production/qa.ts:212)"
+      ],
+      "viewportSpecific": "Content layout QA runs at 390 and 1440 only, DSF1.",
+      "knownLossy": [
+        "Production is DELIBERATELY not pixel-equal to the reconstruction: asset rewriting makes images paint that were blank in the clone, brand-bake replaces WHOLE inline SVG marks with a generated system-ui <text> mark, and no font is self-hosted. Nothing anywhere compares production pixels back to the reconstruction.",
+        "Gradients, background-images, opacity, filters, SVG fills and all typography are structurally unthemeable, so a themed site is guaranteed to be a partial re-skin."
+      ]
+    }
+  ],
+  "styleWhitelist": {
+    "capturedPropertyCount": 111,
+    "source": "src/observer/types.ts:260-388 (count VERIFIED by parsing the array)",
+    "reusedVerbatimBy": [
+      "src/reconstruction/style-generator.ts:40 (ALLOWED_CSS_PROPERTIES = STYLE_WHITELIST + PSEUDO_STYLE_WHITELIST)",
+      "src/reconstruction-qa/capture-page.ts:46 (QA_STYLE_PROPERTIES = STYLE_WHITELIST)",
+      "src/reconstruction-qa/interaction-qa.ts:71 (TARGET_STATE_STYLE_PROPERTIES = STYLE_WHITELIST)"
+    ],
+    "capturedProperties": [
+      "display",
+      "position",
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "width",
+      "height",
+      "min-width",
+      "min-height",
+      "max-width",
+      "max-height",
+      "aspect-ratio",
+      "margin-top",
+      "margin-right",
+      "margin-bottom",
+      "margin-left",
+      "padding-top",
+      "padding-right",
+      "padding-bottom",
+      "padding-left",
+      "box-sizing",
+      "overflow",
+      "overflow-x",
+      "overflow-y",
+      "gap",
+      "row-gap",
+      "column-gap",
+      "flex-direction",
+      "flex-wrap",
+      "flex-grow",
+      "flex-shrink",
+      "flex-basis",
+      "justify-content",
+      "align-items",
+      "align-content",
+      "align-self",
+      "grid-template-columns",
+      "grid-template-rows",
+      "grid-column",
+      "grid-row",
+      "grid-template-areas",
+      "grid-area",
+      "grid-auto-flow",
+      "grid-auto-rows",
+      "grid-auto-columns",
+      "place-items",
+      "place-content",
+      "place-self",
+      "order",
+      "vertical-align",
+      "list-style-type",
+      "list-style-position",
+      "list-style-image",
+      "font-family",
+      "font-size",
+      "font-weight",
+      "font-style",
+      "line-height",
+      "letter-spacing",
+      "text-align",
+      "text-decoration",
+      "text-transform",
+      "white-space",
+      "text-overflow",
+      "overflow-wrap",
+      "word-break",
+      "color",
+      "object-fit",
+      "object-position",
+      "background-color",
+      "background-image",
+      "background-size",
+      "background-position",
+      "background-repeat",
+      "border-top",
+      "border-right",
+      "border-bottom",
+      "border-left",
+      "border-radius",
+      "box-shadow",
+      "opacity",
+      "clip-path",
+      "filter",
+      "backdrop-filter",
+      "mix-blend-mode",
+      "isolation",
+      "mask-image",
+      "mask-size",
+      "mask-position",
+      "mask-repeat",
+      "-webkit-mask-image",
+      "-webkit-mask-size",
+      "-webkit-mask-position",
+      "-webkit-mask-repeat",
+      "visibility",
+      "content-visibility",
+      "transform",
+      "transform-origin",
+      "transition-property",
+      "transition-duration",
+      "transition-delay",
+      "transition-timing-function",
+      "animation-name",
+      "animation-duration",
+      "animation-delay",
+      "animation-timing-function",
+      "animation-iteration-count",
+      "cursor",
+      "pointer-events",
+      "z-index"
+    ],
+    "notCapturedButVisuallySignificant": [
+      {
+        "property": "opacity (on ::before/::after)",
+        "whyItMatters": "THE single largest measured paint defect in this lineage. It is in STYLE_WHITELIST for elements but NOT in PSEUDO_STYLE_WHITELIST, so a pseudo the source suppresses with opacity:0 paints at full strength in the clone. Root cause of the rgb(8,9,10)->rgb(20,21,22) banding that is 91.6% of changed pixels on /pricing desktop and 84.5% on /customers desktop.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "visibility (on ::before/::after)",
+        "whyItMatters": "Same mechanism as pseudo opacity; the second way a source hides a decorative pseudo that the clone then paints.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "@font-face (not a property - an at-rule with no capture channel at all)",
+        "whyItMatters": "The clone names 'Inter Variable' 4,188 times and 'Berkeley Mono' 109 times with zero @font-face to back them. Every glyph on every route renders in a fallback face with different outlines and advance widths inside boxes pinned to the original font's metrics.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "@keyframes (at-rule)",
+        "whyItMatters": "animation-name IS captured (26 declarations name a real animation) while the keyframes are captured nowhere. Marquees freeze, staggered reveals never run, and 85 tokens captured mid-reveal at opacity:0 stay invisible forever.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "background-clip / -webkit-background-clip / -webkit-text-fill-color",
+        "whyItMatters": "Gradient text collapses: the clone paints the gradient across the whole box and the text at a fully transparent colour on top. linear.app CSS: background-clip 27, -webkit-text-fill-color 19. One confirmed live instance (s000210).",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "mask-composite / -webkit-mask-composite / mask-clip / mask-origin / mask-mode",
+        "whyItMatters": "mask-image/size/position/repeat ARE captured but the compositing operator is not, so the standard two-layer gradient-border cut-out collapses from a 1px ring to a filled block. 56 masked elements; linear.app CSS has -webkit-mask-composite 63.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "color-scheme",
+        "whyItMatters": "The source root is <html data-theme=\"dark\" style=\"color-scheme: dark\">; the clone's html node keeps only {lang:'en'}. Scrollbar track, native form controls and the canvas beyond the root div render light on a black site.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "outline / outline-width / outline-style / outline-color / outline-offset",
+        "whyItMatters": "Pure paint loss (outlines do not affect layout): hairline rings and selected-card highlights vanish, and UA default focus rings reappear because outline:none is equally unobservable. 0 occurrences of 'outline' in the 11MB stylesheet; linear.app CSS has outline 68.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "-webkit-font-smoothing / -moz-osx-font-smoothing / text-rendering",
+        "whyItMatters": "antialiased vs default subpixel changes the stroke weight of ALL text on macOS, which alone moves a large fraction of pixels.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "font-variant-numeric / font-feature-settings / font-variation-settings / font-stretch / font-optical-sizing",
+        "whyItMatters": "tabular-nums is used 34 times, almost certainly on pricing figures and changelog dates; without it every number column is ragged. Variable-font axes cannot be expressed at all.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "text-wrap (balance/pretty) / hyphens / word-spacing / text-indent / tab-size",
+        "whyItMatters": "A balanced headline rewraps in the clone: different line count, different ragged edge, different block height - compounding with the wrong typeface.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "counter-reset / counter-increment / counter-set / quotes",
+        "whyItMatters": "892 pseudos hold content:counter(...). Verified live: 406 elements on /changelog have a counter ::before and every one reports counterReset:none. counter(line, decimal-leading-zero) renders '00' on every code line.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "scrollbar-width / scrollbar-color / -ms-overflow-style / ::-webkit-scrollbar*",
+        "whyItMatters": "Hidden scrollbars reappear as a visible ~15px track on every carousel and overflow rail, plus a real layout shift. linear.app has a .hideScrollbars utility and 20 ::-webkit-scrollbar rules.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "appearance / -webkit-appearance / ::-webkit-slider-thumb / resize",
+        "whyItMatters": "Every input/select/button/range reset with appearance:none renders as a native OS widget over the captured background. Highly visible on pricing and signup surfaces. linear.app CSS: appearance 46.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "fill / stroke / stroke-width / stroke-dasharray / stop-color / fill-opacity",
+        "whyItMatters": "Double loss: the property is in no whitelist AND SVG children are never visited. ~10 icons per page whose paint comes from CSS render with the initial fill (black). linear.app CSS: fill 33, stroke 7.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "translate / rotate / scale (independent transforms)",
+        "whyItMatters": "Only the composite `transform` matrix is captured. An element positioned by translate:-50% with an unrelated transform:rotate loses the translate and lands 50% of its width off target. NOTE: `translate` IS in LAYOUT_RULE_PROPERTIES but not STYLE_WHITELIST (VERIFIED) - it was added to exactly the wrong list, and the authored channel is the dead one.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "text-decoration-thickness / text-underline-offset / text-decoration-color / text-shadow",
+        "whyItMatters": "Only the text-decoration shorthand is captured, so underlines sit at UA default offset and thickness - visibly heavier and tighter than the source's hairline underlines on every link.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "-webkit-line-clamp / -webkit-box-orient / box-decoration-break",
+        "whyItMatters": "display:-webkit-box survives without the clamp that makes it work, so a 3-line card summary renders in full and pushes the grid below it. Not currently triggered on these 8 routes.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "float / clear",
+        "whyItMatters": "Every floated element returns to normal flow - a total layout collapse. linear.app uses neither (0 declarations), so no test in this lineage could ever surface it. High risk for the next site.",
+        "presentInSourceEvidence": false
+      },
+      {
+        "property": "CSS custom properties (--*)",
+        "whyItMatters": "0 '--*' keys in any styles.json while linear.app defines 613. 1,443 of 11,345 recovered authored values (12.7% site-wide; 50.3% on p000001 desktop) are bare var() references that resolve to nothing.",
+        "presentInSourceEvidence": true
+      },
+      {
+        "property": "background-attachment / background-origin / background-blend-mode / border-image / border-collapse / border-spacing / table-layout / columns / writing-mode / direction / user-select / caret-color / accent-color / overscroll-behavior / scroll-snap-* / will-change / perspective / transform-style / backface-visibility / image-rendering / shape-outside / contain",
+        "whyItMatters": "The long tail of the closed allowlist. Each is a whole class of visual technique the pipeline cannot represent, cannot verify, and cannot report.",
+        "presentInSourceEvidence": true
+      }
+    ]
+  },
+  "pseudoCoverage": {
+    "pseudoElementsObserved": [
+      "::before",
+      "::after"
+    ],
+    "onlyReadSites": "src/observer/collect-dom.ts:600 and :608 - the only two getComputedStyle pseudo reads in the entire codebase",
+    "captureGate": "content must be renderable (not 'none' and not 'normal'), collect-dom.ts:601,609 - a ::before that paints purely via background/border with no content is skipped entirely",
+    "propertyCount": 18,
+    "properties": [
+      "content",
+      "display",
+      "position",
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "width",
+      "height",
+      "color",
+      "background-color",
+      "background-image",
+      "font-size",
+      "font-weight",
+      "border-radius",
+      "transform",
+      "z-index",
+      "pointer-events"
+    ],
+    "missingAndLoadBearing": [
+      "opacity",
+      "visibility",
+      "background-size",
+      "background-position",
+      "background-repeat",
+      "border-*",
+      "box-shadow",
+      "margin",
+      "padding",
+      "overflow",
+      "mask-*",
+      "clip-path",
+      "filter",
+      "mix-blend-mode",
+      "transform-origin",
+      "line-height",
+      "letter-spacing",
+      "font-family",
+      "inset",
+      "aspect-ratio"
+    ],
+    "neverObservedPseudos": [
+      "::marker",
+      "::placeholder",
+      "::selection",
+      "::first-line",
+      "::first-letter",
+      "::backdrop",
+      "::-webkit-scrollbar",
+      "::-webkit-scrollbar-thumb",
+      "::-webkit-scrollbar-track",
+      "::-webkit-slider-thumb",
+      "::view-transition-*",
+      "::part",
+      "::file-selector-button"
+    ],
+    "linearUsageOfNeverObserved": "::-webkit-scrollbar 20, ::-webkit-slider-thumb 12, ::placeholder 9, ::selection 7, ::view-transition-* 5, ::-webkit-scrollbar-thumb 3, ::part 2, ::-webkit-scrollbar-track 1, :first-letter 1",
+    "measuredExposure": {
+      "pseudoRecordsSiteWide": 2258,
+      "pseudoRecordsThatPaintABackground": 1128,
+      "shareOfPseudosThatPaint": "49.9%",
+      "sumOfOwnerBoxAreaForPaintingPseudos": "23,859,175 px^2",
+      "distinctPseudoStyleTokens": 148,
+      "pseudoTokensThatPaint": 89,
+      "nodesFlaggedPseudoElementLimitedStyleSet": 2210,
+      "topPageViewportsByPaintingPseudoCount": {
+        "p000002/desktop": 385,
+        "p000002/mobile": 385,
+        "p000003/desktop": 62,
+        "p000003/mobile": 62,
+        "p000007/desktop": 59,
+        "p000007/mobile": 59
+      },
+      "pseudosWithBackgroundImageAndNoSizing": 55,
+      "pseudosWithCounterContent": 892,
+      "pseudosWithQuoteContent": 44
+    },
+    "theRepoJustification": "src/observer/types.ts:515-516 - \"Nothing else was added. `opacity` and `visibility` would change how such a box LOOKS and no measurement has asked for them yet.\" This audit is that measurement, and it falsifies the assumption."
+  },
+  "lossRisks": [
+    {
+      "id": "LR-01",
+      "what": "PSEUDO_STYLE_WHITELIST omits `opacity` and `visibility`, so every ::before/::after the source suppresses paints at full strength in the clone. This is the single largest measured paint defect in the entire pipeline.",
+      "where": "src/observer/types.ts:484-520 (the 18-property list) emitted verbatim at src/reconstruction/pseudo-generator.ts:84",
+      "evidence": "ROOT-CAUSED IN THIS AUDIT. On p000007 (/pricing) desktop, 57 ::before records at x=48 w=1344 h=44 (the comparison-table rows, 44px pitch) all reference style token st004315, whose FULL property set is exactly the 18 whitelisted names with background-color rgb(20,21,22). The clone emits it verbatim: `[data-wr-page=\"p000007\"][data-wr-viewport=\"desktop\"] [data-wr-node=\"n000396\"]::before{background-color:rgb(20, 21, 22);...;height:44px;width:1344px;z-index:auto}`. Independent pngjs diff of the retained QA screenshots: snapshot-vs-clone changedRatio 0.3831, and the dominant transition rgb(8,9,10)->rgb(20,21,22) accounts for 3,205,659 of 3,501,532 changed pixels (91.6%). Spatially it is 9 contiguous row bands (1555-1730, 1847-2462, 2579-2886, 3003-3178, 3295-3426, 3543-3718, 3835-4098, 4215-4654, 4770-4945) inset to columns 48..1391 - i.e. exactly the 1344px container. On p000003 (/customers) desktop the same transition is 4,303,301 of 5,091,361 changed pixels (84.5%). Source drift is definitively excluded: snapshot-vs-live changedRatio is 0.0000 on p000007 and 0.0007 on p000003. Site-wide exposure: 1,128 of 2,258 pseudo records paint a background over 23.86M px^2 of owner-box area.",
+      "visualConsequence": "Every decorative pseudo the source hides or fades - hover-reveal row highlights, zebra striping, focus rings, gradient borders, glows, badges - paints as a solid opaque block in the clone. On the pricing page this is a lighter panel behind every one of 57 comparison rows; on /customers it is the same defect at similar scale. It is the dominant contributor to the 16.79% changed-pixel median and it is invisible to every gated dimension: /pricing desktop reports 234/234 text nodes exact, 11 style mismatches of 128,205, 0 asset findings, 0 JS errors and variant OK.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "PSEUDO_STYLE_WHITELIST omits opacity/visibility for EVERY site. Any site that hides a decorative pseudo hits this. linear.app supplies the measurement (1,128 of 2,258 painting pseudos; 91.6%/84.5% of changed pixels on the two worst pages)."
+    },
+    {
+      "id": "LR-02",
+      "what": "No @font-face is ever captured or emitted, so every glyph on every route renders in a fallback face inside boxes pinned to the original font's metrics.",
+      "where": "src/observer/collect-dom.ts:748-750 (the cross-origin catch that loses the rules) and src/reconstruction/style-generator.ts:176 (no at-rule channel exists)",
+      "evidence": "VERIFIED END-TO-END. linear.app serves 132 stylesheets, ALL on cross-origin static.linear.app; 81 carry a crossorigin attribute and 51 do not. The @font-face-bearing sheet index.CtQdVDoA.css is in the second group - its link tag is `<link rel=\"stylesheet\" href=\"https://static.linear.app/web/_next/static/css/index.CtQdVDoA.css\" data-rsc-css-href=\"...\" data-precedence=\"vite-rsc/importer-resources\">` with NO crossorigin - so sheet.cssRules throws and the catch skips it. Chain: 0 assets of type 'font' across all 16 observations (verified by direct count of every assets.json); asset-catalog kindCounts {inline-svg 207, image 194, mask-image 12, video 11, video-poster 6, icon 3, source 3, background-image 2, audio 1} has no font key; generated-styles.css contains 0 '@font-face' against 4,188 'font-family:\"Inter Variable\"' and 109 '\"Berkeley Mono\"'. Live probe of the served clone: fontFaceRulesInDocument 0, documentFontsSize 0, bodyFontFamily 'Times', CDP platform font '.SF NS' isCustomFont:false. A SECOND independent defect stacks on top: the harvester iterates only each sheet's TOP-LEVEL rules and never recurses (unlike the layout-rule visitor 480 lines earlier), so an @font-face nested in @layer would be lost even from a readable sheet - and linear.app's CSS uses @layer 167 times.",
+      "visualConsequence": "Different outlines, different weight rendering (Inter is variable 100-900; the fallback snaps to discrete weights), different advance widths, therefore different line breaking inside fixed boxes. Isolated by A/B injection of the real InterVariable.woff2 into the served clone: / 5.15% of pixels, /security 5.22%, /pricing 2.50%, /changelog 1.12%. CAVEAT: that A/B was measured over a 1440x900 VIEWPORT (changedPixels 66,698 / 0.0515 implies ~1440x899), not the full page, so it is not directly comparable to the full-page 16.79% median. Fonts are a large, real, site-wide defect - but on the evidence they are the SECOND driver, not the first.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-linear-specific-trigger",
+      "siteSpecificityNote": "GENERIC: no @font-face emission channel exists in the generator at all, and collect-assets.ts:230 drops the family name so a correct @font-face could never be written even from a captured URL. LINEAR-SPECIFIC: the proximate cause here is that index.CtQdVDoA.css carries no crossorigin attribute. A site serving same-origin CSS would still lose fonts to the family-drop and the non-recursive harvester."
+    },
+    {
+      "id": "LR-03",
+      "what": "Every <video> in the clone is an empty box: the asset resolver's kind list omits `video` and `audio`, so a video receives its POSTER image as src (undecodable) or nothing at all.",
+      "where": "src/reconstruction/asset-resolver.ts:25 (PRIMARY_IMAGE_KINDS) and :150-164",
+      "evidence": "VERIFIED: `const PRIMARY_IMAGE_KINDS: readonly string[] = [\"image\", \"source\", \"video-poster\"];`. The catalog holds 11 real video assets and 22 video occurrences; mapping every emitted media src back to its catalog kind gives img->image 436, source->source 6, video->video-poster 12, video->NO-SRC 12, audio->NO-SRC 2, and video->video ZERO. Live on /changelog: 14 <video> with srcs ending .png/.jpg and 4 requests net::ERR_ABORTED. Compounding it, every playback attribute is outside both attribute allowlists: 24 source <video> tags carry preload(22)/crossorigin(22)/muted(10)/loop(10)/playsinline(10)/autoplay(2) and the SiteSpec video nodes carry only {aria-busy,height,width} or {}.",
+      "visualConsequence": "Every product video on the site - including the /changelog hero and four /customers videos that have no poster at all - is a blank rectangle where the source plays an autolooping product demo. It is also a MOTION difference no single screenshot can quantify.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "PRIMARY_IMAGE_KINDS omits video/audio for every site. Any site with a <video> hits this."
+    },
+    {
+      "id": "LR-04",
+      "what": "The broken-video defect is structurally invisible: `unresolved` is set only for <img>, and the QA asset dimension also inspects only <img>. Both honesty mechanisms share one blind spot.",
+      "where": "src/reconstruction/asset-resolver.ts:160 (`if (tagName === \"img\" && ...) result.unresolved = true;`) and src/reconstruction-qa/asset-diff.ts:147 (`if (node.tagName !== \"img\") continue;`)",
+      "evidence": "VERIFIED both lines. reconstruction-manifest reports `unresolvedElementAssets: 0` and the QA final-summary reports imageNodes 436 / assetBoundImageNodes 436 / assetUnboundImageNodes 0, while 24 <video> and 2 <audio> are broken. /pricing and /security report snapshotImages 0, so their entire asset dimension is a no-op.",
+      "visualConsequence": "An operator reading the manifest concludes assets are complete. CSS background-image, <source>, <object>, <use>, mask-image and font files are likewise never checked for load success anywhere in the pipeline.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "The img-only scoping of both honesty mechanisms is unconditional."
+    },
+    {
+      "id": "LR-05",
+      "what": "Zero asset bytes are ever downloaded; the clone hotlinks the origin CDN for every pixel it does not draw itself.",
+      "where": "src/observer/collect-assets.ts:14-16 (binaries never downloaded) and src/reconstruction/generate-app.ts:133 (`assetDownloads: 0` hardcoded)",
+      "evidence": "reconstruction-manifest: assetMode 'reference', remoteAssetUrls 404, assetDownloads 0. QA final-summary: assetFailures 202, blockedAssetMessages 26 (13+13 from one CORS error on webassets.linear.app). 128 of the 202 were relabelled source-content-drift and routed to `requires-asset-materialization`, which src/e2e/escalation-policy.ts:57-70 lists as a REFUSED escalation.",
+      "visualConsequence": "Every image the CDN refuses (referer checks, hotlink protection, CORS) is a blank box. 202 measured image holes trace to this one decision, and the pipeline has formally declined to ever fix them.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": true,
+      "siteSpecificity": "generic-mechanism-linear-specific-magnitude",
+      "siteSpecificityNote": "assetMode 'reference' is unconditional. The 202 failures and 26 blocked messages are linear.app's CDN policy; a permissive origin would show fewer, a stricter one would show a blank site."
+    },
+    {
+      "id": "LR-06",
+      "what": "The observed root background never reaches the browser canvas, and the ONE correction the QA run produced to fix it never shipped.",
+      "where": "src/reconstruction/app-template.ts:276-280 (framework html/body get only margin/padding:0) + src/reconstruction/compile-node.ts:514-550 (the observed html/body become nested <div>s)",
+      "evidence": "VERIFIED: data/linear.app/reconstructions/2026-08-25T20-30-33-313Z/app/app/globals.css contains NO background-color and no 'QA CORRECTIONS' block, and its reconstruction-manifest.json has NO correctionSet key (keys are schemaVersion..limitationGlossary only). The accepted correction qc000001 `document-canvas-background` exists ONLY in the throwaway iteration app under the QA run's iterations/q001/. Live measurement: getComputedStyle(html).backgroundColor 'rgba(0,0,0,0)', color 'rgb(0,0,0)', colorScheme 'normal', while the observed html/body divs are rgb(8,9,10). The Recon Template's manifest points at the UNCORRECTED reconstruction, so the fix never reaches the template or the customer site - yet final-summary.json reports canvas-background-mismatch fully resolved because it measured the throwaway app.",
+      "visualConsequence": "On a dark site the overscroll/rubber-band area, the scrollbar track and every pixel outside the root div paint white, and native form controls render in light mode. The pipeline built a dedicated correction type for exactly this, measured it as fixed, and shipped the unfixed artifact.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-linear-specific-magnitude",
+      "siteSpecificityNote": "The canvas-background gap and the unshipped correction are generic. The VISIBLE damage is proportional to how dark the source is - severe for linear.app (rgb(8,9,10)), near-invisible for a white site."
+    },
+    {
+      "id": "LR-07",
+      "what": "709 elements are hidden across the whole 1024-1231.98px band by rules inferred from a single probe bit, with no replacement content available at that width.",
+      "where": "src/reconstruction/layout-inference.ts:163-187 (responsive-hidden) and :430-453 (hiddenRanges midpoint)",
+      "evidence": "VERIFIED 710 @media occurrences in generated-styles.css; 709 of the 710 responsive-hidden rules share the single condition `(min-width:1024px) and (max-width:1231.98px)`, of which /pricing alone contributes 507. The probe's visible counts for p000007 are 390->789, 768->792, 1024->778, 1440->1268, 1920->1268 - a 490-element cliff at one width. Live: /pricing desktop tree has 528 of 2,975 elements at display:none at 1024/1100/1231 and 21 at 1232/1440/1920, with document height unchanged (6,348px both sides) because heights are pinned.",
+      "visualConsequence": "On any 1024-1231px laptop the pricing page keeps full height but the entire plan-comparison table vanishes, leaving large empty regions. The layout the source shows at that width exists only in the 390px mobile tree, which is display:none above 915px - so the clone can never show it.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-linear-specific-instance",
+      "siteSpecificityNote": "The single-probe-bit-to-display:none inference is generic. The specific 1024-1231.98px band with 709 rules is a linear.app probe artifact and would differ per site."
+    },
+    {
+      "id": "LR-08",
+      "what": "The mobile tree receives zero responsive recovery, so every width from 391 to 914px renders a 390px column stranded on a wide canvas.",
+      "where": "src/reconstruction/layout-inference.ts:136 (`const viewport = page.viewports.desktop;`), :131-133 (filter width >= breakpoint) and :470 (selector hardcodes data-wr-viewport=\"desktop\")",
+      "evidence": "Live sweep of the served clone on `/`: at viewport 700 the mobile tree is active, the body div is 700px but <main> and <header> are exactly 390px; identical at 914. No recovered-rule selector in generated-styles.css contains data-wr-viewport=\"mobile\". Document height jumps 6,382 -> 10,898px between 914 and 915.",
+      "visualConsequence": "The entire tablet and small-laptop range is visibly broken, and the transition at the inferred 915px breakpoint is an abrupt whole-page swap at a width the source never used.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "layout-inference is desktop-only by construction for every site."
+    },
+    {
+      "id": "LR-09",
+      "what": "The recovered layout tier only ever writes width / max-width / margin-left / margin-right / display. Padding, gap, font-size, line-height, height, grid tracks and flex direction stay frozen at the single observed viewport value at every other width.",
+      "where": "src/reconstruction/layout-inference.ts:265-270, :342-347, :363, :408 (the only declarations any rule kind emits) and :38 (TRUTH_WIDTH = 1440 hardcoded)",
+      "evidence": "Manifest: nodesWithProbe 7,700 of 18,918 element nodes, recoveredRules 1,910 - about 10% of nodes get any responsive behaviour, desktop only. Live sweep on `/`: the h1 is 1,282px wide at font-size 64px at every desktop viewport from 915 to 2560, while the source probe for the corresponding container measures 344/698/954/1282/1282 at 390/768/1024/1440/1920 and its horizontal inset moves 23->35->35->79->319.",
+      "visualConsequence": "At 915-1280px the hero heading is ~330px wider than the source's and is clipped by an overflow ancestor; container padding is ~44px too large per side at 1024. Everything vertical is wrong wherever text re-wraps. Additionally, if a desktop observation is ever taken at any width other than exactly 1440, the whole tier silently emits zero rules.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "The five-declaration vocabulary and the hardcoded TRUTH_WIDTH 1440 apply to every site; any site observed at a non-1440 desktop width gets zero recovered rules."
+    },
+    {
+      "id": "LR-10",
+      "what": "Authored responsive CSS is almost entirely unrecoverable, and half of what IS recovered is unusable var() tokens. The cross-origin failure that causes it is swallowed with no counter, no flag and no artifact field.",
+      "where": "src/observer/collect-dom.ts:319-326 (the silent catch) and :270 (the silent MAX_LAYOUT_RULES early return)",
+      "evidence": "VERIFIED on the artifact: p000001 desktop has 8 distinct selectors and only 35 of 2,024 elements carry any layoutRules; of its 598 recorded declarations, 301 (50.3%) contain a bare `var(...)` reference while ZERO custom-property definitions exist anywhere in the system. Site-wide 488 of 18,918 nodes (2.6%) carry authoredLayout and 191 sit at exactly the 32-declaration cap. The recovered selectors (.hCgVwa_reset-button, .Fzcv4W_inset, .Fzcv4W_insetLarge ...) appear in NONE of p000001's 3 inline <style> blocks (0 of 8), proving they came from the 81 CORS-readable external sheets - so CORS is not globally broken, but the 51 sheets without a crossorigin attribute are unreadable by construction and nothing records that they were skipped. NOTE: the two archaeology reports disagreed here; the truth is that BOTH the cross-origin catch and the (silent, unverifiable) 2,000-rule cap are live, and no artifact field can distinguish a complete capture from a total one.",
+      "visualConsequence": "Computed style says `margin-left: 220px` where the author wrote `margin: 0 auto`, and `width: 1200px` where the author wrote `min(1200px, 100%)`. The clone is pinned to the observed viewport and breaks at every other width - the exact failure this channel was built to prevent.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-linear-specific-magnitude",
+      "siteSpecificityNote": "The silent cross-origin catch and the silent rule cap are generic. The ~97% loss rate is linear.app's (132 cross-origin sheets, 51 without crossorigin); a same-origin site would recover far more."
+    },
+    {
+      "id": "LR-11",
+      "what": "Named CSS animations are emitted with no @keyframes, and elements captured mid-reveal at opacity:0 stay invisible forever.",
+      "where": "src/reconstruction/style-generator.ts:176 (no at-rule channel) with animation-name captured at src/observer/types.ts:380",
+      "evidence": "VERIFIED 0 '@keyframes' in the 11,267,135-byte generated stylesheet. 26 declarations name a real animation (xt7VyG_scroll, w9ZFkq_staggerIn, TZTsQG_mobileMenuIn, _4phDSW_cursorIn, qM9FAa_cursorBlink ...). Live on `/`: 14 elements report a non-none animationName and element.getAnimations().length === 0 for every one. 85 style tokens carry opacity:0. Nothing in plan-reconstruction, validate-output or the manifest notices that a named animation has no rule, even though the exactly analogous check for style tokens (assertNoMissingStyleTokens, style-generator.ts:214) exists and is enforced.",
+      "visualConsequence": "Marquees stand still, staggered entrances never play, cursors stop blinking, and any element whose reveal animation had not run at capture time is permanently invisible in the clone.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "No @keyframes channel exists for any site."
+    },
+    {
+      "id": "LR-12",
+      "what": "SVG fragment ids are never namespaced while BOTH viewport trees render into one document, so every paint-server / mask / filter / clipPath reference is ambiguous and half resolve into the other viewport's tree.",
+      "where": "src/reconstruction/asset-resolver.ts:224-254 (annotateSvgRoot touches only the root's class/style/id/data-*) with both trees mounted by src/runtime/PageRenderer.tsx",
+      "evidence": "Static scan of all 8 emitted page JSONs: 5,206 id attributes inside SVG markup, 364 `url(#...)`/`href=\"#...\"` references, and 364 of 364 (100%) point at an id that occurs more than once in the same document; 0 dangle. p000001 alone: 328 distinct ids appearing 694 times. Live in Chromium on `/`: refs 102, refsAmbiguous 102, refsCrossViewport 51.",
+      "visualConsequence": "A mobile SVG whose linearGradient or userSpaceOnUse clipPath differs from the desktop one silently paints with the desktop definition and desktop coordinates. The pipeline scopes node ids per page+viewport in CSS selectors and explicitly documents that hazard (pseudo-generator.ts:14-19) yet does not apply the same reasoning to ids inside opaque SVG markup.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "Both viewport trees share one document for every site, and SVG fragment ids are never namespaced. Any site with two inline SVGs using the same internal id hits this."
+    },
+    {
+      "id": "LR-13",
+      "what": "Inline SVG interiors are opaque at every stage: never walked, never styled, never compared, never slottable, never themeable.",
+      "where": "src/observer/collect-dom.ts:665-671 (the walk RETURNS at <svg>), src/reconstruction-qa/capture-page.ts:278 (QA returns at <svg>), src/recon-template/extract.ts:285-318 (svg-opaque)",
+      "evidence": "1,581 inline SVGs are emitted (manifest inlineSvgRendered 1581) and 1,359 svg-opaque exclusions are recorded by the template extractor. fill/stroke/stroke-width/stop-color are in NO whitelist and the elements carrying them are never visited. Measured on p000001 desktop: of 182 inline SVGs, 82 use currentColor (safe - the root's color IS captured), 20 reference url(#) defs and 5 declare gradients (safe inside outerHTML), but 10 have shape children carrying class=, so their paint comes from stylesheets the observer cannot read. Additionally src/reconstruction/asset-resolver.ts:240-249 strips the SVG root's class/style/id, destroying root-level custom properties that descendants reference (e.g. asset a000304's style=\"--x---icon-default-color: currentColor\").",
+      "visualConsequence": "Around 10 icons per page paint solid black (the SVG fill initial value) or lose their stroke, and any icon whose colour rides on a root-level custom property loses it. No dimension of any QA can see inside an SVG, so every logo and illustration in the clone is verified by nothing but the ungated pixel number.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "The walk returns at <svg> for every site at every stage."
+    },
+    {
+      "id": "LR-14",
+      "what": "The changed-pixel ratio - the ONLY signal in the pipeline that can see paint - is not merely ungated, it is structurally unrepresentable as a finding.",
+      "where": "src/reconstruction-qa/emit-diffs.ts:93 (the sole `dimension: \"visual\"` emission in the codebase, classified `environment-unstable`) and src/reconstruction-qa/types.ts:272-310 (QaClassificationSchema, 27 codes, none naming a paint difference)",
+      "evidence": "VERIFIED: grep finds exactly one `dimension: \"visual\"` occurrence in emit-diffs.ts. No screenshot metric becomes a QaDiff on any code path. src/e2e/summarize.ts:102-114 (BOUNDARY_CLASSIFICATIONS) contains no visual/geometry/style/content code, and summarize.ts:42-43 and :101 state that fidelity deltas are 'a measurement, not a limitation'. The CLI sets a non-zero exit code only for usage/infrastructure errors.",
+      "visualConsequence": "A clone can differ from the original on 100% of its pixels and every artifact, summary, routing table and release verdict still reads clean. On this run the median is 16.79% and the worst page 49.56%, and the release verdict is unaffected.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "QaClassificationSchema has no paint code for any site."
+    },
+    {
+      "id": "LR-15",
+      "what": "The QA that is supposed to catch capture loss reuses the Observer's own allowlist verbatim, so verification can never exceed capture.",
+      "where": "src/reconstruction-qa/capture-page.ts:46 (`QA_STYLE_PROPERTIES = STYLE_WHITELIST`) and src/reconstruction-qa/interaction-qa.ts:71",
+      "evidence": "VERIFIED both aliases. styleComparedProperties 1,381,062 / styleComparedNodes 12,442 = exactly 111.0 properties per node - the full whitelist and nothing beyond it. style-diff.ts:141 (`if (actualValue === undefined) continue;`) makes the comparison an identity with the capture list.",
+      "visualConsequence": "This is why the run reports contentExactRatio 1.0 and geometryMedianOfMedians 0.01px beside a 16.79% changed-pixel median with no explanation. Every defect in LR-01, LR-02, LR-06, LR-11 and LR-13 is invisible to the only instrument that could attribute it. The reported paradox is not a paradox - it is the definition of the measurement.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "QA_STYLE_PROPERTIES = STYLE_WHITELIST unconditionally."
+    },
+    {
+      "id": "LR-16",
+      "what": "The accepted final-summary was measured with the live original switched OFF, so its sourceDrift 0 and unstablePages 0 are evidence of not looking.",
+      "where": "src/reconstruction-qa/run-correction-loop.ts:308 (`useLiveOriginal: false`)",
+      "evidence": "VERIFIED by direct comparison of the two artifacts. final-summary.json: sourceDrift {attempted 0, structuralDrift 0, styleDriftProperties 0}, unstablePages 0, completed 16. baseline-summary.json for the SAME run: sourceDrift {attempted 16, structurallyAligned 14, structuralDrift 2, contentDriftNodes 7, styleDriftProperties 404 (cursor 352, transform 13, transform-origin 8, opacity 7, z-index 6, filter 3)}, unstablePages 5, completed 14.",
+      "visualConsequence": "The document the pipeline publishes as final is the one that looked least. Findings also shifted between the two purely because the five unstable pages stopped being suppressed.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "useLiveOriginal:false in the correction loop applies to every run that applies a correction."
+    },
+    {
+      "id": "LR-17",
+      "what": "The site-level geometry headline is Y-AXIS ONLY, so horizontal displacement and width/height errors never reach any published figure.",
+      "where": "src/reconstruction-qa/summarize.ts:259-263",
+      "evidence": "VERIFIED: `medians.push(page.geometry.y.median); p95s.push(page.geometry.y.p95); maxima.push(page.geometry.y.max);` - no x, width or height. The published geometryMaxDelta is 108.75 (a y value) while the diff list contains qd000623 on p000007 desktop node n000328 with expected x=47.5 w=1344 -> actual x=317 w=805 (a 539px width error and a 269px x error) and qd000124 with dx = -500.72. Note that n000328's expected geometry (x 47.5, w 1344) is the same container the LR-01 banding sits in.",
+      "visualConsequence": "A 0.01px median-of-medians is mathematically compatible with an arbitrarily broken page. 93 of 241 emitted geometry diffs exceed 20px. Consistent with this, `width` is the top style mismatch at 478 of 627 - the recovered-layout tier measurably disagrees with the observed values at its own truth viewport, contradicting its docstring claim that 1440px 'cannot regress by construction'.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "The y-only site aggregation is unconditional."
+    },
+    {
+      "id": "LR-18",
+      "what": "CSS custom properties are captured nowhere, and the `style` attribute that carries per-instance layout values is dropped at two separate boundaries.",
+      "where": "src/observer/collect-dom.ts:394-403 (collectStyles iterates the allowlist) and src/observer/types.ts:221-247 (ATTR_WHITELIST has no `style`), then again at src/sitespec/safe-attributes.ts:131-137",
+      "evidence": "VERIFIED ATTR_WHITELIST = 25 names with no 'style'. 0 '--*' keys in any styles.json while linear.app's CSS defines 613 custom properties. p000001's rendered.html sets 39 distinct custom properties via 562 inline style= attributes, including the layout drivers --grid-areas-desktop, --grid-areas-mobile, --Carousel-gap, --Marquee-duration, --flex-direction, --mobile-width. The source root is `<html lang=\"en\" data-theme=\"dark\" style=\"color-scheme: dark;\">` and the SiteSpec html node's attributes are exactly {\"lang\":\"en\"}.",
+      "visualConsequence": "Grid area maps that switch between mobile and desktop, carousel gaps and marquee timing simply do not exist downstream, and 1 in 8 recovered authored values is an unusable token string. Any consumer emitting var(--x) into the clone gets the CSS initial value.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-linear-specific-magnitude",
+      "siteSpecificityNote": "No custom-property or style-attribute channel exists for any site. The 613 definitions and 562 inline style attributes are linear.app's; a site not driving layout through inline custom properties loses less."
+    },
+    {
+      "id": "LR-19",
+      "what": "34.2% of nodes are excluded from BOTH geometry and style comparison because the snapshot recorded them hidden, and effectiveVisible is captured on both sides yet compared nowhere.",
+      "where": "src/reconstruction-qa/map-clone-nodes.ts:80 (`if (!node.effectiveVisible) { hiddenSnapshotNodeCount++; continue; }`)",
+      "evidence": "Summed over the run's 16 page/viewports: snapshotNodes 18,918, mapped 18,918, hiddenSnapshotNodes 6,476. effectiveVisible is written at capture-page.ts:241 and read only at map-clone-nodes.ts:80 - never in any diff module.",
+      "visualConsequence": "A menu, modal, tooltip or dropdown the clone renders VISIBLE where the original hid it produces no diff in any dimension. This is the same class of defect as LR-01 and the QA is blind to it by exclusion as well as by allowlist.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "The hidden-node exclusion is unconditional."
+    },
+    {
+      "id": "LR-20",
+      "what": "The asset module's stated premise is false: it assumes both the Observer and the QA capture at scroll 0, so 128 real clone image holes are relabelled 'the source site drifted'.",
+      "where": "src/reconstruction-qa/asset-diff.ts:38-40 (the premise) contradicted by src/observer/observe-page.ts:184 -> src/observer/layout-probe.ts:32-61 (the Observer auto-scrolls first)",
+      "evidence": "asset-diff.ts:38-40 asserts 'both the Observer and this QA capture at scroll 0'. observe-page.ts:184 calls autoScrollPrepare before observing (up to 40 steps / 120,000px), while the QA's stabilize() (capture-page.ts:501-540) does networkidle -> fonts.ready -> 1200ms -> 2 rAF and never scrolls. Of 202 asset failures, 128 became source-content-drift with evidence like snapshotExpected '2560x1429' / liveOriginal 'naturalWidth 0' / cloneActual 'src set, naturalWidth 0'.",
+      "visualConsequence": "128 image holes the snapshot proves were filled are attributed to the site rather than the clone, routed to `requires-reobserve`, and downgraded to a known limitation instead of a defect. Whether a hole is a 'clone defect' or 'drift' depends on whether the live original happened to structurally align that minute.",
+      "generic": true,
+      "confidence": "likely",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "The scroll-premise mismatch between Observer and QA is unconditional; it fires on any site with lazy-loaded imagery below the fold."
+    },
+    {
+      "id": "LR-21",
+      "what": "'liveFidelity' - the block presented as the live canary - is three-quarters mislabelled; only one of its four fields is a real clone-vs-live measurement.",
+      "where": "src/reconstruction-qa/qa-page.ts:486-491 and :309-313",
+      "evidence": "qa-page.ts:488-489 fills contentExactRatio and styleMismatches from the CLONE-vs-SNAPSHOT diffs computed at :241-257; :309-313 computes geometryP95 as a SNAPSHOT-vs-LIVE number. Arithmetic check: liveFidelity.styleMismatches 156 equals the sum of clone-vs-snapshot mismatchedProperties over the 6 comparable pairs. Only screenshotChangedRatioMedian (0.0891) is genuinely clone-vs-live.",
+      "visualConsequence": "'liveFidelity.geometryP95Median 0' reads as 'the clone matches the live site to 0px'; it actually means 'the live site has not moved since observation'. A reviewer trusting the live canary is reading the snapshot comparison twice.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "The liveFidelity mislabelling is unconditional."
+    },
+    {
+      "id": "LR-22",
+      "what": "59.6% of observed attribute occurrences are dropped, including ~2,300 occurrences of live visual-state data-* attributes, and the drop records no limitation code.",
+      "where": "src/sitespec/safe-attributes.ts:131-137",
+      "evidence": "Across all 16 dom.json files: 33,191 attribute occurrences over 80 distinct names; 46 names survive; 19,773 occurrences dropped, led by class(16,081), id(666), src(466), data-plan(456), data-loaded(290), data-nimg(288), data-state(276), data-orientation(114), data-theme(100), data-active(80), data-show/hide(128). class and src are legitimately re-expressed (466 src -> 466 URL assets verified), but the state attributes are re-expressed nowhere. Emitted limitation codes site-wide are only pseudo-element-limited-style-set(2210), svg-subtree-opaque(1581) and source-html-id-not-identity(666).",
+      "visualConsequence": "data-state='open'/'closed', data-active, data-show/hide, data-selected, data-disabled and data-loaded encode which variant a component was showing. Combined with the missing CSS, any component whose appearance is driven by a state attribute reconstructs in an undefined variant.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-linear-specific-magnitude",
+      "siteSpecificityNote": "The attribute policy is unconditional. The ~2,300 state-attribute occurrences are linear.app's Radix-style components; a site not encoding variant state in data-* loses less."
+    },
+    {
+      "id": "LR-23",
+      "what": "Dark mode is structurally unobservable and every observation of every site runs as a Korean-locale, Seoul-timezone visitor.",
+      "where": "src/observer/types.ts:152-155 (OBSERVATION_LOCALE 'ko-KR', OBSERVATION_TIMEZONE 'Asia/Seoul', OBSERVATION_COLOR_SCHEME 'light', OBSERVATION_REDUCED_MOTION 'no-preference')",
+      "evidence": "VERIFIED verbatim in types.ts, applied at observe-page.ts:225 and layout-probe.ts:229, recorded in observation.json observationProfile for all 8 pages, and repeated in the QA context (capture-page.ts:30-33) and the template parity harness (parity-qa.ts:218-219). linear.app's CSS carries --lightningcss-light/--lightningcss-dark pairs and `color-scheme` 3 times, none captured.",
+      "visualConsequence": "The clone has exactly one theme and no evidence of the other. Server-side content negotiation, Intl date/number formatting and `quotes: auto` all resolve for a Korean visitor, so localized text is captured in the wrong language and locale-formatted values in the wrong format - with different string widths and therefore different wrapping.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "The locale/timezone/colorScheme/reducedMotion pins are hardcoded for every site, with no CLI override."
+    },
+    {
+      "id": "LR-24",
+      "what": "The layout probe does not align with dom.json on 2 of 8 pages, invalidating the responsive-inference channel on exactly the busiest route.",
+      "where": "src/observer/layout-probe.ts:95-118 (a SECOND page load at :236) with the alignment contract at :79-83",
+      "evidence": "Comparing each layout-probe.json `tags` array against the same page's desktop dom.json tagName sequence: p000001 probe 1,994 vs dom 2,024 (MISALIGNED), p000003 probe 1,208 vs dom 1,206 (MISALIGNED), the other six align exactly. `truncated` is false on all 8, so this is a genuinely different DOM from a second load, not a cap. Downstream, SiteSpec attaches probe data to only 267 of p000001's 2,024 desktop nodes (13%).",
+      "visualConsequence": "With authored rules ~97% dead (LR-10), the probe is the only remaining responsive evidence - and on the homepage both channels are simultaneously unusable. A consumer that skips the alignment check the code explicitly invites gets index-shifted geometry attributed to the wrong nodes.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-linear-specific-instance",
+      "siteSpecificityNote": "The second-page-load misalignment risk is generic (any hydration-timing-variable app). It fired on 2 of 8 linear.app pages including the homepage."
+    },
+    {
+      "id": "LR-25",
+      "what": "Diff lists are capped at 25 rows per dimension per page/viewport; 1,777 individual node differences in this run exist only as an aggregate count.",
+      "where": "src/reconstruction-qa/classify-diff.ts:66 (MAX_NODE_DIFFS_PER_DIMENSION = 25)",
+      "evidence": "11 diffs in qa-manifest.json carry limitations ['diff-list-truncated'] with affectedNodeCount 268, 29, 525, 362, 100, 117, 135, 33, 86, 87, 35 = 1,777. Asset findings are exempt from the cap (61 rows from one page/viewport) while geometry on the same page is capped at 25.",
+      "visualConsequence": "525 geometry differences on /changelog desktop collapse into one row. Which nodes and by how much is unrecoverable from the artifact, so the largest defects cannot be triaged even where they were detected.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "MAX_NODE_DIFFS_PER_DIMENSION 25 is unconditional."
+    },
+    {
+      "id": "LR-26",
+      "what": "Every clone-side fidelity classification routes to recommendation 'none' with no owner and no next action - 519 of 732 diffs terminate.",
+      "where": "src/reconstruction-qa/classify-diff.ts:74-82 and :128-136",
+      "evidence": "VERIFIED from final-summary.json summary.rootCauses: recommendationCounts {none: 519, requires-asset-materialization: 74, requires-reobserve: 139} and eligibilityCounts {not-eligible-no-correction-type: 519, ...}. 519 = geometry-mismatch 324 + style-mismatch 181 + layout-cascade 14. (An earlier read of the top-level rootCauses key gives the baseline figures {none: 460, ...}; the summary block is the operative one.)",
+      "visualConsequence": "The 519 are the pipeline's own layout and paint defects. They are recorded, given no recommendation, given no upstream owner beyond 'reconstruction', excluded from the release boundary set, and terminate.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "The ROUTING table maps clone-side fidelity codes to 'none' for every site."
+    },
+    {
+      "id": "LR-27",
+      "what": "The correction loop's no-regression gate cannot see geometry, style, assets or pixels, so an accepted correction may degrade the page anywhere it did not target.",
+      "where": "src/reconstruction-qa/correction-loop.ts:74-125 (evaluateRegression) with the policy stated at :16-18",
+      "evidence": "evaluateRegression checks exactly seven things: routesRendered vs routesExpected, runtimeErrors, contentMismatches, behaviorMismatches, unknownBehaviorsImplemented, formWrites, generatorInvariantsPass. Module doc: 'A pixel score that improved a little is not a substitute (item 121): visual metrics are recorded before and after for diagnosis, and they never decide.'",
+      "visualConsequence": "On this run only one correction was proposed and it was benign (and never shipped - LR-06), but the gate as written would accept a correction that doubled the changed-pixel ratio.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "evaluateRegression's seven checks are unconditional."
+    },
+    {
+      "id": "LR-28",
+      "what": "Sub-layout-unit tolerance is not applied to multi-value length strings, so quantisation noise inflates the style headline by ~15% and buries the genuinely visible rows.",
+      "where": "src/reconstruction-qa/style-diff.ts:74-86 (pxValue anchors /^(-?\\d+(?:\\.\\d+)?)px$/ on the WHOLE string)",
+      "evidence": "Across the run's 33 grid-template mismatch diffs the max per-track delta is 0.010-0.016px, i.e. at or below one Blink quantum (0.03125px), yet they contribute 95 of the 627 headline mismatches (grid-template-columns 73 + grid-template-rows 22 - confirmed in styleMismatchByProperty).",
+      "visualConsequence": "The style headline reports noise alongside the real rows (max-width none->672px x6, margin-left/right 2px->0px x10, line-height 24px->normal x1), degrading the one dimension that still has resolution.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "pxValue's single-scalar anchor is unconditional; it fires wherever a site uses grid-template, box-shadow lists or transform matrices."
+    },
+    {
+      "id": "LR-29",
+      "what": "srcset/sizes are dead before the template boundary, so every image renders its 1x src at every DPR - including on the DSF3 mobile capture.",
+      "where": "src/reconstruction/asset-resolver.ts:70-99 (buildSrcSet drops descriptorless candidates) driven by src/observer/types.ts:181 (ATTR_MAX_LEN = 500 truncates long Next/image srcsets)",
+      "evidence": "manifest resolvedSrcset 0, droppedSrcsetCandidates 0; 0 'srcSet' and 0 'sizes' across all 8 reconstruction page files; 0 of 439 catalog assets carry a descriptor despite 2,141 observed occurrences; 0 of 195 template image slots carry a srcset field. The `descriptor` field exists end-to-end in AssetObservationSchema, the catalog canonical key and AssetSpec, and produced nothing.",
+      "visualConsequence": "Visibly softer images on high-DPR displays, and the QA screenshot delta is measured against a source that used the higher-resolution candidate. A feature that reads as supported in three schemas does nothing on a real site. Also latent: changing an image src without a srcset silently deletes the attribute (src/recon-template/app-templates.ts:100-106).",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-linear-specific-instance",
+      "siteSpecificityNote": "ATTR_MAX_LEN truncation and the descriptorless-drop rule are generic. On linear.app the result is 0 srcset end-to-end, so the template's entire responsive-image path is DEAD CODE here and carries no regression coverage from this pilot."
+    },
+    {
+      "id": "LR-30",
+      "what": "Element text is silently cut at 200 characters in dom.json with no per-element flag.",
+      "where": "src/observer/types.ts:178 (TEXT_MAX_LEN = 200) applied at src/observer/collect-dom.ts:413-416",
+      "evidence": "98 dom.json text values across the 16 observations are exactly 200 characters. Fully mitigated in THIS lineage by the aligned rendered.html channel (16/16 viewports aligned, 96 of 98 long texts recovered, longest SiteSpec text node 504 chars), but fully in force on any fallback viewport and on ALL dynamic templates, which have no rendered.html by construction.",
+      "visualConsequence": "A truncated paragraph occupies fewer lines, so the block is shorter and everything below moves up. Nothing marks WHICH nodes need backfilling, so a consumer must diff against rendered.html to find them.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-not-triggered-on-linear",
+      "siteSpecificityNote": "TEXT_MAX_LEN 200 is unconditional, but the aligned rendered.html channel fully mitigated it in this lineage (16/16 viewports aligned). It is live for any fallback viewport and for ALL dynamic templates."
+    },
+    {
+      "id": "LR-31",
+      "what": "Dynamic templates (interaction after-states) carry no geometry and no pseudo-elements at all.",
+      "where": "src/sitespec/dynamic-template.ts:87-102 (the DynamicTemplateNode literal has no boundingBox, no pseudo, no localVisible, no relations)",
+      "evidence": "39 templates / 2,519 nodes. Key census across interaction-spec.json: 'pseudo' appears 0 times; 'boundingBox' appears 29 times but never inside a template. Text is the Observer's normalized 200-char-capped form because no rendered.html exists for a post-click DOM.",
+      "visualConsequence": "23 confirmed opened menus, dropdowns and modals reconstruct without any ::before/::after (arrows, separators, focus rings, gradient borders) and with no way for QA to check their position or size.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "DynamicTemplateNode has no geometry or pseudo fields for any site."
+    },
+    {
+      "id": "LR-32",
+      "what": "Shadow-root, iframe and canvas content is inventoried and never entered; adoptedStyleSheets are referenced nowhere in the codebase.",
+      "where": "src/observer/collect-dom.ts:654-658 (flag set) and :673-675 (walk iterates el.children only)",
+      "evidence": "4 open shadow roots on this site are recorded as existing and nothing more; closed roots return null and are not even counted. Both CSSOM reads iterate document.styleSheets, which by specification excludes document.adoptedStyleSheets, and grep for adoptedStyleSheets/CSSStyleSheet( over src/ returns zero hits. linear.app has 0 iframes and 0 <canvas>, so those are generic rather than site-specific risks here.",
+      "visualConsequence": "Whatever those 4 components render is an empty box. Any design system distributing CSS via Constructable Stylesheets would contribute zero authored rules and zero @font-face, with no diagnostic anywhere.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-not-triggered-on-linear",
+      "siteSpecificityNote": "Unconditional blind spots. linear.app has only 4 open shadow roots, 0 iframes and 0 <canvas>, so the damage here is small - but it is total for any site built on web components, embeds or canvas rendering."
+    },
+    {
+      "id": "LR-33",
+      "what": "The reconstruction's viewport-scoped fragment ids split one real anchor into two independent template slots, guaranteeing desktop/mobile content desync.",
+      "where": "src/recon-template/grouping.ts:27-33 (the link merge key includes href) meeting the generated ids from src/reconstruction/relations.ts:31",
+      "evidence": "slots.json: home.body.link.skip-to-content.href = '#wr-p000001-desktop-n000060' and home.body.link.skip-to-content-2.href = '#wr-p000001-mobile-n000060', both bound to the SAME source anchor n000005. 106 of 443 url slots (all 106 hash-kind slots) carry a viewport-scoped synthetic fragment; 53 anchor pairs are split, dragging 106 label text slots with them. 296 of 3,079 slots bind only one viewport, and all 53 mobile-only text slots have a byte-identical desktop-only twin.",
+      "visualConsequence": "An operator edits a label once and the other viewport still paints the original string. Operator-facing keys also leak internal node ids (changelog.main.link.wr-p000002-desktop-n000200.href).",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "Viewport-scoped generated ids plus an href-inclusive merge key produce this split on any site with in-page anchors."
+    },
+    {
+      "id": "LR-34",
+      "what": "aria-hidden paint twins are conservatively excluded, leaving stale painted duplicates when their visible twin is edited.",
+      "where": "src/recon-template/twin-binding.ts:38-46 (MAX_ANCESTOR_DISTANCE 4, MIN_OVERLAP_RATIO 0.5, real bounding box required on BOTH owners)",
+      "evidence": "report/slot-summary.json excludedCandidates {'aria-hidden': 66} against manifest counts.paintTwinBindings = 4. Manifest limitation 'aria-hidden-twin-without-box-overlap-evidence-not-cobound'.",
+      "visualConsequence": "Up to ~62 aria-hidden text candidates can double-expose: the visible layer shows the new copy while the gradient/effect layer underneath still paints the source string.",
+      "generic": true,
+      "confidence": "likely",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "The twin-binding thresholds are unconditional."
+    },
+    {
+      "id": "LR-35",
+      "what": "Neither artifact app ships node_modules, so every historical reconstruction is rebuilt and re-served against whatever Next/React the repo currently resolves.",
+      "where": "src/recon-template/generate-template-app.ts:27 (COPY_EXCLUDES) with builds spawned at src/recon-template/parity-qa.ts:118,135 via `npx --no-install next build|start`",
+      "evidence": "COPY_EXCLUDES = {node_modules, .next, next-env.d.ts}; neither app dir contains node_modules; the artifact package.json pins next 16.3.0 and the repo currently resolves next 16.3.0 - a match nothing asserts or verifies.",
+      "visualConsequence": "A repo-level dependency bump silently re-renders every historical artifact under a different renderer, and parity QA cannot notice because it compares two apps built with the same new toolchain.",
+      "generic": true,
+      "confidence": "suspected",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "COPY_EXCLUDES and npx --no-install apply to every artifact ever produced."
+    },
+    {
+      "id": "LR-36",
+      "what": "zod's default strip mode makes the SiteSpec write boundary a silent field-deletion point.",
+      "where": "src/sitespec/store.ts:89-108 with all 47 schemas in src/sitespec/types.ts using zod's default 'strip' (0 .strict(), 0 .passthrough())",
+      "evidence": "ElementObservation.hasShadowRoot (src/observer/types.ts:679) has no counterpart on ElementSpecNodeSchema, so the per-element shadow-host flag is deleted from every node; only the aggregate hostNodeIds survives.",
+      "visualConsequence": "Any per-node visual field added upstream without a matching schema entry disappears at write time with no error, and the validator that runs immediately afterwards sees a self-consistent document. This is the mechanism by which a future paint fix would die quietly.",
+      "generic": true,
+      "confidence": "proven",
+      "detectedByCurrentQa": false,
+      "siteSpecificity": "generic-mechanism-generic-trigger",
+      "siteSpecificityNote": "zod strip mode on all 47 schemas is unconditional."
+    }
+  ],
+  "unobservable": [
+    "Cross-origin stylesheet RULES without a crossorigin attribute: sheet.cssRules throws SecurityError. A hard browser boundary - but it is silently swallowed at src/observer/collect-dom.ts:323-326 and :748-750 with no counter, so no artifact can distinguish a complete capture from a total one. VERIFIED: 51 of linear.app's 132 sheets are in this state, including the ONLY sheet carrying @font-face.",
+    "Closed shadow roots: el.shadowRoot is null, so they are not merely unwalked, they are uncountable (collect-dom.ts:654).",
+    "Cross-origin iframe documents: contentDocument throws; frames.json records accessible:false and stops. 0 iframes on linear.app.",
+    "Canvas and WebGL pixel content: no readback channel exists anywhere in src/, and a tainted canvas could not be read even if one did.",
+    "Video frame content beyond the poster URL.",
+    "The bytes of any external resource - the Observer performs no HTTP fetch of its own and the generator is fully offline (src/cli-reconstruct.ts:29-33).",
+    "Actual font metrics and the resolved font face of a loaded webfont: document.fonts is only awaited for readiness (observe-page.ts:137). The face is reachable only via CDP CSS.getPlatformFontsForNode, which the pipeline does not use.",
+    "Any state gated on real user input: :hover, :focus, :focus-visible, :active, :checked, :target, :placeholder-shown. The walk runs once with no pointer and no focus, and interaction QA replays clicks only (interaction-qa.ts:408,673). linear.app's CSS carries layout declarations under :hover 197, :focus 51, :active 47, :disabled 41.",
+    "prefers-color-scheme: dark and prefers-reduced-motion: reduce - technically observable, made unobservable by the hard pins at src/observer/types.ts:154-155.",
+    "Which @media / @container query was ACTIVE at capture: condition text is recorded without ever evaluating matchMedia, so the consumer must re-parse and re-evaluate it.",
+    "Print stylesheets, forced-colors mode, and any media context outside screen/light/no-preference.",
+    "The original server HTML: page.content() serializes the LIVE post-hydration DOM, so pre-hydration markup, script-injected-then-removed nodes and original attribute ordering are gone.",
+    "The original stylesheet and script SOURCE (SiteSpec limitations original-stylesheet-source-not-compiled and original-script-source-not-compiled). An authored `max-width: min(1200px, 100%)` and a computed `width: 1200px` are indistinguishable - identical at 1440px and divergent everywhere else.",
+    "Occlusion and overlap: effectiveVisible is a display/opacity/content-visibility ancestor test explicitly documented as 'not a human can-a-person-see-it judgement, no occlusion/overlap detection' (src/observer/types.ts:657-661).",
+    "Vertical responsive behaviour at any unobserved width: the probe records only x, width and a visibility bit - no y and no height at any of the 5 probe widths.",
+    "WHERE on the page the pixels differ: the red-overlay diff PNG is written to disk and never read back by any code, so the data exists and is unavailable to the pipeline."
+  ],
+  "qaGates": {
+    "actualReleaseGates": [
+      "A stage that failed outright (src/e2e/summarize.ts:45-137 classifyFinalStatus)",
+      "failedPages > 0 or missingRoutes > 0",
+      "The root-URL invariant",
+      "Clone JS runtime errors > 0",
+      "Presence of a BOUNDARY_CLASSIFICATION (src/e2e/summarize.ts:102-114) - and that can only move the verdict to 'complete-with-known-limitations', never to 'partial' or 'failed'",
+      "Route check = HTTP 200 only (src/reconstruction-qa/qa-behavior.ts:678); the body is fetched and discarded, so a 200 with a blank body counts as rendered",
+      "Reconstruction template parity: contentEqual && structureEqual && docHeightDelta <= 1px && geometry.p95 <= 2px && no introduced JS errors && no hydration errors (src/recon-template/parity-qa.ts:364-370)"
+    ],
+    "reportedOnly": [
+      "screenshotChangedRatioMedian 0.1679 and screenshotMeanDeltaMedian 7.6295 - printed by src/cli-qa-reconstruction.ts:153 and consumed by nothing",
+      "worst.visual (0.4956 /customers desktop down to 0.3292 /pricing mobile) - computed, printed, never consumed",
+      "geometryMedianOfMedians / geometryMedianOfP95 / geometryMaxDelta - y-axis only, and explicitly declared 'a measurement, not a limitation' (src/e2e/summarize.ts:42-43)",
+      "styleMismatchedProperties 627 - never gates",
+      "assetFailures 202 and blockedAssetMessages 26 - route to requires-asset-materialization, a REFUSED escalation (src/e2e/escalation-policy.ts:57-70)",
+      "519 clone-side fidelity diffs with recommendation 'none'",
+      "Every screenshot captured by src/theme/theme-qa.ts, src/content-injection/layout-qa.ts and src/recon-template - three harnesses capture images and NONE of them compares two"
+    ],
+    "blindSpots": [
+      "No classification code exists for 'the paint is wrong'. QaClassificationSchema has 27 codes and none names a paint difference; the sole dimension:'visual' emission is classified environment-unstable (emit-diffs.ts:93).",
+      "Style comparison is bounded by the Observer's own 111-property allowlist (capture-page.ts:46), so it is structurally incapable of reporting any of LR-01, LR-02, LR-06, LR-11 or LR-13.",
+      "Inline SVG interiors are opaque to the QA on both sides (capture-page.ts:278) - 1,581 SVGs verified by nothing.",
+      "The asset dimension inspects only <img> (asset-diff.ts:147); background-image, video, poster, <use>, mask-image and font loads are never checked. /pricing and /security have snapshotImages 0.",
+      "34.2% of nodes (6,476 of 18,918) are excluded from geometry and style because the snapshot recorded them hidden; effectiveVisible is never compared.",
+      "Site-level geometry is y-only, hiding a measured 539px width error and a 500px x error.",
+      "Only 914/915/916px on ONE route are ever rendered outside the two observed widths, and the check is variant-exclusivity + non-empty DOM + zero console errors.",
+      "Interaction QA replays clicks only - no hover, focus, keyboard, scroll-linked or media-query state.",
+      "Geometry, style, assets and pixels are all excluded from the correction loop's no-regression gate by explicit design (correction-loop.ts:16-18).",
+      "The accepted final-summary was measured with the live original off, so drift and stability read zero by construction.",
+      "The template stage's mutation canary asserts only the node-id sequence, so a slot edit that reflows or clips the page passes by construction (parity-qa.ts:802-804).",
+      "No decoded-image CONTENT comparison exists - an <img> that decodes the wrong picture at the right size passes (asset-diff.ts:180)."
+    ]
+  },
+  "firstStageThatCanAlterPaint": "Information loss begins at OBSERVATION (src/observer/collect-dom.ts:394-403 and the closed STYLE_WHITELIST / PSEUDO_STYLE_WHITELIST), but the first stage whose OUTPUT can render differently from the source is RECONSTRUCTION GENERATION (src/reconstruction/**, entry src/reconstruction/plan-reconstruction.ts:175) - SiteSpec is an IR and is never rendered. RECON therefore carries the entire 16.79% delta. The RECON TEMPLATE boundary is provably paint-neutral: 8/8 full-page screenshot pairs are MD5-identical between the raw reconstruction app and the template app (docs/result/28.5-visual-fidelity-evidence/stage5-template-vs-recon-pixel-diff.json), only 3 source files differ and reconstruction-data/ is byte-identical, and all 9,929 slot bindings are no-ops at default content. The next stages that can alter paint again are AUTHORED content injection (values only: reflow, image swaps), then THEME (an 11-property CSS override) and PRODUCTION BAKE (asset materialization, whole-SVG brand-mark replacement, fallback fonts) - and PRODUCTION is deliberately not pixel-equal to the reconstruction with no gate measuring the distance.",
+  "contradictionsWithRepoDocs": [
+    "src/observer/types.ts:515-516 states of the pseudo whitelist: 'Nothing else was added. `opacity` and `visibility` would change how such a box LOOKS and no measurement has asked for them yet.' This audit is that measurement. The omission is the largest single paint defect in the lineage (91.6% of changed pixels on /pricing desktop, 84.5% on /customers desktop).",
+    "src/observer/collect-dom.ts:323-326 comments that when a cross-origin stylesheet is skipped 'The computed-style channel still covers its effects at this viewport.' False for any property outside STYLE_WHITELIST, and false for authored responsive semantics at ANY other viewport.",
+    "src/reconstruction/style-generator.ts:34 refuses a global reset because 'every element in the clone carries its complete computed style'. The premise is false for anything outside the allowlist: UA defaults for float, border-collapse, appearance, text-shadow, background-clip, -webkit-line-clamp, column-count and color-scheme leak straight through, unchallenged and unrecorded.",
+    "src/reconstruction/layout-inference.ts docstring claims 'every emitted rule must REPRODUCE the observed truth-viewport geometry, so the 1440px rendering cannot regress by construction.' The QA for this exact artifact reports styleMismatchByProperty width 478, max-width 11, margin-left 5, margin-right 5 and geometryMaxDelta 108.75.",
+    "src/reconstruction-qa/asset-diff.ts:38-40 asserts 'both the Observer and this QA capture at scroll 0'. The Observer auto-scrolls first (observe-page.ts:184 -> layout-probe.ts:32-61). This false premise manufactures the source-content-drift label for 128 of 202 image failures.",
+    "The manifest reports unresolvedElementAssets: 0 and the QA reports assetUnboundImageNodes: 0 while 24 <video> and 2 <audio> are broken - both honesty mechanisms are scoped to <img> (asset-resolver.ts:160, asset-diff.ts:147).",
+    "final-summary.json reports canvas-background-mismatch resolved and the accepted reconstruction does not contain the fix: globals.css has no correction block and the manifest has no correctionSet. The QA measured a throwaway iteration app; the Recon Template points at the uncorrected artifact.",
+    "The documented limitation 'font-source-binding-unverified' understates the situation. It is not unverified - it is proven absent: 0 @font-face against 4,188 'Inter Variable' declarations, documentFontsSize 0 in the live clone.",
+    "'svg-subtree-opaque' is a misleading name at the SiteSpec stage: the markup is preserved (205 of 207 catalog entries byte-identical, sanitized=false). What is opaque is the TREE, and the real SVG paint damage happens later at src/reconstruction/asset-resolver.ts:240-249 (root class/style/id stripped) and via the never-namespaced fragment ids.",
+    "src/recon-template/compile.ts:53-54 claims 'Same inputs + same overrides + same run id -> byte-identical output', but the accepted template manifest was produced by an older compiler: current compile.ts:184-190 unconditionally writes counts.slotizedPages/slotizedRoutes/structureOnlyRoutes/excludedRoutes/collections and a routePolicy block that the artifact does not contain.",
+    "src/recon-template/validate-output.ts:34 advertises 'byte-identical app copies' but only byte-compares the three template-data JSONs (:124-133). App byte-identity rests on node:fs cp plus one string-presence drift guard.",
+    "Repo docs describe QA geometry as median/p90/p95/max per node x/y/width/height. True per page; false at site level, where summarize.ts:259-263 publishes y only.",
+    "AGENT-REPORT CORRECTION: Stage Group 2 concluded that CORS is fine on linear.app and that the 2,000-rule cap explains the empty authored-layout channel and the missing fonts. Verified false as a complete account - 51 of 132 sheets carry no crossorigin attribute and are unreadable by construction, including the sole @font-face-bearing sheet index.CtQdVDoA.css. Stage Group 1's cross-origin mechanism is the proximate cause. Stage Group 2 is nonetheless right that 81 sheets ARE readable (the 8 recovered selectors appear in none of the inline <style> blocks) and that the font harvester's lack of recursion is a second, independent defect.",
+    "AGENT-REPORT CORRECTION: Stage Group 3 describes the whitelist as '~120 properties'. STYLE_WHITELIST is exactly 111 (verified by parsing the array); ~129 is the union ALLOWED_CSS_PROPERTIES = STYLE_WHITELIST + PSEUDO_STYLE_WHITELIST.",
+    "AGENT-REPORT CORRECTION: Stage Group 4 reported that ZERO SiteSpec nodes on p000007 desktop carry background-color rgb(20,21,22) and left the 38% defect unattributed. True for ELEMENT nodes only - 57 ::before PSEUDO records on that page use token st004315 whose background-color is exactly rgb(20,21,22), and 13 tokens site-wide carry it. That one step converts the audit's biggest unexplained finding into a fully attributed root cause (LR-01).",
+    "AGENT-REPORT CORRECTION: Stage Group 3's font A/B isolation (/ 5.15%, /security 5.22%, /pricing 2.50%, /changelog 1.12%) was measured over a 1440x900 VIEWPORT, not the full page, so it is not directly comparable to the full-page screenshotChangedRatioMedian of 0.1679. The conclusion that fonts explain only a minority of the changed-pixel count still holds, and LR-01 supplies the missing majority."
+  ],
+  "genericVsSiteSpecific": {
+    "legend": {
+      "generic-mechanism-generic-trigger": "The code defect exists for every site and fires on every site with the relevant content.",
+      "generic-mechanism-linear-specific-trigger": "The code defect is generic but the proximate cause measured here depends on a linear.app condition.",
+      "generic-mechanism-linear-specific-magnitude": "The code defect is generic; the measured size of the damage is a property of linear.app.",
+      "generic-mechanism-linear-specific-instance": "The code defect is generic; the specific instance recorded here is an artifact of this run and would differ per site.",
+      "generic-mechanism-not-triggered-on-linear": "The code defect is generic but is unexercised or mitigated in this lineage - latent for the next site."
+    },
+    "note": "Every risk in this handoff is a GENERIC code defect: none is caused by linear.app doing something unusual. The `generic` boolean is therefore true throughout; `siteSpecificity` records whether the TRIGGER, the MAGNITUDE or the INSTANCE is linear.app-specific. Risks tagged not-triggered-on-linear are the ones this pilot proves nothing about.",
+    "latentRisksThisPilotCannotValidate": [
+      "float/clear are in NO whitelist and linear.app uses neither (0 declarations) - any site using floats reconstructs with the entire float layout collapsed into normal flow.",
+      "srcset/sizes are 0 end-to-end here, so the responsive-image path (including the stale-srcset deletion at src/recon-template/app-templates.ts:100-106) is untested dead code.",
+      "svg-text slotting: manifest counts.svgTextBindings = 0 and there are 0 <text>/<tspan> in any reconstruction page, so the SVG-text applier has zero coverage.",
+      "data:/blob: URIs produce no asset record and ATTR_MAX_LEN 500 truncates long attributes - 0 occurrences on linear.app.",
+      "-webkit-line-clamp: 0 captured tokens currently use display:-webkit-box, so the clamp loss is unexercised.",
+      "parse5 lowercases SVG element/attribute names outside the HTML adjustment table (feDropShadow -> fedropshadow) - linear.app's filter primitives are all in the table, so this never fired.",
+      "Shadow DOM, iframes and canvas: 4 open shadow roots, 0 iframes, 0 canvas on linear.app.",
+      "The SiteSpec fallback path (contentRecovery.status !== 'aligned') never ran: 0 fallback viewports in this lineage.",
+      "Family-represented routes: exactObservationRate is 1.0 here, so the largest possible per-route paint loss (a route painting another page's content) is unexercised."
+    ]
+  }
+}

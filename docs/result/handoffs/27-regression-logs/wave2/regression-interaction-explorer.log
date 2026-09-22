@@ -1,0 +1,129 @@
+Already up to date
+Done in 154ms using pnpm v11.21.0
+$ tsx scripts/smoke-interaction-explorer.ts
+[smoke:interaction-explorer] Task 11 — safe rule-based interaction exploration
+
+Eligibility & shape (pure)
+  PASS  §11 P1 with a state-toggle capability is eligible
+  PASS  §13 P3 is never eligible
+  PASS  §13 P3 records reason=priority, not silence
+  PASS  §14/§37 form-submit is excluded and names its guard
+  PASS  §38 file-input is excluded
+  PASS  §14 hidden is preserved as its own skip reason, not deleted
+  PASS  §11 P2 checkbox is eligible
+  PASS  §11 P2 icon-only button is eligible (mobile hamburger shape)
+  PASS  §11 P2 button WITH text is not eligible (no blanket P2 allowance)
+  PASS  §12 P2 text input is not eligible
+  PASS  §17 aria-expanded false and true are different shapes
+  PASS  §16 two identical candidates share one shape key
+
+State diff (pure)
+  PASS  §58 an aria-expanded flip is one candidate-attribute-change
+  PASS  §59 that change is meaningful
+  PASS  §59 an identical snapshot pair is no-change
+  PASS  §58 a checked flip gets its own category
+  PASS  §58 a URL change is recorded
+  PASS  §59 a URL change alone is NOT `changed`
+  PASS  §109 container churn caused by a navigation does not declare `changed`
+  PASS  §56 an unresolved target that mounts is target-mounted
+  PASS  §58 diff output is independent of attribute key order
+
+Fixture pipeline (Task 09 observation + Task 10 detection)
+  PASS  all 10 fixture pages observed
+  PASS  Task 10 produced candidates for the fixture site
+
+Plan (offline, deterministic)
+  PASS  §64 the plan validates against its own schema
+  PASS  §9 the plan carries no timestamp (it is a pure function of its input)
+  PASS  §2 no action uses the stored elementId as a live locator
+  PASS  §118 every action carries Task 10 provenance
+  PASS  §63 action ids are a dense ia000001… sequence
+  PASS  §13 no P3 candidate is planned
+  PASS  §14 no excluded guard reaches the plan
+  PASS  §12 no hidden candidate is planned
+  PASS  §88 ten identical <details> produce exactly one action
+  PASS  §16 every deduplicated candidate names its representative
+  PASS  §18 the per-viewport budget caps /budget at 8
+  PASS  §18 candidates dropped by the budget are recorded with reason=budget
+  PASS  §81 the form page produces zero actions (submit + file excluded)
+  PASS  §37 the submit button is in skipped[] with a form-submit guard
+  PASS  §38 the file input is in skipped[] with a file-input guard
+  PASS  §90 reversing candidates[] and page order yields an identical plan
+
+Live exploration (real Chromium, fresh context per action)
+  PASS  §66 the run completed with every planned action attempted
+  PASS  §69 manifest actions are in actionId order regardless of completion order
+  PASS  §102 both viewports were explored
+  PASS  §72 the disclosure button resolves and changes
+  PASS  §72 aria-expanded false → true is in the diff
+  PASS  §72 the controlled panel goes hidden → visible
+  PASS  §21 an exact HTML id resolves through the id-exact strategy
+  PASS  §74 clicking a <summary> opens its <details> (open false → true)
+  PASS  §74 clicking an OPEN <details> closes it (open true → false)
+  PASS  §77 a button with no handler is executed and reported as no-change
+  PASS  §77 …and is not an error
+  PASS  an aria-label flip is captured as a candidate state change
+  PASS  §73 a target absent before the click mounts after it
+  PASS  §49 the target's before state is exists:false, which is not an error
+  PASS  §57 newly mounted interactive descendants are inventoried
+  PASS  §108 the new menu items are inventoried but NOT clicked
+
+Task 17 §4 — user-visible target discovery
+  PASS  an existing hidden region revealed by the click is discovered
+  PASS  …with BOTH declared and observed relation evidence
+  PASS  …a content fingerprint and a structural path
+  PASS  a region mounted into a visible container is NEWLY-MOUNTED, not content-replaced
+  PASS  …its mounted subtree is counted and captured with the Observer's walk
+  PASS  a tab activation discovers the appearing panel AND the disappearing one
+  PASS  every executed same-document action carries a discovery summary
+  PASS  the manifest aggregates user-visible target discovery
+
+Task 17.1 — portal discovery + adaptive capture
+  PASS  a visible panel inside a 0-rect mounted portal wrapper is discovered
+  PASS  …the AFTER-click aria-controls relation marks it declared
+  PASS  …its mount host resolves to the baseline <body> with a child position
+  PASS  …the truncated default capture was retried under the expanded caps
+  PASS  …a text run AFTER an element child records its position (textSegments)
+  PASS  §76 a checkbox toggles checked false → true
+  PASS  §75 clicking an unselected tab selects it
+  PASS  §75 …and the tabpanel visibility changes with it
+  PASS  §78 the stored generated id is stale by exploration time
+  PASS  §78 id-exact misses and the semantic fallback resolves it
+  PASS  §17 both tab states were explored separately
+  PASS  §79 two indistinguishable controls resolve as ambiguous
+  PASS  §23 an ambiguous locator is never clicked
+  PASS  §23 the ambiguous match count is recorded
+  PASS  §22 the structural path was tried and found nothing (it had gone stale)
+  PASS  §16 two identical controls collapse into one action
+  PASS  §22 semantic strategies were ambiguous but the structural path narrowed it
+  PASS  §23 …and it picked the RIGHT one (only the first button reacts)
+  PASS  §80 a control disabled since observation resolves but is not clicked
+  PASS  §80 the live reconciliation is what found the disabled state
+  PASS  §28 Task 10 recorded this candidate as operable — the drift is visible
+  PASS  §82 a navigation attempt was blocked
+  PASS  §82 the /danger page was never fetched
+  PASS  §83 a popup attempt was recorded and closed
+  PASS  §84 a POST was blocked before it reached the network
+  PASS  §84 the write endpoint recorded zero hits
+  PASS  §81 the form endpoint recorded zero hits
+  PASS  §85 a download attempt was recorded
+  PASS  §42 no request body is ever stored in an artifact
+  PASS  a confirm() dialog was dismissed, not accepted
+  PASS  §32/§86 no action ever saw the previous action's localStorage or body class
+  PASS  §67 …and the polluting click really did run (its own marker appeared)
+  PASS  §87 a 1000-mutation storm is capped and flagged truncated
+  PASS  §59 …and DOM mutation alone does not make an action `changed`
+  PASS  §117 a persisted observation passes Zod after reload
+  PASS  §62 no raw HTML is stored in an action artifact
+  PASS  §117 the manifest passes Zod after reload
+  PASS  §113 the manifest records its own true byte size
+  PASS  the manifest holds no absolute local path
+  PASS  §8 the manifest names both of its sources
+  PASS  §116 the source site-observation.json is byte-identical after exploration
+  PASS  §7 nothing was written into the source run directory
+  PASS  §60 every observation carries exactly one primary status from the taxonomy
+  PASS  §66 one ambiguous and one inoperable action did not stop the run
+  PASS  §111 no action was retried (planned = observed, one artifact each)
+
+108/108 checks passed
+[smoke:interaction-explorer] OK

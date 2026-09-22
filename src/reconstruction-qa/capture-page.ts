@@ -5,10 +5,10 @@ import {
   OBSERVATION_REDUCED_MOTION,
   OBSERVATION_TIMEZONE,
   SKIP_TAGS,
-  STYLE_WHITELIST,
   type ViewportProfile,
 } from "../observer/types.js";
 import {
+  buildScreenshotCoverage,
   ERROR_MESSAGE_MAX_LEN,
   QA_FONTS_READY_TIMEOUT_MS,
   QA_NAV_TIMEOUT_MS,
@@ -16,7 +16,10 @@ import {
   QA_RAF_COUNT,
   QA_SETTLE_MS,
   type DocumentGeometry,
+  type ScreenshotCoverage,
+  type ScreenshotSide,
 } from "./types.js";
+import { readPngDimensions } from "./screenshot-diff.js";
 
 /**
  * Page capture, shared by all three truth sources (items 18, 19, 20, 21).
@@ -42,8 +45,292 @@ import {
  * like the Observer's own collector.
  */
 
-/** Computed properties captured per element — the Observer's own whitelist (item 46). */
-export const QA_STYLE_PROPERTIES: readonly string[] = STYLE_WHITELIST;
+/**
+ * Computed properties captured per element — QA's OWN vocabulary (item 46,
+ * rewritten by Task 28.5B change 6).
+ *
+ * Until 28.5B this constant was literally `= STYLE_WHITELIST`, an alias of the
+ * Observer's list. That made the QA structurally incapable of its one job: a
+ * property the Observer never captured was also a property the QA never read,
+ * so the harness was blind in exactly the Observer's blind spots and reported
+ * "no style mismatch" for differences it could not physically see. Task 28.5A
+ * measured this on real pages (`docs/result/28.5-visual-reconstruction-root-
+ * cause-2026-08-29.md`): `-webkit-font-smoothing`, `text-wrap-mode` and
+ * `text-wrap-style` were repainting the clone's text and the QA said nothing.
+ *
+ * The list is therefore an INDEPENDENT literal. It deliberately shares its
+ * vocabulary with the Observer — every property in `STYLE_WHITELIST` at the
+ * time of writing appears below, because QA must never lose coverage — but it
+ * is not derived from it, and it carries a curated tail of paint-relevant
+ * properties the Observer does NOT record. Those extra properties cannot be
+ * compared against a SiteSpec style token (the spec never stored them); they
+ * are compared ORIGINAL-BROWSER ↔ CLONE-BROWSER by `compareCapturedStyles`
+ * below, and they are reported as un-verifiable-from-spec by
+ * `unverifiableFromSpecProperties` rather than silently counted as equal. That
+ * is the honest degradation: spec-less does not mean difference-less.
+ *
+ * Two consequences are intended:
+ *
+ *  - The two lists may now DIVERGE, and that is the point. A QA property with
+ *    no observer counterpart is a candidate observer gap; the proof suite
+ *    `scripts/smoke-qa-independence.ts` asserts the divergence exists and that
+ *    the Observer's whole vocabulary is still contained here.
+ *  - `diffStyles` iterates the SPEC's properties, so an extra QA property never
+ *    manufactures a spec mismatch and never crashes an older artifact.
+ *
+ * Ordering is literal and grouped, the same convention `STYLE_WHITELIST` uses;
+ * nothing here is sorted at runtime, so the capture order is deterministic.
+ */
+export const QA_STYLE_PROPERTIES: readonly string[] = [
+  // --- Layout ---------------------------------------------------------------
+  "display",
+  "position",
+  "top",
+  "right",
+  "bottom",
+  "left",
+  "width",
+  "height",
+  "min-width",
+  "min-height",
+  "max-width",
+  "max-height",
+  "aspect-ratio",
+  "margin-top",
+  "margin-right",
+  "margin-bottom",
+  "margin-left",
+  "padding-top",
+  "padding-right",
+  "padding-bottom",
+  "padding-left",
+  "box-sizing",
+  "overflow",
+  "overflow-x",
+  "overflow-y",
+  // Task 28.75 MIRROR of STYLE_WHITELIST. The superset invariant
+  // (`STYLE_WHITELIST ⊆ QA_STYLE_PROPERTIES`) is asserted by
+  // `scripts/smoke-qa-independence.ts` AND by `scripts/smoke-multi-observer.ts`;
+  // adding an observer property without mirroring it here turns both red. See
+  // the observer-side note for the measured gs.severance.healthcare carousels.
+  "float",
+  "clear",
+  "gap",
+  "row-gap",
+  "column-gap",
+  "flex-direction",
+  "flex-wrap",
+  "flex-grow",
+  "flex-shrink",
+  "flex-basis",
+  "justify-content",
+  "align-items",
+  "align-content",
+  "align-self",
+  "grid-template-columns",
+  "grid-template-rows",
+  "grid-column",
+  "grid-row",
+  "grid-template-areas",
+  "grid-area",
+  "grid-auto-flow",
+  "grid-auto-rows",
+  "grid-auto-columns",
+  "place-items",
+  "place-content",
+  "place-self",
+  "order",
+  "vertical-align",
+  "list-style-type",
+  "list-style-position",
+  "list-style-image",
+  // --- Typography -----------------------------------------------------------
+  "font-family",
+  "font-size",
+  "font-weight",
+  "font-style",
+  "line-height",
+  "letter-spacing",
+  "text-align",
+  "text-decoration",
+  "text-transform",
+  "white-space",
+  "text-overflow",
+  // Task 28.75 note: `text-indent` was ALREADY here (in the typography tail
+  // below, and in QA_ONLY_STYLE_PROPERTIES), so the Observer adopting it needs
+  // no mirror entry — adding one made this list carry it twice and turned the
+  // no-duplicates check in scripts/smoke-qa-independence.ts red. Per that
+  // constant's own contract, an Observer adoption leaves
+  // QA_ONLY_STYLE_PROPERTIES correct as "properties QA added on its own
+  // initiative", so it is left alone.
+  "overflow-wrap",
+  "word-break",
+  "color",
+  "text-wrap-mode",
+  "text-wrap-style",
+  "-webkit-font-smoothing",
+  // --- Media fit ------------------------------------------------------------
+  "object-fit",
+  "object-position",
+  // --- Visual ---------------------------------------------------------------
+  "background-color",
+  "background-image",
+  "background-size",
+  "background-position",
+  "background-repeat",
+  "border-top",
+  "border-right",
+  "border-bottom",
+  "border-left",
+  "border-radius",
+  "box-shadow",
+  "opacity",
+  // --- Masking / clipping / filters / blending -------------------------------
+  "clip-path",
+  "filter",
+  "backdrop-filter",
+  "mix-blend-mode",
+  "isolation",
+  "mask-image",
+  "mask-size",
+  "mask-position",
+  "mask-repeat",
+  "-webkit-mask-image",
+  "-webkit-mask-size",
+  "-webkit-mask-position",
+  "-webkit-mask-repeat",
+  // --- Table formatting -----------------------------------------------------
+  //
+  // Task 28.7 regression repair. Task 28.6 W6 O5 added these five to the
+  // Observer's `STYLE_WHITELIST` (`src/observer/types.ts`) and did not mirror
+  // them here, which broke the 28.5B superset invariant this file's own header
+  // states: "every property in `STYLE_WHITELIST` at the time of writing appears
+  // below, because QA must never lose coverage". `smoke-qa-independence`
+  // asserts that invariant and had been red since 28.6 — 28.6 ran no full
+  // regression, so the first authoritative full regression after it is what
+  // found this. QA was blind to exactly the property family 28.6 measured
+  // growing hobbang.net's tables by up to +82px.
+  "border-collapse",
+  "border-spacing",
+  "table-layout",
+  "caption-side",
+  "empty-cells",
+  // --- Visibility -----------------------------------------------------------
+  "visibility",
+  "content-visibility",
+  // --- Transform / behavior hints -------------------------------------------
+  "transform",
+  "transform-origin",
+  "transition-property",
+  "transition-duration",
+  "transition-delay",
+  "transition-timing-function",
+  "animation-name",
+  "animation-duration",
+  "animation-delay",
+  "animation-timing-function",
+  "animation-iteration-count",
+  "cursor",
+  "pointer-events",
+  "z-index",
+
+  // ==========================================================================
+  // QA-ONLY TAIL (Task 28.5B change 6)
+  //
+  // Paint-relevant properties the Observer does not record today. Each one can
+  // change what a pixel looks like without changing a single observed value —
+  // which is precisely the failure mode 28.5A found. They are listed here so
+  // the QA can SEE the difference and name it, not so the QA can blame the
+  // clone: an entry that keeps showing up here is evidence for an Observer
+  // whitelist extension, and until that happens it is reported honestly as
+  // un-verifiable against the SiteSpec.
+  // ==========================================================================
+  // Gradient/knockout text — the modern headline treatment. `background-image`
+  // is observed, but the two properties that turn it into visible text are not,
+  // so a gradient headline reconstructs as a solid-colour headline with an
+  // invisible gradient behind it.
+  "background-clip",
+  "-webkit-background-clip",
+  "-webkit-text-fill-color",
+  "-webkit-text-stroke-color",
+  "-webkit-text-stroke-width",
+  // Text painting beyond `color`.
+  "text-shadow",
+  "text-decoration-line",
+  "text-decoration-color",
+  "text-decoration-style",
+  "text-decoration-thickness",
+  "text-underline-offset",
+  "text-indent",
+  "word-spacing",
+  "direction",
+  // Variable-font axes and OpenType features: same family, same weight
+  // keyword, visibly different glyph rendering.
+  "font-variation-settings",
+  "font-feature-settings",
+  // Focus rings and other outline painting (drawn outside the border box, so
+  // no observed border property covers it).
+  "outline-style",
+  "outline-width",
+  "outline-color",
+  "outline-offset",
+  // Individual transform properties. `transform` is observed; `translate` /
+  // `rotate` / `scale` compose with it independently and are lost silently.
+  "translate",
+  "rotate",
+  "scale",
+  // SVG paint. The Observer records `color`, but shapes paint through these.
+  "fill",
+  "stroke",
+  "stroke-width",
+  // Remaining paint surfaces.
+  "background-blend-mode",
+  "border-image-source",
+  "accent-color",
+  "appearance",
+];
+
+/**
+ * The QA-only tail, named separately for reporting (Task 28.5B change 6).
+ *
+ * A literal subset of `QA_STYLE_PROPERTIES`, NOT computed by subtracting the
+ * Observer's list — computing it would re-introduce the coupling this change
+ * removed. If the Observer later adopts one of these, this constant stays
+ * correct as "properties QA added on its own initiative"; the proof suite
+ * measures the live divergence against `STYLE_WHITELIST` directly.
+ */
+export const QA_ONLY_STYLE_PROPERTIES: readonly string[] = [
+  "-webkit-background-clip",
+  "-webkit-text-fill-color",
+  "-webkit-text-stroke-color",
+  "-webkit-text-stroke-width",
+  "accent-color",
+  "appearance",
+  "background-blend-mode",
+  "background-clip",
+  "border-image-source",
+  "direction",
+  "fill",
+  "font-feature-settings",
+  "font-variation-settings",
+  "outline-color",
+  "outline-offset",
+  "outline-style",
+  "outline-width",
+  "rotate",
+  "scale",
+  "stroke",
+  "stroke-width",
+  "text-decoration-color",
+  "text-decoration-line",
+  "text-decoration-style",
+  "text-decoration-thickness",
+  "text-indent",
+  "text-shadow",
+  "text-underline-offset",
+  "translate",
+  "word-spacing",
+];
 
 /** Attribute names captured per element for structure / state comparison. */
 export const QA_ATTRIBUTE_NAMES: readonly string[] = [
@@ -577,7 +864,254 @@ export async function runCapture(
  * `fullPage: true`, PNG, no clip, no animation freezing, no `caret` or `mask`
  * options — because that is exactly what produced the saved snapshot the clone
  * is being compared against.
+ *
+ * ## Why this returns a coverage record and not just a Buffer (Task 28.6, C5)
+ *
+ * A full-page screenshot is the ONLY input to every pixel metric in this Task,
+ * and it has two failure modes that used to be invisible:
+ *
+ *  1. The driver refuses a document taller than
+ *     {@link SCREENSHOT_DEVICE_DIMENSION_CAP} device px. Before this, that
+ *     exception escaped to `captureOriginal`/`captureClone`'s outer catch, which
+ *     threw away a perfectly good DOM capture and reported the page as a LOAD
+ *     ERROR — the clone had loaded fine; only the screenshot was too tall.
+ *  2. A browser that CLIPS instead of refusing returns a short PNG, and every
+ *     downstream number is then computed over the part that survived while
+ *     reading exactly like a whole-page result.
+ *
+ * So the document is measured first, the PNG that comes back is measured
+ * against it (from its IHDR, so this costs no decode), and the difference is
+ * reported. `buffer` is absent when nothing was captured; `coverage` is always
+ * present and always says how much of the page the caller is allowed to speak
+ * for. Nothing here throws for a screenshot problem.
+ *
+ * Measured on 2026-09-03, darwin + playwright 1.62.1: no clipping at 1440x40000,
+ * 1440x200000 or 1170x180000 device px, so on this platform `truncated` is
+ * expected to be false and the record is a standing proof of that rather than a
+ * silence. See {@link SCREENSHOT_DEVICE_DIMENSION_CAP} for the off-darwin case.
  */
-export async function captureScreenshot(page: Page): Promise<Buffer> {
-  return page.screenshot({ fullPage: true, type: "png" });
+export interface ScreenshotCapture {
+  /** Absent when the capture failed; `coverage.reason` says why. */
+  buffer?: Buffer;
+  coverage: ScreenshotCoverage;
+}
+
+export async function captureScreenshot(
+  page: Page,
+  side: ScreenshotSide,
+): Promise<ScreenshotCapture> {
+  let documentHeightCss = 0;
+  let documentWidthCss = 0;
+  let deviceScaleFactor = 1;
+  let measureError: string | undefined;
+  try {
+    const measured = await page.evaluate(() => ({
+      height: Math.max(
+        document.documentElement.scrollHeight,
+        document.documentElement.getBoundingClientRect().height,
+      ),
+      width: Math.max(
+        document.documentElement.scrollWidth,
+        document.documentElement.getBoundingClientRect().width,
+      ),
+      dpr: window.devicePixelRatio,
+    }));
+    documentHeightCss = measured.height;
+    documentWidthCss = measured.width;
+    deviceScaleFactor = measured.dpr;
+  } catch (err) {
+    // The document could not be measured, so coverage cannot be claimed either.
+    // Recorded rather than assumed complete.
+    measureError = `document not measurable: ${
+      err instanceof Error ? err.message.split("\n", 1)[0] : String(err)
+    }`;
+  }
+
+  let buffer: Buffer | undefined;
+  let reason = measureError;
+  try {
+    buffer = await page.screenshot({ fullPage: true, type: "png" });
+  } catch (err) {
+    reason = `screenshot failed: ${
+      err instanceof Error ? err.message.split("\n", 1)[0] : String(err)
+    }`;
+  }
+
+  const dimensions = buffer ? readPngDimensions(buffer) : undefined;
+  if (buffer && !dimensions) {
+    reason = reason ?? "screenshot bytes are not a readable PNG";
+  }
+  const coverage = buildScreenshotCoverage({
+    side,
+    // The one fact that makes every fraction below readable. `measureError` is
+    // set exactly when the `page.evaluate` above threw, so a document we could
+    // not measure is reported as unknown rather than as a page of height 0 that
+    // we confidently covered none of.
+    documentMeasured: measureError === undefined,
+    documentHeightCss,
+    documentWidthCss,
+    deviceScaleFactor,
+    ...(dimensions ? { captured: dimensions } : {}),
+    ...(reason !== undefined ? { reason } : {}),
+  });
+  if (coverage.truncated && coverage.captured && coverage.reason === undefined) {
+    const shortfalls: string[] = [];
+    if (coverage.truncatedDeviceRows > 0) {
+      shortfalls.push(
+        `${coverage.capturedDeviceHeight} of ${coverage.expectedDeviceHeight} device rows`,
+      );
+    }
+    if (coverage.truncatedDeviceColumns > 0) {
+      shortfalls.push(
+        `${coverage.capturedDeviceWidth} of ${coverage.expectedDeviceWidth} device columns`,
+      );
+    }
+    coverage.reason = `captured ${shortfalls.join(" and ")}`;
+  }
+  return { ...(buffer ? { buffer } : {}), coverage };
+}
+
+// ---------------------------------------------------------------------------
+// Browser-to-browser style comparison (Task 28.5B change 6)
+// ---------------------------------------------------------------------------
+
+/**
+ * `diffStyles` compares a capture against the SiteSpec's stored style token, so
+ * it can only ever see properties the OBSERVER wrote down. Every property in
+ * the QA-only tail above is invisible to it — not because the two pages agree,
+ * but because there is nothing to agree with.
+ *
+ * These two helpers are the honest alternative:
+ *
+ *   `unverifiableFromSpecProperties`  names what the spec cannot adjudicate,
+ *                                     so a report can say "un-verifiable"
+ *                                     instead of implying "equal".
+ *   `compareCapturedStyles`           compares two LIVE captures directly.
+ *                                     Original browser vs clone browser needs
+ *                                     no observer data at all, so the QA-only
+ *                                     tail is fully verifiable on that axis.
+ *
+ * Both are pure functions over capture records; neither touches a browser.
+ */
+
+/** QA properties the SiteSpec vocabulary cannot adjudicate. Sorted. */
+export function unverifiableFromSpecProperties(
+  specProperties: Iterable<string>,
+  qaProperties: readonly string[] = QA_STYLE_PROPERTIES,
+): string[] {
+  const spec = new Set(specProperties);
+  return qaProperties.filter((property) => !spec.has(property)).sort();
+}
+
+export interface CapturedStyleMismatch {
+  /** Capture key — document-order index (original walk) or node id (clone walk). */
+  key: string;
+  tagName: string;
+  property: string;
+  a: string;
+  b: string;
+}
+
+export interface CapturedStyleComparison {
+  comparedElements: number;
+  comparedProperties: number;
+  mismatches: CapturedStyleMismatch[];
+  /** Non-zero per-property mismatch counts, sorted by property. */
+  byProperty: Record<string, number>;
+  /** Keys present on exactly one side — a structural difference, not a style one. */
+  unmatchedKeys: string[];
+  /** Keys whose two sides are different elements; their styles are NOT compared. */
+  tagMismatchKeys: string[];
+  /** Properties one side reported and the other did not (engine/UA difference). */
+  oneSidedProperties: string[];
+}
+
+export interface CompareCapturedStylesOptions {
+  /** Restrict the comparison to this vocabulary. Default: everything captured. */
+  properties?: readonly string[];
+  /** Cap on retained mismatch records; counts are never capped. */
+  maxMismatches?: number;
+}
+
+/**
+ * Compare two captures property-by-property, EXACT string equality.
+ *
+ * Defensible for the same reason `style-diff.ts` gives: both sides were
+ * serialized by the same Chromium build, so `rgb(17, 24, 39)` vs `#111827`
+ * cannot occur. No tolerance, no threshold — a caller that wants the layout
+ * quantum tolerance can apply `isSubLayoutUnitDifference` to the output.
+ */
+export function compareCapturedStyles(
+  a: QaRawCapture,
+  b: QaRawCapture,
+  options: CompareCapturedStylesOptions = {},
+): CapturedStyleComparison {
+  const limit = options.maxMismatches ?? 500;
+  const vocabulary = options.properties ? new Set(options.properties) : undefined;
+  const byKeyB = new Map(b.elements.map((element) => [element.key, element]));
+  const seenB = new Set<string>();
+  const mismatches: CapturedStyleMismatch[] = [];
+  const byProperty: Record<string, number> = {};
+  const unmatchedKeys: string[] = [];
+  const tagMismatchKeys: string[] = [];
+  const oneSided = new Set<string>();
+  let comparedElements = 0;
+  let comparedProperties = 0;
+
+  for (const elementA of a.elements) {
+    const elementB = byKeyB.get(elementA.key);
+    if (!elementB) {
+      unmatchedKeys.push(elementA.key);
+      continue;
+    }
+    seenB.add(elementA.key);
+    if (elementA.tagName !== elementB.tagName) {
+      tagMismatchKeys.push(elementA.key);
+      continue;
+    }
+    comparedElements++;
+    const properties = new Set([
+      ...Object.keys(elementA.style),
+      ...Object.keys(elementB.style),
+    ]);
+    for (const property of [...properties].sort()) {
+      if (vocabulary && !vocabulary.has(property)) continue;
+      const valueA = elementA.style[property];
+      const valueB = elementB.style[property];
+      if (valueA === undefined || valueB === undefined) {
+        oneSided.add(property);
+        continue;
+      }
+      comparedProperties++;
+      if (valueA === valueB) continue;
+      byProperty[property] = (byProperty[property] ?? 0) + 1;
+      if (mismatches.length < limit) {
+        mismatches.push({
+          key: elementA.key,
+          tagName: elementA.tagName,
+          property,
+          a: valueA,
+          b: valueB,
+        });
+      }
+    }
+  }
+  // Keys the `b` side has and the `a` side never presented.
+  for (const element of b.elements) {
+    if (!seenB.has(element.key)) unmatchedKeys.push(element.key);
+  }
+
+  const sortedByProperty: Record<string, number> = {};
+  for (const property of Object.keys(byProperty).sort()) {
+    sortedByProperty[property] = byProperty[property]!;
+  }
+  return {
+    comparedElements,
+    comparedProperties,
+    mismatches,
+    byProperty: sortedByProperty,
+    unmatchedKeys: [...new Set(unmatchedKeys)].sort(),
+    tagMismatchKeys: tagMismatchKeys.sort(),
+    oneSidedProperties: [...oneSided].sort(),
+  };
 }

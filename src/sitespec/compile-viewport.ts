@@ -4,6 +4,7 @@ import {
   type ElementObservation,
   type FrameObservation,
   type PageMetadata,
+  type RootCustomProperties,
   type ShadowInventory,
   type StyleTable,
   type ViewportProfile,
@@ -14,6 +15,7 @@ import {
   type AlignedChild,
   type AlignmentResult,
 } from "./content-tree.js";
+import { computeAuthoredBreakpoints } from "./authored-breakpoints.js";
 import { compileAttributes, type RelationSource } from "./safe-attributes.js";
 import type { AssetCatalogBuilder } from "./asset-catalog.js";
 import type { StyleCatalogBuilder } from "./style-catalog.js";
@@ -68,6 +70,11 @@ export interface CompileViewportInput {
   renderedHtml: string | undefined;
   styleBuilder: StyleCatalogBuilder;
   assetBuilder: AssetCatalogBuilder;
+  /**
+   * Task 28.5B §5 — this viewport's `:root` custom properties, as observed.
+   * `undefined` for a pre-28.5B observation, which compiles exactly as before.
+   */
+  customProperties?: RootCustomProperties;
 }
 
 /**
@@ -103,6 +110,7 @@ export function compileViewport(input: CompileViewportInput): CompiledViewport {
     renderedHtml,
     styleBuilder,
     assetBuilder,
+    customProperties,
   } = input;
 
   styleBuilder.countLocalStyleTable(Object.keys(styleTable).length);
@@ -294,6 +302,15 @@ export function compileViewport(input: CompileViewportInput): CompiledViewport {
       // Task 17 §7. Same verbatim policy for authored layout declarations.
       ...(source.layoutRules !== undefined ? { authoredLayout: source.layoutRules } : {}),
       ...(source.layoutRulesTruncated ? { authoredLayoutTruncated: true } : {}),
+      // Responsive Core P0 §C1.7 — cap counters and runtime inline style,
+      // verbatim. `safe-attributes.ts` still drops the `style` ATTRIBUTE.
+      ...(source.layoutRulesMatched !== undefined
+        ? { authoredLayoutMatched: source.layoutRulesMatched }
+        : {}),
+      ...(source.layoutRulesKept !== undefined
+        ? { authoredLayoutKept: source.layoutRulesKept }
+        : {}),
+      ...(source.inlineStyle !== undefined ? { inlineStyle: source.inlineStyle } : {}),
       styleTokenId: styleKey,
       ...(pseudo ? { pseudo } : {}),
       assetRefs,
@@ -454,6 +471,18 @@ export function compileViewport(input: CompileViewportInput): CompiledViewport {
     viewportLimitations.add("svg-subtree-opaque");
   }
 
+  // Task 28.6 W2 — where the SOURCE says this viewport's layout changes.
+  // Derived from the authored declarations already carried on the nodes above,
+  // so it adds no input and cannot disagree with them. `undefined` when the
+  // observation recovered no authored declaration at all AND truncated none
+  // away, which is why the field is optional rather than a record full of
+  // zeros. A viewport whose nodes were ALL truncated to zero declarations
+  // still gets a record, because "the page authored nothing" and "we cut away
+  // everything it authored" are opposite facts.
+  const authoredBreakpoints = computeAuthoredBreakpoints(
+    nodes.filter((n): n is ElementSpecNode => n.type === "element"),
+  );
+
   const spec: ViewportPageSpec = {
     profile,
     documentDimensions: {
@@ -491,6 +520,10 @@ export function compileViewport(input: CompileViewportInput): CompiledViewport {
     assetRefs: [...viewportAssetKeys].sort(),
     frameInventory,
     shadowInventory,
+    // Task 28.5B §5 — carried verbatim, per viewport, never merged.
+    ...(customProperties !== undefined ? { customProperties } : {}),
+    // Task 28.6 W2 — same per-viewport, never-merged policy.
+    ...(authoredBreakpoints !== undefined ? { authoredBreakpoints } : {}),
     limitations: sortLimitations(viewportLimitations),
   };
 

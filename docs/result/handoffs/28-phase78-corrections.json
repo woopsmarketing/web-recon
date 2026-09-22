@@ -1,0 +1,172 @@
+{
+  "schema": "task28-phase78-corrections-v1",
+  "phase": "7 + 8 (FRESH CORRECTION AGENT — I did not write the original code)",
+  "producedAt": "2026-08-28T07:40Z (KST 16:40)",
+  "verdictSought": "every recorded Phase 7/8 verifier FAIL fixed IN CODE, with the failing evidence preserved and the corrected numbers measured",
+  "summary": "Four recorded failures, all fixed in code and each proven by a mutation that makes the new check fail. (1) BLOCKER — a brief-only Create Site no longer resolves to the HOST SLUG: src/release/create-site.ts gains siteIdFromBrief()/resolveCreateSiteIdentity(), which has no host fallback at all and never lets a DERIVED identity land on an existing release project; two real brief-only createSite runs with the identical brief now produce two distinct new projects (reprepared false both times) and no data/<host>/release-projects/<host>/ directory exists afterwards. (2) DOC DEFECT — the collection figure is re-measured across EVERY template (2 of 8 carry collections, 3 each; 6 carry none — not '7 of 8 empty') and is now a number a suite check prints on every run. (3) UI HONESTY — the Library screen renders the `warnings` array both endpoints return, so an artifact the scan could not read is NAMED as missing instead of vanishing; a clean scan says so explicitly. (4) UI HONESTY — a pre-Task-27 project's adapted siteId and revision now say on the row that they came from adaptReleaseProject's in-memory upgrade and that the file on disk is at r1 and was not rewritten. scripts/smoke-create-site.ts: 46 -> 66 checks, 0 failures, with the Library screen now driven in a real Chromium.",
+  "findingsAddressed": [
+    {
+      "finding": "BLOCKER (Phase 8, identity): a brief with no workingName resolved siteId to defaultSiteId(host); two brief-only sites from one template landed on the same project and the second RE-PREPARED the first customer's project.",
+      "resolution": "IMPLEMENTED",
+      "code": "src/release/create-site.ts — slugifySiteId / siteIdFromBrief / resolveCreateSiteIdentity; createSite always passes an explicit siteId AND projectId to prepareReleaseProject (prepare's host-slug default is now unreachable from Create Site). src/editor/server.ts returns siteId/siteIdSource/siteIdBase/siteIdDisambiguation; src/editor/client.ts states them on the create result.",
+      "measured": {
+        "twoBriefOnlyCreates": [
+          "data/stripe.com/release-projects/wr28-nameless-brief-canary-a-payments (source goal, disambiguation 0, reprepared false)",
+          "data/stripe.com/release-projects/wr28-nameless-brief-canary-a-payments-2 (source goal, disambiguation 1, reprepared false)"
+        ],
+        "hostSlugProjectExistsAfterBoth": false,
+        "collisionAgainstARealExistingProject": "a brief slugging to the existing wr28-createsite-suite-01 stepped past it (disambiguation 1) and returned an unoccupied projectDir",
+        "nonAsciiGoal": "site-<10 hex of sha256(goal)>, source 'brief-hash' — still never the host",
+        "explicitSiteIdUnchanged": "honoured verbatim, and resolvesOntoExistingProject is reported rather than hidden"
+      },
+      "checks": "10 (scripts/smoke-create-site.ts, 'PHASE 8 CORRECTION')",
+      "mutationProof": "M1 — the collision guard replaced by `if (true)`: 4 checks FAIL, including 'reprepared true' on the second create (the verifier's exact defect). Restored byte-identically (sha256 + cmp)."
+    },
+    {
+      "finding": "DOC DEFECT (Phase 7): 28-library.json claimed collection count is 0 for 7 of 8 templates.",
+      "resolution": "IMPLEMENTED",
+      "measuredTruth": "6 of 8 carry ZERO; data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z and .../2026-08-26T22-38-06-075Z carry 3 each.",
+      "code": "scripts/smoke-create-site.ts — a new check compares EVERY template's rendered collection count against its own site-map.json and prints the distribution ('2 of 8 templates carry compiled collections; 6 carry none'), so the figure can no longer drift into prose. 28-library.json corrected with a corrections[] block that preserves the original wrong claim.",
+      "engineeringDefect": "none — the screen always rendered 3 correctly."
+    },
+    {
+      "finding": "UI HONESTY (Phase 7): the Library screen discarded the `warnings` array from GET /api/sites and GET /api/templates; a project that failed to parse simply vanished from the table.",
+      "resolution": "IMPLEMENTED",
+      "code": "src/editor/client.ts — renderLibraryWarnings() under each table; loadLibrary() and the post-create refresh pass warnings through; a clean scan is STATED, so silence is never mistaken for cleanliness.",
+      "measured": {
+        "sitesOnDiskAtMeasurement": 31,
+        "templatesOnDisk": 8,
+        "warningsOnCleanTree": 0,
+        "warningsWithOneUnreadableProject": 1
+      },
+      "checks": "5 of the 9 browser-driven checks (real Chromium, real editor server with a THROWING runtime, one deliberately unreadable project written and removed by the suite under its own wr28- namespace)",
+      "mutationProof": "M2 — loadLibrary reverted to `renderSiteLibrary(r.sites)` (the exact original defect): 2 checks FAIL, the screen claiming '0 scan warnings' while a project is missing. Restored byte-identically."
+    },
+    {
+      "finding": "UI HONESTY (Phase 7): the Revision cell printed 'doc r2' and the Site ID cell a host slug for the 3 pre-Task-27 projects whose documents are at r1 with no siteId; adaptedFromRevision was in the payload and dropped.",
+      "resolution": "IMPLEMENTED",
+      "code": "src/editor/client.ts — the Site ID cell says the id was derived from the host because that r<n> document has none on disk; the Revision cell says the file on disk is at r<n> and was not rewritten.",
+      "measured": {
+        "adaptedProjects": 3,
+        "onDiskRevision": 1,
+        "inMemoryRevision": 2
+      },
+      "checks": "3 of the 9 browser-driven checks (every adapted row says so; no other row claims it; the sample row names r1 next to doc r2)",
+      "mutationProof": "M3 — both adaptation branches deleted: 2 checks FAIL ('0 rows say adapted vs 3 adapted entries'). Restored byte-identically."
+    }
+  ],
+  "nonNegotiablesRecheckedByThisPass": {
+    "everyLibraryColumnTracesToARealArtifact": "PASS — 11 Template Library + 8 Site Library + 4 HTTP checks unchanged and green, plus the new all-templates collection check; the browser section additionally compares rendered rows against a fresh scanSites()",
+    "createSiteNeedsOnlyABrief": "PASS — the two new end-to-end runs supplied ONLY templateManifestFile + brief.goal (no siteId, no displayName, no theme/seo/assets/pageRegions) and produced full, registered, independent sites",
+    "templateByteIdenticalAfterCreateSite": "PASS — dir-sha256-v1 with no exclusions, computed by createSite AND independently by the suite, before and after; unchanged by this pass",
+    "structureOnlyRoutesNotPromoted": "PASS — 20 routes / 10 included / 10 structure-only on the real route-policy template, the named shared-page failure case still excluded",
+    "pageRegionsDirRecorded": "PASS — one shared findMatchingPageRegionsRun for both createSite and the editor; recorded on auxiliary.pageRegionsDir and re-read from the saved document"
+  },
+  "suiteResults": {
+    "method": "every run through bash tmp/wr28/suite-lock.sh; counts re-derived by grepping PASS/FAIL lines in the raw logs (tmp/wr28/fix78/final-*.log), not read off the summary line",
+    "suites": [
+      {
+        "suite": "create-site",
+        "checks": 66,
+        "failures": 0,
+        "baseline": 46,
+        "delta": 20
+      },
+      {
+        "suite": "first-draft",
+        "checks": 29,
+        "failures": 0,
+        "baseline": 29,
+        "delta": 0
+      },
+      {
+        "suite": "visual-editor",
+        "checks": 50,
+        "failures": 0,
+        "baseline": 50,
+        "delta": 0
+      },
+      {
+        "suite": "editor-integration",
+        "checks": 45,
+        "failures": 0,
+        "baseline": 45,
+        "delta": 0
+      },
+      {
+        "suite": "registry",
+        "checks": 35,
+        "failures": 0,
+        "baseline": 35,
+        "delta": 0
+      },
+      {
+        "suite": "revision",
+        "checks": 36,
+        "failures": 0,
+        "baseline": 36,
+        "delta": 0
+      },
+      {
+        "suite": "release",
+        "checks": 274,
+        "failures": 0,
+        "baseline": 274,
+        "delta": 0
+      },
+      {
+        "suite": "authoring-preview",
+        "checks": 41,
+        "failures": 0,
+        "baseline": 41,
+        "delta": 0
+      },
+      {
+        "suite": "enablement",
+        "checks": 101,
+        "failures": 1,
+        "baseline": 101,
+        "delta": 0,
+        "note": "NOT MINE — see concurrentTreeFinding below. Reported, not hidden."
+      }
+    ],
+    "typecheck": "exit 0 (pnpm typecheck, run 4x across this pass including after every mutation restore)"
+  },
+  "concurrentTreeFinding": {
+    "what": "scripts/smoke-enablement.ts fails ONE check against the tree as I found it. At 07:29 the failing check was 28.P5.52 ('the reconciliation still PROVES the account'), reporting reconciled=false with 590 named unaccountedSlotKeys out of 594 scoped template slots (counted from the raw log, not estimated); at 07:35, after the file changed again, the failing check had MOVED to 28.P6.15 (594 vs 594).",
+    "cause": "src/content-injection/accounting.ts — an UNCOMMITTED, in-flight change by another agent that adds a template-derived denominator (templateCoverage.unaccountedSlotKeys) and tightens `reconciled` to require it to be empty. `git diff` shows the block as an addition (+75 lines) and the file's mtime moved twice during my session (07:23:36, then 07:34:34) while the failing check changed with it.",
+    "notMine": "I touched src/release/create-site.ts, src/editor/server.ts, src/editor/client.ts and scripts/smoke-create-site.ts only. None of them is reachable from buildSlotAccounting, and the enablement fixture that fails is a pure in-memory computation over the template.",
+    "action": "reported here rather than worked around, silenced or blamed on my change. The owning agent should reconcile smoke-enablement's synthetic 1-unit fixture with the new template-derived denominator."
+  },
+  "mutationInjectionProofs": "3 (M1 identity collision guard, M2 library warnings, M3 adaptation notes) — each: sha256 backup -> mutate -> run the suite inside the SAME locked command -> observe named FAILs -> restore from the byte copy -> cmp + sha256 -> rerun 66/0. Never git. Logs: tmp/wr28/fix78/m1.log, m2.log, m3.log.",
+  "measuredNumbers": {
+    "templatesOnDisk": 8,
+    "templatesWithCompiledCollections": 2,
+    "collectionsPerSuchTemplate": 3,
+    "templatesWithNoCollections": 6,
+    "releaseProjectsOnDiskAtCorrectionTime": 31,
+    "adaptedLegacyProjects": 3,
+    "scanWarningsOnACleanTree": 0,
+    "createSiteChecks": 66,
+    "createSiteChecksBefore": 46
+  },
+  "limitations": [
+    "The brief-only identity proof uses a goal whose derived slug lands in this task's own wr28- namespace, because the program contract reserves the others. The derivation exercised is the shipped default; only the words of the goal were chosen. The host-slug write path was never executed by anyone — it no longer exists in code.",
+    "Identity resolution is check-then-write, not a lock: two createSite calls resolving the same derived base id in the same instant could still collide. Named, not fixed; nothing in this repo runs createSite concurrently.",
+    "The browser coverage added here is for the LIBRARY SCREEN (tables, warnings, adaptation notes) against an editor server with no open site. The Create Site FORM is browser-driven by scripts/smoke-first-draft.ts; the Template Library row's 'Edit' path is still covered at the data/HTTP level only.",
+    "I re-ran 9 suites (the ones reachable from the files I changed, plus registry/revision/release as regression), not all 25. The other 16 were untouched by this pass and I do not re-claim them.",
+    "The enablement failure above is on the tree as I found it; I did not fix another agent's in-flight work, and I cannot report a 25-suite all-green gate because of it.",
+    "smoke-create-site now runs THREE real createSite pipelines (three `next build`s) and one Chromium session, so it takes ~3-4 minutes instead of ~20 seconds. Stated so nobody reads the longer runtime as a hang."
+  ],
+  "artifactsLeftOnDisk": [
+    "data/stripe.com/release-projects/wr28-createsite-suite-01 (deleted and recreated by the suite each run)",
+    "data/stripe.com/release-projects/wr28-nameless-brief-canary-a-payments and ...-2 (same convention)",
+    "their content-runs / production-specs / production-builds under data/stripe.com/",
+    "tmp/wr28/fix78/*.log and the byte backups used for the mutation restores"
+  ],
+  "processHygiene": {
+    "git": "ZERO mutating git operations. Read-only `git diff` / `git status` only; every mutation restore used cp + cmp + sha256.",
+    "historicalData": "nothing predating 2026-08-27 was written; every new artifact is under a wr28- namespace.",
+    "reaping": "every Chromium and editor server this pass started is closed in a finally block. `ps -eo pid,ppid,etime,command | awk '$2==1 && /next|chromium|playwright|tsx/'` at the end lists only two site-factory-next runners (pids 8036/8038, ~10h old, an unrelated project predating this session), which I did not kill."
+  }
+}

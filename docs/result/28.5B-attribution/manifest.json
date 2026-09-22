@@ -1,0 +1,70 @@
+{
+  "schema": "task285b-attribution-manifest-v1",
+  "producedAt": "2026-08-30T16:29:07.000047Z",
+  "what": "Before/after visual attribution for Task 28.5B: the OLD accepted reconstruction (2026-08-25) and the NEW hardened reconstruction (2026-08-30) each diffed against the SAME live-original capture from the 2026-08-30 QA session.",
+  "comparability": "SAME_REFERENCE_COMPARABLE between old and new diffs; old clone built from 2026-08-25 source (drift caveat)",
+  "comparabilityDetail": "SAME_REFERENCE_COMPARABLE between old and new diffs: both sides are diffed against the IDENTICAL live-original PNG bytes captured in the 2026-08-30T15-57-54-926Z QA session, so the reference is held fixed and old-vs-new channel deltas are attributable to the clone. CAVEAT: the old clone was generated from the 2026-08-25 observation/site-spec source, five days older than the reference capture, so any real linear.app drift in that window is charged to the old clone. The comparison therefore DISADVANTAGES the old build; improvements it shows are a lower bound, and any place where the old build wins is not explainable by drift.",
+  "namingConvention": {
+    "source-<route>-<width>.png": "the shared reference: QA live-original full-page capture (identical bytes for both diffs)",
+    "old-clone-<route>-<width>.png": "OLD reconstruction served and captured now with the project's own QA capture path",
+    "new-clone-<route>-<width>.png": "NEW reconstruction clone capture, copied verbatim from the QA run",
+    "old-diff-<route>-<width>.png": "source vs old clone, current screenshot-diff module",
+    "new-diff-<route>-<width>.png": "source vs new clone, copied verbatim from the QA run's diffs"
+  },
+  "readingTheNumbers": "No single channel is the verdict. @1 counts any 1/255 change and is dominated by sub-perceptual noise; @16 gates on amplitude; dE76>2.3 is the perceptual JND and dE76>10 is clearly visible side by side. Judge visible regression on @16 and dE76>10.",
+  "routes": {
+    "pricing": {
+      "pageId": "p000007",
+      "route": "/pricing",
+      "viewport": "desktop",
+      "verdictNumbers": "at1 0.3914→0.0266 (-0.3648), at16 0.0295→0.0158 (-0.0137), dE76>JND 0.3794→0.0172 (-0.3622), dE76>10 0.0279→0.0146 (-0.0133), dE76mean 3.0826→0.7039 (-2.3787), meanMaxDelta 8.1354→1.7595 (-6.3759), common 0.9981→1, heightDelta -12→0",
+      "files": {
+        "source": "docs/result/28.5B-attribution/source-pricing-1440.png",
+        "oldClone": "docs/result/28.5B-attribution/old-clone-pricing-1440.png",
+        "newClone": "docs/result/28.5B-attribution/new-clone-pricing-1440.png",
+        "oldDiff": "docs/result/28.5B-attribution/old-diff-pricing-1440.png",
+        "newDiff": "docs/result/28.5B-attribution/new-diff-pricing-1440.png"
+      }
+    },
+    "changelog": {
+      "pageId": "p000002",
+      "route": "/changelog",
+      "viewport": "desktop",
+      "verdictNumbers": "at1 0.0885→0.0746 (-0.0139), at16 0.0471→0.0417 (-0.0054), dE76>JND 0.0641→0.0533 (-0.0108), dE76>10 0.041→0.0343 (-0.0067), dE76mean 2.3744→1.7572 (-0.6172), meanMaxDelta 6.0068→4.457 (-1.5498), common 1→1, heightDelta 1→1",
+      "files": {
+        "source": "docs/result/28.5B-attribution/source-changelog-1440.png",
+        "oldClone": "docs/result/28.5B-attribution/old-clone-changelog-1440.png",
+        "newClone": "docs/result/28.5B-attribution/new-clone-changelog-1440.png",
+        "oldDiff": "docs/result/28.5B-attribution/old-diff-changelog-1440.png",
+        "newDiff": "docs/result/28.5B-attribution/new-diff-changelog-1440.png"
+      }
+    },
+    "security": {
+      "pageId": "p000008",
+      "route": "/security",
+      "viewport": "desktop",
+      "verdictNumbers": "at1 0.0462→0.0418 (-0.0044), at16 0.0382→0.0346 (-0.0036), dE76>JND 0.0422→0.0383 (-0.0039), dE76>10 0.0348→0.0316 (-0.0032), dE76mean 1.6138→1.3871 (-0.2267), meanMaxDelta 4.0139→3.4428 (-0.5711), common 1→1, heightDelta 0→0",
+      "files": {
+        "source": "docs/result/28.5B-attribution/source-security-1440.png",
+        "oldClone": "docs/result/28.5B-attribution/old-clone-security-1440.png",
+        "newClone": "docs/result/28.5B-attribution/new-clone-security-1440.png",
+        "oldDiff": "docs/result/28.5B-attribution/old-diff-security-1440.png",
+        "newDiff": "docs/result/28.5B-attribution/new-diff-security-1440.png"
+      }
+    },
+    "pricingMobile": {
+      "pageId": "p000007",
+      "route": "/pricing",
+      "viewport": "mobile",
+      "verdictNumbers": "at1 0.3345→0.0355 (-0.299), at16 0.0343→0.027 (-0.0073), dE76>JND 0.3308→0.0283 (-0.3025), dE76>10 0.0325→0.0257 (-0.0068), dE76mean 3.1605→1.452 (-1.7085), meanMaxDelta 8.2981→3.6417 (-4.6564), common 0.9997→1, heightDelta -6→0",
+      "files": {
+        "source": "docs/result/28.5B-attribution/source-pricing-390.png",
+        "oldClone": "docs/result/28.5B-attribution/old-clone-pricing-390.png",
+        "newClone": "docs/result/28.5B-attribution/new-clone-pricing-390.png",
+        "oldDiff": "docs/result/28.5B-attribution/old-diff-pricing-390.png",
+        "newDiff": "docs/result/28.5B-attribution/new-diff-pricing-390.png"
+      }
+    }
+  },
+  "handoff": "docs/result/handoffs/28.5B-attribution.json"
+}

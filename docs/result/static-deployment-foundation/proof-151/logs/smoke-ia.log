@@ -1,0 +1,127 @@
+site boost-interior-demo · release interior-01-1.5.1-6bbdd07eb9bf
+
+[A] routes at 1440 and 390
+  ok   home@1440: 200, 0 broken images, overflow 0, no console error, no non-local request
+  ok   home@1440: header nav = portfolio · 3D · about · contact pill (hrefs, labels, order)
+  ok   home@1440: aria-current only on its own nav item
+  ok   home@1440: inline nav shown, menu button hidden, items in one row inside the header
+  ok   home@1440: floating CTA shown → /contact, clear of the header
+  ok   portfolio@1440: 200, 0 broken images, overflow 0, no console error, no non-local request
+  ok   portfolio@1440: header nav = portfolio · 3D · about · contact pill (hrefs, labels, order)
+  ok   portfolio@1440: aria-current only on its own nav item
+  ok   portfolio@1440: inline nav shown, menu button hidden, items in one row inside the header
+  ok   portfolio@1440: floating CTA shown → /contact, clear of the header
+  ok   detail@1440: 200, 0 broken images, overflow 0, no console error, no non-local request
+  ok   detail@1440: header nav = portfolio · 3D · about · contact pill (hrefs, labels, order)
+  ok   detail@1440: aria-current only on its own nav item
+  ok   detail@1440: inline nav shown, menu button hidden, items in one row inside the header
+  ok   detail@1440: floating CTA shown → /contact, clear of the header
+  ok   3d-portfolio@1440: 200, 0 broken images, overflow 0, no console error, no non-local request
+  ok   3d-portfolio@1440: header nav = portfolio · 3D · about · contact pill (hrefs, labels, order)
+  ok   3d-portfolio@1440: aria-current only on its own nav item
+  ok   3d-portfolio@1440: inline nav shown, menu button hidden, items in one row inside the header
+  ok   3d-portfolio@1440: floating CTA shown → /contact, clear of the header
+  ok   about@1440: 200, 0 broken images, overflow 0, no console error, no non-local request
+  ok   about@1440: header nav = portfolio · 3D · about · contact pill (hrefs, labels, order)
+  ok   about@1440: aria-current only on its own nav item
+  ok   about@1440: inline nav shown, menu button hidden, items in one row inside the header
+  ok   about@1440: floating CTA shown → /contact, clear of the header
+  ok   contact@1440: 200, 0 broken images, overflow 0, no console error, no non-local request
+  ok   contact@1440: header nav = portfolio · 3D · about · contact pill (hrefs, labels, order)
+  ok   contact@1440: aria-current only on its own nav item
+  ok   contact@1440: inline nav shown, menu button hidden, items in one row inside the header
+  ok   contact@1440: floating CTA hidden on /contact
+  ok   home@390: 200, 0 broken images, overflow 0, no console error, no non-local request
+  ok   home@390: header nav = portfolio · 3D · about · contact pill (hrefs, labels, order)
+  ok   home@390: aria-current only on its own nav item
+  ok   home@390: header = logo + menu button only (nav hidden), button 44×44 inside the viewport
+  ok   home@390: floating CTA shown → /contact, clear of the header
+  ok   portfolio@390: 200, 0 broken images, overflow 0, no console error, no non-local request
+  ok   portfolio@390: header nav = portfolio · 3D · about · contact pill (hrefs, labels, order)
+  ok   portfolio@390: aria-current only on its own nav item
+  ok   portfolio@390: header = logo + menu button only (nav hidden), button 44×44 inside the viewport
+  ok   portfolio@390: floating CTA shown → /contact, clear of the header
+  ok   detail@390: 200, 0 broken images, overflow 0, no console error, no non-local request
+  ok   detail@390: header nav = portfolio · 3D · about · contact pill (hrefs, labels, order)
+  ok   detail@390: aria-current only on its own nav item
+  ok   detail@390: header = logo + menu button only (nav hidden), button 44×44 inside the viewport
+  ok   detail@390: floating CTA shown → /contact, clear of the header
+  ok   3d-portfolio@390: 200, 0 broken images, overflow 0, no console error, no non-local request
+  ok   3d-portfolio@390: header nav = portfolio · 3D · about · contact pill (hrefs, labels, order)
+  ok   3d-portfolio@390: aria-current only on its own nav item
+  ok   3d-portfolio@390: header = logo + menu button only (nav hidden), button 44×44 inside the viewport
+  ok   3d-portfolio@390: floating CTA shown → /contact, clear of the header
+  ok   about@390: 200, 0 broken images, overflow 0, no console error, no non-local request
+  ok   about@390: header nav = portfolio · 3D · about · contact pill (hrefs, labels, order)
+  ok   about@390: aria-current only on its own nav item
+  ok   about@390: header = logo + menu button only (nav hidden), button 44×44 inside the viewport
+  ok   about@390: floating CTA shown → /contact, clear of the header
+  ok   contact@390: 200, 0 broken images, overflow 0, no console error, no non-local request
+  ok   contact@390: header nav = portfolio · 3D · about · contact pill (hrefs, labels, order)
+  ok   contact@390: aria-current only on its own nav item
+  ok   contact@390: header = logo + menu button only (nav hidden), button 44×44 inside the viewport
+  ok   contact@390: floating CTA hidden on /contact
+
+[B] header at 900 / 899
+  ok   900: inline nav, one row, inside the viewport, no overflow
+  ok   899: menu button, nav hidden
+
+[C] mobile menu at 390
+  ok   server HTML has no menu dialog (client-only, like the photo viewer)
+  ok   closed at load: no dialog, aria-expanded=false, no aria-controls
+  ok   opens: modal dialog open, aria-expanded=true, aria-controls = its id, labelled 메뉴
+  ok   focus moves into the dialog, onto the close button
+  ok   4 items in order with the header's hrefs and labels; contact last
+  ok   close button named 메뉴 닫기
+  ok   menu button named 메뉴 열기
+  ok   scroll lock: html overflow hidden, scroll position kept
+  ok   scroll lock: a wheel over the page does not move it
+  ok   floating CTA hidden while the menu is open (no overlap)
+  ok   the menu's contact item is on top where it is drawn
+  ok   sheet inside the viewport (full height, right edge)
+  ok   Tab ×8 never focuses anything on the page behind (modal)
+  ok   Esc closes: dialog gone, aria-expanded=false, focus back on the menu button, lock released, scroll kept
+  ok   close button closes, focus back on the menu button
+  ok   a press inside the sheet (empty area) does not close it
+  ok   backdrop press closes
+  ok   keyboard: Enter on the button opens, Esc closes
+  ok   menu → /about: navigated, page renders, menu closed, lock released, aria-expanded=false, aria-current on the new page
+  ok   menu → /3d-portfolio: navigated, page renders, menu closed, lock released, aria-expanded=false, aria-current on the new page
+  ok   menu → /contact: navigated, page renders, menu closed, lock released, aria-expanded=false, aria-current on the new page
+  ok   menu → /portfolio: navigated, page renders, menu closed, lock released, aria-expanded=false, aria-current on the new page
+  ok   menu walk: no console error, no non-local request
+  ok   resize to 1000 with the menu open: it closes, lock released, inline nav usable
+
+[D] /contact form
+  ok   390: 7 labelled fields (이름*, 연락처*, 지역, 평형, 공사 유형 select, 예상 일정, 문의 내용*)
+  ok   390: work-type options from the site
+  ok   390: says online submission is not connected; direct email shown; no success wording at load
+  ok   390: empty submit is blocked by required validation (no hand-off, no status)
+  ok   390: the submit button is not covered by anything (no floating seat on /contact)
+  ok   390: one mailto hand-off to the business address
+  ok   390: subject "[견적 문의] 홍길동님"
+  ok   390: body = one labelled line per field, message last (CRLF, message lines too)
+  ok   390: status after the hand-off says nothing was sent yet and names the address — no success claim
+  ok   390: no network request on submit, no console error
+  ok   390: still on /contact
+  ok   1440: 7 labelled fields (이름*, 연락처*, 지역, 평형, 공사 유형 select, 예상 일정, 문의 내용*)
+  ok   1440: work-type options from the site
+  ok   1440: says online submission is not connected; direct email shown; no success wording at load
+  ok   1440: empty submit is blocked by required validation (no hand-off, no status)
+  ok   1440: the submit button is not covered by anything (no floating seat on /contact)
+  ok   1440: one mailto hand-off to the business address
+  ok   1440: subject "[견적 문의] 홍길동님"
+  ok   1440: body = one labelled line per field, message last (CRLF, message lines too)
+  ok   1440: status after the hand-off says nothing was sent yet and names the address — no success claim
+  ok   1440: no network request on submit, no console error
+  ok   1440: still on /contact
+  ok   fixture-empty (no email) /contact: no form, the neutral unavailable line, no mailto, no contact CTA, no floating seat
+  ok   fixture-empty: no contact CTA on the home page either
+
+[E] contact calls to action → /contact
+  ok   detail CTA → /contact
+  ok   header pill navigates to /contact
+  ok   390: floating seat navigates to /contact (client-side, the seat survives) and hides itself there
+  ok   390: back on /about the seat shows again
+
+114 / 114 passed

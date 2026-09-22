@@ -225,8 +225,24 @@ export function deriveAssets(
     if (u) push({ url: u, type: "icon" });
   }
 
+  /*
+   * Task 28.6 W6 O4 — a relative `@font-face` `url()` resolves against the
+   * STYLESHEET that authored it, not against the document.
+   *
+   * MEASURED on hobbang.net: 92 of 184 font assets pointed at
+   * `https://hobbang.net/packages/pretendard/...`, which returns 404 (146 bytes
+   * of `text/html`), while the correct `cdn.jsdelivr.net` URL returns 200 and
+   * 34,568 bytes of `font/woff2`. The split was diagnostic — ABSOLUTE `src` in
+   * the CORS-bridged sheet resolved correctly 92/92, RELATIVE `src` in the
+   * readable third-party sheet was wrong 92/92 — which is precisely what a
+   * document-base-only resolver produces.
+   *
+   * `sheetHref` is absent for an inline `<style>` (whose base IS the document)
+   * and for a `data:` src (which needs no base), so `baseUri` remains the
+   * correct fallback and is never a guess.
+   */
   for (const font of fontUrls) {
-    const u = resolve(font.url, baseUri);
+    const u = resolve(font.url, font.sheetHref ?? baseUri);
     if (u) push({ url: u, type: "font" });
   }
 

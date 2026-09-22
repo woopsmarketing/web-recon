@@ -14,7 +14,7 @@
  * census is inherited (conservative — replacements can only shrink the
  * residual set; re-run assets:qa to re-measure).
  */
-import { copyFile, cp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, cp, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
@@ -99,18 +99,30 @@ export async function applyAssetResolutions(
         const existing = rewriteMap.entries.find((rewrite) => rewrite.sourceUrl === entry.sourceUrl);
         if (existing !== undefined) existing.localPath = localPath;
         else rewriteMap.entries.push({ sourceUrl: entry.sourceUrl, localPath, contexts: ["html", "css"] });
-        manifest.entries.push({
+        // UPSERT, never append (Task 28 Phase 1C defect 1). The base run
+        // already carries an entry for this inventoryId — `skipped-…` for a
+        // replacement-required asset, `fetched` for a recommended one — and a
+        // second replacement of the same asset (the Visual Editor's ordinary
+        // case) would append again. Appending leaves the manifest with two
+        // records claiming different sha256/localPath for one id, and every
+        // first-match lookup (`entries.find(e => e.inventoryId === …)`) reads
+        // the STALE one. Replace in place so the record is single-valued and
+        // the array keeps its original order.
+        const record = {
           inventoryId: assetId,
           sourceUrl: entry.sourceUrl,
           classification: entry.classification,
           status: "operator-provided",
           httpStatus: null,
           mime: null,
-          size: null,
+          size: (await stat(file)).size,
           sha256,
           localPath,
           redirectChain: [],
-        });
+        };
+        const at = manifest.entries.findIndex((e) => e.inventoryId === assetId);
+        if (at >= 0) manifest.entries[at] = record;
+        else manifest.entries.push(record);
       }
       appliedAssets.push({ assetId, file, localPath });
       log(`[release] asset ${assetId} → ${localPath} (${entry.sourceUrl ?? "no source url"})`);
@@ -149,13 +161,33 @@ export async function applyAssetResolutions(
   // ---- manifest counts + files --------------------------------------------
   manifest.runId = runId;
   manifest.createdAt = new Date().toISOString();
-  const uniqueLocalFiles = new Set<string>([
-    ...rewriteMap.entries.map((entry) => entry.localPath),
-    ...appliedAssets.map((entry) => entry.localPath),
-    ...recordedFiles.map((entry) => entry.localPath),
-  ]);
-  manifest.counts.uniqueFiles = uniqueLocalFiles.size;
+  // Counts describe THIS run's artifact, re-derived exactly the way
+  // createAssetMaterializationRun derives them (Task 28 Phase 1C defect 2).
+  // Copying the base counts forward was wrong in a way that shipped: the
+  // derived run stored one more media file than the base and still reported
+  // the base's `totalBytes`, and an asset moved out of `skipped-…` into
+  // `operator-provided` while `skippedByClassification` kept counting it.
+  // `uniqueFiles` / `totalBytes` are MEASURED from the media directory that
+  // this run actually ships, not inferred from the rewrite map.
+  const mediaFiles = await readdir(mediaDir);
+  let mediaBytes = 0;
+  for (const name of mediaFiles) mediaBytes += (await stat(path.join(mediaDir, name))).size;
+  manifest.counts.uniqueFiles = mediaFiles.length;
+  manifest.counts.totalBytes = mediaBytes;
   manifest.counts.rewriteEntries = rewriteMap.entries.length;
+  manifest.counts.fetched = manifest.entries.filter((e) => e.status === "fetched").length;
+  manifest.counts.skippedByClassification = manifest.entries.filter(
+    (e) => e.status.startsWith("skipped-") && e.status !== "skipped-truncated",
+  ).length;
+  manifest.counts.skippedTruncated = manifest.entries.filter(
+    (e) => e.status === "skipped-truncated",
+  ).length;
+  // `operator-provided` is neither a fetch nor a skip nor a failure — the base
+  // rule (anything not fetched and not skipped) would have counted it as one.
+  manifest.counts.failed = manifest.entries.filter(
+    (e) => e.status !== "fetched" && e.status !== "operator-provided" && !e.status.startsWith("skipped-"),
+  ).length;
+  // `candidates` is inherited unchanged: a derived run selects no candidates.
 
   const writeJson = (name: string, value: unknown): Promise<void> =>
     writeFile(path.join(runDir, name), JSON.stringify(value, null, 2) + "\n", "utf8");
@@ -180,6 +212,8 @@ export async function applyAssetResolutions(
     appliedAssets,
     recordedFiles,
     fontDecisionFamilies: Object.keys(options.fontDecisions),
-    unknownAssetIds: [],
+    // Always empty here — an unknown id throws above. Return the variable
+    // rather than a literal so the field cannot drift away from the check.
+    unknownAssetIds,
   };
 }

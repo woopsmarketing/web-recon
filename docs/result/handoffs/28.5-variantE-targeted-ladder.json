@@ -1,0 +1,3209 @@
+{
+ "schema": "task28.5-variantE-targeted-ladder-v1",
+ "producedAt": "2026-08-29",
+ "agent": "Agent D experimenter - Variant E (targeted fix ladder)",
+ "built": true,
+ "method": "Runtime Playwright injection over the ALREADY-BUILT accepted reconstruction (data/linear.app/reconstructions/2026-08-25T20-30-33-313Z/app served with `next start`). NO pipeline code was changed; nothing under src/, scripts/ or data/ was written.",
+ "simulationCaveat": "Every rung is a SIMULATION and therefore an UPPER BOUND. F2, F3 and F6 read the correct answer from a live CURRENT_SOURCE probe of linear.app taken 2026-08-29; a real pipeline fix must derive the same facts from the OBSERVATION, which is strictly harder and can only be worse.",
+ "reference": {
+  "kind": "ACCEPTED_OBSERVATION",
+  "files": "docs/result/28.5-visual-fidelity-evidence/<routeId>/<viewport>/source.ACCEPTED.png",
+  "note": "Wave-1 baseline reproduced EXACTLY on all four pairs (0.3831/0.3292/0.0460/0.0676 changedRatio, identical meanDelta), which validates the harness."
+ },
+ "currentSourceUse": "probe/ holds CURRENT_SOURCE captures used only to READ the source's true pseudo opacity, custom-property values, SVG shape paint and text-wrap. metrics/responsive*.json is scored against a CURRENT_SOURCE live capture and is labelled as such. Neither is presented as historical truth.",
+ "comparisonRules": "src/reconstruction-qa/screenshot-diff.ts policy, verbatim via tmp/wr-visual-fidelity-investigation/lib.mjs: never resize, composite over white, a pixel differs when any R/G/B channel differs by >= 1.",
+ "rungs": [
+  {
+   "id": "F1",
+   "name": "FONTS",
+   "pipelineChangeSite": [
+    "src/observer/collect-dom.ts:741-750 (the same-origin-only @font-face harvest; `catch { continue; }` drops all 132 cross-origin linear.app sheets, so fontUrls is empty)",
+    "src/observer/types.ts asset kinds (no 'font' kind)",
+    "src/reconstruction/style-generator.ts:176 (no at-rule emit channel)"
+   ],
+   "cheaperGenericPath": "The Observer's own network log already sees every font response (the substrate harvested all four woff2 files with source 'network-response'); descriptors can come from document.fonts, which is readable cross-origin."
+  },
+  {
+   "id": "F2",
+   "name": "PSEUDO SUPPRESSION",
+   "pipelineChangeSite": [
+    "src/observer/types.ts:484-519 PSEUDO_STYLE_WHITELIST (18 properties) - add opacity and visibility; the comment at :515-516 states 'opacity and visibility would change how such a box LOOKS and no measurement has asked for them yet'. This is that measurement.",
+    "consumed verbatim at src/reconstruction/pseudo-generator.ts:84"
+   ]
+  },
+  {
+   "id": "F3",
+   "name": "SVG PAINT",
+   "pipelineChangeSite": [
+    "custom properties: src/observer/collect-dom.ts:394-403 (closed allowlist iteration) and src/observer/types.ts ATTR_WHITELIST (no `style`), then src/sitespec/safe-attributes.ts:131-137",
+    "SVG interior paint: src/observer/collect-dom.ts:665-671 (the walk RETURNS at <svg>) and src/reconstruction/asset-resolver.ts:240-249 (strips the SVG root's class/style/id)"
+   ]
+  },
+  {
+   "id": "F4",
+   "name": "SVG ID SCOPING",
+   "pipelineChangeSite": [
+    "src/reconstruction/asset-resolver.ts:224-254 annotateSvgRoot, with both viewport trees mounted by src/runtime/PageRenderer.tsx"
+   ]
+  },
+  {
+   "id": "F5",
+   "name": "LAYOUT-RECOVERY OVERRIDE",
+   "pipelineChangeSite": [
+    "src/reconstruction/layout-inference.ts:38 TRUTH_WIDTH=1440, :163-187 + :430-453 responsive-hidden, and generateLayoutCss's (0,3,0) selector `[data-wr-page][data-wr-viewport=desktop] [data-wr-node]` which outranks the exact observed .wr-stXXXXXX class (0,1,0)"
+   ],
+   "simulation": "the emitted block is identified by its own marker comment at byte 11036488 of public/wr/generated-styles.css and the trailing 230,625 bytes are served stripped"
+  },
+  {
+   "id": "F6",
+   "name": "TEXT-WRAP (extra rung, added after the briefed five, because the C5 residual was traced to greedy vs balanced line breaking)",
+   "pipelineChangeSite": [
+    "src/observer/types.ts:260-388 STYLE_WHITELIST - `white-space` is present at :335, `text-wrap-mode` / `text-wrap-style` are not"
+   ]
+  }
+ ],
+ "results": [
+  {
+   "variant": "baseline",
+   "fixes": [],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 6348,
+   "cloneWidth": 1440,
+   "cloneHeight": 6348,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 9141120,
+   "changedPixels": 3501532,
+   "changedRatio": 0.3831,
+   "commonAreaRatio": 1,
+   "meanDelta": 6.7632,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 6348,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {},
+   "elapsedMs": 5027,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/baseline/r000007/desktop/variant.png",
+   "baselineChangedRatio": 0.3831,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "baseline",
+   "fixes": [],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 23136,
+   "cloneWidth": 1170,
+   "cloneHeight": 23136,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 27069120,
+   "changedPixels": 8910789,
+   "changedRatio": 0.3292,
+   "commonAreaRatio": 1,
+   "meanDelta": 7.6563,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 7712,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {},
+   "elapsedMs": 7080,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/baseline/r000007/mobile/variant.png",
+   "baselineChangedRatio": 0.3292,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "baseline",
+   "fixes": [],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 3231,
+   "cloneWidth": 1440,
+   "cloneHeight": 3231,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 4652640,
+   "changedPixels": 214116,
+   "changedRatio": 0.046,
+   "commonAreaRatio": 1,
+   "meanDelta": 3.9086,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 3231,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {},
+   "elapsedMs": 3586,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/baseline/r000008/desktop/variant.png",
+   "baselineChangedRatio": 0.046,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "baseline",
+   "fixes": [],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 14349,
+   "cloneWidth": 1170,
+   "cloneHeight": 14349,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 16788330,
+   "changedPixels": 1135232,
+   "changedRatio": 0.0676,
+   "commonAreaRatio": 1,
+   "meanDelta": 7.6026,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 4783,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {},
+   "elapsedMs": 5127,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/baseline/r000008/mobile/variant.png",
+   "baselineChangedRatio": 0.0676,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "F1",
+   "fixes": [
+    "F1"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 6348,
+   "cloneWidth": 1440,
+   "cloneHeight": 6348,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 9141120,
+   "changedPixels": 3392166,
+   "changedRatio": 0.3711,
+   "commonAreaRatio": 1,
+   "meanDelta": 5.1008,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 6348,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    }
+   },
+   "elapsedMs": 4715,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F1/r000007/desktop/variant.png",
+   "baselineChangedRatio": 0.3831,
+   "gapClosedPctOfChangedRatio": 3.13,
+   "gapClosedPctOfMeanDelta": 24.58
+  },
+  {
+   "variant": "F1",
+   "fixes": [
+    "F1"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 23136,
+   "cloneWidth": 1170,
+   "cloneHeight": 23136,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 27069120,
+   "changedPixels": 8380870,
+   "changedRatio": 0.3096,
+   "commonAreaRatio": 1,
+   "meanDelta": 4.4587,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 7712,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    }
+   },
+   "elapsedMs": 5775,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F1/r000007/mobile/variant.png",
+   "baselineChangedRatio": 0.3292,
+   "gapClosedPctOfChangedRatio": 5.95,
+   "gapClosedPctOfMeanDelta": 41.76
+  },
+  {
+   "variant": "F1",
+   "fixes": [
+    "F1"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 3231,
+   "cloneWidth": 1440,
+   "cloneHeight": 3231,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 4652640,
+   "changedPixels": 36633,
+   "changedRatio": 0.0079,
+   "commonAreaRatio": 1,
+   "meanDelta": 1.2547,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 3231,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    }
+   },
+   "elapsedMs": 3391,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F1/r000008/desktop/variant.png",
+   "baselineChangedRatio": 0.046,
+   "gapClosedPctOfChangedRatio": 82.83,
+   "gapClosedPctOfMeanDelta": 67.9
+  },
+  {
+   "variant": "F1",
+   "fixes": [
+    "F1"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 14349,
+   "cloneWidth": 1170,
+   "cloneHeight": 14349,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 16788330,
+   "changedPixels": 141524,
+   "changedRatio": 0.0084,
+   "commonAreaRatio": 1,
+   "meanDelta": 1.4699,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 4783,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    }
+   },
+   "elapsedMs": 4357,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F1/r000008/mobile/variant.png",
+   "baselineChangedRatio": 0.0676,
+   "gapClosedPctOfChangedRatio": 87.57,
+   "gapClosedPctOfMeanDelta": 80.67
+  },
+  {
+   "variant": "F2",
+   "fixes": [
+    "F2"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 6348,
+   "cloneWidth": 1440,
+   "cloneHeight": 6348,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 9141120,
+   "changedPixels": 293885,
+   "changedRatio": 0.0321,
+   "commonAreaRatio": 1,
+   "meanDelta": 2.5787,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 6348,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F2": {
+     "cloneChips": 60,
+     "matchedExact": 60,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 56
+    }
+   },
+   "elapsedMs": 4555,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F2/r000007/desktop/variant.png",
+   "baselineChangedRatio": 0.3831,
+   "gapClosedPctOfChangedRatio": 91.62,
+   "gapClosedPctOfMeanDelta": 61.87
+  },
+  {
+   "variant": "F2",
+   "fixes": [
+    "F2"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 23136,
+   "cloneWidth": 1170,
+   "cloneHeight": 23136,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 27069120,
+   "changedPixels": 1068042,
+   "changedRatio": 0.0395,
+   "commonAreaRatio": 1,
+   "meanDelta": 4.185,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 7712,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F2": {
+     "cloneChips": 59,
+     "matchedExact": 59,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 57
+    }
+   },
+   "elapsedMs": 5599,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F2/r000007/mobile/variant.png",
+   "baselineChangedRatio": 0.3292,
+   "gapClosedPctOfChangedRatio": 88.0,
+   "gapClosedPctOfMeanDelta": 45.34
+  },
+  {
+   "variant": "F2",
+   "fixes": [
+    "F2"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 3231,
+   "cloneWidth": 1440,
+   "cloneHeight": 3231,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 4652640,
+   "changedPixels": 214116,
+   "changedRatio": 0.046,
+   "commonAreaRatio": 1,
+   "meanDelta": 3.9086,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 3231,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F2": {
+     "cloneChips": 3,
+     "matchedExact": 3,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 0
+    }
+   },
+   "elapsedMs": 3329,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F2/r000008/desktop/variant.png",
+   "baselineChangedRatio": 0.046,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "F2",
+   "fixes": [
+    "F2"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 14349,
+   "cloneWidth": 1170,
+   "cloneHeight": 14349,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 16788330,
+   "changedPixels": 1135232,
+   "changedRatio": 0.0676,
+   "commonAreaRatio": 1,
+   "meanDelta": 7.6026,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 4783,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F2": {
+     "cloneChips": 1,
+     "matchedExact": 1,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 0
+    }
+   },
+   "elapsedMs": 4275,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F2/r000008/mobile/variant.png",
+   "baselineChangedRatio": 0.0676,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "F3",
+   "fixes": [
+    "F3"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 6348,
+   "cloneWidth": 1440,
+   "cloneHeight": 6348,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 9141120,
+   "changedPixels": 3487176,
+   "changedRatio": 0.3815,
+   "commonAreaRatio": 1,
+   "meanDelta": 6.309,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 6348,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F3": {
+     "rootVarsInjected": 410,
+     "varRefs": 504,
+     "varResolved": 504,
+     "cloneSvgs": 319,
+     "svgMatched": 316,
+     "svgUnmatched": 3,
+     "shapesTouched": 58,
+     "propsCopied": 116
+    }
+   },
+   "elapsedMs": 4572,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F3/r000007/desktop/variant.png",
+   "baselineChangedRatio": 0.3831,
+   "gapClosedPctOfChangedRatio": 0.42,
+   "gapClosedPctOfMeanDelta": 6.72
+  },
+  {
+   "variant": "F3",
+   "fixes": [
+    "F3"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 23136,
+   "cloneWidth": 1170,
+   "cloneHeight": 23136,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 27069120,
+   "changedPixels": 8841485,
+   "changedRatio": 0.3266,
+   "commonAreaRatio": 1,
+   "meanDelta": 7.1475,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 7712,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F3": {
+     "rootVarsInjected": 411,
+     "varRefs": 504,
+     "varResolved": 504,
+     "cloneSvgs": 160,
+     "svgMatched": 154,
+     "svgUnmatched": 6,
+     "shapesTouched": 0,
+     "propsCopied": 0
+    }
+   },
+   "elapsedMs": 5630,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F3/r000007/mobile/variant.png",
+   "baselineChangedRatio": 0.3292,
+   "gapClosedPctOfChangedRatio": 0.79,
+   "gapClosedPctOfMeanDelta": 6.65
+  },
+  {
+   "variant": "F3",
+   "fixes": [
+    "F3"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 3231,
+   "cloneWidth": 1440,
+   "cloneHeight": 3231,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 4652640,
+   "changedPixels": 211782,
+   "changedRatio": 0.0455,
+   "commonAreaRatio": 1,
+   "meanDelta": 3.8329,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 3231,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F3": {
+     "rootVarsInjected": 410,
+     "varRefs": 42,
+     "varResolved": 42,
+     "cloneSvgs": 40,
+     "svgMatched": 40,
+     "svgUnmatched": 0,
+     "shapesTouched": 12,
+     "propsCopied": 12
+    }
+   },
+   "elapsedMs": 3300,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F3/r000008/desktop/variant.png",
+   "baselineChangedRatio": 0.046,
+   "gapClosedPctOfChangedRatio": 1.09,
+   "gapClosedPctOfMeanDelta": 1.94
+  },
+  {
+   "variant": "F3",
+   "fixes": [
+    "F3"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 14349,
+   "cloneWidth": 1170,
+   "cloneHeight": 14349,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 16788330,
+   "changedPixels": 1118073,
+   "changedRatio": 0.0666,
+   "commonAreaRatio": 1,
+   "meanDelta": 7.4186,
+   "maxChannelDelta": 239,
+   "variantScrollHeightCss": 4783,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F3": {
+     "rootVarsInjected": 411,
+     "varRefs": 42,
+     "varResolved": 42,
+     "cloneSvgs": 40,
+     "svgMatched": 40,
+     "svgUnmatched": 0,
+     "shapesTouched": 12,
+     "propsCopied": 12
+    }
+   },
+   "elapsedMs": 4281,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F3/r000008/mobile/variant.png",
+   "baselineChangedRatio": 0.0676,
+   "gapClosedPctOfChangedRatio": 1.48,
+   "gapClosedPctOfMeanDelta": 2.42
+  },
+  {
+   "variant": "F4",
+   "fixes": [
+    "F4"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 6348,
+   "cloneWidth": 1440,
+   "cloneHeight": 6348,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 9141120,
+   "changedPixels": 3501532,
+   "changedRatio": 0.3831,
+   "commonAreaRatio": 1,
+   "meanDelta": 6.7632,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 6348,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 642,
+     "refsRewritten": 32,
+     "refs": 34,
+     "refsAmbiguousBefore": 32,
+     "refsAfter": 34,
+     "refsAmbiguousAfter": 12
+    }
+   },
+   "elapsedMs": 4555,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F4/r000007/desktop/variant.png",
+   "baselineChangedRatio": 0.3831,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "F4",
+   "fixes": [
+    "F4"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 23136,
+   "cloneWidth": 1170,
+   "cloneHeight": 23136,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 27069120,
+   "changedPixels": 8910789,
+   "changedRatio": 0.3292,
+   "commonAreaRatio": 1,
+   "meanDelta": 7.6563,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 7712,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 642,
+     "refsRewritten": 32,
+     "refs": 34,
+     "refsAmbiguousBefore": 32,
+     "refsAfter": 34,
+     "refsAmbiguousAfter": 12
+    }
+   },
+   "elapsedMs": 5781,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F4/r000007/mobile/variant.png",
+   "baselineChangedRatio": 0.3292,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "F4",
+   "fixes": [
+    "F4"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 3231,
+   "cloneWidth": 1440,
+   "cloneHeight": 3231,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 4652640,
+   "changedPixels": 214116,
+   "changedRatio": 0.046,
+   "commonAreaRatio": 1,
+   "meanDelta": 3.9086,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 3231,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 638,
+     "refsRewritten": 46,
+     "refs": 48,
+     "refsAmbiguousBefore": 46,
+     "refsAfter": 48,
+     "refsAmbiguousAfter": 8
+    }
+   },
+   "elapsedMs": 3361,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F4/r000008/desktop/variant.png",
+   "baselineChangedRatio": 0.046,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "F4",
+   "fixes": [
+    "F4"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 14349,
+   "cloneWidth": 1170,
+   "cloneHeight": 14349,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 16788330,
+   "changedPixels": 1135232,
+   "changedRatio": 0.0676,
+   "commonAreaRatio": 1,
+   "meanDelta": 7.6026,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 4783,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 638,
+     "refsRewritten": 46,
+     "refs": 48,
+     "refsAmbiguousBefore": 46,
+     "refsAfter": 48,
+     "refsAmbiguousAfter": 8
+    }
+   },
+   "elapsedMs": 4320,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F4/r000008/mobile/variant.png",
+   "baselineChangedRatio": 0.0676,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "F5",
+   "fixes": [
+    "F5"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 6348,
+   "cloneWidth": 1440,
+   "cloneHeight": 6348,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 9141120,
+   "changedPixels": 3490348,
+   "changedRatio": 0.3818,
+   "commonAreaRatio": 1,
+   "meanDelta": 6.5506,
+   "maxChannelDelta": 239,
+   "variantScrollHeightCss": 6348,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F5": {
+     "strippedBytes": 230625
+    }
+   },
+   "elapsedMs": 4650,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F5/r000007/desktop/variant.png",
+   "baselineChangedRatio": 0.3831,
+   "gapClosedPctOfChangedRatio": 0.34,
+   "gapClosedPctOfMeanDelta": 3.14
+  },
+  {
+   "variant": "F5",
+   "fixes": [
+    "F5"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 23136,
+   "cloneWidth": 1170,
+   "cloneHeight": 23136,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 27069120,
+   "changedPixels": 8910789,
+   "changedRatio": 0.3292,
+   "commonAreaRatio": 1,
+   "meanDelta": 7.6563,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 7712,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F5": {
+     "strippedBytes": 230625
+    }
+   },
+   "elapsedMs": 5793,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F5/r000007/mobile/variant.png",
+   "baselineChangedRatio": 0.3292,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "F5",
+   "fixes": [
+    "F5"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 3231,
+   "cloneWidth": 1440,
+   "cloneHeight": 3231,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 4652640,
+   "changedPixels": 214116,
+   "changedRatio": 0.046,
+   "commonAreaRatio": 1,
+   "meanDelta": 3.9086,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 3231,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F5": {
+     "strippedBytes": 230625
+    }
+   },
+   "elapsedMs": 3391,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F5/r000008/desktop/variant.png",
+   "baselineChangedRatio": 0.046,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "F5",
+   "fixes": [
+    "F5"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 14349,
+   "cloneWidth": 1170,
+   "cloneHeight": 14349,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 16788330,
+   "changedPixels": 1135232,
+   "changedRatio": 0.0676,
+   "commonAreaRatio": 1,
+   "meanDelta": 7.6026,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 4783,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F5": {
+     "strippedBytes": 230625
+    }
+   },
+   "elapsedMs": 4351,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F5/r000008/mobile/variant.png",
+   "baselineChangedRatio": 0.0676,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "C2",
+   "fixes": [
+    "F1",
+    "F2"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 6348,
+   "cloneWidth": 1440,
+   "cloneHeight": 6348,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 9141120,
+   "changedPixels": 128880,
+   "changedRatio": 0.0141,
+   "commonAreaRatio": 1,
+   "meanDelta": 0.8494,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 6348,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 60,
+     "matchedExact": 60,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 56
+    }
+   },
+   "elapsedMs": 4745,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C2/r000007/desktop/variant.png",
+   "baselineChangedRatio": 0.3831,
+   "gapClosedPctOfChangedRatio": 96.32,
+   "gapClosedPctOfMeanDelta": 87.44
+  },
+  {
+   "variant": "C2",
+   "fixes": [
+    "F1",
+    "F2"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 23136,
+   "cloneWidth": 1170,
+   "cloneHeight": 23136,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 27069120,
+   "changedPixels": 297833,
+   "changedRatio": 0.011,
+   "commonAreaRatio": 1,
+   "meanDelta": 0.8535,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 7712,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 59,
+     "matchedExact": 59,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 57
+    }
+   },
+   "elapsedMs": 5794,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C2/r000007/mobile/variant.png",
+   "baselineChangedRatio": 0.3292,
+   "gapClosedPctOfChangedRatio": 96.66,
+   "gapClosedPctOfMeanDelta": 88.85
+  },
+  {
+   "variant": "C2",
+   "fixes": [
+    "F1",
+    "F2"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 3231,
+   "cloneWidth": 1440,
+   "cloneHeight": 3231,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 4652640,
+   "changedPixels": 36633,
+   "changedRatio": 0.0079,
+   "commonAreaRatio": 1,
+   "meanDelta": 1.2547,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 3231,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 3,
+     "matchedExact": 3,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 0
+    }
+   },
+   "elapsedMs": 3417,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C2/r000008/desktop/variant.png",
+   "baselineChangedRatio": 0.046,
+   "gapClosedPctOfChangedRatio": 82.83,
+   "gapClosedPctOfMeanDelta": 67.9
+  },
+  {
+   "variant": "C2",
+   "fixes": [
+    "F1",
+    "F2"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 14349,
+   "cloneWidth": 1170,
+   "cloneHeight": 14349,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 16788330,
+   "changedPixels": 141524,
+   "changedRatio": 0.0084,
+   "commonAreaRatio": 1,
+   "meanDelta": 1.4699,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 4783,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 1,
+     "matchedExact": 1,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 0
+    }
+   },
+   "elapsedMs": 4357,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C2/r000008/mobile/variant.png",
+   "baselineChangedRatio": 0.0676,
+   "gapClosedPctOfChangedRatio": 87.57,
+   "gapClosedPctOfMeanDelta": 80.67
+  },
+  {
+   "variant": "C3",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 6348,
+   "cloneWidth": 1440,
+   "cloneHeight": 6348,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 9141120,
+   "changedPixels": 106684,
+   "changedRatio": 0.0117,
+   "commonAreaRatio": 1,
+   "meanDelta": 0.3846,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 6348,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 60,
+     "matchedExact": 60,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 56
+    },
+    "F3": {
+     "rootVarsInjected": 410,
+     "varRefs": 504,
+     "varResolved": 504,
+     "cloneSvgs": 319,
+     "svgMatched": 316,
+     "svgUnmatched": 3,
+     "shapesTouched": 58,
+     "propsCopied": 116
+    }
+   },
+   "elapsedMs": 4770,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C3/r000007/desktop/variant.png",
+   "baselineChangedRatio": 0.3831,
+   "gapClosedPctOfChangedRatio": 96.95,
+   "gapClosedPctOfMeanDelta": 94.31
+  },
+  {
+   "variant": "C3",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 23136,
+   "cloneWidth": 1170,
+   "cloneHeight": 23136,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 27069120,
+   "changedPixels": 217787,
+   "changedRatio": 0.008,
+   "commonAreaRatio": 1,
+   "meanDelta": 0.3412,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 7712,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 59,
+     "matchedExact": 59,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 57
+    },
+    "F3": {
+     "rootVarsInjected": 411,
+     "varRefs": 504,
+     "varResolved": 504,
+     "cloneSvgs": 160,
+     "svgMatched": 154,
+     "svgUnmatched": 6,
+     "shapesTouched": 0,
+     "propsCopied": 0
+    }
+   },
+   "elapsedMs": 5880,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C3/r000007/mobile/variant.png",
+   "baselineChangedRatio": 0.3292,
+   "gapClosedPctOfChangedRatio": 97.57,
+   "gapClosedPctOfMeanDelta": 95.54
+  },
+  {
+   "variant": "C3",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 3231,
+   "cloneWidth": 1440,
+   "cloneHeight": 3231,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 4652640,
+   "changedPixels": 34299,
+   "changedRatio": 0.0074,
+   "commonAreaRatio": 1,
+   "meanDelta": 1.1789,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 3231,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 3,
+     "matchedExact": 3,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 0
+    },
+    "F3": {
+     "rootVarsInjected": 410,
+     "varRefs": 42,
+     "varResolved": 42,
+     "cloneSvgs": 40,
+     "svgMatched": 40,
+     "svgUnmatched": 0,
+     "shapesTouched": 12,
+     "propsCopied": 12
+    }
+   },
+   "elapsedMs": 3418,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C3/r000008/desktop/variant.png",
+   "baselineChangedRatio": 0.046,
+   "gapClosedPctOfChangedRatio": 83.91,
+   "gapClosedPctOfMeanDelta": 69.84
+  },
+  {
+   "variant": "C3",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 14349,
+   "cloneWidth": 1170,
+   "cloneHeight": 14349,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 16788330,
+   "changedPixels": 124365,
+   "changedRatio": 0.0074,
+   "commonAreaRatio": 1,
+   "meanDelta": 1.2859,
+   "maxChannelDelta": 239,
+   "variantScrollHeightCss": 4783,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 1,
+     "matchedExact": 1,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 0
+    },
+    "F3": {
+     "rootVarsInjected": 411,
+     "varRefs": 42,
+     "varResolved": 42,
+     "cloneSvgs": 40,
+     "svgMatched": 40,
+     "svgUnmatched": 0,
+     "shapesTouched": 12,
+     "propsCopied": 12
+    }
+   },
+   "elapsedMs": 4399,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C3/r000008/mobile/variant.png",
+   "baselineChangedRatio": 0.0676,
+   "gapClosedPctOfChangedRatio": 89.05,
+   "gapClosedPctOfMeanDelta": 83.09
+  },
+  {
+   "variant": "C4",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3",
+    "F4"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 6348,
+   "cloneWidth": 1440,
+   "cloneHeight": 6348,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 9141120,
+   "changedPixels": 106684,
+   "changedRatio": 0.0117,
+   "commonAreaRatio": 1,
+   "meanDelta": 0.3846,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 6348,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 60,
+     "matchedExact": 60,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 56
+    },
+    "F3": {
+     "rootVarsInjected": 410,
+     "varRefs": 504,
+     "varResolved": 504,
+     "cloneSvgs": 319,
+     "svgMatched": 316,
+     "svgUnmatched": 3,
+     "shapesTouched": 58,
+     "propsCopied": 116
+    },
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 642,
+     "refsRewritten": 32,
+     "refs": 34,
+     "refsAmbiguousBefore": 32,
+     "refsAfter": 34,
+     "refsAmbiguousAfter": 12
+    }
+   },
+   "elapsedMs": 4788,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C4/r000007/desktop/variant.png",
+   "baselineChangedRatio": 0.3831,
+   "gapClosedPctOfChangedRatio": 96.95,
+   "gapClosedPctOfMeanDelta": 94.31
+  },
+  {
+   "variant": "C4",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3",
+    "F4"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 23136,
+   "cloneWidth": 1170,
+   "cloneHeight": 23136,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 27069120,
+   "changedPixels": 217787,
+   "changedRatio": 0.008,
+   "commonAreaRatio": 1,
+   "meanDelta": 0.3412,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 7712,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 59,
+     "matchedExact": 59,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 57
+    },
+    "F3": {
+     "rootVarsInjected": 411,
+     "varRefs": 504,
+     "varResolved": 504,
+     "cloneSvgs": 160,
+     "svgMatched": 154,
+     "svgUnmatched": 6,
+     "shapesTouched": 0,
+     "propsCopied": 0
+    },
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 642,
+     "refsRewritten": 32,
+     "refs": 34,
+     "refsAmbiguousBefore": 32,
+     "refsAfter": 34,
+     "refsAmbiguousAfter": 12
+    }
+   },
+   "elapsedMs": 5863,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C4/r000007/mobile/variant.png",
+   "baselineChangedRatio": 0.3292,
+   "gapClosedPctOfChangedRatio": 97.57,
+   "gapClosedPctOfMeanDelta": 95.54
+  },
+  {
+   "variant": "C4",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3",
+    "F4"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 3231,
+   "cloneWidth": 1440,
+   "cloneHeight": 3231,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 4652640,
+   "changedPixels": 34299,
+   "changedRatio": 0.0074,
+   "commonAreaRatio": 1,
+   "meanDelta": 1.1789,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 3231,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 3,
+     "matchedExact": 3,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 0
+    },
+    "F3": {
+     "rootVarsInjected": 410,
+     "varRefs": 42,
+     "varResolved": 42,
+     "cloneSvgs": 40,
+     "svgMatched": 40,
+     "svgUnmatched": 0,
+     "shapesTouched": 12,
+     "propsCopied": 12
+    },
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 638,
+     "refsRewritten": 46,
+     "refs": 48,
+     "refsAmbiguousBefore": 46,
+     "refsAfter": 48,
+     "refsAmbiguousAfter": 8
+    }
+   },
+   "elapsedMs": 3422,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C4/r000008/desktop/variant.png",
+   "baselineChangedRatio": 0.046,
+   "gapClosedPctOfChangedRatio": 83.91,
+   "gapClosedPctOfMeanDelta": 69.84
+  },
+  {
+   "variant": "C4",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3",
+    "F4"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 14349,
+   "cloneWidth": 1170,
+   "cloneHeight": 14349,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 16788330,
+   "changedPixels": 124365,
+   "changedRatio": 0.0074,
+   "commonAreaRatio": 1,
+   "meanDelta": 1.2859,
+   "maxChannelDelta": 239,
+   "variantScrollHeightCss": 4783,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 1,
+     "matchedExact": 1,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 0
+    },
+    "F3": {
+     "rootVarsInjected": 411,
+     "varRefs": 42,
+     "varResolved": 42,
+     "cloneSvgs": 40,
+     "svgMatched": 40,
+     "svgUnmatched": 0,
+     "shapesTouched": 12,
+     "propsCopied": 12
+    },
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 638,
+     "refsRewritten": 46,
+     "refs": 48,
+     "refsAmbiguousBefore": 46,
+     "refsAfter": 48,
+     "refsAmbiguousAfter": 8
+    }
+   },
+   "elapsedMs": 4443,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C4/r000008/mobile/variant.png",
+   "baselineChangedRatio": 0.0676,
+   "gapClosedPctOfChangedRatio": 89.05,
+   "gapClosedPctOfMeanDelta": 83.09
+  },
+  {
+   "variant": "C5",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 6348,
+   "cloneWidth": 1440,
+   "cloneHeight": 6348,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 9141120,
+   "changedPixels": 95500,
+   "changedRatio": 0.0104,
+   "commonAreaRatio": 1,
+   "meanDelta": 0.172,
+   "maxChannelDelta": 239,
+   "variantScrollHeightCss": 6348,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 60,
+     "matchedExact": 60,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 56
+    },
+    "F3": {
+     "rootVarsInjected": 410,
+     "varRefs": 504,
+     "varResolved": 504,
+     "cloneSvgs": 319,
+     "svgMatched": 316,
+     "svgUnmatched": 3,
+     "shapesTouched": 58,
+     "propsCopied": 116
+    },
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 642,
+     "refsRewritten": 32,
+     "refs": 34,
+     "refsAmbiguousBefore": 32,
+     "refsAfter": 34,
+     "refsAmbiguousAfter": 12
+    },
+    "F5": {
+     "strippedBytes": 230625
+    }
+   },
+   "elapsedMs": 5196,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C5/r000007/desktop/variant.png",
+   "baselineChangedRatio": 0.3831,
+   "gapClosedPctOfChangedRatio": 97.29,
+   "gapClosedPctOfMeanDelta": 97.46
+  },
+  {
+   "variant": "C5",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 23136,
+   "cloneWidth": 1170,
+   "cloneHeight": 23136,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 27069120,
+   "changedPixels": 217787,
+   "changedRatio": 0.008,
+   "commonAreaRatio": 1,
+   "meanDelta": 0.3412,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 7712,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 59,
+     "matchedExact": 59,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 57
+    },
+    "F3": {
+     "rootVarsInjected": 411,
+     "varRefs": 504,
+     "varResolved": 504,
+     "cloneSvgs": 160,
+     "svgMatched": 154,
+     "svgUnmatched": 6,
+     "shapesTouched": 0,
+     "propsCopied": 0
+    },
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 642,
+     "refsRewritten": 32,
+     "refs": 34,
+     "refsAmbiguousBefore": 32,
+     "refsAfter": 34,
+     "refsAmbiguousAfter": 12
+    },
+    "F5": {
+     "strippedBytes": 230625
+    }
+   },
+   "elapsedMs": 7399,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C5/r000007/mobile/variant.png",
+   "baselineChangedRatio": 0.3292,
+   "gapClosedPctOfChangedRatio": 97.57,
+   "gapClosedPctOfMeanDelta": 95.54
+  },
+  {
+   "variant": "C5",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 3231,
+   "cloneWidth": 1440,
+   "cloneHeight": 3231,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 4652640,
+   "changedPixels": 34299,
+   "changedRatio": 0.0074,
+   "commonAreaRatio": 1,
+   "meanDelta": 1.1789,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 3231,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 3,
+     "matchedExact": 3,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 0
+    },
+    "F3": {
+     "rootVarsInjected": 410,
+     "varRefs": 42,
+     "varResolved": 42,
+     "cloneSvgs": 40,
+     "svgMatched": 40,
+     "svgUnmatched": 0,
+     "shapesTouched": 12,
+     "propsCopied": 12
+    },
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 638,
+     "refsRewritten": 46,
+     "refs": 48,
+     "refsAmbiguousBefore": 46,
+     "refsAfter": 48,
+     "refsAmbiguousAfter": 8
+    },
+    "F5": {
+     "strippedBytes": 230625
+    }
+   },
+   "elapsedMs": 3707,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C5/r000008/desktop/variant.png",
+   "baselineChangedRatio": 0.046,
+   "gapClosedPctOfChangedRatio": 83.91,
+   "gapClosedPctOfMeanDelta": 69.84
+  },
+  {
+   "variant": "C5",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 14349,
+   "cloneWidth": 1170,
+   "cloneHeight": 14349,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 16788330,
+   "changedPixels": 124365,
+   "changedRatio": 0.0074,
+   "commonAreaRatio": 1,
+   "meanDelta": 1.2859,
+   "maxChannelDelta": 239,
+   "variantScrollHeightCss": 4783,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 1,
+     "matchedExact": 1,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 0
+    },
+    "F3": {
+     "rootVarsInjected": 411,
+     "varRefs": 42,
+     "varResolved": 42,
+     "cloneSvgs": 40,
+     "svgMatched": 40,
+     "svgUnmatched": 0,
+     "shapesTouched": 12,
+     "propsCopied": 12
+    },
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 638,
+     "refsRewritten": 46,
+     "refs": 48,
+     "refsAmbiguousBefore": 46,
+     "refsAfter": 48,
+     "refsAmbiguousAfter": 8
+    },
+    "F5": {
+     "strippedBytes": 230625
+    }
+   },
+   "elapsedMs": 5147,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C5/r000008/mobile/variant.png",
+   "baselineChangedRatio": 0.0676,
+   "gapClosedPctOfChangedRatio": 89.05,
+   "gapClosedPctOfMeanDelta": 83.09
+  },
+  {
+   "variant": "F6",
+   "fixes": [
+    "F6"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 6348,
+   "cloneWidth": 1440,
+   "cloneHeight": 6348,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 9141120,
+   "changedPixels": 3501532,
+   "changedRatio": 0.3831,
+   "commonAreaRatio": 1,
+   "meanDelta": 6.7632,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 6348,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F6": {
+     "candidates": 542,
+     "matched": 73,
+     "applied": 5,
+     "sourceRecords": 76
+    }
+   },
+   "elapsedMs": 4590,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F6/r000007/desktop/variant.png",
+   "baselineChangedRatio": 0.3831,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "F6",
+   "fixes": [
+    "F6"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 23136,
+   "cloneWidth": 1170,
+   "cloneHeight": 23136,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 27069120,
+   "changedPixels": 8910789,
+   "changedRatio": 0.3292,
+   "commonAreaRatio": 1,
+   "meanDelta": 7.6563,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 7712,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F6": {
+     "candidates": 459,
+     "matched": 23,
+     "applied": 3,
+     "sourceRecords": 31
+    }
+   },
+   "elapsedMs": 5734,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F6/r000007/mobile/variant.png",
+   "baselineChangedRatio": 0.3292,
+   "gapClosedPctOfChangedRatio": 0.0,
+   "gapClosedPctOfMeanDelta": 0.0
+  },
+  {
+   "variant": "F6",
+   "fixes": [
+    "F6"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 3231,
+   "cloneWidth": 1440,
+   "cloneHeight": 3231,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 4652640,
+   "changedPixels": 207448,
+   "changedRatio": 0.0446,
+   "commonAreaRatio": 1,
+   "meanDelta": 3.5548,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 3231,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F6": {
+     "candidates": 251,
+     "matched": 57,
+     "applied": 4,
+     "sourceRecords": 62
+    }
+   },
+   "elapsedMs": 3326,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F6/r000008/desktop/variant.png",
+   "baselineChangedRatio": 0.046,
+   "gapClosedPctOfChangedRatio": 3.04,
+   "gapClosedPctOfMeanDelta": 9.05
+  },
+  {
+   "variant": "F6",
+   "fixes": [
+    "F6"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 14349,
+   "cloneWidth": 1170,
+   "cloneHeight": 14349,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 16788330,
+   "changedPixels": 1106906,
+   "changedRatio": 0.0659,
+   "commonAreaRatio": 1,
+   "meanDelta": 7.1983,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 4783,
+   "documentFontsSize": 0,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F6": {
+     "candidates": 243,
+     "matched": 11,
+     "applied": 2,
+     "sourceRecords": 21
+    }
+   },
+   "elapsedMs": 4270,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/F6/r000008/mobile/variant.png",
+   "baselineChangedRatio": 0.0676,
+   "gapClosedPctOfChangedRatio": 2.51,
+   "gapClosedPctOfMeanDelta": 5.32
+  },
+  {
+   "variant": "C6",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 6348,
+   "cloneWidth": 1440,
+   "cloneHeight": 6348,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 9141120,
+   "changedPixels": 95500,
+   "changedRatio": 0.0104,
+   "commonAreaRatio": 1,
+   "meanDelta": 0.172,
+   "maxChannelDelta": 239,
+   "variantScrollHeightCss": 6348,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 60,
+     "matchedExact": 60,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 56
+    },
+    "F3": {
+     "rootVarsInjected": 410,
+     "varRefs": 504,
+     "varResolved": 504,
+     "cloneSvgs": 319,
+     "svgMatched": 316,
+     "svgUnmatched": 3,
+     "shapesTouched": 58,
+     "propsCopied": 116
+    },
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 642,
+     "refsRewritten": 32,
+     "refs": 34,
+     "refsAmbiguousBefore": 32,
+     "refsAfter": 34,
+     "refsAmbiguousAfter": 12
+    },
+    "F5": {
+     "strippedBytes": 230625
+    },
+    "F6": {
+     "candidates": 542,
+     "matched": 73,
+     "applied": 5,
+     "sourceRecords": 76
+    }
+   },
+   "elapsedMs": 5155,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C6/r000007/desktop/variant.png",
+   "baselineChangedRatio": 0.3831,
+   "gapClosedPctOfChangedRatio": 97.29,
+   "gapClosedPctOfMeanDelta": 97.46
+  },
+  {
+   "variant": "C6",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6"
+   ],
+   "routeId": "r000007",
+   "route": "/pricing",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000007/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 23136,
+   "cloneWidth": 1170,
+   "cloneHeight": 23136,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 27069120,
+   "changedPixels": 217787,
+   "changedRatio": 0.008,
+   "commonAreaRatio": 1,
+   "meanDelta": 0.3412,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 7712,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 59,
+     "matchedExact": 59,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 57
+    },
+    "F3": {
+     "rootVarsInjected": 411,
+     "varRefs": 504,
+     "varResolved": 504,
+     "cloneSvgs": 160,
+     "svgMatched": 154,
+     "svgUnmatched": 6,
+     "shapesTouched": 0,
+     "propsCopied": 0
+    },
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 642,
+     "refsRewritten": 32,
+     "refs": 34,
+     "refsAmbiguousBefore": 32,
+     "refsAfter": 34,
+     "refsAmbiguousAfter": 12
+    },
+    "F5": {
+     "strippedBytes": 230625
+    },
+    "F6": {
+     "candidates": 459,
+     "matched": 23,
+     "applied": 3,
+     "sourceRecords": 31
+    }
+   },
+   "elapsedMs": 6953,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C6/r000007/mobile/variant.png",
+   "baselineChangedRatio": 0.3292,
+   "gapClosedPctOfChangedRatio": 97.57,
+   "gapClosedPctOfMeanDelta": 95.54
+  },
+  {
+   "variant": "C6",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "desktop",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/desktop/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1440,
+   "sourceHeight": 3231,
+   "cloneWidth": 1440,
+   "cloneHeight": 3231,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 4652640,
+   "changedPixels": 17029,
+   "changedRatio": 0.0037,
+   "commonAreaRatio": 1,
+   "meanDelta": 0.4828,
+   "maxChannelDelta": 247,
+   "variantScrollHeightCss": 3231,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 3,
+     "matchedExact": 3,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 0
+    },
+    "F3": {
+     "rootVarsInjected": 410,
+     "varRefs": 42,
+     "varResolved": 42,
+     "cloneSvgs": 40,
+     "svgMatched": 40,
+     "svgUnmatched": 0,
+     "shapesTouched": 12,
+     "propsCopied": 12
+    },
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 638,
+     "refsRewritten": 46,
+     "refs": 48,
+     "refsAmbiguousBefore": 46,
+     "refsAfter": 48,
+     "refsAmbiguousAfter": 8
+    },
+    "F5": {
+     "strippedBytes": 230625
+    },
+    "F6": {
+     "candidates": 251,
+     "matched": 57,
+     "applied": 4,
+     "sourceRecords": 62
+    }
+   },
+   "elapsedMs": 3668,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C6/r000008/desktop/variant.png",
+   "baselineChangedRatio": 0.046,
+   "gapClosedPctOfChangedRatio": 91.96,
+   "gapClosedPctOfMeanDelta": 87.65
+  },
+  {
+   "variant": "C6",
+   "fixes": [
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6"
+   ],
+   "routeId": "r000008",
+   "route": "/security",
+   "viewport": "mobile",
+   "referenceKind": "ACCEPTED_OBSERVATION",
+   "reference": "docs/result/28.5-visual-fidelity-evidence/r000008/mobile/source.ACCEPTED.png",
+   "httpStatus": 200,
+   "sourceWidth": 1170,
+   "sourceHeight": 14349,
+   "cloneWidth": 1170,
+   "cloneHeight": 14349,
+   "widthDelta": 0,
+   "heightDelta": 0,
+   "overlapPixels": 16788330,
+   "changedPixels": 69425,
+   "changedRatio": 0.0041,
+   "commonAreaRatio": 1,
+   "meanDelta": 0.6064,
+   "maxChannelDelta": 239,
+   "variantScrollHeightCss": 4783,
+   "documentFontsSize": 4,
+   "interCheck": true,
+   "stabilize": {
+    "fontsReadyReached": true,
+    "networkIdleReached": true
+   },
+   "applied": {
+    "F1": {
+     "injectedFaces": 4
+    },
+    "F2": {
+     "cloneChips": 1,
+     "matchedExact": 1,
+     "matchedLoose": 0,
+     "unmatched": 0,
+     "suppressed": 0
+    },
+    "F3": {
+     "rootVarsInjected": 411,
+     "varRefs": 42,
+     "varResolved": 42,
+     "cloneSvgs": 40,
+     "svgMatched": 40,
+     "svgUnmatched": 0,
+     "shapesTouched": 12,
+     "propsCopied": 12
+    },
+    "F4": {
+     "subtrees": 2,
+     "idsRewritten": 638,
+     "refsRewritten": 46,
+     "refs": 48,
+     "refsAmbiguousBefore": 46,
+     "refsAfter": 48,
+     "refsAmbiguousAfter": 8
+    },
+    "F5": {
+     "strippedBytes": 230625
+    },
+    "F6": {
+     "candidates": 243,
+     "matched": 11,
+     "applied": 2,
+     "sourceRecords": 21
+    }
+   },
+   "elapsedMs": 5103,
+   "shot": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/C6/r000008/mobile/variant.png",
+   "baselineChangedRatio": 0.0676,
+   "gapClosedPctOfChangedRatio": 93.93,
+   "gapClosedPctOfMeanDelta": 92.02
+  }
+ ],
+ "residualAfterFullLadder": {
+  "label": "C6 residual vs ACCEPTED_OBSERVATION",
+  "out": [
+   {
+    "routeId": "r000007",
+    "viewport": "desktop",
+    "width": 1440,
+    "height": 6348,
+    "changedPixels": 95500,
+    "changedRatio": 0.0104,
+    "perceptiblePixels_maxChannelGe24": 15310,
+    "perceptibleShareOfChanged": 16,
+    "perceptibleShareOfFrame": 0.1675,
+    "topBandsByInk": [
+     {
+      "yFromCss": 400,
+      "yToCss": 500,
+      "changedPx": 3315,
+      "meanMag": 109.5,
+      "maxMag": 239
+     },
+     {
+      "yFromCss": 1400,
+      "yToCss": 1500,
+      "changedPx": 78883,
+      "meanMag": 2.4,
+      "maxMag": 24
+     },
+     {
+      "yFromCss": 4800,
+      "yToCss": 4900,
+      "changedPx": 2138,
+      "meanMag": 59.9,
+      "maxMag": 201
+     },
+     {
+      "yFromCss": 2700,
+      "yToCss": 2800,
+      "changedPx": 984,
+      "meanMag": 95.1,
+      "maxMag": 115
+     },
+     {
+      "yFromCss": 2300,
+      "yToCss": 2400,
+      "changedPx": 896,
+      "meanMag": 95.3,
+      "maxMag": 115
+     },
+     {
+      "yFromCss": 4500,
+      "yToCss": 4600,
+      "changedPx": 750,
+      "meanMag": 95,
+      "maxMag": 115
+     },
+     {
+      "yFromCss": 3300,
+      "yToCss": 3400,
+      "changedPx": 692,
+      "meanMag": 94.5,
+      "maxMag": 115
+     },
+     {
+      "yFromCss": 2200,
+      "yToCss": 2300,
+      "changedPx": 656,
+      "meanMag": 95.1,
+      "maxMag": 115
+     }
+    ],
+    "topTransitions": [
+     {
+      "transition": "208,214,224 -> 98,102,109",
+      "pixels": 5355,
+      "share": 35
+     },
+     {
+      "transition": "32,33,34 -> 8,9,10",
+      "pixels": 724,
+      "share": 4.7
+     },
+     {
+      "transition": "86,90,95 -> 43,45,49",
+      "pixels": 204,
+      "share": 1.3
+     },
+     {
+      "transition": "161,166,174 -> 76,80,85",
+      "pixels": 162,
+      "share": 1.1
+     },
+     {
+      "transition": "73,76,79 -> 37,39,41",
+      "pixels": 153,
+      "share": 1
+     },
+     {
+      "transition": "138,143,152 -> 8,9,10",
+      "pixels": 145,
+      "share": 0.9
+     },
+     {
+      "transition": "8,9,10 -> 247,248,248",
+      "pixels": 135,
+      "share": 0.9
+     },
+     {
+      "transition": "192,198,207 -> 90,94,100",
+      "pixels": 114,
+      "share": 0.7
+     }
+    ]
+   },
+   {
+    "routeId": "r000007",
+    "viewport": "mobile",
+    "width": 1170,
+    "height": 23136,
+    "changedPixels": 217787,
+    "changedRatio": 0.008,
+    "perceptiblePixels_maxChannelGe24": 49828,
+    "perceptibleShareOfChanged": 22.9,
+    "perceptibleShareOfFrame": 0.1841,
+    "topBandsByInk": [
+     {
+      "yFromCss": 2600,
+      "yToCss": 2700,
+      "changedPx": 13311,
+      "meanMag": 197.4,
+      "maxMag": 247
+     },
+     {
+      "yFromCss": 2500,
+      "yToCss": 2600,
+      "changedPx": 11552,
+      "meanMag": 199,
+      "maxMag": 247
+     },
+     {
+      "yFromCss": 1300,
+      "yToCss": 1400,
+      "changedPx": 10924,
+      "meanMag": 153.6,
+      "maxMag": 239
+     },
+     {
+      "yFromCss": 800,
+      "yToCss": 900,
+      "changedPx": 10874,
+      "meanMag": 153.9,
+      "maxMag": 239
+     },
+     {
+      "yFromCss": 2800,
+      "yToCss": 2900,
+      "changedPx": 108392,
+      "meanMag": 6.5,
+      "maxMag": 239
+     },
+     {
+      "yFromCss": 1900,
+      "yToCss": 2000,
+      "changedPx": 2205,
+      "meanMag": 135.8,
+      "maxMag": 214
+     },
+     {
+      "yFromCss": 2700,
+      "yToCss": 2800,
+      "changedPx": 59670,
+      "meanMag": 2,
+      "maxMag": 4
+     },
+     {
+      "yFromCss": 6700,
+      "yToCss": 6800,
+      "changedPx": 499,
+      "meanMag": 28.1,
+      "maxMag": 57
+     }
+    ],
+    "topTransitions": [
+     {
+      "transition": "8,9,10 -> 255,255,255",
+      "pixels": 7975,
+      "share": 16
+     },
+     {
+      "transition": "255,255,255 -> 8,9,10",
+      "pixels": 7141,
+      "share": 14.3
+     },
+     {
+      "transition": "8,9,10 -> 247,248,248",
+      "pixels": 4882,
+      "share": 9.8
+     },
+     {
+      "transition": "138,143,152 -> 8,9,10",
+      "pixels": 4123,
+      "share": 8.3
+     },
+     {
+      "transition": "247,248,248 -> 8,9,10",
+      "pixels": 2835,
+      "share": 5.7
+     },
+     {
+      "transition": "32,33,34 -> 8,9,10",
+      "pixels": 1777,
+      "share": 3.6
+     },
+     {
+      "transition": "11,11,11 -> 247,248,248",
+      "pixels": 711,
+      "share": 1.4
+     },
+     {
+      "transition": "138,143,152 -> 247,248,248",
+      "pixels": 437,
+      "share": 0.9
+     }
+    ]
+   },
+   {
+    "routeId": "r000008",
+    "viewport": "desktop",
+    "width": 1440,
+    "height": 3231,
+    "changedPixels": 17029,
+    "changedRatio": 0.0037,
+    "perceptiblePixels_maxChannelGe24": 15224,
+    "perceptibleShareOfChanged": 89.4,
+    "perceptibleShareOfFrame": 0.3272,
+    "topBandsByInk": [
+     {
+      "yFromCss": 2300,
+      "yToCss": 2400,
+      "changedPx": 9317,
+      "meanMag": 130.1,
+      "maxMag": 247
+     },
+     {
+      "yFromCss": 2400,
+      "yToCss": 2500,
+      "changedPx": 5904,
+      "meanMag": 154.9,
+      "maxMag": 247
+     },
+     {
+      "yFromCss": 1900,
+      "yToCss": 2000,
+      "changedPx": 934,
+      "meanMag": 80.5,
+      "maxMag": 239
+     },
+     {
+      "yFromCss": 800,
+      "yToCss": 900,
+      "changedPx": 394,
+      "meanMag": 97.9,
+      "maxMag": 99
+     },
+     {
+      "yFromCss": 700,
+      "yToCss": 800,
+      "changedPx": 228,
+      "meanMag": 98,
+      "maxMag": 99
+     },
+     {
+      "yFromCss": 2200,
+      "yToCss": 2300,
+      "changedPx": 102,
+      "meanMag": 58.7,
+      "maxMag": 142
+     },
+     {
+      "yFromCss": 2600,
+      "yToCss": 2700,
+      "changedPx": 84,
+      "meanMag": 36.9,
+      "maxMag": 57
+     },
+     {
+      "yFromCss": 0,
+      "yToCss": 100,
+      "changedPx": 66,
+      "meanMag": 23.8,
+      "maxMag": 36
+     }
+    ],
+    "topTransitions": [
+     {
+      "transition": "8,9,10 -> 247,248,248",
+      "pixels": 2050,
+      "share": 13.5
+     },
+     {
+      "transition": "247,248,248 -> 8,9,10",
+      "pixels": 1431,
+      "share": 9.4
+     },
+     {
+      "transition": "8,9,10 -> 255,255,255",
+      "pixels": 445,
+      "share": 2.9
+     },
+     {
+      "transition": "255,255,255 -> 8,9,10",
+      "pixels": 403,
+      "share": 2.6
+     },
+     {
+      "transition": "98,102,109 -> 8,9,10",
+      "pixels": 310,
+      "share": 2
+     },
+     {
+      "transition": "8,9,10 -> 98,102,109",
+      "pixels": 300,
+      "share": 2
+     },
+     {
+      "transition": "138,143,152 -> 8,9,10",
+      "pixels": 177,
+      "share": 1.2
+     },
+     {
+      "transition": "8,9,10 -> 138,143,152",
+      "pixels": 173,
+      "share": 1.1
+     }
+    ]
+   },
+   {
+    "routeId": "r000008",
+    "viewport": "mobile",
+    "width": 1170,
+    "height": 14349,
+    "changedPixels": 69425,
+    "changedRatio": 0.0041,
+    "perceptiblePixels_maxChannelGe24": 64111,
+    "perceptibleShareOfChanged": 92.3,
+    "perceptibleShareOfFrame": 0.3819,
+    "topBandsByInk": [
+     {
+      "yFromCss": 3500,
+      "yToCss": 3600,
+      "changedPx": 27286,
+      "meanMag": 161.4,
+      "maxMag": 239
+     },
+     {
+      "yFromCss": 3600,
+      "yToCss": 3700,
+      "changedPx": 18167,
+      "meanMag": 190.1,
+      "maxMag": 239
+     },
+     {
+      "yFromCss": 3400,
+      "yToCss": 3500,
+      "changedPx": 13438,
+      "meanMag": 108.3,
+      "maxMag": 142
+     },
+     {
+      "yFromCss": 2800,
+      "yToCss": 2900,
+      "changedPx": 5044,
+      "meanMag": 103.7,
+      "maxMag": 239
+     },
+     {
+      "yFromCss": 1200,
+      "yToCss": 1300,
+      "changedPx": 3447,
+      "meanMag": 98.7,
+      "maxMag": 99
+     },
+     {
+      "yFromCss": 1000,
+      "yToCss": 1100,
+      "changedPx": 2043,
+      "meanMag": 98.9,
+      "maxMag": 99
+     }
+    ],
+    "topTransitions": [
+     {
+      "transition": "247,248,248 -> 8,9,10",
+      "pixels": 11538,
+      "share": 18
+     },
+     {
+      "transition": "8,9,10 -> 247,248,248",
+      "pixels": 10840,
+      "share": 16.9
+     },
+     {
+      "transition": "8,9,10 -> 138,143,152",
+      "pixels": 8036,
+      "share": 12.5
+     },
+     {
+      "transition": "138,143,152 -> 8,9,10",
+      "pixels": 7445,
+      "share": 11.6
+     },
+     {
+      "transition": "98,102,109 -> 8,9,10",
+      "pixels": 2772,
+      "share": 4.3
+     },
+     {
+      "transition": "8,9,10 -> 98,102,109",
+      "pixels": 2688,
+      "share": 4.2
+     },
+     {
+      "transition": "138,143,152 -> 247,248,248",
+      "pixels": 871,
+      "share": 1.4
+     },
+     {
+      "transition": "246,247,247 -> 8,9,10",
+      "pixels": 199,
+      "share": 0.3
+     }
+    ]
+   }
+  ]
+ },
+ "axisTests": {
+  "out": [
+   {
+    "routeId": "r000007",
+    "withFixes": false,
+    "totalRequests": 8,
+    "sameOriginRequests": 8,
+    "externalHosts": {},
+    "requestFailures": 0,
+    "httpFailures": [],
+    "consoleErrors": [],
+    "pageErrors": [],
+    "interaction": {
+     "triggerCount": 6,
+     "clicked": 6,
+     "domChangedAfterClick": 1,
+     "scrollHeightBefore": 6348,
+     "scrollHeightAfter": 6348
+    },
+    "fixReports": {}
+   },
+   {
+    "routeId": "r000007",
+    "withFixes": true,
+    "totalRequests": 9,
+    "sameOriginRequests": 9,
+    "externalHosts": {},
+    "requestFailures": 0,
+    "httpFailures": [],
+    "consoleErrors": [],
+    "pageErrors": [],
+    "interaction": {
+     "triggerCount": 6,
+     "clicked": 6,
+     "domChangedAfterClick": 1,
+     "scrollHeightBefore": 6348,
+     "scrollHeightAfter": 6348
+    },
+    "fixReports": {
+     "F2": {
+      "cloneChips": 60,
+      "matchedExact": 60,
+      "matchedLoose": 0,
+      "unmatched": 0,
+      "suppressed": 56
+     },
+     "F3": {
+      "rootVarsInjected": 410,
+      "varRefs": 504,
+      "varResolved": 504,
+      "cloneSvgs": 319,
+      "svgMatched": 316,
+      "svgUnmatched": 3,
+      "shapesTouched": 58,
+      "propsCopied": 116
+     },
+     "F4": {
+      "subtrees": 2,
+      "idsRewritten": 642,
+      "refsRewritten": 32,
+      "refs": 34,
+      "refsAmbiguousBefore": 32,
+      "refsAfter": 34,
+      "refsAmbiguousAfter": 12
+     },
+     "F6": {
+      "candidates": 542,
+      "matched": 73,
+      "applied": 5,
+      "sourceRecords": 76
+     }
+    }
+   },
+   {
+    "routeId": "r000008",
+    "withFixes": false,
+    "totalRequests": 8,
+    "sameOriginRequests": 8,
+    "externalHosts": {},
+    "requestFailures": 0,
+    "httpFailures": [],
+    "consoleErrors": [],
+    "pageErrors": [],
+    "interaction": {
+     "triggerCount": 6,
+     "clicked": 6,
+     "domChangedAfterClick": 1,
+     "scrollHeightBefore": 3231,
+     "scrollHeightAfter": 3231
+    },
+    "fixReports": {}
+   },
+   {
+    "routeId": "r000008",
+    "withFixes": true,
+    "totalRequests": 9,
+    "sameOriginRequests": 9,
+    "externalHosts": {},
+    "requestFailures": 0,
+    "httpFailures": [],
+    "consoleErrors": [],
+    "pageErrors": [],
+    "interaction": {
+     "triggerCount": 6,
+     "clicked": 6,
+     "domChangedAfterClick": 1,
+     "scrollHeightBefore": 3231,
+     "scrollHeightAfter": 3231
+    },
+    "fixReports": {
+     "F2": {
+      "cloneChips": 3,
+      "matchedExact": 3,
+      "matchedLoose": 0,
+      "unmatched": 0,
+      "suppressed": 0
+     },
+     "F3": {
+      "rootVarsInjected": 410,
+      "varRefs": 42,
+      "varResolved": 42,
+      "cloneSvgs": 40,
+      "svgMatched": 40,
+      "svgUnmatched": 0,
+      "shapesTouched": 12,
+      "propsCopied": 12
+     },
+     "F4": {
+      "subtrees": 2,
+      "idsRewritten": 638,
+      "refsRewritten": 46,
+      "refs": 48,
+      "refsAmbiguousBefore": 46,
+      "refsAfter": 48,
+      "refsAmbiguousAfter": 8
+     },
+     "F6": {
+      "candidates": 251,
+      "matched": 57,
+      "applied": 4,
+      "sourceRecords": 62
+     }
+    }
+   }
+  ]
+ },
+ "artifacts": {
+  "metrics": [
+   "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/metrics/ladder-merged.json",
+   "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/metrics/residual-C6.json",
+   "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/metrics/residual-C5.json",
+   "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/metrics/axes.json",
+   "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/metrics/responsive-b.json"
+  ],
+  "shots": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/shots/<variant>/<routeId>/<viewport>/variant.png (+ diff.png for baseline, C5 and C6)",
+  "sourceProbes": "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/probe/ (CURRENT_SOURCE)",
+  "scripts": [
+   "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/run-ladder.mjs",
+   "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/fixes.mjs",
+   "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/probe-source.mjs",
+   "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/probe-textwrap.mjs",
+   "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/residual.mjs",
+   "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/responsive.mjs",
+   "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/axes.mjs",
+   "tmp/wr-visual-fidelity-investigation/exp-E-targeted-ladder/varbefore.mjs"
+  ]
+ }
+}

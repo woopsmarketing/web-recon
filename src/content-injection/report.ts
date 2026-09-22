@@ -69,6 +69,18 @@ export interface OperatorReviewJson {
   imageBriefs: unknown[];
 }
 
+/**
+ * How to NAME a brand-leak finding that has no slot key (Task 28 CR8: a
+ * surface-scoped finding binds to no editable slot). Printing `null` would read
+ * as a bug; the surface plus the `data-wr-node` identity is what an operator
+ * can actually locate.
+ */
+function leakSubject(warning: { surface?: string; kind: string; nodeId?: string | null; route?: string }): string {
+  const where = warning.nodeId != null ? `@${warning.nodeId}` : "";
+  const route = warning.route !== undefined ? ` ${warning.route}` : "";
+  return `(no slot) ${warning.surface ?? warning.kind}${where}${route}`;
+}
+
 export function buildOperatorReview(input: OperatorReviewInput): {
   json: OperatorReviewJson;
   markdown: string;
@@ -195,12 +207,12 @@ export function buildOperatorReview(input: OperatorReviewInput): {
     const blockers = brandLeak.warnings.filter((w) => w.severity === "blocker");
     if (blockers.length > 0) {
       push(`**BLOCKERS (${blockers.length})** — user-targeted visible content kept at the source default by an engine limitation:`);
-      for (const w of blockers) push(`- \`${w.slotKey}\` [${w.kind}] ${w.detail}`);
+      for (const w of blockers) push(`- \`${w.slotKey ?? leakSubject(w)}\` [${w.kind}] ${w.detail}`);
       push();
     }
     const ordinary = brandLeak.warnings.filter((w) => w.severity !== "blocker");
     const shown = ordinary.slice(0, 40);
-    for (const w of shown) push(`- \`${w.slotKey}\` [${w.kind}] ${w.detail}`);
+    for (const w of shown) push(`- \`${w.slotKey ?? leakSubject(w)}\` [${w.kind}] ${w.detail}`);
     if (ordinary.length > shown.length) {
       push(`- … ${ordinary.length - shown.length} more in report/brand-leak.json`);
     }

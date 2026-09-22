@@ -39,23 +39,31 @@ SEO 최적화되고 유지보수 가능한 우리 소유의 웹사이트"
 - 브라우저에서 실제로 확인 가능한 behavior
 
 
-## 3. 원본에서 그대로 가져오지 않을 것
+## 3. 최종 Production Site가 영구적으로 의존하지 않을 것
 
-다음은 복사의 대상이 아니다:
+어떤 계층에서도 가져오지 않는 것:
 
-- WordPress/PHP/그누보드/Vue/React 등의 원본 구현 구조
 - 원본 backend source
 - 원본 DB
 - 원본 관리자
 - secret
 - private API
-- 원본 JavaScript bundle
+
+최종 Production Site의 영구 의존성이 아닌 것:
+
+- WordPress/PHP/그누보드/Vue/React 등의 원본 구현 구조
+- 원본 JavaScript bundle / runtime
 - 원본 CSS source
 - 난잡한 원본 component 구조
-- 원본의 SEO 실수
-- 잘못된 canonical
-- 잘못된 heading 구조
+- 원본 infrastructure
+- 원본의 SEO 실수 (잘못된 canonical, 잘못된 heading 구조 등)
 - 불필요한 외부 asset 의존성
+
+단, 원본 HTML / CSS / public JS runtime / public runtime data snapshot은
+fidelity와 관측 가능한 behavior에 필요할 때
+Preservation / Reference Layer (Source-Preserved Faithful Clone)에
+보존·실행될 수 있다. (§4 참고)
+Production Site에 원본 runtime 의존성이 남는 경우는 명시적 production exception / debt로만 허용한다.
 
 
 ## 4. 핵심 아키텍처 원칙
@@ -66,22 +74,60 @@ SEO 최적화되고 유지보수 가능한 우리 소유의 웹사이트"
 
 Original Website
 ↓
-Observation
+Source Capture
 ↓
-SiteSpec
+Source-Preserved Faithful Clone
 ↓
-Exact Reconstruction
+Observation / SiteSpec / Runtime Evidence
 ↓
-ProductionSpec
+Recon Template
+↓
+ProductionSpec / Slots / Theme / Content
 ↓
 Production Compiler
 ↓
 Production Website
 
 
+### 두 개의 계층
+
+**1. Preservation / Reference Layer**
+
+Source Capture → Source-Preserved Faithful Clone
+
+- fidelity와 관측 가능한 behavior에 필요할 때
+  원본 HTML, 원본 CSS, 원본 public JS/runtime, public runtime data snapshot을
+  보존하고 실행할 수 있다.
+- QA / reference / forensic 계층이다. 최종 Production Site가 아니다.
+- runtime 보존 규칙: `docs/architecture/runtime-preservation.md`
+
+**2. Production / Ownership Layer**
+
+Recon Template → Slots / Theme / Content / ProductionSpec → Production Website
+
+- 독립적이고, 유지보수 가능하고, SEO 최적화된, 우리 소유의 사이트를 만든다.
+- 최종적으로 다음에 영구 의존하지 않는다:
+  원본 backend, 원본 DB, 원본 관리자, private API, 원본 infrastructure,
+  원본 JS/CSS/runtime.
+- 원본 JS/CSS/runtime에 조용히(암묵적으로) 영구 의존하지 않는다.
+  production에 원본 runtime 의존성이 남아야 한다면
+  명시적이고(explicit), 근거가 있으며(justified),
+  production exception / debt로 추적(tracked)되어야 한다.
+  "필요하다"는 이유만으로 영구히 남겨두지 않는다.
+
+
+### Source-Preserved Faithful Clone
+
+preservation이 가능한 원본에 대해서는
+Source-Preserved Faithful Clone이 가장 강한 reference / fidelity baseline이다.
+
+
 ### SiteSpec
 
 SiteSpec은 원본 브라우저에서 관측한 사실이다.
+
+SiteSpec은 production 변환에 쓰이는 구조화된 evidence / analysis이다.
+더 이상 유일한 fidelity 수단이 아니다.
 
 SiteSpec에는:
 
@@ -112,7 +158,10 @@ SiteSpec을 가능한 한 정확하게 Next.js로 재구성한 QA 기준본이�
 - generated exact CSS
 - generic interaction runtime
 
-Exact Reconstruction은 Production Site의 정답지 역할을 한다.
+Exact Reconstruction은 SiteSpec 기반 재구성 경로이며
+유용한 historical / production evidence로 남는다.
+단, 유일한 fidelity 경로가 아니다.
+preservation이 가능한 원본에서는 Source-Preserved Faithful Clone이 더 강한 정답지(reference baseline)이다.
 
 
 ### ProductionSpec
@@ -462,71 +511,42 @@ Current Production
 3-way diff 기반으로 처리하는 것을 목표로 한다.
 
 
-## 16. 현재 구현 완료 범위
+## 16. 현재 구현 상태
 
-Task 01~16:
+이 문서는 지속되는 vision을 기술한다. 진행 중인 milestone 상태는 여기에 유지하지 않는다.
 
-URL
-↓
-Discovery
-↓
-Verification
-↓
-Page Family
-↓
-Desktop/Mobile Observation
-↓
-Interaction Detection
-↓
-Safe Interaction Exploration
-↓
-Pattern Modeling
-↓
-SiteSpec
-↓
-Next.js Reconstruction
-↓
-Visual/Structural/Behavior QA
-↓
-Root Cause Attribution
-↓
-Safe Correction
-↓
-Full E2E
-
-까지 구현 완료.
+- 현재 상태 / 다음 phase: `docs/status/source-preservation-v2.md`
+- 과거 작업과 evidence: `docs/result/README.md`
 
 
-## 17. 현재 아직 구현하지 않은 Production 영역
+## 17. 아직 구현하지 않은 영역
 
-- ProductionSpec
-- semantic component extraction
-- design token extraction
-- Tailwind production conversion
-- theme system
-- full asset materialization
-- image optimization pipeline
-- full font reconstruction/self-hosting
-- SEO Audit Engine
-- SEO Production Engine
-- Source SEO vs Production SEO comparison
-- deployment platform integration
-- common production runtime
-- site management UI
-- version / preview / rollback
-- editing / CMS layer
+구현 여부는 §16의 status / result 문서를 기준으로 한다.
+이 문서에 구현 완료·미완료 목록을 따로 유지하지 않는다.
 
 
 ## 18. 앞으로의 개발 방식
 
-먼저 실제 사이트 여러 개를 현재 E2E로 테스트한다.
+먼저 첫 번째 Apartmentary end-to-end proof를 완성한다:
 
-목적:
+Source Capture
+↓
+Faithful Clone
+↓
+Runtime / Data
+↓
+Recon Template
+↓
+Slots
+↓
+Customer / Production transformation
 
-- 실제 failure pattern 축적
-- 사이트 기술 다양성 검증
-- Production Compiler 설계 데이터 확보
-- 반복되는 문제의 우선순위 결정
+그 다음 실제 필요가 생길 때 새 원본 사이트를 테스트하고,
+evidence가 요구할 때만 새 bootstrap adapter를 추가한다.
+
+두 번째 기술 스택 proof는 deferred이며,
+Recon Template / Slots의 선행 조건이 아니다.
+그 전까지 범용 framework 지원을 주장하지 않는다.
 
 새로운 문제 발견 시:
 
@@ -553,3 +573,7 @@ SEO, 성능, 자산, 코드 품질을 개선한 뒤,
 우리 공통 인프라에서 수정·배포·운영할 수 있게 하는 플랫폼"
 
 이다.
+
+최종 산출물은 깨끗하고 유지보수 가능하며 원본에 독립적인 Production Site이다.
+그 과정의 중간 산출물로 원본을 보존한 Source-Preserved Faithful Clone(reference clone)이
+존재할 수 있다. 이 clone은 QA / reference / forensic 용도이며 최종 Production Site가 아니다.

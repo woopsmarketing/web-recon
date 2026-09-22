@@ -1,0 +1,11 @@
+smoke:authoring-preview	tsx scripts/smoke-authoring-preview.ts
+smoke:brand-assets	tsx scripts/smoke-brand-assets.ts
+editor	tsx src/cli-editor.ts
+smoke:visual-editor	tsx scripts/smoke-visual-editor.ts
+smoke:enablement	tsx scripts/smoke-enablement.ts
+smoke:editor-integration	tsx scripts/smoke-editor-integration.ts
+smoke:create-site	tsx scripts/smoke-create-site.ts
+content:generate:delta	npx tsx scripts/build-content-authoring-delta.ts --decisions <decisions.json> --base <generation-result.json> --template <template manifest.json> --out <delta.json>	Task 28 Phase 9: expand a hand-authored decisions file into a content authoring delta
+smoke:content-generation	npx tsx scripts/smoke-content-generation.ts	Task 28 Phase 9: full-site content generation canary (8-route linear.app template, offline, 50 checks after the Phase 9/10 correction pass)
+smoke:first-draft	tsx scripts/smoke-first-draft.ts	Task 28 Phase 10 — the operator journey end to end: Template Library -> Create Site -> ONE brief -> First Draft -> Edit Site, in a real browser
+smoke:production-canary	tsx scripts/smoke-production-canary.ts	Task 28 Phase 11 — the full local production canary, re-checked from its own artifacts (37 checks, no browser, no server)

@@ -1,0 +1,149 @@
+{
+  "schema": "task285b-final-v1",
+  "producedAt": "2026-08-31T04:10:00Z",
+  "report": "docs/result/28.5B-generic-fidelity-hardening-wave1-2026-08-29.md",
+  "baselineSha": "6c2e723601a0d76431c96a48bbdb4726c02063e7",
+  "verdict": "WAVE 1 HARDENING ACCEPTED — READY FOR RESPONSIVE/FONT DECISION",
+  "implemented": {
+    "pseudoOpacity": true,
+    "pseudoVisibility": true,
+    "fontSmoothingObservation": true,
+    "textWrapMode": true,
+    "textWrapStyle": true,
+    "layoutContainingBlockGuard": true,
+    "layoutPostEmitTruthCheck": true,
+    "videoResolution": true,
+    "videoHonestyCounter": true,
+    "perViewportCustomProperties": true,
+    "qaVocabularyDecoupled": true,
+    "pixelAt16": true,
+    "dE76": true
+  },
+  "linear": {
+    "freshObservation": true,
+    "routesMeasured": 8,
+    "desktopPairs": 8,
+    "mobilePairs": 8,
+    "responsiveWidths": [390, 500, 700, 914, 1024, 1100, 1440, 1920],
+    "recoveredRules": {
+      "candidate": 1757,
+      "accepted": 1752,
+      "rejected": 5,
+      "acceptedRegressed": 0
+    },
+    "recoveredRulesNote": "Two denominators, not one. candidateRules (1757) counts RULES inference proposed; the rule ledger reconciles exactly as truthCheckable 1019 + acceptedUnchecked 738 = 1757, and 1757 - rejectedByTruthCheck 5 = acceptedRules 1752 = recoveredRules, with rejectedUnverifiable 0. rejectedByGuard (145) is a separate NODE counter incremented before any rule was emitted, so those nodes never entered candidateRules and must not be summed with it.",
+    "run": "2026-08-30T15-56-29-877Z (reconstruction) / 2026-08-30T15-57-54-926Z (QA)"
+  },
+  "secondSite": {
+    "host": "stripe.com",
+    "freshObservation": true,
+    "pairsMeasured": 4,
+    "regressionDetected": false,
+    "note": "2 routes, full 7-stage run 2026-08-30T16:15-16:19Z, all stages first-attempt. truthCheckStatus verified, acceptedRegressed 0, unresolvedElementAssets 0, customPropertyRejected 0, 9/9 interaction patterns behaviour-equivalent. Rule ledger: candidateRules 726 - rejectedByTruthCheck 25 = acceptedRules 701; rejectedByGuard 225 is the separate node counter. The industries/media-entertainment mobile outlier is PRE-EXISTING: the same page/viewport/pair at 2026-08-17T21-38-08-701Z reads @1 0.4672 / heightDelta +3 / commonArea 0.9999 against today's 0.4588 / +3 / 0.9999, i.e. 0.0084 better after hardening."
+  },
+  "visual": {
+    "pricing": {
+      "improved": true,
+      "oldAt16": 0.0295,
+      "newAt16": 0.0158
+    },
+    "changelog": {
+      "improved": true,
+      "columnCollapseResolved": true
+    },
+    "security": {
+      "improved": true,
+      "wrapImproved": true
+    },
+    "comparisonBiasDirection": "The old clone was built from the 2026-08-25 source and diffed against a fixed 2026-08-30 live-original reference, so up to five days of source drift is charged against the old build. The measured old->new gain is therefore an UPPER bound on the engineering gain, not a lower bound. The valid companion clause stands: any place where the old build wins is not explainable by drift.",
+    "knownIssue": "/changelog first video renders a different frame than the source (one 500px band of 51 on a 25,342px page; 1.17% -> 6.91% at >=16/255). Ruled NON-blocking: videos now actually play and no frame pinning exists in the QA capture path on either side; box geometry is pixel-correct; the route improved overall while carrying it (@16 0.0471 -> 0.0417, dE76 mean 2.3744 -> 1.7572)."
+  },
+  "responsive": {
+    "fixed": false,
+    "knownResidualPreserved": true,
+    "majorDiscontinuities": [
+      "variant-switch at 914->1024 (mobile variant -> desktop variant) on all 8 of 8 routes",
+      "scrollHeight cliff at 914->1024: / 5876->9960 (+69.5%), /customers 8049->4886 (-39.3%), /integrations 15622->11059 (-29.2%), /security 4783->3231 (-32.5%)",
+      "visible-node recovery at 914->1024: / 926->2759 (+198%), /plan 466->721 (+54.7%); /pricing recovers later, at 1100->1440, 1035->1706 (+64.8%)",
+      "frozen band 390..914 on all 8 routes: scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength BIT-IDENTICAL at 390/500/700/914; on 5 routes even maxContentRight is constant",
+      "frozen band 1024..1100 on all 8 routes: same four metrics bit-identical",
+      "frozen band 1440..1920 on all 8 routes: same four metrics bit-identical; only the far edge of full-bleed elements tracks the canvas",
+      "landmark-collapse: <main> stays at its observed 390px width at 500/700/914 on all 8 routes (deficits 110/310/524px) while the live source's <main> tracks the viewport exactly",
+      "/pricing comparison-table band: clone holds the narrow layout until 1232 while the live source transitions in (1024, 1100]; at 1100 the clone loses the header row and 3 of 4 value columns, 503 extra nodes display:none (28.5A: 507) and 286 characters of visible text (28.5A: 274)",
+      "stylesheet residual: all 738 @media blocks in the shipped generated stylesheet are at the single synthetic band (min-width:1024px) and (max-width:1231.98px); app/globals.css adds a 915px variant switch inferred as the midpoint of the two observed endpoints"
+    ],
+    "fidelityByWidth": {
+      "route": "/pricing clone-vs-source @16",
+      "390": 0.0371,
+      "500": 0.0387,
+      "700": 0.0446,
+      "914": 0.0376,
+      "1024": 0.0378,
+      "1100": 0.043,
+      "1440": 0.0158,
+      "1920": 0.0125,
+      "note": "the two observed-adjacent widths are 2.4-3.6x better than every unobserved width"
+    },
+    "comparisonWith285A": "same-defect / NOT worse / NOT improved on both 28.5A responsive findings; the sweep's own handoff carries notClaimedFixed: true"
+  },
+  "fonts": {
+    "sourceFontBinariesShipped": false,
+    "licensingDecisionDeferred": true,
+    "note": "0 .woff*/.ttf/.otf files under either fresh reconstruction, 0 @font-face rules in the 11.9 MB generated stylesheet, assetDownloads 0. The biggest single driver of the /pricing win is -webkit-font-smoothing observation (4,371 antialiased declarations now emitted where the clone previously reverted to the CSS initial 'auto') — an ENGINEERING fix to a computed-style capture gap, not a font fix. Every 28.5B number is engineering-only. The 28.5A font-assisted ladder figures are EXPERIMENTAL simulated upper bounds, quoted separately in the report and never merged with these."
+  },
+  "reviewPack": {
+    "primaryImages": 24,
+    "diagnosticImages": 5,
+    "contactSheets": 2,
+    "manifest": "docs/result/28.5B-review-pack/manifest.json"
+  },
+  "regression": {
+    "suites": 34,
+    "baselineChecks": 2970,
+    "finalChecks": 3354,
+    "failures": 0,
+    "negativeDeltas": [],
+    "typecheckExit": 0,
+    "newSuiteChecks": 384,
+    "batterySeconds": 1454,
+    "note": "baselineChecks 2970 is the CURRENT-TREE total of the 29 pre-existing suites. The Task-28 close-out handoff (28-final-regression.json) RECORDED 2,948, and the 28.5B start handoff treated repository evidence as authoritative over the prompt's 2,970. The 22-check difference is exactly the two positive deltas — production +1 and brand-assets +21 — whose script mtimes (Aug 28 22:53 and 23:00 KST) predate the 28.5B start handoff (2026-08-29T11:31:27Z) by ~22 hours, placing them in the intermediate Task-28.5A window and not attributable to any of the six 28.5B changes. Arithmetic either way: 2,948 + 1 + 21 + 384 = 3,354 = 2,970 + 384.",
+    "execution": "all 34 suites run STRICTLY SERIALLY; smoke-e2e via background+poll (695s wall exceeds the 600s foreground limit) with no suite running concurrently. Every trailer read directly and every log independently grepped for FAIL-prefixed lines: zero found."
+  },
+  "historicalMutationCount": 0,
+  "gitMutatingOperations": 0,
+  "historicalIntegrityNote": "data/ is gitignored, so git-based 'clean' claims prove nothing there; cleared by birth-time (crtime) forensics after disproving a 2,978-file timezone false positive (UTC-named run dirs vs a UTC+9 local clock). HEAD unchanged at 6c2e723, branch main, 0 stashes. Abandoned split-family namespaces preserved untouched and disclosed: data/linear.app/site-observations/2026-08-29T13-13-12-793Z/ and data/linear.app/interaction-explorations/2026-08-30T14-42-36-086Z/ (stages 4-7 never run against them). Three temporary verification mutations were each restored byte-identically with sha256 recorded both sides. Two foreign processes (pid 53338 and child 53352) died during the responsive sweep from probable memory pressure — no signal was sent to them, verified alive after this task's own explicit kill and again after the clone sweep.",
+  "acceptCriteriaQualified": {
+    "videoCannotFailSilently": "Holds in the honest direction. RES-1 (dangling own ref + good <source> children over-counts 1 at the parent) and RES-2 (N broken <source> children count N, not 1) are OVER-counts with 0 corpus occurrences. <audio> media is still silently dropped (2 corpus occurrences) — out of scope and named in code.",
+    "visualAuditorFindsNoNewBlockerClassRegression": "Exactly one old-vs-hardened regression in the entire pack (/changelog video frame), ruled non-blocking; the capture-determinism fix is a mandatory carry-forward."
+  },
+  "remainingBlockers": [],
+  "nextTask": "28.5C — responsive/@media architecture decision (largest residual) + font licensing decision; carry-forwards: QA video frame pinning, stripe background-clip:text capture, cli-reconstruct rejectedUnverifiable print, audio asset handling",
+  "sources": [
+    "docs/result/handoffs/28.5B-start.json",
+    "docs/result/handoffs/28.5B-code-gate.json",
+    "docs/result/handoffs/28.5B-build-vocab.json",
+    "docs/result/handoffs/28.5B-verify-vocab.json",
+    "docs/result/handoffs/28.5B-build-layout.json",
+    "docs/result/handoffs/28.5B-verify-layout.json",
+    "docs/result/handoffs/28.5B-build-video.json",
+    "docs/result/handoffs/28.5B-verify-video.json",
+    "docs/result/handoffs/28.5B-verify-video2.json",
+    "docs/result/handoffs/28.5B-build-qa.json",
+    "docs/result/handoffs/28.5B-verify-qa.json",
+    "docs/result/handoffs/28.5B-build-qa-integration.json",
+    "docs/result/handoffs/28.5B-verify-qa-integration.json",
+    "docs/result/handoffs/28.5B-build-customprops.json",
+    "docs/result/handoffs/28.5B-verify-customprops.json",
+    "docs/result/handoffs/28.5B-verify-final-corrections.json",
+    "docs/result/handoffs/28.5B-linear-run.json",
+    "docs/result/handoffs/28.5B-stripe-run.json",
+    "docs/result/handoffs/28.5B-attribution.json",
+    "docs/result/handoffs/28.5B-responsive-residual.json",
+    "docs/result/handoffs/28.5B-visual-audit.json",
+    "docs/result/handoffs/28.5B-regression.json",
+    "docs/result/handoffs/28.5B-adversarial-audit.json",
+    "docs/result/28.5-visual-reconstruction-root-cause-2026-08-29.md",
+    "docs/result/handoffs/28.5-variantE-targeted-ladder.json",
+    "docs/result/28.5B-review-pack/manifest.json"
+  ]
+}

@@ -910,10 +910,32 @@ async function main(): Promise<void> {
       oddGroup !== undefined && oddGroup.status === "review" && oddGroup.semanticToken === null,
       JSON.stringify(oddGroup ? [oddGroup.status, oddGroup.semanticToken] : null),
     );
+    // Every selector the adapter may reference, spelled out. A generated
+    // stylesheet addresses paint by RECONSTRUCTION identity only: the style
+    // token classes, the document-root wrapper class, the page-scope attribute,
+    // and (Task 28.75 §CANVAS) the document-canvas scope `html:has([data-wr-page=…])`
+    // that the generator moves the root/body background onto. An author class
+    // name (`.card`, `.btn`, `.hero`) matches none of these and still fails.
+    const RECONSTRUCTION_IDENTITY = [
+      /^\.wr-(doc-)?st\d+$/,
+      /^\[data-wr-page="p\d+"\]/,
+      /^html:has\(\[data-wr-page="p\d+"\]\)$/,
+    ];
+    const isReconstructionIdentity = (selector: string): boolean =>
+      selector
+        .split(",")
+        .map((part) => part.trim())
+        .filter((part) => part !== "")
+        .every((part) => RECONSTRUCTION_IDENTITY.some((re) => re.test(part)));
     check(
       "6 adapter references ONLY reconstruction identity (no common class names)",
-      adapter.paintGroups.every((g) =>
-        g.selectors.every((s) => /^\.wr-(doc-)?st\d+$/.test(s) || s.startsWith("[data-wr-page=")),
+      adapter.paintGroups.length > 0 &&
+        adapter.paintGroups.every((g) => g.selectors.every(isReconstructionIdentity)) &&
+        // the predicate is not vacuous: an author class name is still rejected
+        !isReconstructionIdentity(".card") &&
+        !isReconstructionIdentity('html:has([data-wr-page="p000001"]),.card'),
+      JSON.stringify(
+        adapter.paintGroups.flatMap((g) => g.selectors).filter((s) => !isReconstructionIdentity(s)),
       ),
     );
 

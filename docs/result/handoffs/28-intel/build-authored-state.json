@@ -1,0 +1,142 @@
+{
+ "status": "DONE",
+ "summary": "Extended AuthoredState with `authored.assets` (keyed exactly like the resolution pack's assetId: inventory id, or the site-level og-image / organization-logo) and `authored.brand` (REPLACE / REMOVE / PRESERVE per detected source-brand surface, keyed by a new stable `brandSurfaceId` that stores NO detection evidence). Both fields are optional and absent-when-empty, so all 7 release projects already on disk load with byte-identical authored-state hashes. Plumbed them through prepare (carried + counted in `preserved`), resolve (pack `assets` now FOLD into authored.assets idempotently while the pack stays the audit record), the revision chain (diff/summary/emptiness widened; new change fields optional so existing records still parse), and freshness (`resolutionAssetContentHashes` now hashes the merged pack+authored set the assets runner actually applies; the production slice gains a brand-decision hash only when non-empty). Added a small explicit write API (src/release/authored.ts) whose every function reports whether anything changed, so a no-op edit writes nothing at all — no project rewrite, no mtime move, no revision. Verified on the REAL engine, not from the code: on the synthetic fixture an authored.assets edit produced run.json rerunStages [assets, production] with content/theme/seo reused; an authored.brand edit produced rerunStages [production] with assets reused; both were followed by an unchanged rebuild with rerunStages []. Re-ran the Phase-1 proof on the real linear project data/linear.app/release-projects/wr28-assets-stage: an unchanged rebuild reruns nothing and reuses materialization 2026-08-27T09-38-59-492Z, and an authored-only edit (no resolution pack) made the assets StageRunner execute again into a new run 2026-08-27T11-16-18-528Z whose rewrite map and replacement manifest carry the authored bytes. Regression: typecheck exit 0; smoke:release 230 checks / 0 failures (was 202); smoke:revision 36 / 0 (was 29); smoke:registry 35 / 0 and smoke:content-injection 138 / 0 unchanged. 35 new checks. Falsifiability proven on two of them. Zero git mutations; nothing written outside NEW 2026-08-27 run ids and wr28-* namespaces.",
+ "filesChanged": [
+  "/Users/woops/projects/web-recon/src/release/authored.ts",
+  "/Users/woops/projects/web-recon/src/release/types.ts",
+  "/Users/woops/projects/web-recon/src/release/instance.ts",
+  "/Users/woops/projects/web-recon/src/release/freshness.ts",
+  "/Users/woops/projects/web-recon/src/release/graph.ts",
+  "/Users/woops/projects/web-recon/src/release/revisions.ts",
+  "/Users/woops/projects/web-recon/src/release/build.ts",
+  "/Users/woops/projects/web-recon/src/release/stages.ts",
+  "/Users/woops/projects/web-recon/src/release/prepare.ts",
+  "/Users/woops/projects/web-recon/src/release/resolve.ts",
+  "/Users/woops/projects/web-recon/src/release/index.ts",
+  "/Users/woops/projects/web-recon/scripts/smoke-release.ts",
+  "/Users/woops/projects/web-recon/scripts/smoke-revision.ts"
+ ],
+ "items": [
+  {
+   "id": "auth.assets",
+   "resolution": "IMPLEMENTED",
+   "evidence": "src/release/types.ts `AuthoredAssetSchema` = { file (min 1), alt?, note?, updatedAt } and `AuthoredStateSchema.assets: z.record(z.string(), AuthoredAssetSchema).optional()`. KEYING MATCHED EXACTLY to the existing pack: ProductionResolution.assets is keyed by assetId whose vocabulary is interpreted in exactly one place — src/release/resolve-assets.ts:95 (replacement-manifest entries[].inventoryId) and :129 (the two site-level ids og-image / organization-logo) — and authored.assets reuses that key with no translation table, which is what makes `mergedAssetResolutions` a plain object spread. Proven by smoke:release 28.P2.11 (merge precedence: pack first, authored last) and 28.P2.17 (the authored file's sha256 is present in the derived run's media/, the source url's rewrite entry points at /media/<sha>.png, and the replacement-manifest entry is `provided`). `alt` is present and RECORDED but has no consumer — see limitations."
+  },
+  {
+   "id": "auth.brand",
+   "resolution": "IMPLEMENTED",
+   "evidence": "src/release/types.ts BRAND_DECISIONS = [REPLACE, REMOVE, PRESERVE], `AuthoredBrandDecisionSchema` = { decision, replacement? {text|assetId|file}, reason?, note?, updatedAt } with a `.superRefine` enforcing REPLACE-needs-a-payload, PRESERVE-needs-a-reason, and no payload/reason on the wrong decision; `AuthoredStateSchema.brand: z.record(z.string(), AuthoredBrandDecisionSchema).optional()`. DETECTION IS NOT STORED: the record has no route/nodeId/value/pointer field and `.strict()` refuses one — smoke:release 28.P2.3 runs 11 cases through the schema including {decision:'REMOVE', route:'/', nodeId:'n000017'} which is rejected. The key is `brandSurfaceId` (src/release/authored.ts), derived from surface + route + nodeId + slotKey + evidencePointer only; 28.P2.4 proves value / matched / sourceUrl / evidenceFile / suggestedResolution do NOT move the id (it survives a template recompile), 28.P2.5 proves route, node, viewport, prop, surface and slot binding each produce a distinct id (7/7)."
+  },
+  {
+   "id": "auth.prepareResolve",
+   "resolution": "IMPLEMENTED",
+   "evidence": "PREPARE: prepare.ts already carries the whole `existing.authored` object (`carriedAuthored`), so both fields ride along; the `preserved` report now names them (`authored.assets:N`, `authored.brand:N`). smoke:release 28.P2.26 re-prepares a project holding 2 authored assets and 1 brand decision and asserts hashAuthoredState(reprepared) === hashAuthoredState(before) AND that `preserved` contains `authored.assets:2` and `authored.brand:1`. RESOLVE: resolve.ts still folds via instance.ts `foldResolutionIntoAuthored`, which now (a) spreads `...authored` FIRST so no authored field it does not own can be dropped by an object literal that forgot it, and (b) folds pack `assets` into `authored.assets` through the new `foldResolutionAssets`, preserving an existing `alt` and leaving each entry's `updatedAt` untouched when nothing moved. resolve.ts also emits an asset-write-doctrine warning mirroring the content one. Evidence: smoke:release 28.P2.24 (fold happens, the earlier authored-only entry survives, and the pack is still recorded verbatim in project.resolutions) and 28.P2.25 (re-applying the SAME pack moves no entry timestamp and appends no revision, while still recording a second applied pack)."
+  },
+  {
+   "id": "auth.revision",
+   "resolution": "IMPLEMENTED",
+   "evidence": "revisions.ts `AuthoredChangeSchema` gained assetIdsAdded/Changed/Removed + brandSurfacesAdded/Changed/Removed, all OPTIONAL because the schema is .strict() and loadRevisionChain PARSES every record on disk — a required field would report an old history as a corrupt one. diffAuthoredState now derives all three dimensions through one shared `diffKeyedMap`; authoredChangeIsEmpty and summarizeAuthoredChange were widened. The revision record itself needed no change (it embeds the whole snapshot, and hashAuthoredState covers the new fields), so appendAuthoredRevisionIfChanged at the prepare/resolve transaction boundaries already appends for these edits. Evidence: smoke:revision 28.P2.R1 (both directions, by key), R2 (summary reads 'edit: +1 asset' / 'edit: +1 brand'; emptiness), R3 (a pre-Task-28 change block still parses; an unknown key still refused), R4 (every revision chain on disk still loads), R6 (one batch of an asset + a brand edit appends exactly ONE revision naming both dimensions, matching the saved project hash), R7 (restore rolls both fields back to ABSENT and records assetIdsRemoved / brandSurfacesRemoved). smoke:release 28.P2.13 and 28.P2.19 assert the same on real prepare-created projects, and the real linear edit produced r001 with change.assetIdsAdded ['ai000036'] and summary 'edit: +1 asset'."
+  },
+  {
+   "id": "auth.freshness",
+   "resolution": "IMPLEMENTED",
+   "evidence": "graph.ts adds AUTHORED_SLOT_VALUE_IMPACTS=[content], AUTHORED_ASSET_IMPACTS=[assets,production], AUTHORED_BRAND_IMPACTS=[production] plus `authoredInvalidatedStages(before, after)` which closes them over STAGE_DEPENDENCIES with downstreamOf (the same derivation invalidatedStages uses, so the two cannot drift by hand-maintenance). freshness.ts is the authoritative half and mirrors the resolution-asset content-hash precedent exactly: `resolutionAssetContentHashes(resolution, authored?)` now hashes the BYTES (hashFile) of the merged pack+authored set the assets runner actually applies, so an authored asset is a new/changed entry in the assets slice; the production slice gains `authoredBrand: <sha256 of the key-sorted decisions>` only when non-empty. Back-compat is structural, not special-cased: with authored.assets absent the merged map IS the pack map (key order included), so every recorded inputsHash recomputes identically. build.ts:200 passes project.authored so the hash a rerun RECORDS is computed from the same bytes the next refresh recomputes (otherwise an authored asset would be permanently stale). VERIFIED BY RUNNING THE ENGINE, from run.json: smoke:release 28.P2.16 rerunStages exactly ['assets','production'] with reconstruction/template/content/theme/seo all in reusedStages; 28.P2.18 the next unchanged rebuild rerunStages []; 28.P2.21 a brand decision gives rerunStages exactly ['production'] with assets/content/theme/seo reused and the SAME assets artifact id; 28.P2.22 the following rebuild rerunStages []; 28.P2.20 the dry-run plan agrees (wouldRun ['production']). Real data: wr28-assets-stage run 2026-08-27T11-16-18-525Z run.json rerunStages ['assets','production'], reusedStages ['reconstruction','template','content','theme','seo']."
+  },
+  {
+   "id": "auth.writeApi",
+   "resolution": "IMPLEMENTED",
+   "evidence": "NEW FILE src/release/authored.ts, exported on the release barrel (src/release/index.ts). Pure, non-mutating, each returning { authored, changed }: setAuthoredSlotValue, removeAuthoredSlotValue, setAuthoredAsset, removeAuthoredAsset, setAuthoredBrandDecision, removeAuthoredBrandDecision, plus applyAuthoredEdit / applyAuthoredEdits over a typed AuthoredEdit union. Project-level: commitAuthoredEdits(projectDir, edits, {origin, summary, now}) which loads, applies, and — ONLY when changed — calls commitAuthoredState (record written before the document). `changed` excludes updatedAt from the comparison, so re-setting the same value is a true no-op. Also brandSurfaceId, authoredAssetsAsResolutionAssets, mergedAssetResolutions. No server, no UI. Evidence: smoke:release 28.P2.6 (set twice: changed then NOT changed, same object identity returned, updatedAt does not move), 28.P2.7 (a new alt or a different file IS a change), 28.P2.8 (removing the last asset deletes the FIELD so the state round-trips to its prior hash, and a second remove is a no-op), 28.P2.9 (brand decision idempotent, decision change detected, an empty REPLACE throws with 'replacement payload'), 28.P2.12 (a no-op batch appends no revision AND leaves release-project.json bytes and mtimeMs untouched); smoke:revision 28.P2.R5 (same, on a copy of a real project)."
+  },
+  {
+   "id": "auth.backCompat",
+   "resolution": "IMPLEMENTED",
+   "evidence": "All 7 real release projects on disk load: flowpilot-wr27 (rev2), flowpilot-wr27-blocked (rev2), linear.app-2026-08-25T23-32-42-075Z (rev1), linear.app-2026-08-25T23-54-21-435Z (rev1), wr28-assets-runner (rev2), wr28-assets-stage (rev2), stripe.com-2026-08-19T06-36-35-798Z (rev1). smoke:release 28.P2.1 asserts, for every project found under data/*/release-projects, that hashAuthoredState(loaded.authored) === hashAuthoredState(schema-parsed raw file `authored`) — i.e. loading injects nothing (revision-1 documents have no raw block and are recorded as 'replayed'). 28.P2.1b asserts that any document whose own authored block LACKS the two fields still lacks them after a load; its population is defined by the FILE, not a directory allow-list, so the check cannot become self-invalidating as more projects get authored into. 28.P2.2 asserts emptyAuthoredState() emits neither field and its key set is still exactly slotValues,theme,updatedAt. Chains: smoke:revision 28.P2.R3/R4 prove a pre-Task-28 `change` block and every on-disk revision chain still parse through the widened .strict() schemas. Independent pre-suite verification: tmp/wr28/authored-scratch/backcompat.ts printed all 7 projects OK with assets/brand absent and the empty-state hash 0828f7876bbc."
+  },
+  {
+   "id": "auth.assetsRunnerStillWorks",
+   "resolution": "IMPLEMENTED",
+   "evidence": "The resolution-pack path is FED, not replaced: stages.ts assetsStageRunner now passes mergedAssetResolutions(context.effective.assets, context.project.authored) — pack first, authored last — so a project whose only asset input is a pack passes byte-identical arguments to applyAssetResolutions. Phase-1 proof re-run on data/linear.app/release-projects/wr28-assets-stage: (1) UNCHANGED REBUILD run 2026-08-27T11-15-50-368Z → rerunStages [], reusedStages all 7, assets artifact still 2026-08-27T09-38-59-492Z, 221 ms; (2) ASSETS STILL EXECUTES, now driven by an AUTHORED edit with no new pack — commitAuthoredEdits set-asset ai000036 → revision r001 (assetIdsAdded ['ai000036']) → build 2026-08-27T11-16-18-525Z rerunStages ['assets','production'], new materialization 2026-08-27T11-16-18-528Z, rewrite-map entry pointing at /media/e86043f8c0a040034081e3dd13f2a034325129b0233b502e9b3ea4cfef6b179d.png, replacement-manifest ai000036 = {status:'provided', providedBy:'release:wr28-assets-stage:2026-08-27T11-16-18-525Z'}, production QA 76/76, 36.0 s; (3) the immediately following rebuild → rerunStages [], same assets artifact, 262 ms. Also smoke:release 28.P2.15 asserts the fixture project had resolutions.length === 0 when the authored edit staled assets, and the pre-existing §1C checks 28.1C.1-28.1C.12 (pack-driven) still pass unchanged."
+  }
+ ],
+ "testsAdded": [
+  "scripts/smoke-release.ts 28.P2.1 every release project on disk still LOADS, and loading injects nothing into its authored state",
+  "scripts/smoke-release.ts 28.P2.1b a document whose authored block LACKS the new fields still lacks them after a load",
+  "scripts/smoke-release.ts 28.P2.2 emptyAuthoredState() emits neither field",
+  "scripts/smoke-release.ts 28.P2.3 the decision schema enforces REPLACE-needs-a-payload / PRESERVE-needs-a-reason and stores no detection evidence (11 cases)",
+  "scripts/smoke-release.ts 28.P2.4 brandSurfaceId is stable across a re-scan (value/matched/sourceUrl/evidenceFile do not move it)",
+  "scripts/smoke-release.ts 28.P2.5 route, node, viewport, prop, surface and slot binding each give a DIFFERENT id",
+  "scripts/smoke-release.ts 28.P2.6 setAuthoredAsset reports changed once, then reports NO change and moves no timestamp",
+  "scripts/smoke-release.ts 28.P2.7 a new alt, or a different file, IS a change",
+  "scripts/smoke-release.ts 28.P2.8 removing the last authored asset deletes the FIELD and round-trips to the prior hash",
+  "scripts/smoke-release.ts 28.P2.9 setAuthoredBrandDecision idempotent, detects a changed decision, refuses an empty REPLACE",
+  "scripts/smoke-release.ts 28.P2.10 impact table: asset edit predicts assets+production, brand predicts production only",
+  "scripts/smoke-release.ts 28.P2.11 authored.assets FEEDS the resolution path (pack first, authored last)",
+  "scripts/smoke-release.ts 28.P2.12 a NO-OP edit writes NOTHING: no revision, no project rewrite, no mtime move",
+  "scripts/smoke-release.ts 28.P2.13 an authored.assets edit appends exactly one revision naming the assetId",
+  "scripts/smoke-release.ts 28.P2.14 the prediction for that edit is assets+production",
+  "scripts/smoke-release.ts 28.P2.15 the dry-run plan agrees WITHOUT any resolution pack applied",
+  "scripts/smoke-release.ts 28.P2.16 REAL BUILD: run.json rerunStages exactly [assets, production]; content/theme/seo reused",
+  "scripts/smoke-release.ts 28.P2.17 authored.assets FED the pack path: bytes materialized, source url rewritten, replacement provided",
+  "scripts/smoke-release.ts 28.P2.18 an unchanged rebuild reruns NOTHING",
+  "scripts/smoke-release.ts 28.P2.19 an authored.brand edit appends a revision naming the SURFACE ID and stores no evidence",
+  "scripts/smoke-release.ts 28.P2.20 the plan for a brand decision is production ONLY, assets in the reused set",
+  "scripts/smoke-release.ts 28.P2.21 REAL BUILD: a brand decision reruns production ONLY; assets/content/theme/seo reused",
+  "scripts/smoke-release.ts 28.P2.22 the brand slice is stable across a reload — the next rebuild reruns nothing",
+  "scripts/smoke-release.ts 28.P2.23 an alt-only edit is recorded in history but stales NO stage",
+  "scripts/smoke-release.ts 28.P2.24 a pack's assets FOLD into authored.assets and the pack is still recorded verbatim",
+  "scripts/smoke-release.ts 28.P2.25 re-applying the SAME pack is an idempotent fold — no timestamp moves, no revision manufactured",
+  "scripts/smoke-release.ts 28.P2.26 a re-prepare carries authored.assets and authored.brand non-destructively and reports them",
+  "scripts/smoke-release.ts 28.P2.27 the replacement-image requirement clears through the REBUILT artifact, zero packs applied",
+  "scripts/smoke-revision.ts 28.P2.R1 diffAuthoredState reports asset and brand movement by KEY, in both directions",
+  "scripts/smoke-revision.ts 28.P2.R2 authoredChangeIsEmpty and the one-line summary both see the new dimensions",
+  "scripts/smoke-revision.ts 28.P2.R3 a pre-Task-28 `change` block still parses; an unknown key is still refused",
+  "scripts/smoke-revision.ts 28.P2.R4 every authored-revision chain already on disk still loads through the widened schema",
+  "scripts/smoke-revision.ts 28.P2.R5 commitAuthoredEdits on a no-op batch appends NO revision and does not rewrite the project",
+  "scripts/smoke-revision.ts 28.P2.R6 one batch of real edits appends ONE revision naming both dimensions, matching the saved project",
+  "scripts/smoke-revision.ts 28.P2.R7 restoring the pre-edit revision rolls authored.assets and authored.brand back to ABSENT"
+ ],
+ "measurements": [
+  {
+   "metric": "data/linear.app/release-projects/wr28-assets-stage — release:build with nothing changed (rerunStages [], all 7 stages reused)",
+   "reps": 2,
+   "medianMs": 241.5,
+   "maxMs": 262,
+   "method": "buildRelease() called directly via npx tsx, wall clock around the call (Date.now() delta). Two observations: 221 ms (before the authored edit, run 2026-08-27T11-15-50-368Z) and 262 ms (immediately after the authored-edit build). With only two samples the 'median' is their mean; both raw values are reported here rather than hidden behind it."
+  },
+  {
+   "metric": "data/linear.app/release-projects/wr28-assets-stage — release:build after an authored.assets edit (assets + production rerun: derived materialization + real next build + isolated-package QA)",
+   "reps": 1,
+   "medianMs": 36018,
+   "maxMs": 36018,
+   "method": "Single observation, wall clock around one buildRelease() call (run 2026-08-27T11-16-18-525Z). Includes copying the ~210 MB media set into the derived materialization, `next build` (2711 ms as reported by the production compile) and production QA 76/76. reps=1, so median === max === the single sample; this is a cost datum, not a benchmark."
+  }
+ ],
+ "commandsRun": [
+  "bash /Users/woops/projects/web-recon/tmp/wr28/suite-lock.sh pnpm typecheck  (exit 0; run 8 times across the work, final run clean)",
+  "bash /Users/woops/projects/web-recon/tmp/wr28/suite-lock.sh npx tsx scripts/smoke-release.ts  (final: 230 checks, 0 failures; baseline before my edits 202/0)",
+  "bash /Users/woops/projects/web-recon/tmp/wr28/suite-lock.sh npx tsx scripts/smoke-revision.ts  (final: 36 checks, 0 failures; baseline 29/0)",
+  "bash /Users/woops/projects/web-recon/tmp/wr28/suite-lock.sh npx tsx scripts/smoke-registry.ts  (35 checks, 0 failures — unchanged from Phase 1)",
+  "bash /Users/woops/projects/web-recon/tmp/wr28/suite-lock.sh npx tsx scripts/smoke-content-injection.ts  (138 checks, 0 failures — unchanged from Phase 1)",
+  "npx tsx tmp/wr28/authored-scratch/backcompat.ts  (loads all 7 on-disk release projects; all OK, assets/brand absent, empty-state hash 0828f7876bbc)",
+  "npx tsx tmp/wr28/authored-scratch/wr28-rebuild.ts  (wr28-assets-stage unchanged rebuild)",
+  "npx tsx tmp/wr28/authored-scratch/wr28-authored-build.ts  (wr28-assets-stage authored edit + real build + reuse rebuild)",
+  "npx tsx tmp/wr28/authored-scratch/wr28-repoint.ts  (re-point the authored asset to a durable data/ path; dry-run confirms it stales nothing)",
+  "find data -type f -newermt '2026-08-27 20:05:00'  (history-mutation audit, grouped by containing run directory)",
+  "git diff --stat / git status --porcelain / shasum -a 256  (read-only inspection and sabotage-restore verification)"
+ ],
+ "limitations": [
+  "NOTHING READS authored.brand YET. As of this commit no stage consumes it — Phase 2's bake-time rewrite is the consumer being built in parallel. AUTHORED_BRAND_IMPACTS=[production] is therefore CONSERVATIVE: 28.P2.21 measures that a brand decision reruns the production compile, which today reproduces the same bytes. The rerun is real in SELECTION, a no-op in OUTPUT. This is stated in graph.ts at the declaration, not only here. Over-staleness costs a rebuild; under-staleness would ship a decision the operator believes was applied.",
+  "`authored.assets[*].alt` IS RECORDED AND CONSUMED BY NOTHING. The asset materialization rewrites bytes keyed on a source URL (assets/rewrite.ts) and never touches markup, so an alt attribute can only be written by a bake-time IR rewrite. authoredAssetsAsResolutionAssets deliberately does NOT map it into ResolutionAsset (which has no alt field) rather than inventing a consumption. Check 28.P2.23 asserts that an alt-only edit is recorded in history but stales no stage — that is the honest statement of the gap, not a feature.",
+  "brandSurfaceId ADDRESSES A HOST, NOT AN OCCURRENCE. The detector's evidencePointer is per-node (`desktop.doc[n000017].v`), not per-match, so a single node whose inline SVG carries two aria-labels yields two findings with ONE id and therefore one decision. That granularity matches what a REPLACE/REMOVE/PRESERVE choice means, but it must not be described as per-occurrence addressing. Documented at the function.",
+  "brandSurfaceId was exercised against SYNTHETIC BrandFinding objects, not against a live scanBrandSurfaces run. I did not run the detector in this phase (Phase 2's brand builder owns it). The stability and distinctness properties (28.P2.4 / 28.P2.5) are properties of the derivation, verified over hand-built findings shaped exactly like the real ones.",
+  "BEHAVIOUR CHANGE: a resolution pack's `assets` now fold into authored.assets. For a REVISION-1 project this happens at adapt time (authoredFromResolutions), which would change that project's authored-state hash on its next prepare. Measured: all three revision-1 projects on disk carry ZERO pack assets, so nothing currently on disk is affected — but the change is real and would surface on the next revision-1 project that has them.",
+  "An AUTHORED-ONLY asset edit clears its replacement-image requirement via the artifact + carry-forward (`not-applicable`), NOT via matchResolutionToRequirements — which still runs over resolution packs only and has no branch that can produce a match from authored state. 28.P2.27 asserts the artifact path works and that resolvedBy stays absent. Whether the matcher should also see authored state is a real design question I did not answer.",
+  "The brand-decision freshness impact was measured end to end only on the SYNTHETIC 2-route fixture (28.P2.20-22). The real-data run (wr28-assets-stage) exercised authored.assets only; I did not spend a second ~36 s linear production compile to repeat the brand case there.",
+  "authored.brand is a decision surface with no validation against a real detected surface set: nothing checks that a surfaceId key corresponds to a surface the detector actually found on this lineage. A stale key (from a template recompile that moved a node) would sit in the map unnoticed. Reconciliation belongs with the consumer.",
+  "FALSIFIABILITY, exactly as performed: (A) made AuthoredChangeSchema.assetIdsAdded REQUIRED → smoke:revision 36 checks / 2 failures, 28.P2.R3 and 28.P2.R4 FAIL (R4 detail: `wr28-assets-runner:THROW([`); restored; sha256 of src/release/revisions.ts back to 3222a2604c25684b20ea7f795a3715e750a74b236662eb61d0cf64406718ccfb, byte-identical to the pre-sabotage capture. (B) made resolutionAssetContentHashes ignore `authored` → smoke:release 229 checks / 3 failures, 28.P2.15 (`run=[] packs=0`), 28.P2.16 (`rerun=[]`) and 28.P2.17 FAIL; restored; sha256 of src/release/freshness.ts back to e259934dd5cc63696da39a39280fa3eeccde3de5cd25b9fba03e3174032936bf. NOTE ON METHOD: a whole-tree `git diff` hash is NOT a valid restore proof here because other Task-28 phases were writing the same working tree concurrently — I used per-file sha256 against a pre-sabotage capture (tmp/wr28/authored-scratch/pre-sabotage.sha) instead, and it matched exactly for both files. I also grepped the touched files for leftover sabotage markers (`void authored`, `void mergedAssetResolutions`): none.",
+  "One of my own new checks (28.P2.1b) was initially written so that the suite invalidated it by authoring into its own fixture project. It FAILED on the first full run; I rewrote its population to be defined by the FILE's contents rather than a directory allow-list, and it now passes and cannot self-invalidate. Recording this because the first version would have looked green in a single-run world and rotted later.",
+  "I ran typecheck plus 4 suites (release, revision, registry, content-injection — the only 4 that import src/release, verified with `grep -ln src/release scripts/*.ts`). I did NOT re-run the other 16 suites in the Phase-1 regression set, so I hold no fresh evidence about them and do not claim the full 20-suite / 2220-check regression.",
+  "NO NEW SCRIPT was added, so nothing was appended to docs/result/handoffs/28-intel/pending-package-scripts.tsv — both suites I extended (smoke:release, smoke:revision) are already registered in package.json, which I did not edit.",
+  "HISTORY: zero mutating git operations. Every file written under data/ since my session start (2026-08-27 20:05 KST = 11:05Z) falls in a NEW 2026-08-27 run id or a wr28-* namespace: production-builds/2026-08-27T11-16-18-737Z (442 files), asset-materializations/2026-08-27T11-16-18-528Z (164), production-specs/2026-08-27T11-16-18-737Z (1), release-projects/wr28-assets-stage (8), and one new file data/linear.app/wr28-operator-assets/wr28-phase2-authored-hero.png. Method: mtime grouped by containing run directory (birth time is unreliable on this APFS volume, per the Phase-1 note). NOTE: wr28-assets-stage now carries authored.assets and 3 revisions where Phase 1 left it with 1 — that is the deliberate re-run of the Phase-1 proof, not incidental drift, and the authored file it points at lives in data/linear.app/wr28-operator-assets/ so it survives scratch cleanup (verified: the re-point stales nothing, because the bytes are identical and freshness hashes content, not paths)."
+ ]
+}

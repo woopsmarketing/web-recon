@@ -1,0 +1,2413 @@
+# MASTER TASK
+# WEB-RECON × BOOSTCHAT
+# PRODUCER REVIEW + INTEGRATION CONTRACT V0 CANDIDATE
+#
+# MODE:
+# READ-ONLY ARCHITECTURE / CONTRACT DESIGN / CROSS-SYSTEM REVIEW
+#
+# DO NOT IMPLEMENT
+#
+# MAIN AGENT:
+# Opus XHigh recommended
+
+==================================================
+0. PURPOSE
+==================================================
+
+우리는 지금 서로 독립적으로 개발해 온 두 시스템을
+처음으로 실제 제품 수준에서 연결하려고 한다.
+
+이 작업의 목적은 구현이 아니다.
+
+목적은:
+
+1. BoostChat consumer가 실제로 무엇을 요구하는지 검토하고
+2. web-recon producer가 실제로 무엇을 제공할 수 있는지 확인하고
+3. 양쪽의 내부 구현을 서로 노출하지 않는 경계를 만들고
+4. boost-interior-demo 전용이 아닌
+5. 향후 다른 web-recon 사이트/Template과
+6. 향후 다른 BoostChat 고객/업종에도 확장 가능한
+
+Integration Contract V0 후보를 만드는 것이다.
+
+이번 작업이 끝나기 전에는
+양쪽 implementation을 시작하지 않는다.
+
+==================================================
+1. SYSTEM BOUNDARIES
+==================================================
+
+현재 시스템 역할을 다음과 같이 본다.
+
+--------------------------------------------------
+WEB-RECON
+--------------------------------------------------
+
+역할:
+
+- source website 분석/재구축
+- authored reusable Template 생성
+- Template Release immutable
+- site data / settings / theme / slots / collections / assets 사용
+- static HTML/CSS/JS/assets package build
+- 향후 Cloudflare R2 + recon-runtime으로 static serve
+- first-party business data의 PRODUCER
+
+현재 중요한 구조:
+
+Original Website
+→ Source Capture
+→ Source-Preserved Faithful Clone
+→ Authored Recon Template
+→ Site Data
+→ Static Build
+→ Package
+
+Preservation은 production runtime dependency가 아니다.
+
+현재 production data source는 local JSON.
+
+Supabase Site Platform은 아직 구현하지 않는다.
+
+--------------------------------------------------
+BOOSTCHAT
+--------------------------------------------------
+
+역할:
+
+- 독립 AI 상담 runtime
+- widget
+- lead/inquiry
+- AI tool calling
+- tenant integrations
+- first-party business data의 CONSUMER
+
+이번 V1에서:
+
+BoostChat
+→ web-recon first-party portfolio data
+→ deterministic portfolio search
+→ structured result
+→ visitor consultation
+
+을 구현하려 한다.
+
+--------------------------------------------------
+BOOSTWEB
+--------------------------------------------------
+
+현재 V1 runtime dependency가 아니다.
+
+이번 Contract에 끌어들이지 않는다.
+
+--------------------------------------------------
+SITE PLATFORM
+--------------------------------------------------
+
+향후:
+
+content edit
+build
+publish
+rollback
+domain
+customer ownership
+
+등을 제공할 수 있지만
+이번 READ integration에는 포함하지 않는다.
+
+==================================================
+2. CRITICAL PRODUCT GOAL
+==================================================
+
+우리가 만들려는 첫 실제 UX:
+
+Visitor:
+
+"34평 아파트인데 깔끔한 화이트톤으로
+리모델링하고 싶어요."
+
+BoostChat:
+
+natural language
+→ structured intent
+
+예:
+
+area
+style
+scope
+budget
+
+→ deterministic normalization
+
+→ web-recon이 제공한
+실제 first-party portfolio records 검색
+
+→ deterministic ranking
+
+→ 실제 존재하는 사례 Top N
+
+→ structured card
+
+→ detail page
+
+또는:
+
+[비슷한 사례 모두 보기]
+
+→ producer가 소유하는 portfolio listing URL
+
+중요:
+
+LLM은 실제 portfolio를 만들어내지 않는다.
+
+LLM:
+natural language → intent
+
+Server:
+calculation / normalization / matching / ranking
+
+Producer:
+actual records
+
+Presentation:
+verified result only
+
+==================================================
+3. FIRST PRINCIPLE — THIS MUST NOT BECOME DEMO-SPECIFIC
+==================================================
+
+가장 중요하다.
+
+이번 Contract는:
+
+boost-interior-demo
+전용 계약이 되어서는 안 된다.
+
+또한:
+
+interior
+전용 platform-core 계약이 되어서는 안 된다.
+
+예를 들어 다음 값들은
+Contract core에 hardcode하면 안 된다.
+
+- 화이트
+- 미니멀
+- 모던
+- 주방
+- 욕실
+- 아파트
+- 평
+- 인테리어-specific taxonomy
+
+이것들은 필요하다면:
+
+- site data
+- template data
+- vertical adapter
+- vocabulary
+- producer emitter mapping
+
+영역에 있어야 한다.
+
+Contract core가 다룰 것은
+가능하면 다음과 같은 일반 개념이어야 한다.
+
+- resource
+- stable record id
+- title
+- detail URL
+- optional facets
+- numeric dimensions
+- missing-data semantics
+- schema version
+- content version
+- public origin
+- result identity
+
+단:
+
+지금부터 억지로 universal resource framework를 만들라는 뜻도 아니다.
+
+V0은 portfolio를 실제 첫 resource로 사용하되
+platform core가 interior-specific해지지 않도록 한다.
+
+==================================================
+4. SECOND PRINCIPLE — DO NOT OVER-GENERALIZE
+==================================================
+
+다음도 금지한다.
+
+resource.search(type=...)
+arbitrary generic tool framework
+generic HTTP fetch tool
+unrestricted dynamic schema system
+
+두 번째 resource가 실제로 존재하기 전까지
+필요 이상의 추상화를 만들지 않는다.
+
+현재 목표:
+
+BoostChat:
+portfolio.search
+
+web-recon:
+portfolio search artifact
+
+단 그 아래의 transport/version/origin/missing-data 같은
+공통 원칙은 future resource에서도 재사용 가능하게 만든다.
+
+==================================================
+5. INPUT MATERIAL — MUST READ
+==================================================
+
+이 작업에서는 반드시 다음 두 종류의 증거를 함께 사용한다.
+
+--------------------------------------------------
+A. WEB-RECON PRODUCER REALITY
+--------------------------------------------------
+
+현재 web-recon repo의 실제:
+
+- content schema
+- ProjectSchema
+- categories
+- assets
+- site data
+- ContentReader
+- SiteSnapshot
+- buildSiteSnapshot()
+- project filter
+- static build package
+- release/build records
+- boost-interior-demo data
+- portfolio routes
+- filters
+- URL behavior
+
+를 직접 확인한다.
+
+특히 이미 작성된 다음 조사 결과를 읽는다.
+
+docs/result/boostchat-portfolio-data-readiness/
+
+가능하면:
+
+00-summary.md
+01-field-coverage.md
+02-area-price.md
+03-vocabulary.md
+04-query-evaluation.md
+evidence/
+
+이 보고서를 정본으로 맹신하지 말고
+중요 판단은 실제 코드/데이터로 spot-check한다.
+
+--------------------------------------------------
+B. BOOSTCHAT CONSUMER REQUIREMENTS
+--------------------------------------------------
+
+BoostChat 측에서 작성한:
+
+web-recon-consumer-requirements-v0.md
+web-recon-consumer-requirements-v0.json
+
+그리고 가능하면:
+
+web-recon-first-party-data-audit.md
+web-recon-first-party-data-inventory.json
+web-recon-first-party-data-audit-review.md
+
+를 읽는다.
+
+이 파일들이 sibling boost-chat repo에 있다면 read-only로 읽어라.
+
+예상 위치:
+
+boost-chat/docs/reports/integration/
+
+정확한 경로가 다르면 검색하라.
+
+절대로 BoostChat repo를 수정하지 않는다.
+
+중요:
+
+BoostChat consumer requirements는
+최종 contract가 아니다.
+
+consumer의 요구사항 초안일 뿐이다.
+
+web-recon producer는:
+
+ACCEPT
+ACCEPT_WITH_CHANGE
+REJECT
+DEFER
+
+를 판단해야 한다.
+
+==================================================
+6. READ-ONLY RULE
+==================================================
+
+절대 하지 말 것:
+
+- production code 수정
+- test 수정
+- fixture 수정
+- JSON data 수정
+- Template 수정
+- schema 수정
+- migration 작성
+- DB 변경
+- R2 resource 생성
+- Worker deploy
+- env 수정
+- package install
+- commit
+- push
+- build pipeline 변경
+- manifest emitter 구현
+- portfolio index 구현
+- BoostChat widget 구현
+
+이번 작업에서 허용되는 file write는
+최종 보고서 문서만이다.
+
+==================================================
+7. EVIDENCE LABELS
+==================================================
+
+모든 중요한 판단은:
+
+CONFIRMED
+INFERRED
+UNKNOWN
+
+으로 구분한다.
+
+가능하면 실제:
+
+file
+symbol
+line
+data sample
+
+근거를 남긴다.
+
+특히 BoostChat 문서가 가정한 web-recon 사실과
+실제 web-recon이 다르면
+반드시 명확하게 수정한다.
+
+==================================================
+8. START BY RECONSTRUCTING CURRENT WEB-RECON CONTRACT
+==================================================
+
+먼저 현재 web-recon의 실제 producer contract를
+코드 기준으로 다시 정리한다.
+
+확인:
+
+Site
+Settings
+Theme
+Slots
+Business
+Projects
+Categories
+Reviews
+Banners
+Assets
+SEO
+
+Project fields:
+
+required
+optional
+nullable
+semantic meaning
+
+특히:
+
+id
+slug
+title
+status
+publishedAt
+category
+cover
+summary
+body
+location
+area
+scope
+keywords
+pricePerArea
+builtYear
+period
+durationWeeks
+galleryGroups
+customerQuote
+
+의 실제 타입과 의미를 기록한다.
+
+==================================================
+9. VERIFY IDENTITY
+==================================================
+
+BoostChat은 stable record id를 요구한다.
+
+현재 project.id가:
+
+- rebuild 후 유지되는가
+- Template release가 바뀌어도 유지되는가
+- slug 변경 후 유지되는가
+- site data 수정 후 유지되는가
+- 다른 site와 namespace collision 가능성이 있는가
+
+를 조사한다.
+
+다음 중 어느 것이 맞는지 결정:
+
+A.
+site-local id만 있으면 충분
+
+B.
+siteId + recordId 조합이 canonical identity
+
+C.
+global opaque id가 필요
+
+V0에서 가장 작은 해법을 제안한다.
+
+==================================================
+10. VERIFY CURRENT AREA MODEL
+==================================================
+
+BoostChat consumer는 다음 semantics를 원한다.
+
+value
+unit
+basis
+
+실제 web-recon의 area model을 확인한다.
+
+특히 boost-interior-demo에서:
+
+unit
+basis
+
+가 실제 존재하는지 확인.
+
+이미 조사된 사실 후보:
+
+unit = pyeong
+basis = supply
+
+but verify.
+
+그리고 다음을 판단:
+
+- producer가 authored value를 그대로 emit 가능한가?
+- consumer가 pyeong ↔ m2 변환하는 것이 맞는가?
+- supply ↔ exclusive는 절대 환산하지 않는 것이 맞는가?
+- bare-number fallback이 필요한가?
+
+현재 web-recon 데이터가 이미 구조화되어 있다면
+manifest defaults를 불필요하게 사용하지 않는 방향을 우선한다.
+
+==================================================
+11. VERIFY PRICE MODEL
+==================================================
+
+현재 pricePerArea를 조사한다.
+
+특히:
+
+- coverage
+- currency
+- unit
+- basis 존재 여부
+- category별 의미
+- full remodel vs partial remodel
+- total project cost 존재 여부
+- VAT/철거/가구/가전 포함 범위
+
+중요:
+
+현재 web-recon 데이터 readiness audit에서
+다음 문제가 발견됐다.
+
+- pricePerArea는 일부 project에 없음
+- 부분공사 사례에 가격이 없음
+- total project cost field 없음
+- pricePerArea × area는 실제 계약총액이 아니라 추정치
+
+이 사실을 실제 데이터로 확인한다.
+
+Integration Contract에서는 반드시:
+
+visitorTotalBudget
+derivedBudgetPerArea
+
+와
+
+projectPrice
+projectPricePerArea
+projectTotalCost
+
+를 의미적으로 구분한다.
+
+Visitor budget에서 계산한 값이
+project의 실제 가격처럼 표현되지 않게 한다.
+
+==================================================
+12. BUDGET SEARCH BOUNDARY
+==================================================
+
+다음 UX를 검토한다.
+
+Visitor:
+"24평에 2천만원"
+
+BoostChat server:
+20,000,000 / 24
+→ 833,333 KRW/pyeong
+
+이 계산은 가능하다.
+
+하지만 현재 producer data가:
+
+totalCost 없음
+partial project price 없음
+
+이라면 다음 주장은 할 수 없다.
+
+"2천만원에 맞는 사례"
+
+따라서 Contract V0에서:
+
+- visitor budget criterion
+- actual project price evidence
+- unsupported budget match
+
+를 구분하는 semantics를 제안한다.
+
+현재 데이터로 근거 없는 budget suitability를
+표시하지 못하게 해야 한다.
+
+==================================================
+13. VERIFY STYLE / KEYWORD REALITY
+==================================================
+
+BoostChat consumer는 optional:
+
+style
+propertyType
+scope
+
+facet을 원한다.
+
+하지만 실제 web-recon에서
+이 개념이 어떻게 저장되는지 확인한다.
+
+특히 keywords가:
+
+color
+style
+feature
+material
+
+을 섞고 있다는 기존 조사 결과를 검증한다.
+
+예:
+
+화이트
+미니멀
+모던
+간접조명
+수납 특화
+내추럴
+우드 포인트
+그레이지
+
+를 모두 style로 내보내면 안 된다.
+
+판단:
+
+A.
+현재 keywords를 그대로 facet으로 제공
+
+B.
+emitter-level vocabulary mapping
+
+C.
+ProjectSchema에 새 canonical facet 추가
+
+D.
+V0에서는 일부 facet만 제공
+
+중 V0에 적절한 방법을 선택한다.
+
+중요:
+
+이번 작업에서는 schema 변경을 구현하지 않는다.
+
+==================================================
+14. PROPERTY TYPE
+==================================================
+
+현재 producer facts에는
+structured propertyType이 없을 가능성이 높다.
+
+확인한다.
+
+아파트/빌라/오피스텔/상가 등을
+title/body에서 추론해서 emit하는 설계는
+기본적으로 금지한다.
+
+source fact가 없으면:
+
+facet 자체를 omit
+
+한다.
+
+이 원칙이 generic contract와 맞는지 평가한다.
+
+==================================================
+15. SCOPE NORMALIZATION
+==================================================
+
+현재 scope에 다음과 같은 문제가 있다는
+기존 조사 결과를 실제 데이터와 비교한다.
+
+예:
+
+욕실
+공용 욕실
+안방 욕실
+
+침실
+안방
+작은방
+아이방
+
+주방
+주방·팬트리
+주방·다이닝
+
+복도 수납
+복도·수납
+
+확인:
+
+- source value 보존
+- search vocabulary
+- hierarchy
+- alias
+- composite token
+
+중 어떤 층에서 처리하는 것이 적절한가.
+
+Contract core에
+인테리어 room ontology를 넣으면 안 된다.
+
+==================================================
+16. MISSING-DATA SEMANTICS
+==================================================
+
+BoostChat requirement:
+
+omitted/null
+= unknown
+
+[]
+= confirmed none
+
+0 / ""
+= 실제 값일 때만
+
+이 semantics가
+현재 web-recon content philosophy와 맞는지 확인한다.
+
+현재 web-recon은:
+
+missing optional value
+→ unknown
+→ never invented
+
+철학을 갖고 있는 것으로 예상된다.
+
+실제 schema/docs를 확인한다.
+
+가능하면 이 원칙을 Contract V0 핵심 규칙으로 채택한다.
+
+==================================================
+17. PRODUCER ARTIFACT MODEL REVIEW
+==================================================
+
+BoostChat은 현재 다음 두 artifact를 요청한다.
+
+1.
+integration manifest
+
+2.
+portfolio search index
+
+검토한다.
+
+질문:
+
+A.
+2-file 구조가 정말 필요한가?
+
+B.
+manifest + index가 현재 static build architecture와 자연스럽게 맞는가?
+
+C.
+index를 package에 포함하면 reproducibility를 해치지 않는가?
+
+D.
+build input과 동일 data에서 deterministically 생성 가능한가?
+
+E.
+원본 project JSON을 그대로 expose하는 것보다
+search projection을 따로 만드는 것이 나은가?
+
+F.
+향후 다른 resource를 추가할 때
+manifest가 확장 가능한가?
+
+더 좋은 구조가 있으면 제안할 수 있다.
+
+단 API server 방식으로 바꾸지 않는다.
+
+static-first를 유지한다.
+
+==================================================
+18. IMPORTANT — SEARCH INDEX IS A PROJECTION
+==================================================
+
+portfolio index는
+새로운 source of truth가 되어서는 안 된다.
+
+원칙:
+
+Site Data / Canonical Snapshot
+      ↓
+deterministic projection
+      ↓
+portfolio search index
+
+이어야 한다.
+
+index를 사람이 별도로 관리하면 안 된다.
+
+현재 canonical build input에서
+derived artifact로 만들어야 한다.
+
+다음 관계를 명확히 한다.
+
+Canonical Site Data
+≠ Search Index
+
+Search Index
+= derived integration artifact
+
+==================================================
+19. WHERE SHOULD EMITTER LIVE?
+==================================================
+
+현재 web-recon 구조를 조사해서
+integration artifact emitter가 생긴다면
+어느 layer가 가장 자연스러운지 판단한다.
+
+후보:
+
+A.
+Template-specific code
+
+B.
+platform build pipeline
+
+C.
+site adapter
+
+D.
+content/export layer
+
+E.
+별도 integration emitter
+
+목표:
+
+- customer-specific hardcode 없음
+- Template JSX가 BoostChat을 알지 않음
+- BoostChat 내부 이름을 platform이 알지 않음
+- 같은 SiteSnapshot에서 deterministic output
+- future resource 추가 가능
+
+정확한 위치를 제안하되
+구현하지 않는다.
+
+==================================================
+20. GENERICITY AXES
+==================================================
+
+이 설계는 두 종류의 재사용성을 만족해야 한다.
+
+AXIS A:
+
+같은 Template
+→ 여러 고객 site
+
+예:
+
+interior-01
+→ customer A
+→ customer B
+→ customer C
+
+모두 같은 integration contract를 사용해야 한다.
+
+AXIS B:
+
+다른 Template / 업종
+
+예:
+
+interior
+hospital
+academy
+accounting
+portfolio
+B2B
+
+로 확장해도
+platform core를 매번 다시 뜯지 않아야 한다.
+
+각 요구사항이
+A / B 중 무엇을 만족하는지 검토한다.
+
+==================================================
+21. CONTRACT CORE VS RESOURCE-SPECIFIC CONTRACT
+==================================================
+
+반드시 다음 두 층을 구분해라.
+
+--------------------------------------------------
+CORE INTEGRATION CONTRACT
+--------------------------------------------------
+
+예:
+
+schemaVersion
+site identity
+publicOrigin
+resource href
+resource version
+same-origin policy
+missing semantics
+URL ownership
+version semantics
+
+--------------------------------------------------
+PORTFOLIO RESOURCE CONTRACT
+--------------------------------------------------
+
+예:
+
+record id
+title
+detailUrl
+area
+pricePerArea
+styles
+scope
+category
+
+향후:
+
+service
+case
+product
+doctor
+class
+
+등이 생겨도
+core를 재사용할 수 있어야 한다.
+
+단 V0에서 universal resource framework를 구현하거나
+과도하게 추상화하지 않는다.
+
+문서 수준에서 경계만 명확하게 한다.
+
+==================================================
+22. MANIFEST REVIEW
+==================================================
+
+BoostChat consumer proposal:
+
+schemaVersion
+
+site:
+  id
+  publicOrigin
+
+resources:
+  portfolio:
+    href
+    version
+    recordCount?
+
+vocabulary?
+defaults?
+allResults?
+locale?
+
+각 필드에 대해:
+
+ACCEPT
+CHANGE
+REJECT
+DEFER
+
+판정한다.
+
+특히:
+
+- 정말 producer가 알아야 하는 필드인가?
+- BoostChat 내부 구현 누출인가?
+- web-recon architecture와 자연스러운가?
+- future resource에도 의미가 있는가?
+
+를 검토한다.
+
+==================================================
+23. PORTFOLIO INDEX REVIEW
+==================================================
+
+BoostChat proposal:
+
+required:
+id
+title
+detailUrl
+
+optional:
+category
+propertyType
+styles
+scope
+area
+pricePerArea
+location
+publishedAt
+cover
+
+not needed:
+summary
+body
+galleryGroups
+customerQuote
+keywords
+
+각 항목을 실제 current data와 비교한다.
+
+특히 이전 web-recon audit에서는:
+
+body
+gallery alt
+
+에 스타일 근거가 더 풍부하다는 사실이 있었다.
+
+그러나 consumer는 prompt-injection boundary 때문에
+free text를 최소화하려 한다.
+
+다음 질문을 판단한다.
+
+1.
+검색 정확도를 위해 body 전체가 정말 필요한가?
+
+2.
+필요 없다면 producer가
+structured facet으로 정보를 승격/정규화해야 하는가?
+
+3.
+"추천 근거 설명"을 위해
+짧은 evidence field가 필요한가?
+
+4.
+그 evidence가 다시 free-text prompt injection surface가 되는가?
+
+V0에서는 가장 작은 안전한 contract를 선택한다.
+
+==================================================
+24. MATCH EVIDENCE
+==================================================
+
+BoostChat은 LLM이 추천 이유를 만들지 않게 하려 한다.
+
+Producer가 match reason을 만들 필요는 없다.
+
+다만 consumer matcher가 사용할
+structured facts는 제공해야 한다.
+
+예:
+
+area
+styles
+scope
+price
+
+등.
+
+다음 원칙을 검토한다.
+
+Producer:
+facts
+
+Consumer matcher:
+match evidence
+
+Presenter:
+human-readable explanation
+
+LLM:
+선택적으로 연결 문장만
+
+이 경계가 적절한지 판단한다.
+
+==================================================
+25. URL OWNERSHIP
+==================================================
+
+BoostChat 요구:
+
+producer가 URL semantics를 소유.
+
+Consumer는:
+
+detailUrl
+allResults.baseUrl
+
+을 그대로 사용.
+
+query를 직접 만들지 않는다.
+
+이 원칙은 유지할 가능성이 높다.
+
+하지만 실제 web-recon의:
+
+portfolio route
+filter state
+query parameters
+client-side filters
+static export
+
+를 조사한다.
+
+확인:
+
+1. portfolio filter가 현재 URL에 반영되는가?
+2. 새로고침 후 filter state 유지 가능한가?
+3. filtered URL을 외부에서 열 수 있는가?
+4. canonical SEO URL에 영향이 있는가?
+
+V0:
+
+all portfolio base URL
+
+만 제공할지,
+
+filtered result URL까지 지원할지
+
+판단한다.
+
+무리해서 filter URL 기능을 새로 설계하지 않는다.
+
+==================================================
+26. DETAIL URL
+==================================================
+
+각 project detailUrl이:
+
+- static build에서 존재
+- published record와 같은 build
+- site origin 하위
+- slug 변경 시 contract 영향
+- record id와 identity 분리
+
+되는지 확인한다.
+
+URL은 identity가 아니다.
+
+==================================================
+27. VERSIONING
+==================================================
+
+BoostChat은:
+
+manifest.resources.portfolio.version
+==
+portfolio-index.version
+
+echo 방식을 요구한다.
+
+이 version은:
+
+integrity hash가 아니다.
+
+목적:
+
+- change detection
+- manifest/index pair consistency
+- cache invalidation
+
+이다.
+
+web-recon에는 이미:
+
+siteSnapshotHash
+buildInputId
+packageHash
+template release identity
+
+등이 있을 수 있다.
+
+검토:
+
+A.
+어떤 existing identity를 그대로 재사용할 수 있는가?
+
+B.
+portfolio index content-specific hash가 더 정확한가?
+
+C.
+buildInputId 사용 시 portfolio가 안 바뀌어도 version이 바뀌는 문제가 있는가?
+
+D.
+새 hash를 만들 필요가 있는가?
+
+목표:
+
+같은 portfolio content
+→ 가능하면 같은 resource version
+
+portfolio content changed
+→ 반드시 version changed
+
+가장 deterministic한 방법을 제안한다.
+
+==================================================
+28. SCHEMA VERSION
+==================================================
+
+BoostChat proposal:
+
+major.minor
+
+breaking:
+major
+
+additive:
+minor
+
+web-recon의 기존 schema version convention과 비교한다.
+
+가능하면 기존 관례를 재사용한다.
+
+integration schemaVersion과
+projects@1 같은 producer internal content schema를
+같은 것으로 취급하지 않는다.
+
+==================================================
+29. HTTP DELIVERY CONTRACT
+==================================================
+
+BoostChat consumer requirement에는 다음이 있다.
+
+https
+direct 200
+no redirect
+application/json
+same origin
+manifest no-cache or short cache
+identity/uncompressed response
+
+이 중:
+
+- producer가 보장 가능한 것
+- recon-runtime이 책임질 것
+- Cloudflare 동작 검증이 필요한 것
+- 과한 요구
+
+를 나눈다.
+
+특히:
+
+Accept-Encoding 없는 request에
+R2/recon-runtime이 실제 어떤 응답을 하는지는
+현재 배포가 아직 없으면 UNKNOWN으로 남긴다.
+
+계약과 runtime implementation detail을 혼동하지 않는다.
+
+==================================================
+30. SAME-ORIGIN MODEL
+==================================================
+
+BoostChat은:
+
+manifest
+index
+detailUrl
+cover
+allResults
+
+전부 site.publicOrigin same-origin을 선호한다.
+
+현재 web-recon package asset 구조를 조사한다.
+
+cover가 build package에 포함되고
+same-origin URL로 서빙 가능한지 확인한다.
+
+향후 R2 public hostname을 visitor-facing asset URL로
+노출할 필요가 없는 구조라면
+same-origin rule을 유지한다.
+
+==================================================
+31. WIDGET INTEGRATION SEAM
+==================================================
+
+이번 Contract의 중심은 data integration이지만
+site에 widget을 넣는 seam도 검토한다.
+
+절대:
+
+Template JSX에 고객별 widget key hardcode
+
+하지 않는다.
+
+후보:
+
+settings.integration.boostChat
+
+또는 generic integration config
+
+또는 build injection.
+
+현재 settings philosophy:
+
+defaults
+→ sparse site override
+→ effective settings
+
+와 맞는 방식을 찾는다.
+
+단 구현하지 않는다.
+
+그리고:
+
+BoostChat widget이 없어도
+Template는 완전히 정상 작동해야 한다.
+
+==================================================
+32. DO NOT LET BOOSTCHAT LEAK INTO TEMPLATE CORE
+==================================================
+
+Template component가:
+
+BoostChat
+portfolio.search
+manifest
+
+를 직접 알게 만들지 않는다.
+
+가능하면:
+
+Site Data
+→ integration emitter
+
+와
+
+Site Settings
+→ optional widget embed config
+
+정도로 분리한다.
+
+실제 architecture와 비교해서
+가장 자연스러운 seam을 제안한다.
+
+==================================================
+33. PRODUCER QUESTIONS FROM BOOSTCHAT
+==================================================
+
+BoostChat이 준 10개 질문에 반드시
+하나씩 답한다.
+
+Q1.
+스타일 / 공간 유형 개념은 실제 어디에 있는가?
+닫힌 vocabulary로 만들 수 있는가?
+
+Q2.
+area / pricePerArea:
+actual type / unit / basis / meaning?
+
+Q3.
+cover asset origin?
+same-origin 가능?
+thumbnail 제공 가능한가?
+
+Q4.
+portfolio listing URL filter 지원 여부?
+
+Q5.
+manifest fixed path는 무엇이 적절한가?
+
+Q6.
+R2 + recon-runtime:
+redirect / Content-Type / Cache-Control /
+compression contract는 어떻게 할 것인가?
+
+Q7.
+portfolio 예상 record 수/index size?
+
+현재 demo뿐 아니라 현실적인 customer scale도 구분한다.
+
+Q8.
+project.id는 rebuild/reimport에서도 stable한가?
+
+Q9.
+multilingual:
+locale별 vocabulary/index 필요 가능성?
+
+Q10.
+site 자체 CSP가 존재하는가?
+widget embed에 어떤 영향이 있는가?
+
+각 질문:
+
+ANSWER
+EVIDENCE
+CONTRACT IMPACT
+
+형식으로 작성한다.
+
+==================================================
+34. RECONCILE WITH DATA READINESS AUDIT
+==================================================
+
+기존 data readiness 결과와
+BoostChat consumer requirements를 직접 교차표로 만든다.
+
+예:
+
+Consumer wants:
+style facet
+
+Producer reality:
+keywords mixed facets
+
+Decision:
+...
+
+Consumer wants:
+propertyType
+
+Producer reality:
+no structured field
+
+Decision:
+omit
+
+Consumer wants:
+area
+
+Producer reality:
+value/unit/basis available
+
+Decision:
+accept
+
+Consumer wants:
+budget matching
+
+Producer reality:
+pricePerArea partial, totalCost absent
+
+Decision:
+limited support
+
+최소 15개 contract 항목을 대조한다.
+
+==================================================
+35. IMPORTANT — NO FABRICATION
+==================================================
+
+Contract emitter가 다음을 해서는 안 된다.
+
+- title/body에서 propertyType 추론
+- missing price 추정
+- missing style 생성
+- customer household 추론
+- supply/exclusive 환산
+- total project cost 생성
+- "modern" 등 style을 근거 없이 생성
+
+source data가 없으면:
+
+omit / null
+
+이다.
+
+==================================================
+36. NORMALIZATION OWNERSHIP
+==================================================
+
+각 normalization의 owner를 정한다.
+
+예:
+
+Producer emitter:
+internal field
+→ canonical facet id
+
+Consumer:
+visitor language
+→ canonical facet id
+
+Matcher:
+canonical id ↔ canonical id
+
+이 대칭 구조가 좋은지 검토한다.
+
+예:
+
+Producer:
+
+keywords:
+"화이트"
+
+→ style id:
+"white"
+
+Consumer:
+
+"화이트톤"
+"하얀 느낌"
+"white"
+
+→ style id:
+"white"
+
+Matcher:
+
+white == white
+
+이 구조가 가능하다면 제안한다.
+
+하지만 producer와 consumer가
+동일 synonym dictionary를 복제해야 하는 구조는 피한다.
+
+어휘 ownership도 명확히 한다.
+
+==================================================
+37. VOCABULARY OWNERSHIP
+==================================================
+
+BoostChat은 manifest에서
+closed vocabulary를 받고
+LLM이 그 id를 선택하는 방식을 제안했다.
+
+검토:
+
+Producer owns:
+available canonical values
+
+Consumer owns:
+natural-language mapping to those values
+
+이 분리가 맞는가?
+
+예:
+
+manifest:
+{
+  style: [
+    { id: "white", label: "화이트" },
+    { id: "minimal", label: "미니멀" }
+  ]
+}
+
+Visitor:
+"깔끔한 화이트톤"
+
+Consumer:
+white + minimal
+
+이때 "깔끔한→minimal" 같은 synonym은
+누가 소유해야 하는지 판단한다.
+
+주의:
+
+Producer의 label을 alias dictionary로 오해하지 않는다.
+
+==================================================
+38. CONTRACT V0 MUST SUPPORT DEGRADED CAPABILITY
+==================================================
+
+어떤 site는:
+
+area 있음
+style 있음
+price 없음
+
+어떤 site는:
+
+style 없음
+scope 없음
+
+일 수 있다.
+
+Integration이:
+
+ALL OR NOTHING
+
+이면 안 된다.
+
+Manifest/resource가
+어떤 검색 capability가 실제로 가능한지
+consumer가 알 수 있는 방식이 필요하다.
+
+단 operation metadata를 과도하게 만들지 않는다.
+
+vocabulary / field presence / optional semantics만으로
+충분한지 검토한다.
+
+==================================================
+39. STATIC-FIRST MUST REMAIN
+==================================================
+
+이 Integration 때문에:
+
+visitor request
+→ web-recon database
+
+구조가 생기면 안 된다.
+
+정상 public path:
+
+Visitor
+→ static site
+
+BoostChat:
+→ BoostChat backend
+→ static first-party artifacts
+
+이어야 한다.
+
+web-recon runtime DB read = 0
+
+원칙 유지.
+
+==================================================
+40. SEO/PERFORMANCE
+==================================================
+
+Integration artifact는
+사이트 page rendering에 필요하지 않아야 한다.
+
+Browser page load가:
+
+portfolio-index.json
+
+을 내려받을 이유가 없다.
+
+Widget 자체도 optional enhancement다.
+
+다음 원칙 유지:
+
+- site HTML independent
+- SEO independent
+- widget failure does not break site
+- first-party index fetched by BoostChat backend
+- static site remains crawlable without BoostChat
+
+==================================================
+41. SECURITY BOUNDARY
+==================================================
+
+Producer 관점에서 검토:
+
+- public first-party JSON
+- no secrets
+- no PII
+- published records only
+- same origin URLs
+- no arbitrary remote host
+- no customerQuote
+- no private/internal data
+- no unpublished project
+
+portfolio index를
+"공개 사이트에서 이미 볼 수 있는 정보의
+machine-readable projection"
+
+으로 유지할 수 있는가?
+
+YES/NO/CONDITIONAL.
+
+==================================================
+42. SIZE / SCALE
+==================================================
+
+현재 demo:
+
+8 projects
+
+지만 Contract는
+8개에 최적화하지 않는다.
+
+현실적인 범위:
+
+10
+100
+500
+1000+
+
+에서:
+
+manifest
+index
+
+구조가 얼마나 유지되는지 분석한다.
+
+단:
+
+premature database/API/search service를 만들지 않는다.
+
+어느 규모부터 static JSON이 불편해지는지는
+threshold 후보만 제안한다.
+
+==================================================
+43. MULTI-TEMPLATE / MULTI-VERTICAL REVIEW
+==================================================
+
+다음 가상 사례에 Contract V0를 적용해 본다.
+
+A.
+Interior:
+portfolio
+
+B.
+Dermatology:
+case portfolio
+
+C.
+Tax accountant:
+service/case
+
+D.
+Academy:
+class/course
+
+이번 V0를 억지로 이 resource들에 적용하지 말고:
+
+CORE 부분 중 무엇이 그대로 재사용되는지
+
+PORTFOLIO-specific 부분 중 무엇이
+future resource에서는 달라지는지
+
+를 구분한다.
+
+이걸 통해 core abstraction이
+너무 interior-specific하지 않은지 검증한다.
+
+==================================================
+44. DECISION TABLE FOR EVERY BOOSTCHAT REQUIREMENT
+==================================================
+
+BoostChat consumer requirements의 모든 MUST/SHOULD를
+다음 표로 검토한다.
+
+Requirement
+Consumer Level
+Producer Reality
+Decision
+Reason
+Contract V0
+Implementation Impact
+
+Decision:
+
+ACCEPT
+ACCEPT_WITH_CHANGE
+REJECT
+DEFER
+
+하나.
+
+consumer 요구를 그대로 복사하지 않는다.
+
+==================================================
+45. PROPOSE CONTRACT V0 CANDIDATE
+==================================================
+
+Producer review 후
+실제 Integration Contract V0 후보를 작성한다.
+
+최소 두 층:
+
+A.
+Core Integration Manifest Contract
+
+B.
+Portfolio Resource Contract
+
+가능하면 JSON example을 포함한다.
+
+예시는 실제 web-recon data semantics와 맞아야 한다.
+
+fictional field를 실제 field처럼 쓰지 않는다.
+
+==================================================
+46. CANDIDATE CORE MANIFEST
+==================================================
+
+최종 후보를 이 조사에서 직접 제안한다.
+
+예시 형태:
+
+{
+  "schemaVersion": "...",
+
+  "site": {
+    "id": "...",
+    "publicOrigin": "..."
+  },
+
+  "resources": {
+    "portfolio": {
+      "href": "...",
+      "version": "..."
+    }
+  },
+
+  ...
+}
+
+하지만 BoostChat 초안을 기계적으로 복사하지 않는다.
+
+불필요한 필드는 제거한다.
+
+==================================================
+47. CANDIDATE PORTFOLIO INDEX
+==================================================
+
+현재 producer reality에 맞춘
+실제 V0 candidate를 제안한다.
+
+예:
+
+{
+  "schemaVersion": "...",
+  "version": "...",
+  "records": [...]
+}
+
+각 record의:
+
+required
+optional
+
+을 명확히 한다.
+
+현재 존재하지 않는 propertyType 등을
+required로 만들지 않는다.
+
+==================================================
+48. SEARCH SUPPORT MATRIX
+==================================================
+
+현재 boost-interior-demo를 기준으로:
+
+area
+category
+style
+scope
+location
+builtYear
+duration
+price
+totalBudget
+propertyType
+
+각 기준에 대해:
+
+SUPPORTED
+SUPPORTED_AFTER_NORMALIZATION
+PARTIAL
+UNSUPPORTED
+
+판정한다.
+
+그리고 이유를 적는다.
+
+==================================================
+49. V0 VS FUTURE DATA MODEL
+==================================================
+
+현재 V0 contract 때문에
+ProjectSchema를 지금 바꿔야 하는지 판단한다.
+
+후보:
+
+A.
+schema change 0
+emitter normalization만
+
+B.
+기존 field 보강만
+
+C.
+새 field 필요
+
+하지만:
+
+실제 구현은 하지 않는다.
+
+구분:
+
+NEEDED_FOR_V0
+USEFUL_FOR_REAL_CUSTOMERS
+DEFER_UNTIL_TEMPLATE2_3
+DEFER_UNTIL_SITE_PLATFORM
+
+==================================================
+50. FIRST REAL CUSTOMER CONSIDERATION
+==================================================
+
+demo synthetic fixture와
+실제 고객 data를 구분한다.
+
+Contract는 synthetic assumptions에 기대면 안 된다.
+
+실제 고객 onboarding 시 필요한
+minimum portfolio data quality checklist를 제안한다.
+
+예:
+
+stable id
+title
+detail route
+area?
+price?
+style?
+cover?
+published status?
+
+단 모든 field를 필수로 만들지 않는다.
+
+==================================================
+51. WEB-RECON BUILD INTEGRATION POINT
+==================================================
+
+Contract V0가 확정된다고 가정할 때
+향후 구현될 흐름을 설계만 한다.
+
+Site Data
+↓
+buildSiteSnapshot()
+↓
+SiteSnapshot
+↓
+Integration Projection
+↓
+manifest/index
+↓
+static package
+
+또는 더 나은 위치가 있다면 제안.
+
+중요:
+
+ContentReader/Template가
+BoostChat을 알게 만들지 않는다.
+
+==================================================
+52. PUBLICATION CONSISTENCY
+==================================================
+
+manifest/index/detail HTML/assets가
+같은 build에서 나오는 것이 이상적이다.
+
+다음 race를 검토:
+
+old manifest
+new index
+
+new manifest
+index not uploaded
+
+index points to detail page not live
+
+static package + pointer activation architecture와
+어떻게 자연스럽게 묶이는지 분석한다.
+
+구현하지 않는다.
+
+==================================================
+53. R2 / RECON-RUNTIME COMPATIBILITY
+==================================================
+
+향후 static deployment:
+
+site package
+→ R2
+→ recon-runtime
+
+에서 integration artifact도
+같은 immutable package에 포함시키는 것이
+적절한지 검토한다.
+
+가능하면:
+
+package activation
+
+과
+
+integration data activation
+
+을 하나의 publication boundary로 만든다.
+
+별도 runtime DB/API sync를 만들지 않는다.
+
+==================================================
+54. WIDGET CONFIG IS SEPARATE FROM DATA CONTRACT
+==================================================
+
+매우 중요.
+
+두 계약을 섞지 않는다.
+
+A.
+First-party Data Contract
+
+B.
+BoostChat Widget Embed Config
+
+widget key/origin enablement는
+data manifest에 꼭 들어갈 필요가 없다.
+
+별도로:
+
+site settings / integration config
+
+에서 다루는 것이 적절한지 판단한다.
+
+==================================================
+55. OWNER DECISIONS
+==================================================
+
+Producer review 후
+사람이 결정해야 하는 것만 남긴다.
+
+최대한:
+
+technical fact로 해결 가능한 것은
+owner에게 떠넘기지 않는다.
+
+Decision마다:
+
+Question
+Options
+Recommendation
+Tradeoff
+Need Now?
+
+를 작성한다.
+
+==================================================
+56. IMPLEMENTATION PHASES — DESIGN ONLY
+==================================================
+
+Contract가 확정된 뒤의 구현 순서를 제안한다.
+
+예:
+
+Phase A
+web-recon emitter
+
+Phase B
+BoostChat consumer
+
+Phase C
+widget/card integration
+
+Phase D
+E2E
+
+하지만 구현하지 않는다.
+
+각 phase:
+
+repo
+scope
+tests
+exit criteria
+
+정도만 정의한다.
+
+==================================================
+57. TEST CONTRACT
+==================================================
+
+양쪽에서 Contract V0를 독립적으로 테스트할 방법을 설계한다.
+
+예:
+
+web-recon producer fixtures
+↓
+contract validation
+↓
+golden manifest/index
+
+BoostChat
+↓
+same fixture
+↓
+consumer validation
+
+그리고 E2E:
+
+same input
++
+same index
+→ same result ids
+
+추천 사례:
+actual source record only
+
+를 보장.
+
+==================================================
+58. INDEPENDENT REVIEW
+==================================================
+
+초안 Contract 작성 후
+fresh-context reviewer에게 독립 검토한다.
+
+다음 관점:
+
+- demo-specific coupling
+- interior-specific core leakage
+- consumer-internal naming leakage
+- producer-internal naming leakage
+- duplicate source of truth
+- fabricated field
+- URL ownership
+- missing-data semantics
+- area basis
+- price semantics
+- stale/version race
+- static publication consistency
+- future vertical extensibility
+- over-generalization
+- under-generalization
+- Site Platform contamination
+- BoostWeb contamination
+- security
+- PII exposure
+
+분류:
+
+BLOCKER
+MAJOR
+MINOR
+NOTE
+
+중요한 defect는
+최종 문서에 반영한다.
+
+==================================================
+59. REQUIRED OUTPUT
+==================================================
+
+다음 문서를 작성한다.
+
+docs/reports/integration/
+
+01-web-recon-producer-review-v0.md
+
+02-integration-contract-v0-candidate.md
+
+03-integration-contract-v0-candidate.json
+
+04-boostchat-requirement-disposition.md
+
+05-integration-contract-v0-independent-review.md
+
+필요하면:
+
+06-implementation-phase-plan.md
+
+도 작성 가능.
+
+==================================================
+60. 01 PRODUCER REVIEW MUST INCLUDE
+==================================================
+
+1. Executive Summary
+2. Actual web-recon data contract
+3. Current build architecture
+4. BoostChat requirement review
+5. Data readiness reconciliation
+6. Area semantics
+7. Price/budget semantics
+8. Vocabulary/style/scope reality
+9. URL model
+10. Record identity
+11. Version model
+12. Static artifact model
+13. Security/PII
+14. Genericity analysis
+15. Producer answers Q1–Q10
+16. Decisions
+17. Unknowns
+18. What not to build
+
+==================================================
+61. CONTRACT DOCUMENT MUST INCLUDE
+==================================================
+
+Contract V0 Candidate:
+
+1. Scope
+2. Non-goals
+3. Core contract
+4. Portfolio resource contract
+5. Manifest schema
+6. Index schema
+7. Required/optional fields
+8. Missing-data semantics
+9. Area semantics
+10. Price semantics
+11. Vocabulary semantics
+12. URL ownership
+13. Identity
+14. schemaVersion
+15. resource version
+16. HTTP serving requirements
+17. publication consistency
+18. security
+19. compatibility
+20. degradation behavior
+21. examples
+22. test invariants
+23. future extensions
+24. explicitly deferred items
+
+==================================================
+62. MACHINE-READABLE CONTRACT
+==================================================
+
+03-integration-contract-v0-candidate.json은:
+
+최종 JSON Schema일 필요는 없다.
+
+다만 사람이 읽는 MD와
+기계적으로 비교 가능한 semantic contract를 담는다.
+
+예:
+
+version
+status
+core.required
+portfolio.required
+portfolio.optional
+missingSemantics
+urlRules
+versionRules
+areaRules
+priceRules
+securityRules
+deferred
+
+MD와 JSON이 모순되지 않게 한다.
+
+==================================================
+63. BOOSTCHAT REQUIREMENT DISPOSITION
+==================================================
+
+BoostChat의 요구 하나하나를:
+
+ACCEPT
+ACCEPT_WITH_CHANGE
+REJECT
+DEFER
+
+로 표시한다.
+
+왜 그런지 반드시 producer reality를 근거로 설명한다.
+
+==================================================
+64. FINAL READINESS MATRIX
+==================================================
+
+최종에 반드시 채운다.
+
+WEB_RECON_PRODUCER_CONTRACT_READY =
+
+CORE_MANIFEST_READY =
+PORTFOLIO_RESOURCE_CONTRACT_READY =
+
+CURRENT_PROJECT_SCHEMA_CHANGE_REQUIRED_FOR_V0 =
+CURRENT_SITE_DATA_CHANGE_REQUIRED_FOR_V0 =
+
+AREA_SEARCH_READY =
+CATEGORY_SEARCH_READY =
+STYLE_SEARCH_READY =
+SCOPE_SEARCH_READY =
+PRICE_SEARCH_READY =
+TOTAL_BUDGET_MATCH_READY =
+PROPERTY_TYPE_SEARCH_READY =
+
+STABLE_RECORD_ID_READY =
+DETAIL_URL_READY =
+ALL_RESULTS_BASE_URL_READY =
+FILTERED_RESULTS_URL_READY =
+
+RESOURCE_VERSION_STRATEGY =
+SCHEMA_VERSION_STRATEGY =
+
+STATIC_PACKAGE_INTEGRATION_SEAM =
+WIDGET_CONFIG_SEAM =
+
+BOOSTCHAT_REQUIREMENTS_ACCEPTED =
+BOOSTCHAT_REQUIREMENTS_CHANGED =
+BOOSTCHAT_REQUIREMENTS_REJECTED =
+BOOSTCHAT_REQUIREMENTS_DEFERRED =
+
+DEMO_SPECIFIC_COUPLING_FOUND =
+INTERIOR_SPECIFIC_CORE_LEAKAGE_FOUND =
+
+SITE_PLATFORM_REQUIRED_FOR_V0 =
+BOOSTWEB_REQUIRED_FOR_V0 =
+RUNTIME_API_REQUIRED_FOR_V0 =
+
+BLOCKERS_BEFORE_IMPLEMENTATION =
+OWNER_DECISIONS_REQUIRED =
+
+RECOMMENDED_NEXT_STEP =
+
+==================================================
+65. CRITICAL FINAL QUESTION
+==================================================
+
+마지막에 반드시 이 질문에 답한다.
+
+"이 Contract V0를 그대로 구현했을 때,
+boost-interior-demo가 아닌
+두 번째 실제 고객 사이트에서도
+web-recon Template code나
+BoostChat core architecture를 다시 뜯지 않고
+같은 integration mechanism을 사용할 수 있는가?"
+
+YES
+NO
+CONDITIONAL
+
+그리고 정확한 이유를 설명한다.
+
+또:
+
+"두 번째 업종이 들어왔을 때
+무엇이 재사용되고
+무엇이 resource-specific하게 새로 생기는가?"
+
+를 명확히 한다.
+
+==================================================
+66. STOP CONDITION
+==================================================
+
+이번 작업은:
+
+PRODUCER REVIEW
++
+CONTRACT V0 CANDIDATE
+
+에서 끝난다.
+
+절대 구현하지 않는다.
+
+특히 금지:
+
+- manifest emitter 구현
+- portfolio index generator 구현
+- schema 수정
+- data 수정
+- BoostChat 코드 수정
+- widget 삽입
+- migration
+- deployment
+- R2 upload
+- recon-runtime 수정
+- Site Platform 구현
+- BoostWeb 연결
+
+다음 단계는
+사람이 Contract를 리뷰/승인한 이후다.
+
+==================================================
+67. EXECUTION STRATEGY
+==================================================
+
+속도를 위해 subagent 병렬 조사는 허용한다.
+
+추천:
+
+A.
+Actual web-recon content/data/schema
+
+B.
+Build/package/release/runtime
+
+C.
+Portfolio routes/filter/URL/assets
+
+D.
+BoostChat consumer requirements vs producer reality
+
+단:
+
+최종 architecture 판단과
+Contract V0 후보는 Main agent가 직접 작성한다.
+
+Subagent 결론을 복사하지 않는다.
+
+중요한 사실은 Main agent가 원문을 재확인한다.
+
+특히:
+
+- ProjectSchema
+- project filter
+- area model
+- price model
+- stable id
+- build package
+- URL routes
+- assets
+- SiteSnapshot/buildSiteSnapshot
+
+은 직접 확인한다.
+
+==================================================
+68. FINAL LINE
+==================================================
+
+마지막 한 줄:
+
+WEB_RECON_BOOSTCHAT_CONTRACT_V0_CANDIDATE_COMPLETE — NO IMPLEMENTATION PERFORMED

@@ -1,0 +1,117 @@
+Already up to date
+Done in 155ms using pnpm v11.21.0
+$ tsx scripts/smoke-release.ts
+
+== 0. fixture pipeline — REAL reconstruction → template → content → theme → seo → assets → production
+  PASS  fixture template compiled (2 routes)
+  PASS  fixture content run ingested (1 unresolved href)
+  PASS  fixture theme run created
+  PASS  fixture seo plan is preview mode
+  PASS  fixture inventory: favicon replacement-required + font license-needs-review
+  PASS  fixture materialization fetched the hero, skipped the favicon
+  PASS  fixture replacement seam lists favicon + hero
+  PASS  fixture preview production QA passes
+  PASS  fixture preview spec decision is preview
+
+== 1. release-project-v1 + requirement schemas (spec tests 1-3)
+  PASS  1.1 release-project.json validates as release-project-v1
+  PASS  1.2 accepted lineage carries id+path+hash for all 7 stages
+  PASS  1.3 no single boolean ready — closed enum state
+  PASS  2.1 requirements normalize from artifacts (schema-valid, evidence-backed)
+  PASS  3.1 production-resolution-v1 schema accepts an all-optional pack
+  PASS  3.2 resolution schema rejects unknown fields
+
+== 2. requirement kinds derived from the fixture artifacts (tests 4-9)
+  PASS  4 domain requirement (release-blocking, from seo plan domainState)
+  PASS  5 business-fact requirements (7 canonical facts, high-value)
+  PASS  6 asset requirement: favicon replacement-required is release-blocking
+  PASS  6b asset requirement: hero replacement-recommended is high-value
+  PASS  7 font requirement from font-inventory license[]
+  PASS  8 route-content requirement for the uninjected route
+  PASS  9 multi-subsystem merge: seo + content + assets + fonts in ONE list
+
+== 3. dependency graph + invalidation semantics (tests 12-15)
+  PASS  12.1 graph: template←reconstruction, content←template, theme←template+content
+  PASS  12.2 downstream closure: content → theme+seo+production, never reconstruction
+  PASS  13a field impacts: domain → seo+production ONLY
+  PASS  14a field impacts: image/font → assets+production ONLY
+  PASS  15 theme invalidation: selection → theme+production; content rerun invalidates theme
+  PASS  13b invalidatedStages(domain-only) = [seo, production]
+
+== 4. stage input hashing (test 16)
+  PASS  16.1 same inputs → same hash (deterministic)
+  PASS  16.2 upstream artifact change → different hash (stale)
+  PASS  16.3 resolution slice change → different hash (stale)
+  PASS  16.4 domain does NOT touch the content stage's inputs
+
+== 5. invalid resolution rejected (test 11)
+  PASS  11.1 non-schema pack rejected by the validator gate
+  PASS  11.2 unknown slot key rejected before any stage runs
+  PASS  11.3 NL seam: manual-json parser enforces the validator too
+
+== 6. preview mode honesty (test 20) + dry-run no-mutation (test 17)
+  PASS  20 preview build stands WITH unresolved factual requirements (noindex policy)
+  PASS  17.1 dry-run mutates NOTHING under the host namespace
+  PASS  17.2 dry-run on the fresh baseline: nothing to run, all stages reused
+
+== 7. full-resolution pack 1 (everything except the domain) — tests 10, 18, 22, 24
+  PASS  7.0 pricing slot keys discoverable from the template
+  PASS  10.1 resolved requirements carry traceable resolvedBy (spec §11)
+  PASS  10.2 matches cover facts/urls/assets/fonts/routeContent
+  PASS  18a pack1 invalidates content+theme+seo+assets+production, keeps frozen roots
+  PASS  18b dry-run predicts the cascade: run content/theme/seo/assets/production, reuse frozen roots
+  PASS  18c selective rerun executed: content/theme/seo/assets/production, frozen roots reused
+  PASS  22a after pack1 the ONLY blocker left is the domain
+  PASS  24 operator checklist: Why/How-to-resolve/Expected + resolved strikethroughs
+
+== 8. indexable gate (test 21) — a domain alone must NOT go indexable
+  PASS  21.1 with the domain but unresolved blockers, production is BLOCKED BY them
+  PASS  21.2 seo would still rerun (domain flows to the plan) — but never a fake-indexable compile
+  PASS  21.3 gate project stays PRODUCTION_INPUTS_REQUIRED
+
+== 9. failure recovery (test 19) — retry never re-runs earlier stages
+  PASS  13c domain-only resolution invalidates seo+production ONLY
+  PASS  19.1 failure recorded: failedStage/failureArtifact/retryable (spec §27)
+  PASS  19.2 nothing re-ran before the failure; fresh stages recorded reused (run stops AT the failure)
+  PASS  19.3 retry re-runs ONLY the failed stage + downstream (seo, production)
+  PASS  19.4 failure cleared after the successful retry
+
+== 10. PREVIEW → PRODUCTION_READY (tests 22, 26) + §26 rerun counts
+  PASS  22b synthetic project reached PRODUCTION_READY honestly
+  PASS  22c final spec is indexable with the operator domain and zero blockers
+  PASS  26.1 runtime/hydration production regression: isolated-package QA green
+  PASS  26.2 zero external requests — full asset independence in the READY build
+  PASS  26.3 reconstruction rerun count = 0 and template compile count = 0 (whole scenario)
+  PASS  26.4 domain-only change re-ran seo+production only (content regenerate count 0)
+  PASS  14b image-only resolution invalidates assets+production ONLY
+  PASS  26.5 asset replacement re-ran assets+production only, content/theme/seo reused
+  PASS  22d still PRODUCTION_READY after the asset swap
+  PASS  26.6 the replacement hero bytes actually serve (rewrite applied to the new build)
+  PASS  26.7 sitemap.xml served in the indexable package
+  PASS  20b route readiness: every route READY after full resolution
+
+== 11. technical debt register (spec §30)
+  PASS  30.1 GED-D/E/F/G preserved from the Task 24 artifact (not re-invented)
+  PASS  30.2 register maps defects to affected requirement kinds (GED-F → content-route)
+  PASS  30.3 project embeds the register + blog/collection limitation (spec §31)
+
+== 12. STRIPE CANARY — requirement collection, read-only (tests 23, 25)
+  PASS  23.0 accepted stripe candidate present
+  PASS  23.1 domain requirement iff the seo plan says needs-input
+  PASS  23.2 canonical business-fact count derives from the plan
+  PASS  23.3 content-route requirements = template routes minus content scope
+  PASS  23.4 replacement-image requirements = awaiting replacement-manifest entries
+  PASS  23.5 font-license requirements = license-needs-review families
+  PASS  23.6 inline-SVG brand-mark requirement carries the inventory count
+  PASS  23.7 external-url + slot business-fact requirements = content unresolved split
+  PASS  23.8 og-image / social-handle / organization-logo derived
+  PASS  23.9 stripe stays PRODUCTION_INPUTS_REQUIRED (unresolved release-blocking > 0)
+  PASS  25.1 historical stripe lineage byte-untouched by collection
+  PASS  25.2 accepted fixture content run untouched (reruns landed in new run dirs)
+  PASS  25.3 accepted production spec/build untouched
+
+== 13. audit trail (spec §28)
+  PASS  28.1 run records intentHash/resolutionHash/input hashes/verdict
+  PASS  28.2 operator overrides recorded (font decision + none invented)
+
+smoke:release — 84 checks, 0 failures

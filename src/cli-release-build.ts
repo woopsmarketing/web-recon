@@ -21,13 +21,21 @@ async function main(): Promise<void> {
     dryRun,
     log: (line) => console.log(line),
   });
-  if (dryRun) return;
+  if (dryRun) {
+    console.log(`\n  requirements: ${result.requirementsCount} (persisted; a dry run writes nothing)`);
+    return;
+  }
   console.log(`\n[release:build] run ${result.run?.runId}`);
   console.log(`  rerun:   ${result.run?.rerunStages.join(", ") || "(none)"}`);
   console.log(`  reused:  ${result.run?.reusedStages.join(", ") || "(none)"}`);
   if ((result.run?.blockedStages.length ?? 0) > 0) {
     console.log(`  blocked: ${result.run?.blockedStages.join(", ")}`);
   }
+  // A build RE-COLLECTS from the artifacts its own stage reruns produced, so
+  // its total legitimately differs from the prepare total collected against
+  // the accepted lineage. Reported here and recorded on run.json, so the two
+  // are comparable instead of looking like one number disagreeing with itself.
+  console.log(`  requirements: ${result.requirementsCount} (re-collected from the current artifacts)`);
   console.log(`  verdict: ${result.project.releaseState}`);
   if (result.failed) {
     console.log(`  FAILED at ${result.project.failure?.failedStage}: ${result.project.failure?.message}`);

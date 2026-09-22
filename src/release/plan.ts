@@ -6,6 +6,7 @@
 import path from "node:path";
 
 import { collectRequirements, type RouteReadiness } from "./collect.js";
+import { enablementCollectInput, resolveEnablementForProject } from "./enablement.js";
 import { applyBlocking, refreshStageStatuses } from "./freshness.js";
 import { effectiveResolution, releaseBlockers } from "./requirements.js";
 import { loadReleaseProject, loadRequirementsFile } from "./store.js";
@@ -41,6 +42,13 @@ export async function planRelease(
   applyBlocking(refreshed.stageStatus, blockers, targetMode);
 
   const production = refreshed.stageStatus.production?.artifact ?? null;
+  // Task 28 Phases 5 + 6 — the plan must count the routes this project will
+  // actually export, and must show the same enablement refusals a build would.
+  const resolvedEnablement = await resolveEnablementForProject(
+    project,
+    refreshed.stageStatus.template.artifact!.path,
+  );
+  const collectEnablement = enablementCollectInput(resolvedEnablement);
   const collected = await collectRequirements({
     host: project.source.host,
     templateRunDir: refreshed.stageStatus.template.artifact!.path,
@@ -50,6 +58,7 @@ export async function planRelease(
     materializationRunDir: refreshed.stageStatus.assets.artifact!.path,
     productionSpecFile: production ? path.join(production.path, "production-spec.json") : null,
     productionBuildDir: production ? productionBuildDir(project.source.host, production.id) : null,
+    ...(collectEnablement !== undefined ? { enablement: collectEnablement } : {}),
   });
 
   const ready: ReleaseStage[] = [];

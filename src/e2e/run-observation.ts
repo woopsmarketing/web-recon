@@ -47,6 +47,7 @@ export async function runObservationStage(
       const run = await observeSelectedPages(input.selection, {
         concurrency: context.options.concurrency,
         prepareScroll: context.options.prepareScroll,
+        normalizePageState: context.options.normalizePageState ?? true,
         sourceSelectedPagesFile: input.sourceSelectedPagesFile,
         ...(input.sourcePageFamiliesFile
           ? { sourcePageFamiliesFile: input.sourcePageFamiliesFile }

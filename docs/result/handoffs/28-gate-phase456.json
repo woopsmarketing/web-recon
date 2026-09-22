@@ -1,0 +1,598 @@
+{
+ "schema": "task28-gate-phase456-v1",
+ "role": "FRESH GATE AGENT for Phases 4, 5 and 6 — implemented nothing, verified no one's prose, measured only the tree as it stands. Independent of the 04:17 gate agent whose report is preserved at docs/result/handoffs/28-gate-phase456-prior-0417.json.",
+ "producedAt": "2026-08-28T04:46 → 05:12 KST (2026-08-27T19:46 → 20:12Z), darwin 25.2.0, Node 22.22.3, pnpm 11.21.0",
+ "typecheck": "exit 0",
+ "typecheckEvidence": "bash tmp/wr28/suite-lock.sh pnpm typecheck. Raw log tmp/wr28/gate456/logs/typecheck.log verbatim: `wr28-lock: acquired after 0s -> pnpm typecheck` / `Already up to date` / `Done in 153ms using pnpm v11.21.0` / `$ tsc --noEmit` / `wr28-lock: released (exit 0)`. No tsc diagnostic line. package.json `typecheck` is exactly `tsc --noEmit` and package.json is unmodified (git status --porcelain package.json is empty). CAVEAT: tsc does NOT cover EDITOR_CLIENT_JS, which lives inside a template string in src/editor/client.ts.",
+ "countDerivation": "Every count re-derived by me from raw captured stdout with `grep -cE '^ *PASS '` and `grep -cE '^ *FAIL '`, never from a handoff and never from a suite's own summary line. Each derived count was then CROSS-CHECKED against the suite's own self-reported summary; all 25 agree exactly. Trap avoided: tmp/wr28/gate456/logs/content-injection.log contains 2 lines matching `FAIL` but they are `[content:qa]   FAIL — …` lines emitted by the QA tool on a deliberate negative fixture; they do not match `^ *FAIL ` and are not check failures.",
+ "invocation": "25 counted suites, ONE AT A TIME, each through `bash tmp/wr28/suite-lock.sh npx tsx scripts/smoke-<name>.ts`, sequentially, driven by tmp/wr28/gate456/run.sh. Every lock acquisition succeeded (no exit 99). smoke:playwright was SKIPPED as instructed (uncounted, hits the public internet). Task-28 suites discovered by globbing scripts/smoke-*.ts (26 files) and cross-read against docs/result/handoffs/28-intel/pending-package-scripts.tsv (6 lines): the five suites absent from package.json are authoring-preview, brand-assets, visual-editor, enablement, editor-integration — all five were run.",
+ "suites": [
+  {
+   "suite": "verifier",
+   "checks": 81,
+   "failures": 0,
+   "seconds": 7,
+   "prevCount": 81,
+   "delta": 0
+  },
+  {
+   "suite": "selector",
+   "checks": 81,
+   "failures": 0,
+   "seconds": 0,
+   "prevCount": 81,
+   "delta": 0
+  },
+  {
+   "suite": "multi-observer",
+   "checks": 62,
+   "failures": 0,
+   "seconds": 27,
+   "prevCount": 62,
+   "delta": 0
+  },
+  {
+   "suite": "interaction-detector",
+   "checks": 92,
+   "failures": 0,
+   "seconds": 0,
+   "prevCount": 92,
+   "delta": 0
+  },
+  {
+   "suite": "interaction-explorer",
+   "checks": 108,
+   "failures": 0,
+   "seconds": 98,
+   "prevCount": 108,
+   "delta": 0
+  },
+  {
+   "suite": "interaction-patterns",
+   "checks": 88,
+   "failures": 0,
+   "seconds": 0,
+   "prevCount": 88,
+   "delta": 0
+  },
+  {
+   "suite": "sitespec",
+   "checks": 257,
+   "failures": 0,
+   "seconds": 0,
+   "prevCount": 257,
+   "delta": 0
+  },
+  {
+   "suite": "reconstruction",
+   "checks": 217,
+   "failures": 0,
+   "seconds": 7,
+   "prevCount": 217,
+   "delta": 0
+  },
+  {
+   "suite": "reconstruction-qa",
+   "checks": 134,
+   "failures": 0,
+   "seconds": 155,
+   "prevCount": 134,
+   "delta": 0
+  },
+  {
+   "suite": "e2e",
+   "checks": 130,
+   "failures": 0,
+   "seconds": 611,
+   "prevCount": 130,
+   "delta": 0
+  },
+  {
+   "suite": "recon-template",
+   "checks": 109,
+   "failures": 0,
+   "seconds": 80,
+   "prevCount": 109,
+   "delta": 0
+  },
+  {
+   "suite": "regions",
+   "checks": 76,
+   "failures": 0,
+   "seconds": 1,
+   "prevCount": 67,
+   "delta": 9
+  },
+  {
+   "suite": "content-injection",
+   "checks": 152,
+   "failures": 0,
+   "seconds": 58,
+   "prevCount": 145,
+   "delta": 7
+  },
+  {
+   "suite": "theme",
+   "checks": 47,
+   "failures": 0,
+   "seconds": 36,
+   "prevCount": 47,
+   "delta": 0
+  },
+  {
+   "suite": "seo",
+   "checks": 104,
+   "failures": 0,
+   "seconds": 1,
+   "prevCount": 97,
+   "delta": 7
+  },
+  {
+   "suite": "assets",
+   "checks": 140,
+   "failures": 0,
+   "seconds": 5,
+   "prevCount": 140,
+   "delta": 0
+  },
+  {
+   "suite": "production",
+   "checks": 129,
+   "failures": 0,
+   "seconds": 4,
+   "prevCount": 123,
+   "delta": 6
+  },
+  {
+   "suite": "release",
+   "checks": 274,
+   "failures": 0,
+   "seconds": 89,
+   "prevCount": 241,
+   "delta": 33
+  },
+  {
+   "suite": "revision",
+   "checks": 36,
+   "failures": 0,
+   "seconds": 2,
+   "prevCount": 36,
+   "delta": 0
+  },
+  {
+   "suite": "registry",
+   "checks": 35,
+   "failures": 0,
+   "seconds": 0,
+   "prevCount": 35,
+   "delta": 0
+  },
+  {
+   "suite": "authoring-preview",
+   "checks": 41,
+   "failures": 0,
+   "seconds": 22,
+   "prevCount": 41,
+   "delta": 0
+  },
+  {
+   "suite": "brand-assets",
+   "checks": 141,
+   "failures": 0,
+   "seconds": 15,
+   "prevCount": 141,
+   "delta": 0
+  },
+  {
+   "suite": "visual-editor",
+   "checks": 50,
+   "failures": 0,
+   "seconds": 26,
+   "prevCount": null,
+   "delta": null
+  },
+  {
+   "suite": "enablement",
+   "checks": 101,
+   "failures": 0,
+   "seconds": 5,
+   "prevCount": null,
+   "delta": null
+  },
+  {
+   "suite": "editor-integration",
+   "checks": 45,
+   "failures": 0,
+   "seconds": 24,
+   "prevCount": null,
+   "delta": null
+  }
+ ],
+ "totalChecks": 2730,
+ "totalFailures": 0,
+ "totalChecksBreakdown": "2472 (gate-phase23 baseline, 22 suites) + 62 growth in five carried suites (regions +9, content-injection +7, seo +7, production +6, release +33) + 196 in three suites the baseline does not contain (enablement 101, visual-editor 50, editor-integration 45) = 2730. Arithmetic checked: 2472 + 62 + 196 = 2730.",
+ "negativeDeltas": [],
+ "deltaExplanations": [
+  {
+   "suite": "regions",
+   "prev": 67,
+   "now": 76,
+   "delta": 9,
+   "kind": "growth",
+   "explanation": "Phase 5/6 region-enablement checks added to smoke-regions.ts. No prior check removed — every id present in the baseline still runs."
+  },
+  {
+   "suite": "content-injection",
+   "prev": 145,
+   "now": 152,
+   "delta": 7,
+   "kind": "growth",
+   "explanation": "disabled-region / disabled-route accounting dispositions added by the Phase 5/6 builder."
+  },
+  {
+   "suite": "seo",
+   "prev": 97,
+   "now": 104,
+   "delta": 7,
+   "kind": "growth",
+   "explanation": "route-enablement filtering of the production SEO plan (sitemap, canonical, OG, JSON-LD)."
+  },
+  {
+   "suite": "production",
+   "prev": 123,
+   "now": 129,
+   "delta": 6,
+   "kind": "growth",
+   "explanation": "enablement applied to the static export and the deploy manifest."
+  },
+  {
+   "suite": "release",
+   "prev": 241,
+   "now": 274,
+   "delta": 33,
+   "kind": "growth",
+   "explanation": "28.P5.6x-7x and 28.P6.2x-3x end-to-end enablement checks on the real fixture build."
+  },
+  {
+   "suite": "enablement",
+   "prev": null,
+   "now": 101,
+   "delta": null,
+   "kind": "new-suite",
+   "explanation": "scripts/smoke-enablement.ts does not exist in the gate-phase23 baseline. 101 PASS / 0 FAIL over 96 unique ids (28.P5.19 emits 4 times and 28.P5.28 / 28.P6.8 twice each, from loop-emitted checks — 101 - 5 = 96)."
+  },
+  {
+   "suite": "visual-editor",
+   "prev": null,
+   "now": 50,
+   "delta": null,
+   "kind": "new-suite",
+   "explanation": "50 PASS / 0 FAIL over 50 unique contiguous ids 28.P4.1 … 28.P4.50."
+  },
+  {
+   "suite": "editor-integration",
+   "prev": null,
+   "now": 45,
+   "delta": null,
+   "kind": "new-suite",
+   "explanation": "45 PASS / 0 FAIL over 45 unique ids. Grew from the 25 reported at 02:05 by the fix builder that closed F1, the route/widening seam and F3. The literal `28.P8.39` appears twice in the source, but the second occurrence (scripts/smoke-editor-integration.ts:1045) is inside a `if (stripeInputs.regions === null)` guard that fires only when the stripe page-regions compile is missing; it did not emit in this run."
+  }
+ ],
+ "gitMutatingOperations": 0,
+ "gitEvidence": "Read-only inspection only, run before AND after the battery with identical results. `git log --oneline -3` → `6c2e723 0827 morning` / `d33abb3 checkpoint: web-recon MVP preview-ready baseline` / `2777b41 chore: initialize web-recon foundation (Phase 1)`. `git stash list` → 0 lines. `git reflog` → exactly 3 entries: `6c2e723 HEAD@{0}: commit: 0827 morning`, `d33abb3 HEAD@{1}: commit: checkpoint…`, `2777b41 HEAD@{2}: commit (initial): chore…` — no reset, checkout, rebase or new commit. Branch main. 28-start.json's baselineSha 6c2e723601a0d76431c96a48bbdb4726c02063e7 still matches HEAD.",
+ "aggregationPhase1Intact": true,
+ "aggregationPhase1Evidence": "Working-tree sha256 09e3745e3041d9018640e7027c1fb6ec60617f04d2cbcbd4e421a48b7c8d1c30 equals `git show HEAD:docs/result/handoffs/24-aggregation-phase1.json | shasum -a 256`, verified before and after the battery. `git status --porcelain docs/result/handoffs/24-aggregation-phase1.json` is empty.",
+ "historicalMutationCount": 0,
+ "historicalMutationMethod": "tmp/wr28/gate456/datascan.py walked every timestamped run directory under data/ (537 before the battery, 539 after) and compared each directory's UTC run-id label against the NEWEST mtime of any file inside it, grouped by containing run directory. Not `git status data/` (vacuous — data/ is gitignored) and not birth times (APFS clonefile preserves the source's).",
+ "historicalMutationEvidence": "Exactly 3 directories are labelled before the 2026-08-27 local boundary yet contain a file touched after it, and all 3 are `runs/` inside data/stripe.com/release-projects/wr28-int-stripe — a wr28- prefixed Task-28 namespace the contract explicitly permits writing to. Their old-looking inner run ids are carried history from the stripe project they were copied from (release-project.json createdAt 2026-08-25T13:28:26.494Z, projectId wr28-int-stripe). The 05:07:47 writes are MY OWN battery's smoke:editor-integration run. Zero recon-templates, reconstructions, page-regions, content-runs, theme-runs, seo-plans or asset-materializations predating 2026-08-27 were touched. Two directories a naive scan flags — data/linear.app/page-regions/2026-08-26T16-14-07-901Z and data/stripe.com/page-regions/2026-08-26T16-14-08-675Z — are NOT mutations: their label is 2026-08-26T16:14Z = 2026-08-27 01:14 KST, and every file's mtime equals that label to the second, i.e. these are original write timestamps on runs created ON 2026-08-27 local.",
+ "dataWrSlotEmissionSites": 0,
+ "dataWrSlotEvidence": "`grep -rn data-wr-slot src scripts` returns exactly 16 lines, unchanged before and after the battery, and I read all 16. FIVE are doc comments asserting the attribute does not exist (src/regions/enablement.ts:40, src/authoring-preview/bridge.ts:16, src/editor/index.ts:6, src/editor/inversion.ts:4, scripts/smoke-visual-editor.ts:16). ELEVEN are negative assertions in suites (smoke-authoring-preview.ts:276; smoke-visual-editor.ts:468,579,640,1054,1057,1058; smoke-regions.ts:360,771,775; smoke-brand-assets.ts:391). There is no setAttribute, no template-literal emission and no serializer that writes the attribute. Zero emission sites.",
+ "editorArtifactsInProductionPackage": 0,
+ "editorArtifactsEvidence": "Scanned the package tree of the MOST RECENT production build, data/domainchecker.co.kr/production-builds/2026-08-27T20-06-38-206Z/package (198 files) — freshly produced BY THIS BATTERY, so it is a package built from the tree under gate. 18 needles, all `grep -rl --binary-files=text` so minified and binary chunks are searched too: data-wr-slot, __wrAuthoringBridge, __wrEditor, WR_AUTHORING, wr-authoring-editor, wr-refusals, data-wr-region-toggle, data-wr-route-toggle, data-wr-remedy, data-wr-editor-style, api/region-enablement, api/preview-value, api/ai-rewrite, EDITOR_CLIENT_JS, wr-undo, data-wr-refusal-code, wr-editor, authoring-preview. ALL EIGHTEEN = 0 files. The same 18 needles were also run over the previous newest package, data/linear.app/production-builds/2026-08-27T19-33-43-857Z/package (220 files, 261 MB) — all 0 there too.",
+ "knownFindings": {
+  "F1_undo": "RESOLVED — fixed in the tree and proven by checks that pass in MY OWN run. src/editor/commit.ts now exports `undoCursorIndex(chain)` (lines 176-188), which walks head → restoredFrom TRANSITIVELY (strictly decreasing index, visited-set, stops at 0) to find the authored state the operator is standing on; `undoLastRevision` then restores `chain[cursor - 1]` BY INDEX (line 240), not the old `chain[chain.length - 2]`. Append-only is structurally preserved: every restore goes through restoreAuthoredRevision → appendAuthoredRevision. Redo is a documented DECISION, not an omission (`EDITOR_REDO_POLICY`, commit.ts:154). Checks PASSING in my run: 28.P8.26 (fixture is real: 3 distinct states/hashes), 28.P8.27 (F1 FIXED — three Undos step back three authored states, hash-compared per press), 28.P8.28 (+1 record per press, earlier records byte-identical, head origin=restore), 28.P8.29 (walk closed, Redo policy documented), 28.P8.19 (rewritten: Undo is an UNDO STACK, not a one-step toggle), 28.P8.36 (third press reaches the pre-text-edit state in authored state AND served preview), 28.P8.37 (chain only ever grew, +3 restores, prefix byte-identical), 28.P8.45 (the Pages rail is re-read after an Undo). NOTE: docs/result/handoffs/28-editor-enablement.json still records F1 as 'NOT fixed here' — correct for 02:05, superseded by the tree.",
+  "F2_cascade": "HONESTLY CARRIED, NOT SOFTENED. I read both assertions in source and both PASS in my run. scripts/smoke-editor-integration.ts:656 `28.P8.11 the cascade is NOT a rubber stamp: taking it re-adjudicates the whole transaction, and the hazard no cascade can fix is offered no retry` asserts sawUnreachable, the literal prose 'No re-issue can make this safe', and `unreachableRemedies === 0`. scripts/smoke-editor-integration.ts:671 `28.P8.35 F2 stands as measured: taking the cascade returns a NON-EMPTY refusal set … and this check must never be softened into \\u0060the cascade clears everything\\u0060` asserts `cascadeCodes.length > 0` and PRINTS the measured count rather than hard-coding a comfortable zero. At engine level scripts/smoke-enablement.ts:499 `28.P5.38` asserts `cascaded.allowed === false` plus a residual refusal whose own cascadeAvailable is false. No assertion anywhere claims the cascade clears the transaction.",
+  "F3_stripeUI": "CLOSED THROUGH THE UI — with one honest qualification about the shape, and one about my own evidence. scripts/smoke-editor-integration.ts §4 drives a real Chromium against the real editor over a real authoring preview of data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z; 28.P8.38 … 28.P8.44 ALL PASS in my own locked run. I verified the fixture premise independently from the raw artifact rather than trusting the suite: stripe's route-map.json is 20 routes over 18 pageSourceIds with exactly 2 many-to-one groups (p000012 ← /resources/more/arr-loans-explained + /resources/more/virtual-credit-cards-for-businesses-explained; p000013 ← /resources/more/kit-digital + /resources/more/what-is-carding…), and linear.app's is 8 routes over 8 pages with ZERO many-to-one, so linear genuinely cannot host this journey. QUALIFICATION 1 (the shape, carried from the fix builder and independently consistent with my census): no stripe region's shared-page refusal arrives ALONE — every single-page/two-route region is also global-for-enablement — so the suite asserts the exact available discriminator, `refusal.detail.pageSourceIds` being exactly ONE page with a two-route radius, where linear's same-code refusal names several pages. QUALIFICATION 2 (my own evidence): I did NOT stand up my own browser against the stripe preview. I proved F3 by running, under the mutex, the suite that does, and by verifying its fixture premise from the raw route-map. That is a re-run, not an independent re-drive."
+ },
+ "handoffSpotChecks": [
+  {
+   "file": "28-visual-editor.json",
+   "field": "fixture.template — 3,079 slots / 9,929 bindings",
+   "claimed": "3079 / 9929",
+   "measured": "slots.json 3079, slot-bindings.json 9929 at data/linear.app/recon-templates/2026-08-25T21-53-26-980Z",
+   "agrees": true
+  },
+  {
+   "file": "28-visual-editor.json",
+   "field": "domToSlotInversion.measuredOnTheRealTemplate.occurrenceKeyIsExactlyInvertible",
+   "claimed": "9,929 bindings → 9,929 distinct keys, 0 keys spanning >1 slot",
+   "measured": "I reimplemented src/editor/inversion.ts occurrenceKey() in Python from the raw bindings file: 9929 distinct keys, 0 colliding",
+   "agrees": true
+  },
+  {
+   "file": "28-visual-editor.json",
+   "field": "domToSlotInversion.measuredOnTheRealTemplate.dynamicBindings",
+   "claimed": "262",
+   "measured": "262 bindings with surface=dynamic-template (census: static 9663, dynamic-template 262, paint-twin 4)",
+   "agrees": true
+  },
+  {
+   "file": "28-visual-editor.json",
+   "field": "domToSlotInversion.measuredOnTheRealTemplate.widenedWithoutTrigger",
+   "claimed": "94 of 262 dynamic bindings would get a STRICTLY WIDER candidate set — i.e. slots that are not on that element — if resolved on templateNodeId alone",
+   "measured": "22. Replicating scripts/smoke-visual-editor.ts:311-315 verbatim in Python on the raw bindings file: bindings where len(looseSet) > len(tightSet) = 22. 94 is a different quantity — the number of dynamic bindings whose templateNodeId-only candidate set is merely AMBIGUOUS (len(looseSet) > 1). Single-slot 168 → 182 and sound 262/262 both reproduce exactly, so only this one figure is wrong.",
+   "agrees": false
+  },
+  {
+   "file": "28-visual-editor.json",
+   "field": "domToSlotInversion.measuredOnTheRealTemplate.singleSlotResolution",
+   "claimed": "168/262 → 182/262",
+   "measured": "168 → 182",
+   "agrees": true
+  },
+  {
+   "file": "28-visual-editor.json",
+   "field": "multiBinding.provenOn — plan.main.text.projects (sl002641), 5 bindings",
+   "claimed": "sl002641, 5 bindings: static desktop n000086, static desktop n000098, dynamic-template desktop trigger n000094/dt000001/t000014, static mobile n000086, static mobile n000098",
+   "measured": "slots.json key plan.main.text.projects → sl002641; 5 bindings, node-for-node identical to the claim including the dynamic trigger triple",
+   "agrees": true
+  },
+  {
+   "file": "28-visual-editor.json",
+   "field": "multiBinding.paintTwin — 3 linear slots, 4 bindings; 0 svg-text of 9,929",
+   "claimed": "3 / 4 / 0",
+   "measured": "paint-twin bindings 4 over 3 distinct slotIds; target census is attribute 2496 + text 7433 = 9929, no svg-text binding exists",
+   "agrees": true
+  },
+  {
+   "file": "28-visual-editor.json",
+   "field": "architecture.appLocation.code — 'src/editor/ (13 modules)'",
+   "claimed": "13 modules",
+   "measured": "14 modules / 4,983 lines (ai-rewrite, assets, catalog, client, commit, enablement, index, inspect, inversion, panels, region-enablement, runtime, server, session). Stale: src/editor/enablement.ts was added by the integration phase after this handoff was written.",
+   "agrees": false
+  },
+  {
+   "file": "28-visual-editor.json",
+   "field": "tests.suite — 50 checks, ids 28.P4.1 … 28.P4.50",
+   "claimed": "50 / 0",
+   "measured": "50 PASS / 0 FAIL, 50 unique ids, in my own locked run",
+   "agrees": true
+  },
+  {
+   "file": "28-region-enablement.json",
+   "field": "safetyRules[0].realCounterexample — stripe route table",
+   "claimed": "20 routes over 18 pages, 2 MANY-TO-ONE groups (p000012 ← 2 routes, p000013 ← 2 routes)",
+   "measured": "route-map.json: 20 routes, 18 distinct pageSourceIds, exactly 2 groups with >1 route, and the four route paths are exactly the ones named",
+   "agrees": true
+  },
+  {
+   "file": "28-region-enablement.json",
+   "field": "safetyRules[0].realCounterexample — chosen region carries 109 slot keys and renders on both routes",
+   "claimed": "109 slot keys / 2 routes",
+   "measured": "page-regions.json region p000012:rgn:doc:div:1>div:1>section:2>div:1>div:2>div:1>div:1>div:2>article:1 → slotKeys 109, scope page, pages[0].routes = both named routes, occurrences desktop+mobile on n001579",
+   "agrees": true
+  },
+  {
+   "file": "28-region-enablement.json",
+   "field": "refusalCodes — the 10-code vocabulary",
+   "claimed": "10 codes",
+   "measured": "src/release/enablement.ts:234-245 ENABLEMENT_REFUSAL_CODES is exactly those 10, same order, and no other code literal exists in the file",
+   "agrees": true
+  },
+  {
+   "file": "28-region-enablement.json",
+   "field": "accountingDispositions.guard — one footer1 region names 84 global.footer.* keys bound on the other 7 enabled routes",
+   "claimed": "84 keys / 8 sibling regions",
+   "measured": "page-regions.json: 8 regions matching *:rgn:footer1:self (p000001..p000008), each with exactly 84 slotKeys, all 84 prefixed global.footer., each region on exactly one page/one route",
+   "agrees": true
+  },
+  {
+   "file": "28-region-enablement.json",
+   "field": "disableabilityCensusAfterCorrection — linear 68 regions / 8 routes; stripe 1,014 regions / 20 routes",
+   "claimed": "68 / 8 and 1014 / 20",
+   "measured": "linear page-regions.json regions=68, counts.routes=8; stripe page-regions.json regions=1014, route-map 20 routes",
+   "agrees": true
+  },
+  {
+   "file": "28-region-enablement.json",
+   "field": "testsAdded.newSuite — smoke-enablement.ts 88 checks",
+   "claimed": "88 / 0",
+   "measured": "101 / 0. STALE, NOT FALSE: the handoff's mtime (01:19:35) predates the 02:57:46 edit that grew the suite. My re-derivation matches the reconciler's 101 and the suite's own summary line.",
+   "agrees": false
+  },
+  {
+   "file": "28-region-enablement.json",
+   "field": "regressionAfterCorrection.rerun — all 13 re-run suite counts",
+   "claimed": "enablement 101, release 274, content-injection 152, production 129, seo 104, regions 76, revision 36, registry 35, theme 47, assets 140, recon-template 109, authoring-preview 41, brand-assets 141",
+   "measured": "All thirteen reproduce EXACTLY in my own independent battery.",
+   "agrees": true
+  },
+  {
+   "file": "28-route-enablement.json",
+   "field": "navigationCascade.measuredOnLinear — 2 deterministic nav groups",
+   "claimed": "global.header.nav.pricing and global.footer.link.pricing",
+   "measured": "slots.json: exactly 4 slots carry those key prefixes, in exactly 2 groupIds, each an href+label pair with defaultValue '/pricing' and 'Pricing'",
+   "agrees": true
+  },
+  {
+   "file": "28-route-enablement.json",
+   "field": "navigationCascade.measuredOnLinear — 28 anchor nodes = 7 ENABLED pages x 2 viewports",
+   "claimed": "28 = 7 x 2",
+   "measured": "64 bindings over those 4 slots; 32 distinct (pageId, viewport, nodeId) static occurrences over all 8 pages; excluding p000007 (the /pricing page, whose tree is deleted) leaves exactly 28, spanning 7 pages x 2 viewports",
+   "agrees": true
+  },
+  {
+   "file": "28-route-enablement.json",
+   "field": "accounting / orphan page — 'orphan page p000007' for /pricing",
+   "claimed": "p000007",
+   "measured": "linear route-map.json maps /pricing → p000007, and the table is one-to-one across all 8 routes",
+   "agrees": true
+  },
+  {
+   "file": "28-route-enablement.json",
+   "field": "productionRemoval + refusal vocabulary consistency with the engine",
+   "claimed": "one filter in src/seo/production-plan.ts drives sitemap/canonical/OG/JSON-LD",
+   "measured": "Consistent with the tree and with smoke:seo 97 → 104 and smoke:production 123 → 129 growth; the end-to-end assertions 28.P6.23-30 and 28.P6.37 all PASS in my own smoke:release run (274/0)",
+   "agrees": true
+  },
+  {
+   "file": "28-editor-enablement.json",
+   "field": "measuredOnRealArtifacts.template — 8 routes, 3079 slots, 9929 bindings",
+   "claimed": "8 / 3079 / 9929",
+   "measured": "route-map.json 8 routes, slots.json 3079, slot-bindings.json 9929",
+   "agrees": true
+  },
+  {
+   "file": "28-editor-enablement.json",
+   "field": "measuredOnRealArtifacts.pageRegions — 68 regions, 25 on p000001",
+   "claimed": "68 / 25",
+   "measured": "page-regions.json regions=68; regions whose pages[] contains p000001 = 25 (regions whose pages are EXACTLY p000001 = 20 — the claim uses the 'containing' definition and is right)",
+   "agrees": true
+  },
+  {
+   "file": "28-editor-enablement.json",
+   "field": "measuredOnRealArtifacts.routeDisable — 2 nav-cascade groups / 28 anchor nodes / orphan page p000007",
+   "claimed": "2 / 28 / p000007",
+   "measured": "All three reproduce from the raw artifacts (see the 28-route-enablement rows above)",
+   "agrees": true
+  },
+  {
+   "file": "28-editor-enablement.json",
+   "field": "regression.smoke:editor-integration — 25 checks / 0 failures (NEW)",
+   "claimed": "25 / 0",
+   "measured": "45 / 0. STALE, NOT FALSE: true at 02:05; the fix builder grew the suite to 45 while closing F1, the route/widening seam and F3. Growth, never a negative delta.",
+   "agrees": false
+  },
+  {
+   "file": "28-editor-enablement.json",
+   "field": "regression.smoke:enablement — 88 / 0 (unchanged)",
+   "claimed": "88 / 0",
+   "measured": "101 / 0. Same growth as recorded above.",
+   "agrees": false
+  },
+  {
+   "file": "28-editor-enablement.json",
+   "field": "regression.smoke:visual-editor / smoke:authoring-preview / typecheck",
+   "claimed": "50 / 0, 41 / 0, exit 0",
+   "measured": "50 / 0, 41 / 0, exit 0",
+   "agrees": true
+  },
+  {
+   "file": "28-editor-enablement.json",
+   "field": "findings[0] 'undo-is-a-one-step-toggle — NOT fixed here'",
+   "claimed": "undoLastRevision always restores chain[length-2]",
+   "measured": "No longer true of the tree: commit.ts now resolves a transitive cursor and restores chain[cursor-1]. The handoff is a correct point-in-time record, superseded by the fix builder. Not a dishonesty finding.",
+   "agrees": false
+  },
+  {
+   "file": "28-reconciliation.json",
+   "field": "handoffAudit — gate-phase23 '22 suites / 2472 checks / 0 failures' is internally consistent",
+   "claimed": "sum of suites[] = 2472 over 22 entries",
+   "measured": "sum = 2472, entries = 22, failures sum 0",
+   "agrees": true
+  },
+  {
+   "file": "28-reconciliation.json",
+   "field": "handoffAudit — region-enablement slot sharing 134 of 3,079, 84 global.footer.*",
+   "claimed": "134 / 3079 / 84",
+   "measured": "Recomputed from page-regions.json slotKeys: 3079 distinct keys across regions, 134 appearing in more than one region, 84 of those prefixed global.footer.",
+   "agrees": true
+  },
+  {
+   "file": "28-reconciliation.json",
+   "field": "handoffAudit — flowpilot-wr27 has no revisions/ directory",
+   "claimed": "no revisions/",
+   "measured": "ls data/linear.app/release-projects/flowpilot-wr27 → authored, operator-checklist.md, release-project.json, requirements.json, runs, technical-debt.json. No revisions/. smoke:registry 27B.27 asserts it and PASSES in my run.",
+   "agrees": true
+  },
+  {
+   "file": "28-reconciliation.json",
+   "field": "handoffAudit — pending-package-scripts.tsv 6 lines, package.json unmodified",
+   "claimed": "6 lines / unmodified",
+   "measured": "wc -l = 6; git status --porcelain package.json empty; the 5 suites absent from package.json scripts are exactly the 5 the tsv registers plus `editor`",
+   "agrees": true
+  },
+  {
+   "file": "28-reconciliation.json",
+   "field": "suitesReDerived — visual-editor 50, authoring-preview 41, brand-assets 141, enablement 101",
+   "claimed": "50 / 41 / 141 / 101, 0 failures",
+   "measured": "50 / 41 / 141 / 101, 0 failures, in my own independent battery",
+   "agrees": true
+  },
+  {
+   "file": "28-reconciliation.json",
+   "field": "suitesReDerived — editor-integration 25",
+   "claimed": "25 / 0",
+   "measured": "45 / 0. Growth after 03:12, by the same mechanism the reconciler itself documented for smoke:enablement. Its own caveat ('the next agent should re-derive rather than cite me') anticipated exactly this.",
+   "agrees": false
+  },
+  {
+   "file": "28-reconciliation.json",
+   "field": "leakedProcesses — 3 orphaned `npm exec next start` on ports 61590 / 61930 / 62026",
+   "claimed": "3 PPID-1 orphans, listening",
+   "measured": "NOT VERIFIABLE NOW — none of the three exists. `ps` shows zero next-server, next start, chromium or chrome-headless processes at 04:46 (before my battery) and at 05:12 (after it). Consistent with the editor verifier's later report that they had gone.",
+   "agrees": null
+  },
+  {
+   "file": "28-brand-assets.json",
+   "field": "suite check count",
+   "claimed": "109 checks in one place, 117 checks in another, 141 checks in a third — all undated, in the same document",
+   "measured": "141 / 0. The newest figure matches the tree; the other two are earlier undated moments. Untraceable AS WRITTEN — a versioning failure, not a fabrication.",
+   "agrees": false
+  },
+  {
+   "file": "28-start.json",
+   "field": "baselineSha",
+   "claimed": "6c2e723601a0d76431c96a48bbdb4726c02063e7 / '0827 morning' / branch main",
+   "measured": "HEAD is 6c2e723 '0827 morning' on main",
+   "agrees": true
+  }
+ ],
+ "handoffUntraceableNumbers": [
+  "docs/result/handoffs/28-visual-editor.json domToSlotInversion.measuredOnTheRealTemplate.widenedWithoutTrigger: '94 of 262 … STRICTLY WIDER candidate set'. The measured value is 22; 94 is the AMBIGUOUS count. BLOCKING. Independently confirmed by me in Python against the raw slot-bindings.json, and independently reported by the 04:17 gate agent (which also FAILed on it) and by the Phase-4 verifier before that. The same wrong figure also sits in docs/result/handoffs/28-intel/build-phase4-editor.json. Remedy is a one-token edit — 94 → 22, or restate the sentence as 'ambiguous without the trigger'. Check 28.P4.2 itself is honest: it asserts widened > 0 and prints the true 22 in its detail string.",
+  "docs/result/handoffs/28-brand-assets.json: 109, 117 and 141 are all given for the same suite with no timestamps, so no figure is traceable from the document alone. The newest (141) matches the tree. Versioning failure, not fabrication — carried forward unchanged from the reconciliation.",
+  "docs/result/handoffs/28-visual-editor.json architecture.appLocation.code 'src/editor/ (13 modules)': the tree holds 14 modules / 4,983 lines. Stale, not false — src/editor/enablement.ts arrived after the handoff.",
+  "STALE-BUT-TRUE-WHEN-WRITTEN, listed so nobody reads them as regressions: 28-editor-enablement.json smoke:editor-integration 25 → 45 and smoke:enablement 88 → 101; 28-region-enablement.json smoke-enablement 88 → 101; 28-reconciliation.json smoke:editor-integration 25 → 45; 28-editor-enablement.json findings[0] recording F1 as unfixed. Every one is a GROWTH or a later fix, never a shrink."
+ ],
+ "authorAttribution": {
+  "correctionsMade": "NONE — I found no stale author attribution to correct, and I did not rewrite any handoff.",
+  "measured": "Only docs/result/handoffs/28-editor-enablement.json and docs/result/handoffs/28-reconciliation.json declare producedBy. 28-editor-enablement.json's ('integration builder (session web-recon-33)') is consistent with file mtimes and is unusually candid — it self-reports the route-not-forwarded defect, F1, F2, F3 and the fact that a second agent was writing the tree throughout. 28-reconciliation.json's names its own pid and start time. The other nine 28-*.json files declare no author at all. That is an attribution GAP, not a stale attribution, and inventing an author for them would be a fabrication, so I left them alone.",
+  "supersededOwnershipClaim": "28-editor-enablement.json filesOwnedByThisPhase lists src/editor/client.ts, src/editor/enablement.ts and scripts/smoke-editor-integration.ts. The later fix builder has since edited all three plus commit.ts, panels.ts, region-enablement.ts and server.ts. The ownership sentence is a correct point-in-time record, now superseded. Recorded, not rewritten."
+ },
+ "leakedProcesses": [],
+ "leakedProcessesEvidence": "`ps -axo pid,ppid,lstart,command` filtered for next / next-server / next start / chromium / chrome-headless / playwright, run at 04:46 KST (before the battery) and again at 05:12 KST (after it): ZERO matches both times, PPID 1 or otherwise. The three orphans the reconciliation recorded (ports 61590 / 61930 / 62026, started 02:35-02:37) and the port-3224 orphan are gone. I reaped every process my own battery spawned — during smoke:e2e I observed its own `npm exec next start -p 53549` → next-server and a chrome-headless-shell as live CHILDREN of the suite, and all had exited by the end. Nothing of mine survives.",
+ "measurementIntegrity": "I pinned sha256 of all 399 src/**/*.ts + scripts/**/*.ts files IMMEDIATELY BEFORE the battery (tmp/wr28/gate456/pre.sha, manifest sha256 49057e3f2f77a7a0cc5cec44ed559cf1f35e8bea0bce9795b9ebe37c15c11693) and again AFTER the last suite (tmp/wr28/gate456/post.sha). `diff pre.sha post.sha` is EMPTY: the tree was byte-identical for the whole 26-minute measurement, so no concurrent writer touched src/ or scripts/ while I measured. Unlike every earlier agent in this program, I saw no evidence of a live second half: no `claude --resume` process took the mutex, no suite-lock wait exceeded 0 seconds, and no source byte moved.",
+ "verdict": "FAIL",
+ "blockers": [
+  "HANDOFF HONESTY — docs/result/handoffs/28-visual-editor.json still asserts '94 of 262 dynamic bindings would get a STRICTLY WIDER candidate set — i.e. slots that are not on that element — if resolved on templateNodeId alone'. The measured value is 22. I re-derived it myself in Python from the raw data/linear.app/recon-templates/2026-08-25T21-53-26-980Z/slot-bindings.json, replicating scripts/smoke-visual-editor.ts:311-315 verbatim: bindings where the templateNodeId-keyed candidate set is STRICTLY LARGER than the trigger-keyed one = 22; bindings whose templateNodeId-keyed set is merely AMBIGUOUS (size > 1) = 94. Every neighbouring figure in the same block reproduces exactly (262 dynamic, 262/262 sound, 168 → 182 single-slot), which is what makes this one figure a mislabel rather than an artefact of a different definition. This is the THIRD independent agent to report it (Phase-4 verifier, the 04:17 gate agent, now me) and it has shipped uncorrected each time; the file carries no corrections block. The same wrong figure also sits in docs/result/handoffs/28-intel/build-phase4-editor.json. NOTHING FUNCTIONAL FAILS — check 28.P4.2 is itself honest and prints the true 22 — and the gate criterion I was given is explicit that a handoff number that cannot be traced is a FAIL, so I do not have the latitude to wave it through on the grounds that it is cheap to fix. Remedy: change 94 → 22 in both files, or restate the sentence as 'ambiguous without the trigger'."
+ ],
+ "limitations": [
+  "THE VERDICT IS FAIL ON DOCUMENTATION HONESTY ALONE. Every engineering criterion PASSED: typecheck exit 0; 25 suites, 2,730 checks, 0 failures; zero negative deltas; git and history unmoved; 24-aggregation-phase1.json byte-identical; 0 historical data/ mutations; 0 data-wr-slot emission sites; 0 editor artifacts in a production package built by this very battery; F1 fixed, F2 honestly carried, F3 closed through the UI. If the single mislabelled figure in 28-visual-editor.json is corrected, this gate is a PASS on the evidence already collected — but it must be corrected, not argued away, and a re-run of smoke:visual-editor should accompany the edit.",
+  "MY TYPECHECK DOES NOT COVER THE BROWSER HALF OF THE EDITOR. EDITOR_CLIENT_JS lives inside a template string in src/editor/client.ts, outside tsconfig's reach. `tsc --noEmit` exit 0 says nothing about it. The client is proven only by smoke:editor-integration's and smoke:visual-editor's Playwright assertions (95 checks between them, all passing here).",
+  "I RAN NO MUTATION OR SABOTAGE PROOFS. My role was to measure the tree as it stands, and three earlier agents each ran their own falsifiability injections (the fix builder's M1/M2/M3, the editor verifier's S1-S4, the enablement verifier's M1/M2/M3). I re-ran none of them, so 'the checks can fail' rests on their evidence, not mine. What I add is that all 2,730 checks pass on a tree whose 399 source files I proved byte-identical from before the first suite to after the last.",
+  "F3 IS A RE-RUN, NOT AN INDEPENDENT RE-DRIVE. I did not stand up my own Chromium against the stripe preview. I verified the fixture premise from the raw route-map myself (20 routes / 18 pages / 2 many-to-one groups on stripe; 8 / 8 / 0 on linear) and then ran, under the mutex, the suite that drives the browser. 28.P8.38-44 all PASS. Nobody has yet driven that journey by hand outside the suite.",
+  "THE 22-SUITE / 2,472-CHECK BASELINE IN 28-gate-phase23.json IS SUPERSEDED AND SHOULD NOT BE QUOTED AS TREE STATE. It contains none of enablement, visual-editor or editor-integration, and five member counts have risen since. The current figure is 25 suites / 2,730 checks / 0 failures. This report is the new baseline.",
+  "SUITE IDS ARE NOT UNIQUE IN TWO SUITES, WHICH MAKES 'unique ids' A WEAKER CROSS-CHECK THAN IT LOOKS. smoke:enablement emits 101 checks over 96 unique ids (28.P5.19 four times, 28.P5.28 and 28.P6.8 twice each — loop-emitted). smoke-editor-integration.ts contains the literal 28.P8.39 twice, though the second is inside a missing-fixture guard that did not fire. Neither is a defect; both mean an id census can undercount real checks.",
+  "MY OWN BATTERY WROTE INTO data/. It created data/domainchecker.co.kr/production-builds/2026-08-27T20-06-38-206Z (198 files — which I then used as the production-separation evidence, so it is load-bearing, not litter) and rewrote three run.json files under the permitted Task-28 namespace data/stripe.com/release-projects/wr28-int-stripe/runs/2026-08-25T*/ at 05:07:47 via smoke:editor-integration. A naive mtime scan will flag those three as pre-2026-08-27 mutations; they are not — the inner run ids are carried history from the copied project, whose own createdAt is 2026-08-25T13:28:26.494Z.",
+  "I PRESERVED THE PREVIOUS GATE REPORT RATHER THAN OVERWRITING IT. The 04:17 report is now at docs/result/handoffs/28-gate-phase456-prior-0417.json, unmodified. It reached the same FAIL on the same single blocker by an independent route; I re-derived its 94-vs-22 finding from the raw artifact rather than citing it, and my suite counts match its table exactly, suite for suite.",
+  "SCOPE I DID NOT COVER: I did not re-verify the widenedToBlastRadius seam behaviourally (I read the source and the 28.P8.30-33 checks pass), I did not audit docs/result/handoffs/28-intel/*.json beyond the one file carrying the duplicated 94, and I ran no performance measurements. My numbers describe the bytes present between 04:46 and 05:12 KST on 2026-08-28.",
+  "ZERO MUTATING GIT OPERATIONS. The only files I created are docs/result/handoffs/28-gate-phase456.json (this file), docs/result/handoffs/28-gate-phase456-prior-0417.json (the preserved copy) and my working files under tmp/wr28/gate456/ (run.sh, derive.sh, datascan.py, pre.sha, post.sha, results.tsv, battery.log, logs/*.log)."
+ ],
+ "evidenceOnDisk": {
+  "rawSuiteLogs": "tmp/wr28/gate456/logs/*.log — 25 suite logs plus typecheck.log, each including its own `wr28-lock: acquired` / `released (exit N)` lines",
+  "exitCodesAndWallClock": "tmp/wr28/gate456/results.tsv (suite, exit code, seconds)",
+  "countDeriver": "tmp/wr28/gate456/derive.sh — re-derives every count from the raw logs and prints each suite's own self-reported summary beside it",
+  "runner": "tmp/wr28/gate456/run.sh",
+  "historicalMutationScanner": "tmp/wr28/gate456/datascan.py",
+  "treeIntegrity": "tmp/wr28/gate456/pre.sha and tmp/wr28/gate456/post.sha (399 files each; diff empty)",
+  "preservedPriorGate": "docs/result/handoffs/28-gate-phase456-prior-0417.json"
+ },
+ "postGateResolution": {
+  "resolvedAt": "2026-08-27T20:22:31.775954Z",
+  "resolvedBy": "Task-28 orchestrator",
+  "soleBlocker": "the widenedWithoutTrigger figure in 28-visual-editor.json (claimed 94, true 22)",
+  "action": "Recomputed independently a fourth time from the raw slot-bindings.json, replicating scripts/smoke-visual-editor.ts:305-316: 262 dynamic bindings, STRICTLY WIDER = 22, MERELY AMBIGUOUS = 94. Corrected 28-visual-editor.json and 28-intel/build-phase4-editor.json, added the missing ambiguousWithoutTrigger field, refreshed the stale 'src/editor/ (13 modules)' to '14 modules, 4,983 lines', and recorded the whole thing in a corrections[] block rather than silently overwriting it.",
+  "verdictStands": "This gate's FAIL is left AS RECORDED. The orchestrator does not overturn its own gate. The next gate re-checks the figure independently and is the one entitled to call it closed.",
+  "engineeringPropertiesAtThisGate": "25 suites / 2730 checks / 0 failures / typecheck exit 0; 0 negative deltas; 0 git ops; 0 historical mutation; 0 data-wr-slot emission sites; 0 editor artifacts in 2 production packages"
+ }
+}

@@ -1,0 +1,70 @@
+{
+ "schema": "task28-resume-state-v1",
+ "writtenAt": "2026-08-28T15:14:01Z",
+ "purpose": "TASK 28 IS COMPLETE AND RE-ADJUDICATED. This file is no longer a mid-task resume state; it is the TRUE STATE a new session should read first. Read this, then docs/result/28-visual-production-workflow-2026-08-28.md and docs/result/handoffs/28-final.json.",
+ "baselineSha": "6c2e723601a0d76431c96a48bbdb4726c02063e7",
+ "gitState": "HEAD unmoved at 6c2e723601a0d76431c96a48bbdb4726c02063e7. ALL Task-28 work — INCLUDING the close-out fix — is STILL AN UNCOMMITTED WORKING TREE. THIS IS NOW THE HIGHEST RISK IN THE PROGRAM: one stray git checkout/clean/stash destroys four tasks of work. COMMIT FIRST, BEFORE ANY OTHER WORK. CORRECTION TO THIS FILE'S EARLIER TEXT, WHICH SAID 'ZERO mutating git operations all program' — THAT WAS FALSE. gitMutatingOperations = 1: a `git stash push --include-untracked` ran at 2026-08-28 05:49:35 KST and was popped 36 s later, caught only because an auditor ran `git fsck` and found three orphaned stash-shaped commits (a pop erases the stash list, the reflog entry and the log). No content harm: HEAD, refs/heads/main and both remote refs unmoved, no commit/reset/checkout/clean/push ever ran, the stashed tree equalled HEAD's tree. Re-verified at re-adjudication: exactly 3 unreachable commits, all stamped 1787863775 = that single event, ZERO new orphans; no refs/stash, no ORIG_HEAD, no MERGE_HEAD; HEAD reflog still 3 pre-Task-28 entries.",
+ "phasesComplete": {
+  "1_carriedItems": "PASS — 8 Task-27 change requests, requirement-drift root-caused and fixed generically, assets StageRunner run on real data (2 defects found+fixed)",
+  "authoredSubstrate": "PASS — authored.assets / authored.brand / authored.enablement through prepare, resolve, revisions, freshness graph; write API in src/release/authored.ts",
+  "2_brandAssets": "PASS after a correction round that fixed 3 real honesty defects — whole-asset REPLACE/REMOVE/PRESERVE, clearing wired to a census of REAL OUTPUT incl. RSC flight payload and post-hydration DOM",
+  "3_fastPreview": "PASS — src/authoring-preview/, patched template copy behind a stable-URL proxy, epoch-file invalidation; cold 3201ms / warm 617ms / text edit 180ms median (verifier's number, not builder's)",
+  "4_visualEditor": "BUILT + verified — src/editor/ (14 modules), src/cli-editor.ts, DOM->Slot via slot-bindings inversion, hover overlay geometry delta exactly 0",
+  "5_regionEnablement": "BUILT + verified — src/release/enablement.ts, src/regions/enablement.ts, src/production/enablement.ts",
+  "6_routeEnablement": "BUILT + verified — SEO/nav/accounting cascade",
+  "gate456": "FAIL on ONE documentation figure only (widenedWithoutTrigger 94 vs true 22). CORRECTED by the orchestrator with a corrections[] block; the FAIL verdict was deliberately NOT overturned. The Phase-7/8/9 gate re-checks it independently and is entitled to close it.",
+  "7_library": "BUILT + verified — Template/Site Library screens in the operator app, every column traced to a real artifact",
+  "8_createSite": "BUILT + verified — one natural-language brief creates an independent release-project; Recon Template proven byte-immutable across 3 pipelines; structure-only routes not promoted",
+  "9_contentGeneration": "BUILT + verified — one brief -> multi-route first draft (site 'Millwright'); 3 new suites (content-generation 50, create-site 66, first-draft 34)",
+  "gate789": "FAIL on TWO handoff-traceability defects only, both corrected by the orchestrator with corrections[] blocks; 27 suites / 2759 checks / 0 failures",
+  "10_productionSeo": "BUILT + verified — production-mode SEO end to end on a reserved test domain; preview noindex, production indexable only after the gate resolves, proven both directions",
+  "11_productionCanary": "BUILT + verified — full local production canary, complete operator journey; all 13 zero-gates independently re-derived as 0 by the gate agent",
+  "gate1011": "FAIL on THREE handoff-traceability defects only, all corrected by the orchestrator; 28 suites / 2818 checks / 0 failures",
+  "closeOut": "PASS — the ONE failing bar clause closed. Four sub-fixes across src/release/brand-scan.ts, src/production/brand-census.ts, src/content-injection/brand-surfaces.ts, scripts/smoke-brand-assets.ts, scripts/smoke-production.ts: preservedAfter>0 now ALWAYS yields preserve-acceptance (never output-proof); a rendered+flight imageSrcPath axis added, measured with the detector's own scanImageLogo; the alt matcher aligned with the detector; branch order fixed. Every one of the six RESOLVABLE_BRAND_SURFACES now has a matching census axis on both encodings. Falsified by the fix agent (3 mutations), an independent verifier (pre-fix rebuild, 4,116-case matrix, 63,918-string fuzz, 2 mutations) and the final adjudicator (7 own-design false-zero attacks, 65,536-string fuzz, canary re-derivation). Evidence: docs/result/handoffs/28-brand-clearing-fix.json."
+ },
+ "inFlightAtWriteTime": {
+  "workflow": "wf_d2677b44-3d4 — Phases 7 (Library UI) + 8 (Create Site from one brief) + 9 (full-site content generation)",
+  "stageReached": "Recon complete (2 agents); the two builders were running",
+  "recoveryNote": "If it was interrupted, read its journal.jsonl and recover completed agents BEFORE relaunching — that is how three earlier interruptions were recovered tonight with near-zero loss."
+ },
+ "phasesRemaining": [],
+ "regressionBaseline": {
+  "suites": 29,
+  "checks": 2970,
+  "failures": 0,
+  "typecheck": "exit 0",
+  "perSuiteSource": "docs/result/handoffs/28-final-regression.json .suites[] for the 2,948 pre-fix table; the close-out delta is smoke-brand-assets 141 -> 162 and smoke-production 132 -> 133, all 27 other suites delta 0.",
+  "note": "2,970 — NOT 2,948 — is the number a future task must protect. All +22 are newly added; zero negative deltas. smoke:e2e RAN in full (130/130) and no deferrals remain.",
+  "gotcha": "smoke:e2e takes ~11 min and exceeds a 10-minute Bash tool timeout — run it detached or it orphans a next-server."
+ },
+ "openFindings": [
+  "F2 (by design, keep honest): accepting an enablement cascade RE-ADJUDICATES the whole transaction and can return MORE refusals (measured: 20, not 0). Must stay asserted as-is, never 'fixed' into a comfortable zero.",
+  "F3 (CLOSED): the stripe route->page many-to-one shared-page refusal IS proven through the UI. scripts/smoke-editor-integration.ts:998-1174 carries a full stripe UI journey including a check literally named '28.P8.41 F3 CLOSED', and auditor 2 independently stood up their own Chromium and reproduced it. This file previously recorded 'F3 (open)' and that was FALSE; so does 28-editor-enablement.json .limitations, which is still uncorrected.",
+  "Undo was a one-step toggle (commit.ts undoLastRevision restored chain[length-2]); a backward walk was implemented in the Phase-4/5/6 fix stage — re-verify it survived.",
+  "smoke-release.ts rm -rf's a FIXED fixture path (data/release-fixture.example) at startup and in finally: two concurrent suite runs destroy each other. ALL suite runs must go through bash tmp/wr28/suite-lock.sh. Worth fixing properly before any parallel CI.",
+  "next/chromium workers leak: several orphaned PPID-1 servers were found and reaped tonight. Agents must reap what they spawn.",
+  "SYSTEMIC, ROOT-CAUSED: three consecutive gates failed on handoff traceability. Each correction pass answered its OWN verifier line by line and none answered the RE-VERIFICATION that followed. A re-verification is a verification. Every shipped handoff must be diffed against the LAST verifier report's failures[], not the first.",
+  "CLOSED: the image-logo brand-clearing defect (the one failing bar clause). Fixed and re-adjudicated — see phasesComplete.closeOut. Retained because the CLASS of defect is the one to keep watching for: an instrument blind on exactly the surface it certifies, while every suite passes.",
+  "OPEN, SYMMETRIC, DISCLOSED: a brand logo delivered via CSS background-image, <object>, or an inline <image href> is neither detected nor censused. It cannot reopen the fixed defect, because preservedAfter>0 now outranks the census entirely.",
+  "OPEN: a production build baked BEFORE the close-out fix has no imageSrcPath in its stored bake report and reads 0 on the new axis. REBUILD it rather than trusting it.",
+  "OPEN: smoke-production-canary reads STORED artifacts and does NOT re-derive requirements through brand-scan.ts. Never cite its pass as evidence that a change to the clearing instrument is safe — re-derive against the build the requirement's evidence names.",
+  "OPEN: smoke-editor-integration flaked once during the close-out (waitForFunction 120 s timeout in the real-browser journey, 32 PASS / 0 FAIL, suite aborted). Re-ran clean at 45/45 twice."
+ ],
+ "hardEarnedLessons": [
+  "A --resume while the original session is still live FORKS the program: two halves wrote src/editor/** concurrently for ~13 minutes. Before resuming, make sure no other Claude Code session is running on this repo.",
+  "git status --porcelain data/ is a VACUOUS proof — data/ is gitignored. Use mtimes grouped by containing run directory; birth times are unreliable on APFS (clonefile preserves the source's).",
+  "Four real honesty defects were caught by adversarial verification, not by tests passing: a source-brand blocker silenced by a narrowed trigger; a false measured claim its own scanner falsified in seconds; a region refusal rendering 1 of the 2 the engine produced; and a verifier finding that shipped uncorrected. Keep the fresh-verifier-per-builder discipline.",
+  "An instrument that certifies a release blocker must be COMPLETE WITH RESPECT TO WHAT IT CERTIFIES, and a passing suite is not evidence that it is — 2,948 checks passed while the brand instrument could say 'resolved' with the source logotype on the page, because the suite contained a check asserting the OPPOSITE of correct behaviour. The structural remedy was not the new census axis; it was the ORDERING: preservedAfter>0 outranks the census, so an unmeasured surface can only downgrade a build and can never upgrade one to proof."
+ ],
+ "howToResume": [
+  "1. Confirm no other Claude Code session is live on this repo (ListAgents, or check /tmp/cc-socks). A second live session forks the program.",
+  "2. COMMIT THE TREE. Before anything else. It holds Tasks 25-28 uncommitted and a mutating git operation has already run here once.",
+  "3. Read docs/result/28-visual-production-workflow-2026-08-28.md (verdict + THE CLOSE-OUT + the 24 Remaining Risks) and docs/result/handoffs/28-final.json.",
+  "4. Verify the tree still compiles: bash tmp/wr28/suite-lock.sh pnpm typecheck; protect 29 suites / 2,970 checks / 0 failures.",
+  "5. Then Task 29 — FIRST REAL PRODUCTION PILOT, on a NON-linear lineage (nextjs.org, which is the lineage that exposed the brand defect; expect 510 real brand decisions).",
+  "6. Keep the contract: zero mutating git operations, no historical data/ mutation, all suites through the mutex, no new dependencies, no data-wr-slot."
+ ],
+ "taskStatus": "COMPLETE",
+ "verdict": "READY FOR FIRST PRODUCTION PILOT",
+ "verdictHistory": "Task 28's own final adjudication returned 'NOT READY — VISUAL PRODUCTION WORKFLOW INCOMPLETE' on exactly ONE of the twenty bar clauses: 'source-brand-asset resolution works'. That clause was then root-caused, fixed in four sub-fixes, falsified five independent ways, and RE-ADJUDICATED to READY. The NOT READY verdict is not erased — see 28-final.json .closeOutFix and the report's 'THE CLOSE-OUT' section."
+}

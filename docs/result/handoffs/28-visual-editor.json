@@ -1,0 +1,461 @@
+{
+ "schema": "task28-visual-editor-v1",
+ "phase": "Task 28 Phase 4 — Visual Editor V1 (operator browser UI)",
+ "status": "COMPLETE — a real operator browser UI over a real Recon Template, 50/50 checks, typecheck exit 0, Phase 3's suite still 41/41 including the production-bake inertness proof",
+ "writtenBy": "builder (Phase 4)",
+ "fixture": {
+  "template": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z (3,079 slots / 9,929 bindings, slotSchemaVersion 2)",
+  "releaseProject": "data/linear.app/release-projects/wr28-visual-editor — recreated per suite run from the accepted wr28-brand-assets project (ids rewritten); starts with 4 revisions r000..r003",
+  "authoringPreview": "data/linear.app/authoring-previews/wr28-editor-smoke — built once, kept warm between runs, never rm -rf'd by any suite",
+  "operatorAssets": "data/linear.app/wr28-editor-assets — replacement image files the image/logo inspectors point authored.assets at"
+ },
+ "architecture": {
+  "decision": "Option B from the recon: a dependency-free node:http server in a NEW src/editor/ module on its OWN 127.0.0.1 origin, launched by a tsx CLI (src/cli-editor.ts), serving one hand-written HTML page + one CSS + one vanilla-JS asset, with EVERY decision behind a typed JSON API.",
+  "whyOwnOrigin": "The preview bridge's security model is cross-origin BY CONSTRUCTION: it posts only to explicitly allowlisted origins (never \"*\") and accepts only messages whose event.origin is allowlisted AND whose event.source is the embedder. Serving the editor from the preview's own origin makes both guards vacuous. Two ports, two origins, one postMessage channel — and 28.P4.44 proves an un-allowlisted origin receives nothing and cannot command the bridge.",
+  "rejected": [
+   {
+    "option": "A second Next.js app under src/",
+    "why": "next dev/build REWRITES the SHARED root tsconfig.json on first run (it injects jsx/plugins/include/exclude) and drops .next/types/*.ts inside src/, which `tsc --noEmit` over src/**/*.ts would then typecheck — breaking the typecheck gate for every other Task-28 agent running concurrently. Measured precondition: the repo root has no next.config, no app/ or pages/ dir, and the root tsconfig has no \"jsx\" option and includes only src/**/*.ts + scripts/**/*.ts."
+   },
+   {
+    "option": "A static HTML file opened over file://",
+    "why": "the bridge's inbound guard is `if (origins.indexOf(event.origin) === -1) return;` and a file:// document posts origin \"null\". Making it work requires weakening the exact security property Phase 3 was measured on."
+   },
+   {
+    "option": "Serving the editor from the authoring proxy at a reserved path",
+    "why": "same-origin with the preview: both inbound guards become vacuous, and editor bytes move inside the serve boundary whose separation from the production bake is the tested property."
+   },
+   {
+    "option": "Any new dependency (Vite, a component library, a bundler)",
+    "why": "no network budget by contract. Built on next/react/playwright/parse5/zod/pino/tsx only — and the editor itself uses none of them except playwright in its test."
+   }
+  ],
+  "appLocation": {
+   "code": "src/editor/ (14 modules, 4,983 lines) + src/cli-editor.ts",
+   "separateFromProductionOutput": "the editor never writes into a generated customer application. It reads the IMMUTABLE Recon Template run and writes only (a) release-project.json + revisions/ through src/release, and (b) the authoring preview's own overlay files. The production bake copies the immutable template run, so no editor byte can reach a package — re-proven this phase by scripts/smoke-authoring-preview.ts 28.P3.34/35/36 (real production package, 0 occurrences of the bridge marker, 0 of the authoring patch) after the bridge was extended.",
+   "installedDepsOnly": "node:http + node:net, exactly like src/authoring-preview/serve.ts, src/theme/serve.ts, src/seo/serve.ts and src/assets/serve.ts already do."
+  },
+  "layoutShipped": "top bar (Site select · Page select · Desktop/Mobile · Preview/QA · Select-mode · status · Undo) / left rail (Pages, Regions) / centre (the real preview in an iframe, or the QA report) / right (Inspector tabs: Slot · Region · Theme · Logo).",
+  "clientIsThin": "The browser asset is deliberately wiring only — iframe plumbing, postMessage, one <style> rewrite inside the preview, and form rendering from server-provided data. `tsc --noEmit` covers src/**/*.ts and a browser asset is outside the type system either way, so slot inversion, inspector assembly, group composition, theme validation, enablement, revisions and the AI-rewrite contract are ALL server-side and typechecked. The 2.9 MB slot-bindings file is never sent to the browser."
+ },
+ "domToSlotInversion": {
+  "noNewDomAttribute": "There is no data-wr-slot and this phase added none. DOM identity is the EXISTING data-wr-node / data-wr-dyn-node plus the slot-bindings.json inversion. 28.P4.45 measures 0 elements carrying data-wr-slot in the live preview and 0 occurrences of the string in the served HTML.",
+  "keys": {
+   "staticAndPaintTwin": "pageId | viewport | nodeId",
+   "dynamicTemplate": "pageId | viewport | RECOVERED TRIGGER nodeId | templateNodeId",
+   "fallback": "pageId | viewport | templateNodeId — used ONLY when the trigger could not be recovered, and then every candidate is returned with triggerRecovered:false and an explicit note"
+  },
+  "triggerRecovery": {
+   "where": "src/authoring-preview/bridge.ts recoverTrigger() — in-page, because report.node is ALWAYS null on a mounted dynamic-template element",
+   "how": "walk up to the outermost [data-wr-dyn-node]; collect its id, its parent's id and its [id] descendants; look each up as [data-wr-dyn-id=\"…\"] and read that element's data-wr-node; failing that, scan [data-wr-obs] triggers and match their parsed entries' hn/h against the mounted root",
+   "honesty": "a token that is not [A-Za-z0-9_.:-]{1,64} is skipped rather than escaped into a selector, and a failed recovery returns null — the editor then shows the candidate list instead of choosing"
+  },
+  "measuredOnTheRealTemplate": {
+   "occurrenceKeyIsExactlyInvertible": "9,929 bindings → 9,929 distinct full occurrence keys, 0 keys spanning more than one slot (28.P4.1)",
+   "dynamicBindings": 262,
+   "soundWithTrigger": "262/262 — the trigger-keyed candidate set always contains the binding's own slot",
+   "widenedWithoutTrigger": "22 of 262 dynamic bindings would get a STRICTLY WIDER candidate set — i.e. slots that are not on that element — if resolved on templateNodeId alone",
+   "singleSlotResolution": "168/262 on templateNodeId alone → 182/262 with the trigger. The residue is NOT ambiguity: an element can legitimately carry a label AND an href, which is what the candidate list is for.",
+   "elementGranularityIsReal": "clicking a 2-slot anchor shows BOTH candidates rather than silently picking one (28.P4.21, measured on the real header nav anchor n000027 → navigation.href + navigation.label, one shared groupId)",
+   "ambiguousWithoutTrigger": "94 of 262 dynamic bindings have an AMBIGUOUS (size > 1) templateNodeId-keyed candidate set. This is the figure previously and wrongly reported as 'strictly wider'."
+  },
+  "textIndexRule": "NOT used by the editor at all, and that is the point: the editor never addresses a text segment itself. It writes authored.slotValues[slotKey] and the template's OWN applier (with its expectedValue guard) rewrites every bound occurrence. The recon's `childNodes.filter(n => n.nodeType !== 8)[childIndex]` finding therefore stays inside the runtime, where it already is."
+ },
+ "bridgeExtension": {
+  "file": "src/authoring-preview/bridge.ts — ADDITIVE ONLY",
+  "added": [
+   "describe() now reports dynTrigger (recovered trigger nodeId, or null)",
+   "inbound `highlight` {spec:{hover?,selected?}} → rewrites ONE <style data-wr-editor-style=\"1\"> in <head>",
+   "inbound `select-mode` {enabled} → a click that would NAVIGATE (an anchor with href) is preventDefault'ed; propagation is NEVER stopped, so a dynamic-template menu still opens",
+   "inbound `geometry` + scroll/resize rAF ticks → outbound `geometry` so PARENT-document chrome can follow the element (the recon's stale-overlay risk, closed)",
+   "window.__wrAuthoringBridge gains highlight + recoverTrigger"
+  ],
+  "whyBridgeAndNotAParentOverlay": "the preview is cross-origin, so a highlight that tracks layout by itself must live in the preview document. The alternative — a second editor-owned proxy splicing its own script — would have added a proxy hop for every request and duplicated the serve boundary.",
+  "nonRegressionProof": "scripts/smoke-authoring-preview.ts re-run after the change: 41 checks, 0 failures — including 28.P3.8 (no postMessage to \"*\", origin AND source validated, data-wr-node/data-wr-dyn-node reported, NO data-wr-slot), 28.P3.34/35/36 (a REAL production package baked after a preview session: 198+ files, bridge marker 0 occurrences, authoring patch 0 occurrences) and 28.P3.37 (the immutable template run byte-untouched).",
+  "bridgeScriptSize": "12,308 bytes with one editor origin (was 6,112 in Phase 3)"
+ },
+ "hoverOverlay": {
+  "technique": "ONE <style data-wr-editor-style=\"1\"> appended to <head>, textContent rewritten per hover to `[data-wr-viewport=\"<vp>\"] [data-wr-node=\"<n>\"]{outline:2px solid #0a84ff !important;outline-offset:-1px !important;}` (and #f0a000 for the selected element). It targets the EXISTING attribute, so ZERO attributes are set on any customer element and ZERO nodes are inserted into the customer subtree.",
+  "whyOutline": "outline is painted outside the border box and never participates in layout, so unlike a border/box-shadow/inserted box it cannot move anything, and unlike an absolutely-positioned box it cannot extend the scrollable overflow area.",
+  "roleTypeIndicator": "drawn in the EDITOR document (a fixed badge positioned from the reported rect), never inside the customer page — zero geometry cost by construction. It follows iframe scrolling because the bridge now emits geometry ticks.",
+  "measuredGeometryDelta": {
+   "method": "getBoundingClientRect{x,y,width,height} for EVERY element in the preview document plus 6 document metrics (documentElement.scrollWidth/scrollHeight/clientWidth/clientHeight, body.scrollWidth/scrollHeight); the injected <style> is filtered out of both snapshots; max absolute delta over ~32,000 numbers",
+   "noiseFloor": "0 (baseline vs baseline, 400 ms apart, 8,010 elements) — so a nonzero result would be real",
+   "desktop1440x900": "max delta EXACTLY 0 over 13 probes, one per tag kind (main, section, nav, div, ul, li, p, h1, h2, a, span, button, img), 8,010 elements + 6 document metrics",
+   "mobile390x844": "max delta EXACTLY 0 over the same 13 probe kinds",
+   "probeDesignIsMeasured": "the FIRST version of this check hovered one inline anchor and read 0 even when the highlight was deliberately changed from `outline` to `border` — the template's boxes are border-box, so a border on a childless inline element moves nothing. The check was strengthened to one probe per tag kind, and re-injecting the same break then produced a 4.0001220703125 px delta at section#n000004 on desktop and 4 px on mobile. The zero above is therefore a measurement with a demonstrated ability to fail."
+  }
+ },
+ "viewportSemantics": {
+  "profiles": "Desktop 1440x900 / Mobile 390x844 — the OBSERVED profiles frozen in src/observer/types.ts and the widths every QA suite uses (parity-qa DEFAULT_WIDTHS, production/qa, theme-qa, layout-qa)",
+  "breakpoint": "915 for linear.app, read from <templateRun>/app/reconstruction-data/route-map.json .breakpoint (inferBreakpoint = floor((390+1440)/2)); convention `mobile: width < breakpoint; desktop: width >= breakpoint`",
+  "implementation": "the toggle is an IFRAME WIDTH change (1440 vs 390) with a transform:scale to fit the pane; the badge math multiplies by that scale. Both variant trees are always in the DOM (8,010 elements at both widths); the inactive one is display:none behind the media queries.",
+  "namedLimitation": "an iframe inside a desktop browser cannot reproduce deviceScaleFactor 3 or hasTouch:true. The Mobile view reproduces the mobile TREE and its CSS layout at 390 CSS px and nothing more — the bootstrap payload says so verbatim, and 28.P4.13 asserts that sentence is present."
+ },
+ "inspectors": {
+  "slotText": "slot key, canonical role, type, scope, page/route, editability, urlKind, current value (authored ?? default), default, constraints (the ORIGINAL's character/word count and rendered width/height/lineCount per viewport), evidence tags, appliedOverrides, the full rendered-binding table with its surface/viewport/page breakdown, and — when a content run is on the accepted lineage — origin / disposition / customerFacing / detail from slot-accounting.json.",
+  "fieldsDeliberatelyNotShipped": [
+   "maxCharacters or any length limit — src/recon-template/types.ts refuses to derive one; constraints are a REFERENCE, not a limit",
+   "x/y position — a slot has no coordinates; position exists only as the live rect the bridge reports",
+   "human approval / sign-off — editability:\"review\" is the COMPILER's confidence and disposition:\"human-required\" is the ENGINE's. The panel says in words that opening or editing a slot records NOTHING about human approval. 1,493 of 3,079 linear slots are review.",
+   "assetId as a slot field — composed at read time from the materialization manifest + rewrite map, and reported as UNJOINED when it cannot be composed",
+   "per-binding 'visible right now' — not recorded in any artifact"
+  ],
+  "howThatIsEnforced": "the inspector payload carries a `fieldsNotAvailable` array that the UI prints; 28.P4.8 asserts the payload has no maxCharacters/x/approved key and that the array names them.",
+  "urlAndCta": {
+   "groupingIsReal": "SlotDefinition.groupId exists on this data — 1,553 of 3,079 linear slots across 635 groups. The editor renders a group as `Button label` fields + one `Destination` field.",
+   "oneHrefNLabels": "a CTA can carry N label segments: home.main.cta.new-loops = .href (\"/now/introducing-loops\") + .label.01 (\"New\") + .label.02 (\"Loops →\"). The form renders 1 href + N labels and never assumes a pair (28.P4.6, 28.P4.29).",
+   "degradedGroups": "194 groupIds hold exactly ONE slot (190 of them image.content). The inspector degrades to the single-slot form there rather than rendering an empty group (28.P4.7).",
+   "saveSemantics": "Save writes INDEPENDENT slot values — the group is a view, not a storage unit. 28.P4.28 asserts the destination value lands on the href slot and NOT on its label sibling."
+  },
+  "image": "current image (served from the preview's own /media path), source URL, composed assetId + materialization status/mime/size, the /media names it is served at, the current authored replacement, alt text, and an honest note when the join is impossible. Replacement goes through setAuthoredAsset (authored.assets keyed by the materialization's OWN assetId — the same key the resolution pack uses) AND writes the bytes into the preview's media override dir so the pixel repaints immediately (28.P4.30/31).",
+  "logo": "the Phase-2 source brand asset resolver. scanBrandSurfaces() over the template runtime IR + content run; each finding keyed by brandSurfaceId() — the SAME id src/production/brand-bake.ts derives; REPLACE / REMOVE / PRESERVE recorded through setAuthoredBrandDecision. WHOLE brand HOST replacement only — there is no SVG path editor. The panel prints RESOLVABLE_BRAND_SURFACES and SURFACES_NOT_RESOLVED verbatim, and states that a decision is applied by the PRODUCTION BAKE and will NOT change the preview iframe (28.P4.34/35). A PRESERVE with no reason is refused by the authored-state schema, surfaced as HTTP 400 (28.P4.36).",
+  "theme": "theme-contract-v1 ONLY: the closed 24-token vocabulary, each row showing the base theme's value, the site's ORIGINAL painted value from the theme adapter, the operator's override, and how many paint groups the token drives (0 = editing it will show nothing on this site). The library (themes/library/*.theme.json) is offered as a base. There is NO raw-CSS field and margin/padding/width/grid/flex are not representable at all; validateThemeTokens refuses any non-token id and any value failing isSafeThemeValue (28.P4.9 — url(), a smuggled declaration and a layout property are all rejected).",
+  "region": "regionId, scope + scopeKey, landmark kind/key/source, rootTag, childPath, element/binding/dynamic-binding counts, slot count, every route that reaches the region ON THIS PAGE, every pageSourceId it appears on (shared-page ownership), the per-viewport occurrence nodeIds, and the enablement state."
+ },
+ "multiBinding": {
+  "provenOn": "plan.main.text.projects (sl002641, route /plan) — 5 bindings: static desktop n000086, static desktop n000098, DYNAMIC-TEMPLATE desktop trigger n000094/dt000001/t000014, static mobile n000086, static mobile n000098",
+  "whatTheInspectorShows": "\"5 rendered bindings\" (site-wide) AND \"3 in this view\" (this pageId+viewport), plus the surface breakdown {static:4, dynamic-template:1} and the per-binding table with an in-view marker (28.P4.5, 28.P4.24)",
+  "oneEditUpdatesAll": "ONE Save rewrote every bound occurrence: the served /plan went from 0 occurrences of the new value to 5+, and a REAL browser rendered it in both the desktop and the mobile tree (28.P4.25/26). The editor writes ONE authored.slotValues entry; the template's own applier fans it out with its expectedValue guard.",
+  "paintTwin": "the same mechanism covers the aria-hidden paint twin (3 linear slots, 4 bindings) — it is just another row in the binding table and is written by the same single value. NAMED LIMITATION: no linear binding of the svg-text kind exists (0 of 9,929), so the svg-text row is schema-supported but UNEXERCISED on this fixture."
+ },
+ "revisionAndUndo": {
+  "transactionBoundary": "a keystroke calls POST /api/preview-value (debounced 250 ms), which writes the preview overlay ONLY — no project write, no revision. An explicit Save calls commitAuthoredEdits(), which appends exactly one revision, and none at all when nothing moved.",
+  "measured": [
+   "7 keystrokes produced 0 revisions while the typed value WAS already served by the preview and was NOT in the project's authoritative authored state (28.P4.38)",
+   "the single Save that followed appended exactly 1 revision (28.P4.39)",
+   "re-saving the identical value wrote nothing and appended no revision (28.P4.41)"
+  ],
+  "undo": "restoreAuthoredRevision APPENDS the earlier snapshot as a new head. 28.P4.42 asserts the chain grew by exactly one, the new head's origin is \"restore\", its restoredFrom is the target revisionId, its authoredStateHash equals the target's, and every pre-existing revision record is byte-identical afterwards. 28.P4.43 asserts the undone value is actually gone from the authoritative authored state.",
+  "themeCommitNote": "AuthoredEdit has no set-theme op today, so src/editor/commit.ts composes the new AuthoredState and hands it to the SAME commitAuthoredState, re-deriving the no-op guard from hashAuthoredState (the identical canonicalisation appendAuthoredRevisionIfChanged compares on). See integrationSeams."
+ },
+ "aiRewriteContract": {
+  "noCredentials": "There is no LLM API key in this repo (src/config/env.ts declares only FIRECRAWL_API_KEY) and no vendor SDK was added. The feature runs on the EXISTING provider-neutral ContentGenerator seam and works with --provider fake (FakeContentGenerator, deterministic and offline) or provider \"result\" (loadManualGenerationResult — an operator-authored generation-result.json, parsed by the same schema and the same validator).",
+  "endpoint": "POST /api/ai-rewrite { scope: {kind:\"slot\"|\"region\", slotKey?|regionId?}, route, provider, resultFile? }",
+  "requestContext": "customer brief (the content run's intent.json verbatim, else the project's intent.rawIntent — and a REFUSAL, not an invented brief, when neither exists) + the SiteContentPlan from the content run's generation-result.json + the route + the selected PageRegion (regionId, landmark, rootTag, slotCount) + the contained Content Units built by buildContentUnits() + each unit slot's recorded constraints + CONTENT_POLICY (content-policy-v1) + the run's own generation instructions.",
+  "responseContract": "KEYED STRUCTURED SLOT VALUES. `proposed` is slotKey → value; any key the provider returns that is not in the requested scope is listed in `outOfScope` and REFUSED — never split, truncated or reassigned. `unresolved` entries stay unresolved and are NOT filled in. Nothing is applied by the call: the operator applies the proposal through the ordinary Save path, so an AI rewrite creates exactly one revision like any other edit.",
+  "measured": "28.P4.48 (the request really carries brief + sitePlan + units + slot constraints + policy id + instructions), 28.P4.49 (every proposed key is in scope, every value is a string, outOfScope is empty, and the revision count is unchanged by the call), 28.P4.50 (a PageRegion rewrite is scoped by that region's own slot keys).",
+  "includeReviewNote": "a hand-picked rewrite sets includeReview:true, because the operator selected that exact slot/region. This loosens no batch gate — review slots stay excluded from batch content runs — and it records nothing about human approval."
+ },
+ "integrationSeams": {
+  "regionEnablement": {
+   "port": "src/editor/panels.ts RegionEnablementPort — read(site, regionIds) / write(site, regionId, enabled); startVisualEditor({ regionEnablement }) takes any implementation",
+   "statusInThisBuild": "WIRED. The enablement builder landed src/release/enablement.ts (loadEnablementInputs / evaluateRegionDisable / evaluateRouteDisable / resolveEnablement) and the disable-region / enable-region AuthoredEdit ops while this editor was being written, so src/editor/region-enablement.ts calls them directly: evaluateRegionDisable for the decision, commitAuthoredEdits to record it, resolveEnablement to report the current state.",
+   "honestyRule": "a region whose recorded disable is REFUSED by the resolver reports enabled:null (UNKNOWN) with the refusal text verbatim — never 'disabled', because a recorded decision the bake will not apply is not an off switch. A refusal (code, message, affected routes, cascade) is surfaced verbatim and never softened.",
+   "fallback": "UNWIRED_REGION_ENABLEMENT is still exported and still reports enabled:null / editable:false, and POST /api/region-enablement answers 501 with REGION_ENABLEMENT_SEAM when a port reports wired:false. If the integration agent needs a different API shape, substituting the port is the whole change.",
+   "notWiredHere": "ROUTE disable. evaluateRouteDisable exists and the Pages rail is the obvious place for it, but this phase shipped no route toggle — the Pages list is navigation only. That is a gap, not a claim."
+  },
+  "authoredEditSetTheme": "REQUESTED SEAM: `AuthoredEdit` covers slot values, assets, brand decisions and enablement, but not the theme block. src/editor/commit.ts commitThemeTokens() composes the state itself and commits through commitAuthoredState. If src/release adds `{op:\"set-theme-token\"|\"clear-theme-token\"}`, commitThemeTokens collapses into commitEdits with no caller change.",
+  "packageJson": "NOT edited (concurrent writers). Two script names appended to docs/result/handoffs/28-intel/pending-package-scripts.tsv: `editor` → tsx src/cli-editor.ts, `smoke:visual-editor` → tsx scripts/smoke-visual-editor.ts.",
+  "assetUploads": "the image inspector takes a server-side file PATH (the operator app runs locally). There is no upload endpoint and no media library — out of scope by contract."
+ },
+ "performance": {
+  "method": "every number below is wall clock around the REAL editor, the REAL preview and (where a browser is involved) a REAL Chromium driving the REAL UI. Setup time is INCLUDED, never excluded. All runs went through tmp/wr28/suite-lock.sh. Script: tmp/wr28/p4/measure.mts + measure2.mts.",
+  "table": [
+   {
+    "metric": "editor initial startup (COLD: copy + patch + next build + preview + editor server)",
+    "reps": 5,
+    "medianMs": 3239,
+    "maxMs": 3322,
+    "method": "wall clock around startVisualEditor() with the preview workspace deleted first; includes every setup step",
+    "samples": [
+     3322,
+     3280,
+     3210,
+     3239,
+     3224
+    ]
+   },
+   {
+    "metric": "preview startup (COLD, inside the above)",
+    "reps": 5,
+    "medianMs": 3169,
+    "maxMs": 3241,
+    "method": "AuthoringPreviewSession start, measured inside the cold editor startup",
+    "samples": [
+     3241,
+     3221,
+     3163,
+     3169,
+     3167
+    ]
+   },
+   {
+    "metric": "next build (COLD, inside the above)",
+    "reps": 5,
+    "medianMs": 2556,
+    "maxMs": 2611,
+    "method": "materializeMs.build reported by the preview session",
+    "samples": [
+     2602,
+     2611,
+     2545,
+     2556,
+     2552
+    ]
+   },
+   {
+    "metric": "editor initial startup (WARM: existing preview workspace)",
+    "reps": 5,
+    "medianMs": 604,
+    "maxMs": 641,
+    "method": "wall clock around startVisualEditor() reusing the built preview app; includes the 5.8 MB slots+bindings load and the editor server bind",
+    "samples": [
+     603,
+     608,
+     598,
+     641,
+     604
+    ]
+   },
+   {
+    "metric": "preview startup (WARM, inside the above)",
+    "reps": 5,
+    "medianMs": 556,
+    "maxMs": 557,
+    "method": "AuthoringPreviewSession start, measured inside the warm editor startup",
+    "samples": [
+     556,
+     557,
+     552,
+     554,
+     556
+    ]
+   },
+   {
+    "metric": "release project + template index load (inside the above)",
+    "reps": 5,
+    "medianMs": 45,
+    "maxMs": 82,
+    "method": "loadEditorSite(): release-project.json + slots.json + slot-bindings.json + route-map + regions + accounting",
+    "samples": [
+     43,
+     48,
+     44,
+     82,
+     45
+    ]
+   },
+   {
+    "metric": "route switch (operator picks a page → the new route is rendered)",
+    "reps": 6,
+    "medianMs": 22,
+    "maxMs": 658,
+    "method": "selectOption on #wr-route → iframe src moved, [data-wr-viewport] present, document.readyState complete",
+    "samples": [
+     34,
+     655,
+     10,
+     7,
+     658,
+     7
+    ]
+   },
+   {
+    "metric": "text edit visible in the browser",
+    "reps": 6,
+    "medianMs": 911.5,
+    "maxMs": 932,
+    "method": "fill() on the inspector textarea → the value is in the preview DOM; INCLUDES the editor's 250 ms debounce, the overlay write and the document re-fetch",
+    "samples": [
+     889,
+     912,
+     902,
+     916,
+     911,
+     932
+    ]
+   },
+   {
+    "metric": "url edit visible in the browser",
+    "reps": 6,
+    "medianMs": 901.5,
+    "maxMs": 918,
+    "method": "fill() on the group's Destination field → an <a href> with the new value exists in the preview DOM; includes the 250 ms debounce",
+    "samples": [
+     918,
+     895,
+     906,
+     903,
+     898,
+     900
+    ]
+   },
+   {
+    "metric": "theme token edit visible in the browser",
+    "reps": 6,
+    "medianMs": 829,
+    "maxMs": 927,
+    "method": "fill() on a theme-contract token field → the CSS custom property has the new value in the preview; includes the 250 ms debounce and the stylesheet <link> swap",
+    "samples": [
+     775,
+     827,
+     927,
+     904,
+     773,
+     831
+    ]
+   },
+   {
+    "metric": "image replacement visible in the browser",
+    "reps": 6,
+    "medianMs": 23.5,
+    "maxMs": 126,
+    "method": "POST /api/asset (commit + authored.assets revision + bytes into the preview media override) → refresh-media → the RENDERED PIXEL is the new colour",
+    "samples": [
+     126,
+     24,
+     24,
+     23,
+     23,
+     22
+    ]
+   },
+   {
+    "metric": "text edit ENGINE-only (no browser, no debounce)",
+    "reps": 6,
+    "medianMs": 137,
+    "maxMs": 171,
+    "method": "POST /api/preview-value → the next GET of the route already carries the new value; isolates the overlay write + epoch re-parse from the editor's 250 ms debounce and the iframe document reload",
+    "samples": [
+     171,
+     151,
+     138,
+     136,
+     136,
+     135
+    ]
+   },
+   {
+    "metric": "Save transaction (commit + revision + preview refresh)",
+    "reps": 6,
+    "medianMs": 21,
+    "maxMs": 31,
+    "method": "POST /api/save → commitAuthoredEdits appended a revision and the preview overlay was rewritten",
+    "samples": [
+     31,
+     21,
+     20,
+     20,
+     21,
+     21
+    ]
+   }
+  ],
+  "readingTheEditLatencies": "text/url/theme 'visible in the browser' (~0.83–0.91 s median) is the FULL operator-visible path and includes the editor's own 250 ms debounce plus a complete iframe document re-fetch. The engine cost alone — POST /api/preview-value until the next GET of the route already carries the new value — is 137 ms median / 171 ms max, and a Save transaction (commit + revision + overlay rewrite) is 21 ms median / 31 ms max. The gap is UI policy (debounce + full reload), not engine cost, and could be closed later by re-rendering without a document reload; it is reported rather than tuned away.",
+  "routeSwitchNote": "route switch is 22 ms median / 658 ms max — the max is the first visit to an un-warmed route in the preview worker; repeat visits are single-digit ms."
+ },
+ "tests": {
+  "suite": "scripts/smoke-visual-editor.ts — 50 checks, 0 failures (ids 28.P4.1 … 28.P4.50)",
+  "conventions": "the file-local check()/section() helper convention, exactly as the other 22 suites use it",
+  "everythingIsReal": "a real release project, the real 3,079-slot linear.app Recon Template, a real authoring preview behind the real bridge, a real Chromium driving the real UI, and a real un-allowlisted rogue origin on its own port. No mock editor, no synthetic template, no stubbed bridge.",
+  "coverage": [
+   "hover highlight with zero geometry delta (desktop AND mobile, 13 probe kinds each)",
+   "click → slot resolution, including a 2-slot anchor showing both candidates",
+   "select mode preventing navigation away from the edited route",
+   "multi-binding slot display (5 bindings / 3 in view) and one-edit-updates-all in the served HTML and in the DOM",
+   "text edit saved and visible in a real browser",
+   "URL edit written as an href and landing on the href slot, not its label sibling",
+   "image replacement recorded in authored.assets and repainting the rendered pixel",
+   "logo/brand whole-host decision recorded, and a PRESERVE with no reason refused",
+   "theme token override live-visible then saved to authored.theme",
+   "revision on save, no revision from N keystrokes, no revision on a no-op re-save",
+   "undo appending a restored state with the earlier records byte-identical",
+   "postMessage origin rejection (a rogue origin receives nothing and cannot command the highlight)",
+   "0 browser runtime errors, 0 hydration errors, 0 data-wr-slot attributes",
+   "the AI rewrite request/response contract for a slot and for a PageRegion"
+  ],
+  "failureInjectionProof": {
+   "method": "three independent breaks injected into three files, the suite run, the failures observed, then restored by the exact inverse edit and verified byte-identical with sha256 (git was never used to restore — zero mutating git operations this task)",
+   "run1": {
+    "breaks": [
+     "src/authoring-preview/bridge.ts — highlight rule `outline:2px solid` → `border:2px solid`",
+     "src/editor/inversion.ts — the no-trigger dynamic fallback returns the FIRST candidate claiming triggerRecovered:true",
+     "src/editor/server.ts — /api/preview-value also commits, so a keystroke appends a revision"
+    ],
+    "observed": [
+     "FAIL 28.P4.4 — {\"keys\":[\"global.header.nav.intake-make-your-product-operations-self.label.02\"],\"recovered\":true}",
+     "FAIL 28.P4.16 — the injected rule was reported verbatim",
+     "FAIL 28.P4.20 — max delta 131.0001220703125 over 8,010 elements",
+     "FAIL 28.P4.38 — 9 → 10 revisions after 7 keystrokes; committed=WR28에디터"
+    ],
+    "whatItExposed": "28.P4.18 (desktop) PASSED under the border break because the first version of the check hovered ONE inline anchor and the template's boxes are border-box. The check was then strengthened to one probe per tag kind."
+   },
+   "run2": {
+    "break": "the same bridge outline→border break, against the STRENGTHENED check",
+    "observed": [
+     "FAIL 28.P4.16",
+     "FAIL 28.P4.18 — 13 probes (main,section,nav,div,ul,li,p,h1,h2,a,span,button,img), worst delta 4.0001220703125 at section#n000004, 8,010 elements + 6 document metrics",
+     "FAIL 28.P4.20 — 13 probes, worst delta 4"
+    ]
+   },
+   "restore": "sha256 of src/authoring-preview/bridge.ts, src/editor/inversion.ts and src/editor/server.ts identical to the pre-injection values after each restore; the suite then re-ran 50/50."
+  },
+  "regressionRun": {
+   "typecheck": "pnpm typecheck (tsc --noEmit) exit 0",
+   "smokeVisualEditor": "50 checks / 0 failures",
+   "smokeAuthoringPreview": "41 checks / 0 failures — re-run BECAUSE this phase extended bridge.ts; includes the real production bake with 0 bridge occurrences"
+  }
+ },
+ "limitations": [
+  "The browser-side asset is NOT covered by `tsc --noEmit` (include is src/**/*.ts and the client is a TS-emitted string). It is kept to wiring on purpose and every decision is behind the typed JSON API, but a client-side regression can only be caught by the Playwright suite, not by the type system.",
+  "Text / URL / theme edits are browser-visible in ~0.9 s because the editor debounces 250 ms and then reloads the preview document. The engine itself is 137 ms median. This is a UI policy choice, reported rather than optimised away.",
+  "The Mobile toggle reproduces the mobile TREE and its CSS layout at 390 CSS px. It does NOT reproduce deviceScaleFactor 3 or hasTouch:true — only the Playwright QA suites do, with real contexts.",
+  "ROUTE enablement is not wired. evaluateRouteDisable exists and the Pages rail is the obvious home for it; this phase shipped region enablement only.",
+  "A brand (logo) decision is recorded but is NOT visible in the preview: it is applied by the production bake. The panel says so; the operator cannot see the result until a build.",
+  "The image inspector takes a server-side file path. There is no upload endpoint, no thumbnail browser and no media library — out of scope by contract.",
+  "svg-text bindings are schema-supported but UNEXERCISED: the linear.app template has 0 of 9,929. Any claim about that path on this fixture would be unfounded; the domainchecker.co.kr / stripe.com lineages are where those cases live.",
+  "Site switching re-opens a full runtime (slots + bindings + preview). For a site on a DIFFERENT template that costs a cold materialize (~3.2 s); for a site on the same template it reuses the warm preview workspace.",
+  "The editor scans page-regions runs by templateId and takes the newest match. A project whose region compile predates a template recompile simply has no region panel — reported as unavailable, never approximated.",
+  "The geometry-zero result is measured on ONE template. It is structural (outline never participates in layout; no node or attribute is added to the customer subtree) and the failure mode a border-based technique produces was measured too — but 'exactly 0' is a statement about linear.app's 8,010-element document at two viewports, not a proof for every site.",
+  "authored.theme carries no `set-theme` AuthoredEdit op, so the editor composes that one state transition itself (see integrationSeams). It uses the same commit + the same hash-based no-op guard, but it is the one write path that does not go through applyAuthoredEdit."
+ ],
+ "dataWritten": [
+  "data/linear.app/release-projects/wr28-visual-editor — a NEW wr28- namespace, recreated per suite run from wr28-brand-assets",
+  "data/linear.app/authoring-previews/wr28-editor-smoke — the warm preview workspace (~100 MB, one next build)",
+  "data/linear.app/wr28-editor-assets — replacement image files used by the image inspector tests and measurements",
+  "NOTHING else under data/ was written. No historical run directory was mutated; docs/result/handoffs/24-aggregation-phase1.json was not touched."
+ ],
+ "filesChanged": {
+  "created": [
+   "src/editor/index.ts",
+   "src/editor/inversion.ts",
+   "src/editor/catalog.ts",
+   "src/editor/assets.ts",
+   "src/editor/inspect.ts",
+   "src/editor/panels.ts",
+   "src/editor/region-enablement.ts",
+   "src/editor/commit.ts",
+   "src/editor/ai-rewrite.ts",
+   "src/editor/runtime.ts",
+   "src/editor/server.ts",
+   "src/editor/session.ts",
+   "src/editor/client.ts",
+   "src/cli-editor.ts",
+   "scripts/smoke-visual-editor.ts"
+  ],
+  "modified": [
+   "src/authoring-preview/bridge.ts (additive: dynTrigger, highlight, select-mode, geometry ticks)",
+   "docs/result/handoffs/28-intel/pending-package-scripts.tsv (appended two script names)"
+  ],
+  "notTouched": "src/release/**, src/regions/**, src/production/**, src/seo/** — read and CALLED, never edited. package.json unedited. Zero mutating git operations."
+ },
+ "howToRun": [
+  "npx tsx src/cli-editor.ts --list                                    # every release project on disk",
+  "npx tsx src/cli-editor.ts --project data/linear.app/release-projects/wr28-visual-editor",
+  "bash tmp/wr28/suite-lock.sh npx tsx scripts/smoke-visual-editor.ts  # 50 checks"
+ ],
+ "corrections": [
+  {
+   "correctedAt": "2026-08-27T20:21:56.224779Z",
+   "correctedBy": "Task-28 orchestrator, after the Phase-4/5/6 gate returned FAIL on this figure alone",
+   "finding": "28-visual-editor.json claimed '94 of 262 dynamic bindings would get a STRICTLY WIDER candidate set ... if resolved on templateNodeId alone'. That conflated two different quantities. Re-derived three times independently (the Phase-4/5/6 gate in Python and TypeScript, a second gate in the forked half, and the orchestrator replicating scripts/smoke-visual-editor.ts:305-316 verbatim against the raw data/linear.app/recon-templates/2026-08-25T21-53-26-980Z/slot-bindings.json): STRICTLY WIDER = 22; MERELY AMBIGUOUS (templateNodeId-keyed candidate set size > 1) = 94.",
+   "provenance": "The Phase-4 independent verifier reported this on 2026-08-27 and the correction was NOT applied before the handoff shipped. Recorded here rather than silently overwritten, because an uncorrected verifier finding is itself the defect.",
+   "functionalImpact": "None. Check 28.P4.2 was always honest — it asserts widened > 0 and prints the true 22 in its detail string — and the DOM->Slot inversion behaviour it guards is correct. This was a documentation-traceability defect only.",
+   "wasBefore": {
+    "widenedWithoutTrigger": "94 of 262 dynamic bindings would get a STRICTLY WIDER candidate set — i.e. slots that are not on that element — if resolved on templateNodeId alone",
+    "appLocationCode": "src/editor/ (13 modules) + src/cli-editor.ts"
+   }
+  }
+ ]
+}

@@ -1,0 +1,45 @@
+Already up to date
+Done in 156ms using pnpm v11.21.0
+$ tsx scripts/smoke-revision.ts
+
+== legacy project (revision 1, no revisions/ directory)
+  PASS  27A.1 a legacy project with NO revisions loads and reports an empty chain
+  PASS  27A.2 the first append on a chainless project is r000 with a null parent
+
+== authored edits append to the chain
+  PASS  27A.3 fixture precondition: a revision-2 project with authored content
+  PASS  27A.4 an authored edit appends a new revision with the correct parent
+  PASS  27A.5 the change summary names the edited slot key (keys only, values live in the snapshot)
+
+== authoredStateHash changes iff the authored state changes
+  PASS  27A.6 the record's hash is the hash of the snapshot it actually captured
+  PASS  27A.7 an unchanged state hashes identically (key order and reload do not move it)
+  PASS  27A.8 a changed state hashes differently (slot value; theme token)
+  PASS  27A.9 appendIfChanged writes nothing when the state did not move
+
+== the chain survives a project reload from disk
+  PASS  27A.10 the chain reloads intact (ids, parents, hashes verified on read)
+  PASS  27A.11 the project document on disk carries the committed authored state
+
+== restore is an APPEND, never a rewrite
+  PASS  27A.12 restore(r000) reproduces that authored state EXACTLY
+  PASS  27A.13 restore APPENDS r002 (parent r001, restoredFrom r000) — the chain grew
+  PASS  27A.14 no earlier record was rewritten or truncated by the restore
+  PASS  27A.15 the project document now holds the restored state, and a restore is itself restorable
+
+== a record edited behind its own hash is rejected
+  PASS  27A.16 loading a chain whose record no longer matches its hash throws
+
+== a chain that crosses r999/r1000
+  PASS  27A.17 the 1000th and 1001st appends widen to r999 then r1000 (they do not wrap)
+  PASS  27A.18 the crossed chain LOADS, in numeric order (r100, r101, … r999, r1000)
+  PASS  27A.19 headRevision past the boundary is r1000 — not r999, and not a throw
+  PASS  27A.20 an append after r1000 is r1001, parented to r1000
+  PASS  27A.21 getRevision still addresses both sides of the boundary distinctly
+
+== historical artifacts untouched
+  PASS  27A.22 both real release projects under data/ are byte-identical afterwards
+  PASS  27A.23 no revisions/ directory was created in either source project
+  PASS  27A.24 diffAuthoredState reports adds, removes and theme moves against a null parent
+
+smoke:revision — 24 checks, 0 failures

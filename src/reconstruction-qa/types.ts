@@ -155,7 +155,18 @@ export const WORST_SCREENSHOTS_PER_SITE = 5;
 /** Worst-N rows reported per dimension (items 86, 169). */
 export const WORST_RANK_SIZE = 5;
 
-/** Widths probed for the clone-only inferred-breakpoint check (item 59). */
+/**
+ * FALLBACK widths for the clone-only breakpoint probe (item 59).
+ *
+ * Responsive Core P0 — these were the 390/1440 midpoint ±1 and were probed on
+ * every run, while the clone's served switch is 641, 801, 900 or 992 depending
+ * on the evidence grade. The probe now reads the SERVED switch from the
+ * manifest (`config.inferredBreakpoint.value`) and the route map's
+ * `pageBreakpoints` and probes served−1 / served / served+1 per route
+ * ({@link planBreakpointProbeTargets} in `capture-clone.ts`). This constant is
+ * used ONLY for a manifest carrying no usable breakpoint, and every such target
+ * is counted as `fallback-constant`.
+ */
 export const BREAKPOINT_PROBE_WIDTHS: readonly number[] = [914, 915, 916];
 
 /**
@@ -173,6 +184,236 @@ export const STABILITY_GEOMETRY_EPSILON = 1;
 
 /** Nodes sampled for the stability re-capture. Bounded, deterministic (first N). */
 export const STABILITY_SAMPLE_SIZE = 400;
+
+/**
+ * The largest single dimension, in DEVICE pixels, a full-page screenshot may
+ * have before the browser driver refuses it (Task 28.6, C5).
+ *
+ * This is not a number this Task chose. It is Playwright's own
+ * `validateScreenshotDimension` limit. WHERE THAT LIMIT IS APPLIED IS
+ * ENGINE-SPECIFIC, and the first version of this note got it wrong by reading
+ * only the platform guard inside the function. Re-measured against
+ * playwright-core 1.62.1 on disk (`lib/coreBundle.js`):
+ *
+ *   defined  :47205 (WKPage, WebKit) and :49747 (WVPage)
+ *   called   :47216-17 and :49760-61 — inside those two classes and nowhere else
+ *   chromium :37182 `CRPage.takeScreenshot` — ZERO calls
+ *   firefox  :45106 `FFPage.takeScreenshot` — ZERO calls
+ *   bidi     :41727 `BidiPage.takeScreenshot` — ZERO calls
+ *
+ * So the cap does not bite in this pipeline at all: {@link QA_ENGINE} is
+ * chromium (`run-qa.ts` launches `chromium`), and chromium never calls the
+ * check on any platform. The platform guard (`if (process.platform ===
+ * "darwin") return;`) is real but is reached only by the two engines above.
+ *
+ * The consequence of getting this wrong was not academic: `capEnforced` was
+ * computed from the platform alone, so every non-darwin run wrote
+ * `capEnforced: true` into three coverage records per page/viewport and into
+ * every coverage finding's evidence text — a confident, wrong statement about
+ * the instrument, in the record whose entire job is to describe the instrument
+ * honestly.
+ *
+ * Measured behaviour that remains true: on darwin with chromium,
+ * `page.screenshot({ fullPage: true })` returned the complete document at
+ * 1440x40000, 1440x200000 and 1170x180000 device px. Nothing was clipped.
+ *
+ * A future engine that refuses, or one that CLIPS instead of refusing, is
+ * covered by the same record either way, because {@link ScreenshotCoverage} is
+ * computed by comparing the PNG that came back against the document that was
+ * measured — it never trusts the driver to report its own truncation.
+ */
+export const SCREENSHOT_DEVICE_DIMENSION_CAP = 32_767;
+
+/**
+ * The playwright page classes that actually call `validateScreenshotDimension`.
+ *
+ * Sorted, and named by engine rather than by class so a caller can pass what it
+ * launched. Anything not in here does not consult the cap, whatever the platform.
+ */
+export const SCREENSHOT_CAP_ENFORCING_ENGINES: readonly string[] = ["webkit", "webview"];
+
+/** The engine this QA pipeline launches. `run-qa.ts` calls `chromium.launch()`. */
+export const QA_BROWSER_ENGINE = "chromium";
+
+/**
+ * True when the browser driver enforces {@link SCREENSHOT_DEVICE_DIMENSION_CAP}.
+ *
+ * BOTH conditions are required, and the engine one is the one that was missing:
+ * the cap check is defined only on the WebKit and WebView page classes, and it
+ * returns early on darwin. Defaults to this pipeline's own engine, so the common
+ * call site cannot accidentally answer for an engine it did not launch.
+ */
+export function screenshotCapEnforced(
+  engine: string = QA_BROWSER_ENGINE,
+  platform: string = process.platform,
+): boolean {
+  return platform !== "darwin" && SCREENSHOT_CAP_ENFORCING_ENGINES.includes(engine);
+}
+
+/** Which of the three images a coverage record describes. */
+export const ScreenshotSideSchema = z.enum(["snapshot", "live-original", "clone"]);
+export type ScreenshotSide = z.infer<typeof ScreenshotSideSchema>;
+
+/**
+ * How much of the document ONE screenshot actually contains (Task 28.6, C5).
+ *
+ * Every pixel metric in this pipeline is computed over the overlap of two PNGs.
+ * Without this record, a PNG that stopped short of the document bottom produces
+ * exactly the same shaped metric as one that did not, and a reader cannot tell
+ * "clean" from "clean as far as we looked". `coveredFraction` is that
+ * distinction, and it is written for EVERY side, truncated or not, so its
+ * absence means a pre-28.6 artifact rather than full coverage.
+ *
+ * `capturedDeviceHeight` is read from the PNG's IHDR, not from what the driver
+ * claimed, so a silent clip is detected the same way an explicit refusal is.
+ */
+export const ScreenshotCoverageSchema = z.object({
+  side: ScreenshotSideSchema,
+  /**
+   * TRUE when the document dimensions beside this were actually measured.
+   *
+   * The denominator of every fraction here is the document, and the document is
+   * measured by a `page.evaluate` that can throw — a navigation mid-flight, a
+   * closed context, a CSP that killed the world. When it threw, the old record
+   * kept `documentHeightCss: 0`, which made `expectedDeviceHeight` 0, which made
+   * `coveredFraction` 0 AND `truncatedDeviceRows` 0 AND `truncated` false — a
+   * confident "we covered none of it" sitting beside "nothing was truncated",
+   * with no finding raised, because the emitter skipped anything not truncated.
+   * Measured: a real capture at 1440x5000 with an unmeasurable document produced
+   * exactly that record and zero diffs.
+   *
+   * So the unknown denominator is now its own fact. `false` means every fraction
+   * on this record is UNKNOWN, not zero, and the emitter raises a finding on it.
+   */
+  documentMeasured: z.boolean(),
+  /** Document height at capture time, CSS px. Meaningless when `documentMeasured` is false. */
+  documentHeightCss: z.number(),
+  /** Document width at capture time, CSS px. Meaningless when `documentMeasured` is false. */
+  documentWidthCss: z.number(),
+  deviceScaleFactor: z.number(),
+  /** `documentHeightCss * deviceScaleFactor`, rounded — what a whole page WOULD be. */
+  expectedDeviceHeight: z.number().int().nonnegative(),
+  expectedDeviceWidth: z.number().int().nonnegative(),
+  /** Read from the PNG header. 0 when nothing was captured. */
+  capturedDeviceHeight: z.number().int().nonnegative(),
+  capturedDeviceWidth: z.number().int().nonnegative(),
+  /**
+   * The fraction of the document AREA this capture contains, 4 decimals:
+   * `coveredHeightFraction * coveredWidthFraction`. 0 when nothing was captured,
+   * and 0 when the document could not be measured — read `documentMeasured`
+   * before reading this, because in that case 0 means UNKNOWN.
+   */
+  coveredFraction: z.number(),
+  /** `capturedDeviceHeight / expectedDeviceHeight`, clamped to 1, 4 decimals. */
+  coveredHeightFraction: z.number(),
+  /**
+   * `capturedDeviceWidth / expectedDeviceWidth`, clamped to 1, 4 decimals.
+   *
+   * Recorded because the width channel is live and was unchecked: truncation
+   * used to be height-only while both width fields were written down, so a
+   * half-width capture (measured: expected 1440, captured 720) reported
+   * `coveredFraction: 1`, `truncated: false` and raised no finding. Real
+   * observations do diverge on this axis — 12 MDN captures record documentWidth
+   * 1425 against a 1440-wide PNG — so the channel is not hypothetical.
+   */
+  coveredWidthFraction: z.number(),
+  /** True when the capture covers less than the document on EITHER axis. */
+  truncated: z.boolean(),
+  /** Device rows of the document that no pixel metric on this page ever saw. */
+  truncatedDeviceRows: z.number().int().nonnegative(),
+  /** Device COLUMNS of the document that no pixel metric on this page ever saw. */
+  truncatedDeviceColumns: z.number().int().nonnegative(),
+  /** True when a PNG came back at all. */
+  captured: z.boolean(),
+  /** The driver cap that would apply, device px. */
+  capDeviceDimension: z.number().int().positive(),
+  /**
+   * True only when the launched ENGINE consults the cap and the platform does
+   * not skip it — see {@link screenshotCapEnforced}. False for chromium, which
+   * never calls the check on any platform.
+   */
+  capEnforced: z.boolean(),
+  /** Why nothing (or less than everything) was captured. Absent on a full capture. */
+  reason: z.string().optional(),
+});
+export type ScreenshotCoverage = z.infer<typeof ScreenshotCoverageSchema>;
+
+/** Round to 4 decimals, the ratio precision every metric in this Task uses. */
+export function round4(value: number): number {
+  return Math.round(value * 10_000) / 10_000;
+}
+
+/**
+ * Build a coverage record from a measured document and the PNG that came back.
+ *
+ * Pure, and deliberately takes the CAPTURED dimensions rather than a Buffer, so
+ * it is testable without a browser and without decoding an image.
+ */
+export function buildScreenshotCoverage(input: {
+  side: ScreenshotSide;
+  /**
+   * REQUIRED, not defaulted. Every caller knows whether its document numbers
+   * came from a measurement or from a `catch`, and a default here would let the
+   * one fact that makes the fractions readable be forgotten silently.
+   */
+  documentMeasured: boolean;
+  documentHeightCss: number;
+  documentWidthCss: number;
+  deviceScaleFactor: number;
+  captured?: { width: number; height: number };
+  reason?: string;
+  /** Engine that took the shot, when it is not this pipeline's own. */
+  engine?: string;
+  capEnforced?: boolean;
+}): ScreenshotCoverage {
+  const expectedDeviceHeight = Math.max(
+    0,
+    Math.round(input.documentHeightCss * input.deviceScaleFactor),
+  );
+  const expectedDeviceWidth = Math.max(
+    0,
+    Math.round(input.documentWidthCss * input.deviceScaleFactor),
+  );
+  const capturedDeviceHeight = input.captured?.height ?? 0;
+  const capturedDeviceWidth = input.captured?.width ?? 0;
+  const coveredHeightFraction =
+    expectedDeviceHeight === 0
+      ? 0
+      : round4(Math.min(1, capturedDeviceHeight / expectedDeviceHeight));
+  const coveredWidthFraction =
+    expectedDeviceWidth === 0
+      ? 0
+      : round4(Math.min(1, capturedDeviceWidth / expectedDeviceWidth));
+  const truncatedDeviceRows = Math.max(0, expectedDeviceHeight - capturedDeviceHeight);
+  // Both axes. A capture that is short on width hides exactly as much of the
+  // page as one that is short on height, and it used to score as whole-page.
+  const truncatedDeviceColumns = Math.max(0, expectedDeviceWidth - capturedDeviceWidth);
+  const truncated = truncatedDeviceRows > 0 || truncatedDeviceColumns > 0;
+  return {
+    side: input.side,
+    documentMeasured: input.documentMeasured,
+    documentHeightCss: input.documentHeightCss,
+    documentWidthCss: input.documentWidthCss,
+    deviceScaleFactor: input.deviceScaleFactor,
+    expectedDeviceHeight,
+    expectedDeviceWidth,
+    capturedDeviceHeight,
+    capturedDeviceWidth,
+    // The AREA fraction, so a short-on-width capture cannot read as whole-page.
+    // Equal to the height fraction whenever the width is complete, which is why
+    // every previously measured figure is unchanged by the addition.
+    coveredFraction: round4(coveredHeightFraction * coveredWidthFraction),
+    coveredHeightFraction,
+    coveredWidthFraction,
+    truncated,
+    truncatedDeviceRows,
+    truncatedDeviceColumns,
+    captured: input.captured !== undefined,
+    capDeviceDimension: SCREENSHOT_DEVICE_DIMENSION_CAP,
+    capEnforced: input.capEnforced ?? screenshotCapEnforced(input.engine),
+    ...(input.reason !== undefined ? { reason: input.reason } : {}),
+  };
+}
 
 /**
  * A y-offset group this large or larger is reported as one cascade candidate
@@ -304,6 +545,7 @@ export const QaClassificationSchema = z.enum([
   "unknown-behavior-gap",
   // --- coverage ---
   "family-representation-gap",
+  "visual-coverage-truncated",
   // --- infrastructure ---
   "runtime-error",
   "environment-unstable",
@@ -366,6 +608,8 @@ export const QA_CLASSIFICATION_MESSAGES: Readonly<
     "The original shows an observable behavior on a trigger Task 12 classified as unknown; the clone deliberately implements nothing. Detection is the goal — the gap is never auto-filled.",
   "family-representation-gap":
     "A family-represented route (no exact observation of its own) renders its representative's tree and differs from the live URL. This is a coverage gap, not a generator defect.",
+  "visual-coverage-truncated":
+    "A full-page screenshot did not cover the whole document, so every pixel metric computed from it speaks only for the part that was captured. Nothing below the captured height was inspected, and a clean pixel ratio on this page means \u201cclean as far as we looked\u201d, not \u201cclean\u201d.",
   "runtime-error":
     "The clone reported a console error, page error, hydration error or failed resource.",
   "environment-unstable":
@@ -546,6 +790,106 @@ export const ScreenshotMetricSchema = z.object({
   commonAreaRatio: z.number().optional(),
   overlapPixels: z.number().int().nonnegative().optional(),
   changedPixels: z.number().int().nonnegative().optional(),
+
+  /*
+   * Task 28.5B change 6 — additional pixel channels, reported ALONGSIDE the @1
+   * figures above, never instead of them. Every field is optional so QA
+   * artifacts written before 28.5B still parse against this schema; a reader
+   * that finds them absent is reading a pre-28.5B run, not a zero.
+   *
+   * No single field here is "the" visual number. 28.5A measured @1 saturating
+   * at ~1.0 on renders a human calls identical; the amplitude-gated and
+   * perceptual channels are what separate that noise from a real regression.
+   */
+  /** Pixels whose largest channel delta is ≥ 16/255, over the overlap. */
+  changedPixelsAt16: z.number().int().nonnegative().optional(),
+  /** `changedPixelsAt16 / overlapPixels`, 4 decimals. */
+  changedRatioAt16: z.number().optional(),
+  /** Mean per-pixel MAX channel delta over the overlap, 0–255. */
+  meanMaxChannelDelta: z.number().optional(),
+  /** Mean CIELab ΔE*76 over the overlap. */
+  deltaE76Mean: z.number().optional(),
+  /** Largest ΔE*76 anywhere in the overlap. */
+  deltaE76Max: z.number().optional(),
+  /** Overlap pixels with ΔE76 > 2.3 (the JND threshold). */
+  deltaE76AboveJndPixels: z.number().int().nonnegative().optional(),
+  /** `deltaE76AboveJndPixels / overlapPixels`, 4 decimals. */
+  deltaE76AboveJndRatio: z.number().optional(),
+  /** Overlap pixels with ΔE76 > 10 (clearly visible, not merely detectable). */
+  deltaE76AboveVisiblePixels: z.number().int().nonnegative().optional(),
+  /** `deltaE76AboveVisiblePixels / overlapPixels`, 4 decimals. */
+  deltaE76AboveVisibleRatio: z.number().optional(),
+
+  /*
+   * Task 28.8 FAST change 3 — THE CANVAS THE MIN-CROP LEFT OUT.
+   *
+   * Every pixel field above is computed over `min(a,b)` in each axis. Until now
+   * that crop was silent: two captures of different widths produced a perfectly
+   * well-formed set of numbers describing only the columns they shared, and
+   * nothing in the artifact said how much had been dropped or whether anything
+   * was in it. `widthDelta` recorded that the sizes differed and never that the
+   * difference was excluded from every number beside it.
+   *
+   * The crop stays — a resize invents pixels — and the band is measured. INK is
+   * the field that decides whether the omission matters: a strip of plain page
+   * background reads 0 and hides nothing. Optional so pre-28.8-FAST artifacts still
+   * parse; ABSENT means "this run never measured the band", never "the band was
+   * empty", and `uncomparedMeasured` distinguishes an unresolvable modal colour
+   * from a measured zero.
+   */
+  /** Columns the wider capture has that the comparison never read. */
+  uncomparedWidthPx: z.number().int().nonnegative().optional(),
+  /** Rows the taller capture has that the comparison never read. */
+  uncomparedHeightPx: z.number().int().nonnegative().optional(),
+  /** Pixels outside the compared canvas, summed over BOTH captures. */
+  uncomparedPixels: z.number().int().nonnegative().optional(),
+  /** Pixels actually READ for the ink figures. Below `uncomparedPixels` when
+   *  the band exceeded the sample budget, in which case the ratio is a sample
+   *  and the AREA above is still exact. */
+  uncomparedSampledPixels: z.number().int().nonnegative().optional(),
+  /** Sampled pixels that are ink against their own capture's modal colour. */
+  uncomparedInkPixels: z.number().int().nonnegative().optional(),
+  /** `uncomparedInkPixels / uncomparedSampledPixels`, 4 decimals. */
+  uncomparedInkRatio: z.number().optional(),
+  /** False when a modal colour could not be resolved on one side, so the ink
+   *  figure beside it is not a measured zero. */
+  uncomparedMeasured: z.boolean().optional(),
+
+  /*
+   * Task 28.6 C5 — how much of the PAGE this pair's numbers speak for.
+   *
+   * Every field above is computed over the OVERLAP of two PNGs, and
+   * `commonAreaRatio` compares the two IMAGES to each other, not either of them
+   * to the document. If a side stopped short of the document bottom, the metrics
+   * are still perfectly well-formed and still describe only the part that was
+   * captured. These three fields are what makes that visible. Optional so
+   * pre-28.6 artifacts still parse; absent means "this run never measured
+   * coverage", never "coverage was complete".
+   */
+  /**
+   * min(a, b) covered fraction — the fraction of the document this pair
+   * inspected. ABSENT when either side's coverage is unknown (missing record,
+   * or a document that could not be measured): a pair cannot speak for a side it
+   * knows nothing about, and reporting the known side's number there was the
+   * defect. Read `coverageUnknownSides` before concluding anything from its
+   * absence.
+   */
+  coveredFraction: z.number().optional(),
+  /**
+   * True when either side stopped short of its own document, OR when either
+   * side's coverage is unknown. Both mean the same thing to a reader: this
+   * pair's pixel numbers are not a whole-page verdict.
+   */
+  coverageTruncated: z.boolean().optional(),
+  /** Which sides were truncated or missing, sorted. */
+  truncatedSides: z.array(ScreenshotSideSchema).optional(),
+  /**
+   * How many of the pair's TWO sides have no usable coverage record — 0, 1 or 2.
+   * `0` with a `coveredFraction` present is the only shape that speaks for the
+   * whole pair.
+   */
+  coverageUnknownSides: z.number().int().min(0).max(2).optional(),
+
   /** Persisted diff PNG, relative to the run dir, when one was kept. */
   diffFile: z.string().optional(),
 });
@@ -564,6 +908,14 @@ export const ContentDiffSummarySchema = z.object({
   orderedSequenceEqual: z.boolean(),
   /** `exactEqual / comparedTextNodes`, 4 decimals. */
   exactRatio: z.number(),
+  /*
+   * Task 28.6 — nodes that were compared by PREFIX, not by equality, because
+   * the Observer's own `TEXT_MAX_LEN` cap truncated the stored text. Their
+   * tails were never compared by anyone, so `exactRatio` over a page with a
+   * high count here is a weaker claim than the same number on a page with
+   * zero. Counted rather than silent. Optional for pre-28.6 artifacts.
+   */
+  prefixComparedNodes: z.number().int().nonnegative().optional(),
 });
 export type ContentDiffSummary = z.infer<typeof ContentDiffSummarySchema>;
 
@@ -750,15 +1102,82 @@ export type AssetOccurrenceComparison = z.infer<
   typeof AssetOccurrenceComparisonSchema
 >;
 
+/**
+ * Whether the page's geometry was still moving between two captures (item 21).
+ *
+ * Task 28.6 C5, same-standard pass: this record USED to say `sampledNodes: 400`
+ * and nothing else, which is a cap reported as if it were a population. Three
+ * silent limits are now counted, because each one is a way the `stable` verdict
+ * can be true about less of the page than a reader assumes:
+ *
+ *   `candidateNodes`  how many elements the first capture actually had
+ *   `unsampledNodes`  …minus the ones the {@link STABILITY_SAMPLE_SIZE} prefix
+ *                     reached. Never looked at. A page whose animation lives
+ *                     past element 400 is "stable" only in its first 400 nodes.
+ *   `unmatchedNodes`  sampled nodes with no counterpart in the SECOND capture.
+ *                     They cannot be compared, so they are skipped — and a node
+ *                     that vanished between two captures 400ms apart is exactly
+ *                     the kind of movement this check exists to notice.
+ *
+ * `stable` is a verdict over `sampledNodes - unmatchedNodes` nodes. It is
+ * meaningless when `measured` is false, and every consumer must gate on
+ * `measured` first: a re-capture that THREW returns `measured: false` with
+ * `stable: true`, which is a placeholder, not a finding of stability.
+ */
 export const StabilitySchema = z.object({
   measured: z.boolean(),
   /** Sampled nodes whose geometry kept moving between the two captures. */
   movingNodes: z.number().int().nonnegative(),
+  /** Nodes actually compared, i.e. `min(candidateNodes, STABILITY_SAMPLE_SIZE)`. */
   sampledNodes: z.number().int().nonnegative(),
+  /** Elements the first capture had. Optional: absent on a pre-28.6 artifact. */
+  candidateNodes: z.number().int().nonnegative().optional(),
+  /** Elements past the sample cap that were never looked at. `candidate - sampled`. */
+  unsampledNodes: z.number().int().nonnegative().optional(),
+  /** Sampled nodes missing from the second capture, so not comparable. */
+  unmatchedNodes: z.number().int().nonnegative().optional(),
   documentHeightDelta: z.number(),
+  /** Only meaningful when `measured`. See the note above. */
   stable: z.boolean(),
 });
 export type Stability = z.infer<typeof StabilitySchema>;
+
+/**
+ * One QA-only style difference between the LIVE ORIGINAL browser and the CLONE
+ * browser (Task 28.5B change 6, integration).
+ *
+ * `nodeId` is the SiteSpec node id — the identity BOTH sides were already keyed
+ * by for asset and style diffing — so a finding here points at the same node the
+ * rest of the report points at, and can be looked up in the SiteSpec directly.
+ */
+export const QaOnlyStyleSampleSchema = z.object({
+  nodeId: z.string(),
+  tagName: z.string(),
+  property: z.string(),
+  /** The live original's computed value. */
+  original: z.string(),
+  /** The clone's computed value. */
+  clone: z.string(),
+});
+export type QaOnlyStyleSample = z.infer<typeof QaOnlyStyleSampleSchema>;
+
+/** Cap on retained per-page samples. Counts are NEVER capped. */
+export const QA_ONLY_STYLE_SAMPLE_LIMIT = 50;
+
+/**
+ * Why a page has no QA-only style comparison. Recorded instead of a zero, because
+ * "nothing was compared" and "nothing differed" are different statements and the
+ * whole point of change 6 is to stop conflating them.
+ */
+export const QaOnlyStyleUnavailableReasonSchema = z.enum([
+  "no-clone-capture",
+  "no-live-original",
+  "source-not-aligned",
+  "no-comparable-nodes",
+]);
+export type QaOnlyStyleUnavailableReason = z.infer<
+  typeof QaOnlyStyleUnavailableReasonSchema
+>;
 
 /** One page × viewport QA result, persisted as `pages/<pageId>/<viewport>.json`. */
 export const QaPageResultSchema = z.object({
@@ -802,6 +1221,35 @@ export const QaPageResultSchema = z.object({
   }),
 
   screenshots: z.array(ScreenshotMetricSchema),
+  /*
+   * Task 28.6 C5 — one record per screenshot side that was attempted, sorted by
+   * side. Written whether or not anything was truncated, so a reader can tell a
+   * fully covered page from a page this field was never computed for. Optional
+   * only for pre-28.6 artifacts.
+   */
+  screenshotCoverage: z.array(ScreenshotCoverageSchema).optional(),
+  /*
+   * Task 28.6 — what the bounded waits in `stabilize()` actually reached.
+   *
+   * Both waits are deliberately bounded (many sites never truly idle), but
+   * before this the two booleans were computed and then dropped on the floor by
+   * every caller, so a page captured mid-load was indistinguishable from a
+   * settled one. Recorded, not gated on. Optional for pre-28.6 artifacts.
+   */
+  stabilization: z
+    .object({
+      clone: z.object({
+        networkIdleReached: z.boolean(),
+        fontsReadyReached: z.boolean(),
+      }),
+      liveOriginal: z
+        .object({
+          networkIdleReached: z.boolean(),
+          fontsReadyReached: z.boolean(),
+        })
+        .optional(),
+    })
+    .optional(),
   sourceDrift: SourceDriftSummarySchema,
 
   /** Live-original ↔ clone figures, computed ONLY when the source did not drift. */
@@ -813,6 +1261,37 @@ export const QaPageResultSchema = z.object({
       geometryP95: z.number().optional(),
     })
     .optional(),
+
+  /*
+   * Task 28.5B change 6 (integration) — the BROWSER-TO-BROWSER axis.
+   *
+   * `style` above compares the clone against the SiteSpec's stored style token,
+   * so it can only ever see properties the OBSERVER wrote down. The 30 QA-only
+   * properties have nothing to compare against there and are silently skipped.
+   * These fields close that gap on the one axis that needs no observer data at
+   * all: the live original's computed style vs the clone's, over the SAME
+   * SiteSpec-node pairing the asset diff already uses.
+   *
+   * Every field is optional so a pre-28.5B QA artifact still parses, and
+   * `qaOnlyStyleComparison: "unavailable"` is recorded rather than a zero
+   * whenever the pairing could not be established.
+   */
+  qaOnlyStyleComparison: z.enum(["compared", "unavailable"]).optional(),
+  qaOnlyStyleUnavailableReason: QaOnlyStyleUnavailableReasonSchema.optional(),
+  /** Whether the original side was captured this iteration or reused (item 118). */
+  qaOnlyStyleOriginalSource: z.enum(["live", "stored"]).optional(),
+  /** Node pairs whose styles were actually compared. */
+  qaOnlyStyleComparedNodes: z.number().int().nonnegative().optional(),
+  /** Property comparisons performed (both sides reported a value). */
+  qaOnlyStyleComparedProperties: z.number().int().nonnegative().optional(),
+  /** Total QA-only property mismatches. UNCAPPED, unlike the sample list. */
+  qaOnlyStyleMismatches: z.number().int().nonnegative().optional(),
+  /** Paired nodes whose tags differ (document-root wrappers); NOT compared. */
+  qaOnlyStyleTagMismatchedNodes: z.number().int().nonnegative().optional(),
+  /** Non-zero per-property counts, sorted. Uncapped. */
+  qaOnlyStyleByProperty: z.record(z.string(), z.number().int().nonnegative()).optional(),
+  /** Bounded, deterministic evidence sample (document order × sorted property). */
+  qaOnlyStyleSamples: z.array(QaOnlyStyleSampleSchema).optional(),
 
   diffIds: z.array(z.string()),
   errors: z.array(z.string()),

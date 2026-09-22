@@ -1,0 +1,46 @@
+site boost-interior-demo · release interior-01-1.5.0-75f173939e77 · build 6c74d34c2ecd
+
+[mobile 390] detail photo strip
+  ok   detail 200
+       rooms: 전체 (13) · 거실 (3) · 주방 (3) · 현관 (2) · 복도·수납 (1) · 침실 (2) · 욕실 (2)
+  ok   first photo: counter 1 / N, previous disabled + invisible + a tap on it does nothing, next enabled + visible
+  ok   arrows carry the site's aria-labels and control the strip
+  ok   arrows sit inside the photo, left / right, vertically centred, 44px targets
+  ok   no visible horizontal scrollbar on the strip
+  ok   next → photo 2: exact seat + counter
+  ok   next → photo 3: exact seat + counter
+  ok   next → photo 4: exact seat + counter
+  ok   next → photo 5: exact seat + counter
+  ok   next → photo 6: exact seat + counter
+  ok   next → photo 7: exact seat + counter
+  ok   next → photo 8: exact seat + counter
+  ok   next → photo 9: exact seat + counter
+  ok   next → photo 10: exact seat + counter
+  ok   next → photo 11: exact seat + counter
+  ok   next → photo 12: exact seat + counter
+  ok   next → photo 13: exact seat + counter
+  ok   last photo: next disabled + invisible, previous enabled
+  ok   previous → exact seat + counter
+  ok   touch swipe still moves the strip and snaps to a seat; counter follows
+  ok   every room tab opens on photo 1 (also when re-entering a room left on a later photo)
+  ok   single-photo room: no arrows, no counter
+  ok   keyboard Enter on next steps one seat
+       price fact: ["평당 290만 원"]
+  ok   price reads 평당 N만 원 (no KRW / 평 form)
+  ok   no horizontal page overflow at 390
+  ok   no console / page error, no non-local request
+
+[desktop 1440] detail grid unchanged
+  ok   grid layout, arrows + counter not rendered (display none), strip does not scroll
+  ok   hidden arrows are out of the tab order
+  ok   no console / page error
+
+[pages] / · /portfolio · detail at 1440 + 390
+  ok   home @1440: 200, 15 images, 0 broken, no overflow, no console error, no non-local request
+  ok   portfolio @1440: 200, 10 images, 0 broken, no overflow, no console error, no non-local request
+  ok   detail @1440: 200, 27 images, 0 broken, no overflow, no console error, no non-local request
+  ok   home @390: 200, 15 images, 0 broken, no overflow, no console error, no non-local request
+  ok   portfolio @390: 200, 10 images, 0 broken, no overflow, no console error, no non-local request
+  ok   detail @390: 200, 27 images, 0 broken, no overflow, no console error, no non-local request
+
+35 passed, 0 failed

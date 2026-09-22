@@ -1,0 +1,359 @@
+{
+  "task": "28.5C",
+  "agent": "C — Source Responsive Rule Investigator",
+  "generatedAt": "2026-08-31",
+  "target": {
+    "site": "https://linear.app",
+    "primaryPage": "https://linear.app/pricing",
+    "browser": "playwright chromium 1.62.1 (headless)",
+    "widthsProbed": [390, 700, 1024, 1100, 1440],
+    "observationCompared": "data/linear.app/site-observations/2026-08-30T15-52-54-381Z (page p000007 = /pricing)"
+  },
+
+  "headline": "Linear's responsiveness is 100% declarative CSS. Zero JS involvement in layout branching. The whole /pricing comparison table pivots on ONE breakpoint — @media (max-width:1024px) — and the rules are ~3.2 KB of CSS. They are fully recoverable at capture time, but NOT via document.styleSheets: the 30 SSR-emitted <link> sheets (which include Comparison.css, Plans.css, Layout.css, index.css) are CORS-opaque to CSSOM and must be re-fetched by URL.",
+
+  "mediaRules": {
+    "summary": {
+      "totalSheets": 81,
+      "totalCssBytes": 436496,
+      "inlineStyleTagBytes": 19976,
+      "totalMediaRules": 381,
+      "totalMediaRuleCssBytes": 51437,
+      "widthConditionedMediaRules": 226,
+      "widthConditionedBytes": 26214,
+      "featureConditionedMediaRules": 155,
+      "featureConditionedBytes": 25223,
+      "featureConditionsAre": "any-hover / hover / pointer / prefers-reduced-motion / prefers-color-scheme / device-pixel-ratio / aspect-ratio — none affect page layout",
+      "distinctConditions": 31,
+      "conditionHistogram": {
+        "(max-width: 640px)": 95,
+        "(any-hover: hover)": 72,
+        "(max-width: 1024px)": 55,
+        "(max-width: 768px)": 46,
+        "(any-hover: hover) and (any-pointer: fine)": 32,
+        "(prefers-reduced-motion: no-preference)": 22,
+        "(max-width: 1280px)": 16,
+        "(prefers-reduced-motion: reduce)": 14,
+        "(max-width: 928px)": 3,
+        "not (any-hover: hover)": 2,
+        "(min-width: 1536px)": 2,
+        "only screen and ((min-device-pixel-ratio:2) or (-webkit-min-device-pixel-ratio: 2)), only screen and ((min-device-pixel-ratio:2) or (min-resolution: 192dpi))": 2,
+        "(min-width: 1281px) and (max-width: 1440px)": 2,
+        "(prefers-reduced-motion:reduced)": 1,
+        "(max-width: 1140px)": 1,
+        "(dynamic-range: high) or (color-gamut: p3)": 1,
+        "(min-width: 641px)": 1,
+        "(min-width: 769px)": 1,
+        "(min-width: 1025px)": 1,
+        "(min-width: 1281px)": 1,
+        "(hover: none) and (pointer: coarse)": 1,
+        "(max-width: 600px)": 1,
+        "(prefers-reduced-motion)": 1,
+        "(max-width: 1439px)": 1,
+        "(hover: hover) and (pointer: fine)": 1,
+        "(pointer: fine)": 1,
+        "(min-aspect-ratio: 16 / 9)": 1,
+        "(min-aspect-ratio: 4 / 3)": 1,
+        "(any-hover: none)": 1,
+        "(prefers-color-scheme: dark)": 1,
+        "(hover: none)": 1
+      },
+      "designSystemBreakpoints": [640, 768, 1024, 1280],
+      "note": "All layout breakpoints are max-width (desktop-first). There is NO breakpoint between 1025 and 1280 that affects the comparison table, so the rules in force at 1100px are IDENTICAL to those at 1440px. The table's 1100px failure in the reconstruction is therefore not a missing breakpoint — it is a baked fixed-px substitution for a fluid fr-based grid."
+    },
+
+    "loadBearingPricingTableRules": {
+      "source": "https://static.linear.app/web/_next/static/css/Comparison.BbtD2Cgj.css (4810 bytes, CORS-opaque to CSSOM, fetched directly)",
+      "baseRules_appliesAbove1024_including_1100_and_1440": [
+        ".PDOlRq_table{--sticky-reserve:125px;--first-row-gap:57px;--table-bg:var(--color-bg-primary);background:var(--table-bg);border-radius:12px;grid-template-columns:1fr;grid-auto-rows:auto;display:grid;position:relative}",
+        ".PDOlRq_row{--height:44px;height:var(--height);grid-template-columns:2fr repeat(4,1fr);width:100%;display:grid;position:relative}",
+        ".PDOlRq_row>[data-plan=free]~[data-plan=free],.PDOlRq_row>[data-plan=basic]~[data-plan=basic],.PDOlRq_row>[data-plan=business]~[data-plan=business],.PDOlRq_row>[data-plan=enterprise]~[data-plan=enterprise]{display:none}",
+        ".PDOlRq_featureCell{min-height:42px;padding:14px var(--homepage-padding-inset);border-left:1px solid var(--color-line-secondary);align-items:center;display:flex;position:relative}",
+        ".PDOlRq_labelCell{padding:0 var(--homepage-padding-inset);align-items:center;gap:8px;min-height:44px;display:flex;position:relative}",
+        ":where(.PDOlRq_table) :where(table,thead,tbody,th,td,tr){display:block}",
+        ".PDOlRq_sticky{top:var(--header-height);margin-bottom:var(--sticky-reserve);z-index:var(--layer-3);position:sticky}"
+      ],
+      "theSingleRuleThatKeepsFiveColumnsAt1100": {
+        "selector": ".PDOlRq_row",
+        "declaration": "grid-template-columns: 2fr repeat(4, 1fr); display: grid;",
+        "atMedia": "(none — unconditional base rule)",
+        "why": "Fluid fr units. Measured computed value: 1440px -> '448px 224px 224px 224px 224px'; 1100px -> '360px 180px 180px 180px 180px'. Same rule, different resolved pixels. Features|Free|Basic|Business|Enterprise all present at 1100.",
+        "reconstructionImplication": "Freezing the computed 1440px value ('448px 224px x4' = 1344px of track) into a 1100px-wide viewport overflows/clips the last columns. Preserving the declared '2fr repeat(4,1fr)' fixes 1100 with no extra breakpoint."
+      },
+      "mobileTransformRules_verbatim": [
+        "@media (max-width: 1024px) { .PDOlRq_row { --height: 48px; grid-template-columns: 264px repeat(4, 1fr); } }",
+        "@media (max-width: 1024px) { .PDOlRq_row { justify-content: space-between; display: flex; } :is(.PDOlRq_table:has(option[value=\"free\"]:checked) .PDOlRq_row > [data-plan]:not([data-plan=\"free\"]), .PDOlRq_table:has(option[value=\"basic\"]:checked) .PDOlRq_row > [data-plan]:not([data-plan=\"basic\"]), .PDOlRq_table:has(option[value=\"business\"]:checked) .PDOlRq_row > [data-plan]:not([data-plan=\"business\"]), .PDOlRq_table:has(option[value=\"enterprise\"]:checked) .PDOlRq_row > [data-plan]:not([data-plan=\"enterprise\"])) { display: none; } }",
+        "@media (max-width: 1024px) { .PDOlRq_table { --sticky-reserve: 104px; --first-row-gap: 32px; padding: var(--homepage-padding-inset); } }",
+        "@media (max-width: 1024px) { .PDOlRq_featureCell { border-left-width: medium; border-left-style: none; border-left-color: currentcolor; } }",
+        "@media (max-width: 1024px) { .PDOlRq_labelCell { padding: 0px; } }",
+        "@media (max-width: 1024px) { .PDOlRq_subtitleRow { padding-bottom: 24px; padding-left: 0px; padding-right: 0px; } }",
+        "@media (max-width: 1024px) { .PDOlRq_ctaRow { border-width: medium; border-style: none; border-color: currentcolor; border-image: none; } }",
+        "@media (max-width: 1024px) { .PDOlRq_ctaCell { width: 100%; padding: 24px 0px 0px; } }",
+        "@media (max-width: 1024px) { .PDOlRq_sticky { top: calc(var(--header-height)); } }",
+        "@media (max-width: 1024px) { .PDOlRq_stickyContent .PDOlRq_row { height: var(--height); } }"
+      ],
+      "howTheDesktopHeaderRowIsHidden": {
+        "element": "<div role=\"row\" data-header-row class=\"hide-laptop PDOlRq_row\">  (observation node e000288)",
+        "rule": "@media (max-width: 1024px) { [data-hide=\"laptop\"], .hide-laptop { display: none !important; } }",
+        "sheet": "index.jjy8s6kJ.css",
+        "note": "The desktop 5-column header row and the mobile <select> plan switcher are BOTH always in the DOM; only the generic hide-laptop/show-laptop utility toggles which one paints."
+      },
+      "genericResponsiveUtilities_verbatim": [
+        "@media (max-width: 640px) { [data-hide=\"mobile\"], .hide-mobile { display: none !important; } }",
+        "@media (min-width: 641px) { [data-show=\"mobile\"], .show-mobile { display: none !important; } }",
+        "@media (max-width: 768px) { [data-hide=\"tablet\"], .hide-tablet { display: none !important; } }",
+        "@media (min-width: 769px) { [data-show=\"tablet\"], .show-tablet { display: none !important; } }",
+        "@media (max-width: 1024px) { [data-hide=\"laptop\"], .hide-laptop { display: none !important; } }",
+        "@media (min-width: 1025px) { [data-show=\"laptop\"], .show-laptop { display: none !important; } }",
+        "@media (max-width: 1280px) { [data-hide=\"desktop\"], .hide-desktop { display: none !important; } }",
+        "@media (min-width: 1281px) { [data-show=\"desktop\"], .show-desktop { display: none !important; } }",
+        "@media (any-hover: hover) { [data-hide=\"hover\"], .hide-hover { display: none !important; } }",
+        "@media not (any-hover: hover) { [data-show=\"hover\"], .show-hover { display: none !important; } }"
+      ],
+      "utilitiesNote": "10 rules, 968 bytes total, all in index.jjy8s6kJ.css. This single utility family drives EVERY parallel desktop/mobile DOM swap on the site (nav, logo marquee, plan header). Capturing these 10 rules plus the original class attributes reproduces all of it."
+    }
+  },
+
+  "containerRules": {
+    "count": 6,
+    "containerTypeDeclarations": 2,
+    "verdict": "Container queries are NOT part of Linear's page-layout responsive system. Only two isolated widgets use them.",
+    "declarations": [
+      { "selector": "._91f_Kq_container", "decl": "container: _91f_Kq_video-player / size", "sheet": "VideoPlayer.BfQ8S5zm.css" },
+      { "selector": ".K64U9a_axisX", "decl": "container-type: inline-size", "sheet": "charts.4GgBWSKg.css" }
+    ],
+    "rules": [
+      "@container _91f_Kq_video-player (width <= 640px) { ._91f_Kq_controls { gap: 6px; padding-inline: 12px; inset-block-end: 10px; } }",
+      "@container _91f_Kq_video-player (width <= 640px) { :where(._91f_Kq_root._91f_Kq_variant-inline[data-status=\"paused\"], ._91f_Kq_root[data-idle=\"false\"], ._91f_Kq_root:has(._91f_Kq_controls:hover)) ._91f_Kq_captions { transform: translateY(-32px); } }",
+      "@container _91f_Kq_video-player (width <= 640px) { ._91f_Kq_playbackRate, ._91f_Kq_pip { display: none; } }",
+      "@container _91f_Kq_video-player (width <= 640px) { ._91f_Kq_previewLineThumb { display: none; } }",
+      "@container _91f_Kq_video-player (width <= 640px) { ._91f_Kq_timestampThumb { bottom: calc(100% + 16px); } }",
+      "@container (width <= 420px) { .K64U9a_axisXTick:nth-child(2n) { display: none; } }"
+    ],
+    "notUsedOnPricingTable": true
+  },
+
+  "mediaConditionedCustomProps": {
+    "count": 35,
+    "criticalRootTokens_verbatim": [
+      "@media (max-width: 1280px) { :root { --homepage-outer-padding: 10px; } }",
+      "@media (max-width: 1024px) { :root { --homepage-outer-padding: 28px; } }",
+      "@media (max-width: 1024px) { :root { --homepage-padding-inset: 8px; } }",
+      "@media (max-width: 768px) { :root { --page-padding-y: 48px; --grid-columns: 8; } }",
+      "@media (max-width: 640px) { :root { --homepage-outer-padding: 16px; --header-height: 64px; } }",
+      "@media (max-width: 640px) { :root { --grid-columns: 4; } }"
+    ],
+    "baseValues": {
+      "--homepage-padding-inset": "32px (>=1025px), 8px (<=1024px)",
+      "--header-height": "72px (>=641px), 64px (<=640px)"
+    },
+    "componentScopedExamples": [
+      "@media (max-width: 1024px) { .PDOlRq_table { --sticky-reserve: 104px; --first-row-gap: 32px; } }",
+      "@media (max-width: 1024px) { .PDOlRq_row { --height: 48px; } }",
+      "@media (max-width: 768px) { ._9PBFba_root { --grid-columns: 8; grid-template-areas: var(--grid-areas-tablet, var(--grid-areas-default)); } }",
+      "@media (max-width: 640px) { ._9PBFba_root { --grid-columns: 4; grid-template-areas: var(--grid-areas-mobile, var(--grid-areas-default)); } }",
+      "@media (max-width: 1280px) { .WS84WW_frameWrapper { --frame-buffer: ...; } }"
+    ],
+    "capturabilityNote": "These are the single most important thing a computed-style capture LOSES. Two-viewport computed capture sees --homepage-padding-inset resolved as 32px (desktop) and 8px (mobile) with no record that 1024 is the switch point, and no record of the 1280/768 intermediate steps that were never sampled. Preserving 6 rules / 461 bytes restores the whole token cascade.",
+    "totalRootBreakpointBytes": 461
+  },
+
+  "cssInJs": {
+    "documentStyleSheets": 81,
+    "adoptedStyleSheets_document": 1,
+    "shadowRoots": 2,
+    "shadowRootAdoptedSheets": "0 (2 shadow roots found, neither carries adopted sheets or style tags relevant to layout)",
+    "inlineStyleTags": 3,
+    "inlineStyleTagDetail": [
+      { "attrs": { "type": "text/css" }, "rules": 97, "bytes": 16624 },
+      { "attrs": { "data-styled": "active", "data-styled-version": "6.1.24" }, "rules": 78, "bytes": 9413, "note": "styled-components v6 runtime sheet — but rules are readable in the DOM text node, no CSSOM-only injection (insertRule-only) observed; textContent length matches rule count" },
+      { "attrs": { "type": "text/css" }, "rules": 45, "bytes": 5683 }
+    ],
+    "insertRuleOnlySheets": 0,
+    "verdict": "No CSSOM-only (constructable / insertRule-without-text) stylesheets carry layout. Every byte of layout CSS is retrievable either as <style> textContent or by fetching the <link> href. styled-components is present but its sheet is a normal <style> whose textContent is complete."
+  },
+
+  "jsDrivenBranching": {
+    "matchMediaCalls": 5,
+    "matchMediaQueries": [
+      { "query": "only screen and (min-device-pixel-ratio: 2), only screen and (min-resolution: 192dpi)", "changeListeners": 0 },
+      { "query": "(display-mode: standalone)", "changeListeners": 0 },
+      { "query": "(prefers-reduced-motion: reduce)", "changeListeners": 0 },
+      { "query": "(prefers-color-scheme: dark)", "changeListeners": 1 },
+      { "query": "(prefers-color-scheme: dark)", "changeListeners": 0 }
+    ],
+    "matchMediaVerdict": "NOT ONE width-based matchMedia query. All five are dpr / PWA-display-mode / motion / color-scheme. No JS width branching exists.",
+    "windowResizeListeners": 4,
+    "resizeListenerOrigins": [
+      "framework-DvOl2wyO.js (React DOM internal)",
+      "module-rsXrDyNr.js :: startMeasuringScrollPosition (scroll instrumentation)",
+      "useViewportSize-CBi65eiC.js (a viewport-size hook)"
+    ],
+    "resizeObservers": 0,
+    "domMutationOnResize": "NONE. Element count is exactly 3246 at 390px, 1024px, 1100px and 1440px. No node is added, removed, or re-parented by resize. useViewportSize does not restructure layout.",
+    "classToggles": "html element carries class \"enhanced js\" with JS on and \"\" with JS off; these are progressive-enhancement flags, not breakpoint flags. No width-derived class is applied to any element.",
+    "verdict": "Source responsive layout has ZERO runtime dependency."
+  },
+
+  "jsDisabledBehavior": {
+    "method": "playwright context with javaScriptEnabled:false, waitUntil 'load', resized across 390/700/1024/1100/1440",
+    "pricingTableResult": "IDENTICAL to JS-enabled at every width.",
+    "measurements": [
+      { "width": 390, "headerRowDisplay": "none", "bodyRow": "flex", "visibleHeaders": [], "selectVisible": true, "homepagePaddingInset": "8px", "headerHeight": "64px", "match": "same as JS on" },
+      { "width": 700, "headerRowDisplay": "none", "bodyRow": "flex", "visibleHeaders": [], "selectVisible": true, "homepagePaddingInset": "8px", "headerHeight": "72px", "match": "same as JS on" },
+      { "width": 1024, "headerRowDisplay": "none", "bodyRow": "flex", "visibleHeaders": [], "selectVisible": true, "homepagePaddingInset": "8px", "headerHeight": "72px", "match": "same as JS on" },
+      { "width": 1100, "headerRowDisplay": "grid", "bodyRow": "grid", "gridTemplateColumns": "360px 180px 180px 180px 180px", "visibleHeaders": ["Features", "Free", "Basic", "Business", "Enterprise"], "visibleBodyPlans": ["free", "basic", "business", "enterprise"], "selectVisible": false, "homepagePaddingInset": "32px", "match": "same as JS on" },
+      { "width": 1440, "headerRowDisplay": "grid", "bodyRow": "grid", "gridTemplateColumns": "448px 224px 224px 224px 224px", "visibleHeaders": ["Features", "Free", "Basic", "Business", "Enterprise"], "visibleBodyPlans": ["free", "basic", "business", "enterprise"], "selectVisible": false, "homepagePaddingInset": "32px", "match": "same as JS on" }
+    ],
+    "mobilePlanSwitcherWithJsOff": {
+      "test": "at 390px, native <select> changed to 'business' then 'enterprise' with JS DISABLED",
+      "result": "57 plan rows re-render to show only the chosen plan's cells — firstRowVisiblePlans went ['free'] -> ['business'] -> ['enterprise'], identical to the JS-enabled run",
+      "mechanism": ":has(option[value=X]:checked) — pure CSS, no script",
+      "verdict": "Even the interactive mobile plan switcher is CSS-only."
+    },
+    "domNodeCounts": { "jsOn": 3246, "jsOff": 3035, "delta": 211, "deltaNote": "~6.5% of nodes are JS-hydrated extras (toast portals, command menu, number-flow widgets). None participate in the comparison table's responsive behaviour." },
+    "verdict": "Source responsiveness is PURE CSS. JS off changes nothing about the pricing table at any width."
+  },
+
+  "duplicateResponsiveDom": {
+    "present": true,
+    "mechanism": "Parallel desktop/mobile subtrees coexist permanently in one DOM and are toggled by the .hide-*/.show-* / [data-hide]/[data-show] media utilities. Nothing is conditionally rendered.",
+    "measuredAtSameDomIndices": {
+      "nodesVisibleAt1440ButNotAt390": 729,
+      "nodesVisibleAt390ButNotAt1440": 93,
+      "displayFlipsBetween1100And1024": 286
+    },
+    "examples": {
+      "desktopOnly": ["UL.TZTsQG_navItems", "LI.hide-tablet TZTsQG_item (full nav items)", "DIV.hide-tablet _5mGmSq_root", "UL.MR81zG_root ... hide-tablet (static logo grid)", "DIV.hide-laptop PDOlRq_row (5-column table header)"],
+      "mobileOnly": ["LI.TZTsQG_mobileItem TZTsQG_item", "BUTTON.TZTsQG_mobileMenuTrigger", "DIV.show-tablet _5mGmSq_root", "DIV.MR81zG_mobileMarqueeWrapper show-tablet (logo marquee)", "the PDOlRq_select plan dropdown cell"]
+    },
+    "reconstructionImplication": "A frozen reconstruction that keeps the full DOM plus the 10 utility rules gets every desktop/mobile swap for free. A reconstruction that PRUNES invisible nodes per viewport permanently loses the other half of every pair.",
+    "observationStatus": "The 2026-08-30 capture DOES retain both subtrees — desktop and mobile dom.json are byte-for-byte the same 1363 nodes, with hide-tablet x10, show-mobile x4, hide-laptop present. Nothing was pruned."
+  },
+
+  "capabilityFindings": {
+    "cssomReadable": {
+      "readableViaCssRules": 51,
+      "blockedViaCssRules": 30,
+      "blockedShare": "37% of sheets",
+      "blockedIncludes": ["Comparison.BbtD2Cgj.css (THE pricing table sheet)", "index.jjy8s6kJ.css (root breakpoint tokens + all hide/show utilities)", "Plans.C0S6XqB2.css", "Layout.tvkMFESE.css", "LayoutContent.D8YYVbao.css", "Grid.Cds8fjKR.css", "Flex.BEZjGLsi.css", "utils.CVEX6qwi.css", "Header.C7eR1ZyF.css", "Button.dcAi4KbO.css", "and 20 more"],
+      "error": "SecurityError: Failed to read the 'cssRules' property from 'CSSStyleSheet': Cannot access rules",
+      "rootCause": "The SSR-emitted <link rel=stylesheet data-precedence=\"vite-rsc/client-reference\"> tags carry NO crossorigin attribute, so the fetch is no-cors and the response is opaque to CSSOM — even though static.linear.app returns 'access-control-allow-origin: *'. The 51 readable sheets are the ones the Next/vite client router injected later WITH crossorigin set.",
+      "measuredEvidence": "curl -I https://static.linear.app/web/_next/static/css/Comparison.BbtD2Cgj.css -> HTTP 200, access-control-allow-origin: *",
+      "conclusion": "CSSOM alone captures only 299,501 of 436,496 bytes and 210 of 381 media rules. Naive CSSOM walking silently loses the exact rules that matter."
+    },
+    "corsBlocked": {
+      "trulyUnfetchable": 0,
+      "workarounds": [
+        "PREFERRED: read the <link href> list from the DOM and fetch each URL (page.request.get / in-page fetch with mode:'cors'). Verified working — 81/81 sheets fetched with 0 errors, 436,496 bytes total.",
+        "ALTERNATIVE: addInitScript that sets link.crossOrigin='anonymous' on stylesheet links before load, making cssRules readable.",
+        "ALTERNATIVE: route interception to capture CSS response bodies as they load."
+      ],
+      "verdict": "No stylesheet is unrecoverable. The block is a CSSOM-access artifact, not a network restriction."
+    },
+    "selectorStability": {
+      "classNameScheme": "CSS-modules content hashes, per component: PDOlRq_row, PDOlRq_table, PDOlRq_featureCell, TZTsQG_navItems, _9PBFba_root, sx-12vwx15 (a StyleX-like atomic set), l1KB_G_select.",
+      "hashedButStable": "The hash is per-build. It WILL change on the next Linear deploy — but that is irrelevant to a frozen reconstruction, because the DOM class attributes and the CSS are captured in the SAME observation run and are internally consistent forever after.",
+      "nonClassSelectorsInLoadBearingRules": [
+        "[data-plan=\"free\"|\"basic\"|\"business\"|\"enterprise\"] (228 occurrences on /pricing)",
+        "[data-header-row] (2 occurrences)",
+        "option[value=\"...\"]:checked",
+        ":has()  — used for the mobile plan switch",
+        ":is() / :where() / :not() / sibling combinator ~"
+      ],
+      "risk": "MEDIUM-LOW. Selector text is trivially stable. The real risk is the reconstruction MUTATING the DOM: if it rewrites class attributes, drops data-plan / data-header-row, replaces <select>/<option> with a JS widget, or reorders children (the ~ sibling and :has() rules depend on order), the preserved rules stop matching. Rule preservation must be paired with a contract that original class + data-* attributes and child order are frozen verbatim."
+    },
+    "classNamePreservationInObservation": {
+      "verified": true,
+      "file": "data/linear.app/site-observations/2026-08-30T15-52-54-381Z/pages/p000007/viewports/{desktop,mobile}/dom.json",
+      "evidence": {
+        "PDOlRq_table": 1,
+        "PDOlRq_row": 59,
+        "PDOlRq_featureCell": 224,
+        "hide-tablet": 10,
+        "show-mobile": 4,
+        "data-plan": 228,
+        "data-header-row": 2,
+        "headerRowNode": "e000288 = <div role=\"row\" data-header-row class=\"hide-laptop PDOlRq_row\">",
+        "selectNode": "e000303 = <select class=\"PDOlRq_select l1KB_G_select\">",
+        "optionNodes": "5 options: placeholder / free / basic / business / enterprise — all value attributes retained"
+      },
+      "conclusion": "Original hashed class names, data-* attributes, <select>/<option> values and both parallel subtrees ARE fully preserved in the current observation. Every load-bearing selector would still match. Nothing in the capture blocks this approach."
+    },
+    "runtimeDependencies": {
+      "sourceJsRequiredForLayout": false,
+      "sourceJsRequiredForMobilePlanSwitch": false,
+      "fontsOrAssetsInsideLoadBearingRules": "none — the pricing-table media rules reference no url(). They reference only custom properties: --homepage-padding-inset, --header-height, --sticky-reserve, --first-row-gap, --height, --color-bg-primary, --color-line-secondary, --color-bg-level-2, --color-bg-tertiary, --layer-3, --speed-highlightFadeIn/Out, --ease-out-cubic/quad, --radius-8, --font-weight-semibold, --header-bg, --header-blur.",
+      "customPropSurvival": "All of the above resolve from :root in index.jjy8s6kJ.css (a CORS-opaque but fetchable sheet). Task 20's theme extraction already models 21 tokens; the breakpoint-varying ones (--homepage-padding-inset, --homepage-outer-padding, --header-height, --grid-columns, --page-padding-y) are the ones a static token snapshot flattens and must be re-expressed as media-conditioned tokens.",
+      "atCharsetAtLayer": "Comparison.css begins with '@charset \"UTF-8\"; @layer reset, base, app.base;'. Cascade layers ARE in use across the bundle — any selective re-emission must preserve @layer ordering or specificity resolution shifts."
+    }
+  },
+
+  "scale": {
+    "pricingPage": {
+      "stylesheets": 81,
+      "totalCssBytes": 436496,
+      "totalMediaRules": 381,
+      "totalMediaRuleBytes": 51437,
+      "layoutRelevantMediaRules": 226,
+      "layoutRelevantBytes": 26214,
+      "layoutRelevantShareOfTotalCss": "6.0%",
+      "featureQueryMediaRules": 155,
+      "featureQueryBytes": 25223
+    },
+    "minimalPricingTableSubset": {
+      "rules": 28,
+      "bytes": 3187,
+      "shareOfTotalCss": "0.73%",
+      "composition": {
+        "Comparison.css media rules": { "rules": 12, "bytes": 1758 },
+        ":root breakpoint token rules": { "rules": 6, "bytes": 461 },
+        "hide-*/show-* utilities": { "rules": 10, "bytes": 968 }
+      },
+      "plusBaseRules": "add ~1.2 KB of unconditional Comparison.css base rules (.PDOlRq_row grid-template-columns etc.) to make the subset self-sufficient — total under 4.5 KB."
+    },
+    "wholeSiteEstimate": {
+      "note": "/pricing loads 81 sheets covering the entire component library (many unused on this page). The 4 shared layout sheets that carry ALL cross-page responsive machinery are small.",
+      "keySheetSizes": { "Comparison.BbtD2Cgj.css": 4810, "Plans.C0S6XqB2.css": 8151, "Layout.tvkMFESE.css": 3284, "Grid.Cds8fjKR.css": 921, "Flex.BEZjGLsi.css": 2688, "utils.CVEX6qwi.css": 5891, "LayoutContent.D8YYVbao.css": 752 },
+      "estimatedFullSiteResponsiveSubset": "~30-40 KB across all 8 observed routes if every width-conditioned media rule from every route is preserved; ~26 KB for /pricing alone."
+    }
+  },
+
+  "selectivePreservationFeasibility": {
+    "verdict": "HIGHLY FEASIBLE — and it is the correct fix.",
+    "plainLanguage": [
+      "Linear's responsiveness is entirely declarative CSS. There is no JavaScript to reproduce: with JS disabled the pricing table reflows correctly at 390, 700, 1024, 1100 and 1440, and the mobile plan dropdown still works because it is driven by :has(option:checked). Nothing needs a runtime.",
+      "The whole comparison table pivots on one breakpoint, @media (max-width:1024px). Above it the row is 'grid-template-columns: 2fr repeat(4,1fr)' — fluid. That is why the source is fine at 1100 and the reconstruction is not: the reconstruction bakes the 1440px computed value '448px 224px 224px 224px 224px' (1344px of fixed track) which cannot fit 1100px. Preserving the declared fr-based value alone would likely fix 1100 without preserving a single media rule.",
+      "The full selective-preservation subset for the pricing table is 28 rules / 3.2 KB — 0.73% of the page's 436 KB of CSS. Even preserving EVERY width-conditioned media rule on the page is 226 rules / 26 KB (6%). This is cheap.",
+      "The one non-obvious blocker: 30 of the 81 stylesheets — including Comparison.css and index.css, i.e. exactly the load-bearing ones — throw SecurityError on cssRules because their SSR <link> tags lack a crossorigin attribute. A capture step that walks document.styleSheets will silently miss them and conclude the site has no relevant media rules. The fix is to fetch each <link href> directly; all 81 sheets fetched cleanly with ACAO:* (verified 436,496 bytes, 0 errors). rendered.html already retains all 78 <link> tags, so the URLs are in hand.",
+      "Self-hosting is clean: no url() assets appear in any load-bearing responsive rule, and the class names, data-plan / data-header-row attributes, <select> and all five <option> values are already preserved verbatim in the 2026-08-30 observation, so preserved rules would still match a frozen reconstruction."
+    ],
+    "recommendedApproach": [
+      "1. CAPTURE: add a raw-CSS capture step — enumerate stylesheet <link> hrefs + <style> textContent, fetch each href (do NOT rely on cssRules), store the text. Currently assets.json holds 340 assets and ZERO CSS entries.",
+      "2. QUICK WIN, INDEPENDENT OF THE ABOVE: stop baking fluid track values. Where a source declaration resolves from fr/%/minmax/auto, preserve the declared value rather than the computed pixel value. This alone addresses the /pricing @1100 regression.",
+      "3. SELECTIVE PRESERVATION: re-emit only width-conditioned @media rules whose selectors match at least one node in the frozen DOM (~226 rules -> far fewer after match-filtering). Preserve @layer order.",
+      "4. TOKENS: promote the 6 media-conditioned :root rules (--homepage-padding-inset, --homepage-outer-padding, --header-height, --grid-columns, --page-padding-y) into the theme layer as breakpoint-conditioned tokens instead of a flat desktop/mobile snapshot.",
+      "5. CONTRACT: freeze original class attributes, data-* attributes and child order; keep BOTH parallel desktop/mobile subtrees (do not prune per-viewport-invisible nodes) — 729 desktop-only and 93 mobile-only nodes depend on it.",
+      "6. NOTE ON PROBE WIDTHS: layout-probe.json samples [390, 768, 1024, 1440, 1920]. 1100 is unsampled, but the rules at 1100 equal those at 1440, so adding widths is NOT the fix — the fix is preserving fluid declarations and the rules themselves."
+    ],
+    "risks": [
+      "Cascade layers (@layer reset, base, app.base) are in use; selectively re-emitting rules without preserving layer order can flip specificity outcomes.",
+      "Modern selectors in load-bearing rules (:has(), :is(), :where(), ~) require the reconstruction to keep DOM structure and child order intact.",
+      "The 51 CSSOM-readable sheets and the 30 opaque ones overlap in scope (two Header.css, two Icon.css, two Select.css variants present) — dedupe by URL when capturing.",
+      "155 feature-conditioned media rules (hover/pointer/motion/color-scheme) are also currently flattened; they do not affect layout but do affect interaction fidelity."
+    ]
+  },
+
+  "artifacts": {
+    "scratchDir": "/Users/woops/projects/web-recon/tmp/wr-responsive-investigation/agent-c/",
+    "files": [
+      "01-enumerate.mjs / sheets.json / media-rules.json  — CSSOM-only enumeration (shows the 30 blocked sheets)",
+      "02-fullcss.mjs / full-sheets.json / full-media-rules.json  — fetch-based full enumeration (81/81 sheets, 381 media rules)",
+      "03-resize.mjs / resize.json  — 5-width probe, JS on vs JS off",
+      "04-jsbranch.mjs / js-branching.json  — matchMedia/resize instrumentation + duplicate-DOM diff",
+      "05-mobile-select.mjs  — mobile plan switcher with JS disabled",
+      "comparison-media.json  — the 12 Comparison.css media rules verbatim",
+      "css/*.css  — 7 fetched load-bearing stylesheets"
+    ]
+  }
+}

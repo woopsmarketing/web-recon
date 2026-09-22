@@ -1,0 +1,540 @@
+{
+  "task": "28.5A",
+  "role": "Agent D — substrate builder (no conclusions; files only)",
+  "generatedAt": "2026-08-28T19:01:11.000Z",
+  "substrateDir": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/substrate",
+  "readOnly": true,
+  "label": "CURRENT_SOURCE — live capture 2026-08-29; NOT the historical August truth",
+  "acceptedObservation": "data/linear.app/site-observations/2026-08-25T19-23-01-716Z",
+  "routesChosen": [
+    {
+      "routeId": "r000008",
+      "path": "/security",
+      "role": "primary"
+    },
+    {
+      "routeId": "r000007",
+      "path": "/pricing",
+      "role": "secondary"
+    }
+  ],
+  "standbyNotNeeded": {
+    "routeId": "r000004",
+    "path": "/customers/automattic",
+    "reason": "/pricing drift was low enough to keep it; substitute not used"
+  },
+  "browserPolicy": {
+    "locale": "ko-KR",
+    "timezone": "Asia/Seoul",
+    "colorScheme": "light",
+    "reducedMotion": "no-preference",
+    "waitUntil": "load",
+    "networkIdleTimeoutMs": 8000,
+    "fontsReadyTimeoutMs": 5000,
+    "prepareScroll": true,
+    "scrollBackToTop": true,
+    "settleMs": 1200,
+    "rafCount": 2,
+    "source": "src/observer (verbatim, via tmp/wr-visual-fidelity-investigation/lib.mjs)"
+  },
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900,
+      "deviceScaleFactor": 1
+    },
+    {
+      "id": "wide",
+      "width": 1920,
+      "height": 1080,
+      "deviceScaleFactor": 1
+    },
+    {
+      "id": "mobile",
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 3,
+      "isMobile": true,
+      "hasTouch": true,
+      "mobileUserAgent": true
+    }
+  ],
+  "drift": {
+    "desktop": [
+      {
+        "routeId": "r000008",
+        "path": "/security",
+        "viewport": "desktop",
+        "acceptedScreenshot": "/Users/woops/projects/web-recon/data/linear.app/site-observations/2026-08-25T19-23-01-716Z/pages/p000008/viewports/desktop/screenshot.png",
+        "currentSourceScreenshot": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/substrate/_driftcheck/r000008-desktop.CURRENT_SOURCE.png",
+        "capturedAt": "2026-08-28T18:52:11.162Z",
+        "httpStatus": 200,
+        "finalUrl": "https://linear.app/security",
+        "acceptedSize": {
+          "w": 1440,
+          "h": 3231
+        },
+        "currentSize": {
+          "w": 1440,
+          "h": 3231
+        },
+        "heightDelta": 0,
+        "widthDelta": 0,
+        "driftChangedRatio": 0.0023,
+        "driftMeanDelta": 0.2558,
+        "maxChannelDelta": 247,
+        "commonAreaRatio": 1,
+        "scrollHeightLive": 3231,
+        "textLineCountLive": 104,
+        "consoleErrors": 0,
+        "requestFailures": 0
+      },
+      {
+        "routeId": "r000007",
+        "path": "/pricing",
+        "viewport": "desktop",
+        "acceptedScreenshot": "/Users/woops/projects/web-recon/data/linear.app/site-observations/2026-08-25T19-23-01-716Z/pages/p000007/viewports/desktop/screenshot.png",
+        "currentSourceScreenshot": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/substrate/_driftcheck/r000007-desktop.CURRENT_SOURCE.png",
+        "capturedAt": "2026-08-28T18:52:11.162Z",
+        "httpStatus": 200,
+        "finalUrl": "https://linear.app/pricing",
+        "acceptedSize": {
+          "w": 1440,
+          "h": 6348
+        },
+        "currentSize": {
+          "w": 1440,
+          "h": 6360
+        },
+        "heightDelta": 12,
+        "widthDelta": 0,
+        "driftChangedRatio": 0.0343,
+        "driftMeanDelta": 3.4674,
+        "maxChannelDelta": 247,
+        "commonAreaRatio": 0.9981,
+        "scrollHeightLive": 6360,
+        "textLineCountLive": 204,
+        "consoleErrors": 0,
+        "requestFailures": 0
+      },
+      {
+        "routeId": "r000004",
+        "path": "/customers/automattic",
+        "viewport": "desktop",
+        "acceptedScreenshot": "/Users/woops/projects/web-recon/data/linear.app/site-observations/2026-08-25T19-23-01-716Z/pages/p000004/viewports/desktop/screenshot.png",
+        "currentSourceScreenshot": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/substrate/_driftcheck/r000004-desktop.CURRENT_SOURCE.png",
+        "capturedAt": "2026-08-28T18:52:11.162Z",
+        "httpStatus": 200,
+        "finalUrl": "https://linear.app/customers/automattic",
+        "acceptedSize": {
+          "w": 1440,
+          "h": 5242
+        },
+        "currentSize": {
+          "w": 1440,
+          "h": 5242
+        },
+        "heightDelta": 0,
+        "widthDelta": 0,
+        "driftChangedRatio": 0.0002,
+        "driftMeanDelta": 0.0128,
+        "maxChannelDelta": 142,
+        "commonAreaRatio": 1,
+        "scrollHeightLive": 5242,
+        "textLineCountLive": 99,
+        "consoleErrors": 0,
+        "requestFailures": 0
+      }
+    ],
+    "mobile": [
+      {
+        "routeId": "r000008",
+        "viewport": "mobile",
+        "acceptedSize": {
+          "w": 1170,
+          "h": 14349
+        },
+        "currentSize": {
+          "w": 1170,
+          "h": 14349
+        },
+        "heightDelta": 0,
+        "widthDelta": 0,
+        "driftChangedRatio": 0.0024,
+        "driftMeanDelta": 0.3166,
+        "maxChannelDelta": 239
+      },
+      {
+        "routeId": "r000007",
+        "viewport": "mobile",
+        "acceptedSize": {
+          "w": 1170,
+          "h": 23136
+        },
+        "currentSize": {
+          "w": 1170,
+          "h": 23142
+        },
+        "heightDelta": 6,
+        "widthDelta": 0,
+        "driftChangedRatio": 0.0255,
+        "driftMeanDelta": 2.769,
+        "maxChannelDelta": 247
+      }
+    ]
+  },
+  "driftBands": {
+    "note": "200px-row bands of ACCEPTED vs CURRENT_SOURCE desktop, only bands with >1% changed pixels listed",
+    "perRoute": {
+      "r000008": {
+        "overlapHeight": 3231,
+        "bands": [
+          {
+            "yStart": 2400,
+            "yEnd": 2600,
+            "changedRatio": 0.0267
+          }
+        ]
+      },
+      "r000007": {
+        "overlapHeight": 6348,
+        "bands": [
+          {
+            "yStart": 1000,
+            "yEnd": 1200,
+            "changedRatio": 0.0282
+          },
+          {
+            "yStart": 1200,
+            "yEnd": 1400,
+            "changedRatio": 0.0176
+          },
+          {
+            "yStart": 1400,
+            "yEnd": 1600,
+            "changedRatio": 0.1679
+          },
+          {
+            "yStart": 1600,
+            "yEnd": 1800,
+            "changedRatio": 0.054
+          },
+          {
+            "yStart": 1800,
+            "yEnd": 2000,
+            "changedRatio": 0.0383
+          },
+          {
+            "yStart": 2000,
+            "yEnd": 2200,
+            "changedRatio": 0.0328
+          },
+          {
+            "yStart": 2200,
+            "yEnd": 2400,
+            "changedRatio": 0.0339
+          },
+          {
+            "yStart": 2400,
+            "yEnd": 2600,
+            "changedRatio": 0.0301
+          },
+          {
+            "yStart": 2600,
+            "yEnd": 2800,
+            "changedRatio": 0.0377
+          },
+          {
+            "yStart": 2800,
+            "yEnd": 3000,
+            "changedRatio": 0.0249
+          },
+          {
+            "yStart": 3000,
+            "yEnd": 3200,
+            "changedRatio": 0.0462
+          },
+          {
+            "yStart": 3200,
+            "yEnd": 3400,
+            "changedRatio": 0.029
+          },
+          {
+            "yStart": 3400,
+            "yEnd": 3600,
+            "changedRatio": 0.0299
+          },
+          {
+            "yStart": 3600,
+            "yEnd": 3800,
+            "changedRatio": 0.0268
+          },
+          {
+            "yStart": 3800,
+            "yEnd": 4000,
+            "changedRatio": 0.0257
+          },
+          {
+            "yStart": 4000,
+            "yEnd": 4200,
+            "changedRatio": 0.0271
+          },
+          {
+            "yStart": 4200,
+            "yEnd": 4400,
+            "changedRatio": 0.0418
+          },
+          {
+            "yStart": 4400,
+            "yEnd": 4600,
+            "changedRatio": 0.0342
+          },
+          {
+            "yStart": 4600,
+            "yEnd": 4800,
+            "changedRatio": 0.0201
+          },
+          {
+            "yStart": 4800,
+            "yEnd": 5000,
+            "changedRatio": 0.0473
+          },
+          {
+            "yStart": 5000,
+            "yEnd": 5200,
+            "changedRatio": 0.0698
+          },
+          {
+            "yStart": 5400,
+            "yEnd": 5600,
+            "changedRatio": 0.0987
+          },
+          {
+            "yStart": 5600,
+            "yEnd": 5800,
+            "changedRatio": 0.0267
+          },
+          {
+            "yStart": 5800,
+            "yEnd": 6000,
+            "changedRatio": 0.0359
+          },
+          {
+            "yStart": 6000,
+            "yEnd": 6200,
+            "changedRatio": 0.0588
+          }
+        ]
+      },
+      "r000004": {
+        "overlapHeight": 5242,
+        "bands": []
+      }
+    }
+  },
+  "inventory": {
+    "totalsOnDisk": {
+      "stylesheetCount": 329,
+      "stylesheetBytes": 1521300,
+      "fontFileCount": 8,
+      "fontBytes": 1878400,
+      "imageCount": 15,
+      "imageBytes": 3166144
+    },
+    "uniqueUrlsAcrossRoutes": {
+      "stylesheet": 177,
+      "font": 4,
+      "image": 8
+    },
+    "perRoute": {
+      "r000008": {
+        "path": "/security",
+        "stylesheetCount": 152,
+        "stylesheetBytes": 720774,
+        "fontFileCount": 4,
+        "fontBytes": 939200,
+        "imageCount": 7,
+        "imageBytes": 1409911,
+        "fetchFailures": [
+          {
+            "routeId": "r000008",
+            "url": "https://static.linear.app/web/_next/static/static/grain-default.png",
+            "origin": "https://static.linear.app",
+            "kind": "img",
+            "status": 404,
+            "reason": "HTTP 404",
+            "referencedBy": [
+              "css url() in ddb70938aa-HeroIllustration.Bvfe7oWz.css",
+              "css url() in dca58741e6-Plan.CJ1uEObJ.css",
+              "css url() in 5bc23d02d1-SlackIssue.tG1BN7t9.css"
+            ]
+          }
+        ]
+      },
+      "r000007": {
+        "path": "/pricing",
+        "stylesheetCount": 177,
+        "stylesheetBytes": 800526,
+        "fontFileCount": 4,
+        "fontBytes": 939200,
+        "imageCount": 8,
+        "imageBytes": 1756233,
+        "fetchFailures": [
+          {
+            "routeId": "r000007",
+            "url": "https://static.linear.app/web/_next/static/static/grain-default.png",
+            "origin": "https://static.linear.app",
+            "kind": "img",
+            "status": 404,
+            "reason": "HTTP 404",
+            "referencedBy": [
+              "css url() in ddb70938aa-HeroIllustration.Bvfe7oWz.css",
+              "css url() in 5bc23d02d1-SlackIssue.tG1BN7t9.css",
+              "css url() in dca58741e6-Plan.CJ1uEObJ.css"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "crossOriginBlocked": [
+    {
+      "routeId": "r000008",
+      "url": "https://static.linear.app/web/_next/static/static/grain-default.png",
+      "origin": "https://static.linear.app",
+      "kind": "img",
+      "status": 404,
+      "reason": "HTTP 404",
+      "referencedBy": [
+        "css url() in ddb70938aa-HeroIllustration.Bvfe7oWz.css",
+        "css url() in dca58741e6-Plan.CJ1uEObJ.css",
+        "css url() in 5bc23d02d1-SlackIssue.tG1BN7t9.css"
+      ]
+    },
+    {
+      "routeId": "r000007",
+      "url": "https://static.linear.app/web/_next/static/static/grain-default.png",
+      "origin": "https://static.linear.app",
+      "kind": "img",
+      "status": 404,
+      "reason": "HTTP 404",
+      "referencedBy": [
+        "css url() in ddb70938aa-HeroIllustration.Bvfe7oWz.css",
+        "css url() in 5bc23d02d1-SlackIssue.tG1BN7t9.css",
+        "css url() in dca58741e6-Plan.CJ1uEObJ.css"
+      ]
+    }
+  ],
+  "captures": [
+    {
+      "routeId": "r000008",
+      "viewport": "desktop",
+      "httpStatus": 200,
+      "finalUrl": "https://linear.app/security",
+      "scrollHeight": 3231,
+      "scrollWidth": 1440,
+      "screenshotBytes": 388076,
+      "domHtmlBytes": 690292,
+      "textLineCount": 104,
+      "visibleElementCount": 384,
+      "networkIdleReached": true,
+      "fontsReadyReached": true,
+      "scrollSteps": 4,
+      "requestFailures": 0,
+      "consoleErrors": 0
+    },
+    {
+      "routeId": "r000008",
+      "viewport": "wide",
+      "httpStatus": 200,
+      "finalUrl": "https://linear.app/security",
+      "scrollHeight": 3231,
+      "scrollWidth": 1920,
+      "screenshotBytes": 396056,
+      "domHtmlBytes": 696858,
+      "textLineCount": 104,
+      "visibleElementCount": 384,
+      "networkIdleReached": true,
+      "fontsReadyReached": true,
+      "scrollSteps": 3,
+      "requestFailures": 0,
+      "consoleErrors": 0
+    },
+    {
+      "routeId": "r000008",
+      "viewport": "mobile",
+      "httpStatus": 200,
+      "finalUrl": "https://linear.app/security",
+      "scrollHeight": 4783,
+      "scrollWidth": 390,
+      "screenshotBytes": 1282852,
+      "domHtmlBytes": 687199,
+      "textLineCount": 99,
+      "visibleElementCount": 376,
+      "networkIdleReached": true,
+      "fontsReadyReached": true,
+      "scrollSteps": 6,
+      "requestFailures": 0,
+      "consoleErrors": 0
+    },
+    {
+      "routeId": "r000007",
+      "viewport": "desktop",
+      "httpStatus": 200,
+      "finalUrl": "https://linear.app/pricing",
+      "scrollHeight": 6360,
+      "scrollWidth": 1440,
+      "screenshotBytes": 448666,
+      "domHtmlBytes": 851306,
+      "textLineCount": 204,
+      "visibleElementCount": 1645,
+      "networkIdleReached": true,
+      "fontsReadyReached": true,
+      "scrollSteps": 8,
+      "requestFailures": 0,
+      "consoleErrors": 0
+    },
+    {
+      "routeId": "r000007",
+      "viewport": "wide",
+      "httpStatus": 200,
+      "finalUrl": "https://linear.app/pricing",
+      "scrollHeight": 6360,
+      "scrollWidth": 1920,
+      "screenshotBytes": 452159,
+      "domHtmlBytes": 847865,
+      "textLineCount": 204,
+      "visibleElementCount": 1645,
+      "networkIdleReached": true,
+      "fontsReadyReached": true,
+      "scrollSteps": 6,
+      "requestFailures": 0,
+      "consoleErrors": 0
+    },
+    {
+      "routeId": "r000007",
+      "viewport": "mobile",
+      "httpStatus": 200,
+      "finalUrl": "https://linear.app/pricing",
+      "scrollHeight": 7714,
+      "scrollWidth": 390,
+      "screenshotBytes": 1290297,
+      "domHtmlBytes": 857577,
+      "textLineCount": 175,
+      "visibleElementCount": 1014,
+      "networkIdleReached": true,
+      "fontsReadyReached": true,
+      "scrollSteps": 10,
+      "requestFailures": 0,
+      "consoleErrors": 0
+    }
+  ],
+  "rulesForExperimentAgents": [
+    "Score every variant against the reference-*.png in this directory. Do not take a new live capture; a second capture is a second reference and breaks comparability.",
+    "The substrate is chmod read-only. Build variants under your own tmp/wr-visual-fidelity-investigation/<subdir>/.",
+    "linear.app renders data-theme=\"dark\" regardless of the requested prefers-color-scheme: light. Dark is the reference appearance.",
+    "Reference PNG sizes: desktop 1440xH DSF1, wide 1920xH DSF1, mobile 1170xH (390 CSS px at DSF3)."
+  ],
+  "failures": []
+}

@@ -125,8 +125,10 @@ export interface TruthModeOutcome {
  * image values are not (an image is never a sentence-shaped claim, and §19
  * already routes image changes through explicit briefs).
  *
- * A value identical to the template default is NOT a new claim — it is source
- * content that survived, which `brand-leak.ts` already reports on its own axis.
+ * A value identical to the template default is not an INVENTION — but if it is
+ * fact-shaped it is still the SOURCE company's fact shipping on this site, so
+ * it is recorded as `source-fact-carried-over` in both modes and refused under
+ * `verified-only` (see the block below; this is Phase 9 finding F3, fixed).
  * A value whose source is `user-provided` is backed by definition.
  */
 export function applyTruthMode(
@@ -186,7 +188,59 @@ export function applyTruthMode(
       }
       const original = template.defaultContent.values[key];
       if (typeof original === "string" && normalize(original) === normalize(value)) {
-        // Source content that survived: reported by the brand-leak scan, not here.
+        // -------------------------------------------------------------------
+        // FINDING F3, FIXED. A value identical to the source default used to
+        // be kept SILENTLY here, on the reasoning that surviving source content
+        // is the brand-leak scan's axis. That reasoning is wrong for a FACT:
+        // the brand-leak scan looks for the source BRAND TOKEN, so a bare
+        // figure like "50%", "$16 per user/month" or "ISO 27001 certified"
+        // carries no token, trips no scanner, and ships on the new customer's
+        // site as if it were their own number. The verifier caught exactly that
+        // shipping on an editable, customer-facing slot of a "complete first
+        // draft" with no decision recorded anywhere.
+        //
+        // It is not an INVENTION (nobody made it up) so `marked-synthetic`
+        // would be the wrong word, and it is not backed by the user either.
+        // It gets its own decision, recorded in BOTH modes so the survival is
+        // never silent again, and under `verified-only` it is refused the same
+        // way an unbacked invented claim is: the operator has to state their
+        // own figure or delete the slot.
+        //
+        // Text only. A url or an image is not a sentence-shaped claim, and
+        // refusing an internal route because its path happens to contain a
+        // digit would be a manufactured blocker.
+        const slotType = template.slotByKey.get(key)?.type;
+        if (slotType !== "text") {
+          keep();
+          continue;
+        }
+        const editability = template.slotByKey.get(key)?.editability ?? "review";
+        if (mode === "verified-only") {
+          refusedKeys.add(key);
+          refused.push({
+            slotKey: key,
+            reason:
+              `needs factual input: unsupported ${claim} claim carried over unchanged from the source site ` +
+              `(content truth mode: ${mode})`,
+          });
+          decisions.push({
+            slotKey: key,
+            claim,
+            decision: "refused-unresolved",
+            detail:
+              `the written value is identical to the source default and states a ${claim}; it is the SOURCE ` +
+              `company's fact, not this site's, and no providedFacts entry backs it (slot editability: ${editability})`,
+          });
+          continue;
+        }
+        decisions.push({
+          slotKey: key,
+          claim,
+          decision: "source-fact-carried-over",
+          detail:
+            `the written value is identical to the source default and states a ${claim}; retained under ` +
+            `synthetic-allowed and recorded so the survival is visible (slot editability: ${editability})`,
+        });
         keep();
         continue;
       }

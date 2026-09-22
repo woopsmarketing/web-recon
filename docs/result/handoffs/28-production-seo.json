@@ -1,0 +1,367 @@
+{
+ "schema": "task28-production-seo-v1",
+ "phase": "10",
+ "role": "BUILDER — production-mode SEO, end to end (CORRECTED 2026-08-28 by a fresh correction agent: see `corrections` — every verifier finding is answered here, in this document, not only in the code)",
+ "producedAt": "2026-08-27T23:45:00Z (builder) / CORRECTED 2026-08-28T01:35:00Z. Every number in the corrections block below was re-measured at the moment it was written, against the artifact it cites; the three numbers the verifier found wrong are corrected IN PLACE and preserved verbatim inside `corrections`.",
+ "ownership": "src/seo/**, the SEO surfaces of src/production/**, the SEO checks in scripts/smoke-seo.ts / smoke-production.ts / smoke-release.ts. package.json NOT edited.",
+ "claim": "A REAL indexable production build ran end to end for the first time: real crawled-site lineage (linear.app), real Task-9 authored content (Millwright, brief-writer), a schema-valid reserved (.example) production domain, real font/asset resolutions, a real `next build` static export, and a real isolated-package QA pass. Both directions of the mode-rules pair are proven on real artifacts, not only on the pre-existing synthetic release-fixture.example suite (which already covered the state machine generically — see priorCoverage below). The schema itself (production-spec-v1) now REFUSES an indexable+blockers-present shape structurally, not only via release-layer orchestration. CORRECTION PASS (2026-08-28): a fresh agent re-drove the phase against the verifier's FAIL. All three findings were documentation/traceability; one of them (titles described as per-route while every route served one identical string) was ALSO a real SEO defect, and it is now fixed in code — titles derive per route from the customer's own authored heading, with duplicate <title> measured in the SEO plan AND on the served bytes. Every non-negotiable was re-proven on real lineage after the change (see reProvenAfterTheFix), and every finding and note the verifier recorded is answered in `corrections`.",
+ "realCanary": {
+  "sourceTemplate": "linear.app-2026-08-25T21-53-26-980Z (data/linear.app/recon-templates/2026-08-25T21-53-26-980Z), 8 routes",
+  "realContentRun": "data/linear.app/content-runs/2026-08-27T23-18-09-848Z (Task 28 Phase 9 first draft, generator=brief-writer, 1491 slot values, scopedRoutes = all 8 routes) — READ ONLY, never mutated",
+  "newReleaseProjects": [
+   "data/linear.app/release-projects/wr28-seo-canary (indexable canary)",
+   "data/linear.app/release-projects/wr28-seo-preview (preview control, unused after a cleaner direct-compile control was built — see corruptionFinding)"
+  ],
+  "productionDomain": "millwright-canary.example — a schema-valid RFC-2606-reserved .example domain. The schema places NO format/regex constraint on productionBaseUrl (src/release/types.ts:533 is `z.string().min(1)`; src/release/requirements.ts normalizeProductionDomain only strips a leading https:// and trailing slash) — .example was already the established convention in this repo (scripts/smoke-release.ts's own synthetic canary uses newco-prod.example; scripts/smoke-seo.ts uses newbrand-prod.example). No live DNS lookup was performed anywhere in this phase's work.",
+  "resolutionPacks": [
+   "domain-only pack (productionBaseUrl=millwright-canary.example) — used FIRST, alone, to prove direction 1",
+   "full pack (+ fontDecisions: berkeley mono / inter variable -> use-fallback-stack; + assets: all 84 release-blocking replacement-image ids -> ONE placeholder 8x8 PNG, disclosed, same file reused for every id since the subject under test is the SEO surface not asset content quality)"
+  ]
+ },
+ "direction1_blockedWhileBlockersRemain": {
+  "step": "resolved ONLY productionBaseUrl (2 font + 84 asset release-blocking requirements still unresolved)",
+  "dryRunEvidence": "`npx tsx src/cli-release-build.ts data/linear.app/release-projects/wr28-seo-canary --dry-run` -> BLOCKED BY production: font-license-berkeley-mono, font-license-inter-variable, replacement-image-ai000003 ... (86 ids total)",
+  "realBuildEvidence": "the SAME command WITHOUT --dry-run actually ran: `[release] running stage seo… [seo:plan] … mode production` then `blocked: production`, `verdict: PRODUCTION_INPUTS_REQUIRED`. release-project.json stageStatus.production stayed pinned to the OLD artifact (data/linear.app/production-specs/2026-08-27T23-18-09-979Z) whose indexabilityGate.decision is still \"preview\" — confirmed by `ls -dt data/linear.app/production-specs/*/` showing NO new spec dir was created by this build.",
+  "conclusion": "CONFIRMED: a domain alone flips the SEO PLAN's internal `mode` to \"production\" (a planning document), but the actual SERVABLE production BUILD (the static HTML a visitor's browser would receive) never regenerates while release-blocking requirements remain — no indexable artifact is ever emitted. This is the same invariant scripts/smoke-release.ts already asserts generically at 21.1/21.2/21.3 on its synthetic fixture; this run reproduces it on REAL crawled-site lineage."
+ },
+ "direction2_indexableOnceGateResolves": {
+  "step": "resolved the full pack (fonts + 84 assets)",
+  "dryRunEvidence": "WOULD RUN: assets, production — zero entries under BLOCKED BY",
+  "realBuildEvidence": "real build ran: isolated-package QA `77/77` (0 failures), `[release] production 2026-08-27T23-34-55-222Z: QA 77/77`. THE BUILD-TIME NUMBERS THIS LINE ORIGINALLY CARRIED ARE WITHDRAWN as mis-attributed/unbacked (corrections[2]); the timings that stand are the re-measured ones in `buildTimings` below, each read from a log retained on disk.",
+  "specFile": "data/linear.app/production-specs/2026-08-27T23-34-55-222Z/production-spec.json",
+  "buildDir": "data/linear.app/production-builds/2026-08-27T23-34-55-222Z",
+  "indexabilityGate": {
+   "decision": "indexable",
+   "robotsPolicy": "per-plan production robots",
+   "blockers": []
+  },
+  "baseUrl": {
+   "value": "millwright-canary.example",
+   "status": "provided",
+   "mode": "production",
+   "basis": "user-provided"
+  },
+  "remainingReleaseBlocking": 1,
+  "remainingReleaseBlockingDetail": "source-brand-inline-svg (80 template hosts) — by DESIGN (src/release/requirements.ts PRODUCTION_STAGE_RESOLVED_KINDS) this kind does not gate the PRODUCTION STAGE (it is measured on the compiled candidate, not required before compiling one), so a genuinely indexable build compiled while it stayed open. It DOES still gate overall releaseState, which is why wr28-seo-canary's releaseState stayed PRODUCTION_INPUTS_REQUIRED even though its production BUILD is indexable — this is the existing, intentional Phase-2 design (\"compiling a candidate is how it is measured; publishing it is what stays gated\"), not a Phase-10 gap. Resolving the 80 brand surfaces is Phase-2/brand-bake territory, outside this phase's file ownership, and was NOT attempted.",
+  "conclusion": "CONFIRMED: once every requirement gating the production STAGE clears, the SAME project produces a real indexable static export, verified over real HTTP + a real headless browser."
+ },
+ "disabledRouteTest": {
+  "action": "disabled /customers/automattic on wr28-seo-canary via the real authored write API (commitAuthoredEdits, op=disable-route) — an operator action on THIS canary, not a hypothetical route",
+  "revision": "r002",
+  "rebuild": {
+   "specFile": "data/linear.app/production-specs/2026-08-27T23-36-27-840Z/production-spec.json",
+   "buildDir": "data/linear.app/production-builds/2026-08-27T23-36-27-840Z",
+   "qa": "70/70 (0 failures)",
+   "enablementLog": "[production] enablement: 1 route(s) off (7 remain), 0 region root(s) removed, 6 nav host(s) removed, 1 orphaned page tree(s) deleted"
+  },
+  "provenFromBuiltArtifacts": {
+   "export": "customers/automattic.html is ABSENT from package/site (`find $BUILD/package/site/customers` lists only the shared /customers index files)",
+   "sitemap": "exactly 7 <url> entries, none is /customers/automattic (`grep -c '<url>' sitemap.xml` = 7)",
+   "robots": "unaffected structurally (route-independent) — Allow: / + Sitemap: line present",
+   "headBlocks": "9 served HTML files (8 routes minus 1 disabled + _not-found + 404) checked; none references /customers/automattic"
+  },
+  "reProvenAfterTheTitleFix": "Re-run end to end under the corrected code: enable-route (revision r003) → 8-route indexable build 2026-08-28T01-27-04-359Z, then disable-route again (revision r004) → 7-route build 2026-08-28T01-28-16-178Z with `grep -rIoa automattic <build>/package | wc -l` = 0, exactly 7 <url> entries in sitemap.xml, customers/automattic.html absent from the export, and no reference in any remaining route's head block. QA 71/71."
+ },
+ "sourceDomainAbsence": {
+  "seoSurfacesGrep": "0 occurrences of \"linear.app\" AND 0 word-boundary occurrences of the source brand word inside the `wr-seo-head-start`…`wr-seo-head-end` block and the <title> of EVERY served route HTML, and 0 in sitemap.xml and robots.txt. Re-measured at correction time with a per-file python scan on data/linear.app/production-builds/2026-08-28T01-27-04-359Z (8 routes, indexable) and 2026-08-28T01-28-16-178Z (7 routes, after the route disable), and previously on the builder's 2026-08-27T23-36-27-840Z.",
+  "wholePackageGrep": "18 occurrences of \"linear.app\" across the WHOLE package — NOT the 12 this document originally shipped (see corrections[0]). Re-measured at correction time with `grep -rIoa 'linear\\.app' <build>/package | wc -l` on THREE builds and identical every time: the builder's own 2026-08-27T23-36-27-840Z, and this correction's 2026-08-28T01-27-04-359Z (8 routes) and 2026-08-28T01-28-16-178Z (7 routes). Per-file, all three: RUN.md 3, deploy-manifest.json 3, site/changelog.html 4, site/changelog.txt 2, site/changelog/__next.$oc$slug.__PAGE__.txt 2, site/changelog/__next._full.txt 2, site/integrations.html 1, site/wr/theme-overlay.css 1. NONE is an SEO surface (0 inside every head block, every <title>, sitemap.xml and robots.txt — re-verified per file at correction time): (a) the 10 changelog occurrences are ONE literal example URL in body copy, duplicated by Next's SSR + flight + text-export encodings (content-injection scope); (b) 1 is an un-rewritten `webassets.linear.app` image src in integrations.html body (asset-rewrite scope); (c) 1 is a provenance comment in wr/theme-overlay.css; (d) RUN.md 3 and deploy-manifest.json 3 — the two files the original count MISSED — are operator/provenance metadata that deliberately NAME the source host (\"source host: linear.app\", \"sourceHost\":\"linear.app\", knownResidualSourceHosts:[linear.app, webassets.linear.app]); they ship inside the package but are never served as page content. DISCLOSED, NOT FIXED — every one of them is outside this phase's SEO-surface ownership.",
+  "verdict": "PASS for the scope this phase owns (SEO surfaces = 0); a real, disclosed, non-zero whole-package count exists and is reported, never hidden or downgraded to pass a gate."
+ },
+ "previewControl": {
+  "purpose": "a definitively CLEAN preview-mode build tied to Millwright's own, correctly-lineaged content run, built by calling createProductionSeoPlanRun (no productionDomain) + runProductionCompile + runProductionQa directly against data/linear.app/content-runs/2026-08-27T23-18-09-848Z",
+  "seoPlanDir": "data/linear.app/production-seo-plans/2026-08-27T23-41-30-519Z (site.siteName.value=Millwright, mode=preview)",
+  "specFile": "data/linear.app/production-specs/2026-08-27T23-41-30-528Z/production-spec.json",
+  "buildDir": "data/linear.app/production-builds/2026-08-27T23-41-30-528Z",
+  "indexabilityGate": {
+   "decision": "preview",
+   "robotsPolicy": "noindex,nofollow on every route; robots.txt Disallow all with no Sitemap line; /sitemap.xml intentionally 404"
+  },
+  "headBlock": "meta name=\"robots\" content=\"noindex,nofollow\"; no <link rel=canonical>; no og:url (needs-input); og:title/og:description/og:site_name/jsonLd all present and Millwright-derived",
+  "robotsTxt": "User-agent: * / Disallow: / (no Sitemap: line)",
+  "sitemapXml": "absent from package/site (404); package/sitemap.preview.xml (a path-only, non-final plan artifact) present instead",
+  "qa": "77/77 (0 failures)",
+  "externalRequestsResidual": "hosts={\"linear.app\":12,\"webassets.linear.app\":19} — 60 replacement-required source-host asset URLs genuinely still render in PREVIEW (matches the seo plan's own \"replacement-required-assets ... residual=60\" blocker text); this is the exact contrast to the resolved indexable build's hosts={} (zero external requests) measured above.",
+  "conclusion": "PREVIEW mode is noindex, confirmed on real Millwright lineage, with a real measured contrast against the resolved indexable build.",
+  "retainedEvidence": "The original preview control's headline numbers had NO log or qa.json on disk and the verifier had to re-derive them. This correction re-built the control under the fixed code and RETAINED the log: data/linear.app/production-builds/2026-08-28T01-29-07-998Z, log tmp/wr28/p10-corr/preview-control.log — indexabilityGate.decision=preview with 6 blockers, robots.txt `Disallow: /` with no Sitemap line, /sitemap.xml absent (package/sitemap.preview.xml present instead), every route `<meta name=\"robots\" content=\"noindex,nofollow\"/>` with NO canonical and NO og:url, QA 78/78 (0 failures), and the same residual contrast as before: `external-requests-only-known-residual — hosts={\"linear.app\":12,\"webassets.linear.app\":19}` against the resolved indexable build's hosts={}. Per-route titles are correct here too (pricing.html serves `Pricing | Millwright`)."
+ },
+ "corruptionFinding": {
+  "severity": "notable, pre-existing, NOT caused by this phase, NOT fixed by this phase (outside src/seo/**, src/production/** SEO-surface ownership)",
+  "summary": "Millwright's ORIGINAL accepted lineage (data/linear.app/release-projects/millwright/release-project.json, and the production-spec it carries at data/linear.app/production-specs/2026-08-27T23-18-09-979Z) points its `seo` stage artifact at data/linear.app/production-seo-plans/2026-08-27T22-08-24-570Z — which belongs to a DIFFERENT, unrelated project (site.siteName.value=\"WR28 Vfy Alpha\", almost certainly an earlier verifier fixture on the same linear.app host). Millwright's `content` stage artifact (data/linear.app/content-runs/2026-08-27T23-18-09-848Z, 1491 slots, generator=brief-writer) IS correct.",
+  "howDiscovered": "A first attempt at a preview control build (build-preview-control.mts) passed the millwright-accepted seoPlanRunDir directly into runProductionCompile alongside the correct contentRunDir. The resulting served HTML titled every route \"WR28 Vfy Alpha | not stated in the brief\" instead of Millwright, and QA's external-requests check showed real residual hits (hosts={linear.app:12, webassets.linear.app:19}) — the tell that the SEO PLAN (which owns title/description/canonical/og/jsonLd, all independent of the content bake) was NOT Millwright's own.",
+  "impactOnThisPhase": "NONE on the results reported above: the release orchestrator's `seo` stage runner (src/release/stages.ts) REGENERATES production-seo-plan.json fresh from the project's CURRENT `content` artifact on every build where `seo` is stale — never reuses the stale pointer once invalidated. All checks above used either (a) a full release build after resolving productionBaseUrl, which invalidates+regenerates `seo`, or (b) a direct createProductionSeoPlanRun call with the correct contentRunDir. Both independently verified site.siteName.value=\"Millwright\" before being used as evidence.",
+  "likelyRootCause": "NOT diagnosed in code (out of ownership) — most likely a stale/most-recent-directory lookup used by whatever script assembled Millwright's FIRST production-spec (Task 28 Phase 9/10 first-draft integration), on a source host (\"linear.app\") that multiple different customer projects share as their storage namespace.",
+  "recommendation": "carry forward: whoever owns the Phase-9 first-draft/create-site integration path should re-verify EVERY accepted lineage pointer it wrote by ID, not by directory recency, and re-prepare data/linear.app/release-projects/millwright once fixed (do not hand-edit its release-project.json — it is real program state)."
+ },
+ "schemaHardening": {
+  "file": "src/production/types.ts",
+  "change": "productionSpecSchema gained a `.superRefine` refusing decision===\"indexable\" with a non-empty blockers array. Previously nothing in the TYPE prevented constructing such a spec — only src/release/freshness.ts `applyBlocking` (orchestration) prevented the real pipeline from EMITTING one. This closes that gap at the schema layer too: a hand-built or future-buggy indexable+blockers spec is now unparseable, not merely discouraged.",
+  "verifiedNonBreaking": "runProductionCompile ALWAYS sets blockers=[] whenever mode !== \"preview\" (src/production/run.ts line ~344-367) — the real code path never violates the new refinement. Confirmed by re-running the full smoke:release suite (274/274, unchanged) and smoke:production (132/132) after the change.",
+  "scopeClarification": "READ THIS BEFORE QUOTING THE HARDENING. The refinement is DEFENCE IN DEPTH, not the thing that gates the pipeline. src/production/run.ts:344 sets `blockers = mode === \"preview\" ? buildPreviewBlockers(...) : []` unconditionally, so a production-mode compile can never construct the shape the superRefine refuses; the refinement can only catch a hand-built or future-buggy spec. What actually gates a real release is src/release/requirements.ts `blockersGatingProduction` + the release orchestrator (freshness.ts `applyBlocking`), which is what leaves the production stage BLOCKED — re-proven in both directions in this correction pass."
+ },
+ "newChecksAdded": {
+  "scripts/smoke-seo.ts": {
+   "beforeThePhase": 104,
+   "afterTheBuilder": 107,
+   "afterTheCorrection": 113,
+   "addedByTheBuilder": [
+    "5 .example is accepted as a production domain — schema-valid, reserved (RFC 2606), no live DNS required",
+    "5 og:title / og:description mirror the route title/description exactly",
+    "5 source domain (smoke.test) is ABSENT from every production SEO surface (title/description/canonical/og/twitter/jsonLd/robots/sitemap)"
+   ],
+   "addedByTheCorrection": [
+    "5c hero headline wins for its own route; a nav label covers a route with no hero",
+    "5c an over-long or head-unsafe candidate is REJECTED (no truncation, no escaping — the route keeps the site-level title)",
+    "5c the route's title is its OWN authored heading + the brand; the home route keeps the site-level title",
+    "5c og:title / twitter:title follow the per-route title (still mirrors, not the site-level string)",
+    "5c checkTitleUniqueness passes when every route has its own title",
+    "5c checkTitleUniqueness CATCHES the shipped defect: no authored heading anywhere → one identical <title> on every route, named with its routes"
+   ]
+  },
+  "scripts/smoke-production.ts": {
+   "before": 129,
+   "after": 132,
+   "added": [
+    "28.P10.1 indexable + zero blockers parses (the REAL shape runProductionCompile emits once the gate resolves)",
+    "28.P10.2 indexable + non-empty blockers is REFUSED by the schema — a build cannot claim indexable while blockers remain",
+    "28.P10.3 preview + non-empty blockers still parses (the ORIGINAL fixture above) — the refinement is ONE-DIRECTIONAL"
+   ]
+  },
+  "scripts/smoke-release.ts": {
+   "beforeThePhase": 274,
+   "afterTheBuilder": 274,
+   "afterTheCorrection": 275,
+   "addedByTheCorrection": [
+    "fixture package QA measures served <title> uniqueness on every route (Task 28 Phase 10) — asserts the new `title-uniqueness-measured` QA check ran on a REAL compiled package, covered every route, and carries duplicate-title-groups= in its detail"
+   ],
+   "note": "The builder did not modify this suite; the correction adds exactly one check, which is what takes it from 274 to 275."
+  }
+ },
+ "threeFailureProofs": {
+  "builderProofs": [
+   {
+    "n": 1,
+    "file": "src/production/types.ts",
+    "break": "wrapped the superRefine condition in `if (false && ...)`",
+    "observedFail": "smoke:production -> `FAIL 28.P10.2 indexable + non-empty blockers is REFUSED by the schema ... — null` ; suite total 132 checks, 1 failures",
+    "restore": "reverted the literal edit",
+    "verification": "sha256 964044942dfea514032c520bbf78ae07bd14f5b32b931f324f2cb711bfe0daea before AND after (byte-identical)"
+   },
+   {
+    "n": 2,
+    "file": "src/seo/production-plan.ts",
+    "break": "changed the known-title branch's og:title source from `known(effectiveTitle, ...)` to `known(brand, ...)` — a plausible regression (og:title silently degrading to the bare brand name instead of mirroring the real route title)",
+    "observedFail": "smoke:seo -> `FAIL 5 og:title / og:description mirror the route title/description exactly — [[\"새브랜드\",\"새브랜드 | 테스트 카테고리\"],[null,null]]` ; suite total 106/107 passed",
+    "restore": "reverted the literal edit",
+    "verification": "sha256 fe5463122c39170ce80293f7cc8cc657a1dc508d7e2902211f47aa51d253b222 before AND after (byte-identical); confirmed via `git diff` that the restored file matches the pre-existing (Phase 6) working-tree state exactly — the diff shown is ONLY the pre-existing disabledRoutes feature, unrelated to this test"
+   },
+   {
+    "n": 3,
+    "file": "src/seo/production-plan.ts",
+    "break": "appended a literal `+ \"#via-smoke.test\"` fragment onto `organization.url` in buildRouteJsonLd — simulating a source-domain leak into JSON-LD",
+    "observedFail": "smoke:seo -> `FAIL 5 source domain (smoke.test) is ABSENT from every production SEO surface ... — 2 occurrence(s)` (both prodPlan and disabledPlan, which share the code path) ; suite total 106/107 passed",
+    "restore": "reverted the literal edit",
+    "verification": "sha256 fe5463122c39170ce80293f7cc8cc657a1dc508d7e2902211f47aa51d253b222 before AND after (byte-identical)"
+   }
+  ],
+  "correctionProofs": [
+   {
+    "n": "A",
+    "file": "src/seo/production-plan.ts",
+    "break": "replaced the per-route lookup `const heading = route.key === \"/\" ? undefined : contentRun.routeHeadings[route.key];` with `const heading = undefined;` — i.e. reverted to the shipped behaviour where every route takes the site-level title",
+    "observedFail": "smoke:seo 110/113 — FAIL '5c the route's title is its OWN authored heading + the brand…', FAIL '5c og:title / twitter:title follow the per-route title…', FAIL '5c checkTitleUniqueness passes when every route has its own title' (detail showed duplicates:[{title:'새브랜드 | 테스트 카테고리', routes:['/','/a']}])",
+    "log": "tmp/wr28/p10-corr/inject-A.log",
+    "restore": "restored from a byte copy; sha256 0d6370cba8b88ffbb534f3becbb3864ab121fc0737b337984f745dfcb0d07bca before AND after"
+   },
+   {
+    "n": "B",
+    "file": "src/seo/production-plan.ts",
+    "break": "neutered the detector: `.filter(([, routes]) => false && routes.length > 1)` in checkTitleUniqueness",
+    "observedFail": "smoke:seo 112/113 — FAIL '5c checkTitleUniqueness CATCHES the shipped defect…' with detail {\"pass\":true,\"routesMeasured\":2,\"distinctTitles\":1,\"duplicates\":[]} — i.e. a plan with two identical titles reported as clean",
+    "log": "tmp/wr28/p10-corr/inject-B.log",
+    "restore": "restored; same sha256 0d6370cba8b88ffb… before and after"
+   },
+   {
+    "n": "C",
+    "file": "src/production/qa.ts",
+    "break": "made the served-title measurement skip the first route (`if (servedTitleByRoute.size > 0) servedTitleByRoute.set(...)`) — the vacuous-measurement failure the check exists to catch",
+    "observedFail": "smoke:release — FAIL 'fixture package QA measures served <title> uniqueness on every route (Task 28 Phase 10) — routes=0/2 distinct=0 duplicate-title-groups=0' AND the package QA itself failed ('fixture preview production QA passes — title-uniqueness-measured(routes=0/2 …)'), which correctly cascaded into the release stages that refuse to adopt a build whose QA failed",
+    "log": "tmp/wr28/p10-corr/inject-C.log",
+    "restore": "restored; sha256 0256df40ef9860cd7ec5ade14bd08c3cb8c7edc1c01470a3af671b538ea3ceb1 before AND after"
+   }
+  ],
+  "restorationProof": "tmp/wr28/p10-corr/pre-injection.sha vs post-injection.sha — all 6 touched files byte-identical after every injection (src/seo/production-plan.ts, src/production/qa.ts, src/seo/run.ts, src/seo/types.ts, scripts/smoke-seo.ts, scripts/smoke-release.ts)."
+ },
+ "priorCoverage": {
+  "note": "scripts/smoke-release.ts already proved the mode-rules pair GENERICALLY on a fully synthetic fixture (host release-fixture.example, domain newco-prod.example) before this phase: section 8 (\"21.1 with the domain but unresolved blockers, production is BLOCKED BY them\" / \"21.2 ... never a fake-indexable compile\" / \"21.3 gate project stays PRODUCTION_INPUTS_REQUIRED\") and section 10 (\"22b synthetic project reached PRODUCTION_READY honestly\" / \"22c final spec is indexable with the operator domain and zero blockers\"). That generic proof was NOT sufficient to close the task's own stated gap (\"no full indexable-production SEO path has ever run end to end — every real build finished at PRODUCTION_INPUTS_REQUIRED\") because a synthetic fixture is not a real accepted lineage. This phase's contribution is the REAL run (realCanary above), the schema-level hardening, and 6 new regression checks; it deliberately did not duplicate the already-thorough synthetic-fixture state-machine proof."
+ },
+ "regressionBattery": {
+  "method": "Every run through `bash tmp/wr28/suite-lock.sh`. Counts RE-DERIVED from raw output with grep -cE '^\\s*PASS' / '^\\s*FAIL', not read off the summary line, and cross-checked against each suite's own trailer.",
+  "typecheck": "exit 0 (tmp/wr28/p10-corr/final-typecheck.log; also re-run after every edit and after every injection restore)",
+  "smoke:seo": "113 PASS / 0 FAIL (tmp/wr28/p10-corr/final-seo.log; trailer '113/113 checks passed') — baseline 104, builder 107, correction 113",
+  "smoke:production": "132 PASS / 0 FAIL (tmp/wr28/p10-corr/final-production.log; trailer 'smoke:production — 132 checks, 0 failures') — unchanged by the correction; the new QA check runs against compiled packages, which this suite does not build",
+  "smoke:release": "275 PASS / 0 FAIL (tmp/wr28/p10-corr/final-release.log; trailer 'smoke:release — 275 checks, 0 failures') — 274 baseline + 1 new",
+  "scope": "NOT the full 27-suite battery: this is a single-phase correction. The suites re-run are the ones whose code changed (src/seo/**, src/production/qa.ts) plus every suite that consumes them — grep confirms only smoke-seo.ts and smoke-release.ts reference the SEO plan API or runProductionQa, and smoke-production.ts/smoke-authoring-preview.ts reference runProductionCompile (smoke-production re-run green; smoke-authoring-preview does not assert on titles). The program-wide battery remains a separate later step."
+ },
+ "filesChanged": {
+  "byTheBuilder": [
+   "src/production/types.ts (productionSpecSchema.superRefine — indexable+blockers refused)",
+   "scripts/smoke-seo.ts (+3 checks)",
+   "scripts/smoke-production.ts (+3 checks)"
+  ],
+  "byTheCorrection": [
+   "src/seo/production-plan.ts (deriveRouteHeadings + isHeadSafeText + per-route title composition + checkTitleUniqueness)",
+   "src/seo/run.ts (measures title uniqueness, records it in the manifest, logs it)",
+   "src/seo/types.ts (TitleUniquenessResultSchema + OPTIONAL manifest fields: checks.titleUniqueness, counts.duplicateTitleRoutes, counts.routeDerivedTitles)",
+   "src/seo/index.ts (exports checkTitleUniqueness / deriveRouteHeadings / isHeadSafeText / MAX_ROUTE_HEADING_CHARS / RouteHeading)",
+   "src/production/qa.ts (title-uniqueness-measured — served-bytes duplicate-title measurement)",
+   "scripts/smoke-seo.ts (+6 checks, section 5c)",
+   "scripts/smoke-release.ts (+1 check on a REAL compiled package)",
+   "docs/result/handoffs/28-production-seo.json (this document: corrections[], perRouteTitles, buildTimings, reProvenAfterTheFix, indexableIsNotShippable, schemaHardening.scopeClarification, previewControl.retainedEvidence, backCompatProof)"
+  ],
+  "notTouched": "package.json (no new suite registered — new suites would go to docs/result/handoffs/28-intel/pending-package-scripts.tsv; none was created). No dependency added. No git operation of any kind. No pre-2026-08-27 data/ directory mutated."
+ },
+ "processesReaped": "Every browser and static server started here was launched inside runProductionQa / launchPackageIsolated's own try/finally and exited with it. Verified at the end of the pass: `ps aux` shows zero next-server / chrome-headless / chromium / server.mjs / tsx processes attributable to this work, and no wr-production-qa-* temp directory survives.",
+ "dataWritten": {
+  "namespaceRule": "release PROJECT dirs are wr28--prefixed (wr28-seo-canary, wr28-seo-preview) per contract; the lower-level run artifacts they and my direct compile calls produced (production-seo-plans/, production-specs/, production-builds/ under data/linear.app/) are auto-timestamped by the existing store.ts convention, exactly as every real customer build already does — no historical (pre-2026-08-27) directory was touched, confirmed by mtimes.",
+  "newDirsCreatedThisPhase": [
+   "data/linear.app/release-projects/wr28-seo-canary",
+   "data/linear.app/release-projects/wr28-seo-preview",
+   "data/linear.app/production-seo-plans/2026-08-27T23-34-32-375Z, 2026-08-27T23-36-27-563Z, 2026-08-27T23-39-22-266Z (contaminated control, superseded), 2026-08-27T23-41-30-519Z (clean control)",
+   "data/linear.app/production-specs/2026-08-27T23-34-55-222Z, 2026-08-27T23-36-27-840Z, 2026-08-27T23-39-22-266Z (superseded), 2026-08-27T23-41-30-528Z",
+   "data/linear.app/production-builds/<same ids>",
+   "data/linear.app/asset-materializations/2026-08-27T23-34-54-986Z (derived run carrying the 84 placeholder replacements + 2 font decisions)"
+  ],
+  "verifierAndCorrectionArtifacts": {
+   "verifier": "data/linear.app/release-projects/wr28-vfyp10 plus its production-seo-plans / production-specs / production-builds runs (2026-08-28T00-54…00-56…) — the verifier's independent reproduction, left on disk as evidence.",
+   "correction": [
+    "data/linear.app/release-projects/wr28-seo-corr (NEW: fresh direction-1 proof project, domain-only resolution seocorr-canary.example)",
+    "data/linear.app/release-projects/wr28-seo-canary — REUSED, advanced to authored revisions r003 (enable-route) and r004 (disable-route)",
+    "data/linear.app/production-seo-plans/2026-08-28T01-27-04-127Z, 01-28-15-938Z, 01-29-07-992Z, 01-30-54-447Z",
+    "data/linear.app/production-specs + production-builds/2026-08-28T01-27-04-359Z (8 routes, indexable), 01-28-16-178Z (7 routes, indexable), 01-29-07-998Z (preview control)",
+    "tmp/wr28/p10-corr/** — every log quoted in this document (build logs, suite logs, injection logs, sha files, the resolution pack and the scripts)"
+   ],
+   "namespaceRule": "unchanged: release PROJECT dirs are wr28--prefixed; lower-level run artifacts are auto-timestamped by store.ts as every real customer build already does. No historical (pre-2026-08-27) directory was touched."
+  }
+ },
+ "perRouteTitles": {
+  "status": "DEFECT FOUND BY THE VERIFIER — FIXED IN CODE IN THIS CORRECTION PASS, then re-proven on the real lineage.",
+  "whatWasWrong": "The shipped build gave EVERY route the identical title `Millwright | AI workflow automation for discrete manufacturing` (all 7 served routes of 2026-08-27T23-36-27-840Z), while the phase reported them as \"per-route\". The SEO plan's own basis field said so: routes[].title.basis was `content-run:sitePlan.siteIdentity (workingName + category)` — a SITE-level string. Duplicate <title> across every indexable route is a real SEO defect, and NO check in the program measured title uniqueness, which is how it shipped unnoticed.",
+  "fix": "src/seo/production-plan.ts now derives a PER-ROUTE title from the CUSTOMER'S OWN authored content (never the source site, whose titles are forbidden copy). New exported pure function `deriveRouteHeadings(units, slotValues)` reads the content run's own content-units.json (which carries the route each authored unit belongs to) + slot-values.json and applies two rules, in precedence order: (1) `hero-headline` — the route's own hero unit headline slot; (2) `nav-label` — an authored nav/link label whose sibling `.href` slot VALUE is exactly this route key. The title becomes `<heading> | <brand>`; the HOME route deliberately keeps the site-level `<brand> | <category>`, which is the correct homepage title. Nothing is invented, truncated or reworded: a candidate that is empty, head-unsafe, or longer than MAX_ROUTE_HEADING_CHARS (70) is REJECTED and that route keeps the site-level title, with the fallback stated in its own `basis` string. Ties break on sorted slot key, so the derivation is deterministic.",
+  "detector": "New exported `checkTitleUniqueness(plan)` MEASURES duplicate <title>s and names every duplicate group with its routes. It is recorded in the plan-run manifest (checks.titleUniqueness, counts.duplicateTitleRoutes, counts.routeDerivedTitles — all OPTIONAL in the zod schema so plan runs written before this change still load; absence means \"not measured\", never \"zero\") and printed by the run (`[seo:plan] titles: 7/8 from the route's own authored heading, 8 distinct across 8 route(s)`). It is deliberately NON-fatal: a duplicate title is a quality defect, and failing the run would delete a title rather than fix one. Independently, isolated-package QA now measures the SERVED bytes: new check `title-uniqueness-measured` (src/production/qa.ts) asserts the measurement ran on every route and that no served title is empty, and carries `duplicate-title-groups=` in its detail — so a plan that PROMISES unique titles and a package that SERVES one repeated string can no longer agree with each other.",
+  "provenOnTheRealLineage": {
+   "build8Routes": "data/linear.app/production-builds/2026-08-28T01-27-04-359Z (wr28-seo-canary, /customers/automattic re-enabled, revision r003): 8 routes, 8 DISTINCT titles — index.html `Millwright | AI workflow automation for discrete manufacturing` (site-level, home), changelog `Changelog | Millwright` (nav-label), customers `Customers | Millwright`, customers/automattic `Keep the ERP and the floor telling the same story, end to end. | Millwright`, integrations `Integrations | Millwright`, plan `Open work, on one plan. | Millwright`, pricing `Pricing | Millwright`, security `One plan for machine data. | Millwright` (all hero-headline). QA `title-uniqueness-measured — routes=8/8 distinct=8 duplicate-title-groups=0 duplicate-title-routes=0`; QA 78/78, 0 failures; indexabilityGate decision=indexable, blockers=[].",
+   "build7Routes": "data/linear.app/production-builds/2026-08-28T01-28-16-178Z (same project, /customers/automattic disabled again, revision r004): 7 routes, 7 distinct titles, QA 71/71, `title-uniqueness-measured — routes=7/7 distinct=7 duplicate-title-groups=0`.",
+   "planCounts": "data/linear.app/production-seo-plans/2026-08-28T01-28-15-938Z/manifest.json counts = {routes:7, knownTitles:7, needsInputTitles:0, duplicateTitleRoutes:0, routeDerivedTitles:6}, checks.titleUniqueness = {pass:true, routesMeasured:7, distinctTitles:7, duplicates:[]}.",
+   "ogMirrorStillHolds": "og:title / twitter:title still mirror the route title exactly — now the PER-ROUTE one: pricing.html serves og:title=\"Pricing | Millwright\" and twitter:title=\"Pricing | Millwright\"."
+  },
+  "namedLimitation": "A route the content run gave NO authored heading (no hero headline, no nav label pointing at it) still falls back to the site-level title, and if the home route is among the survivors that is a duplicate. On this lineage that case does not occur (7/8 routes heading-derived, home site-level by design, 8/8 distinct), but it is not structurally impossible — which is exactly why the fallback is stated in the route's own `basis`, counted in the manifest, and measured on the served bytes by QA instead of being assumed away. NO SILENT CAP: the 70-character rejection bound and the home-route exemption are both stated here and both visible in the plan's basis strings.",
+  "safetyOfTheNewTitleSource": "The new title source is covered by the SEO plan's EXISTING guards, which is why widening the title's provenance does not widen the leak surface: every planned title/og/twitter string goes through checkForbiddenCopy (byte-equality against every source title/description/og/twitter value) and through checkBrandIsolation, which scans the RENDERED surface (renderedSurfaceOf includes plan titles and the rendered head) against terms derived from the source snapshot — a run whose heading carried the source brand FAILS instead of shipping. Both passed on the real runs (`forbidden-copy PASS (56 comparisons), brand isolation PASS (147 strings vs 3 terms)` on the 8-route build; 49/129 on the 7-route build). A head-unsafe heading cannot reach the head either: candidates are filtered by isHeadSafeText before use and the composed title is still assertHeadSafeText'd."
+ },
+ "buildTimings": {
+  "note": "Every row below is read from a log file that is retained on disk, and the log's own route count is quoted next to it so the number cannot be attached to the wrong build again. Single reps: these are provenance for the builds, not a benchmark.",
+  "rows": [
+   {
+    "build": "data/linear.app/production-builds/2026-08-28T01-27-04-359Z",
+    "routes": 8,
+    "mode": "indexable production",
+    "nextBuildMs": 2706,
+    "log": "tmp/wr28/p10-corr/build-enabled-8routes.log:111",
+    "logRouteEvidence": "[seo:plan] routes 8 (injected 8); QA 78/78",
+    "wallClockSeconds": 37.7,
+    "wallClockMethod": "`time npx tsx src/cli-release-build.ts` — whole release build, not just next build"
+   },
+   {
+    "build": "data/linear.app/production-builds/2026-08-28T01-28-16-178Z",
+    "routes": 7,
+    "mode": "indexable production, after disabling /customers/automattic",
+    "nextBuildMs": 2864,
+    "log": "tmp/wr28/p10-corr/build-disabled-7routes.log:113",
+    "logRouteEvidence": "[production] enablement: 1 route(s) off (7 remain) … ; QA 71/71",
+    "wallClockSeconds": 36.5,
+    "wallClockMethod": "same"
+   },
+   {
+    "build": "data/linear.app/production-builds/2026-08-28T01-29-07-998Z",
+    "routes": 8,
+    "mode": "preview control (no domain)",
+    "nextBuildMs": 2706,
+    "log": "tmp/wr28/p10-corr/preview-control.log:10",
+    "logRouteEvidence": "[seo:plan] routes 8 (injected 8); QA 78/78",
+    "wallClockSeconds": 36.8,
+    "wallClockMethod": "`time npx tsx tmp/wr28/p10-corr/preview-control.mts` — direct compile + QA, no release orchestration"
+   }
+  ],
+  "withdrawn": "The original pair (2859ms attributed to the 8-route build, 2723ms to the 7-route build) is withdrawn: the only log the builder retained (tmp/wr28/p10-seo/build-disabled.log) is the 7-ROUTE build and its line 112 reads `next build finished in 2859ms`, so 2859 belonged to the 7-route build; the string 2723 appears in no artifact on disk."
+ },
+ "indexableIsNotShippable": "DISCLOSED AND RE-MEASURED, so nobody reads \"a genuinely indexable static export\" as \"ready to publish\": the indexable package still carries the SOURCE BRAND in its BODY. Word-boundary grep for the source brand word across the 7 served route HTML files of data/linear.app/production-builds/2026-08-28T01-28-16-178Z = 752 occurrences (integrations.html 340, changelog.html 172, index.html 102, customers.html 76, pricing.html 28, plan.html 22, security.html 12), and QA's own census reports svg-aria-label/svg-symbol-id/visible-text surfaces. NONE of that is an SEO surface (0 in every head block, title, sitemap and robots.txt), the release-blocking requirement `source-brand-inline-svg` (80 template hosts) stays OPEN, and the project's releaseState correctly stays PRODUCTION_INPUTS_REQUIRED. Resolving those 80 brand surfaces is Phase-2/brand-bake ownership and was NOT attempted here.",
+ "corrections": {
+  "why": "THE LAST TWO GATES BOTH FAILED ON HANDOFF TRACEABILITY: a verifier recorded a finding and the document shipped uncorrected anyway. This block exists so that never happens silently again. It lists EVERY finding and EVERY note the Phase-10 verifier recorded, verbatim in `wasWritten`, next to what the artifact actually says, next to where the correction now lives IN THIS DOCUMENT. A finding fixed only in code is not fixed.",
+  "verifierVerdict": "FAIL — 3 findings, all documentation/traceability; the verifier explicitly recorded that the ENGINEERING was sound (the gate was not loosened, SEO surfaces carry no source host or brand word, both directions of the mode-rules pair reproduce on a project they created from scratch).",
+  "findings": [
+   {
+    "id": "corrections[0] — whole-package source-host count",
+    "verifierFinding": "HANDOFF NUMBER WRONG. `.sourceDomainAbsence.wholePackageGrep` said 12 occurrences with a per-file breakdown; the artifact yields 18 on the builder's own build AND on the verifier's independent reproduction. The breakdown omits package/RUN.md (3) and package/deploy-manifest.json (3).",
+    "wasWritten": "12 occurrences of \"linear.app\" across the WHOLE package (grep -rIo, per-file breakdown re-measured: changelog.html 4, changelog.txt 2, changelog/__next.$oc$slug.__PAGE__.txt 2, changelog/__next._full.txt 2, integrations.html 1, wr/theme-overlay.css 1)",
+    "reMeasuredNow": "18, identical on three builds: the builder's 2026-08-27T23-36-27-840Z, and this pass's 2026-08-28T01-27-04-359Z and 2026-08-28T01-28-16-178Z. `grep -rIoa 'linear\\.app' <build>/package | wc -l` = 18 each time. Missing files confirmed: RUN.md 3 ('source host: linear.app', 'Requests to linear.app, webassets.linear.app remain…'), deploy-manifest.json 3 (\"sourceHost\":\"linear.app\", knownResidualSourceHosts:[linear.app, webassets.linear.app]).",
+    "correctedIn": ".sourceDomainAbsence.wholePackageGrep (rewritten in place, 18 with the full 8-file breakdown and the reason each file is not an SEO surface)",
+    "engineeringImpact": "NONE — neither added file is an SEO surface; 0 source-host occurrences inside every head block, title, sitemap.xml and robots.txt still holds and was re-verified per file at correction time. The defect was the NUMBER, shipped under the word 're-measured'.",
+    "resolution": "IMPLEMENTED (documentation corrected; nothing to fix in code)"
+   },
+   {
+    "id": "corrections[1] — 'per-route' titles",
+    "verifierFinding": "HANDOFF CLAIM CONTRADICTED BY ARTIFACT. Item seo.titles asserted \"Every enabled route's <title> is real, per-route, derived from the content run\". Every enabled route carried the IDENTICAL title; routes[].title.basis is a SITE-level string; the example the item cited (index.html) is literally the shared string. 8 identical <title>s on an indexable site is a real SEO defect that no check in the suite catches. Suggested fix: restate the claim and record it as a named limitation.",
+    "wasWritten": "Every enabled route's <title> is real, per-route, derived from the content run (e.g. index.html='Millwright | AI workflow automation for discrete manufacturing')",
+    "reMeasuredNow": "Confirmed exactly as the verifier reported: all 7 served routes of 2026-08-27T23-36-27-840Z carried 'Millwright | AI workflow automation for discrete manufacturing'.",
+    "correctedIn": ".perRouteTitles (new section: what was wrong, the code fix, the detector, the real-lineage proof, and the named limitation)",
+    "actionTaken": "GOING FURTHER THAN THE VERIFIER ASKED — the defect is fixed IN CODE, not only restated. Titles are now derived per route from the customer's own authored content (hero headline, else an authored nav label pointing at the route; home keeps the site-level title), and the previously-unmeasured property is now measured in two independent places (SEO plan `checkTitleUniqueness`, served-bytes QA `title-uniqueness-measured`). Real re-proof: 8/8 distinct titles on data/linear.app/production-builds/2026-08-28T01-27-04-359Z and 7/7 on 2026-08-28T01-28-16-178Z.",
+    "residualLimitationNamed": "A route with no authored heading still falls back to the site-level title (see .perRouteTitles.namedLimitation). It does not occur on this lineage; it is measured, not assumed away.",
+    "resolution": "IMPLEMENTED (code + documentation)"
+   },
+   {
+    "id": "corrections[2] — build timings",
+    "verifierFinding": "MEASUREMENT MIS-ATTRIBUTED / UNBACKED. 2859ms was assigned to the 8-route indexable build and 2723ms to the 7-route post-disable build. The only retained log (tmp/wr28/p10-seo/build-disabled.log) IS the 7-route build and its line 112 reads 'next build finished in 2859ms'; the string 2723 appears in no log or artifact on disk. Fix: re-derive from retained logs or drop the pair.",
+    "wasWritten": "measurements: 'indexable production next-build time (wr28-seo-canary, 8 routes)' = 2859ms; 'indexable production next-build time (7 routes, after route disable)' = 2723ms",
+    "reMeasuredNow": "Both original numbers WITHDRAWN. Replaced by three timings read from logs retained on disk, each quoted next to that log's own route-count line: 8-route indexable 2706ms (tmp/wr28/p10-corr/build-enabled-8routes.log:111, '[seo:plan] routes 8'), 7-route post-disable 2864ms (tmp/wr28/p10-corr/build-disabled-7routes.log:113, '1 route(s) off (7 remain)'), preview control 2706ms (tmp/wr28/p10-corr/preview-control.log:10). Wall-clock for each full `release:build` was also measured (37.7s / 36.5s / 36.8s via `time`).",
+    "correctedIn": ".buildTimings (new section, with .withdrawn stating what the old pair was and why it is gone) and .direction2_indexableOnceGateResolves.realBuildEvidence (timing removed from the sentence)",
+    "resolution": "IMPLEMENTED (documentation corrected; the numbers now have retained logs behind them)"
+   }
+  ],
+  "verifierNotesAlsoAnswered": [
+   {
+    "note": "SCHEMA HARDENING IS NARROWER THAN IT READS — src/production/run.ts:344 sets blockers=[] unconditionally whenever mode !== 'preview', so a production-mode compile can never construct the shape the superRefine refuses; the thing that actually gates the pipeline is src/release/requirements.ts blockersGatingProduction + the release orchestrator.",
+    "answeredIn": ".schemaHardening.scopeClarification (added, and the source line re-read at correction time: run.ts:344-367 is `mode === \"preview\" ? buildPreviewBlockers({...}) : []`)"
+   },
+   {
+    "note": "DISCLOSED-BUT-WORTH-REPEATING: the 'indexable' package still carries the SOURCE BRAND in its body (≈752 word-boundary occurrences across the served pages); 'a genuinely indexable static export' should not be read as 'shippable'.",
+    "answeredIn": ".indexableIsNotShippable (added; re-measured at correction time on 2026-08-28T01-28-16-178Z: 752 occurrences with the same per-file distribution the verifier reported, source-brand-inline-svg still OPEN, releaseState still PRODUCTION_INPUTS_REQUIRED)"
+   },
+   {
+    "note": "The preview control's headline numbers had NO artifact on disk and the verifier had to re-run runProductionQa to confirm them; retain the control-build log next time.",
+    "answeredIn": ".previewControl.retainedEvidence (added; the control was REBUILT under the fixed code and its full log is retained at tmp/wr28/p10-corr/preview-control.log, with the build at data/linear.app/production-builds/2026-08-28T01-29-07-998Z)"
+   },
+   {
+    "note": "The verifier drove everything independently on a fresh project (data/linear.app/release-projects/wr28-vfyp10) and left new wr28-namespaced artifacts on disk.",
+    "answeredIn": ".dataWritten.verifierAndCorrectionArtifacts (recorded, so the next reader knows those directories are evidence and not stray state)"
+   },
+   {
+    "note": "PRE-EXISTING lineage-consistency defect in Millwright's accepted spec (seo stage pointer belonged to 'WR28 Vfy Alpha'); the verifier reproduced it and confirmed it taints nothing because the orchestrator regenerates the seo stage once invalidated.",
+    "answeredIn": ".corruptionFinding (already present, INDEPENDENTLY RE-OBSERVED in this pass: `release:prepare` of the fresh wr28-seo-corr project again printed `[release] hashed seo: c62b1bdc9023… (data/linear.app/production-seo-plans/2026-08-27T22-08-24-570Z)`, and the first build regenerated it as 2026-08-28T01-30-54-447Z with siteName=Millwright. Still NOT fixed — out of this phase's ownership; the carry-forward recommendation stands)"
+   }
+  ]
+ },
+ "reProvenAfterTheFix": {
+  "why": "The correction changed how every production <title> is derived, so every non-negotiable of this phase was re-proven on real lineage AFTER the change — not carried over from the builder's runs.",
+  "direction1_blockedWhileBlockersRemain": {
+   "project": "data/linear.app/release-projects/wr28-seo-corr — a FRESH project prepared in this pass from the same accepted spec (data/linear.app/production-specs/2026-08-27T23-18-09-979Z), 287 requirements, 88 release-blocking unresolved",
+   "step": "resolved ONLY productionBaseUrl=seocorr-canary.example (tmp/wr28/p10-corr/domain-only.json); invalidated seo + production",
+   "dryRun": "tmp/wr28/p10-corr/dryrun-blocked.log — WOULD RUN: seo; BLOCKED BY production: exactly 86 ids (font-license-berkeley-mono, font-license-inter-variable, 84 replacement-image-*), counted from the log itself",
+   "realBuild": "tmp/wr28/p10-corr/build-blocked.log — ran the seo stage only, `blocked: production`, `verdict: PRODUCTION_INPUTS_REQUIRED`. production-spec directory count 73 BEFORE and 73 AFTER: no indexable artifact emitted. release-project.json stageStatus.production = status \"blocked\", blockedBy 86, artifact still 2026-08-27T23-18-09-979Z whose indexabilityGate.decision is \"preview\" with 6 blockers."
+  },
+  "direction2_indexableOnlyAfterTheGate": "data/linear.app/production-specs/2026-08-28T01-27-04-359Z: decision=indexable, blockers=[], baseUrl={value:'millwright-canary.example',status:'provided',mode:'production'}, QA 78/78 (0 failures), `external-requests-only-known-residual — hosts={}`. Same project, every gating requirement resolved.",
+  "seoSurfacesDeriveFromTheCustomer": "0 source-host AND 0 source-brand-word occurrences inside every head block, every <title>, sitemap.xml and robots.txt of both new builds. Every surface traced to the content run: title from the route's own authored heading, description from pagePlan.primaryMessage + siteIdentity.positioning, og:*/twitter:* mirroring them, JSON-LD @graph WebSite+Organization from siteIdentity, canonical/og:url on the operator's domain.",
+  "disabledRouteAbsentEverywhere": "Re-proven under the fixed code: after `commitAuthoredEdits disable-route /customers/automattic` (revision r004) and a real rebuild, `grep -rIoa automattic <build>/package | wc -l` = 0, sitemap.xml has exactly 7 <url> entries (none the disabled route), customers/automattic.html is absent from the export, and every remaining route's head block is free of it. QA 71/71.",
+  "previewStaysNoindex": "data/linear.app/production-builds/2026-08-28T01-29-07-998Z: noindex,nofollow on every route, no canonical, no og:url, robots.txt Disallow-all with no Sitemap line, /sitemap.xml absent, QA 78/78, residual hosts={linear.app:12, webassets.linear.app:19} vs the resolved build's hosts={}."
+ },
+ "backCompatProof": "The plan-run manifest schema is `.strict()` and loadProductionSeoPlanRun re-parses OLD manifests on every release build, so the new fields are OPTIONAL by construction. Proven, not assumed: loading the pre-change plan run data/linear.app/production-seo-plans/2026-08-27T22-08-24-570Z succeeds and reports checks.titleUniqueness=null / counts.duplicateTitleRoutes=null — 'not measured', never a false zero (tmp/wr28/p10-corr/backcompat.mts).",
+ "qaTotalsMoved": "READ THIS BEFORE COMPARING QA NUMBERS ACROSS THIS DOCUMENT. The correction adds exactly one isolated-package QA check (`title-uniqueness-measured`), so package QA totals moved by +1 AFTER it: the builder's builds are correctly recorded as 77/77 (8 routes) and 70/70 (7 routes), and the correction's rebuilds of the same project are 78/78 (8 routes, 2026-08-28T01-27-04-359Z), 71/71 (7 routes, 2026-08-28T01-28-16-178Z) and 78/78 (preview control, 2026-08-28T01-29-07-998Z). Same package shape, one more check — not a coverage change in either direction, and 0 failures in every one of them."
+}

@@ -1,0 +1,98 @@
+{
+  "schema": "task285b-regression-v1",
+  "producedAt": "2026-08-31T02:20:00Z",
+  "role": "FINAL REGRESSION RUNNER for Task 28.5B — implemented nothing, changed nothing except this handoff. Read-only measurement.",
+  "typecheck": {
+    "command": "pnpm typecheck",
+    "exitCode": 0,
+    "note": "tsc --noEmit emitted zero diagnostic lines."
+  },
+  "invocation": {
+    "mutex": "All 34 counted suites (29 baseline + 5 new) ran STRICTLY SERIALLY, one at a time, via tmp/wr285b/regression/run-one.sh (npx tsx scripts/smoke-<name>.ts), in the exact order listed in tmp/wr285b/regression/order.txt. smoke-e2e was run via background+poll (its 695s wall time exceeds the 600s foreground tool limit) but no other suite executed concurrently with it or with each other.",
+    "rawLogs": "tmp/wr285b/regression/<name>.log (34 suite logs + typecheck.log), all under the repo's tmp/ (git-ignored working area, not docs/ or data/).",
+    "counting": "Each suite's own printed trailer line was read directly: 'N/N checks passed' (most suites) or 'N checks, 0 failures' / 'smoke:<name> — N checks, 0 failures' (release, registry, revision, authoring-preview, create-site, first-draft, visual-editor, editor-integration, production, brand-assets) or 'smoke-visual-vocab: N passed, 0 failed' (visual-vocab). Every log was additionally grepped for FAIL-prefixed lines; zero found across all 34 logs, consistent with every trailer's '0 failures' / exit 0."
+  },
+  "suites": [
+    {"name":"verifier","checks":81,"passed":81,"failed":0,"seconds":7,"baselineChecks":81,"delta":0},
+    {"name":"selector","checks":81,"passed":81,"failed":0,"seconds":0,"baselineChecks":81,"delta":0},
+    {"name":"multi-observer","checks":62,"passed":62,"failed":0,"seconds":27,"baselineChecks":62,"delta":0},
+    {"name":"interaction-detector","checks":92,"passed":92,"failed":0,"seconds":1,"baselineChecks":92,"delta":0},
+    {"name":"interaction-explorer","checks":108,"passed":108,"failed":0,"seconds":93,"baselineChecks":108,"delta":0},
+    {"name":"interaction-patterns","checks":88,"passed":88,"failed":0,"seconds":0,"baselineChecks":88,"delta":0},
+    {"name":"sitespec","checks":257,"passed":257,"failed":0,"seconds":0,"baselineChecks":257,"delta":0},
+    {"name":"reconstruction","checks":217,"passed":217,"failed":0,"seconds":7,"baselineChecks":217,"delta":0},
+    {"name":"reconstruction-qa","checks":134,"passed":134,"failed":0,"seconds":156,"baselineChecks":134,"delta":0},
+    {"name":"e2e","checks":130,"passed":130,"failed":0,"seconds":695,"baselineChecks":130,"delta":0,"note":"wall time 695s vs baseline 626s (+69s); environment variance on a fully local suite (own 127.0.0.1 server, real Chromium), not a check-count issue. Ran via background+poll because it exceeds the 600s foreground tool limit."},
+    {"name":"recon-template","checks":109,"passed":109,"failed":0,"seconds":80,"baselineChecks":109,"delta":0},
+    {"name":"regions","checks":76,"passed":76,"failed":0,"seconds":1,"baselineChecks":76,"delta":0},
+    {"name":"content-injection","checks":161,"passed":161,"failed":0,"seconds":58,"baselineChecks":161,"delta":0},
+    {"name":"content-generation","checks":50,"passed":50,"failed":0,"seconds":1,"baselineChecks":50,"delta":0},
+    {"name":"theme","checks":47,"passed":47,"failed":0,"seconds":36,"baselineChecks":47,"delta":0},
+    {"name":"seo","checks":113,"passed":113,"failed":0,"seconds":1,"baselineChecks":113,"delta":0},
+    {"name":"assets","checks":140,"passed":140,"failed":0,"seconds":6,"baselineChecks":140,"delta":0},
+    {"name":"production","checks":133,"passed":133,"failed":0,"seconds":3,"baselineChecks":132,"delta":1,"note":"positive delta, not a regression; see deltaExplanations"},
+    {"name":"release","checks":275,"passed":275,"failed":0,"seconds":90,"baselineChecks":275,"delta":0},
+    {"name":"revision","checks":36,"passed":36,"failed":0,"seconds":2,"baselineChecks":36,"delta":0},
+    {"name":"registry","checks":35,"passed":35,"failed":0,"seconds":0,"baselineChecks":35,"delta":0},
+    {"name":"authoring-preview","checks":41,"passed":41,"failed":0,"seconds":23,"baselineChecks":41,"delta":0},
+    {"name":"brand-assets","checks":162,"passed":162,"failed":0,"seconds":15,"baselineChecks":141,"delta":21,"note":"positive delta, not a regression; see deltaExplanations"},
+    {"name":"visual-editor","checks":50,"passed":50,"failed":0,"seconds":26,"baselineChecks":50,"delta":0},
+    {"name":"enablement","checks":101,"passed":101,"failed":0,"seconds":5,"baselineChecks":101,"delta":0},
+    {"name":"editor-integration","checks":45,"passed":45,"failed":0,"seconds":26,"baselineChecks":45,"delta":0},
+    {"name":"create-site","checks":66,"passed":66,"failed":0,"seconds":33,"baselineChecks":66,"delta":0},
+    {"name":"first-draft","checks":34,"passed":34,"failed":0,"seconds":14,"baselineChecks":34,"delta":0},
+    {"name":"production-canary","checks":46,"passed":46,"failed":0,"seconds":13,"baselineChecks":46,"delta":0},
+    {"name":"visual-vocab","checks":88,"passed":88,"failed":0,"seconds":5,"baselineChecks":null,"delta":null,"newIn285B":true},
+    {"name":"layout-safety","checks":67,"passed":67,"failed":0,"seconds":1,"baselineChecks":null,"delta":null,"newIn285B":true},
+    {"name":"video-honesty","checks":36,"passed":36,"failed":0,"seconds":0,"baselineChecks":null,"delta":null,"newIn285B":true},
+    {"name":"qa-independence","checks":101,"passed":101,"failed":0,"seconds":11,"baselineChecks":null,"delta":null,"newIn285B":true},
+    {"name":"custom-properties","checks":92,"passed":92,"failed":0,"seconds":18,"baselineChecks":null,"delta":null,"newIn285B":true}
+  ],
+  "totals": {
+    "suites": 34,
+    "checks": 3354,
+    "failures": 0,
+    "typecheckExit": 0,
+    "baselineSuites": 29,
+    "baselineChecks": 2948,
+    "battery29SuiteChecksNow": 2970,
+    "newSuiteChecks": 384,
+    "batterySeconds": 1454,
+    "arithmetic": "2,948 (baseline) + 1 (production) + 21 (brand-assets) + 384 (5 new suites) = 3,354"
+  },
+  "negativeDeltas": {
+    "count": 0,
+    "list": [],
+    "statement": "ZERO negative count deltas against the Task-28 baseline across all 29 pre-existing suites. Every suite's exit code was 0 and every trailer's failure count was 0."
+  },
+  "positiveDeltaAttribution": [
+    {
+      "suite": "production",
+      "delta": 1,
+      "baseline": 132,
+      "measured": 133,
+      "explanation": "scripts/smoke-production.ts filesystem mtime (Aug 28 22:53 KST) predates the Task-28.5B start handoff (docs/result/handoffs/28.5B-start.json, producedAt 2026-08-29T11:31:27Z / Aug 29 20:31 KST) by roughly 22 hours. The file was last touched during the interval between the Task-28 regression close-out (28-final-regression.json producedAt 2026-08-28T12:35:33Z) and Task 28.5B's start — i.e. during the intermediate 'Task 28.5A' visual-reconstruction root-cause investigation (docs/result/handoffs/28.5-*.json, Aug 29 02:48-18:26), not during any of 28.5B's six scoped changes (C1 pseudo-visibility, C2 typography vocab, C3 layout safety, C4 video honesty, C5 custom properties, C6 QA decoupling). Not attributable to 28.5B."
+    },
+    {
+      "suite": "brand-assets",
+      "delta": 21,
+      "baseline": 141,
+      "measured": 162,
+      "explanation": "scripts/smoke-brand-assets.ts filesystem mtime (Aug 28 23:00 KST) likewise predates the 28.5B start handoff. The added checks are in section '§5f detection is token-derived — and the tokens now include the name the SOURCE declares' and '§6 the canary's numbers, side by side' (declared-brand-name widening / source-brand host census), with an in-file comment stating the underlying matcher 'was aligned with the detector (Task 28 close-out)'. This is unrelated to any of 28.5B's six scoped changes (pseudo-visibility, typography vocab, layout safety, video honesty, custom properties, QA decoupling) and was already present on disk before Task 28.5B began. Not attributable to 28.5B."
+    }
+  ],
+  "newSuites": {
+    "count": 5,
+    "checks": 384,
+    "breakdown": {"visual-vocab":88,"layout-safety":67,"video-honesty":36,"qa-independence":101,"custom-properties":92},
+    "crossCheck": "All five counts match docs/result/handoffs/28.5B-code-gate.json .finalTreeBattery.suites exactly (smoke-visual-vocab 88/88, smoke-layout-safety 67/67, smoke-video-honesty 36/36, smoke-qa-independence 101/101, smoke-custom-properties 92/92)."
+  },
+  "verdict": "PASS",
+  "notes": [
+    "34 of 34 counted suites exit 0; 3,354 of 3,354 checks passed; 0 check failures anywhere (verified both by trailer line and by an independent grep for FAIL-prefixed lines across all 34 raw logs).",
+    "0 negative deltas against the Task-28 baseline across all 29 pre-existing suites; the two positive deltas (production +1, brand-assets +21) both trace to filesystem evidence (mtime + in-file comments) placing them BEFORE Task 28.5B's start, in an intermediate Task-28.5A investigation, unrelated to any of the six 28.5B changes.",
+    "smoke-e2e ran once, serially, via background execution because its 695s wall time exceeds the 600s foreground tool timeout; no suite ran concurrently with it.",
+    "No code changes, no git-mutating operations, and no writes to data/ or docs/ other than this handoff. All raw logs and timing kept under tmp/wr285b/regression/ (git-ignored working area).",
+    "Environment-caused single-suite retries: NONE required — every suite passed on its first and only run, so no suite needed the permitted one-time retry."
+  ]
+}

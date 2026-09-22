@@ -1,0 +1,89 @@
+Already up to date
+Done in 150ms using pnpm v11.21.0
+$ tsx scripts/smoke-selector.ts
+web-recon — smoke:selector (offline fixture, no network / no browser)
+
+  PASS  locale prefix en-US detected
+  PASS  routeScope after locale is docs
+  PASS  parentPath is /en-US/docs/Web
+  PASS  pathDepth 4
+  PASS  locale segment is not removed from pathSegments
+  PASS  routeScope without locale is docs
+  PASS  localePrefix absent when first segment is not xx/xx-YY
+  PASS  queryKeys sorted + signature
+  PASS  terminal root
+  PASS  terminal numeric
+  PASS  terminal uuid
+  PASS  terminal date-like
+  PASS  terminal hex-id
+  PASS  plain slug stays text (not assumed dynamic)
+  PASS  fixture produced 31 verified URLs
+  PASS  verified URLs carry the coarse profile (except the no-profile rows)
+  PASS  coarse sibling: /blog/post-a|b|c are ONE family despite different exact hashes
+  PASS  coarse sibling family type
+  PASS  coarse sibling: the exact structureHash did NOT match (Task 07 could not do this)
+  PASS  coarse sibling: all three merge conditions recorded as true
+  PASS  coarse sibling: element range recorded (410–489, ratio 1.193)
+  PASS  coarse sibling: readable structuralMatchReason stored
+  PASS  coarse sibling: inferredRoutePattern /blog/<*>
+  PASS  coarse sibling: family carries the shared coarse hashes
+  PASS  blog LIST page is not in the post family
+  PASS  ratio guard: 200/100 = 2 exactly ⇒ /tools/a|b|c stay together
+  PASS  ratio guard: 201/100 is over the limit ⇒ /tools/d is split off
+  PASS  ratio guard: 900/410 is over the limit ⇒ /blog/post-huge is split off
+  PASS  ratio guard: no family exceeds the global constant
+  PASS  scope-structure: /docs/guide/intro + /docs/api/reference are ONE family
+  PASS  scope-structure family type
+  PASS  scope-structure routeScope docs
+  PASS  ancestor guard: /docs index shares the coarse profile but is NOT absorbed
+  PASS  ancestor guard: the index is still selected (never silently dropped)
+  PASS  scope-structure representative is the shorter URL
+  PASS  landmark guard: same skeleton + different landmark tree ⇒ no merge
+  PASS  presence guard: same skeleton + landmark, different element kinds ⇒ no merge
+  PASS  no profile ⇒ never grouped, even as same-parent siblings
+  PASS  content duplicate: /duplicate-a and /duplicate-b are ONE family
+  PASS  content duplicate family type
+  PASS  content duplicate shares text hash
+  PASS  content duplicate: /page + ?v=1 + ?v=2 are ONE family
+  PASS  query-variant family type
+  PASS  query-variant aliases preserved as members
+  PASS  representative prefers the query-free URL
+  PASS  a coarse match NEVER produces a content-duplicate
+  PASS  same coarse profile + different text is NOT a content duplicate
+  PASS  canonical-only: /canonical-a and /canonical-b NOT merged
+  PASS  canonical-only: /legal/terms and /legal/privacy NOT merged (same scope + same canonical)
+  PASS  canonical-only: /canonical-a NOT merged into the root family
+  PASS  canonical pointing elsewhere is still recorded as a hint
+  PASS  canonical pointing elsewhere is counted for review
+  PASS  all-self-canonical family is NOT flagged as pointing elsewhere
+  PASS  structure-only across scopes: /about and /pricing NOT merged
+  PASS  singleton: /pricing is its own family
+  PASS  root is a protected singleton
+  PASS  root family has exactly 1 member
+  PASS  root survives selection
+  PASS  root selection reason is root-protected
+  PASS  root protection also covers a path-rooted run (MDN-style /en-US/)
+  PASS  23 families
+  PASS  family type counts
+  PASS  largest family size 3
+  PASS  selectedCount === familyCount
+  PASS  reductionCount 8
+  PASS  reductionRate 0.2581
+  PASS  coverage: sum(members) === verified count
+  PASS  membership: no URL in two families
+  PASS  coverage: every verified URL is in a family
+  PASS  representative: exactly one per family
+  PASS  provenance: every non-representative URL is recorded as unselected
+  PASS  provenance: every unselected URL names its representative
+  PASS  provenance: members keep their structural profile for later review
+  PASS  family ids are deterministic f000001…
+  PASS  determinism: reversed input order → identical output
+  PASS  strided order is a real permutation of the fixture
+  PASS  determinism: strided input order → identical output
+  PASS  determinism: reversed verified-urls + duplicateGroups arrays → identical output
+  PASS  page-families.json passes Zod after reload
+  PASS  selected-pages.json passes Zod after reload
+  PASS  reloaded selection keeps every selected URL
+
+81/81 checks passed
+[smoke:selector] OK

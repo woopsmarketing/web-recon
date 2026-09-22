@@ -1,0 +1,89 @@
+{
+  "claimId": "C1-FONT",
+  "lens": "measurement",
+  "verifier": "adversarial, fresh context, independent scripts",
+  "scratch": "tmp/wr-visual-fidelity-investigation/verify-C1-FONT-measurement/",
+  "harnessCalibration": {
+    "note": "my diff reproduces wave-1 metrics.json EXACTLY on every pair I recomputed, so wave-1 capture/diff harness is sound",
+    "reproduced": {
+      "r000001/desktop": {"wave1": 0.2073, "mine": 0.2073},
+      "r000001/mobile": {"wave1": 0.1113, "mine": 0.1113},
+      "r000005/desktop": {"wave1": 0.0235, "mine": 0.0235},
+      "r000008/desktop": {"wave1": 0.046, "mine": 0.046}
+    }
+  },
+  "confirmed": {
+    "fontFaceCount": 0,
+    "generatedStylesBytes": 11267135,
+    "fontFilesUnderApp": 0,
+    "interStackDeclarationBlocks": 4188,
+    "berkeleyDeclarationBlocks": 109,
+    "fontWeight510Occurrences": 1472,
+    "fontWeight590Occurrences": 76,
+    "totalDeclarationBlocks": 8493,
+    "substringInflation": "none - 0 font-family decls contain 'Inter' outside the one exact stack",
+    "cloneFaceCount_8of8_desktop": 0,
+    "liveFaceCount_3of3": 3,
+    "clonePlatformFonts": ".SF NS (+ Menlo for the mono stack)",
+    "livePlatformFonts": "Inter Variable (+ Berkeley Mono Variable)",
+    "stackStringIdentical": "clone stack == live stack, byte for byte; the ONLY delta is the missing @font-face",
+    "observationFontAssets": "0 font-kind assets in all 16 observation viewport assets.json; kinds seen: image, inline-svg, icon, video, video-poster, background-image, mask-image, audio, source"
+  },
+  "refuted": {
+    "roundUpAgainstStaticFallback": {
+      "claim": "1472 rules request font-weight:510 and 76 request 590, which round UP against a static fallback",
+      "finding": "FALSE. The fallback .SF NS is a VARIABLE font and Chrome instantiates the exact requested axis value.",
+      "evidence": "CSS.getPlatformFontsForNode postScriptName at w510 = .SFNS-Regular_wdth_opsz200000_GRAD_wght1FE0000 (0x1FE0000 / 65536 = 510.0); at w590 = ..._wght24E0000 (= 590.0); at w500 = ..._wght1F40000 (= 500.0). Advance widths vary continuously and monotonically across 300..800 with 510 strictly between 500 and 600.",
+      "impact": "weight is faithfully reproduced; the defect is typeface substitution only, not weight snapping"
+    },
+    "inkCost": {
+      "claim": "+9% to +42% ink on identical strings",
+      "finding": "NOT REPRODUCIBLE as stated. n=240 real strings, identical text/size/weight/letter-spacing, black on white, DSF2.",
+      "measured": {
+        "inkMass_sum255minusLuma": {"mean": 0.9938, "median": 0.9562, "p5": 0.9344, "p95": 1.1121, "max": 1.2590},
+        "darkPixels_ge50pctLumaDrop": {"mean": 0.9800, "median": 0.9570, "max": 1.2499},
+        "coverage_anyPixelTouched": {"mean": 1.0674, "median": 0.9730, "p95": 1.3291, "max": 1.3877}
+      },
+      "byWeight_coverage_mass_dark": {"400 (n=161)": [0.9718, 0.9606, 0.9545], "510 (n=59)": [1.3043, 1.0739, 1.0411], "590 (n=19)": [1.1443, 1.0259, 1.0054]},
+      "impact": "under the physically honest definitions the clone has SLIGHTLY LESS ink than the source, not more. The +9..+42% figure is only approachable under 'count every pixel an antialiasing fringe touches', where the +30% at w510 comes with only +7% actual ink mass -> the metric conflates AA spread with weight. Sign flips negative at weight 400, which is 64% of rendered text runs."
+    },
+    "rewrap": {
+      "claim": "re-wrapping on nearly every multi-line block",
+      "finding": "FALSE. 152 of 683 multi-line runs change line count when the real font is restored at the clone's own container widths = 22.3% of multi-line runs, 7.7% of all 1974 unique runs.",
+      "pageScale": "restoring fonts changed full-page document height by exactly 0px on 6/6 route+viewport pairs (r000001 d/m, r000005 d/m, r000008 d/m)"
+    },
+    "narrowerAdvances": {
+      "claim": "1.9-3.8% narrower advances",
+      "finding": "central value in range, range itself overstated as uniform. n=1974 unique real strings at their real size/weight/letter-spacing.",
+      "measured": {"mean": 0.97674, "median": 0.97212, "p5": 0.95406, "p95": 1.01170, "min": 0.91151, "max": 1.14080, "fractionWIDERinClone": "15.1%"},
+      "bySize": {"<=13px (n=503)": "-0.04% i.e. no effect", "14-16px (n=708)": "2.18% narrower", "17-24px (n=715)": "4.19% narrower"},
+      "honestStatement": "median 2.8% narrower; p5-p95 spans -1.2% to +4.6%; a quarter of runs show no measurable narrowing"
+    },
+    "topWeightCause": {
+      "claim": "fonts are a top-weight visual cause",
+      "finding": "ROUTE-DEPENDENT, and FALSE on the worst route.",
+      "counterfactual_clone_plus_real_fontface_vs_ACCEPTED_source": {
+        "r000001/desktop": {"changedRatio_th1": [0.2073, 0.1974], "reductionPct_th1": 4.8, "meanDelta": [5.5403, 3.6949]},
+        "r000001/mobile": {"changedRatio_th1": [0.1113, 0.0948], "reductionPct_th1": 14.8, "meanDelta": [7.1096, 4.4148]},
+        "r000005/desktop": {"changedRatio_th1": [0.0235, 0.0174], "reductionPct_th1": 26.0, "meanDelta": [1.4659, 0.4543]},
+        "r000005/mobile": {"changedRatio_th1": [0.0371, 0.0175], "reductionPct_th1": 52.8, "meanDelta": [3.5370, 0.7841]},
+        "r000008/desktop": {"changedRatio_th1": [0.046, 0.0333], "reductionPct_th1": 27.6, "meanDelta": [3.9086, 2.0050]},
+        "r000008/mobile": {"changedRatio_th1": [0.0676, 0.0339], "reductionPct_th1": 49.9, "meanDelta": [7.6026, 2.6957]}
+      },
+      "impact": "the homepage, the highest-changedRatio accepted pair at 0.2073, still sits at 0.1974 with perfect fonts. Fonts are necessary-but-far-from-sufficient there; they only dominate on text-heavy, media-light routes."
+    }
+  },
+  "denominatorCaveats": {
+    "wave1ChangedPixelThreshold": "any R/G/B channel differs by >= 1 -> counts every antialiasing pixel",
+    "thresholdSweep_r000001_desktop_noFont": {"th1": 0.2073, "th4": 0.1305, "th8": 0.0635, "th16": 0.0447, "th32": 0.0382, "th64": 0.027},
+    "note": "the headline changedRatio band 0.0235..0.4953 is a >=1/255 metric; at a perceptual threshold (>=32) r000001 desktop is 0.0382, not 0.2073. Wave-1 states its rule honestly in metrics.json, but the number should not be read as 'fraction of visibly different pixels'.",
+    "ruleVsRenderedDenominator": "1472/76 are CSS declaration-block counts. Only 997 and 92 RENDERED text runs (of 3069 harvested across 8 routes at desktop) actually carry weight 510 / 590.",
+    "captureCountAsymmetry": "claim cites 24 clone captures vs 16 live captures without explaining the different denominators (3 viewports vs 2)"
+  },
+  "provenance": {
+    "source.ACCEPTED.png is byte-identical (sha256 e8a006e9...) to data/linear.app/site-observations/2026-08-25T19-23-01-716Z/pages/p000001/viewports/desktop/screenshot.png": true,
+    "live captures labelled CURRENT_SOURCE, taken 2026-08-29, used ONLY to establish that the live site loads Inter Variable + Berkeley Mono; never used as historical truth or as a pixel baseline",
+    "fontFilesUsedInCounterfactual": ["https://static.linear.app/fonts/InterVariable.woff2?v=4.1 sha256 693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3", "https://static.linear.app/fonts/Berkeley-Mono-Variable.woff2?v=3.2"],
+    "allCounterfactualVariantsScoredAgainstTheSameACCEPTEDobservationPNG": true
+  }
+}

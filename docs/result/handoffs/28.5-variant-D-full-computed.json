@@ -1,0 +1,1120 @@
+{
+  "schema": "28.5A-experiment-variant/1",
+  "task": "28.5A",
+  "role": "Agent D — experimenter, VARIANT D (full computed style, control experiment)",
+  "producedAt": "2026-08-29T08:37:31.650Z",
+  "sourceTruthPolicy": "All references are the substrate CURRENT_SOURCE PNGs (live capture 2026-08-28). The accepted historical truth remains data/linear.app/site-observations/2026-08-25T19-23-01-716Z and is NOT used here.",
+  "variant": {
+    "id": "D-full-computed",
+    "definition": "Substrate settled DOM, tagged data-dfc per element; every property of the full CSSStyleDeclaration (752 properties per element in Chromium 151 on this page, incl. resolved custom properties) emitted as one [data-dfc] rule per element, plus ::before/::after/::marker full sets; served with NO source stylesheet.",
+    "subVariants": {
+      "D1-pure": "no @font-face at all (strict 'no source stylesheet')",
+      "D2-fonts": "same + the 4 @font-face blocks lifted from source CSS, fonts served from the substrate font files"
+    },
+    "harvestViewport": "desktop 1440x900 DSF1 only"
+  },
+  "blockerFoundAndRepaired": {
+    "finding": "The substrate dom.html cannot be replayed as-is. linear.app uses styled-components v6, which injects rules through CSSOM insertRule; outerHTML serialises <style data-styled=\"active\"> with length 0. 61 rules (7,202 bytes) on /security and 9,490 bytes on /pricing are silently absent from the snapshot.",
+    "symptomBeforeRepair": "Replaying substrate dom.html with all 93 of its own <link> stylesheets gave changedRatio 0.0630, heightDelta +125px, and the h1 rendered at 16px/590 instead of the display size.",
+    "repair": "Recovered the CSSOM text from the live page and refilled the empty <style data-styled> element in place (cascade position preserved). Class-hash identity verified (iSOwhx present in both). Labelled CURRENT_SOURCE.",
+    "symptomAfterRepair": {
+      "r000008 baseline changedRatio": 0.0025,
+      "r000007 baseline changedRatio": 0.0003,
+      "heightDelta": 0
+    },
+    "generality": "Not linear.app-specific. Any CSS-in-JS runtime in production mode (styled-components speedy, emotion, stitches) is invisible to DOM serialisation. Any snapshot-based reconstruction must read document.styleSheets, not the DOM."
+  },
+  "harvest": {
+    "r000008": {
+      "routeId": "r000008",
+      "path": "/security",
+      "harvestViewport": "desktop 1440x900 DSF1",
+      "stabilize": {
+        "networkIdleReached": true,
+        "fontsReadyReached": true,
+        "networkIdleMs": 524,
+        "fontsReadyMs": 4,
+        "scrollSteps": 4,
+        "scrollDistancePx": 2331,
+        "scrollMs": 1261,
+        "settleMs": 1200,
+        "rafCount": 2
+      },
+      "styledRepair": {
+        "hadStyledTag": true,
+        "styledCssBytes": 7202
+      },
+      "mirrorServed": {
+        "css": 93,
+        "fonts": 1,
+        "img": 0,
+        "doc": 1
+      },
+      "mirrorUnmapped": [],
+      "mirrorUnmappedCount": 0,
+      "stats": {
+        "elementCount": 1354,
+        "blockCount": 1394,
+        "declCount": 1049528,
+        "propsPerElement": 752,
+        "pseudoStats": {
+          "before": 3,
+          "after": 0,
+          "marker": 37
+        },
+        "totalDomElements": 1354
+      },
+      "geometry": {
+        "scrollHeight": 3231,
+        "scrollWidth": 1440
+      },
+      "generatedCssBytes": 31640214,
+      "generatedCssBytesDeduped": 15975369,
+      "taggedHtmlBytes": 363870,
+      "baselineMirrorVsReference": {
+        "sourceWidth": 1440,
+        "sourceHeight": 3231,
+        "cloneWidth": 1440,
+        "cloneHeight": 3231,
+        "widthDelta": 0,
+        "heightDelta": 0,
+        "overlapPixels": 4652640,
+        "changedPixels": 11603,
+        "changedRatio": 0.0025,
+        "commonAreaRatio": 1,
+        "meanDelta": 0.3353,
+        "maxChannelDelta": 247
+      }
+    },
+    "r000007": {
+      "routeId": "r000007",
+      "path": "/pricing",
+      "harvestViewport": "desktop 1440x900 DSF1",
+      "stabilize": {
+        "networkIdleReached": true,
+        "fontsReadyReached": true,
+        "networkIdleMs": 532,
+        "fontsReadyMs": 2,
+        "scrollSteps": 8,
+        "scrollDistancePx": 5460,
+        "scrollMs": 2269,
+        "settleMs": 1200,
+        "rafCount": 2
+      },
+      "styledRepair": {
+        "hadStyledTag": true,
+        "styledCssBytes": 9490
+      },
+      "mirrorServed": {
+        "css": 117,
+        "fonts": 1,
+        "img": 0,
+        "doc": 1
+      },
+      "mirrorUnmapped": [],
+      "mirrorUnmappedCount": 0,
+      "stats": {
+        "elementCount": 2796,
+        "blockCount": 2894,
+        "declCount": 2184224,
+        "propsPerElement": 752,
+        "pseudoStats": {
+          "before": 61,
+          "after": 0,
+          "marker": 37
+        },
+        "totalDomElements": 2796
+      },
+      "geometry": {
+        "scrollHeight": 6360,
+        "scrollWidth": 1440
+      },
+      "generatedCssBytes": 65616503,
+      "generatedCssBytesDeduped": 19985689,
+      "taggedHtmlBytes": 718730,
+      "baselineMirrorVsReference": {
+        "sourceWidth": 1440,
+        "sourceHeight": 6360,
+        "cloneWidth": 1440,
+        "cloneHeight": 6360,
+        "widthDelta": 0,
+        "heightDelta": 0,
+        "overlapPixels": 9158400,
+        "changedPixels": 2988,
+        "changedRatio": 0.0003,
+        "commonAreaRatio": 1,
+        "meanDelta": 0.0338,
+        "maxChannelDelta": 239
+      }
+    }
+  },
+  "pixel": {
+    "r000008": [
+      {
+        "routeId": "r000008",
+        "path": "/security",
+        "variant": "D1-pure",
+        "viewport": "desktop",
+        "viewportCss": "1440x900 DSF1",
+        "referencePng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/substrate/r000008/reference-r000008-desktop.png",
+        "variantPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000008-D1-pure-desktop.png",
+        "diffPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000008-D1-pure-desktop.diff.png",
+        "referenceScrollHeight": null,
+        "variantScrollHeight": 3231,
+        "variantScrollWidth": 1440,
+        "stylesheetCount": 1,
+        "fontsLoaded": [],
+        "mirror": {
+          "served": {
+            "css": 0,
+            "fonts": 0,
+            "img": 0,
+            "doc": 1
+          },
+          "unmapped": 0
+        },
+        "elapsedMs": 3765,
+        "sourceWidth": 1440,
+        "sourceHeight": 3231,
+        "cloneWidth": 1440,
+        "cloneHeight": 3231,
+        "widthDelta": 0,
+        "heightDelta": 0,
+        "overlapPixels": 4652640,
+        "changedPixels": 194484,
+        "changedRatio": 0.0418,
+        "commonAreaRatio": 1,
+        "meanDelta": 3.3713,
+        "maxChannelDelta": 247
+      },
+      {
+        "routeId": "r000008",
+        "path": "/security",
+        "variant": "D2-fonts",
+        "viewport": "desktop",
+        "viewportCss": "1440x900 DSF1",
+        "referencePng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/substrate/r000008/reference-r000008-desktop.png",
+        "variantPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000008-D2-fonts-desktop.png",
+        "diffPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000008-D2-fonts-desktop.diff.png",
+        "referenceScrollHeight": null,
+        "variantScrollHeight": 3231,
+        "variantScrollWidth": 1440,
+        "stylesheetCount": 2,
+        "fontsLoaded": [
+          "Tiempos Headline/unloaded",
+          "Inter Variable/loaded",
+          "Inter Variable/unloaded",
+          "Berkeley Mono/unloaded"
+        ],
+        "mirror": {
+          "served": {
+            "css": 0,
+            "fonts": 1,
+            "img": 0,
+            "doc": 1
+          },
+          "unmapped": 0
+        },
+        "elapsedMs": 3888,
+        "sourceWidth": 1440,
+        "sourceHeight": 3231,
+        "cloneWidth": 1440,
+        "cloneHeight": 3231,
+        "widthDelta": 0,
+        "heightDelta": 0,
+        "overlapPixels": 4652640,
+        "changedPixels": 17536,
+        "changedRatio": 0.0038,
+        "commonAreaRatio": 1,
+        "meanDelta": 0.4834,
+        "maxChannelDelta": 247
+      },
+      {
+        "routeId": "r000008",
+        "path": "/security",
+        "variant": "D2-fonts",
+        "viewport": "wide",
+        "viewportCss": "1920x1080 DSF1",
+        "referencePng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/substrate/r000008/reference-r000008-wide.png",
+        "variantPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000008-D2-fonts-wide.png",
+        "diffPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000008-D2-fonts-wide.diff.png",
+        "referenceScrollHeight": null,
+        "variantScrollHeight": 3231,
+        "variantScrollWidth": 1440,
+        "stylesheetCount": 2,
+        "fontsLoaded": [
+          "Tiempos Headline/unloaded",
+          "Inter Variable/loaded",
+          "Inter Variable/unloaded",
+          "Berkeley Mono/unloaded"
+        ],
+        "mirror": {
+          "served": {
+            "css": 0,
+            "fonts": 1,
+            "img": 0,
+            "doc": 1
+          },
+          "unmapped": 0
+        },
+        "elapsedMs": 3704,
+        "sourceWidth": 1920,
+        "sourceHeight": 3231,
+        "cloneWidth": 1920,
+        "cloneHeight": 3231,
+        "widthDelta": 0,
+        "heightDelta": 0,
+        "overlapPixels": 6203520,
+        "changedPixels": 310780,
+        "changedRatio": 0.0501,
+        "commonAreaRatio": 1,
+        "meanDelta": 4.5447,
+        "maxChannelDelta": 247
+      },
+      {
+        "routeId": "r000008",
+        "path": "/security",
+        "variant": "D2-fonts",
+        "viewport": "mobile",
+        "viewportCss": "390x844 DSF3",
+        "referencePng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/substrate/r000008/reference-r000008-mobile.png",
+        "variantPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000008-D2-fonts-mobile.png",
+        "diffPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000008-D2-fonts-mobile.diff.png",
+        "referenceScrollHeight": null,
+        "variantScrollHeight": 3231,
+        "variantScrollWidth": 1440,
+        "stylesheetCount": 2,
+        "fontsLoaded": [
+          "Tiempos Headline/unloaded",
+          "Inter Variable/loaded",
+          "Inter Variable/unloaded",
+          "Berkeley Mono/unloaded"
+        ],
+        "mirror": {
+          "served": {
+            "css": 0,
+            "fonts": 1,
+            "img": 0,
+            "doc": 1
+          },
+          "unmapped": 0
+        },
+        "elapsedMs": 4249,
+        "sourceWidth": 1170,
+        "sourceHeight": 14349,
+        "cloneWidth": 4320,
+        "cloneHeight": 9693,
+        "widthDelta": 3150,
+        "heightDelta": -4656,
+        "overlapPixels": 11340810,
+        "changedPixels": 909251,
+        "changedRatio": 0.0802,
+        "commonAreaRatio": 0.2708,
+        "meanDelta": 9.1592,
+        "maxChannelDelta": 248
+      }
+    ],
+    "r000007": [
+      {
+        "routeId": "r000007",
+        "path": "/pricing",
+        "variant": "D1-pure",
+        "viewport": "desktop",
+        "viewportCss": "1440x900 DSF1",
+        "referencePng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/substrate/r000007/reference-r000007-desktop.png",
+        "variantPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000007-D1-pure-desktop.png",
+        "diffPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000007-D1-pure-desktop.diff.png",
+        "referenceScrollHeight": null,
+        "variantScrollHeight": 6360,
+        "variantScrollWidth": 1440,
+        "stylesheetCount": 1,
+        "fontsLoaded": [],
+        "mirror": {
+          "served": {
+            "css": 0,
+            "fonts": 0,
+            "img": 0,
+            "doc": 1
+          },
+          "unmapped": 0
+        },
+        "elapsedMs": 5452,
+        "sourceWidth": 1440,
+        "sourceHeight": 6360,
+        "cloneWidth": 1440,
+        "cloneHeight": 6360,
+        "widthDelta": 0,
+        "heightDelta": 0,
+        "overlapPixels": 9158400,
+        "changedPixels": 167503,
+        "changedRatio": 0.0183,
+        "commonAreaRatio": 1,
+        "meanDelta": 1.6923,
+        "maxChannelDelta": 239
+      },
+      {
+        "routeId": "r000007",
+        "path": "/pricing",
+        "variant": "D2-fonts",
+        "viewport": "desktop",
+        "viewportCss": "1440x900 DSF1",
+        "referencePng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/substrate/r000007/reference-r000007-desktop.png",
+        "variantPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000007-D2-fonts-desktop.png",
+        "diffPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000007-D2-fonts-desktop.diff.png",
+        "referenceScrollHeight": null,
+        "variantScrollHeight": 6360,
+        "variantScrollWidth": 1440,
+        "stylesheetCount": 2,
+        "fontsLoaded": [
+          "Tiempos Headline/unloaded",
+          "Inter Variable/loaded",
+          "Inter Variable/unloaded",
+          "Berkeley Mono/unloaded"
+        ],
+        "mirror": {
+          "served": {
+            "css": 0,
+            "fonts": 1,
+            "img": 0,
+            "doc": 1
+          },
+          "unmapped": 0
+        },
+        "elapsedMs": 5832,
+        "sourceWidth": 1440,
+        "sourceHeight": 6360,
+        "cloneWidth": 1440,
+        "cloneHeight": 6360,
+        "widthDelta": 0,
+        "heightDelta": 0,
+        "overlapPixels": 9158400,
+        "changedPixels": 6986,
+        "changedRatio": 0.0008,
+        "commonAreaRatio": 1,
+        "meanDelta": 0.0564,
+        "maxChannelDelta": 239
+      },
+      {
+        "routeId": "r000007",
+        "path": "/pricing",
+        "variant": "D2-fonts",
+        "viewport": "wide",
+        "viewportCss": "1920x1080 DSF1",
+        "referencePng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/substrate/r000007/reference-r000007-wide.png",
+        "variantPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000007-D2-fonts-wide.png",
+        "diffPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000007-D2-fonts-wide.diff.png",
+        "referenceScrollHeight": null,
+        "variantScrollHeight": 6360,
+        "variantScrollWidth": 1440,
+        "stylesheetCount": 2,
+        "fontsLoaded": [
+          "Tiempos Headline/unloaded",
+          "Inter Variable/loaded",
+          "Inter Variable/unloaded",
+          "Berkeley Mono/unloaded"
+        ],
+        "mirror": {
+          "served": {
+            "css": 0,
+            "fonts": 1,
+            "img": 0,
+            "doc": 1
+          },
+          "unmapped": 0
+        },
+        "elapsedMs": 5443,
+        "sourceWidth": 1920,
+        "sourceHeight": 6360,
+        "cloneWidth": 1920,
+        "cloneHeight": 6360,
+        "widthDelta": 0,
+        "heightDelta": 0,
+        "overlapPixels": 12211200,
+        "changedPixels": 515043,
+        "changedRatio": 0.0422,
+        "commonAreaRatio": 1,
+        "meanDelta": 4.0378,
+        "maxChannelDelta": 247
+      },
+      {
+        "routeId": "r000007",
+        "path": "/pricing",
+        "variant": "D2-fonts",
+        "viewport": "mobile",
+        "viewportCss": "390x844 DSF3",
+        "referencePng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/substrate/r000007/reference-r000007-mobile.png",
+        "variantPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000007-D2-fonts-mobile.png",
+        "diffPng": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots/r000007-D2-fonts-mobile.diff.png",
+        "referenceScrollHeight": null,
+        "variantScrollHeight": 6360,
+        "variantScrollWidth": 1440,
+        "stylesheetCount": 2,
+        "fontsLoaded": [
+          "Tiempos Headline/unloaded",
+          "Inter Variable/loaded",
+          "Inter Variable/unloaded",
+          "Berkeley Mono/unloaded"
+        ],
+        "mirror": {
+          "served": {
+            "css": 0,
+            "fonts": 1,
+            "img": 0,
+            "doc": 1
+          },
+          "unmapped": 0
+        },
+        "elapsedMs": 6308,
+        "sourceWidth": 1170,
+        "sourceHeight": 23142,
+        "cloneWidth": 4320,
+        "cloneHeight": 19080,
+        "widthDelta": 3150,
+        "heightDelta": -4062,
+        "overlapPixels": 22323600,
+        "changedPixels": 2141636,
+        "changedRatio": 0.0959,
+        "commonAreaRatio": 0.2708,
+        "meanDelta": 7.4272,
+        "maxChannelDelta": 252
+      }
+    ]
+  },
+  "geometry": {
+    "r000008": [
+      {
+        "routeId": "r000008",
+        "viewport": "desktop",
+        "viewportCss": "1440x900",
+        "sourceScrollHeight": 3231,
+        "sourceScrollWidth": 1440,
+        "variantScrollHeight": 3231,
+        "variantScrollWidth": 1440,
+        "nodesCompared": 1260,
+        "within1pxPct": 96.03,
+        "within4pxPct": 96.03,
+        "offBy10pxPct": 3.97,
+        "displayNoneMismatches": 0,
+        "fontSizeMismatches": 0,
+        "maxDxPx": 5,
+        "maxDyPx": 80,
+        "meanAbsDxPx": 0.2,
+        "meanAbsDyPx": 3.2
+      },
+      {
+        "routeId": "r000008",
+        "viewport": "wide",
+        "viewportCss": "1920x1080",
+        "sourceScrollHeight": 3231,
+        "sourceScrollWidth": 1920,
+        "variantScrollHeight": 3231,
+        "variantScrollWidth": 1440,
+        "nodesCompared": 1260,
+        "within1pxPct": 68.57,
+        "within4pxPct": 68.57,
+        "offBy10pxPct": 31.43,
+        "displayNoneMismatches": 0,
+        "fontSizeMismatches": 0,
+        "maxDxPx": 252,
+        "maxDyPx": 80,
+        "meanAbsDxPx": 73.1,
+        "meanAbsDyPx": 3.2
+      },
+      {
+        "routeId": "r000008",
+        "viewport": "mobile",
+        "viewportCss": "390x844",
+        "sourceScrollHeight": 4783,
+        "sourceScrollWidth": 390,
+        "variantScrollHeight": 3231,
+        "variantScrollWidth": 1440,
+        "nodesCompared": 1260,
+        "within1pxPct": 66.67,
+        "within4pxPct": 66.67,
+        "offBy10pxPct": 33.33,
+        "displayNoneMismatches": 18,
+        "fontSizeMismatches": 1,
+        "maxDxPx": 1201,
+        "maxDyPx": 4701,
+        "meanAbsDxPx": 174.5,
+        "meanAbsDyPx": 326.4
+      }
+    ],
+    "r000007": [
+      {
+        "routeId": "r000007",
+        "viewport": "desktop",
+        "viewportCss": "1440x900",
+        "sourceScrollHeight": 6360,
+        "sourceScrollWidth": 1440,
+        "variantScrollHeight": 6360,
+        "variantScrollWidth": 1440,
+        "nodesCompared": 2676,
+        "within1pxPct": 100,
+        "within4pxPct": 100,
+        "offBy10pxPct": 0,
+        "displayNoneMismatches": 0,
+        "fontSizeMismatches": 0,
+        "maxDxPx": 0,
+        "maxDyPx": 0,
+        "meanAbsDxPx": 0,
+        "meanAbsDyPx": 0
+      },
+      {
+        "routeId": "r000007",
+        "viewport": "wide",
+        "viewportCss": "1920x1080",
+        "sourceScrollHeight": 6360,
+        "sourceScrollWidth": 1920,
+        "variantScrollHeight": 6360,
+        "variantScrollWidth": 1440,
+        "nodesCompared": 2676,
+        "within1pxPct": 36.02,
+        "within4pxPct": 36.02,
+        "offBy10pxPct": 63.98,
+        "displayNoneMismatches": 0,
+        "fontSizeMismatches": 0,
+        "maxDxPx": 240,
+        "maxDyPx": 0,
+        "meanAbsDxPx": 152.5,
+        "meanAbsDyPx": 0
+      },
+      {
+        "routeId": "r000007",
+        "viewport": "mobile",
+        "viewportCss": "390x844",
+        "sourceScrollHeight": 7714,
+        "sourceScrollWidth": 390,
+        "variantScrollHeight": 6360,
+        "variantScrollWidth": 1440,
+        "nodesCompared": 2676,
+        "within1pxPct": 32.32,
+        "within4pxPct": 32.32,
+        "offBy10pxPct": 67.68,
+        "displayNoneMismatches": 203,
+        "fontSizeMismatches": 10,
+        "maxDxPx": 1274,
+        "maxDyPx": 7632,
+        "meanAbsDxPx": 358,
+        "meanAbsDyPx": 1368
+      }
+    ]
+  },
+  "probes": {
+    "routeId": "r000008",
+    "inkRatioReference": [
+      {
+        "file": "reference-r000008-desktop.png",
+        "width": 1440,
+        "height": 3231,
+        "dominantColor": "#08090a",
+        "dominantShare": 0.9473,
+        "nonDominantShare": 0.0527,
+        "distinctColors": 1873
+      },
+      {
+        "file": "reference-r000008-wide.png",
+        "width": 1920,
+        "height": 3231,
+        "dominantColor": "#08090a",
+        "dominantShare": 0.9557,
+        "nonDominantShare": 0.0443,
+        "distinctColors": 1866
+      },
+      {
+        "file": "reference-r000008-mobile.png",
+        "width": 1170,
+        "height": 14349,
+        "dominantColor": "#08090a",
+        "dominantShare": 0.922,
+        "nonDominantShare": 0.078,
+        "distinctColors": 1977
+      }
+    ],
+    "probes": [
+      {
+        "label": "source-css-replay",
+        "hover": {
+          "sel": "/homepage",
+          "color": "rgb(247, 248, 248)",
+          "textDecorationColor": "rgb(247, 248, 248)",
+          "bg": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        "hovered": {
+          "color": "rgb(247, 248, 248)",
+          "textDecorationColor": "rgb(247, 248, 248)",
+          "bg": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        "edit": {
+          "h1WidthBefore": 592,
+          "h1WidthAfter": 592,
+          "h1HeightBefore": 136,
+          "h1HeightAfter": 339,
+          "parentHeightBefore": 242,
+          "parentHeightAfter": 445,
+          "docHeightBefore": 3231,
+          "docHeightAfter": 3434,
+          "overflowsParent": false
+        },
+        "census": {
+          "svgCount": 45,
+          "svgPainted": 45,
+          "beforeCount": 3,
+          "afterCount": 0,
+          "inputCount": 0,
+          "firstLine": 0
+        }
+      },
+      {
+        "label": "variant-D2-full-computed",
+        "hover": {
+          "sel": "/homepage",
+          "color": "rgb(247, 248, 248)",
+          "textDecorationColor": "rgb(247, 248, 248)",
+          "bg": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        "hovered": {
+          "color": "rgb(247, 248, 248)",
+          "textDecorationColor": "rgb(247, 248, 248)",
+          "bg": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        "edit": {
+          "h1WidthBefore": 592,
+          "h1WidthAfter": 592,
+          "h1HeightBefore": 136,
+          "h1HeightAfter": 136,
+          "parentHeightBefore": 242,
+          "parentHeightAfter": 242,
+          "docHeightBefore": 3231,
+          "docHeightAfter": 3231,
+          "overflowsParent": false
+        },
+        "census": {
+          "svgCount": 45,
+          "svgPainted": 45,
+          "beforeCount": 3,
+          "afterCount": 0,
+          "inputCount": 0,
+          "firstLine": 0
+        }
+      }
+    ]
+  },
+  "desktopGeometryOffenders": {
+    "route": "r000008",
+    "count": 50,
+    "note": "All 50 nodes that differ by >10px at the capture viewport lie inside the customer-logo marquee band (y~2300-2480), uniformly offset -80px in y; the animated child .xt7VyG_content also carries a frozen mid-animation transform matrix(1,0,0,1,-75.29,0) with animation-name xt7VyG_scroll present in source and absent from the generated CSS. /pricing had 0 such nodes.",
+    "top": [
+      {
+        "id": "359",
+        "tag": "div",
+        "cls": "_7bwwmq_root",
+        "src": [
+          208,
+          2373,
+          1024,
+          128
+        ],
+        "var": [
+          208,
+          2293,
+          1024,
+          128
+        ],
+        "worst": 80,
+        "anim": "none",
+        "transform": "none",
+        "mask": false
+      },
+      {
+        "id": "360",
+        "tag": "p",
+        "cls": "sc-KOGVz hhRTHt",
+        "src": [
+          232,
+          2373,
+          976,
+          21
+        ],
+        "var": [
+          232,
+          2293,
+          976,
+          21
+        ],
+        "worst": 80,
+        "anim": "none",
+        "transform": "none",
+        "mask": false
+      },
+      {
+        "id": "361",
+        "tag": "div",
+        "cls": "_5mGmSq_root",
+        "src": [
+          231,
+          2401,
+          1,
+          1
+        ],
+        "var": [
+          231,
+          2321,
+          1,
+          1
+        ],
+        "worst": 80,
+        "anim": "none",
+        "transform": "none",
+        "mask": false
+      },
+      {
+        "id": "362",
+        "tag": "a",
+        "cls": "Jhkf-W_customerLink I_mUeq_root",
+        "src": [
+          232,
+          2402,
+          976,
+          99
+        ],
+        "var": [
+          232,
+          2322,
+          976,
+          99
+        ],
+        "worst": 80,
+        "anim": "none",
+        "transform": "none",
+        "mask": false
+      },
+      {
+        "id": "363",
+        "tag": "div",
+        "cls": "Jhkf-W_logos",
+        "src": [
+          232,
+          2402,
+          976,
+          99
+        ],
+        "var": [
+          232,
+          2322,
+          976,
+          99
+        ],
+        "worst": 80,
+        "anim": "none",
+        "transform": "none",
+        "mask": false
+      },
+      {
+        "id": "364",
+        "tag": "div",
+        "cls": "Jhkf-W_marquee xt7VyG_root ImRUSq_root",
+        "src": [
+          232,
+          2426,
+          976,
+          51
+        ],
+        "var": [
+          232,
+          2346,
+          976,
+          51
+        ],
+        "worst": 80,
+        "anim": "none",
+        "transform": "none",
+        "mask": true
+      },
+      {
+        "id": "365",
+        "tag": "div",
+        "cls": "xt7VyG_content",
+        "src": [
+          157,
+          2426,
+          1480,
+          51
+        ],
+        "var": [
+          151,
+          2346,
+          1480,
+          51
+        ],
+        "worst": 80,
+        "anim": "xt7VyG_scroll",
+        "transform": "matrix(1, 0, 0, 1, -75.2903, 0)",
+        "mask": false
+      },
+      {
+        "id": "366",
+        "tag": "svg",
+        "cls": "",
+        "src": [
+          157,
+          2426,
+          164,
+          51
+        ],
+        "var": [
+          151,
+          2346,
+          164,
+          51
+        ],
+        "worst": 80,
+        "anim": "none",
+        "transform": "none",
+        "mask": false
+      },
+      {
+        "id": "367",
+        "tag": "path",
+        "cls": "",
+        "src": [
+          191,
+          2438,
+          96,
+          26
+        ],
+        "var": [
+          186,
+          2358,
+          96,
+          26
+        ],
+        "worst": 80,
+        "anim": "none",
+        "transform": "none",
+        "mask": false
+      },
+      {
+        "id": "368",
+        "tag": "svg",
+        "cls": "",
+        "src": [
+          345,
+          2426,
+          164,
+          51
+        ],
+        "var": [
+          339,
+          2346,
+          164,
+          51
+        ],
+        "worst": 80,
+        "anim": "none",
+        "transform": "none",
+        "mask": false
+      },
+      {
+        "id": "369",
+        "tag": "path",
+        "cls": "",
+        "src": [
+          379,
+          2438,
+          95,
+          25
+        ],
+        "var": [
+          374,
+          2358,
+          95,
+          25
+        ],
+        "worst": 80,
+        "anim": "none",
+        "transform": "none",
+        "mask": false
+      },
+      {
+        "id": "370",
+        "tag": "svg",
+        "cls": "",
+        "src": [
+          533,
+          2426,
+          164,
+          49
+        ],
+        "var": [
+          527,
+          2346,
+          164,
+          49
+        ],
+        "worst": 80,
+        "anim": "none",
+        "transform": "none",
+        "mask": false
+      }
+    ]
+  },
+  "artifactCost": {
+    "currentPipeline": {
+      "file": "data/linear.app/reconstructions/2026-08-25T20-30-33-313Z/app/public/wr/generated-styles.css",
+      "bytes": 11267135,
+      "rules": 9203,
+      "declarations": 512972,
+      "coverage": "8 routes x 2 viewports = 16 route-viewport pairs",
+      "bytesPerRouteViewportPair": 704196,
+      "mediaQueries": 710,
+      "pseudoBeforeRules": 2165,
+      "hoverRules": 0,
+      "fontFaceRules": 0,
+      "keyframes": 0
+    },
+    "variantD": {
+      "r000008": {
+        "bytes": 31640214,
+        "gzipBytes": 466284,
+        "dedupedBytes": 15975369,
+        "rules": 1394,
+        "declarations": 1049528,
+        "elements": 1354,
+        "propertiesPerElement": 752,
+        "htmlBytes": 363870,
+        "coverage": "1 route x 1 viewport"
+      },
+      "r000007": {
+        "bytes": 65616503,
+        "gzipBytes": 1038198,
+        "dedupedBytes": 19985689,
+        "rules": 2894,
+        "declarations": 2184224,
+        "elements": 2796,
+        "propertiesPerElement": 752,
+        "htmlBytes": 718730,
+        "coverage": "1 route x 1 viewport"
+      },
+      "meanBytesPerRouteViewportPair": 48628358,
+      "ratioVsCurrentPipelinePerPair": 69.1,
+      "note": "And a frozen clone needs one INDEPENDENT document per viewport, so a 2-viewport site multiplies this again; the current pipeline covers both viewports inside one 11.3MB file."
+    }
+  },
+  "cssFeatureCensus": {
+    "note": "regex census over the substrate's own stylesheets vs the generated full-computed CSS. ':before' in the generated column is the -webkit-ruby-position:before longhand, not a pseudo rule; the real pseudo rule counts come from the harvest stats.",
+    "r000008": {
+      "source": {
+        "hover": 381,
+        "focus": 63,
+        "active": 62,
+        "mediaQuery": 805,
+        "container": 16,
+        "supports": 10,
+        "keyframes": 76,
+        "layer": 230,
+        "fontFace": 4,
+        "selection": 8,
+        "placeholder": 9,
+        "scrollbar": 34,
+        "viewTransition": 5
+      },
+      "generated": {
+        "hover": 0,
+        "focus": 0,
+        "active": 0,
+        "mediaQuery": 0,
+        "container": 0,
+        "supports": 0,
+        "keyframes": 0,
+        "layer": 0,
+        "fontFace": 0,
+        "selection": 0,
+        "placeholder": 0,
+        "scrollbar": 0,
+        "viewTransition": 0,
+        "pseudoBeforeRules": 3,
+        "pseudoAfterRules": 0,
+        "pseudoMarkerRules": 37
+      }
+    },
+    "r000007": {
+      "source": {
+        "hover": 404,
+        "focus": 64,
+        "active": 67,
+        "mediaQuery": 938,
+        "container": 17,
+        "supports": 12,
+        "keyframes": 90,
+        "layer": 262,
+        "fontFace": 4,
+        "selection": 8,
+        "placeholder": 11,
+        "scrollbar": 35,
+        "viewTransition": 5
+      },
+      "generated": {
+        "hover": 0,
+        "focus": 0,
+        "active": 0,
+        "mediaQuery": 0,
+        "container": 0,
+        "supports": 0,
+        "keyframes": 0,
+        "layer": 0,
+        "fontFace": 0,
+        "selection": 0,
+        "placeholder": 0,
+        "scrollbar": 0,
+        "viewTransition": 0,
+        "pseudoBeforeRules": 61,
+        "pseudoAfterRules": 0,
+        "pseudoMarkerRules": 37
+      }
+    }
+  },
+  "measurementCaveat": {
+    "inkRatio": [
+      {
+        "file": "reference-r000008-desktop.png",
+        "width": 1440,
+        "height": 3231,
+        "dominantColor": "#08090a",
+        "dominantShare": 0.9473,
+        "nonDominantShare": 0.0527,
+        "distinctColors": 1873
+      },
+      {
+        "file": "reference-r000008-wide.png",
+        "width": 1920,
+        "height": 3231,
+        "dominantColor": "#08090a",
+        "dominantShare": 0.9557,
+        "nonDominantShare": 0.0443,
+        "distinctColors": 1866
+      },
+      {
+        "file": "reference-r000008-mobile.png",
+        "width": 1170,
+        "height": 14349,
+        "dominantColor": "#08090a",
+        "dominantShare": 0.922,
+        "nonDominantShare": 0.078,
+        "distinctColors": 1977
+      }
+    ],
+    "interpretation": "linear.app is a dark page: 94.7% of the /security desktop reference is one flat colour (#08090a). changedRatio therefore saturates near 0.05 and a 'small' 0.0501 at 1920 means roughly 95% of all non-background pixels differ. commonAreaRatio and the geometry table, not changedRatio, are the honest signal at off-capture viewports."
+  },
+  "paths": {
+    "expDir": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed",
+    "shots": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/shots",
+    "metrics": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/metrics",
+    "build": "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/exp-D-full-computed/build",
+    "evidence": "/Users/woops/projects/web-recon/docs/result/28.5-visual-fidelity-evidence/agentD-full-computed"
+  }
+}

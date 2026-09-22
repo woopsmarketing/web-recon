@@ -1,0 +1,393 @@
+{
+  "schema": "task285b-attribution-v1",
+  "producedAt": "2026-08-30T16:29:07.000047Z",
+  "referenceFamily": "data/linear.app/reconstruction-qa/2026-08-30T15-57-54-926Z originals (same-session)",
+  "comparability": "SAME_REFERENCE_COMPARABLE between old and new diffs; old clone built from 2026-08-25 source (drift caveat)",
+  "comparabilityDetail": "SAME_REFERENCE_COMPARABLE between old and new diffs: both sides are diffed against the IDENTICAL live-original PNG bytes captured in the 2026-08-30T15-57-54-926Z QA session, so the reference is held fixed and old-vs-new channel deltas are attributable to the clone. CAVEAT: the old clone was generated from the 2026-08-25 observation/site-spec source, five days older than the reference capture, so any real linear.app drift in that window is charged to the old clone. The comparison therefore DISADVANTAGES the old build; improvements it shows are a lower bound, and any place where the old build wins is not explainable by drift.",
+  "inputs": {
+    "newReconstruction": "data/linear.app/reconstructions/2026-08-30T15-56-29-877Z",
+    "newQaRun": "data/linear.app/reconstruction-qa/2026-08-30T15-57-54-926Z",
+    "oldReconstruction": "data/linear.app/reconstructions/2026-08-25T20-30-33-313Z",
+    "oldAppServedFrom": "tmp/wr285b/attribution/old-app (byte copy of the old app/ dir; the data/ original was never served, built or modified)",
+    "oldAppRebuilt": false,
+    "diffModule": "src/reconstruction-qa/screenshot-diff.ts (current, 28.5B change-6 channels)",
+    "captureModule": "src/reconstruction-qa/capture-clone.ts via capture-page.ts (newQaContext → gotoQa → stabilize → runCapture → captureScreenshot fullPage png), identical to how QA captures clones",
+    "viewports": {
+      "desktop": "1440x900 DSF1",
+      "mobile": "390x844 DSF3 (PNG width 1170)"
+    }
+  },
+  "routeMapVerified": {
+    "source": "data/linear.app/reconstruction-qa/2026-08-30T15-57-54-926Z/pages/pNNNNNN/desktop.json .url + app/reconstruction-data/route-map.json",
+    "map": {
+      "p000001": "/",
+      "p000002": "/changelog",
+      "p000003": "/customers",
+      "p000004": "/customers/automattic",
+      "p000005": "/integrations",
+      "p000006": "/plan",
+      "p000007": "/pricing",
+      "p000008": "/security"
+    },
+    "note": "verified, not assumed; old and new route-map.json agree on routeId→path ordering"
+  },
+  "routes": {
+    "pricing": {
+      "pageId": "p000007",
+      "route": "/pricing",
+      "viewport": "desktop",
+      "sourceObservationDriftSnapshotVsOriginal": {
+        "at1": 0,
+        "at16": 0,
+        "de76jnd": 0,
+        "de76visible": 0
+      },
+      "old": {
+        "at1": 0.3914,
+        "at16": 0.0295,
+        "de76jnd": 0.3794,
+        "de76visible": 0.0279,
+        "de76mean": 3.0826,
+        "de76max": 97.5721,
+        "meanMaxDelta": 8.1354,
+        "meanAbsoluteRgbDelta": 8.0356,
+        "maxChannelDelta": 247,
+        "common": 0.9981,
+        "heightDelta": -12,
+        "widthDelta": 0,
+        "originalHeight": 6360,
+        "cloneHeight": 6348,
+        "overlapPixels": 9141120,
+        "changedPixels": 3577407,
+        "changedPixelsAt16": 269529,
+        "de76JndPixels": 3468476,
+        "de76VisiblePixels": 254697
+      },
+      "new": {
+        "at1": 0.0266,
+        "at16": 0.0158,
+        "de76jnd": 0.0172,
+        "de76visible": 0.0146,
+        "de76mean": 0.7039,
+        "de76max": 95.0772,
+        "meanMaxDelta": 1.7595,
+        "meanAbsoluteRgbDelta": 1.715,
+        "maxChannelDelta": 239,
+        "common": 1,
+        "heightDelta": 0,
+        "widthDelta": 0,
+        "originalHeight": 6360,
+        "cloneHeight": 6360,
+        "overlapPixels": 9158400,
+        "changedPixels": 243549,
+        "changedPixelsAt16": 144996,
+        "de76JndPixels": 157861,
+        "de76VisiblePixels": 134004
+      },
+      "verdictNumbers": "at1 0.3914→0.0266 (-0.3648), at16 0.0295→0.0158 (-0.0137), dE76>JND 0.3794→0.0172 (-0.3622), dE76>10 0.0279→0.0146 (-0.0133), dE76mean 3.0826→0.7039 (-2.3787), meanMaxDelta 8.1354→1.7595 (-6.3759), common 0.9981→1, heightDelta -12→0",
+      "deltas": {
+        "at1": -0.3648,
+        "at16": -0.0137,
+        "de76jnd": -0.3622,
+        "de76visible": -0.0133,
+        "de76mean": -2.3787,
+        "meanMaxDelta": -6.3759,
+        "meanAbsoluteRgbDelta": -6.3206,
+        "common": 0.0019
+      },
+      "files": {
+        "source": "docs/result/28.5B-attribution/source-pricing-1440.png",
+        "oldClone": "docs/result/28.5B-attribution/old-clone-pricing-1440.png",
+        "newClone": "docs/result/28.5B-attribution/new-clone-pricing-1440.png",
+        "oldDiff": "docs/result/28.5B-attribution/old-diff-pricing-1440.png",
+        "newDiff": "docs/result/28.5B-attribution/new-diff-pricing-1440.png"
+      },
+      "newMetricProvenance": "reused verbatim from QA pages/p000007/desktop.json screenshots[pair=original-clone]; all 28.5B channels present, nothing recomputed",
+      "oldMetricProvenance": "computed now by src/reconstruction-qa/screenshot-diff.ts measurePair(pair=original-clone, a=QA live-original PNG, b=old-clone capture)"
+    },
+    "changelog": {
+      "pageId": "p000002",
+      "route": "/changelog",
+      "viewport": "desktop",
+      "sourceObservationDriftSnapshotVsOriginal": {
+        "at1": 0,
+        "at16": 0,
+        "de76jnd": 0,
+        "de76visible": 0
+      },
+      "old": {
+        "at1": 0.0885,
+        "at16": 0.0471,
+        "de76jnd": 0.0641,
+        "de76visible": 0.041,
+        "de76mean": 2.3744,
+        "de76max": 112.4025,
+        "meanMaxDelta": 6.0068,
+        "meanAbsoluteRgbDelta": 5.7285,
+        "maxChannelDelta": 248,
+        "common": 1,
+        "heightDelta": 1,
+        "widthDelta": 0,
+        "originalHeight": 25342,
+        "cloneHeight": 25343,
+        "overlapPixels": 36492480,
+        "changedPixels": 3231274,
+        "changedPixelsAt16": 1718657,
+        "de76JndPixels": 2339532,
+        "de76VisiblePixels": 1494973
+      },
+      "new": {
+        "at1": 0.0746,
+        "at16": 0.0417,
+        "de76jnd": 0.0533,
+        "de76visible": 0.0343,
+        "de76mean": 1.7572,
+        "de76max": 97.5721,
+        "meanMaxDelta": 4.457,
+        "meanAbsoluteRgbDelta": 4.2221,
+        "maxChannelDelta": 247,
+        "common": 1,
+        "heightDelta": 1,
+        "widthDelta": 0,
+        "originalHeight": 25342,
+        "cloneHeight": 25343,
+        "overlapPixels": 36492480,
+        "changedPixels": 2723892,
+        "changedPixelsAt16": 1519948,
+        "de76JndPixels": 1945750,
+        "de76VisiblePixels": 1251084
+      },
+      "verdictNumbers": "at1 0.0885→0.0746 (-0.0139), at16 0.0471→0.0417 (-0.0054), dE76>JND 0.0641→0.0533 (-0.0108), dE76>10 0.041→0.0343 (-0.0067), dE76mean 2.3744→1.7572 (-0.6172), meanMaxDelta 6.0068→4.457 (-1.5498), common 1→1, heightDelta 1→1",
+      "deltas": {
+        "at1": -0.0139,
+        "at16": -0.0054,
+        "de76jnd": -0.0108,
+        "de76visible": -0.0067,
+        "de76mean": -0.6172,
+        "meanMaxDelta": -1.5498,
+        "meanAbsoluteRgbDelta": -1.5064,
+        "common": 0
+      },
+      "files": {
+        "source": "docs/result/28.5B-attribution/source-changelog-1440.png",
+        "oldClone": "docs/result/28.5B-attribution/old-clone-changelog-1440.png",
+        "newClone": "docs/result/28.5B-attribution/new-clone-changelog-1440.png",
+        "oldDiff": "docs/result/28.5B-attribution/old-diff-changelog-1440.png",
+        "newDiff": "docs/result/28.5B-attribution/new-diff-changelog-1440.png"
+      },
+      "newMetricProvenance": "reused verbatim from QA pages/p000002/desktop.json screenshots[pair=original-clone]; all 28.5B channels present, nothing recomputed",
+      "oldMetricProvenance": "computed now by src/reconstruction-qa/screenshot-diff.ts measurePair(pair=original-clone, a=QA live-original PNG, b=old-clone capture)"
+    },
+    "security": {
+      "pageId": "p000008",
+      "route": "/security",
+      "viewport": "desktop",
+      "sourceObservationDriftSnapshotVsOriginal": {
+        "at1": 0.0025,
+        "at16": 0.0022,
+        "de76jnd": 0.0024,
+        "de76visible": 0.0021
+      },
+      "old": {
+        "at1": 0.0462,
+        "at16": 0.0382,
+        "de76jnd": 0.0422,
+        "de76visible": 0.0348,
+        "de76mean": 1.6138,
+        "de76max": 97.5721,
+        "meanMaxDelta": 4.0139,
+        "meanAbsoluteRgbDelta": 3.9013,
+        "maxChannelDelta": 247,
+        "common": 1,
+        "heightDelta": 0,
+        "widthDelta": 0,
+        "originalHeight": 3231,
+        "cloneHeight": 3231,
+        "overlapPixels": 4652640,
+        "changedPixels": 214803,
+        "changedPixelsAt16": 177901,
+        "de76JndPixels": 196542,
+        "de76VisiblePixels": 162050
+      },
+      "new": {
+        "at1": 0.0418,
+        "at16": 0.0346,
+        "de76jnd": 0.0383,
+        "de76visible": 0.0316,
+        "de76mean": 1.3871,
+        "de76max": 97.5721,
+        "meanMaxDelta": 3.4428,
+        "meanAbsoluteRgbDelta": 3.3406,
+        "maxChannelDelta": 247,
+        "common": 1,
+        "heightDelta": 0,
+        "widthDelta": 0,
+        "originalHeight": 3231,
+        "cloneHeight": 3231,
+        "overlapPixels": 4652640,
+        "changedPixels": 194418,
+        "changedPixelsAt16": 160781,
+        "de76JndPixels": 178023,
+        "de76VisiblePixels": 146962
+      },
+      "verdictNumbers": "at1 0.0462→0.0418 (-0.0044), at16 0.0382→0.0346 (-0.0036), dE76>JND 0.0422→0.0383 (-0.0039), dE76>10 0.0348→0.0316 (-0.0032), dE76mean 1.6138→1.3871 (-0.2267), meanMaxDelta 4.0139→3.4428 (-0.5711), common 1→1, heightDelta 0→0",
+      "deltas": {
+        "at1": -0.0044,
+        "at16": -0.0036,
+        "de76jnd": -0.0039,
+        "de76visible": -0.0032,
+        "de76mean": -0.2267,
+        "meanMaxDelta": -0.5711,
+        "meanAbsoluteRgbDelta": -0.5607,
+        "common": 0
+      },
+      "files": {
+        "source": "docs/result/28.5B-attribution/source-security-1440.png",
+        "oldClone": "docs/result/28.5B-attribution/old-clone-security-1440.png",
+        "newClone": "docs/result/28.5B-attribution/new-clone-security-1440.png",
+        "oldDiff": "docs/result/28.5B-attribution/old-diff-security-1440.png",
+        "newDiff": "docs/result/28.5B-attribution/new-diff-security-1440.png"
+      },
+      "newMetricProvenance": "reused verbatim from QA pages/p000008/desktop.json screenshots[pair=original-clone]; all 28.5B channels present, nothing recomputed",
+      "oldMetricProvenance": "computed now by src/reconstruction-qa/screenshot-diff.ts measurePair(pair=original-clone, a=QA live-original PNG, b=old-clone capture)"
+    },
+    "pricingMobile": {
+      "pageId": "p000007",
+      "route": "/pricing",
+      "viewport": "mobile",
+      "sourceObservationDriftSnapshotVsOriginal": {
+        "at1": 0.0013,
+        "at16": 0.0012,
+        "de76jnd": 0.0013,
+        "de76visible": 0.0012
+      },
+      "old": {
+        "at1": 0.3345,
+        "at16": 0.0343,
+        "de76jnd": 0.3308,
+        "de76visible": 0.0325,
+        "de76mean": 3.1605,
+        "de76max": 97.5721,
+        "meanMaxDelta": 8.2981,
+        "meanAbsoluteRgbDelta": 8.1568,
+        "maxChannelDelta": 247,
+        "common": 0.9997,
+        "heightDelta": -6,
+        "widthDelta": 0,
+        "originalHeight": 23142,
+        "cloneHeight": 23136,
+        "overlapPixels": 27069120,
+        "changedPixels": 9054379,
+        "changedPixelsAt16": 929465,
+        "de76JndPixels": 8954336,
+        "de76VisiblePixels": 879553
+      },
+      "new": {
+        "at1": 0.0355,
+        "at16": 0.027,
+        "de76jnd": 0.0283,
+        "de76visible": 0.0257,
+        "de76mean": 1.452,
+        "de76max": 97.5721,
+        "meanMaxDelta": 3.6417,
+        "meanAbsoluteRgbDelta": 3.5381,
+        "maxChannelDelta": 247,
+        "common": 1,
+        "heightDelta": 0,
+        "widthDelta": 0,
+        "originalHeight": 23142,
+        "cloneHeight": 23142,
+        "overlapPixels": 27076140,
+        "changedPixels": 960223,
+        "changedPixelsAt16": 730595,
+        "de76JndPixels": 767547,
+        "de76VisiblePixels": 695705
+      },
+      "verdictNumbers": "at1 0.3345→0.0355 (-0.299), at16 0.0343→0.027 (-0.0073), dE76>JND 0.3308→0.0283 (-0.3025), dE76>10 0.0325→0.0257 (-0.0068), dE76mean 3.1605→1.452 (-1.7085), meanMaxDelta 8.2981→3.6417 (-4.6564), common 0.9997→1, heightDelta -6→0",
+      "deltas": {
+        "at1": -0.299,
+        "at16": -0.0073,
+        "de76jnd": -0.3025,
+        "de76visible": -0.0068,
+        "de76mean": -1.7085,
+        "meanMaxDelta": -4.6564,
+        "meanAbsoluteRgbDelta": -4.6187,
+        "common": 0.0003
+      },
+      "files": {
+        "source": "docs/result/28.5B-attribution/source-pricing-390.png",
+        "oldClone": "docs/result/28.5B-attribution/old-clone-pricing-390.png",
+        "newClone": "docs/result/28.5B-attribution/new-clone-pricing-390.png",
+        "oldDiff": "docs/result/28.5B-attribution/old-diff-pricing-390.png",
+        "newDiff": "docs/result/28.5B-attribution/new-diff-pricing-390.png"
+      },
+      "newMetricProvenance": "reused verbatim from QA pages/p000007/mobile.json screenshots[pair=original-clone]; all 28.5B channels present, nothing recomputed",
+      "oldMetricProvenance": "computed now by src/reconstruction-qa/screenshot-diff.ts measurePair(pair=original-clone, a=QA live-original PNG, b=old-clone capture)"
+    }
+  },
+  "files": [
+    "docs/result/28.5B-attribution/new-clone-changelog-1440.png",
+    "docs/result/28.5B-attribution/new-clone-pricing-1440.png",
+    "docs/result/28.5B-attribution/new-clone-pricing-390.png",
+    "docs/result/28.5B-attribution/new-clone-security-1440.png",
+    "docs/result/28.5B-attribution/new-diff-changelog-1440.png",
+    "docs/result/28.5B-attribution/new-diff-pricing-1440.png",
+    "docs/result/28.5B-attribution/new-diff-pricing-390.png",
+    "docs/result/28.5B-attribution/new-diff-security-1440.png",
+    "docs/result/28.5B-attribution/old-clone-changelog-1440.png",
+    "docs/result/28.5B-attribution/old-clone-pricing-1440.png",
+    "docs/result/28.5B-attribution/old-clone-pricing-390.png",
+    "docs/result/28.5B-attribution/old-clone-security-1440.png",
+    "docs/result/28.5B-attribution/old-diff-changelog-1440.png",
+    "docs/result/28.5B-attribution/old-diff-pricing-1440.png",
+    "docs/result/28.5B-attribution/old-diff-pricing-390.png",
+    "docs/result/28.5B-attribution/old-diff-security-1440.png",
+    "docs/result/28.5B-attribution/source-changelog-1440.png",
+    "docs/result/28.5B-attribution/source-pricing-1440.png",
+    "docs/result/28.5B-attribution/source-pricing-390.png",
+    "docs/result/28.5B-attribution/source-security-1440.png",
+    "docs/result/28.5B-attribution/manifest.json"
+  ],
+  "anomalies": [
+    {
+      "id": "a1",
+      "severity": "context",
+      "text": "SAME_REFERENCE_COMPARABLE between old and new diffs: both sides are diffed against the IDENTICAL live-original PNG bytes captured in the 2026-08-30T15-57-54-926Z QA session, so the reference is held fixed and old-vs-new channel deltas are attributable to the clone. CAVEAT: the old clone was generated from the 2026-08-25 observation/site-spec source, five days older than the reference capture, so any real linear.app drift in that window is charged to the old clone. The comparison therefore DISADVANTAGES the old build; improvements it shows are a lower bound, and any place where the old build wins is not explainable by drift."
+    },
+    {
+      "id": "height-pricing",
+      "severity": "finding",
+      "text": "pricing: full-page height parity changed — old clone heightDelta -12 (common 0.9981), new clone heightDelta 0 (common 1). The old clone was 12px shorter than the live original; the new clone matches exactly."
+    },
+    {
+      "id": "height-pricingMobile",
+      "severity": "finding",
+      "text": "pricingMobile: full-page height parity changed — old clone heightDelta -6 (common 0.9997), new clone heightDelta 0 (common 1). The old clone was 6px shorter than the live original; the new clone matches exactly."
+    },
+    {
+      "id": "changelog-height",
+      "severity": "note",
+      "text": "changelog: BOTH old and new clones are +1px taller than the live original (25343 vs 25342) — an unchanged, pre-existing 1px full-page height difference, not affected by the six changes."
+    },
+    {
+      "id": "source-drift",
+      "severity": "note",
+      "text": "snapshot-original drift in the reference session is non-zero for security desktop (@1 0.0025, dE76>JND 0.0024) and pricing mobile (@1 0.0013, dE76>JND 0.0013), and zero for pricing desktop and changelog. Both old and new diffs use the SAME live-original bytes, so this drift cancels out of the old-vs-new comparison; it only bounds how much of each absolute number is site movement rather than clone error."
+    },
+    {
+      "id": "at1-noise",
+      "severity": "note",
+      "text": "The @1 channel behaves exactly as 28.5A predicted: for pricing desktop it reads 0.3914 (old) vs 0.0266 (new) while the amplitude-gated @16 channel reads 0.0295 vs 0.0158. The @1 collapse is dominated by a sub-perceptual whole-page shift in the old clone (dE76>JND 0.3794 with dE76>10 only 0.0279), i.e. a large area moved a tiny, near-threshold amount. Read @16 and dE76>10 for visible regression; @1 alone would overstate the improvement."
+    },
+    {
+      "id": "no-recompute",
+      "severity": "note",
+      "text": "No new-side metric was recomputed: every 28.5B channel (@1, @16, dE76 mean/max/JND/visible, meanMaxChannelDelta, commonAreaRatio, width/height deltas) is already stored in the QA page JSONs, and the QA diff PNGs were copied, not regenerated."
+    },
+    {
+      "id": "clean-load",
+      "severity": "note",
+      "text": "All four old-clone captures returned HTTP 200 with 0 console errors and 0 page errors, so no capture-failure artifact is mixed into the old numbers."
+    }
+  ]
+}

@@ -2,8 +2,16 @@ import { z } from "zod";
 import {
   ATTR_WHITELIST,
   BoundingBoxSchema,
+  FamilySwitchBisectionSchema,
+  InitialDocumentSchema,
+  InlineStyleProvenanceCountsSchema,
+  InlineStyleProvenanceSchema,
+  InlineStyleSchema,
+  LayoutProbeFingerprintSchema,
   MatchedLayoutRuleSchema,
+  RootCustomPropertiesSchema,
   ScrollStateSchema,
+  StylesheetCoverageSchema,
   ViewportProfileSchema,
 } from "../observer/types.js";
 import { PageFamilyTypeSchema } from "../selector/types.js";
@@ -75,8 +83,77 @@ import { ActionStatusSchema, DiffCategorySchema } from "../interaction-explorer/
  * (the resolved static host a mounted region attaches to), `containsTrigger`
  * (the region is an ancestor of its own trigger, so its contents must not be
  * replaced at runtime), and `captureExpanded`. Every addition is OPTIONAL.
+ *
+ * v5 (Task 28.6, Lane W2): `ViewportPageSpec.authoredBreakpoints` — the
+ * viewport breakpoints this viewport's authored `@media` conditions name,
+ * folded into a weighted whole-pixel histogram. OPTIONAL, like every addition
+ * since v2, so every v2–v4 document on disk is a valid v5 one.
+ *
+ * WHY THIS BUMPS despite being purely additive. The rule this constant states
+ * is "bumped when any persisted SiteSpec shape changes", and v3 and v4 were
+ * both optional-only additions that bumped. But the specific reason here is
+ * that an ABSENT `authoredBreakpoints` is ambiguous without the version: under
+ * v4 it means "compiled before this field existed", under v5 it means "this
+ * viewport carried no authored declaration at all AND nothing was truncated
+ * away" (a viewport whose every node was truncated to zero declarations gets a
+ * record, not an absence — see {@link AuthoredBreakpointsSchema}). Those are
+ * opposite facts —
+ * one is a gap in the tooling, the other a fact about the page — and a consumer
+ * that snaps responsive band edges to this histogram must be able to tell them
+ * apart. Not bumping would make the field's own absence a silent ambiguity,
+ * which is the failure mode the field exists to remove. The cost is nil:
+ * {@link READABLE_SCHEMA_VERSIONS} keeps 2–4, so nothing on disk is invalidated,
+ * and every downstream version gate either derives from that list
+ * (`SUPPORTED_SITESPEC_SCHEMA_VERSIONS`) or compares a SiteSpec against the
+ * version its own manifest recorded (`recon-template` lineage), never against a
+ * hard-coded 4.
+ *
+ * v6 (Task 28.6, Lane CORE / C2): `PageSpec.layoutProbeMobile` — the
+ * MOBILE-context multi-width layout probe's attachment status, and with it the
+ * `probe` arrays on the MOBILE viewport's element nodes. The Observer has been
+ * writing `layout-probe-mobile.json` on every page since 28.6 W1.4 (1.2 MB on
+ * one hobbang.net page, 852 elements x 8 widths) and NOTHING downstream read
+ * it: `compilePage()` read `observation.layoutProbe` alone, so the mobile probe
+ * never crossed this boundary and the mobile subtree carried no width evidence
+ * at all.
+ *
+ * WHY THIS BUMPS, by the same argument v5 used. An absent `layoutProbeMobile`
+ * is ambiguous without the version: under v5 it means "compiled before the
+ * field existed", under v6 it means "the observation carried no mobile probe,
+ * or the probe did not align to this page's mobile element walk". A consumer
+ * that infers mobile layout rules must be able to tell "this page has no mobile
+ * width evidence" from "this compiler could not carry any", because the first
+ * is a fact about the page and the second is a gap in the tooling. As with v5
+ * the addition is OPTIONAL and {@link READABLE_SCHEMA_VERSIONS} keeps 2-5, so
+ * nothing on disk is invalidated.
  */
-export const SCHEMA_VERSION = 4 as const;
+/*
+ * NOT BUMPED by Task 28.7 §27, which added `PageSpec.layoutProbe.fingerprints`
+ * and `PageSpec.layoutProbeMobile.fingerprints` — the per-width DOM-FAMILY
+ * FINGERPRINT the layout probe now takes at every width it already visits.
+ *
+ * The rule this constant states is "bumped when any persisted SiteSpec shape
+ * changes", and v3-v6 were all optional-only additions that bumped, so the
+ * exception has to earn itself. The v5 and v6 arguments were both the SAME
+ * argument: an absent field meant two OPPOSITE things either side of the bump —
+ * "this compiler could not carry it" versus "this page genuinely has none" — and
+ * a consumer had to act differently on each.
+ *
+ * That argument does not hold here, and the difference is not cosmetic. Both v5
+ * and v6 carried something the OBSERVATION already had on disk and the compiler
+ * had been throwing away, so the two readings could both be true of the same
+ * artifact. The fingerprint exists in NO observation written before §27, so an
+ * absent `fingerprints` has exactly one cause under either version — the run
+ * that produced it did not measure one — and the only consumer
+ * (`tree-switch.ts`) behaves identically under both readings: no fingerprint
+ * evidence, fall back to the geometry ranking. A version bump that cannot change
+ * any consumer's behaviour buys nothing, and it would invalidate the repo check
+ * that deliberately pins this value.
+ *
+ * If a later task makes the fingerprint's absence mean something a consumer must
+ * act on, that task bumps.
+ */
+export const SCHEMA_VERSION = 6 as const;
 
 /**
  * SiteSpec shapes this codebase can still READ (Task 16, item 105).
@@ -88,12 +165,14 @@ export const SCHEMA_VERSION = 4 as const;
  *
  * Producers ALWAYS write {@link SCHEMA_VERSION}; only the reader is permissive.
  */
-export const READABLE_SCHEMA_VERSIONS = [2, 3, 4] as const;
+export const READABLE_SCHEMA_VERSIONS = [2, 3, 4, 5, 6] as const;
 
 export const ReadableSchemaVersionSchema = z.union([
   z.literal(2),
   z.literal(3),
   z.literal(4),
+  z.literal(5),
+  z.literal(6),
 ]);
 
 /**
@@ -658,6 +737,24 @@ export const ElementSpecNodeSchema = z.object({
   authoredLayout: z.array(MatchedLayoutRuleSchema).optional(),
   authoredLayoutTruncated: z.boolean().optional(),
   /**
+   * Responsive Core P0 §C1.7 — the observer's cascade-aware cap counters
+   * (`layoutRulesMatched` / `layoutRulesKept`), carried verbatim.
+   */
+  authoredLayoutMatched: z.number().int().nonnegative().optional(),
+  authoredLayoutKept: z.number().int().nonnegative().optional(),
+  /**
+   * Responsive Core P0 §C1.7 — the element's RUNTIME inline style at the truth
+   * width, carried verbatim from the observation. The `style` ATTRIBUTE is
+   * still never an entry of `attributes`.
+   */
+  inlineStyle: InlineStyleSchema.optional(),
+  /**
+   * Responsive Core P0 §C1.4 — where each inline declaration came from
+   * (initial document vs runtime, and whether it varies across probe widths).
+   * Present exactly when `inlineStyle` has declarations.
+   */
+  inlineStyleProvenance: InlineStyleProvenanceSchema.optional(),
+  /**
    * Task 17 §8 — this node's box at each of the page's `layoutProbe.widths`
    * (x / width / visible, index-aligned). Present only on the desktop tree of
    * a page whose probe aligned exactly.
@@ -667,6 +764,12 @@ export const ElementSpecNodeSchema = z.object({
       x: z.array(z.number()),
       w: z.array(z.number()),
       v: z.array(z.union([z.literal(0), z.literal(1)])),
+      /**
+       * Responsive Core P0 §C1.7 — per width, the index into the owning probe
+       * summary's `inlineStyleTable` (-1 = no `style` attribute / disconnected).
+       * Present only when the probe carried `s` for every width.
+       */
+      s: z.array(z.number().int().min(-1)).optional(),
     })
     .optional(),
 
@@ -790,6 +893,188 @@ export const DocumentDimensionsSchema = z.object({
 export type DocumentDimensions = z.infer<typeof DocumentDimensionsSchema>;
 
 /**
+ * ONE bucket of a viewport's authored breakpoint histogram: the whole CSS pixel
+ * the source says the layout changes at, which side of the change it names, and
+ * how many matched declarations named it.
+ */
+export const AuthoredBreakpointEntrySchema = z.object({
+  /** Whole CSS pixel. `boundary.above` for a `min` bound, `boundary.below` for a `max`. */
+  px: z.number().int(),
+  /** `"min"` = the change begins at `px`; `"max"` = it ends at `px`. */
+  kind: z.enum(["min", "max"]),
+  /** Matched declarations that named this exact `(px, kind)` pair. */
+  count: z.number().int().nonnegative(),
+});
+export type AuthoredBreakpointEntry = z.infer<typeof AuthoredBreakpointEntrySchema>;
+
+/**
+ * ONE AUTHORED CHANGE of a viewport's breakpoint histogram, keyed on the
+ * boundary rather than on the pixel a bound happens to name.
+ *
+ * `entries` answers "what did the source write"; this answers "where does the
+ * layout change". They differ by exactly the adjacency problem: `(max-width:
+ * 1024px)` names the pixel 1024 from below and `(min-width: 1025px)` names the
+ * pixel 1025 from above, so in `entries` they are TWO buckets one pixel apart
+ * while the author wrote ONE change. Both spellings share the boundary
+ * `{below: 1024, above: 1025}`, and here they share one row.
+ *
+ * This is the view a band-edge snapper should read. It is not hypothetical: the
+ * observations on disk carry `(max-width: 899px)` beside `(min-width: 900px)`,
+ * `(max-width: 599px)` beside `(min-width: 600px)`, and `(max-width: 1111px)`
+ * beside `(min-width: 1112px)`.
+ *
+ * `below` may be `-1`, for a bound authored at 0px: the notional pixel before
+ * the first real one. Clamping it to 0 would break `above === below + 1`, which
+ * is the adjacency the fold depends on.
+ */
+export const AuthoredBreakpointBoundarySchema = z.object({
+  /** Last whole pixel on the low side of the change. */
+  below: z.number().int(),
+  /** First whole pixel on the high side. Always `below + 1`. */
+  above: z.number().int(),
+  /** Weighted declarations naming this boundary from either side; `minCount + maxCount`. */
+  count: z.number().int().nonnegative(),
+  /** …spelled as a `min` bound (the change begins at `above`). */
+  minCount: z.number().int().nonnegative(),
+  /** …spelled as a `max` bound (the change ends at `below`). */
+  maxCount: z.number().int().nonnegative(),
+});
+export type AuthoredBreakpointBoundary = z.infer<typeof AuthoredBreakpointBoundarySchema>;
+
+/**
+ * Task 28.6 W2 — WHERE THE SOURCE SAYS ITS LAYOUT CHANGES, for one viewport.
+ *
+ * Everything before this asked geometry where the layout changed. This asks the
+ * stylesheet: every distinct authored `@media` condition matched to an element
+ * of this viewport, weighted by how many declarations sit under it, folded into
+ * whole-pixel snap targets. A responsive band edge placed on one of these
+ * numbers is a number the author wrote; a band edge placed between them is a
+ * guess.
+ *
+ * ABSENT ONLY WHEN THE VIEWPORT CARRIED NO AUTHORED DECLARATION AT ALL *AND*
+ * NOTHING WAS TRUNCATED AWAY — usually cross-origin stylesheets the CSSOM
+ * refused. Three distinct facts, three distinct shapes, none of them collapsed
+ * into the others:
+ *
+ *  - absent                                    → nothing was read and nothing
+ *                                                was truncated; the page's
+ *                                                breakpoints are UNKNOWN.
+ *  - `entries: []`, `declarationsExamined > 0`  → declarations were read and
+ *                                                none of them was inside a
+ *                                                usable screen `@media`.
+ *  - `declarationsExamined === 0`,
+ *    `truncatedNodeCount > 0`                   → every node's declaration list
+ *                                                was truncated to nothing. The
+ *                                                fold is empty because the
+ *                                                INPUT was cut, not because the
+ *                                                page authored nothing.
+ *
+ * The third case is why "absent means the observation recovered none" is not
+ * the whole rule: it would make a fully-truncated viewport indistinguishable
+ * from a viewport with no CSS.
+ *
+ * Every declaration examined is accounted for. `declarationsExamined` splits
+ * into `mediaScopedDeclarations` + `unconditionalDeclarations` + (declarations
+ * gated only by `@supports` / `@container`), and `mediaScopedDeclarations`
+ * splits into `foldedDeclarations` + `containerGatedSkippedDeclarations`.
+ * Nothing is dropped without a counter.
+ */
+export const AuthoredBreakpointsSchema = z.object({
+  /** Sorted by `px` ascending, then `kind` ascending (`"max"` before `"min"`). */
+  entries: z.array(AuthoredBreakpointEntrySchema),
+  /**
+   * The same fold keyed on the authored CHANGE, sorted by `below` ascending, so
+   * the `max` spelling and the `min` spelling of one boundary are ONE row here
+   * and two rows in `entries`. Read this to snap a band edge; read `entries` to
+   * see what the stylesheet literally said.
+   *
+   * Optional: absent on a v5 record written before this view existed, where it
+   * is UNKNOWN, not empty. A reader that finds it absent should fold `entries`
+   * itself or say it could not.
+   */
+  boundaries: z.array(AuthoredBreakpointBoundarySchema).optional(),
+  /**
+   * Root font size assumed when converting an `em` / `rem` breakpoint. The
+   * observation does not record the real one, so the assumption is carried
+   * rather than hidden.
+   */
+  rootFontSizePx: z.number().positive(),
+
+  /** Matched authored declarations looked at, across every node of this viewport. */
+  declarationsExamined: z.number().int().nonnegative(),
+  /**
+   * Distinct `@media` conditions among them, counted on the parser's NORMALIZED
+   * form: `(max-width: 640px)`, `(MAX-WIDTH: 640px)` and `(max-width:640px)` are
+   * one condition, not three.
+   */
+  distinctConditions: z.number().int().nonnegative(),
+  /**
+   * Distinct RAW `@media` strings, before that normalization. Greater than
+   * `distinctConditions` exactly when the source spells one breakpoint more than
+   * one way, so the collapse is visible instead of silent. Optional: absent on a
+   * v5 spec written before this counter existed, where it is unknown, NOT zero.
+   */
+  distinctRawConditions: z.number().int().nonnegative().optional(),
+  /** Declarations that sat inside an `@media`. */
+  mediaScopedDeclarations: z.number().int().nonnegative(),
+  /** …of those, the ones actually weighted into `entries`. */
+  foldedDeclarations: z.number().int().nonnegative(),
+  /**
+   * Declarations with NO `@media`, NO `@supports` and NO `@container`. The
+   * only ones that genuinely always apply. Pre-28.6 collectors mislabelled
+   * gated declarations as unconditional; this counter cannot be read that way.
+   */
+  unconditionalDeclarations: z.number().int().nonnegative(),
+
+  /** Declarations inside an `@container` (viewport-irrelevant by construction). */
+  containerScopedDeclarations: z.number().int().nonnegative(),
+  /** Declarations inside an `@supports` (a feature gate, not a size gate). */
+  supportsScopedDeclarations: z.number().int().nonnegative(),
+  /** Declarations inside an `@layer` (cascade order only; never affects applicability). */
+  layerScopedDeclarations: z.number().int().nonnegative(),
+  /**
+   * `@media` declarations EXCLUDED from the histogram because they also sit
+   * inside an `@container`: their change width follows an element box, not the
+   * window, so their media value is not a viewport band edge.
+   */
+  containerGatedSkippedDeclarations: z.number().int().nonnegative(),
+  /**
+   * Declarations whose sheet text was recovered from the network rather than
+   * read from the CSSOM. Same declarations, weaker provenance.
+   */
+  fetchedOriginDeclarations: z.number().int().nonnegative(),
+  /** Nodes whose authored-declaration list was truncated: the fold is incomplete by that much. */
+  truncatedNodeCount: z.number().int().nonnegative(),
+
+  /** Conditions (weighted) that contributed at least one entry. */
+  widthDeclarations: z.number().int().nonnegative(),
+  /** Conditions (weighted) that parsed cleanly and named no screen breakpoint. */
+  widthIrrelevantDeclarations: z.number().int().nonnegative(),
+  /** Conditions (weighted) whose meaning could not be represented (`not`, `or`, `calc()`, …). */
+  unsupportedDeclarations: z.number().int().nonnegative(),
+  /**
+   * Conditions (weighted) that could not be read at all. The honesty gate: a
+   * non-zero value here means this histogram is INCOMPLETE, not that the page
+   * authored fewer breakpoints.
+   */
+  unparsedDeclarations: z.number().int().nonnegative(),
+  /** Informational: conditions (weighted) that were comma-separated disjunctions. */
+  disjunctionDeclarations: z.number().int().nonnegative(),
+  /** Informational: conditions (weighted) contributing a deprecated `device-width` bound. */
+  deviceWidthDeclarations: z.number().int().nonnegative(),
+  /** Alternatives (weighted) skipped because their media type is not screen-applicable. */
+  nonScreenSkippedDeclarations: z.number().int().nonnegative(),
+  /** Alternatives (weighted) skipped because no width can satisfy them. */
+  emptyIntervalSkippedDeclarations: z.number().int().nonnegative(),
+
+  /** The distinct condition strings that could not be read. Sorted; never capped. */
+  unparsedConditions: z.array(z.string()),
+  /** The distinct condition strings understood in shape but not representable. Sorted; never capped. */
+  unsupportedConditions: z.array(z.string()),
+});
+export type AuthoredBreakpoints = z.infer<typeof AuthoredBreakpointsSchema>;
+
+/**
  * ONE viewport of one page — a complete, independent reconstruction unit.
  *
  * Desktop and mobile are never merged and never matched (items 22, 70). A
@@ -825,6 +1110,58 @@ export const ViewportPageSpecSchema = z.object({
   assetRefs: z.array(z.string()),
   frameInventory: z.array(FrameSpecSchema),
   shadowInventory: ShadowInventorySpecSchema,
+
+  /**
+   * Task 28.5B §5 — the source `:root` CSS custom properties resolved AT THIS
+   * VIEWPORT, carried verbatim from the observation.
+   *
+   * Per viewport and never merged: a media query may give `--brand` a different
+   * value at 390 than at 1440, and both viewport subtrees coexist in one
+   * generated document, so a single universal map would be a value the page
+   * never had. Optional — historical SiteSpecs carry no such record.
+   */
+  customProperties: RootCustomPropertiesSchema.optional(),
+
+  /**
+   * Task 28.6 W2 — the viewport breakpoints this viewport's authored `@media`
+   * conditions name, folded into a weighted whole-pixel histogram.
+   *
+   * Per viewport and never merged, for the same reason as everything else here
+   * (items 22, 70): desktop and mobile are two independent observations, and a
+   * merged histogram would be a set of breakpoints no single observed document
+   * ever had. A consumer that wants one number line across both merges them
+   * itself, knowingly.
+   *
+   * Optional: absent on every pre-v5 SiteSpec, and absent on a viewport whose
+   * observation recovered no authored declaration at all AND had nothing
+   * truncated. A viewport whose nodes were all truncated to zero declarations
+   * carries a RECORD (with `declarationsExamined === 0` and a non-zero
+   * `truncatedNodeCount`), never an absence — see
+   * {@link AuthoredBreakpointsSchema} for the three-way split.
+   */
+  authoredBreakpoints: AuthoredBreakpointsSchema.optional(),
+
+  /**
+   * Responsive Core P0 §C1.7 — summary of this viewport's initial document
+   * evidence (the file itself stays in the observation). Absent = the
+   * observation predates the capture.
+   */
+  initialDocument: InitialDocumentSchema.pick({
+    status: true,
+    reason: true,
+    bytes: true,
+    sha256: true,
+  }).optional(),
+  /** Responsive Core P0 §C1.4 — inline-style provenance tallies for this viewport. */
+  inlineStyleProvenanceCounts: InlineStyleProvenanceCountsSchema.optional(),
+  /**
+   * The observation's `viewports.<id>.stylesheetCoverage`, carried VERBATIM
+   * (unreadable / unrecovered sheets, unresolved imports, rule-index cap,
+   * skipped grouping rules, size-capped / body-unavailable sheets, cascade-cap
+   * totals). A consumer proving a node has NO authored declaration needs it;
+   * absent = the observation predates coverage (never read as complete).
+   */
+  stylesheetCoverage: StylesheetCoverageSchema.optional(),
 
   limitations: z.array(LimitationCodeSchema),
 });
@@ -894,6 +1231,133 @@ export const PageSpecSchema = z.object({
       alignedElementCount: z.number().int().nonnegative().optional(),
       elementCount: z.number().int().nonnegative(),
       truncated: z.boolean(),
+      /**
+       * Task 28.75 §07 — HOW MUCH OF THIS VIEWPORT'S TREE CARRIES PROBE DATA.
+       *
+       * `alignedElementCount` has never had a denominator in the artifact, so
+       * "311" read the same as "2,283": both are just numbers until you go and
+       * count the viewport's nodes yourself. Nobody did, and a page sitting at
+       * 13.5% coverage looked exactly like a healthy one for three waves.
+       *
+       * `nodeCount` is the viewport's element-node count; `alignmentRatio` is
+       * `alignedElementCount / nodeCount` rounded to 4 places. A reader — or a
+       * suite — can now see starvation without instrumenting anything.
+       */
+      nodeCount: z.number().int().nonnegative().optional(),
+      alignmentRatio: z.number().optional(),
+      /**
+       * Task 28.7 §27 — the per-width DOM-FAMILY FINGERPRINT, index-aligned to
+       * {@link widths}.
+       *
+       * NOT gated on `aligned` / `alignedElementCount`, and that is the point.
+       * The `probe` arrays on the element nodes are a per-ELEMENT claim and are
+       * refused whenever the probe's walk does not match this page's walk; the
+       * fingerprint is a per-DOCUMENT census of what the width renders and is
+       * true whether or not two page loads produced the same element order. A
+       * page whose probe would not attach still gets width evidence from it.
+       *
+       * Present only when EVERY width carried one, so a consumer never has to
+       * decide what a hole in the middle of the array means. Absent = the
+       * observation predates §27 (or the probe was not read).
+       */
+      fingerprints: z.array(LayoutProbeFingerprintSchema).optional(),
+      /**
+       * Responsive Core P0 §C1.7 — the normalized `style` texts the element
+       * nodes' `probe.s` arrays index (compacted to the entries they use).
+       */
+      inlineStyleTable: z.array(z.string()).optional(),
+      /** Responsive Core P0 §C1.6 — observed family switches bisected to 1px. */
+      familySwitchBisections: z.array(FamilySwitchBisectionSchema).optional(),
+      familySwitchPairsSkipped: z.number().int().nonnegative().optional(),
+    })
+    .optional(),
+  /**
+   * Task 28.6 C2 — the MOBILE-context multi-width layout probe for this page.
+   *
+   * A SEPARATE field from {@link layoutProbe} with a SEPARATE width list,
+   * because the two probes walked two different trees. The mobile probe ran in
+   * a mobile browser context and walked the tree that context rendered, so its
+   * per-element arrays align to `viewports.mobile`'s element list and to
+   * NOTHING ELSE. When `aligned` is true (or `alignedElementCount > 0`) the
+   * MOBILE tree's nodes carry `probe` arrays indexed by THIS record's `widths`;
+   * the desktop tree's `probe` arrays stay indexed by `layoutProbe.widths`.
+   * A consumer that indexes one viewport's arrays with the other viewport's
+   * widths corrupts every rule it derives, so the two never share a field.
+   *
+   * Absent under schemaVersion 6 means the observation carried no mobile probe
+   * at all, or it could not be read. Absent under 2-5 means the compiler
+   * predates the field. `alignedElementCount === 0` with the record present
+   * means the probe was read and REFUSED: it walked a tree this page's mobile
+   * element list does not match.
+   */
+  layoutProbeMobile: z
+    .object({
+      widths: z.array(z.number().int().positive()),
+      /** True when the WHOLE walk matched the MOBILE tree tag-for-tag. */
+      aligned: z.boolean(),
+      /**
+       * Elements covered by the longest common tag prefix, under the same 90%
+       * rule the desktop probe uses. 0 means nothing was attached.
+       */
+      alignedElementCount: z.number().int().nonnegative().optional(),
+      elementCount: z.number().int().nonnegative(),
+      truncated: z.boolean(),
+      /**
+       * Task 28.75 §07 — HOW MUCH OF THIS VIEWPORT'S TREE CARRIES PROBE DATA.
+       *
+       * `alignedElementCount` has never had a denominator in the artifact, so
+       * "311" read the same as "2,283": both are just numbers until you go and
+       * count the viewport's nodes yourself. Nobody did, and a page sitting at
+       * 13.5% coverage looked exactly like a healthy one for three waves.
+       *
+       * `nodeCount` is the viewport's element-node count; `alignmentRatio` is
+       * `alignedElementCount / nodeCount` rounded to 4 places. A reader — or a
+       * suite — can now see starvation without instrumenting anything.
+       */
+      nodeCount: z.number().int().nonnegative().optional(),
+      alignmentRatio: z.number().optional(),
+      /**
+       * The observation's own profile id for the context this probe ran in.
+       * MUST be `"mobile"`; a probe whose context is anything else is refused
+       * rather than attached, and the refusal is recorded in
+       * {@link refusedReason}.
+       */
+      profileId: z.string().optional(),
+      /**
+       * Why nothing was attached, when nothing was. Absent when
+       * `alignedElementCount > 0`. A refusal is an outcome a caller must be
+       * able to read, never a silent absence.
+       */
+      refusedReason: z
+        .enum([
+          /** The probe walked a context that is not the mobile one. */
+          "probe-context-not-mobile",
+          /** The probe's tag walk does not match the mobile element walk. */
+          "tag-walk-mismatch",
+          /** The probe's own walk was truncated by the observer's cap. */
+          "probe-truncated",
+          /** The file named by the observation could not be read or parsed. */
+          "probe-unreadable",
+        ])
+        .optional(),
+      /**
+       * Task 28.7 §27 — the per-width DOM-family fingerprint of the MOBILE
+       * probe, index-aligned to this record's own {@link widths}.
+       *
+       * Carried even when the probe was REFUSED for attachment: a refusal is a
+       * statement about element-order alignment between two page loads, and the
+       * fingerprint makes no per-element claim. Present only when every width
+       * carried one.
+       */
+      fingerprints: z.array(LayoutProbeFingerprintSchema).optional(),
+      /**
+       * Responsive Core P0 §C1.7 — the normalized `style` texts the element
+       * nodes' `probe.s` arrays index (compacted to the entries they use).
+       */
+      inlineStyleTable: z.array(z.string()).optional(),
+      /** Responsive Core P0 §C1.6 — observed family switches bisected to 1px. */
+      familySwitchBisections: z.array(FamilySwitchBisectionSchema).optional(),
+      familySwitchPairsSkipped: z.number().int().nonnegative().optional(),
     })
     .optional(),
   /** Confirmed pattern ids verified ON THIS PAGE, sorted. */

@@ -41,6 +41,8 @@ export interface CompileRuntimePageInput {
   interactions: InteractionPlan;
   /** Does this style token produce a CSS rule? See `hasRenderableDeclarations`. */
   styleRenders: (styleTokenId: string, documentRoot?: boolean) => boolean;
+  /** Task 28.8 A3 — the token's computed properties, for the relief variants. */
+  styleLookup?: (styleTokenId: string) => Readonly<Record<string, string>> | undefined;
   /** Task 15 corrections. Undefined for a baseline reconstruction (item 114). */
   corrections?: CorrectionPlan;
 }
@@ -108,6 +110,7 @@ export function compileRuntimePage(
         links: input.links,
         interactions: input.interactions,
         styleRenders: input.styleRenders,
+        ...(input.styleLookup !== undefined ? { styleLookup: input.styleLookup } : {}),
         ...(input.corrections ? { corrections: input.corrections } : {}),
       },
       counters,
@@ -122,13 +125,21 @@ export function compileRuntimePage(
       pageId: input.page.pageId,
       viewportId,
     });
-    if (adaptations.length > 0) {
-      counters.nestingAdaptations += adaptations.length;
+    const interposed = adaptations.filter((a) => a.mode === "interpose").length;
+    const demoted = adaptations.length - interposed;
+    if (interposed > 0) {
+      counters.nestingAdaptations += interposed;
       // Each interposed container is a real element in the written tree, so the
       // manifest has to count it; `validateGeneratedApp` reads both back and
       // compares them.
-      counters.elementNodes += adaptations.length;
+      counters.elementNodes += interposed;
       counters.limitations.add("parser-invalid-nesting-adapted");
+    }
+    if (demoted > 0) {
+      // TASK 28.8 FAST (Phase F correction 1) — a demotion keeps the node and
+      // only changes its tag: no new element, but a named limitation.
+      counters.nestingDemotions += demoted;
+      counters.limitations.add("parser-invalid-nesting-demoted");
     }
 
     return { id: viewportId, width: viewport.profile.width, doc: root };
@@ -167,7 +178,13 @@ export function mergeCounters(total: CompileCounters, page: CompileCounters): vo
   total.scrollStateNodes += page.scrollStateNodes;
   total.scrollRestoreNodes += page.scrollRestoreNodes;
   total.nestingAdaptations += page.nestingAdaptations;
+  total.nestingDemotions += page.nestingDemotions;
   for (const token of page.usedStyleTokens) total.usedStyleTokens.add(token);
+  // Task 28.8 A3 — the variant tokens and the nodes wearing each variant class.
+  for (const token of page.textBoxHeightTokens) total.textBoxHeightTokens.add(token);
+  for (const token of page.textBoxShrinkTokens) total.textBoxShrinkTokens.add(token);
+  total.textBoxHeightNodes += page.textBoxHeightNodes;
+  total.textBoxShrinkNodes += page.textBoxShrinkNodes;
   total.pseudoRules.push(...page.pseudoRules);
   for (const code of page.limitations) total.limitations.add(code);
 }

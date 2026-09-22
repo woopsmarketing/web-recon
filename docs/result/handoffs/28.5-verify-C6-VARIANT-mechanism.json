@@ -1,0 +1,95 @@
+{
+ "schema": "wr.28.5.verify/1",
+ "claimId": "C6-VARIANT",
+ "lens": "mechanism",
+ "producedAt": "2026-08-29",
+ "verdict": "NOT_REFUTED",
+ "servedPort": 63417,
+ "isolationMatrix": {
+  "m-01_dup_deskhidden": "INERT (no gradient painted) - reproduces recon shape",
+  "m-02_dup_deskvisible": "PAINTS - duplicate id alone is harmless",
+  "m-03_nodup_deskhidden": "PAINTS - display:none alone is harmless",
+  "m-04_dup_deskhidden_mobfirst": "PAINTS - document order decides the winner",
+  "m-05_crossref_into_hidden": "INERT - gradient under display:none wrapper",
+  "m-06_crossref_hidden_bare_svg": "INERT - <svg style=display:none> sprite pattern also fails",
+  "m-07_crossref_visible_zero_svg": "PAINTS - visible 0x0 svg host works",
+  "m-08_crossref_hidden_div": "INERT - display:none plain div host"
+ },
+ "livePlanMobile": {
+  "deskDisplay": "none",
+  "sharedIds": 347,
+  "urlRefs": 46,
+  "refsIntoHiddenDesktop": 46,
+  "refTargetTags": {
+   "linearGradient": 33,
+   "clipPath": 6,
+   "mask": 5,
+   "filter": 2
+  },
+  "overlaySvgsWithUrlFills": 16,
+  "overlaysWithNonZeroGeometry": 10
+ },
+ "counterfactual": {
+  "intervention": "rename ids in the HIDDEN desktop subtree only; mobile markup and display:none untouched",
+  "changedPx": 5106151,
+  "changedRatio": 0.15455,
+  "shareInsideThe10Overlays": 1.0,
+  "changedOutside": 0,
+  "pixelIdenticalTo": [
+   "F_relocate_desktop_defs",
+   "sibling B_remove_desktop_subtree"
+  ],
+  "allTenOverlaysAffected": true
+ },
+ "independentRecompute": {
+  "cloneVsAcceptedShareInside": 0.7925,
+  "claimSaid": 0.378,
+  "maskRowShareOfPageHeight": 0.3973
+ },
+ "scopeAllRoutesMobile": {
+  "/": {
+   "urlRefs": 40,
+   "intoHiddenDesktop": 40
+  },
+  "/changelog": {
+   "urlRefs": 10,
+   "intoHiddenDesktop": 10
+  },
+  "/customers": {
+   "urlRefs": 10,
+   "intoHiddenDesktop": 10
+  },
+  "/customers/automattic": {
+   "urlRefs": 10,
+   "intoHiddenDesktop": 10
+  },
+  "/integrations": {
+   "urlRefs": 15,
+   "intoHiddenDesktop": 15
+  },
+  "/plan": {
+   "urlRefs": 46,
+   "intoHiddenDesktop": 46
+  },
+  "/pricing": {
+   "urlRefs": 16,
+   "intoHiddenDesktop": 16
+  },
+  "/security": {
+   "urlRefs": 14,
+   "intoHiddenDesktop": 14
+  }
+ },
+ "codePath": [
+  "src/reconstruction/runtime-template.ts:318-345",
+  "src/reconstruction/app-template.ts:296-309",
+  "src/reconstruction/asset-resolver.ts:224-256"
+ ],
+ "corrections": [
+  "'347 SVG resource ids' is loose: 347 ids are duplicated but only 46 are url(#)-referenced resources; the rest are icon symbol/g ids never used as paint servers.",
+  "78.1% / 37.8% recompute to 79.25% / 39.73% - the claim understates, it does not overstate.",
+  "Wave-1 marked this cluster recurringAcrossRoutes:false. Wrong at the mechanism level: 100% of mobile url(#) refs bind into the hidden desktop subtree on all 8 routes.",
+  "Restoring the fades leaves ~23% of the in-overlay error (fonts, video frame); the fade is dominant, not the sole in-box defect.",
+  "'paint server attached to no layout object' is an unverified Blink-internals story; the measured operative condition is display:none on any ancestor of the definition."
+ ]
+}

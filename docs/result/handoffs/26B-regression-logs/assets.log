@@ -1,0 +1,134 @@
+Already up to date
+Done in 156ms using pnpm v11.21.0
+$ tsx scripts/smoke-assets.ts
+
+== 1. address validation (SSRF ranges)
+  PASS  isPrivateAddress(10.0.0.1) === true
+  PASS  isPrivateAddress(10.255.255.254) === true
+  PASS  isPrivateAddress(172.16.0.1) === true
+  PASS  isPrivateAddress(172.31.255.255) === true
+  PASS  isPrivateAddress(172.32.0.1) === false
+  PASS  isPrivateAddress(192.168.1.1) === true
+  PASS  isPrivateAddress(169.254.169.254) === true
+  PASS  isPrivateAddress(169.254.0.1) === true
+  PASS  isPrivateAddress(127.0.0.1) === true
+  PASS  isPrivateAddress(0.0.0.0) === true
+  PASS  isPrivateAddress(100.64.0.1) === true
+  PASS  isPrivateAddress(8.8.8.8) === false
+  PASS  isPrivateAddress(151.101.1.140) === false
+  PASS  isPrivateAddress(::1) === true
+  PASS  isPrivateAddress(fe80::1) === true
+  PASS  isPrivateAddress(fd00::1) === true
+  PASS  isPrivateAddress(::ffff:10.0.0.1) === true
+  PASS  isPrivateAddress(::ffff:8.8.8.8) === false
+  PASS  isPrivateAddress(2606:4700::1111) === false
+  PASS  isPrivateAddress(not-an-ip) === true
+
+== 2. safeFetchAsset URL policy (no network)
+  PASS  ftp:// rejected-scheme
+  PASS  file:// rejected-scheme
+  PASS  credentials rejected
+  PASS  non-standard port rejected
+  PASS  host outside allowlist rejected
+
+== 3. safeFetchAsset DNS-resolution-based rejection
+  PASS  hostname resolving to 10/8 → rejected-private-address
+  PASS  rejection detail names the resolved address
+  PASS  dual public+private resolution → rejected (ANY private address rejects)
+  PASS  direct metadata endpoint 169.254.169.254 → rejected-private-address
+  PASS  loopback WITHOUT the test override → rejected-private-address
+
+== 4. fixture fetches: limits, MIME, redirect re-validation
+  PASS  fixture png fetched
+  PASS  fetched mime image/png
+  PASS  fetched bytes match fixture bytes
+  PASS  same-host redirect followed
+  PASS  redirect chain recorded
+  PASS  redirect hop to metadata endpoint rejected (re-validated per hop)
+  PASS  metadata hop rejection names the address
+  PASS  redirect hop to private-resolving hostname rejected (DNS re-check)
+  PASS  redirect hop leaving the host allowlist rejected
+  PASS  redirect loop → too-many-redirects
+  PASS  body over maxBytes → too-large (streaming abort)
+  PASS  text/html for expected image → mime-rejected
+  PASS  404 → http-error
+  PASS  slow endpoint → timeout
+  PASS  extensionForMime maps png / woff2 / fallback
+
+== 5. inventory + conservative classification (fixture artifacts)
+  PASS  inventory: catalog 12-1 fragment + css-url 2-1 fragment + head favicon.svg/og/font 3 = 15 entries
+  PASS  url(#fragment) refs skipped at ingestion (catalog + css channel)
+  PASS  isFragmentOnlyCssRef: raw + browser-serialized fragment shapes only
+  PASS  inventory: 1 inline-svg entry (no url)
+  PASS  truncated prefix URL detected
+  PASS  non-truncated sibling stays untruncated
+  PASS  css url() becomes generated-css-url entry
+  PASS  head favicon.ico deduped into catalog icon entry
+  PASS  slot join: person image carries its slot key
+  PASS  brief join: person image carries the warning brief
+  PASS  classification: font preload → license-needs-review
+  PASS  classification: favicon → replacement-required
+  PASS  classification: og:image → replacement-required
+  PASS  classification: logo filename → replacement-required
+  PASS  classification: person (brief warning) → replacement-required
+  PASS  classification: replace-recommended brief → replacement-recommended
+  PASS  classification: keep-default brief → safe-to-materialize
+  PASS  classification: video → replacement-recommended
+  PASS  classification: unproven default → replacement-recommended
+  PASS  sibling-variant escalation: webp rendition of a required person photo → required
+  PASS  sibling escalation never relaxes: safe keep-default asset stays safe
+  PASS  inline-svg entries carry no classification decision
+  PASS  byte-deterministic across two runs with a pinned runId
+  PASS  loadAssetInventoryRun round-trips (zod-validated)
+
+== 6. font inventory + license safety
+  PASS  font URL observed from rendered.html preload
+  PASS  no live fetch → fontFaceRules empty + provenance not-fetched
+  PASS  familyUsage counts declarations per lead family
+  PASS  webfont with no @font-face in clone flagged webfontUndefinedInClone
+  PASS  system family not flagged
+  PASS  license: every webfont family license-needs-review, selfHostApproved false
+  PASS  fallback plan derived from the observed stack
+  PASS  live-font-css: @font-face rule recovered with provenance live-fetched
+  PASS  live-font-css: relative src URL resolved against the stylesheet URL
+  PASS  live-font-css: fetched stylesheet recorded with rule count
+
+== 7. content-hash materialization + replacement seam
+  PASS  safe + recommended candidates fetched (hero, hero2x, wave, product, cssBg)
+  PASS  media file stored as /media/<sha256>.<ext> with the CONTENT hash
+  PASS  stored bytes byte-identical to fixture bytes
+  PASS  identical bytes under two URLs dedupe into ONE media file
+  PASS  wave stored with mime-derived extension (jpg despite .png URL)
+  PASS  replacement-required (person/logo/favicon/og + escalated webp sibling) NEVER fetched
+  PASS  fixture served ZERO requests for skipped person/logo paths
+  PASS  license-needs-review font NEVER fetched
+  PASS  truncated URL skipped-truncated
+  PASS  video 404 recorded as http-error failure (not invented)
+  PASS  rewrite map contains exactly the fetched URLs
+  PASS  css-origin URL rewrites in css context only
+  PASS  replacement seam: required entry carries brief + awaiting-input
+  PASS  replacement seam: recommended entries listed, safe entries not
+  PASS  loadAssetMaterializationRun round-trips (zod-validated)
+
+== 8. rewrite application + asset proxy + real browser
+  PASS  rewriteVariants covers raw, &amp; and \u0026 encodings
+  PASS  HTML rewrite replaces raw + &amp; + \u0026 variants
+  PASS  longest-URL-first: query variant did not get prefix-clobbered
+  PASS  CSS rewrite replaces url() reference
+  PASS  proxied HTML rewritten to /media path
+  PASS  proxied stylesheet: url() rewritten AND theme overlay appended after
+  PASS  /media serves 200 with correct content-type
+  PASS  /media bytes are the stored asset bytes
+  PASS  unknown /media file → 404
+  PASS  non-HTML passthrough byte-identical
+  PASS  mediaContentType maps woff2 + fallback
+  PASS  browser loads the image from /media through the proxy
+  PASS  browser makes ZERO requests to the source asset URL
+  PASS  image actually decoded (naturalWidth > 0)
+  PASS  findTruncatedUrls: exact duplicates are not truncation
+  PASS  findTruncatedUrls: query variant prefix is NOT truncation
+  PASS  findTruncatedUrls: mid-token prefix IS truncation
+  PASS  findTruncatedUrls: cut HOSTNAME detected despite normalized trailing slash
+  PASS  findTruncatedUrls: subdomain-boundary host prefix is NOT truncation
+
+113/113 checks passed

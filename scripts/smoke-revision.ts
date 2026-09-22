@@ -10,10 +10,29 @@
 import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+import {
+  // Task 28 CR1 — the SAME symbols, reached through the public barrel. If the
+  // re-export is ever dropped this suite stops compiling.
+  appendAuthoredRevisionIfChanged as barrelAppendIfChanged,
+  loadRevisionChain as barrelLoadChain,
+  restoreAuthoredRevision as barrelRestore,
+} from "../src/release/index.js";
 import { loadReleaseProject, saveReleaseProject } from "../src/release/store.js";
+// Task 28 Phase 2 — the authored write API. The chain is its transaction
+// boundary, so the "a no-op edit appends nothing" contract is tested HERE,
+// against a real project copy, rather than only in smoke:release.
+import {
+  brandSurfaceId,
+  commitAuthoredEdits,
+  setAuthoredAsset,
+  setAuthoredBrandDecision,
+} from "../src/release/authored.js";
 import {
   AUTHORED_REVISION_SCHEMA_NAME,
+  AuthoredChangeSchema,
   AuthoredRevisionSchema,
+  authoredChangeIsEmpty,
+  summarizeAuthoredChange,
   appendAuthoredRevision,
   appendAuthoredRevisionIfChanged,
   commitAuthoredState,
@@ -28,6 +47,7 @@ import {
 } from "../src/release/revisions.js";
 import {
   RELEASE_SCHEMA_VERSION,
+  ReleaseProjectSchema,
   emptyAuthoredState,
   type AuthoredState,
 } from "../src/release/types.js";
@@ -422,6 +442,242 @@ async function main(): Promise<void> {
           Object.keys(baseAuthored.slotValues).length &&
         diffAuthoredState(baseAuthored, { ...baseAuthored, theme: {} }).themeChanged,
       JSON.stringify(diffAuthoredState(null, baseAuthored)),
+    );
+    // =====================================================================
+    section("Task 28 CR1/CR2/CR3 — barrel surface, single-read append, displayName");
+    // =====================================================================
+    check(
+      "28.CR1.1 the revision chain API is the SAME function through the release barrel",
+      barrelAppendIfChanged === appendAuthoredRevisionIfChanged &&
+        barrelLoadChain === loadRevisionChain &&
+        barrelRestore === restoreAuthoredRevision,
+    );
+    // The append path now runs on the operator path (prepare/resolve) and reads
+    // the chain ONCE for both the "did anything change?" comparison and the
+    // append. Verification must NOT have been traded away for that: a tampered
+    // record still throws instead of being appended onto.
+    const tamperDir = path.join(scratch, "cr2-tamper");
+    await cp(AUTHORED_SOURCE, tamperDir, { recursive: true });
+    const tamperLoaded = await loadReleaseProject(tamperDir);
+    await appendAuthoredRevision(tamperDir, {
+      siteId: tamperLoaded.project.siteId,
+      authored: tamperLoaded.project.authored,
+      origin: "prepare",
+    });
+    const tamperFile = path.join(revisionDir(tamperDir, "r000"), "revision.json");
+    const tamperRecord = JSON.parse(await readFile(tamperFile, "utf8")) as {
+      authored: AuthoredState;
+    };
+    tamperRecord.authored = { ...tamperRecord.authored, slotValues: { "x.y": "tampered" } };
+    await writeFile(tamperFile, JSON.stringify(tamperRecord, null, 2) + "\n", "utf8");
+    let ifChangedRefused = false;
+    try {
+      await appendAuthoredRevisionIfChanged(tamperDir, {
+        siteId: tamperLoaded.project.siteId,
+        authored: emptyAuthoredState(),
+        origin: "edit",
+      });
+    } catch {
+      ifChangedRefused = true;
+    }
+    check(
+      "28.CR2.1 the single-read append still VERIFIES the chain (tampered head refused)",
+      ifChangedRefused && (await readdir(path.join(tamperDir, "revisions"))).length === 1,
+      `refused=${ifChangedRefused}`,
+    );
+    // …and an untampered chain appends with the parent taken from that one read.
+    const seqDir = path.join(scratch, "cr2-sequence");
+    await cp(AUTHORED_SOURCE, seqDir, { recursive: true });
+    const seqLoaded = await loadReleaseProject(seqDir);
+    const seqBase = seqLoaded.project.authored;
+    await appendAuthoredRevisionIfChanged(seqDir, {
+      siteId: seqLoaded.project.siteId,
+      authored: seqBase,
+      origin: "prepare",
+    });
+    const seqNoop = await appendAuthoredRevisionIfChanged(seqDir, {
+      siteId: seqLoaded.project.siteId,
+      authored: seqBase,
+      origin: "prepare",
+    });
+    const seqMoved = await appendAuthoredRevisionIfChanged(seqDir, {
+      siteId: seqLoaded.project.siteId,
+      authored: { ...seqBase, theme: { tokens: { "color.accent.primary": "#010203" } } },
+      origin: "resolve",
+    });
+    const seqChain = await loadRevisionChain(seqDir);
+    check(
+      "28.CR2.2 an unchanged authored state appends nothing; a moved one appends r001 with parent r000",
+      seqNoop === null &&
+        seqMoved !== null &&
+        seqMoved.revisionId === "r001" &&
+        seqMoved.parentRevisionId === "r000" &&
+        seqMoved.origin === "resolve" &&
+        seqChain.length === 2,
+      JSON.stringify(seqChain.map((r) => `${r.revisionId}:${r.origin}`)),
+    );
+    // ---- CR3 backward compatibility --------------------------------------
+    check(
+      "28.CR3.1 a project on disk with NO displayName loads with the field absent",
+      loaded.project.displayName === undefined && legacy.project.displayName === undefined,
+      `${String(loaded.project.displayName)} / ${String(legacy.project.displayName)}`,
+    );
+    check(
+      "28.CR3.2 release-project-v1 accepts a displayName and still rejects an empty one",
+      ReleaseProjectSchema.safeParse({ ...loaded.project, displayName: "Acme Inc" }).success &&
+        !ReleaseProjectSchema.safeParse({ ...loaded.project, displayName: "" }).success,
+    );
+
+    // =====================================================================
+    section("Task 28 Phase 2 — authored.assets / authored.brand in the chain");
+    // =====================================================================
+    // A revision record embeds the WHOLE authored snapshot, so the two new
+    // authored dimensions ride along for free. What does NOT ride along for
+    // free is the `change` summary: an asset or brand edit that reported
+    // `slotKeysChanged: []` and `themeChanged: false` would be a record saying
+    // "nothing moved" about a snapshot that moved.
+    const surfaceId = brandSurfaceId({
+      surface: "svg-aria-label",
+      route: "/",
+      nodeId: "n000017",
+      slotKey: null,
+      evidencePointer: "desktop.doc[n000017].v",
+    });
+    const p2Base = emptyAuthoredState();
+    const p2WithAsset = setAuthoredAsset(
+      p2Base,
+      "organization-logo",
+      { file: "tmp/wr28/does-not-need-to-exist.png", alt: "NewCo" },
+      "2026-08-27T00:00:00.000Z",
+    ).authored;
+    const p2WithBrand = setAuthoredBrandDecision(
+      p2WithAsset,
+      surfaceId,
+      { decision: "PRESERVE", reason: "licensed partner mark" },
+      "2026-08-27T00:01:00.000Z",
+    ).authored;
+    const p2AssetDiff = diffAuthoredState(p2Base, p2WithAsset);
+    const p2BrandDiff = diffAuthoredState(p2WithAsset, p2WithBrand);
+    const p2RemovalDiff = diffAuthoredState(p2WithBrand, p2Base);
+    check(
+      "28.P2.R1 diffAuthoredState reports asset and brand movement by KEY, in both directions",
+      p2AssetDiff.assetIdsAdded?.join(",") === "organization-logo" &&
+        p2AssetDiff.brandSurfacesAdded?.length === 0 &&
+        p2BrandDiff.brandSurfacesAdded?.join(",") === surfaceId &&
+        p2BrandDiff.assetIdsAdded?.length === 0 &&
+        p2BrandDiff.assetIdsChanged?.length === 0 &&
+        p2RemovalDiff.assetIdsRemoved?.join(",") === "organization-logo" &&
+        p2RemovalDiff.brandSurfacesRemoved?.join(",") === surfaceId,
+      JSON.stringify({ asset: p2AssetDiff, brand: p2BrandDiff, removal: p2RemovalDiff }),
+    );
+    check(
+      "28.P2.R2 authoredChangeIsEmpty and the one-line summary both see the new dimensions",
+      authoredChangeIsEmpty(diffAuthoredState(p2WithBrand, p2WithBrand)) &&
+        !authoredChangeIsEmpty(p2AssetDiff) &&
+        !authoredChangeIsEmpty(p2BrandDiff) &&
+        summarizeAuthoredChange(p2AssetDiff, "edit") === "edit: +1 asset" &&
+        summarizeAuthoredChange(p2BrandDiff, "edit") === "edit: +1 brand",
+      `${summarizeAuthoredChange(p2AssetDiff, "edit")} | ${summarizeAuthoredChange(p2BrandDiff, "edit")}`,
+    );
+    // BACKWARD COMPATIBILITY. Every revision record already on disk carries a
+    // `change` with the four original fields only, and AuthoredChangeSchema is
+    // `.strict()` — a REQUIRED new field would make `loadRevisionChain` reject
+    // those records as a corrupt history rather than an old one.
+    const legacyChange = {
+      slotKeysAdded: ["a"],
+      slotKeysChanged: [],
+      slotKeysRemoved: [],
+      themeChanged: false,
+    };
+    check(
+      "28.P2.R3 a pre-Task-28 `change` block still parses, and an unknown key is still refused",
+      AuthoredChangeSchema.safeParse(legacyChange).success &&
+        authoredChangeIsEmpty(AuthoredChangeSchema.parse(legacyChange)) === false &&
+        !AuthoredChangeSchema.safeParse({ ...legacyChange, invented: [] }).success,
+    );
+    // …and the same statement against REAL records: every revision chain that
+    // exists under data/ today must still load through the widened schema.
+    const realChains: string[] = [];
+    for (const hostEntry of await readdir("data", { withFileTypes: true })) {
+      if (!hostEntry.isDirectory()) continue;
+      const projectsDir = path.join("data", hostEntry.name, "release-projects");
+      let names: string[] = [];
+      try {
+        names = (await readdir(projectsDir, { withFileTypes: true }))
+          .filter((entry) => entry.isDirectory())
+          .map((entry) => entry.name);
+      } catch {
+        continue;
+      }
+      for (const name of names) {
+        const dir = path.join(projectsDir, name);
+        try {
+          const chain = await loadRevisionChain(dir);
+          if (chain.length > 0) realChains.push(`${name}:${chain.length}`);
+        } catch (err) {
+          realChains.push(`${name}:THROW(${(err as Error).message.slice(0, 40)})`);
+        }
+      }
+    }
+    check(
+      "28.P2.R4 every authored-revision chain already on disk still loads through the widened schema",
+      realChains.length > 0 && realChains.every((row) => !row.includes("THROW")),
+      realChains.join(" ") || "no chains found on disk",
+    );
+
+    // ---- the write API's transaction boundary ----------------------------
+    const editDir = path.join(scratch, "p2-edit");
+    await cp(AUTHORED_SOURCE, editDir, { recursive: true });
+    const editLoaded = await loadReleaseProject(editDir);
+    await appendAuthoredRevision(editDir, {
+      siteId: editLoaded.project.siteId,
+      authored: editLoaded.project.authored,
+      origin: "prepare",
+    });
+    const editBytesBefore = await readFile(path.join(editDir, "release-project.json"), "utf8");
+    const noopEdit = await commitAuthoredEdits(editDir, [
+      { op: "remove-asset", assetId: "never-set" },
+      { op: "remove-brand-decision", surfaceId },
+      { op: "set-slot-value", slotKey: Object.keys(editLoaded.project.authored.slotValues)[0], value: editLoaded.project.authored.slotValues[Object.keys(editLoaded.project.authored.slotValues)[0]] },
+    ]);
+    check(
+      "28.P2.R5 commitAuthoredEdits on a no-op batch appends NO revision and does not rewrite the project",
+      noopEdit.changed === false &&
+        noopEdit.revision === null &&
+        (await loadRevisionChain(editDir)).length === 1 &&
+        (await readFile(path.join(editDir, "release-project.json"), "utf8")) === editBytesBefore,
+      `changed=${noopEdit.changed} chain=${(await loadRevisionChain(editDir)).length}`,
+    );
+    const realEdit = await commitAuthoredEdits(
+      editDir,
+      [
+        { op: "set-asset", assetId: "og-image", file: "tmp/wr28/og.png", alt: "NewCo" },
+        { op: "set-brand-decision", surfaceId, decision: "REMOVE" },
+      ],
+      { now: new Date("2026-08-27T02:00:00.000Z") },
+    );
+    const editReloaded = (await loadReleaseProject(editDir)).project;
+    check(
+      "28.P2.R6 one batch of real edits appends ONE revision that names both dimensions and matches the saved project",
+      realEdit.changed &&
+        realEdit.revision?.revisionId === "r001" &&
+        realEdit.revision.change.assetIdsAdded?.join(",") === "og-image" &&
+        realEdit.revision.change.brandSurfacesAdded?.join(",") === surfaceId &&
+        (await loadRevisionChain(editDir)).length === 2 &&
+        hashAuthoredState(editReloaded.authored) === realEdit.revision.authoredStateHash,
+      `${realEdit.revision?.revisionId} ${realEdit.revision?.summary}`,
+    );
+    // Restore is the undo the Visual Editor will call. It must roll the two new
+    // dimensions back exactly, not just the slot values it was written for.
+    const restoredP2 = await restoreAuthoredRevision(editDir, "r000");
+    check(
+      "28.P2.R7 restoring the pre-edit revision rolls authored.assets and authored.brand back to ABSENT",
+      restoredP2.authored.assets === undefined &&
+        restoredP2.authored.brand === undefined &&
+        (await loadReleaseProject(editDir)).project.authored.assets === undefined &&
+        restoredP2.revision.change.assetIdsRemoved?.join(",") === "og-image" &&
+        restoredP2.revision.change.brandSurfacesRemoved?.join(",") === surfaceId,
+      JSON.stringify(restoredP2.revision.change),
     );
   } finally {
     await rm(scratch, { recursive: true, force: true });

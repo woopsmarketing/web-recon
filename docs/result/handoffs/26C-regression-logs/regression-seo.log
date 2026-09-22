@@ -1,0 +1,102 @@
+Already up to date
+Done in 154ms using pnpm v11.21.0
+$ tsx scripts/smoke-seo.ts
+
+== 1 head parsing from rendered.html
+  PASS  1 title extracted
+  PASS  1 description extracted
+  PASS  1 canonical extracted
+  PASS  1 robots meta absent stays null
+  PASS  1 hreflang entries
+  PASS  1 og entries with keys
+  PASS  1 twitter entries
+  PASS  1 JSON-LD parsed with @graph types
+  PASS  1 heading outline in document order with joined text
+  PASS  1 image alt audit: with/empty/missing
+  PASS  1 html lang
+  PASS  1 absent metadata stays null/[] (never defaulted)
+  PASS  1 unparseable JSON-LD recorded, not repaired
+
+== 2 source SEO snapshot (real observer over the fixture run)
+  PASS  2 three pages observed
+  PASS  2 httpStatus joined from verification
+  PASS  2 duplicate titles grouped
+  PASS  2 duplicate descriptions grouped
+  PASS  2 canonical cluster with self + elsewhere member
+  PASS  2 orphan candidate (observed subgraph, root excluded)
+  PASS  2 link graph edges deduplicated
+  PASS  2 broken internal link via verified 404
+  PASS  2 unverified target is unobserved, not broken
+  PASS  2 indexability: robots noindex wins
+  PASS  2 indexability: no observed blocker
+  PASS  2 indexability: canonical points elsewhere
+  PASS  2 missing metadata recorded per kind (h1 on p000003)
+  PASS  2 robots.txt not-fetched without the flag
+  PASS  2 deterministic: same inputs → byte-identical snapshot
+  PASS  2 snapshot round-trips through the zod schema
+
+== 3 robots.txt / sitemap helpers
+  PASS  3 robots.txt parse (disallow + sitemap)
+  PASS  3 sitemap classification
+
+== 4 production SEO plan — preview mode (no domain, real run creator)
+  PASS  4 preview mode without a domain
+  PASS  4 injected route title known, derived from content run
+  PASS  4 uninjected route title needs-input with brand-only fallback
+  PASS  4 uninjected description needs-input with NO fallback
+  PASS  4 preview robots noindex,nofollow on every route
+  PASS  4 canonical never finalized in preview
+  PASS  4 og:url / og:image / twitter:site needs-input (never invented)
+  PASS  4 fact safety: all 7 business facts needs-input with null values
+  PASS  4 no invented absolute production URL anywhere in the plan
+  PASS  4 JSON-LD emitted with only known identity; url/sameAs omitted as needs-input
+  PASS  4 forbidden-copy check ran and passed
+  PASS  4 brand isolation check ran and passed
+  PASS  4 preview robots.txt disallows all, names no Sitemap
+  PASS  4 preview sitemap is path-only (no absolute <loc>, marked non-final)
+  PASS  4 consolidated needs-input report written
+  PASS  4 plan run round-trips (manifest + plan + rendered head)
+  PASS  4 no-hreflang decision derived from THIS snapshot's evidence (no hardcoded source facts)
+
+== 5 production SEO plan — domain-provided mode
+  PASS  5 production mode with known domain
+  PASS  5 robots meta index,follow
+  PASS  5 canonical finalized self on the production domain
+  PASS  5 og:url known on the production domain
+  PASS  5 production robots.txt allows and names the sitemap
+  PASS  5 production sitemap absolute on the domain
+
+== 6 forbidden-copy + brand isolation gates
+  PASS  6 copying a source title is detected and fails
+  PASS  6 forbidden terms derived from source evidence (host, org, sameAs, og:site_name)
+  PASS  6 source host URL in a production string is a violation
+  PASS  6 source org name on a word boundary is a violation
+  PASS  6 unrelated substring does not false-positive on the name term
+
+== 7 serve boundary — head rewrite, robots/sitemap, Chromium title
+  PASS  7 <title> element rewritten
+  PASS  7 flight-payload occurrence rewritten (no upstream title anywhere)
+  PASS  7 head block injected before </head>
+  PASS  7 proxied HTML carries the plan title and noindex
+  PASS  7 proxied HTML retains no upstream title byte (incl. inline script)
+  PASS  7 /robots.txt served by the boundary
+  PASS  7 /sitemap.xml is 404 in preview
+  PASS  7 non-HTML passthrough is byte-identical
+  PASS  7 Chromium document.title is the production title (post-script)
+
+== 8 internal link audit classification
+  PASS  8 route-resolving anchors (incl. trailing slash)
+  PASS  8 broken internal anchors
+  PASS  8 source-host absolute anchors (incl. www)
+  PASS  8 external anchors
+  PASS  8 non-navigational anchors
+
+== 9 seo-qa head brand scope (SEO surfaces fail; app asset refs measured)
+  PASS  9 clean SEO surfaces produce no leak
+  PASS  9 source term in a meta content IS an SEO-surface leak
+  PASS  9 source org name in JSON-LD IS an SEO-surface leak
+  PASS  9 app-emitted preload href does NOT fail the SEO-surface scan
+  PASS  9 app-emitted source asset refs measured and deduplicated
+  PASS  9 brand-free head yields zero measured asset refs
+
+79/79 checks passed

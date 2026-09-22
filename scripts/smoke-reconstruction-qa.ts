@@ -1,5 +1,7 @@
 import { createServer, type Server } from "node:http";
 import { mkdtemp, readFile, rm, writeFile, mkdir } from "node:fs/promises";
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 import { chromium, type Browser } from "playwright";
@@ -7,6 +9,7 @@ import { PNG } from "pngjs";
 import {
   DESKTOP_PROFILE,
   MOBILE_PROFILE,
+  TEXT_MAX_LEN,
   type PageObservation,
 } from "../src/observer/types.js";
 import { observePageWithBrowser, resolveViewportProfiles } from "../src/observer/observe-page.js";
@@ -56,24 +59,44 @@ import {
   diffGeometry,
   diffStyles,
   DiffCollector,
+  buildScreenshotCoverage,
+  captureScreenshot,
+  emitScreenshotCoverageDiffs,
   encodePng,
   evaluateRegression,
   judgeCorrection,
   measurePair,
   metricIsHigherBetter,
+  newQaContext,
+  pairCoverage,
   proposeCorrections,
+  readPngDimensions,
   qaAssetFileName,
   qaDiffId,
   runReconstructionQa,
   selectFamilyAuditRoutes,
   selectUnknownSamples,
+  summarizeLiveFidelity,
   summarizeRootCauses,
+  summarizeSnapshotFidelity,
+  screenshotCapEnforced,
   LENGTH_TOLERANCE_PX,
   MAX_DATA_IMAGE_BYTES,
+  QA_BROWSER_ENGINE,
+  QA_ENGINE,
+  SCREENSHOT_CAP_ENFORCING_ENGINES,
+  SCREENSHOT_DEVICE_DIMENSION_CAP,
   MAX_FAMILY_AUDIT_ROUTES_PER_SITE,
   MAX_UNKNOWN_QA_PER_SITE,
   type QaCorrection,
+  type QaPageResult,
+  type ScreenshotMetric,
 } from "../src/reconstruction-qa/index.js";
+import {
+  expectedVariantAt,
+  planBreakpointProbeTargets,
+} from "../src/reconstruction-qa/capture-clone.js";
+import { BREAKPOINT_PROBE_WIDTHS } from "../src/reconstruction-qa/types.js";
 
 /**
  * Fixture test for Reconstruction QA & the Automated Correction Loop (Task 15).
@@ -131,6 +154,23 @@ function solidPng(width: number, height: number, rgb: [number, number, number]):
     png.data[i * 4 + 1] = rgb[1];
     png.data[i * 4 + 2] = rgb[2];
     png.data[i * 4 + 3] = 255;
+  }
+  return PNG.sync.write(png);
+}
+
+/** A white PNG whose columns from `inkFrom` rightwards are solid black. Used to
+ *  put KNOWN ink outside the min-crop the comparison reads. */
+function inkedStripPng(width: number, height: number, inkFrom: number): Buffer {
+  const png = new PNG({ width, height });
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      const value = x >= inkFrom ? 0 : 255;
+      png.data[i] = value;
+      png.data[i + 1] = value;
+      png.data[i + 2] = value;
+      png.data[i + 3] = 255;
+    }
   }
   return PNG.sync.write(png);
 }
@@ -202,6 +242,630 @@ function testScreenshotMetrics(): void {
   });
   check("a missing side is `available: false`, never a fake score", missing.metric.available === false);
   check("…and names which side was missing", (missing.metric.unavailableReason ?? "").includes("snapshot"));
+
+  // -- Task 28.8 FAST change 3: the min-crop is no longer SILENT ----------------
+  //
+  // Every figure above is computed over `min(a,b)` in each axis, and until now
+  // nothing said how much canvas that removed or whether anything was in it.
+  // `widthDelta` recorded that the sizes differed and never that the difference
+  // was excluded from every number beside it. The crop stays — a resize invents
+  // pixels — and the band is measured. Magnitudes from the corpus that made it
+  // matter: linear.app @700 is source 700px vs clone 862px, severance @1100 is
+  // 1280 vs 1100, interiorbay @390 is 1525 vs 390.
+  check(
+    "the min-crop is still a crop and still never a resize",
+    sized.overlapPixels === 100 && sized.aWidth === 10 && sized.bHeight === 20,
+  );
+  const narrow = decodePng(solidPng(8, 8, [255, 255, 255]));
+  const wideBlank = decodePng(solidPng(12, 8, [255, 255, 255]));
+  const wideInked = decodePng(inkedStripPng(12, 8, 8));
+  check(
+    "a comparison over unequal widths REPORTS the strip it never read: dimensions, pixels and ink",
+    (() => {
+      const band = compareImages(wideInked, narrow).uncompared;
+      return (
+        band.widthPx === 4 &&
+        band.heightPx === 0 &&
+        band.pixels === 32 &&
+        band.aPixels === 32 &&
+        band.bPixels === 0 &&
+        band.sampledPixels === 32 &&
+        band.aInkSampled === 32 &&
+        band.inkPixels === 32 &&
+        band.inkRatio === 1 &&
+        band.measured === true
+      );
+    })(),
+    JSON.stringify(compareImages(wideInked, narrow).uncompared),
+  );
+  check(
+    "…and a dropped strip of plain page background reads 0 ink, so a harmless crop is never inflated",
+    (() => {
+      const band = compareImages(wideBlank, narrow).uncompared;
+      return band.widthPx === 4 && band.pixels === 32 && band.inkPixels === 0;
+    })(),
+    JSON.stringify(compareImages(wideBlank, narrow).uncompared),
+  );
+  check(
+    "…a taller side's dropped BOTTOM strip is measured on the same terms",
+    (() => {
+      const band = compareImages(a, tall).uncompared;
+      return band.heightPx === 10 && band.widthPx === 0 && band.bPixels === 100;
+    })(),
+    JSON.stringify(compareImages(a, tall).uncompared),
+  );
+  check(
+    "…and two equal-sized captures report a band of ZERO, the only case where 0 means nothing was dropped",
+    (() => {
+      const band = compareImages(narrow, narrow).uncompared;
+      return band.widthPx === 0 && band.heightPx === 0 && band.pixels === 0;
+    })(),
+  );
+  check(
+    "the band reaches the ARTIFACT, so a reader of a stored metric can see it without recomputing",
+    (() => {
+      const measured = measurePair({
+        pair: "snapshot-clone",
+        a: inkedStripPng(12, 8, 8),
+        b: solidPng(8, 8, [255, 255, 255]),
+        aLabel: "snapshot",
+        bLabel: "clone",
+      });
+      return (
+        measured.metric.uncomparedWidthPx === 4 &&
+        measured.metric.uncomparedPixels === 32 &&
+        measured.metric.uncomparedInkPixels === 32 &&
+        measured.metric.uncomparedInkRatio === 1 &&
+        measured.metric.uncomparedMeasured === true
+      );
+    })(),
+    JSON.stringify(
+      measurePair({
+        pair: "snapshot-clone",
+        a: inkedStripPng(12, 8, 8),
+        b: solidPng(8, 8, [255, 255, 255]),
+        aLabel: "snapshot",
+        bLabel: "clone",
+      }).metric,
+    ),
+  );
+}
+
+/**
+ * Task 28.6 C5 — full-page screenshot coverage must be reported, not assumed.
+ *
+ * The defect this replaces: every pixel metric in this Task is computed over
+ * the OVERLAP of two PNGs, and nothing anywhere compared a PNG to the DOCUMENT
+ * it came from. A capture that stopped short of the page bottom produced a
+ * perfectly well-formed metric describing only the part that survived, and a
+ * reader could not tell "clean" from "clean as far as we looked".
+ *
+ * These checks are the standing proof that the distinction now exists. They are
+ * written so that DELETING the reporting makes them fail: `coveredFraction`
+ * absent is asserted to be different from `coveredFraction === 1`, and the
+ * truncated case is asserted to produce a routed diff, not a note.
+ */
+function testScreenshotCoverage(): void {
+  section("Screenshot coverage (Task 28.6 C5) — a capped capture is never a whole-page verdict");
+
+  // --- dimensions without a decode ------------------------------------------
+  const png = solidPng(7, 13, [1, 2, 3]);
+  const dimensions = readPngDimensions(png);
+  check(
+    "PNG dimensions are read from the IHDR, no decode",
+    dimensions?.width === 7 && dimensions?.height === 13,
+  );
+  check(
+    "non-PNG bytes report no dimensions instead of throwing",
+    readPngDimensions(Buffer.from("this is not a png at all, not even close")) === undefined,
+  );
+
+  // --- a whole-page capture -------------------------------------------------
+  const whole = buildScreenshotCoverage({
+    side: "clone",
+    documentMeasured: true,
+    documentHeightCss: 18_981,
+    documentWidthCss: 1440,
+    deviceScaleFactor: 1,
+    captured: { width: 1440, height: 18_981 },
+  });
+  check("a whole-page capture reports coveredFraction 1", whole.coveredFraction === 1);
+  check("…and is not truncated", whole.truncated === false);
+  check("…and hides no rows", whole.truncatedDeviceRows === 0);
+  check(
+    "…and still records the document it was measured against",
+    whole.documentHeightCss === 18_981 && whole.expectedDeviceHeight === 18_981,
+  );
+
+  // --- a capped capture over the same page ----------------------------------
+  const capped = buildScreenshotCoverage({
+    side: "clone",
+    documentMeasured: true,
+    documentHeightCss: 18_981,
+    documentWidthCss: 1440,
+    deviceScaleFactor: 1,
+    captured: { width: 1440, height: 12_000 },
+    reason: "captured 12000 of 18981 device rows",
+  });
+  check(
+    "a 12000px capture of an 18981px page reports the captured height",
+    capped.capturedDeviceHeight === 12_000,
+  );
+  check("…and the full document height beside it", capped.expectedDeviceHeight === 18_981);
+  check("…and the covered fraction", capped.coveredFraction === 0.6322);
+  check("…and is flagged truncated", capped.truncated === true);
+  check(
+    "…and counts the rows nothing ever looked at",
+    capped.truncatedDeviceRows === 6981,
+  );
+  check("…and names the driver cap it is measured against", capped.capDeviceDimension === SCREENSHOT_DEVICE_DIMENSION_CAP);
+
+  // --- a capture that never happened ----------------------------------------
+  const failed = buildScreenshotCoverage({
+    side: "live-original",
+    documentMeasured: true,
+    documentHeightCss: 40_000,
+    documentWidthCss: 1440,
+    deviceScaleFactor: 1,
+    reason: "screenshot failed: Cannot take screenshot larger than 32767 pixels on any dimension",
+  });
+  check("a refused screenshot is `captured: false`", failed.captured === false);
+  check("…and covered fraction 0, never an unstated 1", failed.coveredFraction === 0);
+  check("…and carries the driver's own reason", (failed.reason ?? "").includes("32767"));
+
+  // --- the pair rule --------------------------------------------------------
+  const pair = pairCoverage(whole, capped);
+  check(
+    "a pair speaks for the WEAKER side, not the average",
+    pair.coveredFraction === 0.6322,
+  );
+  check("…and says a side was truncated", pair.coverageTruncated === true);
+  check(
+    "…and names which side",
+    JSON.stringify(pair.truncatedSides) === JSON.stringify(["clone"]),
+  );
+  const cleanPair = pairCoverage(whole, whole);
+  check("two whole captures report no truncation", cleanPair.coverageTruncated === false);
+  check(
+    "coverage is absent, not 1, when it was never measured",
+    pairCoverage(undefined, undefined).coveredFraction === undefined,
+  );
+
+  // --- the metric carries the caveat ---------------------------------------
+  const metric = measurePair({
+    pair: "snapshot-clone",
+    a: solidPng(4, 4, [0, 0, 0]),
+    b: solidPng(4, 4, [0, 0, 0]),
+    aLabel: "snapshot",
+    bLabel: "clone",
+    aCoverage: whole,
+    bCoverage: capped,
+  }).metric;
+  check(
+    "a pixel-identical pair over a truncated capture is still 0 changed pixels",
+    metric.changedPixels === 0,
+  );
+  check(
+    "…but the metric refuses to read as a whole-page verdict",
+    metric.coverageTruncated === true && metric.coveredFraction === 0.6322,
+  );
+  const uncovered = measurePair({
+    pair: "snapshot-clone",
+    a: solidPng(4, 4, [0, 0, 0]),
+    b: solidPng(4, 4, [0, 0, 0]),
+    aLabel: "snapshot",
+    bLabel: "clone",
+  }).metric;
+  check(
+    "…and a run that never measured coverage says so by absence",
+    uncovered.coveredFraction === undefined && uncovered.coverageTruncated === undefined,
+  );
+
+  // --- truncation is a FINDING, routed to an owner --------------------------
+  const collector = new DiffCollector();
+  const base = { pageId: "p000001", viewport: "desktop" as const, route: "https://example.test/" };
+  emitScreenshotCoverageDiffs(collector, base, [whole]);
+  check(
+    "a fully covered page raises nothing — the finding is about what was NOT seen",
+    collector.build().length === 0,
+  );
+  emitScreenshotCoverageDiffs(collector, base, [capped, failed]);
+  const coverageDiffs = collector
+    .build()
+    .filter((diff) => diff.classification === "visual-coverage-truncated");
+  check("a truncated capture raises a diff, not a footnote", coverageDiffs.length === 2);
+  check(
+    "…on the visual dimension",
+    coverageDiffs.every((diff) => diff.dimension === "visual"),
+  );
+  check(
+    "…owned by qa, because the instrument fell short, not the clone",
+    coverageDiffs.every((diff) => diff.upstreamStage === "qa"),
+  );
+  check(
+    "…never auto-fixable, because there is nothing in the clone to correct",
+    coverageDiffs.every((diff) => diff.autoFixEligibility === "not-eligible-unstable-measurement"),
+  );
+  check(
+    "…carrying the machine-readable limitation",
+    coverageDiffs.every((diff) => diff.limitations.includes("screenshot-coverage-truncated")),
+  );
+  check(
+    "…and evidence naming captured vs full document height",
+    coverageDiffs.some(
+      (diff) =>
+        (diff.evidence[0]?.note ?? "").includes("12000 of 18981") &&
+        diff.evidence[0]?.count === 6981,
+    ),
+  );
+  check(
+    "…and identifying which of the three images was short",
+    JSON.stringify(coverageDiffs.map((diff) => diff.property).sort()) ===
+      JSON.stringify(["clone", "live-original"]),
+  );
+
+  // ------------------------------------------------------------------------
+  // Task 28.6 Wave 3 corrections. Each block reproduces a case that used to be
+  // scored as a whole-page verdict, and pins the honest answer instead.
+  // ------------------------------------------------------------------------
+
+  section("Screenshot coverage corrections (Task 28.6 W3) — no silent whole-page verdicts");
+
+  // --- the cap belongs to an ENGINE, not to a platform ----------------------
+  check(
+    "chromium never consults the driver cap, on ANY platform",
+    screenshotCapEnforced("chromium", "linux") === false &&
+      screenshotCapEnforced("chromium", "win32") === false &&
+      screenshotCapEnforced("chromium", "darwin") === false,
+    `${screenshotCapEnforced("chromium", "linux")}`,
+  );
+  check(
+    "…and this pipeline launches chromium, so the DEFAULT answer is false off darwin too",
+    QA_BROWSER_ENGINE === "chromium" &&
+      QA_ENGINE.includes(QA_BROWSER_ENGINE) &&
+      screenshotCapEnforced(undefined, "linux") === false,
+    `${QA_BROWSER_ENGINE} / ${QA_ENGINE}`,
+  );
+  check(
+    "an engine that DOES consult it reports true off darwin and false on it",
+    SCREENSHOT_CAP_ENFORCING_ENGINES.every(
+      (engine) =>
+        screenshotCapEnforced(engine, "linux") === true &&
+        screenshotCapEnforced(engine, "darwin") === false,
+    ),
+    SCREENSHOT_CAP_ENFORCING_ENGINES.join(","),
+  );
+  check(
+    "…and the claim is pinned against the DRIVER: chromium's page class contains no cap call",
+    (() => {
+      /*
+       * Read playwright's own bundle rather than restating a measurement in a
+       * comment. `validateScreenshotDimension` is defined and called only in the
+       * WebKit and WebView page classes; `CRPage` — the class whose
+       * `takeScreenshot` this pipeline actually reaches — never mentions it. If a
+       * future playwright moves the check into chromium, this goes RED and the
+       * engine list above has to be re-measured, which is the correct signal.
+       */
+      let bundle: string;
+      try {
+        const entry = createRequire(import.meta.url).resolve("playwright-core");
+        bundle = readFileSync(path.join(path.dirname(entry), "lib", "coreBundle.js"), "utf8");
+      } catch {
+        return false; // cannot verify ⇒ fail loudly, never pass by default
+      }
+      const crStart = bundle.indexOf("CRPage = class");
+      if (crStart < 0) return false;
+      const nextClass = bundle.indexOf(" = class", crStart + "CRPage = class".length);
+      const crBody = bundle.slice(crStart, nextClass < 0 ? bundle.length : nextClass);
+      return (
+        crBody.includes("takeScreenshot(") &&
+        !crBody.includes("validateScreenshotDimension") &&
+        bundle.includes("validateScreenshotDimension")
+      );
+    })(),
+  );
+  check(
+    "a coverage record built for this pipeline says the cap is NOT enforced",
+    whole.capEnforced === false && whole.capDeviceDimension === SCREENSHOT_DEVICE_DIMENSION_CAP,
+    `capEnforced=${whole.capEnforced}`,
+  );
+
+  // --- an unmeasurable document is UNKNOWN, never "we covered 0 of it" ------
+  const unmeasurable = buildScreenshotCoverage({
+    side: "clone",
+    // The `page.evaluate` that measures the document threw; the screenshot
+    // itself came back fine at 1440x5000.
+    documentMeasured: false,
+    documentHeightCss: 0,
+    documentWidthCss: 0,
+    deviceScaleFactor: 1,
+    captured: { width: 1440, height: 5000 },
+    reason: "document not measurable: Execution context was destroyed",
+  });
+  check(
+    "a capture whose document could not be measured says so",
+    unmeasurable.documentMeasured === false && unmeasurable.captured === true,
+    JSON.stringify(unmeasurable),
+  );
+  check(
+    "…and it raises a finding, where the old `!truncated && captured` guard let it pass",
+    (() => {
+      const local = new DiffCollector();
+      emitScreenshotCoverageDiffs(local, base, [unmeasurable]);
+      const raised = local.build();
+      return (
+        raised.length === 1 &&
+        raised[0]!.classification === "visual-coverage-truncated" &&
+        (raised[0]!.evidence[0]?.note ?? "").includes("UNKNOWN")
+      );
+    })(),
+    JSON.stringify(
+      (() => {
+        const local = new DiffCollector();
+        emitScreenshotCoverageDiffs(local, base, [unmeasurable]);
+        return local.build().map((d) => d.evidence[0]?.note);
+      })(),
+    ),
+  );
+  check(
+    "…and a pair containing it reports UNKNOWN coverage, not 0 and not 1",
+    (() => {
+      const pairWithUnknown = pairCoverage(whole, unmeasurable);
+      return (
+        pairWithUnknown.coveredFraction === undefined &&
+        pairWithUnknown.coverageTruncated === true &&
+        pairWithUnknown.coverageUnknownSides === 1
+      );
+    })(),
+    JSON.stringify(pairCoverage(whole, unmeasurable)),
+  );
+
+  // --- truncation is BOTH axes ---------------------------------------------
+  const halfWidth = buildScreenshotCoverage({
+    side: "clone",
+    documentMeasured: true,
+    documentHeightCss: 5000,
+    documentWidthCss: 1440,
+    deviceScaleFactor: 1,
+    captured: { width: 720, height: 5000 },
+  });
+  check(
+    "a half-WIDTH capture is truncated, where height-only accounting scored it 1.0",
+    halfWidth.truncated === true &&
+      halfWidth.coveredWidthFraction === 0.5 &&
+      halfWidth.coveredHeightFraction === 1 &&
+      halfWidth.coveredFraction === 0.5,
+    JSON.stringify(halfWidth),
+  );
+  check(
+    "…and the columns nobody looked at are counted, like the rows",
+    halfWidth.truncatedDeviceColumns === 720 && halfWidth.truncatedDeviceRows === 0,
+    `${halfWidth.truncatedDeviceColumns} columns / ${halfWidth.truncatedDeviceRows} rows`,
+  );
+  check(
+    "…and it raises the same finding a short-on-height capture does",
+    (() => {
+      const local = new DiffCollector();
+      emitScreenshotCoverageDiffs(local, base, [halfWidth]);
+      return local.build().length === 1;
+    })(),
+  );
+  check(
+    "a capture WIDER than the document is not truncation — the shortfall floors at 0",
+    (() => {
+      // The real shape from the corpus: 12 MDN observations record a 1425 CSS px
+      // document against a 1440 px PNG. Wider is not missing.
+      const wider = buildScreenshotCoverage({
+        side: "snapshot",
+        documentMeasured: true,
+        documentHeightCss: 3000,
+        documentWidthCss: 1425,
+        deviceScaleFactor: 1,
+        captured: { width: 1440, height: 3000 },
+      });
+      return (
+        wider.truncated === false &&
+        wider.truncatedDeviceColumns === 0 &&
+        wider.coveredWidthFraction === 1 &&
+        wider.coveredFraction === 1
+      );
+    })(),
+  );
+  check(
+    "the area fraction leaves every previously measured height-only figure unchanged",
+    capped.coveredFraction === 0.6322 && capped.coveredHeightFraction === 0.6322,
+    `${capped.coveredFraction}`,
+  );
+
+  // --- a pair has TWO sides, always -----------------------------------------
+  check(
+    "a pair with one side missing does NOT inherit the known side's coverage",
+    (() => {
+      const lopsided = pairCoverage(whole, undefined);
+      return (
+        lopsided.coveredFraction === undefined &&
+        lopsided.coverageTruncated === true &&
+        lopsided.coverageUnknownSides === 1
+      );
+    })(),
+    JSON.stringify(pairCoverage(whole, undefined)),
+  );
+  check(
+    "…while two known sides report 0 unknown sides and a real fraction",
+    cleanPair.coverageUnknownSides === 0 && cleanPair.coveredFraction === 1,
+    JSON.stringify(cleanPair),
+  );
+  check(
+    "…and both sides absent is still ABSENCE, not a fraction of anything",
+    (() => {
+      const nothing = pairCoverage(undefined, undefined);
+      return (
+        nothing.coveredFraction === undefined &&
+        nothing.coverageTruncated === undefined &&
+        nothing.coverageUnknownSides === undefined
+      );
+    })(),
+  );
+}
+
+/**
+ * Task 28.6 C5, measured half — the same accounting against a real browser on a
+ * genuinely tall page (18,981 CSS px, the height the C5 report names).
+ *
+ * This does NOT assert that a cap bites. Measured on 2026-09-03 with playwright
+ * 1.62.1 on darwin, `page.screenshot({ fullPage: true })` returned the complete
+ * document at 1440x40000 and 1440x200000 device px, so on this platform there
+ * is nothing being clipped and the honest assertion is that the coverage record
+ * SAYS SO — a standing regression test that the instrument reports what it
+ * covered instead of staying silent. The truncated branch is then exercised
+ * against a REAL clipped PNG of the same page, produced by a banded capture, so
+ * the truncation path is proven on real bytes rather than on a hand-built
+ * record.
+ */
+async function testTallPageCoverage(): Promise<void> {
+  section("Screenshot coverage on a genuinely tall page (Task 28.6 C5) — measured, not assumed");
+
+  const TALL_CSS_HEIGHT = 18_981;
+  const browser = await chromium.launch();
+  try {
+    const context = await newQaContext(browser, DESKTOP_PROFILE);
+    try {
+      const page = await context.newPage();
+      await page.setContent(
+        `<body style="margin:0"><div style="height:${TALL_CSS_HEIGHT}px;` +
+          `background:linear-gradient(#ffffff,#0000ff)"></div></body>`,
+      );
+      await page.waitForTimeout(200);
+
+      const shot = await captureScreenshot(page, "clone");
+      check(
+        "the real capture path measures the document it captured",
+        shot.coverage.documentHeightCss === TALL_CSS_HEIGHT,
+        `documentHeightCss=${shot.coverage.documentHeightCss}`,
+      );
+      check(
+        "…and records the captured height beside it",
+        shot.coverage.capturedDeviceHeight === shot.coverage.expectedDeviceHeight &&
+          shot.coverage.capturedDeviceHeight === TALL_CSS_HEIGHT,
+        `captured=${shot.coverage.capturedDeviceHeight} expected=${shot.coverage.expectedDeviceHeight}`,
+      );
+      check(
+        "…so an 18,981px page reports full coverage rather than silence",
+        shot.coverage.coveredFraction === 1 && shot.coverage.truncated === false,
+        `covered=${shot.coverage.coveredFraction} truncated=${shot.coverage.truncated}`,
+      );
+      check("…and a buffer came back", (shot.buffer?.byteLength ?? 0) > 0);
+      check(
+        "…and the record states the driver cap and whether it is enforced here",
+        // NOT `process.platform !== "darwin"`. That was the platform-only rule
+        // the cap note originally stated, and it is wrong for this pipeline: the
+        // cap check lives in the WebKit / WebView page classes and chromium never
+        // calls it, so the honest answer is false on every platform. Written as
+        // the function's own contract so the two cannot drift apart.
+        shot.coverage.capDeviceDimension === SCREENSHOT_DEVICE_DIMENSION_CAP &&
+          shot.coverage.capEnforced === false &&
+          shot.coverage.capEnforced === screenshotCapEnforced(QA_BROWSER_ENGINE),
+        `capEnforced=${shot.coverage.capEnforced} platform=${process.platform}`,
+      );
+      check(
+        "…and the real capture path reports that it MEASURED the document",
+        shot.coverage.documentMeasured === true &&
+          shot.coverage.coveredWidthFraction === 1 &&
+          shot.coverage.truncatedDeviceColumns === 0,
+        JSON.stringify({
+          documentMeasured: shot.coverage.documentMeasured,
+          coveredWidthFraction: shot.coverage.coveredWidthFraction,
+        }),
+      );
+
+      /*
+       * A REAL short PNG of the SAME page: 12,000 of 18,981 CSS px, taken by the
+       * browser. Coverage is then built from those bytes exactly as the capture
+       * path builds it, which is what a driver that clipped instead of refusing
+       * would hand us.
+       */
+      const clipped = await page.screenshot({
+        type: "png",
+        fullPage: true,
+        clip: { x: 0, y: 0, width: 1440, height: 12_000 },
+      });
+      const clippedDimensions = readPngDimensions(clipped);
+      const clippedCoverage = buildScreenshotCoverage({
+        side: "clone",
+        documentMeasured: shot.coverage.documentMeasured,
+        documentHeightCss: shot.coverage.documentHeightCss,
+        documentWidthCss: shot.coverage.documentWidthCss,
+        deviceScaleFactor: shot.coverage.deviceScaleFactor,
+        ...(clippedDimensions ? { captured: clippedDimensions } : {}),
+      });
+      check(
+        "a real 12,000px capture of the same page is detected as short",
+        clippedCoverage.truncated === true && clippedCoverage.capturedDeviceHeight === 12_000,
+        `captured=${clippedCoverage.capturedDeviceHeight}`,
+      );
+      check(
+        "…and 6,981 device rows are counted as never inspected",
+        clippedCoverage.truncatedDeviceRows === 6981,
+        `rows=${clippedCoverage.truncatedDeviceRows}`,
+      );
+      check(
+        "…and the pair built from it cannot report a whole-page verdict",
+        pairCoverage(clippedCoverage, shot.coverage).coverageTruncated === true,
+      );
+      const collector = new DiffCollector();
+      emitScreenshotCoverageDiffs(
+        collector,
+        { pageId: "p000001", viewport: "desktop", route: "https://example.test/" },
+        [clippedCoverage],
+      );
+      check(
+        "…and the real short capture raises the coverage finding",
+        collector.build().some((diff) => diff.classification === "visual-coverage-truncated"),
+      );
+
+      /*
+       * Task 28.6 W3 — the UNMEASURABLE branch on the REAL capture path.
+       *
+       * `documentMeasured` is only worth anything if the capture path actually
+       * computes it; hard-coding it to `true` would leave every fixture-built
+       * check above green. So the page is closed under it: the `page.evaluate`
+       * that measures the document throws, the screenshot throws, and the record
+       * has to say both — unknown document, nothing captured — rather than
+       * "covered 0 of a 0-pixel page, nothing truncated".
+       */
+      const closedPage = await context.newPage();
+      await closedPage.setContent("<body>gone in a moment</body>");
+      await closedPage.close();
+      const afterClose = await captureScreenshot(closedPage, "clone");
+      check(
+        "a capture on a dead page reports an UNMEASURABLE document, not a measured zero",
+        afterClose.coverage.documentMeasured === false &&
+          afterClose.coverage.captured === false &&
+          afterClose.buffer === undefined,
+        JSON.stringify(afterClose.coverage),
+      );
+      check(
+        "…and it raises the coverage finding rather than passing as untruncated",
+        (() => {
+          const local = new DiffCollector();
+          emitScreenshotCoverageDiffs(
+            local,
+            { pageId: "p000001", viewport: "desktop", route: "https://example.test/" },
+            [afterClose.coverage],
+          );
+          const raised = local.build();
+          return (
+            raised.length === 1 &&
+            (raised[0]!.evidence[0]?.note ?? "").includes("UNKNOWN")
+          );
+        })(),
+      );
+    } finally {
+      await context.close().catch(() => {});
+    }
+  } finally {
+    await browser.close().catch(() => {});
+  }
 }
 
 function testDataImageSafety(): void {
@@ -964,6 +1628,48 @@ function testAlignmentAndContent(): void {
     "…but the drift comparison normalizes, because the snapshot may be capped",
     trimmedDrift.summary.changed === 0,
   );
+
+  /*
+   * Task 28.6 audit — the SAME defect class as C5 in the text channel. When the
+   * Observer's `TEXT_MAX_LEN` cap truncated a stored value, this comparison
+   * silently drops from equality to a PREFIX match, so the node's tail is never
+   * compared by anyone and `exactRatio` reads identically either way. The
+   * weaker check is now counted.
+   */
+  const cappedText = "x".repeat(TEXT_MAX_LEN);
+  const cappedViewport = {
+    ...viewport,
+    nodes: viewport.nodes.map((node) =>
+      node.type === "text" ? { ...node, value: cappedText } : node,
+    ),
+  };
+  const cappedCompare = diffContent({
+    viewport: cappedViewport,
+    nodes: cappedViewport.nodes.filter(
+      (node): node is Extract<typeof node, { type: "element" }> => node.type === "element",
+    ),
+    actualByNodeId: new Map([
+      [
+        "n000002",
+        { ...goodCapture.elements[1]!, rawText: `${cappedText} and a tail nobody stored` },
+      ],
+    ]),
+    mode: "normalized",
+  });
+  check(
+    "a node the Observer capped is compared by prefix, and counted as such",
+    cappedCompare.summary.prefixComparedNodes === 1,
+    `prefixComparedNodes=${cappedCompare.summary.prefixComparedNodes}`,
+  );
+  check(
+    "…so a prefix match is not presented as a full-text match with no trace",
+    cappedCompare.summary.exactEqual === 1 &&
+      (cappedCompare.summary.prefixComparedNodes ?? 0) > 0,
+  );
+  check(
+    "…and an uncapped page reports 0, never absence",
+    trimmedDrift.summary.prefixComparedNodes === 0,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -973,7 +1679,30 @@ function testAlignmentAndContent(): void {
 const HOME_HTML = (variant: "original" | "drifted"): string => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Fixture home</title>
 <style>
-  html { background: rgb(17, 24, 39); }
+  /* Task 28.75 §CANVAS. The generator propagates the observed document-root
+     background onto the clone's REAL <html> (scoped per page), so a clone whose
+     canvas is simply missing is no longer producible by a generator bug — and
+     this fixture must not depend on one to have something for QA to find.
+     It therefore constructs the mismatch itself, through the refusal the
+     generator documents: the two observed viewports must AGREE on the canvas
+     declaration TEXT, and here they disagree on background-position ONLY
+     ('resolveDocumentRootCanvas' → "viewports-disagree",
+     src/reconstruction/style-generator.ts:317-318). The canvas is then left
+     unpromoted and this page's clone really does paint the UA's white canvas
+     under a dark-root source — a genuine, still-reachable defect.
+     background-position is chosen deliberately: it is compared by neither
+     canvasMismatchedProperties (skipped while background-image is 'none',
+     src/reconstruction-qa/qa-page.ts:202-208) nor the human eye here, so the
+     observed canvas COLOUR stays identical at both widths and the resulting
+     mismatch is one site-level correction can actually fix.
+     The /member/* pages below keep an ordinary agreeing canvas and are the
+     positive control: they get promoted and must show NO mismatch. */
+  html { background-color: rgb(17, 24, 39); background-position: 0% 0%; }
+  /* 1200px, not 700px: this fixture has no <meta name="viewport">, so Chromium's
+     mobile emulation lays the page out at its 980px default rather than at the
+     390px profile width. The breakpoint must sit between that layout width and
+     the 1440px desktop profile for the two captures to differ at all. */
+  @media (max-width: 1200px) { html { background-position: 25% 75%; } }
   body { margin: 0; font-family: system-ui, sans-serif; color: rgb(255,255,255); }
   main { padding: 24px; }
   .panel { display: none; background: rgb(30,41,59); padding: 12px; }
@@ -1739,6 +2468,50 @@ async function testLiveHalf(): Promise<void> {
     const pipeline = await buildPipeline(browser, root, fixture.baseUrl);
     check("the fixture pipeline produced a SiteSpec", pipeline.siteSpecFile.length > 0);
 
+    // --- Responsive Core P0: breakpoint probe planning (pure) ---------------
+    {
+      const planned = planBreakpointProbeTargets({
+        siteBreakpoint: 641,
+        pageBreakpoints: { p000002: 1025 },
+        routes: [
+          { pageId: "p000001", clonePath: "/" },
+          { pageId: "p000001", clonePath: "/" },
+          { pageId: "p000002", clonePath: "/pricing" },
+        ],
+      });
+      check(
+        "(P0) probe planning: site switch per route, a route-map override at its OWN width, one target per page",
+        planned.targets.length === 2 &&
+          planned.fallbackTargets === 0 &&
+          JSON.stringify(planned.targets[0]?.widths) === "[640,641,642]" &&
+          planned.targets[0]?.source === "manifest-site" &&
+          JSON.stringify(planned.targets[1]?.widths) === "[1024,1025,1026]" &&
+          planned.targets[1]?.source === "route-map-page" &&
+          planned.targets[1]?.clonePath === "/pricing",
+        JSON.stringify(planned),
+      );
+      const fallback = planBreakpointProbeTargets({
+        siteBreakpoint: undefined,
+        routes: [{ pageId: "p000001", clonePath: "/" }],
+      });
+      check(
+        "(P0) probe planning: a manifest with no usable switch falls back to the constant, COUNTED",
+        fallback.fallbackTargets === 1 &&
+          fallback.targets[0]?.source === "fallback-constant" &&
+          fallback.targets[0]?.breakpoint === undefined &&
+          JSON.stringify(fallback.targets[0]?.widths) === JSON.stringify(BREAKPOINT_PROBE_WIDTHS) &&
+          planBreakpointProbeTargets({ siteBreakpoint: Number.NaN, routes: [] }).fallbackTargets === 1,
+        JSON.stringify(fallback),
+      );
+      check(
+        "(P0) the convention: mobile strictly below the switch, desktop at and above it",
+        expectedVariantAt(900, 899) === "mobile" &&
+          expectedVariantAt(900, 900) === "desktop" &&
+          expectedVariantAt(900, 901) === "desktop" &&
+          expectedVariantAt(undefined, 915) === undefined,
+      );
+    }
+
     // --- baseline QA against the UNCHANGED original -------------------------
     const baselineRun = await runReconstructionQa({
       manifestFile: pipeline.manifestFile,
@@ -1759,6 +2532,42 @@ async function testLiveHalf(): Promise<void> {
       baselineRun.routeCheck.rendered === baselineRun.routeCheck.checked,
       `${baselineRun.routeCheck.rendered}/${baselineRun.routeCheck.checked}`,
     );
+
+    // --- Responsive Core P0: the breakpoint probe reads the SERVED switch ----
+    {
+      const manifestRaw = JSON.parse(await readFile(pipeline.manifestFile, "utf8")) as {
+        config: { inferredBreakpoint: { value: number } };
+      };
+      const served = manifestRaw.config.inferredBreakpoint.value;
+      const probe = baselineRun.breakpointProbe;
+      const distinctPages = new Set(baselineRun.pages.map((page) => page.pageId)).size;
+      check(
+        "(P0) the breakpoint probe targets EVERY route at served−1 / served / served+1, never 914–916",
+        probe.targets.length === distinctPages &&
+          probe.fallbackTargets === 0 &&
+          probe.targets.every(
+            (t) =>
+              t.breakpoint !== undefined &&
+              (t.source === "manifest-site" || t.source === "route-map-page") &&
+              JSON.stringify(t.widths) ===
+                JSON.stringify([t.breakpoint - 1, t.breakpoint, t.breakpoint + 1]),
+          ) &&
+          probe.targets.some((t) => t.source === "manifest-site" && t.breakpoint === served),
+        JSON.stringify(probe.targets),
+      );
+      check(
+        "(P0) …and at each sample the clone shows exactly the variant the convention requires",
+        probe.results.length === probe.targets.length * 3 &&
+          probe.failures === 0 &&
+          probe.results.every(
+            (r) =>
+              r.ok &&
+              r.expectedVariant === expectedVariantAt(r.breakpoint, r.width) &&
+              (r.expectedVariant === "desktop" ? r.desktopVisible : r.mobileVisible),
+          ),
+        JSON.stringify(probe.results.filter((r) => !r.ok)),
+      );
+    }
     check(
       "content fidelity against the snapshot is exact",
       baselineRun.baseline.snapshotFidelity.contentExactRatio === 1,
@@ -1773,9 +2582,283 @@ async function testLiveHalf(): Promise<void> {
       "no clone runtime errors",
       baselineRun.baseline.snapshotFidelity.runtimeErrors === 0,
     );
+
+    /*
+     * Task 28.6 C5 (a) — a REAL run's per-page artifact must say how much of
+     * each page its pixel numbers speak for. Absence used to be the only
+     * possible answer; it is now a regression.
+     */
+    check(
+      "every QA'd page records screenshot coverage for all three images",
+      baselineRun.pages.every(
+        (qaPage) => (qaPage.screenshotCoverage ?? []).length === 3,
+      ),
+      baselineRun.pages
+        .map((qaPage) => (qaPage.screenshotCoverage ?? []).length)
+        .join(","),
+    );
+    check(
+      "…naming the snapshot, live original and clone sides",
+      baselineRun.pages.every(
+        (qaPage) =>
+          JSON.stringify(
+            (qaPage.screenshotCoverage ?? []).map((entry) => entry.side).sort(),
+          ) === JSON.stringify(["clone", "live-original", "snapshot"]),
+      ),
+    );
+    /*
+     * `.every()` over an empty array is vacuously true, so these two count the
+     * records they inspected — a run that wrote NO coverage must fail them,
+     * not pass them by having nothing to check.
+     */
+    const coverageRecords = baselineRun.pages.flatMap(
+      (qaPage) => qaPage.screenshotCoverage ?? [],
+    );
+    check(
+      "…with the captured height AND the full document height on every side",
+      coverageRecords.length === 12 &&
+        coverageRecords.every(
+          (entry) =>
+            entry.capturedDeviceHeight > 0 &&
+            entry.expectedDeviceHeight > 0 &&
+            entry.documentHeightCss > 0,
+        ),
+      `${coverageRecords.length} coverage records`,
+    );
+    check(
+      "…and short fixture pages honestly report full coverage, not silence",
+      coverageRecords.length === 12 &&
+        coverageRecords.every(
+          (entry) => entry.coveredFraction === 1 && entry.truncated === false,
+        ),
+      `${coverageRecords.length} coverage records`,
+    );
+    check(
+      "every screenshot metric carries the fraction of the page it speaks for",
+      baselineRun.pages.every((qaPage) =>
+        qaPage.screenshots.every((metric) => metric.coveredFraction !== undefined),
+      ),
+    );
+    check(
+      "…so a fully covered run reports 0 truncated pairs rather than nothing",
+      baselineRun.baseline.snapshotFidelity.screenshotTruncatedPairs === 0 &&
+        baselineRun.baseline.snapshotFidelity.screenshotMinCoveredFraction === 1,
+      `truncated=${baselineRun.baseline.snapshotFidelity.screenshotTruncatedPairs} min=${baselineRun.baseline.snapshotFidelity.screenshotMinCoveredFraction}`,
+    );
+    /*
+     * Task 28.6 W3 — the RUN SUMMARY over real page results.
+     *
+     * These take a page the live half actually produced and swap only its
+     * `screenshots` array, so the summarizer under test is fed a real
+     * `QaPageResult` rather than a hand-built stand-in that could drift from the
+     * schema.
+     */
+    const realPage = baselineRun.pages[0]!;
+    const withPairs = (metrics: ScreenshotMetric[]): QaPageResult => ({
+      ...realPage,
+      screenshots: metrics,
+    });
+    check(
+      "a snapshot-clone pair that could not be measured AT ALL still lowers the run summary",
+      (() => {
+        /*
+         * The exact case C5 created and the summary then skipped: a clone
+         * screenshot that failed outright is now `available: false` WITH
+         * `coverageTruncated: true`, and the counter's `|| !metric.available`
+         * gate ran BEFORE the coverage counters, so the run read as fully
+         * covered while the per-page finding said otherwise.
+         */
+        const summary = summarizeSnapshotFidelity([
+          withPairs([
+            {
+              pair: "snapshot-clone",
+              available: false,
+              unavailableReason: "clone screenshot unavailable",
+              coverageTruncated: true,
+              truncatedSides: ["clone"],
+              coverageUnknownSides: 1,
+            },
+          ]),
+        ]);
+        return (
+          summary.screenshotTruncatedPairs === 1 &&
+          summary.screenshotUnavailablePairs === 1 &&
+          summary.screenshotPairsMeasured === 0 &&
+          summary.screenshotMinCoveredFraction === undefined
+        );
+      })(),
+      JSON.stringify(
+        summarizeSnapshotFidelity([
+          withPairs([
+            {
+              pair: "snapshot-clone",
+              available: false,
+              unavailableReason: "clone screenshot unavailable",
+              coverageTruncated: true,
+              truncatedSides: ["clone"],
+              coverageUnknownSides: 1,
+            },
+          ]),
+        ]),
+      ),
+    );
+    check(
+      "…and a measured-but-short pair lowers the run's minimum covered fraction",
+      (() => {
+        const summary = summarizeSnapshotFidelity([
+          withPairs([
+            {
+              pair: "snapshot-clone",
+              available: true,
+              coveredFraction: 0.6322,
+              coverageTruncated: true,
+              truncatedSides: ["clone"],
+              coverageUnknownSides: 0,
+            },
+          ]),
+        ]);
+        return (
+          summary.screenshotTruncatedPairs === 1 &&
+          summary.screenshotUnavailablePairs === 0 &&
+          summary.screenshotPairsMeasured === 1 &&
+          summary.screenshotMinCoveredFraction === 0.6322
+        );
+      })(),
+    );
+    check(
+      "the LIVE-fidelity summary reports coverage too, instead of a bare visual median",
+      (() => {
+        /*
+         * C5 gave the snapshot summary coverage fields and left `LiveFidelity`
+         * with none, so `summarizeLiveFidelity`'s original-clone visual medians
+         * could still read as a whole-page verdict over a capped capture — the
+         * same defect, in the other half of the report.
+         */
+        const summary = summarizeLiveFidelity([
+          withPairs([
+            {
+              pair: "original-clone",
+              available: true,
+              changedPixelRatio: 0,
+              coveredFraction: 0.5,
+              coverageTruncated: true,
+              truncatedSides: ["clone"],
+              coverageUnknownSides: 0,
+            },
+          ]),
+        ]);
+        return (
+          summary.screenshotChangedRatioMedian === 0 &&
+          summary.screenshotTruncatedPairs === 1 &&
+          summary.screenshotMinCoveredFraction === 0.5 &&
+          summary.screenshotUnavailablePairs === 0
+        );
+      })(),
+      JSON.stringify(
+        summarizeLiveFidelity([
+          withPairs([
+            {
+              pair: "original-clone",
+              available: true,
+              changedPixelRatio: 0,
+              coveredFraction: 0.5,
+              coverageTruncated: true,
+              truncatedSides: ["clone"],
+              coverageUnknownSides: 0,
+            },
+          ]),
+        ]),
+      ),
+    );
+    check(
+      "…and an unmeasurable live pair counts there as well, rather than vanishing",
+      (() => {
+        const summary = summarizeLiveFidelity([
+          withPairs([
+            {
+              pair: "original-clone",
+              available: false,
+              unavailableReason: "clone screenshot unavailable",
+              coverageTruncated: true,
+              coverageUnknownSides: 1,
+            },
+          ]),
+        ]);
+        return (
+          summary.screenshotTruncatedPairs === 1 &&
+          summary.screenshotUnavailablePairs === 1 &&
+          summary.screenshotMinCoveredFraction === undefined
+        );
+      })(),
+    );
+    check(
+      "the real fully-covered run reports both summaries as covered, not silent",
+      baselineRun.baseline.liveFidelity.screenshotTruncatedPairs === 0 &&
+        baselineRun.baseline.liveFidelity.screenshotUnavailablePairs === 0 &&
+        baselineRun.baseline.liveFidelity.screenshotMinCoveredFraction === 1,
+      JSON.stringify({
+        truncated: baselineRun.baseline.liveFidelity.screenshotTruncatedPairs,
+        unavailable: baselineRun.baseline.liveFidelity.screenshotUnavailablePairs,
+        min: baselineRun.baseline.liveFidelity.screenshotMinCoveredFraction,
+      }),
+    );
+
+    /*
+     * Task 28.6 W3, same-standard pass — the stability sample is a BOUNDED
+     * PREFIX, and `sampledNodes: 400` used to be the only thing said about it.
+     */
+    check(
+      "the stability verdict names the population it is a verdict over",
+      baselineRun.pages.every(
+        (qaPage) =>
+          qaPage.stability.candidateNodes !== undefined &&
+          qaPage.stability.unsampledNodes !== undefined &&
+          qaPage.stability.unmatchedNodes !== undefined,
+      ),
+      JSON.stringify(baselineRun.pages.map((qaPage) => qaPage.stability)),
+    );
+    check(
+      "…and the counts add up: sampled + unsampled === candidates on every page",
+      baselineRun.pages.length > 0 &&
+        baselineRun.pages.every(
+          (qaPage) =>
+            qaPage.stability.sampledNodes + (qaPage.stability.unsampledNodes ?? -1) ===
+            qaPage.stability.candidateNodes,
+        ),
+      JSON.stringify(
+        baselineRun.pages.map(
+          (qaPage) =>
+            `${qaPage.stability.sampledNodes}+${qaPage.stability.unsampledNodes}=${qaPage.stability.candidateNodes}`,
+        ),
+      ),
+    );
+    check(
+      "…and nodes that vanished between the two captures are counted, not skipped in silence",
+      baselineRun.pages.every((qaPage) => qaPage.stability.unmatchedNodes === 0),
+      JSON.stringify(baselineRun.pages.map((qaPage) => qaPage.stability.unmatchedNodes)),
+    );
+
+    check(
+      "the bounded load waits are recorded rather than dropped on the floor",
+      baselineRun.pages.every(
+        (qaPage) => qaPage.stabilization?.clone !== undefined,
+      ),
+    );
+    // p000001 is the page whose canvas the generator REFUSED to promote
+    // (viewports-disagree, see HOME_HTML) — its clone really does paint the UA
+    // white canvas under a dark-root source, and QA must say so. p000002's
+    // canvas IS promoted onto the real <html>, so a mismatch reported there
+    // would be a false positive. Both halves are asserted: detection alone is
+    // satisfied by a detector that fires on everything.
+    const canvasMismatchPages = new Set(
+      baselineRun.diffs
+        .filter((diff) => diff.classification === "canvas-background-mismatch")
+        .map((diff) => diff.pageId),
+    );
     check(
       "the canvas background mismatch is detected (dark root, white canvas)",
-      baselineRun.diffs.some((diff) => diff.classification === "canvas-background-mismatch"),
+      canvasMismatchPages.has("p000001") && !canvasMismatchPages.has("p000002"),
+      `mismatch pages: ${[...canvasMismatchPages].sort().join(",") || "(none)"}`,
     );
     check(
       "…and it is the only correction type proposed here besides observed ones",
@@ -2036,6 +3119,8 @@ async function main(): Promise<void> {
   console.log("Reconstruction QA fixture (Task 15)");
 
   testScreenshotMetrics();
+  testScreenshotCoverage();
+  await testTallPageCoverage();
   testDataImageSafety();
   testCorrectionPolicy();
   testAcceptanceGate();

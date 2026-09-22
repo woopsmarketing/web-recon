@@ -76,6 +76,8 @@ export interface RunE2eOptions {
   maxFixIterations?: number;
   familyEscalation?: number;
   prepareScroll?: boolean;
+  /** Task 28.7 A2 — bounded page-state normalization (default ON). */
+  normalizePageState?: boolean;
   /** Injected for the local fixture; production uses the Firecrawl adapter. */
   discoveryProvider?: DiscoveryProvider;
   firecrawlApiKey?: string;
@@ -110,6 +112,8 @@ export async function runE2eReconstruction(
       maxFixIterations: options.maxFixIterations ?? DEFAULT_MAX_FIX_ITERATIONS,
       familyEscalation: options.familyEscalation ?? DEFAULT_FAMILY_ESCALATION,
       prepareScroll: options.prepareScroll ?? false,
+      // Task 28.7 A2 — ON by default, matching every other observe entry point.
+      normalizePageState: options.normalizePageState ?? true,
       localDiscovery: options.discoveryProvider !== undefined,
     },
     ...(options.onLog ? { onLog: options.onLog } : {}),

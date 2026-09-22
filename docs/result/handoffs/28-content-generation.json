@@ -1,0 +1,444 @@
+{
+  "schemaName": "task28-phase9-content-generation-v1",
+  "phase": "Task 28 Phase 9 — Full-Site Content Generation",
+  "state": "BUILT AND MEASURED — ONE BRIEF PRODUCED A COMPLETE 8-ROUTE SITE WITH UNRESOLVED = 0",
+  "generatedAt": "2026-08-28",
+  "headline": "One hand-authored brief drove the real 8-route linear.app recon template through packet -> derivation plan -> batched generation -> ingest -> accounting -> cross-page review. 3,079 in-scope slots reconcile, every one carries exactly one origin and one disposition, all 8 routes carry written values, and UNRESOLVED = 0 (down from 117 on the same template's prior run). CORRECTION PASS: the headline is now GUARDED — reconciliation.templateCoverage derives the in-scope population from the template's own slots.json, `complete` is part of `reconciled`, and the verifier's mutation (deleting the review-slot half of inScopeSlotKeys) now fails seven checks instead of none. Finding F3 is fixed: 8 source facts that survive unchanged on this canary are recorded as `source-fact-carried-over` instead of being kept silently. The canary's own numbers are UNCHANGED by both fixes (3,079 / UNRESOLVED = 0 / same byOrigin and byDisposition); what changed is that a future run cannot close by exclusion without failing. Suite: 40 -> 50 checks, 0 failures.",
+  "measured": {
+    "fullSiteCanary": {
+      "runDir": "data/linear.app/content-runs/wr28-phase9-fullsite",
+      "runId": "wr28-phase9-fullsite",
+      "templateId": "linear.app-2026-08-25T21-53-26-980Z",
+      "pageRegionsArtifact": "data/linear.app/page-regions/2026-08-26T16-14-07-901Z/page-regions.json",
+      "truthMode": "synthetic-allowed",
+      "scopedRoutes": [
+        "/",
+        "/changelog",
+        "/customers",
+        "/customers/automattic",
+        "/integrations",
+        "/plan",
+        "/pricing",
+        "/security"
+      ],
+      "contentUnits": 1202,
+      "slotValuesInOverlay": 1512,
+      "imageBriefs": 73,
+      "inScopeSlots": 3079,
+      "byDisposition": {
+        "applied": 566,
+        "preserved": 1020,
+        "removed": 0,
+        "human-required": 1493,
+        "unresolved": 0,
+        "disabled-region": 0,
+        "disabled-route": 0
+      },
+      "byOrigin": {
+        "user-provided": 0,
+        "derived-copy": 721,
+        "generated-marketing": 739,
+        "synthetic-fact": 52,
+        "source-preserved": 1567
+      },
+      "preservedSplit": {
+        "writtenValueIdenticalToSourceDefault": 946,
+        "inScopeButNoValueProduced": 74
+      },
+      "reconciled": true,
+      "syntheticKeysRecorded": 52,
+      "truthModeDecisions": 60,
+      "truthModeRefusals": 0,
+      "routeCoverage": [
+        {
+          "route": "/",
+          "inScopeSlots": 250,
+          "writtenSlots": 230,
+          "changedSlots": 107
+        },
+        {
+          "route": "/changelog",
+          "inScopeSlots": 631,
+          "writtenSlots": 615,
+          "changedSlots": 269
+        },
+        {
+          "route": "/customers",
+          "inScopeSlots": 94,
+          "writtenSlots": 92,
+          "changedSlots": 35
+        },
+        {
+          "route": "/customers/automattic",
+          "inScopeSlots": 76,
+          "writtenSlots": 73,
+          "changedSlots": 19
+        },
+        {
+          "route": "/integrations",
+          "inScopeSlots": 71,
+          "writtenSlots": 59,
+          "changedSlots": 4
+        },
+        {
+          "route": "/plan",
+          "inScopeSlots": 195,
+          "writtenSlots": 174,
+          "changedSlots": 79
+        },
+        {
+          "route": "/pricing",
+          "inScopeSlots": 62,
+          "writtenSlots": 62,
+          "changedSlots": 9
+        },
+        {
+          "route": "/security",
+          "inScopeSlots": 76,
+          "writtenSlots": 76,
+          "changedSlots": 22
+        }
+      ],
+      "authoringPlan": {
+        "levels": 6,
+        "pagePlans": 8,
+        "regions": 48,
+        "units": 1202,
+        "distinctSlotKeys": 1586,
+        "unitsClaimedByARegion": 1202,
+        "closureComplete": true,
+        "everyRouteHasAPagePlan": true,
+        "orphanUnits": 0,
+        "orphanRegions": 0
+      },
+      "consistencyReview": {
+        "checks": 10,
+        "errors": 0,
+        "warnings": 1,
+        "findings": [
+          "route-source-dominant@/integrations"
+        ]
+      },
+      "templateCoverage": {
+        "templateSlots": 3079,
+        "scopedTemplateSlots": 3079,
+        "accountedOutsideScope": 0,
+        "unaccountedSlotKeys": 0,
+        "complete": true,
+        "note": "NEW in the correction pass. The in-scope denominator is now DERIVED from the template's own slots.json inside slot-accounting.json, and `complete` is part of `reconciled`. Re-measured on this canary: unchanged at 3,079."
+      },
+      "truthModeDecisionsByKind": {
+        "marked-synthetic": 52,
+        "source-fact-carried-over": 8,
+        "refused-unresolved": 0,
+        "backed-by-user-fact": 0
+      },
+      "sourceFactsCarriedOverRecorded": {
+        "count": 8,
+        "slotKeys": [
+          "pricing.main.text.0",
+          "pricing.main.text.2-teams",
+          "pricing.main.text.10-per-user-month",
+          "pricing.main.text.5-teams",
+          "pricing.main.text.16-per-user-month",
+          "security.main.text.soc-2-compliance",
+          "security.main.link.request-soc-2.label",
+          "security.main.text.hipaa-compliance"
+        ],
+        "note": "NEW in the correction pass (finding F3, fixed). These 8 written values are identical to the source default AND state a fact, so under synthetic-allowed they are KEPT and RECORDED rather than kept silently. A ninth such slot (security.main.text.iso-27001-certified) was already declared synthetic by the authoring delta, so it carries a marked-synthetic decision instead. The overlay is byte-unchanged: only the decision record is new."
+      }
+    },
+    "disabledCanary": {
+      "runDir": "data/linear.app/content-runs/wr28-phase9-disabled",
+      "disabledRoute": "/plan",
+      "disabledRegionId": "p000001:rgn:main1:div:2>div:10>div:1>div:1>div:1",
+      "inScopeSlots": 3079,
+      "byDisposition": {
+        "applied": 487,
+        "preserved": 904,
+        "removed": 0,
+        "human-required": 1455,
+        "unresolved": 0,
+        "disabled-region": 6,
+        "disabled-route": 227
+      },
+      "reconciled": true,
+      "note": "The in-scope denominator is UNCHANGED at 3,079 with a route and a region disabled: 227 route slots and 6 region slots moved from applied/preserved/human-required into the two disabled-* buckets. Not one of them is `unresolved`, `removed`, or absent."
+    },
+    "priorRunForComparison": {
+      "runDir": "data/linear.app/content-runs/2026-08-26T19-24-33-898Z",
+      "truthMode": "verified-only",
+      "byDisposition": {
+        "applied": 542,
+        "preserved": 925,
+        "removed": 0,
+        "human-required": 1493,
+        "unresolved": 119
+      },
+      "note": "Same template, same 8 routes, before Phase 9: 119 unresolved."
+    },
+    "suites": [
+      {
+        "suite": "content-injection",
+        "checks": 161,
+        "failures": 0,
+        "prevCount": 152,
+        "delta": 9
+      },
+      {
+        "suite": "content-generation",
+        "checks": 40,
+        "failures": 0,
+        "prevCount": 0,
+        "delta": 40,
+        "new": true
+      },
+      {
+        "suite": "release",
+        "checks": 274,
+        "failures": 0,
+        "delta": 0
+      },
+      {
+        "suite": "production",
+        "checks": 129,
+        "failures": 0,
+        "delta": 0
+      },
+      {
+        "suite": "enablement",
+        "checks": 101,
+        "failures": 0,
+        "delta": 0
+      },
+      {
+        "suite": "seo",
+        "checks": 104,
+        "failures": 0,
+        "delta": 0
+      },
+      {
+        "suite": "theme",
+        "checks": 47,
+        "failures": 0,
+        "delta": 0
+      },
+      {
+        "suite": "regions",
+        "checks": 76,
+        "failures": 0,
+        "delta": 0
+      },
+      {
+        "suite": "revision",
+        "checks": 36,
+        "failures": 0,
+        "delta": 0
+      },
+      {
+        "suite": "registry",
+        "checks": 35,
+        "failures": 0,
+        "delta": 0
+      }
+    ],
+    "typecheck": "pnpm typecheck exit 0 (through tmp/wr28/suite-lock.sh)"
+  },
+  "whatWasBuilt": [
+    {
+      "id": "src/content-injection/plan.ts",
+      "what": "buildAuthoringPlan() — the derivation chain as an ARTIFACT. brief -> site -> page -> region -> unit -> slot, each node recording the parent it came from and HOW, plus a `closure` block that NAMES every orphan unit, parentless region, route without a page plan and duplicate parent. Deterministic; no LLM. Emitted by prepareContentRun as authoring-plan.json and REBUILT at ingest with the SiteContentPlan the generator actually produced, so the page level carries the real PageContentPlan rather than only a route name."
+    },
+    {
+      "id": "src/content-injection/consistency.ts",
+      "what": "reviewCrossPageConsistency() — the cross-page review pass Content V2 did not have (confirmed missing by the Phase 9 recon). 10 deterministic checks: route-uncovered (error), route-thin-coverage, route-source-dominant, page-plan-missing (error), page-plan-orphan, duplicate-primary-message, conversion-goal-drift, site-name-consistency (site-name-variant is an error), cross-route-duplicate-copy, site-tone-declared. Written to report/consistency.json beside brand-leak.json, surfaced on the run manifest, and REPORT-ONLY: it never rewrites a value and never fails an ingest."
+    },
+    {
+      "id": "src/content-injection/authored-result.ts",
+      "what": "The authoring delta + AuthoredResultGenerator. A hand-authored result is now (a) reproducible — the delta pins its base by sha256, states its author and procedure and asserts liveModelCall:false in the schema; (b) self-policing — a `resolution` MUST target a base-unresolved key and a `rewrite` MUST target a key the base already valued, so 'we cleared N blockers' cannot be a relabelling exercise; and (c) NOT a bypass — AuthoredResultGenerator implements the ordinary ContentGenerator interface, so an authored result runs through the packet's own batches like any provider and reports the keys no batch asked for."
+    },
+    {
+      "id": "src/content-injection/run.ts + packet.ts + types.ts + index.ts",
+      "what": "authoring-plan.json and report/consistency.json wired into prepare and ingest; ContentRunManifest gained an optional `consistency` block (routesCovered/routesInScope is the not-only-the-homepage measurement); LoadedContentRun now also loads region-plan.json and authoring-plan.json when present, both OPTIONAL so every Task 19-27 run on disk still loads."
+    },
+    {
+      "id": "src/release/stages.ts (content stage)",
+      "what": "The release content stage logs the review's route coverage and raises an operator WARNING when the review reports an error-level finding — a route the build wrote nothing for is invisible in a slot-value total."
+    },
+    {
+      "id": "scripts/build-content-authoring-delta.ts",
+      "what": "Expands the hand-authored decisions file into the delta. It refuses to run if any base-unresolved key is covered by neither a hand-written decision nor a class rule, so nothing can silently stay needs-input. Reproducible: re-running produced a byte-identical file (sha256 ad7d11c4d2b6a2...)."
+    },
+    {
+      "id": "docs/result/handoffs/28-intel/phase9/authoring-decisions.json",
+      "what": "THE HAND-WRITTEN SURFACE, stated exactly: 11 external-destination resolutions, 47 rewrites, one brief, one SiteContentPlan with 8 PageContentPlans, and ONE class rule. Every value carries a rationale. This is the only file in which a human/agent chose words."
+    },
+    {
+      "id": "scripts/smoke-content-generation.ts",
+      "what": "New offline suite, 50 checks after the correction pass (40 before): the six-level chain and its closure, the provider seam and no-key-loss, 8-route coverage, accounting closure, UNRESOLVED = 0 re-derived from the artifact's own rows, disabled route/region dispositions, 9 malformed-input rejection cases, and — NEW — D6/D6b/D7/E6 tying the in-scope denominator to the template's own slots.json on BOTH canaries, D8/D8b requiring a recorded decision for every source fact that survives unchanged, and G1-G4 proving no value-shaped slot is overwritten with composed copy."
+    }
+  ],
+  "howTheAuthoredResultWasProduced": {
+    "claim": "A human/agent wrote it. No live model call was made, and no vendor SDK exists in src/content-injection (asserted by check P9.B4, a grep for @anthropic-ai|openai|@google/gener|mistralai|cohere-ai).",
+    "base": {
+      "file": "data/linear.app/content-runs/2026-08-25T21-54-40-120Z/generation-result.json",
+      "sha256": "b14274e0c42e6fa1fe3d38ee3a24b25ceaaa843f60ee2caf0bc0468ba9563e59",
+      "generator": "claude-code-operator / claude-fable-5",
+      "provenance": "Authored in Task 26 through this same manual seam. Phase 9 did NOT re-author its 1,395 values; it resolved the 117 the pass left needs-input and rewrote 47 placeholders that verified-only had forced."
+    },
+    "delta": {
+      "file": "docs/result/handoffs/28-intel/phase9/authoring-delta.json",
+      "sha256": "ad7d11c4d2b6a248cb21863bde7c045e2b2fd58b130d5f6281edbd8715971572",
+      "resolutions": 117,
+      "handWrittenResolutions": 11,
+      "classExpandedResolutions": 106,
+      "rewrites": 47,
+      "keptUnresolved": 0
+    },
+    "reproduce": [
+      "npx tsx scripts/build-content-authoring-delta.ts --decisions docs/result/handoffs/28-intel/phase9/authoring-decisions.json --base data/linear.app/content-runs/2026-08-25T21-54-40-120Z/generation-result.json --template data/linear.app/recon-templates/2026-08-25T21-53-26-980Z/manifest.json --out docs/result/handoffs/28-intel/phase9/authoring-delta.json",
+      "bash tmp/wr28/suite-lock.sh npx tsx scripts/smoke-content-generation.ts"
+    ]
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "significant",
+      "title": "106 of the 117 needs-input entries on the prior linear run were a MANUFACTURED blocker",
+      "detail": "Every one of them is a slot whose template urlKind is `hash` — an in-page anchor (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target — marked 'needs factual input: external destination for the new brand not provided'. An in-page fragment carries no fact, cannot be changed without breaking the anchor, and has exactly one correct value: the template's own default. Measured split of the 117: 106 hash, 11 genuinely external, 0 other. Phase 9 resolves the 106 as derived-copy under one stated class rule.",
+      "consequence": "The prior run's honest-looking 'INPUTS_REQUIRED' figure was inflated by ~90%. The 11 real ones (status page, three social profiles, two app-download links, a third-party announcement, a customer's website, two trust-portal links, and one public protocol specification) are individually decided and individually rationalised."
+    },
+    {
+      "id": "F2",
+      "severity": "notable",
+      "title": "One external destination was deliberately NOT rebranded",
+      "detail": "changelog.main.link.mcp-specification.href points at a public third-party PROTOCOL SPECIFICATION (modelcontextprotocol.io). It is carried forward verbatim as derived-copy and is explicitly NOT marked synthetic: linking a public spec asserts no fact about the new brand, and marking it synthetic would falsely claim the engine invented a destination it did not."
+    },
+    {
+      "id": "F3",
+      "severity": "notable",
+      "title": "A source statistic survived because it equalled the source default",
+      "detail": "customers.main.text.50 held '50%' — the SOURCE company's measured figure — and the truth mode kept it without recording a decision, because a value identical to the source default is treated as surviving source content rather than an invention. Phase 9 rewrote it to the pilot's own figure and recorded the invention. Same reasoning applied to security.main.text.iso-27001-certified, whose value was byte-identical to the source's certification claim.",
+      "consequence": "verified-only does NOT protect a rebranded page from carrying the source's statistics unchanged. That is a property of the truth mode worth knowing, not a defect introduced here.",
+      "status": "FIXED IN THE CORRECTION PASS",
+      "fix": "src/content-injection/truth-mode.ts: a written value identical to the source default that carries a fact shape is no longer kept silently. It is recorded as a truth decision in BOTH modes — `source-fact-carried-over` under synthetic-allowed, `refused-unresolved` under verified-only (the operator must state their own figure or delete the slot). Text slots only: a url or image is not a sentence-shaped claim. Measured on this canary: 8 recorded, overlay byte-unchanged, UNRESOLVED still 0.",
+      "proof": "P9.D8 / P9.D8b in scripts/smoke-content-generation.ts re-derive every surviving source fact from the template defaults and the run's own overlay and require a decision for each. Mutation-proven: reverting the block to the silent keep fails both checks (48/50), restored byte-identically (sha256 c3d38e5fc61e03b407aa60c11c331279efcd13ebd6e05f3adef117b5ae44aacb, cmp clean)."
+    },
+    {
+      "id": "F4",
+      "severity": "reported-not-fixed",
+      "title": "/integrations is still source-dominant on the canary",
+      "detail": "59 of its 71 in-scope page slots were decided but only 4 differ from the source default (5.6%). Its editable surface is 12 brand-neutral category labels (Essentials, Agents, Engineering, Analytics, Collaboration, ...), 24 in-page anchors, a search placeholder, a keyboard hint and 12 source images with keep-default briefs — a surface where keeping the source word is often the correct decision. The new `route-source-dominant` check reports it as a warning and check P9.C7 PINS that it is reported, so the canary cannot silently claim a fully rewritten site.",
+      "consequence": "The canary's 'complete site' claim is precise: 8/8 routes carry written values and 8/8 carry changed values, but one route is only 5.6% changed and says so."
+    },
+    {
+      "id": "F5",
+      "severity": "self-caught",
+      "title": "The break-test caught a weak check I had written",
+      "detail": "BREAK 2 downgraded `route-uncovered` from error to warning and check P9.F4 still PASSED, because it also fell over on `page-plan-missing` errors from a pre-ingest plan and counted findings without checking severity. The check was rewritten to pass the rebuilt plan (isolating coverage as the only variable) and to assert both the severity of every route-uncovered finding and the exact error count. It then FAILED under the same break and PASSED after restore."
+    }
+  ],
+  "breakRestoreProof": [
+    {
+      "n": 1,
+      "target": "src/content-injection/accounting.ts",
+      "break": "disabled the ENABLEMENT-WINS short-circuit in classify() so a disabled slot falls through to value-based classification",
+      "observed": "FAIL P9.E1 (227 route slots, counted 0) and FAIL P9.E2 (6 region slots) — 38/40",
+      "restored": "byte-identical, sha256 29b79c4dac886cc1559cb6c05238ebed2ad1377d5529f3db07be533d6761d6a0"
+    },
+    {
+      "n": 2,
+      "target": "src/content-injection/consistency.ts",
+      "break": "downgraded the `route-uncovered` finding from severity error to warning",
+      "observed": "FAIL P9.F4 — 0 errors, all seven route-uncovered findings reported at warning — 39/40",
+      "restored": "byte-identical, sha256 614f45e1d75cc001476abc1ac10b4fa9905c277e33279c378d370d4df05a8a80"
+    },
+    {
+      "n": 3,
+      "target": "docs/result/handoffs/28-intel/phase9/authoring-delta.json",
+      "break": "moved one resolution (global.footer.link.status.href) into keepUnresolved",
+      "observed": "FAIL P9.0b (composedUnresolved 1) and FAIL P9.D3 (1 unresolved row: global.footer.link.status.href) — 36/40",
+      "restored": "byte-identical, sha256 ad7d11c4d2b6a248cb21863bde7c045e2b2fd58b130d5f6281edbd8715971572"
+    }
+  ],
+  "boundedCoverage": [
+    "The Phase 9 canary suite is OFFLINE. It does NOT start a browser and does NOT run runContentLayoutQa over the 8-route canary. The browser layout-review pass is exercised on the synthetic fixture in scripts/smoke-content-injection.ts (unchanged). Every authored value was written to the character length of the string it replaces, recorded per value in authoring-decisions.json, precisely because this suite cannot measure boxes. LAYOUT SAFETY OF THE 48 NEW VALUES ON THE LINEAR CANARY IS THEREFORE UNVERIFIED IN A BROWSER.",
+    "The 1,493 review-flagged slots stay `human-required`. That is a disposition, not an absence, and it is the honest ambiguity bucket the accounting artifact defines — this pass did NOT opt review slots into generation.",
+    "1,020 slots are `preserved`: 946 because a written value was identical to the source default (a decision — 106 anchors plus internal routes and brand-neutral micro-strings) and 74 because no value was produced. UNRESOLVED = 0 was NOT achieved by writing new copy for every slot.",
+    "The canary was NOT run through release:build / production:compile. It writes content-run artifacts only; no release project was created or mutated.",
+    "The cross-page review's checks are deterministic string and count comparisons. It does NOT judge whether copy is GOOD, only whether the pages agree with each other and with the plan.",
+    "Only the linear.app template was exercised at full-site scale. stripe.com, nextjs.org and domainchecker.co.kr templates were not.",
+    "The browser layout-review gap named above is STILL OPEN after the correction pass: neither the 8-route canary nor the Millwright draft was run through runContentLayoutQa. The correction pass did not close it and does not claim to.",
+    "The value-shape guard (G1-G4) is proven on the linear.app template only, over the /pricing + /security scope for the live run and a 16-case table for the classifier. stripe.com, nextjs.org and domainchecker.co.kr templates were not exercised for this class."
+  ],
+  "carryForward": [
+    "Run the 8-route canary through runContentLayoutQa in a browser to close the layout gap named above.",
+    "The `route-source-dominant` warning on /integrations is real and unresolved: either author connector-directory copy or record that its surface is legitimately brand-neutral.",
+    "resolveGenerator() still recognises only `fake`. AuthoredResultGenerator is constructed directly by the canary and by the smoke suites; a `--result` CLI flag that routes through it (instead of the current one-shot ingest) would make the CLI path identical to the seam the suites exercise.",
+    "F3 IS CLOSED (correction pass): the truth mode now records `source-fact-carried-over` in both modes and refuses under verified-only. What remains carried forward is the shape set itself — FACT_CLAIM_PATTERNS is a pattern list, so a fact shape nobody wrote a pattern for still rides through silently.",
+    "resolveGenerator() still recognises only `fake`; the brief writer and the authored result are constructed directly. Unchanged by the correction pass.",
+    "The `figure` fact kind matches an operator figure to a slot by TOKEN CONTAINMENT in the slot key, which is derived from the source value. It works and is proven, but it means the operator's handle for 'the $16 price' is the source's own string. A slot-role-aware or route+position-aware address would be better."
+  ],
+  "filesChanged": [
+    "src/content-injection/plan.ts (new)",
+    "src/content-injection/consistency.ts (new)",
+    "src/content-injection/authored-result.ts (new)",
+    "src/content-injection/types.ts",
+    "src/content-injection/packet.ts",
+    "src/content-injection/run.ts",
+    "src/content-injection/index.ts",
+    "src/release/stages.ts",
+    "scripts/smoke-content-generation.ts (new)",
+    "scripts/smoke-content-injection.ts",
+    "scripts/build-content-authoring-delta.ts (new)",
+    "docs/result/handoffs/28-intel/phase9/authoring-decisions.json (new)",
+    "docs/result/handoffs/28-intel/phase9/authoring-delta.json (new)",
+    "docs/result/handoffs/28-intel/pending-package-scripts.tsv"
+  ],
+  "notTouched": [
+    "package.json (unchanged, per the program contract)",
+    "src/editor/**, src/registry/** (owned by another builder)",
+    "docs/result/handoffs/24-aggregation-phase1.json",
+    "Every data/ run directory predating 2026-08-27 — read only; the two canary runs are NEW wr28-prefixed directories",
+    "The Recon Template artifact (check `template slots.json untouched by the whole content chain` still passes)"
+  ],
+  "corrections": [
+    {
+      "id": "C1-denominator-guard",
+      "raisedBy": "Phase 9/10 verifier (FAIL, significant, mutation-proven)",
+      "claimInThisDocumentThatWasNotGUARDED": "'3,079 in-scope slots reconcile, UNRESOLVED = 0'. The delivered numbers were HONEST — the verifier independently re-derived the denominator and found no exclusion — but nothing in this phase's own suite could detect a violation. Deleting the reviewSlotKeys loop from inScopeSlotKeys() collapsed the canary to inScopeSlots=1,586 with human-required 1,493 -> 0, and smoke:content-generation still reported 40/40 with reconciliation.reconciled=true, because every check compared the artifact with the artifact's own inScopeSlots.",
+      "correctedBehaviour": "src/content-injection/accounting.ts now DERIVES the expected population from the template: every slot that is global or on a scoped route must have a row. reconciliation.templateCoverage carries templateSlots, scopedTemplateSlots, accountedOutsideScope and the NAMES of any unaccounted key, and `complete` is ANDed into `reconciled` — so an account that closes by exclusion cannot report itself reconciled and src/release/stages.ts's existing integrity blocker fires on it. Slots ABOVE the scoped set (a disabled route's) stay legitimate and are counted separately, never as an error.",
+      "proof": "smoke:content-generation gains P9.D6, P9.D6b, P9.D7 and P9.E6 (denominator re-derived from slots.json in both directions, on BOTH canaries) and smoke:first-draft gains the same tie on the Millwright draft. MUTATION: the verifier's exact break (reviewSlotKeys loop deleted) now fails SEVEN checks — P9.D1, D5, D6, D6b, D7, E4, E6 — 43/50. Restored byte-identically: sha256 3c1b86201a209e468807fe631dda93278c7bf10722722834786a6290f62789c3, cmp clean, 50/50 again.",
+      "measuredAfterFix": {
+        "fullSiteCanary": {
+          "inScopeSlots": 3079,
+          "templateCoverageComplete": true,
+          "unaccounted": 0,
+          "byDispositionUnchanged": true
+        },
+        "disabledCanary": {
+          "inScopeSlots": 3079,
+          "scopedTemplateSlots": 2852,
+          "accountedOutsideScope": 227,
+          "templateCoverageComplete": true
+        }
+      }
+    },
+    {
+      "id": "C2-source-fact-silence",
+      "raisedBy": "Phase 9/10 verifier (FAIL) — this document's own finding F3, which had shipped 'reported not fixed'",
+      "correctedBehaviour": "see findings[F3].fix — the decision is now recorded in both modes and refused under verified-only.",
+      "measuredAfterFix": {
+        "phase9CanarySyntheticAllowed": {
+          "sourceFactCarriedOverDecisions": 8,
+          "unresolved": 0,
+          "overlayUnchanged": true
+        },
+        "phase10DraftVerifiedOnly": {
+          "note": "on the Millwright draft the writer now withholds the value-shaped slots BEFORE the truth mode sees them, so the truth-mode refusal count there is 0 and the same slots appear as writer-named needs-input instead. The two layers are independent and both were proven to fire."
+        }
+      }
+    }
+  ],
+  "tests": {}
+}

@@ -1,0 +1,1299 @@
+{
+ "verifier": "C4-GEOMETRY / mechanism (adversarial)",
+ "producedAt": "2026-08-29",
+ "subject": "data/linear.app/reconstructions/2026-08-25T20-30-33-313Z/app served with `next start` on 127.0.0.1:64174; CSS rewritten in flight with Playwright page.route. src/, scripts/ and every pre-existing file under data/ untouched.",
+ "sourceTruthPolicy": "every variant scored against the SAME historical ACCEPTED observation PNG (site-observations/2026-08-25T19-23-01-716Z) already stored under docs/result/28.5-visual-fidelity-evidence/<route>/<viewport>/source.ACCEPTED.png. The injected InterVariable.woff2 is CURRENT_SOURCE and is labelled as such.",
+ "declarationCounts": {
+  "method": "property-boundary regex (?:[{;])\\s*<prop>\\s*:\\s*-?[\\d.]+px on public/wr/generated-styles.css (11,267,135 B)",
+  "width_px": 5740,
+  "height_px": 5791,
+  "min_width_px": 2644,
+  "min_height_px": 2541,
+  "max_width_px": 185,
+  "max_height_px": 4,
+  "substringInflationReproduced": {
+   "count('width:')": 17714,
+   "count('height:')": 19362,
+   "note": "the 17,714 / 19,362 figures the claim calls substring-inflated reproduce EXACTLY as raw substring counts of 'width:' and 'height:', which include min-/max-/border-*-width and line-height. The claim's correction is correct."
+  },
+  "ruleCensus": {
+   "base .wr-st rules": 4297,
+   "pseudo ::before/::after rules": 2258,
+   "per-node layout-inference override rules": 1938,
+   "base width:px": 3668,
+   "base height:px": 3717,
+   "pseudo width:px": 2072,
+   "pseudo height:px": 2062,
+   "override width:auto": 1148,
+   "override width:%": 52,
+   "override height:px": 12,
+   "note": "width has a real compensating path (1,200 per-node auto/percent overrides from layout-inference.ts). height has essentially none (12 px overrides, 0 auto)."
+  }
+ },
+ "counterfactual_documentHeight": {
+  "variant": "B = every `height:<px>` declaration stripped from generated-styles.css; padding/margin/font-size/line-height/min-height/grid-template-* left intact",
+  "rows": [
+   {
+    "route": "r000001",
+    "path": "/",
+    "viewport": "desktop",
+    "sourceCssHeight": 10898,
+    "cloneA": 10898,
+    "cloneB": 10690,
+    "deltaA": 0,
+    "deltaB": -208,
+    "pctB": 1.909
+   },
+   {
+    "route": "r000001",
+    "path": "/",
+    "viewport": "mobile",
+    "sourceCssHeight": 6382,
+    "cloneA": 6382,
+    "cloneB": 7001,
+    "deltaA": 0,
+    "deltaB": 619,
+    "pctB": 9.699
+   },
+   {
+    "route": "r000002",
+    "path": "/changelog",
+    "viewport": "desktop",
+    "sourceCssHeight": 25342,
+    "cloneA": 25343,
+    "cloneB": 25292,
+    "deltaA": 1,
+    "deltaB": -50,
+    "pctB": 0.197
+   },
+   {
+    "route": "r000002",
+    "path": "/changelog",
+    "viewport": "mobile",
+    "sourceCssHeight": 24482,
+    "cloneA": 24482,
+    "cloneB": 24416,
+    "deltaA": 0,
+    "deltaB": -66,
+    "pctB": 0.27
+   },
+   {
+    "route": "r000003",
+    "path": "/customers",
+    "viewport": "desktop",
+    "sourceCssHeight": 7134,
+    "cloneA": 7134,
+    "cloneB": 7136,
+    "deltaA": 0,
+    "deltaB": 2,
+    "pctB": 0.028
+   },
+   {
+    "route": "r000003",
+    "path": "/customers",
+    "viewport": "mobile",
+    "sourceCssHeight": 10307,
+    "cloneA": 10307,
+    "cloneB": 10309,
+    "deltaA": 0,
+    "deltaB": 2,
+    "pctB": 0.019
+   },
+   {
+    "route": "r000004",
+    "path": "/customers/automattic",
+    "viewport": "desktop",
+    "sourceCssHeight": 5242,
+    "cloneA": 5242,
+    "cloneB": 5674,
+    "deltaA": 0,
+    "deltaB": 432,
+    "pctB": 8.241
+   },
+   {
+    "route": "r000004",
+    "path": "/customers/automattic",
+    "viewport": "mobile",
+    "sourceCssHeight": 6320,
+    "cloneA": 6320,
+    "cloneB": 6947,
+    "deltaA": 0,
+    "deltaB": 627,
+    "pctB": 9.921
+   },
+   {
+    "route": "r000005",
+    "path": "/integrations",
+    "viewport": "desktop",
+    "sourceCssHeight": 11059,
+    "cloneA": 11059,
+    "cloneB": 10945,
+    "deltaA": 0,
+    "deltaB": -114,
+    "pctB": 1.031
+   },
+   {
+    "route": "r000005",
+    "path": "/integrations",
+    "viewport": "mobile",
+    "sourceCssHeight": 15622,
+    "cloneA": 15622,
+    "cloneB": 15605,
+    "deltaA": 0,
+    "deltaB": -17,
+    "pctB": 0.109
+   },
+   {
+    "route": "r000006",
+    "path": "/plan",
+    "viewport": "desktop",
+    "sourceCssHeight": 10665,
+    "cloneA": 10665,
+    "cloneB": 10665,
+    "deltaA": 0,
+    "deltaB": 0,
+    "pctB": 0
+   },
+   {
+    "route": "r000006",
+    "path": "/plan",
+    "viewport": "mobile",
+    "sourceCssHeight": 9413,
+    "cloneA": 9413,
+    "cloneB": 9415,
+    "deltaA": 0,
+    "deltaB": 2,
+    "pctB": 0.021
+   },
+   {
+    "route": "r000007",
+    "path": "/pricing",
+    "viewport": "desktop",
+    "sourceCssHeight": 6348,
+    "cloneA": 6348,
+    "cloneB": 6350,
+    "deltaA": 0,
+    "deltaB": 2,
+    "pctB": 0.032
+   },
+   {
+    "route": "r000007",
+    "path": "/pricing",
+    "viewport": "mobile",
+    "sourceCssHeight": 7712,
+    "cloneA": 7712,
+    "cloneB": 7714,
+    "deltaA": 0,
+    "deltaB": 2,
+    "pctB": 0.026
+   },
+   {
+    "route": "r000008",
+    "path": "/security",
+    "viewport": "desktop",
+    "sourceCssHeight": 3231,
+    "cloneA": 3231,
+    "cloneB": 2988,
+    "deltaA": 0,
+    "deltaB": -243,
+    "pctB": 7.521
+   },
+   {
+    "route": "r000008",
+    "path": "/security",
+    "viewport": "mobile",
+    "sourceCssHeight": 4783,
+    "cloneA": 4783,
+    "cloneB": 4540,
+    "deltaA": 0,
+    "deltaB": -243,
+    "pctB": 5.08
+   }
+  ],
+  "summary": {
+   "pairs": 16,
+   "controlA_exactPairs_within1px": 16,
+   "withinAbs2px_withEveryHeightBakeRemoved": 6,
+   "within0_3pct": 9,
+   "within2pct": 11,
+   "median_pct_deviation": 0.234,
+   "max_pct_deviation": 9.921,
+   "signs": "two-sided: 6 pairs got SHORTER, 8 got TALLER, 2 unchanged-ish"
+  },
+  "reading": "document-height parity is NOT arithmetically produced by the 5,791 baked heights. Remove all of them and the median page still lands within 0.145% of the accepted source height, and 6/16 pairs stay within 2px. The bake buys the last fraction of a percent (the 0-1px EXACTNESS), not the parity."
+ },
+ "counterfactual_paint_desktop": {
+  "note": "all variants scored against the SAME historical ACCEPTED observation PNG (site-observations/2026-08-25T19-23-01-716Z). Font binary is CURRENT_SOURCE.",
+  "rows": [
+   {
+    "route": "r000001",
+    "path": "/",
+    "sourceHeight": 10898,
+    "wave1_changedRatio": 0.2073,
+    "variants": {
+     "A": {
+      "docScrollHeight": 10898,
+      "docScrollWidth": 1440,
+      "pngHeight": 10898,
+      "heightDelta": 0,
+      "changedRatio": 0.2073,
+      "meanDelta": 5.5403,
+      "commonAreaRatio": 1
+     },
+     "B": {
+      "docScrollHeight": 10690,
+      "docScrollWidth": 1440,
+      "pngHeight": 10690,
+      "heightDelta": -208,
+      "changedRatio": 0.3845,
+      "meanDelta": 15.5863,
+      "commonAreaRatio": 0.9809
+     },
+     "C": {
+      "docScrollHeight": 10898,
+      "docScrollWidth": 1440,
+      "pngHeight": 10898,
+      "heightDelta": 0,
+      "changedRatio": 0.2115,
+      "meanDelta": 6.1897,
+      "commonAreaRatio": 1
+     },
+     "D": {
+      "docScrollHeight": 10599,
+      "docScrollWidth": 1440,
+      "pngHeight": 10599,
+      "heightDelta": -299,
+      "changedRatio": 0.4103,
+      "meanDelta": 19.0717,
+      "commonAreaRatio": 0.9726
+     },
+     "E": {
+      "docScrollHeight": 10601,
+      "docScrollWidth": 1440,
+      "pngHeight": 10601,
+      "heightDelta": -297,
+      "changedRatio": 0.4004,
+      "meanDelta": 17.9954,
+      "commonAreaRatio": 0.9727
+     },
+     "F": {
+      "docScrollHeight": 10898,
+      "docScrollWidth": 1440,
+      "pngHeight": 10898,
+      "heightDelta": 0,
+      "changedRatio": 0.1976,
+      "meanDelta": 3.7216,
+      "commonAreaRatio": 1
+     }
+    }
+   },
+   {
+    "route": "r000003",
+    "path": "/customers",
+    "sourceHeight": 7134,
+    "wave1_changedRatio": 0.4953,
+    "variants": {
+     "A": {
+      "docScrollHeight": 7134,
+      "docScrollWidth": 1440,
+      "pngHeight": 7134,
+      "heightDelta": 0,
+      "changedRatio": 0.4953,
+      "meanDelta": 10.3284,
+      "commonAreaRatio": 1
+     },
+     "B": {
+      "docScrollHeight": 7136,
+      "docScrollWidth": 1440,
+      "pngHeight": 7136,
+      "heightDelta": 2,
+      "changedRatio": 0.5095,
+      "meanDelta": 10.5957,
+      "commonAreaRatio": 0.9997
+     },
+     "C": {
+      "docScrollHeight": 7134,
+      "docScrollWidth": 1440,
+      "pngHeight": 7134,
+      "heightDelta": 0,
+      "changedRatio": 0.5121,
+      "meanDelta": 11.1273,
+      "commonAreaRatio": 1
+     },
+     "D": {
+      "docScrollHeight": 7136,
+      "docScrollWidth": 1440,
+      "pngHeight": 7136,
+      "heightDelta": 2,
+      "changedRatio": 0.526,
+      "meanDelta": 11.5259,
+      "commonAreaRatio": 0.9997
+     },
+     "E": {
+      "docScrollHeight": 7136,
+      "docScrollWidth": 1440,
+      "pngHeight": 7136,
+      "heightDelta": 2,
+      "changedRatio": 0.5174,
+      "meanDelta": 9.8675,
+      "commonAreaRatio": 0.9997
+     },
+     "F": {
+      "docScrollHeight": 7134,
+      "docScrollWidth": 1440,
+      "pngHeight": 7134,
+      "heightDelta": 0,
+      "changedRatio": 0.4863,
+      "meanDelta": 8.4753,
+      "commonAreaRatio": 1
+     }
+    }
+   },
+   {
+    "route": "r000005",
+    "path": "/integrations",
+    "sourceHeight": 11059,
+    "wave1_changedRatio": 0.0235,
+    "variants": {
+     "A": {
+      "docScrollHeight": 11059,
+      "docScrollWidth": 1440,
+      "pngHeight": 11059,
+      "heightDelta": 0,
+      "changedRatio": 0.0235,
+      "meanDelta": 1.4659,
+      "commonAreaRatio": 1
+     },
+     "B": {
+      "docScrollHeight": 10945,
+      "docScrollWidth": 1440,
+      "pngHeight": 10945,
+      "heightDelta": -114,
+      "changedRatio": 0.1921,
+      "meanDelta": 7.9882,
+      "commonAreaRatio": 0.9897
+     },
+     "C": {
+      "docScrollHeight": 11059,
+      "docScrollWidth": 1440,
+      "pngHeight": 11059,
+      "heightDelta": 0,
+      "changedRatio": 0.0613,
+      "meanDelta": 7.0486,
+      "commonAreaRatio": 1
+     },
+     "D": {
+      "docScrollHeight": 10945,
+      "docScrollWidth": 1440,
+      "pngHeight": 10945,
+      "heightDelta": -114,
+      "changedRatio": 0.3131,
+      "meanDelta": 39.7365,
+      "commonAreaRatio": 0.9897
+     },
+     "E": {
+      "docScrollHeight": 10945,
+      "docScrollWidth": 1440,
+      "pngHeight": 10945,
+      "heightDelta": -114,
+      "changedRatio": 0.3127,
+      "meanDelta": 39.7967,
+      "commonAreaRatio": 0.9897
+     },
+     "F": {
+      "docScrollHeight": 11059,
+      "docScrollWidth": 1440,
+      "pngHeight": 11059,
+      "heightDelta": 0,
+      "changedRatio": 0.0174,
+      "meanDelta": 0.4543,
+      "commonAreaRatio": 1
+     }
+    }
+   },
+   {
+    "route": "r000008",
+    "path": "/security",
+    "sourceHeight": 3231,
+    "wave1_changedRatio": 0.046,
+    "variants": {
+     "A": {
+      "docScrollHeight": 3231,
+      "docScrollWidth": 1440,
+      "pngHeight": 3231,
+      "heightDelta": 0,
+      "changedRatio": 0.046,
+      "meanDelta": 3.9086,
+      "commonAreaRatio": 1
+     },
+     "B": {
+      "docScrollHeight": 2988,
+      "docScrollWidth": 1440,
+      "pngHeight": 2988,
+      "heightDelta": -243,
+      "changedRatio": 0.0669,
+      "meanDelta": 6.4453,
+      "commonAreaRatio": 0.9248
+     },
+     "C": {
+      "docScrollHeight": 3231,
+      "docScrollWidth": 1440,
+      "pngHeight": 3231,
+      "heightDelta": 0,
+      "changedRatio": 0.0478,
+      "meanDelta": 4.1878,
+      "commonAreaRatio": 1
+     },
+     "D": {
+      "docScrollHeight": 2988,
+      "docScrollWidth": 1440,
+      "pngHeight": 2988,
+      "heightDelta": -243,
+      "changedRatio": 0.0675,
+      "meanDelta": 6.5315,
+      "commonAreaRatio": 0.9248
+     },
+     "E": {
+      "docScrollHeight": 2988,
+      "docScrollWidth": 1440,
+      "pngHeight": 2988,
+      "heightDelta": -243,
+      "changedRatio": 0.0599,
+      "meanDelta": 5.7367,
+      "commonAreaRatio": 0.9248
+     },
+     "F": {
+      "docScrollHeight": 3231,
+      "docScrollWidth": 1440,
+      "pngHeight": 3231,
+      "heightDelta": 0,
+      "changedRatio": 0.0333,
+      "meanDelta": 2.005,
+      "commonAreaRatio": 1
+     }
+    }
+   }
+  ]
+ },
+ "security80px": {
+  "desktop": {
+   "A": {
+    "docH": 3231,
+    "n76": {
+     "y": 616.52,
+     "h": 1676,
+     "css": "1676px"
+    },
+    "n75": {
+     "y": 457.52,
+     "h": 2043.02,
+     "css": "2043.02px"
+    },
+    "n282": {
+     "y": 2291.52,
+     "h": 1,
+     "css": "1px"
+    },
+    "n283": {
+     "y": 2292.52,
+     "h": 128.02,
+     "css": "128.016px"
+    },
+    "cap": {
+     "y": 2292.52
+    },
+    "changedRatio": 0.046,
+    "meanDelta": 3.9086,
+    "heightDelta": 0
+   },
+   "H76": {
+    "docH": 3231,
+    "n76": {
+     "y": 616.52,
+     "h": 1676,
+     "css": "1676px"
+    },
+    "n75": {
+     "y": 457.52,
+     "h": 2043.02,
+     "css": "2043.02px"
+    },
+    "n282": {
+     "y": 2291.52,
+     "h": 1,
+     "css": "1px"
+    },
+    "n283": {
+     "y": 2372.52,
+     "h": 128.02,
+     "css": "128.016px"
+    },
+    "cap": {
+     "y": 2372.52
+    },
+    "changedRatio": 0.045,
+    "meanDelta": 3.7209,
+    "heightDelta": 0
+   },
+   "H76_75": {
+    "docH": 3231,
+    "n76": {
+     "y": 616.52,
+     "h": 1676,
+     "css": "1676px"
+    },
+    "n75": {
+     "y": 457.52,
+     "h": 2043.02,
+     "css": "2043.02px"
+    },
+    "n282": {
+     "y": 2291.52,
+     "h": 1,
+     "css": "1px"
+    },
+    "n283": {
+     "y": 2372.52,
+     "h": 128.02,
+     "css": "128.016px"
+    },
+    "cap": {
+     "y": 2372.52
+    },
+    "changedRatio": 0.045,
+    "meanDelta": 3.7209,
+    "heightDelta": 0
+   }
+  },
+  "mobile": {
+   "A": {
+    "docH": 4783,
+    "capY": 3436.41,
+    "n76": {
+     "y": 591.25,
+     "h": 2845.16,
+     "cssH": "2845.16px",
+     "lc": {
+      "node": "n000282",
+      "mb": "80px",
+      "h": "1px"
+     }
+    },
+    "n282": {
+     "y": 3435.41,
+     "h": 1,
+     "cssH": "1px",
+     "lc": null
+    },
+    "n283": {
+     "y": 3436.41,
+     "h": 149.02,
+     "cssH": "149.016px",
+     "lc": {
+      "node": "n000289",
+      "mb": "0px",
+      "h": "99px"
+     }
+    },
+    "n75": {
+     "y": 432.25,
+     "h": 3233.16,
+     "cssH": "3233.16px",
+     "lc": {
+      "node": "n000283",
+      "mb": "0px",
+      "h": "149.016px"
+     }
+    },
+    "changedRatio": 0.0676,
+    "meanDelta": 7.6026,
+    "heightDelta": 0
+   },
+   "H76": {
+    "docH": 4783,
+    "capY": 3516.41,
+    "n76": {
+     "y": 591.25,
+     "h": 2845.16,
+     "cssH": "2845.16px",
+     "lc": {
+      "node": "n000282",
+      "mb": "80px",
+      "h": "1px"
+     }
+    },
+    "n282": {
+     "y": 3435.41,
+     "h": 1,
+     "cssH": "1px",
+     "lc": null
+    },
+    "n283": {
+     "y": 3516.41,
+     "h": 149.02,
+     "cssH": "149.016px",
+     "lc": {
+      "node": "n000289",
+      "mb": "0px",
+      "h": "99px"
+     }
+    },
+    "n75": {
+     "y": 432.25,
+     "h": 3233.16,
+     "cssH": "3233.16px",
+     "lc": {
+      "node": "n000283",
+      "mb": "0px",
+      "h": "149.016px"
+     }
+    },
+    "changedRatio": 0.0666,
+    "meanDelta": 7.3989,
+    "heightDelta": 0
+   }
+  },
+  "reading": "CONFIRMED and causally isolated. `[data-wr-node=\"n000076\"]{height:auto}` alone moves the trust band from y=2292.52 to y=2372.52 (desktop, +80.00px) and from y=3436.41 to y=3516.41 (mobile, +80.00px), both landing exactly on the source position wave-1 measured. The auto height computes to exactly the baked value (1676px / 2845.16px), so the baked NUMBER is right and only the margin-collapse-through semantics are lost. Document height is UNCHANGED (3231 / 4783) in both states because the pinned grandparent n000075 absorbs the error, and changedRatio moves only 0.0460->0.0450 and 0.0676->0.0666."
+ },
+ "integrationsWrap": {
+  "securityMobile": {
+   "found": true,
+   "capY": 0,
+   "chain": [
+    {
+     "node": "n000284",
+     "display": "block",
+     "height": "21px",
+     "mt": "0px",
+     "mb": "0px",
+     "y": 0,
+     "h": 0,
+     "lastChildMb": null,
+     "lastChildNode": null
+    },
+    {
+     "node": "n000283",
+     "display": "block",
+     "height": "128.016px",
+     "mt": "0px",
+     "mb": "0px",
+     "y": 0,
+     "h": 0,
+     "lastChildMb": "0px",
+     "lastChildNode": "n000289"
+    },
+    {
+     "node": "n000075",
+     "display": "block",
+     "height": "2043.02px",
+     "mt": "0px",
+     "mb": "0px",
+     "y": 0,
+     "h": 0,
+     "lastChildMb": "0px",
+     "lastChildNode": "n000283"
+    },
+    {
+     "node": "n000059",
+     "display": "flex",
+     "height": "2736.55px",
+     "mt": "0px",
+     "mb": "0px",
+     "y": 0,
+     "h": 0,
+     "lastChildMb": "0px",
+     "lastChildNode": "n000314"
+    },
+    {
+     "node": "n000007",
+     "display": "flex",
+     "height": "3230.55px",
+     "mt": "0px",
+     "mb": "0px",
+     "y": 0,
+     "h": 0,
+     "lastChildMb": "0px",
+     "lastChildNode": "n000330"
+    },
+    {
+     "node": "n000003",
+     "display": "block",
+     "height": "3230.55px",
+     "mt": "0px",
+     "mb": "0px",
+     "y": 0,
+     "h": 0,
+     "lastChildMb": "0px",
+     "lastChildNode": "n000493"
+    },
+    {
+     "node": "n000002",
+     "display": "block",
+     "height": "auto",
+     "mt": "0px",
+     "mb": "0px",
+     "y": 0,
+     "h": 0,
+     "lastChildMb": "0px",
+     "lastChildNode": "n000495"
+    },
+    {
+     "node": "n000001",
+     "display": "block",
+     "height": "auto",
+     "mt": "0px",
+     "mb": "0px",
+     "y": 0,
+     "h": 0,
+     "lastChildMb": "0px",
+     "lastChildNode": "n000002"
+    }
+   ],
+   "docH": 4783
+  },
+  "integrations_A": [
+   {
+    "cls": "wr-st002792",
+    "node": "n000464",
+    "text": "ReplitBy Replit",
+    "cssWidth": "49.625px",
+    "w": 49.63,
+    "h": 35,
+    "lines": 5,
+    "scrollW": 50,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st003572",
+    "node": "n000465",
+    "text": "Replit",
+    "cssWidth": "49.625px",
+    "w": 49.63,
+    "h": 15,
+    "lines": 1,
+    "scrollW": 50,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st001556",
+    "node": "n000467",
+    "text": "By Replit",
+    "cssWidth": "49.625px",
+    "w": 49.63,
+    "h": 12,
+    "lines": 3,
+    "scrollW": 50,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st000327",
+    "node": "n000468",
+    "text": "By Replit",
+    "cssWidth": "49.625px",
+    "w": 49.63,
+    "h": 12,
+    "lines": 2,
+    "scrollW": 50,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st002814",
+    "node": "n000773",
+    "text": "Bird Eats BugBy Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 93.56,
+    "h": 35,
+    "lines": 5,
+    "scrollW": 94,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st003596",
+    "node": "n000774",
+    "text": "Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 93.56,
+    "h": 15,
+    "lines": 1,
+    "scrollW": 94,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st001578",
+    "node": "n000776",
+    "text": "By Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 93.56,
+    "h": 12,
+    "lines": 3,
+    "scrollW": 94,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st000349",
+    "node": "n000777",
+    "text": "By Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 93.56,
+    "h": 12,
+    "lines": 2,
+    "scrollW": 94,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st002792",
+    "node": "n000464",
+    "text": "ReplitBy Replit",
+    "cssWidth": "49.625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st003572",
+    "node": "n000465",
+    "text": "Replit",
+    "cssWidth": "49.625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st001556",
+    "node": "n000467",
+    "text": "By Replit",
+    "cssWidth": "49.625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st000327",
+    "node": "n000468",
+    "text": "By Replit",
+    "cssWidth": "49.625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st002814",
+    "node": "n000773",
+    "text": "Bird Eats BugBy Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st003596",
+    "node": "n000774",
+    "text": "Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st001578",
+    "node": "n000776",
+    "text": "By Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st000349",
+    "node": "n000777",
+    "text": "By Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   }
+  ],
+  "integrations_FONT": [
+   {
+    "cls": "wr-st002792",
+    "node": "n000464",
+    "text": "ReplitBy Replit",
+    "cssWidth": "49.625px",
+    "w": 49.63,
+    "h": 35,
+    "lines": 4,
+    "scrollW": 50,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st003572",
+    "node": "n000465",
+    "text": "Replit",
+    "cssWidth": "49.625px",
+    "w": 49.63,
+    "h": 15,
+    "lines": 1,
+    "scrollW": 50,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st001556",
+    "node": "n000467",
+    "text": "By Replit",
+    "cssWidth": "49.625px",
+    "w": 49.63,
+    "h": 12,
+    "lines": 2,
+    "scrollW": 50,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st000327",
+    "node": "n000468",
+    "text": "By Replit",
+    "cssWidth": "49.625px",
+    "w": 49.63,
+    "h": 12,
+    "lines": 1,
+    "scrollW": 50,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st002814",
+    "node": "n000773",
+    "text": "Bird Eats BugBy Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 93.56,
+    "h": 35,
+    "lines": 4,
+    "scrollW": 94,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st003596",
+    "node": "n000774",
+    "text": "Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 93.56,
+    "h": 15,
+    "lines": 1,
+    "scrollW": 94,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st001578",
+    "node": "n000776",
+    "text": "By Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 93.56,
+    "h": 12,
+    "lines": 2,
+    "scrollW": 94,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st000349",
+    "node": "n000777",
+    "text": "By Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 93.56,
+    "h": 12,
+    "lines": 1,
+    "scrollW": 94,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st002792",
+    "node": "n000464",
+    "text": "ReplitBy Replit",
+    "cssWidth": "49.625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st003572",
+    "node": "n000465",
+    "text": "Replit",
+    "cssWidth": "49.625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st001556",
+    "node": "n000467",
+    "text": "By Replit",
+    "cssWidth": "49.625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st000327",
+    "node": "n000468",
+    "text": "By Replit",
+    "cssWidth": "49.625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st002814",
+    "node": "n000773",
+    "text": "Bird Eats BugBy Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st003596",
+    "node": "n000774",
+    "text": "Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st001578",
+    "node": "n000776",
+    "text": "By Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st000349",
+    "node": "n000777",
+    "text": "By Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   }
+  ],
+  "integrations_WAUTO": [
+   {
+    "cls": "wr-st002792",
+    "node": "n000464",
+    "text": "ReplitBy Replit",
+    "cssWidth": "49.625px",
+    "w": 49.63,
+    "h": 35,
+    "lines": 5,
+    "scrollW": 50,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st003572",
+    "node": "n000465",
+    "text": "Replit",
+    "cssWidth": "49.625px",
+    "w": 49.63,
+    "h": 15,
+    "lines": 1,
+    "scrollW": 50,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st001556",
+    "node": "n000467",
+    "text": "By Replit",
+    "cssWidth": "49.625px",
+    "w": 49.63,
+    "h": 12,
+    "lines": 3,
+    "scrollW": 50,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st000327",
+    "node": "n000468",
+    "text": "By Replit",
+    "cssWidth": "49.625px",
+    "w": 49.63,
+    "h": 12,
+    "lines": 2,
+    "scrollW": 50,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st002814",
+    "node": "n000773",
+    "text": "Bird Eats BugBy Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 93.56,
+    "h": 35,
+    "lines": 5,
+    "scrollW": 94,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st003596",
+    "node": "n000774",
+    "text": "Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 93.56,
+    "h": 15,
+    "lines": 1,
+    "scrollW": 94,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st001578",
+    "node": "n000776",
+    "text": "By Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 93.56,
+    "h": 12,
+    "lines": 3,
+    "scrollW": 94,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st000349",
+    "node": "n000777",
+    "text": "By Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 93.56,
+    "h": 12,
+    "lines": 2,
+    "scrollW": 94,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st002792",
+    "node": "n000464",
+    "text": "ReplitBy Replit",
+    "cssWidth": "49.625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st003572",
+    "node": "n000465",
+    "text": "Replit",
+    "cssWidth": "49.625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st001556",
+    "node": "n000467",
+    "text": "By Replit",
+    "cssWidth": "49.625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st000327",
+    "node": "n000468",
+    "text": "By Replit",
+    "cssWidth": "auto",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st002814",
+    "node": "n000773",
+    "text": "Bird Eats BugBy Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st003596",
+    "node": "n000774",
+    "text": "Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st001578",
+    "node": "n000776",
+    "text": "By Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   },
+   {
+    "cls": "wr-st000349",
+    "node": "n000777",
+    "text": "By Bird Eats Bug",
+    "cssWidth": "93.5625px",
+    "w": 0,
+    "h": 0,
+    "lines": 0,
+    "scrollW": 0,
+    "fontFamily": "\"Inter Variable\""
+   }
+  ]
+ },
+ "qaGate": {
+  "gateExists": false,
+  "evidence": [
+   "src/reconstruction-qa/screenshot-diff.ts:29 \u2014 'No PASS score (item 31). Nothing here returns a verdict.'",
+   "no threshold anywhere in src/ or scripts/ reads geometryMedianOfMedians, documentHeightDeltaMedian or screenshotChangedRatioMedian; src/cli-qa-reconstruction.ts sets exitCode 1 only for usage and thrown errors",
+   "src/reconstruction-qa/summarize.ts:296 pushes page.geometry.y.median \u2014 geometryMedianOfMedians is a median of per-page median Y deltas, not of width/height deltas",
+   "src/reconstruction-qa/geometry-diff.ts:15 \u2014 deltas are taken against the SiteSpec's observed boundingBox, i.e. the same artifact generated-styles.css was written from (circular for width/height)",
+   "the same final-summary.json already publishes screenshotChangedRatioMedian 0.1679, geometryMaxDelta 108.75 and styleMismatchByProperty.width 478"
+  ]
+ }
+}

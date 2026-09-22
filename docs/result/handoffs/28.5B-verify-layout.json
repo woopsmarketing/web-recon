@@ -1,0 +1,133 @@
+{
+  "schema": "task285b-verify-layout-v1",
+  "producedAt": "2026-08-29T21:15:00+09:00",
+  "verdict": "PASS_WITH_RISKS",
+  "verifier": "fresh independent verifier, implemented nothing; only tmp/wr285b/verify-layout/* written",
+  "guardsSound": true,
+  "truthCheckSound": true,
+  "nameShimFixed": true,
+  "suiteResults": {
+    "layoutSafety": {
+      "command": "npx tsx scripts/smoke-layout-safety.ts",
+      "passed": 55,
+      "failed": 0,
+      "exit": 0,
+      "note": "matches the builder's claim exactly (55/55)"
+    },
+    "e2e": {
+      "command": "npx tsx scripts/smoke-e2e.ts",
+      "passed": 130,
+      "failed": 0,
+      "exit": 0,
+      "attribution": "The builder's 9 failures are GONE. They were downstream of clone-load-error in the QA stage caused by the concurrent QA builder's mid-run rewrite, exactly as the builder attributed. This run rendered routes 6/6 and reached 'complete-with-known-limitations'. Started 21:00:22 local, i.e. after the video-honesty agent's last edits to asset-resolver.ts/compile-node.ts (20:56-20:57). Caveat: src/reconstruction-qa/qa-page.ts was written again at 21:02:54, during (but after module load of) this run.",
+      "layoutAssertion": "smoke-e2e.ts:894 'the centered .centered band recovered a layout rule from the probe' PASSES — the guards do not over-reject a legitimate centered container on the real observer->compiler->generator path."
+    },
+    "reconstruction": {
+      "command": "npx tsx scripts/smoke-reconstruction.ts",
+      "passed": 217,
+      "failed": 0,
+      "exit": 0
+    },
+    "typecheck": { "command": "npx tsc --noEmit", "result": "clean, exit 0" }
+  },
+  "determinismProven": true,
+  "determinismEvidence": {
+    "script": "tmp/wr285b/verify-layout/determinism.ts",
+    "fixture": "4 runtime pages / 6 candidate rules (2 grid-denominator percentage rules, 1 legitimate centered, 1 guard-clean regressor, 1 no-worse-than-baseline, 1 @media responsive-hidden) — a corpus WITH candidates, unlike smoke-reconstruction's zero-candidate double-generation check",
+    "result": "two generateApp() runs, 23 files each, 23/23 sha256-identical; counters identical run to run: {status:verified, candidateRules:6, truthCheckable:5, acceptedRules:3, rejectedByTruthCheck:3, acceptedRegressed:0, rounds:4, pagesRendered:4, converged:true}",
+    "conclusion": "the browser round does not break byte-determinism of the artifact; elapsedMs is returned to the caller and never written to the manifest (independently confirmed in the manifest schema and the shipped file)"
+  },
+  "historicalManifestParses": true,
+  "historicalManifestEvidence": {
+    "script": "tmp/wr285b/verify-layout/manifest-parse.ts",
+    "file": "data/linear.app/reconstructions/2026-08-25T20-30-33-313Z/reconstruction-manifest.json",
+    "result": "ReconstructionManifestSchema.safeParse SUCCESS; legacy layout block {pagesWithAlignedProbe:8, nodesWithProbe:7700, recoveredRules:1910, centered:42, fullWidth:1106, percentage:52, responsiveHidden:710} parses with every 28.5B field absent"
+  },
+  "verifiedClaims": [
+    "Guards are refused, not solved: grid (parent display grid|inline-grid), flex row/row-reverse with flex-grow>0 or flex-basis!=auto, position:absolute whose parent does not establish a containing block, position:absolute whose parent DOES but has non-zero horizontal padding OR border, and position:fixed.",
+    "PADDING-BOX handling is correct. An absolutely positioned child resolves against the parent's padding box; contentAt() subtracts padding AND border, so the guard accepts ONLY when both are zero (the one case where padding box == content box). Verified in src/reconstruction/layout-inference.ts:246-257.",
+    "establishesAbsoluteContainingBlock() DOES handle transform / filter / perspective / will-change(transform|perspective|filter) / contain(layout|paint|strict|content) plus any non-static position (src/reconstruction/layout-inference.ts:199-217). perspective, will-change and contain are NOT in the observer STYLE_WHITELIST, so they read absent -> function returns false -> the caller REFUSES. The miss direction is over-refusal only, which is safe. For position:fixed the function is never consulted (fixed is refused unconditionally), so the transform-creates-a-fixed-containing-block case cannot leak.",
+    "Refusals apply to BOTH branches that divide by contentAt(): full-width at layout-inference.ts:572-580 and percentage-width at :611-619. The guard is computed once per node at :413-422.",
+    "contentAt() now subtracts parent border as well as padding (:408-411, horizontalBorder() at :166-190 parsing the leading length of Chromium's '<width> <style> <color>' border shorthand).",
+    "No site-specific logic. The only occurrences of a site name in either module are two provenance COMMENTS ('/changelog' at :269, 'non-Stripe' at :503). scripts/smoke-layout-safety.ts contains zero site names.",
+    "The truth-check render is genuinely offline: context.route('http://**') and ('https://**') both abort, document is set with setContent (no navigation), no re-parse between rounds, deviceScaleFactor 1, fixed viewport = runtimePage.desktop.width (1440, matching the observer's DESKTOP profile 1440x900 and TRUTH_WIDTH).",
+    "The responsive-hidden 'accepted unchecked' shortcut is SOUND. hiddenRanges() (layout-inference.ts:661-684) opens a band at the floor-midpoint between a hidden width and its lower VISIBLE neighbour and closes it at the floor-midpoint minus 0.02 against its upper VISIBLE neighbour; 1440 is required visible by the vAt(truthEntry)===1 gate, so any band below 1440 closes before 1440 and any band above 1440 opens at midpoint(1440,next) > 1440. No generated band can apply at the truth viewport.",
+    "The __name / esbuild-keepNames browser-context bug is FIXED and PROVEN. measureInBrowser() and applyCandidateCss() are top-level function declarations with no inner named bindings (keepNames emits the __name call outside the body), and real page.evaluate calls under tsx succeeded in smoke-layout-safety Part 2 (4 pages, 592 ms), Part 3 (real generateApp), my determinism script (8 evaluate rounds), and the full e2e run.",
+    "The generic grid-denominator regression case is generic in mechanism: a two-column grid (296px + 624px + 360px gap inside 1280px) with placeholder class names, no site strings. It proves the two halves INDEPENDENTLY — Part 1 drives the real inferLayoutRules and shows the grid children refused as 'grid-item' while an IDENTICAL-arithmetic block-parent control still recovers width:48.75%, so only the containing block can be what rejected them; Part 2 feeds the same rules straight to the browser check (bypassing the guard) and shows Chromium rejecting them with the measurement recorded.",
+    "Wiring is minimal and order-preserving: generate-app.ts hoists globals, builds baseStylesheet (globals-independent: exact classes + pseudo tier + observed-target tier), calls verifyLayoutRules before the stylesheet is written, and appends ONLY layoutVerification.css. Every new manifest field is z.optional(). generateApp's other call sites (cli-reconstruct.ts, reconstruction-qa/apply-corrections.ts, e2e/run-reconstruction.ts) all inherit verifyLayout default true."
+  ],
+  "defects": [
+    {
+      "id": "D1",
+      "severity": "medium",
+      "title": "acceptedRegressed is structurally forced to 0, not an independent measurement",
+      "detail": "The confirming render (layout-truth-check.ts:424-448) re-measures the SAME style state that the loop's final round just measured with zero regressors — no CSS is swapped between them. So acceptedRegressed can only become non-zero if Chromium returns different rects for an unchanged DOM. It verifies render determinism, not correctness. The handoff's 'a MEASUREMENT rather than a docstring claim' overstates what the 0 proves.",
+      "recommendation": "Keep the counter (it is a real determinism tripwire) but restate the claim in the docstring and any release report as 'no accepted rule regressed in the render that accepted it'."
+    },
+    {
+      "id": "D2",
+      "severity": "medium",
+      "title": "The shipped guarantee is 'no worse than the exact fallback', NOT 'within 4px of truth'",
+      "detail": "Rejection requires errorWith > 4 AND errorWith > errorWithout + 0.5. A rule whose node lands arbitrarily far from the observed box still ships whenever the exact-computed baseline was equally far. Observed live in my determinism run: the NO_WORSE_THAN_BASELINE fixture (`width: 101%`, observed w=600, rendered ~505) SHIPPED into generated-styles.css. Per-node the worst case a shipped rule can add is 0.5px over baseline; the absolute error is unbounded.",
+      "recommendation": "Never report shipped recovered rules as 'truth-accurate'. The honest sentence is 'no shipped rule is more than 0.5px worse at the truth viewport than the exact-computed fallback it overrides'."
+    },
+    {
+      "id": "D3",
+      "severity": "medium",
+      "title": "status 'no-candidates' is also returned when candidates exist but none are checkable, and every candidate then ships unverified",
+      "detail": "layout-truth-check.ts:300-301: if checkable.length === 0 the function returns empty('no-candidates') with rules = ALL candidates and acceptedRules = candidateRules. A corpus whose rules are all @media (responsive-hidden), or all missing rule.truth, or all naming pages this generation is not writing, ships them unfiltered while the manifest reads 'no-candidates'. The historical linear manifest carries 710 responsiveHidden rules, so this path is reachable in shape.",
+      "recommendation": "Split the status: 'no-candidates' only when candidateRules === 0; add 'nothing-checkable' for the other case. Also note that per-rule, any candidate excluded from `checkable` ships without verification even when other rules on the run were checked."
+    },
+    {
+      "id": "D4",
+      "severity": "medium",
+      "title": "centered-max-width is unguarded although its second branch does depend on contentAt() as a containing block",
+      "detail": "Both centered branches `continue` before the guard is consulted (by design, documented). But the capped-fill branch (:509-513) tests `w == min(contentAt(i), cap)` — arithmetic about the parent CONTENT box — and then emits `width: auto`, which for a grid item stretches to the GRID AREA and for a row flex item is governed by flex base size. Its only protection is the browser truth check. Under manifest status 'chromium-unavailable' or 'disabled' the guard layer covers only full-width and percentage, so unguarded centered rules ship unfiltered.",
+      "recommendation": "Either gate the capped-fill branch on the same guard, or state plainly in the release report that a chromium-unavailable run leaves the centered tier unverified."
+    },
+    {
+      "id": "D5",
+      "severity": "low",
+      "title": "Residual containing-block classes the guard does not name (miss direction = may emit, not over-refuse)",
+      "detail": "Not covered: parents with display table / table-row / table-cell / inline-table (table layout, not percentage-of-content-box, and anonymous table boxes); parents with column-count or column-width (containing block is the column box); parents with display: contents (the parent generates no box at all, so its probe rect is not a box the child resolves against); and an absolutely positioned grid item with explicit grid-row/grid-column placement inside a zero-padding, zero-border positioned grid container, whose containing block is the grid area rather than the padding box. Each is backstopped only by the browser truth check.",
+      "recommendation": "Cheap follow-up: add parent display table*/contents and non-`auto` column-count to LayoutGuardReason. Not a gate blocker while the truth check runs."
+    },
+    {
+      "id": "D6",
+      "severity": "low",
+      "title": "The flex branch defaults unknown properties to NON-refusal, contradicting the module's stated conservatism",
+      "detail": "layout-inference.ts:275-277 reads `own?.['flex-grow'] ?? '0'` and `own?.['flex-basis'] ?? 'auto'`, so a node with no recorded style props, or a whitelist that ever loses those keys, silently passes the flex guard. The docstring's 'a property the Observer does not record reads as absent and therefore refuses' is true for establishesAbsoluteContainingBlock() and false here. Today both keys ARE in src/observer/types.ts STYLE_WHITELIST (:292, :294), so the branch is live and this is latent only.",
+      "recommendation": "Refuse when `own` is undefined or either key is missing."
+    },
+    {
+      "id": "D7",
+      "severity": "medium",
+      "title": "smoke-reconstruction §190 now passes vacuously (builder-disclosed, confirmed)",
+      "detail": "scripts/smoke-reconstruction.ts:3430-3456 walks only static `from \"…\"` specifiers; layout-truth-check.ts reaches Chromium via `await import(\"playwright\")`. Both checks — 'the generator reaches no browser / crawler / HTTP / AI-provider module' and '…its only third-party dependencies are the HTML parser and zod' — still report PASS while the generator now launches a browser and depends on playwright (which is a runtime `dependencies` entry, not a devDependency). The claim is false in substance; nothing in the suite would catch a future real browser/HTTP dependency added dynamically.",
+      "recommendation": "Teach the walker about `import(\"…\")` and restate the invariant as 'no crawler / HTTP / AI-provider module; the only browser use is the offline post-emit layout truth check'. Should be fixed before the invariant is cited in a release gate."
+    },
+    {
+      "id": "D8",
+      "severity": "low-medium",
+      "title": "e2e/run-reconstruction.ts:125 reports CANDIDATES as layoutRecoveredRules",
+      "detail": "`layoutRecoveredRules: plan.layout.rules.length` is post-guard but pre-truth-check, so the E2E/pilot stage report can exceed what shipped. In my determinism fixture the same gap is 6 candidates vs 3 shipped (a 2x over-report). smoke-e2e.ts:894 only asserts >= 1, so no suite catches the drift. For the upcoming linear rerun this is a REPORTING severity issue, not a correctness one — the manifest (layout.recoveredRules / acceptedRules / candidateRules) is honest and is the number to quote.",
+      "recommendation": "Change the stage count to `generated.layoutVerification.counters.acceptedRules` and add `layoutCandidateRules` / `layoutRejectedByGuard` / `layoutRejectedByTruthCheck` alongside it before the linear rerun is reported."
+    },
+    {
+      "id": "D9",
+      "severity": "informational",
+      "title": "Cross-node coupling can over-reject and drop a whole page",
+      "detail": "Baselines are measured once with the recovered tier empty, but errorWith is measured with the whole surviving set applied, so an accepted ancestor rule can push a descendant past baseline+0.5 and get the descendant rejected on its neighbour's account. Direction is safe (over-rejection), it is bounded by MAX_ROUNDS = 4, and a non-settling page is dropped whole with truthCheckConverged=false recorded. No action needed; watch truthCheckConverged on the linear rerun."
+    }
+  ],
+  "notes": [
+    "Environment during verification was NOT quiescent. mtimes: src/reconstruction/asset-resolver.ts 20:56:29, compile-node.ts 20:56:50, scripts/smoke-video-honesty.ts 20:57:24 (video-honesty agent, out of scope per brief); src/reconstruction-qa/qa-page.ts 21:02:54 — i.e. the QA files were NOT fully stable, one was rewritten mid-run. My smoke-e2e process started 21:00:22 and loaded its modules before that write, and still passed 130/130 with routes 6/6.",
+    "src/reconstruction/layout-truth-check.ts is 471 lines, not the 468 claimed, and its mtime is 20:53:48 — later than layout-inference.ts (20:42:30). Trivial drift; nothing in it contradicts the handoff.",
+    "src/observer/types.ts is modified in the working tree, but the diff is Task 28.5A typography/pseudo whitelist work (text-wrap-mode, text-wrap-style, -webkit-font-smoothing, opacity, visibility), not this change.",
+    "playwright sits in package.json dependencies (not devDependencies), so the dynamic import in the generator resolves in a production install. This is what makes D7's stale invariant possible rather than merely theoretical.",
+    "The truth-check harness omits data-wr-route / data-wr-render-coverage / data-wr-behavior-coverage from the wrapper the app renders (runtime-template.ts:320-329). No generated CSS tier selects on those attributes, so geometry is unaffected; worth keeping in mind if a future tier ever does.",
+    "Serialized page content is inserted with setContent and can execute inline <script> text if a runtime tree ever carried one; remote fetches from such a script would be aborted by the http/https routes, so the offline claim holds regardless.",
+    "Suites re-run by this verifier, all green: smoke-layout-safety 55/55, smoke-e2e 130/130, smoke-reconstruction 217/217, tsc --noEmit clean.",
+    "Verdict is PASS_WITH_RISKS rather than PASS because of D1/D2/D3 (what the counters and the acceptance rule actually guarantee is narrower than the handoff's prose), D7 (a suite invariant that now passes without measuring its claim) and D8 (a stale count that will be quoted in the linear rerun report). None of these is a correctness regression in the shipped generator; all are honesty/reporting issues that should be corrected before the numbers are cited at the gate."
+  ]
+}

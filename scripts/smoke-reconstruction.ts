@@ -53,6 +53,9 @@ import {
   adaptAttribute,
   generateApp,
   inferBreakpoint,
+  inferResponsivePlan,
+  breakpointMediaQueries,
+  V1_RESPONSIVE_POLICY,
   inferLayoutRules,
   isSafeCssValue,
   loadReconstructionInput,
@@ -60,6 +63,7 @@ import {
   resolveDependencyVersions,
   routeKeyFromParts,
   detectNestingRepair,
+  adaptParserNesting,
   validateGeneratedApp,
   type RuntimeElementNode,
   type RuntimeNode,
@@ -1964,6 +1968,13 @@ function layoutInferenceChecks(): void {
     w: [200, 200, 200, 200, 0],
     v: [1, 1, 1, 1, 0],
   };
+  // Task 28.6 R1 — hidden at the LOWEST desktop probe width, which is the shape
+  // 100% of the 28.5B Linear corpus had and the shape the off-by-one inverted.
+  const hiddenNarrow: ProbeArrays = {
+    x: [0, 0, 0, 0, 0],
+    w: [200, 200, 0, 200, 200],
+    v: [1, 1, 0, 1, 1],
+  };
   // Task 26 generic correction — a marketing shell whose max-width cap engages
   // only ABOVE the truth width: fills the viewport at 390–1024, sits 2px in at
   // 1440, and centers at a constant 1436 at 1920. w == min(parentContent, cap)
@@ -1981,7 +1992,7 @@ function layoutInferenceChecks(): void {
   };
   const page = {
     pageId: "p000001",
-    layoutProbe: { widths, aligned: true, elementCount: 7, truncated: false },
+    layoutProbe: { widths, aligned: true, elementCount: 10, truncated: false },
     viewports: {
       desktop: {
         nodes: [
@@ -1995,6 +2006,7 @@ function layoutInferenceChecks(): void {
           node("n000007", "div", "n000003", { ...centered, w: [390, 768, 1024, 900, 900] }, 1080),
           node("n000008", "div", "n000003", cappedFill, 1436),
           node("n000009", "div", "n000003", cappedPinned, 1436),
+          node("n000010", "div", "n000003", hiddenNarrow, 200),
         ],
       },
       mobile: { nodes: [] },
@@ -2076,6 +2088,57 @@ function layoutInferenceChecks(): void {
     "no aligned probe → zero rules and generation proceeds on the exact fallback",
     noProbe.rules.length === 0 && noProbe.css === "",
   );
+  /*
+   * --- Task 28.6, the three proven responsive-recovery defects ---------------
+   *
+   * R1 the band ran upward from the observed sample instead of downward, R2
+   * `width: auto` was emitted where it is intrinsic sizing rather than stretch,
+   * and R3 nothing ever rendered a banded rule. The dedicated proof suite is
+   * `smoke-layout-safety`; these are the invariants pinned on the generator's
+   * own fixture, so a regression cannot pass this suite either.
+   */
+  const narrowRule = byNode.get("n000010|responsive-hidden");
+  check(
+    "R1: hidden at the LOWEST desktop probe width → a band open DOWNWARD",
+    narrowRule?.media === "(max-width: 1231.98px)" &&
+      narrowRule?.band?.minWidth === undefined &&
+      narrowRule?.band?.maxWidth === 1232,
+    `${narrowRule?.media} / ${JSON.stringify(narrowRule?.band ?? {})}`,
+  );
+  check(
+    "R1: band coverage agrees with the probe at every desktop width (0 mismatches)",
+    result.counters.bandSampleMismatches === 0,
+    String(result.counters.bandSampleMismatches),
+  );
+  check(
+    "R3: every banded rule carries the observed width the truth check renders it at",
+    result.rules
+      .filter((rule) => rule.media !== undefined)
+      .every(
+        (rule) =>
+          rule.band !== undefined &&
+          rule.band.hiddenSamples.includes(rule.band.verifyWidth),
+      ) && hiddenRule?.band?.verifyWidth === 1920,
+    String(hiddenRule?.band?.verifyWidth),
+  );
+  check(
+    "R2: every width-bearing rule records which inline-size form it chose and why",
+    result.rules
+      .filter((rule) => rule.kind === "centered-max-width" || rule.kind === "full-width")
+      .every((rule) => rule.evidence.some((line) => line.startsWith("inline size:"))),
+  );
+  check(
+    "R2: on an all-block fixture every box is stretch, none is refused",
+    result.counters.widthModeStretch === 3 &&
+      result.counters.widthModeFillPercentage === 0 &&
+      result.counters.widthModeRefusals === 0,
+    JSON.stringify({
+      stretch: result.counters.widthModeStretch,
+      fill: result.counters.widthModeFillPercentage,
+      refused: result.counters.widthModeRefusals,
+    }),
+  );
+
   check(
     "the recovered CSS tier uses (0,3,0) attribute selectors, deterministic order",
     result.css.includes(
@@ -2138,29 +2201,157 @@ async function main(): Promise<void> {
     );
 
     // -----------------------------------------------------------------------
-    console.log("\n§28/§29 breakpoint inference");
+    console.log("\n§28/§29 breakpoint inference + Task 28.8 A1 product policy");
     const breakpoint = inferBreakpoint(input.siteSpec);
+    /*
+     * TASK 28.8 A1 — WHAT THIS ASSERTION USED TO SAY, AND WHY IT MOVED.
+     *
+     * It read `breakpoint.value === 915` — the midpoint of 390 and 1440. That
+     * number is still computed and is still in the artifact, but it is now
+     * EVIDENCE (`inferredAuthoredPx`) rather than the width the clone serves.
+     * V1 serves one pair of modes on every site: mobile to 800, desktop from
+     * 801. The check therefore asserts BOTH halves — the served policy width
+     * and the inference the policy overrode — because a policy that quietly
+     * discarded the inference would be the thing worth catching.
+     */
     check(
-      "the breakpoint is the midpoint of the two observed widths",
-      breakpoint.value === 915,
+      "the SERVED breakpoint is the V1 product policy width, not the midpoint",
+      breakpoint.value === 801 && breakpoint.value === V1_RESPONSIVE_POLICY.desktopMinPx,
       String(breakpoint.value),
     );
     check(
-      "…and is labeled inferred, never observed",
-      breakpoint.provenance === "inferred" &&
-        breakpoint.method === "observed-endpoint-midpoint" &&
-        breakpoint.mobileObservedWidth === 390 &&
-        breakpoint.desktopObservedWidth === 1440,
+      "…and the midpoint the inference chose is still carried, as evidence",
+      breakpoint.inferredAuthoredPx === 915 &&
+        breakpoint.inferredAuthoredMethod === "observed-endpoint-midpoint",
+      `${breakpoint.inferredAuthoredPx} / ${breakpoint.inferredAuthoredMethod}`,
     );
     check(
-      "--breakpoint override is recorded as an operator override",
-      inferBreakpoint(input.siteSpec, { override: 800 }).provenance === "operator-override",
+      // Responsive Core P0 §C2.6: the policy is now grade 4 of the graded
+      // switch; with no pages there is no grade-2/3 evidence, so it is served.
+      "…and is labeled product-policy (grade 4, no evidence), never observed",
+      breakpoint.provenance === "product-policy" &&
+        breakpoint.method === "product-policy-v1" &&
+        breakpoint.policyClamped === undefined &&
+        breakpoint.mobileObservedWidth === 390 &&
+        breakpoint.desktopObservedWidth === 1440 &&
+        breakpoint.servedSwitch?.grade === "product-policy" &&
+        breakpoint.servedSwitch.value === breakpoint.value,
+      breakpoint.servedSwitch?.reason,
+    );
+    check(
+      "…and the media queries the policy implies are the 801 / 800.98 pair",
+      breakpointMediaQueries(breakpoint.value).desktop === "(min-width: 801px)" &&
+        breakpointMediaQueries(breakpoint.value).mobile === "(max-width: 800.98px)",
+      JSON.stringify(breakpointMediaQueries(breakpoint.value)),
+    );
+    check(
+      "--breakpoint override still wins over the policy",
+      inferBreakpoint(input.siteSpec, { override: 640 }).provenance === "operator-override" &&
+        inferBreakpoint(input.siteSpec, { override: 640 }).value === 640 &&
+        inferBreakpoint(input.siteSpec, { override: 640 }).inferredAuthoredPx === undefined &&
+        inferBreakpoint(input.siteSpec, { override: 640 }).servedSwitch?.grade === "operator-override",
+      String(inferBreakpoint(input.siteSpec, { override: 640 }).value),
+    );
+    /*
+     * NEGATIVE — the policy width is CLAMPED into the interval the observation
+     * can serve. A corpus observed at 320 / 768 cannot serve 801: the desktop
+     * tree was never observed above 768, and serving the mobile tree at 800
+     * would put it at a width where the desktop tree is the one that was looked
+     * at. The clamp is announced rather than silent.
+     */
+    const narrowSpec = {
+      ...input.siteSpec,
+      responsiveModel: {
+        ...input.siteSpec.responsiveModel,
+        observedViewports: [
+          { id: "mobile", width: 320 },
+          { id: "desktop", width: 768 },
+        ],
+      },
+    } as typeof input.siteSpec;
+    const clamped = inferBreakpoint(narrowSpec);
+    check(
+      "a corpus whose desktop endpoint is below 801 clamps the policy and says so",
+      clamped.value === 768 && clamped.policyClamped === true,
+      `${clamped.value} clamped=${clamped.policyClamped}`,
+    );
+    const plan801 = inferResponsivePlan(input.siteSpec, { pages: input.pages });
+    check(
+      /*
+       * Responsive Core P0 §C2.6 — was "the two-mode policy is SITE-WIDE". A
+       * route now gets its own switch ONLY on its own grade-2/3 evidence; this
+       * fixture has none (no histogram, no fingerprint, no bisection), so every
+       * route inherits the grade-4 site switch and byPageId stays empty.
+       */
+      "with no route evidence every route inherits the site switch: byPageId empty",
+      plan801.byPageId.size === 0 &&
+        plan801.records.length === input.pages.length &&
+        plan801.records.every(
+          (r) =>
+            r.servedSwitch?.inherited === true &&
+            r.servedSwitch.grade === "product-policy" &&
+            r.servedSwitch.value === plan801.site.value,
+        ),
+      `${plan801.byPageId.size} override(s) over ${plan801.records.length} record(s)`,
+    );
+    /*
+     * Task 28.6 C1 — the pages are what turn the midpoint into a snap, and this
+     * fixture's pages carry no authored histogram. The point of the two checks
+     * below is that the ABSENCE is reported as an absence: an artifact that
+     * cannot tell "we had nothing to snap to" from "the source authored nothing"
+     * cannot be audited, and 915 shipped for a year saying neither.
+     */
+    const withPages = inferBreakpoint(input.siteSpec, { pages: input.pages });
+    check(
+      "a fixture whose pages author no breakpoints keeps the midpoint and names why",
+      // 28.8 A1: the midpoint moved from `value` to `inferredAuthoredPx`; the
+      // fallback reason and the pages-read count are unchanged.
+      withPages.inferredAuthoredPx === 915 &&
+        withPages.inferredAuthoredMethod === "observed-endpoint-midpoint" &&
+        withPages.value === 801 &&
+        withPages.fallbackReason === "no-histogram" &&
+        withPages.pagesRead === input.pages.length,
+      `${withPages.inferredAuthoredPx} → served ${withPages.value} ` +
+        `${withPages.fallbackReason} over ${withPages.pagesRead} page(s)`,
+    );
+    check(
+      "…and it never claims to know where a source swaps its DOM",
+      withPages.domSwitchWidthObserved === false &&
+        withPages.treeDivergence !== undefined,
+      String(withPages.treeDivergence),
     );
 
     // -----------------------------------------------------------------------
     console.log("\n§120 reconstruction plan");
     const plan = planReconstruction(input);
     check("every verified route is planned exactly once", plan.routes.routes.length === 6);
+    check(
+      "the plan hands the PAGES to the breakpoint inference — C1's whole input",
+      plan.breakpoint.pagesRead === input.pages.length &&
+        plan.breakpoint.candidateCount !== undefined,
+      `pagesRead ${String(plan.breakpoint.pagesRead)}`,
+    );
+    check(
+      "…and layout inference attempts BOTH viewports, counting each refusal",
+      plan.layout.counters.viewportPasses["desktop"] === input.pages.length &&
+        plan.layout.counters.viewportPasses["mobile"] === input.pages.length,
+      JSON.stringify(plan.layout.counters.viewportPasses),
+    );
+    check(
+      "…and the inline-size funnel partitions every probed node it examined",
+      Object.values(plan.layout.counters.inlineSizePreStageDrops).reduce(
+        (total, value) => total + value,
+        0,
+      ) +
+        plan.layout.counters.inlineSizeCandidates ===
+        plan.layout.counters.nodesWithProbe &&
+        Object.values(plan.layout.counters.inlineSizeOutcomes).reduce(
+          (total, value) => total + value,
+          0,
+        ) === plan.layout.counters.inlineSizeCandidates &&
+        plan.layout.counters.inlineSizeOutcomeDoubleCounts === 0,
+      `${plan.layout.counters.inlineSizeCandidates} candidate(s), ${plan.layout.counters.nodesWithProbe} probed`,
+    );
     check(
       "route keys distinguish two query variants of one pathname",
       plan.routes.byKey.has("/search?q=a") && plan.routes.byKey.has("/search?q=b"),
@@ -2472,6 +2663,45 @@ async function main(): Promise<void> {
     );
 
     // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    console.log("\nTask 28.8 FAST Phase F correction 1 — parser-unstable SPA edges are demoted, not refused");
+    {
+      type E = { k: "e"; n: string; t: string; p?: Record<string, string>; c?: E[] };
+      const el = (n: string, t: string, p?: Record<string, string>, c?: E[]): E => ({ k: "e", n, t, ...(p ? { p } : {}), ...(c ? { c } : {}) });
+      const ctx = { pageId: "pX", viewportId: "desktop" };
+      // (a) <a><span><a href>…</a></span></a> — the inner link is demoted in place.
+      const inner = el("n2", "a", { className: "wr-st001 wr-st002", href: "/x", "data-wr-node": "n2" }, [el("n3", "span")]);
+      const treeA = el("root", "div", undefined, [el("n1", "a", { href: "/outer" }, [el("n1b", "span", undefined, [inner])])]);
+      const resA = adaptParserNesting(treeA as never, ctx);
+      check("(a) one adaptation, mode demote, kind nested-anchor", resA.adaptations.length === 1 && resA.adaptations[0]!.mode === "demote" && resA.adaptations[0]!.kind === "nested-anchor", JSON.stringify(resA.adaptations));
+      check("(a) the inner node keeps its id and classes, tag is span", inner.n === "n2" && inner.t === "span" && inner.p?.["className"] === "wr-st001 wr-st002" && inner.p?.["data-wr-node"] === "n2");
+      check("(a) marked data-wr-demoted=a, href moved to data-wr-href", inner.p?.["data-wr-demoted"] === "a" && inner.p?.["data-wr-href"] === "/x" && inner.p?.["href"] === undefined);
+      check("(a) the inner node's children are untouched", inner.c?.length === 1 && inner.c[0]!.n === "n3");
+      // (b) nested <button> → span.
+      const btn = el("b2", "button", { className: "wr-st009" });
+      const treeB = el("root", "div", undefined, [el("b1", "button", undefined, [btn])]);
+      const resB = adaptParserNesting(treeB as never, ctx);
+      check("(b) nested button demoted to span", resB.adaptations.length === 1 && resB.adaptations[0]!.kind === "nested-button" && btn.t === "span" && btn.p?.["data-wr-demoted"] === "button");
+      // (c) <p><div> — the OPEN <p> is re-tagged to div; the div child is untouched.
+      const para = el("p1", "p", { className: "wr-st020" }, [el("t1", "span"), el("d1", "div", { className: "wr-st021" })]);
+      const treeC = el("root", "div", undefined, [para]);
+      const resC = adaptParserNesting(treeC as never, ctx);
+      check("(c) block-closes-p repaired on the ancestor: p → div, marked data-wr-demoted=p", resC.adaptations.length === 1 && resC.adaptations[0]!.kind === "block-closes-p" && resC.adaptations[0]!.nodeId === "p1" && para.t === "div" && para.p?.["data-wr-demoted"] === "p", JSON.stringify(resC.adaptations));
+      check("(c) the block child keeps its tag and classes", para.c?.[1]!.t === "div" && para.c?.[1]!.p?.["className"] === "wr-st021");
+      check("(c) the served tree has no parser-unstable edge left", detectNestingRepair("div", ["div", para.t]) === null);
+      // (d) li inside li still INTERPOSES a wr-nest container (unchanged behaviour).
+      const innerLi = el("l2", "li");
+      const treeD = el("root", "ul", undefined, [el("l1", "li", undefined, [innerLi])]);
+      const resD = adaptParserNesting(treeD as never, ctx);
+      const wrapped = treeD.c![0]!.c![0]!;
+      check("(d) li-in-li still interposes a ul.wr-nest wrapper (mode interpose)", resD.adaptations.length === 1 && resD.adaptations[0]!.mode === "interpose" && wrapped.t === "ul" && wrapped.p?.["className"] === "wr-nest" && wrapped.c?.[0] === innerLi && innerLi.t === "li");
+      // (e) stray text inside a table row still refuses.
+      const treeE = el("root", "table", undefined, [el("tb", "tbody", undefined, [{ k: "e", n: "tr1", t: "tr", c: [{ k: "t", v: "stray" } as unknown as E] }])]);
+      let threw = "";
+      try { adaptParserNesting(treeE as never, ctx); } catch (err) { threw = (err as Error).message; }
+      check("(e) table-stray-content still refuses the build", threw.includes("table-stray-content"), threw.slice(0, 80));
+    }
+
     console.log("\nTask 16 correction — parser-stable nesting");
     const quietJson = JSON.parse(
       filesA.get("app/reconstruction-data/pages/p000005.json")!,
@@ -2600,6 +2830,81 @@ async function main(): Promise<void> {
       "…carrying the z-index that puts it BEHIND the content",
       (overlayRule ?? "").includes("z-index:-1"),
       (overlayRule ?? "").slice(0, 120),
+    );
+
+    // -----------------------------------------------------------------------
+    console.log("\n§28.8 A2/A3 authored intent + text-box relief, end to end");
+    /*
+     * The unit behaviour of both branches is pinned in `smoke-layout-safety`.
+     * What is checked HERE is the thing only a whole generation can show: that
+     * the class a node wears and the rule the stylesheet writes are decided from
+     * one source, and that the manifest's numbers are the ones on disk.
+     */
+    const txRuleCount = (generatedCss.match(/\.wr-st\d+\.wr-tx\{/g) ?? []).length;
+    const sfRuleCount = (generatedCss.match(/\.wr-st\d+\.wr-sf\{/g) ?? []).length;
+    const reliefTokens = new Set(
+      [...generatedCss.matchAll(/\.(wr-st\d+)\.wr-(?:tx|sf)\{/g)].map((m) => `${m[1]}`),
+    );
+    const wornVariants = new Set<string>();
+    const wornBaseTokens = new Set<string>();
+    for (const pageJson of [homeJson]) {
+      for (const viewportId of ["desktop", "mobile"] as const) {
+        for (const node of flattenElements(pageJson, viewportId)) {
+          const className = node.p?.["className"];
+          if (typeof className !== "string") continue;
+          const parts = className.split(" ");
+          for (const part of parts) {
+            if (part === "wr-tx" || part === "wr-sf") {
+              wornVariants.add(part);
+              const base = parts.find((c) => c.startsWith("wr-st"));
+              if (base !== undefined) wornBaseTokens.add(base);
+            }
+          }
+        }
+      }
+    }
+    check(
+      "(A3) the manifest's variant-rule count is the number of rules on disk",
+      generatedA.manifest.layout?.textBoxRelief?.tokensVariants === txRuleCount + sfRuleCount,
+      `${JSON.stringify(generatedA.manifest.layout?.textBoxRelief)} vs ` +
+        `${txRuleCount} tx + ${sfRuleCount} sf`,
+    );
+    check(
+      "(A3) every token a flagged node wears has its variant rule in the sheet",
+      [...wornBaseTokens].every((token) => reliefTokens.has(token)),
+      `${wornBaseTokens.size} worn token(s), ${reliefTokens.size} with rules`,
+    );
+    check(
+      "(A3) …and every emitted variant restates a number, never forces one",
+      !generatedCss.includes("!important") &&
+        [...generatedCss.matchAll(/\.wr-st\d+\.wr-tx\{([^}]*)\}/g)].every((m) =>
+          /^height:auto;min-height:[\d.]+px$/.test(m[1] ?? ""),
+        ) &&
+        [...generatedCss.matchAll(/\.wr-st\d+\.wr-sf\{([^}]*)\}/g)].every(
+          (m) => m[1] === "width:auto",
+        ),
+      `${txRuleCount} tx rule(s)`,
+    );
+    const authoredOffered = generatedA.manifest.layout?.authoredIntentOffered ?? {};
+    const authoredEmitted = generatedA.manifest.layout?.authoredIntentEmitted ?? {};
+    const authoredRefused = generatedA.manifest.layout?.authoredIntentRefusalsByReason ?? {};
+    const sumOf = (record: Record<string, number>): number =>
+      Object.values(record).reduce((total, value) => total + value, 0);
+    check(
+      "(A2) the authored-intent branch accounts for every node it was offered",
+      sumOf(authoredOffered) === sumOf(authoredEmitted) + sumOf(authoredRefused),
+      `${sumOf(authoredOffered)} offered = ${sumOf(authoredEmitted)} emitted + ` +
+        `${sumOf(authoredRefused)} refused`,
+    );
+    check(
+      "(A2) …and it declines LOUDLY: every refused node names a reason",
+      sumOf(authoredOffered) > 0 && Object.keys(authoredRefused).length > 0,
+      JSON.stringify(authoredRefused),
+    );
+    check(
+      "(A2) the shipped count never exceeds what inference proposed",
+      (generatedA.manifest.layout?.authoredInlineSize ?? 0) <= sumOf(authoredEmitted),
+      `${generatedA.manifest.layout?.authoredInlineSize} shipped of ${sumOf(authoredEmitted)}`,
     );
 
     console.log("\n§84–§106 interaction bindings");
@@ -3427,10 +3732,19 @@ async function main(): Promise<void> {
      */
     const emitsCode = /\/(app|runtime)-template\.ts$/.test(abs);
     const scan = emitsCode ? src.replace(/`[\s\S]*?`/g, "``") : src;
-    for (const match of scan.matchAll(/\bfrom\s+["'](\.[^"']+)["']/g)) {
+    /*
+     * A module specifier never contains WHITESPACE, and requiring that is what
+     * keeps this a scan of imports rather than a scan of English. Prose inside a
+     * docstring reaches this regex too — `tell "was not there" from "was never
+     * looked at"` in `observer/types.ts` reads as an import of a package called
+     * `was never looked at` — and a false external would fail the assertion below
+     * for a module nothing actually depends on. The assertion itself is
+     * unchanged: the reachable third-party set must still be exactly parse5+zod.
+     */
+    for (const match of scan.matchAll(/\bfrom\s+["'](\.[^"'\s]+)["']/g)) {
       walkImports(path.resolve(path.dirname(abs), match[1]!.replace(/\.js$/, ".ts")));
     }
-    for (const match of scan.matchAll(/\bfrom\s+["']([^."'][^"']*)["']/g)) {
+    for (const match of scan.matchAll(/\bfrom\s+["']([^."'\s][^"'\s]*)["']/g)) {
       externals.add(match[1]!);
     }
   };

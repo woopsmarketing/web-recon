@@ -64,7 +64,7 @@ import {
   loadAssetInventoryRun,
 } from "../src/assets/index.js";
 import { hashDirectory } from "../src/production/hash.js";
-import { runProductionCompile, runProductionQa } from "../src/production/index.js";
+import { productionBuildDir, runProductionCompile, runProductionQa, scanAppBrandHosts } from "../src/production/index.js";
 import {
   buildRelease,
   collectRequirements,
@@ -98,11 +98,52 @@ import {
   type ProductionResolution,
   type ReleaseRun,
   mergeRequirements,
+  buildRequirementsFile,
+  duplicateRequirementIds,
   releaseBlockers,
   REQUIREMENT_KINDS,
   SEVERITY_POLICY,
   type Requirement,
+  // Task 28 CR1: the revision chain is now ON the release barrel — imported
+  // from the barrel here ON PURPOSE, so a regression that drops the re-export
+  // fails this suite at compile time.
+  hashAuthoredState,
+  loadRevisionChain,
+  type AuthoredRevision,
+  // Task 28 §1C: the assets stage runner's engine. Imported so the
+  // "replace the same asset twice" case can be exercised without paying for a
+  // second production compile.
+  applyAssetResolutions,
+  // Task 28 §2 — the shared authoring substrate: authored.assets /
+  // authored.brand and the write API a Visual Editor calls. Imported through
+  // the BARREL, like the revision chain above, so dropping the re-export
+  // fails this suite at compile time.
+  AUTHORED_ASSET_IMPACTS,
+  AUTHORED_BRAND_IMPACTS,
+  AuthoredBrandDecisionSchema,
+  AuthoredStateSchema,
+  authoredInvalidatedStages,
+  brandSurfaceId,
+  commitAuthoredEdits,
+  mergedAssetResolutions,
+  removeAuthoredAsset,
+  setAuthoredAsset,
+  setAuthoredBrandDecision,
+  // Task 28 Phases 5 + 6 — enablement safety + planning, through the BARREL.
+  AUTHORED_DISABLED_REGION_IMPACTS,
+  AUTHORED_DISABLED_ROUTE_IMPACTS,
+  evaluateRegionDisable,
+  loadEnablementInputs,
+  resolveEnablement,
+  resolveEnablementForProject,
 } from "../src/release/index.js";
+import {
+  compilePageRegions,
+  loadRegionInput,
+  newRegionRunId,
+  writeRegionRun,
+} from "../src/regions/index.js";
+import { loadSiteRegistry } from "../src/registry/index.js";
 // brand-scan is not (yet) on the release barrel — see changeRequests in the
 // Task 27 handoff for src/release/index.ts.
 import {
@@ -125,6 +166,41 @@ function check(name: string, ok: boolean | undefined, detail = ""): void {
 }
 function section(title: string): void {
   console.log(`\n== ${title}`);
+}
+
+/**
+ * The COUNT↔ARTIFACT agreement invariant (Task 28 §1B — the 378↔380 drift).
+ *
+ * Task 27 recorded a requirement count printed by a CLI and a different count
+ * sitting in requirements.json, and could not say which was wrong. Neither
+ * was: `release:build` re-collects requirements from the artifacts its own
+ * stage reruns just produced and REWRITES requirements.json, while recording
+ * no total of its own — so a prepare's line and a later build's file were
+ * compared as if they described one collection.
+ *
+ * This invariant is what makes that unrepeatable, for WHATEVER the numbers
+ * happen to be: the count a command REPORTS must equal the number of UNIQUE
+ * requirement ids in the file that command left on disk, must equal that
+ * file's own `counts.total`, and (for a run that writes one) must equal the
+ * `requirementsTotal` recorded on its run.json. No number is hardcoded here.
+ */
+async function requirementCountAgreement(
+  projectDir: string,
+  reportedCount: number,
+): Promise<{ agrees: boolean; detail: string; uniqueIds: number; total: number }> {
+  const file = await loadRequirementsFile(projectDir);
+  const uniqueIds = new Set(file.requirements.map((requirement) => requirement.requirementId)).size;
+  return {
+    agrees:
+      reportedCount === uniqueIds &&
+      reportedCount === file.counts.total &&
+      file.requirements.length === uniqueIds,
+    uniqueIds,
+    total: file.counts.total,
+    detail:
+      `reported=${reportedCount} uniqueIds=${uniqueIds} counts.total=${file.counts.total} ` +
+      `arrayLength=${file.requirements.length}`,
+  };
 }
 
 /**
@@ -950,6 +1026,10 @@ async function main(): Promise<void> {
   await rm(HOST_DATA_DIR, { recursive: true, force: true });
   const scratch = path.resolve("data", `.smoke-release-${process.pid}`);
   await rm(scratch, { recursive: true, force: true });
+  // Task 28 CR4: `release:prepare` now caches the project in the site registry
+  // index. The suite points that write at its OWN scratch root so a fixture run
+  // never lands rows in the repo's real data/.registry.
+  const registryRoot = path.join(scratch, "registry-root");
   await mkdir(scratch, { recursive: true });
   const fixture = await startAssetFixture();
   const heroUrl = `${fixture.baseUrl}/img/hero.png`;
@@ -1182,11 +1262,26 @@ async function main(): Promise<void> {
         .join(", "),
     );
     check("fixture preview spec decision is preview", compile0.spec.indexabilityGate.decision === "preview");
+    // Task 28 Phase 10 CORRECTION — the isolated package MEASURES its served
+    // <title>s. The shipped Phase-10 build served one identical title on every
+    // route and nothing noticed; this asserts the measurement ran on every
+    // route of a REAL compiled package and that its detail carries the
+    // duplicate-group number, whatever that number is.
+    const titleMeasure = qa0.checks.find((entry) => entry.id === "title-uniqueness-measured");
+    check(
+      "fixture package QA measures served <title> uniqueness on every route (Task 28 Phase 10)",
+      titleMeasure !== undefined &&
+        titleMeasure.ok &&
+        titleMeasure.detail.includes(`routes=${qa0.routeCensus.length}/${qa0.routeCensus.length}`) &&
+        /duplicate-title-groups=\d+/.test(titleMeasure.detail),
+      titleMeasure?.detail ?? "check absent",
+    );
 
     // =======================================================================
     section("1. release-project-v1 + requirement schemas (spec tests 1-3)");
     // =======================================================================
     const preparedProject = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
       productionSpecRef: compile0.specDir,
       log: () => {},
     });
@@ -1251,6 +1346,7 @@ async function main(): Promise<void> {
     // Explicit operator siteId → its own project namespace (several customer
     // sites from ONE template).
     const secondSite = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
       productionSpecRef: compile0.specDir,
       siteId: "second-customer",
       log: () => {},
@@ -1266,6 +1362,7 @@ async function main(): Promise<void> {
       "27.5 the same siteId prepared twice keeps ONE identity (no run-scoped fork)",
       (
         await prepareReleaseProject({
+      registryDataRoot: registryRoot,
           productionSpecRef: compile0.specDir,
           siteId: "second-customer",
           log: () => {},
@@ -1415,6 +1512,7 @@ async function main(): Promise<void> {
     // then follows the remedy the warning prints and asserts it clears.
     const legacyProjectId = `${loaded.project.siteId}-legacy-exclusions`;
     const legacyPrepared = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
       productionSpecRef: compile0.specDir,
       projectId: legacyProjectId,
       log: () => {},
@@ -1474,6 +1572,7 @@ async function main(): Promise<void> {
     // Now DO what the warning tells the operator to do.
     const legacyBefore = (await loadReleaseProject(legacyDir)).project;
     const remedied = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
       productionSpecRef: compile0.specDir,
       projectId: legacyProjectId,
       log: () => {},
@@ -1521,6 +1620,7 @@ async function main(): Promise<void> {
     };
     await writeFile(legacyFile, JSON.stringify(advancedDoc, null, 2) + "\n", "utf8");
     const afterAdvancedReprepare = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
       productionSpecRef: compile0.specDir,
       projectId: legacyProjectId,
       log: () => {},
@@ -1904,6 +2004,56 @@ async function main(): Promise<void> {
         `production=${persistedAfterResolve.stageStatus.production.status}`,
     );
 
+    // ---- Task 28 Phase 2: SOURCE-BRAND DECISIONS on the real engine -------
+    // The fixture template genuinely carries source-brand surfaces (an <img>
+    // alt that names the fixture brand, on both viewports). Before Phase 2
+    // they were invisible to the gate; now they are a release blocker, and the
+    // ONLY way to clear one is to decide it and REBUILD. This is that flow, on
+    // the real engine, and the checks below are the proof that Task 27's dead
+    // end ("any source with an inline-SVG logo can never reach
+    // PRODUCTION_READY") is gone.
+    const brandHostsBefore = (await scanAppBrandHosts(path.join(templateDir, "app"), HOST)).hosts;
+    check(
+      "28.P2B.1 the fixture template really does carry source-brand hosts",
+      brandHostsBefore.length > 0,
+      String(brandHostsBefore.length),
+    );
+    const preBrandRequirements = JSON.parse(
+      await readFile(path.join(projectDir, "requirements.json"), "utf8"),
+    ) as { requirements: Array<{ requirementId: string; status: string; count?: number }> };
+    const preBrandRequirement = preBrandRequirements.requirements.find(
+      (requirement) => requirement.requirementId === "source-brand-inline-svg",
+    );
+    check(
+      "28.P2B.2 it is an UNRESOLVED release blocker before any decision, counted from HOSTS",
+      preBrandRequirement?.status === "unresolved" && preBrandRequirement.count === brandHostsBefore.length,
+      JSON.stringify(preBrandRequirement),
+    );
+    const brandEdits = brandHostsBefore.map((host) => ({
+      op: "set-brand-decision" as const,
+      surfaceId: host.id,
+      decision: "REPLACE" as const,
+      replacement: { text: "Newco visual" },
+      note: "smoke: source-brand surface resolved by an authored decision",
+    }));
+    const brandCommit = await commitAuthoredEdits(projectDir, brandEdits, {
+      origin: "edit",
+      summary: "brand decisions",
+    });
+    check(
+      "28.P2B.3 the decisions are AUTHORED state and append exactly one revision",
+      brandCommit.changed === true && brandCommit.revision !== null,
+      JSON.stringify(brandCommit.revision?.revisionId),
+    );
+    const afterBrandEdit = (await loadReleaseProject(projectDir)).project;
+    check(
+      "28.P2B.4 the decision record stores the DECISION only — no detection evidence",
+      Object.values(afterBrandEdit.authored.brand ?? {}).every(
+        (decision) => Object.keys(decision).sort().join(",") === "decision,note,replacement,updatedAt",
+      ),
+      JSON.stringify(afterBrandEdit.authored.brand),
+    );
+
     const build1 = await buildRelease(projectDir, { log: () => {} });
     check(
       "18c selective rerun executed: content/theme/seo/assets/production, frozen roots reused",
@@ -1920,6 +2070,64 @@ async function main(): Promise<void> {
         (build1.project.stageStatus.content.artifact?.excluded ?? []).includes(entry),
       ),
       JSON.stringify(build1.project.stageStatus.content.artifact?.excluded),
+    );
+    const bakeReportFile = path.join(
+      build1.project.stageStatus.production.artifact?.path.replace("production-specs", "production-builds") ?? "",
+      "report",
+      "bake-report.json",
+    );
+    const bakeReport = existsSync(bakeReportFile)
+      ? (JSON.parse(await readFile(bakeReportFile, "utf8")) as {
+          brand: {
+            census: Record<string, number>;
+            flight: Record<string, number>;
+            bake: {
+              hostsBefore: number;
+              applied: { replaced: number; refused: number };
+              residual: { unexplainedAfter: string[] };
+            } | null;
+          };
+        })
+      : null;
+    check(
+      "28.P2B.5 the REAL production build ran the brand resolver and recorded what it did",
+      bakeReport?.brand.bake !== null &&
+        bakeReport?.brand.bake?.hostsBefore === brandHostsBefore.length &&
+        bakeReport?.brand.bake?.applied.replaced === brandHostsBefore.length &&
+        bakeReport?.brand.bake?.applied.refused === 0,
+      JSON.stringify(bakeReport?.brand.bake?.applied) + ` file=${bakeReportFile}`,
+    );
+    check(
+      "28.P2B.6 the rebuilt output carries NO unexplained brand host, and the flight axis was measured",
+      bakeReport?.brand.bake?.residual.unexplainedAfter.length === 0 &&
+        typeof bakeReport?.brand.flight.svgAriaLabel === "number",
+      JSON.stringify(bakeReport?.brand.flight),
+    );
+    const postBrandRequirement = JSON.parse(
+      await readFile(path.join(projectDir, "requirements.json"), "utf8"),
+    ) as { requirements: Array<{ requirementId: string; status: string; statusNote?: string }> };
+    const cleared = postBrandRequirement.requirements.find(
+      (requirement) => requirement.requirementId === "source-brand-inline-svg",
+    );
+    check(
+      "28.P2B.7 the blocker cleared BY MEASURED OUTPUT, and says so",
+      cleared?.status === "resolved" && (cleared.statusNote ?? "").startsWith("cleared by MEASURED OUTPUT"),
+      JSON.stringify(cleared),
+    );
+    check(
+      // The third axis (Task 28 Phase 2): the exported bytes and the RSC
+      // flight are inputs; this is what a visitor's browser actually renders
+      // after React reconciles the flight into the DOM. It reaches the
+      // requirement from THIS build's own report/qa.json, so a build that
+      // never measured it says "not measured" here instead of scoring a zero.
+      "28.P2B.7b the POST-HYDRATION census is part of the proof — what renders, not raw bytes",
+      (cleared?.statusNote ?? "").includes("post-hydration brand surfaces=0"),
+      cleared?.statusNote ?? "",
+    );
+    check(
+      "28.P2B.8 it was NOT cleared by a resolution pack (no resolvedBy)",
+      (cleared as { resolvedBy?: unknown } | undefined)?.resolvedBy === undefined,
+      JSON.stringify(cleared),
     );
     check(
       "22a after pack1 the ONLY blocker left is the domain",
@@ -1941,6 +2149,7 @@ async function main(): Promise<void> {
     section("8. indexable gate (test 21) — a domain alone must NOT go indexable");
     // =======================================================================
     const gateProject = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
       productionSpecRef: compile0.specDir,
       projectId: "fixture-indexable-gate",
       log: () => {},
@@ -2094,6 +2303,33 @@ async function main(): Promise<void> {
       JSON.stringify(build3.run?.rerunStages) + (build3.project.failure ? ` FAILURE: ${build3.project.failure.message}` : ""),
     );
     check("22d still PRODUCTION_READY after the asset swap", build3.project.releaseState === "PRODUCTION_READY");
+
+    // ---- Task 28 §1B on a REAL build (no extra next build spent) ----------
+    // `release:build` is the command that rewrote requirements.json under
+    // Task 27 while reporting nothing, which is how its total became
+    // unattributable. Assert the agreement on the build that just ran.
+    const build3Agreement = await requirementCountAgreement(projectDir, build3.requirementsCount);
+    check(
+      "28.1B.1 a REAL build reports exactly the unique requirement ids it persisted",
+      build3Agreement.agrees,
+      build3Agreement.detail,
+    );
+    const build3RunRecord = JSON.parse(
+      await readFile(path.join(projectDir, "runs", build3.run!.runId, "run.json"), "utf8"),
+    ) as { requirementsTotal: number };
+    check(
+      "28.1B.2 the build's run.json records the requirement total it wrote (durable, not only a log line)",
+      build3RunRecord.requirementsTotal === build3Agreement.total,
+      `run.requirementsTotal=${build3RunRecord.requirementsTotal} vs persisted ${build3Agreement.total}`,
+    );
+    const build3File = await loadRequirementsFile(projectDir);
+    check(
+      "28.1B.3 the persisted file names WHICH run and WHICH stage artifacts it was collected from",
+      build3File.collectedFrom?.releaseRunId === build3.run!.runId &&
+        build3File.collectedFrom?.releaseRunKind === "build" &&
+        build3File.collectedFrom.stageArtifacts.content === build3.project.stageStatus.content.artifact!.path,
+      JSON.stringify(build3File.collectedFrom ?? null),
+    );
     const heroSha = createHash("sha256").update(Buffer.concat([PNG_1PX, Buffer.from([2])])).digest("hex");
     const finalSite = path.join(
       HOST_DATA_DIR,
@@ -2244,10 +2480,33 @@ async function main(): Promise<void> {
       (stripeByKind.get("font-license") ?? 0) === expectedFonts,
       `${stripeByKind.get("font-license")} vs ${expectedFonts}`,
     );
+    // Task 28 Phase 2 CHANGED THIS COUNT ON PURPOSE, and the check follows the
+    // change rather than the old proxy: `inlineSvgEntries` counts every inline
+    // SVG on the site (icons included), which is not a count of source-brand
+    // marks. The requirement now carries brand-CARRYING hosts, measured by the
+    // same walker the bake-time resolver uses.
+    const stripeBrandHosts = (
+      await scanAppBrandHosts(path.join(stripeSpec.lineage.template.dir, "app"), "stripe.com")
+    ).hosts;
+    const stripeBrandRequirement = stripeCollected.requirements.find(
+      (requirement) => requirement.requirementId === "source-brand-inline-svg",
+    );
     check(
-      "23.6 inline-SVG brand-mark requirement carries the inventory count",
-      stripeCollected.requirements.find((requirement) => requirement.requirementId === "source-brand-inline-svg")
-        ?.count === stripeInventoryCounts.inlineSvgEntries,
+      "23.6 the source-brand requirement carries the BRAND-CARRYING HOST count (re-derived here)",
+      stripeBrandRequirement?.count === stripeBrandHosts.length && stripeBrandHosts.length > 0,
+      `${stripeBrandRequirement?.count} vs ${stripeBrandHosts.length}`,
+    );
+    check(
+      "23.6b and that count is strictly smaller than the inline-svg entry count it replaced",
+      stripeBrandHosts.length < stripeInventoryCounts.inlineSvgEntries,
+      `${stripeBrandHosts.length} hosts vs ${stripeInventoryCounts.inlineSvgEntries} inline-svg entries`,
+    );
+    check(
+      "23.6c the inventory count is still CITED as evidence, so nothing was hidden",
+      (stripeBrandRequirement?.evidence ?? []).some((entry) =>
+        (entry.detail ?? "").includes(`counts.inlineSvgEntries=${stripeInventoryCounts.inlineSvgEntries}`),
+      ),
+      JSON.stringify(stripeBrandRequirement?.evidence),
     );
     const expectedUrlish = stripeUnresolved.filter((slot) => slot.slotKey.endsWith(".href")).length;
     check(
@@ -2528,6 +2787,7 @@ async function main(): Promise<void> {
     // ---- non-destructive re-prepare --------------------------------------
     const beforeReprepare = (await loadReleaseProject(projectDir)).project;
     const reprepared = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
       productionSpecRef: compile0.specDir,
       projectId: beforeReprepare.projectId,
       log: () => {},
@@ -2861,6 +3121,1434 @@ async function main(): Promise<void> {
       !restoredPlan.text.includes("frozen-stage-input-drift") && restoredPlan.ready.includes("template"),
       `ready=${JSON.stringify(restoredPlan.ready)}`,
     );
+
+    // =======================================================================
+    section("Task 28 — CR1/CR2/CR3/CR4: revision chain, displayName, site registry");
+    // =======================================================================
+    // A DEDICATED project so nothing above is disturbed: same accepted lineage,
+    // its own siteId, its own revision chain and its own registry row.
+    const cr = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
+      productionSpecRef: compile0.specDir,
+      siteId: "task28-cr",
+      displayName: "Task 28 Demo Site",
+      log: () => {},
+    });
+    const crChain0 = await loadRevisionChain(cr.projectDir);
+    check(
+      "28.CR2.1 the FIRST prepare records the authored baseline (r000, origin prepare)",
+      crChain0.length === 1 &&
+        crChain0[0].revisionId === "r000" &&
+        crChain0[0].origin === "prepare" &&
+        crChain0[0].parentRevisionId === null,
+      JSON.stringify(crChain0.map((r: AuthoredRevision) => `${r.revisionId}:${r.origin}`)),
+    );
+    check(
+      "28.CR2.2 the recorded snapshot IS the project's authoritative authored state",
+      crChain0[0].authoredStateHash === hashAuthoredState(cr.project.authored),
+      `${crChain0[0].authoredStateHash} vs ${hashAuthoredState(cr.project.authored)}`,
+    );
+    check(
+      "28.CR3.1 the operator-supplied displayName is recorded on the project",
+      cr.project.displayName === "Task 28 Demo Site",
+      String(cr.project.displayName),
+    );
+    check(
+      "28.CR4.1 prepare cached the project in the site registry index",
+      cr.registeredSiteKey === `${HOST}/task28-cr` && cr.registryWarnings.length === 0,
+      `${cr.registeredSiteKey} warnings=${JSON.stringify(cr.registryWarnings)}`,
+    );
+    const crIndex1 = await loadSiteRegistry({ dataRoot: registryRoot });
+    const crRows1 = crIndex1.entries.filter((entry) => entry.siteKey === `${HOST}/task28-cr`);
+    check(
+      "28.CR3.2 the indexed display name comes from the project, not from the siteId",
+      crRows1.length === 1 &&
+        crRows1[0].name === "Task 28 Demo Site" &&
+        crRows1[0].nameSource === "project-display-name",
+      JSON.stringify(crRows1.map((row) => [row.name, row.nameSource])),
+    );
+    check(
+      "28.CR3.3 a project with NO displayName still indexes, deriving the name from siteId",
+      crIndex1.entries.some(
+        (entry) =>
+          entry.siteKey === `${HOST}/${defaultSiteId(HOST)}` &&
+          entry.name === defaultSiteId(HOST) &&
+          entry.nameSource === "derived-from-site-id",
+      ),
+      JSON.stringify(crIndex1.entries.map((row) => [row.siteKey, row.nameSource])),
+    );
+    // ---- idempotency: prepare twice ---------------------------------------
+    const crAgain = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
+      productionSpecRef: compile0.specDir,
+      siteId: "task28-cr",
+      log: () => {},
+    });
+    const crChain1 = await loadRevisionChain(cr.projectDir);
+    check(
+      "28.CR2.3 a re-prepare that moves NO authored value appends NO revision",
+      crChain1.length === 1,
+      JSON.stringify(crChain1.map((r: AuthoredRevision) => r.revisionId)),
+    );
+    check(
+      "28.CR3.4 a re-prepare that omits --display-name CARRIES the recorded name",
+      crAgain.project.displayName === "Task 28 Demo Site" &&
+        crAgain.preserved.some((entry) => entry === "displayName:Task 28 Demo Site"),
+      `${crAgain.project.displayName} / ${JSON.stringify(crAgain.preserved)}`,
+    );
+    const crIndex2 = await loadSiteRegistry({ dataRoot: registryRoot });
+    check(
+      "28.CR4.2 re-registering upserts by siteKey — one row, never a duplicate",
+      crIndex2.entries.filter((entry) => entry.siteKey === `${HOST}/task28-cr`).length === 1,
+      String(crIndex2.entries.filter((entry) => entry.siteKey === `${HOST}/task28-cr`).length),
+    );
+    check(
+      "28.CR4.3 the registry row points at the project directory the prepare wrote",
+      crIndex2.entries.find((entry) => entry.siteKey === `${HOST}/task28-cr`)?.projectDir ===
+        cr.projectDir.split(path.sep).join("/"),
+      crIndex2.entries.find((entry) => entry.siteKey === `${HOST}/task28-cr`)?.projectDir,
+    );
+    check(
+      "28.CR4.4 the registry head-revision pointer sees the chain prepare recorded",
+      crIndex2.entries.find((entry) => entry.siteKey === `${HOST}/task28-cr`)?.revision
+        ?.revisionId === "r000",
+      JSON.stringify(crIndex2.entries.find((entry) => entry.siteKey === `${HOST}/task28-cr`)?.revision),
+    );
+    // ---- resolve is the other transaction boundary ------------------------
+    const crThemePack = path.join(scratch, "cr-theme-pack.json");
+    await writeFile(
+      crThemePack,
+      JSON.stringify({
+        schemaVersion: 1,
+        schemaName: "production-resolution-v1",
+        theme: { tokens: { [authoredToken!]: "rgb(9, 9, 9)" } },
+      }),
+      "utf8",
+    );
+    await resolveRelease(cr.projectDir, { resolutionFile: crThemePack, log: () => {} });
+    const crChain2 = await loadRevisionChain(cr.projectDir);
+    check(
+      "28.CR2.4 a resolve that MOVES the authored state appends exactly one record",
+      crChain2.length === 2 &&
+        crChain2[1].origin === "resolve" &&
+        crChain2[1].parentRevisionId === "r000" &&
+        crChain2[1].change.themeChanged === true,
+      JSON.stringify(crChain2.map((r: AuthoredRevision) => `${r.revisionId}:${r.origin}`)),
+    );
+    check(
+      "28.CR2.5 the appended snapshot matches the saved project (document and chain agree)",
+      crChain2[1].authoredStateHash ===
+        hashAuthoredState((await loadReleaseProject(cr.projectDir)).project.authored),
+    );
+    await resolveRelease(cr.projectDir, { resolutionFile: crThemePack, log: () => {} });
+    const crChain3 = await loadRevisionChain(cr.projectDir);
+    check(
+      "28.CR2.6 re-applying the SAME pack records the resolution but appends NO revision",
+      crChain3.length === 2 &&
+        (await loadReleaseProject(cr.projectDir)).project.resolutions.length === 2,
+      `chain=${crChain3.length} resolutions=${(await loadReleaseProject(cr.projectDir)).project.resolutions.length}`,
+    );
+    await rm(cr.projectDir, { recursive: true, force: true });
+
+    // =======================================================================
+    section("Task 28 §1B — requirement count ↔ persisted requirement ids");
+    // =======================================================================
+    // The Task-27 drift: a CLI printed one requirement total and
+    // requirements.json held another, with nothing on disk recording which
+    // collection either number described. Every command that WRITES that file
+    // must now report the file's own total, and every write must say which run
+    // and which stage artifacts produced it. Nothing below hardcodes a total —
+    // the invariant is agreement, whatever the numbers are.
+    const drift = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
+      productionSpecRef: compile0.specDir,
+      siteId: "task28-drift",
+      log: () => {},
+    });
+    const driftPrepare = await requirementCountAgreement(drift.projectDir, drift.requirementsCount);
+    check(
+      "28.1B.4 prepare reports exactly the unique requirement ids it persisted",
+      driftPrepare.agrees,
+      driftPrepare.detail,
+    );
+    const driftPrepareFile = await loadRequirementsFile(drift.projectDir);
+    check(
+      "28.1B.5 prepare's file names its own run and the ACCEPTED-LINEAGE artifacts it collected from",
+      driftPrepareFile.collectedFrom?.releaseRunKind === "prepare" &&
+        driftPrepareFile.collectedFrom.releaseRunId ===
+          drift.project.runs[drift.project.runs.length - 1]!.runId &&
+        driftPrepareFile.collectedFrom.stageArtifacts.content ===
+          drift.project.acceptedLineage.content.path,
+      JSON.stringify(driftPrepareFile.collectedFrom ?? null),
+    );
+    const driftPrepareRun = JSON.parse(
+      await readFile(
+        path.join(
+          drift.projectDir,
+          "runs",
+          drift.project.runs[drift.project.runs.length - 1]!.runId,
+          "run.json",
+        ),
+        "utf8",
+      ),
+    ) as { requirementsTotal: number };
+    check(
+      "28.1B.6 prepare's run.json records the total it reported — the number survives the terminal",
+      driftPrepareRun.requirementsTotal === drift.requirementsCount,
+      `run.requirementsTotal=${driftPrepareRun.requirementsTotal} vs reported ${drift.requirementsCount}`,
+    );
+
+    const driftAgain = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
+      productionSpecRef: compile0.specDir,
+      siteId: "task28-drift",
+      log: () => {},
+    });
+    const driftReprepare = await requirementCountAgreement(
+      driftAgain.projectDir,
+      driftAgain.requirementsCount,
+    );
+    check(
+      "28.1B.7 a re-prepare still reports exactly what it persisted",
+      driftReprepare.agrees,
+      driftReprepare.detail,
+    );
+
+    const driftPackFile = path.join(scratch, "task28-drift-pack.json");
+    await writeFile(
+      driftPackFile,
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          schemaName: "production-resolution-v1",
+          theme: { tokens: { "color.accent.primary": "#123456" } },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+    const driftResolved = await resolveRelease(driftAgain.projectDir, {
+      resolutionFile: driftPackFile,
+      log: () => {},
+    });
+    const driftResolveAgreement = await requirementCountAgreement(
+      driftAgain.projectDir,
+      driftResolved.requirementsCount,
+    );
+    check(
+      "28.1B.8 resolve REWRITES requirements.json and reports exactly what it wrote",
+      driftResolveAgreement.agrees,
+      driftResolveAgreement.detail,
+    );
+    const driftResolveFile = await loadRequirementsFile(driftAgain.projectDir);
+    check(
+      "28.1B.9 resolve's write is attributed to the resolve run that made it",
+      driftResolveFile.collectedFrom?.releaseRunKind === "resolve" &&
+        driftResolveFile.collectedFrom.releaseRunId ===
+          driftResolved.project.runs[driftResolved.project.runs.length - 1]!.runId,
+      JSON.stringify(driftResolveFile.collectedFrom ?? null),
+    );
+
+    const driftDryRun = await buildRelease(driftAgain.projectDir, { dryRun: true, log: () => {} });
+    const driftDryAgreement = await requirementCountAgreement(
+      driftAgain.projectDir,
+      driftDryRun.requirementsCount,
+    );
+    check(
+      "28.1B.10 a dry run reports the PERSISTED total and writes nothing",
+      driftDryAgreement.agrees &&
+        driftDryRun.requirementsCount === driftResolved.requirementsCount,
+      `${driftDryAgreement.detail} | resolve reported ${driftResolved.requirementsCount}`,
+    );
+
+    // Two writes of the same project by different runs: the totals may
+    // legitimately differ (a build re-collects from artifacts it just made),
+    // but the file must always say WHICH run and WHICH artifacts, so a reader
+    // can attribute a delta instead of calling it drift.
+    check(
+      "28.1B.11 every requirements write carries a distinct, run-attributed provenance",
+      driftPrepareFile.collectedFrom !== undefined &&
+        driftResolveFile.collectedFrom !== undefined &&
+        driftPrepareFile.collectedFrom.releaseRunId !== driftResolveFile.collectedFrom.releaseRunId,
+      `${driftPrepareFile.collectedFrom?.releaseRunId} vs ${driftResolveFile.collectedFrom?.releaseRunId}`,
+    );
+
+    // The other half of the class: a collection carrying one id twice would
+    // make the array length unreproducible by any id-keyed reader. Refused
+    // where the information would be lost, and named, not counted.
+    const oneRequirement = driftPrepareFile.requirements[0]!;
+    let duplicateBuildRefused = "";
+    try {
+      buildRequirementsFile("task28-drift", [oneRequirement, { ...oneRequirement }]);
+    } catch (err) {
+      duplicateBuildRefused = (err as Error).message;
+    }
+    check(
+      "28.1B.12 a duplicate requirement id is REFUSED when the file is built, and named",
+      duplicateBuildRefused.includes(oneRequirement.requirementId),
+      duplicateBuildRefused,
+    );
+    let duplicateMergeRefused = "";
+    try {
+      mergeRequirements(null, [oneRequirement, { ...oneRequirement }], []);
+    } catch (err) {
+      duplicateMergeRefused = (err as Error).message;
+    }
+    check(
+      "28.1B.13 a duplicate id in ONE collection is refused at the merge, not silently dropped",
+      duplicateMergeRefused.includes(oneRequirement.requirementId),
+      duplicateMergeRefused,
+    );
+    check(
+      "28.1B.14 duplicateRequirementIds names every colliding id and nothing else",
+      JSON.stringify(duplicateRequirementIds([oneRequirement, { ...oneRequirement }])) ===
+        JSON.stringify([oneRequirement.requirementId]) &&
+        duplicateRequirementIds(driftPrepareFile.requirements).length === 0,
+      JSON.stringify(duplicateRequirementIds([oneRequirement, { ...oneRequirement }])),
+    );
+    await rm(drift.projectDir, { recursive: true, force: true });
+
+    // =======================================================================
+    section("Task 28 §1C — the assets stage RUNNER executes, and is reused");
+    // =======================================================================
+    // Task 27 proved asset REUSE only: across all three real builds `assets`
+    // appeared exclusively in reusedStages, so the runner itself had never
+    // executed on any pipeline. The two halves below close that hole, and
+    // 28.1C.7/8/12 are regressions for the two defects the first real
+    // execution exposed (duplicate manifest entry; stale counts).
+    const acRunDirs = async (): Promise<string[]> =>
+      (await readdir(path.join(HOST_DATA_DIR, "asset-materializations"))).sort();
+    const acMediaTotals = async (
+      dir: string,
+    ): Promise<{ files: number; bytes: number }> => {
+      const names = await readdir(path.join(dir, "media"));
+      let bytes = 0;
+      for (const name of names) bytes += (await stat(path.join(dir, "media", name))).size;
+      return { files: names.length, bytes };
+    };
+    const acManifestOf = async (dir: string): Promise<{
+      counts: { uniqueFiles: number; totalBytes: number; rewriteEntries: number };
+      entries: Array<{ inventoryId: string; status: string; sha256: string | null; localPath: string | null }>;
+    }> => JSON.parse(await readFile(path.join(dir, "manifest.json"), "utf8"));
+
+    const acBaseManifest = await acManifestOf(materializationDir);
+    const acRunsBefore = await acRunDirs();
+    const acFile = path.join(scratch, "task28-1c-hero.png");
+    await writeFile(acFile, Buffer.concat([PNG_1PX, Buffer.from([28, 1, 12])]));
+    const acSha = createHash("sha256").update(await readFile(acFile)).digest("hex");
+
+    const ac = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
+      productionSpecRef: compile0.specDir,
+      siteId: "task28-assets-runner",
+      log: () => {},
+    });
+    const acPackFile = path.join(scratch, "task28-1c-pack.json");
+    await writeFile(
+      acPackFile,
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          schemaName: "production-resolution-v1",
+          // ASSETS ONLY. Any other populated field would pull content/theme/seo
+          // in through RESOLUTION_FIELD_IMPACTS and the trigger would no longer
+          // isolate the assets dependency.
+          assets: { [heroInventoryId!]: { file: acFile, note: "task28 §1C operator replacement" } },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+    const acResolved = await resolveRelease(ac.projectDir, { resolutionFile: acPackFile, log: () => {} });
+    check(
+      "28.1C.1 an assets-only authored replacement stales EXACTLY assets+production, through the graph",
+      JSON.stringify(acResolved.invalidated) === JSON.stringify(["assets", "production"]),
+      JSON.stringify(acResolved.invalidated),
+    );
+    const acDry = await buildRelease(ac.projectDir, { dryRun: true, log: () => {} });
+    check(
+      "28.1C.2 the plan agrees: assets+production would run, content/theme/seo are reused",
+      JSON.stringify(acDry.plan.wouldRun) === JSON.stringify(["assets", "production"]) &&
+        ["content", "theme", "seo"].every((stage) => acDry.plan.wouldReuse.includes(stage as never)),
+      `run=${JSON.stringify(acDry.plan.wouldRun)} reuse=${JSON.stringify(acDry.plan.wouldReuse)}`,
+    );
+
+    const acBuild1 = await buildRelease(ac.projectDir, { log: () => {} });
+    check(
+      "28.1C.3 the assets STAGE RUNNER executed — assets is in rerunStages, not reusedStages",
+      acBuild1.run !== null &&
+        acBuild1.run.rerunStages.includes("assets") &&
+        !acBuild1.run.reusedStages.includes("assets") &&
+        acBuild1.failed === false,
+      `rerun=${JSON.stringify(acBuild1.run?.rerunStages)} reused=${JSON.stringify(acBuild1.run?.reusedStages)}`,
+    );
+    const acDerivedDir = acBuild1.project.stageStatus.assets.artifact!.path;
+    check(
+      "28.1C.4 it produced a NEW materialization run and left the base run in place",
+      acDerivedDir !== materializationDir &&
+        existsSync(path.join(acDerivedDir, "manifest.json")) &&
+        (await acRunDirs()).length === acRunsBefore.length + 1,
+      `${acDerivedDir} (was ${materializationDir})`,
+    );
+    const acRewrite = JSON.parse(
+      await readFile(path.join(acDerivedDir, "rewrite-map.json"), "utf8"),
+    ) as { entries: Array<{ sourceUrl: string; localPath: string }> };
+    const acLocalPath = `/media/${acSha}.png`;
+    check(
+      "28.1C.5 the operator bytes are stored under their own sha256 and the source url now points at them",
+      existsSync(path.join(acDerivedDir, "media", `${acSha}.png`)) &&
+        acRewrite.entries.filter((entry) => entry.sourceUrl === heroUrl).length === 1 &&
+        acRewrite.entries.find((entry) => entry.sourceUrl === heroUrl)?.localPath === acLocalPath,
+      acLocalPath,
+    );
+    const acReplacement = JSON.parse(
+      await readFile(path.join(acDerivedDir, "replacement-manifest.json"), "utf8"),
+    ) as { entries: Array<{ inventoryId: string; replacement: { status: string; providedFile: string | null; providedBy: string | null } }> };
+    const acHeroReplacement = acReplacement.entries.find((entry) => entry.inventoryId === heroInventoryId)!;
+    check(
+      "28.1C.6 the replacement seam is flipped to provided and attributed to the release run",
+      acHeroReplacement.replacement.status === "provided" &&
+        acHeroReplacement.replacement.providedFile === acLocalPath &&
+        acHeroReplacement.replacement.providedBy === `release:${ac.project.projectId}:${acBuild1.run!.runId}`,
+      JSON.stringify(acHeroReplacement.replacement),
+    );
+    const acDerivedManifest = await acManifestOf(acDerivedDir);
+    check(
+      "28.1C.7 DEFECT-1 regression: one manifest record per inventoryId — the operator record REPLACES, never appends",
+      acDerivedManifest.entries.filter((entry) => entry.inventoryId === heroInventoryId).length === 1 &&
+        acDerivedManifest.entries.length === acBaseManifest.entries.length &&
+        acDerivedManifest.entries.find((entry) => entry.inventoryId === heroInventoryId)?.status ===
+          "operator-provided",
+      `${acDerivedManifest.entries.filter((e) => e.inventoryId === heroInventoryId).length} record(s), ` +
+        `${acDerivedManifest.entries.length} entries vs base ${acBaseManifest.entries.length}`,
+    );
+    const acMedia = await acMediaTotals(acDerivedDir);
+    check(
+      "28.1C.8 DEFECT-2 regression: counts describe THIS run's media directory, not the base run's",
+      acDerivedManifest.counts.uniqueFiles === acMedia.files &&
+        acDerivedManifest.counts.totalBytes === acMedia.bytes &&
+        acDerivedManifest.counts.rewriteEntries === acRewrite.entries.length,
+      `counts=${JSON.stringify(acDerivedManifest.counts)} measured=${JSON.stringify(acMedia)}`,
+    );
+    const acSpec = JSON.parse(
+      await readFile(
+        path.join(acBuild1.project.stageStatus.production.artifact!.path, "production-spec.json"),
+        "utf8",
+      ),
+    ) as { lineage: { assets: { dir: string; materializationRunId: string } } };
+    check(
+      "28.1C.9 the production bake CONSUMED the derived run (spec lineage names it, not the base)",
+      path.resolve(acSpec.lineage.assets.dir) === path.resolve(acDerivedDir) &&
+        acSpec.lineage.assets.materializationRunId === acBuild1.project.stageStatus.assets.artifact!.id,
+      `${acSpec.lineage.assets.dir} vs ${acDerivedDir}`,
+    );
+
+    // ---- second, otherwise-unchanged build: the artifact must be REUSED ----
+    const acTreeBefore = (await hashDirectory(acDerivedDir, [])).hash;
+    const acRunsAfterBuild1 = await acRunDirs();
+    const acBuild2 = await buildRelease(ac.projectDir, { log: () => {} });
+    check(
+      "28.1C.10 an otherwise-unchanged rebuild REUSES assets — nothing rerun",
+      acBuild2.run !== null &&
+        acBuild2.run.reusedStages.includes("assets") &&
+        !acBuild2.run.rerunStages.includes("assets") &&
+        acBuild2.run.rerunStages.length === 0,
+      `rerun=${JSON.stringify(acBuild2.run?.rerunStages)} reused=${JSON.stringify(acBuild2.run?.reusedStages)}`,
+    );
+    check(
+      "28.1C.11 the reused artifact is byte-identical and no second materialization run was minted",
+      (await hashDirectory(acDerivedDir, [])).hash === acTreeBefore &&
+        JSON.stringify(await acRunDirs()) === JSON.stringify(acRunsAfterBuild1) &&
+        acBuild2.project.stageStatus.assets.artifact!.id ===
+          acBuild1.project.stageStatus.assets.artifact!.id,
+      `${acTreeBefore.slice(0, 12)} → ${(await hashDirectory(acDerivedDir, [])).hash.slice(0, 12)}`,
+    );
+
+    // ---- replacing the SAME asset again (the editor's ordinary case) -------
+    // Direct engine call: the shape regression does not need a second bake.
+    const acFile2 = path.join(scratch, "task28-1c-hero-2.png");
+    await writeFile(acFile2, Buffer.concat([PNG_1PX, Buffer.from([28, 1, 12, 2])]));
+    const acSecond = await applyAssetResolutions({
+      baseMaterializationRunDir: acDerivedDir,
+      assets: { [heroInventoryId!]: { file: acFile2 } },
+      fontDecisions: {},
+      providedBy: "task28-1c-second",
+      outputDir: path.join(scratch, "task28-1c-second-run"),
+      log: () => {},
+    });
+    const acSecondManifest = await acManifestOf(acSecond.runDir);
+    const acSecondMedia = await acMediaTotals(acSecond.runDir);
+    check(
+      "28.1C.12 replacing the SAME asset a second time stays single-valued and correctly counted",
+      acSecondManifest.entries.filter((entry) => entry.inventoryId === heroInventoryId).length === 1 &&
+        acSecondManifest.entries.length === acBaseManifest.entries.length &&
+        acSecondManifest.counts.totalBytes === acSecondMedia.bytes &&
+        acSecondManifest.counts.uniqueFiles === acSecondMedia.files,
+      `${acSecondManifest.entries.filter((e) => e.inventoryId === heroInventoryId).length} record(s), ` +
+        `counts=${JSON.stringify(acSecondManifest.counts)} measured=${JSON.stringify(acSecondMedia)}`,
+    );
+    await rm(ac.projectDir, { recursive: true, force: true });
+
+    // =======================================================================
+    section("Task 28 §2 — the shared authoring substrate: authored.assets + authored.brand");
+    // =======================================================================
+    // Phase 1 recorded the gap this section closes: "AuthoredState still has no
+    // assets field: the asset replacement survives only as an entry in
+    // project.resolutions[], not folded into project.authored the way
+    // slotValues and theme are." Everything below is measured on the REAL
+    // engine — the freshness verdicts come from run.json, never from the
+    // impact table alone.
+
+    // ---- backward compatibility, on REAL projects already on disk ---------
+    // The two new fields are OPTIONAL and ABSENT-when-empty. That is not a
+    // style choice: `AuthoredStateSchema` is `.strict()`, and
+    // `hashAuthoredState` hashes the snapshot as captured — an always-present
+    // `{}` would change the authored hash of every project ever written and
+    // manufacture a spurious revision on the next prepare.
+    const realProjectDirs: string[] = [];
+    for (const hostEntry of await readdir("data", { withFileTypes: true })) {
+      if (!hostEntry.isDirectory()) continue;
+      const projectsDir = path.join("data", hostEntry.name, "release-projects");
+      if (!existsSync(projectsDir)) continue;
+      for (const entry of await readdir(projectsDir, { withFileTypes: true })) {
+        if (entry.isDirectory()) realProjectDirs.push(path.join(projectsDir, entry.name));
+      }
+    }
+    const loadRows: string[] = [];
+    const fieldRows: string[] = [];
+    for (const dir of realProjectDirs) {
+      const raw = JSON.parse(
+        await readFile(path.join(dir, "release-project.json"), "utf8"),
+      ) as { projectRevision?: number; authored?: unknown };
+      const loadedReal = await loadReleaseProject(dir);
+      // A revision-1 document has NO `authored` block at all — it is replayed
+      // from the applied packs (instance.ts), so there is no raw hash to
+      // compare against and the row records that rather than inventing one.
+      const identical =
+        raw.authored === undefined
+          ? "replayed"
+          : hashAuthoredState(loadedReal.project.authored) ===
+              hashAuthoredState(AuthoredStateSchema.parse(raw.authored))
+            ? "ok"
+            : "DRIFT";
+      loadRows.push(`${path.basename(dir)}:rev${raw.projectRevision ?? 1}:${identical}`);
+      // The population for the "absent-when-empty" half is defined by the FILE,
+      // not by a directory allow-list: a document whose own `authored` block
+      // lacks the two new fields must still lack them after a load. A project
+      // that HAS authored assets on disk (this suite's own fixture, and the
+      // wr28-* projects a real authored edit has since touched) is simply not
+      // in that population — its lossless load is what 28.P2.1 above asserts.
+      // Defining it this way is what keeps the check true forever instead of
+      // true until the next project gets authored into.
+      const rawAuthored = (raw.authored ?? {}) as { assets?: unknown; brand?: unknown };
+      if (raw.authored !== undefined && rawAuthored.assets === undefined && rawAuthored.brand === undefined) {
+        fieldRows.push(
+          `${path.basename(dir)}:${
+            loadedReal.project.authored.assets === undefined &&
+            loadedReal.project.authored.brand === undefined
+              ? "ok"
+              : "PRESENT"
+          }`,
+        );
+      }
+    }
+    check(
+      "28.P2.1 every release project on disk still LOADS, and loading injects nothing into its authored state",
+      realProjectDirs.length > 0 && loadRows.every((row) => !row.endsWith(":DRIFT")),
+      `${realProjectDirs.length} project(s): ${loadRows.join(" ")}`,
+    );
+    check(
+      "28.P2.1b a document whose authored block LACKS the new fields still lacks them after a load (absent-when-empty)",
+      fieldRows.length > 0 && fieldRows.every((row) => row.endsWith(":ok")),
+      `${fieldRows.length} such project(s) on disk: ${fieldRows.join(" ")}`,
+    );
+    check(
+      "28.P2.2 emptyAuthoredState() emits neither field — an empty authored state hashes as it always did",
+      emptyAuthoredState().assets === undefined &&
+        emptyAuthoredState().brand === undefined &&
+        Object.keys(emptyAuthoredState()).sort().join(",") === "slotValues,theme,updatedAt",
+      Object.keys(emptyAuthoredState()).sort().join(","),
+    );
+
+    // ---- the brand DECISION schema is the enforcement, not the write API --
+    const brandDecisionCases: Array<[string, unknown, boolean]> = [
+      ["REPLACE with text", { decision: "REPLACE", replacement: { text: "NewCo" }, updatedAt: "t" }, true],
+      ["REPLACE with assetId", { decision: "REPLACE", replacement: { assetId: "organization-logo" }, updatedAt: "t" }, true],
+      ["REPLACE with nothing to ship", { decision: "REPLACE", updatedAt: "t" }, false],
+      ["REPLACE with an empty payload", { decision: "REPLACE", replacement: {}, updatedAt: "t" }, false],
+      ["REMOVE", { decision: "REMOVE", updatedAt: "t" }, true],
+      ["REMOVE carrying a payload", { decision: "REMOVE", replacement: { text: "x" }, updatedAt: "t" }, false],
+      ["PRESERVE with a reason", { decision: "PRESERVE", reason: "third-party partner mark", updatedAt: "t" }, true],
+      ["PRESERVE with no reason", { decision: "PRESERVE", updatedAt: "t" }, false],
+      ["PRESERVE payload", { decision: "PRESERVE", reason: "r", replacement: { text: "x" }, updatedAt: "t" }, false],
+      ["an invented decision", { decision: "IGNORE", updatedAt: "t" }, false],
+      ["detection evidence smuggled in", { decision: "REMOVE", route: "/", nodeId: "n000017", updatedAt: "t" }, false],
+    ];
+    const brandDecisionResults = brandDecisionCases.map(
+      ([name, value, expected]) =>
+        `${name}=${AuthoredBrandDecisionSchema.safeParse(value).success === expected ? "ok" : "WRONG"}`,
+    );
+    check(
+      "28.P2.3 the decision schema enforces REPLACE-needs-a-payload, PRESERVE-needs-a-reason, and stores no detection evidence",
+      brandDecisionResults.every((row) => row.endsWith("=ok")),
+      brandDecisionResults.join(" "),
+    );
+
+    // ---- the surface id is derived from ADDRESS, never from CONTENT -------
+    const asFinding = (over: Partial<BrandFinding>): BrandFinding => ({
+      surface: "svg-aria-label",
+      origin: "template-default",
+      route: "/",
+      value: '<svg aria-label="Linear Logo">',
+      matched: "Linear",
+      sourceUrl: null,
+      slotKey: null,
+      nodeId: "n000017",
+      evidenceFile: "data/linear.app/recon-templates/RUN-A/app/reconstruction-data/pages/p000001.json",
+      evidencePointer: "desktop.doc[n000017].v",
+      suggestedResolution: "",
+      ...over,
+    });
+    const idBase = brandSurfaceId(asFinding({}));
+    check(
+      "28.P2.4 brandSurfaceId is stable across a re-scan: value, matched, sourceUrl and evidenceFile do not move it",
+      brandSurfaceId(
+        asFinding({
+          value: '<svg aria-label="Acme Logo">',
+          matched: "Acme",
+          sourceUrl: "https://linear.app/x",
+          evidenceFile: "data/linear.app/recon-templates/RUN-B/app/reconstruction-data/pages/p000001.json",
+          suggestedResolution: "different text entirely",
+        }),
+      ) === idBase && idBase.startsWith("bs-svg-aria-label-"),
+      idBase,
+    );
+    const idVariants = new Set([
+      idBase,
+      brandSurfaceId(asFinding({ route: "/pricing" })),
+      brandSurfaceId(asFinding({ nodeId: "n000018" })),
+      brandSurfaceId(asFinding({ evidencePointer: "mobile.doc[n000017].v" })),
+      brandSurfaceId(asFinding({ evidencePointer: "desktop.doc[n000017].p" })),
+      brandSurfaceId(asFinding({ surface: "image-alt" })),
+      brandSurfaceId(asFinding({ nodeId: null, slotKey: "hero.title", evidencePointer: "warnings[hero.title]" })),
+    ]);
+    check(
+      "28.P2.5 a different route, node, viewport, prop, surface or slot binding is a DIFFERENT id",
+      idVariants.size === 7,
+      `${idVariants.size}/7 distinct`,
+    );
+
+    // ---- the pure write API: idempotent, and it says so -------------------
+    const wapiFileA = path.join(scratch, "task28-2-logo-a.png");
+    const wapiFileB = path.join(scratch, "task28-2-logo-b.png");
+    await writeFile(wapiFileA, Buffer.concat([PNG_1PX, Buffer.from([28, 2, 1])]));
+    await writeFile(wapiFileB, Buffer.concat([PNG_1PX, Buffer.from([28, 2, 2])]));
+    const wapi0 = emptyAuthoredState();
+    const wapi1 = setAuthoredAsset(wapi0, "organization-logo", { file: wapiFileA }, "2026-08-27T00:00:00.000Z");
+    const wapi1Again = setAuthoredAsset(wapi1.authored, "organization-logo", { file: wapiFileA }, "2026-08-27T09:00:00.000Z");
+    check(
+      "28.P2.6 setAuthoredAsset reports changed once, then reports NO change and moves no timestamp",
+      wapi1.changed &&
+        wapi1.authored.assets?.["organization-logo"].file === wapiFileA &&
+        wapi1Again.changed === false &&
+        wapi1Again.authored === wapi1.authored &&
+        wapi1Again.authored.updatedAt === "2026-08-27T00:00:00.000Z",
+      `changed=${wapi1.changed}/${wapi1Again.changed} updatedAt=${wapi1Again.authored.updatedAt}`,
+    );
+    const wapiAlt = setAuthoredAsset(
+      wapi1.authored,
+      "organization-logo",
+      { file: wapiFileA, alt: "NewCo logo" },
+      "2026-08-27T10:00:00.000Z",
+    );
+    const wapiSwap = setAuthoredAsset(wapi1.authored, "organization-logo", { file: wapiFileB }, "2026-08-27T11:00:00.000Z");
+    check(
+      "28.P2.7 a new alt, or a different file, IS a change",
+      wapiAlt.changed &&
+        wapiAlt.authored.assets?.["organization-logo"].alt === "NewCo logo" &&
+        wapiSwap.changed &&
+        wapiSwap.authored.assets?.["organization-logo"].file === wapiFileB,
+      `alt=${wapiAlt.changed} file=${wapiSwap.changed}`,
+    );
+    const wapiRemoved = removeAuthoredAsset(wapi1.authored, "organization-logo", "2026-08-27T12:00:00.000Z");
+    check(
+      "28.P2.8 removing the last authored asset deletes the FIELD, so the state round-trips to its prior hash",
+      wapiRemoved.changed &&
+        wapiRemoved.authored.assets === undefined &&
+        hashAuthoredState({ ...wapiRemoved.authored, updatedAt: wapi0.updatedAt }) === hashAuthoredState(wapi0) &&
+        removeAuthoredAsset(wapiRemoved.authored, "organization-logo", "t").changed === false,
+      `assets=${JSON.stringify(wapiRemoved.authored.assets ?? null)}`,
+    );
+    const brandSet = setAuthoredBrandDecision(
+      wapi0,
+      idBase,
+      { decision: "PRESERVE", reason: "partner mark, licensed" },
+      "2026-08-27T00:00:00.000Z",
+    );
+    const brandSame = setAuthoredBrandDecision(
+      brandSet.authored,
+      idBase,
+      { decision: "PRESERVE", reason: "partner mark, licensed" },
+      "2026-08-27T09:00:00.000Z",
+    );
+    const brandMoved = setAuthoredBrandDecision(
+      brandSet.authored,
+      idBase,
+      { decision: "REPLACE", replacement: { text: "NewCo" } },
+      "2026-08-27T09:00:00.000Z",
+    );
+    let brandRefused = "";
+    try {
+      setAuthoredBrandDecision(wapi0, idBase, { decision: "REPLACE" }, "t");
+    } catch (err) {
+      brandRefused = (err as Error).message;
+    }
+    check(
+      "28.P2.9 setAuthoredBrandDecision is idempotent, detects a changed decision, and cannot store an empty REPLACE",
+      brandSet.changed &&
+        brandSame.changed === false &&
+        brandMoved.changed &&
+        brandMoved.authored.brand?.[idBase].decision === "REPLACE" &&
+        brandRefused.includes("replacement payload"),
+      `${brandSet.changed}/${brandSame.changed}/${brandMoved.changed} refused=${brandRefused.slice(0, 60)}`,
+    );
+
+    // ---- the impact table, and its closure over the graph -----------------
+    check(
+      "28.P2.10 an authored asset edit predicts assets+production; a brand decision predicts production only",
+      JSON.stringify(authoredInvalidatedStages(wapi0, wapi1.authored)) === JSON.stringify(["assets", "production"]) &&
+        JSON.stringify(authoredInvalidatedStages(wapi0, brandSet.authored)) === JSON.stringify(["production"]) &&
+        JSON.stringify(authoredInvalidatedStages(wapi0, wapi0)) === JSON.stringify([]) &&
+        JSON.stringify(AUTHORED_ASSET_IMPACTS) === JSON.stringify(["assets", "production"]) &&
+        JSON.stringify(AUTHORED_BRAND_IMPACTS) === JSON.stringify(["production"]),
+      `${JSON.stringify(authoredInvalidatedStages(wapi0, wapi1.authored))} / ${JSON.stringify(authoredInvalidatedStages(wapi0, brandSet.authored))}`,
+    );
+    check(
+      "28.P2.11 authored.assets FEEDS the resolution path: the pack is applied first, the authored value last",
+      JSON.stringify(mergedAssetResolutions({ a: { file: "pack-a.png" }, b: "pack-b.png" }, wapi0)) ===
+        JSON.stringify({ a: { file: "pack-a.png" }, b: "pack-b.png" }) &&
+        JSON.stringify(
+          mergedAssetResolutions({ "organization-logo": { file: "pack.png" } }, wapi1.authored),
+        ) === JSON.stringify({ "organization-logo": { file: wapiFileA } }),
+      JSON.stringify(mergedAssetResolutions({ "organization-logo": { file: "pack.png" } }, wapi1.authored)),
+    );
+
+    // ---- the REAL engine: a project, an edit, a build, a run.json ---------
+    // Every freshness verdict below is READ BACK from runs/<id>/run.json. The
+    // impact table (28.2.10) is a prediction; this is the measurement.
+    const sub = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
+      productionSpecRef: compile0.specDir,
+      siteId: "task28-authored-substrate",
+      log: () => {},
+    });
+    const subProjectFile = path.join(sub.projectDir, "release-project.json");
+    const subChainAfterPrepare = (await loadRevisionChain(sub.projectDir)).length;
+    const subBytesBefore = await readFile(subProjectFile, "utf8");
+    const subMtimeBefore = (await stat(subProjectFile)).mtimeMs;
+    const subNoop = await commitAuthoredEdits(sub.projectDir, [
+      { op: "remove-asset", assetId: "organization-logo" },
+      { op: "remove-brand-decision", surfaceId: idBase },
+    ]);
+    check(
+      "28.P2.12 a NO-OP edit writes NOTHING: no revision, no project rewrite, no mtime move",
+      subNoop.changed === false &&
+        subNoop.revision === null &&
+        (await loadRevisionChain(sub.projectDir)).length === subChainAfterPrepare &&
+        (await readFile(subProjectFile, "utf8")) === subBytesBefore &&
+        (await stat(subProjectFile)).mtimeMs === subMtimeBefore,
+      `changed=${subNoop.changed} chain=${(await loadRevisionChain(sub.projectDir)).length}/${subChainAfterPrepare}`,
+    );
+
+    const subAssetFile = path.join(scratch, "task28-2-hero.png");
+    await writeFile(subAssetFile, Buffer.concat([PNG_1PX, Buffer.from([28, 2, 42])]));
+    const subAssetSha = createHash("sha256").update(await readFile(subAssetFile)).digest("hex");
+    const subAuthoredBefore = (await loadReleaseProject(sub.projectDir)).project.authored;
+    const subAssetEdit = await commitAuthoredEdits(sub.projectDir, [
+      { op: "set-asset", assetId: heroInventoryId!, file: subAssetFile, alt: "NewCo hero", note: "task28 §2" },
+    ]);
+    const subAfterAssetEdit = (await loadReleaseProject(sub.projectDir)).project;
+    check(
+      "28.P2.13 an authored.assets edit appends exactly one revision naming the assetId, and lands on the project document",
+      subAssetEdit.changed &&
+        subAssetEdit.revision?.revisionId === "r001" &&
+        subAssetEdit.revision.change.assetIdsAdded?.includes(heroInventoryId!) === true &&
+        (subAssetEdit.revision.change.slotKeysAdded.length === 0) &&
+        subAssetEdit.revision.summary.includes("asset") &&
+        subAfterAssetEdit.authored.assets?.[heroInventoryId!].file === subAssetFile &&
+        subAfterAssetEdit.authored.assets[heroInventoryId!].alt === "NewCo hero" &&
+        (await loadRevisionChain(sub.projectDir)).length === subChainAfterPrepare + 1,
+      `${subAssetEdit.revision?.revisionId} ${subAssetEdit.revision?.summary} ` +
+        JSON.stringify(subAssetEdit.revision?.change.assetIdsAdded),
+    );
+    check(
+      "28.P2.14 the prediction for THIS edit is assets+production",
+      JSON.stringify(authoredInvalidatedStages(subAuthoredBefore, subAfterAssetEdit.authored)) ===
+        JSON.stringify(["assets", "production"]),
+      JSON.stringify(authoredInvalidatedStages(subAuthoredBefore, subAfterAssetEdit.authored)),
+    );
+    const subReqBefore = (await loadRequirementsFile(sub.projectDir)).requirements.find(
+      (requirement) => requirement.requirementId === `replacement-image-${heroInventoryId}`,
+    );
+    const subDry1 = await buildRelease(sub.projectDir, { dryRun: true, log: () => {} });
+    check(
+      "28.P2.15 the plan agrees — WITHOUT any resolution pack ever being applied to this project",
+      JSON.stringify(subDry1.plan.wouldRun) === JSON.stringify(["assets", "production"]) &&
+        ["content", "theme", "seo"].every((stage) => subDry1.plan.wouldReuse.includes(stage as never)) &&
+        subAfterAssetEdit.resolutions.length === 0,
+      `run=${JSON.stringify(subDry1.plan.wouldRun)} packs=${subAfterAssetEdit.resolutions.length}`,
+    );
+    const subBuild1 = await buildRelease(sub.projectDir, { log: () => {} });
+    const subRun1 = await readRun(sub.projectDir, subBuild1.run!.runId);
+    check(
+      "28.P2.16 REAL BUILD: run.json rerunStages is exactly [assets, production]; content/theme/seo are REUSED",
+      subBuild1.failed === false &&
+        JSON.stringify(subRun1.rerunStages) === JSON.stringify(["assets", "production"]) &&
+        ["reconstruction", "template", "content", "theme", "seo"].every((stage) =>
+          (subRun1.reusedStages as string[]).includes(stage),
+        ),
+      `rerun=${JSON.stringify(subRun1.rerunStages)} reused=${JSON.stringify(subRun1.reusedStages)}` +
+        (subBuild1.project.failure ? ` FAILURE: ${subBuild1.project.failure.message}` : ""),
+    );
+    const subAssetsDir = subBuild1.project.stageStatus.assets.artifact!.path;
+    const subRewrite = JSON.parse(
+      await readFile(path.join(subAssetsDir, "rewrite-map.json"), "utf8"),
+    ) as { entries: Array<{ sourceUrl: string; localPath: string }> };
+    const subReplacement = JSON.parse(
+      await readFile(path.join(subAssetsDir, "replacement-manifest.json"), "utf8"),
+    ) as { entries: Array<{ inventoryId: string; replacement: { status: string; providedFile: string | null } }> };
+    check(
+      "28.P2.17 authored.assets FED the resolution-pack path: the bytes are materialized and the source url points at them",
+      existsSync(path.join(subAssetsDir, "media", `${subAssetSha}.png`)) &&
+        subRewrite.entries.find((entry) => entry.sourceUrl === heroUrl)?.localPath ===
+          `/media/${subAssetSha}.png` &&
+        subReplacement.entries.find((entry) => entry.inventoryId === heroInventoryId)?.replacement
+          .status === "provided",
+      `/media/${subAssetSha}.png`,
+    );
+    // The requirement must clear THROUGH THE ARTIFACT, never because a field
+    // was "requested". No resolution pack has ever been applied to this
+    // project, so `matchResolutionToRequirements` cannot have flipped it: the
+    // derived replacement-manifest entry is `provided`, collect.ts therefore
+    // stops emitting the gap, and the carry-forward records it not-applicable.
+    const subReqAfter = await loadRequirementsFile(sub.projectDir);
+    const subHeroReq = subReqAfter.requirements.find(
+      (requirement) => requirement.requirementId === `replacement-image-${heroInventoryId}`,
+    );
+    check(
+      "28.P2.27 the replacement-image requirement clears through the REBUILT artifact, with zero resolution packs applied",
+      subReqBefore?.status === "unresolved" &&
+        (await loadReleaseProject(sub.projectDir)).project.resolutions.length === 0 &&
+        (subHeroReq === undefined || subHeroReq.status === "not-applicable") &&
+        subHeroReq?.resolvedBy === undefined,
+      `before=${subReqBefore?.status} after=${subHeroReq === undefined ? "not-collected" : subHeroReq.status}`,
+    );
+    const subBuild2 = await buildRelease(sub.projectDir, { log: () => {} });
+    const subRun2 = await readRun(sub.projectDir, subBuild2.run!.runId);
+    check(
+      "28.P2.18 an unchanged rebuild reruns NOTHING — the authored asset hash is stable across a reload",
+      JSON.stringify(subRun2.rerunStages) === JSON.stringify([]) &&
+        (subRun2.reusedStages as string[]).includes("assets") &&
+        subBuild2.project.stageStatus.assets.artifact!.id ===
+          subBuild1.project.stageStatus.assets.artifact!.id,
+      `rerun=${JSON.stringify(subRun2.rerunStages)}`,
+    );
+
+    // ---- a brand decision stales the production bake, and nothing else ----
+    const subBrandEdit = await commitAuthoredEdits(sub.projectDir, [
+      {
+        op: "set-brand-decision",
+        surfaceId: idBase,
+        decision: "REPLACE",
+        replacement: { text: "NewCo" },
+        note: "task28 §2",
+      },
+    ]);
+    check(
+      "28.P2.19 an authored.brand edit appends a revision naming the SURFACE ID (no detection evidence stored)",
+      subBrandEdit.changed &&
+        subBrandEdit.revision?.change.brandSurfacesAdded?.includes(idBase) === true &&
+        subBrandEdit.revision.summary.includes("brand") &&
+        Object.keys(subBrandEdit.authored.brand![idBase]).sort().join(",") ===
+          "decision,note,replacement,updatedAt",
+      `${subBrandEdit.revision?.summary} keys=${Object.keys(subBrandEdit.authored.brand?.[idBase] ?? {}).sort().join(",")}`,
+    );
+    const subDry2 = await buildRelease(sub.projectDir, { dryRun: true, log: () => {} });
+    check(
+      "28.P2.20 the plan for a brand decision is production ONLY — assets included in the reused set",
+      JSON.stringify(subDry2.plan.wouldRun) === JSON.stringify(["production"]) &&
+        subDry2.plan.wouldReuse.includes("assets" as never),
+      `run=${JSON.stringify(subDry2.plan.wouldRun)} reuse=${JSON.stringify(subDry2.plan.wouldReuse)}`,
+    );
+    const subBuild3 = await buildRelease(sub.projectDir, { log: () => {} });
+    const subRun3 = await readRun(sub.projectDir, subBuild3.run!.runId);
+    check(
+      "28.P2.21 REAL BUILD: a brand decision reruns production ONLY; assets/content/theme/seo are reused",
+      subBuild3.failed === false &&
+        JSON.stringify(subRun3.rerunStages) === JSON.stringify(["production"]) &&
+        ["content", "theme", "seo", "assets"].every((stage) =>
+          (subRun3.reusedStages as string[]).includes(stage),
+        ) &&
+        subBuild3.project.stageStatus.assets.artifact!.id ===
+          subBuild1.project.stageStatus.assets.artifact!.id,
+      `rerun=${JSON.stringify(subRun3.rerunStages)} reused=${JSON.stringify(subRun3.reusedStages)}` +
+        (subBuild3.project.failure ? ` FAILURE: ${subBuild3.project.failure.message}` : ""),
+    );
+    const subBuild4 = await buildRelease(sub.projectDir, { log: () => {} });
+    check(
+      "28.P2.22 and the brand slice is stable too — the next unchanged rebuild reruns nothing",
+      JSON.stringify((await readRun(sub.projectDir, subBuild4.run!.runId)).rerunStages) ===
+        JSON.stringify([]),
+      JSON.stringify((await readRun(sub.projectDir, subBuild4.run!.runId)).rerunStages),
+    );
+
+    // ---- honesty: `alt` is RECORDED and has no consumer, so it stales nothing
+    const subAltEdit = await commitAuthoredEdits(sub.projectDir, [
+      { op: "set-asset", assetId: heroInventoryId!, file: subAssetFile, alt: "A different caption" },
+    ]);
+    const subDry3 = await buildRelease(sub.projectDir, { dryRun: true, log: () => {} });
+    check(
+      "28.P2.23 an alt-only edit IS recorded in the history but stales NO stage — the materialization writes bytes, not markup",
+      subAltEdit.changed &&
+        subAltEdit.revision?.change.assetIdsChanged?.includes(heroInventoryId!) === true &&
+        JSON.stringify(subDry3.plan.wouldRun) === JSON.stringify([]),
+      `changed=${subAltEdit.changed} wouldRun=${JSON.stringify(subDry3.plan.wouldRun)}`,
+    );
+
+    // ---- the resolution-pack path still works, and now FEEDS authored ------
+    const subLogoFile = path.join(scratch, "task28-2-org-logo.png");
+    await writeFile(subLogoFile, Buffer.concat([PNG_1PX, Buffer.from([28, 2, 77])]));
+    const subPackFile = path.join(scratch, "task28-2-pack.json");
+    await writeFile(
+      subPackFile,
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          schemaName: "production-resolution-v1",
+          assets: { "organization-logo": { file: subLogoFile, note: "site-level logo" } },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+    const subResolved = await resolveRelease(sub.projectDir, { resolutionFile: subPackFile, log: () => {} });
+    const subAfterResolve = (await loadReleaseProject(sub.projectDir)).project;
+    const subFoldedAt = subAfterResolve.authored.assets?.["organization-logo"].updatedAt;
+    check(
+      "28.P2.24 a pack's assets FOLD into authored.assets, and the pack is still recorded verbatim as the audit record",
+      subAfterResolve.authored.assets?.["organization-logo"].file === subLogoFile &&
+        subAfterResolve.authored.assets["organization-logo"].note === "site-level logo" &&
+        // the earlier authored-only entry survives the fold untouched
+        subAfterResolve.authored.assets[heroInventoryId!].file === subAssetFile &&
+        subAfterResolve.resolutions.some(
+          (applied) =>
+            applied.resolutionId === subResolved.resolutionId &&
+            Object.keys(applied.resolution.assets ?? {}).join(",") === "organization-logo",
+        ),
+      JSON.stringify(Object.keys(subAfterResolve.authored.assets ?? {})),
+    );
+    const subChainBeforeReResolve = (await loadRevisionChain(sub.projectDir)).length;
+    const subResolvedAgain = await resolveRelease(sub.projectDir, { resolutionFile: subPackFile, log: () => {} });
+    const subAfterResolve2 = (await loadReleaseProject(sub.projectDir)).project;
+    check(
+      "28.P2.25 re-applying the SAME pack is an idempotent fold: no entry timestamp moves, so no revision is manufactured",
+      subAfterResolve2.authored.assets?.["organization-logo"].updatedAt === subFoldedAt &&
+        (await loadRevisionChain(sub.projectDir)).length === subChainBeforeReResolve &&
+        subResolvedAgain.resolutionId !== subResolved.resolutionId &&
+        subAfterResolve2.resolutions.length === subAfterResolve.resolutions.length + 1,
+      `${subFoldedAt} → ${subAfterResolve2.authored.assets?.["organization-logo"].updatedAt}`,
+    );
+    // A re-prepare must carry both new fields exactly, like slotValues and theme.
+    const subReprepared = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
+      productionSpecRef: compile0.specDir,
+      siteId: "task28-authored-substrate",
+      log: () => {},
+    });
+    check(
+      "28.P2.26 a re-prepare carries authored.assets and authored.brand non-destructively, and says what it preserved",
+      hashAuthoredState(subReprepared.project.authored) ===
+        hashAuthoredState(subAfterResolve2.authored) &&
+        subReprepared.preserved.some((row) => row.startsWith("authored.assets:2")) &&
+        subReprepared.preserved.some((row) => row.startsWith("authored.brand:1")),
+      subReprepared.preserved.filter((row) => row.startsWith("authored.")).join(" "),
+    );
+    await rm(sub.projectDir, { recursive: true, force: true });
+
+    // =======================================================================
+    section("Task 28 Phases 5 + 6 — REGION OFF / ROUTE OFF through the REAL engine");
+    // =======================================================================
+    //
+    // Everything above this line proves the analysis. This proves the ENGINE:
+    // a region compile for the fixture template, an authored disable, a real
+    // release build, and the artifacts that build produced — the route table,
+    // the SEO plan, the sitemap, the static export, the slot accounting and
+    // the requirement set. No number below is read from a prediction.
+
+    const enRegionDir = path.join(HOST_DATA_DIR, "page-regions", "2026-08-28T00-00-00-000Z");
+    const enRegionInput = await loadRegionInput(templateDir);
+    const enRegionArtifact = compilePageRegions(enRegionInput);
+    await writeRegionRun(enRegionDir, newRegionRunId(), enRegionArtifact, templateDir);
+    check(
+      "28.P5.65 the fixture template region-compiles (both routes, both pages, no orphan binding)",
+      enRegionArtifact.counts.routes === 2 &&
+        enRegionArtifact.counts.pages === 2 &&
+        enRegionArtifact.counts.orphanBindings === 0 &&
+        enRegionArtifact.regions.length > 0,
+      `routes=${enRegionArtifact.counts.routes} pages=${enRegionArtifact.counts.pages} regions=${enRegionArtifact.regions.length}`,
+    );
+
+    const en = await prepareReleaseProject({
+      registryDataRoot: registryRoot,
+      productionSpecRef: compile0.specDir,
+      siteId: "task28-enablement",
+      pageRegionsDir: enRegionDir,
+      log: () => {},
+    });
+    check(
+      "28.P5.66 release:prepare records the page-regions run as a first-class project auxiliary",
+      en.project.auxiliary.pageRegionsDir === enRegionDir,
+      String(en.project.auxiliary.pageRegionsDir),
+    );
+    const enInputs = await loadEnablementInputs({
+      templateRunDir: templateDir,
+      pageRegionsRef: enRegionDir,
+    });
+    for (const region of enRegionArtifact.regions) {
+      console.log(
+        `  [measured] fixture region ${region.regionId} scope=${region.scope} ` +
+          `pages=${region.pages.map((page) => page.pageSourceId).join("+")} ` +
+          `slots=${region.slotKeys.length} [${region.slotKeys.join(" ")}]`,
+      );
+    }
+    // The section to delete: the SMALLEST page-scoped region on the HOME page
+    // that carries content and that every safety rule clears.
+    //
+    // Smallest, not largest, and the reason is a real one worth recording: the
+    // fixture's whole home page is a hero plus a tagline, and the hero region
+    // owns every element carrying a themed style token. Disabling it makes
+    // production QA's `theme-computed-paint` fail honestly ("no probe class
+    // found in DOM") and the build is then not adopted — a property of a
+    // 2-route fixture, not of the feature. The large-region physical removal
+    // (670 nodes, 73 slot keys) is proven against the real linear.app template
+    // in scripts/smoke-enablement.ts §9 and §11 instead.
+    const enCandidate = enRegionArtifact.regions
+      .filter((region) => region.pages.every((page) => page.pageSourceId === "p000001"))
+      .filter((region) => region.slotKeys.length > 0)
+      .sort((a, b) => a.slotKeys.length - b.slotKeys.length || (a.regionId < b.regionId ? -1 : 1))
+      .find((region) => evaluateRegionDisable({ regionId: region.regionId, scope: "global" }, enInputs).allowed);
+    check(
+      "28.P5.67 at least one home-page region with content passes every safety rule",
+      enCandidate !== undefined,
+      enRegionArtifact.regions.map((region) => `${region.regionId}:${region.slotKeys.length}`).join(" "),
+    );
+    const enRegionId = enCandidate!.regionId;
+    const enRegionSlotKeys = [...enCandidate!.slotKeys];
+
+    // ---- a STALE region id must never silently disable anything -----------
+    const enStale = await commitAuthoredEdits(en.projectDir, [
+      { op: "disable-region", regionId: "p000001:rgn:main1:self@nope", scope: "global" },
+    ]);
+    const enStaleResolved = await resolveEnablementForProject(
+      (await loadReleaseProject(en.projectDir)).project,
+      templateDir,
+    );
+    check(
+      "28.P5.68 a recorded region id this template does not have is REFUSED at resolve time, and disables NOTHING",
+      enStale.changed &&
+        enStaleResolved.refusals.length === 1 &&
+        enStaleResolved.refusals[0].code === "unknown-region" &&
+        enStaleResolved.plan.disabledNodes.length === 0,
+      JSON.stringify(enStaleResolved.refusals.map((refusal) => refusal.code)),
+    );
+    await commitAuthoredEdits(en.projectDir, [
+      { op: "enable-region", regionId: "p000001:rgn:main1:self@nope" },
+    ]);
+
+    // ---- the real edit ----------------------------------------------------
+    const enBefore = (await loadReleaseProject(en.projectDir)).project;
+    const enChainBefore = (await loadRevisionChain(en.projectDir)).length;
+    const enEdit = await commitAuthoredEdits(
+      en.projectDir,
+      [
+        { op: "disable-route", route: "/pricing", reason: "the operator does not need a pricing page" },
+        { op: "disable-region", regionId: enRegionId, scope: "global", reason: "section not needed" },
+      ],
+      { summary: "task 28 phases 5+6" },
+    );
+    const enAfterEdit = (await loadReleaseProject(en.projectDir)).project;
+    check(
+      "28.P5.69 ONE batch of a route disable + a region disable appends exactly ONE revision naming both",
+      enEdit.changed &&
+        (await loadRevisionChain(en.projectDir)).length === enChainBefore + 1 &&
+        enEdit.revision?.change.routesDisabled?.includes("/pricing") === true &&
+        enEdit.revision.change.regionsDisabled?.includes(enRegionId) === true &&
+        hashAuthoredState(enAfterEdit.authored) === enEdit.revision.authoredStateHash,
+      `${enEdit.revision?.revisionId} ${enEdit.revision?.summary}`,
+    );
+    check(
+      "28.P6.20 the impact PREDICTION for this edit is everything but the frozen roots",
+      JSON.stringify(authoredInvalidatedStages(enBefore.authored, enAfterEdit.authored)) ===
+        JSON.stringify(["content", "theme", "seo", "assets", "production"]) &&
+        JSON.stringify(AUTHORED_DISABLED_ROUTE_IMPACTS) ===
+          JSON.stringify(["content", "seo", "assets", "production"]) &&
+        JSON.stringify(AUTHORED_DISABLED_REGION_IMPACTS) ===
+          JSON.stringify(["content", "assets", "production"]),
+      JSON.stringify(authoredInvalidatedStages(enBefore.authored, enAfterEdit.authored)),
+    );
+    const enResolvedEdit = await resolveEnablementForProject(enAfterEdit, templateDir);
+    for (const finding of enResolvedEdit.route?.deadLinks ?? []) {
+      console.log(`  [measured] dead link ${JSON.stringify(finding)}`);
+    }
+    for (const item of enResolvedEdit.route?.navCascade ?? []) {
+      console.log(
+        `  [measured] nav cascade ${item.slotKey} group=${item.groupId} nodes=${item.nodes.length} ` +
+          `removes=[${item.removedSlotKeys.join(" ")}]`,
+      );
+    }
+    const enDry = await buildRelease(en.projectDir, { dryRun: true, log: () => {} });
+    check(
+      "28.P6.21 release:plan AGREES with the prediction — no drift between the surface and the hash",
+      JSON.stringify(enDry.plan.wouldRun) ===
+        JSON.stringify(["content", "theme", "seo", "assets", "production"]),
+      JSON.stringify(enDry.plan.wouldRun),
+    );
+
+    const enBuild = await buildRelease(en.projectDir, { log: () => {} });
+    const enRun = await readRun(en.projectDir, enBuild.run!.runId);
+    if (enBuild.failed) {
+      // Diagnostic, not a check: name the production QA checks that failed so a
+      // regression here is actionable from the log instead of from a run
+      // directory the suite deletes in its finally block.
+      const failedRunId = /build (\S+) not adopted/.exec(enBuild.project.failure?.message ?? "")?.[1];
+      if (failedRunId !== undefined) {
+        const failedQaFile = path.join(productionBuildDir(HOST, failedRunId), "report", "qa.json");
+        if (existsSync(failedQaFile)) {
+          const failedQa = JSON.parse(await readFile(failedQaFile, "utf8")) as {
+            checks: Array<{ id: string; ok: boolean; detail: string }>;
+          };
+          for (const failure of failedQa.checks.filter((entry) => !entry.ok)) {
+            console.log(`  [diagnostic] production QA FAIL ${failure.id} — ${failure.detail}`);
+          }
+        }
+      }
+    }
+    check(
+      "28.P6.22 REAL BUILD: run.json rerunStages is MEASURED as content..production, reconstruction/template reused",
+      enBuild.failed === false &&
+        JSON.stringify(enRun.rerunStages) ===
+          JSON.stringify(["content", "theme", "seo", "assets", "production"]) &&
+        (enRun.reusedStages as string[]).includes("template") &&
+        (enRun.reusedStages as string[]).includes("reconstruction"),
+      `rerun=${JSON.stringify(enRun.rerunStages)} reused=${JSON.stringify(enRun.reusedStages)}` +
+        (enBuild.project.failure ? ` FAILURE: ${enBuild.project.failure.message}` : ""),
+    );
+
+    const enProject = enBuild.project;
+    const enSeoDir = enProject.stageStatus.seo.artifact!.path;
+    const enSeoPlan = JSON.parse(
+      await readFile(path.join(enSeoDir, "production-seo-plan.json"), "utf8"),
+    ) as { routes: Array<{ route: string; canonical: { value: string | null }; openGraph: unknown }> };
+    check(
+      "28.P6.23 the disabled route is GONE from the SEO plan — no title, no description, no canonical, no og block",
+      enSeoPlan.routes.length === 1 &&
+        enSeoPlan.routes[0].route === "/" &&
+        !enSeoPlan.routes.some((route) => route.route === "/pricing"),
+      enSeoPlan.routes.map((route) => route.route).join(","),
+    );
+    const enSitemap = await readFile(path.join(enSeoDir, "sitemap.preview.xml"), "utf8");
+    check(
+      "28.P6.24 the sitemap urlset carries exactly one <url> and it is not the disabled route",
+      (enSitemap.match(/<url>/g) ?? []).length === 1 && !enSitemap.includes("/pricing"),
+      `${(enSitemap.match(/<url>/g) ?? []).length} urls, pricing=${enSitemap.includes("/pricing")}`,
+    );
+    const enHead = JSON.parse(await readFile(path.join(enSeoDir, "rendered-head.json"), "utf8")) as {
+      routes: Array<{ route: string }>;
+    };
+    check(
+      "28.P6.25 the rendered head blocks follow the plan — one route, not two",
+      enHead.routes.length === 1 && enHead.routes[0].route === "/",
+      enHead.routes.map((route) => route.route).join(","),
+    );
+
+    const enBuildDir = productionBuildDir(HOST, enProject.stageStatus.production.artifact!.id);
+    const enSiteDir = path.join(enBuildDir, "package", "site");
+    const enEnablementReport = JSON.parse(
+      await readFile(path.join(enBuildDir, "report", "enablement.json"), "utf8"),
+    ) as { applied: { routesRemoved: string[]; regionNodesRemoved: number; navNodesRemoved: number; pageFilesRemoved: string[] } };
+    check(
+      "28.P6.26 the build records what it physically removed",
+      enEnablementReport.applied.routesRemoved.join(",") === "/pricing" &&
+        enEnablementReport.applied.regionNodesRemoved === 2 &&
+        enEnablementReport.applied.navNodesRemoved > 0 &&
+        enEnablementReport.applied.pageFilesRemoved.length === 1,
+      JSON.stringify(enEnablementReport.applied),
+    );
+    check(
+      "28.P6.27 the disabled route is NOT EXPORTED: no pricing.html in the shipped package",
+      existsSync(path.join(enSiteDir, "index.html")) && !existsSync(path.join(enSiteDir, "pricing.html")),
+      (await readdir(enSiteDir)).filter((entry) => entry.endsWith(".html")).join(","),
+    );
+    const enIndexHtml = await readFile(path.join(enSiteDir, "index.html"), "utf8");
+    check(
+      "28.P5.70 REGION OFF IN PRODUCTION: the region root is absent from the exported HTML",
+      !enIndexHtml.includes(`data-wr-node="${enCandidate!.pages[0].occurrences[0].nodeId}"`) &&
+        enIndexHtml.includes("data-wr-node="),
+      enCandidate!.pages[0].occurrences[0].nodeId,
+    );
+    check(
+      "28.P6.28 no link to the disabled route survives in the exported HTML (never redirected to the homepage)",
+      !enIndexHtml.includes('href="/pricing"'),
+    );
+    const enFlight = (await readdir(enSiteDir)).filter((entry) => entry.endsWith(".txt"));
+    let enFlightPricing = 0;
+    for (const file of enFlight) {
+      const body = await readFile(path.join(enSiteDir, file), "utf8");
+      enFlightPricing += body.split('href\\":\\"/pricing').length - 1;
+      enFlightPricing += body.split('"/pricing"').length - 1;
+    }
+    if (enFlightPricing > 0) {
+      for (const file of enFlight) {
+        const body = await readFile(path.join(enSiteDir, file), "utf8");
+        let index = body.indexOf("/pricing");
+        while (index !== -1) {
+          console.log(`  [diagnostic] flight ${file} ...${body.slice(Math.max(0, index - 160), index + 40)}...`);
+          index = body.indexOf("/pricing", index + 1);
+        }
+      }
+    }
+    let enFlightDynOnly = true;
+    for (const file of enFlight) {
+      const body = await readFile(path.join(enSiteDir, file), "utf8");
+      let index = body.indexOf("/pricing");
+      while (index !== -1) {
+        // MEASURED, and it disagrees with the naive expectation: the fixture's
+        // header disclosure button carries a CAPTURED DYNAMIC TEMPLATE whose
+        // copy of the /pricing anchor is a serialized string inside
+        // `data-wr-dyn-template`, not a node the cascade can address. It is
+        // frozen reconstruction output; the engine refuses to rewrite it and
+        // raises a dead-internal-link requirement instead (28.P6.33).
+        if (!body.slice(Math.max(0, index - 300), index).includes("data-wr-dyn-node")) {
+          enFlightDynOnly = false;
+        }
+        index = body.indexOf("/pricing", index + 1);
+      }
+    }
+    check(
+      "28.P5.71 any residual link to the disabled route in the RSC flight is CONFINED to a captured dynamic template",
+      enFlightDynOnly,
+      `${enFlight.length} flight files, ${enFlightPricing} /pricing occurrences, all inside a dyn template=${enFlightDynOnly}`,
+    );
+    const enDeploy = JSON.parse(
+      await readFile(path.join(enBuildDir, "package", "deploy-manifest.json"), "utf8"),
+    ) as { routes: Array<{ route: string }> };
+    check(
+      "28.P6.29 the deploy manifest ships one route",
+      enDeploy.routes.length === 1 && enDeploy.routes[0].route === "/",
+      enDeploy.routes.map((route) => route.route).join(","),
+    );
+    const enQa = JSON.parse(await readFile(path.join(enBuildDir, "report", "qa.json"), "utf8")) as {
+      failed: number;
+      passed: number;
+      siteLinks: { routesAudited: number; brokenInternalTargets: string[]; anchors: number };
+    };
+    check(
+      "28.P6.30 the served package's OWN link audit finds no rendered anchor pointing at the disabled route",
+      enQa.failed === 0 &&
+        enQa.siteLinks.routesAudited === 1 &&
+        !enQa.siteLinks.brokenInternalTargets.includes("/pricing") &&
+        // the fixture's hero CTA points at /signup, which was NEVER a route —
+        // a pre-existing dangling link the audit reports honestly and this
+        // feature neither creates nor clears
+        enQa.siteLinks.brokenInternalTargets.includes("/signup"),
+      `qa ${enQa.passed}/${enQa.passed + enQa.failed}, audited ${enQa.siteLinks.routesAudited}, broken ${JSON.stringify(enQa.siteLinks.brokenInternalTargets)}`,
+    );
+
+    const enContentDir = enProject.stageStatus.content.artifact!.path;
+    const enAccounting = JSON.parse(
+      await readFile(path.join(enContentDir, "slot-accounting.json"), "utf8"),
+    ) as {
+      totals: { inScopeSlots: number; byDisposition: Record<string, number> };
+      reconciliation: { reconciled: boolean; missing: string[]; originTotal: number; dispositionTotal: number; inScopeSlots: number };
+      entries: Array<{ slotKey: string; disposition: string; origin: string }>;
+    };
+    check(
+      "28.P5.72 REGION SLOT ACCOUNTING: every slot in the disabled region is `disabled-region`, none is unresolved",
+      enRegionSlotKeys.length > 0 &&
+        enRegionSlotKeys.every((key) =>
+          enAccounting.entries.some((entry) => entry.slotKey === key && entry.disposition === "disabled-region"),
+        ),
+      `${enRegionSlotKeys.length} region slot keys; byDisposition=${JSON.stringify(enAccounting.totals.byDisposition)}`,
+    );
+    check(
+      "28.P6.31 ROUTE SLOT ACCOUNTING: at least one slot is `disabled-route`, and it is still in the denominator",
+      (enAccounting.totals.byDisposition["disabled-route"] ?? 0) > 0 &&
+        enAccounting.entries.filter((entry) => entry.disposition === "disabled-route").every((entry) =>
+          entry.origin === "source-preserved",
+        ),
+      JSON.stringify(enAccounting.totals.byDisposition),
+    );
+    check(
+      "28.P5.73 the account still RECONCILES: both axis totals equal the in-scope count, nothing missing",
+      enAccounting.reconciliation.reconciled &&
+        enAccounting.reconciliation.originTotal === enAccounting.reconciliation.inScopeSlots &&
+        enAccounting.reconciliation.dispositionTotal === enAccounting.reconciliation.inScopeSlots &&
+        enAccounting.reconciliation.missing.length === 0,
+      JSON.stringify(enAccounting.reconciliation),
+    );
+    check(
+      "28.P5.74 no disabled slot was folded into `removed` — an emptied value and a deleted section stay distinguishable",
+      (enAccounting.totals.byDisposition["disabled-region"] ?? 0) > 0 &&
+        enRegionSlotKeys.every(
+          (key) => !enAccounting.entries.some((entry) => entry.slotKey === key && entry.disposition === "removed"),
+        ),
+      JSON.stringify(enAccounting.totals.byDisposition),
+    );
+
+    const enRequirements = (await loadRequirementsFile(en.projectDir)).requirements;
+    const enContentRoute = enRequirements.find(
+      (requirement) => requirement.requirementId === "content-route-/pricing",
+    );
+    check(
+      "28.P6.32 the disabled route's content-route requirement STOPS BLOCKING — retained with a note, never silently deleted",
+      enContentRoute !== undefined &&
+        enContentRoute.status === "not-applicable" &&
+        (enContentRoute.statusNote ?? "").includes("no longer detected") &&
+        !releaseBlockers(enRequirements).some((requirement) => requirement.route === "/pricing"),
+      `${enContentRoute?.status} / ${enContentRoute?.statusNote}`,
+    );
+    // The nav cascade removed the STATIC anchors. What it deliberately did not
+    // touch is the captured dynamic template, and the engine says so out loud
+    // instead of pretending the route has no inbound link left.
+    const enDeadLink = enRequirements.find((requirement) => requirement.kind === "dead-internal-link");
+    check(
+      "28.P6.33 the link the cascade could NOT remove becomes an ACTIONABLE, release-blocking requirement",
+      enDeadLink !== undefined &&
+        enDeadLink.severity === "release-blocking" &&
+        enDeadLink.status === "unresolved" &&
+        enDeadLink.route === "/" &&
+        enDeadLink.slotKey === "global.header.nav.pricing.href" &&
+        enDeadLink.message.includes("/pricing") &&
+        enDeadLink.message.includes("CAPTURED DYNAMIC TEMPLATE") &&
+        (enDeadLink.evidence[0]?.pointer ?? "").startsWith("p000001/") &&
+        enDeadLink.resolutionOptions.some((option) => option.includes("re-enable /pricing")),
+      `${enDeadLink?.requirementId} ${enDeadLink?.severity}/${enDeadLink?.status} slot=${enDeadLink?.slotKey}`,
+    );
+    check(
+      "28.P6.33b the served ANCHOR audit reports zero and the requirement STILL does not clear — a blind channel is not evidence",
+      enDeadLink?.status === "unresolved" &&
+        !enQa.siteLinks.brokenInternalTargets.includes("/pricing") &&
+        (enDeadLink?.statusNote ?? "").includes("NOT cleared by the served link audit") &&
+        (enDeadLink?.statusNote ?? "").includes("dynamic-template-host"),
+      `${enDeadLink?.status} note=${JSON.stringify(enDeadLink?.statusNote)}`,
+    );
+    check(
+      "28.P6.34 route readiness counts the ENABLED routes only",
+      enBuild.run !== null && (await planRelease(en.projectDir, { log: () => {} })).routeReadiness.length === 1,
+      JSON.stringify((await planRelease(en.projectDir, { log: () => {} })).routeReadiness.map((row) => row.route)),
+    );
+
+    const enRebuild = await buildRelease(en.projectDir, { dryRun: true, log: () => {} });
+    check(
+      "28.P6.35 with nothing further changed the next build reruns NOTHING — the enablement slice is stable across a reload",
+      JSON.stringify(enRebuild.plan.wouldRun) === JSON.stringify([]),
+      JSON.stringify(enRebuild.plan.wouldRun),
+    );
+
+    // ---- re-enable ---------------------------------------------------------
+    const enRestore = await commitAuthoredEdits(en.projectDir, [
+      { op: "enable-route", route: "/pricing" },
+      { op: "enable-region", regionId: enRegionId },
+    ]);
+    const enRestored = (await loadReleaseProject(en.projectDir)).project;
+    check(
+      "28.P6.36 re-enabling both deletes BOTH fields and records the reverse movement",
+      enRestore.changed &&
+        !("disabledRoutes" in enRestored.authored) &&
+        !("disabledRegions" in enRestored.authored) &&
+        enRestore.revision?.change.routesReEnabled?.includes("/pricing") === true &&
+        enRestore.revision.change.regionsReEnabled?.includes(enRegionId) === true,
+      JSON.stringify(enRestore.revision?.change.routesReEnabled),
+    );
+    const enBuildBack = await buildRelease(en.projectDir, { log: () => {} });
+    const enSeoBack = JSON.parse(
+      await readFile(
+        path.join(enBuildBack.project.stageStatus.seo.artifact!.path, "production-seo-plan.json"),
+        "utf8",
+      ),
+    ) as { routes: Array<{ route: string }> };
+    const enSiteBack = path.join(
+      productionBuildDir(HOST, enBuildBack.project.stageStatus.production.artifact!.id),
+      "package",
+      "site",
+    );
+    check(
+      "28.P6.37 re-enabling brings the route back: 2 SEO routes and pricing.html is exported again",
+      enBuildBack.failed === false &&
+        enSeoBack.routes.length === 2 &&
+        existsSync(path.join(enSiteBack, "pricing.html")),
+      `${enSeoBack.routes.map((route) => route.route).join(",")} exported=${existsSync(path.join(enSiteBack, "pricing.html"))}` +
+        (enBuildBack.project.failure ? ` FAILURE: ${enBuildBack.project.failure.message}` : ""),
+    );
+    // ---- the Phase-5/6 CORRECTION: the content scope is RECOVERABLE ------
+    //
+    // A build under a route disable narrows the content run's `scopedRoutes`
+    // to the routes that stayed enabled. If the next build read that back as
+    // the requested scope the narrowing would be PERMANENT — re-enabling the
+    // route would leave its slots out of the units, out of the merge and out
+    // of the accounting denominator. The run records what IT disabled, and the
+    // re-enabled build must be back at the full route set.
+    const enOffManifest = JSON.parse(
+      await readFile(path.join(enContentDir, "manifest.json"), "utf8"),
+    ) as { scopedRoutes?: string[]; enablement?: { disabledRoutes?: string[]; withheld?: unknown[] } };
+    check(
+      "28.P6.38 the narrowed run RECORDS the route it dropped, so the scope can be recovered",
+      (enOffManifest.enablement?.disabledRoutes ?? []).includes("/pricing") &&
+        !(enOffManifest.scopedRoutes ?? []).includes("/pricing"),
+      `scopedRoutes=${JSON.stringify(enOffManifest.scopedRoutes)} disabled=${JSON.stringify(enOffManifest.enablement?.disabledRoutes)}`,
+    );
+    const enBackManifest = JSON.parse(
+      await readFile(
+        path.join(enBuildBack.project.stageStatus.content.artifact!.path, "manifest.json"),
+        "utf8",
+      ),
+    ) as { scopedRoutes?: string[]; enablement?: unknown };
+    check(
+      "28.P6.38b the re-enabled build is back at the FULL route scope — the narrowing was not permanent",
+      (enBackManifest.scopedRoutes ?? []).includes("/pricing") &&
+        (enBackManifest.scopedRoutes ?? []).length === 2 &&
+        enBackManifest.enablement === undefined,
+      `scopedRoutes=${JSON.stringify(enBackManifest.scopedRoutes)}`,
+    );
+    const enBackAccounting = JSON.parse(
+      await readFile(
+        path.join(enBuildBack.project.stageStatus.content.artifact!.path, "slot-accounting.json"),
+        "utf8",
+      ),
+    ) as {
+      totals: { inScopeSlots: number; byDisposition: Record<string, number> };
+      reconciliation: { reconciled: boolean; missing: string[] };
+    };
+    check(
+      "28.P6.38c re-enabling puts the route's slots BACK in the denominator with no disabled disposition left",
+      enBackAccounting.reconciliation.reconciled &&
+        enBackAccounting.reconciliation.missing.length === 0 &&
+        (enBackAccounting.totals.byDisposition["disabled-route"] ?? 0) === 0 &&
+        (enBackAccounting.totals.byDisposition["disabled-region"] ?? 0) === 0 &&
+        enBackAccounting.totals.inScopeSlots >= enAccounting.totals.inScopeSlots,
+      `inScope ${enAccounting.totals.inScopeSlots} -> ${enBackAccounting.totals.inScopeSlots}; ` +
+        JSON.stringify(enBackAccounting.totals.byDisposition),
+    );
+    check(
+      "28.P5.75 the re-enabled region renders again in the exported HTML",
+      (await readFile(path.join(enSiteBack, "index.html"), "utf8")).includes(
+        `data-wr-node="${enCandidate!.pages[0].occurrences[0].nodeId}"`,
+      ),
+    );
+    await rm(en.projectDir, { recursive: true, force: true });
 
   } finally {
     fixture.server.close();

@@ -1,0 +1,2605 @@
+{
+  "note": "Phase 3C.1 Strategy B hydration-base control — experiment artifact summary (not a production schema). Full evidence: the artifact directory.",
+  "experiment": {
+    "strategyB": "2026-09-16T14-30-58-205Z",
+    "strategyA": "2026-09-16T10-50-02-746Z",
+    "artifact": "data/apartmentary.com/runtime-experiments/2026-09-16T14-30-58-205Z",
+    "gateBlockedAttempt": "2026-09-16T14-28-51-591Z (runtime never released: pre-execution gate false positive in the harness's own matchMedia check)"
+  },
+  "inputs": {
+    "initialDocument": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/document/response.html",
+    "initialDocumentSha256": "95eb46dd666eb9fc97a089fc9c53564124c584a8027fa303cc40e02e2856f13b",
+    "experimentDocumentSha256": "e791298be11e0f3fd891a5e0b57f3426de044c6cd9758cda9fe86ba4d1b05565",
+    "strategyADocumentSha256": "526fbe4a59170ad1e4670c6dfdf8c0173a4af91395b27d4d53eead4488c03a02",
+    "buildId": "yMHNQjHujDVTgIp539WqR",
+    "replayScripts": [
+      {
+        "step": 1,
+        "servedSrc": "/_next/static/chunks/webpack-3d4d997a6d82a026.js",
+        "sha256": "9d7e660aed50e7505700f8f529ba4ed6ae880b297830a03c5bd1e3edc25d882e"
+      },
+      {
+        "step": 2,
+        "servedSrc": "/_next/static/chunks/framework-a070cbfff3c750c5.js",
+        "sha256": "33dc89018fe5aed90ddd9f9615cba7412569abfad7d4995d81001e532aac79c9"
+      },
+      {
+        "step": 3,
+        "servedSrc": "/_next/static/chunks/main-58aeb610bf878a93.js",
+        "sha256": "85c8c1164b2edb6144c9aa952bb00d50eada1c41b4e9c41d8a0acfdff57de558"
+      },
+      {
+        "step": 4,
+        "servedSrc": "/_next/static/chunks/pages/_app-9c2508f77b107208.js",
+        "sha256": "e6a0597718ac22f86128707ccb7ae7b527a9496aa9afa4b92839133299d668f0"
+      },
+      {
+        "step": 5,
+        "servedSrc": "/_next/static/chunks/2924-2d8edfe2e564207a.js",
+        "sha256": "8ee1e431b3de6cc779456a607fb1473590e392b30dc0c2d268956e17171fedda"
+      },
+      {
+        "step": 6,
+        "servedSrc": "/_next/static/chunks/7925-44556921d193a2a3.js",
+        "sha256": "f3f2a3778df4027c618cfc1332ae4220220696bc442a9091b5ea97a56f39edfd"
+      },
+      {
+        "step": 7,
+        "servedSrc": "/_next/static/chunks/pages/index-798ca695bc5c80ee.js",
+        "sha256": "dba4c3c5f36697454e4a510622ab5bba3d4fec51fd109827a185b1135779d3ef"
+      },
+      {
+        "step": 8,
+        "servedSrc": "/_next/static/yMHNQjHujDVTgIp539WqR/_buildManifest.js",
+        "sha256": "c5d1208261e311524b7ba31dcade18209ec686f84e9fd20df249dd6f5747d8fb"
+      },
+      {
+        "step": 9,
+        "servedSrc": "/_next/static/yMHNQjHujDVTgIp539WqR/_ssgManifest.js",
+        "sha256": "6f5b4aa00d2f8d6aed9935b471806bf7acef464d0c1d390260e5fe27f800c67e"
+      }
+    ],
+    "neutralizedScripts": 12,
+    "localMirrorEntries": 15
+  },
+  "hashes": {
+    "fixturesSha256": "e168f8e1c7ab70dc175e36b9e8039a94930ad7388529ac7179344501813a1b4b",
+    "contractSha256": "9f49c84fc58dd6d53264ffa109450d09e2a1fcf1ef96346c038e62b9ba27c434",
+    "syntheticImages": 46
+  },
+  "gates": {
+    "staticPreflight": {
+      "total": 118,
+      "failed": 0
+    },
+    "controlEquivalence": {
+      "total": 36,
+      "failed": 0,
+      "differences": [
+        {
+          "id": "D1.hydrationBase",
+          "intended": true,
+          "strategyA": "Phase 2 clone desktop/index.html (sha 2bcfb6aaed4aef5725be0a7ea3d4e3f66f2b0116bb73a18ab5ca8a0388556fb1), built from Phase 1 runtime DOM",
+          "strategyB": "Phase 1 document/response.html (sha 95eb46dd666eb9fc97a089fc9c53564124c584a8027fa303cc40e02e2856f13b)"
+        },
+        {
+          "id": "D2.documentPreparation",
+          "intended": false,
+          "strategyA": "Phase 2 transform (URL localization, script/tracker/iframe/beacon neutralization, runtime-derived style tags) + activate.mjs splice",
+          "strategyB": "script start-tag splices only: 9 activated (tags byte-identical to A), 12 neutralized; everything else byte-identical to the response"
+        },
+        {
+          "id": "D3.styleComposition",
+          "intended": false,
+          "consequence": "expected: the SSR document carries the server-rendered Emotion tags (below-md hashes) and no Phase 2 runtime-derived CSSOM tags; recorded by the style probe at B0–B4"
+        },
+        {
+          "id": "D4.fontDelivery",
+          "intended": false,
+          "strategyA": "fonts via rewritten ../assets URLs (static root)",
+          "strategyB": "same bytes via router local mirror at original URLs (15 URLs)"
+        },
+        {
+          "id": "D5.cssDelivery",
+          "intended": false,
+          "strategyA": "../styles/<sha>.css link hrefs (static root)",
+          "strategyB": "/_next/static/css/*.css hrefs via the evidence path map (same sha256 bytes)"
+        },
+        {
+          "id": "D6.otherResourceUrls",
+          "intended": false,
+          "strategyB": {
+            "unmappedRootRelativeRefs": [
+              "/_next/static/chunks/polyfills-c67a75d1b6f99dc8.js"
+            ],
+            "note": "not localized in B; requests will 404 locally (logged)"
+          }
+        },
+        {
+          "id": "D7.extraInstrumentation",
+          "intended": false,
+          "strategyB": "lifecycle probe (identity + style) at the commit measure and first microtask after it; read-only (getComputedStyle/getBoundingClientRect force layout, no DOM writes)"
+        },
+        {
+          "id": "D8.bodyAttributes/Phase2 inert rewrites",
+          "intended": false,
+          "strategyB": "no Phase 2 navigation/beacon/iframe rewrites; noscript content is inert text with scripting enabled; no inline event handlers exist in the response (0)"
+        }
+      ]
+    },
+    "runtimePreflight": [
+      [
+        "runtime.guardInstalledBeforeAnyNavigation",
+        true
+      ],
+      [
+        "runtime.outboundDefaultBlock",
+        true
+      ],
+      [
+        "runtime.stubInterceptionWorks",
+        true
+      ],
+      [
+        "runtime.gateNotYetTouched",
+        true
+      ],
+      [
+        "runtime.localMirrorInstalled",
+        true
+      ]
+    ],
+    "preExecution": [
+      [
+        "gate.firstRuntimeScriptHeld",
+        true
+      ],
+      [
+        "gate.standInsInstalled",
+        true
+      ],
+      [
+        "gate.standInsInstalledBeforeAnyScriptElement",
+        true
+      ],
+      [
+        "gate.standInSurface karrotPixel",
+        true
+      ],
+      [
+        "gate.standInsNotYetCalled",
+        true
+      ],
+      [
+        "gate.onlyActivatedScriptsExecutable (no tracker/widget/vendor script)",
+        true
+      ],
+      [
+        "gate.sourceRuntimeNotBegun.webpackGlobalsAbsent",
+        true
+      ],
+      [
+        "gate.sourceRuntimeNotBegun.nextUndefined",
+        true
+      ],
+      [
+        "gate.sourceRuntimeNotBegun.noHydrationMeasure",
+        true
+      ],
+      [
+        "gate.apiRoutingReady",
+        true
+      ],
+      [
+        "gate.outboundDefaultBlock",
+        true
+      ],
+      [
+        "gate.B.documentServedIsStrategyBDocument",
+        true
+      ],
+      [
+        "gate.B.hydrationDataPresent",
+        true
+      ],
+      [
+        "gate.B.noMatchMediaForcing",
+        true
+      ],
+      [
+        "gate.B.lifecycleRecorderReady",
+        true
+      ],
+      [
+        "gate.B.scrollAtTop",
+        true
+      ],
+      [
+        "gate.B.staticPreflightAndEquivalencePassed",
+        true
+      ]
+    ]
+  },
+  "lifecycle": {
+    "measuredAt": {
+      "B0": "after the Strategy B document loaded, first runtime script held at the router, before release",
+      "B1": "synchronously inside the framework's hydration performance.measure (hydrate commit, layout-effect phase; includes child layout effects, NOT pure hydration)",
+      "B2": "first microtask after the B1 measure: after the synchronous hydrate call returned, i.e. after the sync layout-effect media-query re-render and the passive effects React 17 flushes before it",
+      "B3": "settled desktop (same settle rule as 3C: load + network quiet 1500 ms (max 15 s) + 2000 ms)",
+      "B4": "after one resize 1440x900 → 390x844 + 3000 ms"
+    },
+    "perfMs": {
+      "B1": 437.1,
+      "B2": 451
+    },
+    "B0": {
+      "containerClass": "MuiBox-root css-14mj874",
+      "containerIsInitial": true,
+      "containerComputed": {
+        "display": "flex",
+        "position": "static",
+        "flex-grow": "0",
+        "flex-shrink": "1",
+        "flex-basis": "auto",
+        "width": "1440px",
+        "height": "727.469px",
+        "flex-direction": "column",
+        "flex-wrap": "nowrap",
+        "gap": "normal",
+        "max-width": "1920px"
+      },
+      "containerRect": {
+        "x": 0,
+        "y": 1977,
+        "w": 1440,
+        "h": 727.5
+      },
+      "children": [
+        {
+          "index": 0,
+          "initialIndex": 0,
+          "classList": [
+            "MuiBox-root",
+            "css-ety3zj"
+          ],
+          "childElementCount": 1,
+          "descendantCount": 1,
+          "retainedDescendantsFromInitial": 1,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 20,
+            "y": 2067,
+            "w": 43,
+            "h": 58.5
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "43px",
+            "height": "58.4688px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 1,
+          "initialIndex": 1,
+          "classList": [
+            "MuiBox-root",
+            "css-1gapyfo"
+          ],
+          "childElementCount": 0,
+          "descendantCount": 0,
+          "retainedDescendantsFromInitial": 0,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 20,
+            "y": 2125,
+            "w": 1400,
+            "h": 60
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "1400px",
+            "height": "60px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 2,
+          "initialIndex": 2,
+          "classList": [
+            "MuiBox-root",
+            "css-1rr4qq7"
+          ],
+          "childElementCount": 7,
+          "descendantCount": 96,
+          "retainedDescendantsFromInitial": 96,
+          "containsAnchor": true,
+          "containsInitialAnchor": true,
+          "rect": {
+            "x": 20,
+            "y": 2185,
+            "w": 1400,
+            "h": 429
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "1",
+            "flex-shrink": "1",
+            "flex-basis": "0%",
+            "width": "1400px",
+            "height": "429px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 3,
+          "initialIndex": 3,
+          "classList": [
+            "MuiBox-root",
+            "css-v7v99c"
+          ],
+          "childElementCount": 0,
+          "descendantCount": 0,
+          "retainedDescendantsFromInitial": 0,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 20,
+            "y": 2614,
+            "w": 100,
+            "h": 0
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "100px",
+            "height": "0px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        }
+      ],
+      "anchor": {
+        "class": "MuiGrid-root MuiGrid-container css-1d4lhyj",
+        "isInitialAnchor": true,
+        "ownerChildIndex": 2,
+        "ownerChildInitialIndex": 2,
+        "ownerChildClassList": [
+          "MuiBox-root",
+          "css-1rr4qq7"
+        ],
+        "ownerChildWidth": 1400,
+        "rect": {
+          "x": 20,
+          "y": 2125,
+          "w": 1400,
+          "h": 285
+        },
+        "items": [
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-6 MuiGrid-grid-md-4 css-1ho082a",
+            "rect": {
+              "x": 20,
+              "y": 2125,
+              "w": 466.7,
+              "h": 285
+            },
+            "whiteSpace": "normal"
+          },
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-6 MuiGrid-grid-md-4 css-1ho082a",
+            "rect": {
+              "x": 487,
+              "y": 2125,
+              "w": 466.7,
+              "h": 285
+            },
+            "whiteSpace": "normal"
+          },
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-md-4 css-19egsyp",
+            "rect": {
+              "x": 953,
+              "y": 2125,
+              "w": 466.7,
+              "h": 285
+            },
+            "whiteSpace": "normal"
+          }
+        ]
+      },
+      "initialFates": [
+        {
+          "initialIndex": 0,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 0,
+          "classNow": "MuiBox-root css-ety3zj",
+          "childElementCountNow": 1
+        },
+        {
+          "initialIndex": 1,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 1,
+          "classNow": "MuiBox-root css-1gapyfo",
+          "childElementCountNow": 0
+        },
+        {
+          "initialIndex": 2,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 2,
+          "classNow": "MuiBox-root css-1rr4qq7",
+          "childElementCountNow": 7
+        },
+        {
+          "initialIndex": 3,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 3,
+          "classNow": "MuiBox-root css-v7v99c",
+          "childElementCountNow": 0
+        }
+      ]
+    },
+    "B1": {
+      "containerClass": "MuiBox-root css-14mj874",
+      "containerIsInitial": true,
+      "containerComputed": {
+        "display": "flex",
+        "position": "static",
+        "flex-grow": "0",
+        "flex-shrink": "1",
+        "flex-basis": "auto",
+        "width": "1440px",
+        "height": "727.469px",
+        "flex-direction": "column",
+        "flex-wrap": "nowrap",
+        "gap": "normal",
+        "max-width": "1920px"
+      },
+      "containerRect": {
+        "x": 0,
+        "y": 1977,
+        "w": 1440,
+        "h": 727.5
+      },
+      "children": [
+        {
+          "index": 0,
+          "initialIndex": 0,
+          "classList": [
+            "MuiBox-root",
+            "css-ety3zj"
+          ],
+          "childElementCount": 1,
+          "descendantCount": 1,
+          "retainedDescendantsFromInitial": 1,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 20,
+            "y": 2067,
+            "w": 43,
+            "h": 58.5
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "43px",
+            "height": "58.4688px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 1,
+          "initialIndex": 1,
+          "classList": [
+            "MuiBox-root",
+            "css-1gapyfo"
+          ],
+          "childElementCount": 0,
+          "descendantCount": 0,
+          "retainedDescendantsFromInitial": 0,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 20,
+            "y": 2125,
+            "w": 1400,
+            "h": 60
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "1400px",
+            "height": "60px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 2,
+          "initialIndex": 2,
+          "classList": [
+            "MuiBox-root",
+            "css-1rr4qq7"
+          ],
+          "childElementCount": 7,
+          "descendantCount": 96,
+          "retainedDescendantsFromInitial": 96,
+          "containsAnchor": true,
+          "containsInitialAnchor": true,
+          "rect": {
+            "x": 20,
+            "y": 2185,
+            "w": 1400,
+            "h": 429
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "1",
+            "flex-shrink": "1",
+            "flex-basis": "0%",
+            "width": "1400px",
+            "height": "429px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 3,
+          "initialIndex": 3,
+          "classList": [
+            "MuiBox-root",
+            "css-v7v99c"
+          ],
+          "childElementCount": 0,
+          "descendantCount": 0,
+          "retainedDescendantsFromInitial": 0,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 20,
+            "y": 2614,
+            "w": 100,
+            "h": 0
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "100px",
+            "height": "0px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        }
+      ],
+      "anchor": {
+        "class": "MuiGrid-root MuiGrid-container css-1d4lhyj",
+        "isInitialAnchor": true,
+        "ownerChildIndex": 2,
+        "ownerChildInitialIndex": 2,
+        "ownerChildClassList": [
+          "MuiBox-root",
+          "css-1rr4qq7"
+        ],
+        "ownerChildWidth": 1400,
+        "rect": {
+          "x": 20,
+          "y": 2125,
+          "w": 1400,
+          "h": 285
+        },
+        "items": [
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-6 MuiGrid-grid-md-4 css-1ho082a",
+            "rect": {
+              "x": 20,
+              "y": 2125,
+              "w": 466.7,
+              "h": 285
+            },
+            "whiteSpace": "normal"
+          },
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-6 MuiGrid-grid-md-4 css-1ho082a",
+            "rect": {
+              "x": 487,
+              "y": 2125,
+              "w": 466.7,
+              "h": 285
+            },
+            "whiteSpace": "normal"
+          },
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-md-4 css-19egsyp",
+            "rect": {
+              "x": 953,
+              "y": 2125,
+              "w": 466.7,
+              "h": 285
+            },
+            "whiteSpace": "normal"
+          }
+        ]
+      },
+      "initialFates": [
+        {
+          "initialIndex": 0,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 0,
+          "classNow": "MuiBox-root css-ety3zj",
+          "childElementCountNow": 1
+        },
+        {
+          "initialIndex": 1,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 1,
+          "classNow": "MuiBox-root css-1gapyfo",
+          "childElementCountNow": 0
+        },
+        {
+          "initialIndex": 2,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 2,
+          "classNow": "MuiBox-root css-1rr4qq7",
+          "childElementCountNow": 7
+        },
+        {
+          "initialIndex": 3,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 3,
+          "classNow": "MuiBox-root css-v7v99c",
+          "childElementCountNow": 0
+        }
+      ]
+    },
+    "B2": {
+      "containerClass": "MuiBox-root css-1qi39fj",
+      "containerIsInitial": true,
+      "containerComputed": {
+        "display": "flex",
+        "position": "static",
+        "flex-grow": "0",
+        "flex-shrink": "1",
+        "flex-basis": "auto",
+        "width": "1440px",
+        "height": "807px",
+        "flex-direction": "row",
+        "flex-wrap": "nowrap",
+        "gap": "normal",
+        "max-width": "1920px"
+      },
+      "containerRect": {
+        "x": 0,
+        "y": 3303,
+        "w": 1440,
+        "h": 807
+      },
+      "children": [
+        {
+          "index": 0,
+          "initialIndex": 0,
+          "classList": [
+            "MuiBox-root",
+            "css-17taob2"
+          ],
+          "childElementCount": 1,
+          "descendantCount": 1,
+          "retainedDescendantsFromInitial": 1,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 0,
+            "y": 3423,
+            "w": 432,
+            "h": 567
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "432px",
+            "height": "567px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 1,
+          "initialIndex": 2,
+          "classList": [
+            "MuiBox-root",
+            "css-1rr4qq7"
+          ],
+          "childElementCount": 7,
+          "descendantCount": 110,
+          "retainedDescendantsFromInitial": 96,
+          "containsAnchor": true,
+          "containsInitialAnchor": true,
+          "rect": {
+            "x": 432,
+            "y": 3423,
+            "w": 908,
+            "h": 567
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "1",
+            "flex-shrink": "1",
+            "flex-basis": "0%",
+            "width": "908px",
+            "height": "567px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 2,
+          "initialIndex": 3,
+          "classList": [
+            "MuiBox-root",
+            "css-v7v99c"
+          ],
+          "childElementCount": 0,
+          "descendantCount": 0,
+          "retainedDescendantsFromInitial": 0,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 1340,
+            "y": 3423,
+            "w": 100,
+            "h": 567
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "100px",
+            "height": "567px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        }
+      ],
+      "anchor": {
+        "class": "MuiGrid-root MuiGrid-container css-1d3bbye",
+        "isInitialAnchor": true,
+        "ownerChildIndex": 1,
+        "ownerChildInitialIndex": 2,
+        "ownerChildClassList": [
+          "MuiBox-root",
+          "css-1rr4qq7"
+        ],
+        "ownerChildWidth": 908,
+        "rect": {
+          "x": 432,
+          "y": 3423,
+          "w": 908,
+          "h": 281
+        },
+        "items": [
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-6 MuiGrid-grid-md-4 css-1ho082a",
+            "rect": {
+              "x": 432,
+              "y": 3423,
+              "w": 302.7,
+              "h": 281
+            },
+            "whiteSpace": "normal"
+          },
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-6 MuiGrid-grid-md-4 css-1ho082a",
+            "rect": {
+              "x": 735,
+              "y": 3423,
+              "w": 302.7,
+              "h": 281
+            },
+            "whiteSpace": "normal"
+          },
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-md-4 css-19egsyp",
+            "rect": {
+              "x": 1037,
+              "y": 3423,
+              "w": 302.7,
+              "h": 281
+            },
+            "whiteSpace": "normal"
+          }
+        ]
+      },
+      "initialFates": [
+        {
+          "initialIndex": 0,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 0,
+          "classNow": "MuiBox-root css-17taob2",
+          "childElementCountNow": 1
+        },
+        {
+          "initialIndex": 1,
+          "connected": false,
+          "parentIsContainer": false,
+          "currentIndex": -1,
+          "classNow": "MuiBox-root css-1gapyfo",
+          "childElementCountNow": 0
+        },
+        {
+          "initialIndex": 2,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 1,
+          "classNow": "MuiBox-root css-1rr4qq7",
+          "childElementCountNow": 7
+        },
+        {
+          "initialIndex": 3,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 2,
+          "classNow": "MuiBox-root css-v7v99c",
+          "childElementCountNow": 0
+        }
+      ]
+    },
+    "B3": {
+      "containerClass": "MuiBox-root css-1qi39fj",
+      "containerIsInitial": true,
+      "containerComputed": {
+        "display": "flex",
+        "position": "static",
+        "flex-grow": "0",
+        "flex-shrink": "1",
+        "flex-basis": "auto",
+        "width": "1440px",
+        "height": "807px",
+        "flex-direction": "row",
+        "flex-wrap": "nowrap",
+        "gap": "normal",
+        "max-width": "1920px"
+      },
+      "containerRect": {
+        "x": 0,
+        "y": 4835,
+        "w": 1440,
+        "h": 807
+      },
+      "children": [
+        {
+          "index": 0,
+          "initialIndex": 0,
+          "classList": [
+            "MuiBox-root",
+            "css-17taob2"
+          ],
+          "childElementCount": 1,
+          "descendantCount": 1,
+          "retainedDescendantsFromInitial": 1,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 0,
+            "y": 4955,
+            "w": 432,
+            "h": 567
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "432px",
+            "height": "567px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 1,
+          "initialIndex": 2,
+          "classList": [
+            "MuiBox-root",
+            "css-1rr4qq7"
+          ],
+          "childElementCount": 7,
+          "descendantCount": 110,
+          "retainedDescendantsFromInitial": 96,
+          "containsAnchor": true,
+          "containsInitialAnchor": true,
+          "rect": {
+            "x": 432,
+            "y": 4955,
+            "w": 908,
+            "h": 567
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "1",
+            "flex-shrink": "1",
+            "flex-basis": "0%",
+            "width": "908px",
+            "height": "567px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 2,
+          "initialIndex": 3,
+          "classList": [
+            "MuiBox-root",
+            "css-v7v99c"
+          ],
+          "childElementCount": 0,
+          "descendantCount": 0,
+          "retainedDescendantsFromInitial": 0,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 1340,
+            "y": 4955,
+            "w": 100,
+            "h": 567
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "100px",
+            "height": "567px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        }
+      ],
+      "anchor": {
+        "class": "MuiGrid-root MuiGrid-container css-1d3bbye",
+        "isInitialAnchor": true,
+        "ownerChildIndex": 1,
+        "ownerChildInitialIndex": 2,
+        "ownerChildClassList": [
+          "MuiBox-root",
+          "css-1rr4qq7"
+        ],
+        "ownerChildWidth": 908,
+        "rect": {
+          "x": 432,
+          "y": 4955,
+          "w": 908,
+          "h": 281
+        },
+        "items": [
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-6 MuiGrid-grid-md-4 css-1ho082a",
+            "rect": {
+              "x": 432,
+              "y": 4955,
+              "w": 302.7,
+              "h": 281
+            },
+            "whiteSpace": "normal"
+          },
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-6 MuiGrid-grid-md-4 css-1ho082a",
+            "rect": {
+              "x": 735,
+              "y": 4955,
+              "w": 302.7,
+              "h": 281
+            },
+            "whiteSpace": "normal"
+          },
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-md-4 css-19egsyp",
+            "rect": {
+              "x": 1037,
+              "y": 4955,
+              "w": 302.7,
+              "h": 281
+            },
+            "whiteSpace": "normal"
+          }
+        ]
+      },
+      "initialFates": [
+        {
+          "initialIndex": 0,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 0,
+          "classNow": "MuiBox-root css-17taob2",
+          "childElementCountNow": 1
+        },
+        {
+          "initialIndex": 1,
+          "connected": false,
+          "parentIsContainer": false,
+          "currentIndex": -1,
+          "classNow": "MuiBox-root css-1gapyfo",
+          "childElementCountNow": 0
+        },
+        {
+          "initialIndex": 2,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 1,
+          "classNow": "MuiBox-root css-1rr4qq7",
+          "childElementCountNow": 7
+        },
+        {
+          "initialIndex": 3,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 2,
+          "classNow": "MuiBox-root css-v7v99c",
+          "childElementCountNow": 0
+        }
+      ]
+    },
+    "B4": {
+      "containerClass": "MuiBox-root css-14mj874",
+      "containerIsInitial": true,
+      "containerComputed": {
+        "display": "flex",
+        "position": "static",
+        "flex-grow": "0",
+        "flex-shrink": "1",
+        "flex-basis": "auto",
+        "width": "390px",
+        "height": "1018.47px",
+        "flex-direction": "column",
+        "flex-wrap": "nowrap",
+        "gap": "normal",
+        "max-width": "1920px"
+      },
+      "containerRect": {
+        "x": 0,
+        "y": 3664,
+        "w": 390,
+        "h": 1018.5
+      },
+      "children": [
+        {
+          "index": 0,
+          "initialIndex": 0,
+          "classList": [
+            "MuiBox-root",
+            "css-ety3zj"
+          ],
+          "childElementCount": 1,
+          "descendantCount": 1,
+          "retainedDescendantsFromInitial": 1,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 20,
+            "y": 3754,
+            "w": 43,
+            "h": 58.5
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "43px",
+            "height": "58.4688px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 1,
+          "initialIndex": -1,
+          "classList": [
+            "MuiBox-root",
+            "css-1gapyfo"
+          ],
+          "childElementCount": 0,
+          "descendantCount": 0,
+          "retainedDescendantsFromInitial": 0,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 20,
+            "y": 3812,
+            "w": 350,
+            "h": 60
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "350px",
+            "height": "60px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 2,
+          "initialIndex": 2,
+          "classList": [
+            "MuiBox-root",
+            "css-1rr4qq7"
+          ],
+          "childElementCount": 7,
+          "descendantCount": 110,
+          "retainedDescendantsFromInitial": 96,
+          "containsAnchor": true,
+          "containsInitialAnchor": true,
+          "rect": {
+            "x": 20,
+            "y": 3872,
+            "w": 350,
+            "h": 720
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "1",
+            "flex-shrink": "1",
+            "flex-basis": "0%",
+            "width": "350px",
+            "height": "720px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 3,
+          "initialIndex": 3,
+          "classList": [
+            "MuiBox-root",
+            "css-v7v99c"
+          ],
+          "childElementCount": 0,
+          "descendantCount": 0,
+          "retainedDescendantsFromInitial": 0,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 20,
+            "y": 4592,
+            "w": 100,
+            "h": 0
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "100px",
+            "height": "0px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        }
+      ],
+      "anchor": {
+        "class": "MuiGrid-root MuiGrid-container css-1d4lhyj",
+        "isInitialAnchor": true,
+        "ownerChildIndex": 2,
+        "ownerChildInitialIndex": 2,
+        "ownerChildClassList": [
+          "MuiBox-root",
+          "css-1rr4qq7"
+        ],
+        "ownerChildWidth": 350,
+        "rect": {
+          "x": 20,
+          "y": 3812,
+          "w": 350,
+          "h": 510
+        },
+        "items": [
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-6 MuiGrid-grid-md-4 css-1ho082a",
+            "rect": {
+              "x": 20,
+              "y": 3812,
+              "w": 175,
+              "h": 285
+            },
+            "whiteSpace": "normal"
+          },
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-6 MuiGrid-grid-md-4 css-1ho082a",
+            "rect": {
+              "x": 195,
+              "y": 3812,
+              "w": 175,
+              "h": 285
+            },
+            "whiteSpace": "normal"
+          },
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-md-4 css-19egsyp",
+            "rect": {
+              "x": 20,
+              "y": 4097,
+              "w": 350,
+              "h": 225
+            },
+            "whiteSpace": "normal"
+          }
+        ]
+      },
+      "initialFates": [
+        {
+          "initialIndex": 0,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 0,
+          "classNow": "MuiBox-root css-ety3zj",
+          "childElementCountNow": 1
+        },
+        {
+          "initialIndex": 1,
+          "connected": false,
+          "parentIsContainer": false,
+          "currentIndex": -1,
+          "classNow": "MuiBox-root css-1gapyfo",
+          "childElementCountNow": 0
+        },
+        {
+          "initialIndex": 2,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 2,
+          "classNow": "MuiBox-root css-1rr4qq7",
+          "childElementCountNow": 7
+        },
+        {
+          "initialIndex": 3,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 3,
+          "classNow": "MuiBox-root css-v7v99c",
+          "childElementCountNow": 0
+        }
+      ]
+    },
+    "B4vsB3Registry": {
+      "containerClass": "MuiBox-root css-14mj874",
+      "containerIsInitial": true,
+      "containerComputed": {
+        "display": "flex",
+        "position": "static",
+        "flex-grow": "0",
+        "flex-shrink": "1",
+        "flex-basis": "auto",
+        "width": "390px",
+        "height": "1018.47px",
+        "flex-direction": "column",
+        "flex-wrap": "nowrap",
+        "gap": "normal",
+        "max-width": "1920px"
+      },
+      "containerRect": {
+        "x": 0,
+        "y": 3664,
+        "w": 390,
+        "h": 1018.5
+      },
+      "children": [
+        {
+          "index": 0,
+          "initialIndex": 0,
+          "classList": [
+            "MuiBox-root",
+            "css-ety3zj"
+          ],
+          "childElementCount": 1,
+          "descendantCount": 1,
+          "retainedDescendantsFromInitial": 1,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 20,
+            "y": 3754,
+            "w": 43,
+            "h": 58.5
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "43px",
+            "height": "58.4688px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 1,
+          "initialIndex": -1,
+          "classList": [
+            "MuiBox-root",
+            "css-1gapyfo"
+          ],
+          "childElementCount": 0,
+          "descendantCount": 0,
+          "retainedDescendantsFromInitial": 0,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 20,
+            "y": 3812,
+            "w": 350,
+            "h": 60
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "350px",
+            "height": "60px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 2,
+          "initialIndex": 1,
+          "classList": [
+            "MuiBox-root",
+            "css-1rr4qq7"
+          ],
+          "childElementCount": 7,
+          "descendantCount": 110,
+          "retainedDescendantsFromInitial": 110,
+          "containsAnchor": true,
+          "containsInitialAnchor": true,
+          "rect": {
+            "x": 20,
+            "y": 3872,
+            "w": 350,
+            "h": 720
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "1",
+            "flex-shrink": "1",
+            "flex-basis": "0%",
+            "width": "350px",
+            "height": "720px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        },
+        {
+          "index": 3,
+          "initialIndex": 2,
+          "classList": [
+            "MuiBox-root",
+            "css-v7v99c"
+          ],
+          "childElementCount": 0,
+          "descendantCount": 0,
+          "retainedDescendantsFromInitial": 0,
+          "containsAnchor": false,
+          "containsInitialAnchor": false,
+          "rect": {
+            "x": 20,
+            "y": 4592,
+            "w": 100,
+            "h": 0
+          },
+          "computed": {
+            "display": "block",
+            "position": "static",
+            "flex-grow": "0",
+            "flex-shrink": "1",
+            "flex-basis": "auto",
+            "width": "100px",
+            "height": "0px",
+            "flex-direction": "row",
+            "flex-wrap": "nowrap",
+            "gap": "normal",
+            "max-width": "none"
+          }
+        }
+      ],
+      "anchor": {
+        "class": "MuiGrid-root MuiGrid-container css-1d4lhyj",
+        "isInitialAnchor": true,
+        "ownerChildIndex": 2,
+        "ownerChildInitialIndex": 1,
+        "ownerChildClassList": [
+          "MuiBox-root",
+          "css-1rr4qq7"
+        ],
+        "ownerChildWidth": 350,
+        "rect": {
+          "x": 20,
+          "y": 3812,
+          "w": 350,
+          "h": 510
+        },
+        "items": [
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-6 MuiGrid-grid-md-4 css-1ho082a",
+            "rect": {
+              "x": 20,
+              "y": 3812,
+              "w": 175,
+              "h": 285
+            },
+            "whiteSpace": "normal"
+          },
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-6 MuiGrid-grid-md-4 css-1ho082a",
+            "rect": {
+              "x": 195,
+              "y": 3812,
+              "w": 175,
+              "h": 285
+            },
+            "whiteSpace": "normal"
+          },
+          {
+            "class": "MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-md-4 css-19egsyp",
+            "rect": {
+              "x": 20,
+              "y": 4097,
+              "w": 350,
+              "h": 225
+            },
+            "whiteSpace": "normal"
+          }
+        ]
+      },
+      "initialFates": [
+        {
+          "initialIndex": 0,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 0,
+          "classNow": "MuiBox-root css-ety3zj",
+          "childElementCountNow": 1
+        },
+        {
+          "initialIndex": 1,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 2,
+          "classNow": "MuiBox-root css-1rr4qq7",
+          "childElementCountNow": 7
+        },
+        {
+          "initialIndex": 2,
+          "connected": true,
+          "parentIsContainer": true,
+          "currentIndex": 3,
+          "classNow": "MuiBox-root css-v7v99c",
+          "childElementCountNow": 0
+        }
+      ]
+    },
+    "rowMutationsB0toB3": {
+      "records": 50,
+      "truncated": 0
+    },
+    "rowMutationsB3toB4": {
+      "records": 36,
+      "truncated": 0
+    }
+  },
+  "style": {
+    "B0": {
+      "styleSheetCount": 7,
+      "styleElementCount": 5,
+      "duplicatedRuleTexts": 2,
+      "sheets": [
+        {
+          "index": 0,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css-global 0"
+          },
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 0,
+          "cssomTextHash": "811c9dc5"
+        },
+        {
+          "index": 1,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css-global 5zgh7c"
+          },
+          "nodeTextLength": 3090,
+          "nodeTextHash": "1ef554fa",
+          "cssomRuleCount": 20,
+          "cssomTextHash": "1d505f02"
+        },
+        {
+          "index": 2,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css xuaqpw 8atqhb w16pwn 1w8vvkf w22of0 4u8ayh ir6ml4 1e3sj1t enqozp pk6lzr 1dibfmr ufcztx uanaa8 17v1pwt j7qwjs 1jgxixz xas7pb 1njsip6 1xzsyzi o30mcf u1jr60 7e3bvq 1l4w6pd bosr71 4tnojn 9t26qk 1wj0762 sbzp1 1pg8bi 1ssbn0c 13o6z6d 1qzfsby 14mj874 ety3zj 1gapyfo 1rr4qq7 k008qs 1d4lhyj 1ho082a swqxbl 1fmbnq2 htdp2j 1am5dzr 1ymfup1 149w0h4 19egsyp 70qvj9 1bvg7gj 1xhz4ze xnnme8 1crehmc dsw18m 15p9n5u ky5i6l o6yuww v7v99c"
+          },
+          "nodeTextLength": 20339,
+          "nodeTextHash": "374831c2",
+          "cssomRuleCount": 107,
+          "cssomTextHash": "df812eac"
+        },
+        {
+          "index": 3,
+          "owner": "link",
+          "href": "/_next/static/css/80139ea3111436a9.css",
+          "attrs": {},
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 250,
+          "cssomTextHash": "7fbf1480"
+        },
+        {
+          "index": 4,
+          "owner": "link",
+          "href": "/_next/static/css/d7c08271dabb56dd.css",
+          "attrs": {},
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 42,
+          "cssomTextHash": "e0429fb9"
+        },
+        {
+          "index": 5,
+          "owner": "style",
+          "href": null,
+          "attrs": {},
+          "nodeTextLength": 20724,
+          "nodeTextHash": "0d75fa64",
+          "cssomRuleCount": 40,
+          "cssomTextHash": "c78e3aba"
+        },
+        {
+          "index": 6,
+          "owner": "style",
+          "href": null,
+          "attrs": {},
+          "nodeTextLength": 915,
+          "nodeTextHash": "2588b6f6",
+          "cssomRuleCount": 4,
+          "cssomTextHash": "9ac1fdb0"
+        }
+      ]
+    },
+    "B1": {
+      "styleSheetCount": 8,
+      "styleElementCount": 6,
+      "duplicatedRuleTexts": 2,
+      "sheets": [
+        {
+          "index": 0,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css-global",
+            "data-s": ""
+          },
+          "nodeTextLength": 3090,
+          "nodeTextHash": "1ef554fa",
+          "cssomRuleCount": 20,
+          "cssomTextHash": "1d505f02"
+        },
+        {
+          "index": 1,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css xuaqpw 8atqhb w16pwn 1w8vvkf w22of0 4u8ayh ir6ml4 1e3sj1t enqozp pk6lzr 1dibfmr ufcztx uanaa8 17v1pwt j7qwjs 1jgxixz xas7pb 1njsip6 1xzsyzi o30mcf u1jr60 7e3bvq 1l4w6pd bosr71 4tnojn 9t26qk 1wj0762 sbzp1 1pg8bi 1ssbn0c 13o6z6d 1qzfsby 14mj874 ety3zj 1gapyfo 1rr4qq7 k008qs 1d4lhyj 1ho082a swqxbl 1fmbnq2 htdp2j 1am5dzr 1ymfup1 149w0h4 19egsyp 70qvj9 1bvg7gj 1xhz4ze xnnme8 1crehmc dsw18m 15p9n5u ky5i6l o6yuww v7v99c",
+            "data-s": ""
+          },
+          "nodeTextLength": 20339,
+          "nodeTextHash": "374831c2",
+          "cssomRuleCount": 107,
+          "cssomTextHash": "df812eac"
+        },
+        {
+          "index": 2,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css",
+            "data-s": ""
+          },
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 43,
+          "cssomTextHash": "f5398fcc"
+        },
+        {
+          "index": 3,
+          "owner": "link",
+          "href": "/_next/static/css/80139ea3111436a9.css",
+          "attrs": {},
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 250,
+          "cssomTextHash": "7fbf1480"
+        },
+        {
+          "index": 4,
+          "owner": "link",
+          "href": "/_next/static/css/d7c08271dabb56dd.css",
+          "attrs": {},
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 42,
+          "cssomTextHash": "e0429fb9"
+        },
+        {
+          "index": 5,
+          "owner": "style",
+          "href": null,
+          "attrs": {},
+          "nodeTextLength": 20724,
+          "nodeTextHash": "0d75fa64",
+          "cssomRuleCount": 40,
+          "cssomTextHash": "c78e3aba"
+        },
+        {
+          "index": 6,
+          "owner": "style",
+          "href": null,
+          "attrs": {},
+          "nodeTextLength": 915,
+          "nodeTextHash": "2588b6f6",
+          "cssomRuleCount": 4,
+          "cssomTextHash": "9ac1fdb0"
+        },
+        {
+          "index": 7,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css-global 0",
+            "data-s": ""
+          },
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 0,
+          "cssomTextHash": "811c9dc5"
+        }
+      ]
+    },
+    "B2": {
+      "styleSheetCount": 8,
+      "styleElementCount": 6,
+      "duplicatedRuleTexts": 2,
+      "sheets": [
+        {
+          "index": 0,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css-global",
+            "data-s": ""
+          },
+          "nodeTextLength": 3090,
+          "nodeTextHash": "1ef554fa",
+          "cssomRuleCount": 20,
+          "cssomTextHash": "1d505f02"
+        },
+        {
+          "index": 1,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css xuaqpw 8atqhb w16pwn 1w8vvkf w22of0 4u8ayh ir6ml4 1e3sj1t enqozp pk6lzr 1dibfmr ufcztx uanaa8 17v1pwt j7qwjs 1jgxixz xas7pb 1njsip6 1xzsyzi o30mcf u1jr60 7e3bvq 1l4w6pd bosr71 4tnojn 9t26qk 1wj0762 sbzp1 1pg8bi 1ssbn0c 13o6z6d 1qzfsby 14mj874 ety3zj 1gapyfo 1rr4qq7 k008qs 1d4lhyj 1ho082a swqxbl 1fmbnq2 htdp2j 1am5dzr 1ymfup1 149w0h4 19egsyp 70qvj9 1bvg7gj 1xhz4ze xnnme8 1crehmc dsw18m 15p9n5u ky5i6l o6yuww v7v99c",
+            "data-s": ""
+          },
+          "nodeTextLength": 20339,
+          "nodeTextHash": "374831c2",
+          "cssomRuleCount": 107,
+          "cssomTextHash": "df812eac"
+        },
+        {
+          "index": 2,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css",
+            "data-s": ""
+          },
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 111,
+          "cssomTextHash": "cb4f90bb"
+        },
+        {
+          "index": 3,
+          "owner": "link",
+          "href": "/_next/static/css/80139ea3111436a9.css",
+          "attrs": {},
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 250,
+          "cssomTextHash": "7fbf1480"
+        },
+        {
+          "index": 4,
+          "owner": "link",
+          "href": "/_next/static/css/d7c08271dabb56dd.css",
+          "attrs": {},
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 42,
+          "cssomTextHash": "e0429fb9"
+        },
+        {
+          "index": 5,
+          "owner": "style",
+          "href": null,
+          "attrs": {},
+          "nodeTextLength": 20724,
+          "nodeTextHash": "0d75fa64",
+          "cssomRuleCount": 40,
+          "cssomTextHash": "c78e3aba"
+        },
+        {
+          "index": 6,
+          "owner": "style",
+          "href": null,
+          "attrs": {},
+          "nodeTextLength": 915,
+          "nodeTextHash": "2588b6f6",
+          "cssomRuleCount": 4,
+          "cssomTextHash": "9ac1fdb0"
+        },
+        {
+          "index": 7,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css-global 0",
+            "data-s": ""
+          },
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 0,
+          "cssomTextHash": "811c9dc5"
+        }
+      ]
+    },
+    "B3": {
+      "styleSheetCount": 8,
+      "styleElementCount": 6,
+      "duplicatedRuleTexts": 2,
+      "sheets": [
+        {
+          "index": 0,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css-global",
+            "data-s": ""
+          },
+          "nodeTextLength": 3090,
+          "nodeTextHash": "1ef554fa",
+          "cssomRuleCount": 20,
+          "cssomTextHash": "1d505f02"
+        },
+        {
+          "index": 1,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css xuaqpw 8atqhb w16pwn 1w8vvkf w22of0 4u8ayh ir6ml4 1e3sj1t enqozp pk6lzr 1dibfmr ufcztx uanaa8 17v1pwt j7qwjs 1jgxixz xas7pb 1njsip6 1xzsyzi o30mcf u1jr60 7e3bvq 1l4w6pd bosr71 4tnojn 9t26qk 1wj0762 sbzp1 1pg8bi 1ssbn0c 13o6z6d 1qzfsby 14mj874 ety3zj 1gapyfo 1rr4qq7 k008qs 1d4lhyj 1ho082a swqxbl 1fmbnq2 htdp2j 1am5dzr 1ymfup1 149w0h4 19egsyp 70qvj9 1bvg7gj 1xhz4ze xnnme8 1crehmc dsw18m 15p9n5u ky5i6l o6yuww v7v99c",
+            "data-s": ""
+          },
+          "nodeTextLength": 20339,
+          "nodeTextHash": "374831c2",
+          "cssomRuleCount": 107,
+          "cssomTextHash": "df812eac"
+        },
+        {
+          "index": 2,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css",
+            "data-s": ""
+          },
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 150,
+          "cssomTextHash": "6d32fac8"
+        },
+        {
+          "index": 3,
+          "owner": "link",
+          "href": "/_next/static/css/80139ea3111436a9.css",
+          "attrs": {},
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 250,
+          "cssomTextHash": "7fbf1480"
+        },
+        {
+          "index": 4,
+          "owner": "link",
+          "href": "/_next/static/css/d7c08271dabb56dd.css",
+          "attrs": {},
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 42,
+          "cssomTextHash": "e0429fb9"
+        },
+        {
+          "index": 5,
+          "owner": "style",
+          "href": null,
+          "attrs": {},
+          "nodeTextLength": 20724,
+          "nodeTextHash": "0d75fa64",
+          "cssomRuleCount": 40,
+          "cssomTextHash": "c78e3aba"
+        },
+        {
+          "index": 6,
+          "owner": "style",
+          "href": null,
+          "attrs": {},
+          "nodeTextLength": 915,
+          "nodeTextHash": "2588b6f6",
+          "cssomRuleCount": 4,
+          "cssomTextHash": "9ac1fdb0"
+        },
+        {
+          "index": 7,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css-global 0",
+            "data-s": ""
+          },
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 0,
+          "cssomTextHash": "811c9dc5"
+        }
+      ]
+    },
+    "B4": {
+      "styleSheetCount": 8,
+      "styleElementCount": 6,
+      "duplicatedRuleTexts": 9,
+      "sheets": [
+        {
+          "index": 0,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css-global",
+            "data-s": ""
+          },
+          "nodeTextLength": 3090,
+          "nodeTextHash": "1ef554fa",
+          "cssomRuleCount": 20,
+          "cssomTextHash": "1d505f02"
+        },
+        {
+          "index": 1,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css xuaqpw 8atqhb w16pwn 1w8vvkf w22of0 4u8ayh ir6ml4 1e3sj1t enqozp pk6lzr 1dibfmr ufcztx uanaa8 17v1pwt j7qwjs 1jgxixz xas7pb 1njsip6 1xzsyzi o30mcf u1jr60 7e3bvq 1l4w6pd bosr71 4tnojn 9t26qk 1wj0762 sbzp1 1pg8bi 1ssbn0c 13o6z6d 1qzfsby 14mj874 ety3zj 1gapyfo 1rr4qq7 k008qs 1d4lhyj 1ho082a swqxbl 1fmbnq2 htdp2j 1am5dzr 1ymfup1 149w0h4 19egsyp 70qvj9 1bvg7gj 1xhz4ze xnnme8 1crehmc dsw18m 15p9n5u ky5i6l o6yuww v7v99c",
+            "data-s": ""
+          },
+          "nodeTextLength": 20339,
+          "nodeTextHash": "374831c2",
+          "cssomRuleCount": 107,
+          "cssomTextHash": "df812eac"
+        },
+        {
+          "index": 2,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css",
+            "data-s": ""
+          },
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 183,
+          "cssomTextHash": "1f833612"
+        },
+        {
+          "index": 3,
+          "owner": "link",
+          "href": "/_next/static/css/80139ea3111436a9.css",
+          "attrs": {},
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 250,
+          "cssomTextHash": "7fbf1480"
+        },
+        {
+          "index": 4,
+          "owner": "link",
+          "href": "/_next/static/css/d7c08271dabb56dd.css",
+          "attrs": {},
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 42,
+          "cssomTextHash": "e0429fb9"
+        },
+        {
+          "index": 5,
+          "owner": "style",
+          "href": null,
+          "attrs": {},
+          "nodeTextLength": 20724,
+          "nodeTextHash": "0d75fa64",
+          "cssomRuleCount": 40,
+          "cssomTextHash": "c78e3aba"
+        },
+        {
+          "index": 6,
+          "owner": "style",
+          "href": null,
+          "attrs": {},
+          "nodeTextLength": 915,
+          "nodeTextHash": "2588b6f6",
+          "cssomRuleCount": 4,
+          "cssomTextHash": "9ac1fdb0"
+        },
+        {
+          "index": 7,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css-global 0",
+            "data-s": ""
+          },
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 0,
+          "cssomTextHash": "811c9dc5"
+        }
+      ]
+    },
+    "strategyA_F2": {
+      "styleSheetCount": 11,
+      "styleElementCount": 9,
+      "duplicatedRuleTexts": 162,
+      "sheets": [
+        {
+          "index": 0,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css-global",
+            "data-s": ""
+          },
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 20,
+          "cssomTextHash": "1d505f02"
+        },
+        {
+          "index": 1,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css xuaqpw 8atqhb w16pwn 1w8vvkf w22of0 4u8ayh ir6ml4 1e3sj1t enqozp pk6lzr 1dibfmr ufcztx uanaa8 17v1pwt j7qwjs 1jgxixz xas7pb 1njsip6 1xzsyzi o30mcf u1jr60 7e3bvq 1l4w6pd bosr71 4tnojn 9t26qk 1wj0762 sbzp1 1pg8bi 1ssbn0c 13o6z6d 1qzfsby 14mj874 ety3zj 1gapyfo 1rr4qq7 k008qs 1d4lhyj 1ho082a swqxbl 1fmbnq2 htdp2j 1am5dzr 1ymfup1 149w0h4 19egsyp 70qvj9 1bvg7gj 1xhz4ze xnnme8 1crehmc dsw18m 15p9n5u ky5i6l o6yuww v7v99c",
+            "data-s": ""
+          },
+          "nodeTextLength": 20339,
+          "nodeTextHash": "374831c2",
+          "cssomRuleCount": 107,
+          "cssomTextHash": "df812eac"
+        },
+        {
+          "index": 2,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css",
+            "data-s": ""
+          },
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 150,
+          "cssomTextHash": "6d32fac8"
+        },
+        {
+          "index": 3,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css-global",
+            "data-s": ""
+          },
+          "nodeTextLength": 3028,
+          "nodeTextHash": "2e2fd07c",
+          "cssomRuleCount": 20,
+          "cssomTextHash": "06244748"
+        },
+        {
+          "index": 4,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css",
+            "data-s": ""
+          },
+          "nodeTextLength": 23857,
+          "nodeTextHash": "ad105dde",
+          "cssomRuleCount": 159,
+          "cssomTextHash": "537a0872"
+        },
+        {
+          "index": 5,
+          "owner": "link",
+          "href": "/styles/c9a8505d982a957356f34c0b6a260cb2f7f592169d530130f7bf71b07a7f8e48.css",
+          "attrs": {
+            "data-preservation-source-href": "https://apartmentary.com/_next/static/css/80139ea3111436a9.css"
+          },
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 250,
+          "cssomTextHash": "7fbf1480"
+        },
+        {
+          "index": 6,
+          "owner": "link",
+          "href": "/styles/2a45b1fa640feda37d3fa08001363584731f04ac81dc1fa4884f76fb66635888.css",
+          "attrs": {
+            "data-preservation-source-href": "https://apartmentary.com/_next/static/css/d7c08271dabb56dd.css"
+          },
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 42,
+          "cssomTextHash": "e0429fb9"
+        },
+        {
+          "index": 7,
+          "owner": "style",
+          "href": null,
+          "attrs": {},
+          "nodeTextLength": 20260,
+          "nodeTextHash": "8842e3ea",
+          "cssomRuleCount": 40,
+          "cssomTextHash": "b4f980b8"
+        },
+        {
+          "index": 8,
+          "owner": "style",
+          "href": null,
+          "attrs": {},
+          "nodeTextLength": 907,
+          "nodeTextHash": "898560b1",
+          "cssomRuleCount": 4,
+          "cssomTextHash": "1efed129"
+        },
+        {
+          "index": 9,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-emotion": "css-global 0",
+            "data-s": ""
+          },
+          "nodeTextLength": 0,
+          "nodeTextHash": null,
+          "cssomRuleCount": 0,
+          "cssomTextHash": "811c9dc5"
+        },
+        {
+          "index": 10,
+          "owner": "style",
+          "href": null,
+          "attrs": {
+            "data-styled": "active",
+            "data-styled-version": "5.3.9"
+          },
+          "nodeTextLength": 2672,
+          "nodeTextHash": "862eece4",
+          "cssomRuleCount": 18,
+          "cssomTextHash": "58419472"
+        }
+      ]
+    },
+    "strongestForm": {
+      "B3_spacerRuleApplications": [
+        {
+          "holder": "div.MuiBox-root.css-v7v99c",
+          "childCount": 0,
+          "width": 100,
+          "sheet": 1,
+          "ruleIndex": 106,
+          "declarations": {
+            "width": "100px"
+          }
+        }
+      ],
+      "A_F2_spacerRuleApplications": [
+        {
+          "holder": "div.MuiBox-root.css-v7v99c",
+          "childCount": 7,
+          "width": 100,
+          "sheet": 1,
+          "ruleIndex": 106,
+          "declarations": {
+            "width": "100px"
+          }
+        },
+        {
+          "holder": "div.MuiBox-root.css-v7v99c",
+          "childCount": 0,
+          "width": 100,
+          "sheet": 1,
+          "ruleIndex": 106,
+          "declarations": {
+            "width": "100px"
+          }
+        }
+      ],
+      "sameRuleInBoth": true,
+      "spacerRuleAppliesOnlyToEmptySpacerInB": true,
+      "spacerRuleAppliedToContentInA": true
+    }
+  },
+  "runtime": {
+    "bootStatus": "BOOT_PROVEN",
+    "mountedStatus": "STAYED_MOUNTED",
+    "fatalErrors": 0,
+    "hydrationStatusAutomatic": "SURVIVED",
+    "commitPoint": {
+      "preInRoot": 171,
+      "retainedInRoot": 171,
+      "removedFromRoot": 0,
+      "insertedInRoot": 0
+    },
+    "firstMicrotask": {
+      "preInRoot": 171,
+      "retainedInRoot": 156,
+      "removedFromRoot": 15,
+      "insertedInRoot": 57
+    },
+    "strategyA": {
+      "hydrationStatusAutomatic": "FAILED",
+      "commitPoint": {
+        "preInRoot": 660,
+        "retainedInRoot": 60,
+        "removedFromRoot": 600,
+        "insertedInRoot": 111
+      }
+    },
+    "standInCalls": 1
+  },
+  "data": {
+    "apiInterceptions": [
+      {
+        "label": "reviews",
+        "decision": "stub-fulfilled",
+        "itemCount": 6,
+        "responseBytes": 949
+      },
+      {
+        "label": "portfoliosArea1",
+        "decision": "stub-fulfilled",
+        "itemCount": 10,
+        "responseBytes": 3425
+      },
+      {
+        "label": "portfoliosArea2",
+        "decision": "stub-fulfilled",
+        "itemCount": 4,
+        "responseBytes": 1390
+      },
+      {
+        "label": "mainBanners",
+        "decision": "stub-fulfilled",
+        "itemCount": 9,
+        "responseBytes": 2041
+      }
+    ]
+  },
+  "swiper": {
+    "settled": [
+      {
+        "label": "hero",
+        "instancePresent": true,
+        "slideCount": 9,
+        "visibleSlides": 1,
+        "instance": {
+          "initialized": true,
+          "activeIndex": 0,
+          "realIndex": 0,
+          "params.slidesPerView": 1,
+          "params.loop": true,
+          "params.spaceBetween": 0,
+          "params.centeredSlides": false,
+          "params.autoplay.delay": 5000,
+          "slides.length": 9,
+          "autoplay.running": true,
+          "width": 1440,
+          "isBeginning": true,
+          "isEnd": false
+        }
+      },
+      {
+        "label": "portfoliosArea1",
+        "instancePresent": true,
+        "slideCount": 10,
+        "visibleSlides": 3,
+        "instance": {
+          "initialized": true,
+          "activeIndex": 0,
+          "realIndex": 0,
+          "params.slidesPerView": 3,
+          "params.loop": false,
+          "params.spaceBetween": 50,
+          "params.centeredSlides": false,
+          "params.autoplay.delay": 3000,
+          "slides.length": 10,
+          "autoplay.running": false,
+          "width": 1340,
+          "isBeginning": true,
+          "isEnd": false
+        }
+      },
+      {
+        "label": "portfoliosArea2",
+        "instancePresent": true,
+        "slideCount": 4,
+        "visibleSlides": 3,
+        "instance": {
+          "initialized": true,
+          "activeIndex": 0,
+          "realIndex": 0,
+          "params.slidesPerView": 3,
+          "params.loop": false,
+          "params.spaceBetween": 50,
+          "params.centeredSlides": false,
+          "params.autoplay.delay": 3000,
+          "slides.length": 4,
+          "autoplay.running": false,
+          "width": 1340,
+          "isBeginning": true,
+          "isEnd": false
+        }
+      },
+      {
+        "label": "reviews",
+        "instancePresent": true,
+        "slideCount": 6,
+        "visibleSlides": 3,
+        "instance": {
+          "initialized": true,
+          "activeIndex": 0,
+          "realIndex": 0,
+          "params.slidesPerView": 3,
+          "params.loop": false,
+          "params.spaceBetween": 50,
+          "params.centeredSlides": false,
+          "params.autoplay.delay": 3000,
+          "slides.length": 6,
+          "autoplay.running": false,
+          "width": 1224,
+          "isBeginning": true,
+          "isEnd": false
+        }
+      }
+    ],
+    "afterAutoplayWait": [
+      {
+        "label": "hero",
+        "realIndex": 1,
+        "transform": "translate3d(-1440px, 0px, 0px)"
+      },
+      {
+        "label": "portfoliosArea1",
+        "realIndex": 0,
+        "transform": "translate3d(0px, 0px, 0px)"
+      },
+      {
+        "label": "portfoliosArea2",
+        "realIndex": 0,
+        "transform": "translate3d(0px, 0px, 0px)"
+      },
+      {
+        "label": "reviews",
+        "realIndex": 0,
+        "transform": "translate3d(0px, 0px, 0px)"
+      }
+    ],
+    "interaction": {
+      "clicked": true,
+      "area1Transform": "translate3d(-463.333px, 0px, 0px)"
+    },
+    "afterResize": [
+      {
+        "label": "hero",
+        "slideCount": 9,
+        "visibleSlides": 1,
+        "slidesPerView": 1,
+        "transform": "translate3d(-780px, 0px, 0px)"
+      },
+      {
+        "label": "portfoliosArea1",
+        "slideCount": 10,
+        "visibleSlides": 1,
+        "slidesPerView": 1,
+        "transform": "translate3d(-400px, 0px, 0px)"
+      },
+      {
+        "label": "portfoliosArea2",
+        "slideCount": 4,
+        "visibleSlides": 1,
+        "slidesPerView": 1,
+        "transform": "translate3d(0px, 0px, 0px)"
+      },
+      {
+        "label": "reviews",
+        "slideCount": 3,
+        "visibleSlides": 1,
+        "slidesPerView": 1,
+        "transform": "translate3d(0px, 0px, 0px)"
+      }
+    ]
+  },
+  "network": {
+    "escaped": 0,
+    "blocked": [
+      {
+        "phase": "pre-execution",
+        "method": "GET",
+        "url": "https://apartmentary-static.s3.ap-northeast-2.amazonaws.com/main-introduce.mp4",
+        "resourceType": "media",
+        "bucket": "source-other"
+      }
+    ],
+    "decisionsByKind": {
+      "allow-local": 70,
+      "blocked": 2,
+      "stub-fulfilled": 5
+    },
+    "localMirrorFulfilled": 0,
+    "serverStatuses": {
+      "200": 69,
+      "404": 1
+    }
+  },
+  "integrity": {
+    "sourceJsBytesModified": false,
+    "anyBaselineMutated": false,
+    "baselines": {
+      "phase1Run": {
+        "dir": "data/apartmentary.com/2026-09-16T05-27-10-722Z",
+        "treeSha256": "e13a81f33946d2bf210a79e410d0b5e0380ad1331a73ca8a4c1d10ff2d991cb5",
+        "unchanged": true
+      },
+      "phase2Clone": {
+        "dir": "data/apartmentary.com/preservation-clones/2026-09-16T06-42-28-282Z",
+        "treeSha256": "cfd97f475a55f7011a65d4f63a4ffea89ecda239158961d7436c2189e3a2a568",
+        "unchanged": true
+      },
+      "phase3bArtifact": {
+        "dir": "data/apartmentary.com/runtime-experiments/2026-09-16T08-42-21-971Z",
+        "treeSha256": "d62793c80b15b2f04323a40610345054560233eb93a80156bb43146a4dd3af5d",
+        "unchanged": true
+      },
+      "phase3b1Artifact": {
+        "dir": "data/apartmentary.com/runtime-experiments/2026-09-16T09-59-25-874Z",
+        "treeSha256": "c4e595b0f6b93c37d27bca7ee68e248d3dd84eb77ab7b09d00451a822746b87f",
+        "unchanged": true
+      },
+      "phase3cSupersededAttempt1": {
+        "dir": "data/apartmentary.com/runtime-experiments/2026-09-16T10-47-09-345Z",
+        "treeSha256": "37a0b8699e684c10fb32d16d3969f32a35daf7783617b1ea22b57230274b171f",
+        "unchanged": true
+      },
+      "phase3cArtifact": {
+        "dir": "data/apartmentary.com/runtime-experiments/2026-09-16T10-50-02-746Z",
+        "treeSha256": "b637b774c4b05ad7beb09ed7843fcb597f5c5997365c9c9bbf2a12a999c0b7c4",
+        "unchanged": true
+      },
+      "phase3aReports": {
+        "dir": "docs/result/source-preservation-phase3a",
+        "treeSha256": "d4cf6d5d85a895b3a6a66971633cd884cb6544d5b030ec055178662437d0b6bb",
+        "unchanged": true
+      },
+      "phase3bReports": {
+        "dir": "docs/result/source-preservation-phase3b",
+        "treeSha256": "7510b14b8e8573524f74f58bbc83d4ae09ce730747dfd971091faaa91c464092",
+        "unchanged": true
+      },
+      "phase3b1Reports": {
+        "dir": "docs/result/source-preservation-phase3b1",
+        "treeSha256": "9c2a5f02328d24df8723573ad60cb03e7c985a95db49f316ed7c6a83846a413c",
+        "unchanged": true
+      },
+      "phase3cReports": {
+        "dir": "docs/result/source-preservation-phase3c",
+        "treeSha256": "d3f37a8c1cd3bc9878216cdd4ee5c327ed205c829e0d8d9677ad5d172e3ef029",
+        "unchanged": true
+      },
+      "phase3cHarness": {
+        "dir": "tmp/source-preservation-phase3c",
+        "treeSha256": "5d18c79e5e7c1ff5c902face45be96489196a389a5bf698b56129b77ecd18cb9",
+        "unchanged": true
+      },
+      "phase3bHarness": {
+        "dir": "tmp/source-preservation-phase3b",
+        "treeSha256": "aba30aa52dc8cac7fcffd4b33bcae01f47f332064a6ff965a1b9f1ebf8fdce8e",
+        "unchanged": true
+      },
+      "phase3b1Harness": {
+        "dir": "tmp/source-preservation-phase3b1",
+        "treeSha256": "ad35ce943581041ab38f5a7eb417e54e86150bd446605bf1fe38c06d4e2ce7b9",
+        "unchanged": true
+      }
+    },
+    "experimentDocument": {
+      "prepared": "e791298be11e0f3fd891a5e0b57f3426de044c6cd9758cda9fe86ba4d1b05565",
+      "beforeRun": "e791298be11e0f3fd891a5e0b57f3426de044c6cd9758cda9fe86ba4d1b05565",
+      "afterRun": "e791298be11e0f3fd891a5e0b57f3426de044c6cd9758cda9fe86ba4d1b05565",
+      "served": [
+        "e791298be11e0f3fd891a5e0b57f3426de044c6cd9758cda9fe86ba4d1b05565"
+      ]
+    }
+  },
+  "criteria": {
+    "C1_startsFromInitialDocument": true,
+    "C2_sourceJsByteIdentical": true,
+    "C3_sameFixtures": true,
+    "C4_networkRuntimeEquivalent": true,
+    "C5_noPositionalMismatchAtB1": true,
+    "C6_contentNotInSpacerAtB1": true,
+    "C7_B2FlexExpandingWrapper": true,
+    "C8_desktopColumnsUsable": true,
+    "C9_B3StructurallyCorrect": true,
+    "C10_B4StructurallyCorrect": true,
+    "C11_runtimeStillWorks": true,
+    "C12_noCssOrFooterPatch": true
+  },
+  "consistency": {
+    "total": 34,
+    "failed": []
+  },
+  "verdict": {
+    "primary": "HYDRATION_BASE_MISMATCH_CONFIRMED",
+    "scope": "this footer, this build (Next 12.3.4 / React 17 legacy hydrate / MUI useMediaQuery), one run per strategy at 1440x900 + one resize to 390x844",
+    "secondary": {
+      "controlEquivalence": "PASS (36/36; not a one-variable design — co-varying D2–D9 documented in 03, style confounder tested in 07)",
+      "ssrHydration": "BOOT_PROVEN, STAYED_MOUNTED, commit 171/171 SSR root elements reused (A: 60/660, FAILED)",
+      "footerB0toB4": "grid owner = original SSR node #2 css-1rr4qq7 at B0..B4; B3 wrapper 908px, columns 3x302.7; B4 wrapper 350px",
+      "nodeIdentity": "Strategy A positional reuse absent; spacer v7v99c empty throughout",
+      "styleEmotion": "not a material confounder; v7v99c width:100px same SSR tag/rule 106/hash in both arms, applied only to the empty spacer in B",
+      "data": "4/4 fixtures (9/10/4/6)",
+      "swiper": "4 source instances, autoplay advanced, click -463.333px",
+      "responsive": "390 switch identical to A",
+      "networkEscapes": 0,
+      "sourceJsByteIdentical": true,
+      "baselinesUnchanged": true,
+      "reviewer": {
+        "BLOCKER": 0,
+        "MAJOR": 0,
+        "MINOR": 5,
+        "NOTE": 6,
+        "independentVerdict": "HYDRATION_BASE_MISMATCH_CONFIRMED",
+        "rerun": false
+      }
+    },
+    "mustNotClaim": [
+      "hydration base was the sole difference",
+      "React 17 attribute-not-patched step proven",
+      "fixes other components / explains 3B.1 unattributed replacement",
+      "holds across repeated runs, other widths, live site",
+      "B1 is pure hydration; B2 is provably the first microtask",
+      "fonts via local mirror (0 used)",
+      "production or preservation readiness"
+    ],
+    "nextStep": "design (not implement) real public API capture/replay policy on a bootstrap-document hydration base; generic rule = start from the source application compatible bootstrap document/state, not always SSR",
+    "adjudicatedAt": "2026-09-16T14:40:59.957Z"
+  }
+}

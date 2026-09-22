@@ -1,5 +1,7 @@
 import { chromium, type Browser } from "playwright";
 import {
+  LAYOUT_PROBE_WIDTHS,
+  MOBILE_LAYOUT_PROBE_WIDTHS,
   OBSERVATION_COLOR_SCHEME,
   OBSERVATION_LOCALE,
   OBSERVATION_REDUCED_MOTION,
@@ -11,6 +13,15 @@ import {
   type PageObservation,
   type ViewportResponsiveSummary,
 } from "../observer/index.js";
+// Direct module import: `observer/index.ts` is not re-exporting this helper and
+// is owned by no lane in this wave. One implementation of "which widths did we
+// probe" is worth more than the barrel.
+import { resolveProbeWidths } from "../observer/layout-probe.js";
+// Task 28.7 A1 — ONE definition of "the page navigated out from under us",
+// shared with the preparation-scroll recovery so the classifier and the
+// recovery can never disagree about what a navigation is.
+import { isNavigationDestroyedContextError } from "../observer/navigation-errors.js";
+import type { SourceCaptureOptions } from "../source-package/index.js";
 import type { PageSelection } from "../selector/types.js";
 import {
   DEFAULT_CONCURRENCY,
@@ -66,6 +77,38 @@ export interface ObserveSiteOptions {
   concurrency?: number;
   /** Read-only preparation auto-scroll, applied identically to every page. */
   prepareScroll?: boolean;
+  /**
+   * Task 28.7 A2 — run the bounded, evidence-gated PAGE-STATE NORMALIZATION
+   * phase before collection on every page (default TRUE; the CLI's
+   * `--no-normalize-page-state` opts out). Each page's evidence directory is
+   * keyed by its deterministic `pageId`, so a site run's evidence is
+   * page-addressable rather than anonymous.
+   */
+  normalizePageState?: boolean;
+  /** Evidence root override (the smoke suite points this at a temp directory). */
+  pageStateEvidenceRoot?: string;
+  /**
+   * Task 28.7 — full-page screenshot budget, applied identically to every page.
+   * Overrunning it degrades that viewport's screenshot and records the fact; it
+   * no longer costs the page its whole observation.
+   */
+  screenshotTimeoutMs?: number;
+  /**
+   * Task 28.6 W1.3 — extra layout-probe widths, applied identically to every
+   * page and RECORDED in the manifest config. Before this wave the site runner
+   * had no such field at all, so the single-page observer's `probeExtraWidths`
+   * was silently unreachable from a site run: `observePageWithBrowser` was
+   * called with `{ prepareScroll, onLog }` and nothing else.
+   */
+  probeExtraWidths?: readonly number[];
+  /** Extra widths for the mobile-context probe pass only (Task 28.6 W1.4). */
+  mobileProbeExtraWidths?: readonly number[];
+  /**
+   * Source Preservation V2 Phase 1 — capture a Source Package for every
+   * viewport load of every page (default OFF). Passed through unchanged to
+   * {@link observePageWithBrowser}; the site runner adds nothing of its own.
+   */
+  sourcePackage?: boolean | SourceCaptureOptions;
   /** Provenance recorded in the manifest. */
   sourceSelectedPagesFile: string;
   sourcePageFamiliesFile?: string;
@@ -131,6 +174,19 @@ function shortMessage(err: unknown): string {
  * as an observation error rather than being optimistically excused as a network
  * blip. The raw name and message are stored either way, so a misclassification
  * is visible instead of hidden.
+ *
+ * TASK 28.7 A1 — THE MISFILED CLASS. "The page navigated out from under us and
+ * destroyed the execution context we were evaluating in" is a fact about the
+ * SITE, not a defect in this engine, and it was landing here as
+ * `observation-error`. It is now recognised through the ONE shared helper
+ * ({@link isNavigationDestroyedContextError}) that the preparation-scroll
+ * recovery also uses, so the two can never disagree about what counts as a
+ * navigation. The enum is unchanged — a new member would stop every historical
+ * site manifest from parsing — and `navigation-error` is the honest bucket.
+ *
+ * With A1 in place the preparation scroll no longer throws this class at all;
+ * this stays as the classifier of last resort for every OTHER evaluate in the
+ * pipeline (the collect pass, the screenshot, the probe walk).
  */
 function classifyObservationError(err: unknown, phase: ObservationPhase): SitePageStatus {
   if (phase === "store") return "storage-error";
@@ -142,11 +198,11 @@ function classifyObservationError(err: unknown, phase: ObservationPhase): SitePa
     "NS_ERROR_",
     "ERR_CONNECTION",
     "Navigation failed",
-    "frame was detached",
   ];
   if (navigationSignatures.some((s) => message.includes(s))) {
     return "navigation-error";
   }
+  if (isNavigationDestroyedContextError(err)) return "navigation-error";
   if (name === "TimeoutError" && message.includes("goto")) return "navigation-error";
   return "observation-error";
 }
@@ -244,7 +300,12 @@ export async function observeSelectedPages(
 ): Promise<SiteObservationRun> {
   const log = options.onLog ?? (() => {});
   const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
-  const prepareScroll = options.prepareScroll ?? false;
+  // Task 28.6 W8 RC2 — default TRUE, matching the observer's own default and the
+  // responsive-QA capture, which scrolls unconditionally. See
+  // ObserveOptions.prepareScroll for the measured justification.
+  const prepareScroll = options.prepareScroll ?? true;
+  // Task 28.7 A2 — ON by default, matching the observer's own default.
+  const normalizePageState = options.normalizePageState ?? true;
   const maxValidationSamples =
     options.maxValidationSamples ?? MAX_VALIDATION_SAMPLES_PER_SITE;
   const minValidationFamilySize =
@@ -286,6 +347,23 @@ export async function observeSelectedPages(
       try {
         const observed = await observePageWithBrowser(browser, page.url, {
           prepareScroll,
+          normalizePageState,
+          // The deterministic page id, so `docs/result/28.7/evidence/page-state/
+          // <host>/<pageId>-<viewport>-<n>/` points back at this exact page.
+          pageStateEvidenceId: page.pageId,
+          ...(options.pageStateEvidenceRoot
+            ? { pageStateEvidenceRoot: options.pageStateEvidenceRoot }
+            : {}),
+          ...(options.screenshotTimeoutMs !== undefined
+            ? { screenshotTimeoutMs: options.screenshotTimeoutMs }
+            : {}),
+          ...(options.probeExtraWidths
+            ? { probeExtraWidths: options.probeExtraWidths }
+            : {}),
+          ...(options.mobileProbeExtraWidths
+            ? { mobileProbeExtraWidths: options.mobileProbeExtraWidths }
+            : {}),
+          ...(options.sourcePackage ? { sourcePackage: options.sourcePackage } : {}),
           onLog: (msg) => log(`[${page.pageId}] ${msg}`),
         });
         try {
@@ -319,6 +397,15 @@ export async function observeSelectedPages(
               title: observation.target.title,
               responsiveSummary: observation.responsiveSummary,
               bytes: observation.sizes.runTotalBytes,
+              // Task 28.7 B1 — carried up VERBATIM from the observation the
+              // Observer produced. Absent on a healthy page; present (with
+              // `suspect: true`) when the document answered non-2xx after the
+              // bounded retry or a viewport is starved against its sibling.
+              // The artifact is kept either way — see the field's doc for why
+              // dropping it is the worse outcome.
+              ...(observation.sourceIntegrity
+                ? { sourceIntegrity: observation.sourceIntegrity }
+                : {}),
             }
           : {}),
         ...(error ? { error } : {}),
@@ -409,10 +496,18 @@ export async function observeSelectedPages(
       pageBytes += observation.sizes.runTotalBytes;
     }
 
+    // Task 28.7 B1 — pages that HAVE artifacts and are not the source page.
+    // Counted apart from `failedPages`: they are persisted, and every byte
+    // figure includes them.
+    const suspectPages = pages.filter(
+      (p) => p.sourceIntegrity?.suspect === true,
+    ).length;
+
     const stats: SiteObservationStats = {
       requestedPages: pages.length,
       completedPages: successful.length,
       failedPages: pages.length - successful.length,
+      suspectPages,
       desktopObservations: successful.length,
       mobileObservations: successful.length,
       desktopBytes,
@@ -445,11 +540,31 @@ export async function observeSelectedPages(
         : {}),
       startedAt,
       completedAt: new Date().toISOString(),
-      status: stats.failedPages > 0 ? "completed-with-errors" : "completed",
+      // Task 28.7 B1 — a suspect page degrades the run too. The artifacts are
+      // kept, but the manifest must not report a plain `completed` over a page
+      // whose main document was an error response.
+      status:
+        stats.failedPages > 0 || suspectPages > 0
+          ? "completed-with-errors"
+          : "completed",
       config: {
         concurrency,
         prepareScroll,
         viewportProfiles,
+        // Task 28.6 W1.3 — resolved by the probe's own helper so the manifest
+        // cannot drift from the probe. Task 28.6 C3 D1 correction: since the
+        // probe DERIVES its widths from each page's own authored breakpoints,
+        // this is the run-wide FLOOR set (plus operator extras), not the set
+        // any given page sampled. The per-page truth, with provenance for every
+        // width, is `widthProvenance` in that page's `layout-probe.json`.
+        probeWidths: resolveProbeWidths(
+          LAYOUT_PROBE_WIDTHS,
+          options.probeExtraWidths ?? [],
+        ),
+        probeWidthsMobile: resolveProbeWidths(
+          MOBILE_LAYOUT_PROBE_WIDTHS,
+          options.mobileProbeExtraWidths ?? [],
+        ),
         maxValidationSamplesPerSite: maxValidationSamples,
         minValidationFamilySize,
       },

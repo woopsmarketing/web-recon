@@ -11,7 +11,11 @@ import {
   type QaRawCapture,
 } from "./capture-page.js";
 import { measureStability } from "./capture-original.js";
-import { BREAKPOINT_PROBE_WIDTHS, type Stability } from "./types.js";
+import {
+  BREAKPOINT_PROBE_WIDTHS,
+  type ScreenshotCoverage,
+  type Stability,
+} from "./types.js";
 
 /**
  * Capturing the CLONE (items 7, 38, 39, 59).
@@ -37,8 +41,12 @@ export interface CloneCapture {
   httpStatus?: number;
   capture?: QaRawCapture;
   screenshot?: Buffer;
+  /** Task 28.6 C5 — how much of the document `screenshot` contains. */
+  screenshotCoverage?: ScreenshotCoverage;
   diagnostics?: PageDiagnostics;
   stability?: Stability;
+  /** Task 28.6 — what `stabilize()`'s two bounded waits actually reached. */
+  stabilization?: { networkIdleReached: boolean; fontsReadyReached: boolean };
   error?: string;
   loadMs: number;
   totalMs: number;
@@ -75,9 +83,10 @@ export async function captureClone(
     });
 
     const loadStart = Date.now();
+    let stabilization: { networkIdleReached: boolean; fontsReadyReached: boolean };
     try {
       await gotoQa(page, requestUrl);
-      await stabilize(page);
+      stabilization = await stabilize(page);
       loadMs = Date.now() - loadStart;
     } catch (err) {
       loadMs = Date.now() - loadStart;
@@ -93,7 +102,11 @@ export async function captureClone(
     }
 
     const capture = await runCapture(page, options.viewportId);
-    const screenshot = options.screenshot ? await captureScreenshot(page) : undefined;
+    // Task 28.6 C5 — see the note in `captureOriginal`: a screenshot the driver
+    // refuses is a coverage finding, not a clone load error.
+    const screenshot = options.screenshot
+      ? await captureScreenshot(page, "clone")
+      : undefined;
     const stability = options.measureStability
       ? await measureStability(page, capture, options.viewportId)
       : undefined;
@@ -103,7 +116,9 @@ export async function captureClone(
       requestUrl,
       ...(httpStatus !== undefined ? { httpStatus } : {}),
       capture,
-      ...(screenshot ? { screenshot } : {}),
+      ...(screenshot?.buffer ? { screenshot: screenshot.buffer } : {}),
+      ...(screenshot ? { screenshotCoverage: screenshot.coverage } : {}),
+      stabilization,
       diagnostics,
       ...(stability ? { stability } : {}),
       loadMs,
@@ -125,17 +140,97 @@ export async function captureClone(
 }
 
 /**
- * The clone-only inferred-breakpoint probe (items 59, 60).
+ * The clone-only breakpoint probe (items 59, 60).
  *
- * 915 px is this generator's own arithmetic, not an observation, so demanding
- * pixel equality with the original there would be measuring a number nobody ever
- * measured. What CAN be required is internal consistency: at 914 / 915 / 916 the
- * clone must show exactly one variant, must render content, and must throw
- * nothing. A failure here is `inferred-breakpoint-runtime-defect` and is never
- * reported as an original mismatch.
+ * The switch width is this generator's decision, not an observation of the
+ * original at that width, so demanding pixel equality with the original there
+ * would be measuring a number nobody measured. What CAN be required is internal
+ * consistency: around the switch the clone must show exactly one variant, must
+ * render content, and must throw nothing. A failure here is
+ * `inferred-breakpoint-runtime-defect` and is never reported as an original
+ * mismatch.
+ *
+ * Responsive Core P0 — WHERE it probes. It used to probe 914/915/916 (the stale
+ * 390/1440 midpoint) on the first route only, which never touched the served
+ * switch. It now probes served−1 / served / served+1 on EVERY route, with the
+ * route's own served width from the route map, and additionally requires the
+ * RIGHT variant: mobile below the switch, desktop at and above it (the
+ * convention `width < breakpoint → mobile`). Only a manifest with no usable
+ * breakpoint falls back to {@link BREAKPOINT_PROBE_WIDTHS}, consistency-only,
+ * and that is counted.
  */
+export type BreakpointProbeSource = "route-map-page" | "manifest-site" | "fallback-constant";
+
+export interface BreakpointProbeTarget {
+  pageId?: string;
+  clonePath: string;
+  /** The served switch this route swaps at; absent only for the fallback. */
+  breakpoint?: number;
+  widths: number[];
+  source: BreakpointProbeSource;
+}
+
+const usableBreakpoint = (value: unknown): value is number =>
+  typeof value === "number" && Number.isInteger(value) && value > 1;
+
+/**
+ * Pure: one probe target per distinct route (first clone path wins per page),
+ * in input order. A route listed in `pageBreakpoints` is probed at its own
+ * width; otherwise at the site's; with neither usable, at the fallback constant.
+ */
+export function planBreakpointProbeTargets(input: {
+  siteBreakpoint?: unknown;
+  pageBreakpoints?: Record<string, unknown>;
+  routes: ReadonlyArray<{ pageId: string; clonePath: string }>;
+}): { targets: BreakpointProbeTarget[]; fallbackTargets: number } {
+  const targetFor = (pageId: string | undefined, clonePath: string): BreakpointProbeTarget => {
+    const own = pageId !== undefined ? input.pageBreakpoints?.[pageId] : undefined;
+    if (usableBreakpoint(own)) {
+      return { ...(pageId !== undefined ? { pageId } : {}), clonePath, breakpoint: own, widths: [own - 1, own, own + 1], source: "route-map-page" };
+    }
+    if (usableBreakpoint(input.siteBreakpoint)) {
+      const bp = input.siteBreakpoint;
+      return { ...(pageId !== undefined ? { pageId } : {}), clonePath, breakpoint: bp, widths: [bp - 1, bp, bp + 1], source: "manifest-site" };
+    }
+    return {
+      ...(pageId !== undefined ? { pageId } : {}),
+      clonePath,
+      widths: [...BREAKPOINT_PROBE_WIDTHS],
+      source: "fallback-constant",
+    };
+  };
+  const seen = new Set<string>();
+  const targets: BreakpointProbeTarget[] = [];
+  for (const route of input.routes) {
+    if (seen.has(route.pageId)) continue;
+    seen.add(route.pageId);
+    targets.push(targetFor(route.pageId, route.clonePath));
+  }
+  if (targets.length === 0) targets.push(targetFor(undefined, "/"));
+  return {
+    targets,
+    fallbackTargets: targets.filter((t) => t.source === "fallback-constant").length,
+  };
+}
+
+/** The variant the convention requires at `width`, or undefined when no switch is known. */
+export function expectedVariantAt(
+  breakpoint: number | undefined,
+  width: number,
+): "mobile" | "desktop" | undefined {
+  if (breakpoint === undefined) return undefined;
+  return width < breakpoint ? "mobile" : "desktop";
+}
+
 export interface BreakpointProbeResult {
   width: number;
+  /** Responsive Core P0 — which route and which served switch this sample probed. */
+  clonePath?: string;
+  pageId?: string;
+  breakpoint?: number;
+  source?: BreakpointProbeSource;
+  /** The variant the convention requires here; absent for the fallback constant. */
+  expectedVariant?: "mobile" | "desktop";
   ok: boolean;
   desktopVisible: boolean;
   mobileVisible: boolean;
@@ -149,16 +244,32 @@ export async function probeBreakpoint(options: {
   baseUrl: string;
   clonePath: string;
   desktopProfile: ViewportProfile;
+  /** Responsive Core P0 — the target; omitted = the fallback constant on `clonePath`. */
+  target?: BreakpointProbeTarget;
 }): Promise<BreakpointProbeResult[]> {
   const results: BreakpointProbeResult[] = [];
-  for (const width of BREAKPOINT_PROBE_WIDTHS) {
+  const target: BreakpointProbeTarget = options.target ?? {
+    clonePath: options.clonePath,
+    widths: [...BREAKPOINT_PROBE_WIDTHS],
+    source: "fallback-constant",
+  };
+  const clonePath = target.clonePath;
+  for (const width of target.widths) {
+    const expectedVariant = expectedVariantAt(target.breakpoint, width);
+    const identity = {
+      clonePath,
+      ...(target.pageId !== undefined ? { pageId: target.pageId } : {}),
+      ...(target.breakpoint !== undefined ? { breakpoint: target.breakpoint } : {}),
+      source: target.source,
+      ...(expectedVariant !== undefined ? { expectedVariant } : {}),
+    };
     const context = await newQaContext(options.browser, options.desktopProfile, {
       widthOverride: width,
     });
     try {
       const page = await context.newPage();
       const diagnostics = attachDiagnostics(page);
-      await gotoQa(page, `${options.baseUrl}${options.clonePath}`);
+      await gotoQa(page, `${options.baseUrl}${clonePath}`);
       await stabilize(page);
       const probe = await page.evaluate(() => {
         const visible = (id: string): boolean => {
@@ -179,10 +290,15 @@ export async function probeBreakpoint(options: {
       });
       const runtimeErrors =
         diagnostics.consoleErrors.length + diagnostics.pageErrors.length;
+      const rightVariant =
+        expectedVariant === undefined ||
+        (expectedVariant === "desktop" ? probe.desktop : probe.mobile);
       results.push({
         width,
+        ...identity,
         ok:
           probe.desktop !== probe.mobile &&
+          rightVariant &&
           probe.elementCount > 0 &&
           runtimeErrors === 0,
         desktopVisible: probe.desktop,
@@ -193,6 +309,7 @@ export async function probeBreakpoint(options: {
     } catch (err) {
       results.push({
         width,
+        ...identity,
         ok: false,
         desktopVisible: false,
         mobileVisible: false,

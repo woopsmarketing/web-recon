@@ -40,6 +40,15 @@ import {
   THEME_OVERLAY_HREF,
 } from "../src/production/index.js";
 import { censusServedHtml, summarizeBrandCensus } from "../src/production/qa.js";
+import { applyEnablementToApp, emptyEnablementPlan } from "../src/production/enablement.js";
+import {
+  censusFlightPayload,
+  decodeFlightPayload,
+  extractInlineFlightChunks,
+  flightBrandSurfaceTotal,
+  markupBrandSurfaceTotal,
+  stripReferencedObservationChunks,
+} from "../src/production/brand-census.js";
 import type { RewriteMap } from "../src/assets/types.js";
 
 let checks = 0;
@@ -213,6 +222,142 @@ section("content proof selection");
   check("deterministic order (sorted keys)", JSON.stringify(keys) === JSON.stringify([...keys].sort()));
   const limited = pickContentProof(slots, bindings, defaults, overlay, "p1", 1);
   check("count respected", limited.length === 1);
+  // Task 28 Phases 5 + 6: a proof is a promise QA holds the served HTML to, so
+  // a slot the enablement plan stops rendering must never become one.
+  const disabledProofs = pickContentProof(
+    slots,
+    bindings,
+    defaults,
+    overlay,
+    "p1",
+    5,
+    new Set(["hero.title"]),
+  );
+  check(
+    "28.P5.PR1 a DISABLED slot is never promised as a content proof",
+    !disabledProofs.map((proof) => proof.slotKey).includes("hero.title") &&
+      disabledProofs.map((proof) => proof.slotKey).includes("hero.badge"),
+    disabledProofs.map((proof) => proof.slotKey).join(","),
+  );
+  check(
+    "28.P5.PR2 with no disabled set the selection is byte-identical to before the parameter existed",
+    JSON.stringify(pickContentProof(slots, bindings, defaults, overlay, "p1", 5)) ===
+      JSON.stringify(proofs),
+  );
+}
+
+// ---------------------------------------------------------------------------
+section("28 Phases 5 + 6 — the disable, applied to a build copy of the app");
+{
+  const enDir = path.join(fixtureRoot, "enablement-app", "reconstruction-data");
+  await mkdir(path.join(enDir, "pages"), { recursive: true });
+  const page = (pageId: string, extra: unknown[] = []): unknown => ({
+    pageId,
+    desktop: {
+      id: "desktop",
+      width: 1440,
+      doc: {
+        k: "e",
+        n: "n1",
+        t: "div",
+        c: [
+          { k: "e", n: "n2", t: "header", c: [{ k: "e", n: "n3", t: "a", p: { href: "/gone" }, c: [{ k: "t", v: "Gone" }] }] },
+          { k: "e", n: "n4", t: "main", c: [{ k: "e", n: "n5", t: "section", c: [{ k: "e", n: "n6", t: "p", c: [{ k: "t", v: "inside" }] }] }, ...extra] },
+        ],
+      },
+    },
+    mobile: { id: "mobile", width: 390, doc: { k: "e", n: "m1", t: "div", c: [{ k: "e", n: "m2", t: "main" }] } },
+  });
+  await writeFile(path.join(enDir, "pages", "p1.json"), JSON.stringify(page("p1")), "utf8");
+  await writeFile(path.join(enDir, "pages", "p2.json"), JSON.stringify(page("p2")), "utf8");
+  await writeFile(
+    path.join(enDir, "route-map.json"),
+    JSON.stringify({
+      schemaVersion: 1,
+      rootUrl: "https://fixture.example/",
+      breakpoint: 1024,
+      routes: [
+        { routeId: "r1", key: "/", url: "https://fixture.example/", path: "/", pageFile: "pages/p1.json", pageSourceId: "p1" },
+        { routeId: "r2", key: "/gone", url: "https://fixture.example/gone", path: "/gone", pageFile: "pages/p2.json", pageSourceId: "p2" },
+      ],
+    }),
+    "utf8",
+  );
+  const appDir = path.join(fixtureRoot, "enablement-app");
+  const report = await applyEnablementToApp(appDir, {
+    ...emptyEnablementPlan(),
+    disabledRoutes: ["/gone"],
+    disabledRegionIds: ["p1:rgn:main1:section:1"],
+    disabledNodes: [{ regionId: "p1:rgn:main1:section:1", pageSourceId: "p1", viewport: "desktop", nodeId: "n5" }],
+    removedNavNodes: [
+      { pageSourceId: "p1", viewport: "desktop", nodeId: "n3", slotKey: "nav.gone.href", groupId: "nav.gone", targetRoute: "/gone" },
+    ],
+    disabledSlotKeys: ["nav.gone.href", "nav.gone.label"],
+  });
+  const afterRouteMap = JSON.parse(await readFile(path.join(enDir, "route-map.json"), "utf8")) as {
+    routes: Array<{ key: string }>;
+  };
+  const afterPage = await readFile(path.join(enDir, "pages", "p1.json"), "utf8");
+  check(
+    "28.P6.PR3 the disabled route leaves the route table and its orphaned page tree is deleted",
+    afterRouteMap.routes.length === 1 &&
+      afterRouteMap.routes[0].key === "/" &&
+      report.pageFilesRemoved.join(",") === "pages/p2.json" &&
+      !(await readdir(path.join(enDir, "pages"))).includes("p2.json"),
+    `${afterRouteMap.routes.map((route) => route.key).join(",")} removed=${report.pageFilesRemoved.join(",")}`,
+  );
+  check(
+    "28.P5.PR4 the region root AND its whole subtree are gone; the nav host is gone; the rest of the tree is untouched",
+    !afterPage.includes('"n5"') &&
+      !afterPage.includes('"n6"') &&
+      !afterPage.includes('"n3"') &&
+      afterPage.includes('"n4"') &&
+      afterPage.includes('"n2"') &&
+      report.regionNodesRemoved === 1 &&
+      report.navNodesRemoved === 1,
+    `regions=${report.regionNodesRemoved} nav=${report.navNodesRemoved}`,
+  );
+  check(
+    "28.P6.PR5 an id the tree does not carry is reported as NOT FOUND, never silently ignored",
+    (
+      await applyEnablementToApp(appDir, {
+        ...emptyEnablementPlan(),
+        disabledNodes: [{ regionId: "x", pageSourceId: "p1", viewport: "desktop", nodeId: "n404" }],
+      })
+    ).regionNodesNotFound.length === 1,
+  );
+  // A nav host INSIDE a region the same edit disables is GONE, not missing.
+  const nestedDir = path.join(fixtureRoot, "enablement-nested", "reconstruction-data");
+  await mkdir(path.join(nestedDir, "pages"), { recursive: true });
+  await writeFile(path.join(nestedDir, "pages", "p1.json"), JSON.stringify(page("p1")), "utf8");
+  await writeFile(
+    path.join(nestedDir, "route-map.json"),
+    JSON.stringify({
+      schemaVersion: 1,
+      rootUrl: "https://fixture.example/",
+      breakpoint: 1024,
+      routes: [
+        { routeId: "r1", key: "/", url: "https://fixture.example/", path: "/", pageFile: "pages/p1.json", pageSourceId: "p1" },
+      ],
+    }),
+    "utf8",
+  );
+  const nested = await applyEnablementToApp(path.join(fixtureRoot, "enablement-nested"), {
+    ...emptyEnablementPlan(),
+    disabledRegionIds: ["p1:rgn:main1:self"],
+    disabledNodes: [{ regionId: "p1:rgn:main1:self", pageSourceId: "p1", viewport: "desktop", nodeId: "n4" }],
+    removedNavNodes: [
+      { pageSourceId: "p1", viewport: "desktop", nodeId: "n6", slotKey: "inside.href", groupId: null, targetRoute: "/gone" },
+    ],
+    disabledSlotKeys: [],
+  });
+  check(
+    "28.P6.PR6 a nav host INSIDE a region the same edit disables is reported REMOVED, not missing",
+    nested.regionNodesRemoved === 1 &&
+      nested.navNodesRemoved === 1 &&
+      nested.navNodesNotFound.length === 0,
+    `regions=${nested.regionNodesRemoved} nav=${nested.navNodesRemoved} missing=${nested.navNodesNotFound.length}`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -244,7 +389,14 @@ section("export post-processing (head splice + rewrite + robots)");
     { route: "/missing", upstreamTitle: null, title: "없음", headHtml: "<!-- wr-seo-head-start -->" },
   ];
   const robots = "User-agent: *\nDisallow: /\n";
-  const result = await postProcessExport(outDir, planRoutes, rewriteMap, robots, ["cdn.example-source.com"]);
+  const result = await postProcessExport(
+    outDir,
+    planRoutes,
+    rewriteMap,
+    robots,
+    ["cdn.example-source.com"],
+    "cdn.example-source.com",
+  );
   check("routeHtmlFile maps / to index.html", routeHtmlFile("/") === "index.html");
   check("routeHtmlFile maps nested routes", routeHtmlFile("/sub/page") === "sub/page.html");
   check("head blocks spliced", result.seo.headBlocksSpliced === 2, String(result.seo.headBlocksSpliced));
@@ -271,11 +423,209 @@ section("export post-processing (head splice + rewrite + robots)");
   );
   const robotsOut = await readFile(path.join(outDir, "robots.txt"), "utf8");
   check("robots.txt emitted from the plan", robotsOut === robots);
-  const again = await postProcessExport(outDir, planRoutes.slice(0, 1), rewriteMap, robots, []);
+  // ---- Task 28 CR7: the bake carries its own brand-surface census ---------
+  check(
+    "28.CR7.1 bake report carries a brand census measured on the exported route HTML",
+    result.brand.measuredOn === "static-export-route-html" &&
+      result.brand.measurementNote.length > 0,
+    JSON.stringify({ measuredOn: result.brand.measuredOn }),
+  );
+  check(
+    "28.CR7.2 brand tokens derived from the source host, never hardcoded",
+    JSON.stringify(result.brand.census.brandTokens) === JSON.stringify(["cdn"]),
+    JSON.stringify(result.brand.census.brandTokens),
+  );
+  check(
+    "28.CR7.3 only routes with an exported file are censused (missing route omitted, not zeroed)",
+    result.brand.census.routesMeasured === 2 &&
+      result.brand.census.byRoute.map((row) => row.route).join(",") === "/,/sub/page",
+    JSON.stringify(result.brand.census.byRoute.map((row) => row.route)),
+  );
+  check(
+    "28.CR7.4 census is measured AFTER the asset rewrite (rewritten src no longer counts as a source URL)",
+    result.brand.census.sourceUrl === 1 && result.brand.census.bodyAnchorIdentity === 1,
+    JSON.stringify({
+      sourceUrl: result.brand.census.sourceUrl,
+      bodyAnchorIdentity: result.brand.census.bodyAnchorIdentity,
+    }),
+  );
+  check(
+    "28.CR7.5 per-route census sums to the report-level census",
+    result.brand.census.byRoute.reduce((sum, row) => sum + row.sourceUrl, 0) ===
+      result.brand.census.sourceUrl,
+    JSON.stringify(result.brand.census.byRoute),
+  );
+  const again = await postProcessExport(
+    outDir,
+    planRoutes.slice(0, 1),
+    rewriteMap,
+    robots,
+    [],
+    "cdn.example-source.com",
+  );
+  check(
+    "28.CR7.6 a narrowed route list censuses only those routes",
+    again.brand.census.routesMeasured === 1 && again.brand.census.byRoute[0].route === "/",
+    JSON.stringify(again.brand.census.byRoute.map((row) => row.route)),
+  );
   check(
     "double head-splice refused",
     again.seo.headBlocksSpliced === 0 && again.seo.headSpliceFailures[0].includes("already present"),
     JSON.stringify(again.seo.headSpliceFailures),
+  );
+  // ---- Task 28 Phase 2: the RSC FLIGHT axis --------------------------------
+  // The markup census reads ONE encoding. A Next static export ships the same
+  // inline SVG again in the `.txt` flight (JSON-escaped) and again inside the
+  // `self.__next_f.push` chunks inlined in the HTML (escaped twice). Without a
+  // flight axis a markup-only rewrite reports a clean census while the site
+  // still ships the source brand — and the flight WINS on hydration, because
+  // the inline SVG arrives through dangerouslySetInnerHTML.
+  check(
+    "28.P2.F1 the bake report carries a flight axis alongside the markup census",
+    typeof result.brand.flight.svgAriaLabel === "number" &&
+      result.brand.flight.txtFiles === 1 &&
+      result.brand.flight.documents === result.brand.flight.txtFiles + result.brand.flight.htmlDocuments,
+    JSON.stringify(result.brand.flight),
+  );
+  check(
+    "28.P2.F2 `bake` is null when no resolver ran — which is NOT 'nothing was found'",
+    result.brand.bake === null,
+  );
+}
+
+section("28 Phase 2 — the flight census sees what the markup census cannot");
+{
+  const outDir = path.join(fixtureRoot, "flight-out");
+  await mkdir(outDir, { recursive: true });
+  const mark = '<svg viewBox="0 0 60 25" aria-label="Acme Logo"><title>Acme logo</title></svg>';
+  // 1. SSR markup, 2. the same mark JSON-escaped in the inlined flight chunk.
+  const inlined = mark.replace(/</g, "\\u003c").replace(/"/g, '\\\\\"');
+  await writeFile(
+    path.join(outDir, "index.html"),
+    `<!DOCTYPE html><html><head><title>t</title></head><body><span>${mark}</span>` +
+      `<script>self.__next_f.push([1,"3:[\"$\",\"span\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"${inlined}\"}}]"])</script>` +
+      "</body></html>",
+  );
+  // The `.txt` flight: JSON-escaped props AND a raw length-prefixed T-chunk.
+  await writeFile(
+    path.join(outDir, "index.txt"),
+    `2:{"aria-label":"Acme Home"}\n3:I{"__html":"${mark.replace(/"/g, '\\"')}"}\n` +
+      `10:T${mark.length.toString(16)},${mark}\n`,
+  );
+  const planRoutes = [
+    { route: "/", upstreamTitle: null, title: "t", headHtml: "<!-- wr-seo-head-start --><!-- wr-seo-head-end -->" },
+  ];
+  const flightResult = await postProcessExport(
+    outDir,
+    planRoutes,
+    { schemaVersion: 1, entries: [] } as unknown as RewriteMap,
+    "User-agent: *\n",
+    [],
+    "acme.com",
+  );
+  const html = await readFile(path.join(outDir, "index.html"), "utf8");
+  const txt = await readFile(path.join(outDir, "index.txt"), "utf8");
+  const markupOnly = censusServedHtml(html, "acme.com", ["acme"]);
+  const chunks = extractInlineFlightChunks(html);
+  const inlineCensus = censusFlightPayload(chunks.join(""), "acme.com", ["acme"]);
+  const txtCensus = censusFlightPayload(txt, "acme.com", ["acme"]);
+  console.log(
+    `  [measured] markup svgAriaLabel=${markupOnly.svgAriaLabel} svgText=${markupOnly.svgText}; ` +
+      `inlined-chunk svgAriaLabel=${inlineCensus.svgAriaLabel}; txt svgAriaLabel=${txtCensus.svgAriaLabel} ` +
+      `chunks=${txtCensus.lengthPrefixedChunks}`,
+  );
+  check("28.P2.F3 an inlined flight chunk is found in the html", chunks.length === 1, String(chunks.length));
+  check(
+    "28.P2.F4 the double-escaped inlined chunk is decoded and measured",
+    inlineCensus.svgAriaLabel === 1,
+    JSON.stringify(inlineCensus),
+  );
+  check(
+    "28.P2.F5 the JSON-escaped .txt flight is measured too",
+    txtCensus.svgAriaLabel >= 1,
+    JSON.stringify(txtCensus),
+  );
+  check(
+    "28.P2.F6 the length-prefixed T-chunk encoding is recognised",
+    txtCensus.lengthPrefixedChunks === 1,
+    String(txtCensus.lengthPrefixedChunks),
+  );
+  check(
+    "28.P2.F7 the flight axis on the bake report sums both encodings",
+    flightBrandSurfaceTotal(flightResult.brand.flight) >= inlineCensus.svgAriaLabel + txtCensus.svgAriaLabel,
+    JSON.stringify(flightResult.brand.flight),
+  );
+  check(
+    "28.P2.F8 decoding is idempotent",
+    decodeFlightPayload(decodeFlightPayload(txt)) === decodeFlightPayload(txt),
+  );
+  // ---- observation-evidence payloads are NOT rendered surfaces ------------
+  // `data-wr-obs` carries the recorded interaction evidence the exact-
+  // reconstruction verifier reads. It is an ATTRIBUTE VALUE holding serialized
+  // nodes, so nothing inside it renders as an alt / aria-label / inline SVG.
+  // The markup census can never match it (it is escaped); the flight census
+  // decodes, so it would — and on the real linear lineage it did, reporting
+  // residual brand after every rendered surface had been resolved. An
+  // over-strict gate is as dishonest as a lax one, so it is excluded — but
+  // ONLY by structure: an inline value, or a chunk actually referenced as one.
+  const obsAlt = '{"alt":"A blueprint image of a project in Acme"}';
+  const inlineObs = `1:[{"p":{"data-wr-obs":"[{\\"k\\":\\"e\\",\\"p\\":${obsAlt.replace(/"/g, '\\\\"')}}]"}}]`;
+  check(
+    "28.P2.F10 an INLINE data-wr-obs payload is excluded from the flight census",
+    censusFlightPayload(inlineObs, "acme.com", ["acme"]).imageAlt === 0,
+    JSON.stringify(censusFlightPayload(inlineObs, "acme.com", ["acme"])),
+  );
+  const hoisted =
+    `1:[{"p":{"data-wr-obs":"$7","alt":"Acme hero"}}]\n` +
+    `7:T2f,[{"k":"e","p":${obsAlt}}]\n` +
+    `8:T20,[{"k":"e","p":{"alt":"Acme banner"}}]\n`;
+  const hoistedCensus = censusFlightPayload(hoisted, "acme.com", ["acme"]);
+  check(
+    "28.P2.F11 a HOISTED obs chunk (referenced as $id) is excluded — and ONLY that chunk",
+    hoistedCensus.imageAlt === 2,
+    JSON.stringify(hoistedCensus),
+  );
+  check(
+    "28.P2.F12 the exclusion is structural: an unreferenced chunk is never dropped",
+    stripReferencedObservationChunks(hoisted).includes("Acme banner") &&
+      !stripReferencedObservationChunks(hoisted).includes("blueprint image"),
+  );
+  check(
+    "28.P2.F13 a payload with no data-wr-obs reference is returned untouched",
+    stripReferencedObservationChunks("1:T10,[{\"alt\":\"Acme\"}]") === "1:T10,[{\"alt\":\"Acme\"}]",
+  );
+  check(
+    "28.P2.F9 markupBrandSurfaceTotal counts only the surfaces this resolver owns",
+    markupBrandSurfaceTotal({
+      sourceUrl: 99,
+      bodyAnchorIdentity: 99,
+      visibleText: 99,
+      imageSrcPath: 1,
+      imageAlt: 1,
+      ariaLabel: 1,
+      svgAriaLabel: 1,
+      svgSymbolId: 1,
+      svgText: 1,
+    }) === 6,
+  );
+  // Task 28 close-out: `imageSrcPath` IS one of them — `image-logo` is the
+  // first resolvable surface and the resolver rewrites `props.src` for it.
+  // `sourceUrl` still is NOT: it is the asset layer's axis, and a self-hosted
+  // `/static/AcmeLogo.svg` is not a source-host URL, so it was never counted
+  // there either.
+  check(
+    "28.P2.F9b the image-logo surface is COUNTED and is not the same axis as sourceUrl",
+    markupBrandSurfaceTotal({
+      sourceUrl: 99,
+      bodyAnchorIdentity: 0,
+      visibleText: 0,
+      imageSrcPath: 3,
+      imageAlt: 0,
+      ariaLabel: 0,
+      svgAriaLabel: 0,
+      svgSymbolId: 0,
+      svgText: 0,
+    }) === 3,
   );
 }
 
@@ -408,6 +758,38 @@ section("production-spec-v1 schema");
   const missingLayer = structuredClone(spec) as { lineage: Record<string, unknown> };
   delete missingLayer.lineage.seoPlan;
   check("missing lineage layer rejected", !productionSpecSchema.safeParse(missingLayer).success);
+
+  // Task 28 Phase 10 — the mode-rules pair enforced STRUCTURALLY (not only by
+  // src/release/freshness.ts `applyBlocking`): an "indexable" spec must carry
+  // zero blockers. A build that is indexable WHILE blockers remain is a
+  // serious defect per the program contract, never a convenience — this is
+  // the schema saying the same thing a hand-crafted counter-example cannot
+  // even construct.
+  const indexableClean = structuredClone(spec) as Record<string, unknown>;
+  indexableClean.indexabilityGate = { decision: "indexable", robotsPolicy: "per-plan production robots", blockers: [] };
+  indexableClean.baseUrl = { value: "canary.example", status: "provided", mode: "production", basis: "user-provided" };
+  (indexableClean.lineage as Record<string, Record<string, unknown>>).seoPlan.mode = "production";
+  check(
+    "28.P10.1 indexable + zero blockers parses (the REAL shape runProductionCompile emits once the gate resolves)",
+    productionSpecSchema.safeParse(indexableClean).success,
+  );
+  const indexableWithBlockers = structuredClone(indexableClean) as Record<string, unknown>;
+  indexableWithBlockers.indexabilityGate = {
+    decision: "indexable",
+    robotsPolicy: "per-plan production robots",
+    blockers: [{ id: "replacement-required-assets", summary: "84 assets awaiting replacement", evidence: "e" }],
+  };
+  const rejectedIndexableWithBlockers = productionSpecSchema.safeParse(indexableWithBlockers);
+  check(
+    "28.P10.2 indexable + non-empty blockers is REFUSED by the schema — a build cannot claim indexable while blockers remain",
+    !rejectedIndexableWithBlockers.success &&
+      rejectedIndexableWithBlockers.error.issues.some((issue) => issue.path.join(".") === "indexabilityGate.blockers"),
+    JSON.stringify(rejectedIndexableWithBlockers.success ? null : rejectedIndexableWithBlockers.error.issues),
+  );
+  check(
+    "28.P10.3 preview + non-empty blockers still parses (the ORIGINAL fixture above) — the refinement is ONE-DIRECTIONAL",
+    productionSpecSchema.safeParse(spec).success,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -459,6 +841,36 @@ section("preview blocker summaries derive from inputs (GED-B)");
     "inline-svg evidence carries the inventory count",
     byId.get("source-brand-inline-svg")?.evidence.includes("42 inline-svg entries") === true,
     byId.get("source-brand-inline-svg")?.evidence,
+  );
+  // Task 28 Phase 2: the inventory count counts EVERY inline SVG (icons
+  // included). When the brand-carrying host count is measured, it is carried
+  // too — and when it is ZERO there is no source-brand asset to resolve, so
+  // the blocker must not be emitted at all.
+  const blockersHosts = buildPreviewBlockers({ ...inputsA, brandCarryingHostCount: 7 });
+  const byIdHosts = new Map(blockersHosts.map((blocker) => [blocker.id, blocker]));
+  check(
+    "28.P2.B1 the measured brand-carrying host count is carried in summary AND evidence",
+    byIdHosts.get("source-brand-inline-svg")?.summary.startsWith("7 inline host(s)") === true &&
+      byIdHosts.get("source-brand-inline-svg")?.evidence.includes("7 brand-carrying host(s)") === true,
+    byIdHosts.get("source-brand-inline-svg")?.summary,
+  );
+  check(
+    "28.P2.B2 the inventory count is STILL cited beside it (nothing hidden)",
+    byIdHosts.get("source-brand-inline-svg")?.evidence.includes("42 inline-svg entries") === true,
+    byIdHosts.get("source-brand-inline-svg")?.evidence,
+  );
+  const blockersNoBrand = buildPreviewBlockers({ ...inputsA, brandCarryingHostCount: 0 });
+  check(
+    "28.P2.B3 zero brand-carrying hosts drops the blocker (an icon-only template is not a brand gap)",
+    blockersNoBrand.every((blocker) => blocker.id !== "source-brand-inline-svg") &&
+      blockersNoBrand.length === blockersA.length - 1,
+    JSON.stringify(blockersNoBrand.map((blocker) => blocker.id)),
+  );
+  check(
+    "28.P2.B4 an UNSUPPLIED count leaves the pre-Phase-2 behaviour exactly as it was",
+    byId.get("source-brand-inline-svg")?.summary ===
+      "inline-SVG brand marks (incl. the source logo) remain in template markup — template-layer limitation",
+    byId.get("source-brand-inline-svg")?.summary,
   );
   // A second input set must change the prose — proves nothing is hardcoded.
   const blockersB = buildPreviewBlockers({

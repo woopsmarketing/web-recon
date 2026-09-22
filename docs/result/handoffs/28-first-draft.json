@@ -1,0 +1,776 @@
+{
+ "schema": "task28-first-draft-v1",
+ "phase": "10",
+ "role": "INTEGRATION BUILDER — Template Library -> Create Site -> ONE Brief -> COMPLETE FIRST DRAFT -> Edit Site",
+ "producedAt": "2026-08-28T (KST) — run ids below are the authority; this field is a label, not evidence",
+ "summary": "The seam between the Phase 7/8 builder (Library + Create Site) and the Phase 9 builder (full-site content generation) is closed and the journey is proven end to end in a real browser against the real operator app. Three gaps were found and fixed, not narrated: (1) Create Site's only wired provider was FakeContentGenerator, so ONE BRIEF produced a site whose every text slot read \"Fake …\" — a new brief-driven writer (src/content-injection/brief-writer.ts) now composes the draft from the operator's own brief and is the DEFAULT; (2) the Visual Editor seeded its preview from authored.slotValues ALONE, so a freshly created site opened showing the SOURCE site's copy while the production bake would have shipped the draft — the editor now layers the content run's overlay under the authored edits, in the same order src/production/bake.ts stacks them, and the inspector reports which layer a value came from; (3) Create Site defaulted its siteId to the HOST SLUG, so a second Create Site from the same template re-prepared the first customer's project — measured on the first journey run, which wrote data/linear.app/release-projects/linear.app; the site id now comes from the brief's working name and the API reports `reprepared` so \"created\" is never an unverifiable claim. CORRECTION PASS (Phase 9/10 verifier returned FAIL on three recorded findings; all three are fixed IN CODE and the numbers here are re-measured, not carried over): (4) the writer was blind to slot semantics and filled the pricing table, the changelog date column and the compliance labels with adjectives — value-shaped slots are now either kept verbatim (chrome) or named as needs-input quoting the source figure (fact-bearing), 0 overwritten of 443; (5) a SOURCE statistic ('50%') shipped on an editable customer-facing slot with no decision recorded — the truth mode now records `source-fact-carried-over` in both modes and refuses it under verified-only, and the writer withholds it a layer earlier; (6) the phase's headline denominator was not guarded by its own suite — slot-accounting.json now derives the expected population from the template itself, `templateCoverage.complete` is part of `reconciled`, and the verifier's exact mutation now fails seven checks. The draft after the fixes: 3,079 in-scope slots reconcile, 1,491 filled, 924 changed, UNRESOLVED = 20 (4 external destinations + 16 fact-bearing value-shaped slots), requirements 271 -> 287. It fills fewer slots and blocks on more, deliberately.",
+ "customer": {
+  "note": "A coherent independent FICTIONAL business. Not Linear or Stripe reworded — the source template is linear.app and nothing in the brief refers to it.",
+  "workingName": "Millwright",
+  "category": "AI workflow automation for discrete manufacturing",
+  "audience": "operations, quality and maintenance leaders at mid-size discrete manufacturers running one to five plants",
+  "positioning": "the shop-floor workflow layer that keeps machine data, work orders and quality checks on one running plan",
+  "primaryConversion": "book a plant walkthrough",
+  "tone": [
+   "direct",
+   "practical",
+   "plain-spoken",
+   "no hype"
+  ],
+  "truthMode": "verified-only",
+  "factCount": 47,
+  "factKinds": [
+   "capability",
+   "external-link",
+   "integration",
+   "module",
+   "outcome",
+   "page",
+   "proof",
+   "segment"
+  ]
+ },
+ "briefUsed": {
+  "file": "docs/result/handoffs/28-intel/phase10-brief.json",
+  "goal": "We are launching the marketing site for Millwright, a B2B AI workflow company for discrete manufacturing. We sell to plant operations, quality and maintenance leaders at mid-size manufacturers who are running production on whiteboards, paper travellers and three disconnected systems. The site has to explain, without hype, that Millwright puts machine data, work orders, standard work and quality checks on one running plan that updates while the line is still moving — and it has to end every page by asking the reader to book a plant walkthrough with our team.",
+  "howItWasSubmitted": "Typed into the Create Site form in the Visual Editor's Library screen by Playwright — the goal textarea, five optional single-line fields, and one 'kind | value' facts textarea — and POSTed to the same /api/create-site endpoint the editor's own client calls. No CLI, no direct createSite() call, no fixture.",
+  "briefGapsReported": [],
+  "questionsAsked": 0
+ },
+ "siteCreated": {
+  "siteKey": "linear.app/millwright",
+  "siteIdSource": "derived from the brief's workingName by siteIdFromWorkingName() — NOT the host slug",
+  "projectDir": "data/linear.app/release-projects/millwright",
+  "reprepared": false,
+  "releaseState": "PRODUCTION_INPUTS_REQUIRED",
+  "releaseStateIsHonest": "A first draft from a brief is not production-ready: release:prepare recorded 287 requirements for it (271 before the correction pass; the 16 additional ones are the value-shaped facts the writer now refuses to invent or to carry over from the source). Reporting PRODUCTION_READY here would be the fabrication this program exists to prevent.",
+  "template": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z (linear.app-2026-08-25T21-53-26-980Z, 8 routes, 3,079 slots)",
+  "templateUnmutated": true,
+  "templateUnmutatedMethod": "dir-sha256-v1 over the whole template directory, no exclusions, computed by createSite AND independently by the suite, before and after",
+  "contentRunDir": "data/linear.app/content-runs/2026-08-27T22-45-22-289Z",
+  "contentProvider": "brief-writer",
+  "requirements": 287,
+  "contentRunDirNote": "CORRECTION PASS re-run, and the one on disk now. Every number in perRouteAccounting is folded from slot-accounting.json's own rows. The draft is deterministic and this was verified, not assumed: the two corrected runs (2026-08-27T22-35-55-604Z and 22-45-22-289Z) produced BYTE-EQUAL totals and per-route rows. Requirements rose 271 -> 287 because the 16 fact-bearing value-shaped slots the writer now WITHHOLDS are named needs-input rather than being filled with composed copy — an honest increase in blockers, not a regression."
+ },
+ "perRouteAccounting": {
+  "source": "docs: report/first-draft.json inside the content run; every number folded from slot-accounting.json's own rows",
+  "denominator": "the accounting artifact's in-scope population — 3,079 slots — now TIED TO THE TEMPLATE inside the artifact: reconciliation.templateCoverage derives the expected population from the template's own slots.json and `complete` is part of `reconciled`, so an account that closed by shrinking its predicate could not report itself reconciled. Re-derived independently by scripts/smoke-first-draft.ts against loadReconTemplate(), both directions.",
+  "columns": [
+   "route",
+   "scope",
+   "inScopeSlots",
+   "filledSlots",
+   "changedSlots",
+   "unresolvedSlots",
+   "byDisposition",
+   "byOrigin"
+  ],
+  "rows": [
+   {
+    "route": "(global)",
+    "scope": "global",
+    "inScopeSlots": 131,
+    "filledSlots": 131,
+    "changedSlots": 46,
+    "unresolvedSlots": 0,
+    "byDisposition": {
+     "preserved": 85,
+     "applied": 46
+    },
+    "byOrigin": {
+     "derived-copy": 85,
+     "generated-marketing": 42,
+     "user-provided": 4
+    }
+   },
+   {
+    "route": "/",
+    "scope": "page",
+    "inScopeSlots": 463,
+    "filledSlots": 226,
+    "changedSlots": 159,
+    "unresolvedSlots": 3,
+    "byDisposition": {
+     "preserved": 88,
+     "applied": 159,
+     "unresolved": 3,
+     "human-required": 213
+    },
+    "byOrigin": {
+     "derived-copy": 67,
+     "generated-marketing": 159,
+     "source-preserved": 237
+    }
+   },
+   {
+    "route": "/changelog",
+    "scope": "page",
+    "inScopeSlots": 1011,
+    "filledSlots": 612,
+    "changedSlots": 407,
+    "unresolvedSlots": 3,
+    "byDisposition": {
+     "preserved": 221,
+     "applied": 407,
+     "unresolved": 3,
+     "human-required": 380
+    },
+    "byOrigin": {
+     "derived-copy": 205,
+     "generated-marketing": 392,
+     "user-provided": 15,
+     "source-preserved": 399
+    }
+   },
+   {
+    "route": "/customers",
+    "scope": "page",
+    "inScopeSlots": 475,
+    "filledSlots": 89,
+    "changedSlots": 42,
+    "unresolvedSlots": 3,
+    "byDisposition": {
+     "preserved": 49,
+     "applied": 42,
+     "unresolved": 3,
+     "human-required": 381
+    },
+    "byOrigin": {
+     "derived-copy": 47,
+     "generated-marketing": 42,
+     "source-preserved": 386
+    }
+   },
+   {
+    "route": "/customers/automattic",
+    "scope": "page",
+    "inScopeSlots": 97,
+    "filledSlots": 72,
+    "changedSlots": 24,
+    "unresolvedSlots": 1,
+    "byDisposition": {
+     "preserved": 51,
+     "applied": 24,
+     "unresolved": 1,
+     "human-required": 21
+    },
+    "byOrigin": {
+     "derived-copy": 48,
+     "generated-marketing": 24,
+     "source-preserved": 25
+    }
+   },
+   {
+    "route": "/integrations",
+    "scope": "page",
+    "inScopeSlots": 459,
+    "filledSlots": 59,
+    "changedSlots": 30,
+    "unresolvedSlots": 0,
+    "byDisposition": {
+     "preserved": 41,
+     "applied": 30,
+     "human-required": 388
+    },
+    "byOrigin": {
+     "derived-copy": 29,
+     "generated-marketing": 30,
+     "source-preserved": 400
+    }
+   },
+   {
+    "route": "/plan",
+    "scope": "page",
+    "inScopeSlots": 227,
+    "filledSlots": 174,
+    "changedSlots": 122,
+    "unresolvedSlots": 0,
+    "byDisposition": {
+     "preserved": 73,
+     "applied": 122,
+     "human-required": 32
+    },
+    "byOrigin": {
+     "derived-copy": 52,
+     "generated-marketing": 119,
+     "user-provided": 3,
+     "source-preserved": 53
+    }
+   },
+   {
+    "route": "/pricing",
+    "scope": "page",
+    "inScopeSlots": 140,
+    "filledSlots": 56,
+    "changedSlots": 37,
+    "unresolvedSlots": 6,
+    "byDisposition": {
+     "preserved": 19,
+     "applied": 37,
+     "unresolved": 6,
+     "human-required": 78
+    },
+    "byOrigin": {
+     "derived-copy": 19,
+     "generated-marketing": 37,
+     "source-preserved": 84
+    }
+   },
+   {
+    "route": "/security",
+    "scope": "page",
+    "inScopeSlots": 76,
+    "filledSlots": 72,
+    "changedSlots": 57,
+    "unresolvedSlots": 4,
+    "byDisposition": {
+     "preserved": 15,
+     "applied": 57,
+     "unresolved": 4
+    },
+    "byOrigin": {
+     "derived-copy": 15,
+     "generated-marketing": 55,
+     "source-preserved": 4,
+     "user-provided": 2
+    }
+   }
+  ],
+  "totals": {
+   "inScopeSlots": 3079,
+   "filledSlots": 1491,
+   "changedSlots": 924,
+   "unresolvedSlots": 20,
+   "byDisposition": {
+    "preserved": 642,
+    "applied": 924,
+    "unresolved": 20,
+    "human-required": 1493
+   },
+   "byOrigin": {
+    "derived-copy": 567,
+    "generated-marketing": 900,
+    "user-provided": 24,
+    "source-preserved": 1588
+   }
+  },
+  "reconciliation": {
+   "accountingInScopeSlots": 3079,
+   "rowSum": 3079,
+   "reconciled": true
+  },
+  "readingNotes": [
+   "filledSlots = the run produced a value for this slot (it is in slot-values.json). changedSlots = that value differs from the template's source default.",
+   "human-required is the review-flagged population the engine never auto-writes (1,493 of 3,079 on this template). It is a disposition inside the denominator, not an absence.",
+   "UNRESOLVED = 20 for the whole site (4 before the correction pass): 4 external destinations the brief did not supply, plus 16 fact-bearing VALUE-SHAPED slots — prices, plan limits, a percentage, two multipliers, four compliance labels and two bylines — that the writer refuses both to overwrite with copy and to carry over from the source. Each names the source figure it will not carry. See valueShapedSlots.",
+   "/customers, /integrations and / have large human-required counts because those pages are mostly review-flagged slots; the writer wrote every editable slot it was given except the value-shaped ones it names instead."
+  ],
+  "unresolvedSlots": [
+   {
+    "slotKey": "home.main.text.1-0",
+    "route": "/",
+    "reason": "needs factual input: multiplier value — the source site states \"1.0×\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "home.main.text.by-romain-1-day-ago",
+    "route": "/",
+    "reason": "needs factual input: attribution value — the source site states \"By romain · 1 day ago\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "home.main.text.by-julian-3-hours-ago",
+    "route": "/",
+    "reason": "needs factual input: attribution value — the source site states \"By julian · 3 hours ago\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "changelog.main.link.ios.href",
+    "route": "/changelog",
+    "reason": "needs factual input: external destination — the brief supplied no address for this link, and an external URL is never invented"
+   },
+   {
+    "slotKey": "changelog.main.link.android.href",
+    "route": "/changelog",
+    "reason": "needs factual input: external destination — the brief supplied no address for this link, and an external URL is never invented"
+   },
+   {
+    "slotKey": "changelog.main.link.mcp-specification.href",
+    "route": "/changelog",
+    "reason": "needs factual input: external destination — the brief supplied no address for this link, and an external URL is never invented"
+   },
+   {
+    "slotKey": "customers.main.text.2-0x",
+    "route": "/customers",
+    "reason": "needs factual input: multiplier value — the source site states \"2.0x\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "customers.main.text.3-3x",
+    "route": "/customers",
+    "reason": "needs factual input: multiplier value — the source site states \"3.3x\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "customers.main.text.50",
+    "route": "/customers",
+    "reason": "needs factual input: percentage value — the source site states \"50%\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "customers-automattic.main.cta.automattic-com.href",
+    "route": "/customers/automattic",
+    "reason": "needs factual input: external destination — the brief supplied no address for this link, and an external URL is never invented"
+   },
+   {
+    "slotKey": "pricing.main.text.0",
+    "route": "/pricing",
+    "reason": "needs factual input: price value — the source site states \"$0\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "pricing.main.text.2-teams",
+    "route": "/pricing",
+    "reason": "needs factual input: counted-quantity value — the source site states \"2 teams\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "pricing.main.text.250-issues",
+    "route": "/pricing",
+    "reason": "needs factual input: counted-quantity value — the source site states \"250 issues\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "pricing.main.text.10-per-user-month",
+    "route": "/pricing",
+    "reason": "needs factual input: price value — the source site states \"$10 per user/month\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "pricing.main.text.5-teams",
+    "route": "/pricing",
+    "reason": "needs factual input: counted-quantity value — the source site states \"5 teams\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "pricing.main.text.16-per-user-month",
+    "route": "/pricing",
+    "reason": "needs factual input: price value — the source site states \"$16 per user/month\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "security.main.text.soc-2-compliance",
+    "route": "/security",
+    "reason": "needs factual input: certification value — the source site states \"SOC 2 compliance\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "security.main.link.request-soc-2.label",
+    "route": "/security",
+    "reason": "needs factual input: certification value — the source site states \"Request SOC 2 →\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "security.main.text.hipaa-compliance",
+    "route": "/security",
+    "reason": "needs factual input: certification value — the source site states \"HIPAA compliance\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   },
+   {
+    "slotKey": "security.main.text.iso-27001-certified",
+    "route": "/security",
+    "reason": "needs factual input: certification value — the source site states \"ISO 27001 certified\" here, which is a fact about the SOURCE business, and the brief supplied no figure for it. Supply a `figure` fact whose label is a token of this slot key, or decide the slot in the editor."
+   }
+  ],
+  "unresolvedSlotsNote": "Re-derived from slot-accounting.json's own rows in the correction pass — 20 rows, each carrying the engine's own reason string."
+ },
+ "structureOnlyRoutes": {
+  "measuredOn": "data/stripe.com/recon-templates/2026-08-26T22-38-06-075Z — the one real template on disk carrying a route policy",
+  "totalRoutes": 20,
+  "generatedRoutes": 10,
+  "structureOnlyRoutes": 10,
+  "generatedSlotRowsOnStructureOnlyRoutes": 0,
+  "whatWasMeasured": "The real content stage was run over the selected scope: the 10 structure-only routes produced ZERO content units, ZERO slot-accounting rows and ZERO PageContentPlans, while all 10 remain routes of the reconstructed app (route-map.json) — excluded from generation is not excluded from the site.",
+  "namedFailureModeGuard": "/resources/more/virtual-credit-cards-for-businesses-explained shares a rendered page with its family's representative; the suite asserts it is excluded, which a slot-binding-count heuristic would get wrong.",
+  "onTheJourneyTemplate": "linear.app carries NO route policy, so all 8 routes are core-reconstruct and 0 are structure-only. The structure-only property is therefore proven on the stripe template, not on the journey template — stated rather than implied."
+ },
+ "renderedInTheBrowser": {
+  "method": "Playwright, real Chromium, the editor's real preview iframe on its own origin",
+  "homepage": "the working name renders; 0 browser runtime errors during the whole journey",
+  "routes": [
+   {
+    "route": "/pricing",
+    "chars": 2739,
+    "routeSpecificValuesChecked": 5,
+    "routeSpecificValuesRendered": 5,
+    "example": "One plan for shorter changeovers."
+   },
+   {
+    "route": "/security",
+    "chars": 3102,
+    "routeSpecificValuesChecked": 28,
+    "routeSpecificValuesRendered": 28,
+    "example": "One plan for machine data."
+   },
+   {
+    "route": "/plan",
+    "chars": 4828,
+    "routeSpecificValuesChecked": 40,
+    "routeSpecificValuesRendered": 36,
+    "example": "Five plants, standardized."
+   }
+  ],
+  "routeCheckNote": "Each route is checked against ITS OWN slot keys, not a site-wide needle. The first version matched the iframe URL by prefix, got the previous route's frame back three times and reported three pages with byte-identical text (8,147 chars each); the suite now compares the frame URL exactly and asserts the three documents differ.",
+  "sourceBrandResidual": {
+   "writtenTextValuesCarryingSourceBrand": 0,
+   "writtenUrlValuesCarryingSourceBrand": 8,
+   "writtenUrlValuesFlaggedInBrandLeakReport": 8,
+   "textSlotsStillCarryingSourceBrand": 130,
+   "allOfThemReviewFlagged": true
+  },
+  "sourceBrandResidualNote": "130 text slots still contain the source brand token and EVERY ONE of them is review-flagged (editability \"review\") — the population the engine declares it never auto-writes. No TEXT value the writer wrote carries it. CORRECTED: 8 written URL values do (7 internal changelog/docs paths such as /docs/linear-agent and one percent-encoded query); the earlier field name `writtenValuesCarryingSourceBrand: 0` was a text-only figure that overstated its scope. All 8 are flagged by the run's own brand-leak.json — the encoded one only after this pass taught the scanner to decode, which took the report from 96 to 97 warnings."
+ },
+ "measuredTimings": {
+  "method": "wall clock inside scripts/smoke-first-draft.ts around the real calls; the Create Site number is measured in the BROWSER, from the click to the result text, so it includes the HTTP round trip",
+  "coldRun": {
+   "note": "both preview workspaces deleted first, so this run paid for the copy + patch + next build",
+   "previewMaterialized": true,
+   "editorStartupMs": 2841,
+   "previewStartMs": 2729,
+   "createSiteMs": 5544,
+   "openNewSiteMs": 2967
+  },
+  "warmRun": {
+   "note": "the preview workspaces already existed; this is the second-and-later operator experience. Numbers from the final green run.",
+   "previewMaterialized": false,
+   "editorStartupMs": 452,
+   "previewStartMs": 343,
+   "createSiteMs": 5694,
+   "openNewSiteMs": 731
+  },
+  "createSiteBreakdown": {
+   "contentPacket": "1,202 content units, 36 batches",
+   "nextBuildMs": 2768,
+   "nextBuildSource": "read from the '[production] next build finished in Nms' line the compile printed, not estimated",
+   "restOfCreateSite": "content generation + ingest + accounting + consistency review + asset/theme/SEO bake + release:prepare, i.e. the remaining ~2.8s of the ~5.5s total"
+  },
+  "reps": {
+   "journeyRunsCompleted": 6,
+   "note": "runs 2,3,4,7,8 warm and run 6 cold. Runs 1 and 5 failed for reasons FIXED in this phase (the host-slug site id / the library refresh destroying its own form; and a create-response read that lost a race) and are reported in seamFixes rather than averaged in."
+  }
+ },
+ "seamFixes": [
+  {
+   "id": "provider",
+   "was": "createSite() only ever ran FakeContentGenerator; every text slot came out as 'Fake hero headline practical automation for teams…'.",
+   "now": "BriefContentGenerator (src/content-injection/brief-writer.ts) is the default. Deterministic, offline, composed from the brief; registered in resolveGenerator as 'brief'. `fake` is still available for fixtures.",
+   "proof": "smoke:first-draft asserts contentProvider === 'brief-writer' and that route-specific written values render in the browser."
+  },
+  {
+   "id": "preview-shows-the-draft",
+   "was": "EditorRuntime seeded the preview with project.authored.slotValues only. A site created 30 seconds earlier opened showing the SOURCE site's copy, and /api/save and /api/undo re-pushed authored-only, so any layering would have been dropped on the first save.",
+   "now": "EditorRuntime.previewSlotValues() = { ...contentSlotValues, ...authored.slotValues } — the same order src/production/bake.ts stacks them — and open, save and undo all call it.",
+   "proof": "the journey renders the generated copy in a real iframe; /api/slot reports valueLayer 'generated-draft' for a slot nobody has edited."
+  },
+  {
+   "id": "site-identity",
+   "was": "no siteId was passed by the API, so prepare defaulted to the HOST slug: the first journey run created data/linear.app/release-projects/linear.app and a second Create Site would have re-prepared the first customer's project.",
+   "now": "siteIdFromWorkingName() derives the id from the brief; the API returns `reprepared` and the UI says 're-prepared existing site' instead of 'created' when it happens.",
+   "proof": "the journey asserts siteKey === 'linear.app/millwright' and reprepared === false."
+  },
+  {
+   "id": "first-draft-summary",
+   "was": "nothing answered 'did it write my pricing page, or only the homepage?' — slot-accounting.json has a route per row but no per-route totals.",
+   "now": "src/release/first-draft.ts summarizeFirstDraft() folds the rows by route; createSite writes report/first-draft.json (inside the lineage-EXCLUDED report/ dir) and returns it; the API returns it and the Library renders it as a table.",
+   "proof": "the suite re-derives UNRESOLVED from the artifact's own rows and checks the row sum against the accounting artifact's own in-scope count."
+  },
+  {
+   "id": "brief-parsing",
+   "was": "/api/create-site cast the request body to ContentBrief without validating it, so a mistyped field would have been silently dropped.",
+   "now": "ContentBriefSchema.safeParse, with the failing field named in the 400.",
+   "proof": "typecheck plus the journey's own successful POST; a negative test for this is NOT in the suite and is named in limitations."
+  },
+  {
+   "id": "copy-quality",
+   "was": "the writer appended a tail to a clause that already said it, producing 'Give operators the next step without a paper traveller without a spreadsheet.' — visible in a real browser on the created site.",
+   "now": "a tail is only appended when the clause shares none of its 4+ character words. Measured after the fix: 0 written values contain 'without' twice.",
+   "proof": "grep over the final run's slot-values.json; the journey suite re-run green afterwards (29/29)."
+  }
+ ],
+ "tests": {
+  "newSuite": {
+   "file": "scripts/smoke-first-draft.ts",
+   "run": "bash tmp/wr28/suite-lock.sh npx tsx scripts/smoke-first-draft.ts",
+   "checks": 34,
+   "failures": 0,
+   "shape": [
+    "§1 route scope: on the REAL route-policy stripe template, including a live content-stage run over the selected scope",
+    "§2 the journey in a real Chromium against the real editor: Library -> Create Site form -> ONE brief -> First Draft -> Edit Site",
+    "§3 the per-route accounting table re-derived from slot-accounting.json's own rows, PLUS (correction pass) the denominator re-derived from the template itself and the value-shaped class checked slot by slot",
+    "§4 the Site Library row and site switching from the library"
+   ],
+   "registeredIn": "docs/result/handoffs/28-intel/pending-package-scripts.tsv (package.json is not edited by contract)"
+  },
+  "regression": {
+   "note": "Every suite touching content-injection, the editor, release or production was re-run AFTER the change. Counts are the raw last line of each run, compared to docs/result/handoffs/28-gate-phase456.json .suites[].",
+   "suites": [
+    {
+     "suite": "content-injection",
+     "checks": 161,
+     "failures": 0,
+     "baseline": "161 (Phase 9 raised it from 152)"
+    },
+    {
+     "suite": "content-generation",
+     "checks": 40,
+     "failures": 0,
+     "baseline": "40 (Phase 9, not in the 25-suite gate)"
+    },
+    {
+     "suite": "create-site",
+     "checks": 46,
+     "failures": 0,
+     "baseline": "46 (Phase 8, not in the 25-suite gate)"
+    },
+    {
+     "suite": "visual-editor",
+     "checks": 50,
+     "failures": 0,
+     "baseline": 50
+    },
+    {
+     "suite": "editor-integration",
+     "checks": 45,
+     "failures": 0,
+     "baseline": 45
+    },
+    {
+     "suite": "authoring-preview",
+     "checks": 41,
+     "failures": 0,
+     "baseline": 41
+    },
+    {
+     "suite": "brand-assets",
+     "checks": 141,
+     "failures": 0,
+     "baseline": 141
+    },
+    {
+     "suite": "registry",
+     "checks": 35,
+     "failures": 0,
+     "baseline": 35
+    },
+    {
+     "suite": "revision",
+     "checks": 36,
+     "failures": 0,
+     "baseline": 36
+    },
+    {
+     "suite": "production",
+     "checks": 129,
+     "failures": 0,
+     "baseline": 129
+    },
+    {
+     "suite": "release",
+     "checks": 274,
+     "failures": 0,
+     "baseline": 274
+    },
+    {
+     "suite": "enablement",
+     "checks": 101,
+     "failures": 0,
+     "baseline": 101
+    },
+    {
+     "suite": "regions",
+     "checks": 76,
+     "failures": 0,
+     "baseline": 76
+    },
+    {
+     "suite": "seo",
+     "checks": 104,
+     "failures": 0,
+     "baseline": 104
+    },
+    {
+     "suite": "theme",
+     "checks": 47,
+     "failures": 0,
+     "baseline": 47
+    },
+    {
+     "suite": "assets",
+     "checks": 140,
+     "failures": 0,
+     "baseline": 140
+    }
+   ],
+   "typecheck": "bash tmp/wr28/suite-lock.sh pnpm typecheck — exit 0, run repeatedly through the build and again after both mutation restorations",
+   "notRerun": [
+    "verifier, selector, multi-observer, interaction-detector, interaction-explorer, interaction-patterns, sitespec, reconstruction, reconstruction-qa, e2e, recon-template — the reconstruction half of the gate. NOT re-run: this phase changed no file under src/observer, src/selector, src/verifier, src/reconstruction, src/sitespec, src/interaction-* or src/recon-template. Stated as a bounded coverage decision, not as a passing result."
+   ],
+   "afterTheCopyQualityFix": "The final tail-repetition fix touches ONLY src/content-injection/brief-writer.ts. `grep -rln` over src/ and scripts/ shows the writer reaches exactly three suites — content-injection (161/161), content-generation (40/40) and create-site (46/46) — plus the new first-draft suite (29/29); all four were re-run green AFTER it. The other twelve suites were run against the identical tree minus that one function and are not re-claimed here."
+  },
+  "correctionPass": {
+   "note": "Re-run through bash tmp/wr28/suite-lock.sh after the three fixes. Counts are the raw last line of each run, re-derived by grepping PASS/FAIL, not carried over from the earlier pass. NOTE: smoke:create-site reports 66 checks (was 46) because a CONCURRENT Phase 7/8 correction session added checks to it in the same tree; that number is not this pass's work.",
+   "typecheck": "exit 0",
+   "suites": {
+    "smoke:content-generation": "50 checks, 0 failures (was 40)",
+    "smoke:first-draft": "34 checks, 0 failures (was 29)",
+    "smoke:content-injection": "161 checks, 0 failures",
+    "smoke:enablement": "101 checks, 0 failures (one fixture rebuilt — see corrections C4)",
+    "smoke:create-site": "66 checks, 0 failures",
+    "smoke:release": "274 checks, 0 failures",
+    "smoke:production": "129 checks, 0 failures",
+    "smoke:brand-assets": "141 checks, 0 failures",
+    "smoke:seo": "104 checks, 0 failures",
+    "smoke:theme": "47 checks, 0 failures",
+    "smoke:regions": "76 checks, 0 failures",
+    "smoke:revision": "36 checks, 0 failures",
+    "smoke:registry": "35 checks, 0 failures",
+    "smoke:assets": "140 checks, 0 failures",
+    "smoke:editor-integration": "45 checks, 0 failures",
+    "smoke:visual-editor": "50 checks, 0 failures",
+    "smoke:authoring-preview": "41 checks, 0 failures"
+   },
+   "mutationProofs": [
+    "BREAK A (the verifier's own): src/content-injection/accounting.ts — the reviewSlotKeys loop deleted from inScopeSlotKeys(). Before the fix this was invisible (40/40 green with inScopeSlots 1,586). After: SEVEN checks fail — P9.D1, D5, D6, D6b, D7, E4, E6 — 43/50. Restored by byte copy; sha256 3c1b86201a209e468807fe631dda93278c7bf10722722834786a6290f62789c3, cmp clean, 50/50 again.",
+    "BREAK B: src/content-injection/brief-writer.ts — the value-shape branch deleted from writeText(). P9.G2/G3/G4 fail (47/50) and the pricing table fills with adjectives again. The first attempt showed P9.G3 passing VACUOUSLY under the break (0 == 0), so G3 was strengthened to require a non-empty withheld set and the break re-run. Restored; sha256 d7b320dedda402550be972b865abc0cb1da952fe4053cce2527fef1213420223, cmp clean.",
+    "BREAK C: src/content-injection/truth-mode.ts — the source-fact block reverted to the silent keep. P9.D8/D8b fail (48/50), naming the 9 surviving source facts. Restored; sha256 c3d38e5fc61e03b407aa60c11c331279efcd13ebd6e05f3adef117b5ae44aacb, cmp clean."
+   ]
+  }
+ },
+ "mutationInjectionProofs": [
+  {
+   "target": "src/editor/runtime.ts — previewSlotValues() and the slotValues passed to startAuthoringPreview",
+   "mutation": "both reverted to `authored.slotValues` alone, i.e. exactly the pre-Phase-10 behaviour",
+   "observedFailures": 2,
+   "failedChecks": [
+    "int.editSiteOpens — the preview renders the GENERATED copy in a real browser (the homepage rendered 8,338 chars of the SOURCE site's text)",
+    "int.multiRouteDraft — /pricing, /security and /plan each render copy written FOR THAT ROUTE (0 of 5, 0 of 28 and 0 of 40 route-specific values rendered)"
+   ],
+   "restored": "byte-identical — sha256 a4fab09be05360c8f861f8141f62598e243094cb8eeb401be52ac9f5c6ca7c95 before and after, `cmp` clean (the file is untracked, so sha256/cmp is the correct check, never git)"
+  },
+  {
+   "target": "src/content-injection/brief-writer.ts — the unit loop in generate()",
+   "mutation": "every unit whose route is not \"/\" skipped: a homepage-only draft, the exact failure the phrase 'not just the homepage' exists to exclude",
+   "observedFailures": 4,
+   "failedChecks": [
+    "int.briefToDraft — the cross-page review passes (it returned 7 errors: one route-uncovered per untouched route)",
+    "int.briefToDraft — no written value carries the source brand and every residual is review-flagged (untouched routes leave EDITABLE slots carrying it)",
+    "int.multiRouteDraft — route-specific copy renders on /pricing, /security and /plan",
+    "int.multiRouteDraft — EVERY enabled core route received written AND changed values (/changelog 0/1011, /customers 0/…)"
+   ],
+   "restored": "byte-identical — sha256 dad8fdba101d8d95b92db152aec9b551efebfa6fac3468c87413a71dc4042ed6 before and after, `cmp` clean; typecheck exit 0 and the suite green again afterwards"
+  }
+ ],
+ "filesChanged": [
+  "src/content-injection/brief-writer.ts (NEW) — the brief-driven writer",
+  "src/content-injection/providers.ts — resolveGenerator knows 'brief'",
+  "src/content-injection/index.ts — barrel exports for the writer",
+  "src/release/first-draft.ts (NEW) — summarizeFirstDraft()",
+  "src/release/index.ts — barrel export",
+  "src/release/create-site.ts — brief writer as the default provider, siteIdFromWorkingName, first-draft summary written + returned, reprepared logged",
+  "src/editor/catalog.ts — EditorSite.contentSlotValues (the generated draft)",
+  "src/editor/runtime.ts — previewSlotValues(): draft under authored, used at open",
+  "src/editor/server.ts — previewSlotValues() on save and undo, ContentBriefSchema parsing, first-draft + reprepared in the response, draft passed to the inspector and to the image-replacement read",
+  "src/editor/inspect.ts — currentSlotValue/slotValueLayer take the draft; SlotInspector gains draftValue and valueLayer",
+  "src/editor/client.ts — full optional brief fields, facts textarea, First Draft table, 'Edit this site', site-library revision columns, and the Site-Library-only refresh that no longer destroys the form",
+  "scripts/smoke-first-draft.ts (NEW) — the journey suite, 34 checks after the correction pass (29 before)",
+  "docs/result/handoffs/28-intel/phase10-brief.json (NEW) — the brief",
+  "docs/result/handoffs/28-first-draft.json (NEW) — this document",
+  "docs/result/handoffs/28-intel/pending-package-scripts.tsv — smoke:first-draft appended"
+ ],
+ "limitations": [
+  "THE WRITER IS NOT A MODEL. It is a deterministic compositional writer; there is no LLM key in this repo. It REPEATS: 917 text values written from 342 distinct strings (37%) on the corrected run of the same brief and template — measured by BriefContentGenerator.writerStats(), not estimated. CORRECTED CLAIM: the earlier description 'coherent, on-brand, length-matched' did not survive the verifier, who found the pricing table, the changelog date column and the compliance labels filled with adjectives. That class is now withheld rather than written (see valueShapedSlots); what remains is ordinary prose repetition, which is a quality ceiling, not a wrong-kind-of-value defect.",
+  "THE VALUE-SHAPE CLASSIFIER IS A PATTERN SET, NOT AN UNDERSTANDING. It recognises prices, percentages, multipliers, counted quantities, certifications, bylines, dates, times, versions, bare numerics and glyphs in source values up to 60 characters. A value-shaped slot it does not recognise would still be written over, and a sentence containing a figure is deliberately still rewritten. Measured on this template: 443 of 2,441 text slots classify as value-shaped, 0 were overwritten, 16 became named needs-input. Nothing claims the class is complete.",
+  "A WITHHELD FACT-BEARING SLOT STILL RENDERS THE SOURCE DEFAULT until the operator decides it — that is what `unresolved` means everywhere in this engine, and it is why the release state is INPUTS_REQUIRED with 287 requirements. The draft does not silently ship the source's price as the customer's; it blocks on it.",
+  "Some composed headlines still read awkwardly ('Standard work, standardized.'). The phrase bank is a heuristic with no part-of-speech tagger behind it; three rules (clause-bounded pairs, preserved adjacency, a blocklist) cut the worst of it after a browser run showed 'Leaders mid-size' and 'Telling same' on a real page, but it is a heuristic and it will produce more.",
+  "NO BROWSER LAYOUT QA over the created site. runContentLayoutQa was not run on the Millwright draft; values are written to roughly the character length of the string they replace, which is the only offline mitigation. Carried forward from Phase 9's identical gap.",
+  "1,493 of the 3,079 slots stay human-required, and 130 text slots still contain the source brand token — every one of them review-flagged. The draft does not resolve review slots and this phase did not opt them in.",
+  "The journey template (linear.app) has NO structure-only routes, so int.structureOnlyRespected is proven on the stripe route-policy template through the content stage only; its interaction with a live production compile is still unexercised, exactly as the Phase 8 handoff already named.",
+  "/api/create-site now parses the brief with ContentBriefSchema, but the suite has NO negative test for a malformed brief; the rejection path is typechecked and reasoned, not measured.",
+  "The suite leaves data/linear.app/release-projects/millwright plus its content run, production spec and production build on disk, and removes only the project directory at the start of the next run. Production specs/builds accumulate per run — the same behaviour every other release-touching suite here has.",
+  "OBSERVED, NOT FIXED: a straight `cp` of a release project keeps its recorded projectId, so the copy and the original report the same `siteKey` — which SiteEntrySchema documents as the one key guaranteed unique. data/linear.app/release-projects/wr28-verifier-authored already collides with wr28-assets-stage on disk today. This suite avoids creating another instance by opening an existing project instead of copying one; the underlying scan behaviour is untouched and reported here.",
+  "FIXED DURING THIS PHASE, NAMED SO IT IS NOT MISTAKEN FOR A CLEAN FIRST RUN: the first journey run wrote data/linear.app/release-projects/linear.app because Create Site inherited release:prepare's host-slug default site id. That directory was created by this build and has been deleted, and the registry rebuilt (27 site entries, back to the pre-run set plus millwright)."
+ ],
+ "provenance": "measured",
+ "corrections": [
+  {
+   "id": "C0-brief-only-identity",
+   "raisedBy": "Phase 7/8 verifier (FAIL, BLOCKER)",
+   "claimInThisDocumentThatWasIncomplete": "summary and seamFixes said 'the site id now comes from the brief's working name' / 'siteIdFromWorkingName() derives the id from the brief'. TRUE only for briefs that supply a working name. A brief with only a goal — the exact minimum the shipped Create Site form advertises — still fell through to release:prepare's HOST-SLUG default, so two brief-only creates from one template resolved to the same project and the second re-prepared the first customer's site. The verifier proved it by execution.",
+   "correctedBehaviour": "src/release/create-site.ts now resolves identity with resolveCreateSiteIdentity(): explicit siteId > workingName slug > the goal's first six words slugged > site-<sha256 prefix>, with NO host fallback anywhere, and a derived id that is already taken on disk steps to -2, -3, ... The four identity fields are reported on CreateSiteResult, on POST /api/create-site and on the Library screen.",
+   "proof": "two REAL brief-only createSite runs with the identical brief produce two distinct new projects (reprepared false both times) and no host-slug project directory — scripts/smoke-create-site.ts, 'PHASE 8 CORRECTION' (10 checks); full numbers in docs/result/handoffs/28-site-create.json corrections C0.",
+   "regressionCheck": "scripts/smoke-first-draft.ts re-run unchanged after the fix: 29 checks, 0 failures (millwright still resolves from the brief's working name, reprepared false)."
+  },
+  {
+   "id": "C1-value-shaped-slots",
+   "raisedBy": "Phase 9/10 verifier (FAIL) — 'the writer is blind to slot semantics; two of eight routes are not usable copy'",
+   "claimInThisDocumentThatDidNotSurvive": "the draft was described as 'coherent, on-brand, length-matched' with repetition as the named weakness. That claim did not survive contact with the pricing table, the changelog date column or the compliance labels.",
+   "correctedBehaviour": "see valueShapedSlots above.",
+   "proof": "smoke:first-draft gains three checks on the REAL Millwright draft (nothing value-shaped overwritten; the six slots the verifier read, by name; every withheld value named with the source figure it refuses to carry) and smoke:content-generation gains P9.G1-G4 on the real template. MUTATION: deleting the value-shape branch from writeText() fails P9.G2, G3 and G4 (47/50); restored byte-identically (sha256 d7b320dedda402550be972b865abc0cb1da952fe4053cce2527fef1213420223, cmp clean).",
+   "measuredAfterFix": {
+    "unresolved": "4 -> 20 (4 external destinations + 16 fact-bearing value-shaped slots)",
+    "requirements": "271 -> 287",
+    "applied": "965 -> 924",
+    "preserved": "617 -> 642",
+    "note": "The draft fills FEWER slots and blocks on MORE, deliberately. A pricing table with adjectives where the prices go filled more slots and was worse."
+   }
+  },
+  {
+   "id": "C2-source-statistic-on-an-editable-slot",
+   "raisedBy": "Phase 9/10 verifier (FAIL) — 'a source statistic ships on an editable slot of the complete first draft, undisclosed'",
+   "claimInThisDocumentThatWasIncomplete": "customers.main.text.50 (editability=editable, customerFacing=confirmed, route /customers) shipped the value '50%' — the SOURCE company's own measured figure — as origin derived-copy / disposition preserved, with truthMode verified-only and NO truth decision recorded. This document did not mention it.",
+   "correctedBehaviour": "TWO independent layers now catch it. (1) The writer: '50%' is a fact-bearing value shape, so it is withheld and named as needs-input instead of being carried. (2) The engine, for ANY provider: src/content-injection/truth-mode.ts records a written value identical to the source default that carries a fact shape as `source-fact-carried-over` in both modes, and REFUSES it under verified-only. This is Phase 9's own finding F3, which had shipped 'reported not fixed'.",
+   "proof": "smoke:first-draft pins customers.main.text.50 as needs-input by name; smoke:content-generation P9.D8/D8b re-derive every surviving source fact on the Phase 9 canary (8 recorded under synthetic-allowed) and require a decision for each. MUTATION: reverting truth-mode.ts to the silent keep fails both (48/50); restored byte-identically (sha256 c3d38e5fc61e03b407aa60c11c331279efcd13ebd6e05f3adef117b5ae44aacb, cmp clean)."
+  },
+  {
+   "id": "C3-brand-residual-field-name",
+   "raisedBy": "Phase 9/10 verifier (note, not a failure)",
+   "claimInThisDocumentThatOverstatedItsScope": "`writtenValuesCarryingSourceBrand: 0` was a TEXT-only figure; 8 written url values do carry the source token (7 internal changelog/docs paths and one percent-encoded query).",
+   "correctedBehaviour": "The field is split and named for what it counts: writtenTextValuesCarryingSourceBrand 0, writtenUrlValuesCarryingSourceBrand 8, writtenUrlValuesFlaggedInBrandLeakReport 8. A REAL detector gap turned up while checking it: the percent-encoded one (security.main.link.request-baa.href) was flagged by NO scanner, because containsBrandToken needs a non-alphanumeric boundary and `%20Linear%20` supplies a digit. src/content-injection/brand-leak.ts now scans a url in both its raw and its percent-decoded form; the run's brand-leak report went 96 -> 97 warnings and all 8 are now flagged.",
+   "proof": "smoke:first-draft check 'the URL half is counted too...' asserts every written url carrying the token is flagged by the run's own brand-leak.json."
+  },
+  {
+   "id": "C4-enablement-fixture-was-not-a-real-packet",
+   "raisedBy": "the new denominator invariant itself, on its first full run",
+   "whatItCaught": "scripts/smoke-enablement.ts §10 built a THREE-SLOT ContentUnitsFile by hand and handed it to buildSlotAccounting with a manifest claiming scopedRoutes ['/'] — an account covering 3 of the 594 slots that scope really contains. The old reconciliation could not see it because it only compared the artifact with itself; the new one named 590 unaccounted keys and reported reconciled=false.",
+   "correctedBehaviour": "the fixture now builds its units with the REAL buildContentUnits() over the route its own slots live on, and the disabled-route slot it uses is a PAGE slot on /pricing rather than the plan's first entry (a GLOBAL nav href, which is in scope on every run and made the '+1, never absent' arithmetic compare 594 with 594). No check was weakened or removed: 28.P5.51-54 and 28.P6.15 assert the same properties on a realistic packet, and the suite is back at 101/101.",
+   "honesty": "This is a test-fixture correction found by a new engine check. It is recorded here rather than folded silently into the suite counts."
+  },
+  {
+   "id": "C-gate789-2",
+   "correctedAt": "2026-08-27T23:27:40.553786Z",
+   "correctedBy": "Task-28 orchestrator, after the Phase-7/8/9 gate blocked on this note",
+   "finding": "The note asserted 'The 23 that remain are PROSE, not value slots' and enumerated only changelog body sentences plus two source product headlines. The COUNT 23 is right; the CLASSIFICATION was false. At least 3 of the 23 are neither prose nor headline, and 4 /customers link labels were unaccounted for.",
+   "provenance": "This was the Phase 9/10 second re-verifier's own recorded FAIL and it SHIPPED UNCORRECTED — corrections C0-C4 exist on this document and none of them touched this note. That is the SECOND time in this program a verifier finding shipped uncorrected (the first was the widenedWithoutTrigger 94-vs-22 figure in 28-visual-editor.json). Recorded as a systemic finding for the final report, not just a one-off.",
+   "wasBefore": "The verifier counted 51 (I measure 50 on the run I re-derived from). The 23 that remain are PROSE, not value slots: changelog body sentences that happened to contain a figure ('Charged at $0.25 per 20-minute block', 'Improved pending SAML domain verification from 24 hours to seven days') and two source product headlines ('Upgrade to Claude Opus 4.8', 'Weekly Pulse for Aug 26'). Rewriting a sentence for the new business is the writer's job and the replacement asserts nothing false; the defect was value COLUMNS filled with adjectives, and that is 0. Stated rather than claimed away.",
+   "howMeasured": "Orchestrator re-enumerated all 23 from the artifacts: applied values in data/linear.app/content-runs/2026-08-27T22-45-22-289Z/slot-values.json (1,491 values) against defaults in data/linear.app/recon-templates/2026-08-25T21-53-26-980Z/default-content.json (3,079), predicate = default contains a digit AND applied value contains none. Every one of the 23 is listed by slot key with its before/after value.",
+   "functionalImpact": "None. No code changed; the writer-pattern gap in category (d) is recorded as open."
+  }
+ ],
+ "valueShapedSlots": {
+  "why": "The Phase 9/10 verifier read the draft and found two of eight routes unusable: the pricing table read '$10 per user/month' -> 'Shorter changeovers', the changelog date column read 'August 20, 2026' -> 'Paper traveller', the security page read 'ISO 27001 certified' -> 'Rockwell FactoryTalk', and customer stat tiles read '2.0x' -> 'Plan'. 51 defaults containing a number were replaced by values containing none.",
+  "fix": "src/content-injection/brief-writer.ts classifies a source value's SHAPE before composing anything. FACT-BEARING shapes (price, percentage, multiplier, counted-quantity, certification, attribution) are never overwritten and never silently kept — they become NAMED needs-input quoting the source figure, unless the brief supplies a `figure` fact for the slot. CHROME shapes (date, time, relative-time, version, numeric-chrome, glyph) are kept verbatim as derived-copy. A sentence that merely contains a figure is still copy and is still rewritten.",
+  "measuredOnThisDraft": {
+   "valueShapedTextSlots": 443,
+   "overwrittenWithComposedCopy": 0,
+   "factBearingNamedNeedsInput": 16,
+   "chromeKeptVerbatim": 211,
+   "namedSlotsPinnedBySuite": [
+    "pricing.main.text.16-per-user-month -> needs-input",
+    "pricing.main.text.250-issues -> needs-input",
+    "security.main.text.iso-27001-certified -> needs-input",
+    "customers.main.text.50 -> needs-input (the live SOURCE statistic the verifier found shipping)",
+    "changelog.main.text.august-20-2026 -> kept verbatim",
+    "changelog.main.text.00-17 -> kept verbatim"
+   ],
+   "defaultsWithANumberReplacedByANumberFreeValue": {
+    "before": 50,
+    "after": 23,
+    "note": "The verifier counted 51; the re-derivation on this run measures 50 before / 23 after. The residual 23 are NOT all prose — that earlier classification was wrong and is corrected here. Measured breakdown of all 23 (text slots only; one further hit, changelog.main.link.github-announcement.href, is an href and is outside this text-slot metric, which is why a naive sweep returns 24): (a) 14 PROSE body sentences that happened to contain a figure — 8 changelog entries, customers-automattic.main.hero.description, customers.main.text.from-ambitious-startups-to-major, and 4 security.main.text.* paragraphs; (b) 2 source product headlines — home.main.text.upgrade-to-claude-opus-4-8, home.main.text.weekly-pulse-for-aug-26; (c) 4 /customers link labels — customers.main.link.*.label.01; (d) 3 that are NEITHER prose nor headline and are editable, applied, customer-visible: changelog.main.text.1-9 ('1–9' -> 'Data'), customers-automattic.main.text.san-francisco-2005 ('San Francisco, 2005' -> 'Rockwell FactoryTalk'), plan.main.text.feb-3-2026-paul-meg-julian ('Feb 3, 2026 · @paul @meg @julian' -> 'Mid-size discrete, standardized.'). 14+2+4+3 = 23. Category (d) is genuine numeric chrome and attribution the writer patterns do not yet cover — an en dash in the numeric-chrome class and a '·'-separated handle byline in the attribution class would close it. The original defect (value COLUMNS filled with adjectives) remains 0.",
+    "residualBreakdown": {
+     "prose": 14,
+     "sourceProductHeadlines": 2,
+     "customersLinkLabels": 4,
+     "numericChromeOrAttribution": 3,
+     "total": 23,
+     "hrefHitOutsideThisMetric": "changelog.main.link.github-announcement.href"
+    }
+   }
+  },
+  "inverseProven": "P9.G4 in scripts/smoke-content-generation.ts: adding three `figure` facts to the brief writes the OPERATOR's numbers ($49 per line/month, $79 per line/month, 500 work orders) and shrinks the needs-input list by exactly three."
+ }
+}

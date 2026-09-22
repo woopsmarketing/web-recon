@@ -1,0 +1,177 @@
+{
+  "schema": "task285b-verify-qa-v1",
+  "producedAt": "2026-08-29T00:00:00.000Z",
+  "verifier": "fresh independent verifier (implemented nothing; modified no source file)",
+  "scope": "Task 28.5B change 6 — QA vocabulary decoupling + multi-channel pixel metrics",
+  "verdict": "PASS_WITH_RISKS",
+  "verdictBasis": "Every claim in docs/result/handoffs/28.5B-build-qa.json was reproduced independently and none was overstated. The risks are about REACH, not correctness: the honest-degradation machinery this change adds is exercised only by its own proof suite and is not yet wired into any real QA run, and the interaction-replay axis still uses the Observer's whitelist, so the blindness the change removes on the page-capture axis survives on the interaction axis.",
+
+  "supersetProven": true,
+  "supersetEvidence": {
+    "method": "tmp/wr285b/verify-qa/superset.ts — imports STYLE_WHITELIST from src/observer/types.ts and QA_STYLE_PROPERTIES / QA_ONLY_STYLE_PROPERTIES from src/reconstruction-qa/capture-page.ts and set-diffs them at runtime",
+    "observerCount": 114,
+    "observerDistinct": 114,
+    "qaCount": 144,
+    "qaDistinct": 144,
+    "observerPropertiesMissingFromQa": [],
+    "qaPropertiesBeyondObserver": 30,
+    "beyondThresholdRequired": 5,
+    "qaOnlyConstantEqualsComputedDifference": true,
+    "referenceEqualToStyleWhitelist": false,
+    "duplicatesInEitherList": 0,
+    "noStyleWhitelistImportInCapturePage": true,
+    "importLineNow": "src/observer/types.js → { OBSERVATION_COLOR_SCHEME, OBSERVATION_LOCALE, OBSERVATION_REDUCED_MOTION, OBSERVATION_TIMEZONE, SKIP_TAGS, type ViewportProfile }",
+    "orderingDeterministic": "literal grouped array, no runtime sort; runCapture passes [...QA_STYLE_PROPERTIES] at capture-page.ts:813",
+    "rationaleCommentCites285B": "yes — capture-page.ts L45-79 names Task 28.5B change 6, the 28.5A root-cause doc, and the -webkit-font-smoothing / text-wrap-* findings"
+  },
+
+  "at1SemanticsUnchanged": {
+    "verdict": "byte-for-byte equivalent",
+    "evidence": "git diff of compareImages: the only change to the @1 path is hoisting the six overWhite() calls into named locals (identical values, identical composite-over-white, identical Math.round) and replacing three sequential `if (dX > maxChannelDelta)` updates with one `pixelMax` that is the max of the same three. changedPixels still increments on `dr !== 0 || dg !== 0 || db !== 0`; totalDelta still accumulates (dr+dg+db)/3; changedPixelRatio, commonAreaRatio, meanAbsoluteRgbDelta, maxChannelDelta and renderDiffImage are untouched. smoke-reconstruction-qa.ts's 15 screenshot-metric checks (which pin @1) all PASS."
+  },
+
+  "at16IsMaxChannel": {
+    "verdict": true,
+    "evidence": "const pixelMax = max(dr, dg, db); if (pixelMax >= CHANGED_PIXEL_AMPLITUDE_THRESHOLD) changedPixelsAt16++ — a per-pixel MAX, not a sum and not an average. Threshold is an exported constant = 16, comparison is >= (boundary 16 counts, 15 does not; the suite pins both)."
+  },
+
+  "dE76ReferenceCheck": {
+    "method": "tmp/wr285b/verify-qa/de76.ts — an independent reimplementation written by the verifier (exact CIE constants: knee (6/29)^3 = 0.0088564517, slope (1/3)(29/6)^2 = 7.787037, offset 4/29) compared against the repo's srgbToLab + deltaE76",
+    "pair": "pure red (255,0,0) vs pure green (0,255,0)",
+    "expected": 170.584201,
+    "actual": 170.584201,
+    "absoluteDifference": 0.0,
+    "additionalPairs": [
+      { "pair": "black vs white", "expected": 100.000001, "actual": 100.000001, "absDiff": 1.42e-14 },
+      { "pair": "white vs white", "expected": 0, "actual": 0, "absDiff": 0 },
+      { "pair": "red vs blue", "expected": 176.332724, "actual": 176.332724, "absDiff": 2.84e-14 },
+      { "pair": "grey 200 vs grey 208", "expected": 2.878117, "actual": 2.878117, "absDiff": 0 },
+      { "pair": "near-black 0 vs 2 (below the Lab knee)", "expected": 0.548350, "actual": 0.548347, "absDiff": 2.6e-6 }
+    ],
+    "mathAudit": {
+      "srgbToLinear": "PASS — 256-entry LUT, knee at 0.04045, else ((c+0.055)/1.055)^2.4, divisor 12.92. Correct sRGB EOTF. Safe to LUT because both sides are composited over white by overWhite(), which Math.rounds to an integer 0..255, so every index is in range (verified: overWhite can never produce <0, >255 or a non-integer).",
+      "xyzMatrix": "PASS — the standard 4-decimal sRGB D65 matrix (0.4124/0.3576/0.1805, 0.2126/0.7152/0.0722, 0.0193/0.1192/0.9505), normalized by D65 white 95.047 / 100 / 108.883.",
+      "labF": "ACCEPTABLE — uses the legacy CIE approximation t > 0.008856 ? cbrt(t) : 7.787t + 16/116 rather than the exact (6/29)^3 / (1/3)(29/6)^2 / 4/29 form. Measured divergence from the exact form is <= 2.6e-6 ΔE and only in the sub-knee (near-black) region. Not a defect at the 2.3 / 10 thresholds in use.",
+      "deltaE76": "PASS — plain Euclidean distance in L*a*b*, no weighting."
+    },
+    "referenceValueNote": "The suite asserts against published EasyRGB triples (red L* 53.2408 ± 0.01). The repo's 4-decimal matrix and 95.047 white give 53.2329 — inside the tolerance by 0.0021. Passing but tight; a future constants refresh could break that assertion without any real regression. Same for 'grey 200 vs 208 ≈ 2.92 ± 0.05' where the actual value is 2.8781 (margin 0.008)."
+  },
+
+  "historicalArtifactParses": true,
+  "historicalArtifactEvidence": {
+    "method": "tmp/wr285b/verify-qa/historical.ts",
+    "run": "data/linear.app/reconstruction-qa/2026-08-25T20-30-41-209Z",
+    "qaPageResultsParsed": "16/16 through the CURRENT QaPageResultSchema",
+    "screenshotMetricsParsed": "48/48 through the CURRENT ScreenshotMetricSchema",
+    "newFieldsAbsentNotZero": "confirmed — no parsed historical metric carries changedRatioAt16 or any ΔE76 field",
+    "finalSummarySnapshotFidelityParses": true,
+    "finalSummaryLiveFidelityParses": true,
+    "resummarizedThroughNewCode": "summarizeSnapshotFidelity() over the historical pages returns screenshotChangedRatioMedian 0.1679 / 16 pairs and OMITS every new median (not 0)",
+    "worstPagesRendering": "@1 0.4956 · @16 n/a · ΔE76>2.3 n/a · ΔE76>10 n/a · mean ΔE76 n/a · mean Δ 10.3759 · mean maxΔ n/a · common 1 · height Δ 0px — 'n/a', never a fabricated 0",
+    "allNewSchemaFieldsOptional": true
+  },
+
+  "suiteRun": {
+    "command": "npx tsx scripts/smoke-qa-independence.ts",
+    "result": "62/62 checks passed, 0 failed",
+    "reproducedByVerifier": true
+  },
+
+  "blindnessFixtureScrutiny": {
+    "drivesRealQaPath": true,
+    "how": "startFixtureServer() serves two variants over a real node http server on 127.0.0.1; the suite launches a real chromium and calls captureOriginal() — the production path (newQaContext → gotoQa → stabilize → runCapture) that qa-page.ts uses for the live original — on both URLs, with screenshot: true. Nothing is stubbed.",
+    "independentReplication": {
+      "method": "tmp/wr285b/verify-qa/fixture-independent.ts — the verifier's OWN playwright capture and OWN getComputedStyle read and OWN set comparison, using none of the QA comparison code",
+      "observerVocabularyComparisons": 798,
+      "observerVocabularyMismatches": 0,
+      "qaVocabularyComparisons": 1008,
+      "qaVocabularyMismatches": 4,
+      "qaNamedProperties": ["background-clip", "-webkit-background-clip", "-webkit-text-fill-color", "text-shadow"],
+      "conclusion": "The blind spot is real and not an artifact of the suite's own comparison code. Two pages that differ visibly (gradient-knockout headline + text shadow) are byte-identical across all 114 observer properties on all 7 elements, and the 4 differences live entirely outside STYLE_WHITELIST. The observer-vocabulary comparison is not vacuous: the suite additionally asserts comparedElements >= 4 and comparedProperties > 100, and the independent run measured 798 comparisons."
+    },
+    "pixelCrossCheck": "The suite also proves the difference is real in pixels (changedRatioAt16 > 0 and deltaE76AboveJndRatio > 0 on the two real screenshots), so the fixture cannot be a vocabulary-only artifact."
+  },
+
+  "regressionRun": {
+    "command": "npx tsx scripts/smoke-reconstruction-qa.ts",
+    "result": "131/134 checks passed, 3 FAILED",
+    "offlineHalf": "PASS — 0 failures across all offline sections, including the 15 screenshot-metric checks that pin the unchanged @1 semantics",
+    "failures": [
+      "the verified disclosure was replayed on both sides",
+      "…and the clone's `display: revert` differs from the observed `flex` — []",
+      "an open-state style correction is therefore proposed"
+    ],
+    "attribution": "OUT OF SCOPE — all three are in the LIVE half and all three are the same root cause: the CLONE side of the disclosure replay did not produce a usable target. Evidence: `openStateEvidenceUsable` PASSES (so the ORIGINAL replay worked) while targetStyleMismatches is [], and qa-behavior.ts:187 only computes mismatches when `clone.ok && clone.targetAfter?.exists === true`. The clone is produced by generateApp → verifyLayoutRules in src/reconstruction/layout-truth-check.ts, which is UNTRACKED (brand new) and owned by the concurrent layout-inference builder; src/reconstruction/generate-app.ts is likewise modified by that builder. Causal exclusion of change 6: the interaction replay path reads TARGET_STATE_STYLE_PROPERTIES (src/reconstruction-qa/interaction-qa.ts:71), which is still `= STYLE_WHITELIST` and was NOT touched by change 6; QA_STYLE_PROPERTIES is referenced nowhere outside capture-page.ts, index.ts and the new proof suite; and the screenshot-diff / types / summarize edits are purely additive and cannot affect clone.attempted. The build handoff reported the live half aborting earlier with `__name is not defined`; it now runs further and fails differently, consistent with that file being edited concurrently.",
+    "typecheck": "npx tsc --noEmit over the whole repo — exit 0, clean"
+  },
+
+  "adversarial": {
+    "nanScan": "No path produces NaN or Infinity. tmp/wr285b/verify-qa/edge.ts exercised zero-overlap, height mismatch, fully transparent vs opaque white, and 50% alpha; every numeric field in every ImageComparison was finite. overWhite() provably returns an integer in [0,255] for any (0..255, 0..255) input, so the SRGB_TO_LINEAR LUT index is always in range and the non-null assertions cannot yield undefined.",
+    "dimensionMismatch": "Metrics are computed over min(width) × min(height) only, never resized; widthDelta/heightDelta and commonAreaRatio report the shortfall. Row indexing uses each image's own stride (rowA = y * a.width * 4), which is correct for differing widths. Verified: a 10×20 vs 10×10 pair reports heightDelta -10, commonAreaRatio 0.5 and 0 changed pixels over the overlap.",
+    "zeroOverlapReadsAsZero": "When overlapPixels === 0 every ratio and mean is guarded to 0 and deltaE76Max is round4(0) = 0 — i.e. a pair with no overlap reads numerically as 'identical'. This mirrors the pre-existing @1 behaviour exactly (changedPixelRatio was already 0 there) and commonAreaRatio 0 discloses it, so it is not a new hazard, but a reader who looks only at deltaE76Mean could be misled. Worth naming in any report that consumes these fields.",
+    "alpha": "Both sides are composited over white with the SAME unchanged overWhite() before differencing, and ΔE76 is computed on the composited values, so alpha can never be read as a colour difference. Verified: fully transparent garbage RGB vs opaque white → 0 on every channel; 50% black over white vs white → @1 1.0, @16 1.0, ΔE76 46.8072, all consistent.",
+    "shortCircuitSoundness": "SOUND, no false negatives. ΔE76 is skipped only when pixelMax === 0, which means all three composited channels are bit-identical, which means both sides map to the identical Lab triple, which means ΔE76 is exactly 0 — it cannot exceed 2.3 or 10 and contributes 0 to the mean. The skip changes no reported value.",
+    "performance": {
+      "measured": "tmp/wr285b/verify-qa/perf.ts on a 1440×30000 (43.2 M px) pair on this machine",
+      "identicalPair": "275 ms (short-circuit fires on every pixel)",
+      "everyPixelDiffers": "2846 ms (the 28.5A @1≈1.0 worst case, where the short-circuit never fires)",
+      "assessment": "~10× slowdown in the worst case, but bounded at ~2.8 s per 43 MP pair — affordable. There is no sampling and none is needed at this size. The cost multiplies by pairs, though: 3 pairs × 2 viewports × N pages, so a 10-page run of very tall pages could add on the order of a minute of pure CPU. Not a blocker; worth a timing note on the first real full-site run.",
+      "captureCost": "Unmeasured on a real site: 30 extra getPropertyValue() calls per element per capture, most of which return a value on every element. The build handoff discloses this."
+    }
+  },
+
+  "defects": [],
+
+  "risks": [
+    {
+      "severity": "medium",
+      "title": "The honesty machinery is proven but INERT in real runs",
+      "detail": "compareCapturedStyles() and unverifiableFromSpecProperties() are referenced nowhere in src/ outside their own definition file and the barrel export — only scripts/smoke-qa-independence.ts calls them. So on an actual QA run the 30 QA-only properties are captured and then compared against nothing, and no report names them as un-verifiable-from-spec. The blind spot is demonstrably closable but is not yet closed in production. The build handoff discloses this as a follow-up (wire into qa-page.ts), which is honest, but until that lands the user-visible QA behaviour is unchanged except for the pixel channels."
+    },
+    {
+      "severity": "medium",
+      "title": "The interaction axis is still blind",
+      "detail": "src/reconstruction-qa/interaction-qa.ts:71 still defines TARGET_STATE_STYLE_PROPERTIES = STYLE_WHITELIST, so open-state style comparison for interactions retains exactly the coupling change 6 removed from page capture. A gradient-knockout or text-shadow difference that appears only in an open state is still invisible. Outside the claimed scope, but it is the same defect in a second place and should be scheduled."
+    },
+    {
+      "severity": "low",
+      "title": "Literal-snapshot coupling is a maintenance obligation",
+      "detail": "QA_STYLE_PROPERTIES is a literal copy of the Observer's 114 properties. When the observer builder adds a property, the suite's 'QA keeps every property the Observer records' check fails until it is copied over. Correctly designed as an alarm rather than silent drift, and the build handoff names it — but it is real ongoing work."
+    },
+    {
+      "severity": "low",
+      "title": "Tight reference tolerances in the ΔE76 checks",
+      "detail": "red L* asserted 53.2408 ± 0.01 against an actual 53.2329 (0.0021 of margin left) and grey200/208 asserted 2.92 ± 0.05 against an actual 2.8781 (0.008 of margin). Both pass, and the underlying math is correct to 1e-6 against an independent exact-constant implementation, but either assertion could flip on a constants cleanup that is not a regression."
+    },
+    {
+      "severity": "low",
+      "title": "The CLI headline is still one scalar",
+      "detail": "src/cli-qa-reconstruction.ts prints only the @1 median (L153, L173). The new channels reach the summary object and worstPages detail, so an operator reading the CLI headline still sees the number 28.5A proved misleading. Disclosed as a follow-up by the builder; noted here because it blunts the change's practical benefit until fixed."
+    }
+  ],
+
+  "claimsVerifiedOneByOne": {
+    "144 properties, 30 beyond a 114-property observer list": "CONFIRMED at runtime",
+    "STYLE_WHITELIST import removed": "CONFIRMED (source-parsed and by inspection)",
+    "QA is a strict superset of the observer vocabulary": "CONFIRMED, 0 properties lost",
+    "@16 is a max-channel gate at >= 16/255": "CONFIRMED",
+    "dE76 implemented in-repo with no new dependency": "CONFIRMED, math independently reproduced",
+    "@1 untouched": "CONFIRMED",
+    "all new Zod fields optional; historical artifacts parse": "CONFIRMED on a real 2026-08-25 linear.app run",
+    "summarize prints all channels side by side and never defaults an unmeasured channel to 0": "CONFIRMED",
+    "smoke-qa-independence 62/62": "CONFIRMED by re-running",
+    "offline half of smoke-reconstruction-qa passes": "CONFIRMED",
+    "tsc --noEmit clean": "CONFIRMED, exit 0"
+  },
+
+  "verifierArtifacts": [
+    "tmp/wr285b/verify-qa/superset.ts",
+    "tmp/wr285b/verify-qa/de76.ts",
+    "tmp/wr285b/verify-qa/historical.ts",
+    "tmp/wr285b/verify-qa/edge.ts",
+    "tmp/wr285b/verify-qa/perf.ts",
+    "tmp/wr285b/verify-qa/fixture-independent.ts"
+  ],
+
+  "notes": "No repository source file was modified and no git operation was performed; the only files written are this handoff and the six read-only verification scripts under the gitignored tmp/ tree. The three failing checks in scripts/smoke-reconstruction-qa.ts were attributed to the concurrently-authored src/reconstruction/layout-truth-check.ts (clone generation), not to change 6, by tracing that the interaction-replay path never reads any constant or function this change touched."
+}

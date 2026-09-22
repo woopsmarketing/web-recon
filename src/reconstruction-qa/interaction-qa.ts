@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { Browser, ElementHandle, Page } from "playwright";
-import { SKIP_TAGS, STYLE_WHITELIST, type ViewportProfile } from "../observer/types.js";
+import { SKIP_TAGS, type ViewportProfile } from "../observer/types.js";
 import { TARGET_TEXT_SAMPLE_LEN } from "../interaction-explorer/types.js";
 import {
   captureSnapshot,
@@ -20,7 +20,7 @@ import {
 } from "../interaction-explorer/index.js";
 import type { CompiledObservedTarget, CompiledPattern } from "../sitespec/index.js";
 import { dynamicTargetDomId, generatedDomId } from "../reconstruction/relations.js";
-import { newQaContext } from "./capture-page.js";
+import { newQaContext, QA_STYLE_PROPERTIES } from "./capture-page.js";
 import {
   ERROR_MESSAGE_MAX_LEN,
   QA_ACTION_TIMEOUT_MS,
@@ -67,8 +67,31 @@ import {
  * for the `interaction-target-state-style` correction.
  */
 
-/** Computed properties read from an interaction target's open state (item 95). */
-export const TARGET_STATE_STYLE_PROPERTIES: readonly string[] = STYLE_WHITELIST;
+/**
+ * Computed properties read from an interaction target's open state (item 95).
+ *
+ * Task 28.5B change 6 (integration): this used to be `= STYLE_WHITELIST`, the
+ * OBSERVER's vocabulary. That is the same coupling change 6 removed from page
+ * capture, in a second place: an open state whose only difference is a
+ * gradient-knockout headline, a `text-shadow`, an `outline`, a `rotate` or a
+ * `text-decoration-*` treatment was byte-identical in the Observer's 114
+ * properties, so the replay reported "equivalent" without ever having looked.
+ *
+ * It is now QA's OWN vocabulary — the same list `runCapture` reads on both the
+ * page-capture axes — for three reasons:
+ *
+ *  1. It is a strict SUPERSET of what this constant used to contain, so no
+ *     open-state property that was compared before is compared any less now
+ *     (the proof suite asserts exactly that, against `STYLE_WHITELIST` itself).
+ *  2. One vocabulary across every QA axis means an open-state finding and a
+ *     page-capture finding name the same property set, which is what makes the
+ *     "promote this into the Observer" feedback loop legible.
+ *  3. The cost is 30 extra `getPropertyValue` calls on ONE element per replay
+ *     side — not per element of a page — which is unmeasurable.
+ *
+ * The observer's `STYLE_WHITELIST` is deliberately NOT imported here.
+ */
+export const TARGET_STATE_STYLE_PROPERTIES: readonly string[] = QA_STYLE_PROPERTIES;
 
 function short(message: string): string {
   const firstLine = message.split("\n", 1)[0]!.trim();

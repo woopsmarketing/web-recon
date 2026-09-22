@@ -173,6 +173,32 @@ async function main(): Promise<void> {
   console.log(`  total compile              ${elapsed} ms`);
   console.log("  Firecrawl 0 · Playwright 0 · network 0 · asset downloads 0 · AI 0");
   console.log("");
+  // ---- registry index (Task 28 CR5) ----------------------------------------
+  // The Library UI lists templates without a database by reading
+  // data/.registry/templates.json. `registerTemplate` re-derives the row from
+  // manifest.json + site-map.json in the run directory, so it must run AFTER
+  // the compile wrote them; it is an upsert by templateId, so re-compiling the
+  // same template id replaces the row instead of duplicating it. A failed index
+  // write NEVER fails a compile that already produced a valid template.
+  const { isScannableTemplateDir, registerTemplate } = await import("./registry/index.js");
+  if (isScannableTemplateDir(compiled.runDir)) {
+    try {
+      const entry = await registerTemplate(compiled.runDir);
+      console.log(
+        `  registry                   ${entry.templateId} indexed (data/.registry/templates.json)`,
+      );
+    } catch (err) {
+      console.log(
+        `  registry                   NOT indexed — ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  } else {
+    console.log(
+      "  registry                   NOT indexed — run is outside data/<host>/recon-templates/, " +
+        "where the registry scan can re-derive it (--output relocation)",
+    );
+  }
+  console.log("");
   console.log(`[recon-template] build check: run \`next build\` in ${compiled.runDir}/app,`);
   console.log(`  or \`pnpm qa:recon-template ${compiled.runDir}/manifest.json\` for the full parity QA`);
 }

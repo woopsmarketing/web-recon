@@ -1,0 +1,333 @@
+{
+ "schema": "task285b-build-layout-v1",
+ "producedAt": "2026-08-29",
+ "task": "28.5B Change 3 — layout inference safety (containing-block guards + post-emit browser truth check)",
+ "filesChanged": [
+  {
+   "path": "src/reconstruction/layout-inference.ts",
+   "change": "owned; guards + border-corrected denominator + retracted false docstring",
+   "lines": {
+    "docstring-retraction": "3-58 (TRUTH-VIEWPORT SAFETY block at :22; the old ':19-22' by-construction claim is gone)",
+    "RecoveredLayoutRule.truth": "84-90",
+    "LayoutGuardReason / LAYOUT_GUARD_REASONS": "93-114",
+    "LayoutInferenceCounters.guardRefusals / guardRefusalsByReason": "116-127",
+    "horizontalBorder()": "166-190",
+    "establishesAbsoluteContainingBlock()": "193-219",
+    "containingBlockGuard()": "221-291",
+    "counters init + refuse()": "304-314",
+    "truthRect capture (post sanity gate)": "357-359",
+    "contentAt() now subtracts parent border too": "408-411",
+    "guard computed once per node": "413-422",
+    "full-width branch refusal": "572-580",
+    "percentage branch refusal": "611-619"
+   }
+  },
+  {
+   "path": "src/reconstruction/layout-truth-check.ts",
+   "change": "NEW module (468 lines) — the post-emit browser truth check",
+   "lines": {
+    "mechanism docstring": "9-52",
+    "MAX_ROUNDS / REGRESSION_EPSILON_PX": "54-57",
+    "RuntimeNode -> HTML serializer": "125-190",
+    "truthCheckHtml()": "195-215",
+    "measureInBrowser() (browser-side)": "226-251",
+    "verifyLayoutRules()": "263-468"
+   }
+  },
+  {
+   "path": "src/reconstruction/generate-app.ts",
+   "change": "minimal additive wiring",
+   "lines": {
+    "import": "24",
+    "GenerateAppOptions.verifyLayout / onLog": "68-77",
+    "GeneratedApp.layoutVerification": "84",
+    "globals.css hoisted so the harness can reuse it": "175-176",
+    "truth check invoked before the stylesheet is written": "204-246",
+    "shippedByKind + sortRecord helpers": "285-294",
+    "manifest.layout counters": "318-341",
+    "return value": "380"
+   }
+  },
+  {
+   "path": "src/reconstruction/types.ts",
+   "change": "manifest layout counters extended ADDITIVELY (every new field .optional())",
+   "lines": {
+    "new layout fields": "481-534"
+   }
+  },
+  {
+   "path": "src/reconstruction/index.ts",
+   "change": "re-exports for the guard + truth-check surface",
+   "lines": {
+    "layout-inference additions": "183-186",
+    "layout-truth-check block": "188-198"
+   }
+  },
+  {
+   "path": "src/cli-reconstruct.ts",
+   "change": "onLog passthrough; prints the verification block; corrected the now-false 'Playwright 0' honesty line",
+   "lines": {
+    "onLog": "303",
+    "verification report": "322-334",
+    "Playwright count": "350-357"
+   }
+  },
+  {
+   "path": "scripts/smoke-layout-safety.ts",
+   "change": "NEW proof suite (969 lines, 55 checks)"
+  },
+  {
+   "path": "docs/result/handoffs/28.5B-build-layout.json",
+   "change": "this handoff"
+  }
+ ],
+ "guards": [
+  {
+   "reason": "grid-item",
+   "trigger": "parent computed display is grid or inline-grid",
+   "why": "the item's containing block is its GRID AREA, which no probe measured; the proven /changelog defect (624px item emitted as 48.75% of the 1280px parent, resolved against the 624px area, rendered 303.27px)",
+   "appliesTo": [
+    "percentage-width",
+    "full-width"
+   ]
+  },
+  {
+   "reason": "flex-item-basis-governed",
+   "trigger": "parent display flex/inline-flex AND flex-direction row|row-reverse AND (flex-grow > 0 OR flex-basis != auto)",
+   "why": "the used main-axis size comes from the flex base size grown/shrunk by free space, not from a fraction of the content box",
+   "notRefused": "flex-grow: 0 + flex-basis: auto in a row container, and every child of a column container (main axis is vertical)",
+   "appliesTo": [
+    "percentage-width",
+    "full-width"
+   ]
+  },
+  {
+   "reason": "abs-containing-block-not-parent",
+   "trigger": "position:absolute and the parent does NOT establish a containing block (position static AND transform/filter/perspective none AND no will-change/contain hint)",
+   "why": "the containing block is some ancestor; the parent's box is unrelated to this node's width. Conservative by design: a property the Observer does not record reads as absent and therefore refuses",
+   "appliesTo": [
+    "percentage-width",
+    "full-width"
+   ]
+  },
+  {
+   "reason": "abs-containing-block-is-padding-box",
+   "trigger": "position:absolute, the parent IS the containing block, but the parent has non-zero horizontal padding or border",
+   "why": "an absolutely positioned child resolves against the parent's PADDING box, which is exactly the quantity contentAt() subtracts away",
+   "notRefused": "position:absolute inside a zero-padding, zero-border positioned parent (the two boxes coincide)",
+   "appliesTo": [
+    "percentage-width",
+    "full-width"
+   ]
+  },
+  {
+   "reason": "fixed-position",
+   "trigger": "position:fixed",
+   "why": "the containing block is the viewport (or a transformed ancestor) — never the parent's content box, at any width",
+   "appliesTo": [
+    "percentage-width",
+    "full-width"
+   ]
+  },
+  {
+   "reason": "(correction, not a guard) parent border subtracted from contentAt()",
+   "trigger": "always",
+   "why": "the parent's content box is its border box minus padding AND border; the original code subtracted only padding, the fourth containing-block error 28.5A named. Chromium serializes computed `border-left` as `<width> <style> <color>`, so the leading length is parsed",
+   "appliesTo": [
+    "percentage-width",
+    "full-width",
+    "centered-max-width"
+   ]
+  },
+  {
+   "reason": "(scope note) centered-max-width is NOT guard-gated",
+   "why": "it emits max-width + margin-inline:auto + width:auto — a cap and a centering, not a fraction of the parent — so the brief scopes guards to the two branches that DIVIDE by contentAt(). The browser truth check is its backstop and does reject it when it regresses."
+  }
+ ],
+ "truthCheck": {
+  "mechanism": "src/reconstruction/layout-truth-check.ts serializes the reconstruction's OWN emitted desktop RuntimeNode tree back into static HTML inside the same `.wr-variant[data-wr-viewport=desktop][data-wr-page=...]` wrapper PageRenderer.tsx produces, so the (0,3,0) recovered selectors match exactly as they will in the app. It loads that document in Chromium at the page's truth viewport with the app's real generated stylesheet (globals + exact computed classes + pseudo tier + observed-target tier) plus one empty `<style id=\"wr-layout-candidates\">`, all remote schemes aborted at the route level so the render is offline and deterministic. It measures every candidate rule's `[data-wr-node]` rect with the candidate tier EMPTY — the baseline, i.e. what the exact computed fallback alone renders — then swaps only that style element's text and re-measures; there is no navigation and no re-parse, so each extra round costs one reflow. A candidate is REJECTED when max(|dx|,|dwidth|) against the observed truth rect exceeds TRUTH_SANITY_TOLERANCE_PX (4) AND exceeds the baseline error by more than 0.5px: the first half says the rule is wrong, the second says the RULE — not the reconstruction's own unavoidable drift from absent images and substituted fonts — is what made it wrong. Rejecting changes the layout, so survivors are re-measured up to MAX_ROUNDS (4) and then confirmed once more; if a page's set never settles, every remaining truth-checkable candidate on it is dropped whole (prefer rejection over clever math) and `truthCheckConverged` goes false. `responsive-hidden` rules are accepted unchecked and counted separately: their @media bands are built between a visible and a hidden probe width with the truth width always on the visible side, so they cannot apply at the truth viewport at all.",
+  "integratedAt": "src/reconstruction/generate-app.ts:232 — inside generateApp(), before the generated stylesheet is written, so it is on the real `pnpm reconstruct` path (src/cli-reconstruct.ts:295 -> generateApp) and equally on the QA-correction path (src/reconstruction-qa/apply-corrections.ts:119) and the E2E path (src/e2e/run-reconstruction.ts:84). Only rules the re-render confirmed reach `generated-styles.css`.",
+  "failureModes": {
+   "chromium-unavailable": "playwright import or chromium.launch() failing is logged and recorded as manifest layout.truthCheckStatus = \"chromium-unavailable\". Rules pass through unfiltered — recovery failing must never fail the page — but the artifact says plainly that it was never verified.",
+   "disabled": "GenerateAppOptions.verifyLayout: false records \"disabled\". There is no path that skips the check and still claims verification.",
+   "no-candidates": "inference emitted nothing checkable; no browser is launched."
+  },
+  "counters": {
+   "manifest.layout.candidateRules": "rules inference proposed and handed to the check",
+   "manifest.layout.acceptedRules": "rules that shipped (equals recoveredRules)",
+   "manifest.layout.rejectedByGuard": "nodes a containing-block guard refused before emission",
+   "manifest.layout.rejectedByTruthCheck": "candidates a truth-viewport re-render measured as regressions",
+   "manifest.layout.acceptedRegressed": "shipped rules still regressing in the confirming render — 0 by construction, and now a MEASUREMENT rather than a docstring claim",
+   "manifest.layout.guardRefusalsByReason": "grid-item / flex-item-basis-governed / abs-* / fixed-position",
+   "manifest.layout.truthCheckStatus": "verified | no-candidates | chromium-unavailable | disabled",
+   "manifest.layout.truthCheckable": "candidates measurable at the truth viewport (non-@media, with an observed rect)",
+   "manifest.layout.truthCheckRounds": "re-render/measure rounds summed across pages",
+   "manifest.layout.truthCheckPagesRendered": "pages actually rendered",
+   "manifest.layout.truthCheckConverged": "false when a page's set never settled and was dropped whole",
+   "changed-semantics": "manifest.layout.recoveredRules / centered / fullWidth / percentage / responsiveHidden now count what SHIPPED, not what was proposed. candidateRules holds the old meaning.",
+   "compatibility": "every new field is z.optional(); a pre-28.5B layout block still parses (checked in Part 4 of the suite)."
+  }
+ },
+ "suite": {
+  "name": "scripts/smoke-layout-safety.ts",
+  "command": "npx tsx scripts/smoke-layout-safety.ts",
+  "checks": 55,
+  "passed": 55,
+  "failed": 0,
+  "parts": [
+   "Part 1 (22 checks) — guards, offline, through the real inferLayoutRules: the generic denominator regression (a two-column grid whose date + content columns sit on constant 23.13%/48.75% curves) refused as grid-item, including its full-width sibling; the IDENTICAL arithmetic under a block parent still recovering `width: 48.75%` and `width: auto`, so only the containing block can be what rejected the grid children; flex-grow / flex-basis refusals with flex-grow:0+basis:auto and column containers explicitly NOT over-rejected; absolute-under-static, fixed, and absolute-in-padded-positioned refusals with absolute-in-zero-padding-positioned explicitly accepted; a bordered parent's child still recovering full-width; containingBlockGuard() driven directly as a unit.",
+   "Part 2 (19 checks) — real Chromium at 1440 over four generic pages: the grid rules rejected with the measurement recorded (624px observed -> 304.2px rendered, 296px -> 68.5px) while the exact fallback renders both columns within 4px of observation; a legitimately centered max-width container ACCEPTED (no over-rejection); an @media rule accepted unchecked; a guard-clean regressor (plain block parent, `width: 40%` on a 600px box) rejected and counted; a rule NO WORSE than the exact fallback accepted even though it is outside tolerance; acceptedRegressed === 0; convergence; the emitted CSS carrying only accepted selectors; the HTML serializer; `enabled:false` recorded as \"disabled\".",
+   "Part 3 (12 checks) — the same rules driven through the real generateApp(): manifest counters, `recoveredRules` naming what shipped, the shipped generated-styles.css carrying the accepted centered selector and none of the three rejected ones, no wall-clock timing in the manifest, and a zero-rule plan recording \"no-candidates\" with zero pages rendered.",
+   "Part 4 (2 checks) — a pre-28.5B layout block parses unchanged with every new field absent; an unknown truthCheckStatus is rejected rather than treated as a pass."
+  ],
+  "regressionSuitesRun": [
+   {
+    "name": "scripts/smoke-reconstruction.ts",
+    "result": "217/217 PASS (includes the byte-identical-double-generation determinism check, next build, next start and a real browser over both viewports)"
+   },
+   {
+    "name": "scripts/smoke-e2e.ts",
+    "result": "121/130 — the ONE layout assertion, \"the centered .centered band recovered a layout rule from the probe\" (smoke-e2e.ts:894), PASSES, so the guards do not over-reject a legitimate centered container on the real observer→compiler→generator path. The 9 failures are all downstream of `clone-load-error` in the QA stage (routes 0/6 rendered) and are NOT from this change: src/reconstruction-qa/{qa-page,qa-behavior,capture-page,summarize,types,index,screenshot-diff}.ts were being rewritten by another 28.5 builder at 20:40–20:42 local, i.e. during this run. Re-run it once that builder lands."
+   },
+   {
+    "name": "npx tsc --noEmit",
+    "result": "clean across the whole repo"
+   }
+  ]
+ },
+ "runtimeCost": {
+  "measurement": "a synthetic page of 6,000 element nodes with 400 candidate rules (200 of them deliberately regressing) verified in 460 ms end to end, 2 rounds, including chromium launch",
+  "suiteObservation": "4 small pages / 6 candidates: 456 ms including chromium launch",
+  "shape": "one chromium launch per generateApp() call, one setContent per page that owns candidates, then N style-swap + measure passes (a reflow each, no re-parse). Browser launch dominates; marginal per-page cost on realistic pages is tens of milliseconds. Pages with no candidate rules are never rendered.",
+  "estimateFor8PageCorpus": "well under 5 s added to a full `pnpm reconstruct`"
+ },
+ "invalidatedExistingChecks": [
+  {
+   "suite": "scripts/smoke-reconstruction.ts",
+   "check": "§190 \"the generator reaches no browser / crawler / HTTP / AI-provider module\" (scripts/smoke-reconstruction.ts:3439-3448)",
+   "status": "STILL PASSES, but only on a technicality — the walker scans `from \"...\"` statements and layout-truth-check.ts reaches playwright through `await import(\"playwright\")`. The generator's INTENT claim is now legitimately narrower: it opens a browser against its own output, offline (all http/https routes aborted), reading no network and no original site. Not edited, per the brief.",
+   "recommendation": "restate the invariant as \"no crawler / HTTP / AI-provider module, and the only browser use is the offline post-emit layout truth check\" and teach the walker about dynamic imports."
+  },
+  {
+   "suite": "scripts/smoke-reconstruction.ts",
+   "check": "§190 \"…and its only third-party dependencies are the HTML parser and zod\" (:3449-3456)",
+   "status": "STILL PASSES for the same reason; playwright is now an optional runtime dependency of generation."
+  },
+  {
+   "suite": "src/cli-reconstruct.ts honesty line",
+   "check": "\"Firecrawl 0 · Playwright 0 · network 0 · asset downloads 0 · AI 0\"",
+   "status": "WAS made false by this change and HAS been corrected in place (it is my file): it now prints the number of pages rendered by the offline layout truth check. `network 0` still holds."
+  },
+  {
+   "suite": "src/e2e/run-reconstruction.ts:125",
+   "check": "stage count `layoutRecoveredRules: plan.layout.rules.length`",
+   "status": "now reports CANDIDATES, not shipped rules, and so can exceed the manifest's recoveredRules. Not edited (outside ownership). smoke-e2e.ts:894 only asserts `>= 1`, so it is unaffected; the honest source is `generated.layoutVerification.counters.acceptedRules`."
+  }
+ ],
+ "risks": [
+  {
+   "risk": "Generation determinism now depends on Chromium producing identical rects for identical content. smoke-reconstruction's byte-identical double-generation check passes today because its fixture has no layout probe (0 candidates, no browser). A corpus WITH candidates has not been double-generated.",
+   "mitigation": "the render is offline, fixed-viewport, deviceScaleFactor 1, with a fixed round budget; no clock or randomness enters the artifact (elapsedMs is returned to the caller but deliberately never written to the manifest). Worth one explicit double-generation on a probed corpus before release."
+  },
+  {
+   "risk": "The differential (worse-than-baseline) acceptance rule is what prevents mass over-rejection when the reconstruction is already drifting for unrelated reasons (absent images, substituted fonts). If a future change made the harness render systematically differently from the real Next app, rules could be judged against the wrong baseline.",
+   "mitigation": "the harness serializes the SAME RuntimeNode IR the app renders and reuses the same wrapper attributes and the same generated CSS. The suite asserts the serializer's attribute mapping. A divergence would show as a large baseline error, not a silent acceptance."
+  },
+  {
+   "risk": "Guards are conservative and will refuse some legitimately recoverable nodes (any grid item, any grown flex item). 28.5A's ablation says dropping the 52 percentage rules reproduces a full deletion's /changelog gain to 4 dp and is the best off-viewport state at 1920, so this is the measured-correct direction — but recovered-rule counts on a real corpus will fall.",
+   "mitigation": "refusal is free by design (the node keeps its exact computed style) and every refusal is counted by reason in the manifest, so the cost is visible rather than silent."
+  },
+  {
+   "risk": "acceptedRegressed is measured only at the TRUTH viewport. Nothing here says anything about 1920 or 390; off-viewport behaviour remains inference, exactly as the `layout-rule-inferred` limitation already states.",
+   "mitigation": "none needed — the scope is stated. Change 3 was scoped to truth-viewport safety."
+  },
+  {
+   "risk": "The truth check adds a chromium launch to every generateApp() call that has candidate rules, including inside other suites (smoke-e2e, smoke-reconstruction-qa) and inside src/production and src/release paths that regenerate.",
+   "mitigation": "zero-candidate plans launch nothing; `verifyLayout: false` is available and is recorded as \"disabled\" rather than silently passing. Measured cost is sub-second."
+  },
+  {
+   "risk": "position:absolute guard reads `will-change`, `contain` and `perspective`, which are NOT in the Observer's STYLE_WHITELIST. They read as absent.",
+   "mitigation": "absent reads as 'does not establish a containing block', which REFUSES. The failure direction is safe by construction; it can only over-refuse, never under-refuse."
+  }
+ ],
+ "notDone": [
+  "No universal CSS layout solver, no containing-block computation — refusal only, as scoped.",
+  "layout-inference was NOT deleted, and the responsive-band / hardcoded-desktop-subtree defects (28.5A items 1, 2 and 8) are untouched: they are other changes.",
+  "src/e2e/run-reconstruction.ts's stage count was left reporting candidates (outside ownership)."
+ ],
+ "correction": {
+  "producedAt": "2026-08-29T22:40:00+09:00",
+  "agent": "fresh correction agent (28.5B Change 3, defects D3 + D8 only)",
+  "defectsFixed": [
+   "D3",
+   "D8"
+  ],
+  "newStatus": {
+   "enum": [
+    "verified",
+    "no-candidates",
+    "responsive-hidden-only",
+    "unverifiable-candidates",
+    "chromium-unavailable",
+    "disabled"
+   ],
+   "no-candidates": "ZERO candidates only.",
+   "responsive-hidden-only": "candidates exist and every one is responsive-hidden — accepted unchecked (their @media band cannot apply at the truth viewport), nothing unverified ships.",
+   "unverifiable-candidates": "geometry-affecting candidates exist and NONE could be rendered/measured — all of them REJECTED.",
+   "chromium-unavailable": "playwright missing or chromium failed to launch — geometry candidates are now REJECTED (previously shipped unverified); responsive-hidden still ships.",
+   "disabled": "the ONLY status under which geometry ships unchecked; it is the caller's explicit opt-out and is recorded as such."
+  },
+  "invariant": "a geometry-affecting recovered rule (centered-max-width / full-width / percentage-width) never ships unverified. Enumerated rejection paths in layout-truth-check.ts: rule.truth undefined; rule.pageId absent from the generation; playwright import failure; chromium launch failure; the node absent from the baseline render; the candidate making the node unmeasurable mid-loop; the page's set not settling inside MAX_ROUNDS; the page render throwing. Per-rule leak closed too: survivors are now computed from the CHECKABLE set, so an unverifiable geometry rule is dropped even on a run whose other rules were measured.",
+  "newCounters": {
+   "rejectedUnverifiable": "geometry candidates dropped because they could not be measured (derived: geometry - shipped - rejectedByTruthCheck, so it cannot be hand-maintained out of agreement with what ships)",
+   "acceptedUnchecked": "shipped responsive-hidden rules, counted apart from the measured acceptances",
+   "manifest": "both added to ReconstructionManifestSchema.layout as .optional(); the truthCheckStatus enum gained two members. Old manifests still parse (Part 4 check).",
+   "semanticChange": "non-convergence drops and unmeasurable nodes now count as rejectedUnverifiable rather than rejectedByTruthCheck, which is reserved for MEASURED regressions."
+  },
+  "d8": {
+   "file": "src/e2e/run-reconstruction.ts:125-137",
+   "before": "layoutRecoveredRules: plan.layout.rules.length (candidates, post-guard/pre-truth-check)",
+   "after": "layoutRecoveredRules = generated.layoutVerification.counters.acceptedRules (SHIPPED), plus labelled layoutCandidateRules / layoutRejectedByGuard / layoutRejectedByTruthCheck / layoutRejectedUnverifiable",
+   "smokeE2e894": "still meaningful and passing — the fixture's centered rule is browser-ACCEPTED, so the shipped count is >= 1"
+  },
+  "filesChanged": [
+   "src/reconstruction/layout-truth-check.ts (statuses, isAcceptedUnchecked(), finish() accounting, unverifiable rejection paths)",
+   "src/reconstruction/types.ts (additive optional manifest fields + enum members)",
+   "src/reconstruction/generate-app.ts (two manifest counters wired)",
+   "src/e2e/run-reconstruction.ts (stage counts)",
+   "scripts/smoke-layout-safety.ts (Part 2b added, 12 new checks, no check weakened)"
+  ],
+  "suite": {
+   "command": "npx tsx scripts/smoke-layout-safety.ts",
+   "checks": 67,
+   "passed": 67,
+   "failed": 0,
+   "note": "55 pre-existing + 12 added"
+  },
+  "reconstruction": {
+   "command": "npx tsx scripts/smoke-reconstruction.ts",
+   "checks": 217,
+   "passed": 217,
+   "failed": 0
+  },
+  "e2e": {
+   "command": "npx tsx scripts/smoke-e2e.ts",
+   "passed": 130,
+   "failed": 0
+  },
+  "typecheck": "npx tsc --noEmit clean (exit 0)",
+  "notFixed": [
+   "D1",
+   "D2",
+   "D4",
+   "D5",
+   "D6",
+   "D7",
+   "D9+ — out of this correction's scope"
+  ],
+  "followUps": [
+   "src/cli-reconstruct.ts:322-334 prints status/candidates/accepted/rejectedByTruthCheck but not rejectedUnverifiable — one line, left to the owner of that file.",
+   "scripts/smoke-layout-safety.ts minimalPlan() gained a customProperties block so the fixture matches the plan shape generateApp() now consumes (28.5B §5 landed concurrently); it is an empty tier, no check relaxed."
+  ]
+ }
+}

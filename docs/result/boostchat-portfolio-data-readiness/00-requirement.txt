@@ -1,0 +1,67 @@
+boost-interior-demo의 실제 portfolio/project 데이터를 READ-ONLY로 조사하라.
+
+목적:
+향후 BoostChat의 자연어 기반 portfolio matching에
+현재 데이터가 얼마나 준비되어 있는지 판단.
+
+구현/수정 금지.
+
+전체 project에 대해 다음 coverage를 계산:
+
+- id / slug / title
+- category
+- cover
+- area.value
+- area.unit
+- area.basis
+- location
+- scope
+- keywords
+- pricePerArea
+- summary
+- gallery
+
+각 필드:
+- 존재율
+- null/empty 비율
+- 값의 종류
+- 표현 일관성
+
+특히 분석:
+
+1. area
+- pyeong / m2 혼재 여부
+- supply / exclusive / unknown 분포
+- 숫자 형식 이상치
+
+2. pricePerArea
+- coverage
+- currency/unit
+- 이상치
+- area와 안전하게 비교 가능한지
+
+3. category / scope / keywords
+- 동의어
+- 중복 표현
+- spelling variation
+- 한국어/영어 혼재
+- vocabulary normalization 필요성
+
+4. "화이트톤", "모던", "미니멀", "전체 리모델링" 같은
+사용자 표현을 현재 데이터가 어느 정도 표현할 수 있는지
+
+5. 다음 사용자 질의가 현재 데이터만으로 매칭 가능한지 평가:
+- "34평 아파트인데 깔끔한 화이트톤"
+- "24평에 2천만원 정도"
+- "30평대 모던한 느낌"
+- "욕실이랑 주방만 하고 싶어요"
+
+각각:
+READY / PARTIAL / NOT_READY
+
+최종:
+- 데이터 schema 변경 없이 해결 가능한 것
+- vocabulary normalization만 필요한 것
+- source data 자체를 보강해야 하는 것
+
+보고서만 작성.

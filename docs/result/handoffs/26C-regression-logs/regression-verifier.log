@@ -1,0 +1,89 @@
+Already up to date
+Done in 154ms using pnpm v11.21.0
+$ tsx scripts/smoke-verifier.ts
+web-recon — smoke:verifier (local fixture)
+
+  PASS  policy is the documented global one
+  PASS  bucket bounds 0|1|2|3-4|5-8|9-16|17-32|33+
+  PASS  bucket bounds are the documented constant
+  PASS  repeat collapse: 3 vs 8 identical siblings are one shape
+  PASS  repeat collapse keeps distinct sibling shapes and their first order
+  PASS  repeat collapse compares whole subtrees, not tags
+  PASS  headings collapse to one label (h2 vs h3 is a content choice)
+  PASS  depth cap 6 hides differences at depth 7
+  PASS  depth cap 6 still sees differences at depth 6
+  PASS  landmark signature keeps nesting and order
+  PASS  landmark signature is insensitive to repeated articles
+  PASS  landmark order matters (main,aside) != (aside,main)
+  PASS  /ok → valid-html
+  PASS  /ok has title
+  PASS  /ok has fingerprints
+  PASS  /to-ok → valid-html
+  PASS  /to-ok redirected
+  PASS  /to-ok redirectCount 1
+  PASS  /to-ok finalUrl → /ok
+  PASS  /to-ok redirectChain hop 302
+  PASS  /redirect → valid-html (301→200)
+  PASS  /redirect chain hop 301
+  PASS  /not-found → http-error
+  PASS  /not-found httpStatus 404
+  PASS  /error → http-error
+  PASS  /error httpStatus 500
+  PASS  /blocked → blocked
+  PASS  /blocked httpStatus 403
+  PASS  /file → non-html
+  PASS  /file contentType application/pdf
+  PASS  /external → external-redirect
+  PASS  /external finalSameSite false
+  PASS  /canonical-a canonicalUrl resolves to /canonical-a
+  PASS  /canonical-b canonicalUrl resolves to /canonical-a
+  PASS  /duplicate-a and /duplicate-b share textHash
+  PASS  /duplicate-a and /duplicate-b share structureHash
+  PASS  final-url group { /ok, /to-ok }
+  PASS  canonical group { /canonical-a, /canonical-b }
+  PASS  content-fingerprint group { /duplicate-a, /duplicate-b }
+  PASS  validHtmlCount = 31
+  PASS  httpErrorCount = 2
+  PASS  nonHtmlCount = 1
+  PASS  externalRedirectCount = 1
+  PASS  blockedCount = 1
+  PASS  every valid HTML page got a structural profile
+  PASS  positive: same article template, 3 vs 9 paragraphs → coarse match
+  PASS  …and the EXACT hash still separates them (duplicate detection unharmed)
+  PASS  positive: same template, 3 vs 8 related items → coarse match
+  PASS  positive: extra <script>/<meta>/<link> noise → coarse match
+  PASS  …and the EXACT hash does see that noise
+  PASS  positive: inline SVG is opaque (1 path vs 4 nodes) → coarse match
+  PASS  positive: a difference below the depth cap → coarse match
+  PASS  guard: same skeleton + same landmarks but different element KINDS → no match
+  PASS  positive: identical markup, different language/text → coarse match
+  PASS  measured limit: optional <section> appearing DOES split the family
+  PASS  …and the cause is the landmark tree, not the skeleton alone
+  PASS  negative: list vs detail
+  PASS  negative: home vs content page
+  PASS  negative: docs index vs docs article
+  PASS  negative: same landmark tree is NOT enough on its own
+  PASS  landmarkCounts read the real DOM
+  PASS  structuralCounts read the real DOM
+  PASS  elementCount excludes head/script/style and tracks real content
+  PASS  elementCount ignores <script>/<meta>/<link> noise entirely
+  PASS  elementCount does not descend into inline SVG
+  PASS  histogramBuckets cover every documented category
+  PASS  histogram presence separates a form page from an article page
+  PASS  maxDepth is recorded uncapped
+  PASS  verified excludes 404
+  PASS  verified excludes 500
+  PASS  verified excludes non-html
+  PASS  verified excludes blocked
+  PASS  verified excludes external final
+  PASS  verified includes /ok once
+  PASS  verified /ok has 3 source candidates (/ok + /to-ok + /redirect)
+  PASS  verified keeps canonical dupes (a & b both present)
+  PASS  verified keeps content dupes (a & b both present)
+  PASS  verified count = 29
+  PASS  verified-urls.json carries the structural profile through
+  PASS  verification.json passes Zod
+  PASS  verified-urls.json passes Zod
+
+81/81 checks passed
+[smoke:verifier] OK

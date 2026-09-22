@@ -1,0 +1,681 @@
+{
+ "area": "Release / Registry / Regions / Revision — src/release/*, src/registry/*, src/regions/*, and the cli-release-*/cli-compile-* entrypoints (read-only scout; nothing implemented)",
+ "files": [
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/types.ts",
+   "role": "All release zod models + severity policy. ReleaseProjectSchema:388-457 is the site authoring model: siteId:400 (stable, min(1)), projectId:401, acceptedLineage:411-423 (7 ArtifactRefs, production split into {spec,build}), auxiliary:425-431, intent:432-437, target:438-443, stageStatus:444, resolutions:447 (AppliedResolution[]), authored:449, releaseState:450, failure:451, limitations/warnings/technicalDebt:452-454, runs:455 ({runId,kind}[]). Schema is .strict() at 457 — any new field must be added here or parsing throws. Two version axes: RELEASE_SCHEMA_VERSION=1 (:18) shared with requirements/run/resolution, RELEASE_PROJECT_REVISION=2 (:37) for the project document alone.",
+   "keySymbols": [
+    "RELEASE_PROJECT_REVISION:37",
+    "LEGACY_RELEASE_PROJECT_REVISION:38",
+    "RELEASE_STAGES:46",
+    "EXECUTABLE_STAGES:61",
+    "FROZEN_STAGES:68",
+    "RELEASE_STATES:74",
+    "REQUIREMENT_KINDS:93",
+    "RequirementSchema:135",
+    "RequirementsFileSchema:163",
+    "AuthoredThemeSchema:197",
+    "AuthoredStateSchema:221",
+    "emptyAuthoredState:231",
+    "ProductionResolutionSchema:277",
+    "ArtifactRefSchema:313",
+    "StageStatusSchema:329",
+    "AppliedResolutionSchema:343",
+    "ReleaseFailureSchema:375",
+    "ReleaseProjectSchema:388",
+    "ReleaseRunSchema:475",
+    "SEVERITY_POLICY:511"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/index.ts",
+   "role": "The barrel. Today it exports exactly 17 modules (lines 2-18): types, instance, store, graph, collect, requirements, freshness, gate, debt, resolve-assets, stages, prepare, resolve, build, plan, checklist, nl. TWO release modules are NOT on it: revisions.js and brand-scan.js. Both are consequently deep-imported by consumers (scripts/smoke-release.ts:106-114 for brand-scan, scripts/smoke-revision.ts:28 + src/registry/scan.ts:24 for revisions).",
+   "keySymbols": [
+    "export * from \"./build.js\":15",
+    "export * from \"./nl.js\":18"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/store.ts",
+   "role": "Release project namespace + IO. Documents the CONTENT WRITE DOCTRINE in the module header (:18-32): authored.slotValues is authoritative, content-runs/<run>/slot-values.json is derived. Directory layout is spelled out at :3-12 including revisions/r000/revision.json. loadReleaseProject:88 routes every read through instance.ts adaptReleaseProject and returns {project, projectDir, adaptedFrom} — a read NEVER rewrites the file.",
+   "keySymbols": [
+    "RELEASE_PROJECT_FILE:47",
+    "REQUIREMENTS_FILE:48",
+    "CHECKLIST_FILE:49",
+    "TECHNICAL_DEBT_FILE:50",
+    "AUTHORED_DIR:52",
+    "AUTHORED_THEME_FILE:53",
+    "REVISIONS_DIR:55",
+    "REVISION_FILE:56",
+    "releaseProjectDir:58",
+    "newReleaseRunId:63",
+    "saveReleaseProject:78",
+    "loadReleaseProject:88",
+    "saveRequirementsFile:101",
+    "loadRequirementsFile:109",
+    "saveReleaseRun:115",
+    "saveChecklist:122"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/instance.ts",
+   "role": "'SITE INSTANCE = EXTENDED RELEASE PROJECT' (header :1-21) — the settled decision that there is no parallel SiteInstance. Owns stable identity (defaultSiteId:40 host-slug, projectIdForSite:46 identity fn), authored folding (foldResolutionIntoAuthored:79 — later packs win, updatedAt only moves when something changed :89-96), and revision-1→2 in-memory adaptation (adaptReleaseProject:128; replays authored from applied resolutions at :154; refuses a newer revision at :137).",
+   "keySymbols": [
+    "defaultSiteId:40",
+    "projectIdForSite:46",
+    "resolutionSlotValues:55",
+    "mergeAuthoredTheme:65",
+    "foldResolutionIntoAuthored:79",
+    "authoredFromResolutions:101",
+    "adaptReleaseProject:128"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/prepare.ts",
+   "role": "release:prepare. Stable identity at :131-138 (requestedSiteId/projectId/projectDir), non-destructive re-prepare at :139-162 (carriedResolutions:148, carriedAuthored:149, carriedRuns:150, preserved[]:151-160). Re-hashes the whole lineage :188-213 with FROZEN_TEMPLATE_HASH_EXCLUSIONS:198 and CONTENT_DERIVED_HASH_EXCLUSIONS:204. Builds project literal :301-344, refreshes freshness only on re-prepare :350-360, derives state :363, appends prepare run :369-370, then writes requirements/checklist/debt/project/run at :372-416. saveReleaseProject is the LAST project write, at :387.",
+   "keySymbols": [
+    "PrepareOptions:68",
+    "PrepareResult:83",
+    "hashRef:98",
+    "prepareReleaseProject:110",
+    "acceptedLineage:189",
+    "collectRequirements call:216",
+    "stageStatus loop:251",
+    "project literal:301",
+    "saveReleaseProject:387",
+    "saveReleaseRun:388"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/resolve.ts",
+   "role": "release:resolve. Validates the pack against ProductionResolutionSchema :62-72, slot/route sanity vs the template :74-100, theme-contract gate :102-122 (isThemeToken/isSafeThemeValue), copies the pack into runs/<id>/resolution.json :129-134, pushes AppliedResolution :137-145, FOLDS into authored at :151, recomputes requirements/invalidation/freshness :153-164, then saves requirements/checklist/project/run at :245-251. The authored write happens at :151 and is persisted at :250 — no revision record is written anywhere in between.",
+   "keySymbols": [
+    "ResolveOptions:39",
+    "ResolveResult:44",
+    "resolveRelease:52",
+    "project.resolutions.push:137",
+    "foldResolutionIntoAuthored:151",
+    "invalidatedStages:157",
+    "refreshStageStatuses:160",
+    "saveReleaseProject:250"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/build.ts",
+   "role": "release:build. 6 phases named in the header. refreshStageStatuses:116 → applyBlocking:118 → wouldRun/wouldReuse/blocked classification :123-132 → dry-run early return :135-158 (mutates nothing) → frozen-drift refusal :160-169 → stage execution loop :197-301 (saves the project after EVERY successful stage at :262 for crash-safe resume; recomputes downstream freshness :264-288) → re-collect :303-320 → failure record :322-346 → state + run persistence :348-393. BuildOptions.runners:61 is the test seam used for retry/resume proof.",
+   "keySymbols": [
+    "BuildOptions:58",
+    "BuildResult:65",
+    "lineagePathsOf:76",
+    "buildRelease:97",
+    "stage loop:197",
+    "saveReleaseProject (per-stage):262",
+    "deriveReleaseState:349",
+    "saveReleaseRun:393"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/stages.ts",
+   "role": "The 5 executable stage runners. contentStageRunner:72 is where authored.slotValues becomes the shipped content — authored applied LAST at :134-138 with source 'user-provided', materialized via ingestGenerationResult:175 into a NEW content run, hashed with CONTENT_DERIVED_HASH_EXCLUSIONS:207. themeStageRunner:218 writes the authored theme into the release project namespace (AUTHORED_DIR/AUTHORED_THEME_FILE) at :244-250. productionStageRunner:327 writes report/qa.json at :340-344 (the file src/release/brand-scan.ts:428 later reads for brandSurfaceCensus).",
+   "keySymbols": [
+    "StageRunnerContext:38",
+    "StageRunnerResult:47",
+    "StageRunner:57",
+    "contentStageRunner:72",
+    "authored apply loop:134",
+    "themeStageRunner:218",
+    "seoStageRunner:275",
+    "assetsStageRunner:305",
+    "productionStageRunner:327",
+    "DEFAULT_STAGE_RUNNERS:358"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/graph.ts",
+   "role": "The closed stage DAG. STAGE_DEPENDENCIES:27 (theme depends on template+content:33; assets on template only:38; production on all five:39). STAGE_ORDER:43 is the topological execution order. THEME_SELECTION_IMPACTS:56 is live (referenced from RESOLUTION_FIELD_IMPACTS.theme:69). invalidatedStages:99 derives the closure via downstreamOf:73 rather than a hand-maintained table.",
+   "keySymbols": [
+    "STAGE_DEPENDENCIES:27",
+    "STAGE_ORDER:43",
+    "THEME_SELECTION_IMPACTS:56",
+    "RESOLUTION_FIELD_IMPACTS:59",
+    "downstreamOf:73",
+    "invalidatedStages:99"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/freshness.ts",
+   "role": "fresh/stale/blocked. Hash-exclusion sets and their rationale :47-117. resolutionSliceFor:177 is where authored state enters the input hash — authoredSlotValues folded into the content slice only when non-empty :186-198, authoredTheme into the theme slice :199-202 (this is what makes an editor write to authored.slotValues stale exactly {content,...} and a theme edit stale exactly {theme,production}). refreshStageStatuses:265 re-hashes every artifact dir with the RECORDED excluded set :299 and ends by calling propagateStaleStages:343. propagateStaleStages:367 is the single cascade fixpoint (previously duplicated in build.ts).",
+   "keySymbols": [
+    "FROZEN_TEMPLATE_HASH_EXCLUSIONS:47",
+    "CONTENT_DERIVED_HASH_EXCLUSIONS:105",
+    "STAGE_HASH_EXCLUSIONS:114",
+    "staleExclusionSetWarnings:136",
+    "resolutionAssetContentHashes:165",
+    "resolutionSliceFor:177",
+    "computeStageInputsHash:229",
+    "refreshStageStatuses:265",
+    "propagateStaleStages:367",
+    "applyBlocking:391"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/requirements.ts",
+   "role": "Requirement matching/merging/effective-resolution. matchResolutionToRequirements:41 uses a MULTI-map by slotKey :50-56 (one slot can carry a brand-leak AND an external-url requirement). mergeRequirements:157 takes freshConsumingStages so 'artifact truth beats bookkeeping'. effectiveResolution:265 deep-merges packs in application order; sha256OfJson:260 is the pack hash.",
+   "keySymbols": [
+    "CANONICAL_FACT_KEYS:22",
+    "RECORD_ONLY_FACT_KEYS:33",
+    "matchResolutionToRequirements:41",
+    "consumingStageOfField:133",
+    "mergeRequirements:157",
+    "releaseBlockers:224",
+    "buildRequirementsFile:233",
+    "sha256OfJson:260",
+    "effectiveResolution:265",
+    "normalizeProductionDomain:316"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/collect.ts",
+   "role": "Requirement collection from existing artifacts (never re-detected). Reads all lineage manifests :118-210 including the content run's report/brand-leak.json at :191-194 (typed loosely as {warnings:[{slotKey}]}). Section 8 :500-506 runs scanBrandSurfaces; section 9 :513-553 emits the source-brand-inline-svg requirement plus brandSurfaceRequirements. brandLeak warning count surfaces at :568-571 and into ArtifactFacts.brandLeakWarnings:617.",
+   "keySymbols": [
+    "LineagePaths:31",
+    "RouteReadiness:44",
+    "ArtifactFacts:53",
+    "CollectResult:75",
+    "collectRequirements:114",
+    "brandLeakFile read:191",
+    "brand surface scan:500",
+    "source-brand-inline-svg requirement:518",
+    "brandSurfaceRequirements:553"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/gate.ts",
+   "role": "deriveReleaseState:27 — the only place releaseState is computed. PRODUCTION_READY requires zero blockers + specDecision 'indexable' + productionQaPass + production stage fresh (:39-47). There is no writable ready flag anywhere.",
+   "keySymbols": [
+    "GateInput:21",
+    "deriveReleaseState:27"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/plan.ts",
+   "role": "release:plan one-screen view. planRelease:30 refreshes :39, blocks :41, re-collects :44-53, then splits stale into staleFrozen/staleRerun :70-71 so the wording matches build.ts's refusal. Renders PROJECT/READY/STALE/BLOCKED/WARNINGS/NEEDS INPUT/ROUTES/NEXT ACTIONS. Returns PlanView (:16-28) whose .stale is the field the plan↔build agreement invariant compares.",
+   "keySymbols": [
+    "PlanView:16",
+    "planRelease:30",
+    "staleFrozen/staleRerun:70",
+    "nextActions:74",
+    "render:109"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/checklist.ts",
+   "role": "renderOperatorChecklist:48 — Markdown operator checklist (Why / How to resolve / Used on / Expected / Evidence per requirement, requirementSection:8). Called from prepare.ts:374, resolve.ts:246, build.ts:388.",
+   "keySymbols": [
+    "requirementSection:8",
+    "renderOperatorChecklist:48"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/debt.ts",
+   "role": "Preserves the Task-24 GED register. DEFAULT_DEBT_SOURCE:15 is docs/result/handoffs/24-aggregation-phase1.json — the DO-NOT-TOUCH runtime input. loadTechnicalDebtRegister:25 filters decision==='post-mvp' and maps GED-D/E/F/G to requirement kinds + stages via AFFECTS:18.",
+   "keySymbols": [
+    "DEFAULT_DEBT_SOURCE:15",
+    "AFFECTS:18",
+    "loadTechnicalDebtRegister:25",
+    "debtAffecting:60"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/resolve-assets.ts",
+   "role": "The only byte-applying consumer of the Task-22 replacement seam. applyAssetResolutions:56 derives a NEW asset-materialization run from the current one; network-qa/font-qa are COPIED with a report/derivation.json recording that the census is inherited (header :12-15). Driven by assetsStageRunner (stages.ts:305) — which per the Task-27 handoff has never executed on real data.",
+   "keySymbols": [
+    "ApplyAssetResolutionsOptions:36",
+    "ApplyAssetResolutionsResult:47",
+    "applyAssetResolutions:56"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/brand-scan.ts",
+   "role": "GED-F detector (detection only, GED_F_NEUTRALIZATION_DEFAULT=false:54). BRAND_SURFACE_POLICY:133 declares per-surface detection/canBlock/basis — svg-aria-label:205 and svg-symbol-id:213 are canBlock:false precisely because no bake-time rewriter exists. brandFindingSeverity:253 blocks only when canBlock AND slotKey!==null AND origin==='injected-value'. Reads the production build's report/qa.json brandSurfaceCensus at :428-446. NOT on the release barrel.",
+   "keySymbols": [
+    "GED_F_NEUTRALIZATION_DEFAULT:54",
+    "BrandFinding:66",
+    "BrandSurfaceReport:83",
+    "BRAND_SURFACE_POLICY:133",
+    "brandFindingSeverity:253",
+    "scanBrandSurfaces:294",
+    "brandSurfaceRequirements:527",
+    "qa.json census read:430"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/nl.ts",
+   "role": "Natural-language seam. ResolutionParser:20 is the whole provider contract; ManualJsonResolutionParser:27 is the only shipped provider; PARSERS:44 + resolveResolutionParser:48 is the registration point an LLM-backed parser plugs into without touching the validator gate.",
+   "keySymbols": [
+    "ResolutionParser:20",
+    "ManualJsonResolutionParser:27",
+    "PARSERS:44",
+    "resolveResolutionParser:48"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/revisions.ts",
+   "role": "The append-only authored-state revision chain — COMPLETE API, ZERO production callers. On-disk format: data/<host>/release-projects/<projectId>/revisions/r000/revision.json, schemaName 'authored-revision-v1', record carries revisionId (r%03d, widening past r999), siteId, parentRevisionId, createdAt, authoredStateHash, origin (prepare|resolve|edit|restore), summary, change{slotKeysAdded/Changed/Removed,themeChanged}, restoredFrom, and the FULL authored snapshot. loadRevisionChain:191 verifies sequential ids, parent linkage and each record's hash against its own snapshot, and returns [] (not an error) for a project with no revisions/ dir. appendAuthoredRevision:262 re-reads the WHOLE chain then writes with flag 'wx' (:289) so a racing writer fails loudly. commitAuthoredState:321 is the declared Visual-Editor seam but RE-LOADS the project from disk (:326) before saving.",
+   "keySymbols": [
+    "AUTHORED_REVISION_SCHEMA_NAME:39",
+    "REVISION_ORIGINS:42",
+    "AuthoredChangeSchema:48",
+    "AuthoredRevisionSchema:58",
+    "hashAuthoredState:106",
+    "diffAuthoredState:114",
+    "summarizeAuthoredChange:144",
+    "revisionsDir:157",
+    "revisionIdForIndex:166",
+    "revisionIndexForId:178",
+    "loadRevisionChain:191",
+    "headRevision:240",
+    "appendAuthoredRevision:262",
+    "appendAuthoredRevisionIfChanged:294",
+    "getRevision:303",
+    "commitAuthoredState:321",
+    "restoreAuthoredRevision:346"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/registry/types.ts",
+   "role": "Registry entry models. TemplateEntrySchema:43 (templateId/host/runId/templateDir/compilerVersion/source/routes/routePolicyApplied/slotized-structureOnly-excluded counts/slotCount/bindingCount/collections/limitations). SiteEntrySchema:99 keyed on siteKey='<host>/<projectId>':107 because siteId is NOT unique for legacy projects (:101-106). name:118 + nameSource:119 is a z.literal('derived-from-site-id') and the comment at :113-117 explicitly names the missing displayName change request. RegistryRevisionPointerSchema:86 is the head-of-chain pointer.",
+   "keySymbols": [
+    "REGISTRY_SCHEMA_VERSION:16",
+    "RegistryCollectionSchema:28",
+    "TemplateEntrySchema:43",
+    "RegistryRevisionPointerSchema:86",
+    "SiteEntrySchema:99",
+    "name:118",
+    "nameSource:119",
+    "TemplateRegistrySchema:140",
+    "SiteRegistrySchema:153",
+    "ResolvedEntry:169"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/registry/scan.ts",
+   "role": "Pure derivation from the filesystem — nothing here writes. templateEntryFromDisk:92 reads manifest.json (required) + site-map.json (optional; collections are a compiler-v3 addition). siteEntryFromDisk:191 calls loadReleaseProject (so it adapts legacy documents in memory) and revisionPointer:168 which calls loadRevisionChain — this is the ONLY non-test import of src/release/revisions.ts in the repo (:24, :169). scanTemplates:141 / scanSites:214 enumerate data/<host>/{recon-templates,release-projects} skipping dot-dirs (listDirs:51).",
+   "keySymbols": [
+    "DEFAULT_DATA_ROOT:33",
+    "RegistryOptions:37",
+    "dataRootOf:42",
+    "posixPath:47",
+    "listHosts:65",
+    "templateEntryFromDisk:92",
+    "scanTemplates:141",
+    "siteKeyFor:164",
+    "revisionPointer:168",
+    "siteEntryFromDisk:191",
+    "scanSites:214",
+    "siteRegistryWarnings:234"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/registry/store.ts",
+   "role": "The index files: data/.registry/templates.json + data/.registry/sites.json (:48-50, :3-5). Doctrine at :16-21 — register* caches, list* reads the cache, read* RE-DERIVES from the artifact and reports indexAgreed, rebuildRegistry:333 throws both files away. registerTemplate:155 and registerSite:172 are upsert-by-id + sort + save; registerSite additionally recomputes siteRegistryWarnings:186. NEITHER has a caller outside scripts/smoke-registry.ts, and data/.registry does not exist on this machine.",
+   "keySymbols": [
+    "REGISTRY_DIR:48",
+    ".registry file names:49-50",
+    "registryDir:52",
+    "entriesAgree:75",
+    "loadTemplateRegistry:112",
+    "loadSiteRegistry:125",
+    "saveTemplateRegistry:136",
+    "saveSiteRegistry:143",
+    "registerTemplate:155",
+    "registerSite:172",
+    "listTemplates:197",
+    "listSites:201",
+    "readTemplate:215",
+    "readSite:263",
+    "sitesWithSiteId:312",
+    "rebuildRegistry:333"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/registry/index.ts",
+   "role": "Barrel: types + scan + store (:7-9). Header states the doctrine 'the artifact is always the source of truth'.",
+   "keySymbols": [
+    "export * from \"./store.js\":9"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/regions/types.ts",
+   "role": "PageRegion artifact schema + the whole selection policy. RegionPolicy:56 / REGION_POLICY:76 fold into every structural hash via policyTag. PageRegionSchema:176 — regionId '<scopeKey>:rgn:<landmarkKey>:<childPath>', scope global|page, scopeKey, landmark{kind,key,source}, childPath, rootTag, structuralHash (drift detector, explicitly NOT the identity :186-190), elementCount, bindingCount, dynamicTemplateBindingCount, slotKeys (KEYS not ids :196), pages[]. RegionOccurrenceSchema:143 carries the join key nodeId:146 per (page,viewport). PageRegionsArtifactSchema:265 pins the four input byte hashes at :273-283. Deliberately NO createdAt (:301-309) — the artifact is a pure function of its inputs and determinism is byte identity.",
+   "keySymbols": [
+    "PAGE_REGION_SCHEMA_NAME:34",
+    "PAGE_REGIONS_FILE:42",
+    "REGION_SUMMARY_FILE:43",
+    "REGION_REPORT_DIR:44",
+    "RegionPolicy:56",
+    "REGION_POLICY:76",
+    "RegionOccurrenceSchema:143",
+    "RegionPageSchema:158",
+    "RegionLandmarkSchema:166",
+    "PageRegionSchema:176",
+    "RegionCountsSchema:225",
+    "PageRegionsArtifactSchema:265",
+    "RegionInputError:311",
+    "RegionCompileError:318"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/regions/compile.ts",
+   "role": "The compile. Header :19-32 states the contract: (pageId, viewport, nodeId) is the ENTIRE contract with the template, which is why it never imports src/recon-template. Bindings indexed by join key at :114-126 ('pageId|viewport|nodeId'). Per-region join at :226-245 walks collectNodeIds and resolves slotId→slotKey via input.slotKeyById (throws on an unknown slot :238-242). Global lift :267-310 requires identical landmarkKey+childPath+rootTag+structuralHash on EVERY non-locale page; the landmark-qualified variant is measured (:296-305) and deliberately not applied. Emission :364-435; accounting :437-470; limitations :472-491.",
+   "keySymbols": [
+    "RegionBinding:34",
+    "RegionCompileInput:49",
+    "PageRegionDraft:68",
+    "compilePageRegions:86",
+    "bindingsByNode/bindingsByTree:114",
+    "binding join:229",
+    "global lift:267",
+    "global id assignment:312",
+    "emit:364",
+    "regionCounts:449",
+    "limitations:472"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/regions/load-input.ts",
+   "role": "Reads ONE recon-template run dir — manifest.json, site-map.json, slots.json, slot-bindings.json, and the runtime trees under app/reconstruction-data (route map + one RuntimePage per pageSourceId, loaded once for many routes :105-119). All four inputs are byte-hashed (hashBytes) into the output :153-158 so a region artifact can be proven to belong to its template. Normalizes runDir to POSIX :151 for byte-stability across working copies.",
+   "keySymbols": [
+    "LoadedRegionInput:72",
+    "loadRegionInput:76",
+    "pages map:108",
+    "slotKeyById:121",
+    "regionBindings:127",
+    "hashes:153"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/regions/select-roots.ts",
+   "role": "Region-root selection over one runtime tree — the policy half of the compiler.",
+   "keySymbols": [
+    "RegionRoot:43",
+    "SelectionStats:53",
+    "SelectionResult:59",
+    "SelectRegionRootsOptions:66",
+    "selectRegionRoots:72"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/regions/skeleton.ts",
+   "role": "Structural primitives ids and hashes are built from. regionIdOf:128 mints the id; pathSegment:104 is the TAG-SCOPED ordinal that makes ids fragile to an UPSTREAM markup insert; structuralHashOf:310 folds policyTag so a policy change moves hashes rather than silently changing meaning; routeHasLocalePrefix:329 drives the locale exclusion.",
+   "keySymbols": [
+    "roleOf:55",
+    "landmarkKindOf:79",
+    "pathSegment:104",
+    "joinPath:115",
+    "regionIdOf:128",
+    "analyzeTree:153",
+    "DOCUMENT_LANDMARK:173",
+    "unwrap:206",
+    "collectNodeIds:274",
+    "structuralHashOf:310",
+    "hashBytes:316",
+    "routeHasLocalePrefix:329"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/regions/store.ts",
+   "role": "Output namespace: data/<host>/page-regions/<run-id>/page-regions.json + report/region-summary.json (:11-19, pageRegionRunDir:35). A NEW kind under data/, never a file inside a template run. serializeArtifact:52 is the exact bytes (also used by smoke:regions for the determinism proof); the only clock reading lives in the run dir name and the summary (:62-67).",
+   "keySymbols": [
+    "siteFolder:25",
+    "pageRegionRunDir:35",
+    "newRegionRunId:40",
+    "createdAtFromRunId:45",
+    "serializeArtifact:52",
+    "WrittenRegionRun:56",
+    "writeRegionRun:68"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/regions/index.ts",
+   "role": "Barrel (types/skeleton/select-roots/compile/load-input/store, :9-14). Its header at :6-7 still claims 'nothing in the repo consumes a PageRegion yet' — that is now out of date (see src/content-injection/region-plan.ts).",
+   "keySymbols": [
+    "export * from \"./compile.js\":12"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/region-plan.ts",
+   "role": "THE ONE EXISTING CONSUMER of the PageRegion artifact, and the model for what any future consumer must read. It never imports src/regions — it reads page-regions.json through a local NON-strict contract schema: RegionRecordContractSchema:40 needs only regionId, scope, slotKeys, pages[{pageSourceId,routes}]. loadRegionContracts:58 is the reader. Dependency discipline stated at :24-33, including the honest caveats (granularity is not uniform; a region id does not survive an upstream markup insert).",
+   "keySymbols": [
+    "RegionRecordContractSchema:40",
+    "PageRegionsContractSchema:52",
+    "loadRegionContracts:58",
+    "purposeOf:88",
+    "BuildRegionPlansResult:97"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/cli-release-prepare.ts",
+   "role": "pnpm release:prepare <production-spec-run-dir> [--site-id <id>] [--project-id <id>]. Flags parsed at :20-22 (first non-'--' arg is the spec ref). Prints project dir, siteId (+ '(existing project updated)'), preserved list, state, requirement count with release-blocking-unresolved, and the release:plan next command (:36-41).",
+   "keySymbols": [
+    "main:18",
+    "prepareReleaseProject call:30",
+    "output block:36-41"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/cli-release-plan.ts",
+   "role": "pnpm release:plan <release-project-dir>. Read-only; no flags. Prints view.text verbatim (:18).",
+   "keySymbols": [
+    "main:9",
+    "planRelease:17"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/cli-release-resolve.ts",
+   "role": "pnpm release:resolve <release-project-dir> --resolution <pack.json>. Prints resolutionId, matched requirement→field lines, unmatched fields, invalidated stages, resulting state (:29-36).",
+   "keySymbols": [
+    "main:14",
+    "resolveRelease:25"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/cli-release-build.ts",
+   "role": "pnpm release:build <release-project-dir> [--dry-run]. Dry run returns before printing the run block (:24). Otherwise prints runId, rerun, reused, blocked, verdict, and sets exitCode 1 on failure (:25-35).",
+   "keySymbols": [
+    "main:11",
+    "buildRelease:20"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/cli-compile-recon-template.ts",
+   "role": "pnpm compile:recon-template <reconstruction-manifest.json> --site-spec <file> [--slot-overrides <file>] [--route-policy <file>] [--output|--out <dir>]. parseArgs:36; compileReconTemplate call :124-131; prints template id, route/page/slot/binding counts, route-policy scope breakdown :150-161, collections :162, role breakdown, validation read-back :168-171, timings, and the qa:recon-template next command :176-177. Typed error branches at :180-191.",
+   "keySymbols": [
+    "ParsedArgs:28",
+    "parseArgs:36",
+    "printUsage:80",
+    "main:105",
+    "compileReconTemplate:124",
+    "summary print:136",
+    "error handler:180"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/cli-compile-regions.ts",
+   "role": "pnpm compile:regions <recon-template-run-dir> [--output|--out <dir>]. Accepts a manifest.json path and uses its dir (:89-91). loadRegionInput:96 → compilePageRegions:98 → writeRegionRun:103. Prints template id, routes/pages, regions global/page, slots joined, bindings joined/orphan/unresolved, empty candidates, unwrap/depth-cap, viewport merges, landmark-qualified-only, near-global groups, policy, limitations, timings, and 'Firecrawl 0 · Playwright 0 · network 0' (:107-129). Line :129 prints 'No consumer: this artifact is inert' — now stale.",
+   "keySymbols": [
+    "parseArgs:36",
+    "printUsage:62",
+    "main:81",
+    "compilePageRegions:98",
+    "writeRegionRun:103",
+    "no-consumer line:129"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/index.ts",
+   "role": "Content-injection barrel. The run.js re-export block is at :81-89 and lists loadContentRun/ingestGenerationResult/revalidateSlotValues/recordLayoutQa/updateManifest + LoadedContentRun/IngestOutcome — CONTENT_WRITE_DOCTRINE_WARNING is absent, which is change request 6.",
+   "keySymbols": [
+    "run.js export block:81-89",
+    "brand-leak exports:66",
+    "region-plan exports:51-57"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/run.ts",
+   "role": "Declares CONTENT_WRITE_DOCTRINE_WARNING at :271 (and documents its firing condition at :289). This is the constant change request 6 wants on the barrel.",
+   "keySymbols": [
+    "CONTENT_WRITE_DOCTRINE_WARNING:271"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/types.ts",
+   "role": "BrandLeakWarningSchema:494 — kind is a CLOSED 5-value z.enum at :498-504, slotKey is a required string at :497, and the object is .strict() at :509. BrandLeakReportSchema:512 wraps it. This is the blocker named in change request 8.",
+   "keySymbols": [
+    "ENGINE_LIMITATION_MARKER:492",
+    "BrandLeakWarningSchema:494",
+    "kind enum:498",
+    "slotKey:497",
+    "strict():509",
+    "BrandLeakReportSchema:512"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/brand-leak.ts",
+   "role": "detectSourceBrandLeaks:38 — the only writer of brand-leak.json warnings. Emits blocked-visible-source-content :66-73, brand-token-in-value/-in-untouched-default :79-87, original-external-url-* :95-103. Every emission is slot-scoped (iterates unitsFile.units → unit.slots), which is the structural half of change request 8.",
+   "keySymbols": [
+    "detectSourceBrandLeaks:38",
+    "engineBlockedKeys branch:65",
+    "brand token branch:77",
+    "external url branch:92"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/brand-surfaces.ts",
+   "role": "Shared brand primitives. BRAND_SURFACES:27 / BrandSurface:43 is the surface vocabulary that BrandLeakWarning.kind does NOT cover; scanInlineSvgMarkup:105 and scanElementProps:149 are the Task-27 detectors whose findings currently have no home in brand-leak.json.",
+   "keySymbols": [
+    "BRAND_SURFACES:27",
+    "BrandSurface:43",
+    "brandTokensFromHost:63",
+    "containsBrandToken:73",
+    "scanInlineSvgMarkup:105",
+    "scanElementProps:149",
+    "scanBodyAnchorIdentity:198"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/types.ts",
+   "role": "BakeReport:95-136 — content/theme/seo/assets/build, no brand block. This is the interface change request 7 targets; it is written to the build's report/bake-report.json.",
+   "keySymbols": [
+    "productionSpecSchema:24",
+    "BakeReport:95",
+    "assets block:116",
+    "build block:129",
+    "DeployManifest:140"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/run.ts",
+   "role": "runProductionCompile:180 assembles the bakeReport literal at :449-474, writes report/bake-report.json at :475 and returns it on CompileResult:169-178 (bakeReport:177). This is where a brand census would have to be populated. Also declares the source-brand-inline-svg blocker at :145-146.",
+   "keySymbols": [
+    "CompileResult:169",
+    "runProductionCompile:180",
+    "bakeReport literal:449",
+    "writeJson bake-report:475"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/qa.ts",
+   "role": "Where the brand census actually lives today. BrandSurfaceCounts:242 / BrandSurfaceCensus:253, censusServedHtml:269 (per served document), summarizeBrandCensus:313, exposed as ProductionQaReport.brandSurfaceCensus:81 with an explicit 'measurement, not an assertion' rationale at :68-80. The measured-only check is at :642-647.",
+   "keySymbols": [
+    "ProductionQaReport:38",
+    "brandSurfaceCensus field:81",
+    "BrandSurfaceCounts:242",
+    "BrandSurfaceCensus:253",
+    "censusServedHtml:269",
+    "summarizeBrandCensus:313",
+    "runProductionQa:339",
+    "brand-surface-census-measured check:642"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/cli-content-validate.ts",
+   "role": "Deep-imports CONTENT_WRITE_DOCTRINE_WARNING from ./content-injection/run.js at :4, with a two-line comment at :2-3 explicitly citing the handoff change request. Fires the warning at :39-41 when manifest.manualEdits is true.",
+   "keySymbols": [
+    "deep import:4",
+    "changeRequest comment:2-3",
+    "warning print:40"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/scripts/smoke-release.ts",
+   "role": "pnpm smoke:release (162 checks at Task-27 close). Imports the release barrel at :95-105 and then deep-imports brand-scan at :108-114 with the comment 'brand-scan is not (yet) on the release barrel — see changeRequests' (:106-107). Any barrel change must keep these imports resolving.",
+   "keySymbols": [
+    "barrel import:95-105",
+    "brand-scan deep import:106-114",
+    "check():118"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/scripts/smoke-revision.ts",
+   "role": "pnpm smoke:revision (24 checks). Works entirely inside data/.smoke-revision-<pid> (:124-126), covers legacy-project empty chain :137-144, append/commit :167-178, no-op suppression :222-229, restore :252-281, tamper detection :295, and the r999→r1000 widening boundary :310-378. The comment at :88 records that appendAuthoredRevision re-reads the whole chain per call.",
+   "keySymbols": [
+    "scratch:124",
+    "legacyChain:137",
+    "appendAuthoredRevision:167",
+    "commitAuthoredState:178",
+    "appendAuthoredRevisionIfChanged:222",
+    "restoreAuthoredRevision:252",
+    "tamper:295",
+    "boundary:310"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/scripts/smoke-registry.ts",
+   "role": "pnpm smoke:registry (27 checks). Copies real templates and release projects into data/.smoke-registry-<pid> (:108-109, :190-220) and passes RegistryOptions{dataRoot: scratch} to every call — which is why registerTemplate:228 / registerSite:250,267,268 have never written the real data/.registry. It also calls commitAuthoredState at :249 purely to give the registry a revision head to read.",
+   "keySymbols": [
+    "scratch root:108",
+    "opts:109",
+    "registerTemplate:228",
+    "commitAuthoredState:249",
+    "registerSite:250"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/scripts/smoke-regions.ts",
+   "role": "pnpm smoke:regions (67 checks). Validates against PageRegionsArtifactSchema (:10) and uses store.serializeArtifact for the byte-identity determinism proof.",
+   "keySymbols": [
+    "PageRegionsArtifactSchema import:10"
+   ]
+  }
+ ],
+ "findings": [
+  "CR1 \"src/release/index.ts — barrel export for revisions.ts\": NOT DONE. /Users/woops/projects/web-recon/src/release/index.ts exports 17 modules on lines 2-18; \"./revisions.js\" is absent (so is \"./brand-scan.js\"). PLACEMENT: add `export * from \"./revisions.js\";` after line 15 (`export * from \"./build.js\";`) or append after line 18. Name-collision check performed: revisions.ts's exported identifiers (AUTHORED_REVISION_SCHEMA_NAME, REVISION_ORIGINS, RevisionOriginSchema/RevisionOrigin, AuthoredChangeSchema/AuthoredChange, AuthoredRevisionSchema/AuthoredRevision, hashAuthoredState, diffAuthoredState, authoredChangeIsEmpty, summarizeAuthoredChange, revisionsDir, revisionDir, revisionIdForIndex, revisionIndexForId, loadRevisionChain, headRevision, AppendRevisionOptions, appendAuthoredRevision, appendAuthoredRevisionIfChanged, getRevision, commitAuthoredState, restoreAuthoredRevision) collide with nothing already on the barrel — store.ts exports REVISIONS_DIR/REVISION_FILE (different names) and its private canonicalJson is not exported. Consumers that would simplify: scripts/smoke-revision.ts:17-28 and src/registry/scan.ts:24. The sibling gap is worth fixing in the same edit: scripts/smoke-release.ts:106-114 deep-imports brand-scan with a comment naming this exact change request.",
+  "CR2 \"src/release/resolve.ts and prepare.ts — call appendAuthoredRevision so the revision chain stops being inert\": NOT DONE, and provably inert. Repo-wide grep over src/ + scripts/ shows the ONLY non-test caller of anything in revisions.ts is src/registry/scan.ts:24,169 (loadRevisionChain, read-only); appendAuthoredRevision/commitAuthoredState appear only in scripts/smoke-revision.ts and scripts/smoke-registry.ts:249. On disk, `find data -type d -name revisions` returns NOTHING across all five release projects (data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z and data/linear.app/release-projects/{flowpilot-wr27,flowpilot-wr27-blocked,linear.app-2026-08-25T23-32-42-075Z,linear.app-2026-08-25T23-54-21-435Z}). PLACEMENT (resolve): src/release/resolve.ts, after the authored fold at line 151 (`project.authored = foldResolutionIntoAuthored(...)`) and before `saveReleaseProject(projectDir, project)` at line 250 — `await appendAuthoredRevisionIfChanged(projectDir, { siteId: project.siteId, authored: project.authored, origin: \"resolve\" })`. PLACEMENT (prepare): src/release/prepare.ts, in the write block at lines 372-387, immediately after `saveReleaseProject(projectDir, project)` at :387 (or just before it), with origin \"prepare\", using the carried authored block assembled at :149/:328. USE appendAuthoredRevisionIfChanged (revisions.ts:294), not appendAuthoredRevision, so a re-prepare/no-op resolve does not grow the chain. DO NOT use commitAuthoredState (revisions.ts:321): it re-loads the project from disk at :326 and saves it, which would discard every in-memory mutation resolve.ts made at lines 137-215 and prepare.ts made at lines 301-370.",
+  "CR3 \"src/release/types.ts — displayName field for the site registry\": NOT DONE. src/release/types.ts ReleaseProjectSchema:388-457 carries siteId at :400 and projectId at :401 and no human-facing name; the registry compensates at src/registry/scan.ts:200-201 (`name: project.siteId`, `nameSource: \"derived-from-site-id\"`), typed by src/registry/types.ts:118-119 where nameSource is a z.literal, with the comment at :113-117 explicitly deferring to this change request. PLACEMENT: add `displayName: z.string().min(1).optional()` beside siteId at src/release/types.ts:400 (the schema is .strict() at :457, so an unknown key would otherwise throw); then widen src/registry/types.ts:119 to `z.enum([\"derived-from-site-id\", \"project-display-name\"])` and branch src/registry/scan.ts:200-201. Make it OPTIONAL: instance.ts adaptReleaseProject:128-157 only handles revision 1→2, so a REQUIRED field would force RELEASE_PROJECT_REVISION 3 at src/release/types.ts:37 plus a new adapt branch and would break parsing of all five on-disk projects. Also wire an operator input — src/cli-release-prepare.ts:20-22 parses flags, so `--display-name` slots in beside `--site-id`, and prepare.ts must carry it like siteId does at :147 (`options.displayName ?? existing?.displayName`).",
+  "CR4 \"src/release/prepare.ts — call registerSite\": NOT DONE. registerSite (src/registry/store.ts:172) has zero callers outside scripts/smoke-registry.ts:250,267,268, and `data/.registry/` does not exist on this machine. PLACEMENT: src/release/prepare.ts, immediately AFTER `await saveReleaseProject(projectDir, project)` at :387 — registerSite derives its entry via siteEntryFromDisk (src/registry/scan.ts:191), which calls loadReleaseProject, so the document must already be on disk. It must be non-fatal: registration is an index, so wrap in try/catch and push onto the `warnings` array built at prepare.ts:286-299 rather than throwing out of a prepare that already succeeded. IMPORT-DIRECTION CAUTION: today src/registry imports src/release (scan.ts:24-25) and src/release imports nothing from src/registry; a direct import at prepare.ts creates the cycle prepare.ts → registry/store.ts → registry/scan.ts → release/store.ts + release/revisions.ts. Either use a lazy `await import(\"../registry/store.js\")` at the call site, or put the call in src/cli-release-prepare.ts after the prepareReleaseProject call at :30-35 (which also keeps the engine free of index concerns). Note registerSite writes to the default data root unless RegistryOptions.dataRoot is passed (scan.ts:37-44).",
+  "CR5 \"src/cli-compile-recon-template.ts — call registerTemplate\": NOT DONE. registerTemplate (src/registry/store.ts:155) has zero callers outside scripts/smoke-registry.ts:228,279. PLACEMENT: src/cli-compile-recon-template.ts, after `const compiled = await compileReconTemplate({...})` at lines 124-131 and before or alongside the summary print starting at :136 — `await registerTemplate(compiled.runDir)`. templateEntryFromDisk (src/registry/scan.ts:92) reads manifest.json (required) and site-map.json (optional) from that directory, so it must run post-write. Make it non-fatal — the CLI's error handler at :180-191 sets exitCode 1, and a failed index write must not fail a successful compile; print a line instead, in the style of :176-177. HONESTY CAVEAT to record: the `--output`/`--out` flag (:63-68) can place the run OUTSIDE data/<host>/recon-templates/, where scanTemplates (scan.ts:141-158) will never find it — the registered entry would then be a row only readTemplate's cached-path branch (store.ts:222-236) can resolve, and rebuildRegistry (store.ts:333) would silently drop it. Either skip registration for --output runs or record the caveat.",
+  "CR6 \"src/content-injection/index.ts — export CONTENT_WRITE_DOCTRINE_WARNING\": NOT DONE. The constant is declared at src/content-injection/run.ts:271; the barrel's run.js re-export block at src/content-injection/index.ts:81-89 lists only loadContentRun, ingestGenerationResult, revalidateSlotValues, recordLayoutQa, updateManifest, LoadedContentRun, IngestOutcome. PLACEMENT: add `CONTENT_WRITE_DOCTRINE_WARNING,` to that block at index.ts:82 (and optionally mention it in the header list at :13-19). FOLLOW-UPS in the same edit: src/cli-content-validate.ts:4 deep-imports it and carries a two-line comment at :2-3 naming this exact change request — both fold into the barrel import on line 1; scripts/smoke-content-injection.ts:84 deep-imports it too and asserts its wording at :1621-1626, so the constant's TEXT must not change while doing this.",
+  "CR7 \"src/production/types.ts — carry a brand-surface census through the bake result\": NOT DONE. BakeReport (src/production/types.ts:95-136) has content/theme/seo/assets/build and no brand member. The census exists only on the QA side: BrandSurfaceCounts:242 / BrandSurfaceCensus:253 in src/production/qa.ts, produced by censusServedHtml:269 + summarizeBrandCensus:313, exposed as ProductionQaReport.brandSurfaceCensus:81 and written to the build's report/qa.json by src/release/stages.ts:339-344 — which is exactly where src/release/brand-scan.ts:428-446 reads it back from today. PLACEMENT: add a `brand: {...}` member to BakeReport at src/production/types.ts:135 (declare the shape structurally rather than importing BrandSurfaceCensus from qa.ts, so types.ts does not depend on the QA module), populate it inside the bakeReport literal in runProductionCompile at src/production/run.ts:449-474 before the write at :475, and it will flow out on CompileResult.bakeReport (run.ts:177). HONESTY CONSTRAINT: at bake time there is no served package — the only measurable HTML is the static export (`post.routeHtmlFiles`, run.ts:470). Either census that export with censusServedHtml, or declare the field as explicitly-not-measured-at-bake-time. Do NOT copy a previous run's QA census into it; that would be a fabricated number.",
+  "CR8 \"src/content-injection/types.ts — closed BrandLeakWarning kind enum blocks writing SVG surfaces into brand-leak.json\": NOT DONE. BrandLeakWarningSchema at src/content-injection/types.ts:494-509 has kind as a closed 5-value z.enum (:498-504: brand-token-in-value, brand-token-in-untouched-default, original-external-url-retained, original-external-url-in-untouched-default, blocked-visible-source-content), slotKey REQUIRED at :497, and .strict() at :509 — so detectSourceBrandLeaks (src/content-injection/brand-leak.ts:38-113, all three emission sites at :66, :79, :95) can only ever produce slot-scoped entries. The surfaces with no kind are the Task-27 additions in BRAND_SURFACES (src/content-injection/brand-surfaces.ts:27-43) found by scanInlineSvgMarkup:105 / scanElementProps:149 — svg-aria-label, svg-symbol-id, svg-text, image-alt, aria-label — which today live only in the release-layer BrandSurfaceReport (src/release/brand-scan.ts:83-107). PLACEMENT: (a) extend the enum at types.ts:498-504; (b) because those surfaces have NO slot binding, relax slotKey at :497 to optional/nullable or add a `surface`/`nodeId` pair — otherwise every new entry must invent a slot key, which is fabrication; (c) emit from brand-leak.ts. LOCKSTEP CONSUMERS: src/release/collect.ts:191-194 reads `warnings[].slotKey`, collect.ts:568-571 emits a count-only warning, and the count lands on ArtifactFacts.brandLeakWarnings (collect.ts:617) and the content manifest field (collect.ts:126). SEVERITY CAUTION: BRAND_SURFACE_POLICY marks svg-aria-label (brand-scan.ts:205-212) and svg-symbol-id (:213-220) canBlock:false precisely because no bake-time rewriter exists — routing new brand-leak.json entries through brandFindingSeverity (brand-scan.ts:253-262) in a way that makes them release-blocking would repeat the unclearable source-brand-asset dead end.",
+  "MAP-A — the revision chain, exactly: API in /Users/woops/projects/web-recon/src/release/revisions.ts is hashAuthoredState:106, diffAuthoredState:114, authoredChangeIsEmpty:135, summarizeAuthoredChange:144, revisionsDir:157, revisionDir:161, revisionIdForIndex:166, revisionIndexForId:178, loadRevisionChain:191, headRevision:240, appendAuthoredRevision:262, appendAuthoredRevisionIfChanged:294, getRevision:303, commitAuthoredState:321, restoreAuthoredRevision:346. ON-DISK: data/<host>/release-projects/<projectId>/revisions/r000/revision.json, schemaVersion 1 + schemaName \"authored-revision-v1\", one file per record, written with flag 'wx' (:289) so a record is never overwritten. A record embeds the FULL authored snapshot plus authoredStateHash over exactly that snapshot (:69-70, :103-108) — snapshot storage, explicitly not content-addressed (:23-28). loadRevisionChain verifies sequential ids, parent linkage and each record's self-hash and THROWS on any violation (:214-233); a project with no revisions/ dir returns [] rather than an error (:205-207). Restore is immutable: restoring r001 from r004 appends r005 (:340-345).",
+  "MAP-B — the registry, exactly: writes only data/.registry/templates.json + data/.registry/sites.json (src/registry/store.ts:48-50). Doctrine at store.ts:16-21 — register* caches, list* reads the cache, read* re-derives from the artifact and reports indexAgreed/artifactMissing (ResolvedEntry, src/registry/types.ts:169-183), rebuildRegistry:333 discards both files and rebuilds from a scan. Keys: templateId for templates, siteKey='<host>/<projectId>' for sites (types.ts:107) BECAUSE siteId is not unique — every pre-Task-27 project adapts to the bare host slug, and siteRegistryWarnings (scan.ts:234-248) reports the collision rather than deduplicating. NOTHING in src/ calls registerSite or registerTemplate; there is no cli-registry-*.ts and no package.json script for it. The one production import of the module family is src/registry/scan.ts importing release/store.ts and release/revisions.ts.",
+  "MAP-C — PageRegion, exactly: compiled by `pnpm compile:regions` into data/<host>/page-regions/<run-id>/page-regions.json + report/region-summary.json (src/regions/store.ts:11-19, pageRegionRunDir:35). Artifact shape is PageRegionsArtifactSchema (src/regions/types.ts:265-298): schema/regionSchema/compiler versions, engine, templateId, a `template` block pinning slotsHash/slotBindingsHash/siteMapHash/routeMapHash (:273-283), policy, routes[], pages[] coverage, counts (RegionCountsSchema:225-262), regions[] and limitations. THE JOIN: the compiler indexes slot-bindings.json by 'pageId|viewport|nodeId' (compile.ts:114-126) and, for each selected region root, walks collectNodeIds and attaches every binding whose nodeId is in the subtree (compile.ts:226-245), mapping slotId→slotKey through slots.json (compile.ts:237-242). Nothing is written into the template run and no data-wr-slot attribute exists — identity stays data-wr-node plus the bindings inversion (types.ts:16-27). WHAT A CONSUMER NEEDS TO READ is already demonstrated and should be copied: src/content-injection/region-plan.ts:40-55 declares a NON-strict contract of regionId + scope + slotKeys + pages[{pageSourceId,routes}] and reads it with loadRegionContracts:58 WITHOUT importing src/regions. Two stale comments to fix if anything is built on this: src/regions/index.ts:6-7 and src/cli-compile-regions.ts:129 both still say the artifact has no consumer.",
+  "MAP-D — where an editor's writes already inherit correct invalidation: authored.slotValues enters the CONTENT stage input hash at src/release/freshness.ts:186-198 (folded in only when non-empty, so pre-Task-27 inputsHashes stay valid), and authored.theme enters the THEME slice at :199-202; computeStageInputsHash:229 is called with project.authored from refreshStageStatuses:314-321 and from build.ts:239-246/:268-275. The value is applied LAST in contentStageRunner at src/release/stages.ts:134-138 with source 'user-provided', and materialized into a NEW content run by ingestGenerationResult (stages.ts:175). So a write to project.authored.slotValues followed by saveReleaseProject is sufficient to stale content→theme/seo→production via propagateStaleStages (freshness.ts:367).",
+  "MAP-E — CLI surface, exactly: `release:prepare <spec-run-dir> [--site-id <id>] [--project-id <id>]` (cli-release-prepare.ts:20-25; prints projectDir/siteId/preserved/state/requirements/next). `release:plan <project-dir>` (no flags; prints PlanView.text). `release:resolve <project-dir> --resolution <pack.json>` (prints resolutionId, matched pairs, unmatched, invalidated, state). `release:build <project-dir> [--dry-run]` (dry run prints WARNINGS/WOULD RUN/WOULD REUSE/BLOCKED BY and returns before the run block; otherwise runId/rerun/reused/blocked/verdict, exitCode 1 on failure). `compile:recon-template <manifest.json> --site-spec <file> [--slot-overrides <f>] [--route-policy <f>] [--output|--out <dir>]` (cli-compile-recon-template.ts:36-93). `compile:regions <template-run-dir> [--output|--out <dir>]` (cli-compile-regions.ts:36-69). There is NO CLI for revisions and NO CLI for the registry."
+ ],
+ "risks": [
+  "Import cycle if CR4 is implemented naively: src/registry already imports src/release (scan.ts:24-25). Adding `import { registerSite } from \"../registry/store.js\"` to src/release/prepare.ts closes the loop prepare.ts → registry/store.ts → registry/scan.ts → release/store.ts + release/revisions.ts. ESM tolerates it but module-init order becomes load-order dependent. Prefer a lazy `await import()` or make the call from src/cli-release-prepare.ts.",
+  "commitAuthoredState (src/release/revisions.ts:321-338) RE-LOADS the project from disk at :326 and saves it at :336. Calling it from resolve.ts or prepare.ts after the in-memory mutations (resolve.ts:137-215, prepare.ts:301-370) would silently discard every one of them — resolutions pushed, requirements, stageStatus, target, releaseState, runs. CR2 must use appendAuthoredRevision / appendAuthoredRevisionIfChanged plus the caller's own saveReleaseProject.",
+  "appendAuthoredRevision is O(n) per call: it calls loadRevisionChain (revisions.ts:266), which reads and zod-parses EVERY record in the chain, and each record embeds a full authored snapshot. scripts/smoke-revision.ts:88 records this and its boundary test builds 1,002 records. Wiring it into prepare and resolve puts that cost on the operator path, and an authored block with thousands of slot values (stripe: 9,529 slots) makes each record large. Size this before an undo UI.",
+  "appendAuthoredRevision writes with flag 'wx' (revisions.ts:289), so two concurrent writers racing for the same position get a hard EEXIST throw rather than a merge. That is the intended safety property, but once prepare/resolve call it, a plain double-invocation becomes an operator-visible failure. There is no locking anywhere in the repo.",
+  "A required `displayName` on ReleaseProjectSchema would break every project on disk: the schema is .strict() (types.ts:457) and adaptReleaseProject (instance.ts:128-157) only knows the 1→2 upgrade. It would force RELEASE_PROJECT_REVISION 3 (types.ts:37) plus a new adapt branch. Optional is the only non-breaking shape.",
+  "CR7 has no honest data source at bake time. runProductionCompile (production/run.ts:180) has no served package — brandSurfaceCensus today is measured by runProductionQa over a launched isolated package (qa.ts:339-394). Populating BakeReport.brand by copying a prior QA census, or by any number not measured in that compile, would be fabrication. Either census the static export in-place or declare the field unmeasured.",
+  "CR8 changes the shape of report/brand-leak.json. That file is EXCLUDED from the content stage hash (freshness.ts:105 CONTENT_DERIVED_HASH_EXCLUSIONS, rationale at :74-79) so it will not cause phantom staleness — but it IS read by collect.ts:191-194 and its warning count feeds ArtifactFacts.brandLeakWarnings (collect.ts:617) and the plan/checklist surfaces. Adding non-slot-scoped entries can move requirement counts and therefore the release gate; the count drift must be re-derived from output, not assumed.",
+  "registerTemplate on a `--output`-relocated template run (cli-compile-recon-template.ts:63-68) produces an index row that scanTemplates (registry/scan.ts:141-158) can never re-derive, so rebuildRegistry (store.ts:333) would silently drop it — quietly breaking the registry's own 'a lost index is rebuilt from the artifacts' guarantee (types.ts:5-8).",
+  "PageRegion has NO place in the release model: 'page-regions' is not in RELEASE_STAGES (types.ts:46-54), has no node in STAGE_DEPENDENCIES (graph.ts:27-40) and no entry in STAGE_HASH_EXCLUSIONS. A page-regions run has no recorded freshness relationship to the template it was compiled from — only the four byte hashes pinned inside the artifact (regions/types.ts:273-283). An editor built on it would have to verify those hashes itself, or a template recompile would silently orphan the region ids.",
+  "Region ids are not insert-stable upstream: pathSegment (regions/skeleton.ts:104) is a tag-scoped ordinal and region roots are overwhelmingly <div>, which is why the Task-27 handoff measured 45 of 68 linear ids repathed (66%) on an upstream insert. Any persisted editor state keyed by regionId inherits that.",
+  "The two stretch modules are inert in real data, not merely uncalled: `data/.registry` does not exist and no release project has a `revisions/` directory. Both smoke suites prove behaviour only inside throwaway scratch roots (data/.smoke-registry-<pid>, data/.smoke-revision-<pid>). Any claim that the chain or the index 'works on real projects' would need a fresh run to back it.",
+  "Stale comments will become lies the moment a consumer lands: src/regions/index.ts:6-7 and src/cli-compile-regions.ts:129 assert PageRegion has no consumer (src/content-injection/region-plan.ts already is one); registry/types.ts:113-117, cli-content-validate.ts:2-3 and smoke-release.ts:106-107 point at change requests that would then be closed."
+ ]
+}

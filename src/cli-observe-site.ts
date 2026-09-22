@@ -7,6 +7,12 @@ import {
   type ObservedSitePage,
   type SiteObservation,
 } from "./multi-observer/index.js";
+import {
+  LAYOUT_PROBE_WIDTHS,
+  MOBILE_LAYOUT_PROBE_WIDTHS,
+  PAGE_STATE_EVIDENCE_ROOT_DEFAULT,
+} from "./observer/types.js";
+import { parseProbeWidths, resolveProbeWidths } from "./observer/layout-probe.js";
 
 /**
  * web-recon Observe-Site CLI — Task 09 (Multi-page Deep Observation).
@@ -18,9 +24,12 @@ import {
  *
  * This command NEVER calls Firecrawl and never re-runs discovery, verification,
  * or selection — it consumes only what those stages already wrote
- * ("Explore Once → Reuse Data"). It is read-only in the browser: renders and
- * reads, with an optional read-only prepare-scroll; it never clicks, types, or
- * submits. There is no AI anywhere.
+ * ("Explore Once → Reuse Data"). In the browser it renders and reads, with an
+ * optional read-only prepare-scroll, plus (Task 28.7 A2) the bounded,
+ * evidence-gated page-state normalization phase that may dismiss an entry popup
+ * before collection — default ON, `--no-normalize-page-state` opts out.
+ * COLLECTION itself stays strictly read-only: it never types or submits. There
+ * is no AI anywhere.
  *
  * There is no resume and no cache: one run observes its whole page list and
  * records what happened. A page that fails is recorded as failed; the rest of
@@ -31,12 +40,39 @@ interface ParsedArgs {
   selectedPagesFile?: string;
   concurrency: number;
   prepareScroll: boolean;
+  /** Task 28.7 A2 — bounded page-state normalization (default ON). */
+  normalizePageState: boolean;
+  /**
+   * Task 28.75 — where dismissal evidence is written. The DEFAULT
+   * ({@link PAGE_STATE_EVIDENCE_ROOT_DEFAULT}) is wave-neutral and outside
+   * `docs/result/`, so a run can never write into a frozen wave's artifacts.
+   */
+  pageStateEvidenceRoot?: string;
+  /** Task 28.6 W1.3 — extra layout-probe widths, applied to every page. */
+  probeWidths?: number[];
+  /** Extra widths for the MOBILE-context probe pass (Task 28.6 W1.4). */
+  probeWidthsMobile?: number[];
+  /** Task 28.8 FAST — cap the validation samples per site (default: MAX_VALIDATION_SAMPLES_PER_SITE). */
+  maxValidationSamples?: number;
+  /** Source Preservation V2 Phase 1 — capture a Source Package per viewport load (default OFF). */
+  sourcePackage: boolean;
+  /** Within a Source Package capture, capture JSON response bodies (default ON; --no-source-package-json opts out). */
+  sourcePackageJson: boolean;
 }
 
 function parseArgs(argv: readonly string[]): ParsedArgs {
   let selectedPagesFile: string | undefined;
   let concurrency = DEFAULT_CONCURRENCY;
-  let prepareScroll = false;
+  // Task 28.6 W8 RC2 — ON by default; --no-prepare-scroll opts out.
+  let prepareScroll = true;
+  // Task 28.7 A2 — ON by default; --no-normalize-page-state opts out.
+  let normalizePageState = true;
+  let sourcePackage = false;
+  let sourcePackageJson = true;
+  let pageStateEvidenceRoot: string | undefined;
+  let probeWidths: number[] | undefined;
+  let probeWidthsMobile: number[] | undefined;
+  let maxValidationSamples: number | undefined;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -46,6 +82,36 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
       concurrency = parseConcurrency(arg.slice("--concurrency=".length));
     } else if (arg === "--prepare-scroll") {
       prepareScroll = true;
+    } else if (arg === "--no-prepare-scroll") {
+      prepareScroll = false;
+    } else if (arg === "--normalize-page-state") {
+      normalizePageState = true;
+    } else if (arg === "--no-normalize-page-state") {
+      normalizePageState = false;
+    } else if (arg === "--page-state-evidence-root") {
+      pageStateEvidenceRoot = argv[++i];
+    } else if (arg.startsWith("--page-state-evidence-root=")) {
+      pageStateEvidenceRoot = arg.slice("--page-state-evidence-root=".length);
+    } else if (arg === "--probe-widths") {
+      probeWidths = parseProbeWidths(argv[++i]);
+    } else if (arg.startsWith("--probe-widths=")) {
+      probeWidths = parseProbeWidths(arg.slice("--probe-widths=".length));
+    } else if (arg === "--probe-widths-mobile") {
+      probeWidthsMobile = parseProbeWidths(argv[++i]);
+    } else if (arg.startsWith("--probe-widths-mobile=")) {
+      probeWidthsMobile = parseProbeWidths(arg.slice("--probe-widths-mobile=".length));
+    } else if (arg === "--source-package") {
+      sourcePackage = true;
+    } else if (arg === "--no-source-package") {
+      sourcePackage = false;
+    } else if (arg === "--source-package-json") {
+      sourcePackageJson = true;
+    } else if (arg === "--no-source-package-json") {
+      sourcePackageJson = false;
+    } else if (arg === "--max-validation-samples") {
+      maxValidationSamples = parseMaxValidationSamples(argv[++i]);
+    } else if (arg.startsWith("--max-validation-samples=")) {
+      maxValidationSamples = parseMaxValidationSamples(arg.slice("--max-validation-samples=".length));
     } else if (arg.startsWith("--")) {
       throw new Error(`Unknown option: ${arg}`);
     } else if (selectedPagesFile === undefined) {
@@ -53,7 +119,26 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
     }
   }
 
-  return { selectedPagesFile, concurrency, prepareScroll };
+  return {
+    selectedPagesFile,
+    concurrency,
+    prepareScroll,
+    normalizePageState,
+    ...(pageStateEvidenceRoot ? { pageStateEvidenceRoot } : {}),
+    ...(probeWidths ? { probeWidths } : {}),
+    ...(probeWidthsMobile ? { probeWidthsMobile } : {}),
+    ...(maxValidationSamples !== undefined ? { maxValidationSamples } : {}),
+    sourcePackage,
+    sourcePackageJson,
+  };
+}
+
+function parseMaxValidationSamples(value: string | undefined): number {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0) {
+    throw new Error(`--max-validation-samples expects a non-negative integer, got ${value}`);
+  }
+  return n;
 }
 
 function parseConcurrency(value: string | undefined): number {
@@ -68,7 +153,8 @@ function parseConcurrency(value: string | undefined): number {
 
 function printUsage(): void {
   console.log(
-    "Usage: pnpm observe:site <path-to-selected-pages.json> [--concurrency N] [--prepare-scroll]",
+    "Usage: pnpm observe:site <path-to-selected-pages.json> [--concurrency N] [--source-package] " +
+      "[--prepare-scroll] [--no-normalize-page-state]",
   );
   console.log(
     "  Deep-observes every selected representative (desktop AND mobile) plus a",
@@ -83,6 +169,26 @@ function printUsage(): void {
   );
   console.log(
     "  --prepare-scroll   Read-only auto-scroll to trigger lazy-loaded content",
+  );
+  console.log(
+    `  --page-state-evidence-root=DIR  where dismissal evidence is written` +
+      ` (default ${PAGE_STATE_EVIDENCE_ROOT_DEFAULT})`,
+  );
+  console.log(
+    "  --no-normalize-page-state       do NOT dismiss entry popups before " +
+      "collection (observe every page WITH its popup; recorded per page)",
+  );
+  console.log(
+    `  --probe-widths=700,1100         extra layout-probe widths (desktop context;` +
+      ` defaults ${LAYOUT_PROBE_WIDTHS.join(",")})`,
+  );
+  console.log(
+    `  --probe-widths-mobile=430,600   extra widths for the mobile-context probe` +
+      ` (defaults ${MOBILE_LAYOUT_PROBE_WIDTHS.join(",")})`,
+  );
+  console.log(
+    "  --no-source-package-json        with --source-package, do NOT capture" +
+      " JSON response bodies (captured by default when --source-package is on)",
   );
 }
 
@@ -176,12 +282,41 @@ async function main(): Promise<void> {
       `Selection: ${selection.verifiedUrlCount} verified → ${selection.familyCount} families → ${selection.selectedCount} representatives`,
     );
     console.log(`Concurrency: ${args.concurrency}`);
+    // Task 28.6 C3 D1 — the FLOOR set. The set actually probed is derived per
+    // page from that page's own authored breakpoints, so it varies across the
+    // run; each page's `layout-probe.json` carries its widths and why.
+    console.log(
+      `Probe widths (floor): ${resolveProbeWidths(LAYOUT_PROBE_WIDTHS, args.probeWidths ?? []).join(", ")}` +
+        ` | mobile ${resolveProbeWidths(MOBILE_LAYOUT_PROBE_WIDTHS, args.probeWidthsMobile ?? []).join(", ")}`,
+    );
     if (args.prepareScroll) console.log("(prepare-scroll: ON)");
+    console.log(
+      `(page-state normalization: ${args.normalizePageState ? "ON" : "OFF"}` +
+        `${
+          args.normalizePageState
+            ? `, evidence → ${args.pageStateEvidenceRoot ?? PAGE_STATE_EVIDENCE_ROOT_DEFAULT}`
+            : ""
+        })`,
+    );
     console.log("");
 
     const run = await observeSelectedPages(selection, {
       concurrency: args.concurrency,
       prepareScroll: args.prepareScroll,
+      normalizePageState: args.normalizePageState,
+      ...(args.sourcePackage
+        ? { sourcePackage: args.sourcePackageJson ? true : { bodyPolicy: { json: false } } }
+        : {}),
+      ...(args.pageStateEvidenceRoot
+        ? { pageStateEvidenceRoot: args.pageStateEvidenceRoot }
+        : {}),
+      ...(args.probeWidths ? { probeExtraWidths: args.probeWidths } : {}),
+      ...(args.probeWidthsMobile
+        ? { mobileProbeExtraWidths: args.probeWidthsMobile }
+        : {}),
+      ...(args.maxValidationSamples !== undefined
+        ? { maxValidationSamples: args.maxValidationSamples }
+        : {}),
       sourceSelectedPagesFile: input.sourceSelectedPagesFile,
       ...(input.sourcePageFamiliesFile
         ? { sourcePageFamiliesFile: input.sourcePageFamiliesFile }

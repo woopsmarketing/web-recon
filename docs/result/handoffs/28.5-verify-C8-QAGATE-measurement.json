@@ -1,0 +1,87 @@
+{
+  "schema": "28.5-adversarial-verification/1",
+  "claimId": "C8-QAGATE",
+  "lens": "measurement",
+  "verifier": "fresh-context adversarial verifier (wave 2)",
+  "producedAt": "2026-08-29",
+  "lineage": {
+    "reconApp": "data/linear.app/reconstructions/2026-08-25T20-30-33-313Z/app",
+    "templateApp": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z/app",
+    "qaRun": "data/linear.app/reconstruction-qa/2026-08-25T20-30-41-209Z"
+  },
+  "part1_templatePaintNeutrality": {
+    "verdict": "SURVIVES, and is UNDERSTATED by the claim",
+    "waveOneEvidenceCoverage": "4 routes x 2 widths = 8 pairs, mobile captured at DSF1 (not the observation profile DSF3), reducedMotion=reduce",
+    "myCoverage": "8 routes x 2 viewports = 16 pairs at the observation profile (1440x900 DSF1 / 390x844 DSF3 touch+Android UA), reducedMotion=no-preference, plus 11 interaction after-states",
+    "fullPagePngMd5Identical": "16 of 16",
+    "interactionAfterStateMd5Identical": "11 of 11 (7 with a successful trigger click on both sides, 4 where the click failed identically on both sides)",
+    "selfControl": "recon-vs-recon re-capture 16 of 16 md5-identical, so the md5 test is deterministic and non-vacuous",
+    "reconstructionDataByteIdentical": "CONFIRMED (aggregate md5 over 9 files identical: 748e684c4d3495d3085d1184b131fec3)",
+    "sourceFilesDiffering": "2 modified (package.json name only; src/runtime/load-page.ts) + 1 added (src/runtime/slot-content.ts) + 1 added data dir (template-data/, 3 files, 6.4MB) not counted by the claim",
+    "bindings": "9929 CONFIRMED from recon-templates manifest.json counts.bindings and slot-bindings.json array length; slots 3079; overridesApplied 0",
+    "servedHtml": "md5 DIFFERS on 16 of 16, but byte length is identical and the only differing characters are Turbopack chunk hashes and the Next BUILD_ID (160 chars over 14 runs in /pricing). Zero DOM/content difference.",
+    "caveatOnTheInference": "Agent A's own handoff says 'Information loss begins at OBSERVATION'. The claim as stated drops that and asserts the delta is 'inherited from RECONSTRUCTION GENERATION'. Paint-neutrality of the template proves only that the delta is upstream of the template; it cannot locate the delta at reconstruction rather than observation."
+  },
+  "part2_qaSchema": {
+    "styleWhitelistCount": {"value": 111, "method": "awk-sliced src/observer/types.ts lines 260..closing bracket, 111 quoted tokens, 111 unique", "verdict": "CONFIRMED"},
+    "comparedPropertiesPerNode": {
+      "value": 111.0,
+      "verdict": "CONFIRMED, but the honest denominator had to be found",
+      "trap": "summary.snapshotFidelity.styleComparedProperties 1381062 / summary comparedNodes 18918 = 73.0, which would look like a refutation. comparedNodes sums cloneMappedNodes (ALL SiteSpec element nodes). The style denominator is per-page style.comparedNodes summing to 12442.",
+      "check": "12442 equals the SiteSpec effectiveVisible element count EXACTLY on all 16 page/viewport pairs (gap 0 on every row). The 6476-node shortfall is a principled visibility skip, not a blind spot. 1381062/12442 = 111.0000."
+    },
+    "classificationCodes": {"value": 27, "verdict": "CONFIRMED (parsed QaClassificationSchema enum)"},
+    "visualDimensionEmission": {"verdict": "CONFIRMED", "detail": "src/reconstruction-qa/emit-diffs.ts:93 is the only `dimension: \"visual\"` in src/; it is unconditionally paired with classification environment-unstable; 5 such diffs in the accepted run"},
+    "noneNamesAPaintDifference": {
+      "verdict": "OVERSTATED",
+      "detail": "canvas-background-mismatch (dimension 'canvas', 16 occurrences) literally names a painted-background colour difference and was the sole correction the run proposed; asset-load-failure (72) and asset-hotlink-blocked (2) name paint-visible failures. The defensible statement is narrower: no code names a RENDERED-PIXEL/IMAGE difference."
+    },
+    "pixelMetricUnrepresentable": {
+      "verdict": "REFUTED",
+      "counterEvidence": [
+        "screenshotMeanDeltaMedian / screenshotChangedRatioMedian / screenshotPairsMeasured are first-class fields of the SnapshotFidelity schema at src/reconstruction-qa/summarize.ts:59-61 and again at :93 for liveFidelity",
+        "the accepted run populates them: screenshotChangedRatioMedian 0.1679, screenshotMeanDeltaMedian 7.6295, screenshotPairsMeasured 16",
+        "per-page changedPixelRatio is persisted in pages/<pageId>/<viewport>.json for all 48 screenshot rows",
+        "45 diff PNGs and 48 screenshots (148MB) ship inside the accepted QA run",
+        "src/cli-qa-reconstruction.ts:152-153 prints both numbers to the operator console"
+      ],
+      "whatIsActuallyTrue": "the pixel metric is REPRESENTED, PERSISTED, IMAGED and PRINTED, but it is (a) not expressible as a diff record with a classification, and (b) never read by evaluateRegression. Its only algorithmic consumer is pruneRetained() in src/reconstruction-qa/run-qa.ts:161, which uses changedRatio to decide which screenshots to keep. src/reconstruction-qa/compare-behavior.ts:240 states the policy in-repo: 'pixel deltas are a measurement, not a verdict.' The word is UNGATED, not unrepresentable."
+    },
+    "diffRouting": {
+      "claimed": "519 of 732 diffs route to recommendation 'none'",
+      "measured": "460 of 680 (67.6%) in the accepted run",
+      "verdict": "REFUTED - numbers unreproducible",
+      "method": "walked every .json in the QA run dir and counted every object carrying both classification and dimension: exactly 680, matching qa-manifest.json diffs.length and baseline-summary diffCount",
+      "exhaustiveSearch": "no reconstruction-qa run anywhere in data/ (31 runs across 6 hosts) has 732 diffs or 519 'none'. Nearest linear.app runs: 670/446, 679/460, 680/460, 680/460, 690/473, 712/487.",
+      "alsoWrong": "'terminate' is imprecise: 16 of the 460 'none' diffs are autoFixEligibility 'eligible' (the canvas set) and did produce the run's one correction. 439 are not-eligible-no-correction-type, 5 not-eligible-unstable-measurement."
+    },
+    "metricQualityCaveatNeitherSideStates": {
+      "denominator": "changedPixelRatio = changedPixels / OVERLAP pixels, with commonAreaRatio reported separately (src/reconstruction-qa/screenshot-diff.ts:126-127). Honest. On all 8 pairs I recomputed, commonAreaRatio = 1.0000 (heights match exactly), so no full-page-vs-viewport confusion.",
+      "tolerance": "zero. A pixel counts as changed when ANY channel differs by 1 level.",
+      "myRecomputation": "I re-derived changedPixelRatio from the shipped snapshot/clone PNGs with my own pngjs script and reproduced the artifact to 4 dp on all 8 pairs (0.2075, 0.1602, 0.4956, 0.4321, 0.0235, 0.0371, 0.3831, 0.3292). The metric is reproducible.",
+      "tolerance_sweep": [
+        {"pair": "p000001 desktop", "tol0": 0.2075, "tol8": 0.0543, "tol16": 0.0444, "reading": "74% of the changed pixels are <=8 levels - text rasterization noise"},
+        {"pair": "p000003 desktop", "tol0": 0.4956, "tol8": 0.4883, "tol16": 0.0647, "reading": "cliff between 8 and 16 - a uniform low-amplitude tint offset over ~42% of the page, not antialiasing"},
+        {"pair": "p000007 desktop", "tol0": 0.3831, "tol8": 0.3730, "tol16": 0.0209, "reading": "same tint-offset signature"},
+        {"pair": "p000005 desktop", "tol0": 0.0235, "tol8": 0.0201, "tol64": 0.0103, "reading": "genuinely small and amplitude-robust"}
+      ],
+      "consequence": "the wave-1 headline range 0.0235..0.4953 and the 16.79% median are ZERO-TOLERANCE changed-pixel counts. They conflate text rasterization noise with a low-amplitude uniform colour offset. They are an upper bound on visible wrongness, not a share of the page that looks wrong."
+    }
+  },
+  "part3_shippedWithoutItsCorrection": {
+    "verdict": "CONFIRMED as fact, REFUTED as a cause of the visual delta",
+    "facts": [
+      "reconstructions/2026-08-25T20-30-33-313Z/app/app/globals.css is 100 lines and contains no QA CORRECTIONS block; the throwaway iterations/q001/reconstruction/app copy is 111 lines and ends with html{background-color:rgb(8, 9, 10);...}",
+      "the accepted reconstruction-manifest.json has no correctionSet / correctionCount / sourceQaRun keys; the q001 manifest has all three",
+      "final-summary.json reports iterations 1, applied 1, accepted 1, regressionPass true, and iterations/q001/summary.json targetMetrics records canvas-background-mismatched-properties before 1 -> after 0 accepted true - all measured against the q001 app",
+      "recon-templates manifest.json source.reconstructionRunId is 2026-08-25T20-30-33-313Z, the UNCORRECTED app. Nothing downstream references iterations/q001.",
+      "the shipped qa-manifest.json still carries all 16 canvas-background-mismatch diffs, which is internally consistent with the accepted app"
+    ],
+    "materiality": {
+      "test": "injected the exact correction CSS into the served accepted app with Playwright and diffed against the same app without it, 8 routes x 2 viewports, zero tolerance",
+      "result": "0 changed pixels of 433,508,510 measured, on all 16 renders",
+      "reading": "the canvas background is only visible where no element paints over it; every audited route is taller than the viewport, so the omission contributes nothing to the measured delta. Part 3 is a real provenance/bookkeeping defect and a real 'the report describes an artifact that was never shipped' problem - but it is worth 0.0000 of the 0.1679."
+    }
+  },
+  "scratch": "tmp/wr-visual-fidelity-investigation/verify-C8-QAGATE-measurement/ (cap.mjs, inter.mjs, canvas.mjs, tol.mjs, rows.json, shots/)"
+}

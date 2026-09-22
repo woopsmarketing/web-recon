@@ -17,6 +17,15 @@
  *   loadContentBrief()         ONE BRIEF → FIRST DRAFT, every field optional (§5)
  *   RepairProgressGuard        bounded no-progress detection, GED-D (§6)
  *   buildRegionPlans()         the missing plan → unit layer
+ *
+ * Task 28 Phase 9 additions:
+ *   buildAuthoringPlan()          brief → site → page → region → unit → slot,
+ *                                 with a closure block that NAMES every orphan
+ *   reviewCrossPageConsistency()  the cross-page review pass V2 did not have
+ *   composeAuthoredResult()       base + authoring delta → one result, pinned
+ *                                 by sha256 and re-derivable
+ *   AuthoredResultGenerator       a hand-authored result served through the
+ *                                 SAME ContentGenerator seam as any provider
  */
 
 export * from "./types.js";
@@ -48,6 +57,15 @@ export {
   type TruthModeOutcome,
 } from "./truth-mode.js";
 export { briefFacts, briefGaps, briefPreferences, loadContentBrief } from "./brief.js";
+export { buildAuthoringPlan, type BuildAuthoringPlanInput } from "./plan.js";
+export { reviewCrossPageConsistency, type ConsistencyReviewInput } from "./consistency.js";
+export {
+  AuthoredResultGenerator,
+  composeAuthoredResult,
+  loadAuthoringDelta,
+  sha256OfFile,
+  type ComposedAuthoredResult,
+} from "./authored-result.js";
 export {
   buildRegionPlanFile,
   buildRegionPlans,
@@ -56,6 +74,23 @@ export {
   type RegionPlanFileInput,
 } from "./region-plan.js";
 export {
+  BRIEF_WRITER_FACT_KINDS,
+  BriefContentGenerator,
+  CHROME_VALUE_SHAPES,
+  FACT_BEARING_VALUE_SHAPES,
+  GENERIC_IA_LABELS,
+  buildBrandVoice,
+  figureForSlotKey,
+  isMarkupFragment,
+  keepsSourceValue,
+  phraseBank,
+  valueShapeIsFactBearing,
+  valueShapeOf,
+  type BrandVoice,
+  type BriefWriterStats,
+  type ValueShape,
+} from "./brief-writer.js";
+export {
   FakeContentGenerator,
   loadManualGenerationResult,
   resolveGenerator,
@@ -63,7 +98,11 @@ export {
   type ContentGenerator,
 } from "./providers.js";
 export { validateGenerationResult, validateSlotAssignments, type ValidateOptions } from "./validate.js";
-export { detectSourceBrandLeaks, brandTokensFromHost } from "./brand-leak.js";
+export {
+  detectSourceBrandLeaks,
+  detectTemplateBrandSurfaceLeaks,
+  brandTokensFromHost,
+} from "./brand-leak.js";
 export { buildOverlayValues, effectiveSlotValues, changedKeys } from "./overlay.js";
 export { runContentLayoutQa, type ContentLayoutQaOptions } from "./layout-qa.js";
 export {
@@ -79,6 +118,7 @@ export {
 } from "./repair.js";
 export { buildOperatorReview, type OperatorReviewInput } from "./report.js";
 export {
+  CONTENT_WRITE_DOCTRINE_WARNING,
   loadContentRun,
   ingestGenerationResult,
   revalidateSlotValues,

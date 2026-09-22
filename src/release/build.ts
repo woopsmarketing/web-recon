@@ -37,6 +37,14 @@ import {
   sha256OfJson,
 } from "./requirements.js";
 import { renderOperatorChecklist } from "./checklist.js";
+import {
+  authoredEnablementIsEmpty,
+  emptyResolvedEnablement,
+  enablementCollectInput,
+  loadEnablementInputs,
+  resolveEnablement,
+  type ResolvedEnablement,
+} from "./enablement.js";
 import { DEFAULT_STAGE_RUNNERS, type StageRunner, type StageRunnerContext } from "./stages.js";
 import {
   loadReleaseProject,
@@ -71,6 +79,13 @@ export interface BuildResult {
     blocked: Array<{ stage: ReleaseStage; blockedBy: string[] }>;
   };
   failed: boolean;
+  /**
+   * The requirement total this build WROTE into requirements.json — read back
+   * off the saved file, never computed a second way (Task 28 §1B). On a dry
+   * run nothing is written, so this is the unique-id count of the file already
+   * on disk.
+   */
+  requirementsCount: number;
 }
 
 function lineagePathsOf(project: ReleaseProject): LineagePaths {
@@ -154,7 +169,17 @@ export async function buildRelease(
       for (const entry of blocked) log(`  ${entry.stage}: ${entry.blockedBy.join(", ")}`);
       log("");
     }
-    return { project, run: null, plan: { wouldRun, wouldReuse, blocked }, failed: false };
+    return {
+      project,
+      run: null,
+      plan: { wouldRun, wouldReuse, blocked },
+      failed: false,
+      // Nothing was written: report what the persisted file actually contains,
+      // counted the same way `buildRequirementsFile` counts it (unique ids).
+      requirementsCount: new Set(
+        requirementsFile.requirements.map((requirement) => requirement.requirementId),
+      ).size,
+    };
   }
 
   const frozenBlocked = blocked.filter((entry) =>
@@ -180,11 +205,48 @@ export async function buildRelease(
   ];
   const current: Partial<Record<ReleaseStage, ArtifactRef | null>> = {};
   for (const stage of STAGE_ORDER) current[stage] = refreshed.stageStatus[stage].artifact;
-  const assetHashes = await resolutionAssetContentHashes(effective);
+  // The pack's assets WITH `authored.assets` merged over them — the same set
+  // `assetsStageRunner` applies, so the inputsHash this build RECORDS after a
+  // rerun is computed from the same bytes `refreshStageStatuses` recomputes on
+  // the next load. Passing only `effective` here would leave an authored asset
+  // permanently stale: rerun, record a hash that omits it, recompute a hash
+  // that includes it, rerun again, forever.
+  const assetHashes = await resolutionAssetContentHashes(effective, project.authored);
 
   let failedStage: ReleaseStage | null = null;
   let failureMessage = "";
   let lastSuccessfulStage: ReleaseStage | null = null;
+
+  // ENABLEMENT, resolved ONCE per build and memoized (Task 28 Phases 5 + 6).
+  //
+  // It is re-SAFETY-CHECKED here, on every build, rather than trusted because
+  // the edit was once accepted: a template recompile that moved a region id, or
+  // a second edit that widened a shared page's route set, must be caught now.
+  // A project with nothing disabled short-circuits before opening a page tree,
+  // so the cost is zero for every project that predates this feature.
+  let enablementPromise: Promise<ResolvedEnablement> | null = null;
+  const enablement = (): Promise<ResolvedEnablement> => {
+    if (enablementPromise === null) {
+      enablementPromise = (async (): Promise<ResolvedEnablement> => {
+        if (authoredEnablementIsEmpty(project.authored)) return emptyResolvedEnablement();
+        const templateDir = current.template?.path;
+        if (templateDir === undefined || templateDir === null) {
+          throw new Error("release build: enablement needs the template artifact and none is recorded");
+        }
+        const inputs = await loadEnablementInputs({
+          templateRunDir: templateDir,
+          pageRegionsRef: project.auxiliary.pageRegionsDir ?? null,
+        });
+        const resolved = resolveEnablement(project.authored, inputs);
+        for (const refusal of resolved.refusals) {
+          log(`[release] enablement REFUSED (${refusal.code}) ${refusal.subject}: ${refusal.message}`);
+        }
+        for (const warning of resolved.warnings) log(`[release] enablement WARNING — ${warning}`);
+        return resolved;
+      })();
+    }
+    return enablementPromise;
+  };
 
   const context: StageRunnerContext = {
     project,
@@ -192,6 +254,7 @@ export async function buildRelease(
     current,
     releaseRunId,
     log,
+    enablement,
   };
 
   for (const stage of STAGE_ORDER) {
@@ -303,7 +366,11 @@ export async function buildRelease(
   // ---- 4. re-collect requirements from the CURRENT artifacts ---------------
   project.stageStatus = refreshed.stageStatus;
   const lineage = lineagePathsOf(project);
-  const collected = await collectRequirements(lineage);
+  const collectEnablement = enablementCollectInput(await enablement());
+  const collected = await collectRequirements({
+    ...lineage,
+    ...(collectEnablement !== undefined ? { enablement: collectEnablement } : {}),
+  });
   const freshConsumers = new Set(
     (["content", "seo", "assets"] as const).filter(
       (stage) => project.stageStatus[stage].status === "fresh",
@@ -363,6 +430,20 @@ export async function buildRelease(
     const hash = current[stage]?.hash;
     if (hash !== undefined && hash !== null) inputArtifactHashes[stage] = hash;
   }
+  // ONE requirements file object: saved, recorded on the run, and reported.
+  // `stageArtifacts` names the artifacts THIS build re-collected from — after
+  // its own stage reruns — which is precisely how a build's total is told
+  // apart from the prepare total collected against the accepted lineage.
+  const nextRequirementsFile = buildRequirementsFile(project.projectId, requirements, {
+    releaseRunId,
+    releaseRunKind: "build",
+    stageArtifacts: Object.fromEntries(
+      Object.entries(project.stageStatus)
+        .filter(([, status]) => status.artifact !== null)
+        .map(([stage, status]) => [stage, status.artifact!.path]),
+    ),
+  });
+
   const run: ReleaseRun = {
     schemaVersion: 1,
     schemaName: "release-run-v1",
@@ -379,12 +460,13 @@ export async function buildRelease(
     operatorOverrides: overrides,
     warnings,
     blockers: finalBlockers.map((requirement) => requirement.requirementId),
+    requirementsTotal: nextRequirementsFile.counts.total,
     finalVerdict: project.releaseState,
     stageExecutions,
     failure: project.failure,
   };
 
-  await saveRequirementsFile(projectDir, buildRequirementsFile(project.projectId, requirements));
+  await saveRequirementsFile(projectDir, nextRequirementsFile);
   await saveChecklist(
     projectDir,
     renderOperatorChecklist(project, requirements, collected.routeReadiness, warnings),
@@ -397,5 +479,6 @@ export async function buildRelease(
     run,
     plan: { wouldRun, wouldReuse, blocked },
     failed: failedStage !== null,
+    requirementsCount: nextRequirementsFile.counts.total,
   };
 }

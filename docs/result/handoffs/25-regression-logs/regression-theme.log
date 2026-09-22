@@ -1,0 +1,87 @@
+Already up to date
+Done in 154ms using pnpm v11.21.0
+$ tsx scripts/smoke-theme.ts
+
+== fixture SiteSpec → REAL reconstruction → REAL template compile
+  PASS  template compiled
+
+== token contract (theme-contract-v1)
+  PASS  3 contract is closed and versioned
+  PASS  3a contract carries the §3 common tokens
+
+== theme file schema validation
+  PASS  1 valid curated theme parses
+  PASS  12 unknown token rejected
+  PASS  1a selector-smuggling value rejected
+  PASS  1b url() asset value rejected
+
+== original theme extraction + adapter mapping
+  PASS  2 canvas extracted
+  PASS  2a heading → text.primary
+  PASS  2b body → text.secondary
+  PASS  2c muted text
+  PASS  2d link color
+  PASS  2e CTA → action.primary
+  PASS  2f CTA text → action.primaryText
+  PASS  2g card border → border.default
+  PASS  2h card bg → surface.secondary
+  PASS  2i pill radius
+  PASS  2j card radius → radius.small
+  PASS  2k shadows extracted (small + large by blur)
+  PASS  2l original theme is an export candidate, never auto-promoted
+  PASS  2m extraction is deterministic (byte-identical adapter)
+  PASS  4 adapter binds token → site paint occurrence (wr-st class selector)
+  PASS  5 gradient-covered background stays a PRESERVED raw group
+  PASS  5a unexplained dark color stays a raw REVIEW group (no forced semantic)
+  PASS  6 adapter references ONLY reconstruction identity (no common class names)
+
+== structural guards
+  PASS  11 layout property mutation rejected by the closed allowlist
+
+== compatibility gates
+  PASS  18 contrast failure detected (near-white text on white)
+  PASS  19 dark theme honestly incompatible (preserved dark text hazard)
+  PASS  19a light curated theme is applicable
+
+== manual adapter overrides
+  PASS  surface.secondary group exists
+  PASS  20 manual preserve: group kept original, overlay no longer touches it
+  PASS  21 manual bind: raw group joins a contract token and gets themed
+
+== browser — original theme no-op parity (builds the app)
+   [theme:qa] building template app
+   [qa:template] next build (/Users/woops/projects/web-recon/data/.smoke-theme-60358/recon-templates/fixture-a/app)
+   [theme:qa] page / @390
+   [theme:qa] page / @1440
+   [theme:qa] paint / desktop (19 probes)
+   [theme:qa] paint / mobile (19 probes)
+   [theme:qa] interactions / @1440
+   [theme:qa] interactions / @390
+  PASS  13 original theme parity: all pages pass
+  PASS  13a original theme parity: DOM identical + geometry 0
+  PASS  13b original theme parity: computed paint equals the original values
+
+== browser — curated theme (palette + decoration)
+   [theme:qa] building template app
+   [theme:qa] page / @390
+   [theme:qa] page / @1440
+   [theme:qa] paint / desktop (19 probes)
+   [theme:qa] paint / mobile (19 probes)
+   [theme:qa] interactions / @1440
+   [theme:qa] interactions / @390
+  PASS  14 curated theme changes paint (themed groups > 0, all verified checks applied)
+  PASS  15 static occurrence themed
+  PASS  16 dynamic-template occurrence themed (mounted menu carries the theme)
+  PASS  22 geometry unchanged under curated theme
+  PASS  23 interaction unchanged under curated theme
+  PASS  24 hydration-safe themed render
+
+== browser — border/radius/shadow + content+theme composition
+  PASS  hero slot exists for composition
+  PASS  8 border COLOR themed, width/style preserved verbatim
+  PASS  9 radius themed (card 8px→3px, cta pill 14px→5px)
+  PASS  10 shadow themed
+  PASS  17 content + theme overlays compose (new text AND themed paint on one node)
+  PASS  7 palette application (themed text color observed in browser)
+
+47/47 checks passed

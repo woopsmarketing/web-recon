@@ -1,0 +1,22 @@
+
+[release] the Step 5.2 release against the polish release
+  ok   R1 exactly ONE 1.4.0 release exists, verifies, and is every site's pin while 1.4.0 is current; 1.3.1 unchanged
+  ok   R2 same release file set as 1.3.1; exactly schema.ts, the app/ pages + layout, FloatingCta.tsx, SiteFooter.tsx, template.css, template.ts differ
+  ok   R3 FloatingCta.tsx differs in comments only; template.css in comments + ONE rule (filter actions beside the count ≥ 900px); template.ts in comments + version 1.3.1 → 1.4.0 only (no setting/slot change)
+  ok   R4 ONE seat owner: the root layout renders SiteFooter (once, after every page), SiteFooter renders FloatingCta; no page renders either; pages otherwise unchanged
+
+[packages] skipped — a later release (interior-01-1.5.1-6bbdd07eb9bf) is current; the 1.3.1/1.4.0 packages are no longer retained
+
+[unit] area basis contract
+  ok   A1 area.basis: exactly supply | exclusive | unknown are accepted; absent stays valid; anything else is refused
+  ok   A2 every stored fixture area (none states a basis) reads as unknown; a stated basis reads as stated
+  ok   A3 authoring default: bare 평 in Korean residential context → supply; every other unstated case → unknown
+  ok   A4 no auto-equivalence: a supply 34평 stays { 34, pyeong } in the filter record (no basis, no 84㎡ / 25.4평 substitution)
+
+[integration] throwaway-root builds (seat off / no destination, basis end-to-end, document compatibility)
+  ok   I1 seat disabled (site.floating-cta.enabled = false) → no seat on ANY page; basis = supply builds and renders the detail exactly as without a basis
+  ok   I2 no contact destination → no seat on ANY page
+  ok   I3 basis is data only in 1.4.0: detail <main> identical for supply / exclusive / unstated; the value is shown as authored (34평); basis never shipped to the browser
+  ok   I4 rollback boundary: the 1.3.1 release refuses (fails closed) a document that states a basis — basis data needs ≥ 1.4.0
+
+step52: 12 passed, 0 failed

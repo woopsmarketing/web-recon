@@ -1,0 +1,321 @@
+{
+  "schema": "task288-final-v1",
+  "wave": "28.75 -> 28.8",
+  "date": "2026-09-05",
+  "verdict": "NOT READY - GENERIC PRODUCT BLOCKERS REMAIN",
+  "verdictChosenBy": "independent adjudicator, fresh context, no preferred answer supplied",
+  "humanAcceptanceRequired": true,
+  "phaseA": {
+    "gatePassed": false,
+    "gateClauses": {
+      "A_blankContent": "PARTIAL",
+      "B_width": "NOT MET",
+      "C_protect": "NOT MET",
+      "D_popup": "MET",
+      "E_qaHonesty": "PARTIAL",
+      "F_calibration": "PARTIAL",
+      "G_visual": "NOT MET"
+    },
+    "correctionCyclesUsed": 2,
+    "correctionCyclesPermitted": 2,
+    "blankRegionDetector": {
+      "shipped": true,
+      "channel": "blank-region-ratio",
+      "rubricVersion": 5,
+      "firesOnKnownBroken": true,
+      "silentOnControls": true,
+      "evidence": {
+        "prefixSeveranceBlocker": 1.4533,
+        "seoultoneFinal1440": 0.5767,
+        "linearPricingControls": 0
+      },
+      "regionsExamined": 32652,
+      "regionsSelected": 790,
+      "rejectionReasons": 10,
+      "namedHole": "ink leg withheld on every hobbang pair (DOM census 47-55% vs 0.8 floor); trigger is page length",
+      "falsePositive": {
+        "pair": "seoultone.kr / @1440",
+        "value": 0.5767,
+        "whatItFlagged": "183px grey strip below the certificate carousel — intentional section padding ~88px too tall",
+        "groundTruth": "independent visual auditor found the doctor biography fully present in the clone and MORE complete than the source, which drops the entire 병원위치/주차안내/진료시간 column and all five 약속 bullets",
+        "significance": "spec section 9 required this channel never classify intentional whitespace as a defect; it did so on the first page outside its fixture set"
+      }
+    },
+    "dynamicContentRecovery": {
+      "shipped": true,
+      "runtimeEmulatorBuilt": false,
+      "regions": [
+        {
+          "region": "severance-hero",
+          "category": "C",
+          "owner": "reconstruction",
+          "fixed": true
+        },
+        {
+          "region": "severance-news",
+          "category": "C",
+          "owner": "observer",
+          "fixed": true
+        },
+        {
+          "region": "severance-promo-carousel",
+          "category": "C",
+          "owner": "observer",
+          "fixed": true
+        },
+        {
+          "region": "seoultone-doctor-bio",
+          "category": "A",
+          "owner": "observer",
+          "fixed": true
+        }
+      ],
+      "severanceOverlapExcessRatio": {
+        "at1100": [
+          0.4484,
+          0.0016
+        ],
+        "at1440": [
+          0.3425,
+          0.0012
+        ]
+      }
+    },
+    "widthChainRoot": {
+      "shipped": true,
+      "cured": false,
+      "residuals": 6927,
+      "chainRoots": 1107,
+      "clamps": 150,
+      "refusals": 7194,
+      "comparisons": 190590,
+      "improved": 2810,
+      "worsened": 37,
+      "sumWidthErrorDelta": -0.0585,
+      "footerClippedLinearRoot": {
+        "700": 1,
+        "1024": 1,
+        "1100": 1,
+        "sourceAll": 0
+      },
+      "cloneContentMaxRight": {
+        "700": 1575,
+        "1024": 1838,
+        "1100": 1838,
+        "1440": 1840
+      },
+      "sourceContentMaxRight": {
+        "700": 1627,
+        "1024": 1527,
+        "1100": 1509,
+        "1440": 1840
+      }
+    },
+    "popupConsistency": {
+      "closed": true,
+      "viewportRelative": true,
+      "falsePositives": 0,
+      "combinationsTested": 56,
+      "liveSeoultone": {
+        "at390": {
+          "qualified": 1,
+          "dismissed": 1
+        },
+        "at1440": {
+          "qualified": 1,
+          "dismissed": 1
+        }
+      },
+      "residual": "PANEL 0.20 width floor re-blinds above ~2500px"
+    },
+    "qaL1": {
+      "closed": true,
+      "newChannel": "overlap-demoted-excess-ratio",
+      "demotedOverlapCanAffectVerdict": true
+    },
+    "qaL3": {
+      "closed": "responsive-qa only",
+      "excessBandFields": 19,
+      "conservationAsserted": true,
+      "firedOnCorpus": {
+        "pair": "linear / @700",
+        "sourceWidth": 700,
+        "cloneWidth": 862,
+        "bandPx": 162,
+        "bandInkRatio": 0.9998,
+        "comparedAreaRatio": 0.7817
+      },
+      "notClosed": "src/reconstruction-qa/screenshot-diff.ts:209 still min-crops silently"
+    },
+    "blockersBefore": [
+      "B1",
+      "B2",
+      "B3",
+      "B4",
+      "B5",
+      "B6",
+      "B7"
+    ],
+    "blockersAfter": [
+      "B1 (measured, not cured)",
+      "B3 (now load-bearing)",
+      "B4 (hobbang footer only)"
+    ]
+  },
+  "phaseB": {
+    "ran": false,
+    "reason": "Phase A hard gate failed; program spec forbids starting Phase B on gate failure",
+    "sitesAttempted": [],
+    "sitesPreflightedOnly": [
+      "https://channel.io/kr",
+      "https://toss.im/",
+      "https://vipgunma.com/",
+      "https://beomeo.roseeskin.com/"
+    ],
+    "sitesReady": [],
+    "sitesNotReady": [],
+    "genericBlockers": [],
+    "preflightNote": "all four HTTP 200, none blocks crawling of its public marketing surface; vipgunma.com has NO /sitemap.xml (404) and publishes five numbered sitemaps via robots.txt; beomeo.roseeskin.com returns 1.6MB of homepage HTML"
+  },
+  "siteStructure": {
+    "homepageOnly": false,
+    "routeArchetypesUsed": null,
+    "repeatedPostsDeepCloned": null,
+    "note": "routeArchetypesUsed and repeatedPostsDeepCloned are null rather than true/false: both are Phase B properties and Phase B did not run. Asserting either would be a claim about work that does not exist."
+  },
+  "regression": {
+    "suites": 35,
+    "smokeFiles": 36,
+    "checks": 4663,
+    "failures": 0,
+    "crashes": 0,
+    "nonZeroExits": 0,
+    "typecheck": 0,
+    "negativeDeltas": 0,
+    "baseline287": {
+      "suites": 35,
+      "checks": 4326,
+      "failures": 0
+    },
+    "positiveDeltas": {
+      "responsive-qa": 144,
+      "layout-safety": 130,
+      "multi-observer": 55,
+      "sitespec": 8
+    },
+    "run1FoundRegressions": {
+      "smoke-e2e": {
+        "result": "129/130",
+        "cause": "production - probe evidence discarded below 100-element floor",
+        "fixed": true
+      },
+      "smoke-theme": {
+        "result": "40/47",
+        "cause": "6 production defects incl. contrast-failure silently not firing, 1 stale test",
+        "fixed": true
+      },
+      "smoke-reconstruction-qa": {
+        "result": "207/211",
+        "cause": "4 stale tests asserting the bug that was fixed",
+        "fixed": true
+      },
+      "smoke-visual-editor": {
+        "result": "died at check 37 TimeoutError",
+        "cause": "test-side synchronisation across a preview reload",
+        "fixed": true
+      }
+    },
+    "assertionsWeakened": 0,
+    "harnessDefectsFoundAndFixed": 2
+  },
+  "humanReview": {
+    "finalIndex": "docs/result/28.75/human-review/index.html",
+    "manifest": "docs/result/28.75/human-review/manifest.json",
+    "contactSheet": "docs/result/28.75/human-review/contact-sheet.png",
+    "pairs": 18,
+    "primaryImages": [
+      "linear.app / @1100 (Generic Blocker 1)",
+      "linear.app / @1024 (Generic Blocker 1)",
+      "hobbang.net / @390 footer (machine MINOR vs human BLOCKER)",
+      "linear.app /pricing @1440 and @390 (the two human PASS pairs)",
+      "gs.severance.healthcare /gs/index.do @1440 (the wave's clearest win)"
+    ]
+  },
+  "machineTally": {
+    "pairs": 18,
+    "BLOCKER": 8,
+    "MAJOR": 6,
+    "MINOR": 4,
+    "PASS": 0,
+    "acceptableAt700_1024_1100": "0 of 7",
+    "acceptableAt1440": "4 of 5",
+    "note": "machine and independent human disagreed on 10 of 18 pairs, in both directions"
+  },
+  "remainingGenericBlockers": [
+    {
+      "id": "G1",
+      "title": "Frozen desktop canvas at intermediate widths",
+      "evidence": "footer-clipped=1 on linear / at 700/1024/1100 (source 0); clone contentMaxRight pinned 1838 at 1024/1100; scrollWidth==viewport so clipped not scrolled; centred layout clips bilaterally",
+      "reproducedOn": [
+        "linear.app (React marketing)",
+        "gs.severance.healthcare (legacy Korean hospital CMS)"
+      ]
+    },
+    {
+      "id": "G2",
+      "title": "CJK line-box collision — most widespread class",
+      "evidence": "hobbang CJK footer at 390/1100/1440, byte-identical across engines; seoultone 진료시간 at both widths where every closing time overprints the next row's label so opening hours are UNREADABLE, plus tagline over the DERMATOLOGY wordmark and 대표원장 over a credential line",
+      "reproducedOn": [
+        "hobbang.net",
+        "seoultone.kr"
+      ]
+    },
+    {
+      "id": "G3",
+      "title": "Only two DOM trees exist, now load-bearing",
+      "evidence": "at 700 the source serves a third layout neither tree contains; missing-text-ratio 0.157 once the clone honestly reflows"
+    },
+    {
+      "id": "G4",
+      "title": "Rubric top band miscalibrated in both directions",
+      "evidence": "0 of 18 machine PASS; pixel-residual best 0.0152 vs 0.01 threshold on a human-PASS pair; hobbang @390 machine MINOR vs human BLOCKER; blank-region-ratio false-positived BLOCKER on seoultone @1440 for intentional padding"
+    },
+    {
+      "id": "G5",
+      "title": "Content-node loss and asset corruption",
+      "evidence": "linear /pricing @1024 all 7 customer logos absent; hobbang drops 1 of 11 table rows; severance 6 quick-menu icons corrupted"
+    }
+  ],
+  "remainingSourceSpecificIssues": [
+    {
+      "site": "seoultone.kr",
+      "issue": "source capture under-revealed and the comparison runs AGAINST the clone: ~480 chars behind un-fired scroll-reveal opacity, source largest empty band 1560px vs clone 208px, and the clone renders a whole column and five bullets the SOURCE capture drops (confirmed by eye). Machine graded both pairs BLOCKER; the visual auditor graded both MAJOR, on real overlap rather than missing content."
+    },
+    {
+      "site": "linear.app",
+      "issue": "animated agent-demo panel cannot be phase-matched (clock 7:18pm vs 8:51pm)"
+    },
+    {
+      "site": "gs.severance.healthcare",
+      "issue": "slick carousel transform state captured at a single moment"
+    }
+  ],
+  "carriedNotFixed": [
+    "src/reconstruction-qa/screenshot-diff.ts:209 silent min-crop on a second code path",
+    "qa-corrections.ts:178 emits the canvas fix as a global html{} rather than scoped",
+    "style-generator.ts:302 treats a non-painting viewport as absent rather than as a disagreement",
+    "PANEL 0.20 width floor re-blinds above ~2500px",
+    "blank-region ink leg withheld on long pages (hobbang: all pairs)",
+    "five src files contain literal NUL bytes, so git treats them as binary and plain grep skips them"
+  ],
+  "absoluteStopRule": "Program stops here per spec section 59. No Task 28.9 proposed or started.",
+  "humanVisualTally": {
+    "pairs": 18,
+    "BLOCKER": 6,
+    "MAJOR": 5,
+    "MINOR": 5,
+    "PASS": 2,
+    "acceptableAsIs": "7 of 18 (39%)",
+    "disagreedWithMachine": "10 of 18, in both directions"
+  }
+}

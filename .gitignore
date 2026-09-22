@@ -10,8 +10,8 @@ node_modules/
 dist/
 *.tsbuildinfo
 
-# runtime data (crawl output, etc.)
-data/
+# runtime data (crawl output, etc.): see the data/ block at the END of this file
+# (it must come last so that no generic rule above can hide canonical data)
 
 # Playwright artifacts
 test-results/
@@ -25,6 +25,25 @@ playwright/.cache/
 # logs
 *.log
 logs/
+# ...but log evidence cited by the written reports under docs/result stays trackable
+!docs/result/**/logs/
+!docs/result/**/*.log
+
+# proof screenshots under docs/result are regenerable QA evidence (GBs), not
+# source of truth: keep the written reports, drop the images
+docs/result/**/*.png
+docs/result/**/*.jpg
+docs/result/**/*.jpeg
+docs/result/**/*.webp
+docs/result/**/*.gif
+docs/result/**/*.webm
+docs/result/**/*.mp4
+
+# rejected AI-image candidates (never part of a site)
+references/**/generated-candidates/
+
+# wrangler local state / cache
+.wrangler/
 
 # temp files
 tmp/
@@ -40,3 +59,26 @@ Thumbs.db
 # local task instruction files (not part of the project)
 /prompt
 /prompt2
+
+# ---------------------------------------------------------------------------
+# data/ — KEEP THIS BLOCK LAST.
+# data/ is the raw-crawl output dir (tens of GB), but it also holds the canonical
+# template-platform data. Ignore everything directly under data/ except the three
+# canonical subsystems. It must be `data/*`, not `data/`: git cannot re-include a
+# child of an excluded directory.
+# The `/**` lines re-include EVERY file of the canonical trees, even one whose name
+# matches a generic rule above (dist/, logs/, *.log, tmp/, *.tmp ...): a site
+# package is addressed by a hash over all of its bytes, so git must never drop
+# one of them silently. Only the rules repeated after them still apply inside.
+data/*
+!data/.gitkeep
+!data/sites/
+!data/site-builds/
+!data/template-releases/
+!data/sites/**
+!data/site-builds/**
+!data/template-releases/**
+data/**/.env
+data/**/.env.*
+data/**/.DS_Store
+data/**/node_modules/

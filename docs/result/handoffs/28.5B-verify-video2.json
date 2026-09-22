@@ -1,0 +1,97 @@
+{
+  "schema": "task285b-verify-video2-v1",
+  "producedAt": "2026-08-29T00:00:00Z",
+  "verdict": "PASS_WITH_RISKS",
+  "scope": "Re-verification of the CORRECTION to Task 28.5B Change 4 (GAP-A undercount, GAP-B overcount) against docs/result/handoffs/28.5B-build-video.json (correction object) and 28.5B-verify-video.json. Read-only on src/; scratch scripts under tmp/wr285b/reverify-video/ only; no git operations.",
+  "method": {
+    "truthTable": "tmp/wr285b/reverify-video/truthtable.ts — independently constructed fixtures driven through the REAL AssetResolver.resolve() and the REAL compileNode(); reports unresolvedElementAssets per shape, not re-implemented logic.",
+    "corpusDelta": "tmp/wr285b/reverify-video/scan.ts — my own scan (not the correction's script) over the latest site-spec of EVERY data/<site>/site-specs directory (7), diffing a pre-correction reimplementation of resolve()+compile-node's guard against the shipped code, plus shape counts. The correction's own tmp/wr285b/video-fix/corpus-delta.ts was also re-run unmodified.",
+    "renderBaseline": "tmp/wr285b/reverify-video/pre285b.ts — quantifies the BUILD-stage (not correction-stage) render change vs the pre-28.5B PRIMARY_IMAGE_KINDS."
+  },
+  "truthTable": {
+    "a": {"shape": "<video> with resolvable video-kind src", "resolver": "unresolved=false, noOwnMediaAsset=false, src=video url", "countedAt": "nowhere", "count": 0, "correct": true},
+    "b": {"shape": "<video> with a dangling assetRef (id not in catalog)", "resolver": "assets.length===0 so the GAP-B early return is skipped; noSrcAtAll -> unresolved=true", "countedAt": "resolver (child element itself)", "count": 1, "correct": true},
+    "c": {"shape": "<video> poster-only", "resolver": "src = poster url (render unchanged), videoContentUnresolved -> unresolved=true", "countedAt": "resolver", "count": 1, "correct": true},
+    "d": {"shape": "<video> + <source> children all resolvable", "resolver": "parent noOwnMediaAsset=true, unresolved=false; children resolve", "countedAt": "nowhere", "count": 0, "correct": true},
+    "e": {"shape": "GAP-A: <video> + 2 <source> children, one with ZERO assetRefs", "resolver": "child source: empty-refs branch -> unresolved=true; parent: noOwnMediaAsset=true but has a <source> child -> guard false", "countedAt": "the broken <source> child, exactly once; parent zero", "count": 1, "correct": true, "note": "N broken <source> children produce N counts (measured: 2 broken children -> 2). Deliberate per the correction's stated counting-point rationale (one increment per element whose media is lost), not per lost video."},
+    "f": {"shape": "GAP-B: <video> with only a background-image ref + resolvable <source> children", "resolver": "assets present but none of MEDIA_ASSET_KINDS -> early return noOwnMediaAsset=true, unresolved=false; compile-node guard suppressed by the <source> child", "countedAt": "nowhere", "count": 0, "correct": true},
+    "g": {"shape": "<video> with only a background-image ref and NO children", "resolver": "noOwnMediaAsset=true, unresolved=false", "countedAt": "compile-node videoMediaMissingAndNoSourceChild", "count": 1, "correct": true},
+    "h": {"shape": "bare <video>, no refs, no children", "resolver": "empty-refs branch -> noOwnMediaAsset=true, unresolved=false (tagName not img/source)", "countedAt": "compile-node videoMediaMissingAndNoSourceChild", "count": 1, "correct": true},
+    "i": {"shape": "<img> with zero assetRefs", "resolver": "unresolved=true (unchanged)", "countedAt": "resolver", "count": 1, "correct": true, "note": "regression-free: identical to pre-correction behaviour."},
+    "j": {"shape": "<picture> > <source> with zero assetRefs (NEW behaviour: now counts)", "resolver": "empty-refs branch now includes tagName 'source' -> unresolved=true; compile-node entry condition widened with `|| tagName === \"source\"` so it is evaluated at all", "countedAt": "the <source> element", "count": 1, "correct": true, "judgment": "correct honesty, NOT a false positive", "evidence": "src/observer/collect-assets.ts case 'source' pushes kind 'picture-source' for every srcset candidate whose URL resolves to http(s) and kind 'source' for a resolvable src attribute. Zero assetRefs therefore means NO http(s) URL was recoverable from that element at all — the clone emits the <source> with neither src nor srcSet (verified in the suite's SSR check and in my harness), so the media really is absent from the reconstruction. The only shapes that reach zero refs are (1) src/srcset that is a data:/blob: URI, which collect-assets deliberately skips (lines 49-60) — the ORIGINAL renders but the CLONE does not, so counting is still honest and is exactly the pre-existing treatment of <img src=\"data:...\">, and (2) a <source> carrying only type/media attributes. A <source> whose refs resolve only to non-media kinds (e.g. a background-image ref) also counts, but that behaviour predates the correction and is unchanged.", "corpusScanConfirmed": "I re-derived the scan myself rather than trusting the correction's number: over the latest site-spec of all 7 data/ site directories, <source> nodes = 174 (168 stripe.com, 6 linear.app) and <source> nodes with `assetRefs` empty = 0; <source> nodes whose refs resolve only to non-media kinds = 0; <source> nodes with a <picture> parent and zero refs = 0. The scan reads each element node's own `assetRefs` array per page per viewport (tmp/wr285b/reverify-video/scan.ts), i.e. it does check the property in question, and the correction's script does the same at its `r.tag === \"source\" && r.refs.length === 0` shape counter."}
+  },
+  "suite": {
+    "name": "scripts/smoke-video-honesty.ts",
+    "checks": 36,
+    "passed": 36,
+    "failed": 0,
+    "reRunByVerifier": true,
+    "tautologyScrutiny": "The 15 Section C checks are not tautological. They call the real AssetResolver and the real compileNode over hand-built SiteSpec-shaped fixtures, assert on unresolvedElementAssets (a counter the production code owns) and on react-dom/server SSR output, and pin BOTH directions: the aggregate 'exactly 2 counted' check is backed by three per-element isolation runs (videoA=1, videoB=0, videoC=1) so the total cannot pass by cancellation; the GAP-B fix is proven not to be a blanket amnesty (videoC, non-media ref + no <source> child, still counts 1); and two render assertions prove the uncounted GAP-B video really does emit its <source> child's URL and never fabricates the background-image URL into <video src>. Regression checks hold img-with-0-refs, non-media tags, dangling refs, and img-with-only-a-bg-ref at their previous verdicts. No check asserts a constant or re-states the implementation."
+  },
+  "corpusDelta": {
+    "scriptsRun": ["tmp/wr285b/video-fix/corpus-delta.ts (the correction's, unmodified)", "tmp/wr285b/reverify-video/scan.ts (mine, wider)"],
+    "correctionScriptResult": "linear.app 2026-08-25T20-30-27-653Z: img 436, source 6, video 24 — unresolved before=0 after=0, srcDiff=0, srcSetDiff=0. stripe.com 2026-08-17T21-38-01-773Z: img 1518, source 168, video 2 — before=0 after=0, srcDiff=0, srcSetDiff=0. Reproduced exactly.",
+    "myWiderResult": "All 7 data/ site directories (127.0.0.1, developer.mozilla.org, domainchecker.co.kr, linear.app, nextjs.org, seoworld.co.kr, stripe.com): TOTAL unresolved before=332 after=332, delta 0, src diffs 0, srcSet diffs 0. The 332 are nextjs.org <img> elements with zero assetRefs — pre-existing and identical on both sides.",
+    "shapeCounts": {"sourceWithZeroAssetRefs": 0, "sourceWithOnlyNonMediaRefs": 0, "videoWithOnlyNonMediaRefs": 0, "videoWithDanglingRefs": 0, "videoWithZeroAssetRefs": 4, "videoWithZeroRefsAndNoSourceChild": 0, "audioElementsWithRefs": 2},
+    "conclusion": "Both gap shapes have zero occurrences in the whole corpus, so the correction is provably inert on real data and img/<picture> accounting and rendering are untouched. Verified independently, not taken from the handoff."
+  },
+  "firstVerifierClaimOverturned": {
+    "claim": "28.5B-verify-video.json asserted the 4 zero-assetRef <video> elements had no <source> child and were NEWLY counted by the build.",
+    "finding": "Overturned — the correction is right. My scan finds videoWithZeroRefsAndNoSourceChild = 0 corpus-wide; all 4 (linear.app p000006 n000065 desktop+mobile, stripe.com p000011 n001575 desktop+mobile) have <source> children.",
+    "spotCheck": "linear.app 2026-08-25T20-30-27-653Z p000006 desktop n000065: tagName video, assetRefs [], attributes {inert:''}, children n000066/n000067/n000068 — all three <source>, refs a000420/a000422/a000421 (kind 'source'), each resolving to a real static.linear.app URL (…av1.crf24.mp4, …vp9.crf24.webm, …h264.crf17.mp4). Parent uncounted before AND after; children resolve, unresolved=false.",
+    "effect": "The build's own newly-counted-4 claim was wrong; the true corpus effect of Change 4 on unresolvedElementAssets is ZERO on today's specs. The fix is structural/latent, not currently firing."
+  },
+  "typecheck": {"command": "npx tsc --noEmit -p .", "exitCode": 0, "diagnostics": 0, "note": "Project-wide clean at verification time; nothing to attribute to concurrent owners of src/observer, src/sitespec, style-generator/plan-reconstruction/generate-app, or src/reconstruction-qa."},
+  "audioScope": {"scopeCreep": false, "evidence": "The only occurrence of 'audio' in either changed file is the named-limitation paragraph in the MEDIA_ASSET_KINDS doc comment (src/reconstruction/asset-resolver.ts:55-58). Behaviour confirmed by harness: resolve('audio', ['<resolvable source-kind ref>']) -> unresolved=false, no src, compile count 0 — <audio> still takes the generic fall-through and its media is still silently dropped, as documented. 2 such elements exist in the corpus."},
+  "defects": [
+    {
+      "id": "RES-1",
+      "kind": "residual-overcount (latent, deliberate)",
+      "severity": "low-latent",
+      "shape": "<video> whose OWN assetRef is a dangling id (not present in the asset catalog) while its media arrives from resolvable <source> children.",
+      "measured": "tmp/wr285b/reverify-video/truthtable.ts case b2 -> unresolvedElementAssets = 1 at the parent, although the element renders its child's media correctly.",
+      "why": "The GAP-B early return requires assets.length > 0, so refs that resolve to nothing keep falling through to noSrcAtAll -> unresolved, and compile-node's <source>-child guard is keyed on noOwnMediaAsset, which that path never sets. This is the same asymmetry class GAP-B removed, surviving for dangling refs.",
+      "correctionAwareness": "Explicitly documented and chosen in asset-resolver.ts's GAP-B comment ('refs that resolve to nothing at all have no kind to inspect and remain a genuine catalog failure'). Defensible — a dangling ref IS a real SiteSpec/catalog defect — but the increment is attributed to the video's media rather than to the catalog.",
+      "occurrencesInCorpus": 0,
+      "blocking": false
+    },
+    {
+      "id": "RES-2",
+      "kind": "counting-granularity (design consequence)",
+      "severity": "informational",
+      "shape": "A <video> with N <source> children that ALL have zero assetRefs counts N, not 1.",
+      "measured": "truthtable case e2 -> 2 broken <source> children, unresolvedElementAssets = 2, parent 0.",
+      "judgment": "Consistent with the correction's stated invariant (one increment per ELEMENT whose media is lost) and with how <img> has always been counted; the alternative (collapse to 1) would need cross-element bookkeeping. Recorded so a future reader does not read unresolvedElementAssets as 'number of broken media surfaces'.",
+      "occurrencesInCorpus": 0,
+      "blocking": false
+    },
+    {
+      "id": "CARRIED-CLAIM-OVERSTATED",
+      "kind": "carried-forward from 28.5B-verify-video.json (build stage, not correction stage)",
+      "severity": "informational",
+      "detail": "Independently re-measured: 26 of the corpus's 30 <video> elements get a DIFFERENT src under the shipped resolver than under the pre-28.5B PRIMARY_IMAGE_KINDS (tmp/wr285b/reverify-video/pre285b.ts: videos=30, srcChangedVsPre285B=26, nowNoSrc=4). Change 4 is therefore a RENDER change for videos, not merely an accounting change as the build handoff's framing implies — downstream visual-fidelity/QA baselines for linear.app and stripe.com will shift. The correction itself adds zero render change (src/srcSet diffs = 0 corpus-wide).",
+      "blocking": false
+    },
+    {
+      "id": "CARRIED-AUDIO",
+      "kind": "adjacent-silent-path (out of scope, named)",
+      "severity": "informational",
+      "detail": "<audio> media is still silently dropped (no src emitted, never counted). Now recorded as a named limitation in code rather than only in a handoff. 2 corpus occurrences.",
+      "blocking": false
+    },
+    {
+      "id": "CARRIED-REQUESTED-COUNTER",
+      "kind": "diagnostic-counter drift",
+      "severity": "informational",
+      "detail": "elementAssetsRequested now increments for every <video> AND every <source> regardless of assetRefs (measured in the truth-table harness: e.g. the GAP-A shape reports requested=3). Diagnostic-only; no smoke suite or downstream gate asserts it.",
+      "blocking": false
+    }
+  ],
+  "notes": [
+    "GAP-A and GAP-B are both genuinely fixed as claimed, at the counting point the correction documents: the broken <source> child counts exactly once and its parent <video> never double-counts, and a <video> carrying only non-media (background-image/mask-image) refs with good <source> children is counted nowhere while still rendering its child's URL.",
+    "Every truth-table row was measured through the real production code paths, not reasoned about: a=0, b=1, c=1, d=0, e=1, f=0, g=1, h=1, i=1, j=1 counts respectively.",
+    "Case (j) is correct honesty rather than a false positive: a zero-assetRef <source> means the Observer recovered no http(s) URL from it, so the clone renders no media there. Corpus-wide occurrences: 0 (174/174 <source> elements carry at least one ref — re-derived by my own scan, not accepted from the handoff).",
+    "Verdict is PASS_WITH_RISKS rather than PASS only because RES-1 leaves one shape of the same asymmetry family open (deliberately, with a stated rationale, and with zero corpus occurrences) and because the build-stage render change for 26 videos is real and will move downstream baselines. Nothing found blocks Task 28.5B.",
+    "Verifier modified no source file. Scratch scripts: tmp/wr285b/reverify-video/{scan.ts,truthtable.ts,spot.ts,pre285b.ts}. No git operations were performed."
+  ]
+}

@@ -1,0 +1,980 @@
+{
+  "task": "28.75 §03b — Phase A correction cycle 1 of 2",
+  "status": "MECHANISMS ADOPTED, CORRECTED AND RE-MEASURED — GATE CLAUSE NOT MET",
+  "report": "docs/result/28.75/03b-grid-track-band-recovery.md",
+  "generatedAt": "2026-09-05",
+  "rootsMeasured": {
+    "method": "Outermost nodes whose right edge reaches the clone's contentMaxRight, and outermost overflow roots, walked up parentNodeId; each interrogated against all five inline-size branches with the per-route breakpoint map {p000002:1025, p000003:1025} over a site-wide 641.",
+    "trap": "linear.app has a per-route tree switch (Task 28.7 §26). Interrogating /pricing at bp=641 or bp=1024 produces refusals the shipped build never makes; only bp=1025 reproduces globals.css exactly.",
+    "linear.app /": {
+      "widths": [
+        1024,
+        1100
+      ],
+      "cloneContentMaxRight": 1838,
+      "sourceContentMaxRight": {
+        "1024": 1527,
+        "1100": 1509
+      },
+      "roots": [
+        {
+          "nodeId": "n002162",
+          "tagName": "div",
+          "position": "static",
+          "display": "block",
+          "frozenWidth": "1838px",
+          "probe": null,
+          "sourceWidthVector": null,
+          "descendants": 1,
+          "inlineSizeOutcome": "not-in-funnel",
+          "recoveredRuleKind": null,
+          "why": "carries no layout-probe record; every branch requires node.probe"
+        },
+        {
+          "nodeId": "n002946",
+          "tagName": "div",
+          "position": "static",
+          "display": "flex",
+          "frozenWidth": "1414px",
+          "probe": null,
+          "sourceWidthVector": null,
+          "descendants": 41,
+          "inlineSizeOutcome": "not-in-funnel",
+          "recoveredRuleKind": null,
+          "why": "the footer's own overflow root is unobserved; same reason"
+        }
+      ],
+      "pageProbeAlignment": {
+        "pageId": "p000001",
+        "aligned": false,
+        "elementsAttached": 1379,
+        "elementsTotal": 2291,
+        "desktopElementNodesUnprobed": 927,
+        "desktopElementNodes": 2306,
+        "desktopUnprobedRatio": 0.402,
+        "mobileElementNodesUnprobed": 2291,
+        "mobileElementNodes": 2291,
+        "mobileUnprobedRatio": 1,
+        "outermostOverflowRootsUnprobedAt1024": 10,
+        "outermostOverflowRootsAt1024": 26
+      },
+      "verdict": "NOT a width-recovery defect. LEAVE FROZEN is the terminal outcome of the preference order for a node with no observation. Observer/compiler probe-attachment defect, out of this lane's scope."
+    },
+    "linear.app /pricing": {
+      "widths": [
+        1100
+      ],
+      "cloneContentMaxRight": 1361,
+      "sourceContentMaxRight": 1090,
+      "roots": [
+        {
+          "nodeId": "n000353",
+          "tagName": "div",
+          "display": "block",
+          "frozenWidth": "1090px",
+          "guard": "grid-item",
+          "refusedBy": "damageClampWidth",
+          "refusalReason": "containing-block-not-parent",
+          "areaEqualsWidthAtEveryWidth": true,
+          "nowAnsweredBy": "grid-area-fill-width"
+        },
+        {
+          "nodeId": "n001421",
+          "tagName": "div",
+          "display": "flex",
+          "frozenWidth": "342px",
+          "guard": "grid-item",
+          "refusedBy": "damageClampWidth",
+          "refusalReason": "containing-block-not-parent",
+          "areaEqualsWidthAtEveryWidth": true,
+          "mobileWidths": 15,
+          "nowAnsweredBy": "grid-area-fill-width"
+        },
+        {
+          "nodeId": "n000324",
+          "tagName": "div",
+          "display": "block",
+          "frozenWidth": "1090px",
+          "guard": "grid-item",
+          "refusedBy": "damageClampWidth",
+          "refusalReason": "containing-block-not-parent",
+          "areaEqualsWidthAtEveryWidth": true,
+          "nowAnsweredBy": "grid-area-fill-width"
+        }
+      ],
+      "verdict": "Exactly the grid-item defect the brief described; all three answered from measured area vectors.",
+      "footerClippedRoot": {
+        "nodeId": "n001467",
+        "shape": "6 x 224px tracks, 10 children",
+        "refusal": "children-do-not-tile-tracks",
+        "why": "n001468 (20px logo, 32px inside track 1) matches no track start; n001609 (grid-column: 2, 257.9px at every width) matches no run. A relaxation that skipped non-matching children lands on not-every-track-witnessed instead — track 1 would have no span-1 witness.",
+        "evidence": [
+          "src/reconstruction/layout-inference.ts:3057",
+          "src/reconstruction/layout-inference.ts:3092"
+        ],
+        "honestRelaxationExists": false
+      }
+    }
+  },
+  "refusalInterrogation": {
+    "trackedFillWidth": {
+      "emitted": 0,
+      "dominantRefusal": "auto-does-not-stretch",
+      "why": "the frozen node is not a stretch-fill child of an auto-width parent"
+    },
+    "viewportBleedWidth": {
+      "emitted": 0,
+      "dominantRefusal": "not-viewport-wide-at-every-width"
+    },
+    "damageClampWidth": {
+      "emitted": 150,
+      "refused": 7194,
+      "byReason": {
+        "no-material-damage": 6231,
+        "containing-block-not-parent": 363
+      },
+      "question": "Is 150 clamps against 7,194 refusals correct conservatism or an over-tight predicate?",
+      "answer": "CORRECT CONSERVATISM, with one named exception.",
+      "reasoning": "6,231 refusals are no-material-damage — the node is not measurably damaged, so a clamp would be a guess dressed as a repair. The 363 containing-block-not-parent refusals on linear.app are damaged nodes refused correctly: the clamp's arithmetic is against the parent's content box and a grid item's containing block is its grid AREA. That is a MISSING MECHANISM, not an over-tight predicate.",
+      "afterCorrection": {
+        "linear.app containing-block-not-parent": {
+          "before": 109,
+          "after": 101
+        },
+        "hobbang.net containing-block-not-parent": {
+          "before": 188,
+          "after": 15
+        }
+      }
+    },
+    "containingBlockGuardUnchanged": true,
+    "containingBlockGuardBodyDigestSha256Prefix32": "490cc3523b9a8b5b4a09143207543276"
+  },
+  "mechanism": {
+    "adoptionEdits": [
+      "deleted GRID_TRACK_BANDS_ENABLED and its guard clause",
+      "deleted GRID_AREA_FILL_ENABLED and its guard clause",
+      "replaced the A/B doc block with an in-source record of the SHA-256 evidence"
+    ],
+    "correction": {
+      "name": "the banded pass publishes the grid areas it measured",
+      "motivation": "The first adoption withheld areas on the argument that 'the child equals its column' is tautological there. Measured cost: the banded track list put hobbang.net's mobile items at the source's exact x while their truth-width `width` stayed. / @768 went MAJOR -> BLOCKER on a NEW footer-clipped (clone footer right edge 820 against a 768 viewport). A correct track list whose items are still frozen is worse than no track list.",
+      "claimPublished": "NOT 'the child equals its column' (tautological) but 'this item has no inline size of its OWN — it is sized BY its column', evidenced by the item moving with the container by a constant share.",
+      "evidenceAlreadyEnforcedBeforePublication": [
+        "band-track-not-fractional — tracks are constant fractional shares, not coincidental pixels",
+        "band-insets-not-constant — the container's insets are constant across the band",
+        "band-tracks-do-not-partition — tracks plus gaps sum to the content box"
+      ],
+      "itemPassGuardsStillApply": [
+        "not-a-grid-item",
+        "container-tracks-not-recovered",
+        "no-frozen-width",
+        "own-min-width-declared",
+        "fewer-than-two-visible-widths",
+        "frozen-width-not-observed",
+        "area-not-measured-at-every-width",
+        "area-width-constant",
+        "does-not-fill-area"
+      ],
+      "edits": [
+        "Structure gains columnOf: Map<string, number> — which column each child sat in AT THIS WIDTH",
+        "the clustering loop records member ids per cluster and fills columnOf after sorting clusters by x",
+        "GridTrackBandResult ok-branch gains areas: {nodeId, widths: {i, w}[]}[]",
+        "the return builds that union from structure.tracks[columnOf.get(child)] at each width index",
+        "inferLayoutRules() writes them into gridAreaByChild keyed `${viewportId}|${nodeId}`"
+      ],
+      "file": "src/reconstruction/layout-inference.ts"
+    },
+    "counters": {
+      "hobbang.net": {
+        "gridAreaFill": {
+          "before": 155,
+          "after": 328
+        },
+        "gridAreaFillRefusalsByReason.container-tracks-not-recovered": {
+          "before": 190,
+          "after": 17
+        },
+        "damageClampRefusalsByReason.containing-block-not-parent": {
+          "before": 188,
+          "after": 15
+        },
+        "inlineSizeOutcomes.no-branch-matched": {
+          "before": 801,
+          "after": 632
+        },
+        "residualFrozenOmitted": {
+          "before": 1370,
+          "after": 814
+        },
+        "residualFrozenConsequences.offscreen": {
+          "before": 345,
+          "after": 127
+        },
+        "guardRefusalsByReason.grid-item": {
+          "before": 19,
+          "after": 15
+        },
+        "rejectedByTruthCheck": {
+          "before": 2,
+          "after": 6
+        },
+        "acceptedUnchecked": 0,
+        "rejectedUnverifiable": 0,
+        "truthCheckConverged": true
+      },
+      "linear.app": {
+        "gridAreaFill": {
+          "before": 350,
+          "after": 358
+        },
+        "gridAreaFillRefusalsByReason.container-tracks-not-recovered": {
+          "before": 284,
+          "after": 276
+        },
+        "damageClampRefusalsByReason.containing-block-not-parent": {
+          "before": 109,
+          "after": 101
+        },
+        "residualFrozenOmitted": {
+          "before": 2039,
+          "after": 1978
+        },
+        "rejectedByTruthCheck": {
+          "before": 2,
+          "after": 4
+        },
+        "acceptedUnchecked": 0,
+        "rejectedUnverifiable": 0,
+        "truthCheckConverged": {
+          "before": true,
+          "after": false
+        },
+        "truthCheckNonConvergenceConsequence": "[layout-truth] p000001 @1024px: banded geometry did not settle in 4 rounds — dropping 0 rule(s)"
+      }
+    },
+    "truthCheckDroppedBandRules": {
+      "hobbang.net": "grid-template-columns rules 1514 -> 1510; e.g. p000002 mobile n000397 keeps its <768 single-column band and loses its >=768 two-column band once its items are un-frozen",
+      "note": "verifyLayoutRules() doing its job — a rule that does not verify is dropped, never shipped"
+    },
+    "funnelPartitionConserves": true,
+    "containerAccounting": "gridTrackColumns 72 + gridTrackBandContainers 3 + gridTrackRefusals 243 = 246 considered",
+    "deadToggleShipped": false
+  },
+  "adopted": {
+    "both": true,
+    "mechanisms": [
+      "recoverGridTracksBanded",
+      "gridAreaFillWidth",
+      "banded-area publication (this cycle)"
+    ],
+    "abProof": {
+      "method": "sha256 of app/public/wr/generated-styles.css; flag OFF must equal the shipped baseline",
+      "linear.app": {
+        "baseline": "78f7e616b8e4ea2e",
+        "flagOff": "78f7e616b8e4ea2e",
+        "identical": true,
+        "flagOn": "781d42fb9186a733",
+        "adoptionRebuild": "781d42fb9186a733",
+        "corrected": "efa069f384772a42"
+      },
+      "hobbang.net": {
+        "baseline": "1c01ada30cbd202f",
+        "flagOff": "1c01ada30cbd202f",
+        "identical": true,
+        "flagOn": "ca826e9d90308a53",
+        "corrected": "22f1ac3410ef6b61"
+      },
+      "gs.severance.healthcare": {
+        "baseline": "d633541616a53d33",
+        "flagOff": "d633541616a53d33",
+        "flagOn": "d633541616a53d33",
+        "corrected": "d633541616a53d3a3399315a2245343f7ae9b661832e60c0b2439cc5de83713e",
+        "identical": true,
+        "wholeAppTreeSha256": "2f6e0b05e1d1f3346f97ce637911476bc005238cb3aa72e5aa69c323a48f993c",
+        "wholeTreeIdenticalAcrossAllThreeBuilds": true
+      }
+    }
+  },
+  "geometricMeasurement": {
+    "method": "Render BEFORE and AFTER stylesheets in Chromium at every probe width the variant is displayed at (per-route breakpoint respected); measure every [data-wr-node] border box against the source's own probe at the same width. IMPROVED = error shrinks > 2px, WORSENED = grows > 2px. data-wr-node carries the raw nodeId, not the prefixed DOM id.",
+    "baseline": "flag-OFF build (byte-identical to the shipped baseline)",
+    "hobbang.net": {
+      "compared": 34466,
+      "width": {
+        "improved": 4922,
+        "worsened": 12,
+        "errBefore": 2001045,
+        "errAfter": 1263017,
+        "pct": -36.9
+      },
+      "x": {
+        "improved": 2985,
+        "worsened": 110,
+        "errBefore": 1633993,
+        "errAfter": 676898,
+        "pct": -58.6
+      },
+      "worsenedWidthRows": [
+        {
+          "pageId": "p000001",
+          "viewportId": "mobile",
+          "nodeId": "n000352",
+          "widths": [
+            768
+          ],
+          "sourceW": 360,
+          "before": 358,
+          "after": 368,
+          "deltaErr": 6
+        },
+        {
+          "pageId": "p000001",
+          "viewportId": "mobile",
+          "nodeId": "n000357",
+          "widths": [
+            768
+          ],
+          "sourceW": 360,
+          "before": 358,
+          "after": 368,
+          "deltaErr": 6
+        },
+        {
+          "pageId": "p000001",
+          "viewportId": "mobile",
+          "nodeId": "n001070",
+          "widths": [
+            768
+          ],
+          "sourceW": 360,
+          "before": 358,
+          "after": 368,
+          "deltaErr": 6
+        },
+        {
+          "pageId": "p000001",
+          "viewportId": "mobile",
+          "nodeId": "n001075",
+          "widths": [
+            768
+          ],
+          "sourceW": 360,
+          "before": 358,
+          "after": 368,
+          "deltaErr": 6
+        },
+        {
+          "pageId": "p000005",
+          "viewportId": "mobile",
+          "nodeId": "n000531",
+          "widths": [
+            480,
+            639,
+            914,
+            1023
+          ],
+          "sourceW": 292.27,
+          "before": 303.73,
+          "after": 326.13,
+          "deltaErr": 22.4
+        },
+        {
+          "pageId": "p000007",
+          "viewportId": "mobile",
+          "nodeId": "n000430",
+          "widths": [
+            480,
+            639,
+            914,
+            1023
+          ],
+          "sourceW": 319.78,
+          "before": 303.73,
+          "after": 358.09,
+          "deltaErr": 22.3
+        }
+      ],
+      "worsenedXRows": {
+        "count": 110,
+        "distinctNodes": 69,
+        "viewport": "mobile",
+        "widths": {
+          "914": 90,
+          "1023": 20
+        },
+        "deltaRangePx": [
+          16,
+          373.1
+        ],
+        "repeatsAcrossPages": 10,
+        "subtree": "the shared site footer",
+        "workedExample": {
+          "nodeId": "n000642",
+          "pageId": "p000002",
+          "width": 914,
+          "sourceX": 24,
+          "before": 80.19,
+          "after": 453.27,
+          "delta": 373.1,
+          "chain": "n000642 <li> -> n000620 <ul> display:flex wrapping -> n000618 <nav> -> n000610 <div> grid item -> n000608 <div> banded grid (<768: minmax(0,1fr); >=768: minmax(0,1.4fr) minmax(0,1fr) gap 40)",
+          "cause": "n000610 was frozen at 358px against a source 481.83px (124px error) and now fills its 1.4fr track at ~510px (28px error) — a ~96px WIDTH improvement. But n000620 is a wrapping flex list of 12 links and 510 fits one more link per line than 481.83, so n000642 lands at the end of the previous line instead of the start of a new one.",
+          "classification": "residual width error crossing a wrap boundary — reflow discretisation, not a wrong rule"
+        }
+      }
+    },
+    "linear.app": {
+      "compared": 77688,
+      "width": {
+        "improved": 2789,
+        "worsened": 62,
+        "errBefore": 2959679,
+        "errAfter": 2451862,
+        "pct": -17.2
+      },
+      "x": {
+        "improved": 3048,
+        "worsened": 44,
+        "errBefore": 7680951,
+        "errAfter": 6905405,
+        "pct": -10.1
+      },
+      "worsenedWidthRows": [
+        {
+          "pageId": "p000003",
+          "viewportId": "desktop",
+          "nodeId": "n000738",
+          "widths": [
+            1025
+          ],
+          "sourceW": 102.5,
+          "before": 104.27,
+          "after": 90.5,
+          "deltaErr": 10.2,
+          "new": false
+        },
+        {
+          "pageId": "p000003",
+          "viewportId": "desktop",
+          "nodeId": "n000457",
+          "widths": [
+            1025
+          ],
+          "sourceW": 98.77,
+          "before": 98.75,
+          "after": 90.5,
+          "deltaErr": 8.3,
+          "new": false
+        },
+        {
+          "pageId": "p000003",
+          "viewportId": "desktop",
+          "nodeId": "n000521",
+          "widths": [
+            1025
+          ],
+          "sourceW": 232.48,
+          "before": 232.47,
+          "after": 225.42,
+          "deltaErr": 7.1,
+          "new": false
+        },
+        {
+          "pageId": "p000003",
+          "viewportId": "desktop",
+          "nodeId": "n000371",
+          "widths": [
+            1025
+          ],
+          "sourceW": 110.16,
+          "before": 110.14,
+          "after": 105.84,
+          "deltaErr": 4.3,
+          "new": false
+        },
+        {
+          "pageId": "p000003",
+          "viewportId": "desktop",
+          "nodeId": "n000368",
+          "widths": [
+            1025
+          ],
+          "sourceW": 97.17,
+          "before": 97.17,
+          "after": 93.78,
+          "deltaErr": 3.4,
+          "new": false
+        },
+        {
+          "pageId": "p000003",
+          "viewportId": "mobile",
+          "nodes": 51,
+          "widths": [
+            769
+          ],
+          "sourceW": 340.5,
+          "before": 342,
+          "after": 352.5,
+          "deltaErr": 10.5,
+          "new": true
+        },
+        {
+          "pageId": "p000003",
+          "viewportId": "mobile",
+          "nodes": 4,
+          "widths": [
+            769
+          ],
+          "sourceW": 356.5,
+          "before": 358,
+          "after": 368.5,
+          "deltaErr": 10.5,
+          "new": true
+        },
+        {
+          "pageId": "p000003",
+          "viewportId": "mobile",
+          "nodes": 1,
+          "widths": [
+            769
+          ],
+          "sourceW": 167.25,
+          "before": 168,
+          "after": 173.25,
+          "deltaErr": 5.3,
+          "new": true
+        },
+        {
+          "pageId": "p000003",
+          "viewportId": "mobile",
+          "nodes": 1,
+          "widths": [
+            769
+          ],
+          "sourceW": 165.25,
+          "before": 166,
+          "after": 171.25,
+          "deltaErr": 5.3,
+          "new": true
+        }
+      ],
+      "worsenedXRows": {
+        "count": 44,
+        "newThisCorrection": 0,
+        "note": "identical set to the pre-correction adoption: the n001423/n001424 next-frozen-layer rows plus the p000003 desktop inline boxes at 1025/1280/1281"
+      },
+      "xAxisRegressionVsPreCorrection": {
+        "errPreCorrection": 6691602,
+        "errCorrected": 6905405,
+        "pctWorse": 3.2,
+        "cause": "improvedX falls 3426 -> 3048; 378 rows improved by less, same wrap-boundary mechanism as hobbang",
+        "stillBetterThanBaseline": true
+      }
+    },
+    "vsPreCorrectionAdoption": {
+      "hobbang.net": {
+        "widthErr": {
+          "pre": 1864660,
+          "corrected": 1263017
+        },
+        "xErr": {
+          "pre": 870742,
+          "corrected": 676898
+        },
+        "bothAxesBetter": true,
+        "netPct": -29.1
+      },
+      "linear.app": {
+        "widthErr": {
+          "pre": 2558196,
+          "corrected": 2451862
+        },
+        "xErr": {
+          "pre": 6691602,
+          "corrected": 6905405
+        },
+        "bothAxesBetter": false,
+        "netPct": 1.2
+      }
+    },
+    "nextFrozenLayer": {
+      "nodeIds": [
+        "n001423",
+        "n001424"
+      ],
+      "pageId": "p000003",
+      "viewportId": "mobile",
+      "parent": "n001421 — a grid item whose area vector equals its width vector at all 15 mobile widths",
+      "effect": "parent's width becomes correct (610px improvement at 1024); the still-frozen flex children's x error grows by up to 610px across 17 widths; their own width error is unchanged",
+      "reachableBy": "a flex-item inline-size branch, which does not exist"
+    }
+  },
+  "acceptance": {
+    "command": "pnpm qa:responsive <manifest> --routes /,/pricing --widths 1024,1100,1440 --with-self-check",
+    "build": "2026-09-05T11-07-50-860Z",
+    "runId": "2026-09-05T11-15-39-529Z",
+    "selfCheckFloorRunId": "2026-09-05T11-15-39-531Z",
+    "met": false,
+    "identicalToPreCorrectionAdoption": true,
+    "footerClipped": {
+      "/ @1024": {
+        "before": 1,
+        "after": 1,
+        "met": false
+      },
+      "/ @1100": {
+        "before": 1,
+        "after": 1,
+        "met": false
+      },
+      "/pricing @1100": {
+        "before": 1,
+        "after": 1,
+        "met": false
+      }
+    },
+    "contentMaxRight": {
+      "/ @1024": {
+        "source": 1527,
+        "cloneBefore": 1838,
+        "cloneAfter": 1838,
+        "tracksSource": false
+      },
+      "/ @1100": {
+        "source": 1509,
+        "cloneBefore": 1838,
+        "cloneAfter": 1838,
+        "tracksSource": false
+      },
+      "/pricing @1100": {
+        "source": 1090,
+        "cloneBefore": 1361,
+        "cloneAfter": 1361,
+        "tracksSource": false
+      }
+    },
+    "whyNotMet": {
+      "/ @1024 and @1100": "the footer root n002946 and the extent holder n002162 carry NO probe; LEAVE FROZEN is the terminal outcome of the preference order. Observer/compiler probe-alignment defect on p000001, out of scope.",
+      "/pricing @1100": "a different container — the footer's own 6-track grid n001467, refused children-do-not-tile-tracks correctly; no honest relaxation reaches it (it lands on not-every-track-witnessed instead)."
+    },
+    "subGoalClosed": {
+      "/pricing @1100 offscreen-text-excess-chars": {
+        "before": "BLOCKER 175 (source 0)",
+        "after": "MAJOR 70"
+      },
+      "/pricing @1100 overlap-excess-ratio": {
+        "before": "MINOR 0.41%",
+        "after": "cleared"
+      },
+      "cause": "gridAreaFillWidth() un-froze n000353, n001421 and n000324 — the three roots the brief named"
+    },
+    "channelsThatMoved": [
+      {
+        "pair": "/ @1024",
+        "channel": "position-delta-p90-px",
+        "before": "MAJOR 517",
+        "after": "MAJOR 394"
+      },
+      {
+        "pair": "/ @1024",
+        "channel": "offscreen-text-excess-chars",
+        "before": "BLOCKER 1466",
+        "after": "BLOCKER 1461"
+      },
+      {
+        "pair": "/ @1100",
+        "channel": "offscreen-text-excess-chars",
+        "before": "BLOCKER 716",
+        "after": "BLOCKER 711"
+      },
+      {
+        "pair": "/pricing @1100",
+        "channel": "offscreen-text-excess-chars",
+        "before": "BLOCKER 175",
+        "after": "MAJOR 70"
+      },
+      {
+        "pair": "/pricing @1100",
+        "channel": "position-delta-p90-px",
+        "before": "MAJOR 256",
+        "after": "MAJOR 212"
+      },
+      {
+        "pair": "/pricing @1100",
+        "channel": "overlap-excess-ratio",
+        "before": "MINOR 0.41%",
+        "after": "cleared"
+      },
+      {
+        "pair": "/pricing @1024",
+        "channel": "position-delta-p90-px",
+        "before": "MAJOR 622",
+        "after": "MAJOR 551"
+      },
+      {
+        "pair": "/pricing @1024",
+        "channel": "empty-band-excess-ratio",
+        "before": "absent",
+        "after": "MINOR 7.83% (source 3.89%)"
+      }
+    ]
+  },
+  "protectHeld": {
+    "allHeld": true,
+    "linear.app /pricing @1440": {
+      "target": "MINOR, cmr 1392 == 1392, right gutter 48 == 48",
+      "after": "MINOR 0/0/2, cmr 1392 == 1392, gutter 48 == 48",
+      "held": true,
+      "exact": true
+    },
+    "linear.app / @1440": {
+      "target": "MINOR",
+      "after": "MINOR 0/0/3, cmr 1840 == 1840",
+      "held": true,
+      "exact": true
+    },
+    "linear.app /pricing @390": {
+      "target": "MINOR",
+      "after": "MINOR 0/0/2, same two channels",
+      "held": true,
+      "runId": "2026-09-05T11-19-24-313Z"
+    },
+    "hobbang.net 390/1100/1440": {
+      "target": "MINOR / MAJOR / MINOR",
+      "after": "MINOR / MAJOR / MINOR",
+      "held": true,
+      "contentMaxRightExact": {
+        "390": "573 == 573",
+        "1100": "1076 == 1076",
+        "1440": "1272 == 1272"
+      },
+      "footerClipped": 0,
+      "runId": "2026-09-05T11-13-31-951Z",
+      "selfCheckFloorRunId": "2026-09-05T11-13-31-953Z",
+      "floor": "PASS 0/0/0 on all three pairs — this run is adjudicated, unlike the pre-correction re-run whose own floor was already MINOR/MAJOR/MINOR at 8.89/26.13/5.00% pixel self-residual"
+    },
+    "gs.severance.healthcare": {
+      "target": "MAJOR x3, 0 BLOCKER, blank-region-ratio silent",
+      "held": true,
+      "heldBy": "whole-tree sha256",
+      "wholeAppTreeSha256": "2f6e0b05e1d1f3346f97ce637911476bc005238cb3aa72e5aa69c323a48f993c",
+      "identicalAcross": [
+        "2026-09-05T10-23-08-511Z",
+        "2026-09-05T10-40-29-682Z",
+        "2026-09-05T11-08-19-970Z"
+      ],
+      "rubricRunAttempted": {
+        "runId": "2026-09-05T11-19-40-286Z",
+        "verdicts": "BLOCKER x3",
+        "mustNotBeReadAsProtectResult": true,
+        "why": "source-side capture failure — source contentMaxRight 6051/6808/6888 at viewports 390/1100/1440, source footer present while the clone's is absent; the clone build succeeded and the clone is provably unchanged. Run without --with-self-check, so it has no floor and is UNADJUDICATED."
+      }
+    }
+  },
+  "regressionFoundAndCured": {
+    "site": "hobbang.net",
+    "route": "/",
+    "viewport": "mobile",
+    "foundOn": "the pre-correction adoption",
+    "beforeFlagOff": {
+      "640": "MAJOR 0/4/2 cmr 624->624",
+      "700": "MAJOR 0/4/2 cmr 684->684",
+      "768": "MAJOR 0/2/3 cmr 744->752"
+    },
+    "preCorrection": {
+      "640": "MAJOR 0/6/2 cmr 624->665",
+      "700": "MAJOR 0/6/2 cmr 684->695",
+      "768": "BLOCKER 1/4/3 cmr 744->820, footer 768/820, footer-clipped 1"
+    },
+    "corrected": {
+      "640": "BLOCKER 1/1/2 cmr 624->624",
+      "700": "BLOCKER 1/1/2 cmr 684->684",
+      "768": "MAJOR 0/2/2 cmr 744->754"
+    },
+    "cured": [
+      "the @768 footer-clipped BLOCKER",
+      "content extents exact again at 640 and 700",
+      "horizontal-overflow-excess-px",
+      "pixel-uncompared-band-ink-ratio",
+      "column-container-mode-delta",
+      "column-mode-delta",
+      "findings per pair 8 -> 4",
+      "position-delta-p90-px 310->303 @700 and 376->225 @768"
+    ],
+    "costIncurred": {
+      "channel": "overlap-excess-ratio",
+      "values": {
+        "640": {
+          "flagOff": 0.0333,
+          "preCorrection": 0.0349,
+          "corrected": 0.1195
+        },
+        "700": {
+          "flagOff": 0.0205,
+          "preCorrection": 0.0205,
+          "corrected": 0.1078
+        },
+        "768": {
+          "flagOff": "silent",
+          "preCorrection": "silent",
+          "corrected": 0.0876
+        }
+      },
+      "thresholds": {
+        "MAJOR": 0.02,
+        "BLOCKER": 0.1
+      },
+      "newBlockersAt": [
+        640,
+        700
+      ],
+      "widthsInAcceptanceSet": false,
+      "widthsInProtectSet": false,
+      "mechanism": "min-width: 0px is half of what grid-area-fill-width emits and is not optional — without it a grid item's automatic minimum size is its min-content width, which pushes the track wider than the recovered track list and puts the extent error straight back. With it the item box equals its track and any descendant still frozen at a truth-capture width spills INSIDE the box instead. The correction converts a right-extent error into an in-box overlap error.",
+      "runIds": {
+        "flagOff": "2026-09-05T11-00-17-822Z",
+        "preCorrection": "2026-09-05T11-01-25-430Z",
+        "corrected": "2026-09-05T11-12-23-623Z"
+      }
+    }
+  },
+  "smokeChecksBefore": {
+    "smoke-layout-safety": {
+      "passed": 445,
+      "total": 451,
+      "failed": 6
+    },
+    "smoke-reconstruction": {
+      "passed": 227,
+      "total": 227,
+      "failed": 0
+    }
+  },
+  "smokeChecksAfter": {
+    "smoke-layout-safety": {
+      "passed": 455,
+      "total": 455,
+      "failed": 0
+    },
+    "smoke-reconstruction": {
+      "passed": 227,
+      "total": 227,
+      "failed": 0
+    },
+    "checksAdded": 4,
+    "checksRemoved": 0,
+    "checksWeakened": 0,
+    "added": [
+      "the banded recovery PUBLISHES the grid area it measured, per item and per width",
+      "...and each area is that band's OWN column width at that width, not the truth one",
+      "POSITIVE: an item of a BANDED container is answered grid-area-fill-width (width:auto AND min-width:0px)",
+      "THE TWIN: an item of a banded container that declares its OWN min-width is still refused"
+    ],
+    "discardedIntermediateChecks": [
+      "check 3 first failed because the fixture's items carry no width at all (no-frozen-width) — fixed by stamping the truth-width onto them",
+      "check 4 first 'passed' by narrowing an item 40px, which made the CONTAINER refuse column-children-disagree so nothing shipped either way — replaced with the own-min-width-declared twin"
+    ]
+  },
+  "prefixFailureCount": {
+    "count": 6,
+    "suite": "scripts/smoke-layout-safety.ts",
+    "passedOf": "445/451",
+    "method": "reverted the adopted file in place, verified the reverted bytes under shasum -a 256 -c, ran the suite, then restored and verified again",
+    "revertShaFile": "tmp/wr2875c/prefix-check.sha",
+    "revertSha256Prefix": "7aa86a37ecac6b0c",
+    "restoreShaFile": "tmp/wr2875c/restore.sha",
+    "restoreSha256Prefix": "79c934632087452e",
+    "theSix": [
+      "inferLayoutRules() emits the banded kind, with its @media and its numeric band",
+      "...and generateLayoutCss wraps them in the SAME @media machinery responsive-hidden uses",
+      "...and a container ANSWERED by the banded pass is not ALSO counted as a refusal",
+      "...and the band pass's own verdict is recorded in its OWN histogram, never folded into that one",
+      "inferLayoutRules() emits the new kind for the item, once",
+      "...and the inline-size outcome partition still sums to the candidate count"
+    ]
+  },
+  "typecheckExit": 0,
+  "runIds": {
+    "siteSpecs": {
+      "linear.app": "data/linear.app/site-specs/2026-09-04T23-34-15-786Z",
+      "hobbang.net": "data/hobbang.net/site-specs/2026-09-04T23-34-52-203Z",
+      "gs.severance.healthcare": "data/gs.severance.healthcare/site-specs/2026-09-04T23-32-44-789Z"
+    },
+    "baselineReconstruction": "2026-09-05T10-13-17-947Z",
+    "baselineQa": "2026-09-05T10-13-47-506Z",
+    "ab": {
+      "linear.app": {
+        "off": "2026-09-05T10-36-04-559Z",
+        "on": "2026-09-05T10-36-33-066Z"
+      },
+      "hobbang.net": {
+        "off": "2026-09-05T10-37-59-284Z",
+        "on": "2026-09-05T10-39-14-115Z"
+      },
+      "gs.severance.healthcare": {
+        "off": "2026-09-05T10-40-29-682Z",
+        "on": "2026-09-05T10-40-43-308Z"
+      }
+    },
+    "preCorrectionAdoption": {
+      "linear.app": "2026-09-05T10-42-36-596Z",
+      "hobbang.net": "2026-09-05T10-53-10-118Z",
+      "qaAcceptance": "2026-09-05T10-43-13-287Z",
+      "qaAcceptanceFloor": "2026-09-05T10-43-13-290Z",
+      "qaFullSweep": "2026-09-05T10-47-09-260Z",
+      "qaFullSweepFloor": "2026-09-05T10-47-09-286Z"
+    },
+    "correctedReconstructions": {
+      "hobbang.net": {
+        "runId": "2026-09-05T11-06-40-264Z",
+        "generatedStylesSha256": "22f1ac3410ef6b619b75c85bf15f3e479afeae603bc5dca7d5e279031987d046"
+      },
+      "linear.app": {
+        "runId": "2026-09-05T11-07-50-860Z",
+        "generatedStylesSha256": "efa069f384772a42b2469edb82a919d8fd2ed2f7da47d633cf61e65e1cce7177"
+      },
+      "gs.severance.healthcare": {
+        "runId": "2026-09-05T11-08-19-970Z",
+        "generatedStylesSha256": "d633541616a53d3a3399315a2245343f7ae9b661832e60c0b2439cc5de83713e",
+        "unchanged": true
+      }
+    },
+    "correctedQa": {
+      "hobbang.net / @640,700,768": "2026-09-05T11-12-23-623Z",
+      "hobbang.net PROTECT @390,1100,1440": "2026-09-05T11-13-31-951Z",
+      "hobbang.net PROTECT floor": "2026-09-05T11-13-31-953Z",
+      "linear.app ACCEPTANCE": "2026-09-05T11-15-39-529Z",
+      "linear.app ACCEPTANCE floor": "2026-09-05T11-15-39-531Z",
+      "linear.app /pricing @390": "2026-09-05T11-19-24-313Z",
+      "gs.severance.healthcare (source-side artifact)": "2026-09-05T11-19-40-286Z"
+    },
+    "geometry": {
+      "corrected": [
+        "tmp/wr2875c/geom-hobbang-fix.json",
+        "tmp/wr2875c/geom-linear-fix.json"
+      ],
+      "preCorrection": [
+        "tmp/wr2875c/geom-hobbang.json",
+        "tmp/wr2875c/geom-linear2.json"
+      ]
+    },
+    "notAttempted": {
+      "seoultone.kr": "SOURCE_UNAVAILABLE (Cafe24 over-traffic stub)"
+    }
+  },
+  "remainingRisk": [
+    "min-width: 0px trades extent error for in-box overlap — hobbang.net / mobile overlap-excess-ratio 0.0333/0.0205/silent -> 0.1195/0.1078/0.0876 at 640/700/768, crossing the 0.10 BLOCKER line at 640 and 700 while curing a BLOCKER at 768. Neither width is in the acceptance or PROTECT set. Cycle 2 item 1.",
+    "linear.app p000001 layout probe is misaligned: 40.2% of desktop and 100% of mobile element nodes carry no probe. No mechanism in src/reconstruction/** can reach them. Observer/compiler task.",
+    "/pricing footer grid n001467 stays frozen — children-do-not-tile-tracks, no honest relaxation reaches it. This is what keeps footer-clipped at 1 on /pricing @1100.",
+    "Reflow discretisation at wrap boundaries: 110 hobbang x rows at 914/1023 and 378 less-improved linear x rows come from a residual ~28px track error moving a wrapping flex row's break point.",
+    "Next-frozen-layer exposure on p000003 mobile (n001423/n001424) — needs a flex-item inline-size branch.",
+    "recoverGridTracksBanded() refuses 3 of linear.app's 6 offered containers (column-children-disagree).",
+    "linear truthCheckConverged: false on the corrected build, with 0 rules dropped — cosmetic today."
+  ],
+  "cycle2Priorities": [
+    "Give the item pass a way to see its own still-frozen descendants, so min-width:0 is chosen with information instead of blind. The predicate exists in the probe but needs an ordering the funnel lacks.",
+    "Fix p000001's probe attachment in the observer/compiler, or re-observe linear.app and confirm layoutProbe.aligned === true on all four pages before spending another cycle on that route.",
+    "A flex-item inline-size branch — would also shrink the reflow-discretisation residue.",
+    "Do not touch children-do-not-tile-tracks: the obvious relaxation converts one honest refusal into another."
+  ]
+}

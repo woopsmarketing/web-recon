@@ -1,0 +1,98 @@
+{
+ "checked": [
+  {
+   "claim": "auth.assets / auth.brand: both fields exist with the claimed shape, are OPTIONAL, and every release-project.json already on disk still loads with byte-identical authored-state hashes (loading injects nothing).",
+   "result": "VERIFIED",
+   "evidence": "I loaded all 7 real projects myself via loadReleaseProject (tmp/wr28/verifier-authored/v1-load.ts): flowpilot-wr27, flowpilot-wr27-blocked, wr28-assets-runner, wr28-assets-stage all have a raw `authored` block and hashAuthoredState(loaded) === hashAuthoredState(AuthoredStateSchema.parse(raw.authored)) for each; the 3 revision-1 projects (linear.app-2026-08-25T23-32-42-075Z, linear.app-2026-08-25T23-54-21-435Z, stripe.com-2026-08-19T06-36-35-798Z) have no raw authored block and adapt with adaptedFrom=1. Only wr28-assets-stage has assets present; NO project has brand. Old-shape parse `{slotValues:{},theme:{},updatedAt:null}` succeeds and neither key materializes ('assets' in result === false, 'brand' in result === false). emptyAuthoredState() key set is exactly slotValues,theme,updatedAt, hash 0828f7876bbcce489f932106d7cfe888505d568cfbd75bc7d6ed5fe4e3f09384 (matches the builder's figure). Schema read at src/release/types.ts:254-386."
+  },
+  {
+   "claim": "Detection evidence is NOT stored in mutable customer state — only the decision.",
+   "result": "VERIFIED",
+   "evidence": "src/release/types.ts:285-341 AuthoredBrandDecisionSchema is .strict() with fields {decision, replacement?, reason?, note?, updatedAt} and nothing else. I ran 12 cases through the real schema: every detection field is REJECTED (route, nodeId, value, evidencePointer, matched, surface); {decision:'REMOVE',updatedAt} ACCEPTED; REPLACE-without-payload REJECTED; REPLACE-with-text ACCEPTED; PRESERVE-without-reason REJECTED; PRESERVE-with-reason ACCEPTED; REMOVE-with-payload REJECTED. The persisted record I produced on a real project is exactly {\"decision\":\"REMOVE\",\"note\":\"...\",\"updatedAt\":\"...\"} — no route/node/value."
+  },
+  {
+   "claim": "FRESHNESS (high-risk): an authored.assets edit stales exactly [assets, production] and nothing else; the other stages stay fresh.",
+   "result": "VERIFIED",
+   "evidence": "MY OWN wr28-* project data/linear.app/release-projects/wr28-verifier-authored (copy of the real linear project), real engine, run.json read back: commitAuthoredEdits set-asset ai000036 → data/linear.app/wr28-verifier-assets/wr28-verifier-hero.png (sha fcdf15ed5ab1...) → dry-run plan wouldRun ['assets','production'] wouldReuse ['reconstruction','template','content','theme','seo'] → real build run 2026-08-27T11-34-46-610Z rerunStages ['assets','production'], reusedStages ['reconstruction','template','content','theme','seo'], failed=false, 36.1 s. New assets artifact 2026-08-27T11-34-46-613Z (was 2026-08-27T11-16-18-528Z), new production artifact 2026-08-27T11-34-46-824Z."
+  },
+  {
+   "claim": "FRESHNESS: an authored.brand edit stales PRODUCTION ONLY; assets/content/theme/seo reused with the SAME assets artifact id.",
+   "result": "VERIFIED",
+   "evidence": "Same project, real engine. I used a REAL surface id derived from a live scanBrandSurfaces run (bs-svg-symbol-id-3f238b45dff5), set decision REMOVE, then: dry-run wouldRun ['production'] wouldReuse ['reconstruction','template','content','theme','seo','assets']; real build 2026-08-27T11-33-32-948Z rerunStages ['production'] reusedStages ['reconstruction','template','content','theme','seo','assets'], 43.6 s, failed=false; assets artifact id BEFORE and AFTER both 2026-08-27T11-16-18-528Z. NOTE: the builder listed 'brand freshness measured only on the synthetic fixture' as a limitation — I have now measured it on the real linear lineage, so that limitation is retired."
+  },
+  {
+   "claim": "FRESHNESS: a NO-OP edit stales nothing, writes nothing, and appends no revision.",
+   "result": "VERIFIED",
+   "evidence": "Re-setting the identical asset entry (same file/alt/note) on wr28-verifier-authored: changed=false, revision=null, and release-project.json sha256 AND mtimeMs AND size all byte-identical before/after (0233923eedcf6f3e mtimeMs=1787830342168.042 size=15227 unchanged). Revision chain unchanged (r000..r003). A build immediately after: rerunStages [] with all 7 stages reused. Separately, an alt-only edit (a real change, no byte change) appended r005 and the following dry-run wouldRun was [] and the real build rerunStages [] — the builder's 28.P2.23 claim reproduced on real data."
+  },
+  {
+   "claim": "Revisions: an authored edit appends EXACTLY ONE revision naming the right dimension; the previous revision is byte-unchanged; a no-op appends none.",
+   "result": "VERIFIED",
+   "evidence": "On wr28-verifier-authored: the brand edit appended exactly r004 with change.brandSurfacesAdded ['bs-svg-symbol-id-3f238b45dff5'] and all other arrays empty; the prior head r003's revision.json sha256+mtime were identical before and after (checked directly). The asset edits appended exactly r005 / r006 with assetIdsChanged ['ai000036']. No-op appended nothing. On wr28-verifier-packonly a re-applied identical resolution pack appended a 3rd pack record but NO revision and moved no entry updatedAt (r001 remained the head)."
+  },
+  {
+   "claim": "flowpilot-wr27 still has NO revisions/ directory and smoke:revision 27A.23 still passes.",
+   "result": "VERIFIED",
+   "evidence": "`ls data/linear.app/release-projects/flowpilot-wr27/` → authored, operator-checklist.md, release-project.json, requirements.json, runs, technical-debt.json (no revisions). `find ... -newermt '2026-08-27 17:29'` returns nothing, i.e. untouched since the Task-28 program start. My own final smoke:revision run: '  PASS  27A.23 no revisions/ directory was created in either source project' (line 40 of the log), suite 36 checks / 0 failures."
+  },
+  {
+   "claim": "Phase-1 assets proof re-runs: an assets-only authored change makes the assets StageRunner actually EXECUTE (bytes materialized, rewrite map and replacement manifest carry them), and an unchanged rebuild reuses it.",
+   "result": "VERIFIED",
+   "evidence": "My own run, not the builder's: after the authored file swap, the new materialization data/linear.app/asset-materializations/2026-08-27T11-34-46-613Z contains media/fcdf15ed5ab104dee10ce3416bf69c84b388b87e985c69be286fc9073d217f13.png (present=true); replacement-manifest entry ai000036 = {status:'provided', providedFile:'/media/fcdf15…png', providedBy:'release:wr28-assets-stage:2026-08-27T11-34-46-610Z'}; exactly 1 rewrite-map entry points at that sha, rewriting sourceUrl https://linear.app/cdn-cgi/imagedelivery/…/c8aeedda-7726-4a4f-226a-f573f85d8d00/… . The immediately following rebuild: rerunStages [], all 7 reused. I also re-read the builder's own real-data runs on wr28-assets-stage and they say what the report says (11-15-50-368Z rerun [], 11-16-18-525Z rerun ['assets','production'], 11-16-54-595Z rerun [])."
+  },
+  {
+   "claim": "Merge precedence: pack assets first, authored assets last (authored wins), and the pack path is FED, not replaced.",
+   "result": "VERIFIED",
+   "evidence": "Strongest available evidence, on real data: wr28-verifier-authored's single applied pack maps ai000036 → data/linear.app/wr28-operator-assets/flowpilot-product-shot.png, yet the artifact the assets stage produced carries MY authored file's sha (fcdf15ed…), not the pack's. So authored is applied last. Conversely a pack-only project (wr28-verifier-packonly: authored.assets undefined, 1 pack with 1 asset) dry-runs to wouldRun [] — its pre-change recorded inputsHash recomputes identically under the new merged hashing, so back-compat is real and not merely asserted (src/release/freshness.ts:188-201)."
+  },
+  {
+   "claim": "resolve folds a pack's assets into authored.assets idempotently, and the pack stays the audit record.",
+   "result": "VERIFIED",
+   "evidence": "On wr28-verifier-packonly I ran resolveRelease twice with the same pack. After #1: authored.assets.ai000036 = {file: flowpilot-product-shot.png, note:…, updatedAt 2026-08-27T11:43:31.290Z}, packs 1→2, revision r001 'resolve: +1 asset'. After #2: packs 2→3 (pack recorded verbatim again) but authored.assets updatedAt UNCHANGED at 11:43:31.290Z and NO new revision. Code read: src/release/instance.ts:90-140 spreads ...authored first and foldResolutionAssets preserves an existing alt and only moves updatedAt when file/note moved."
+  },
+  {
+   "claim": "prepare carries authored.assets and authored.brand non-destructively and reports them in `preserved`.",
+   "result": "VERIFIED",
+   "evidence": "I ran the real prepareReleaseProject against a real production spec on wr28-verifier-packonly (which I had seeded with 1 authored asset + 1 brand decision): preserved = ['resolutions:3','authored.slotValues:0','authored.theme.tokens:0','authored.assets:1','authored.brand:1','runs:5','siteId:wr28-assets-runner','displayName:WR28 Assets Runner','createdAt:…'], and hashAuthoredState before === after (2f6a5310d4040003386a30d61f95dccfd6183432d2ef8aa47d16a7caf59a6429). The re-prepare appended no spurious revision (chain still r000,r001,r002)."
+  },
+  {
+   "claim": "brandSurfaceId is stable and detection-independent — including against the REAL detector, which the builder declared untested.",
+   "result": "VERIFIED",
+   "evidence": "I ran the live scanBrandSurfaces on the project's own lineage (templateRunDir data/linear.app/recon-templates/2026-08-25T21-53-26-980Z, contentRunDir data/linear.app/content-runs/2026-08-26T19-24-33-898Z): 116 findings. brandSurfaceId is deterministic across recomputation, and mutating value/matched/sourceUrl/evidenceFile/suggestedResolution on all 116 findings produced an IDENTICAL id list. Measured granularity: 116 findings → 104 unique ids, 12 collisions, all svg-symbol-id where one node carries two symbol matches — see notes."
+  },
+  {
+   "claim": "The new checks are real: breaking the code they cover makes them FAIL, and the restore is exact.",
+   "result": "VERIFIED",
+   "evidence": "My own two sabotages, not the builder's. (A) added `value` to the brandSurfaceId discriminator in src/release/authored.ts → smoke:release 229 PASS / 1 FAIL, the single failure being '28.P2.4 brandSurfaceId is stable across a re-scan — bs-svg-aria-label-8d6f992908ec'. (B) made removeAuthoredAsset keep an empty `assets:{}` → smoke:release 229 PASS / 1 FAIL, the single failure being '28.P2.8 removing the last authored asset deletes the FIELD … — assets={}'. Restored from a pre-sabotage copy; sha256 of all 7 touched/adjacent files (authored.ts a88ad2039fb5…, freshness.ts e259934dd5cc…, types.ts, graph.ts, revisions.ts 3222a2604c25…, smoke-release.ts, smoke-revision.ts) diffs CLEAN against the pre-sabotage capture; `grep -rn WR28-VERIFIER-SABOTAGE src scripts` returns nothing. Note: freshness.ts and revisions.ts hashes match the builder's own claimed restore hashes exactly, corroborating its falsifiability report."
+  },
+  {
+   "claim": "Regression: typecheck exit 0 and no unexplained negative suite delta vs Phase 1.",
+   "result": "VERIFIED",
+   "evidence": "All through tmp/wr28/suite-lock.sh. `pnpm typecheck` exit 0 (twice: baseline and post-restore). Counts RE-DERIVED by me from raw '  PASS '/'  FAIL ' lines, not from the suites' summary lines (which agreed in every case): release 230/0 (Phase-1 202 → +28), revision 36/0 (29 → +7), registry 35/0 (35 → 0), assets 140/0 (140 → 0), production 106/0 (106 → 0). No negative delta anywhere. The +35 breaks down as exactly the 28 checks 28.P2.1–27 plus 28.P2.1b in smoke:release and the 7 checks 28.P2.R1–R7 in smoke:revision — I enumerated them from the final logs and all 35 PASS, 0 FAIL."
+  },
+  {
+   "claim": "No historical data/ mutation; nothing written outside NEW 2026-08-27 run ids and wr28-* namespaces.",
+   "result": "VERIFIED",
+   "evidence": "`find data -type f -newermt '2026-08-27 17:29:44'` grouped by containing run directory (mtime, not birth time): production-builds/{09-34-50-563Z,09-38-59-704Z,11-16-18-737Z,11-33-32-948Z,11-34-46-824Z}, asset-materializations/{09-34-50-356Z,09-38-59-492Z,11-16-18-528Z,11-34-46-613Z}, production-specs (5, same ids), release-projects/{wr28-assets-runner,wr28-assets-stage,wr28-verifier-authored,wr28-verifier-packonly}, wr28-operator-assets/*, wr28-verifier-assets/*. Zero files with fewer than 4 path segments. Every one is a 2026-08-27 run id or a wr28-* namespace; the last three groups are MINE. data/.registry does not exist. flowpilot-wr27, the two revision-1 linear projects and the stripe project are untouched. docs/result/handoffs/24-aggregation-phase1.json untouched. Zero git mutations by me."
+  },
+  {
+   "claim": "limitations: 'AUTHORED_BRAND_IMPACTS=[production] … reruns the production compile, which today reproduces the same bytes.'",
+   "result": "FAILED",
+   "evidence": "Refuted at the byte level, and I measured it. The brand-only rerun's package (data/linear.app/production-builds/2026-08-27T11-33-32-948Z) differs from the previous build (…11-16-18-737Z) in 52 paths. index.html is the SAME LENGTH (2,674,090 bytes both) and differs only in the Next.js build id (lhVh5T6eCag5hWMF9caui → L0lV5PYa1I_7uDpoDSZpp), chunk filenames, and webpack module ids; after normalizing the build id and chunk names the remaining deltas are module-id renumbering (e.g. I[66934,…,'InteractionRuntime'] → I[22111,…]). So the correct statement is 'reproduces SEMANTICALLY IDENTICAL output — the Next bake is not byte-reproducible run to run, independent of brand', not 'the same bytes'. This does not change any item resolution and clears no gate; it is a wording inaccuracy in a limitations note."
+  }
+ ],
+ "failures": [
+  "NON-BLOCKING INACCURACY (changes no item resolution, clears no gate): the limitations text 'the production compile … today reproduces the same bytes' is false at the byte level. A brand-only production rerun produced a package differing in 52 paths from its predecessor; index.html is byte-different but identical in length, and after normalizing the Next.js build id and chunk names the only residue is webpack module-id renumbering. The substantive claim (nothing consumes authored.brand yet, so the rerun changes no CONTENT) stands. Correct wording: 'semantically identical output; the Next bake is not byte-reproducible run to run, independent of brand.'"
+ ],
+ "notes": [
+  "VERDICT BASIS: I reproduced every high-risk claim on the REAL engine in my own namespace data/linear.app/release-projects/wr28-verifier-authored (a copy of the real linear project) and wr28-verifier-packonly, never by reading code alone. Real builds executed by me: 2026-08-27T11-32-22-125Z (unchanged, rerun []), 11-33-32-948Z (brand edit, rerun ['production'], 43.6 s), 11-34-46-610Z (asset edit, rerun ['assets','production'], 36.1 s), plus two unchanged rebuilds that reran nothing.",
+  "NEW FINDING (not in the builder's report, minor, OUTSIDE the audited assets/brand surface): setAuthoredSlotValue with an `undefined` value manufactures a phantom revision. `commitAuthoredEdits(dir, [{op:'set-slot-value', slotKey:'x', value:undefined}])` returned changed=true, rewrote release-project.json and appended r003 whose change block says slotKeysAdded ['x'] — but the persisted snapshot's slotValues is {} (undefined is dropped by JSON.stringify). The record and the state disagree. Only reachable from an in-process JS caller (undefined is not representable in JSON, so no hand-edited file or HTTP editor payload can hit it), and the guard is a one-line `value === undefined` check in setAuthoredSlotValue. Carry it; do not block on it.",
+  "MEASURED, where the builder only qualified: brandSurfaceId granularity on REAL detector output. A live scanBrandSurfaces over the linear lineage yields 116 findings → 104 unique ids, i.e. 12 collisions. All 12 are svg-symbol-id findings where ONE node carries two DIFFERENT matched symbol ids ('Linear' and 'LinearAi') on the same evidencePointer. The builder's limitation ('addresses a host, not an occurrence') is accurate, but note the practical consequence: one REPLACE decision on such an id cannot distinguish the two values it governs. The consumer (Phase 2 bake rewrite) has to decide what a single decision means for a two-match host.",
+  "ROBUSTNESS NOTE: an authored.assets entry pointing at a MISSING file does not throw during freshness — freshness.ts:200 records `missing:<path>`, so the plan correctly reports ['assets','production'] stale — but the real build would then throw in applyAssetResolutions ('resolution asset … file not found'). Loud rather than silent, which is the right direction, but an editor that writes a temp path can leave a project that plans fine and fails at build. Nothing claims otherwise; recorded for the editor phase.",
+  "CORROBORATION OF THE BUILDER'S OWN FALSIFIABILITY REPORT: the per-file sha256 it published for its restores (freshness.ts e259934dd5cc63696da39a39280fa3eeccde3de5cd25b9fba03e3174032936bf, revisions.ts 3222a2604c25684b20ea7f795a3715e750a74b236662eb61d0cf64406718ccfb) are exactly what I measured in the working tree before my own sabotage. Its restore was genuine.",
+  "SCOPE I DID NOT COVER: I ran typecheck + smoke:{release,revision,registry,assets,production} as instructed. I did NOT run the other 15 suites in the Phase-1 20-suite set, so I hold no fresh evidence on them (the builder makes the same disclosure). I did not independently re-derive check 28.P2.27's requirement-clearing claim beyond observing it PASS; the builder's own limitation — that an authored-only asset edit clears the requirement via the artifact + `not-applicable` carry-forward and NOT via matchResolutionToRequirements — is an unanswered design question, correctly recorded as such.",
+  "TREE STATE: `find src scripts -name '*.ts' -newermt '2026-08-27 20:25'` returns only src/release/authored.ts, which is my own restore (sha identical to the pre-sabotage capture). No other Task-28 phase edited this area during my window, so the 230/36/35/140/106 counts are attributable.",
+  "DATA I ADDED (yours to delete): data/linear.app/release-projects/wr28-verifier-authored, .../wr28-verifier-packonly, data/linear.app/wr28-verifier-assets/wr28-verifier-hero.png, and the runs they produced — production-builds/{2026-08-27T11-33-32-948Z, 2026-08-27T11-34-46-824Z}, asset-materializations/2026-08-27T11-34-46-613Z, production-specs/{same two ids}, ~600 MB. Scripts and captured logs are under /Users/woops/projects/web-recon/tmp/wr28/verifier-authored/ (v1-load, v3-brandscan, v4-collide, v5-brand-fresh, v6-asset-fresh, v7-missing, v8-packonly, v9-resolve, v10-prepare, plus base-*.log, sabA.log, sabB.log, final-*.log, pre.sha, post.sha)."
+ ],
+ "verdict": "PASS"
+}

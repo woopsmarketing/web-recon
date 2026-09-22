@@ -1,0 +1,160 @@
+Already up to date
+Done in 152ms using pnpm v11.21.0
+$ tsx scripts/smoke-reconstruction-qa.ts
+Reconstruction QA fixture (Task 15)
+
+Screenshot metrics (items 29–32) — deterministic, never resized
+  PASS  identical images report 0 changed pixels
+  PASS  identical images report mean delta 0
+  PASS  identical images report common area ratio 1
+  PASS  opposite images report changed ratio 1
+  PASS  opposite images report mean delta 255
+  PASS  opposite images report max channel delta 255
+  PASS  a taller image reports the height delta
+  PASS  a taller image reports width delta 0
+  PASS  overlap is the smaller area, never a resize
+  PASS  common area ratio is overlap / larger
+  PASS  the overlapping area is still compared
+  PASS  a half-changed image reports ratio 0.5
+  PASS  diff images round-trip through the PNG codec
+  PASS  a missing side is `available: false`, never a fake score
+  PASS  …and names which side was missing
+
+Safe data image recovery (items 101–107) — strict, raster only
+  PASS  a real raster PNG data URI is accepted
+  PASS  …and is content-addressed by SHA-256
+  PASS  …and gets the right extension
+  PASS  an SVG data URI is REJECTED even though it is an image
+  PASS  …for being an unsafe MIME, not for its content
+  PASS  a text/html data URI is rejected
+  PASS  an application/* data URI is rejected
+  PASS  an invalid base64 payload is rejected
+  PASS  a truncated base64 tail is rejected
+  PASS  a declared PNG whose bytes are a JPEG is rejected
+  PASS  a payload over the 1 MiB cap is rejected
+  PASS  a plain URL is out of scope
+
+Correction policy (items 87–112) — three closed types, evidence-gated
+  PASS  exactly the three closed types can be proposed
+  PASS  a canvas correction is proposed once, site-level
+  PASS  the drifted page did not produce a second canvas correction
+  PASS  an open-state style correction is proposed
+  PASS  …carrying ONLY the properties that differ (item 97)
+  PASS  …and its provenance is the LIVE QA observation
+  PASS  …and a scripted mechanism keys the rule on the runtime marker
+  PASS  a pattern with unusable open-state evidence proposes nothing
+  PASS  an unsafe CSS value becomes a REJECTED correction
+  PASS  a safe raster data image is recovered
+  PASS  …and its bytes are written beside the artifact, not inside it
+  PASS  …and its public path is content-addressed
+  PASS  an invisible snapshot image is not recovered
+  PASS  an SVG data URI is not recovered
+  PASS  correction ids are assigned after a stable sort
+  PASS  the same evidence produces byte-identical corrections
+
+Acceptance and the no-regression gate (items 119–122, 142)
+  PASS  a correction that fixes its metric is accepted
+  PASS  a correction that changes CSS and fixes nothing is rejected
+  PASS  …with a named reason, never a shrug
+  PASS  a higher-is-better metric is recognised by name
+  PASS  an unchanged clone passes the gate
+  PASS  a route that stopped rendering fails the gate
+  PASS  …named as regression-routes
+  PASS  more content mismatches fail the gate
+  PASS  more behavior mismatches fail the gate
+  PASS  implementing an unknown behavior fails the gate outright
+  PASS  a form write fails the gate
+  PASS  a broken generator invariant fails the gate
+
+Classification, grouping and precedence (items 45, 48, 82–84)
+  PASS  diff ids are assigned in the stable sort order
+  PASS  …page → viewport → dimension, not arrival order
+  PASS  every diff carries a routing recommendation
+  PASS  every diff carries an upstream stage
+  PASS  source drift routes to re-observation, never to a correction
+  PASS  source drift is never auto-fix eligible
+  PASS  the root-cause table has one row per classification
+  PASS  affected nodes counts what a grouped diff stands for
+  PASS  there is no overall score anywhere in the summary
+  PASS  20 nodes sharing one displacement become ONE cascade
+  PASS  …that stands for all 20 nodes
+  PASS  …and names its first divergence node
+  PASS  …and its common ancestor
+  PASS  …and every member is excluded from independent reporting
+
+Style comparison and the canvas rule (items 46–48, 57)
+  PASS  a sub-layout-unit length difference is not a style mismatch
+  PASS  …and is counted separately rather than dropped
+  PASS  …using the engine's own resolution (0.03125 px)
+  PASS  8 descendants sharing one font-family become ONE group
+  PASS  …standing for all 8
+  PASS  …attributed to the highest node in document order
+  PASS  a white observed root vs a transparent clone canvas is NOT a mismatch
+  PASS  a dark observed root vs a transparent clone canvas IS a mismatch
+  PASS  a dark observed root matched by a dark clone body is not a mismatch
+
+Structural alignment and text comparison (items 34–36, 40, 41)
+  PASS  a matching tree aligns
+  PASS  a different element count fails alignment
+  PASS  …as element-count-mismatch
+  PASS  a different tag sequence fails alignment
+  PASS  a different parent relation fails alignment
+  PASS  no live capture cannot align
+  PASS  identical raw text is an exact match
+  PASS  …with 0 changed
+  PASS  whitespace is NOT normalized away in the clone comparison (item 41)
+  PASS  …but the drift comparison normalizes, because the snapshot may be capped
+
+Sampling policy (items 24, 77)
+  PASS  family audit cap is 4
+  PASS  unknown QA cap is 8
+  PASS  unknown signatures are sampled in the documented priority order
+  PASS  …and the cap is honoured
+
+Runtime vs blocked asset (item 54) — never the same finding
+  PASS  a CORS-blocked image is not a JS error
+  PASS  …it is counted as a blocked asset
+  PASS  …and is reported separately
+  PASS  a real TypeError still counts as a JS error
+  PASS  an uncaught pageerror is always JavaScript
+  PASS  …and the clone-only flag reflects the JS half
+
+Live half — real observer → real SiteSpec → real clone → real QA
+  PASS  the fixture pipeline produced a SiteSpec
+  PASS  every exact-observed page/viewport was QA'd
+  PASS  every verified route renders in the clone
+  PASS  content fidelity against the snapshot is exact
+  PASS  the un-drifted original aligns structurally
+  PASS  no clone runtime errors
+  PASS  the canvas background mismatch is detected (dark root, white canvas)
+  PASS  …and it is the only correction type proposed here besides observed ones
+  PASS  the unknown 메뉴 열기 trigger produced a behavior gap
+  PASS  …and the clone did nothing for it
+  PASS  unknown behaviour is never auto-fix eligible
+  PASS  no correction of any kind targets an unknown interaction
+  PASS  the verified disclosure was replayed on both sides
+  PASS  …the original's open state was observed
+  PASS  …which is new evidence Task 11 never captured
+  PASS  …and the clone's `display: revert` differs from the observed `flex`
+  PASS  an open-state style correction is therefore proposed
+  PASS  the family-represented route was audited
+  PASS  …and its divergence is a representation gap, never a generator defect
+  PASS  no diff id repeats
+  PASS  the correction loop ran
+  PASS  …and stopped within the iteration cap
+  PASS  at least one correction was accepted
+  PASS  the canvas correction was accepted
+  PASS  the corrected manifest records its QA provenance
+  PASS  the Task 14 baseline app was not modified
+  PASS  the corrected app carries the correction CSS
+  PASS  …and it is generated from a template, not free-form
+  PASS  unknown behaviour was still implemented 0 times
+  PASS  changing the original produces source-content-drift
+  PASS  …and the clone's own content fidelity is unchanged
+  PASS  …so no clone content-mismatch was invented
+  PASS  …and drift is never auto-fixed
+  PASS  two snapshot-only runs classify identically
+  PASS  …and propose the same corrections
+  PASS  classification ids were stable across the live runs
+
+134/134 checks passed

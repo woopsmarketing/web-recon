@@ -1,5 +1,9 @@
 import { breakpointMediaQueries } from "./responsive-plan.js";
-import { GENERATED_STYLES_FILE, type BreakpointSpec } from "./types.js";
+import {
+  GENERATED_STYLES_FILE,
+  ReconstructionError,
+  type BreakpointSpec,
+} from "./types.js";
 
 /**
  * The generated Next.js application shell (items 5, 15, 17, 18, 56–58, 206).
@@ -257,6 +261,31 @@ export default function NotFound() {
  * their own computed style, and the user agent's default 8px body margin would
  * otherwise be an offset the original page never had.
  */
+/** One route that swaps its two trees somewhere other than the site-wide width. */
+export interface RouteBreakpointOverride {
+  pageId: string;
+  breakpoint: number;
+}
+
+/**
+ * `p000001` → `[data-wr-page="p000001"]`, or refuse.
+ *
+ * Page ids are minted by this generator (`p` + six digits) and never come from
+ * the observed site, so anything else here means a caller invented one — and a
+ * page id spliced into a selector unchecked is how a selector stops being a
+ * selector. Refusing is cheap; escaping a value nobody should be passing is a
+ * silent invitation to pass one.
+ */
+function pageAttributeSelector(pageId: string): string {
+  if (!/^[A-Za-z0-9_-]+$/.test(pageId)) {
+    throw new ReconstructionError(
+      `page id ${JSON.stringify(pageId)} is not safe to write into a CSS ` +
+        `attribute selector; page ids are generated as [A-Za-z0-9_-]+`,
+    );
+  }
+  return `[data-wr-page="${pageId}"]`;
+}
+
 export function globalsCss(
   breakpoint: BreakpointSpec,
   /**
@@ -264,8 +293,60 @@ export function globalsCss(
    * reconstruction, so the file stays byte-identical to Task 14 (item 114).
    */
   correctionCss?: string,
+  /**
+   * TASK 28.7 §26 — the routes that swap their trees somewhere else.
+   *
+   * OPTIONAL and empty by default, and when it IS empty this function writes
+   * exactly the bytes it wrote before §26: a site whose routes all agree must not
+   * produce a different stylesheet just because the mechanism exists.
+   */
+  routeOverrides?: readonly RouteBreakpointOverride[],
 ): string {
   const media = breakpointMediaQueries(breakpoint.value);
+  /*
+   * §26 SERVING. Both trees are always mounted and CSS hides the inactive one, so
+   * a per-route switch cannot be a second rule that "wins": at a width between
+   * the two numbers the site-wide pair would hide the desktop tree while the
+   * route pair hid the mobile one, and the route would render nothing at all.
+   *
+   * The site-wide pair therefore EXCLUDES the overridden routes by selector
+   * rather than being overridden by them. Each route is then governed by exactly
+   * one pair of queries and there is no cascade to reason about.
+   */
+  const overrides = [...(routeOverrides ?? [])]
+    .filter((entry) => entry.breakpoint !== breakpoint.value)
+    .sort((a, b) => (a.pageId < b.pageId ? -1 : a.pageId > b.pageId ? 1 : 0));
+  const exclude = overrides.map((entry) => `:not(${pageAttributeSelector(entry.pageId)})`).join("");
+  const perRouteCss =
+    overrides.length === 0
+      ? ""
+      : `
+/*
+ * PER-ROUTE TREE SWITCH (Task 28.7 §26).
+ *
+ * A site's routes do not all change layout regime at the same width, and one
+ * site-wide number therefore mounts the wrong tree on some of them. Each route
+ * below swaps at the width ITS OWN authored histogram and ITS OWN layout probe
+ * chose; every other route is served by the site-wide pair above, which excludes
+ * these routes by selector so no width can hide both trees at once.
+ *
+ * This does not add a third tree. Two were observed — one at
+ * ${breakpoint.mobileObservedWidth}px and one at ${breakpoint.desktopObservedWidth}px —
+ * and this moves WHERE they are swapped, nothing more.
+ */
+${overrides
+  .map((entry) => {
+    const routeMedia = breakpointMediaQueries(entry.breakpoint);
+    const scope = pageAttributeSelector(entry.pageId);
+    return (
+      `@media ${routeMedia.mobile} {\n` +
+      `  ${scope}[data-wr-viewport="desktop"] {\n    display: none;\n  }\n}\n\n` +
+      `@media ${routeMedia.desktop} {\n` +
+      `  ${scope}[data-wr-viewport="mobile"] {\n    display: none;\n  }\n}`
+    );
+  })
+  .join("\n\n")}
+`;
   const corrections =
     correctionCss === undefined || correctionCss === ""
       ? ""
@@ -296,17 +377,17 @@ body {
 }
 
 @media ${media.mobile} {
-  [data-wr-viewport="desktop"] {
+  [data-wr-viewport="desktop"]${exclude} {
     display: none;
   }
 }
 
 @media ${media.desktop} {
-  [data-wr-viewport="mobile"] {
+  [data-wr-viewport="mobile"]${exclude} {
     display: none;
   }
 }
-
+${perRouteCss}
 /*
  * Inline SVG host. React needs an element to attach sanitized markup to, and the
  * markup carries its own <svg> root; display:contents keeps the host out of

@@ -9,6 +9,9 @@
  */
 import { z } from "zod";
 
+import type { BrandBakeReport } from "./brand-bake.js";
+import type { BrandFlightCounts, BrandSurfaceCensus } from "./brand-census.js";
+
 export const PRODUCTION_SPEC_SCHEMA_NAME = "production-spec-v1";
 export const PRODUCTION_COMPILER_NAME = "web-recon-production-compiler";
 export const PRODUCTION_COMPILER_VERSION = 1;
@@ -87,6 +90,23 @@ export const productionSpecSchema = z.object({
     ),
   }),
   buildRunId: z.string(),
+}).superRefine((spec, ctx) => {
+  // Task 28 Phase 10: the mode-rules pair, enforced STRUCTURALLY and not only
+  // by orchestration (src/release/freshness.ts `applyBlocking`). A spec that
+  // claims `indexable` while still naming blockers is a serious defect (a
+  // convenience, per the program contract, never acceptable) — this refinement
+  // makes that shape unparseable so a future caller cannot construct one, not
+  // only reject one that slipped through the release gate.
+  if (spec.indexabilityGate.decision === "indexable" && spec.indexabilityGate.blockers.length > 0) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["indexabilityGate", "blockers"],
+      message:
+        `indexabilityGate.decision is "indexable" but ${spec.indexabilityGate.blockers.length} blocker(s) are ` +
+        "still named — an indexable production spec must carry zero blockers (production mode is indexable ONLY " +
+        "after every one clears; a spec that is indexable WHILE blockers remain is refused at the schema, not just the gate)",
+    });
+  }
 });
 
 export type ProductionSpec = z.infer<typeof productionSpecSchema>;
@@ -125,6 +145,36 @@ export interface BakeReport {
       cssReplacedOccurrences: number;
     };
     residualSourceUrlOccurrencesInSite: number;
+  };
+  /**
+   * Source-brand surface census over THIS bake's exported route HTML
+   * (Task 28 CR7). Measured by `postProcessExport` after the head splice and
+   * the asset rewrite — the bake output itself, so a later phase that resolves
+   * a source brand asset can prove from the BUILD (not from a QA run against a
+   * different artifact) that a surface count moved. Never copied from another
+   * run's census; a route with no exported HTML is omitted rather than zeroed.
+   */
+  brand: {
+    measuredOn: "static-export-route-html";
+    measurementNote: string;
+    census: BrandSurfaceCensus;
+    /**
+     * The RSC FLIGHT axis (Task 28 Phase 2). `census` above reads only the SSR
+     * markup; a Next static export ships the same inline SVG again inside the
+     * `.txt` flight files and again inside the `self.__next_f.push` chunks
+     * inlined in each HTML, in two further escapings the markup regexes cannot
+     * match. Without this axis a markup-only rewrite would report a census of
+     * 0 while the flight still carried the source brand — and the flight wins
+     * on hydration, because the inline SVG arrives through
+     * `dangerouslySetInnerHTML`. Measured, never asserted, here.
+     */
+    flight: BrandFlightCounts & { txtFiles: number; htmlDocuments: number };
+    /**
+     * What the bake-time brand resolver actually did to the page IR of THIS
+     * build, and what is left. `null` when no resolver ran (no decisions and
+     * no fallback), which is not the same as "nothing was found".
+     */
+    bake: BrandBakeReport | null;
   };
   build: {
     mode: "static-export";

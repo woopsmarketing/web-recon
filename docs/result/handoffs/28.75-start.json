@@ -1,0 +1,71 @@
+{
+  "schema": "task2875-start-v1",
+  "task": "28.75 -> 28.8 — Final Reconstruction Outcome Closure + Four Fresh Real-World Validation Sites",
+  "date": "2026-09-05",
+  "baselineSha": "6c2e723601a0d76431c96a48bbdb4726c02063e7",
+  "branch": "main",
+  "workingTree": {
+    "dirtyPaths": 240,
+    "modifiedTracked": 106,
+    "untracked": 134,
+    "policy": "carried, never reverted; no mutating git operation for the duration of this program"
+  },
+  "inputVerdict": "NOT READY - CORE BLOCKERS REMAIN",
+  "inputVerdictSource": "docs/result/28.7/10-final-adjudication.md",
+  "inputRegression": {
+    "suiteFilesOnDisk": 36,
+    "suites": 35,
+    "suitesWithoutAssertions": ["smoke-playwright"],
+    "checks": 4326,
+    "failures": 0,
+    "crashes": 0,
+    "nonZeroExits": 0,
+    "typecheckExitCode": 0,
+    "authoritativeArtifact": "tmp/wr287/regression/index-final.tsv"
+  },
+  "inputVisual": {
+    "pairsGraded": 20,
+    "humanGrades": { "pass": 2, "minor": 2, "major": 7, "blocker": 9 },
+    "estimatedHumanVisualEquivalence": "~75% overall, bimodal"
+  },
+  "carriedBlockers": [
+    { "id": "B1", "title": "Frozen inline width / ancestor chains", "family": "width", "linearPct": 0.913, "hobbangPct": 0.991, "highImpactResiduals": 1553 },
+    { "id": "B2", "title": "JS-dependent content reconstructed as empty containers; no QA channel exists" },
+    { "id": "B3", "title": "Only two DOM trees observed; no variant between them", "carryNotBlock": true },
+    { "id": "B4", "title": "True layout overlap on a dynamic homepage" },
+    { "id": "B5", "title": "~30% of visible text absent (seoultone)" },
+    { "id": "B6", "title": "Popup normalizer blind at wide viewports (OVERLAY_SHAPE viewport-relative)" },
+    { "id": "B7", "title": "QA source capture does not normalize page state while observer does" }
+  ],
+  "chainRootPopulations": {
+    "1-out-of-flow-inset-resolved": { "status": "CLOSED in 28.7", "nodesImproved": 384, "nodesWorsened": 2 },
+    "2-in-flow-full-bleed": { "status": "OPEN", "linearRoots": 8, "largestDescendantCount": 416, "pattern": "width:100vw + margin-left:-50vw + left:50%" },
+    "3-banded-grid-tracks": { "status": "OPEN", "hobbangRoots": 4, "refusal": "tracks-not-reproducible-at-every-width" }
+  },
+  "phaseA": {
+    "programs": [
+      "01-blank-region-channel",
+      "02-js-dependent-content-root-cause",
+      "03-frozen-width-chain-root",
+      "04-popup-capture-consistency",
+      "05-qa-width-overlap-honesty",
+      "06-closure-canary",
+      "07-regression",
+      "08-closure-adjudication"
+    ],
+    "canarySites": ["linear.app", "hobbang.net", "gs.severance.healthcare", "seoultone.kr"],
+    "primaryPairs": 18,
+    "correctionCycleBudget": 2,
+    "ideaExperimentBudget": 3
+  },
+  "phaseB": {
+    "runsOnlyIfPhaseAGatePasses": true,
+    "sites": ["https://channel.io/kr", "https://toss.im/", "https://vipgunma.com/", "https://beomeo.roseeskin.com/"],
+    "maxDeepArchetypesPerSite": 5,
+    "sharedCoreCorrectionBudget": 2,
+    "ideaExperimentBudget": 2
+  },
+  "outOfScope": ["Slot", "Template", "Editor", "universal responsive solver", "React/Vue runtime emulator", "third variant-tree synthesis engine"],
+  "absoluteStopRule": "No automatic Task 28.9. Human makes the acceptance decision.",
+  "status": "STARTED"
+}

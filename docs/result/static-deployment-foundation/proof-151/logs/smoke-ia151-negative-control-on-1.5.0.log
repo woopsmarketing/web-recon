@@ -1,0 +1,135 @@
+site boost-interior-demo · release interior-01-1.5.0-75f173939e77 · build 6c74d34c2ecd
+
+[A] layout: 6 routes × 5 widths
+  ok   320 /: 200, overflow 0, console 0, non-local 0
+  ok   320 /portfolio: 200, overflow 0, console 0, non-local 0
+  ok   320 /portfolio/suseong-white-34py-apartment-remodeling: 200, overflow 0, console 0, non-local 0
+  ok   320 /3d-portfolio: 200, overflow 0, console 0, non-local 0
+  ok   320 /about: 200, overflow 0, console 0, non-local 0
+  ok   320 /contact: 200, overflow 0, console 0, non-local 0
+  ok   390 /: 200, overflow 0, console 0, non-local 0
+  ok   390 /portfolio: 200, overflow 0, console 0, non-local 0
+  ok   390 /portfolio/suseong-white-34py-apartment-remodeling: 200, overflow 0, console 0, non-local 0
+  ok   390 /3d-portfolio: 200, overflow 0, console 0, non-local 0
+  ok   390 /about: 200, overflow 0, console 0, non-local 0
+  ok   390 /contact: 200, overflow 0, console 0, non-local 0
+  ok   899 /: 200, overflow 0, console 0, non-local 0
+  ok   899 /portfolio: 200, overflow 0, console 0, non-local 0
+  ok   899 /portfolio/suseong-white-34py-apartment-remodeling: 200, overflow 0, console 0, non-local 0
+  ok   899 /3d-portfolio: 200, overflow 0, console 0, non-local 0
+  ok   899 /about: 200, overflow 0, console 0, non-local 0
+  ok   899 /contact: 200, overflow 0, console 0, non-local 0
+  ok   900 /: 200, overflow 0, console 0, non-local 0
+  ok   900 /portfolio: 200, overflow 0, console 0, non-local 0
+  ok   900 /portfolio/suseong-white-34py-apartment-remodeling: 200, overflow 0, console 0, non-local 0
+  ok   900 /3d-portfolio: 200, overflow 0, console 0, non-local 0
+  ok   900 /about: 200, overflow 0, console 0, non-local 0
+  ok   900 /contact: 200, overflow 0, console 0, non-local 0
+  ok   1440 /: 200, overflow 0, console 0, non-local 0
+  ok   1440 /portfolio: 200, overflow 0, console 0, non-local 0
+  ok   1440 /portfolio/suseong-white-34py-apartment-remodeling: 200, overflow 0, console 0, non-local 0
+  ok   1440 /3d-portfolio: 200, overflow 0, console 0, non-local 0
+  ok   1440 /about: 200, overflow 0, console 0, non-local 0
+  ok   1440 /contact: 200, overflow 0, console 0, non-local 0
+
+[B] M1 long mailto guard + copy fallback
+  FAIL 320: caps — message 500, each one-line field 100
+       {"message":-1,"oneLine":[-1,-1,-1,-1,-1]}
+  FAIL 320: the would-be mailto is 2699 characters (> 2,000) — no mail link opened, hidden link has no href
+       {"encodedLength":2699,"handoffs":["mailto:hello@boost-interior-demo.example?subject=%5B%EA%B2%AC%EC%A0%81%20%EB%AC%B8%EC%9D%98%5D%20%ED%99%8D%EA%B8%B8%EB%8F%99%EB%8B%98&body=%EC%9D%B4%EB%A6%84%3A%20%ED%99%8D%EA%B8%B8%EB%8F%99%0D%0A%EC%97%B0%EB%9D%BD%EC%B2%98%3A%20010-1234-5678%0D%0A%0D%0A%EB%AC%B8%EC%9D%98%20%EB%82%B4%EC%9A%A9%3A%0D%0A1%EB%B2%88%EC%A7%B8%20%EC%9A%94%EC%B2%AD%3A%20%EA%B1%B0%EC%8B%A4%EA%B3%BC%20%EC%A3%BC%EB%B0%A9%20%EC%88%98%EB%82%A9%EC%9D%84%20%EB%8A%98%EB%A6%AC%EA%B3%A0%20%EC%8B%B6%EC%8A%B5%EB%8B%88%EB%8B%A4.%0A2%EB%B2%88%EC%A7%B8%20%EC%9A%94%EC%B2%AD%3A%20%EA%B1%B0%EC%8B%A4%E
+  FAIL 320: status = too long + nothing sent + the address; no success wording
+       메일 앱에서 내용을 확인한 뒤 보내 주세요. 아직 전송된 것은 아닙니다. 메일 앱이 열리지 않으면 hello@boost-interior-demo.example로 보내 주세요.
+  FAIL 320: fallback shows the address (mailto link, no body) and the composed text read-only
+       {"shown":false,"address":null,"addressText":null,"to":null,"label":null,"readOnly":null,"text":null,"hiddenHref":"mailto:hello@boost-interior-demo.example?subject=%5B%EA%B2%AC%EC%A0%81%20%EB%AC%B8%EC%9D%98%5D%20%ED%99%8D%EA%B8%B8%EB%8F%99%EB%8B%98&body=%EC%9D%B4%EB%A6%84%3A%20%ED%99%8D%EA%B8%B8%EB%8F%99%0D%0A%EC%97%B0%EB%9D%BD%EC%B2%98%3A%20010-1234-5678%0D%0A%0D%0A%EB%AC%B8%EC%9D%98%20%EB%82%B4%EC%9A%A9%3A%0D%0A1%EB%B2%88%EC%A7%B8%20%EC%9A%94%EC%B2%AD%3A%20%EA%B1%B0%EC%8B%A4%EA%B3%BC%20%EC%A3%BC%EB%B0%A9%20%EC%88%98%EB%82%A9%EC%9D%84%20%EB%8A%98%EB%A6%AC%EA%B3%A0%20%EC%8B%B6%EC%8A%B5%EB%8B%88
+  FAIL 320: copy text = subject, blank line, the labelled body with the whole message
+       {"want":"[견적 문의] 홍길동님\n\n이름: 홍길동\n연락처: 010-1234-5678\n\n문의 내용:\n1번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n2번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n3번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n4번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n5번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n6번째 요청"}
+  FAIL 320: select button focuses and selects the whole text
+       {"focused":false,"start":-1,"end":-1,"len":0}
+  ok   320: fallback shown — overflow 0, no network request, no console error, still on /contact
+  FAIL 320: a short inquiry afterwards hands off (1 link, ≤ 2,000 chars), status = the hand-off text, fallback gone
+       {"h":[2666,378],"st":"메일 앱에서 내용을 확인한 뒤 보내 주세요. 아직 전송된 것은 아닙니다. 메일 앱이 열리지 않으면 hello@boost-interior-demo.example로 보내 주세요."}
+  FAIL 390: caps — message 500, each one-line field 100
+       {"message":-1,"oneLine":[-1,-1,-1,-1,-1]}
+  FAIL 390: typing 600 characters into the message stops at 500
+       600
+  FAIL 390: the would-be mailto is 2699 characters (> 2,000) — no mail link opened, hidden link has no href
+       {"encodedLength":2699,"handoffs":["mailto:hello@boost-interior-demo.example?subject=%5B%EA%B2%AC%EC%A0%81%20%EB%AC%B8%EC%9D%98%5D%20%ED%99%8D%EA%B8%B8%EB%8F%99%EB%8B%98&body=%EC%9D%B4%EB%A6%84%3A%20%ED%99%8D%EA%B8%B8%EB%8F%99%0D%0A%EC%97%B0%EB%9D%BD%EC%B2%98%3A%20010-1234-5678%0D%0A%0D%0A%EB%AC%B8%EC%9D%98%20%EB%82%B4%EC%9A%A9%3A%0D%0A1%EB%B2%88%EC%A7%B8%20%EC%9A%94%EC%B2%AD%3A%20%EA%B1%B0%EC%8B%A4%EA%B3%BC%20%EC%A3%BC%EB%B0%A9%20%EC%88%98%EB%82%A9%EC%9D%84%20%EB%8A%98%EB%A6%AC%EA%B3%A0%20%EC%8B%B6%EC%8A%B5%EB%8B%88%EB%8B%A4.%0A2%EB%B2%88%EC%A7%B8%20%EC%9A%94%EC%B2%AD%3A%20%EA%B1%B0%EC%8B%A4%E
+  FAIL 390: status = too long + nothing sent + the address; no success wording
+       메일 앱에서 내용을 확인한 뒤 보내 주세요. 아직 전송된 것은 아닙니다. 메일 앱이 열리지 않으면 hello@boost-interior-demo.example로 보내 주세요.
+  FAIL 390: fallback shows the address (mailto link, no body) and the composed text read-only
+       {"shown":false,"address":null,"addressText":null,"to":null,"label":null,"readOnly":null,"text":null,"hiddenHref":"mailto:hello@boost-interior-demo.example?subject=%5B%EA%B2%AC%EC%A0%81%20%EB%AC%B8%EC%9D%98%5D%20%ED%99%8D%EA%B8%B8%EB%8F%99%EB%8B%98&body=%EC%9D%B4%EB%A6%84%3A%20%ED%99%8D%EA%B8%B8%EB%8F%99%0D%0A%EC%97%B0%EB%9D%BD%EC%B2%98%3A%20010-1234-5678%0D%0A%0D%0A%EB%AC%B8%EC%9D%98%20%EB%82%B4%EC%9A%A9%3A%0D%0A1%EB%B2%88%EC%A7%B8%20%EC%9A%94%EC%B2%AD%3A%20%EA%B1%B0%EC%8B%A4%EA%B3%BC%20%EC%A3%BC%EB%B0%A9%20%EC%88%98%EB%82%A9%EC%9D%84%20%EB%8A%98%EB%A6%AC%EA%B3%A0%20%EC%8B%B6%EC%8A%B5%EB%8B%88
+  FAIL 390: copy text = subject, blank line, the labelled body with the whole message
+       {"want":"[견적 문의] 홍길동님\n\n이름: 홍길동\n연락처: 010-1234-5678\n\n문의 내용:\n1번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n2번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n3번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n4번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n5번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n6번째 요청"}
+  FAIL 390: select button focuses and selects the whole text
+       {"focused":false,"start":-1,"end":-1,"len":0}
+  ok   390: fallback shown — overflow 0, no network request, no console error, still on /contact
+  FAIL 390: a short inquiry afterwards hands off (1 link, ≤ 2,000 chars), status = the hand-off text, fallback gone
+       {"h":[2666,378],"st":"메일 앱에서 내용을 확인한 뒤 보내 주세요. 아직 전송된 것은 아닙니다. 메일 앱이 열리지 않으면 hello@boost-interior-demo.example로 보내 주세요."}
+  FAIL 1440: caps — message 500, each one-line field 100
+       {"message":-1,"oneLine":[-1,-1,-1,-1,-1]}
+  FAIL 1440: the would-be mailto is 2699 characters (> 2,000) — no mail link opened, hidden link has no href
+       {"encodedLength":2699,"handoffs":["mailto:hello@boost-interior-demo.example?subject=%5B%EA%B2%AC%EC%A0%81%20%EB%AC%B8%EC%9D%98%5D%20%ED%99%8D%EA%B8%B8%EB%8F%99%EB%8B%98&body=%EC%9D%B4%EB%A6%84%3A%20%ED%99%8D%EA%B8%B8%EB%8F%99%0D%0A%EC%97%B0%EB%9D%BD%EC%B2%98%3A%20010-1234-5678%0D%0A%0D%0A%EB%AC%B8%EC%9D%98%20%EB%82%B4%EC%9A%A9%3A%0D%0A1%EB%B2%88%EC%A7%B8%20%EC%9A%94%EC%B2%AD%3A%20%EA%B1%B0%EC%8B%A4%EA%B3%BC%20%EC%A3%BC%EB%B0%A9%20%EC%88%98%EB%82%A9%EC%9D%84%20%EB%8A%98%EB%A6%AC%EA%B3%A0%20%EC%8B%B6%EC%8A%B5%EB%8B%88%EB%8B%A4.%0A2%EB%B2%88%EC%A7%B8%20%EC%9A%94%EC%B2%AD%3A%20%EA%B1%B0%EC%8B%A4%E
+  FAIL 1440: status = too long + nothing sent + the address; no success wording
+       메일 앱에서 내용을 확인한 뒤 보내 주세요. 아직 전송된 것은 아닙니다. 메일 앱이 열리지 않으면 hello@boost-interior-demo.example로 보내 주세요.
+  FAIL 1440: fallback shows the address (mailto link, no body) and the composed text read-only
+       {"shown":false,"address":null,"addressText":null,"to":null,"label":null,"readOnly":null,"text":null,"hiddenHref":"mailto:hello@boost-interior-demo.example?subject=%5B%EA%B2%AC%EC%A0%81%20%EB%AC%B8%EC%9D%98%5D%20%ED%99%8D%EA%B8%B8%EB%8F%99%EB%8B%98&body=%EC%9D%B4%EB%A6%84%3A%20%ED%99%8D%EA%B8%B8%EB%8F%99%0D%0A%EC%97%B0%EB%9D%BD%EC%B2%98%3A%20010-1234-5678%0D%0A%0D%0A%EB%AC%B8%EC%9D%98%20%EB%82%B4%EC%9A%A9%3A%0D%0A1%EB%B2%88%EC%A7%B8%20%EC%9A%94%EC%B2%AD%3A%20%EA%B1%B0%EC%8B%A4%EA%B3%BC%20%EC%A3%BC%EB%B0%A9%20%EC%88%98%EB%82%A9%EC%9D%84%20%EB%8A%98%EB%A6%AC%EA%B3%A0%20%EC%8B%B6%EC%8A%B5%EB%8B%88
+  FAIL 1440: copy text = subject, blank line, the labelled body with the whole message
+       {"want":"[견적 문의] 홍길동님\n\n이름: 홍길동\n연락처: 010-1234-5678\n\n문의 내용:\n1번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n2번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n3번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n4번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n5번째 요청: 거실과 주방 수납을 늘리고 싶습니다.\n6번째 요청"}
+  FAIL 1440: select button focuses and selects the whole text
+       {"focused":false,"start":-1,"end":-1,"len":0}
+  ok   1440: fallback shown — overflow 0, no network request, no console error, still on /contact
+  FAIL 1440: a short inquiry afterwards hands off (1 link, ≤ 2,000 chars), status = the hand-off text, fallback gone
+       {"h":[2666,378],"st":"메일 앱에서 내용을 확인한 뒤 보내 주세요. 아직 전송된 것은 아닙니다. 메일 앱이 열리지 않으면 hello@boost-interior-demo.example로 보내 주세요."}
+
+[C] m1 CRLF message body   [D] m2 re-announced status
+  FAIL m1: message lines reach the body as CRLF (typed LF and CRLF), no lone LF / CR anywhere
+       "이름: 홍길동\r\n연락처: 010-1234-5678\r\n\r\n문의 내용:\r\n첫 줄\n둘째 줄\n셋째 줄"
+  FAIL m2: every hand-off press re-creates the status text (3 presses → 3 live-region additions, a new node each time), same text
+       {"a1":1,"a2":1,"a3":1,"replaced":false}
+  FAIL m2: repeated too-long presses are announced each time too (2 more additions), no hand-off
+       {"a5":1,"a3":1}
+  ok   C/D: no console error
+
+[E] m3 focus after the menu closes
+  ok   390: Esc closes the menu and focus returns to the (visible) menu button
+  FAIL resize 390 → 1000 with the menu open: it closes and focus is on a rendered header control (not <body>, not the hidden button)
+       {"menuOpen":false,"tag":"BODY","isBody":true,"inHeader":false,"rendered":true,"isMenuButton":false,"desc":"body. "}
+  FAIL …and Tab continues from there through the header
+  ok   E: no console error
+       focus landed on: body. 
+
+[F] m4 sitemap vs contact channel
+  ok   fixture-empty: /contact still answers 200 with the unavailable line and no form
+  FAIL sitemap lists /contact on the demo and fixture-small (email), not on fixture-empty (no channel)
+       {"boost-interior-demo":{"contactListed":true,"contactStatus":200,"locs":13},"fixture-small":{"contactListed":true,"contactStatus":200,"locs":17},"fixture-empty":{"contactListed":true,"contactStatus":200,"locs":4}}
+       {"boost-interior-demo":{"contactListed":true,"contactStatus":200,"locs":13},"fixture-small":{"contactListed":true,"contactStatus":200,"locs":17},"fixture-empty":{"contactListed":true,"contactStatus":200,"locs":4}}
+
+37 / 65 passed
+  FAILED: 320: caps — message 500, each one-line field 100
+  FAILED: 320: the would-be mailto is 2699 characters (> 2,000) — no mail link opened, hidden link has no href
+  FAILED: 320: status = too long + nothing sent + the address; no success wording
+  FAILED: 320: fallback shows the address (mailto link, no body) and the composed text read-only
+  FAILED: 320: copy text = subject, blank line, the labelled body with the whole message
+  FAILED: 320: select button focuses and selects the whole text
+  FAILED: 320: a short inquiry afterwards hands off (1 link, ≤ 2,000 chars), status = the hand-off text, fallback gone
+  FAILED: 390: caps — message 500, each one-line field 100
+  FAILED: 390: typing 600 characters into the message stops at 500
+  FAILED: 390: the would-be mailto is 2699 characters (> 2,000) — no mail link opened, hidden link has no href
+  FAILED: 390: status = too long + nothing sent + the address; no success wording
+  FAILED: 390: fallback shows the address (mailto link, no body) and the composed text read-only
+  FAILED: 390: copy text = subject, blank line, the labelled body with the whole message
+  FAILED: 390: select button focuses and selects the whole text
+  FAILED: 390: a short inquiry afterwards hands off (1 link, ≤ 2,000 chars), status = the hand-off text, fallback gone
+  FAILED: 1440: caps — message 500, each one-line field 100
+  FAILED: 1440: the would-be mailto is 2699 characters (> 2,000) — no mail link opened, hidden link has no href
+  FAILED: 1440: status = too long + nothing sent + the address; no success wording
+  FAILED: 1440: fallback shows the address (mailto link, no body) and the composed text read-only
+  FAILED: 1440: copy text = subject, blank line, the labelled body with the whole message
+  FAILED: 1440: select button focuses and selects the whole text
+  FAILED: 1440: a short inquiry afterwards hands off (1 link, ≤ 2,000 chars), status = the hand-off text, fallback gone
+  FAILED: m1: message lines reach the body as CRLF (typed LF and CRLF), no lone LF / CR anywhere
+  FAILED: m2: every hand-off press re-creates the status text (3 presses → 3 live-region additions, a new node each time), same text
+  FAILED: m2: repeated too-long presses are announced each time too (2 more additions), no hand-off
+  FAILED: resize 390 → 1000 with the menu open: it closes and focus is on a rendered header control (not <body>, not the hidden button)
+  FAILED: …and Tab continues from there through the header
+  FAILED: sitemap lists /contact on the demo and fixture-small (email), not on fixture-empty (no channel)

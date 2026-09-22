@@ -8,8 +8,13 @@ export {
   loadContentRunForSeo,
   buildProductionSeoPlan,
   checkForbiddenCopy,
+  checkTitleUniqueness,
+  deriveRouteHeadings,
   assertHeadSafeText,
+  isHeadSafeText,
+  MAX_ROUTE_HEADING_CHARS,
   type ProvidedBusinessFacts,
+  type RouteHeading,
 } from "./production-plan.js";
 export { deriveForbiddenTerms, checkBrandIsolation } from "./brand-isolation.js";
 export { renderRouteHead, renderPlanHead, SEO_HEAD_START, SEO_HEAD_END } from "./render-head.js";

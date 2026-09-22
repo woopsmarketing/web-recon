@@ -14,6 +14,7 @@ import {
   STABILITY_GEOMETRY_EPSILON,
   STABILITY_SAMPLE_SIZE,
   STABILITY_SETTLE_MS,
+  type ScreenshotCoverage,
   type Stability,
 } from "./types.js";
 
@@ -44,8 +45,20 @@ export interface OriginalCapture {
   finalUrl?: string;
   capture?: QaRawCapture;
   screenshot?: Buffer;
+  /**
+   * Task 28.6 C5 — how much of the document `screenshot` contains. Present
+   * whenever a screenshot was ASKED for, including when it failed, so a caller
+   * can tell "not requested" (absent) from "requested and short" (`truncated`).
+   */
+  screenshotCoverage?: ScreenshotCoverage;
   diagnostics?: PageDiagnostics;
   stability?: Stability;
+  /**
+   * Task 28.6 — what `stabilize()`'s two BOUNDED waits actually reached. It
+   * always computed these and every caller dropped them, so a page captured
+   * while still loading was indistinguishable from a settled one.
+   */
+  stabilization?: { networkIdleReached: boolean; fontsReadyReached: boolean };
   safetyEvents: string[];
   error?: string;
   loadMs: number;
@@ -98,20 +111,35 @@ export async function measureStability(
   try {
     second = await runCapture(page, variantId);
   } catch {
+    // `stable: true` here is a PLACEHOLDER beside `measured: false`, not a
+    // verdict. Every consumer gates on `measured` first; the counters are
+    // written as zeros with `candidateNodes` stated, so a reader can see that
+    // nothing was compared rather than infer it from a bare `true`.
     return {
       measured: false,
       movingNodes: 0,
       sampledNodes: 0,
+      candidateNodes: first.elements.length,
+      unsampledNodes: first.elements.length,
+      unmatchedNodes: 0,
       documentHeightDelta: 0,
       stable: true,
     };
   }
   const byKey = new Map(second.elements.map((element) => [element.key, element]));
+  // A bounded, deterministic PREFIX — and the part it does not reach is counted
+  // below rather than left to look like a page that had exactly this many nodes.
   const sample = first.elements.slice(0, STABILITY_SAMPLE_SIZE);
   let movingNodes = 0;
+  let unmatchedNodes = 0;
   for (const element of sample) {
     const other = byKey.get(element.key);
-    if (!other) continue;
+    if (!other) {
+      // Not comparable: the node is gone from the second capture. Counted, so a
+      // `stable: true` over a page that lost half its nodes cannot read as calm.
+      unmatchedNodes++;
+      continue;
+    }
     const moved =
       Math.abs(element.box.x - other.box.x) > STABILITY_GEOMETRY_EPSILON ||
       Math.abs(element.box.y - other.box.y) > STABILITY_GEOMETRY_EPSILON ||
@@ -125,6 +153,9 @@ export async function measureStability(
     measured: true,
     movingNodes,
     sampledNodes: sample.length,
+    candidateNodes: first.elements.length,
+    unsampledNodes: Math.max(0, first.elements.length - sample.length),
+    unmatchedNodes,
     documentHeightDelta,
     stable: movingNodes === 0 && Math.abs(documentHeightDelta) <= STABILITY_GEOMETRY_EPSILON,
   };
@@ -146,9 +177,10 @@ export async function captureOriginal(
 
     const loadStart = Date.now();
     let finalUrl: string;
+    let stabilization: { networkIdleReached: boolean; fontsReadyReached: boolean };
     try {
       finalUrl = await gotoQa(page, options.url);
-      await stabilize(page);
+      stabilization = await stabilize(page);
       loadMs = Date.now() - loadStart;
     } catch (err) {
       loadMs = Date.now() - loadStart;
@@ -164,7 +196,15 @@ export async function captureOriginal(
     }
 
     const capture = await runCapture(page);
-    const screenshot = options.screenshot ? await captureScreenshot(page) : undefined;
+    /*
+     * Task 28.6 C5: a screenshot that is refused (too tall for the driver) used
+     * to escape to the outer catch and discard `capture` — reporting a page
+     * whose DOM, geometry and style were all captured successfully as a load
+     * error. It is now a recorded coverage failure and the rest of the QA runs.
+     */
+    const screenshot = options.screenshot
+      ? await captureScreenshot(page, "live-original")
+      : undefined;
     const stability = options.measureStability
       ? await measureStability(page, capture)
       : undefined;
@@ -174,7 +214,9 @@ export async function captureOriginal(
       url: options.url,
       finalUrl,
       capture,
-      ...(screenshot ? { screenshot } : {}),
+      ...(screenshot?.buffer ? { screenshot: screenshot.buffer } : {}),
+      ...(screenshot ? { screenshotCoverage: screenshot.coverage } : {}),
+      stabilization,
       diagnostics,
       ...(stability ? { stability } : {}),
       safetyEvents: safetyEvents.sort(),

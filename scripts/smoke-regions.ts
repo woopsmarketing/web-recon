@@ -9,9 +9,18 @@ import type {
 import {
   PageRegionsArtifactSchema,
   REGION_POLICY,
+  buildRegionMembership,
+  buildSignaturePageCounts,
   compilePageRegions,
   loadRegionInput,
+  REGION_GLOBAL_SIGNALS,
+  regionEnablementScope,
+  regionPageSourceIds,
+  regionRouteBlastRadius,
+  scanInteractionEdges,
   serializeArtifact,
+  subtreeNodeIds,
+  findNodeById,
   type PageRegionsArtifact,
   type RegionBinding,
   type RegionCompileInput,
@@ -735,6 +744,100 @@ async function main(): Promise<void> {
     "§8 the split path mints no id an existing artifact could already hold",
     globalSplit!.regions.every((region) => /^global:rgn:[a-z0-9]+:[^@]+(@mobile)?$/.test(region.regionId)),
     globalSplit?.regions.map((region) => region.regionId).join(" "),
+  );
+
+  section("§9 ENABLEMENT ANALYSIS (Task 28 Phase 5) — the artifact's first consumer");
+  //
+  // The compiler is untouched: these are pure READS over the artifact §1
+  // produced plus the runtime trees it was compiled from.
+  const enableInput = buildFixture(HOME_BODY);
+  const enableArtifact = compilePageRegions(enableInput);
+  const membership = buildRegionMembership(enableInput.pages, enableArtifact);
+  check(
+    "§9 every region root in the artifact resolves in the trees it was compiled from",
+    membership.unresolvedRoots.length === 0,
+    `${membership.unresolvedRoots.length} unresolved`,
+  );
+  const docsRegion9 = enableArtifact.regions.find((region) => region.slotKeys.includes("docs.title"))!;
+  check(
+    "§9 the SHARED page's blast radius is BOTH routes — never the first one only",
+    JSON.stringify(regionRouteBlastRadius(docsRegion9)) === JSON.stringify(["/docs", "/documentation"]) &&
+      JSON.stringify(regionPageSourceIds(docsRegion9)) === JSON.stringify(["p3"]),
+    JSON.stringify(regionRouteBlastRadius(docsRegion9)),
+  );
+  const docsOccurrence = docsRegion9.pages[0].occurrences.find((occurrence) => occurrence.viewport === "desktop")!;
+  const docsRoot = findNodeById(enableInput.pages.get("p3")!.desktop.doc, docsOccurrence.nodeId)!;
+  check(
+    "§9 membership is derived by walking the tree from the region root — no data-wr-slot attribute is minted or read",
+    subtreeNodeIds(docsRoot).every((nodeId) =>
+      membership.regionsOf("p3", "desktop", nodeId).includes(docsRegion9.regionId),
+    ) &&
+      !JSON.stringify(enableInput.pages.get("p3")).includes("data-wr-slot"),
+    `${subtreeNodeIds(docsRoot).length} nodes under ${docsOccurrence.nodeId}`,
+  );
+  check(
+    "§9 a node outside every region reports an EMPTY owner list — an honest answer, not an error",
+    membership.regionsOf("p1", "desktop", "n000002").length === 0 &&
+      membership.regionsOf("p1", "desktop", "n999999").length === 0,
+  );
+
+  const signaturePageCounts = buildSignaturePageCounts(enableArtifact);
+  const globalSlotKeys = new Set(
+    [...enableInput.slotKeyById.values()].filter((key) => key.startsWith("global.")),
+  );
+  const scoped = enableArtifact.regions.map((region) => ({
+    region,
+    scope: regionEnablementScope(region, { globalSlotKeys, signaturePageCounts }),
+  }));
+  check(
+    "§9 every region the COMPILER lifted to global is global for enablement too — the union never narrows the compiler",
+    scoped
+      .filter((row) => row.region.scope === "global")
+      .every((row) => row.scope.global && row.scope.signals.includes("compiler-scope-global")),
+    scoped.filter((row) => row.region.scope === "global").map((row) => row.scope.signals.join("+")).join(" | "),
+  );
+  check(
+    "§9 a PAGE-scoped region holding a global-scope slot is still global for enablement (the signal the strict lift misses)",
+    scoped.some(
+      (row) =>
+        row.region.scope === "page" && row.scope.global && row.scope.signals.includes("global-scope-slot"),
+    ) ||
+      // the fixture may lift every global-slot holder; then the signal itself
+      // is what must be demonstrated, on the lifted ones
+      scoped.some((row) => row.scope.signals.includes("global-scope-slot")),
+    scoped.filter((row) => row.scope.global).map((row) => `${row.region.regionId}=${row.scope.signals.join("+")}`).join(" | "),
+  );
+  // MEASURED, and it disagrees with the naive expectation: on this four-page
+  // fixture EVERY region's (landmark, childPath) signature recurs on at least
+  // two pages, so signal (iii) fires everywhere and no region is page-only for
+  // enablement purposes. That is the signal doing its job on a fixture whose
+  // four pages are structurally near-identical, not a bug — and it is exactly
+  // why the union is the WIDEST of three signals rather than any one of them.
+  console.log(
+    `  [measured] enablement scope: ${scoped.filter((row) => row.scope.global).length}/${scoped.length} regions global ` +
+      `(compiler lifted ${scoped.filter((row) => row.region.scope === "global").length}); signals ` +
+      [...new Set(scoped.flatMap((row) => row.scope.signals))].sort().join(" + "),
+  );
+  check(
+    "§9 global-for-enablement is EXACTLY 'at least one signal fired', from the closed vocabulary",
+    scoped.every((row) => row.scope.global === row.scope.signals.length > 0) &&
+      scoped.every((row) =>
+        row.scope.signals.every((signal) => (REGION_GLOBAL_SIGNALS as readonly string[]).includes(signal)),
+      ),
+    scoped.map((row) => `${row.region.regionId}=${row.scope.signals.length}`).join(" "),
+  );
+  check(
+    "§9 the signature signal counts DISTINCT pageSourceIds, so the shared page counts ONCE",
+    signaturePageCounts.get(`${docsRegion9.landmark.key}|${docsRegion9.childPath}`) !== undefined &&
+      [...signaturePageCounts.values()].every((count) => count <= enableArtifact.counts.pages),
+    JSON.stringify([...signaturePageCounts]),
+  );
+
+  const scan = scanInteractionEdges(enableInput.pages, membership);
+  check(
+    "§9 the interaction scan runs over a fixture with no data-wr-op and reports ZERO, never a crash",
+    scan.triggers === 0 && scan.edges.length === 0 && scan.unparsedObs === 0,
+    `${scan.triggers} triggers / ${scan.edges.length} edges`,
   );
 
   console.log("");

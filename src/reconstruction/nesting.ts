@@ -1,4 +1,9 @@
-import { ReconstructionError, type RuntimeElementNode, type RuntimeNode } from "./types.js";
+import {
+  ReconstructionError,
+  type RuntimeElementNode,
+  type RuntimeNode,
+  type RuntimePropValue,
+} from "./types.js";
 
 /**
  * Parser-stable nesting (Task 16 final correction).
@@ -236,8 +241,38 @@ export interface NestingAdaptation {
   nodeId: string;
   childTag: string;
   parentTag: string;
+  /** The interposed container, or (mode "demote") the tag the node was demoted to. */
   container: string;
+  /**
+   * TASK 28.8 FAST (Phase F correction 1) — "interpose" adds a layout-neutral
+   * wrapper element; "demote" keeps the SAME node and only changes its tag.
+   */
+  mode: "interpose" | "demote";
 }
+
+/**
+ * TASK 28.8 FAST (Phase F correction 1, generic) — nested interactive /
+ * formatting elements the parser would close early, and the layout-neutral tag
+ * the node is demoted to instead of refusing the whole build. SPA runtimes build
+ * `<a>` inside `<a>` (or a `<button>` inside a `<button>`) through DOM APIs; the
+ * observed box model is real, only the TAG cannot be served. The frozen style
+ * classes carry the computed color/decoration/display, so a `span` renders the
+ * same box; the inner element stops being its own link/control, which the
+ * manifest records as `parser-invalid-nesting-demoted` and the element marks
+ * with `data-wr-demoted` (+ `data-wr-href` when an href is dropped).
+ */
+const DEMOTION_TAG: Readonly<Record<string, string>> = {
+  a: "span",
+  button: "span",
+  nobr: "span",
+  form: "div",
+};
+const DEMOTABLE_KINDS: ReadonlySet<NestingRepairKind> = new Set([
+  "nested-anchor",
+  "nested-button",
+  "nested-formatting",
+  "nested-form",
+]);
 
 export interface AdaptNestingResult {
   adaptations: NestingAdaptation[];
@@ -261,13 +296,19 @@ export function adaptParserNesting(
 ): AdaptNestingResult {
   const adaptations: NestingAdaptation[] = [];
 
-  const visit = (node: RuntimeElementNode, ancestors: string[]): void => {
+  /*
+   * TASK 28.8 FAST (Phase F correction 1) — the walk keeps the ancestor NODES,
+   * not only their tags, because `block-closes-p` is repaired on the ancestor:
+   * the open <p> is re-tagged to a <div> (same box, same classes, marked
+   * `data-wr-demoted="p"`), which accepts any flow content. Tags are re-read
+   * from the nodes for every edge so a re-tagged ancestor is seen at once.
+   */
+  const visit = (node: RuntimeElementNode, ancestorNodes: RuntimeElementNode[]): void => {
     // `v` is the sanitized inline-SVG channel: foreign content, already a string.
     if (node.v !== undefined || FOREIGN_ROOTS.has(node.t)) return;
     const children = node.c;
     if (!children || children.length === 0) return;
-
-    const nextAncestors = [...ancestors, node.t];
+    const chain = [...ancestorNodes, node];
     for (let i = 0; i < children.length; i++) {
       const child = children[i]!;
       if (child.k === "t") {
@@ -278,14 +319,32 @@ export function adaptParserNesting(
         }
         continue;
       }
-      const repair = detectNestingRepair(child.t, nextAncestors);
-      if (repair !== null) {
-        children[i] = interpose(child, repair, nextAncestors, context, adaptations);
+      let tags = chain.map((n) => n.t);
+      let repair = detectNestingRepair(child.t, tags);
+      if (repair !== null && repair.kind === "block-closes-p") {
+        const open = openParagraph(chain);
+        if (open !== undefined) {
+          demoteInPlace(open, "div");
+          adaptations.push({
+            pageId: context.pageId,
+            viewportId: context.viewportId,
+            kind: repair.kind,
+            nodeId: open.n,
+            childTag: child.t,
+            parentTag: node.t,
+            container: "div",
+            mode: "demote",
+          });
+          tags = chain.map((n) => n.t);
+          repair = detectNestingRepair(child.t, tags);
+        }
       }
-      visit(children[i] as RuntimeElementNode, nextAncestors);
+      if (repair !== null) {
+        children[i] = interpose(child, repair, tags, context, adaptations);
+      }
+      visit(children[i] as RuntimeElementNode, chain);
     }
   };
-
   visit(root, []);
   return { adaptations };
 }
@@ -311,7 +370,25 @@ function interpose(
     detectNestingRepair(container, ancestors) !== null ||
     detectNestingRepair(child.t, [...ancestors, container]) !== null
   ) {
-    throw refusal(context, repair.kind, repair.offendingAncestorTag, child.t, child.n);
+    const demoted = DEMOTABLE_KINDS.has(repair.kind)
+      ? DEMOTION_TAG[child.t]
+      : undefined;
+    if (demoted === undefined || detectNestingRepair(demoted, ancestors) !== null) {
+      throw refusal(context, repair.kind, repair.offendingAncestorTag, child.t, child.n);
+    }
+    adaptations.push({
+      pageId: context.pageId,
+      viewportId: context.viewportId,
+      kind: repair.kind,
+      nodeId: child.n,
+      childTag: child.t,
+      parentTag,
+      container: demoted,
+      mode: "demote",
+    });
+    // Same node id, same classes, same children — only the tag changes.
+    demoteInPlace(child, demoted);
+    return child;
   }
 
   adaptations.push({
@@ -322,6 +399,7 @@ function interpose(
     childTag: child.t,
     parentTag,
     container,
+    mode: "interpose",
   });
 
   return {
@@ -333,6 +411,28 @@ function interpose(
     p: { className: NESTING_CONTAINER_CLASS },
     c: [child],
   };
+}
+
+/** The nearest open <p> the parser would close for a block start tag (scope walk). */
+function openParagraph(chain: readonly RuntimeElementNode[]): RuntimeElementNode | undefined {
+  for (let i = chain.length - 1; i >= 0; i--) {
+    const current = chain[i]!;
+    if (current.t === "p") return current;
+    if (SCOPE_BOUNDARY.has(current.t)) return undefined;
+  }
+  return undefined;
+}
+
+/** Re-tag a node in place: same id, classes and children; marked for QA and humans. */
+function demoteInPlace(node: RuntimeElementNode, tag: string): void {
+  const props: Record<string, RuntimePropValue> = { ...(node.p ?? {}) };
+  props["data-wr-demoted"] = node.t;
+  if (props["href"] !== undefined) {
+    props["data-wr-href"] = props["href"];
+    delete props["href"];
+  }
+  node.t = tag;
+  node.p = props;
 }
 
 function refusal(

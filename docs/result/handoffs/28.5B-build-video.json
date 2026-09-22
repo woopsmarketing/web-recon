@@ -1,0 +1,82 @@
+{
+  "schema": "task285b-build-video-v1",
+  "producedAt": "2026-08-29T00:00:00Z",
+  "filesChanged": [
+    {
+      "path": "src/reconstruction/asset-resolver.ts",
+      "summary": "PRIMARY_IMAGE_KINDS (line ~25-37) gained 'video' between 'source' and 'video-poster', so a <video>'s own media asset (Observer kind 'video') is now eligible to become its src at all — it never was before. resolve()'s img/source/video branch (line ~167-201) now sets `unresolved` for 'img' | 'source' | 'video' (was 'img'-only), and adds a `videoContentUnresolved` check: when a <video>'s src ends up filled by a 'video-poster' asset (no 'video'-kind asset resolved), that is now counted as unresolved even though `src` still renders the poster URL — poster-as-fallback rendering is byte-for-byte unchanged, only its honesty accounting changed."
+    },
+    {
+      "path": "src/reconstruction/compile-node.ts",
+      "summary": "Asset block entry condition (line ~371) gained `|| tagName === \"video\"` so a <video> with zero of its own assetRefs is now evaluated at all (previously skipped entirely, silently, for that element). Added `videoHasNoOwnAssetAndNoSourceChild` (line ~392-401): a <video> with empty assetRefs is flagged unresolved ONLY when it also has no <source> child element — the one signal AssetResolver.resolve() cannot see on its own (sibling structure), needed so a genuinely broken <video> (no src, no children — the exact accepted root-cause shape) is caught, while the standard <video><source>...</video> pattern is not false-flagged at the parent."
+    }
+  ],
+  "counterDesign": {
+    "choice": "reused-existing-unresolvedElementAssets",
+    "rationale": "No schema change to src/reconstruction/types.ts was needed. `unresolvedElementAssets` (already required, non-optional in ManifestStatsSchema) already increments generically off `AssetResolver.resolve()`'s `result.unresolved` in compile-node.ts (line ~426-429, pre-existing wiring, untouched). Making the resolver report `unresolved: true` honestly for the video cases was sufficient to flow through to the manifest with zero schema/back-compat risk.",
+    "posterHandling": "Preserved exactly: a <video> with only a video-poster asset still gets that URL as its `src` (identical rendered output to before). The only change is that this substitution now also sets `unresolved: true`, so the manifest cannot report 0 while a video's real content never resolved."
+  },
+  "suite": {
+    "name": "scripts/smoke-video-honesty.ts",
+    "checks": 21,
+    "passed": 21,
+    "failed": 0
+  },
+  "validation": {
+    "tscOwnedFiles": "clean (npx tsc --noEmit -p . shows zero diagnostics in asset-resolver.ts, compile-node.ts, scripts/smoke-video-honesty.ts; one unrelated pre-existing error in src/reconstruction/generate-app.ts belongs to another concurrent builder's files, per instructions to ignore diagnostics outside ownership)"
+  },
+  "risks": [
+    "Extending the `unresolved` flag to tagName 'source' (not just 'img') also affects <picture><source> accounting, not only <video><source> — the two share the same tag name and asset kind ('source') and cannot be distinguished inside AssetResolver.resolve() without parent context. No existing smoke suite asserts unresolvedElementAssets or elementAssetsRequested counts (verified via grep across scripts/smoke-*.ts), so nothing measurable regressed, but a future <picture> fixture with a deliberately-broken <source> variant will now also increment unresolvedElementAssets where it previously did not — this is intentional (same honesty invariant applies) but is a behavior change worth flagging since the task said 'do not change image/source behaviour.'",
+    "A <video> with a poster-only fallback still renders an image URL as its <video src> (undecodable as video, matches the pre-existing symptom described in docs/result/handoffs/28.5-root-causes.json). This task only fixed the HONESTY of that case (now counted unresolved), not the RENDERED output — fixing the render (e.g. omitting src entirely, or introducing a real `poster` prop) was out of this task's scope (no new output props were added; not requested).",
+    "compile-node.ts's `elementAssetsRequested` counter now increments for every <video> element regardless of whether it carries assetRefs (previously only counted when assetRefs.length > 0). This is a diagnostic-only counter with no downstream assertions found in any smoke suite."
+  ],
+  "correction": {
+    "producedAt": "2026-08-29T00:00:00Z",
+    "by": "fresh correction agent (Task 28.5B Change 4 follow-up to 28.5B-verify-video.json)",
+    "gapsFixed": [
+      "GAP-A",
+      "GAP-B"
+    ],
+    "countingPointChoice": {
+      "choice": "the <source> element itself, never also the parent <video>",
+      "rationale": "A <source> exists for exactly one purpose - to supply media to its <picture>/<video> parent - so zero assetRefs (or zero resolvable ones) IS its failure, observable without any sibling context. Counting there needs no cross-element bookkeeping and keeps unresolvedElementAssets what it has always been: one increment per element whose media is genuinely lost. Counting at the parent instead would need the parent to inspect every child, and would either collapse N broken <source> children into 1 or double-count alongside the child. compile-node.ts therefore deliberately leaves a <video> uncounted whenever ANY <source> child exists, even a broken one - the child carries the count.",
+      "implementation": [
+        "src/reconstruction/asset-resolver.ts:196 - empty-assetRefs branch: unresolved = tagName === \"img\" || tagName === \"source\" (was img-only).",
+        "src/reconstruction/compile-node.ts:387 - asset block entry gained `|| tagName === \"source\"`, so a 0-assetRef <source> is evaluated at all (it was skipped entirely).",
+        "src/reconstruction/asset-resolver.ts:40,60 - SRCSET_KINDS extracted and MEDIA_ASSET_KINDS derived as PRIMARY_IMAGE_KINDS + SRCSET_KINDS, so the media-kind set cannot drift from what choosePrimary()/buildSrcSet() actually consume; buildSrcSet call site (line 255) now reuses SRCSET_KINDS instead of repeating the two literals.",
+        "src/reconstruction/asset-resolver.ts:85,180,248 - new ResolvedElementAssets.noOwnMediaAsset. Set when the element carried no assetRefs, and when a <video>`s refs resolved to assets of which NONE is a media kind (GAP-B); in the latter case resolve() returns early with unresolved:false, because only compile-node can see <source> children. Refs that resolve to nothing at all (dangling ids) have no kind to inspect and keep falling through to noSrcAtAll -> unresolved, unchanged.",
+        "src/reconstruction/compile-node.ts:431 - videoHasNoOwnAssetAndNoSourceChild replaced by videoMediaMissingAndNoSourceChild, keyed on resolved.noOwnMediaAsset instead of node.assetRefs.length === 0. This removes the asymmetry the verifier found: a <video> carrying only the background-image ref collect-assets.ts pushes onto every styled element previously escaped the guard AND was flagged by the resolver despite rendering fine from its <source> children."
+      ]
+    },
+    "outOfScope": {
+      "audio": "NOT extended to <audio> (2 corpus occurrences), per instruction. Recorded as a named known limitation in the MEDIA_ASSET_KINDS doc comment in asset-resolver.ts so the gap is not lost."
+    },
+    "suite": {
+      "name": "scripts/smoke-video-honesty.ts",
+      "checks": 36,
+      "passed": 36,
+      "failed": 0,
+      "added": "Section C, 15 new checks: GAP-A (source with 0 refs flagged; counted EXACTLY once at the child, parent uncounted; renders with no src) and GAP-B (video with only background-image/mask-image refs not flagged by the resolver, reports noOwnMediaAsset, not counted by compile-node, and really does render its media from the <source> child; the bg URL is never fabricated into the video src). Regressions held: img with 0 refs still flagged, non-media tags still not flagged, dangling refs still counted, img with only a background-image ref unchanged, and all 21 pre-existing checks pass unmodified."
+    },
+    "corpusDelta": {
+      "method": "tmp/wr285b/video-fix/corpus-delta.ts - the shipped resolver (after) vs an inline reimplementation of the pre-correction resolver (before), plus each version of compile-node.ts`s video guard, over every img/source/video node of every viewport of the latest linear.app (2026-08-25T20-30-27-653Z) and stripe.com (2026-08-17T21-38-01-773Z) site-spec.",
+      "nodes": {
+        "img": 1954,
+        "source": 174,
+        "video": 26
+      },
+      "result": "ZERO change: unresolved before=0 after=0 (delta 0), src diffs=0, srcSet diffs=0, for every tag on both sites.",
+      "explanation": "Neither gap`s shape occurs in the corpus, so the correction is inert on real data - measured, not assumed: <source> elements with 0 assetRefs = 0 on both sites, and <video> elements carrying only non-media refs = 0 on both sites. img/picture-source accounting and rendering are provably untouched.",
+      "videoZeroRefNote": "The 4 zero-assetRef <video> elements (linear.app p000006 n000065 and stripe.com p000011 n001575, each in both viewports) each DO have <source> children (3 and 1 respectively) whose own refs resolve, so they are correctly uncounted both before and after. This refines 28.5B-verify-video.json`s claim that those 4 had no <source> child and were newly counted - they are not, in the latest specs of these two sites."
+    },
+    "validation": {
+      "typecheck": "npx tsc --noEmit -p . -> zero diagnostics project-wide (concurrent builders` files were clean at this time too)."
+    },
+    "filesTouched": [
+      "src/reconstruction/asset-resolver.ts",
+      "src/reconstruction/compile-node.ts",
+      "scripts/smoke-video-honesty.ts"
+    ],
+    "gitOperations": "none"
+  }
+}

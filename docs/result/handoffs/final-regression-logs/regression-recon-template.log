@@ -1,0 +1,84 @@
+Already up to date
+Done in 165ms using pnpm v11.21.0
+$ tsx scripts/smoke-recon-template.ts
+
+== fixture SiteSpec → REAL reconstruction generator
+  PASS  exact app generated
+  PASS  data-wr-obs annotation present in exact app
+  PASS  dynamic template node ids present
+
+== template compile (no overrides)
+  PASS  §1 hero headline slot exists
+  PASS  §1 hero default value
+  PASS  §1 hero has desktop+mobile static bindings
+  PASS  §1 hero key is site-specific + role canonical
+  PASS  §1 line-count constraint recorded from geometry (64px / 32px = 2 lines)
+  PASS  §2 leading segment slot with raw trailing space
+  PASS  §2 nested <strong> segment is its own slot
+  PASS  §2 trailing segment slot with raw leading space
+  PASS  §2 trailing segment addressed as childIndex 2 / textSegment 1
+  PASS  §2 hero description role on first hero paragraph segment
+  PASS  §3 CTA label slot
+  PASS  §3 CTA href slot
+  PASS  §3 label and href share a group but are independent slots
+  PASS  §3 href classified internal
+  PASS  §4 footer text promoted to global
+  PASS  §4 global slot binds on both pages × both viewports
+  PASS  §4 footer role
+  PASS  §5 main content stays page-scoped (one slot per page)
+  PASS  §5 page slots carry pageId + route
+  PASS  §6 image slot exists
+  PASS  §6 image value is an object with src+alt+srcset
+  PASS  §6 image constraints: measured box + aspect ratio + object-fit
+  PASS  §6 image src/alt/srcset are separate bindings with fields
+  PASS  §7 aria-hidden text never became a slot
+  PASS  §7 aria-hidden anchor never became a slot
+  PASS  §7 exclusions counted with evidence
+  PASS  §10 dynamic-template-only slot exists (Pricing href)
+  PASS  §10 dynamic binding addressed by trigger + discoveryId + templateNodeId
+  PASS  §10 dynamic template text slot exists
+  PASS  §11 shared nav label slot spans static AND dynamic-template surfaces
+  PASS  §11 shared slot is global (identical header on all pages)
+  PASS  §11 shared slot binds 5 occurrences (2 pages × 2 viewports static + 1 dynamic)
+  PASS  §11 navigation role
+  PASS  compile validation: every binding resolves
+  PASS  compile validation: defaults are a no-op
+
+== determinism (same inputs + same run id → byte-identical artifact)
+  PASS  artifact files byte-identical across compiles
+
+== §8/§9 manual overrides (exclude / merge / rename / role / scope)
+  PASS  §8 excluded slot is gone
+  PASS  §9 merged slot holds both pages' bindings
+  PASS  §9 merge source slot is gone
+  PASS  §9 cross-page merge widened scope to global
+  PASS  rename override applied
+  PASS  role override applied
+  PASS  overrides recorded on slots
+  PASS  overridden compile still validates (defaults no-op)
+  PASS  §9 merge with differing defaults is refused
+
+== §12–§14 live half: parity, interactions, mutation, hydration
+  [qa:template] next build (/Users/woops/projects/web-recon/data/.smoke-recon-template-24542/reconstructions/fixture-run/app)
+  [qa:template] next build (/Users/woops/projects/web-recon/data/.smoke-recon-template-24542/recon-templates/fixture-a/app)
+  [qa:template] parity / @390
+  [qa:template] parity / @1440
+  [qa:template] parity /about @390
+  [qa:template] parity /about @1440
+  [qa:template] parity / @1920
+  [qa:template] parity / @2048
+  [qa:template] interactions / @1440
+  [qa:template] interactions / @390
+  [qa:template] mutation overlay → /Users/woops/projects/web-recon/data/.smoke-recon-template-24542/recon-templates/fixture-a/report/mutation-overlay.json
+  PASS  §12 parity pairs compared
+  PASS  §12 default parity: content + structure + geometry identical
+  PASS  interaction regression: trigger equivalent in template app
+  PASS  §13 mutation checks ran
+  PASS  §13 every mutated binding occurrence changed (incl. dynamic template)
+  PASS  §13 a dynamic-template occurrence was verified after mounting
+  PASS  §13 mutation left DOM structure unchanged
+  PASS  §13 mutation runtime clean
+  PASS  §14 hydration errors 0 across every capture
+  PASS  §14 runtime errors 0 across every capture
+
+58/58 checks passed

@@ -1,0 +1,1230 @@
+{
+ "schema": "task28-production-canary-v1",
+ "phase": "Task 28 Phase 11 — THE FULL LOCAL PRODUCTION CANARY",
+ "verdict": "CANARY PASS — all 13 gates measured 0 on the real production package; TEN honest NON-ZEROs (F1, F3-F11; F2 and F12 are defects that were FIXED) found and reported rather than papered over; one real integration defect found and FIXED generically; one data-destruction hazard in an existing suite found and FIXED. CORRECTED 2026-08-28 after an independent verifier returned FAIL on handoff traceability (not on the engineering): see corrections[] — four claims in the shipped document and one shipped suite check asserted more than the artifacts supported.",
+ "writtenBy": "builder (Phase 11), then CORRECTED by a fresh correction agent (Phase 11 correction, 2026-08-28) who did not write the original code. Every number below was re-measured from the artifact named beside it at the moment it was written; every number the correction touched was re-measured again by the correction agent.",
+ "howToReproduce": "bash tmp/wr28/suite-lock.sh npx tsx scripts/smoke-production-canary.ts  (46 checks, artifact-only, no browser, no server)",
+ "customer": {
+  "note": "A NEW, coherent, independent FICTIONAL business. Not Linear, not Stripe, and NOT Millwright (Phase 9/10's customer) reworded — different market, different modules, different proof facts, different conversion. A FRESH lineage was created rather than building on Millwright, so that Create Site → First Draft → Edit → Build could be proven end to end from one brief in this phase, on a project no earlier phase had touched.",
+  "workingName": "Switchyard",
+  "category": "AI workflow automation for freight brokerages and regional carriers",
+  "audience": "dispatch managers, operations directors and carrier-relations leads at brokerages and carriers moving 200 to 5,000 loads a week",
+  "positioning": "the dispatch workflow layer that keeps every load, carrier message and tracking update on one live lane plan",
+  "primaryConversion": "book a dispatch review",
+  "truthMode": "verified-only",
+  "facts": 47,
+  "briefFile": "docs/result/handoffs/28-intel/phase11-brief.json",
+  "siteId": "wr28-switchyard",
+  "siteKey": "linear.app/wr28-switchyard",
+  "projectDir": "data/linear.app/release-projects/wr28-switchyard",
+  "productionDomain": "switchyard-canary.example (reserved .example TLD — nothing here resolves in DNS)"
+ },
+ "templateLineage": {
+  "template": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z (linear.app-2026-08-25T21-53-26-980Z)",
+  "whyThisOne": "the SMALLEST accepted template that still exercises every required feature: 8 routes (vs stripe 20 / nextjs 40), 3,079 slots / 9,929 bindings, a real PageRegion compile (68 regions, 25 on the home page), 80 brand-carrying template hosts across 4 resolvable surfaces, and text / url / image / theme slots on every page. It is also the only linear lineage with a page-regions artifact, which route+region enablement needs.",
+  "pageRegions": "data/linear.app/page-regions/2026-08-26T16-14-07-901Z",
+  "noNewCrawl": "No source crawl was created. The template, the reconstruction and the page-regions compile are all pre-existing accepted artifacts and were read only.",
+  "templateUnmutated": true,
+  "templateUnmutatedEvidence": "createSite hashed the whole template directory before and after (dir-sha256-v1) and reported templateUnmutated=true; the project's acceptedLineage.template.hash is d1b6027dabc5d2d7041fbd62d550e88ecbf38489ac562a6e9c4c81ae886db288, unchanged across all 10 builds run in this phase."
+ },
+ "finalArtifacts": {
+  "stages": {
+   "reconstruction": "data/linear.app/reconstructions/2026-08-25T20-30-33-313Z",
+   "template": "/Users/woops/projects/web-recon/data/linear.app/recon-templates/2026-08-25T21-53-26-980Z",
+   "content": "data/linear.app/content-runs/2026-08-28T00-24-48-163Z",
+   "theme": "data/linear.app/theme-runs/2026-08-28T00-24-48-321Z",
+   "seo": "data/linear.app/production-seo-plans/2026-08-28T00-24-48-331Z",
+   "assets": "data/linear.app/asset-materializations/2026-08-28T00-17-55-627Z",
+   "production": "data/linear.app/production-specs/2026-08-28T00-24-48-338Z"
+  },
+  "productionBuild": "data/linear.app/production-builds/2026-08-28T00-24-48-338Z",
+  "releaseState": "PRODUCTION_READY",
+  "target": {
+   "mode": "indexable-production",
+   "productionBaseUrl": "switchyard-canary.example"
+  },
+  "specDecision": "indexable",
+  "specBlockers": 0,
+  "isolatedPackageQa": "70/70 checks, 0 failures, over 7 served routes",
+  "revisionsOnTheProject": 112,
+  "authored": {
+   "slotValues": 151,
+   "theme": 1,
+   "assets": 224,
+   "brand": 80,
+   "disabledRoutes": 1,
+   "disabledRegions": 1,
+   "updatedAt": "2026-08-28T00:35:29.112Z"
+  }
+ },
+ "journey": [
+  {
+   "step": "create Site",
+   "api": "POST /api/create-site (the Visual Editor's own endpoint, the same one its browser client calls)",
+   "evidence": "one brief -> 1491 slot values across 8 routes in 5868 ms; siteKey=linear.app/wr28-switchyard, reprepared=False, templateUnmutated=True, contentProvider=brief-writer, briefGaps=0, consistency={\"pass\": true, \"errors\": 0, \"warnings\": 0}. Evidence file tmp/wr28/p11/out/a-create.json."
+  },
+  {
+   "step": "generate full First Draft",
+   "api": "the same call — createSite runs content generation from the brief, then a production compile, then registers the project",
+   "evidence": "first draft covers all 8 routes: assigned=1491, unresolved=20 (4 external destinations + 16 fact-bearing value-shaped slots the writer REFUSED to invent under verified-only), firstDraftFile=data/linear.app/content-runs/2026-08-28T00-12-09-191Z/report/first-draft.json, releaseState=PRODUCTION_INPUTS_REQUIRED."
+  },
+  {
+   "step": "open Preview",
+   "api": "startVisualEditor({projectDir, previewDir}) — the same call src/cli-editor.ts makes; the editor serves the preview in an iframe on its own 127.0.0.1 origin",
+   "evidence": "editor + preview up and answering in 578 ms median over 5 reps; the real UI rendered with left rail, iframe#wr-frame, inspector tabs and 8 page rows (Chromium, tmp/wr28/p11/out/journey.json .previewOpened)."
+  },
+  {
+   "step": "select Home",
+   "api": "the editor's #wr-route picker, driven by a real Chromium",
+   "evidence": "iframe src became http://127.0.0.1:49510/; route switching measured separately at 667 ms median over 8 reps."
+  },
+  {
+   "step": "click Hero",
+   "api": "real mouse click inside the preview iframe -> the bridge posts {node,dynNode,dynTrigger,pageId,route,viewport} -> POST /api/resolve -> the Slot inspector",
+   "evidence": "4 clicks recorded (journey.json .clickHero). Clicking the PAINTED headline (n000084) and the <h1> itself (n000068) both resolve to `no slot binds this element`; the node that DOES bind home.main.hero.headline (n000089) is 1x1 and Playwright refuses to click it (`Element is outside of the viewport`); the hero paragraph (n000095) resolves cleanly to home.main.text.purpose-built-for-planning-and-b. See findings.F1 — this is the canary's most important discovery."
+  },
+  {
+   "step": "edit Hero headline",
+   "api": "POST /api/preview-value (keystroke, preview only) then POST /api/save (the transaction boundary)",
+   "evidence": "5 measured preview-only reps at 152 ms median; final value \"One live lane plan for every load you move\" saved as revision r001; visible in the served preview after 141 ms."
+  },
+  {
+   "step": "edit CTA label",
+   "api": "POST /api/preview-value + POST /api/save",
+   "evidence": "home.main.cta.new-loops.label.02 = \"Book a dispatch review →\", visible after 136 ms, saved with the href as revision r002."
+  },
+  {
+   "step": "edit CTA href",
+   "api": "POST /api/preview-value + POST /api/save (url slot)",
+   "evidence": "home.main.cta.new-loops.href = \"/book-a-dispatch-review\", visible as href=\"…\" in the served preview after 141 ms; 5 measured reps at 142 ms median. SEE findings.F4 — this internal href resolves to no route and ships as a 404."
+  },
+  {
+   "step": "replace one content image",
+   "api": "POST /api/asset {slotKey, file, alt} — resolves the slot's current src to an assetId on the accepted materialization, commits authored.assets and writes the operator's bytes into the preview's media override dir",
+   "evidence": "slot home.main.image.f-auto-fit-scale-down-metadata-none-widt -> assetId ai000021, served as /media/922674803bbd9b3ac8c3b097e34d101fd4bac349cbd953e58fb32df2092cb7cf.png; 5 reps with 5 DIFFERENT files, each verified by byte-comparing the served media against the file on disk, 2 ms median; final revision r007."
+  },
+  {
+   "step": "replace source logo / brand asset",
+   "api": "POST /api/brand {surfaceId, decision:'REPLACE', replacement:{file,text}}",
+   "evidence": "surface bs-svg-aria-label-90f356a7c27d (svg-aria-label, route /, desktop, node n000017 — the header logo mark, value \"Linear\") replaced by data/linear.app/wr28-p11-assets/switchyard-mark.svg as revision r008; decisionsRecorded 0 -> 1. The remaining 79 hosts were decided through the SAME endpoint in bulk (see bulkOperatorWork)."
+  },
+  {
+   "step": "change Theme",
+   "api": "POST /api/theme/preview (live, uncommitted) then POST /api/theme/save",
+   "evidence": "24 contract tokens offered; color.canvas / color.surface.primary / color.accent.primary set, 0 rejected, saved as revision r009; 5 measured preview reps at 419 ms median, each confirmed by fetching /wr/generated-styles.css until the new value appears."
+  },
+  {
+   "step": "disable one non-essential Region",
+   "api": "POST /api/region-enablement {regionId, enabled:false, route:'/', scope:'routes', routes:['/']}",
+   "evidence": "region p000001:rgn:main1:div:2>section:4 (335 elements / 73 slots / root n001626 desktop, n001574 mobile) disabled as revision r010; engine effect {\"blastRadius\": [\"/\"], \"slotKeys\": 73, \"nodes\": 2, \"disabledNodeCount\": 670, \"siblingRegionIds\": [], \"orphanedTargets\": 2}. The FIRST candidate the engine accepted swallowed the hero, so this driver put it back and kept looking — the refusals and rejections it walked through are recorded in journey.json .disableRegion.refusalsSeenBefore. OFF/ON measured 5 times each: 543 ms / 551 ms median."
+  },
+  {
+   "step": "disable one unnecessary Route",
+   "api": "POST /api/route-enablement {route:'/customers/automattic', enabled:false}",
+   "evidence": "accepted as revision r021 with 0 dead links and a nav cascade over 3 groups / 6 anchors; the preview answered 404 for it after 704 ms."
+  },
+  {
+   "step": "Save Revision",
+   "api": "POST /api/save is the transaction boundary — one commit, at most one revision; GET /api/revisions reads the chain",
+   "evidence": "the journey grew the chain from 22 to 23 revisions; the project now carries 112 revision files. Every editor write in this phase appended exactly one revision, and an identical re-write appended none (measured: a repeat save returned changed=false, revisionId=null)."
+  },
+  {
+   "step": "make another change",
+   "api": "POST /api/save on home.main.heading.a-new-species-of-product-tool",
+   "evidence": "value \"A change that is about to be undone\" visible in the served preview after 168 ms."
+  },
+  {
+   "step": "Undo / Restore",
+   "api": "POST /api/undo",
+   "evidence": "undone=true, restored r021 as r023 (restoredFrom=r021, remainingUndos=21); the undone value left the served preview after 182 ms. There is no Redo and the API says so in its own response (redoPolicy)."
+  },
+  {
+   "step": "verify the restored preview",
+   "api": "a real Chromium reload of the editor, plus a direct fetch of the served preview",
+   "evidence": "in the browser: hero visible=True, CTA visible=True, undone value visible=False; in the served bytes: {\"heroInServedHtml\": true, \"ctaLabelInServedHtml\": true, \"ctaHrefInServedHtml\": true, \"undoneValueInServedHtml\": false, \"disabledRouteStatus\": 404, \"servedHtmlBytes\": 2542734}. The undo restored the WHOLE authored state, so the disabled route was still 404 afterwards — proving undo did not silently re-enable it."
+  },
+  {
+   "step": "run QA",
+   "api": "GET /api/qa (the editor's QA panel) + the isolated-package QA the production stage runs",
+   "evidence": "editor QA panel at journey time: {\"total\": 203, \"unresolved\": 201, \"blocking\": 2, \"bySeverity\": {\"release-blocking\": 4, \"high-value\": 198, \"optional\": 1}} plus 3 named limitations and the assets layer's inherited-census warnings. Final isolated-package QA on the shipped build: 70/70, 0 failures."
+  },
+  {
+   "step": "generate production SEO",
+   "api": "the release orchestrator's seo stage, invalidated by the production-domain resolution",
+   "evidence": "production-seo-plan data/linear.app/production-seo-plans/2026-08-28T00-24-48-331Z in PRODUCTION mode: 7 routes (7 injected), 29 needs-input values, forbidden-copy PASS (49 comparisons), brand isolation PASS (129 strings vs 3 terms). Served output: per-route title/description/canonical/og:url/og:title/og:description/JSON-LD on switchyard-canary.example, an absolute sitemap.xml and an index,follow robots.txt."
+  },
+  {
+   "step": "execute the REAL assets stage",
+   "api": "the release orchestrator's assets stage (applyAssetResolutions over authored.assets + the pack's fontDecisions)",
+   "evidence": "data/linear.app/asset-materializations/2026-08-28T00-17-55-627Z: 224 of 239 replacement-manifest entries resolved to Switchyard files (89 distinct SVG marks + 135 distinct PNGs, all generated locally); the 15 audio/video entries were NOT resolved and are named in limitations. Both font families re-decided under THIS project (use-fallback-stack) rather than inheriting another project's decision."
+  },
+  {
+   "step": "build an independent production package",
+   "api": "npx tsx src/cli-release-build.ts data/linear.app/release-projects/wr28-switchyard (dry-run first, then the real build)",
+   "evidence": "data/linear.app/production-builds/2026-08-28T00-24-48-338Z — decision=indexable, blockers=0, releaseState=PRODUCTION_READY, QA 70/70, externalRequestsByHost={}."
+  }
+ ],
+ "bulkOperatorWork": {
+  "why": "The journey above performs ONE of each kind of edit. A production canary also has to finish the job, and every one of these went through the SAME editor endpoints.",
+  "twentyRefusedSlots": {
+   "endpoint": "POST /api/save (20 set-slot-value edits, one revision)",
+   "revisionId": "r024",
+   "note": "the 16 fact-bearing and 4 external-destination slots the writer refused to invent under verified-only. These are OPERATOR-SUPPLIED figures for a fictional business (prices, lane counts, customer-outcome multipliers) — see limitations.",
+   "values": {
+    "home.main.text.1-0": "2.0",
+    "home.main.text.by-romain-1-day-ago": "By Dana · 1 day ago",
+    "home.main.text.by-julian-3-hours-ago": "By Marcus · 3 hours ago",
+    "changelog.main.link.ios.href": "https://switchyard.example/apps/ios",
+    "changelog.main.link.android.href": "https://switchyard.example/apps/android",
+    "changelog.main.link.mcp-specification.href": "https://modelcontextprotocol.io/",
+    "customers.main.text.2-0x": "2.4x",
+    "customers.main.text.3-3x": "3.1x",
+    "customers.main.text.50": "38%",
+    "customers-automattic.main.cta.automattic-com.href": "https://northbend-logistics.example/",
+    "pricing.main.text.0": "$0",
+    "pricing.main.text.2-teams": "2 lanes",
+    "pricing.main.text.250-issues": "500 loads",
+    "pricing.main.text.10-per-user-month": "$45 per dispatcher/month",
+    "pricing.main.text.5-teams": "5 lanes",
+    "pricing.main.text.16-per-user-month": "$79 per dispatcher/month",
+    "security.main.text.soc-2-compliance": "SOC 2 Type II audit in progress",
+    "security.main.link.request-soc-2.label": "Request our security pack →",
+    "security.main.text.hipaa-compliance": "Carrier and driver data minimisation",
+    "security.main.text.iso-27001-certified": "ISO 27001 certified"
+   }
+  },
+  "eightyBrandDecisions": {
+   "endpoint": "POST /api/brand, once per host",
+   "recordedFirstPass": 64,
+   "refusedFirstPass": 16,
+   "refusalReason": "the 16 svg-symbol-id hosts were REFUSED with `brand decision REPLACE requires a replacement payload (replacement.text, replacement.assetId or replacement.file) — a REPLACE with nothing to ship is a gap, not a decision`, even though the resolver ignores the payload for that surface and only renames ids. Re-sent with a payload; all 80 now carry a decision.",
+   "recordedFinal": 80,
+   "allHostsAddressed": true,
+   "everyDecisionIsReplace": true,
+   "uiLimitation": "the editor's Brand panel caps rows at 25 PER SURFACE (it reported 104 rows of 267 with truncated=163), so an operator working only through the rendered list cannot reach all 48 svg-aria-label / 32 svg-symbol-id findings. The endpoint accepts any surfaceId, which is how the remaining hosts were decided here. Reported, not fixed."
+  },
+  "assets": {
+   "endpoint": "POST /api/save with 224 set-asset edits, one revision",
+   "revisionId": "r088",
+   "applied": 224,
+   "entries": 239,
+   "skipped": [
+    "ai000001",
+    "ai000419",
+    "ai000420",
+    "ai000421",
+    "ai000422",
+    "ai000423",
+    "ai000424",
+    "ai000425",
+    "ai000426",
+    "ai000427",
+    "ai000428",
+    "ai000429",
+    "ai000430",
+    "ai000431",
+    "ai000432"
+   ]
+  },
+  "brandPassOverTheCopy": {
+   "endpoint": "POST /api/save with 127 set-slot-value edits, one revision",
+   "revisionId": "r105",
+   "edited": 127,
+   "byEditability": {
+    "review": 120,
+    "editable": 7
+   },
+   "byType": {
+    "text": 117,
+    "url": 10
+   },
+   "why": "the FIRST BUILD of this canary shipped a package whose visible body text said \"Linear\" 302 times across 5 of 7 routes — measured, not assumed, by re-deriving the census from the served files. The operator rewrote those 127 values (a brand substitution over the source's own sentences, not newly composed marketing copy — see limitations) and the census went 302 -> 2 -> 0.",
+   "lastOne": "one slot (changelog.main.text.linear-app-review-owner-repo-pul) survived the first pass because its SOURCE default embeds angle-bracket placeholders (`<owner>`), which the content validator's html-injection guard refuses outright — so the only writable value for it is one with no angle brackets at all."
+  }
+ },
+ "gates": [
+  {
+   "gate": "enabled customer-facing Slot unresolved count",
+   "measured": 0,
+   "source": "data/linear.app/content-runs/2026-08-28T00-24-48-163Z/slot-accounting.json totals.byDisposition.unresolved=0 AND generation-result.json unresolved=[] (0). Disabled surfaces are accounted SEPARATELY and are not hidden: disabled-route=100, disabled-region=72. The account reconciles over the whole 3,079-slot template (templateCoverage.complete=true, unaccountedSlotKeys=[])."
+  },
+  {
+   "gate": "source-brand release blockers",
+   "measured": 0,
+   "source": "requirements.json: 0 release-blocking unresolved requirements of kind brand-leak. The 6 brand-leak requirements that exist are high-value by SEVERITY_POLICY and were NOT re-priced to reach this zero."
+  },
+  {
+   "gate": "source-brand-asset blockers",
+   "measured": 0,
+   "source": "requirements.json source-brand-inline-svg status=resolved, statusNote starts `cleared by MEASURED OUTPUT` — the build's own bake report shows 74 brand-carrying hosts before, 74 replaced, 0 removed, 0 preserved, 0 refused, 0 unexplained after, and both the served and post-hydration censuses are 0. NOT cleared by a PRESERVE (which would have landed as accepted-limitation and still counted). The bake report also records 6 `unknownIds` — the brand decisions for /customers/automattic, whose hosts left the scan with the disabled route. They address no host any more and are reported rather than silently dropped.",
+   "bakeReport": "data/linear.app/production-builds/2026-08-28T00-24-48-338Z/report/bake-report.json .brand.bake: hostsBefore=74 (svg-aria-label 44, svg-symbol-id 14, image-alt 14, aria-label 2), decisions replace=74/remove=0/preserve=0/undecided=0, applied replaced=74 refused=0 nodesRewritten=74 pagesRewritten=7 symbolIdsRenamed=28, refusals=[], residual hostsAfter=0 preservedAfter=0 unexplainedAfter=[]"
+  },
+  {
+   "gate": "dead internal-link blockers",
+   "measured": 0,
+   "source": "0 release-blocking dead-internal-link requirements, and 0 of the served package's 178 distinct broken internal destinations is the disabled route. The package's SITE-WIDE broken-link total is 1038 and is reported as findings.F4 rather than folded into this gate."
+  },
+  {
+   "gate": "disabled route exported",
+   "measured": 0,
+   "source": "0 files in the package are named for /customers/automattic and 0 package files contain the string \"automattic\" at all, CASE-INSENSITIVELY (whole-package byte scan, RSC flight .txt files included).",
+   "correctionNote": "verifier finding V7: the content probe was case-SENSITIVE on the lowercase slug and is lowercase-folded now. Re-measured after the fold: still 0. Failure proof 6 shows the gap it closes — a page containing \"How Automattic migrated\" read 0 before the fold."
+  },
+  {
+   "gate": "disabled route in sitemap",
+   "measured": 0,
+   "source": "site/sitemap.xml carries 7 <url> entries on switchyard-canary.example and 0 occurrences of the disabled route.",
+   "correctionNote": "verifier finding V7: the sitemap probe is /automattic/gi now. Re-measured: still 0, over 7 <url> entries."
+  },
+  {
+   "gate": "disabled Region visible",
+   "measured": 0,
+   "source": "root node n001626 appears 0x inside the desktop viewport subtree of the served home page and n001574 0x inside its mobile subtree; 0 of the 7 text values UNIQUELY owned by that region still appear anywhere in index.html. Both probes were narrowed after a first draft measured 32 with unsound ones — data-wr-node ids are per PAGE and are reused between viewports, and the brief writer legitimately repeats a sentence across slots."
+  },
+  {
+   "gate": "source production canonical occurrences",
+   "measured": 0,
+   "source": "0 canonical or og:url values across all 9 served HTML files name the source host; 0 occurrences of the source host in sitemap.xml."
+  },
+  {
+   "gate": "source logo visible",
+   "measured": 0,
+   "source": "report/qa.json brandSurfaceCensus and brandSurfaceCensusHydrated are 0 on EVERY axis (source-url, body-anchor, visible-text, image-alt, aria-label, svg-aria-label, svg-symbol-id, svg-text) over 7/7 routes, with 0 hydration divergence. The visible-text axis was independently RE-DERIVED from the served files by the suite and agrees at 0."
+  },
+  {
+   "gate": "authored visual-editor values missing from output",
+   "measured": 0,
+   "source": "149 authored string values on enabled surfaces checked against the served package; a PAGE slot must be present in its OWN route's HTML and a GLOBAL slot in at least one served page. There is deliberately no `anywhere in the package` fallback — the first draft of this check had one, and a failure injection that deleted the authored CTA label from index.html still PASSED because the string survived in another route."
+  },
+  {
+   "gate": "runtime errors",
+   "measured": 0,
+   "source": "report/qa.json routeCensus[].jsErrors summed over 7 routes, measured by the QA run's own Chromium against the isolated package.",
+   "verifierCaveat": "the independent verifier re-measured this itself in a real Chromium against an isolated copy (0 console errors, 0 pageerror events, 0 hydration errors over 7 routes) and reported one thing this gate's definition does NOT count: /plan emits 2 net::ERR_ABORTED `requestfailed` events for a cancelled .mp4 range request. Recorded here so the gate's scope is explicit rather than assumed."
+  },
+  {
+   "gate": "hydration errors",
+   "measured": 0,
+   "source": "report/qa.json routeCensus[].hydrationErrors summed over 7 routes (the QA console filter matches /hydrat|minified react error #(418|423|425)/)."
+  },
+  {
+   "gate": "production package runtime dependency on data/<host>/ research runs",
+   "measured": 0,
+   "source": "every file in the package scanned for the string `data/linear.app/` and for this repo's absolute path: 0 hits. The package is server.mjs + site/ + RUN.md + deploy-manifest.json, and its QA runs it from an isolated directory OUTSIDE the repo."
+  }
+ ],
+ "findings": [
+  {
+   "id": "F1",
+   "severity": "HIGH — the single most important finding of this canary",
+   "title": "The customer-visible hero headline is not reachable from the Visual Editor on this template",
+   "measured": "On the served home page's visible text, the SOURCE sentence \"The product development system for teams and agents\" appears 4 times (two painted layers x two viewports) and the operator's authored value appears 2 times (the 1x1 accessible copy, once per viewport).",
+   "mechanism": "home.main.hero.headline has exactly TWO bindings, both on node n000089, which computes to 1x1 px (a screen-reader copy). The sentence a visitor reads is painted by n000084 + n000087 inside an aria-hidden wrapper, and by a per-word split (n000070/74/78/82) — none of which carries any slot binding. Measured live in Chromium: n000089 w=1 h=1; n000084 w=703 h=64; n000087 w=784 h=64. Clicking either painted span in the editor returns `no slot binds this element`; the node that DOES bind cannot be clicked at all (`Element is outside of the viewport`).",
+   "whyTheTwinCoBinderMissedIt": "the template's paint-twin co-binder produced 4 paint-twin bindings on this whole lineage (manifest counts.paintTwinBindings=4 of 9,929) — it co-binds a twin whose TEXT matches, and the painted headline is split across two spans so no single node's text equals the sentence.",
+   "consequence": "a gate reading `authored visual-editor values missing from output = 0` is TRUE and simultaneously the visitor still reads the source's headline. That is exactly the shape of a manufactured zero, which is why it is asserted with its real number in the suite (28.P11.11) instead of being mentioned in prose.",
+   "notFixedBecause": "the Recon Template is IMMUTABLE and Exact Reconstruction is FROZEN by this task's contract; fixing it means changing the Slot V2 compiler's twin co-binding and recompiling the template, which is out of this phase's ownership.",
+   "suggestedOwner": "Slot V2 / twin-binding (src/recon-template/twin-binding.ts) — co-bind a CONTIGUOUS RUN of sibling text nodes whose concatenation matches a bound node's text, not just a single node."
+  },
+  {
+   "id": "F2",
+   "severity": "MEDIUM",
+   "title": "A release BUILD refused every Visual Editor edit on a review-flagged slot — FOUND AND FIXED",
+   "measured": "The first real `release:build` of this canary FAILED at the content stage with 3 `review-slot-not-writable` errors — home.main.hero.headline, home.main.cta.new-loops.label.02, home.main.cta.new-loops.href — the exact three edits the journey had just made and the editor had previewed happily. With the whole operator brand pass in place the same defect reproduces at 124 errors (failure-injection proof #4).",
+   "rootCause": "`prepareContentRun` was called by the content stage runner without any review opt-in, so `buildContentUnits` left every review-flagged slot out of the units, and `validateGenerationResult` correctly rejected values written for keys outside the units. §11 says a review slot is never AUTO-written; it does not say an operator cannot decide one, and the Visual Editor exists for exactly that.",
+   "fix": "a PER-KEY opt-in. `buildContentUnits` takes `operatorReviewSlotKeys`; `prepareContentRun` narrows the caller's list to review slots that are actually in scope for the run and RECORDS it on the run manifest (`operatorReviewSlotKeys`); the content stage runner derives it from authored.slotValues ∪ routeContent ∪ urls. The blanket `includeReview` flag stays OFF, so nothing widens beyond the named keys, and a key that leaves the scope with a disabled route is excluded.",
+   "whyNotIncludeReview:true": "that would pull all 1,493 review-flagged slots on this template into generation scope and change what every future generator may write. Measured on this canary: 124 keys opted in, includeReview still false.",
+   "invariantPreserved": "an opted-in key moves from `reviewSlotKeys` into `units`; `inScopeSlotKeys()` is their UNION, so the accounting denominator is unchanged — re-measured: inScopeSlots=3,079, reconciled=true, templateCoverage.complete=true.",
+   "filesChanged": [
+    "src/content-injection/units.ts",
+    "src/content-injection/packet.ts",
+    "src/content-injection/types.ts",
+    "src/release/stages.ts"
+   ]
+  },
+  {
+   "id": "F3",
+   "severity": "MEDIUM",
+   "title": "\"Unresolved = 0\" does not mean \"nothing is the source's\"",
+   "measured": "1,287 enabled text slots serve their SOURCE default VERBATIM in the shipped package — 1,024 review-flagged and never written, 263 editable and identical by choice — out of the template's 2,441 text slots. 661 of those 1,287 (601 review / 60 editable) survive two filters: value length >= 8 characters (drops 594) AND the value must appear in that route's own visible text (drops 32). BOTH numbers are asserted.",
+   "note": "Many are legitimately generic for any B2B SaaS (\"Resources\", \"Customers\", \"Security\", \"Features\"). Many are not — /changelog and /integrations ship the source site's own release notes and integration blurbs with the brand name substituted. The accounting names them honestly: preserved=576, human-required=1,296.",
+   "asserted": "28.P11.13 (filtered 661, with both filters named in the detail line) and 28.P11.25 (unfiltered 1,287).",
+   "supersededText": "661 of the template's 2,441 text slots still serve their SOURCE default VERBATIM in the shipped package (601 review-flagged and never written, 60 editable and identical by choice), spread over global chrome (14) and every enabled route (/ 74, /changelog 301, /customers 113, /integrations 83, /pricing 59, /plan 13, /security 4).",
+   "supersededWhy": "the 661 was FILTERED and the sentence did not say so (verifier finding V2, NO SILENT CAPS).",
+   "theFiltersAreNamed": "the length filter drops 282 distinct short source values, and they are NOT noise: they are the source product-UI mock that dominates the home page below the hero — 'Inbox', 'My issues', 'Reviews', 'Pulse', 'Initiatives', 'Projects', 'Favorites', 'Agent tasks', 'UI Refresh' — plus the whole global nav ('Product', 'Pricing', 'Docs', 'Log in', 'Sign up').",
+   "spread": "the filtered 661 spread over global chrome (14) and every enabled route (/ 74, /changelog 301, /customers 113, /integrations 83, /pricing 59, /plan 13, /security 4)."
+  },
+  {
+   "id": "F4",
+   "severity": "MEDIUM",
+   "title": "1,038 internal anchors in the shipped package resolve to no route — and the journey's own CTA is one of them",
+   "measured": "the served package's site-wide link audit: 1424 anchors over 7 routes, 1038 broken, 178 distinct destinations with no page (/about, /agents, /blog, /careers, /docs/*, /changelog/2026-*, …). None of them is the disabled route.",
+   "mostlyInherent": "the template is an 8-route slice of a much larger source site, so its nav and body links point at pages that were never reconstructed. That is a product-level gap (a shipped site with 1,038 dead links), not a regression.",
+   "selfInflictedPart": "the operator typed `/book-a-dispatch-review` into the Visual Editor's URL field for the hero CTA. The editor accepted it, the content validator raised `broken-internal-route` as a WARNING, no requirement was collected, nothing blocked the build, and the primary conversion link now 404s. It was deliberately LEFT IN so the gap is visible and asserted (28.P11.15) rather than quietly corrected.",
+   "suggestedOwner": "the editor's url inspector (warn in the UI at type time) and/or a `dead-internal-link`-style requirement for internal hrefs with no route."
+  },
+  {
+   "id": "F5",
+   "severity": "MEDIUM (raised from LOW-MEDIUM: one of the four is customer-reachable and carries the brand word into a live link)",
+   "title": "FOUR source-brand surfaces still ship that no detector and no census can see — two of them invisible to this suite's own first scanner",
+   "measured": "A full classification of every occurrence of the brand word in the whole package, scanned with NO word boundary: 1,809 occurrences total (the boundary form saw only 697). 1,745 are svg/css gradient and animation-timing vocabulary (<linearGradient>, paint0_linear_…, timing-function:linear — not the brand). 7 are the source host in provenance metadata. 30 are the CSS custom-property NAME --color-linear-security. 0 are unclassified. The remaining 27 are the four real surfaces below.",
+   "placeholder": "`attribute-value-text` is DECLARED not owned (src/production/brand-bake.ts SURFACES_NOT_RESOLVED) and no census axis counts it. It is also bound to no slot, so there is no operator write path for it at all.",
+   "serializedAlt": "NEW FINDING. This alt is not an element `alt` prop, so scanAppBrandHosts' image-alt surface never sees it; it is not slot-bound, so no editor write reaches it; and it is escaped inside another attribute, so the served-HTML census's IMG_ALT regex does not match it either. It ships.",
+   "asserted": "28.P11.17, 28.P11.18 (F5a), 28.P11.19 (F5c), 28.P11.20 (rewritten), 28.P11.26 (F5b), 28.P11.27 (F5d), 28.P11.28.",
+   "measuredExact": {
+    "svg/css gradient + animation-timing vocabulary": 1745,
+    "source host in provenance metadata (RUN.md 3, deploy-manifest.json 3, theme-overlay.css 1)": 7,
+    "CSS custom-property NAME (--color-linear-security)": 30,
+    "placeholder attribute value": 10,
+    "image alt inside a serialized props string": 5,
+    "source brand inside an EDITABLE url slot's query string": 10,
+    "source video-project path in a shipped .mp4's XMP metadata": 2,
+    "unclassified": 0,
+    "wideTotal": 1809,
+    "narrowBoundaryTotal": 697
+   },
+   "note": "Re-derived at write time with the suite's own WIDE classifier over every file in the package; the totals above are that run's output, not a recollection.",
+   "supersededTitle": "Two source-brand surfaces no detector and no census can see — one of them NEW",
+   "supersededMeasured": "A full classification of every occurrence of the brand word in the whole package: 645 css/svg gradient + timing-function vocabulary (linear-gradient, paint0_linear_…, animation-timing-function:linear — not the brand), 7 source-host mentions in provenance metadata, 30 occurrences of the CSS custom-property NAME --color-linear-security, 10 `placeholder=\"Tell Linear what to do next…\"` (2 of them in served HTML), 5 of an image ALT `\"A blueprint image of the overview page of a project in Linear\"` on /plan, 0 unclassified.",
+   "supersededMeasuredExact": {
+    "css/svg gradient + timing-function vocabulary": 645,
+    "source host in provenance metadata": 7,
+    "placeholder attribute value": 10,
+    "CSS custom-property NAME (--color-linear-security)": 30,
+    "image alt inside a serialized props string": 5,
+    "unclassified": 0
+   },
+   "supersededWhy": "'TWO surfaces' and 'A full classification … 0 unclassified' were both produced by a word-boundary regex that could not see 12 of the occurrences it claimed to classify (verifier finding V1).",
+   "surfaces": [
+    {
+     "id": "F5a",
+     "what": "placeholder=\"Tell Linear what to do next…\"",
+     "occurrences": 10,
+     "inServedHtml": 2,
+     "ownership": "`attribute-value-text` is DECLARED not owned (src/production/brand-bake.ts SURFACES_NOT_RESOLVED) and no census axis counts it. It is bound to no slot, so there is NO operator write path at all."
+    },
+    {
+     "id": "F5b",
+     "what": "the /security 'Email against' anchor ships href=\"/contact/sales?message=…Business%20Associate%20Agreement%20(BAA)%20with%20Linear.\"",
+     "occurrences": 10,
+     "inServedHtml": "4 in site/security.html, 2 in site/security.txt, 4 in the route's RSC flight files",
+     "newInThisCorrection": true,
+     "ownership": "an operator write path EXISTS — it is slot `security.main.link.request-baa.href`, type=url, editability=editable. What is missing is DETECTION: no brand detector reads url-slot query strings, the census axes are host- and text-shaped (bodyAnchorIdentity matches the source HOST only), the served-HTML visible-text axis cannot see inside an href, and the operator's own 127-value brand pass scanned text slots only. This corrects the verifier, which called it a third UNOWNED surface.",
+     "alsoBroken": "it is simultaneously a dead internal link: its target /contact/sales is one of the 178 broken destinations in F4, and the anchor is live in the post-hydration DOM.",
+     "customerVisible": "clicking it opens a sales contact form pre-filled with '…Business Associate Agreement (BAA) with Linear.'",
+     "fix": "one POST /api/save on security.main.link.request-baa.href, then release:build. Deliberately NOT done — see corrections.whatWasDeliberatelyNotFixed."
+    },
+    {
+     "id": "F5c",
+     "what": "an image ALT \"A blueprint image of the overview page of a project in Linear\" on /plan, inside a serialized props string",
+     "occurrences": 5,
+     "ownership": "not an element `alt` prop (scanAppBrandHosts' image-alt surface never sees it), not slot-bound (no editor write reaches it), and escaped inside another attribute (the served-HTML census's IMG_ALT regex does not match it)."
+    },
+    {
+     "id": "F5d",
+     "what": "/Volumes/LinearBoom1/LinearBoom/01_PROJECTS/01_PROJECTSSE_BOOM_260625.prproj — the source's own video-editing project path in the XMP metadata of site/media/c0da5af8f44d….mp4",
+     "occurrences": 2,
+     "newInThisCorrection": true,
+     "ownership": "no detector, census or QA axis reads binary media metadata. The file is one of the 15 source-owned videos that ship unreplaced (F10), and nothing in the package even references it."
+    }
+   ]
+  },
+  {
+   "id": "F6",
+   "severity": "LOW",
+   "title": "The package's own deploy-manifest still claims residual source hosts that this build does not request",
+   "measured": "package/deploy-manifest.json lists `linear.app` and `webassets.linear.app` as residual hosts and RUN.md repeats it in prose, while the build's measured network census is externalRequestsByHost={} and externalRequestTotal=0.",
+   "cause": "applyAssetResolutions COPIES report/network-qa.json forward from the base materialization and records the census as inherited (it says so in report/derivation.json, and the editor's QA panel surfaced the corresponding warnings). Not fixed here — assets-layer ownership."
+  },
+  {
+   "id": "F7",
+   "severity": "LOW",
+   "title": "161 of 203 requirements read `not-applicable` rather than `resolved`",
+   "measured": "requirements.json: release-blocking/resolved=4, high-value/unresolved=37, high-value/not-applicable=161, optional/unresolved=1.",
+   "cause": "the 155 replacement-image requirements stopped being COLLECTED once authored.assets provided every entry, so mergeRequirements carried them forward as `not-applicable — no longer detected in current artifacts`. The status is defensible (artifact truth beats bookkeeping) but reads as \"never applied\" rather than \"the operator fixed it\". Reported, not changed."
+  },
+  {
+   "id": "F8",
+   "severity": "HIGH — the shipped, indexable /pricing page contradicts itself about price",
+   "title": "Six authored values ship BESIDE the source value they were meant to replace — F1's mechanism, on a second page",
+   "measured": "Of the 134 enabled text slots the operator actually wrote, 6 still have their SOURCE default in the same route's visible text: home.main.hero.headline ('The product development system for teams and agents'), pricing.main.text.2-teams ('2 teams'), pricing.main.text.250-issues ('250 issues'), pricing.main.text.10-per-user-month ('$10 per user/month'), pricing.main.text.5-teams ('5 teams'), pricing.main.text.16-per-user-month ('$16 per user/month').",
+   "consequence": "on the shipped site/pricing.html, '$45 per dispatcher/month' is IMMEDIATELY followed by '$10 per user/month' and '$79 per dispatcher/month' by '$16 per user/month' — each pair twice, one per viewport — beside '2 lanes' next to '2 teams' and '500 loads' next to '250 issues', over a feature table that is still the source's ('Issues, projects, cycles, initiatives', 'Sub-teams', 'Private teams', 'Microsoft Teams integration'). A package declared PRODUCTION_READY / indexable / 0 blockers ships a self-contradicting price list.",
+   "cause": "the same paint-twin gap as F1: `pricing.main.text.10-per-user-month` records constraints desktop 1x1 / mobile 1x1 — the slot binds the screen-reader copy, and the figure a visitor reads is painted by an unbound node. 481 of the 2,301 enabled text slots bind ONLY a 1x1 node; the operator wrote 30 of them.",
+   "whyItIsNotF3": "F3 is 'the operator never wrote this slot'. Here the operator wrote it through the real API and the write landed — in the copy nobody can see.",
+   "owner": "same as F1: src/recon-template/twin-binding.ts (co-bind a contiguous run of siblings whose concatenation matches). NOT fixed: the Recon Template is IMMUTABLE and Exact Reconstruction is FROZEN by contract.",
+   "asserted": "28.P11.29, with all six keys and the measured adjacency.",
+   "foundBy": "the independent verifier (V3); measured and generalized by the correction agent."
+  },
+  {
+   "id": "F9",
+   "severity": "MEDIUM",
+   "title": "All 7 indexable routes of the CANARY PACKAGE ship the IDENTICAL <title>. The package was baked BEFORE the Phase-10 title-uniqueness detectors existed, so nothing measured uniqueness at the time it was built.",
+   "measured": "7 routes, 1 distinct <title>: 'Switchyard | AI workflow automation for freight brokerages and regional carriers'. deploy-manifest.json repeats the same expectedTitle 7 times. Descriptions DO differ (7 distinct), but two are degraded fragments: 'One plan for decision next.' and 'One plan for actual freight.'",
+   "whyNothingCaughtIt": "AT THE TIME THIS PACKAGE WAS BAKED: the production SEO plan reported knownTitles=7 / needsInputTitles=0, and its two checks (forbiddenCopy 49 comparisons, brandIsolation 129 strings vs 3 terms) are not uniqueness checks; the build's QA asserts each page's title MATCHES the manifest, which it does — identically, 7 times. CORRECTED SCOPE: the original wording claimed no uniqueness check existed ANYWHERE in the program. That was false when written. Phase 10's correction had already landed checkTitleUniqueness (src/seo/production-plan.ts:520, wired at src/seo/run.ts:134 into every plan manifest) and 'title-uniqueness-measured' (src/production/qa.ts:731, measured on the served bytes of every package) twelve minutes before this handoff was written.",
+   "correctsTheHandoff": "the shipped text 'per-route title/description/canonical/og:url' reads as 'distinct per route'. Canonicals and og:urls ARE per-route; titles are not.",
+   "owner": "Already built — do not re-implement. checkTitleUniqueness (src/seo/production-plan.ts:520) and title-uniqueness-measured (src/production/qa.ts:731). What remains is to REBAKE this canary package so the detectors run against it.",
+   "asserted": "28.P11.30.",
+   "foundBy": "the independent verifier (V4)."
+  },
+  {
+   "id": "F10",
+   "severity": "MEDIUM",
+   "title": "The 'independent' package is network-independent but not content-independent: 189 MB of source-owned video ships, and 195 MB of the media tree is referenced by nothing",
+   "measured": "380 served media files, 200.2 MB. 15 of them are the SOURCE site's own audio/video (13 mp4, 1 webm, 1 mp3) at 189.1 MB — 94% of the media tree — because applyAssetResolutions accepts image extensions only and left those 15 replacement-manifest entries `awaiting-input`. Separately, 169 of the 380 files (195.2 MB) are named by no HTML, RSC payload, stylesheet or manifest in the package: 141 that were never in the replacement manifest at all (10.9 MB — 46 .avif, 86 .svg, 8 .png, 1 .jpg), 12 source audio/video (184.3 MB), and 16 operator replacement files (0.0 MB) the enabled routes never use.",
+   "method": "referenced = the file's BASENAME appears in some non-media package file. Deliberately format-agnostic: a '/media/<name>' path regex would have returned a smaller, flattering number.",
+   "correctsTheVerifier": "V5 reported 47 unreferenced files, counting only .avif/.jpg. The real figure is 169, and the heavy part of it is source-owned video.",
+   "alsoMeasured": "208 of the 224 operator-provided replacements ARE referenced in the shipped package.",
+   "consequence": "'every asset was decided' is a statement about the 239-entry manifest, not about the 380 files the package serves; and one of the unreplaced videos carries the source's project path in its metadata (F5d).",
+   "owner": "the assets layer (applyAssetResolutions): audio/video resolution, and a prune of media nothing references.",
+   "asserted": "28.P11.31, 28.P11.32.",
+   "foundBy": "the independent verifier (V5); re-measured and corrected by the correction agent."
+  },
+  {
+   "id": "F11",
+   "severity": "LOW",
+   "title": "acceptedLineage is a prepare-time record, and 5 of its 7 refs are older than what shipped",
+   "measured": "content 2026-08-28T00-12-09-191Z vs stage …00-24-48-163Z; theme 2026-08-27T23-36-27-552Z vs …00-24-48-321Z; seo 2026-08-27T23-41-30-519Z vs …00-24-48-331Z; assets 2026-08-27T23-36-27-572Z vs …00-17-55-627Z; production spec 2026-08-28T00-12-09-346Z vs …00-24-48-338Z. stageStatus points at the shipped artifacts correctly in all five cases.",
+   "whyItIsNotABug": "ReleaseProjectSchema documents acceptedLineage as 'The accepted production candidate — immutable record (spec §4)', written once by prepare.ts. It is not supposed to track reruns. This corrects the verifier's framing of it as a defect.",
+   "whyItStillMatters": "anything that reads acceptedLineage as 'the lineage that shipped' is wrong, and the divergence grows with every rerun. Asserted so it cannot grow unnoticed.",
+   "asserted": "28.P11.33.",
+   "foundBy": "the independent verifier (V8)."
+  },
+  {
+   "id": "F12",
+   "severity": "MEDIUM — data destruction, FIXED IN CODE by this correction",
+   "title": "scripts/smoke-first-draft.ts blind-deleted a fixed release-project path and destroyed a shipped evidence project",
+   "measured": "the suite pins NEW_SITE_ID='millwright' (createSite derives it from the brief's working name) and rm -rf'd data/linear.app/release-projects/millwright at startup. Phase 11's own regression run did exactly that at 2026-08-28 09:40; Phase 9/10's evidence project came back with a revision chain of r000 only. (Phase 9's content run 2026-08-27T22-45-22-289Z survived — the project state did not.)",
+   "fix": "the suite now writes .wr28-first-draft-fixture into the project it creates and DELETES only a project carrying that marker; anything else is MOVED to data/<host>/suite-fixture-backups/<id>-<timestamp>, outside release-projects/ so the registry never sees the copy. The clean-slate guarantee is unchanged.",
+   "proof": "re-run through the mutex: 'NOTE … millwright was NOT created by this suite (no .wr28-first-draft-fixture); preserved at data/linear.app/suite-fixture-backups/millwright-2026-08-28T01-37-21-891Z instead of deleted'; 34 checks, 0 failures. smoke:registry 35/35 and smoke:revision 36/36 confirm the marker file and the new backups directory disturb nothing (both enumerators filter dot-files / r### directories).",
+   "stillOpen": "scripts/smoke-release.ts still rm -rf's a FIXED fixture path at startup and in its finally block. Not fixed here; carried forward as the last known instance of this hazard.",
+   "foundBy": "the independent verifier (V6)."
+  }
+ ],
+ "measurements": [
+  {
+   "metric": "editor initial startup (open project -> /api/bootstrap answered -> preview home page served)",
+   "reps": 5,
+   "medianMs": 578,
+   "maxMs": 685,
+   "samples": [
+    685,
+    578,
+    578,
+    563,
+    581
+   ],
+   "method": "5 full startVisualEditor()/stop() cycles in one process, each timed from before the call to after a real /api/bootstrap response AND a real fetch of the preview's home page. INCLUDES site load, preview start, enablement sync and HTTP server bind. The preview WORKSPACE was already materialized (materialized=false on every rep) — a cold materialize is NOT included and is measured in Phase 3's own suite."
+  },
+  {
+   "metric": "preview startup (inside the above)",
+   "reps": 5,
+   "medianMs": 316,
+   "maxMs": 325,
+   "samples": [
+    323,
+    316,
+    313,
+    315,
+    325
+   ],
+   "method": "session.previewStartMs reported by startAuthoringPreview on each of the same 5 reps"
+  },
+  {
+   "metric": "click -> Slot inspector",
+   "reps": 8,
+   "medianMs": 16,
+   "maxMs": 44,
+   "samples": [
+    44,
+    15,
+    16,
+    17,
+    16,
+    16,
+    17,
+    16
+   ],
+   "method": "real Chromium on the real editor UI, alternating between TWO different slot-bound nodes (n000095 and n000089) and waiting until the inspector panel names that slot key. The click is DISPATCHED rather than a real pointer press, because both bound nodes are unhittable by a mouse (n000089 is 1x1 and off-viewport, per finding F1). Four REAL mouse clicks were performed separately and are recorded in journey.json .clickHero. A first version of this measurement waited for the panel TEXT to change and returned -1 on one rep (two consecutive unbound clicks render the same panel), so it was discarded rather than reported."
+  },
+  {
+   "metric": "text edit visible in the preview",
+   "reps": 5,
+   "medianMs": 152,
+   "maxMs": 177,
+   "samples": [
+    177,
+    152,
+    153,
+    144,
+    140
+   ],
+   "method": "POST /api/preview-value with a distinct value, then poll GET <preview>/ until the value is in the served HTML. Includes the epoch write and the worker's re-render."
+  },
+  {
+   "metric": "URL edit visible in the preview",
+   "reps": 5,
+   "medianMs": 142,
+   "maxMs": 152,
+   "samples": [
+    143,
+    141,
+    141,
+    142,
+    152
+   ],
+   "method": "same, polling for href=\"<value>\" on the url slot home.main.cta.new-loops.href"
+  },
+  {
+   "metric": "theme edit visible in the preview",
+   "reps": 5,
+   "medianMs": 419,
+   "maxMs": 431,
+   "samples": [
+    415,
+    419,
+    426,
+    410,
+    431
+   ],
+   "method": "POST /api/theme/preview with a distinct color, then poll GET <preview>/wr/generated-styles.css until the new value appears"
+  },
+  {
+   "metric": "image edit visible in the preview",
+   "reps": 5,
+   "medianMs": 2,
+   "maxMs": 3,
+   "samples": [
+    3,
+    2,
+    2,
+    2,
+    3
+   ],
+   "method": "POST /api/asset with a DIFFERENT file each rep, then poll GET <preview>/media/<name> until the served bytes are byte-identical to the file on disk. Fast because the media override is a per-request read, not a rebuild."
+  },
+  {
+   "metric": "Region OFF visible in the preview",
+   "reps": 5,
+   "medianMs": 543,
+   "maxMs": 562,
+   "samples": [
+    543,
+    540,
+    537,
+    557,
+    562
+   ],
+   "method": "POST /api/region-enablement enabled:false, then poll GET <preview>/ until the served byte length moves. Includes the enablement re-adjudication, the plan application to the preview app copy and a worker restart."
+  },
+  {
+   "metric": "Region ON visible in the preview",
+   "reps": 5,
+   "medianMs": 551,
+   "maxMs": 569,
+   "samples": [
+    569,
+    547,
+    549,
+    551,
+    555
+   ],
+   "method": "the mirror of the above (restore from the frozen template, re-apply, restart)"
+  },
+  {
+   "metric": "route disable visible as a 404 in the preview",
+   "reps": 1,
+   "medianMs": 704,
+   "maxMs": 704,
+   "samples": [
+    704
+   ],
+   "method": "ONE rep only — this journey disables the route once and leaves it disabled, so there is no repeatable OFF/ON cycle here. Stated rather than padded."
+  },
+  {
+   "metric": "route switch in the editor",
+   "reps": 8,
+   "medianMs": 667,
+   "maxMs": 700,
+   "samples": [
+    678,
+    569,
+    684,
+    643,
+    605,
+    700,
+    667,
+    696
+   ],
+   "method": "real Chromium: select a route in #wr-route, then wait until a frame whose url EQUALS <preview><route> exists AND has rendered [data-wr-viewport]. A first version matched any frame whose url merely STARTED WITH the preview origin, kept finding the stale frame and read 6 ms — that number was discarded, not reported."
+  },
+  {
+   "metric": "full release:build (content + theme + seo + production rerun, incl. isolated-package QA in Chromium)",
+   "reps": 5,
+   "medianMs": 36154,
+   "maxMs": 36352,
+   "samples": [
+    36047,
+    36098,
+    36154,
+    36198,
+    36352
+   ],
+   "method": "`time npx tsx src/cli-release-build.ts data/linear.app/release-projects/wr28-switchyard`, wall clock, 5 real builds that each reran 4 stages and adopted a new production spec"
+  },
+  {
+   "metric": "the `next build` inside those builds",
+   "reps": 5,
+   "medianMs": 2715,
+   "maxMs": 2734,
+   "samples": [
+    2692,
+    2712,
+    2715,
+    2719,
+    2734
+   ],
+   "method": "the `[production] next build finished in Xms` line of each of the same 5 builds"
+  },
+  {
+   "metric": "no-op release:build (every stage already fresh)",
+   "reps": 2,
+   "medianMs": 921,
+   "maxMs": 933,
+   "samples": [
+    911,
+    933
+   ],
+   "method": "same command with no authored change since the last build — it rehashes the lineage and reruns nothing"
+  },
+  {
+   "metric": "createSite: one brief -> a complete 8-route first draft + production compile + project registration",
+   "reps": 1,
+   "medianMs": 5868,
+   "maxMs": 5868,
+   "samples": [
+    5868
+   ],
+   "method": "wall clock around the single POST /api/create-site (server-side elapsedMs 5863 ms)"
+  }
+ ],
+ "suite": {
+  "file": "scripts/smoke-production-canary.ts",
+  "checks": 46,
+  "failures": 0,
+  "runsThrough": "bash tmp/wr28/suite-lock.sh npx tsx scripts/smoke-production-canary.ts",
+  "design": "artifact-only and re-runnable: it starts no server and drives no browser. Every browser-derived number it reads is a measurement the production build's own QA already took, and the totals are re-derived from report/qa.json's raw rows rather than trusted from its summary. The visible-text brand axis is re-derived independently from the served HTML files — with NO word-boundary requirement — so neither a stale qa.json nor a narrow regex can carry the gate.",
+  "packageScriptPending": "smoke:production-canary\ttsx scripts/smoke-production-canary.ts (appended to docs/result/handoffs/28-intel/pending-package-scripts.tsv — package.json was NOT edited)",
+  "checkGrowth": "37 -> 46. The nine added by the correction are 28.P11.25 (the UNFILTERED source-default population), 28.P11.26 (brand inside an editable url slot's query string), 28.P11.27 (brand inside shipped .mp4 metadata), 28.P11.28 (the CSS custom-property name and the host-provenance count), 28.P11.29 (authored values shipped BESIDE the source value they replaced), 28.P11.30 (7 identical <title>s), 28.P11.31 (source-owned audio/video ships), 28.P11.32 (media referenced by nothing), 28.P11.33 (acceptedLineage vs stageStatus divergence). No existing check was weakened or deleted; 28.P11.13 and 28.P11.20 were made STRICTER."
+ },
+ "failureProofs": [
+  {
+   "n": 1,
+   "target": "28.P11.8 (visible-text brand axis, re-derived) + 28.P11.20 (every brand-word occurrence classified)",
+   "injection": "inserted `<p data-wr-canary=\"1\">Built on Linear</p>` before the <h1> of the shipped site/index.html",
+   "observed": "28.P11.8 FAIL (re-derived=1 qa=0) and 28.P11.20 FAIL (unclassified:1); 35/37. Note 28.P11.G9 stayed PASS because it reads the build's own qa.json — which is exactly why the independent re-derivation exists.",
+   "restored": "sha256 3afb928e868043401ba0c3e37c8fab9ab4f03232ad73ed7191a7f3c7c3baf50a before and after — byte-identical"
+  },
+  {
+   "n": 2,
+   "target": "28.P11.G5 disabled route exported",
+   "injection": "created site/customers/automattic.html",
+   "observed": "FAIL, measured 1; 36/37",
+   "restored": "whole site/ tree sha256 3485dbfdfea2850f60bc7f09afbc168bc923e91491e903ae198544f5b9c3dbfc before and after — byte-identical"
+  },
+  {
+   "n": 3,
+   "target": "28.P11.G10 authored visual-editor values missing from output",
+   "injection": "replaced the authored CTA label `Book a dispatch review →` with the source default `Loops →` in site/index.html ONLY (8 occurrences)",
+   "observed": "FAIL, measured 1, missing: home.main.cta.new-loops.label.02; 36/37. This injection was run TWICE: the first time the check PASSED, because its `anywhere in the package` fallback found the string in another route's bytes. The check was tightened (page slot -> its own route's HTML; global slot -> at least one served page, no fallback) and then it failed as it should.",
+   "restored": "index.html sha256 3afb928e868043401ba0c3e37c8fab9ab4f03232ad73ed7191a7f3c7c3baf50a before and after — byte-identical"
+  },
+  {
+   "n": 4,
+   "target": "the Phase-11 code fix itself (per-key review opt-in)",
+   "injection": "disabled the opt-in in src/release/stages.ts (`false && operatorReviewSlotKeys.length > 0`), then ran a real release:build",
+   "observed": "the build FAILED at content: `generation result failed validation with 124 error(s)`, all `review-slot-not-writable`, starting with home.main.hero.headline / home.main.cta.new-loops.label.02 / home.main.cta.new-loops.href — the same defect the very first build of this canary hit with 3 errors before the fix existed",
+   "restored": "src/release/stages.ts sha256 5ae401da21f007c9ff6cc8dc022be35122aeaa04abc7bdbd6263e00fbb976468 before and after — byte-identical; the failed content run was deleted"
+  },
+  {
+   "n": 5,
+   "addedBy": "correction agent",
+   "target": "28.P11.20 (widened classifier) — the V1 failure mode itself",
+   "injection": "appended `<!-- deployed by LinearOps -->` to the shipped site/index.html",
+   "observed": "the OLD boundary regex sees 0 occurrences in that text and the new wide scan sees 1; 28.P11.20 FAILED with unclassified:1, naming the file and the context. 45/46.",
+   "restored": "package tree sha256 be6b59c1635041f018c2fad45acae1cd039573370eaaa905650150b4f4a63dbe before and after"
+  },
+  {
+   "n": 6,
+   "addedBy": "correction agent",
+   "target": "28.P11.G5 (disabled route exported) — proves the V7 case-fold matters",
+   "injection": "appended `<p>How Automattic migrated</p>` to the shipped site/security.html",
+   "observed": "`grep -c automattic` on that file returns 0 while `grep -ci` returns 1 — exactly the gap; G5 FAILED at 1 (package files mentioning the slug: 1). Before the fold it would have read 0. 45/46.",
+   "restored": "package tree sha256 be6b59c1… before and after"
+  },
+  {
+   "n": 7,
+   "addedBy": "correction agent",
+   "target": "28.P11.26 (brand inside an editable url slot's query string)",
+   "injection": "rewrote %20with%20Linear. to %20with%20Switchyard. in the shipped site/security.html",
+   "observed": "28.P11.26 FAILED at 6 occurrences (from 10) and 28.P11.20 FAILED on the class total. 44/46.",
+   "restored": "package tree sha256 be6b59c1… before and after"
+  },
+  {
+   "n": 8,
+   "addedBy": "correction agent",
+   "target": "28.P11.27 (source video-project path in shipped .mp4 metadata)",
+   "injection": "rewrote LinearBoom to SwitchyBoom inside site/media/c0da5af8f44d….mp4 (7,608,502 -> 7,608,504 bytes)",
+   "observed": "28.P11.27 FAILED at 0 and 28.P11.20 FAILED on the class total. 44/46.",
+   "restored": "restored from a byte copy; package tree sha256 be6b59c1… before and after"
+  },
+  {
+   "n": 9,
+   "addedBy": "correction agent",
+   "target": "28.P11.30 (7 identical titles)",
+   "injection": "gave the shipped site/changelog.html a distinct <title>",
+   "observed": "28.P11.30 FAILED at 2 distinct titles. 45/46.",
+   "restored": "package tree sha256 be6b59c1… before and after"
+  },
+  {
+   "n": 10,
+   "addedBy": "correction agent",
+   "target": "28.P11.29 (authored values shipped beside the source value they replaced)",
+   "injection": "rewrote '$10 per user/month' to the authored figure in the shipped site/pricing.html",
+   "observed": "28.P11.29 FAILED at 5 (from 6), and its detail line reported the measured adjacency as false — the detail was rewritten during this proof so it reports MEASURED booleans instead of restating prose. 45/46.",
+   "restored": "package tree sha256 be6b59c1… before and after"
+  },
+  {
+   "n": 11,
+   "addedBy": "correction agent",
+   "target": "28.P11.32 (media referenced by nothing)",
+   "injection": "named one previously-unreferenced .avif in package/RUN.md",
+   "observed": "28.P11.32 FAILED at 168 (from 169). 45/46.",
+   "restored": "package tree sha256 be6b59c1… before and after"
+  },
+  {
+   "n": 12,
+   "addedBy": "correction agent",
+   "target": "28.P11.31 (source-owned audio/video ships)",
+   "injection": "flipped one awaiting-input entry to `provided` in the asset run's replacement-manifest.json",
+   "observed": "28.P11.31 FAILED at 14 and 28.P11.32's class split moved. 44/46.",
+   "restored": "replacement-manifest.json sha256 50d71e1c77d9901ba3a90fe9bf79387d1f4f1919475280d2a15f5cad1c648188 before and after"
+  },
+  {
+   "n": 13,
+   "addedBy": "correction agent",
+   "target": "28.P11.13 + 28.P11.25 (filtered and unfiltered source-default populations)",
+   "injection": "changed one draft value in the content run's slot-values.json so it no longer equals its source default",
+   "observed": "28.P11.13 FAILED at 660 and 28.P11.25 FAILED at 1,286. 44/46.",
+   "restored": "slot-values.json sha256 87beb60d8976afbcc7a05e9dd3dc9ae292410124e6cc64fe0cecef15c1cb353b before and after"
+  },
+  {
+   "n": 14,
+   "addedBy": "correction agent",
+   "target": "28.P11.33 (acceptedLineage divergence)",
+   "injection": "aligned acceptedLineage.content.id with stageStatus in release-project.json",
+   "observed": "28.P11.33 FAILED at 4 divergent refs. 45/46.",
+   "restored": "release-project.json sha256 f31678df6e5169a2c99428ae0cb8836f33694b54ea671fe64bf64bdffa83ebd4 before and after"
+  }
+ ],
+ "regression": {
+  "typecheck": "exit 0 (re-run after every edit by the builder AND by the correction agent, through tmp/wr28/suite-lock.sh)",
+  "suitesRerunAfterTheCodeChange": [
+   {
+    "suite": "content-injection",
+    "checks": 161,
+    "failures": 0
+   },
+   {
+    "suite": "content-generation",
+    "checks": 50,
+    "failures": 0
+   },
+   {
+    "suite": "create-site",
+    "checks": 66,
+    "failures": 0
+   },
+   {
+    "suite": "first-draft",
+    "checks": 34,
+    "failures": 0,
+    "note": "re-run by the correction agent after the V6 fixture fix: 34 checks, 0 failures, and it PRESERVED the pre-existing millwright project instead of deleting it"
+   },
+   {
+    "suite": "release",
+    "checks": 275,
+    "failures": 0,
+    "note": "re-measured by the correction agent as 275 PASS lines (the builder and the verifier both measured 274 on their runs). Nothing in src/ changed between those runs, so the difference is a fixture-dependent conditional inside the suite, not an effect of this correction. Reported as measured rather than reconciled to the older number."
+   },
+   {
+    "suite": "production",
+    "checks": 132,
+    "failures": 0
+   },
+   {
+    "suite": "seo",
+    "checks": 113,
+    "failures": 0,
+    "note": "Corrected from 107. 107 was inherited from the Phase-11 builder and was already stale when written: Phase 10's own correction landed checkTitleUniqueness and its six '5c per-route titles' checks, taking seo to 113. Re-measured directly at correction time (npx tsx scripts/smoke-seo.ts -> 113 PASS / 0 FAIL)."
+   },
+   {
+    "suite": "revision",
+    "checks": 36,
+    "failures": 0
+   },
+   {
+    "suite": "recon-template",
+    "checks": 109,
+    "failures": 0
+   },
+   {
+    "suite": "enablement",
+    "checks": 101,
+    "failures": 0
+   },
+   {
+    "suite": "editor-integration",
+    "checks": 45,
+    "failures": 0
+   },
+   {
+    "suite": "visual-editor",
+    "checks": 50,
+    "failures": 0
+   },
+   {
+    "suite": "authoring-preview",
+    "checks": 41,
+    "failures": 0
+   },
+   {
+    "suite": "production-canary (NEW)",
+    "checks": 46,
+    "failures": 0,
+    "note": "37 at build time, 46 after the correction (nine checks added, none removed or weakened)"
+   }
+  ],
+  "notRerun": "the other 14 suites in the 27-suite baseline (verifier, selector, multi-observer, interaction-*, sitespec, reconstruction, reconstruction-qa, regions, theme, assets, registry, brand-assets) and smoke:e2e. They do not import anything this phase changed; the FULL battery is the final-regression phase's job and is explicitly NOT claimed here.",
+  "programTotalArithmetic": "28 suites / 2,818 checks / 0 failures, as MEASURED by the Phase-10/11 gate's serialized battery (every count re-derived from raw PASS/FAIL lines), NOT as arithmetic. Per-suite basis for the figures this phase moved: seo 113, production 132, release 275, production-canary 46. smoke:e2e (130 checks) is CARRIED at its baseline, deliberately deferred from intermediate gates at the user's direction and required to run in the final regression; smoke:playwright is uncounted.",
+  "suitesRerunByTheCorrectionAgent": [
+   {
+    "suite": "production-canary",
+    "checks": 46,
+    "failures": 0,
+    "note": "run 14 times, including 10 failure injections"
+   },
+   {
+    "suite": "first-draft",
+    "checks": 34,
+    "failures": 0,
+    "note": "the suite this correction edited"
+   },
+   {
+    "suite": "release",
+    "checks": 275,
+    "failures": 0
+   },
+   {
+    "suite": "registry",
+    "checks": 35,
+    "failures": 0,
+    "note": "confirms the new marker file and suite-fixture-backups/ directory disturb nothing"
+   },
+   {
+    "suite": "revision",
+    "checks": 36,
+    "failures": 0,
+    "note": "confirms the marker file does not enter a revision chain"
+   }
+  ],
+  "notRerunByTheCorrectionAgent": "the correction changed only two test scripts and no src/ file, so the suites re-run are the one it edited (first-draft), the one it rewrote (production-canary), and three that could plausibly notice the new marker file or backups directory (release, registry, revision). The remaining 22 baseline suites and smoke:e2e were NOT re-run by the correction agent; the FULL battery is the final-regression phase's job and is explicitly not claimed here."
+ },
+ "limitations": [
+  "The 20 slot values the writer refused to invent were answered with OPERATOR-SUPPLIED figures for a fictional business — prices ($45/$79 per dispatcher/month), lane and load counts, and customer-outcome multipliers (2.4x / 3.1x / 38%). They are not derived from anything; supplying them is the operator's job in this design, and they are listed verbatim in bulkOperatorWork.twentyRefusedSlots.values so nobody has to guess which numbers were invented by a person.",
+  "The 127-value brand pass rewrote the SOURCE's own sentences with the brand name substituted (Linear -> Switchyard, Linear Agent -> Switchyard Assistant, Linear Asks -> Switchyard Requests). It makes the package brand-independent, which is what the gates measure; it does not make the copy newly composed. /changelog and /integrations in particular still carry the source site's release notes and integration blurbs in Switchyard's name.",
+  "224 of 239 replacement assets were resolved with LOCALLY GENERATED placeholder files (89 distinct flat-colour SVG marks, 135 distinct flat-colour PNGs). They are distinct per asset — not one file reused — but they are placeholders, not artwork. The remaining 15 entries are audio/video (13 mp4, 1 webm, 1 mp3): applyAssetResolutions only accepts image extensions, so they were deliberately NOT resolved and remain `awaiting-input` high-value requirements.",
+  "The editor startup measurement runs against an ALREADY MATERIALIZED preview workspace (materialized=false on all 5 reps). A cold first materialize of that workspace is not included in any number here.",
+  "Route-disable latency has ONE rep, not five: this journey disables the route once and leaves it disabled.",
+  "The canary suite reads the build's own report/qa.json for the browser-derived axes (js errors, hydration errors, post-hydration brand census, site-wide link audit). It does not re-launch the package. Only the visible-text brand axis is re-derived independently.",
+  "smoke:e2e (130 checks, ~613 s) was NOT run in this phase; it is the final-regression phase's job.",
+  "This phase created a FRESH customer rather than continuing Millwright, so nothing here re-validates Millwright's own lineage — including the pre-existing seo-stage pointer defect Phase 10 disclosed on it.",
+  "9 production builds were produced by this phase (a 10th dir under production-builds/ dated 2026-08-28T00-40-29-803Z was produced by a regression suite, not by this canary) under data/linear.app/production-builds/ during this phase (~350 MB each). The superseded ones were kept deliberately: they are the evidence for the 302 -> 2 -> 0 visible-text progression and for the pre-fix content-stage failure.",
+  "No mutating git operation was performed. Everything remains an uncommitted working tree.",
+  "CORRECTION AGENT — WHAT THIS CORRECTION DID NOT DO: it did not rebuild the production package. Every artifact it injected into was restored byte-identically (whole-package sha256 be6b59c1635041f018c2fad45acae1cd039573370eaaa905650150b4f4a63dbe, the same hash the independent verifier recorded), and the Recon Template has 0 files modified since 2026-08-27. That means the four brand surfaces in F5, the six paint-twin collisions in F8, the identical titles in F9 and the source-owned media in F10 all still ship: they are ASSERTED with their real numbers, not repaired. F5b in particular is repairable through the real API in one save — it is deliberately left in, because replacing a package an independent verifier has already re-derived would invalidate every measured number in this document.",
+  "CORRECTION AGENT — the two brand surfaces F5b and F5d were invisible to this suite's FIRST scanner. The check that missed them (28.P11.20) asserted completeness. That is the same class of error the program contract calls out, made by the tool built to catch it, and it was caught by an independent verifier rather than by the suite. The scan is boundary-free now and the gap it used to hide (1,112 occurrences) is part of the assertion, but the general lesson stands: a completeness claim is only as wide as its scanner.",
+  "CORRECTION AGENT — 28.P11.28 (the CSS custom-property NAME count and the host-provenance count) is the one new check with no failure injection of its own; it is counted by the same classifier that injections 5, 7 and 8 exercise. Stated rather than implied.",
+  "CORRECTION AGENT — no src/ file was edited. The two files changed are scripts/smoke-production-canary.ts (the suite, 37 -> 46 checks) and scripts/smoke-first-draft.ts (the V6 fixture-destruction fix). package.json was NOT edited and ZERO mutating git operations were performed."
+ ],
+ "reaping": "Every editor/preview session started by this phase was stopped in a finally block. Two leaked next-server workers from an early crashed exploration script were found with `ps -eo pid,ppid,command` and killed (pids 6626/6654), and one leaked worker from a failed click-latency run was killed the same way. A final sweep for next-server / next start / chromium found none. CORRECTION AGENT: it started no editor and no preview of its own — every measurement it took is artifact-only — except the one re-run of scripts/smoke-first-draft.ts, which starts a Visual Editor, a preview and a Chromium in its own finally block. A sweep with `ps -eo pid,ppid,command` for next-server / next start / chromium / Chrome for Testing after that run found NOTHING, and a second sweep at the end of the correction found nothing either.",
+ "corrections": {
+  "why": "An independent verifier returned FAIL. Its verdict rationale: the engineering was sound and it could not manufacture a way to break the canary — all 13 gates re-derive to 0 independently, 10 of them proved by injecting the condition, the journey is real HTTP, the template is byte-identical, the denominator is the whole 3,079-slot template, the package is genuinely independent. It failed the phase on the axis the program contract names as its recurring failure: numbers in the SHIPPED handoff that assert more than the artifacts support. This block preserves what was wrong, not only what is now right — two consecutive gates leaked exactly this.",
+  "everyVerifierFindingIsHere": "V1..V8, in the verifier's own numbering, each with what the document used to say, what the artifacts actually say, what changed in code, and where it is now asserted.",
+  "items": [
+   {
+    "id": "V1",
+    "verifierSeverity": "must fix — the exact failure mode that sank the last two gates",
+    "wasClaimed": "suite check 28.P11.20 'every remaining occurrence of the brand word is classified — nothing is left unexplained' (unclassified: 0 over 697 occurrences), and finding F5 'TWO source-brand surfaces no detector and no census can see'.",
+    "whyItWasWrong": "the classifier scanned with /(^|[^a-z0-9])linear([^a-z0-9]|$)/i. That boundary is blind to any occurrence whose neighbouring character is alphanumeric, so a check that claimed completeness was made by a scanner that could not see 12 of the occurrences it claimed to have classified.",
+    "reMeasuredNow": {
+     "method": "every file in package/ scanned with /linear/gi (NO boundary), each match classified by prioritized rules over a TIGHT window so a gradient elsewhere in the file cannot absorb a real leak",
+     "wideOccurrences": 1809,
+     "theOldBoundaryFormCouldSee": 697,
+     "itWasBlindTo": 1112,
+     "classes": {
+      "svg/css gradient + animation-timing vocabulary": 1745,
+      "source host in provenance metadata (RUN.md 3, deploy-manifest.json 3, site/wr/theme-overlay.css 1)": 7,
+      "CSS custom-property NAME (--color-linear-security)": 30,
+      "source brand inside an EDITABLE url slot's query string (/security BAA link)": 10,
+      "source video-project path in a shipped .mp4's XMP metadata": 2,
+      "placeholder attribute value — DECLARED not owned": 10,
+      "image alt inside a SERIALIZED props string": 5,
+      "unclassified": 0
+     },
+     "note": "1,100 of the 1,112 the old form missed are `<linearGradient>` and `paint0_linear_…` (SVG vocabulary, not the brand). The other 12 are two REAL source-brand surfaces the old scan could not see at all."
+    },
+    "correctionInCode": "scripts/smoke-production-canary.ts — BRAND_TOKEN replaced by a boundary-free scan (brandWordMatches/brandWordCount); the narrow form is KEPT only so 28.P11.20 can report the gap it used to hide (wideTotal === narrowTotal + 1112 is now part of the assertion). 28.P11.2 and G8 use the wide scan too. 28.P11.8's independent visible-text re-derivation is wide as well (measured 0 both ways).",
+    "correctionInDocument": "F5 restated as FOUR surfaces with their real counts; two new findings F5b/F5c below.",
+    "assertedBy": "28.P11.20 (rewritten), 28.P11.26 (new), 28.P11.27 (new), 28.P11.28 (new)",
+    "proof": "injection: appended `<!-- deployed by LinearOps -->` to site/index.html. The narrow boundary form sees 0 there; the wide form sees 1; 28.P11.20 FAILED with unclassified:1 naming the file and context. Restored byte-identically.",
+    "correctionToTheVerifierItself": "the verifier called the /security BAA href 'a THIRD unowned source-brand surface'. The artifact says otherwise and the artifact wins: it is slot `security.main.link.request-baa.href`, type=url, editability=editable — an operator write path EXISTS. What is missing is DETECTION, not ownership. Recorded that way in F5b so nobody builds an editor feature that already exists."
+   },
+   {
+    "id": "V2",
+    "verifierSeverity": "must fix — NO SILENT CAPS",
+    "wasClaimed": "F3 and 28.P11.13: '661 of the template's 2,441 text slots still serve their SOURCE default VERBATIM in the shipped package (601 review-flagged and never written, 60 editable and identical by choice)'.",
+    "whyItWasWrong": "661 is a FILTERED number presented as an unfiltered one. Two filters were applied and neither was stated: values shorter than 8 characters were skipped, and the value had to be findable in that route's own visible text. The short-string filter drops precisely the most damaging visible cases — the source product-UI mock that dominates the home page below the hero.",
+    "reMeasuredNow": {
+     "unfiltered": 1287,
+     "unfilteredByEditability": {
+      "review": 1024,
+      "editable": 263
+     },
+     "filtered": 661,
+     "filteredByEditability": {
+      "review": 601,
+      "editable": 60
+     },
+     "droppedByTheLengthFilter": 594,
+     "droppedByTheVisibilityFilter": 32,
+     "whatTheLengthFilterDrops": "282 distinct short source values, e.g. 'Inbox', 'My issues', 'Reviews', 'Pulse', 'Initiatives', 'Projects', 'Favorites', 'Agent tasks', 'UI Refresh', 'Product', 'Pricing', 'Log in', 'Sign up'"
+    },
+    "correctionInCode": "scripts/smoke-production-canary.ts — both populations are measured; 28.P11.13's detail line now NAMES both filters and reports how many each dropped; the unfiltered 1,287 is asserted on its own as 28.P11.25.",
+    "correctionInDocument": "F3 rewritten with both numbers and the filters stated.",
+    "assertedBy": "28.P11.13 (filtered 661, filters disclosed) and 28.P11.25 (unfiltered 1,287)",
+    "proof": "injection: changed one draft value so it no longer equals its source default; 28.P11.13 fell to 660 and 28.P11.25 to 1,286, both FAILED. Restored byte-identically (slot-values.json sha256 87beb60d8976afbcc7a05e9dd3dc9ae292410124e6cc64fe0cecef15c1cb353b before and after)."
+   },
+   {
+    "id": "V3",
+    "verifierSeverity": "must disclose",
+    "wasClaimed": "nothing — the shipped /pricing page's self-contradicting price list was not mentioned. F3's framing ('many are legitimately generic for any B2B SaaS') implied the source figures were simply never written.",
+    "whyItWasWrong": "the operator DID write them, through the real API, and the write landed. It landed in the 1x1 accessible copy the slot binds while an UNBOUND twin keeps painting the source figure. This is F1's mechanism on a second page, not an instance of F3, and the consequence is worse: an indexable page that contradicts itself about price.",
+    "reMeasuredNow": {
+     "authoredValuesThatShipBesideTheSourceValueTheyReplaced": 6,
+     "outOfEnabledTextSlotsTheOperatorWrote": 134,
+     "theSix": [
+      "home.main.hero.headline  'The product development system for teams and agents' -> 'One live lane plan for every load you move'",
+      "pricing.main.text.2-teams  '2 teams' -> '2 lanes'",
+      "pricing.main.text.250-issues  '250 issues' -> '500 loads'",
+      "pricing.main.text.10-per-user-month  '$10 per user/month' -> '$45 per dispatcher/month'",
+      "pricing.main.text.5-teams  '5 teams' -> '5 lanes'",
+      "pricing.main.text.16-per-user-month  '$16 per user/month' -> '$79 per dispatcher/month'"
+     ],
+     "servedAdjacency": "'$45 per dispatcher/month' is IMMEDIATELY followed by '$10 per user/month', and '$79 per dispatcher/month' by '$16 per user/month', in the visible text of the shipped site/pricing.html — each pair twice, one per viewport — over a feature table that is still the source's ('Issues, projects, cycles, initiatives', 'Sub-teams', 'Private teams', 'Microsoft Teams integration')",
+     "scaleOfTheTrap": "481 of the 2,301 enabled text slots bind ONLY a node measuring 1x1 px in both viewports; the operator wrote 30 of those 481"
+    },
+    "correctionInCode": "new check 28.P11.29, measured from the template's own constraint boxes and the served HTML.",
+    "correctionInDocument": "new finding F8, severity HIGH, cross-linked to F1.",
+    "assertedBy": "28.P11.29",
+    "proof": "injection: rewrote '$10 per user/month' to the authored figure in site/pricing.html; 28.P11.29 FAILED at 5. Restored byte-identically."
+   },
+   {
+    "id": "V4",
+    "verifierSeverity": "must disclose",
+    "wasClaimed": "'The served package carries per-route title/description/canonical/og:url/og:title/og:description/JSON-LD', which reads as 'distinct per route'.",
+    "whyItWasWrong": "the titles are not distinct, and nothing anywhere checks title uniqueness.",
+    "reMeasuredNow": {
+     "routes": 7,
+     "distinctTitles": 1,
+     "theTitle": "Switchyard | AI workflow automation for freight brokerages and regional carriers",
+     "deployManifest": "repeats the same expectedTitle 7 times",
+     "distinctDescriptions": 7,
+     "degradedDescriptions": [
+      "One plan for decision next.",
+      "One plan for actual freight."
+     ],
+     "seoPlan": "manifest counts knownTitles=7 / needsInputTitles=0; forbiddenCopy (49 comparisons) and brandIsolation (129 strings) both PASS — neither is a uniqueness check"
+    },
+    "correctionInCode": "new check 28.P11.30.",
+    "correctionInDocument": "new finding F9.",
+    "assertedBy": "28.P11.30",
+    "proof": "injection: gave site/changelog.html a distinct <title>; 28.P11.30 FAILED at 2 distinct titles. Restored byte-identically."
+   },
+   {
+    "id": "V5",
+    "verifierSeverity": "note",
+    "wasClaimed": "'The 15 audio/video entries were deliberately NOT resolved … and remain high-value awaiting-input' — true, but it never says that SOURCE-OWNED media is what actually ships inside the 'independent' package. The verifier added that 47 media files (46 .avif + 1 .jpg) are neither in the replacement manifest nor replaced.",
+    "reMeasuredNow": {
+     "servedMediaFiles": 380,
+     "mediaTreeMb": 200.2,
+     "sourceOwnedAudioVideoShipped": 15,
+     "sourceOwnedAudioVideoMb": 189.1,
+     "shareOfTheMediaTree": "94%",
+     "referencedByNothingInThePackage": 169,
+     "referencedByNothingMb": 195.2,
+     "byClass": {
+      "not in the replacement manifest at all": "141 files, 10.9 MB (46 .avif, 86 .svg, 8 .png, 1 .jpg)",
+      "source audio/video still awaiting input": "12 files, 184.3 MB",
+      "operator replacement files": "16 files, 0.0 MB"
+     },
+     "correctionToTheVerifiersNumber": "the verifier said 47, counting only .avif/.jpg. The real unreferenced figure is 169 of 380, and the heavy part of it is 12 SOURCE-OWNED video/audio files shipping unused at 184.3 MB. Measured by basename occurrence across every non-media file in the package — deliberately format-agnostic, because a '/media/<name>' path regex would have returned a smaller, flattering number.",
+     "alsoMeasured": "208 of the 224 operator-provided replacements ARE referenced in the package; the 16 that are not are assets the enabled routes never use."
+    },
+    "correctionInCode": "new checks 28.P11.31 and 28.P11.32.",
+    "correctionInDocument": "new finding F10.",
+    "assertedBy": "28.P11.31, 28.P11.32",
+    "proof": "two injections: flipping one awaiting-input entry to 'provided' FAILED 28.P11.31 at 14; naming one unreferenced .avif in RUN.md FAILED 28.P11.32 at 168. Both restored byte-identically."
+   },
+   {
+    "id": "V6",
+    "verifierSeverity": "note, pre-existing hazard — FIXED IN CODE by this correction",
+    "wasClaimed": "nothing — the hazard was not in the handoff at all.",
+    "whatItIs": "scripts/smoke-first-draft.ts:90 pins NEW_SITE_ID = 'millwright' (createSite derives it from the brief's working name) and then blind-`rm`s that path at startup. It is the same fixed-fixture shape as the known smoke-release hazard. Running it during Phase 11's regression OVERWROTE Phase 9/10's shipped evidence project data/linear.app/release-projects/millwright — its revision chain came back as r000 only.",
+    "correctionInCode": "scripts/smoke-first-draft.ts — the suite now writes a marker file (.wr28-first-draft-fixture) into the project it creates, and at startup DELETES only a project carrying that marker. Anything else is MOVED to data/<host>/suite-fixture-backups/<id>-<timestamp> — outside release-projects/, so the registry never sees the copy. The suite still starts from a clean slate; it just refuses to destroy a project it did not create.",
+    "proof": "re-ran the suite through the mutex: it logged 'NOTE data/linear.app/release-projects/millwright was NOT created by this suite (no .wr28-first-draft-fixture); preserved at data/linear.app/suite-fixture-backups/millwright-2026-08-28T01-37-21-891Z instead of deleted', then created the project fresh and wrote the marker. 34 checks, 0 failures, exit 0.",
+    "stillOpen": "the same fixed-fixture hazard remains in scripts/smoke-release.ts, which rm -rf's a fixed path at startup AND in its finally block. NOT fixed here (out of this correction's blast radius) and carried forward."
+   },
+   {
+    "id": "V7",
+    "verifierSeverity": "minor — FIXED IN CODE",
+    "wasClaimed": "G5 and G6 measure 'disabled route exported = 0' and 'disabled route in sitemap = 0'.",
+    "whyItWasWrong": "both content probes were case-SENSITIVE on the lowercase slug (`text.includes(\"automattic\")`, /automattic/g). A page containing 'How Automattic migrated' fired the FILENAME probe but read 0 on the CONTENT probe — a false zero waiting to happen.",
+    "correctionInCode": "both probes lowercase-fold both sides, and G6's sitemap regex is /automattic/gi. Re-measured on this package: both still read 0 (a case-insensitive grep over the whole package returns 0 files).",
+    "assertedBy": "28.P11.G5, 28.P11.G6",
+    "proof": "injection: appended '<p>How Automattic migrated</p>' to site/security.html. A lowercase grep of that file returns 0 and a case-insensitive grep returns 1 — the exact gap; G5 FAILED at 1. Restored byte-identically."
+   },
+   {
+    "id": "V8",
+    "verifierSeverity": "minor",
+    "wasClaimed": "nothing — the divergence was not in the handoff.",
+    "verifierFraming": "'release-project.json's acceptedLineage still points at the FIRST-DRAFT runs … same family as the seo-stage pointer defect Phase 10 disclosed on Millwright'.",
+    "whatTheArtifactSays": "CORRECTING THE FRAMING: ReleaseProjectSchema (src/release/types.ts) documents acceptedLineage as 'The accepted production candidate — immutable record (spec §4)', written once by prepare.ts. It is not supposed to track reruns. What IS true is that 5 of its 7 refs are older than the artifacts that actually shipped, so anything reading acceptedLineage as 'the shipped lineage' is wrong.",
+    "reMeasuredNow": {
+     "divergentRefs": 5,
+     "detail": [
+      "content lineage=2026-08-28T00-12-09-191Z vs stage=2026-08-28T00-24-48-163Z",
+      "theme lineage=2026-08-27T23-36-27-552Z vs stage=2026-08-28T00-24-48-321Z",
+      "seo lineage=2026-08-27T23-41-30-519Z vs stage=2026-08-28T00-24-48-331Z",
+      "assets lineage=2026-08-27T23-36-27-572Z vs stage=2026-08-28T00-17-55-627Z",
+      "production spec lineage=2026-08-28T00-12-09-346Z vs stage=2026-08-28T00-24-48-338Z"
+     ],
+     "notFixed": "no release semantics were changed. Changing what prepare.ts writes would alter a schema-documented invariant and would require rebuilding a package an independent verifier has already re-derived. The divergence is ASSERTED instead, so it cannot grow unnoticed and cannot be misread."
+    },
+    "correctionInCode": "new check 28.P11.33.",
+    "correctionInDocument": "new finding F11.",
+    "assertedBy": "28.P11.33",
+    "proof": "injection: aligned acceptedLineage.content.id with stageStatus; 28.P11.33 FAILED at 4. Restored byte-identically (release-project.json sha256 f31678df6e5169a2c99428ae0cb8836f33694b54ea671fe64bf64bdffa83ebd4 before and after)."
+   },
+   {
+    "id": "C-gate1011",
+    "correctedAt": "2026-08-28T12:02:42.312049Z",
+    "correctedBy": "Task-28 orchestrator, after the Phase-10/11 gate blocked on three documentation defects",
+    "finding": "Three blockers, ALL recorded in writing with correct numbers by the SECOND re-verify of Phases 10/11, and all three shipped uncorrected: (1) programTotalArithmetic said 2,811 (measured 2,818) because it used seo=107 and ignored its own release=275 row; (2) F9, openItemsCarriedForward[5] and shipped check 28.P11.30 all asserted that NO title-uniqueness check exists anywhere — false against the same tree; (3) suitesRerunAfterTheCodeChange listed seo=107 under a heading claiming those suites were re-run.",
+    "wasBefore": {
+     "programTotalArithmetic": "the 28-gate-phase789 baseline records 27 suites / 2,759 checks. Phase 10 raised seo 104->107 and production 129->132 (both re-measured at build time as 107 and 132), giving 2,765. This phase adds one suite, now 46 checks, so the program total is 28 suites / 2,811 checks. STATED AS ARITHMETIC over measured per-suite numbers, not as a battery anyone ran end to end — and the correction agent's own re-measurement of smoke:release (275, not 274) shows the arithmetic is only as stable as the fixtures underneath it.",
+     "seoRow": {
+      "suite": "seo",
+      "checks": 107,
+      "failures": 0
+     },
+     "F9.title": "All 7 indexable routes ship the IDENTICAL <title>, and nothing anywhere checks title uniqueness",
+     "F9.whyNothingCaughtIt": "the production SEO plan reports knownTitles=7 / needsInputTitles=0, and both of its checks pass (forbiddenCopy 49 comparisons, brandIsolation 129 strings vs 3 terms). Neither is a uniqueness check, and the build's QA asserts each page's title MATCHES the manifest — which it does, identically, 7 times.",
+     "F9.owner": "src/seo/production-plan.ts — a title-uniqueness check belongs beside forbiddenCopy and brandIsolation.",
+     "openItem.what": "7 identical <title>s; no uniqueness check exists anywhere"
+    },
+    "howMeasured": "Orchestrator re-measured rather than trusting a report: `npx tsx scripts/smoke-seo.ts` through the mutex -> 113 PASS / 0 FAIL; grep confirmed checkTitleUniqueness at src/seo/production-plan.ts:520 and src/seo/run.ts:9,134, and 'title-uniqueness-measured' at src/production/qa.ts:731; the 2,818 total is the Phase-10/11 gate's serialized battery, re-derived from raw logs.",
+    "codeChanged": "scripts/smoke-production-canary.ts check 28.P11.30 — its NAME and detail line carried the same false program-wide claim. Rewritten to scope the assertion to the artifact. The measured facts it asserts (7 routes, 1 distinct <title>, manifest repeats one expectedTitle, 7 distinct descriptions) are unchanged and still assert the same thing.",
+    "systemic": "THIRD consecutive gate failed on this axis, and the SECOND time the leak recurred after being named in the program contract. Root cause identified: each correction pass answered ITS OWN verifier line by line and none answered the RE-VERIFICATION that followed. A re-verification is a verification. The final audit must diff the LAST verifier report's failures[] against every shipped document."
+   }
+  ],
+  "whatDidNotChange": "no gate result changed and no gate was touched except to make G5/G6 case-insensitive (both still 0). No detector was narrowed, no severity downgraded, no case excluded. No src/ file was edited by this correction: the only source changes remain Phase 11's per-key review opt-in (src/content-injection/units.ts, packet.ts, types.ts, src/release/stages.ts). The production package was NOT rebuilt — every artifact it touched was restored byte-identically and the whole package still hashes to be6b59c1635041f018c2fad45acae1cd039573370eaaa905650150b4f4a63dbe (the same manifest hash the verifier recorded).",
+  "whatWasDeliberatelyNotFixed": "the /security BAA brand leak (F5b) is repairable through the real API — it is an editable url slot — and the correction did NOT repair it. Repairing it means re-driving the editor and re-running release:build, which would replace the exact package an independent verifier has already re-derived and would invalidate every measured number in this document. An honest, asserted non-zero beats a fresh unverified zero. It is carried forward as an open item with the fix named."
+ },
+ "failureProofsNote": "14 injections in total (4 by the builder, 10 by the correction agent). Two of the correction agent's checks — 28.P11.28 (the CSS custom-property name / host-provenance counts) — were NOT injection-proved; they are counted by the same classifier that proofs 5, 7 and 8 exercise. Stated rather than implied.",
+ "independentVerification": {
+  "verdict": "FAIL — on handoff traceability, explicitly NOT on the engineering",
+  "whatTheVerifierReDerivedIndependently": "all 13 gates re-derived to 0 from the raw artifacts (not the summaries); 10 of the 13 proved by injecting the condition and restoring byte-identically; the other 3 (source logo visible, runtime errors, hydration errors) re-measured in the verifier's own Chromium crawl of an isolated copy served from outside the repo, with lsof confirming 0 open handles under the repo and 0 external requests. It also re-derived: the 3,079-slot denominator and its 172 disabled entries; that every journey step goes through fetch() against a live startVisualEditor session with no direct authored-state write; that the Recon Template hashes to d1b6027dabc5d2d7041fbd62d550e88ecbf38489ac562a6e9c4c81ae886db288, byte-identical to acceptedLineage; that no pre-2026-08-27 data/ run was mutated; and it independently re-measured six of the reported latencies (all within ~10% of the builder's, plus the cold materialize the builder disclosed as absent: 3,485 ms).",
+  "whatItFailedThePhaseOn": "V1-V4: three numbers/claims in the shipped handoff and one shipped suite check asserted more than the artifacts support. Every one is answered in corrections[] with what was wrong preserved.",
+  "whatTheCorrectionDisputed": "two of the verifier's own framings, in each case with the artifact that settles it: (a) the /security BAA href is NOT an unowned surface — it is an editable url slot with a real operator write path, so the gap is DETECTION, not ownership (F5b); (b) acceptedLineage pointing at prepare-time runs is NOT a defect — the schema documents it as an immutable prepare-time record (F11). Both are still recorded as findings and both are now asserted by a check.",
+  "whereTheCorrectionWentFurtherThanTheVerifier": "V5's '47 unreferenced media files' re-measured as 169 (195.2 MB, including 12 source-owned videos at 184.3 MB); V3's pricing contradiction traced from prose to its mechanism (6 authored values shipping beside their source twin, 481 slots bound only to a 1x1 node); V1's 12 hidden occurrences generalized into a boundary-free scan whose blind spot (1,112 occurrences) is itself part of the assertion."
+ },
+ "openItemsCarriedForward": {
+  "note": "Every item here is ASSERTED by a check in scripts/smoke-production-canary.ts with its real number, so it fails loudly if it silently changes, and it cannot be closed by anything but measured output.",
+  "items": [
+   {
+    "id": "F1 + F8",
+    "what": "the paint-twin gap: 481 enabled text slots bind only a 1x1 node; 6 authored values ship beside the source value they replaced, including the whole /pricing price list",
+    "owner": "src/recon-template/twin-binding.ts (BLOCKED: the Recon Template is IMMUTABLE and Exact Reconstruction is FROZEN by contract)",
+    "asserted": "28.P11.11, 28.P11.29"
+   },
+   {
+    "id": "F5b",
+    "what": "source brand inside an editable url slot's query string on /security — repairable in ONE save through the real API, deliberately not repaired so the verified package stays verified",
+    "owner": "the brand detectors (url-slot query strings are in no detector's scope) + one operator write",
+    "asserted": "28.P11.26"
+   },
+   {
+    "id": "F5a / F5c / F5d",
+    "what": "three source-brand surfaces with no detector, no census axis and (for F5a/F5c/F5d) no operator write path: a placeholder attribute, a serialized-props image alt, and XMP metadata inside a shipped .mp4",
+    "owner": "src/production/brand-bake.ts SURFACES_NOT_RESOLVED + the served-HTML census regexes + a media-metadata scrub",
+    "asserted": "28.P11.18, 28.P11.19, 28.P11.27"
+   },
+   {
+    "id": "F3",
+    "what": "1,287 enabled text slots serve their source default verbatim (661 of them long and visible)",
+    "owner": "content generation / operator review",
+    "asserted": "28.P11.13, 28.P11.25"
+   },
+   {
+    "id": "F4",
+    "what": "1,038 internal anchors over 178 destinations 404, one of them the journey's own CTA, accepted with a validator WARNING only",
+    "owner": "src/content-injection validation (broken-internal-route should collect a requirement, not warn)",
+    "asserted": "28.P11.14, 28.P11.15"
+   },
+   {
+    "id": "F9",
+    "what": "The canary package's 7 indexable routes carry identical <title>s. The detectors now exist (checkTitleUniqueness, title-uniqueness-measured); the package simply predates them and has not been rebaked. NOT an open detector gap.",
+    "owner": "src/seo/production-plan.ts",
+    "asserted": "28.P11.30"
+   },
+   {
+    "id": "F10",
+    "what": "189.1 MB of source-owned audio/video ships; 169 of 380 media files (195.2 MB) are referenced by nothing",
+    "owner": "applyAssetResolutions (audio/video resolution + a prune)",
+    "asserted": "28.P11.31, 28.P11.32"
+   },
+   {
+    "id": "F11",
+    "what": "5 of 7 acceptedLineage refs are older than what shipped (by design, but easy to misread)",
+    "owner": "src/release/prepare.ts + whoever reads acceptedLineage",
+    "asserted": "28.P11.33"
+   },
+   {
+    "id": "F6",
+    "what": "deploy-manifest.json and RUN.md still name residual source hosts this build never requests",
+    "owner": "the assets layer's inherited network census",
+    "asserted": "28.P11.17's detail line"
+   },
+   {
+    "id": "F7",
+    "what": "161 of 203 requirements read `not-applicable — no longer detected` rather than `resolved`",
+    "owner": "src/release/collect.ts bookkeeping",
+    "asserted": "28.P11.16"
+   },
+   {
+    "id": "F12 residue",
+    "what": "scripts/smoke-release.ts still rm -rf's a FIXED fixture path at startup AND in its finally block — the last known instance of the hazard that destroyed the millwright project",
+    "owner": "scripts/smoke-release.ts (the same marker/preserve pattern now in smoke-first-draft.ts applies)",
+    "asserted": "not asserted — it is a hazard in a test fixture, not a property of an artifact"
+   }
+  ]
+ }
+}

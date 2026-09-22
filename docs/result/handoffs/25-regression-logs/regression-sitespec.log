@@ -1,0 +1,333 @@
+Already up to date
+Done in 152ms using pnpm v11.21.0
+$ tsx scripts/smoke-sitespec.ts
+[smoke:sitespec] offline fixture — no server, no browser, no network, no AI
+
+§79 static tree fidelity — mixed content ordering
+  PASS  <p>Hello <strong>world</strong> !</p> keeps text / element / text order
+  PASS  the mixed paragraph has exactly three children in document order
+
+§80 long text recovery past the Observer's 200-char cap
+  PASS  the long paragraph carries one text node
+  PASS  SiteSpec text (249) is longer than the Observer's cap (200)
+  PASS  the recovered text is the FULL original paragraph
+  PASS  content recovery counts the cap hit and the repair
+
+§81 <pre> whitespace is design, not noise
+  PASS  the <pre> text node preserves newlines and indentation verbatim
+
+§82 inline SVG stays opaque and alignment survives it
+  PASS  the <svg> root is compiled as one node
+  PASS  the <svg> subtree is NOT in the node tree
+  PASS  the <svg> node records why its subtree is absent
+  PASS  no <circle> / <g> / <rect> node leaked into the tree
+  PASS  the inline SVG is preserved in the asset catalog
+  PASS  its <script> element was removed before storage
+  PASS  its onload handler was removed before storage
+  PASS  its javascript: href was removed before storage
+  PASS  the harmless SVG geometry survived sanitization
+  PASS  a clean SVG is reported as NOT sanitized
+
+§83 noise elements never enter the content tree
+  PASS  <head> is absent from the content tree
+  PASS  <meta> is absent from the content tree
+  PASS  <title> is absent from the content tree
+  PASS  <style> is absent from the content tree
+  PASS  <script> is absent from the content tree
+  PASS  <link> is absent from the content tree
+  PASS  <noscript> is absent from the content tree
+  PASS  <template> is absent from the content tree
+  PASS  the home tree has exactly the Observer's element count
+  PASS  home content recovery aligned
+
+§84 alignment mismatch falls back — it never fuzzy-merges
+  PASS  the broken page is marked fallback
+  PASS  the failure reason is recorded
+  PASS  the fallback records mixed-content-order-not-recovered and text-may-be-truncated
+  PASS  the fallback tree still has every observed element
+  PASS  no <aside> from rendered.html leaked into the fallback tree
+  PASS  an aligned page and a broken page can coexist in one SiteSpec
+
+§87/§88/§16 route coverage, representative fallback, validation override
+  PASS  all six verified URLs are routes
+  PASS  route ids follow normalized-URL lexical order
+  PASS  /a is exact-observed
+  PASS  /a2 is validation-sample-observed
+  PASS  /a3 is family-represented
+  PASS  /a4 is family-represented
+  PASS  /a2 renders from its OWN observation, not the representative's
+  PASS  /a3 renders from the family REPRESENTATIVE, never the validation sample
+  PASS  /a3 does not claim to have been observed
+  PASS  /a3 records the borrowed-source limitation
+
+§66/§114 family-represented behavior is never re-attributed
+  PASS  /a (explored) has exact behavior evidence
+  PASS  /a3 behavior is family-represented-unverified, sourced from the representative
+  PASS  /a2 was observed but not explored — and says so
+  PASS  an unexplored page carries no confirmed patterns
+
+§18/§19 family model
+  PASS  the family keeps all four member URLs
+  PASS  observed / represented-only arithmetic is exact
+  PASS  both observed variants are listed
+  PASS  Task 08's coarse-signal evidence is preserved
+  PASS  no SiteSpec field renames a family into a component
+
+§85/§86 global style catalog
+  PASS  one identical style shared by two pages AND two viewports is ONE token
+  PASS  canonical keys ignore property order
+  PASS  the catalog reports the dedup it achieved
+  PASS  every element node carries a resolvable style token
+  PASS  a pseudo-element style also uses the global catalog
+  PASS  no Tailwind/class/design-token vocabulary entered the style catalog
+
+§50–§53 asset catalog
+  PASS  the shared image URL is ONE asset across two pages
+  PASS  its usage count spans every occurrence
+  PASS  it records the pages it was seen on
+  PASS  a mime hint is derived from the extension
+  PASS  same-origin is computed against the site root
+  PASS  a CDN font is correctly marked cross-origin
+  PASS  the srcset candidate keeps its descriptor as part of its identity
+  PASS  the <img> node references both of its assets
+  PASS  a page-level asset with no element is still in the viewport reference list
+
+§94 safe reconstruction attributes
+  PASS  class is not compiled
+  PASS  data-* is not compiled
+  PASS  no data-* survives anywhere in the SiteSpec pages
+  PASS  onclick is not compiled
+  PASS  style is not compiled
+  PASS  aria-* IS preserved
+  PASS  aria-controls IS preserved
+  PASS  id becomes sourceHtmlId, not an attribute
+  PASS  sourceHtmlId is flagged as a hint, not identity
+  PASS  role IS preserved and lifted
+  PASS  alt IS preserved
+  PASS  width/height IS preserved
+  PASS  src is expressed as an asset, not an attribute
+  PASS  a normal href IS preserved
+  PASS  a javascript: href is dropped
+  PASS  …and the drop is recorded
+  PASS  a public text input value IS preserved
+  PASS  placeholder IS preserved
+  PASS  a password value is never compiled
+  PASS  a hidden input value is never compiled
+  PASS  the hidden input NODE survives (structure) without its value
+  PASS  …and both drops are recorded
+  PASS  no secret token value survives anywhere
+  PASS  no password value survives anywhere
+  PASS  no data-secret value survives anywhere
+  PASS  no inline handler source survives anywhere
+
+§38 form safety
+  PASS  the form's action endpoint is NOT in the IR
+  PASS  only a diagnostic boolean records that one existed
+  PASS  …and the limitation says why
+
+§95 node relations
+  PASS  aria-controls resolves to the panel node in the SAME viewport
+  PASS  an aria-controls with no static target is preserved as unresolved
+  PASS  aria-labelledby resolves
+  PASS  label[for] resolves to its input
+  PASS  an href fragment resolves to the target node
+  PASS  §42 relations never resolve across viewports
+
+§6/§7 the supplemental allowlist is closed and disjoint
+  PASS  every allowlisted name is outside the Observer's own whitelist
+  PASS  no denied name or prefix is on the allowlist
+  PASS  adding formaction to the allowlist fails the policy
+  PASS  adding a data-* name fails the policy
+  PASS  adding an already-observed name fails the policy
+  PASS  the shipped allowlist itself passes the policy
+
+§22 table semantics recovered from the aligned parse tree
+  PASS  scope is recovered
+  PASS  colspan is recovered
+  PASS  …and both are named as recovered, sorted
+  PASS  rowspan is recovered
+  PASS  §15 a cell with no colspan does NOT gain an invented colspan=1
+  PASS  §14 an ALIGNED viewport with table cells carries no table limitation
+
+§27 the existing observed value always wins
+  PASS  an observed colspan is not overwritten by the parsed one
+  PASS  …and it is not claimed as recovered
+  PASS  an observed aria-label survives a different parsed one
+  PASS  the parsed-only value exists nowhere in the IR
+
+§23 native declarative state
+  PASS  <details open> is recovered as presence
+  PASS  §9 disabled="disabled" normalizes to presence
+  PASS  readonly is recovered
+  PASS  …without disturbing the observed value
+  PASS  checked="" is recovered as presence
+  PASS  <select multiple> is recovered
+  PASS  a selected <option> is recovered
+  PASS  …and an unselected one stays unselected
+  PASS  required + autofocus are recovered together
+
+§24 editable / numeric / enumerated values
+  PASS  min / max / step survive verbatim
+  PASS  minlength / maxlength / pattern survive verbatim
+  PASS  accept survives verbatim
+  PASS  §8 a file input still has no value
+  PASS  §10 contenteditable keeps its enumerated value
+  PASS  spellcheck keeps its value
+  PASS  §10 hidden="until-found" is NOT collapsed to presence
+  PASS  …while a bare hidden is stored as presence
+  PASS  <ol start reversed> is recovered (it changes what the reader sees)
+  PASS  <time datetime> keeps its machine-readable value
+
+§25 native popover + §18 relation
+  PASS  popovertarget + popovertargetaction are recovered
+  PASS  popover keeps its enumerated state
+  PASS  a recovered popovertarget becomes a resolved viewport-local relation
+  PASS  …and a popovertarget with no target stays honestly unresolved
+
+§26 the same aligned HTML is not a way in
+  PASS  only the allowlisted attribute of the attack button is recovered
+  PASS  class is not recovered
+  PASS  style is not recovered
+  PASS  data-secret is not recovered
+  PASS  onclick is not recovered
+  PASS  formaction is not recovered
+  PASS  formmethod is not recovered
+  PASS  formenctype is not recovered
+  PASS  download is not recovered
+  PASS  the attack form's action is still only a boolean
+  PASS  a hidden input value present ONLY in rendered.html is not recovered
+  PASS  a javascript: href present ONLY in rendered.html is not recovered
+  PASS  the string original.example exists nowhere in the SiteSpec
+  PASS  the string SUPPLEMENTAL-SECRET exists nowhere in the SiteSpec
+  PASS  the string ATTACK-PAYLOAD exists nowhere in the SiteSpec
+  PASS  the string steal() exists nowhere in the SiteSpec
+  PASS  the string javascript:alert exists nowhere in the SiteSpec
+  PASS  the string multipart/form-data exists nowhere in the SiteSpec
+  PASS  the string color:red exists nowhere in the SiteSpec
+  PASS  the string "secret" exists nowhere in the SiteSpec
+  PASS  the string x.txt exists nowhere in the SiteSpec
+
+§11/§35 recovery provenance is recorded, and only where real
+  PASS  ordinary nodes carry no recoveredAttributeNames field at all
+  PASS  every named recovery really is in the attribute map and on the allowlist
+  PASS  §12 the viewport counts what it recovered
+  PASS  …and names them
+  PASS  the site stats agree with the sum of the viewports
+  PASS  the per-name site counts sum to the same total
+
+§28 a fallback viewport recovers nothing at all
+  PASS  desktop: the fallback viewport recovered 0 attributes
+  PASS  desktop: no node claims a recovered attribute
+  PASS  desktop: §13 the gap is recorded as a limitation
+  PASS  desktop: §14 a fallback viewport WITH table cells keeps the table limitation
+  PASS  mobile: the fallback viewport recovered 0 attributes
+  PASS  mobile: no node claims a recovered attribute
+  PASS  mobile: §13 the gap is recorded as a limitation
+  PASS  mobile: §14 a fallback viewport WITH table cells keeps the table limitation
+  PASS  a colspan plainly written in the unaligned HTML is still not compiled
+  PASS  …and neither are open / disabled
+
+§29 determinism of the supplemental channel
+  PASS  attribute source order does not change the compiled output
+  PASS  the serialized attribute keys are sorted
+  PASS  §9 all three boolean spellings compile to the same fact
+
+§89–§92 interaction join
+  PASS  all three confirmed patterns are compiled
+  PASS  a pattern's trigger element id becomes a SiteSpec node id
+  PASS  a declared, static target resolves to a node
+  PASS  a dynamically mounted target is NOT resolved to a static node
+  PASS  …it is marked dynamic
+  PASS  …its transition is recorded as mounted
+  PASS  …its observed shape and descendant census survive
+  PASS  …and the limitation states the structure was never observed
+  PASS  §60 no invented node was inserted for the dynamic target
+  PASS  the pattern itself is still preserved
+  PASS  §112 a native <summary> trigger links to its <details> target through the tree
+  PASS  Task 12's own free-text limitations are preserved verbatim
+  PASS  rule provenance travels with the IR
+  PASS  only rules that produced a pattern are listed
+  PASS  pages index their own behaviors
+  PASS  an explored page is marked explored
+  PASS  §65 an unexplored page is marked, not silently empty
+
+§92/§62 unknown interactions are preserved, never promoted
+  PASS  the unknown case is compiled
+  PASS  its reason is unchanged
+  PASS  its Task 11 status is preserved
+  PASS  its trigger resolves to a node
+  PASS  its partial hints survive
+  PASS  its AI eligibility survives
+  PASS  an inviting aria-label did NOT promote it to a menu pattern
+
+§93/§64 fake AI is ignored unless explicitly named
+  PASS  ai-analysis.json sits right next to the inputs
+  PASS  the default compile has ZERO inferred interactions
+  PASS  …and the provenance ledger says so
+  PASS  …and no page claims inferred ids
+  PASS  an explicit --ai-analysis produces exactly one inference
+  PASS  …it lands ONLY in inferredInteractions[]
+  PASS  …it keeps provenance inferred and names its provider
+  PASS  …the confident wrong guess did NOT become a confirmed menu
+  PASS  …and the ledger flips to hasAiInference
+
+§90 a pattern whose trigger is not in the tree FAILS the compile
+  PASS  compilation fails fast
+  PASS  …and the error names the unresolvable trigger
+
+§96 self-contained consumer: source artifacts deleted
+  PASS  loadSiteSpec still succeeds with every source run deleted
+  PASS  §30 the recovered attributes survive the deletion of rendered.html itself
+  PASS  …and the full invariant set still passes
+  PASS  …with all reconstruction data present (nodes, text, styles, geometry, assets)
+  PASS  …and the interaction joins still resolve
+  PASS  …the source paths are still recorded for AUDIT, pointing at the deleted runs
+  PASS  §73 no reconstruction data lives outside the SiteSpec root
+
+§74 path safety
+  PASS  every internal file reference is relative
+  PASS  §99 no absolute filesystem path anywhere in site-spec.json
+  PASS  a `..` file reference is rejected by the loader
+  PASS  an absolute file reference is rejected by the loader
+
+§98 Zod round-trip + §99 invariants
+  PASS  the artifact that was written parses back through the SiteSpec schemas
+  PASS  a dangling style token is caught by the invariants
+  PASS  a missing verified route is caught when the expectation is supplied
+  PASS  a recovered attribute outside the allowlist is caught
+  PASS  a recovery claimed on a FALLBACK viewport is caught
+  PASS  a boolean attribute stored as a string instead of presence is caught
+  PASS  a supplemental total that disagrees with the pages is caught
+
+§97 determinism
+  PASS  the same input compiled twice is byte-identical
+  PASS  reversing routes / families / assets / styles / patterns / unknowns changes nothing logical
+  PASS  no timestamp, clock or random id reached a deterministic artifact body
+
+§119 existing artifacts are immutable to this Task
+  PASS  no Task 06–12 fixture artifact changed size or mtime across two compilations
+  PASS  the source tree really was read (the snapshot is non-empty)
+
+§68/§70 responsive model
+  PASS  the responsive model claims only observed endpoints
+  PASS  no breakpoint was invented
+  PASS  the limitation states no cross-viewport matching was performed
+  PASS  responsive differences are reported as numbers only
+
+§76/§77/§78 what must NOT be in the IR
+  PASS  no framework concept appears in the schema output
+  PASS  no original stylesheet source
+  PASS  no script source or inline handler body
+
+§100 provenance summary
+  PASS  the ledger reports observed / derived / inferred separately
+  PASS  pattern / unknown counts agree with the interaction spec
+  PASS  route coverage is 100% while exact-observation coverage is not
+  PASS  the limitation glossary explains every code the artifact uses
+
+§118 offline import graph
+  PASS  the import graph reaches no browser / crawler / HTTP / AI-provider module
+  PASS  …and its only third-party dependencies are the HTML parser and zod
+
+252/252 checks passed
+[smoke:sitespec] OK

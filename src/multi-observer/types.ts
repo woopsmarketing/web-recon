@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   ObservationProfileSchema,
+  PageSourceIntegritySchema,
   ResponsiveSummarySchema,
   ViewportProfileSchema,
 } from "../observer/types.js";
@@ -104,6 +105,11 @@ export type SitePageStatus = z.infer<typeof SitePageStatusSchema>;
  * Run outcome. A single page failure must never destroy the run (item 13), so
  * there is no run-level `failed`: the successful pages are always kept and the
  * failures are listed per page.
+ *
+ * Task 28.7 B1: a page whose SOURCE INTEGRITY is suspect also degrades the run
+ * to `completed-with-errors`. Its artifacts are kept (see
+ * `ObservedSitePage.sourceIntegrity` for why dropping them is worse), but the
+ * run must not report a plain `completed` over a page whose document was a 503.
  */
 export const SiteRunStatusSchema = z.enum(["completed", "completed-with-errors"]);
 export type SiteRunStatus = z.infer<typeof SiteRunStatusSchema>;
@@ -166,6 +172,24 @@ export const ObservedSitePageSchema = z.object({
   /** Every byte this page wrote (both viewports + its observation.json). */
   bytes: z.number().int().nonnegative().optional(),
 
+  /**
+   * Task 28.7 B1 — the page WAS observed and persisted, and its bytes are NOT
+   * trustworthy as the source page (the document answered non-2xx after a
+   * bounded retry, or a viewport is starved relative to its sibling in this
+   * run).
+   *
+   * WHY IT IS HERE RATHER THAN A NEW `status` MEMBER. Dropping the observation
+   * — which is what a failure status means, since a failed page keeps no
+   * artifact — is the worst available outcome: `route-plan` throws when a route
+   * has no `renderSourcePageId`, so one bad response would destroy the entire
+   * reconstruction. The artifact is kept and the manifest says loudly that it
+   * is not the site. The run status also degrades to `completed-with-errors`,
+   * so a reader cannot see a plain `completed` over a page that was a 503.
+   *
+   * Absent on every healthy page and on every pre-B1 manifest.
+   */
+  sourceIntegrity: PageSourceIntegritySchema.optional(),
+
   error: ObservationErrorSchema.optional(),
 });
 export type ObservedSitePage = z.infer<typeof ObservedSitePageSchema>;
@@ -227,6 +251,21 @@ export const SiteObservationConfigSchema = z.object({
   prepareScroll: z.boolean(),
   /** Profiles as actually applied, incl. the UA resolved from the live engine. */
   viewportProfiles: z.array(ViewportProfileSchema),
+  /**
+   * Task 28.6 W1.3 — the layout-probe widths this run applied, so a run is
+   * reproducible from its own manifest instead of from whatever the constant
+   * happens to say today. `.optional()`: pre-28.6 manifests carry neither field.
+   *
+   * Task 28.6 C3 D1 correction: this is the run-wide FLOOR set (the constant
+   * plus any `--probe-widths`), NOT the set any given page sampled. The probe
+   * now DERIVES additional widths per page from that page's own authored
+   * `@media` breakpoints, so the sampled set varies across the run; the
+   * per-page truth, with a reason for every width, is `widthProvenance` in
+   * that page's `layout-probe.json`.
+   */
+  probeWidths: z.array(z.number().int().positive()).optional(),
+  /** The MOBILE-context probe's FLOOR widths (Task 28.6 W1.4 / C3 D1). */
+  probeWidthsMobile: z.array(z.number().int().positive()).optional(),
   maxValidationSamplesPerSite: z.number().int().nonnegative(),
   minValidationFamilySize: z.number().int().positive(),
 });
@@ -290,6 +329,13 @@ export const SiteObservationStatsSchema = z.object({
 
   /** Wall clock for the whole run — NOT the sum of per-page times. */
   totalElapsedMs: z.number().int().nonnegative(),
+  /**
+   * Task 28.7 B1 — pages that were observed and persisted but whose bytes are
+   * not trustworthy as the source page. Counted SEPARATELY from `failedPages`:
+   * they have artifacts, and every byte figure above includes them.
+   * `.optional()` so pre-B1 manifests still parse.
+   */
+  suspectPages: z.number().int().nonnegative().optional(),
 });
 export type SiteObservationStats = z.infer<typeof SiteObservationStatsSchema>;
 

@@ -1,0 +1,1760 @@
+# MASTER TASK
+# WEB-RECON TRACK B
+# INTERIOR-01 1.5.1 + STATIC DEPLOYMENT FOUNDATION
+#
+# MODE:
+# IMPLEMENTATION ALLOWED
+#
+# IMPORTANT:
+# A SEPARATE TRACK A IS RUNNING IN PARALLEL:
+#
+#   WEB-RECON × BOOSTCHAT
+#   PRODUCER REVIEW + INTEGRATION CONTRACT V0 CANDIDATE
+#
+# TRACK A IS READ-ONLY AND MUST NOT BE DISTURBED.
+#
+# THIS TRACK MUST NOT IMPLEMENT OR PREEMPT
+# ANY BOOSTCHAT / INTEGRATION CONTRACT DECISIONS.
+#
+# MAIN AGENT:
+# Claude Code strong coding model, High/XHigh recommended
+
+==================================================
+0. PURPOSE
+==================================================
+
+이번 작업은 BoostChat integration 구현이 아니다.
+
+이번 Track B의 목적은 서로 독립적인 두 가지다.
+
+A.
+현재 interior-01 demo를
+공개 데모로 내보낼 수 있는 1.5.1 상태로 안정화한다.
+
+B.
+web-recon에서 이미 만들어진 immutable static package를
+실제 Cloudflare 기반 delivery layer로 전달할 수 있는
+Static Deployment Foundation을 만든다.
+
+즉:
+
+Site Data
+→ site:build
+→ immutable static package
+→ site:publish
+→ R2
+→ recon-runtime
+→ browser
+
+경로를 준비한다.
+
+이번 작업은:
+
+Integration Contract V0
+portfolio.search
+BoostChat widget
+manifest/index
+
+와 독립적으로 수행되어야 한다.
+
+==================================================
+1. PARALLEL TRACK SAFETY — ABSOLUTE RULE
+==================================================
+
+현재 다른 Claude session에서 Track A가
+동시에 실행 중이다.
+
+Track A:
+
+WEB-RECON × BOOSTCHAT
+PRODUCER REVIEW + INTEGRATION CONTRACT V0 CANDIDATE
+
+Track A는 현재 web-recon의 실제 구조를 읽어서
+contract를 설계하고 있다.
+
+따라서 이 Track B는
+Track A가 읽는 working tree를 수정하면 안 된다.
+
+반드시 시작 시 확인:
+
+git status
+git rev-parse HEAD
+git branch --show-current
+
+그리고:
+
+THIS TRACK MUST RUN IN A SEPARATE GIT WORKTREE
+OR AN EQUIVALENT FULLY ISOLATED COPY.
+
+현재 working tree가 Track A가 쓰는 곳이라면
+거기서 구현을 시작하지 않는다.
+
+가능하면 같은 시작 commit에서:
+
+branch:
+track-b/static-deployment-foundation
+
+별도 worktree를 사용한다.
+
+예시 개념:
+
+main worktree
+→ Track A
+
+../web-recon-track-b
+→ Track B
+
+실제 repo 상태에 맞춰 경로를 정한다.
+
+IMPORTANT:
+
+Track B 시작 commit/hash를
+보고서에 반드시 기록한다.
+
+Track A 완료 전:
+
+- Track B branch merge 금지
+- Track A branch merge 금지
+- 서로 cherry-pick 금지
+- shared generated file overwrite 금지
+
+==================================================
+2. TRACK A OWNED AREAS — DO NOT TOUCH
+==================================================
+
+다음은 Track A가 소유한다.
+
+절대 수정하지 않는다.
+
+docs/reports/integration/**
+
+특히:
+
+01-web-recon-producer-review-v0.md
+02-integration-contract-v0-candidate.md
+03-integration-contract-v0-candidate.json
+04-boostchat-requirement-disposition.md
+05-integration-contract-v0-independent-review.md
+06-implementation-phase-plan.md
+
+또한 아래 개념을 Track B에서
+임의로 설계하거나 구현하지 않는다.
+
+- integration manifest
+- portfolio index
+- portfolio.search
+- first-party resource contract
+- vocabulary contract
+- BoostChat consumer contract
+- widget integration
+- BoostChat settings
+- Site Platform API
+
+Track A 산출물이 아직 없더라도
+추측해서 선행 구현하지 않는다.
+
+==================================================
+3. TRACK B OWNED AREAS
+==================================================
+
+이 Track이 소유하는 범위:
+
+1. interior-01 1.5.1 stabilization
+2. current web-recon Git checkpoint readiness
+3. current static build package inspection
+4. publish contract for existing immutable package
+5. site:publish CLI
+6. thin Cloudflare static serving runtime
+7. R2 artifact layout
+8. local serving test
+9. dry-run publication verification
+10. live deployment plan
+
+중요:
+
+STATIC DELIVERY ONLY.
+
+==================================================
+4. NON-GOALS
+==================================================
+
+이번 작업에서 절대 하지 않는다.
+
+- BoostChat 코드 수정
+- BoostWeb 코드 수정
+- Site Factory 수정
+- Supabase site_platform schema
+- Supabase migration
+- Railway builder
+- portfolio matching
+- vocabulary normalization
+- integration-manifest.json
+- portfolio-index.json
+- widget snippet injection
+- first-party search artifact
+- API backend
+- CMS/editor
+- customer auth
+- billing
+- multi-tenant control plane
+- content DB migration
+- existing Factory Worker route 수정
+- existing BoostWeb Worker route 수정
+- existing PBN data 변경
+- actual live deployment without explicit approval
+
+==================================================
+5. SOURCE PRESERVATION / ARCHITECTURE INVARIANTS
+==================================================
+
+기존 web-recon 핵심 원칙을 유지한다.
+
+Original Website
+→ Source Capture
+→ Source-Preserved Faithful Clone
+→ Authored Template
+→ Site Data
+→ SiteSnapshot
+→ Static Build Package
+→ Publication
+
+Preservation:
+
+QA/reference/forensics only.
+
+Preservation data가
+production serving dependency가 되어서는 안 된다.
+
+Visitor request 시:
+
+- Supabase query 금지
+- source capture 접근 금지
+- Template rendering 금지
+- SSR 금지
+- ISR 금지
+
+Visitor는 이미 만들어진 static bytes만 받는다.
+
+==================================================
+6. CURRENT KNOWN BASELINE
+==================================================
+
+현재 최신 known release:
+
+interior-01 1.5.0
+
+release:
+interior-01-1.5.0-75f173939e77
+
+releaseHash:
+75f173939e778bb6f49d15e4ba2fbcd092e93b849009862a1afe1a26d9a3863c
+
+1.5.0 features:
+
+- /3d-portfolio
+- /about
+- /contact
+- desktop navigation
+- mobile hamburger/dialog
+- contact form mailto handoff
+- 3D placeholder
+- existing gallery/lightbox
+- floating CTA behavior
+
+Known independent-review findings:
+
+1 MAJOR:
+InquiryForm textarea has no bound and mailto URL can exceed
+practical handler/browser limits.
+
+MINOR:
+1. multiline line endings normalization
+2. repeated submit status announcement
+3. mobile menu resize focus behavior
+4. site with no email can still expose /contact in sitemap
+5. test-gating note
+
+Do not assume this summary is exact current source.
+
+Inspect actual code and reports first.
+
+==================================================
+7. PHASE A — 1.5.1 SCOPE
+==================================================
+
+1.5.1 must be a BOUNDED PATCH.
+
+No redesign.
+
+No new business feature.
+
+No customer-specific hack.
+
+No integration feature.
+
+Fix only generic defects justified by current review.
+
+--------------------------------------------------
+7A. MAILTO LENGTH PROTECTION
+--------------------------------------------------
+
+Current inquiry form uses mailto handoff.
+
+Problem:
+
+textarea can generate an excessively long encoded URL.
+
+Required:
+
+- introduce a sensible message maxLength
+- AND/OR encoded URL length guard
+- never report success when navigation cannot be safely attempted
+- preserve accessibility
+- keep behavior generic
+- no browser-specific magic numbers without explanation
+- avoid overengineering because mailto is transitional
+
+If URL exceeds safe supported size:
+
+provide honest fallback.
+
+Possible fallback:
+
+- show configured email
+- offer a copyable prepared message
+- do not claim inquiry was sent
+
+Do not build an inquiry backend.
+
+--------------------------------------------------
+7B. LINE ENDINGS
+--------------------------------------------------
+
+Normalize multiline body consistently.
+
+Prefer:
+
+input CRLF/LF
+→ canonical CRLF in mail body
+
+No accidental double conversion.
+
+--------------------------------------------------
+7C. REPEATED SUBMIT ACCESSIBILITY
+--------------------------------------------------
+
+If same status text is emitted twice,
+screen reader should be able to announce new submit result.
+
+Use the smallest accessible solution.
+
+--------------------------------------------------
+7D. MOBILE MENU FOCUS
+--------------------------------------------------
+
+Current menu closes on resize >= desktop breakpoint.
+
+Do not return focus to a now-hidden hamburger.
+
+Determine appropriate focus behavior.
+
+Preserve:
+
+- ESC
+- backdrop close
+- explicit close
+- link close
+- focus trap
+- focus return for normal mobile close
+- body scroll lock
+- desktop transition
+
+--------------------------------------------------
+7E. NO-CONTACT-CHANNEL ROUTING
+--------------------------------------------------
+
+Inspect whether `/contact` and sitemap are emitted
+for sites without a usable contact channel.
+
+Do NOT invent a platform redesign.
+
+If current Template/site contract allows a small generic correction,
+apply it.
+
+If it requires route-level feature gating or architecture work,
+defer and document.
+
+Do not introduce customer-specific branching.
+
+==================================================
+8. 1.5.1 IMMUTABILITY
+==================================================
+
+Do NOT modify the existing 1.5.0 immutable release.
+
+Create a new Template Release.
+
+Expected semantic version:
+
+1.5.1
+
+Exact release identity must be generated
+by existing release tooling/convention.
+
+Old 1.5.0 remains untouched and available.
+
+==================================================
+9. 1.5.1 VALIDATION
+==================================================
+
+Run all relevant existing regression suites.
+
+At minimum inspect and execute whatever currently covers:
+
+- TypeScript
+- platform tests
+- Template release tests
+- site build
+- IA/navigation
+- mobile menu
+- contact form
+- sitemap
+- gallery
+- Step6/demo proof
+- fixture validation
+
+Do not fabricate expected test names.
+
+Use actual repo scripts.
+
+Run fresh-context independent review after tests.
+
+Review only 1.5.1 delta.
+
+Classify:
+
+BLOCKER
+MAJOR
+MINOR
+NOTE
+
+Resolve BLOCKER/MAJOR before declaring 1.5.1 ready,
+unless explicitly documented as intentionally deferred
+and public demo safety is unaffected.
+
+==================================================
+10. GIT CHECKPOINT READINESS
+==================================================
+
+After 1.5.1 is stable,
+inspect repository status.
+
+Classify every changed/untracked group:
+
+CANONICAL SOURCE
+CANONICAL DATA
+IMMUTABLE RELEASE
+GENERATED REQUIRED ARTIFACT
+TEMPORARY / DISPOSABLE
+REPORT / DOCUMENTATION
+SECRET-RISK
+UNKNOWN
+
+Do NOT blindly clean.
+
+Do NOT delete unknown files.
+
+Inspect:
+
+.gitignore
+env files
+tokens
+credentials
+Cloudflare files
+generated output
+
+Ensure no secret-containing file is about to be committed.
+
+Because Track A is running separately,
+do not incorporate its reports into this branch.
+
+Produce a recommended checkpoint boundary.
+
+Unless explicitly authorized:
+
+DO NOT COMMIT.
+
+Instead provide:
+
+recommended branch
+recommended commit message
+files included
+files excluded
+
+==================================================
+11. STATIC BUILD PACKAGE — INSPECT REALITY FIRST
+==================================================
+
+Before writing deployment code,
+inspect the actual current build package.
+
+Do not rely on remembered structure.
+
+Find:
+
+- site build command
+- build record
+- current.json
+- previous.json
+- history
+- package directory
+- static `site/` tree
+- packageHash
+- buildInputId
+- QA status
+- artifact inventory
+
+Record actual paths and schema.
+
+Inspect boost-interior-demo build.
+
+Determine:
+
+- exact static route layout
+- clean URL representation
+- index.html behavior
+- nested detail routes
+- 404 output
+- `_next` assets
+- public assets
+- raster assets
+- robots.txt
+- sitemap.xml
+
+Do not alter package format unless strictly required.
+
+Prefer serving existing package exactly as built.
+
+==================================================
+12. DEPLOYMENT ARCHITECTURE — FIXED BOUNDARY
+==================================================
+
+Target architecture:
+
+web-recon build
+        ↓
+immutable static package
+        ↓
+site:publish
+        ↓
+Cloudflare R2 artifact bucket
+        ↓
+routing/publication pointer
+        ↓
+recon-runtime
+        ↓
+visitor
+
+recon-runtime is:
+
+STATIC DELIVERY WORKER
+
+not:
+
+- Next runtime
+- application backend
+- API server
+- Site Platform
+- CMS
+- SSR server
+- DB gateway
+
+==================================================
+13. R2 ARTIFACT MODEL
+==================================================
+
+Target bucket concept:
+
+boost-sites-artifacts
+
+Do not create it live yet.
+
+Design based on packageHash identity.
+
+Candidate:
+
+sites/<siteId>/packages/<packageHash>/...
+
+routing/<hostname>.json
+
+But do not blindly adopt this if
+actual package/runtime mapping suggests a better form.
+
+Requirements:
+
+- package immutable
+- same packageHash may be reused
+- no overwrite of immutable bytes
+- publication pointer is mutable
+- pointer update happens LAST
+- old package remains for rollback
+
+Do NOT use buildInputId as the storage identity
+unless evidence shows it is the correct byte identity.
+
+Existing architecture direction prefers packageHash
+as immutable artifact identity.
+
+Verify against current code.
+
+==================================================
+14. PUBLICATION ATOMICITY
+==================================================
+
+Hard invariant:
+
+UPLOAD
+→ VERIFY
+→ ACTIVATE
+
+Never:
+
+ACTIVATE
+→ finish upload
+
+Publication flow:
+
+1. inspect build
+2. validate build record
+3. validate QA
+4. recalculate/verify package identity where possible
+5. enumerate files
+6. upload immutable package
+7. verify package
+8. write/switch routing pointer last
+
+If any step before 8 fails:
+
+current live pointer remains unchanged.
+
+If pointer write fails:
+
+old publication remains live.
+
+Rollback:
+
+pointer swap to an existing retained package.
+
+Do not delete previous package during publish.
+
+==================================================
+15. current.json MUST NOT BECOME LIVE TRUTH
+==================================================
+
+Current local build metadata such as:
+
+current.json
+
+must remain a local/build concept.
+
+Do not redefine it as production serving truth.
+
+For this pilot:
+
+live truth may be a dedicated R2 routing pointer.
+
+Future Site Platform may later move live publication truth
+into a database/publication log.
+
+Track B must leave that seam open.
+
+==================================================
+16. site:publish CLI
+==================================================
+
+Implement a publish CLI
+inside web-recon following existing repo conventions.
+
+Exact naming should fit current package manager/scripts.
+
+Desired conceptual command:
+
+pnpm site:publish --site boost-interior-demo --host <hostname>
+
+Do not force this exact syntax
+if repo conventions clearly suggest another.
+
+Required responsibilities:
+
+1. resolve site/build
+2. read build-record
+3. validate status
+4. verify artifact/package identity
+5. enumerate files deterministically
+6. infer Content-Type
+7. produce target R2 keys
+8. detect existing immutable objects safely
+9. upload missing objects
+10. verify uploaded objects
+11. only after full success switch pointer
+12. emit clear final summary
+
+==================================================
+17. site:publish --dry-run
+==================================================
+
+Mandatory.
+
+Dry-run must:
+
+- perform zero cloud writes
+- perform zero pointer writes
+- perform zero route changes
+- not create bucket
+- not deploy Worker
+
+But should calculate/print:
+
+siteId
+build identity
+packageHash
+file count
+total bytes
+target bucket
+target object keys/prefixes
+content types
+cache categories
+pointer target
+what would be skipped
+what would be uploaded
+validation failures
+
+Dry-run output should be deterministic.
+
+==================================================
+18. CLOUD CREDENTIAL SAFETY
+==================================================
+
+Do not print:
+
+- API token
+- account token
+- secret
+- R2 secret
+- credentials
+
+Do not persist secrets to repo.
+
+Use Wrangler/environment mechanisms
+consistent with existing local setup.
+
+If credentials are absent:
+
+dry-run/local test must still work
+to the greatest extent possible.
+
+Do not weaken credential handling for convenience.
+
+==================================================
+19. recon-runtime
+==================================================
+
+Implement a thin Cloudflare Worker.
+
+Suggested repo placement only if conventions permit:
+
+infra/recon-runtime/
+
+or equivalent.
+
+Responsibilities only:
+
+request
+→ hostname
+→ publication/routing pointer
+→ packageHash
+→ path normalization
+→ R2 object key
+→ R2 GET
+→ correct HTTP response
+
+Nothing more.
+
+==================================================
+20. HOST RESOLUTION
+==================================================
+
+Pilot architecture:
+
+specific hostname
+→ recon-runtime
+
+Do NOT modify existing:
+
+*.boostweb.co.kr/*
+*/*
+Factory routes
+
+during this implementation pass.
+
+Do not rely on wildcard takeover.
+
+Pilot should be compatible with
+an exact hostname/route.
+
+Potential example only:
+
+interior-demo.boostweb.co.kr
+
+The actual host is not hardcoded into platform code.
+
+==================================================
+21. ROUTING POINTER
+==================================================
+
+A routing pointer should minimally identify:
+
+siteId
+packageHash
+
+Potentially:
+
+publicationId/version
+
+if useful for stale-write protection.
+
+But do not prematurely recreate
+future Site Platform publication tables.
+
+For local/R2 pilot,
+keep it minimal.
+
+Pointer must be schema-validated.
+
+Invalid pointer:
+
+fail closed.
+
+Never guess a package.
+
+==================================================
+22. PATH RESOLUTION
+==================================================
+
+Inspect actual static export before implementation.
+
+Support actual package form for:
+
+/
+portfolio list
+portfolio detail
+/3d-portfolio
+/about
+/contact
+assets
+_next/static
+robots.txt
+sitemap.xml
+404
+
+Do not assume:
+
+/foo → /foo.html
+
+or:
+
+/foo → /foo/index.html
+
+until package confirms it.
+
+Create one centralized deterministic resolver.
+
+Protect against:
+
+..
+encoded traversal
+backslash tricks
+double decoding
+null bytes
+unexpected absolute path forms
+
+No arbitrary R2 key access.
+
+==================================================
+23. HTTP SEMANTICS
+==================================================
+
+Runtime must return correct:
+
+status
+Content-Type
+Cache-Control
+Content-Length if naturally available
+ETag if safely available/valuable
+HEAD semantics if supported
+
+At minimum:
+
+HTML
+CSS
+JS
+JSON
+XML
+TXT
+SVG
+PNG
+JPG/JPEG
+WEBP
+AVIF if present
+ICO
+WOFF/WOFF2 if present
+source maps if packaged
+
+Do not hardcode image MIME for all assets.
+
+==================================================
+24. REAL 404
+==================================================
+
+Unknown route must produce:
+
+HTTP 404
+
+not:
+
+200 + 404 body
+
+If package has 404.html:
+
+serve its body with 404 status.
+
+Do not fall back to homepage.
+
+This is SEO-critical.
+
+==================================================
+25. CACHE MODEL
+==================================================
+
+Separate:
+
+MUTABLE POINTER
+vs
+IMMUTABLE PACKAGE OBJECTS
+
+Pointer:
+
+short / controlled freshness
+
+Immutable package:
+
+packageHash-keyed
+
+Static hashed assets:
+
+long immutable browser cache where valid
+
+HTML:
+
+must not become permanently stale merely because URL is stable.
+
+Because packageHash separates package generations,
+edge cache key can safely incorporate package identity.
+
+Design version-aware caching.
+
+Do not require global cache purge for normal publish
+if versioned cache keys can avoid it.
+
+==================================================
+26. WORKER CACHE
+==================================================
+
+If using Cloudflare Cache API:
+
+cache identity must include
+packageHash + resolved object path.
+
+Do not cache only:
+
+hostname + pathname
+
+without publication identity
+if that can serve stale bytes after pointer switch.
+
+Do not make Cache API usage mandatory
+if direct R2 read is simpler for the first local implementation.
+
+Correctness before optimization.
+
+==================================================
+27. HTML / ASSET CACHE POLICY
+==================================================
+
+Suggested policy categories, subject to actual output:
+
+A.
+content-addressed/hashed assets
+→ public, max-age=31536000, immutable
+
+B.
+HTML
+→ reasonable browser policy
+→ edge may cache by packageHash
+
+C.
+routing pointer
+→ very short/no cache as needed
+
+D.
+robots/sitemap
+→ tied to package version
+
+Do not invent aggressive immutable policy
+for unhashed mutable-looking URLs without package version isolation.
+
+==================================================
+28. SEO DELIVERY INVARIANTS
+==================================================
+
+Worker must not modify generated SEO content.
+
+Preserve package bytes.
+
+Verify live/local behavior:
+
+- title/metadata unchanged
+- canonical unchanged
+- JSON-LD unchanged
+- robots correct
+- sitemap correct
+- real 404
+- JS-disabled HTML remains meaningful
+
+No request-time SEO generation.
+
+==================================================
+29. INTEGRATION ARTIFACT NEUTRALITY
+==================================================
+
+Track A may later decide to include:
+
+manifest
+portfolio index
+
+inside the static package.
+
+Track B must not block that.
+
+Therefore:
+
+recon-runtime should be able to serve
+arbitrary safe static files contained in the package
+with correct MIME.
+
+But Track B must NOT:
+
+- reserve BoostChat-specific semantics
+- special-case `/_integration/*`
+- create integration files
+- validate integration contract
+- add BoostChat-specific routing
+
+Treat future integration JSON
+as ordinary static package files.
+
+This is a critical non-conflict rule.
+
+==================================================
+30. PACKAGE FORMAT STABILITY
+==================================================
+
+Do not redesign package format
+just to make Worker serving easier.
+
+First attempt:
+
+serve current output tree faithfully.
+
+If a limitation makes that impossible:
+
+document:
+
+CURRENT PACKAGE LIMITATION
+MINIMUM REQUIRED CHANGE
+WHY
+
+before modifying builder behavior.
+
+Any package-format modification must be
+generic static-delivery behavior,
+not integration behavior.
+
+==================================================
+31. CLOUDFLARE CONFIG AS CODE
+==================================================
+
+New recon-runtime configuration
+must live in Git.
+
+Prefer current Cloudflare recommended Wrangler config form
+consistent with the project.
+
+Do not make Dashboard state
+the only source of configuration.
+
+Include:
+
+Worker name
+R2 binding
+compatibility settings
+local dev config
+route configuration placeholder if appropriate
+
+Do not commit secret values.
+
+==================================================
+32. EXISTING CLOUDFLARE INFRA — HANDS OFF
+==================================================
+
+Known existing infrastructure includes:
+
+BoostWeb Worker
+Site Factory Worker
+existing routes
+Factory custom domains
+R2 image bucket
+R2 ISR cache
+
+Do not modify any of them.
+
+Track B adds a separate delivery path.
+
+No migration of Factory.
+
+No cleanup of Factory ISR.
+
+No route takeover.
+
+==================================================
+33. LOCAL RUNTIME TEST
+==================================================
+
+Test recon-runtime locally
+against an actual boost-interior-demo package.
+
+Use actual package bytes.
+
+Required requests:
+
+/
+portfolio
+at least one real portfolio detail
+/3d-portfolio
+/about
+/contact
+robots.txt
+sitemap.xml
+known asset
+known _next asset
+nonexistent route
+encoded/traversal-dangerous paths
+
+Assert:
+
+expected status
+expected MIME
+expected body/object
+no broken assets
+404 is 404
+no source mutation
+
+==================================================
+34. LOCAL BROWSER SMOKE TEST
+==================================================
+
+Where practical,
+run the locally served site in a real browser.
+
+Verify:
+
+desktop
+mobile viewport
+
+Key pages.
+
+Check:
+
+console errors
+network 404s
+navigation
+assets
+hydration if relevant
+gallery/lightbox
+menu
+contact form
+
+Do not add BoostChat widget.
+
+==================================================
+35. BYTE / PACKAGE INTEGRITY
+==================================================
+
+Publishing/serving must not mutate
+the static package.
+
+Where practical:
+
+hash representative source package files
+and compare served bytes for binary/static resources.
+
+For HTML,
+if no runtime rewriting is intended,
+bytes should also remain identical.
+
+Any exception must be documented.
+
+==================================================
+36. OBSERVABILITY — MINIMAL
+==================================================
+
+Do not add a giant observability stack.
+
+Runtime should make it possible to diagnose:
+
+hostname
+siteId
+packageHash
+request path
+status
+pointer failure
+missing object
+
+without logging secrets.
+
+Prefer structured minimal logs.
+
+Cloudflare Worker observability should be enabled
+when actual deployment happens,
+but live settings are not changed in this pass.
+
+==================================================
+37. ERROR BEHAVIOR
+==================================================
+
+Define behavior for:
+
+unknown hostname
+pointer missing
+pointer malformed
+package missing
+object missing
+R2 error
+invalid path
+
+Fail closed.
+
+Do not:
+
+serve another site's content
+guess a site
+fall through to Factory
+serve stale unknown package by accident
+
+Each failure class should have a deterministic HTTP status.
+
+==================================================
+38. MULTI-SITE DESIGN WITHOUT CONTROL PLANE
+==================================================
+
+Although pilot is one demo site,
+runtime architecture must not hardcode:
+
+boost-interior-demo
+
+as the only site.
+
+Routing:
+
+hostname
+→ pointer
+→ site/package
+
+must naturally support multiple sites later.
+
+But:
+
+no database registry
+no SaaS admin
+no multi-tenant editor
+
+now.
+
+==================================================
+39. DOMAIN MODEL — PILOT ONLY
+==================================================
+
+Do not implement future domain registry.
+
+For pilot:
+
+routing pointer/object mapping is enough.
+
+Future `site_platform.domains`
+remains separate work.
+
+Never reuse Factory `public.domains`.
+
+No Supabase dependency.
+
+==================================================
+40. ROLLBACK DESIGN
+==================================================
+
+Rollback for this pilot should conceptually be:
+
+current pointer:
+package B
+
+→ switch pointer to retained package A
+
+No rebuild required.
+
+No deletion required.
+
+Implement dry-run/supporting primitive if natural,
+but do not build a large deployment history service.
+
+Existing package retention is sufficient for pilot.
+
+==================================================
+41. PUBLICATION CONCURRENCY
+==================================================
+
+Consider concurrent publish attempts
+for the same site.
+
+At minimum:
+
+document whether current pilot CLI assumes
+single operator/single publisher.
+
+Do not build distributed locking
+unless necessary now.
+
+But pointer updates must not accidentally
+allow an obviously stale local process
+to overwrite a newer publication without detection
+if there is a cheap guard.
+
+Possible lightweight protection:
+
+expected previous pointer/version
+
+subject to actual R2 API feasibility.
+
+Do not overbuild.
+
+==================================================
+42. COST AWARENESS
+==================================================
+
+Architecture should remain cheap.
+
+Visitor traffic:
+
+should not hit Supabase.
+
+Should primarily be:
+
+Cloudflare Worker
++
+R2/cache
+
+Do not add Railway
+or database reads to request path.
+
+Do not estimate current Cloudflare prices
+unless official current pricing has been explicitly checked.
+
+This task is architecture/implementation,
+not pricing research.
+
+==================================================
+43. STATIC DELIVERY CONTRACT
+==================================================
+
+Create a concise formal document defining:
+
+Publication Input
+Artifact Identity
+Pointer Identity
+Path Resolution
+HTTP Status
+MIME
+Caching
+404
+Rollback
+Failure behavior
+Immutability
+
+This contract must not mention BoostChat-specific data semantics.
+
+It should be reusable for any web-recon site.
+
+==================================================
+44. DEPLOYMENT FOUNDATION TESTS
+==================================================
+
+Add focused tests for at least:
+
+1. route resolver
+2. root path
+3. nested route
+4. detail route
+5. static asset
+6. MIME
+7. real 404
+8. traversal rejection
+9. invalid pointer
+10. missing package
+11. pointer changes package selection
+12. old package remains addressable
+13. dry-run produces zero writes
+14. publish does pointer last
+15. failed upload does not activate
+16. unknown hostname isolation
+
+Use existing repo testing conventions.
+
+No giant new framework.
+
+==================================================
+45. DO NOT TOUCH CONTENT CONTRACT
+==================================================
+
+This Track must NOT change:
+
+ProjectSchema
+category semantics
+scope semantics
+keywords semantics
+area semantics
+price semantics
+ProjectFilter behavior
+
+unless a 1.5.1 bug absolutely requires it.
+
+If such a need appears:
+
+STOP that sub-change.
+
+Document it as:
+
+TRACK_A_CONTRACT_RELEVANT_CHANGE_REQUIRED
+
+Do not proceed without human review.
+
+This prevents Track A's contract analysis
+from being invalidated.
+
+==================================================
+46. DO NOT TOUCH SNAPSHOT CONTRACT
+==================================================
+
+Do not change:
+
+SiteSnapshot schema
+buildSiteSnapshot semantics
+ContentReader behavior
+assetFiles/unserved semantics
+
+unless deployment is literally impossible otherwise.
+
+Deployment should consume
+existing finalized package output,
+not mutate the content pipeline.
+
+==================================================
+47. DO NOT ADD INTEGRATION FIELDS TO SETTINGS
+==================================================
+
+Track A is deciding widget/data integration seams.
+
+Therefore do not add:
+
+boostChatKey
+integrationManifest
+portfolioSource
+chatbot
+widget
+externalIntegration
+
+to settings/schema/site data in Track B.
+
+Even if it seems obvious.
+
+Wait for Contract V0.
+
+==================================================
+48. REPORT OUTPUT PATH — KEEP SEPARATE
+==================================================
+
+Do not write into:
+
+docs/reports/integration/**
+
+Use a Track-B-specific path, for example:
+
+docs/result/static-deployment-foundation/
+
+or the closest existing result/report convention
+that does not overlap Track A.
+
+Required:
+
+00-summary.md
+01-151-validation.md
+02-current-package-reality.md
+03-static-delivery-contract.md
+04-site-publish-design.md
+05-recon-runtime-design.md
+06-local-validation.md
+07-live-deploy-plan.md
+08-independent-review.md
+
+==================================================
+49. REPORT — 00 SUMMARY
+==================================================
+
+Include:
+
+starting commit
+worktree/branch
+1.5.1 release
+demo build
+packageHash
+tests
+publish CLI state
+runtime state
+dry-run state
+live deployment performed? NO
+blockers
+deferred
+Track A non-conflict confirmation
+
+==================================================
+50. REPORT — LIVE DEPLOY PLAN
+==================================================
+
+Do not deploy.
+
+But provide the exact future steps needed.
+
+Expected categories:
+
+1. Cloudflare authentication verification
+2. create R2 bucket if absent
+3. deploy recon-runtime
+4. configure exact pilot hostname route
+5. upload immutable package
+6. verify package
+7. activate pointer
+8. HTTP smoke
+9. browser smoke
+10. SEO smoke
+11. rollback drill
+
+Use actual implementation commands,
+not hypothetical placeholders,
+once code exists.
+
+Do not expose secret values.
+
+==================================================
+51. LIVE DEPLOYMENT STOP GATE
+==================================================
+
+This Track MUST STOP before:
+
+- bucket creation
+- Worker production deploy
+- route creation/change
+- DNS change
+- live R2 write
+- live routing pointer write
+
+unless the user separately authorizes live deployment.
+
+Local Wrangler/dev/miniflare behavior is allowed
+if it does not mutate production.
+
+==================================================
+52. INDEPENDENT REVIEW
+==================================================
+
+After implementation + tests,
+use a fresh-context reviewer.
+
+Review:
+
+A.
+1.5.1 regression risk
+
+B.
+publication atomicity
+
+C.
+path traversal/security
+
+D.
+cross-site leakage
+
+E.
+MIME/404/cache correctness
+
+F.
+package immutability
+
+G.
+pointer race/stale activation
+
+H.
+accidental Factory coupling
+
+I.
+accidental BoostChat/Contract coupling
+
+J.
+secrets/config
+
+K.
+live resource mutation check
+
+L.
+overengineering
+
+Classify:
+
+BLOCKER
+MAJOR
+MINOR
+NOTE
+
+Resolve blockers/majors where appropriate.
+
+==================================================
+53. REQUIRED FINAL MATRIX
+==================================================
+
+Fill:
+
+TRACK_B_START_COMMIT =
+TRACK_B_ISOLATED_WORKTREE = YES/NO
+
+INTERIOR_151_READY =
+INTERIOR_151_RELEASE_ID =
+INTERIOR_151_RELEASE_HASH =
+
+DEMO_BUILD_READY =
+DEMO_BUILD_ID =
+DEMO_PACKAGE_HASH =
+
+GIT_CHECKPOINT_READY =
+
+STATIC_PACKAGE_FORMAT_CONFIRMED =
+STATIC_DELIVERY_CONTRACT_READY =
+
+SITE_PUBLISH_IMPLEMENTED =
+SITE_PUBLISH_DRY_RUN_PASS =
+
+RECON_RUNTIME_IMPLEMENTED =
+RECON_RUNTIME_LOCAL_PASS =
+
+REAL_404_PASS =
+MIME_PASS =
+PATH_SECURITY_PASS =
+PACKAGE_IMMUTABILITY_PASS =
+
+R2_BUCKET_REQUIRED =
+R2_BUCKET_CREATED = NO
+
+LIVE_WORKER_DEPLOYED = NO
+LIVE_ROUTE_CHANGED = NO
+LIVE_POINTER_CHANGED = NO
+
+SUPABASE_REQUIRED = NO
+RAILWAY_REQUIRED = NO
+BOOSTWEB_CHANGE_REQUIRED = NO
+SITE_FACTORY_CHANGE_REQUIRED = NO
+
+BOOSTCHAT_INTEGRATION_IMPLEMENTED = NO
+INTEGRATION_MANIFEST_IMPLEMENTED = NO
+PORTFOLIO_INDEX_IMPLEMENTED = NO
+
+TRACK_A_FILES_MODIFIED = NO
+TRACK_A_CONTRACT_ASSUMPTIONS_PREEMPTED = NO
+
+BLOCKERS_FOR_LIVE_DEPLOY =
+RECOMMENDED_LIVE_DEPLOY_SEQUENCE =
+
+==================================================
+54. CROSS-TRACK HANDOFF
+==================================================
+
+At completion,
+write a small section:
+
+"INFORMATION TRACK A MAY CARE ABOUT AFTER IT FINISHES"
+
+Only include deployment facts that
+could affect the eventual Contract implementation.
+
+Examples:
+
+- exact same-origin public URL behavior
+- JSON MIME support
+- package arbitrary-static-file support
+- packageHash/publication behavior
+- R2 Worker compression observation if locally testable
+- static artifact path restrictions
+
+Do NOT edit Track A documents.
+
+This section is only a handoff note.
+
+==================================================
+55. STOP CONDITION
+==================================================
+
+Completion means:
+
+1. 1.5.1 stabilized
+2. immutable release created
+3. demo build validated
+4. current package layout understood
+5. site:publish implementation ready
+6. dry-run passes
+7. recon-runtime implementation ready
+8. local runtime tests pass
+9. independent review complete
+10. exact live deployment plan documented
+
+But:
+
+NO PRODUCTION DEPLOYMENT.
+
+And:
+
+NO BOOSTCHAT INTEGRATION IMPLEMENTATION.
+
+==================================================
+56. FINAL LINE
+==================================================
+
+End final report with:
+
+WEB_RECON_TRACK_B_STATIC_DEPLOYMENT_FOUNDATION_COMPLETE
+LIVE_DEPLOYMENT_NOT_PERFORMED
+BOOSTCHAT_INTEGRATION_NOT_IMPLEMENTED
+TRACK_A_NOT_MODIFIED

@@ -1,0 +1,63 @@
+
+[unit] content reader: paginate / getBySlug / listSlugs
+  ok   C (unit) 173 items at 30/page → 6 pages sized 30/30/30/30/30/23
+  ok   G (unit) out-of-range / non-integer pages → undefined (never an empty page)
+  ok   K stable ordering: same input (any storage order) → same first/last item on every page
+  ok   L equal publishedAt → stable id (ascending) tie-break across a page boundary
+  ok   M new newest project: first on page 1, boundaries shift by one, stored items untouched, no page field
+  ok   getBySlug / listSlugs: served items only, latest order; drafts only in preview
+  ok   J duplicate published slug → FAIL (stored-document schema AND reader)
+
+[unit] route plan (generation, pruning, reserved slugs)
+  ok   page 1 is /portfolio; pages 2…N only under /portfolio/page/[n]; /portfolio/page/1 never planned
+  ok   exactly one page (12 items) → portfolio.page pruned as a dynamic segment
+  ok   zero items → list page, pages and details all pruned; home (and, 1.5.0, every other static page) stays
+  ok   I reserved slug `page` (static sibling segment) → validation FAIL
+  ok   I reserved slug `index` (static-export file collision) → validation FAIL
+  ok   route declarations are validated (bad pattern, dynamic static route, pageSize disagreement)
+  ok   Template page size is 30 (observed design), declared once for both list routes
+  ok   pagination window: all pages ≤ 7, else first · 5 around current · last
+  ok   builder prune re-validates entries (no escape from app/, route dir must exist)
+
+[unit] project content model + fact formatting
+  ok   optional detail facts: absent is valid; contracts enforced (period order, unique keywords, price bounds)
+  ok   Q outlier price/area inside the contract render deterministically (no bucketing, no crash)
+  ok   formatting: singular/plural duration, open vs single-month period, 2-decimal contract renders exactly
+  ok   builder accepts the 1.0.0 preflight shape (routes = manifest, no prune) — class-B compatibility
+  ok   I (early) unserved draft/scheduled project with a reserved slug → build warning before publish day
+
+[static] template source rules
+  ok   allowlist widened narrowly: only `notFound` from next/navigation; other exports/forms and next/* refused
+  ok   DETAIL_TEMPLATE_COUNT = 1: one detail route file, one detail section, no per-family variants
+
+[integration] fixture packages on the new release
+  ok   A all three sites pin + were built with the SAME new exact release (verified)
+  ok   B old release still exists, verifies, and is byte-for-byte unchanged (hash + read-only files)
+  ok   C fixture-large: 173 visible → 6 list pages sized 30/30/30/30/30/23, exact expected order
+  ok   D fixture-small: 12 projects → only /portfolio, no /portfolio/page/*
+  ok   E fixture-empty: no portfolio list/detail output at all
+  ok   F every published fixture-large slug → exactly one detail page; nothing else under /portfolio
+  ok   G/H out-of-range pages and unknown slugs are not emitted; package QA is exclusive
+  ok   V packages: no source host/API/brand/runtime/assets; every planned page present; nothing unplanned
+  ok   N before/after (A) and ordinary (B) projects: same detail Template, conditional output only
+  ok   O missing optional quote → no quote wrapper; present quote → rendered
+  ok   P missing optional facts → no blank rows; empty keyword list → no keyword row
+  ok   Q outlier price/area project builds and renders the value verbatim
+  ok   R homepage project cards link to their detail pages; 'view all' → /portfolio
+  ok   S portfolio nav link exists only when the route exists (every page of large/small; never in empty)
+  ok   T sitemap.xml lists exactly the generated routes (absolute on the declared origin)
+  ok   U public robots.txt: allow + sitemap on the real origin only
+  ok   metadata: unique list titles incl. page number; detail = item title + brand; canonical on the declared origin
+  ok   404 page is the site's own (header/footer, localized slot copy, one <title>, noindex)
+  ok   slot proof on new sections: same code, different labels per site; hidden media slot renders nothing
+
+[integration] release change, rollback, build identity
+  ok   X buildInputId changed because the Template Release changed (parts.releaseHash old → new)
+  ok   Y rollback: each site's previous package (an older, verified release) is present and intact
+
+[integration] throwaway-root builds (preview robots, new newest project)
+  ok   U preview build: robots disallow all, every page noindex (list/paged/detail), empty sitemap, drafts only here
+  ok   Y rollback by re-pin: the CURRENT builder still builds a site pinned to the old release (1.0.0-shaped data)
+  ok   M new newest project (integration): first on /portfolio, boundaries shift, last page 23 → 24
+
+step4: 47 passed, 0 failed

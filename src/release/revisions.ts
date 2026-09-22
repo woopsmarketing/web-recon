@@ -51,6 +51,31 @@ export const AuthoredChangeSchema = z
     slotKeysChanged: z.array(z.string()),
     slotKeysRemoved: z.array(z.string()),
     themeChanged: z.boolean(),
+    /**
+     * Task 28 Phase 2 — the two authored dimensions added after this chain
+     * shipped. OPTIONAL, and for one reason only: `AuthoredChangeSchema` is
+     * `.strict()` and `loadRevisionChain` PARSES every record it reads, so a
+     * required field would make every revision already on disk unloadable —
+     * which `loadRevisionChain` reports as a corrupt history, not as an old
+     * one. `diffAuthoredState` always emits them, so absent means "written
+     * before this field existed", never "nothing moved".
+     */
+    assetIdsAdded: z.array(z.string()).optional(),
+    assetIdsChanged: z.array(z.string()).optional(),
+    assetIdsRemoved: z.array(z.string()).optional(),
+    brandSurfacesAdded: z.array(z.string()).optional(),
+    brandSurfacesChanged: z.array(z.string()).optional(),
+    brandSurfacesRemoved: z.array(z.string()).optional(),
+    /**
+     * Task 28 Phases 5 + 6 — ENABLEMENT. Optional for the identical reason the
+     * Phase-2 fields above are: this schema is `.strict()` and every revision
+     * already on disk was written without them.
+     */
+    routesDisabled: z.array(z.string()).optional(),
+    routesReEnabled: z.array(z.string()).optional(),
+    regionsDisabled: z.array(z.string()).optional(),
+    regionsChanged: z.array(z.string()).optional(),
+    regionsReEnabled: z.array(z.string()).optional(),
   })
   .strict();
 export type AuthoredChange = z.infer<typeof AuthoredChangeSchema>;
@@ -111,42 +136,91 @@ export function hashAuthoredState(authored: AuthoredState): string {
 // Change summary
 // ---------------------------------------------------------------------------
 
+/** Added / changed / removed keys between two maps, by canonical value. */
+function diffKeyedMap(
+  before: Record<string, unknown>,
+  after: Record<string, unknown>,
+): { added: string[]; changed: string[]; removed: string[] } {
+  const added: string[] = [];
+  const changed: string[] = [];
+  const removed: string[] = [];
+  for (const [key, value] of Object.entries(after)) {
+    if (!(key in before)) added.push(key);
+    else if (canonicalJson(before[key]) !== canonicalJson(value)) changed.push(key);
+  }
+  for (const key of Object.keys(before)) {
+    if (!(key in after)) removed.push(key);
+  }
+  return { added: added.sort(), changed: changed.sort(), removed: removed.sort() };
+}
+
 export function diffAuthoredState(before: AuthoredState | null, after: AuthoredState): AuthoredChange {
-  const beforeSlots = before?.slotValues ?? {};
-  const afterSlots = after.slotValues;
-  const slotKeysAdded: string[] = [];
-  const slotKeysChanged: string[] = [];
-  const slotKeysRemoved: string[] = [];
-  for (const [key, value] of Object.entries(afterSlots)) {
-    if (!(key in beforeSlots)) slotKeysAdded.push(key);
-    else if (canonicalJson(beforeSlots[key]) !== canonicalJson(value)) slotKeysChanged.push(key);
-  }
-  for (const key of Object.keys(beforeSlots)) {
-    if (!(key in afterSlots)) slotKeysRemoved.push(key);
-  }
+  const slots = diffKeyedMap(before?.slotValues ?? {}, after.slotValues);
+  const assets = diffKeyedMap(before?.assets ?? {}, after.assets ?? {});
+  const brand = diffKeyedMap(before?.brand ?? {}, after.brand ?? {});
+  const routes = diffKeyedMap(before?.disabledRoutes ?? {}, after.disabledRoutes ?? {});
+  const regions = diffKeyedMap(before?.disabledRegions ?? {}, after.disabledRegions ?? {});
   return {
-    slotKeysAdded: slotKeysAdded.sort(),
-    slotKeysChanged: slotKeysChanged.sort(),
-    slotKeysRemoved: slotKeysRemoved.sort(),
+    slotKeysAdded: slots.added,
+    slotKeysChanged: slots.changed,
+    slotKeysRemoved: slots.removed,
     themeChanged: canonicalJson(before?.theme ?? {}) !== canonicalJson(after.theme),
+    assetIdsAdded: assets.added,
+    assetIdsChanged: assets.changed,
+    assetIdsRemoved: assets.removed,
+    brandSurfacesAdded: brand.added,
+    brandSurfacesChanged: brand.changed,
+    brandSurfacesRemoved: brand.removed,
+    // A route/region APPEARING in the map is a disable; DISAPPEARING is a
+    // re-enable. The names say what happened to the SITE, not what happened to
+    // the map, because that is the sentence an operator reads in the history.
+    routesDisabled: routes.added,
+    routesReEnabled: routes.removed,
+    regionsDisabled: regions.added,
+    regionsChanged: regions.changed,
+    regionsReEnabled: regions.removed,
   };
 }
 
 export function authoredChangeIsEmpty(change: AuthoredChange): boolean {
+  const empty = (list: string[] | undefined): boolean => (list?.length ?? 0) === 0;
   return (
-    change.slotKeysAdded.length === 0 &&
-    change.slotKeysChanged.length === 0 &&
-    change.slotKeysRemoved.length === 0 &&
-    !change.themeChanged
+    empty(change.slotKeysAdded) &&
+    empty(change.slotKeysChanged) &&
+    empty(change.slotKeysRemoved) &&
+    !change.themeChanged &&
+    empty(change.assetIdsAdded) &&
+    empty(change.assetIdsChanged) &&
+    empty(change.assetIdsRemoved) &&
+    empty(change.brandSurfacesAdded) &&
+    empty(change.brandSurfacesChanged) &&
+    empty(change.brandSurfacesRemoved) &&
+    empty(change.routesDisabled) &&
+    empty(change.routesReEnabled) &&
+    empty(change.regionsDisabled) &&
+    empty(change.regionsChanged) &&
+    empty(change.regionsReEnabled)
   );
 }
 
 export function summarizeAuthoredChange(change: AuthoredChange, origin: RevisionOrigin): string {
   const parts: string[] = [];
-  if (change.slotKeysAdded.length > 0) parts.push(`+${change.slotKeysAdded.length} slot`);
-  if (change.slotKeysChanged.length > 0) parts.push(`~${change.slotKeysChanged.length} slot`);
-  if (change.slotKeysRemoved.length > 0) parts.push(`-${change.slotKeysRemoved.length} slot`);
+  const count = (list: string[] | undefined): number => list?.length ?? 0;
+  if (count(change.slotKeysAdded) > 0) parts.push(`+${count(change.slotKeysAdded)} slot`);
+  if (count(change.slotKeysChanged) > 0) parts.push(`~${count(change.slotKeysChanged)} slot`);
+  if (count(change.slotKeysRemoved) > 0) parts.push(`-${count(change.slotKeysRemoved)} slot`);
   if (change.themeChanged) parts.push("theme");
+  if (count(change.assetIdsAdded) > 0) parts.push(`+${count(change.assetIdsAdded)} asset`);
+  if (count(change.assetIdsChanged) > 0) parts.push(`~${count(change.assetIdsChanged)} asset`);
+  if (count(change.assetIdsRemoved) > 0) parts.push(`-${count(change.assetIdsRemoved)} asset`);
+  if (count(change.brandSurfacesAdded) > 0) parts.push(`+${count(change.brandSurfacesAdded)} brand`);
+  if (count(change.brandSurfacesChanged) > 0) parts.push(`~${count(change.brandSurfacesChanged)} brand`);
+  if (count(change.brandSurfacesRemoved) > 0) parts.push(`-${count(change.brandSurfacesRemoved)} brand`);
+  if (count(change.routesDisabled) > 0) parts.push(`-${count(change.routesDisabled)} route off`);
+  if (count(change.routesReEnabled) > 0) parts.push(`+${count(change.routesReEnabled)} route on`);
+  if (count(change.regionsDisabled) > 0) parts.push(`-${count(change.regionsDisabled)} region off`);
+  if (count(change.regionsChanged) > 0) parts.push(`~${count(change.regionsChanged)} region scope`);
+  if (count(change.regionsReEnabled) > 0) parts.push(`+${count(change.regionsReEnabled)} region on`);
   return `${origin}: ${parts.length > 0 ? parts.join(", ") : "no authored change"}`;
 }
 
@@ -263,7 +337,24 @@ export async function appendAuthoredRevision(
   projectDir: string,
   options: AppendRevisionOptions,
 ): Promise<AuthoredRevision> {
-  const chain = await loadRevisionChain(projectDir);
+  return appendToChain(projectDir, await loadRevisionChain(projectDir), options);
+}
+
+/**
+ * The append itself, over a chain the CALLER already loaded.
+ *
+ * Task 28 change request 2 wires `appendAuthoredRevisionIfChanged` into
+ * `release:prepare` / `release:resolve`. Loading the chain verifies every
+ * record (see `loadRevisionChain`), which is O(chain) with a full authored
+ * snapshot per record — so the "did anything change?" read and the append MUST
+ * NOT each pay for their own pass. Splitting the append out of the load is the
+ * whole optimisation: one verified read per transaction, never two.
+ */
+async function appendToChain(
+  projectDir: string,
+  chain: AuthoredRevision[],
+  options: AppendRevisionOptions,
+): Promise<AuthoredRevision> {
   const parent = chain.length > 0 ? chain[chain.length - 1] : null;
   const authored = AuthoredStateSchema.parse(options.authored);
   const origin = options.origin ?? "edit";
@@ -295,9 +386,12 @@ export async function appendAuthoredRevisionIfChanged(
   projectDir: string,
   options: AppendRevisionOptions,
 ): Promise<AuthoredRevision | null> {
-  const head = await headRevision(projectDir);
+  // ONE verified chain read for both the comparison and the append (see
+  // `appendToChain`): this runs on the operator path now, not only in tests.
+  const chain = await loadRevisionChain(projectDir);
+  const head = chain.length > 0 ? chain[chain.length - 1] : null;
   if (head && hashAuthoredState(options.authored) === head.authoredStateHash) return null;
-  return appendAuthoredRevision(projectDir, options);
+  return appendToChain(projectDir, chain, options);
 }
 
 export async function getRevision(

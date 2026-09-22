@@ -1,0 +1,851 @@
+{
+ "area": "CONTENT INJECTION / PRODUCTION / ASSETS / SEO / THEME — subsystem map + the release-graph seams that stale them (read-only scout, nothing implemented)",
+ "files": [
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/index.ts",
+   "role": "Public barrel for Content Generation V2. 89 lines. `export * from \"./types.js\"` plus 13 named export groups.",
+   "keySymbols": [
+    "CONTENT_POLICY",
+    "contentRunDir/newContentRunId/createdAtFromRunId",
+    "loadReconTemplate/LoadedReconTemplate",
+    "buildContentUnits/sectionOfKey",
+    "prepareContentRun/intentHash/BATCH_UNIT_LIMIT",
+    "BATCH_ORDERING_RULE/assertNoBatchConflicts/executeGenerationBatches/mergeBatchResults",
+    "buildSlotAccounting/inScopeSlotKeys",
+    "DECLARED_SYNTHETIC/applyTruthMode/claimBackedByFacts/factClaimIn/resolveTruthMode",
+    "briefFacts/briefGaps/briefPreferences/loadContentBrief",
+    "buildRegionPlanFile/buildRegionPlans/loadRegionContracts",
+    "FakeContentGenerator/loadManualGenerationResult/resolveGenerator",
+    "validateGenerationResult/validateSlotAssignments",
+    "detectSourceBrandLeaks/brandTokensFromHost",
+    "buildOverlayValues/effectiveSlotValues/changedKeys",
+    "runContentLayoutQa",
+    "RepairProgressGuard/buildRepairRequest/changedRepairKeys/failureSignatureOf/mergeRepairValues/noRepairCandidatesStop/repairStopFromLoop/unitsForRepair",
+    "buildOperatorReview",
+    "loadContentRun/ingestGenerationResult/revalidateSlotValues/recordLayoutQa/updateManifest"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/types.ts",
+   "role": "1056-line schema spine. All file-name constants, every closed enum, the run manifest, and the two ORTHOGONAL accounting axes.",
+   "keySymbols": [
+    "CONTENT_SCHEMA_VERSION=1",
+    "CONTENT_POLICY_ID=\"content-policy-v1\"/CONTENT_POLICY_VERSION=1",
+    "CONTENT_GENERATOR_CONTRACT_VERSION=1",
+    "SLOT_VALUES_FILE/SLOT_ACCOUNTING_FILE/REGION_PLAN_FILE/BATCH_EXECUTION_FILE/TELEMETRY_FILE/REPAIR_STOP_FILE",
+    "CONTENT_TRUTH_MODES=[verified-only,synthetic-allowed]",
+    "DEFAULT_CONTENT_TRUTH_MODE=verified-only",
+    "TruthModeDecisionSchema.decision=[refused-unresolved,marked-synthetic,backed-by-user-fact]",
+    "ContentBriefSchema (every field optional)",
+    "ContentUnitKindSchema=[navigation,hero,content,cta,image,footer,group]",
+    "SLOT_VALUE_SOURCES=[user-provided,derived-copy,generated-marketing]",
+    "ImageBriefSchema.action=[keep-default,replace-recommended,replaced]",
+    "ENGINE_LIMITATION_MARKER=\"engine-limitation\"",
+    "BrandLeakWarningSchema.kind=[brand-token-in-value,brand-token-in-untouched-default,original-external-url-retained,original-external-url-in-untouched-default,blocked-visible-source-content] severity=[warning,blocker]",
+    "AppliedValueCheckSchema.surface=[static,dynamic-template,paint-twin]",
+    "MAX_REPAIR_ITERATIONS=2",
+    "REPAIR_STOP_REASONS (7)",
+    "SLOT_ORIGINS=[user-provided,derived-copy,generated-marketing,synthetic-fact,source-preserved]",
+    "SLOT_DISPOSITIONS=[applied,preserved,removed,human-required,unresolved]",
+    "SlotAccountingEntrySchema.customerFacing=[confirmed,ambiguous]",
+    "SlotAccountingFileSchema.reconciliation",
+    "BatchKeyConflictSchema.kind (5)",
+    "RegionContractSchema/RegionPlanFileSchema",
+    "ContentRunManifestSchema",
+    "ContentInputError/ContentValidationError"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/run.ts",
+   "role": "Content run orchestration: load / ingest / revalidate / recordLayoutQa. Owns the write doctrine string and the single writeReviewArtifacts fan-out.",
+   "keySymbols": [
+    "loadContentRun (parses manifest+intent+policy+units+request, cross-checks templateId)",
+    "ingestGenerationResult (applyTruthMode FIRST, then validate, overlay written only on PASS)",
+    "revalidateSlotValues (§29 hand-edit path; sets manifest.manualEdits)",
+    "writeReviewArtifacts (slot-accounting.json + report/{validation,brand-leak,operator-review.json,operator-review.md})",
+    "CONTENT_WRITE_DOCTRINE_WARNING (run.ts:271-276)",
+    "recordLayoutQa",
+    "updateManifest"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/accounting.ts",
+   "role": "Task 27 §2/§3 total slot accounting. The SIBLING artifact; slot-values.json stays a bare map.",
+   "keySymbols": [
+    "inScopeSlotKeys (unit slots + reviewSlotKeys)",
+    "classify() → {origin,disposition,detail}",
+    "buildSlotAccounting",
+    "reconciliation{inScopeSlots,uniqueSlotKeys,originTotal,dispositionTotal,missing,doubleCounted,reconciled}",
+    "scopeHonesty{editableSlots,reviewSlots,ambiguousSlots,templateExcludedCandidates,note}"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/truth-mode.ts",
+   "role": "Deterministic fact-claim enforcement, no LLM. 7 regex claim shapes over PRODUCED text/url values only (images exempt unless declared).",
+   "keySymbols": [
+    "FACT_CLAIM_PATTERNS=[counted-metric,price,percentage,phone-number,certification-or-award,superlative-social-proof,founding-date]",
+    "DECLARED_SYNTHETIC=\"declared-synthetic\"",
+    "resolveTruthMode",
+    "factClaimIn",
+    "claimBackedByFacts (substring over providedFacts)",
+    "applyTruthMode → TruthModeOutcome{result,decisions,syntheticKeys,refusedKeys}"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/batching.ts",
+   "role": "Task 27 §1 batch EXECUTOR + recombiner. Consumes the batches persisted in generation-request.json; never re-plans them.",
+   "keySymbols": [
+    "BATCH_ORDERING_RULE",
+    "executeGenerationBatches (one generate() per batch, narrowRequest, telemetry per call)",
+    "mergeBatchResults (first-writer-wins + recorded conflict, never last-write-wins)",
+    "assertNoBatchConflicts (throws ContentValidationError)",
+    "narrowRequest"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/repair.ts",
+   "role": "Bounded repair loop + the GED-D no-progress guard.",
+   "keySymbols": [
+    "buildRepairRequest (skips unslotted-duplicate-text-desync / stale-duplicate-text-remnant)",
+    "unitsForRepair",
+    "mergeRepairValues (out-of-scope keys → ignoredKeys)",
+    "failureSignatureOf (sha256 over candidates+failing pages, 16 hex)",
+    "changedRepairKeys",
+    "RepairProgressGuard.evaluate (3 checks in specificity order)",
+    "repairStopFromLoop",
+    "noRepairCandidatesStop"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/brand-leak.ts",
+   "role": "Slot-shaped source-brand scan over EFFECTIVE (post-overlay) values → report/brand-leak.json.",
+   "keySymbols": [
+    "detectSourceBrandLeaks(template,unitsFile,effectiveValues,changedKeys,engineBlockedKeys)",
+    "re-export brandTokensFromHost"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/brand-surfaces.ts",
+   "role": "Task 27 GED-F wider surface detector, shared with the release brand-scan and production QA. DETECTOR ONLY — no rewrite target exists.",
+   "keySymbols": [
+    "BRAND_SURFACES (14: visible-text,source-url,title-meta,canonical,open-graph,json-ld,image-logo,image-alt,aria-label,svg-text,svg-aria-label,svg-symbol-id,dynamic-template-content,body-anchor-identity)",
+    "brandTokensFromHost",
+    "containsBrandToken",
+    "firstBrandToken",
+    "firstBrandTokenInIdentifier",
+    "scanInlineSvgMarkup",
+    "isSourceHostUrl",
+    "scanElementProps",
+    "scanBodyAnchorIdentity"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/overlay.ts",
+   "role": "Overlay assembly — the whole output toward the site is ONE bare {slotKey:value} map.",
+   "keySymbols": [
+    "buildOverlayValues",
+    "effectiveSlotValues",
+    "changedKeys"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/packet.ts",
+   "role": "prepareContentRun: intent → units → batches → generation-request + all run files.",
+   "keySymbols": [
+    "BATCH_UNIT_LIMIT=40",
+    "intentHash",
+    "buildBatches (global first, then per-route chunks)",
+    "buildGenerationJsonSchema",
+    "buildTemplateSummary",
+    "GENERATION_INSTRUCTIONS",
+    "truthModeInstruction",
+    "prepareContentRun"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/policy.ts",
+   "role": "content-policy-v1, 7 fixed rules copied into every run.",
+   "keySymbols": [
+    "CONTENT_POLICY",
+    "layout-preserved-by-default",
+    "no-structural-edits-without-explicit-request",
+    "content-only-surface",
+    "respect-observed-constraints",
+    "no-invented-facts",
+    "needs-input-over-fabrication",
+    "no-source-brand-carryover"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/load-template.ts",
+   "role": "Read-only Recon Template loader — the ONE place content-injection reads slots.json + slot-bindings.json + default-content.json + site-map.json.",
+   "keySymbols": [
+    "LoadedReconTemplate{slotByKey,bindingsBySlotId,defaultContent,siteMap}",
+    "loadReconTemplate"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/region-plan.ts",
+   "role": "Brief→SiteContentPlan→PageContentPlan→RegionPlan→ContentUnit layer. Duck-typed contract; never imports src/regions.",
+   "keySymbols": [
+    "loadRegionContracts (PageRegionsContractSchema: regionId/scope/slotKeys/pages)",
+    "buildRegionPlans",
+    "buildRegionPlanFile",
+    "purposeOf"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/store.ts",
+   "role": "data/<host>/content-runs/<run-id>/ namespace + run-id clock.",
+   "keySymbols": [
+    "contentRunDir",
+    "newContentRunId",
+    "createdAtFromRunId"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/content-injection/layout-qa.ts",
+   "role": "1143 lines, the one live browser stage. Emits appliedChecks with surface static|dynamic-template|paint-twin and repairCandidates.",
+   "keySymbols": [
+    "runContentLayoutQa",
+    "ContentLayoutQaOptions"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/telemetry/types.ts",
+   "role": "generation-telemetry-v1. `usage` OMITTED unless the provider reported it — never zero-filled.",
+   "keySymbols": [
+    "TELEMETRY_SCHEMA_NAME",
+    "TelemetryUsageSchema",
+    "TelemetryEventSchema{seamId,stage,callIndex,provider,batchIds,unitCount,slotCount,routes,elapsedMs,retryCount,outcome,usage?}"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/telemetry/recorder.ts",
+   "role": "Append-only JSONL recorder, optional everywhere.",
+   "keySymbols": [
+    "TelemetryRecorder.record",
+    "parseTelemetryLines"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/cli-content-generate.ts",
+   "role": "Wires executeGenerationBatches + TelemetryRecorder (report/telemetry.jsonl) + BATCH_EXECUTION_FILE; prints truth-mode refusals.",
+   "keySymbols": [
+    "telemetry file at report/telemetry.jsonl (line 81-82)",
+    "batch-execution.json write (line 118)",
+    "assertNoBatchConflicts (line 133)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/cli-content-validate.ts",
+   "role": "Only operator surface that prints CONTENT_WRITE_DOCTRINE_WARNING when manifest.manualEdits is true.",
+   "keySymbols": [
+    "CONTENT_WRITE_DOCTRINE_WARNING print (line 40)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/types.ts",
+   "role": "161-line bake result shape: production-spec-v1 + BakeReport + DeployManifest.",
+   "keySymbols": [
+    "PRODUCTION_SPEC_SCHEMA_NAME=\"production-spec-v1\"",
+    "PRODUCTION_COMPILER_NAME/VERSION=1",
+    "productionSpecSchema{lineage{template,contentRun,theme,seoPlan,assets},baseUrl,buildMode,indexabilityGate,buildRunId}",
+    "hashedLineageSchema{dir,hash,fileCount,byteCount,excluded}",
+    "buildMode.chosen=[static-export,standalone-server]",
+    "indexabilityGate.decision=[preview,indexable]",
+    "BakeReport{content,theme,seo,assets,build}",
+    "DeployManifest schemaName=\"production-deploy-manifest-v1\""
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/bake.ts",
+   "role": "Steps A–F. Copies the template app, bakes content/theme/seo/assets into the copy, next build --output export, post-processes the exported files.",
+   "keySymbols": [
+    "copyTemplateApp (excludes node_modules/.next/out)",
+    "bakeContent → template-data/slot-values.baked.json + patchSlotContent",
+    "bakeTheme → public/wr/theme-overlay.css + patchLayout",
+    "bakeSeoTitles → reconstruction-data/route-map.json titles",
+    "convertToStaticExport (throws on query-variant route keys)",
+    "buildStaticExport (npx --no-install next build, 10min timeout)",
+    "postProcessExport (head splice + applyRewrite html/flight/css + robots.txt + residual count)",
+    "copyMedia",
+    "routeHtmlFile",
+    "escapeForTitle",
+    "directoryStats"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/run.ts",
+   "role": "498-line compile orchestrator: reads lineage → hashes → indexability gate → spec → bake → package → manifests.",
+   "keySymbols": [
+    "runProductionCompile",
+    "pickContentProof (static/desktop/text bindings only, value must differ from default)",
+    "buildPreviewBlockers (7 ids, uninjected-route-content dropped at 0)",
+    "PreviewBlockerInputs",
+    "knownResidualSourceHosts from report/network-qa.json",
+    "mode !== preview → copyFile sitemap.xml into out/"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/patch.ts",
+   "role": "Four guarded source patches over the COPIED app. requireOnce/requireAbsent fail loudly on anchor drift.",
+   "keySymbols": [
+    "patchNextConfig (output:\"export\")",
+    "PRODUCTION_PAGE_TSX/patchPageTsx (dynamic=\"error\", dynamicParams=false, generateStaticParams)",
+    "patchSlotContent (drops WR_SLOT_VALUES_FILE env seam → slot-values.baked.json)",
+    "THEME_OVERLAY_HREF=\"/wr/theme-overlay.css\"",
+    "patchLayout",
+    "bakeRouteTitles/RouteTitleBakeResult"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/packaging.ts",
+   "role": "package/ assembly — site/, server.mjs, deploy-manifest.json, RUN.md, sitemap.preview.xml (preview only).",
+   "keySymbols": [
+    "renderRunMd",
+    "assemblePackage (renames exportOutDir → package/site)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/store.ts",
+   "role": "data/<host>/production-specs/<run-id>/ and data/<host>/production-builds/<run-id>/.",
+   "keySymbols": [
+    "productionSpecDir",
+    "productionBuildDir",
+    "newProductionRunId"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/qa.ts",
+   "role": "767 lines. Copies the package OUTSIDE the repo, serves it with server.mjs and a PATH-only env, then checks over real HTTP/Chromium. Enforces the preview noindex rule.",
+   "keySymbols": [
+    "runProductionQa",
+    "QaCheck/ProductionQaReport",
+    "robots-meta:<route> (noindex,nofollow required in preview)",
+    "robots-txt / robots-txt-no-sitemap-line / sitemap-preview-404",
+    "content-proof:<slotKey>",
+    "theme-link-present / theme-overlay-served",
+    "external-requests-only-known-residual",
+    "residualRequestFiles",
+    "imports brand-surfaces directly (not via the barrel)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/production/hash.ts",
+   "role": "dir-sha256-v1 — reused by release/freshness.ts, never re-implemented.",
+   "keySymbols": [
+    "hashDirectory",
+    "hashFile",
+    "HASH_METHOD",
+    "HASH_METHOD_DESCRIPTION"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/assets/types.ts",
+   "role": "526-line asset schemas. The 4-value classification enum is the pipeline's whole fetch policy.",
+   "keySymbols": [
+    "AssetClassificationSchema=[safe-to-materialize,replacement-recommended,replacement-required,license-needs-review]",
+    "AssetInventoryEntrySchema.origin=[asset-catalog,generated-css-url,head-favicon,head-og-image,head-font-preload]",
+    "ClassificationDecisionSchema{ruleId,evidence}",
+    "RewriteMapSchema{sourceUrl,localPath,contexts:[html,css]}",
+    "MaterializedEntrySchema",
+    "ReplacementEntrySchema.replacement.status=[awaiting-input,provided]",
+    "FontInventorySchema license[].status=[license-needs-review,open-license-verified]",
+    "ASSET_RESIDUAL_REPORT_SCHEMA_NAME=\"asset-residual-report-v1\"",
+    "CensusRouteScopeSchema",
+    "ResidualAssetFileSchema"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/assets/inventory.ts",
+   "role": "Builds inventory entries from STORED artifacts only (asset-catalog, generated stylesheet url(), rendered.html head, template image-slot join, Task 19 imageBriefs).",
+   "keySymbols": [
+    "readAssetCatalog",
+    "extractCssUrls",
+    "scanHeadEvidence",
+    "readTemplateImageSlotJoin",
+    "readImageBriefs",
+    "findTruncatedUrls",
+    "isFragmentOnlyCssRef",
+    "buildInventoryEntries"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/assets/classify.ts",
+   "role": "Deterministic conservative classifier (ruleId + evidence per decision).",
+   "keySymbols": [
+    "classifyEntry",
+    "classifyInventory",
+    "deriveBrandTermsFromHost"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/assets/materialize.ts",
+   "role": "The fetch. Only safe-to-materialize + replacement-recommended are candidates; host allowlist == exactly the hosts the inventory observed; media/<sha256>.<ext> dedup.",
+   "keySymbols": [
+    "MATERIALIZED_CLASSES",
+    "createAssetMaterializationRun",
+    "expectedKindFor",
+    "skipped-<classification> / skipped-truncated statuses",
+    "RewriteMap build (longest sourceUrl first)",
+    "ReplacementManifest build (awaiting-input)",
+    "loadAssetMaterializationRun"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/assets/residual-report.ts",
+   "role": "Task 27 GED-G. Joins the runtime census with inventory identity + replacement requirement, per FILE across every measured route. Fetches nothing.",
+   "keySymbols": [
+    "normalizeResidualUrl (strips fragment, KEEPS query)",
+    "resolveCensusRoutes (site-map default, explicit override, discardedExplicitRoutes)",
+    "buildResidualAssetReport"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/assets/run.ts",
+   "role": "createAssetInventoryRun / loadAssetInventoryRun — writes asset-inventory.json, classification.json, font-inventory.json, manifest.json.",
+   "keySymbols": [
+    "createAssetInventoryRun",
+    "loadAssetInventoryRun",
+    "fragmentRefsSkipped accounting",
+    "counts.inlineSvgEntries (consumed by the production blocker summary)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/assets/serve.ts",
+   "role": "Asset serve boundary (proxy): /media/<sha256>.<ext> + body rewrite over HTML/RSC + CSS url() rewrite, optional theme overlay append.",
+   "keySymbols": [
+    "startAssetProxy",
+    "startAssetServedApp",
+    "GENERATED_STYLES_PATH=\"/wr/generated-styles.css\"",
+    "MEDIA_FILE regex"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/assets/rewrite.ts",
+   "role": "The rewrite primitive shared by the proxy and the production bake.",
+   "keySymbols": [
+    "rewriteVariants",
+    "applyRewrite(body,map,context)",
+    "mediaContentType"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/assets/safe-fetch.ts",
+   "role": "SSRF-bounded fetcher: private-address refusal, host allowlist, mime allowlist, byte/redirect/timeout caps.",
+   "keySymbols": [
+    "safeFetchAsset",
+    "isPrivateAddress",
+    "mimeAllowed",
+    "extensionForMime",
+    "mapWithConcurrency",
+    "DEFAULT_FETCH_POLICY"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/assets/store.ts",
+   "role": "data/<host>/asset-inventories/<run-id>/ and data/<host>/asset-materializations/<run-id>/.",
+   "keySymbols": [
+    "assetInventoryDir",
+    "assetMaterializationDir",
+    "newAssetRunId"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/resolve-assets.ts",
+   "role": "THE ASSETS STAGE RUNNER's engine. Derives a NEW materialization run by cp of the base, hashes operator files into media/, extends the rewrite map, flips replacement entries to `provided`, records font decisions. Never re-fetches, never re-measures.",
+   "keySymbols": [
+    "applyAssetResolutions",
+    "EXTENSION_BY_SUFFIX=[.png,.jpg,.jpeg,.webp,.gif,.svg,.ico,.avif]",
+    "assetId must be a replacement-manifest inventoryId OR og-image OR organization-logo (else throws)",
+    "font-decisions.json write",
+    "report/derivation.json measurementNote (network-qa/font-qa INHERITED)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/stages.ts",
+   "role": "The 5 typed stage runners. assetsStageRunner is a thin conductor over applyAssetResolutions.",
+   "keySymbols": [
+    "contentStageRunner (authored.slotValues applied LAST, sources=\"user-provided\", excluded:CONTENT_DERIVED_HASH_EXCLUSIONS)",
+    "themeStageRunner",
+    "seoStageRunner",
+    "assetsStageRunner (stages.ts:305-320)",
+    "productionStageRunner (compile + runProductionQa; qa.failed>0 → stage failure)",
+    "DEFAULT_STAGE_RUNNERS"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/graph.ts",
+   "role": "The closed stage DAG and the resolution-field impact table. Answers the assets stale-vs-reuse question directly.",
+   "keySymbols": [
+    "STAGE_DEPENDENCIES (assets:[\"template\"] only; theme:[template,content]; production:[template,content,theme,seo,assets])",
+    "STAGE_ORDER",
+    "THEME_SELECTION_IMPACTS",
+    "RESOLUTION_FIELD_IMPACTS{productionBaseUrl,facts,urls,routeContent,assets:[assets,production],fontDecisions:[assets,production],theme}",
+    "downstreamOf",
+    "invalidatedStages (derives the closure, never hand-maintained)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/freshness.ts",
+   "role": "What actually decides fresh/stale. Per-stage inputsHash = sha256({stage, upstream artifact hashes, resolution slice}).",
+   "keySymbols": [
+    "FROZEN_TEMPLATE_HASH_EXCLUSIONS=[node_modules,.next,out,report]",
+    "CONTENT_DERIVED_HASH_EXCLUSIONS=[report,slot-accounting.json]",
+    "STAGE_HASH_EXCLUSIONS",
+    "staleExclusionSetWarnings",
+    "resolutionAssetContentHashes (hashFile per path, \"missing:<file>\" sentinel)",
+    "resolutionSliceFor (assets → {assets:assetHashes,fontDecisions})",
+    "computeStageInputsHash",
+    "refreshStageStatuses",
+    "propagateStaleStages",
+    "applyBlocking"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/types.ts",
+   "role": "AuthoredState + production-resolution-v1 + requirement model.",
+   "keySymbols": [
+    "AuthoredStateSchema{slotValues,theme,updatedAt} — NO assets field",
+    "ResolutionAssetSchema = string | {file,note?}",
+    "FONT_DECISIONS=[use-fallback-stack,self-host-license-verified]",
+    "ProductionResolutionSchema{productionBaseUrl,facts,urls,assets,fontDecisions,routeContent,theme,acknowledgements}",
+    "REQUIREMENT_KINDS (12, incl. replacement-image, font-license, source-brand-asset, brand-leak)",
+    "SEVERITY_POLICY",
+    "ArtifactRefSchema{id,path,hash,excluded}",
+    "STAGE_FRESHNESS=[fresh,stale,blocked]"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/instance.ts",
+   "role": "Authored folding — where a resolution pack becomes authoritative truth. Confirms assets are NOT folded.",
+   "keySymbols": [
+    "resolutionSlotValues (routeContent.slotValues + urls ONLY)",
+    "mergeAuthoredTheme",
+    "foldResolutionIntoAuthored",
+    "authoredFromResolutions",
+    "adaptReleaseProject"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/release/collect.ts",
+   "role": "Turns asset/font/SEO/content artifacts into Requirements. Reads replacement-manifest.json, font-inventory.json license[], font-decisions.json, report/network-qa.json.",
+   "keySymbols": [
+    "collectRequirements",
+    "replacement asset requirements (collect.ts:399-420)",
+    "inherited-census warning when a provided asset still shows residual (collect.ts:440-448)",
+    "font-license requirements (collect.ts:463-490)",
+    "source-brand-asset from inlineSvgEntryCount"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/seo/index.ts",
+   "role": "SEO barrel.",
+   "keySymbols": [
+    "observeSourceSeo/loadSourceSeoSnapshot",
+    "buildProductionSeoPlan/checkForbiddenCopy/assertHeadSafeText",
+    "renderRouteHead/renderPlanHead/SEO_HEAD_START/SEO_HEAD_END",
+    "generateRobotsTxt/generateSitemapXml",
+    "createProductionSeoPlanRun/loadProductionSeoPlanRun/renderedSurfaceOf",
+    "escapeVariants/substitutionVariants/applySubstitutionVariants/escapeForTitleText/ESCAPE_VARIANT_ENCODINGS",
+    "startSeoProxy/rewriteHtmlHead",
+    "auditAnchors/runInternalLinkQa",
+    "runSeoQa/findSeoSurfaceBrandLeaks/findHeadSourceAssetReferences"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/seo/production-plan.ts",
+   "role": "The plan builder. `preview` is literally `productionDomain === undefined` — there is no default domain to invent.",
+   "keySymbols": [
+    "loadTemplateForSeo",
+    "loadContentRunForSeo (reads manifest+generation-result+slot-values+intent)",
+    "buildProductionSeoPlan",
+    "known()/needsInput()",
+    "assertHeadSafeText",
+    "checkForbiddenCopy",
+    "buildRouteJsonLd",
+    "title = `${brand} | ${category}` for injected routes; brand-only previewFallback otherwise"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/seo/escape-variants.ts",
+   "role": "Task 27 GED-E. 6 encodings, needle and replacement in the SAME encoding, longest-first, literal split/join.",
+   "keySymbols": [
+    "ENCODINGS=[raw,html-hex-apostrophe,html-decimal-apostrophe,html-named-apostrophe,json,json-html-escaped]",
+    "ESCAPE_VARIANT_ENCODINGS",
+    "escapeVariants",
+    "substitutionVariants",
+    "applySubstitutionVariants",
+    "escapeForTitleText (mirrors production/bake.ts escapeForTitle)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/seo/render-head.ts",
+   "role": "Plan → the exact head strings. A needs-input value with no previewFallback renders NO tag.",
+   "keySymbols": [
+    "SEO_HEAD_START=\"<!-- wr-seo-head-start -->\"",
+    "SEO_HEAD_END",
+    "renderRouteHead",
+    "renderPlanHead",
+    "effective() = value ?? previewFallback ?? null"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/seo/robots-sitemap.ts",
+   "role": "Preview vs production robots + sitemap, consistent with domain state.",
+   "keySymbols": [
+    "generateRobotsTxt (preview: Disallow / with NO Sitemap line)",
+    "generateSitemapXml (preview → sitemap.preview.xml, path-only <loc>, explicitly marked non-conformant)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/seo/serve.ts",
+   "role": "SEO serve boundary (preview). Title substitution across every encoding, then <title> rewrite, then head splice; /robots.txt from plan, /sitemap.xml 404 in preview.",
+   "keySymbols": [
+    "rewriteHtmlHead",
+    "normalizeRequestPath",
+    "startSeoProxy",
+    "startSeoServedApp",
+    "GENERATED_STYLES_PATH"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/seo/run.ts",
+   "role": "createProductionSeoPlanRun — writes the 6 plan files; THROWS when forbiddenCopy or brandIsolation fails.",
+   "keySymbols": [
+    "createProductionSeoPlanRun",
+    "renderedSurfaceOf",
+    "countNeedsInput",
+    "loadProductionSeoPlanRun (sitemapXml null in preview)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/seo/seo-qa.ts",
+   "role": "364-line SEO QA over the served boundary.",
+   "keySymbols": [
+    "runSeoQa",
+    "findSeoSurfaceBrandLeaks",
+    "findHeadSourceAssetReferences",
+    "SeoControlledHeadSurfaces"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/theme/types.ts",
+   "role": "theme-contract-v1: closed 24-token vocabulary + closed 11-property paint allowlist + PaintGroup identity.",
+   "keySymbols": [
+    "THEME_CONTRACT_ID=\"theme-contract-v1\"",
+    "COLOR_TOKENS(15)/DECORATION_TOKENS(7)/TYPOGRAPHY_TOKENS(2)",
+    "isThemeToken/tokenKind/tokenLevel",
+    "THEMEABLE_PROPERTIES_LEVEL1(9)+LEVEL2(2)",
+    "isThemeableProperty",
+    "isSafeThemeValue (no ;{}<> no url() no @ no \\)",
+    "PaintGroupSchema{status:[themeable,preserved,review],paintKind:[color,radius,shadow],preservedPrefix,selectors}",
+    "SiteThemeAdapterSchema",
+    "AdapterCoverageSchema",
+    "ThemeFileSchema",
+    "ThemeContractError"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/theme/overlay.ts",
+   "role": "Overlay CSS generation. Selectors reused VERBATIM, wins by cascade order at identical specificity, no !important.",
+   "keySymbols": [
+    "SELECTORS_PER_RULE=25",
+    "themeVariableName (token dots → dashes, --wr-theme-*)",
+    "declarationFor (throws on non-themeable property; preservedPrefix copied byte-for-byte)",
+    "generateThemeOverlay → ThemeOverlay{css,customProperties,ruleCount,declarationCount,themedGroupCount,themedElementWeight,perToken,unthemedTokenGroups}",
+    "typography tokens skipped (never auto-applied)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/theme/serve.ts",
+   "role": "Theme serve boundary: appends overlay CSS to exactly ONE response (/wr/generated-styles.css). Served HTML is byte-identical with and without a theme.",
+   "keySymbols": [
+    "startOverlayProxy",
+    "startThemedApp",
+    "GENERATED_STYLES_PATH"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/theme/run.ts",
+   "role": "createThemeRun / runThemeExtraction — writes selected-theme.json, theme-adapter.json, theme-overlay.css, compatibility.json, manifest.json (pins contentRunDir).",
+   "keySymbols": [
+    "loadThemeFile/loadAdapterFile/loadAdapterOverrides",
+    "runThemeExtraction",
+    "createThemeRun (manifest.contentRunDir at run.ts:192)",
+    "loadThemeRun",
+    "listThemeLibrary/THEME_LIBRARY_DIR"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/theme/extract.ts",
+   "role": "887 lines — deterministic paint-group extraction and semantic assignment from the generated stylesheet + runtime trees.",
+   "keySymbols": [
+    "extractSiteTheme",
+    "applyAdapterOverrides",
+    "GENERATED_STYLESHEET_RELPATH",
+    "ThemeExtraction",
+    "SemanticAssignment"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/theme/occurrences.ts",
+   "role": "Element census over the runtime IR — reads node.p[\"data-wr-node\"] and the data-wr-obs dynamic payload to weight paint groups.",
+   "keySymbols": [
+    "collectUsageCensus",
+    "UsageCensus",
+    "TokenUsage",
+    "reads data-wr-node at occurrences.ts:117 and data-wr-obs at :125"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/reconstruction/compile-node.ts",
+   "role": "PRIMARY EMISSION of data-wr-node into the runtime IR (three distinct sites).",
+   "keySymbols": [
+    "compile-node.ts:249 props[\"data-wr-node\"]=node.nodeId (every element)",
+    "compile-node.ts:460-466 inline-SVG: data-wr-node stamped onto the <svg> root inside the opaque markup (host span carries only className wr-svg-host)",
+    "compile-node.ts:522-525 compileDocumentRoot: data-wr-node + data-wr-doc-tag on the html/body→div adaptations"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/reconstruction/interaction-bindings.ts",
+   "role": "EMISSION of data-wr-dyn-node on dynamic-template nodes, plus the reveal CSS that selects on data-wr-node.",
+   "keySymbols": [
+    "interaction-bindings.ts:850 props[\"data-wr-dyn-node\"]=node.templateNodeId",
+    "interaction-bindings.ts:964,998-1000 [data-wr-node=...][data-wr-revealed=\"1\"] CSS (selector consumer, not emission)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/reconstruction/runtime-template.ts",
+   "role": "Client runtime. buildTemplateNode is where data-wr-dyn-node actually reaches the DOM (setAttribute per prop); dynamic templates ride in the trigger's data-wr-obs payload.",
+   "keySymbols": [
+    "buildTemplateNode (~line 465-495, createElement + setAttribute, no innerHTML)",
+    "data-wr-obs parse (~line 613)",
+    "data-wr-obs-mounted / data-wr-dynamic-target / data-wr-dynamic-content markers",
+    "host lookup via querySelector('[data-wr-node=\"'+entry.hn+'\"]') at :796"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/reconstruction/asset-resolver.ts",
+   "role": "annotateSvgRoot — puts class/id/data-wr-node ON the <svg> element of sanitized inline-SVG markup.",
+   "keySymbols": [
+    "annotateSvgRoot (line 224)"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/recon-template/types.ts",
+   "role": "Slot V2 schema (FROZEN). SlotBinding is the DOM address; there is no data-wr-slot attribute anywhere by design.",
+   "keySymbols": [
+    "SLOT_SCHEMA_VERSION=2 / ACCEPTED_SLOT_SCHEMA_VERSIONS=[1,2]",
+    "SLOT_BINDINGS_FILE=\"slot-bindings.json\" (line 71)",
+    "SlotSurfaceSchema=[static,dynamic-template,paint-twin]",
+    "SlotBindingSchema{bindingId,slotId,field,pageId,viewport,surface,nodeId,discoveryId,templateNodeId,target:[text,attribute,svg-text],attributeName,childIndex,textSegment,svgTextIndex,svgTextPath,expectedValue}",
+    "SlotDefinitionSchema.bindingIds",
+    "SlotTypeSchema/SlotScopeSchema/EditabilitySchema/UrlKindSchema/SlotRoleSchema/SlotValueSchema"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/recon-template/compile.ts",
+   "role": "WRITE #1 of slot-bindings.json → <template-run>/slot-bindings.json (compile.ts:224).",
+   "keySymbols": [
+    "writeJson(SLOT_BINDINGS_FILE, artifacts.bindingsFile)",
+    "then generateTemplateApp()",
+    "then validateTemplateArtifact()"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/recon-template/generate-template-app.ts",
+   "role": "WRITE #2 of slot-bindings.json → <template-run>/app/template-data/slot-bindings.json (line 80). Same in-memory artifact, two copies.",
+   "keySymbols": [
+    "writeJson(\"slots.json\"/\"slot-bindings.json\"/\"default-content.json\")",
+    "writes src/runtime/slot-content.ts from SLOT_CONTENT_TS"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/recon-template/app-templates.ts",
+   "role": "The RUNTIME INVERSION of slot-bindings.json (SLOT_CONTENT_TS, emitted into the generated app). Reads template-data/slot-bindings.json at line 113, applies values onto the runtime IR by node id — never by DOM query.",
+   "keySymbols": [
+    "buildContract (bindings → ops keyed `${pageId}|${viewport}`)",
+    "WR_SLOT_VALUES_FILE env seam (line 123; removed by the production bake)",
+    "indexElements (map keyed by node.n)",
+    "applyText/applyAttribute/applySvgText (expectedValue guard on every write)",
+    "scanSvgRuns/escapeSvgText",
+    "findTemplateNode (dynamic templates by templateNodeId inside data-wr-obs)",
+    "applySlotContent"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/regions/load-input.ts",
+   "role": "READ of slot-bindings.json for the PageRegion join (line 90) + its content hash (line 155).",
+   "keySymbols": [
+    "readJson slot-bindings.json",
+    "RegionBinding{bindingId,slotId,pageId,viewport,surface,nodeId}",
+    "hashes.slotBindings"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/regions/types.ts",
+   "role": "PageRegion contract — explicitly forbids a new DOM attribute; region identity joins through (pageId, viewport, nodeId).",
+   "keySymbols": [
+    "PAGE_REGION_SCHEMA_NAME=\"page-regions-v1\"",
+    "RegionOccurrenceSchema.nodeId = the data-wr-node value of the region root (line 145)",
+    "RegionPolicy/policyTag",
+    "PAGE_REGIONS_FILE"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/recon-template/validate-output.ts",
+   "role": "READ + cross-check: slot.bindingIds must match slot-bindings.json exactly (line 120, 158).",
+   "keySymbols": [
+    "SlotBindingsFileSchema.parse",
+    "bindingIds mismatch error"
+   ]
+  },
+  {
+   "path": "/Users/woops/projects/web-recon/src/recon-template/parity-qa.ts",
+   "role": "READ of slot-bindings.json (line 677) + the buildApp/startApp used by every serve boundary (theme, seo, assets).",
+   "keySymbols": [
+    "buildApp",
+    "startApp",
+    "[data-wr-node] queries at :245,:432,:470,:858,:905"
+   ]
+  }
+ ],
+ "findings": [
+  "CONTENT SLOT VALUE MODEL. The only thing a content run hands the site is `slot-values.json`, a bare `{ slotKey: SlotValue }` map (SlotValue = string | {src,alt?,srcset?}). `buildOverlayValues` (overlay.ts) copies `result.slotValues` verbatim — no filtering, no envelope — because production/run.ts:234,375, seo/production-plan.ts and the freshness hash all read it as a bare map. Any richer per-slot record MUST be a sibling file; `slot-accounting.json` is the established precedent (accounting.ts writes it beside, never into, the overlay). `effectiveSlotValues` = template defaults overlaid by the run; `changedKeys` = keys whose JSON differs from the default.",
+  "AUTHORED.SLOTVALUES APPLICATION PATH (the authoritative one). release/instance.ts `resolutionSlotValues()` collects ONLY `routeContent[*].slotValues` + `urls` from a pack; `foldResolutionIntoAuthored()` merges those into `project.authored.slotValues` (later packs win). At build, `contentStageRunner` (stages.ts:69-210) prepares a BRAND-NEW content run, merges base `generation-result.json` slotValues, then routeContent, then urls, then `authored.slotValues` LAST — every one of those stamped `sources[key]=\"user-provided\"` and removed from `unresolved` — and calls `ingestGenerationResult`, which MATERIALIZES a fresh `slot-values.json`. The doctrine is stated identically in three places on purpose: release/store.ts:19-29, release/resolve.ts:180-186, and content-injection/run.ts:271-276 (`CONTENT_WRITE_DOCTRINE_WARNING`), surfaced to operators only by cli-content-validate.ts:40 when `manifest.manualEdits` is true.",
+  "SLOT ACCOUNTING — TWO ORTHOGONAL AXES, exact enum values. ORIGIN (`SLOT_ORIGINS`, 5): `user-provided`, `derived-copy`, `generated-marketing`, `synthetic-fact`, `source-preserved`. DISPOSITION (`SLOT_DISPOSITIONS`, 5): `applied`, `preserved`, `removed`, `human-required`, `unresolved`. Each in-scope slot carries EXACTLY ONE of each plus `customerFacing: confirmed|ambiguous` (confirmed == compiler said editability=\"editable\"; ambiguous == review-flagged, never folded into a success number). `reconciliation` proves it inside the artifact: uniqueSlotKeys == inScopeSlots, originTotal == dispositionTotal == inScopeSlots, with `missing[]`/`doubleCounted[]` names. The in-scope population is `inScopeSlotKeys()` = every unit slot + every `reviewSlotKeys` entry. `scopeHonesty.templateExcludedCandidates` records the candidates the template compiler suppressed before slotting — they never reach the account at all.",
+  "FACT TRUTH MODES. `CONTENT_TRUTH_MODES = [\"verified-only\", \"synthetic-allowed\"]`, default `verified-only` (DEFAULT_CONTENT_TRUTH_MODE). Enforcement is an ENGINE step, not a prompt: `applyTruthMode` runs FIRST inside `ingestGenerationResult` (run.ts:224-229), before validation and before any overlay exists. Seven deterministic claim regexes over produced text/url values: counted-metric, price, percentage, phone-number, certification-or-award, superlative-social-proof, founding-date; plus `declared-synthetic` when the generator self-declares. Exemptions in order: sources[key]===\"user-provided\"; claim text contained in a `providedFacts` entry; value normalizes equal to the template default (that is source carry-over, brand-leak's axis). Otherwise verified-only REFUSES (key leaves slotValues, enters `unresolved` with reason `needs factual input: unsupported <claim> claim (content truth mode: verified-only)`) and synthetic-allowed KEEPS + marks `synthetic-fact`. Decisions recorded as `{slotKey, claim, decision: refused-unresolved|marked-synthetic|backed-by-user-fact, detail}` in `slot-accounting.json.truthDecisions`. `nextResult.synthetic` is always REWRITTEN, never inherited.",
+  "BATCHING. `BATCH_UNIT_LIMIT = 40` (packet.ts:53). `buildBatches` cuts global units first, then per-route chunks; ids are assigned ONCE at prepare time and persisted in `generation-request.json`. `executeGenerationBatches` consumes those persisted batches (never re-plans), issues one `generate()` per batch with `narrowRequest` (the same packet narrowed to one batch), and records a `BatchCallRecord` + a telemetry event per call. `mergeBatchResults` enforces three rules with NO last-write-wins: a key may only come from the batch owning its unit (`out-of-batch-key`), may only be produced once (`duplicate-slot-value`/`duplicate-unresolved`/`duplicate-image-brief`), and may not be assigned by one batch while another marks it needs-input (`assigned-and-unresolved-across-batches`). First writer's value is kept for determinism, the conflict is recorded, and `assertNoBatchConflicts` throws so the caller FAILS the run. Site plan identity comes from `entries[0]`; page plans merge by route, first writer wins.",
+  "GED-D GUARD. `MAX_REPAIR_ITERATIONS = 2`. `RepairProgressGuard.evaluate` is stateful across one loop and checks in specificity order: (1) `no-candidate-keys-changed` — the repair produced nothing different from the current overlay; (2) `repair-values-identical` — byte-identical to the previous iteration's values; (3) `failure-signature-repeated` — same `failureSignatureOf()` (sha256-16 over sorted repairCandidates `slotKey|reason|evidence` plus failing `route@width|notes`) AND the same candidate set. `REPAIR_STOP_REASONS` (7): `layout-qa-passed`, `no-repair-candidates`, `iteration-bound-reached`, `repair-values-identical`, `failure-signature-repeated`, `no-candidate-keys-changed`, `repair-validation-failed`. Stops persist to `report/repair/repair-stop.json` and to `manifest.repairStop`. `buildRepairRequest` deliberately SKIPS `unslotted-duplicate-text-desync` and `stale-duplicate-text-remnant` candidates — those are operator decisions, not rewritable sentences. Only the guard half of GED-D shipped; the provider half (`fakeText` length-awareness) is out of scope because smoke:seo/release/production all pin its literal output.",
+  "TELEMETRY. `src/telemetry/` is provider-neutral and OPTIONAL everywhere — no recorder means no file and identical pipeline behaviour. `generation-telemetry-v1`, append-only JSONL at `report/telemetry.jsonl` (cli-content-generate.ts:81-82, cli-content-qa.ts:164-165). Event fields: engine, runId, seamId (`content.generate.batch`), stage (`initial`|`repair`|`manual`), callIndex, provider, model?, batchIds, unitCount, slotCount, routes, elapsedMs, retryCount, outcome (`ok`|`error`), error?, usage?. `usage` is OMITTED ENTIRELY unless the provider reported it (`generator.lastUsage?.()`) — never zero-filled, never estimated. The manual `--result <file>` seam therefore leaves it absent, which is the correct record.",
+  "BRANDLEAKWARNING KIND ENUM (types.ts:503-517), exactly 5: `brand-token-in-value`, `brand-token-in-untouched-default`, `original-external-url-retained`, `original-external-url-in-untouched-default`, `blocked-visible-source-content`. `severity` is optional (`warning`|`blocker`); only `blocked-visible-source-content` is emitted at blocker severity, and only when the slot key appears in `engineBlockedKeys` — derived in run.ts:150-154 from unresolved entries whose reason contains `ENGINE_LIMITATION_MARKER` (\"engine-limitation\"). Detection is deterministic MVP: `brandTokensFromHost(host)` word-boundary matching, plus external URL slots whose effective value still equals the source default. A separate, wider surface vocabulary lives in brand-surfaces.ts (`BRAND_SURFACES`, 14 values) and feeds the release layer's `brand-leak` requirement kind — it is DETECTOR ONLY, with neutralization explicitly deferred to bake.",
+  "PRODUCTION BAKE SHAPE. `production-spec-v1` (production/types.ts) pins template/contentRun/theme/seoPlan/assets each by `{dir, hash(dir-sha256-v1), fileCount, byteCount, excluded}` plus per-layer ids, written BEFORE the bake so the build is reproducible from named, verified inputs. Outputs go to two additive namespaces: `data/<host>/production-specs/<run-id>/production-spec.json` and `data/<host>/production-builds/<run-id>/{app/, package/, report/bake-report.json, manifest.json (production-build-v1)}`. `BakeReport` is the per-layer accounting (content/theme/seo/assets/build); `DeployManifest` (`production-deploy-manifest-v1`) is what QA reads so it never touches a run directory. `buildMode.chosen` enum has `standalone-server` but `runProductionCompile` always writes `static-export`, and `convertToStaticExport` THROWS if the route table carries any query-variant key.",
+  "BAKE STEPS A–F. A content: overlay → `app/template-data/slot-values.baked.json` + `patchSlotContent` removes the `WR_SLOT_VALUES_FILE` env seam. B theme: overlay css → `app/public/wr/theme-overlay.css` + `patchLayout` adds `<link rel=\"stylesheet\" href=\"/wr/theme-overlay.css\" precedence=\"wr-generated\">` immediately AFTER the generated sheet (same precedence group, React preserves in-group order — byte-equivalent to the proxy's append). C seo: `bakeRouteTitles` writes plan titles into `reconstruction-data/route-map.json` so head `<title>` AND the RSC flight payload both derive from the route table (no string splicing), then `postProcessExport` splices `headHtml` before `</head>` per route, verifies `<title>escaped</title>`, and writes `robots.txt`. D assets: `copyMedia` into `out/media/`, then `applyRewrite` over every exported `.html` (html context), `.txt` RSC flight (html context) and `.css` (css context) — the Task 22 proxy's exact mechanism at build time. E/F: `assemblePackage` renames `out/` to `package/site/` and emits `server.mjs`, `deploy-manifest.json`, `RUN.md`, plus `sitemap.preview.xml` in preview only. All four source patches (patch.ts) use `requireOnce`/`requireAbsent` anchors and fail LOUDLY on a future generator's drift.",
+  "PREVIEW-VS-PRODUCTION AND THE NOINDEX RULE. Mode is inherited, never re-decided: `seoPlan.domainState.mode`, which is `preview` iff `productionDomain === undefined` (production-plan.ts:162). Preview: every route gets `robotsMeta = noindex,nofollow` in the rendered head; `canonical.finalized=false, value=null`; `og:url`/`og:image`/`twitter:site` needs-input; `robots.txt` = `User-agent: *\\nDisallow: /` with NO Sitemap line (a Sitemap line needs an absolute URL and domains are never invented); `/sitemap.xml` is intentionally absent → 404 from the static host, while `sitemap.preview.xml` (path-only `<loc>`, an XML comment marking it non-conformant) ships as a package artifact only. Production: `index,follow`, self-referential canonical `https://<domain><path>`, absolute og:url, `robots.txt` Allow + `Sitemap:` line, and run.ts:387-390 COPIES the real `sitemap.xml` into `out/`. `indexabilityGate.decision` is `preview`|`indexable`; preview carries 7 machine-readable blockers from `buildPreviewBlockers` (production-domain-needs-input, seo-needs-input-values, replacement-required-assets, fonts-license-needs-review, business-facts-needs-input, uninjected-route-content, source-brand-inline-svg) — every number/name derived per site from the artifacts the evidence strings cite, and `uninjected-route-content` is DROPPED when it would read \"0 of N\". production/qa.ts re-asserts all of it over real HTTP: `robots-meta:<route>`, `robots-txt`, `robots-txt-no-sitemap-line`, `sitemap-preview-404`.",
+  "ASSET PIPELINE. Namespaces: `data/<host>/asset-inventories/<run-id>/` (asset-inventory.json, classification.json, font-inventory.json, manifest.json) and `data/<host>/asset-materializations/<run-id>/` (manifest.json, rewrite-map.json, replacement-manifest.json, media/, report/{network-qa.json, font-qa.json, residual-source-assets.json, derivation.json}). Inventory is built from STORED artifacts only — SiteSpec asset-catalog, `url()` in the generated stylesheet, rendered.html head favicons/og-images/font-preloads, template image-slot join, Task 19 imageBriefs — with `--live-font-css` the single bounded opt-in network access. `AssetClassification` (4): `safe-to-materialize`, `replacement-recommended`, `replacement-required`, `license-needs-review`. `MATERIALIZED_CLASSES` = the first two only; `replacement-required` and `license-needs-review` are NEVER auto-fetched (recorded `skipped-<classification>`), truncated URLs are `skipped-truncated`, and the fetch host allowlist is EXACTLY the hosts the inventory observed. Storage is `media/<sha256>.<ext>` with byte-identical dedup; the rewrite map is sorted longest-sourceUrl-first so a short URL can never steal a long one's occurrences. `residual-report.ts` (GED-G) joins the per-route runtime census with inventory identity and the replacement manifest per FILE, keeping the query string (CDN transform params identify a distinct delivered file) and stripping only the fragment; `replacement-manifest.json` remains the authority on WHETHER an asset must be replaced, the residual report only says WHERE and HOW OFTEN.",
+  "ASSETS STAGE RUNNER. `assetsStageRunner` (stages.ts:305-320) is a thin conductor over `applyAssetResolutions` (release/resolve-assets.ts). It NEVER re-runs inventory and NEVER re-fetches. It `cp`s the whole base materialization run into a new run dir (refusing if the dir exists), content-hashes each operator file into `media/<sha256><ext>`, flips the matching `replacement-manifest.json` entry to `{status:\"provided\", providedFile, providedBy: \"release:<projectId>:<releaseRunId>\"}`, updates-or-appends the rewrite-map entry for that `sourceUrl`, appends an `operator-provided` manifest entry, writes `font-decisions.json`, and recomputes `counts.uniqueFiles`/`rewriteEntries`. Crucially it INHERITS `report/network-qa.json` and `report/font-qa.json` from the base run and says so in `report/derivation.json` (\"conservative: replacements only shrink the residual set; re-run assets:qa against this run to re-measure\").",
+  "WHAT MAKES THE ASSETS STAGE STALE VS REUSED. `STAGE_DEPENDENCIES.assets = [\"template\"]` — assets does NOT depend on content, so a content edit cannot stale it. Its inputsHash (freshness.ts `computeStageInputsHash`) = sha256 over `{stage:\"assets\", upstream:{template:<dir hash>}, resolution:{assets: <assetId→file content sha256>, fontDecisions: <map>}}`. So assets goes stale on exactly four things: (a) the template artifact hash moves (frozen root — should never happen, and if it does `release:build` REFUSES it as frozen-stage drift); (b) `resolutionAssetContentHashes` changes — a new/removed assetId, or DIFFERENT BYTES AT THE SAME PATH (files are content-hashed, so swapping bytes in place is a change), or a file that vanished (recorded as the sentinel `missing:<file>` plus a warning); (c) `resolution.fontDecisions` changes; (d) the assets artifact directory's own bytes drift from the recorded hash. Otherwise it is REUSED verbatim. `RESOLUTION_FIELD_IMPACTS` maps both `assets` and `fontDecisions` to `[\"assets\", \"production\"]`, and `downstreamOf(\"assets\")` is exactly `[\"production\"]` — no other stage sits below it.",
+  "WHAT AN AUTHORED ASSET REPLACEMENT WOULD HAVE TO LOOK LIKE TO STALE ONLY ASSETS. A `production-resolution-v1` pack whose ONLY populated fields are `assets` (and optionally `fontDecisions`) — no `urls`, no `routeContent`, no `facts`, no `productionBaseUrl`, no `theme`, since `fieldPresent()` in graph.ts treats any non-empty record as present and each of those pulls in content/seo/theme. Shape: `assets: { \"<assetId>\": \"path/to/file.png\" }` or `{ file, note? }`. `<assetId>` must be either an `inventoryId` that exists in the base run's `replacement-manifest.json` entries, or one of the two site-level ids `og-image` / `organization-logo` — anything else throws `resolution assets reference unknown inventory ids`. The extension must be in `EXTENSION_BY_SUFFIX` (.png .jpg .jpeg .webp .gif .svg .ico .avif) and the file must exist at resolve time AND at every later `refreshStageStatuses`, because the freshness hash is taken from the ORIGINAL PATH, not from the copy inside the derived run. Result: `invalidatedStages` returns `[\"assets\", \"production\"]`; content, theme and seo stay fresh and are reused; `release:build` runs `assetsStageRunner` then `productionStageRunner` and nothing else.",
+  "SEO PLAN/PREVIEW/QA. `createProductionSeoPlanRun` writes six files into `data/<host>/production-seo-plans/<run-id>/`: `production-seo-plan.json`, `robots.txt`, `sitemap.xml`|`sitemap.preview.xml`, `rendered-head.json`, `report/needs-input.json`, `manifest.json`. Every value is a `PlannedValue {status: known|needs-input, value, basis, previewFallback}` and `renderRouteHead` emits NO TAG for a needs-input value with no fallback — a missing tag is honest, an invented one is not. The only source of production copy is the content run (`sitePlan.siteIdentity` + `pagePlans`); the source snapshot is consumed for forbidden-copy comparison ONLY, and the run THROWS if `checkForbiddenCopy` or `checkBrandIsolation` fails. Preview serving (`seo/serve.ts` `rewriteHtmlHead`) does three ordered things: substitute every encoded occurrence of the upstream title (so the RSC flight payload cannot revert the tab title at hydration), rewrite the `<title>` element with `escapeForTitleText`, then splice `headHtml` before `</head>` between the `wr-seo-head-start`/`wr-seo-head-end` markers. `escape-variants.ts` (GED-E) supplies six encodings — `raw`, `html-hex-apostrophe`, `html-decimal-apostrophe`, `html-named-apostrophe`, `json`, `json-html-escaped` — sorted longest-needle-first, with the REPLACEMENT carried in the SAME encoding as the occurrence (so a raw context gets raw bytes and an HTML context gets `&amp;`, never `&amp;amp;`), applied by literal split/join, never a regex over page bytes. The production bake reproduces the identical result by baking titles into `route-map.json` rather than substituting, and `escapeForTitleText` is deliberately the same escape set as bake.ts's `escapeForTitle`.",
+  "THEME CONTRACT / TOKENS / OVERLAY. `theme-contract-v1` is a CLOSED 24-token vocabulary: 15 COLOR_TOKENS, 7 DECORATION_TOKENS (3 radius + 3 shadow… actually 4 radius + 3 shadow), 2 TYPOGRAPHY_TOKENS. Typography is contract-representable but NEVER auto-applied (`generateThemeOverlay` skips `tokenKind === \"typography\"`; the theme gets a `typography-not-applied` compatibility warning) because a font swap changes line wrap and document height. The paint allowlist is closed at 11 properties: color, background-color, border-top/right/bottom/left, caret-color, outline-color, text-decoration-color (level 1) + border-radius, box-shadow (level 2); a non-themeable property reaching `declarationFor` is a THROWN `ThemeContractError`, not a warning. Three artifacts stay strictly apart: Theme File (site-agnostic, structurally cannot carry a selector/className/nodeId/route — token keys are the closed vocabulary and `isSafeThemeValue` refuses `;{}<>`, `url(`, `expression(`, `javascript:`, `@`, `\\`, unbalanced quotes), Site Theme Adapter (the only artifact holding this site's `wr-st…` identities and `PaintGroup`s), and the generated Theme Overlay CSS. Border shorthands substitute ONLY the color component — `preservedPrefix` (\"1px solid\") is copied byte-for-byte, so the layout half is structurally untouchable. Overlay structure: `:root{--wr-theme-<token-dashed>:value;…}` then selector chunks of 25 reusing each paint group's selectors VERBATIM, winning by cascade order at identical specificity — no !important, no new class names.",
+  "THEME SERVE BOUNDARY, TWO FORMS. Preview: `startOverlayProxy` (theme/serve.ts) appends the overlay CSS to exactly ONE response — `/wr/generated-styles.css` — forcing `accept-encoding: identity` so the append is a plain concatenation. The served HTML is byte-identical with and without a theme, so hydration cannot be affected by construction, and with no theme there is no proxy at all. Production: the same ordering is reproduced statically by `bakeTheme` (a real file at `public/wr/theme-overlay.css`) plus `patchLayout` linking it after the generated sheet in the same `precedence=\"wr-generated\"` group. Composition order across all layers is structural: Template → Content Overlay (server env / baked JSON) → Asset Rewrite → Theme Overlay (stylesheet append / link) → SEO Head Overlay (head splice) → Render. A theme run's manifest pins its `contentRunDir`, which is exactly why `STAGE_DEPENDENCIES.theme = [\"template\", \"content\"]` and why any content rerun stales the theme run too.",
+  "SLOT DOM IDENTITY — EVERY EMISSION SITE. `data-wr-node` is written into the runtime IR at three places in src/reconstruction/compile-node.ts: line 249 (`props[\"data-wr-node\"] = node.nodeId` on every compiled element), lines 460-466 (inline SVG — the attribute is stamped onto the `<svg>` ROOT inside the opaque `v` markup via `annotateSvgRoot`, src/reconstruction/asset-resolver.ts:224; the wrapping host `<span class=\"wr-svg-host\">` carries none), and lines 522-525 (`compileDocumentRoot`, where `<html>`/`<body>` become divs carrying `data-wr-node` + `data-wr-doc-tag`). `data-wr-dyn-node` is written at src/reconstruction/interaction-bindings.ts:850 (`props[\"data-wr-dyn-node\"] = node.templateNodeId`) onto every node of a captured dynamic template; those props live serialized inside the trigger's `data-wr-obs` attribute and only reach the real DOM at client mount, in `buildTemplateNode` in src/reconstruction/runtime-template.ts (~lines 465-495, `createElement` + `setAttribute` per prop, never innerHTML). Everything else that mentions these attributes is a CSS selector consumer (pseudo-generator.ts:16, layout-inference.ts:471, qa-corrections.ts:190, interaction-bindings.ts:964/998-1000 reveal rules) or a QA/measurement reader (reconstruction-qa/capture-page.ts:298-314, capture-clone.ts:176, map-clone-nodes.ts, emit-diffs.ts:182/204, interaction-qa.ts:556/764; recon-template/parity-qa.ts:245-248,432,470,858,905; theme/theme-qa.ts:152,389,405; theme/occurrences.ts:117,125 which reads them off the IR rather than the DOM; content-injection/layout-qa.ts:170,324,405,495,510; production/qa.ts:729-733; release/brand-scan.ts:76). No code path adds a `data-wr-slot` attribute, and regions/types.ts:22-25 states that prohibition as policy.",
+  "SLOT-BINDINGS.JSON — WRITE AND READ SITES. Written exactly twice, both from the same in-memory `artifacts.bindingsFile` and never rewritten afterwards: src/recon-template/compile.ts:224 → `<template-run>/slot-bindings.json`, and src/recon-template/generate-template-app.ts:80 → `<template-run>/app/template-data/slot-bindings.json` (the runtime's copy). Read at: recon-template/validate-output.ts:120 (schema parse + cross-check that every `slot.bindingIds` matches, line 158), recon-template/parity-qa.ts:677, recon-template/app-templates.ts:113 (the generated app's `slot-content.ts`), content-injection/load-template.ts:64 (builds `bindingsBySlotId`), production/run.ts:406 (`pickContentProof`, filtered to surface=static / target=text / viewport=desktop), regions/load-input.ts:90 (plus `hashBytes` → `slotBindingsHash` recorded in the region artifact), and recon-template/report.ts:135 (in-memory). THE INVERSION lives in app-templates.ts `buildContract`: slotId→key via slots.json, each binding resolved against the (optionally overlaid) value, grouped into ops keyed `${pageId}|${viewport}`; `applySlotContent` then indexes the runtime tree by `node.n` (and dynamic-template nodes by `templateNodeId` inside the parsed `data-wr-obs` payload) and applies `text` / `attribute` / `svg-text` writes — every one guarded by `expectedValue`, with a `warnSkip` on mismatch. So slot→DOM identity is resolved on the IR before render; the rendered `data-wr-node` attribute is the JOIN KEY for QA and regions, never the write mechanism."
+ ],
+ "risks": [
+  "AuthoredState has NO assets field (release/types.ts:221-229: only `slotValues`, `theme`, `updatedAt`). An asset replacement therefore cannot be authored the way slot values and theme tokens are — it survives only as an entry in `project.resolutions[]`, re-derived on every read via `effectiveResolution()`. `foldResolutionIntoAuthored` and `resolutionSlotValues` deliberately ignore `assets` and `fontDecisions`. A Visual Editor 'replace this image' write target does not exist yet; adding one means either extending AuthoredState (and the `assets` resolution slice in freshness.ts:resolutionSliceFor) or continuing to synthesize resolution packs.",
+  "`resolutionAssetContentHashes` hashes operator asset files BY PATH on every `refreshStageStatuses`. A file that is moved, deleted, or lives outside the repo becomes the sentinel `missing:<file>`, which permanently changes the assets inputsHash and re-stales assets + production on every command, with a warning. The bytes were already copied into the derived materialization run, so the rerun is unnecessary — but the freshness contract still points at the original path.",
+  "The assets stage runner does not re-measure. `applyAssetResolutions` INHERITS `report/network-qa.json` and `report/font-qa.json` from the base run (documented in report/derivation.json), so after providing a replacement image the residual census can still list that asset, and collect.ts:440-448 raises exactly that warning while a `runtime-source-asset-*` requirement may keep standing until an operator manually runs `pnpm assets:qa` against the new run. A stage that claims to close asset requirements cannot prove it closed them.",
+  "Any content-stage rerun cascades to four stages. `STAGE_DEPENDENCIES.theme = [\"template\",\"content\"]` and seo likewise, so one authored slot value stales content → theme → seo → production. That is correct per the graph but means the cheapest possible authoring edit rebuilds and re-bakes the whole tail, including a real `next build`. Assets is the only stage genuinely orthogonal to content — and prepare.ts:334-337 already records the cost of that simplification as a project limitation (a content rerun does not re-run the asset inventory, so `replacement-manifest` slotKey joins can reference the earlier content run).",
+  "`CONTENT_DERIVED_HASH_EXCLUSIONS = [\"report\", \"slot-accounting.json\"]` and `slot-values.json` deliberately STAYS IN the content hash. Any NEW derived write into a content run directory that is not under `report/` will silently stale content plus every downstream stage. This exclusion set is recorded per-project in `ArtifactRef.excluded` and re-hashed from the RECORDED set, so a project prepared before a fix keeps the old semantics and only gets a `staleExclusionSetWarnings` warning — never a silent re-adoption.",
+  "`accounting.classify()` falls through to origin `user-provided` for any overlay value with no recorded `sources[key]`. The comment justifies it (only the §29 manual path can produce that), but it means a bug that drops provenance would report generated or invented copy as operator-supplied — the one origin value that also makes `applyTruthMode` treat a claim as backed. The release orchestrator's merge stamps `sources[key]=\"user-provided\"` for every authored/routeContent/urls value, so authored content is immune to truth-mode refusal by construction while base-result values are not.",
+  "`verified-only` as the default is a real behaviour change relative to every Task 19-26 run, and truth-mode.ts documents it: re-ingesting an ARCHIVED generation result whose copy contains a percentage, a price or 'trusted by' phrasing now DEMOTES that value from `slotValues` to `unresolved`. Any release rerun that re-ingests a historical base result can therefore move a project from PRODUCTION_READY to INPUTS_REQUIRED. The escape hatch (`--truth-mode synthetic-allowed`) is lossless but must be chosen explicitly.",
+  "`buildPreviewBlockers` is a hardcoded 7-entry list whose PROSE is fixed even though its numbers are derived per site. Only `uninjected-route-content` has a suppression rule (dropped at 0). The other six are emitted unconditionally in preview mode — e.g. `fonts-license-needs-review` prints 'no font is self-hosted' even where an operator has recorded `self-host-license-verified` font decisions in the derived materialization run, because run.ts reads `fontInventory.license` and never consults `font-decisions.json`.",
+  "production/patch.ts is a four-anchor tripwire over generated app source (`next.config.mjs`, `app/[[...slug]]/page.tsx`, `src/runtime/slot-content.ts`, `app/layout.tsx`). Any change to `SLOT_CONTENT_TS`, `NODE_RENDERER_TSX`, the layout template or the page template in src/recon-template/app-templates.ts or src/reconstruction/app-template.ts will break the production bake with a loud 'patch anchor not found' — which is the designed behaviour, but it makes those templates a shared frozen surface between the template compiler and the production compiler.",
+  "There is no per-route authored SEO title seam. `buildProductionSeoPlan` derives every injected route's title as the literal `${workingName} | ${category}` and its description as `${pagePlan.primaryMessage} — ${positioning}`; uninjected routes get a brand-only `previewFallback`. `routeContent[route].pagePlan.primaryMessage` is the only operator lever, and it only moves the description. Authoring a real per-route title today requires changing production-plan.ts, not supplying data.",
+  "`brand-surfaces.ts` names 14 surfaces including `svg-aria-label` and `svg-symbol-id`, which live in the runtime IR's opaque `v` markup and have NO slot binding — so there is no write target and no neutralization anywhere in the pipeline. The module's own header states neutralization belongs at BAKE and is sequenced after Content V2 / region enablement. Consequently the `source-brand-asset` requirement (release-blocking severity) can be raised but cannot be resolved by any code path that exists today.",
+  "`RegionPlanFile.unassignedUnitIds` is expected to be non-empty and is documented as honest rather than defective — PageRegion granularity follows the markup, and a template with little sectioning markup yields few regions. Any future logic that treats region coverage as a completeness metric would be reading that number wrong. Note also that content-injection reaches PageRegion only through the narrow duck-typed `PageRegionsContractSchema` in region-plan.ts and never imports src/regions, so an id-moving policy change over there is invisible here except as different region ids."
+ ]
+}

@@ -1,0 +1,289 @@
+Already up to date
+Done in 144ms using pnpm v11.21.0
+$ tsx scripts/smoke-reconstruction.ts
+[smoke:reconstruction] Task 14 — Next.js Reconstruction Engine
+
+Task 17 §9 — layout rule inference (offline)
+  PASS  1440:180/1080/180 + 1920:420/1080/420 → max-width:1080px; margin-inline auto
+  PASS  a section tracking the viewport at every width recovers width:auto
+  PASS  a constant-ratio sidebar recovers a percentage width
+  PASS  visible at 1440 but gone at 1920 → @media (min-width: 1680px) display:none
+  PASS  a node whose probe disagrees with the deep observation recovers nothing
+  PASS  a cap engaging only above the truth width (fill → 1436 centered @1920) → max-width:1436px
+  PASS  …with the engaged width named in the evidence
+  PASS  the same curve pinned LEFT at 1920 recovers nothing
+  PASS  html/body never receive recovered rules
+  PASS  no aligned probe → zero rules and generation proceeds on the exact fallback
+  PASS  the recovered CSS tier uses (0,3,0) attribute selectors, deterministic order
+
+§121 fixture SiteSpec through the real Task 13 compiler
+  PASS  the fixture compiles into a schema-valid SiteSpec
+  PASS  …carrying every verified pattern and the unknown case
+
+§122 the Task 06–12 source tree is deleted before generating
+  PASS  the whole Task 06–12 run tree is gone
+  PASS  loadSiteSpec() still returns a complete reconstruction input
+
+§28/§29 breakpoint inference
+  PASS  the breakpoint is the midpoint of the two observed widths
+  PASS  …and is labeled inferred, never observed
+  PASS  --breakpoint override is recorded as an operator override
+
+§120 reconstruction plan
+  PASS  every verified route is planned exactly once
+  PASS  route keys distinguish two query variants of one pathname
+  PASS  the query-route key is order-independent
+  PASS  the family-represented route renders from the representative's page
+  PASS  …and is NOT promoted to observed (items 23, 25)
+  PASS  the never-explored route keeps exact-not-explored behavior coverage
+  PASS  all 11 verified patterns became runtime bindings, none unsupported
+  PASS  …split into native and scripted (items 90, 92)
+  PASS  the unknown case is annotated and implemented zero times
+  PASS  no dangling style token
+  PASS  pseudo rules were generated
+  PASS  no initial-state conflict in this fixture
+
+§39–§49 React attribute adapter (unit level)
+  PASS  for → htmlFor
+  PASS  readonly → readOnly (boolean true)
+  PASS  colspan → colSpan (number)
+  PASS  rowspan → rowSpan (number)
+  PASS  contenteditable → contentEditable (verbatim)
+  PASS  autofocus → autoFocus (boolean)
+  PASS  maxlength/minlength → maxLength/minLength
+  PASS  tabindex → tabIndex (number)
+  PASS  datetime → dateTime
+  PASS  spellcheck → spellCheck (verbatim)
+  PASS  aria-* passes through lowercase
+  PASS  hidden='' is boolean true
+  PASS  hidden='until-found' is NOT collapsed to a plain boolean
+  PASS  input value is never emitted as a controlled value
+  PASS  option selected is handled by the parent select
+
+§65 CSS value safety
+  PASS  a value with a declaration terminator is rejected
+  PASS  a value with a newline is rejected
+  PASS  an ordinary computed value is accepted
+
+§5/§12 generate the app (twice, for determinism)
+  PASS  two generations of the same SiteSpec are byte-identical
+  PASS  no generated file contains a timestamp or an absolute local path
+
+§180 validateGeneratedApp()
+  PASS  all six routes are mapped, none duplicated
+  PASS  every runtime page file exists
+  PASS  every pattern trigger is present in a rendered tree
+
+§50/§109/§177 nothing forbidden survived into the generated app
+  PASS  generated source contains no "original.example"
+  PASS  generated source contains no "ATTACK-PAYLOAD"
+  PASS  generated source contains no "SVG-DATA-PAYLOAD"
+  PASS  generated source contains no "steal()"
+  PASS  generated source contains no "javascript:alert"
+  PASS  generated source contains no "TOP-SECRET"
+  PASS  generated source contains no "theme-dark"
+  PASS  generated source contains no "source-svg-class"
+  PASS  generated source contains no "hunter2"
+  PASS  generated source contains no "boom()"
+  PASS  generated source contains no "evil.test"
+  PASS  no source on* handler attribute appears anywhere
+  PASS  the server-only sentinel IS in the runtime page data
+
+§59/§60/§123–§125 content fidelity in the runtime tree
+  PASS  mixed content keeps text / element / text order
+  PASS  long text is not re-truncated at 200 characters
+  PASS  pre whitespace is preserved byte-for-byte
+
+§32–§38 generated DOM identity and IDREF rewriting
+  PASS  label htmlFor points at the GENERATED id, not the source id
+  PASS  a multi-token aria-labelledby keeps its order and is rewritten
+  PASS  a resolved #fragment href points at the generated id
+  PASS  no generated DOM id reuses a source HTML id
+
+§81–§83 link rewriting
+  PASS  a same-origin verified URL becomes a clone-local path
+  PASS  an external link keeps its original href
+  PASS  mailto: is preserved
+  PASS  a same-origin URL outside the route table keeps its local path (clone 404)
+
+§69–§77 assets
+  PASS  an <img> gets its observed src
+  PASS  …and a srcSet built from descriptor semantics
+  PASS  next/image is not used anywhere
+  PASS  the inline SVG is rendered as real <svg> markup
+  PASS  …sanitized: no script, no on*, no javascript:
+  PASS  …carrying the clone's own class and node id, not the source class or style
+  PASS  …and keeping its SVG geometry
+
+§44–§48 declarative form state
+  PASS  a <select> gets defaultValue from its selected option's text
+  PASS  …and the option itself carries no `selected` prop
+  PASS  a multiple <select> gets an array defaultValue
+  PASS  a checked checkbox becomes defaultChecked
+  PASS  …and never a controlled `checked`
+  PASS  a <textarea>'s text becomes defaultValue
+  PASS  …and its children are not also emitted
+  PASS  a password input's value never reaches the clone
+
+Task 16 correction — parser-stable nesting
+  PASS  the SiteSpec really observed <li> directly inside <li> (the defect is in the input)
+  PASS  the generator interposed exactly one container for the one bad edge
+  PASS  …the interposed container carries no data-wr-node, so QA cannot map onto it
+  PASS  …and both viewports were adapted, and only those two
+  PASS  the adaptation is recorded as a limitation, not hidden
+  PASS  the inner <li> is still a descendant of the outer <li>
+  PASS  the already-valid nested list is left exactly as observed
+  PASS  …with no container interposed anywhere inside it
+  PASS  no page in the generated app holds an edge the HTML parser would rewrite
+  PASS  the container is removed from layout, so the observed geometry is unchanged
+
+Task 16 correction — a decorative pseudo is not an interaction barrier
+  PASS  the observed ::after reached the stylesheet
+  PASS  …carrying the z-index that puts it BEHIND the content
+
+§84–§106 interaction bindings
+  PASS  disclosure binding exists
+  PASS  tabs binding exists
+  PASS  menu binding exists
+  PASS  dialog binding exists
+  PASS  dismiss binding exists
+  PASS  state-toggle binding exists
+  PASS  native details/checkbox are marked native, not scripted
+  PASS  the dynamic menu trigger's aria-controls names the CLONE's region id
+  PASS  …and records the observed tag and role, with no invented children
+  PASS  a disclosure with an observed MOUNTED target carries the dynamic-region binding
+  PASS  …whose aria-controls names the CLONE's region id
+  PASS  the 메뉴 열기 trigger is annotated unknown
+  PASS  …and has NO operation attached (item 89)
+
+§203 the SiteSpec is deleted before the app is built
+  PASS  the SiteSpec directory is gone
+
+§150 next build
+  PASS  next build PASS (2662 ms) with the SiteSpec deleted
+
+§205 the generated app source is location-independent
+  PASS  the copied tree is byte-identical to the generated one
+  PASS  no generated file names the repository, the SiteSpec or any absolute path
+  PASS  runtime data is resolved from process.cwd(), not from a baked-in path
+
+§77/§179 dangerouslySetInnerHTML is used exactly once, on sanitized SVG
+  PASS  only NodeRenderer.tsx mentions it
+  PASS  …and it is reached only through the inline-SVG field
+
+§149 SiteSpec data is not in the client bundle
+  PASS  client chunks were produced (7 files, 571.7 KB)
+  PASS  the server-only sentinel is NOT in any client chunk
+  PASS  no SiteSpec-only field "sourceElementId" in the client bundle
+  PASS  no SiteSpec-only field "contentRecovery" in the client bundle
+  PASS  no SiteSpec-only field "sourceObservation" in the client bundle
+  PASS  no SiteSpec-only field "styleTokenId" in the client bundle
+  PASS  no page text leaked into the client bundle
+
+§150/§155 next start + HTTP
+  PASS  next start serves the clone
+  PASS  every SiteSpec route renders over HTTP
+  PASS  a path outside the route table is a clone 404, not a fallback page
+  PASS  §132 the two query variants render their OWN content
+  PASS  §176 the family-represented route renders the representative's page
+  PASS  …and says so in the DOM rather than claiming observation
+
+§126–§148 Chromium
+  §138 responsive
+  PASS  at 1440px the desktop tree is shown and the mobile tree is hidden
+  §126 React attribute adapter in the real DOM
+  PASS  label for=
+  PASS  input readonly
+  PASS  th colspan=2
+  PASS  td rowspan=2
+  PASS  §168 th scope=col
+  PASS  contenteditable=plaintext-only
+  PASS  spellcheck=false
+  PASS  autofocus present
+  PASS  maxlength / minlength
+  PASS  tabindex=0
+  PASS  time datetime
+  PASS  ol start=3 + reversed
+  PASS  input min
+  PASS  input required
+  PASS  §162 the disabled control survives with its label
+  §127 native state
+  PASS  §167 an initially-open <details> is open in the clone
+  PASS  …and a closed one stays closed
+  PASS  a disabled button is really disabled
+  PASS  §43 hidden='until-found' keeps its exact value in the DOM
+  §128–§130 form state in the real DOM
+  PASS  §128 select.value is the selected option
+  PASS  §46 multiple select keeps both selected values
+  PASS  §129 checkbox.checked === true
+  PASS  …and the DOM attribute is present too
+  PASS  §130 textarea keeps its initial value
+  PASS  §47 a text input keeps its observed value
+  §136/§137 CSS
+  PASS  white-space: pre survives
+  PASS  font-size is the exact computed value
+  PASS  color / display / position are exact
+  PASS  margin is exact
+  PASS  §137 ::before content is reproduced
+  PASS  …with its own computed color
+  §139/§140/§142/§143/§144/§145 verified behavior
+  PASS  §139 summary click toggles <details> natively, once
+  PASS  §140 disclosure: aria-expanded false → true
+  PASS  …and the declared target becomes visible
+  PASS  …and clicking again returns to the observed closed state
+  PASS  §142 tabs: the clicked tab becomes selected
+  PASS  …its sibling in the same tablist is deselected
+  PASS  …and its panel becomes visible
+  PASS  §141 the dynamic menu region does not exist before the click
+  PASS  …and mounts with the observed tag and role
+  PASS  …with ZERO invented children
+  PASS  …and the trigger's state moved
+  PASS  §95 a second click unmounts it
+  PASS  §141b a disclosure's observed mounted region does not exist before the click
+  PASS  …and mounts on click with the observed tag and role, op staying disclosure
+  PASS  …INSIDE the observed static host, exactly once — no ghost copy next to the trigger
+  PASS  …and the declared id landed on the SOURCE-id-matched template node
+  PASS  …and the disclosure trigger's state moved
+  PASS  …and a second click unmounts the disclosure's region
+  PASS  …and a third click mounts it again, still exactly once
+  PASS  §143 toggle: aria-pressed false → true
+  PASS  §144 selection: aria-checked false → true
+  PASS  §93 a CSS-hidden region is marked for the reveal override
+  PASS  §101 dialog: the CSS-hidden region actually becomes visible
+  PASS  …and closing returns it to its observed closed style
+  PASS  …without inventing a `hidden` attribute the source never had
+  PASS  §103 generic state toggle flips its ARIA field
+  PASS  §145 dismiss removes the trigger itself
+  PASS  …and removes nothing else
+  PASS  §146 clicking the 메뉴 열기 unknown changes nothing
+  PASS  …and mounts no menu
+  §147/§53 form safety
+  PASS  submitting a generated form does not navigate
+  PASS  …and issues no write request
+  PASS  no generated form carries an action endpoint
+  Task 16 correction — the button under the pseudo is clickable
+  PASS  the pseudo-element is behind the content, as observed
+  PASS  …so the hit target at the button's centre is the button itself
+  PASS  …and Playwright can actually click it
+  §131 internal navigation
+  PASS  clicking a rewritten internal link lands on the clone route
+  PASS  …and renders that route's own page
+  Task 16 correction — the served page hydrates against itself
+  PASS  the naive serialization IS rewritten by the parser (the defect reproduces)
+  PASS  …and the adapted serialization keeps the observed ancestry
+  PASS  in the live clone the inner <li> is inside the outer <li>, through the container
+  PASS  …and the container generates no box, so it cannot move anything
+  §138 mobile viewport
+  PASS  at 390px the mobile tree is shown and the desktop tree is hidden
+  §31 hidden-variant isolation
+  PASS  a click routed at the HIDDEN variant's trigger is ignored
+  §148 browser console
+  PASS  console.error / warning / pageerror across every page visited: 0
+  PASS  …with source asset requests counted separately, not hidden
+
+§190 generator import graph
+  PASS  the generator reaches no browser / crawler / HTTP / AI-provider module
+  PASS  …and its only third-party dependencies are the HTML parser and zod
+
+217/217 checks passed
+[smoke:reconstruction] OK

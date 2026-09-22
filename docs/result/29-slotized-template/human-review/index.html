@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Task 29 — Slotized Template human review</title>
+<style>
+:root { --bg:#fff; --fg:#16181d; --mut:#6b7280; --line:#e4e6eb; --b:#b91c1c; --m:#b45309; --p:#047857; }
+* { box-sizing:border-box }
+body { margin:0; font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--fg); background:var(--bg) }
+.wrap { max-width:1500px; margin:0 auto; padding:24px }
+h1 { font-size:22px; margin:0 0 4px }
+h2 { font-size:19px; margin:34px 0 6px; padding-top:12px; border-top:2px solid var(--line) }
+h3 { font-size:15px; margin:0; font-weight:600 }
+.sub { color:var(--mut); margin:0 0 18px }
+.instr { background:#f7f8fa; border:1px solid var(--line); border-radius:8px; padding:14px 18px; margin:16px 0 }
+.meta { margin:2px 0 8px; color:var(--mut); font-size:12.5px }
+article.pair { border:1px solid var(--line); border-radius:8px; padding:12px; margin:14px 0 }
+article.pair > header { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px }
+.w { color:var(--mut); font-weight:500 }
+code { font:12px ui-monospace,SFMono-Regular,Menlo,monospace; background:#f3f4f6; padding:1px 4px; border-radius:3px }
+.cmp { display:grid; grid-template-columns:1fr 1fr; gap:10px }
+.cmp figure { margin:0; min-width:0 }
+figcaption { font-size:11.5px; font-weight:700; letter-spacing:.03em; color:var(--mut); margin-bottom:4px }
+.pane { height:72vh; overflow:auto; border:1px solid var(--line); border-radius:5px; background:#fafafa }
+.pane img { display:block; width:100%; height:auto }
+@media (max-width:900px) { .cmp { grid-template-columns:1fr } .pane { height:50vh } }
+table.sum { border-collapse:collapse; width:100%; margin:14px 0 8px; font-size:13px }
+table.sum th, table.sum td { border:1px solid var(--line); padding:6px 9px; text-align:left; vertical-align:top }
+table.sum th { background:#f7f8fa; font-weight:600 }
+.v { font-weight:700 } .v-pass { color:var(--p) } .v-fail { color:var(--b) } .v-warn { color:var(--m) } .v-notrun { color:var(--mut) }
+ul.findings { font-size:13px } b.s-fail { color:var(--b) } b.s-warn { color:var(--m) }
+</style></head><body><div class="wrap">
+<h1>Task 29 — Slotized Template: DEFAULT vs NEW</h1>
+<p class="sub">Generated 2026-09-12T22:09:03.352Z · 6 route×width pairs · 0 FAIL · 2 warn · every number below is measured in a real Chromium against a real <code>next start</code> of the rendered app.</p>
+<div class="instr">
+<p><b>Left = DEFAULT.</b> The default content pack + default theme pack. It must be indistinguishable from the accepted reconstruction: this is the template proving it can reproduce what it came from.</p>
+<p><b>Right = NEW.</b> A different content pack + a mutated theme pack, with repeater items added, removed and reordered. Ask: does this read as a coherent, professionally designed site — not the source site, and not a broken one? Is anything major missing or overlapping? Is any source brand, phone number or hostname still visible?</p>
+<p><b>Do not grade:</b> remote images that could not load offline (they render as empty boxes in BOTH columns), 1–2px differences, font anti-aliasing.</p>
+</div>
+<h2 style="border:0">Gates</h2>
+<table class="sum"><thead><tr><th>gate</th><th>verdict</th><th>detail</th></tr></thead><tbody><tr><td>S1</td><td class="v v-pass">PASS</td><td>rosee: present; channel: present</td></tr><tr><td>S2</td><td class="v v-pass">PASS</td><td>default render text provenance worst 100.00% over 6 measurements (FAIL &lt;95%, target ≥99%)</td></tr><tr><td>S3</td><td class="v v-pass">PASS</td><td>rosee: 5 driven, +3/-5, 5 reordered; channel: 4 driven, +6/-6, 4 reordered · duplicate ids introduced 0</td></tr><tr><td>S4</td><td class="v v-pass">PASS</td><td>default theme adds 0 bytes: true; mutated theme visible on 6/6 measurements — rosee: default css 12709582 B identical; rosee: overlay css +506144 B; rosee /17@390: 456/798 nodes repainted (color true, font false); rosee /34@390: 487/800 nodes repainted (color true, font false); rosee /17@1440: 791/798 nodes repainted (color true, font true); rosee /34@1440: 792/800 nodes repainted (color true, font true); channel: default css 8364801 B identical; channel: overlay css +261935 B; channel /kr/pricing@390: 779/800 nodes repainted (color true, font true); channel /kr/pricing@1440: 780/800 nodes repainted (color true, font true)</td></tr><tr><td>S5</td><td class="v v-pass">PASS</td><td>every NEW-render check passed (render, overflow, ids, content volume, injected strings, identity, media, overlap)</td></tr></tbody></table>
+<h2>Findings</h2>
+<ul class="findings"><li><b class="s-warn">WARN</b> <code>BROKEN_IMAGES</code> [channel/new /kr/pricing@390] new 6 / baseline 9 img with naturalWidth 0</li><li><b class="s-warn">WARN</b> <code>BROKEN_IMAGES</code> [channel/new /kr/pricing@1440] new 6 / baseline 8 img with naturalWidth 0</li></ul>
+<h2>Pairs</h2>
+<article class="pair"><header><h3>rosee <code>/17</code></h3><span class="w">390px</span></header>
+<div class="cmp"><figure><figcaption>DEFAULT (default content + default theme)</figcaption><p class="meta">nodes 1841 · visible text 587 chars · elements 443 · media 22img/1bg · overflow 0px · overlaps 12 · dup ids 0</p><div class="pane"><img src="images/rosee-17-390-default.png" alt="DEFAULT (default content + default theme)" loading="lazy"></div></figure><figure><figcaption>NEW (new content + mutated theme)</figcaption><p class="meta">nodes 1839 · visible text 561 chars · elements 441 · media 22img/1bg · overflow 0px · overlaps 10 · dup ids 0</p><div class="pane"><img src="images/rosee-17-390-new.png" alt="NEW (new content + mutated theme)" loading="lazy"></div></figure></div></article>
+<article class="pair"><header><h3>rosee <code>/17</code></h3><span class="w">1440px</span></header>
+<div class="cmp"><figure><figcaption>DEFAULT (default content + default theme)</figcaption><p class="meta">nodes 1841 · visible text 546 chars · elements 437 · media 22img/1bg · overflow 0px · overlaps 0 · dup ids 0</p><div class="pane"><img src="images/rosee-17-1440-default.png" alt="DEFAULT (default content + default theme)" loading="lazy"></div></figure><figure><figcaption>NEW (new content + mutated theme)</figcaption><p class="meta">nodes 1839 · visible text 499 chars · elements 437 · media 22img/1bg · overflow 0px · overlaps 0 · dup ids 0</p><div class="pane"><img src="images/rosee-17-1440-new.png" alt="NEW (new content + mutated theme)" loading="lazy"></div></figure></div></article>
+<article class="pair"><header><h3>rosee <code>/34</code></h3><span class="w">390px</span></header>
+<div class="cmp"><figure><figcaption>DEFAULT (default content + default theme)</figcaption><p class="meta">nodes 1425 · visible text 361 chars · elements 190 · media 26img/0bg · overflow 0px · overlaps 0 · dup ids 0</p><div class="pane"><img src="images/rosee-34-390-default.png" alt="DEFAULT (default content + default theme)" loading="lazy"></div></figure><figure><figcaption>NEW (new content + mutated theme)</figcaption><p class="meta">nodes 1425 · visible text 304 chars · elements 190 · media 26img/0bg · overflow 0px · overlaps 0 · dup ids 0</p><div class="pane"><img src="images/rosee-34-390-new.png" alt="NEW (new content + mutated theme)" loading="lazy"></div></figure></div></article>
+<article class="pair"><header><h3>rosee <code>/34</code></h3><span class="w">1440px</span></header>
+<div class="cmp"><figure><figcaption>DEFAULT (default content + default theme)</figcaption><p class="meta">nodes 1425 · visible text 262 chars · elements 290 · media 25img/3bg · overflow 0px · overlaps 0 · dup ids 0</p><div class="pane"><img src="images/rosee-34-1440-default.png" alt="DEFAULT (default content + default theme)" loading="lazy"></div></figure><figure><figcaption>NEW (new content + mutated theme)</figcaption><p class="meta">nodes 1425 · visible text 232 chars · elements 290 · media 25img/3bg · overflow 0px · overlaps 0 · dup ids 0</p><div class="pane"><img src="images/rosee-34-1440-new.png" alt="NEW (new content + mutated theme)" loading="lazy"></div></figure></div></article>
+<article class="pair"><header><h3>channel <code>/kr/pricing</code></h3><span class="w">390px</span></header>
+<div class="cmp"><figure><figcaption>DEFAULT (default content + default theme)</figcaption><p class="meta">nodes 1470 · visible text 4140 chars · elements 1060 · media 14img/3bg · overflow 0px · overlaps 0 · dup ids 8</p><div class="pane"><img src="images/channel-kr-pricing-390-default.png" alt="DEFAULT (default content + default theme)" loading="lazy"></div></figure><figure><figcaption>NEW (new content + mutated theme)</figcaption><p class="meta">nodes 1470 · visible text 4135 chars · elements 1060 · media 14img/3bg · overflow 0px · overlaps 0 · dup ids 8</p><div class="pane"><img src="images/channel-kr-pricing-390-new.png" alt="NEW (new content + mutated theme)" loading="lazy"></div></figure></div></article>
+<article class="pair"><header><h3>channel <code>/kr/pricing</code></h3><span class="w">1440px</span></header>
+<div class="cmp"><figure><figcaption>DEFAULT (default content + default theme)</figcaption><p class="meta">nodes 1470 · visible text 4308 chars · elements 1385 · media 14img/2bg · overflow 0px · overlaps 0 · dup ids 8</p><div class="pane"><img src="images/channel-kr-pricing-1440-default.png" alt="DEFAULT (default content + default theme)" loading="lazy"></div></figure><figure><figcaption>NEW (new content + mutated theme)</figcaption><p class="meta">nodes 1470 · visible text 4262 chars · elements 1385 · media 14img/2bg · overflow 0px · overlaps 0 · dup ids 8</p><div class="pane"><img src="images/channel-kr-pricing-1440-new.png" alt="NEW (new content + mutated theme)" loading="lazy"></div></figure></div></article>
+</div></body></html>

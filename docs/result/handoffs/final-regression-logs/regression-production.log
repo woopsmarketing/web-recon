@@ -1,0 +1,109 @@
+Already up to date
+Done in 160ms using pnpm v11.21.0
+$ tsx scripts/smoke-production.ts
+
+== dir-sha256-v1 hashing
+  PASS  identical trees hash identically
+  PASS  fileCount counted
+  PASS  byteCount counted
+  PASS  hashFile is sha256 of bytes
+  PASS  byte change changes the hash
+  PASS  excluded subtree does not affect the hash
+  PASS  exclusions recorded
+
+== guarded template patches
+  PASS  next.config gains output: export
+  PASS  next.config re-patch throws
+  PASS  next.config missing anchor throws
+  PASS  page.tsx becomes the static-export page
+  PASS  static page declares generateStaticParams
+  PASS  static page forbids dynamic params
+  PASS  page.tsx re-patch throws
+  PASS  page.tsx missing anchor throws
+  PASS  slot-content drops the env seam
+  PASS  slot-content reads the baked overlay
+  PASS  slot-content re-patch throws
+  PASS  layout links the theme overlay
+  PASS  theme overlay cascades AFTER the generated sheet
+  PASS  layout re-patch throws
+
+== route-title bake
+  PASS  all present routes baked
+  PASS  titles replaced
+  PASS  null upstream title bakes without mismatch
+  PASS  guard mismatch recorded honestly
+  PASS  missing route recorded
+
+== content proof selection
+  PASS  changed static text values picked
+  PASS  html-escapable values skipped
+  PASS  unchanged values skipped (must prove injection)
+  PASS  dynamic-template surfaces skipped
+  PASS  deterministic order (sorted keys)
+  PASS  count respected
+
+== export post-processing (head splice + rewrite + robots)
+  PASS  routeHtmlFile maps / to index.html
+  PASS  routeHtmlFile maps nested routes
+  PASS  head blocks spliced
+  PASS  missing exported file recorded
+  PASS  baked titles verified
+  PASS  head block sits before </head>
+  PASS  html-escaped asset url rewritten
+  PASS  json-escaped flight url rewritten
+  PASS  css url rewritten
+  PASS  rewrite occurrences counted
+  PASS  residual source-host occurrences counted honestly
+  PASS  robots.txt emitted from the plan
+  PASS  double head-splice refused
+
+== generated static server (real HTTP)
+  PASS  ready line prefix is stable
+  PASS  isolated copy lives outside the repo
+  PASS  launch env is minimal (PATH only)
+  PASS  / serves index.html
+  PASS  html content-type
+  PASS  /about maps to about.html
+  PASS  nested route maps to file
+  PASS  trailing slash 308-redirects
+  PASS  unknown path is 404 with 404.html
+  PASS  media served immutable
+  PASS  _next/static immutable
+  PASS  html not cached
+  PASS  flight .txt served
+  PASS  robots.txt served
+  PASS  absent sitemap.xml is 404
+  PASS  path traversal rejected
+  PASS  non-GET is 405
+  PASS  HEAD supported
+
+== theme probe parsing
+  PASS  class probes extracted
+  PASS  comma selectors expanded
+  PASS  probe carries the resolved rgb value
+  PASS  unresolvable tokens skipped
+
+== production-spec-v1 schema
+  PASS  valid spec parses
+  PASS  invalid lineage hash rejected
+  PASS  wrong schemaName rejected
+  PASS  missing lineage layer rejected
+
+== preview blocker summaries derive from inputs (GED-B)
+  PASS  all 7 blocker ids emitted
+  PASS  seo summary carries this site's needs-input + title counts
+  PASS  replacement summary + evidence carry derived counts
+  PASS  font families named from the font inventory
+  PASS  uninjected-route counts derived from route table + content scope
+  PASS  inline-svg evidence carries the inventory count
+  PASS  different inputs produce different derived prose
+  PASS  blocker ids stable across inputs
+
+== interaction sampling: mount-type AND static-target triggers (GED-A)
+  PASS  mount-type trigger still counted via region mount
+  PASS  native <details> toggle counts as a state flip (no region mounted)
+  PASS  aria-checked selection toggle counts as a state flip
+  PASS  aria-expanded + target-visibility change counts as a state flip
+  PASS  inert trigger produces neither regions nor state flips
+
+smoke:production — 84 checks, 0 failures

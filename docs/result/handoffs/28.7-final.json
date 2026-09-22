@@ -1,0 +1,324 @@
+{
+  "schema": "task287-final-v1",
+  "task": "28.7 — Reconstruction Core Correction + Normal Page State + Frozen Value Closure + Honest QA + Fast Multi-Site Verification",
+  "date": "2026-09-05",
+  "baselineSha": "6c2e723601a0d76431c96a48bbdb4726c02063e7",
+  "verdict": "NOT READY - CORE BLOCKERS REMAIN",
+  "verdictBy": "fresh independent adjudicator, docs/result/28.7/10-final-adjudication.md",
+  "normalPageState": {
+    "popupHandling": true,
+    "popupHandlingCaveat": "Implemented and evidence-gated, but it does NOT fire at wide viewports: OVERLAY_SHAPE is viewport-relative (0.5 width/height/area), so a fixed-px modal qualifies at 390 and is invisible at 1440. seoultone p000001 desktop {structuralMatches:0, dismissed:0} vs mobile {1,1} in the same run. No DOM-removal path exists in the module.",
+    "prepareScrollNavigationSafe": true,
+    "unstableRevealHandled": true,
+    "screenshotTimeoutRouteLossClosed": true,
+    "sourceHttpStatusRecorded": true
+  },
+  "residualFreeze": {
+    "auditImplemented": true,
+    "gate": "reporting-only, deliberately never a gate",
+    "topFamilies": [
+      {
+        "family": "width",
+        "linear": 2734,
+        "linearPct": 0.913,
+        "hobbang": 2212,
+        "hobbangPct": 0.991
+      },
+      {
+        "family": "grid-template-columns",
+        "linear": 172,
+        "linearPct": 0.057,
+        "hobbang": 6,
+        "hobbangPct": 0.003
+      },
+      {
+        "family": "min-width",
+        "linear": 89,
+        "linearPct": 0.03,
+        "hobbang": 14,
+        "hobbangPct": 0.006
+      }
+    ],
+    "totalResidualsDetected": {
+      "linear.app": 2995,
+      "hobbang.net": 2232
+    },
+    "remainingHighImpactCount": 1553,
+    "remainingHighImpactDefinition": "residuals tagged consequence=offscreen across the two audited sites (linear 1017 + hobbang 536). `clipping` is 0 by construction because `offscreen` is tested first and wins the tag.",
+    "keyFinding": "The residual is an ANCESTOR-CHAIN property. 6 of 10 linear leaders and 8 of hobbang's carry a truth-check-VERIFIED full-width rule and still measure a constant clone width, because the box they resolve against is frozen. Refusing more is not the fix and neither is emitting more on the leaves.",
+    "artifactLimitation": "Per-route retention is 24 and the ranking's first key is the offscreen tag, so retained records are 100% offscreen while detected populations are 34% (linear) / 24% (hobbang). The family histogram cannot be recomputed from the artifact."
+  },
+  "gridRecovery": {
+    "spanAware": true,
+    "hiddenChildAware": true,
+    "refusalClassEliminated": {
+      "child-count-not-multiple-of-tracks": {
+        "linear": [
+          34,
+          0
+        ],
+        "hobbang": [
+          4,
+          0
+        ]
+      }
+    },
+    "ruleCountCaveat": "gridTrackColumns series on linear across this wave: 76 (pre-wave) -> 80 (B2 runs) -> 84 (gate run) -> 75 (FINAL GRADED run). The +4 reported in report 03 is NOT present in the reconstruction that produced the verdicts. The refusal-class elimination IS present in every post-B2 run including the graded one.",
+    "newlyEmittedRulesSurvivingTruthCheck": 7
+  },
+  "qaHonesty": {
+    "missingRouteGuard": true,
+    "unstableSourceGuard": true,
+    "duplicateImageSeparation": true,
+    "measurementFailureExplicit": true,
+    "coverageConservationAsserted": true,
+    "guardsFiredOnRealCorpus": false,
+    "guardsCaveat": "All demotion counters are 0 on all four final canary runs. The guards are fixture-verified, not corpus-verified; no count change in this wave may be credited to them.",
+    "openDefects": [
+      "L1 — classifyOverlapPair checks failed-image-layer FIRST and demotes on EITHER leaf failing to load, so a real collapse onto a broken image is demoted from BLOCKER-capable overlap-excess-ratio to MAJOR-only image-layer-state. overlap-excess-ratio-undemoted is recorded but no channel fires on it. Blast radius on this wave's reported numbers is provably zero (all demotion counters 0).",
+      "L3 — gatePixels() computes over min(source,clone) width and height, and captures are fullPage, so the horizontal overflow band the frozen-width defect produces is never pixel-diffed and the review pack shows different-width images side by side without saying so."
+    ]
+  },
+  "responsiveVariant": {
+    "perRouteTreeSwitchRequired": true,
+    "implemented": true,
+    "mobileEnvelopeRequired": true,
+    "implementedMobileEnvelope": true,
+    "gateEvidence": "Fresh run: clone scrollHeight byte-identical at 390/700/1024 (5876) and again at 1100/1440 (9960) — two states, no continuum — while the source varies continuously. `/` changes DOM family between 390 and 700; `/pricing` between 1024 and 1100.",
+    "signal": "rendered boxes (getClientRects().length > 0) + depth-6 FNV-1a structure hash. NOT node population, which is flat on sites that ship both variants and swap with display — proved by mutation.",
+    "perRouteBreakpoints": {
+      "/": [
+        641,
+        929
+      ],
+      "/pricing": [
+        1025
+      ],
+      "/changelog": []
+    },
+    "measuredEffect": "linear `/` clone visible nodes 700 1001->2511, 1024 991->2784; scrollHeight 5876->9960 at both; every tree-selection channel disappeared from those pairs; missing-text-ratio 0.4915->0.1071 (700) and 0.5425->0.0774 (1024).",
+    "hardLimit": "Only two DOM trees are ever observed. Per-route switching relocates the swap; it cannot invent a third variant. Records variant-tree-not-observed-at-<width> rather than silently serving the 390 tree."
+  },
+  "routeArchetypes": {
+    "readyForTask288": true,
+    "approach": "existing capability found sufficient; a 191-line pure projection (src/selector/route-archetype-plan.ts) added rather than a redesign",
+    "verifiedThroughRealCode": true,
+    "deepReconstructCapUntouched": "MAX_VALIDATION_SAMPLES_PER_SITE = 3, predates this wave"
+  },
+  "canaries": {
+    "rubricVersion": 4,
+    "comparabilityWarning": "RUBRIC_VERSION moved 3 -> 4. 28.6 and 28.7 pair counts must NOT be summed or differenced, and self-check floors are not comparable across rubric versions.",
+    "linearBlockers": 6,
+    "hobbangBlockers": 0,
+    "severanceBlockers": 2,
+    "seoultoneBlockers": 2,
+    "seoultoneObservationCompletes": true,
+    "totals": {
+      "pairs": 24,
+      "blocker": 10,
+      "major": 7,
+      "minor": 7,
+      "pass": 0
+    },
+    "coverageConservedAllSites": true,
+    "runIds": {
+      "linear.app": {
+        "observation": "2026-09-04T17-21-07-726Z",
+        "reconstruction": "2026-09-04T17-24-33-839Z",
+        "qa": "2026-09-04T17-25-07-319Z"
+      },
+      "hobbang.net": {
+        "observation": "2026-09-04T18-13-50-162Z",
+        "reconstruction": "2026-09-04T18-16-31-732Z",
+        "qa": "2026-09-04T18-17-44-481Z"
+      },
+      "gs.severance.healthcare": {
+        "observation": "2026-09-04T18-13-50-154Z",
+        "reconstruction": "2026-09-04T18-14-47-300Z",
+        "qa": "2026-09-04T18-15-04-161Z"
+      },
+      "seoultone.kr": {
+        "observation": "2026-09-04T18-13-50-161Z",
+        "reconstruction": "2026-09-04T18-17-23-059Z",
+        "qa": "2026-09-04T18-18-47-244Z"
+      }
+    }
+  },
+  "visualAudit": {
+    "report": "docs/result/28.7/08-final-visual-audit.md",
+    "pairsGraded": 20,
+    "auditorGrades": {
+      "pass": 2,
+      "minor": 2,
+      "major": 7,
+      "blocker": 9
+    },
+    "automatedGrades": {
+      "pass": 0,
+      "minor": 3,
+      "major": 7,
+      "blocker": 10
+    },
+    "exactAgreement": "15/20",
+    "estimatedHumanVisualEquivalence": "~75% overall; bimodal — 95%+ on static content at a width the source was designed for, 55-70% elsewhere",
+    "targetMet": false
+  },
+  "architectureAudit": {
+    "report": "docs/result/28.7/09-final-architecture-audit.md",
+    "verified": 18,
+    "partial": 2,
+    "notVerified": 0,
+    "siteSpecificKeyingFound": false,
+    "domRemovalPathInNormalizer": false,
+    "outOfScopeModuleTouched": false,
+    "crawlerExplosion": false,
+    "schemaBackCompatVerified": true,
+    "gitHistoryMutated": false
+  },
+  "regression": {
+    "suiteFilesOnDisk": 36,
+    "suites": 35,
+    "suitesWithoutAssertions": [
+      "smoke-playwright"
+    ],
+    "checks": 4326,
+    "failures": 0,
+    "crashes": 0,
+    "nonZeroExits": 0,
+    "typecheckExitCode": 0,
+    "negativeDeltasVsBaseline": 0,
+    "authoritativeArtifact": "tmp/wr287/regression/index-final.tsv (tmp/wr287/regression/index.tsv is the first-pass record and deliberately still shows the two failures)",
+    "failuresFoundAndRepaired": [
+      "smoke-qa-independence (2 checks) — Task 28.6 W6 O5 added 5 table-formatting properties to the observer's STYLE_WHITELIST without mirroring them into QA_STYLE_PROPERTIES, breaking the 28.5B superset invariant. Red since 28.6, which ran no full regression. Repaired in src/reconstruction-qa/capture-page.ts; 101/101; smoke-reconstruction-qa re-ran unchanged at 211/211 so no verdict moved.",
+      "smoke-multi-observer (1 check) — a 28.7 check asserted networkIdleMs >= 8000 on a value bracketing Playwright's own 8000ms timer with two Date.now() reads; measured 7999 under load. Replaced with NETWORK_IDLE_TIMEOUT_MS - 50, importing the real constant. Discrimination unchanged; 263/263."
+    ],
+    "reconciliation": "36 on disk = 29 (Task-28 battery) + 5 (28.5B new) + smoke-playwright (0 assertions) + smoke-responsive-qa (205 checks, never counted in any prior battery). 28.7-attributable growth +287 (multi-observer +90, layout-safety +103, responsive-qa +85, selector +9); the remaining +502 belongs to 28.6 and is derived by subtraction, not measured — no per-suite baseline was captured at this wave's start."
+  },
+  "humanReviewDir": "docs/result/28.7/human-review/",
+  "humanReviewNote": "index.html references only the four pinned final run ids. 72 stale 2026-09-03 PNGs remain unreferenced inside the per-site shots/ directories; left in place rather than deleted.",
+  "remainingBlockers": [
+    {
+      "id": "B1",
+      "title": "A9 residual frozen width — the correct tree mounts and then lays out at its 1440-resolved width; the right of the page is sliced off",
+      "where": [
+        "linear.app /@700",
+        "linear.app /@1024",
+        "linear.app /@1100",
+        "linear.app /pricing@1100",
+        "linear.app /@390"
+      ],
+      "evidence": "footer-clipped 1.000; width = 91.3%/99.1% of the residual; inlineSizeOutcomes.no-branch-matched 3654 of 5736 in the graded manifest"
+    },
+    {
+      "id": "B2",
+      "title": "JS-dependent content reconstructed as empty containers — hero sliders, news feeds, promo carousels, scroll-revealed text. NO QA channel fires on it.",
+      "where": [
+        "gs.severance.healthcare index@390/@1100/@1440",
+        "seoultone.kr /@390/@1440",
+        "linear.app /@700/@1024"
+      ],
+      "evidence": "visual audit defect class 2; severance findings identical to the 28.6 run, so pre-existing, not a 28.7 regression"
+    },
+    {
+      "id": "B3",
+      "title": "Only two DOM trees are ever observed, so a route whose switch sits between them has no correct variant",
+      "where": [
+        "linear.app /pricing@1024"
+      ],
+      "evidence": "nav-link-ratio 0.500; recorded as variant-tree-not-observed-at-<width>"
+    },
+    {
+      "id": "B4",
+      "title": "True layout overlap on a dynamic homepage",
+      "where": [
+        "gs.severance.healthcare index@1100 (0.448)",
+        "gs.severance.healthcare index@1440 (0.343)"
+      ],
+      "evidence": "0 pairs demoted by any guard; identical findings in the 28.6 run"
+    },
+    {
+      "id": "B5",
+      "title": "~30% of visible text absent",
+      "where": [
+        "seoultone.kr /@390 (0.305)",
+        "seoultone.kr /@1440 (0.278)"
+      ],
+      "evidence": "the doctor credential block and four section headings; part of @390 is the popup capture asymmetry (B7)"
+    },
+    {
+      "id": "B6",
+      "title": "The popup normalizer is blind at wide viewports — OVERLAY_SHAPE is viewport-relative, so a fixed-px modal qualifies at 390 and not at 1440, on any site",
+      "where": [
+        "seoultone.kr /@1440"
+      ],
+      "evidence": "desktop structuralMatches 0 / dismissed 0 vs mobile 1 / 1 in the same observation run"
+    },
+    {
+      "id": "B7",
+      "title": "QA's source capture does not normalize page state while the observer does — a bias introduced by this wave that makes the clone look worse than it is",
+      "where": [
+        "seoultone.kr /@390"
+      ],
+      "evidence": "normalizePageState has zero callers under src/responsive-qa/"
+    }
+  ],
+  "remainingMajors": [
+    {
+      "id": "M1",
+      "title": "Footer/nav link rows collapse into overlapping stacked syllables — small in area, total in effect, under-weighted by an area-based metric",
+      "where": [
+        "hobbang.net all 3 pairs",
+        "gs.severance.healthcare footer @1100/@1440 both routes",
+        "seoultone.kr CTA @1440"
+      ]
+    },
+    {
+      "id": "M2",
+      "title": "Wrong responsive mode leaving large dead areas — a 2x2 plan grid stacked into one narrow column with two-thirds of the page empty",
+      "where": [
+        "linear.app /pricing@700",
+        "linear.app /pricing@1024"
+      ]
+    },
+    {
+      "id": "M3",
+      "title": "Text joined or re-ordered at former line breaks (\"Intakeand integrations\"); a lead sentence relocated to the end of its paragraph",
+      "where": [
+        "linear.app / at all five widths"
+      ]
+    },
+    {
+      "id": "M4",
+      "title": "A breadcrumb strip reconstructed as a copy of the main nav",
+      "where": [
+        "gs.severance.healthcare notice route @1100/@1440"
+      ]
+    },
+    {
+      "id": "M5",
+      "title": "overlap-excess-ratio 0.056 and horizontal-overflow-excess-px 28 (the latter visually invisible)",
+      "where": [
+        "hobbang.net @1100"
+      ]
+    },
+    {
+      "id": "M6",
+      "title": "Two false-alarm channels: offscreen-text-excess-chars at BLOCKER on a by-design bleed; position-delta-p90-px at MAJOR 15px over threshold on a faithful page",
+      "where": [
+        "linear.app /@390",
+        "linear.app /@1440"
+      ]
+    }
+  ],
+  "acceptanceTestForNextWave": [
+    "A blank-region channel that fires on gs.severance.healthcare @1440 and seoultone.kr but NOT on linear.app /pricing@1440.",
+    "footer-clipped at 0 on linear.app / at 700, 1024 and 1100 — even with the frozen-width residual otherwise in place."
+  ],
+  "nextStep": "Task 28.8 is NOT unblocked. Before any fresh public URL test, in this order: (1) build a blank-region detector — B2 has no channel at all today, so a new site can fail it silently and be reported green; (2) attack B1 at the ROOT of each frozen width chain, not with more recovery kinds and not with more refusals — the inset-resolved-width experiment closed the first of three named root populations (384 nodes improved, 2 worsened by 10px), the other two are costed in docs/result/28.7/ideas/frozen-width-chain-root.md; (3) make overlap-excess-ratio-undemoted fire (a rubric change — do it FIRST in the wave and re-measure every self-check floor after); (4) fix the pixel diff's min-crop so the overflow band is at least accounted for; (5) reconcile the two capture paths' page-state policies and make the overlay shape gate viewport-independent, with a check asserting normalization symmetry across viewports on a real site; (6) then re-measure the canary matrix and re-adjudicate. Sites channel.io, toss.im, vipgunma.com and beomeo.roseeskin.com remain untouched and are Task 28.8's own scope.",
+  "historicalIntegrity": {
+    "mutatingGitOperations": 0,
+    "userChangesReverted": 0,
+    "historicalArtifactsModified": 0,
+    "verifiedBy": "independent architecture auditor"
+  }
+}

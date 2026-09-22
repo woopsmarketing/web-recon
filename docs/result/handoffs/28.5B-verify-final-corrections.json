@@ -1,0 +1,207 @@
+{
+  "schema": "task285b-verify-final-corrections-v1",
+  "producedAt": "2026-08-29T22:20:00+09:00",
+  "verifier": "fresh re-verifier (adversarial, read-only except one restored mutation)",
+  "verdict": "PASS_WITH_RISKS",
+  "verdictBasis": "Every claim in both correction objects reproduced independently: the geometry-cannot-ship-unverified invariant holds on every enumerated path, rejectedUnverifiable is genuinely derived from the shipped set, the responsive-hidden media-band proof survives the refactor, all eight suites hit their expected counts on the final tree, tsc is clean, the mutation test proves the §8 checks test the mechanism, the live linear.app numbers reproduce EXACTLY (151 names, 16/16 SVG coverage), and the collector is byte-deterministic. The risks are three low-severity code/doc mismatches and one operational finding (smoke-e2e is not concurrency-safe) — none of them a shipping-correctness defect.",
+
+  "layout": {
+    "geometryCannotShipUnverified": true,
+    "pathWalk": {
+      "method": "read every early-return, every throw site and the finish() accounting in src/reconstruction/layout-truth-check.ts:318-619 line by line",
+      "paths": [
+        { "path": "input.enabled === false", "status": "disabled", "shippedGeometry": "geometry (ALL)", "verdict": "the documented opt-out; recorded, never silent" },
+        { "path": "candidates.length === 0", "status": "no-candidates", "shippedGeometry": "[]", "verdict": "safe" },
+        { "path": "geometry.length === 0", "status": "responsive-hidden-only", "shippedGeometry": "[]", "verdict": "safe" },
+        { "path": "checkable.length === 0 (no truth rect / page absent)", "status": "unverifiable-candidates", "shippedGeometry": "[]", "verdict": "safe" },
+        { "path": "await import(\"playwright\") throws", "status": "chromium-unavailable", "shippedGeometry": "[]", "verdict": "safe — the D3 fix; previously shipped unverified" },
+        { "path": "chromium.launch() throws", "status": "chromium-unavailable", "shippedGeometry": "[]", "verdict": "safe" },
+        { "path": "node absent from the baseline render", "status": "verified", "shippedGeometry": "excluded (unverifiable set)", "verdict": "safe" },
+        { "path": "candidate makes the node unmeasurable mid-loop (vanished)", "status": "verified", "shippedGeometry": "excluded", "verdict": "safe" },
+        { "path": "page's set never settles inside MAX_ROUNDS", "status": "verified, converged=false", "shippedGeometry": "remaining active dropped whole", "verdict": "safe" },
+        { "path": "per-page render throws (setContent/evaluate)", "status": "verified", "shippedGeometry": "all that page's non-regressed rules excluded", "verdict": "safe" },
+        { "path": "browser.newContext / newPage / context.route / the finally closes throw", "status": "EXCEPTION ESCAPES verifyLayoutRules", "shippedGeometry": "none — generateApp aborts", "verdict": "fail-CLOSED, so the safety invariant holds; see defect L1 (the docstring's 'never fails the generation' claim is overstated)" }
+      ],
+      "perRuleLeakClosed": "survivors = checkable.filter(not regressed && not unverifiable), so an unmeasurable geometry rule is dropped even on a run whose other rules were measured (independently exercised by Part 2b case 4)",
+      "noProductionOptOut": "grep across src/ and scripts/ finds NO caller that sets GenerateAppOptions.verifyLayout = false. The only `enabled: false` in the tree is scripts/smoke-layout-safety.ts:700, testing the disabled status itself."
+    },
+    "rejectedUnverifiableIsDerived": {
+      "verified": true,
+      "formula": "src/reconstruction/layout-truth-check.ts:378 — geometry.length - shipped.size - rejectedByTruthCheck, where `shipped` is a Set built from the SAME shippedGeometry array that produces the emitted `rules` (and therefore the emitted CSS). It cannot be hand-maintained out of agreement with what ships.",
+      "partitionProof": "regressed only ever receives rules drawn from `active` (subset of checkable, subset of geometry); survivors excludes regressed; the per-page catch skips rules already in regressed, so regressed and unverifiable are disjoint. The three counters therefore partition `geometry` exactly.",
+      "residualRisk": "the derivation compares Set.size against Array.length, so duplicate rule OBJECT identities in input.rules would skew it — not reachable today (see defect L3)"
+    },
+    "responsiveHiddenAcceptedUnchecked": {
+      "sound": true,
+      "classifier": "isAcceptedUnchecked() = kind === \"responsive-hidden\" && media !== undefined. Grep confirms src/reconstruction/layout-inference.ts:365-372 is the ONLY producer of that kind and it always sets `media`. A hypothetical media-less responsive-hidden rule would be classified as GEOMETRY and truth-checked, where its unconditional display:none makes the node unmeasurable and it is rejected — the failure direction is safe.",
+      "mediaBandProof": "hiddenRanges() (layout-inference.ts:661-684) only opens a band over a contiguous run of HIDDEN probe widths, and the emission site is gated on vAt(truthEntry.i) === 1, i.e. the node is VISIBLE at 1440. Band start = floor(midpoint(visible_below, first_hidden)) > 1440 when 1440 is the visible neighbour below; band end = floor(midpoint(last_hidden, visible_above)) - 0.02 < 1440 when 1440 is the visible neighbour above. LAYOUT_PROBE_WIDTHS = [390,768,1024,1440,1920] are far enough apart that no midpoint can land on 1440. Proof intact after the refactor.",
+      "truthViewportIdentity": "RuntimePage.desktop.width comes from the desktop profile (src/observer/types.ts:114 = 1440) and TRUTH_WIDTH = 1440 (layout-inference.ts:66) — the check renders at exactly the width the band excludes."
+    },
+    "d8ECheck": "src/e2e/run-reconstruction.ts:125-137 confirmed: layoutRecoveredRules now reads generated.layoutVerification.counters.acceptedRules (SHIPPED), with layoutCandidateRules / layoutRejectedByGuard / layoutRejectedByTruthCheck / layoutRejectedUnverifiable reported alongside, labelled.",
+    "suites": {
+      "smoke-layout-safety": { "expected": "67/67", "actual": "67/67", "exit": 0 },
+      "smoke-e2e": { "expected": "130/130", "actual": "130/130 when run ALONE (exit 0)", "concurrentRun": "125/130 — 5 failures, all clone-load-error in the QA stage, when run alongside smoke-reconstruction + smoke-qa-independence + smoke-reconstruction-qa; see defect O1", "note": "smoke-e2e.ts:894 'the centered .centered band recovered a layout rule from the probe' PASSED in BOTH runs, so the guards do not over-reject a legitimate centered container on the real path" },
+      "smoke-reconstruction": { "expected": "217/217", "actual": "217/217", "exit": 0 }
+    },
+    "historicalManifestParse": {
+      "method": "every data/*/reconstructions/*/reconstruction-manifest.json parsed through the CURRENT ReconstructionManifestSchema",
+      "filesChecked": 34,
+      "parsed": 34,
+      "failed": 0,
+      "linear20260825": "all six data/linear.app/reconstructions/2026-08-25T* manifests parse, each carrying the pre-28.5B layout block [pagesWithAlignedProbe,nodesWithProbe,recoveredRules,centered,fullWidth,percentage,responsiveHidden] with every new field absent",
+      "verdict": "additive-optional compatibility confirmed on real historical artifacts, not just the suite fixture"
+    }
+  },
+
+  "customProps": {
+    "referenceDiscoveryReview": {
+      "regex": "/var\\(\\s*(--[-A-Za-z0-9_]+)/g applied to each captured <svg>'s outerHTML",
+      "falsePositives": "HARMLESS BY CONSTRUCTION. A `var(--x)` appearing inside a url() string, an SVG <text> node, a title/desc, or any other attribute text produces an extra name, which is then resolved with getComputedStyle at the consuming element. If it resolves to \"\" it is dropped and counted; if it resolves, the name is a genuinely declared custom property and emitting it on the wrapper is inert (custom properties only take effect where a var() consumes them). Cost is one extra getPropertyValue call. outerHTML escaping cannot break the match either — `var(--x)` contains no escapable character.",
+      "falseNegatives": "names containing escapes or non-ASCII characters are missed. Under-report, never a wrong value.",
+      "elementResolution": "CONFIRMED as described — getComputedStyle(inlineSvgElements[i]) where inlineSvgElements is a parallel array pushed in the same svg branch of the DFS walk (collect-dom.ts:746-747), so index alignment and document order are structural, not incidental. The markup scanned is inlineSvgs[i].outerHTML, i.e. the exact string the pipeline copies verbatim.",
+      "sheetWinsPrecedence": "CONFIRMED (collect-dom.ts:1102 `if (seenCustomNames[name] === true) continue;` after incrementing referenceSheetKnownCount). Reproduced live on my own fixture: --brand is both SVG-referenced and sheet-discovered, and comes out counted 1 in referenceSheetKnownCount, NOT re-resolved, NOT duplicated, value still the sheet's #112233.",
+      "documentOrderConflictRule": "CONFIRMED. Reproduced live on my own fixture: --clash-tone declared #010203 on .zone-a and #030201 on .zone-b, each with its own SVG — captured value is #010203 (the first consuming element in document order) and referenceResolutionConflicts = 1.",
+      "counterClosure": "CONFIRMED on an uncapped run. Sheet channel: discoveredCount = kept + unresolvedCount + valueCapped. Reference channel: referenceDiscoveredCount = referenceSheetKnownCount + referenceResolvedCount + referenceUnresolvedCount. My fixture closed at 4 = 1 + 2 + 1; linear closed at 16 = 0 + 16 + 0. CAVEAT: reference-channel cap drops fold into the SHARED valueCappedCount / countCapped, so per-channel closure only holds when no cap fires (defect C3, informational — the folding is documented as intentional)."
+    },
+    "mutationTest": {
+      "performed": true,
+      "target": "src/observer/collect-dom.ts:1076 — the reference-discovery loop bound changed from `i < inlineSvgElements.length` to `i < 0`, disabling ONLY that step",
+      "shaBefore": "1117abd8ac5f5d37ec53eb424925953edae10481b61a036f8ffc385b8cc77973",
+      "shaMutated": "384b156401b603c5989f9bb6bd2e3e84b93ed54bf500f9c29b75761b0170182f",
+      "shaAfterRestore": "1117abd8ac5f5d37ec53eb424925953edae10481b61a036f8ffc385b8cc77973",
+      "restoredByteIdentical": true,
+      "mutatedResult": "80/92 — 12 checks FAILED, every one of them inside §8 (reference-driven discovery), including the two real-Chromium paint checks which fell back to rgb(0, 0, 0)",
+      "unaffectedSections": "§1-§7 all still passed under the mutation, so the failures isolate to the mechanism under test",
+      "restoredResult": "92/92, exit 0",
+      "verdict": "the §8 checks genuinely test the reference-discovery mechanism — they are not passing on some other channel"
+    },
+    "liveReach": {
+      "performed": true,
+      "method": "one read-only playwright chromium load of https://linear.app/ at 1440x900, load + networkidle + 2.5s, then the REAL shipped collectPageInBrowser with the REAL COLLECT_CONFIG via page.evaluate (not a replica). Evidence: tmp/wr285b/reverify-final/live-linear.json",
+      "namesCaptured": 151,
+      "sheetDiscoveredCount": 135,
+      "countCapped": false,
+      "valueCappedCount": 0,
+      "unresolvedCount": 0,
+      "inlineSvgCount": 239,
+      "svgVarRefs": 183,
+      "distinctSvgVarNames": 16,
+      "svgNamesCovered": 16,
+      "svgNamesMissing": [],
+      "referenceDiscoveredCount": 16,
+      "referenceResolvedCount": 16,
+      "referenceSheetKnownCount": 0,
+      "referenceUnresolvedCount": 0,
+      "referenceResolutionConflicts": 0,
+      "verdict": "EXACT reproduction of correction2's claimed numbers — every counter matched to the unit. No drift on the live site between the builder's run and mine."
+    },
+    "determinism": {
+      "performed": true,
+      "axis1": "two FULL fresh-context collector runs (own browser context, own setContent, own adoptedStyleSheets install) over a deterministic local fixture exercising :root sheets, an @media override, CSS nesting, an adopted constructed sheet, non-root declarations, an SVG conflict pair and an unresolvable reference — the two customProperties records were BYTE-IDENTICAL",
+      "axis2": "two collectPageInBrowser evaluates within ONE live linear.app load (151 names, 16 reference-resolved) — BYTE-IDENTICAL",
+      "verdict": "deterministic on both axes"
+    },
+    "suite": { "expected": "92/92", "actual": "92/92", "exit": 0 }
+  },
+
+  "fullBattery": {
+    "runOn": "the final tree state (no builder edit after 2026-08-29T21:31:25; the only later mtime is my own byte-identical restore of collect-dom.ts at 21:38:18)",
+    "smoke-layout-safety": { "expected": 67, "actual": "67/67", "exit": 0 },
+    "smoke-e2e": { "expected": 130, "actual": "130/130 (solo run)", "exit": 0 },
+    "smoke-reconstruction": { "expected": 217, "actual": "217/217", "exit": 0 },
+    "smoke-custom-properties": { "expected": 92, "actual": "92/92", "exit": 0 },
+    "smoke-video-honesty": { "expected": 36, "actual": "36/36", "exit": 0 },
+    "smoke-qa-independence": { "expected": 101, "actual": "101/101", "exit": 0 },
+    "smoke-visual-vocab": { "expected": 88, "actual": "88 passed, 0 failed", "exit": 0 },
+    "smoke-reconstruction-qa": { "expected": 134, "actual": "134/134", "exit": 0 },
+    "allExpectedCountsMet": true
+  },
+
+  "tscClean": {
+    "command": "npx tsc --noEmit",
+    "runs": 2,
+    "exit": 0,
+    "note": "run once before the mutation and once on the final restored tree; both exit 0 with no output"
+  },
+
+  "crossInteraction": {
+    "question": "generateApp now dereferences plan.customProperties unconditionally — can a plan reach it without one?",
+    "answer": "NO reachable state. ReconstructionPlan.customProperties is a REQUIRED (non-optional) field on the interface (src/reconstruction/plan-reconstruction.ts:74), so tsc — which is clean — statically rejects any caller that builds a plan without it. planReconstruction always supplies it (plan-reconstruction.ts:348, :429).",
+    "correctionLoopPath": "src/reconstruction-qa/run-correction-loop.ts:267 -> applyCorrections -> src/reconstruction-qa/apply-corrections.ts:112 planReconstruction(reconstructionInput, { corrections }) -> :119 generateApp(plan, …). The QA auto-fix loop regenerates apps through the SAME plan-reconstruction path, so it always carries customProperties. Confirmed empirically: smoke-reconstruction-qa 134/134 and smoke-qa-independence 101/101 on the final tree.",
+    "allCallers": "the six non-test callers/uses of generateApp (cli-reconstruct.ts:295, apply-corrections.ts:119, e2e/run-reconstruction.ts:84) and every suite fixture compile and pass; smoke-layout-safety's minimalPlan() carries an empty customProperties tier, which is the correct fixture fix, not a relaxation.",
+    "verdict": "no crash path; historical/QA correction-loop paths are safe"
+  },
+
+  "defects": [
+    {
+      "id": "L1",
+      "severity": "low",
+      "kind": "docstring overstates robustness (safety unaffected)",
+      "file": "src/reconstruction/layout-truth-check.ts:306-311 (docstring) vs :465-484 and :590-604",
+      "finding": "The docstring says 'Failure to verify never fails the generation'. Exceptions thrown by browser.newContext(), context.newPage(), context.route() or by the browserPage.close()/context.close() calls in the per-page `finally` sit OUTSIDE both the import/launch guards and the per-page try/catch, so they propagate out of verifyLayoutRules and abort generateApp() (which does not wrap the call — generate-app.ts:248).",
+      "impact": "fail-CLOSED, not fail-open: nothing unverified ships, the generation just stops. The 28.5B safety invariant is NOT affected. Only the 'never fails the generation' sentence is untrue.",
+      "fix": "either wrap the per-page context setup inside the existing try, or narrow the docstring sentence"
+    },
+    {
+      "id": "C1",
+      "severity": "low",
+      "kind": "docstring example not actually handled",
+      "file": "src/observer/collect-dom.ts (root-discovery docstring ~:882) vs isSelfSelector ~:919",
+      "finding": "The docstring claims ':root { &.x { --a } } and :root { @media … { --b } } BOTH contribute'. isSelfSelector only returns true for a selector part that is exactly '&', so '&.x' does NOT inherit the root context. Measured live on my own fixture: with ':root { &.x { --nested: 9px } @media (min-width: 1px) { --nested2: 8px } }', discoveredCount was 6 and --nested2 was captured while --nested was NOT.",
+      "impact": "under-report only, never a wrong value (and ':root.x' would usually resolve to nothing on documentElement anyway). No effect on the linear measurement.",
+      "fix": "either accept a nested part beginning with '&' when inRoot, or correct the docstring example"
+    },
+    {
+      "id": "C2",
+      "severity": "low",
+      "kind": "precedence keyed on discovered rather than kept",
+      "file": "src/observer/collect-dom.ts:1099-1103",
+      "finding": "Sheet precedence skips element resolution whenever seenCustomNames[name] is true — i.e. whenever the sheet walk DISCOVERED the name, even if that name was subsequently DROPPED (resolved to '' at documentElement and counted in unresolvedCount, or dropped by the value cap, or sliced off by the count cap). A value the consuming element would have resolved is then lost.",
+      "impact": "zero on linear.app (referenceSheetKnownCount = 0). It is counted (referenceSheetKnownCount) rather than silent, and the direction is under-report.",
+      "fix": "key precedence on the kept set (names actually pushed into customProperties) instead of seenCustomNames"
+    },
+    {
+      "id": "C3",
+      "severity": "informational",
+      "kind": "shared cap counters break per-channel closure",
+      "file": "src/observer/collect-dom.ts:1119-1131",
+      "finding": "Reference-channel value-cap and count-cap drops fold into the SHARED valueCappedCount / countCapped, so on a capped run neither channel's discovered = kept + unresolved + capped identity closes on its own counters.",
+      "impact": "documented as intentional ('same drop-never-truncate convention'); noted so a future capped corpus is not misread as an accounting bug"
+    },
+    {
+      "id": "L3",
+      "severity": "informational",
+      "kind": "Set-vs-Array arithmetic in a derived counter",
+      "file": "src/reconstruction/layout-truth-check.ts:363, :378",
+      "finding": "shipped is a Set keyed by object identity while geometry.length counts array entries; duplicate rule OBJECT references in input.rules would make rejectedUnverifiable disagree with acceptedRules.",
+      "impact": "not reachable today — layout-inference constructs a fresh object literal per rule, including inside the hiddenRanges loop. Recorded as a robustness note only."
+    },
+    {
+      "id": "S1",
+      "severity": "low",
+      "kind": "suite coverage gap",
+      "file": "scripts/smoke-layout-safety.ts",
+      "finding": "Part 2b covers the no-truth-rect, orphan-page, missing-node, zero-candidate, responsive-hidden-only and per-rule-leak paths, all genuinely and non-tautologically. It does NOT exercise `chromium-unavailable` (playwright import / launch failure) or the per-page render-throw path; both were verified by code read only, and no injection point exists today.",
+      "impact": "the two least-exercised branches are also the two simplest (each is a single `return finish(\"chromium-unavailable\", { shippedGeometry: [] })`)"
+    },
+    {
+      "id": "O1",
+      "severity": "medium (process, not code)",
+      "kind": "suite is not concurrency-safe",
+      "file": "scripts/smoke-e2e.ts",
+      "finding": "Run alongside smoke-reconstruction + smoke-qa-independence + smoke-reconstruction-qa, smoke-e2e failed 125/130: all 6 routes returned clone-load-error in the QA stage, cascading into 5 assertion failures (§95 route coverage, two interaction-equivalence checks, the named-limitation check, the observed-children mount check). Run ALONE on the identical tree it is 130/130, exit 0.",
+      "impact": "this is the same signature the Change-3 builder saw at 121/130 and attributed to a concurrent builder editing src/reconstruction-qa/. The actual cause is RESOURCE CONTENTION, not source churn. A gate that fans suites out in parallel will produce spurious e2e FAILs.",
+      "fix": "serialize smoke-e2e (and probably smoke-reconstruction-qa) in the whole-tree gate, or raise the clone-load timeout"
+    }
+  ],
+
+  "notes": [
+    "No git operation was run. Nothing outside tmp/wr285b/reverify-final/ was modified except the single deliberate mutation of src/observer/collect-dom.ts:1076, restored byte-identically (sha256 verified before and after) and re-verified at 92/92.",
+    "BUILDER CHURN: none. The newest builder mtime in src/ or scripts/ is scripts/smoke-custom-properties.ts at 2026-08-29T21:31:25. The only later timestamp in the tree is src/observer/collect-dom.ts at 21:38:18, which is my own restore — content byte-identical to the 21:29:43 builder version. All eight suites, both tsc runs and the live probe ran on that final state.",
+    "The Change-3 correction's own follow-up is still open and unchanged: src/cli-reconstruct.ts:322-334 prints status/candidates/accepted/rejectedByTruthCheck but not rejectedUnverifiable, so an operator reading the CLI cannot see the new refusal channel. One line, owned by that file's owner.",
+    "The Change-3 correction's carried risk about determinism on a probed corpus is still open: smoke-reconstruction's byte-identical double-generation check uses a fixture with 0 layout candidates, so the truth check's browser is never launched on that path. A double-generation on a corpus WITH candidates has still not been performed. It is NOT covered by this verification either.",
+    "Independently reconfirmed, not just read: the guards do not over-reject on the real observer->compiler->generator path (smoke-e2e.ts:894 passed in both e2e runs, including the failing concurrent one).",
+    "The custom-property emission is placed first in the generated stylesheet, before plan.styles.css (generate-app.ts:230), which is what makes the var() surviving inside captured inline-SVG markup resolve — the §8 real-Chromium paint checks confirm this end to end and the mutation test confirms they would notice if it stopped working.",
+    "Evidence directory: tmp/wr285b/reverify-final/ (suite logs, tsc logs, baseline-sha.txt, collect-dom.ts.orig, live-linear.json, the historical-manifest and determinism probes, custom-properties-MUTATED.log and custom-properties-RESTORED.log)."
+  ]
+}

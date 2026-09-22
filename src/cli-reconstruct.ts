@@ -300,6 +300,7 @@ async function main(): Promise<void> {
     sourceSiteSpecVersion: input.siteSpec.siteSpecVersion,
     sourceCompilerVersion: input.siteSpec.compilerVersion,
     versions,
+    onLog: (message) => console.log(message),
   });
   const writtenAt = Date.now();
 
@@ -318,6 +319,20 @@ async function main(): Promise<void> {
   console.log(`  runtime page data          ${formatBytes(generated.bytes.runtimeData)}`);
   console.log(`  total                      ${formatBytes(generated.bytes.total)}`);
   console.log("");
+  // Task 28.5B — the recovered layout tier is now a verified claim, not a
+  // docstring's promise. Print what it cost and what it refused.
+  const layoutCheck = generated.layoutVerification.counters;
+  console.log("Recovered layout rules (truth-viewport verified)");
+  console.log(`  status                     ${layoutCheck.status}`);
+  console.log(`  candidates / accepted      ${layoutCheck.candidateRules} / ${layoutCheck.acceptedRules}`);
+  console.log(`  rejected by guard          ${plan.layout.counters.guardRefusals}`);
+  console.log(`  rejected by truth check    ${layoutCheck.rejectedByTruthCheck}`);
+  console.log(`  accepted but regressing    ${layoutCheck.acceptedRegressed}`);
+  console.log(
+    `  rounds / pages rendered    ${layoutCheck.rounds} / ${layoutCheck.pagesRendered}` +
+      ` (${generated.layoutVerification.elapsedMs} ms)`,
+  );
+  console.log("");
   console.log("Validation (read back off disk)");
   console.log(`  routes mapped              ${validation.routeCount}`);
   console.log(`  runtime page files         ${validation.pageFileCount}`);
@@ -332,7 +347,14 @@ async function main(): Promise<void> {
   console.log(`  write                      ${writtenAt - plannedAt} ms`);
   console.log(`  validate                   ${validatedAt - writtenAt} ms`);
   console.log(`  total generation           ${validatedAt - startedAt} ms`);
-  console.log("  Firecrawl 0 · Playwright 0 · network 0 · asset downloads 0 · AI 0");
+  // Playwright is no longer 0: Task 28.5B renders the recovered layout tier in a
+  // real browser before shipping it. The render is offline (all remote schemes
+  // are aborted) and reads only artifacts this run produced, so `network 0`
+  // still holds.
+  console.log(
+    `  Firecrawl 0 · Playwright ${generated.layoutVerification.counters.pagesRendered}` +
+      " (offline layout truth check) · network 0 · asset downloads 0 · AI 0",
+  );
 
   if (args.skipBuild) {
     console.log("");

@@ -370,6 +370,11 @@ export const E2eOptionsSchema = z.object({
   maxFixIterations: z.number().int().nonnegative(),
   familyEscalation: z.number().int().nonnegative(),
   prepareScroll: z.boolean(),
+  /**
+   * Task 28.7 A2 — the bounded page-state normalization phase ran on every
+   * observation of this E2E run. `.optional()` so pre-28.7 manifests still parse.
+   */
+  normalizePageState: z.boolean().optional(),
   /** True when Discovery ran through something other than the Firecrawl adapter. */
   localDiscovery: z.boolean(),
 });

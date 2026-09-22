@@ -87,6 +87,8 @@ export function diffContent(input: ContentDiffInput): ContentDiffResult {
   let snapshotTextNodes = 0;
   let compared = 0;
   let exactEqual = 0;
+  /** Task 28.6 — nodes compared by PREFIX because the Observer capped the text. */
+  let prefixComparedNodes = 0;
   let changed = 0;
   let missing = 0;
   let extra = 0;
@@ -132,7 +134,16 @@ export function diffContent(input: ContentDiffInput): ContentDiffResult {
       const expectedNormalized = normalize(expected);
       const actualNormalized = normalize(actual);
       if (expectedNormalized.length >= TEXT_MAX_LEN) {
-        // The Observer's cap: the stored value is a prefix of the real text.
+        /*
+         * The Observer's cap: the stored value is a prefix of the real text, so
+         * this node gets a PREFIX comparison rather than equality.
+         *
+         * Task 28.6: that weaker check is now counted. Before, a page whose
+         * text nodes all hit the Observer's cap reported the same
+         * `exactRatio` shape as a page compared in full, and nothing in the
+         * artifact said which of the two a reader was looking at.
+         */
+        prefixComparedNodes++;
         equal = actualNormalized.startsWith(expectedNormalized.slice(0, TEXT_MAX_LEN));
       } else {
         equal = expectedNormalized === actualNormalized;
@@ -190,6 +201,7 @@ export function diffContent(input: ContentDiffInput): ContentDiffResult {
           ? expectedSequence === actualSequence
           : normalize(expectedSequence) === normalize(actualSequence),
       exactRatio: compared === 0 ? 1 : Math.round((exactEqual / compared) * 10_000) / 10_000,
+      prefixComparedNodes,
     },
     mismatches,
   };

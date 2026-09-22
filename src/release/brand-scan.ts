@@ -34,11 +34,16 @@ import path from "node:path";
 import {
   BRAND_SURFACES,
   brandTokensFromHost,
-  scanElementProps,
-  scanInlineSvgMarkup,
+  scanRuntimeTemplateSurfaces,
   type BrandSurface,
 } from "../content-injection/brand-surfaces.js";
-import { ROUTE_MAP_FILE, RUNTIME_DATA_DIR } from "../reconstruction/types.js";
+import {
+  flightBrandSurfaceTotal,
+  markupBrandSurfaceTotal,
+  type BrandFlightCounts,
+  type BrandSurfaceCounts,
+  type BrandHost,
+} from "../production/index.js";
 import { TEMPLATE_APP_DIR } from "../recon-template/types.js";
 import type { Requirement, RequirementSeverity } from "./types.js";
 
@@ -173,8 +178,13 @@ export const BRAND_SURFACE_POLICY: Record<BrandSurface, BrandSurfacePolicyEntry>
     basis: "JSON-LD omits absent facts honestly rather than inheriting source ones",
   },
   "image-logo": {
-    detection: "elsewhere",
-    evidenceSource: "asset replacement-manifest.json + inventory counts.inlineSvgEntries",
+    // Task 28 Phase 2: DETECTED here now (an <img> whose image FILE names the
+    // brand), and resolvable by the bake-time resolver. Still not blocking on
+    // this kind: `source-brand-asset` is the one blocker for brand ASSETS and
+    // re-blocking here would duplicate it.
+    detection: "implemented",
+    evidenceSource:
+      "template runtime IR element props (img src/srcset path) + asset replacement-manifest.json",
     canBlock: false,
     basis:
       "owned by the `replacement-image` and `source-brand-asset` kinds; re-blocking here would " +
@@ -207,8 +217,10 @@ export const BRAND_SURFACE_POLICY: Record<BrandSurface, BrandSurfacePolicyEntry>
     evidenceSource: "template runtime IR RuntimeElementNode.v (aria-label inside inline SVG)",
     canBlock: false,
     basis:
-      "NEW in Task 27 — detected by nothing before. It has NO slot binding and no bake-time " +
-      "rewriter yet, so blocking it would repeat the source-brand-asset dead end",
+      "NEW in Task 27 — detected by nothing before. Task 28 Phase 2 gave it a bake-time resolver " +
+      "(src/production/brand-bake.ts), and the blocking is carried by the single " +
+      "`source-brand-inline-svg` requirement, which clears on REBUILT OUTPUT; blocking per-finding " +
+      "here as well would double-count one mark",
   },
   "svg-symbol-id": {
     detection: "implemented",
@@ -283,14 +295,6 @@ async function readJson<T>(file: string): Promise<T> {
   return JSON.parse(await readFile(file, "utf8")) as T;
 }
 
-interface RuntimeNodeLike {
-  k?: string;
-  n?: string;
-  p?: Record<string, unknown>;
-  c?: RuntimeNodeLike[];
-  v?: string;
-}
-
 export async function scanBrandSurfaces(options: BrandScanOptions): Promise<BrandSurfaceReport> {
   const brandTokens = brandTokensFromHost(options.host);
   const cap = options.perSurfaceCap ?? DEFAULT_PER_SURFACE_CAP;
@@ -308,65 +312,39 @@ export async function scanBrandSurfaces(options: BrandScanOptions): Promise<Bran
   };
 
   // ---- 1. template runtime IR: inline SVG + element props -----------------
-  const dataDir = path.join(options.templateRunDir, TEMPLATE_APP_DIR, RUNTIME_DATA_DIR);
-  const routeMapFile = path.join(dataDir, ROUTE_MAP_FILE);
-  let routesScanned = 0;
-  let elementNodes = 0;
-  let inlineSvgNodes = 0;
-  if (existsSync(routeMapFile)) {
-    const routeMap = await readJson<{ routes: Array<{ path: string; pageFile: string }> }>(routeMapFile);
-    for (const route of routeMap.routes) {
-      const pageFile = path.join(dataDir, route.pageFile);
-      if (!existsSync(pageFile)) continue;
-      routesScanned += 1;
-      const page = await readJson<Record<string, { doc?: RuntimeNodeLike } | unknown>>(pageFile);
-      for (const viewport of ["desktop", "mobile"]) {
-        const doc = (page as Record<string, { doc?: RuntimeNodeLike }>)[viewport]?.doc;
-        if (doc === undefined) continue;
-        const stack: RuntimeNodeLike[] = [doc];
-        while (stack.length > 0) {
-          const node = stack.pop()!;
-          if (node.k !== "e") continue;
-          elementNodes += 1;
-          const nodeId = node.n ?? null;
-          const pointer = `${viewport}.doc[${nodeId ?? "?"}]`;
-          if (typeof node.v === "string") {
-            inlineSvgNodes += 1;
-            for (const hit of scanInlineSvgMarkup(node.v, brandTokens)) {
-              record({
-                ...hit,
-                origin: "template-default",
-                route: route.path,
-                slotKey: null,
-                nodeId,
-                evidenceFile: pageFile,
-                evidencePointer: `${pointer}.v`,
-                suggestedResolution: suggestedResolutionFor(hit.surface, null),
-              });
-            }
-          }
-          if (node.p !== undefined) {
-            for (const hit of scanElementProps(node.p, brandTokens, options.host)) {
-              record({
-                ...hit,
-                origin: "template-default",
-                route: route.path,
-                slotKey: null,
-                nodeId,
-                evidenceFile: pageFile,
-                evidencePointer: `${pointer}.p`,
-                suggestedResolution: suggestedResolutionFor(hit.surface, null),
-              });
-            }
-          }
-          if (node.c !== undefined) for (const child of node.c) stack.push(child);
-        }
-      }
+  // The walk itself moved to content-injection/brand-surfaces.ts
+  // (`scanRuntimeTemplateSurfaces`, Task 28 CR8) so the content run's
+  // brand-leak report sees the SAME surfaces through the SAME code. Traversal
+  // order is preserved there, so the capped `findings` sample below is
+  // unchanged.
+  const runtimeScan = await scanRuntimeTemplateSurfaces({
+    templateAppDir: path.join(options.templateRunDir, TEMPLATE_APP_DIR),
+    sourceHost: options.host,
+    brandTokens,
+  });
+  const routesScanned = runtimeScan.routesScanned;
+  const elementNodes = runtimeScan.elementNodes;
+  const inlineSvgNodes = runtimeScan.inlineSvgNodes;
+  if (runtimeScan.available) {
+    for (const hit of runtimeScan.hits) {
+      record({
+        surface: hit.surface,
+        value: hit.value,
+        matched: hit.matched,
+        sourceUrl: hit.sourceUrl,
+        origin: "template-default",
+        route: hit.route,
+        slotKey: null,
+        nodeId: hit.nodeId,
+        evidenceFile: hit.pageFile,
+        evidencePointer: hit.pointer,
+        suggestedResolution: suggestedResolutionFor(hit.surface, null),
+      });
     }
   } else {
     unavailable.push({
       surface: "svg-aria-label",
-      reason: `no runtime IR at ${routeMapFile} — inline-SVG surfaces unmeasured on this lineage`,
+      reason: `no runtime IR at ${runtimeScan.routeMapFile} — inline-SVG surfaces unmeasured on this lineage`,
       kind: "missing-artifact",
     });
   }
@@ -386,10 +364,16 @@ export async function scanBrandSurfaces(options: BrandScanOptions): Promise<Bran
   let contentWarnings = 0;
   if (existsSync(brandLeakFile)) {
     const report = await readJson<{
-      warnings: Array<{ slotKey: string; kind: string; detail: string }>;
+      warnings: Array<{ slotKey: string | null; kind: string; detail: string; surface?: string }>;
     }>(brandLeakFile);
     contentWarnings = report.warnings.length;
     for (const warning of report.warnings) {
+      // Task 28 CR8: the content run now ALSO records surface-scoped findings
+      // (svg-aria-label, svg-symbol-id, svg-text, image-alt, aria-label) read
+      // from the SAME template runtime IR that section 1 above just scanned.
+      // Counting them here too would double-count one mark — section 1 is the
+      // authority for those surfaces, so skip them.
+      if (warning.slotKey === null) continue;
       const surface: BrandSurface = warning.kind.startsWith("original-external-url")
         ? "source-url"
         : "visible-text";
@@ -487,9 +471,12 @@ function suggestedResolutionFor(surface: BrandSurface, slotKey: string | null): 
     case "svg-aria-label":
     case "svg-symbol-id":
     case "svg-text":
+      // Task 28 Phase 2: there IS a write target now — an authored.brand
+      // decision, applied by the bake-time resolver to the build copy's page
+      // IR. It is not a slot binding and never becomes one (Slot V2 is frozen).
       return (
-        "no write target exists today (inline SVG has no slot binding) — acknowledge, or wait for " +
-        "GED-F bake-time neutralization; opaque <path> geometry stays a documented limitation"
+        'authored.brand[<brandSurfaceId>] = { decision: "REPLACE" | "REMOVE" | "PRESERVE" }, ' +
+        "applied at bake by src/production/brand-bake.ts and verified on the rebuilt output"
       );
     case "image-logo":
       return 'assets["organization-logo"] / assets[<inventoryId>]';
@@ -590,4 +577,349 @@ export function brandSurfaceRequirements(
   }
 
   return requirements;
+}
+
+
+// ---------------------------------------------------------------------------
+// Source-brand ASSET requirement (Task 28 Phase 2) — the OUTPUT-PROOF gate
+// ---------------------------------------------------------------------------
+
+/**
+ * The brand section of a production build's `report/bake-report.json`, as
+ * much of it as the gate reads. Declared structurally so the gate can be
+ * evaluated over a report that was just produced in memory (a canary) exactly
+ * as over one read from disk.
+ */
+export interface BrandBakeSection {
+  census?: Partial<BrandSurfaceCounts>;
+  flight?: Partial<BrandFlightCounts>;
+  /** Structural, not `Pick<BrandBakeReport, …>`: a full report satisfies it,
+   *  and so does the minimum a test needs to state a hypothesis. */
+  bake?: {
+    hostsBefore: number;
+    residual: { preservedAfter: number; unexplainedAfter: string[] };
+    applied: { replaced: number; removed: number; preserved: number; refused: number };
+  } | null;
+}
+
+export interface BrandOutputProof {
+  file: string;
+  /** The rule ACCEPTS this build — but see `clearedBy` for what accepted it. */
+  cleared: boolean;
+  /**
+   * WHAT cleared it (Task 28 Phase 2 correction).
+   *
+   *   `output-proof`        the rendered output measured ZERO on every axis
+   *                         that was measured. This is the only value that
+   *                         earns `status: "resolved"`.
+   *   `preserve-acceptance` the IR is fully explained, but only because the
+   *                         operator explicitly PRESERVED host(s) whose mark
+   *                         still renders. The source brand IS still shipping,
+   *                         so this earns `status: "accepted-limitation"`,
+   *                         which still counts in `releaseBlockers()`.
+   *   `null`                not cleared.
+   */
+  clearedBy: "output-proof" | "preserve-acceptance" | null;
+  detail: string;
+  /** Every brand host left in the BUILT app's IR is covered by a PRESERVE. */
+  irClean: boolean;
+  /** The rendered output censuses zero brand surfaces (html AND rsc flight
+   *  AND, when it was measured, the post-hydration DOM). */
+  renderedClean: boolean;
+  markupBrandSurfaces: number;
+  flightBrandSurfaces: number;
+  /**
+   * Brand surfaces in the POST-HYDRATION DOM, from the build's own
+   * `report/qa.json` (`brandSurfaceCensusHydrated`). `null` means NO hydrated
+   * census exists for this build — the axis was not measured, which is stated
+   * in `detail` rather than being scored as a zero.
+   */
+  hydratedBrandSurfaces: number | null;
+  preservedAfter: number;
+  unexplainedAfter: number;
+}
+
+/** The post-hydration axis, as read from a build's `report/qa.json`. */
+export interface HydratedBrandCensus {
+  counts: Partial<BrandSurfaceCounts>;
+  routesMeasured: number;
+}
+
+/**
+ * THE CLEARING RULE for `source-brand-inline-svg`, evaluated over a build's
+ * OWN measurements — never over a decision the operator recorded.
+ *
+ *   (a) `brand.bake.residual.unexplainedAfter` is EMPTY. That array is
+ *       re-derived by re-reading the mutated page files from disk after the
+ *       rewrite, so it says: every brand-carrying host still in the built
+ *       app's IR is covered by an explicit PRESERVE decision.
+ *   (b) when NOTHING is preserved, the rendered output must agree — the
+ *       exported HTML census AND the RSC flight census must both be zero on
+ *       the brand surfaces. This is the cross-check that (a) is not lying: an
+ *       IR rewrite that failed to reach the render shows up here, and a
+ *       markup-only rewrite shows up in the flight axis specifically.
+ *   (c) and when the build carries a POST-HYDRATION census (the QA run's
+ *       `brandSurfaceCensusHydrated`, taken over the live DOM of every route),
+ *       that must be zero too. This is the axis that describes what a visitor
+ *       actually sees after React reconciles the flight into the DOM; the
+ *       other two are its inputs. A build with no hydrated census reports the
+ *       axis as UNMEASURED rather than counting it as clean.
+ *
+ * With PRESERVE decisions present a non-zero rendered residual is EXPECTED —
+ * that is what preserving means — so (b) is REPORTED rather than asserted and
+ * the detail string says so, instead of the rule quietly relaxing itself.
+ *
+ * AND `preservedAfter > 0` OUTRANKS (b) ENTIRELY (Task 28 close-out). Whatever
+ * the rendered census reads, a build that preserves a source mark is cleared by
+ * ACCEPTANCE and never by output proof — a zero on an axis is only as good as
+ * the axis, and a preserved mark is by definition still shipping.
+ *
+ * AND THAT CASE IS NOT `resolved` (Task 28 Phase 2 correction). An earlier
+ * revision let ANY preserve-only build set `status: "resolved"`, which dropped
+ * the kind out of `releaseBlockers()` while the source mark was still
+ * rendering — a silent loosening of a blocker whose policy basis reads
+ * "visible source-brand content must be 0". `clearedBy` now separates the two:
+ * `output-proof` (measured zero → resolved) from `preserve-acceptance`
+ * (acknowledged → `accepted-limitation`, which still blocks).
+ */
+export function evaluateBrandOutputProof(
+  file: string,
+  brand: BrandBakeSection | undefined,
+  /**
+   * The build's post-hydration census, when one exists. Optional so a caller
+   * that has only a bake report (a canary evaluating its own in-memory result)
+   * is unchanged — and so an absent axis is REPORTED absent rather than
+   * silently counted as clean.
+   */
+  hydrated?: HydratedBrandCensus | null,
+): BrandOutputProof {
+  const empty: Omit<BrandOutputProof, "file" | "cleared" | "clearedBy" | "detail"> = {
+    irClean: false,
+    renderedClean: false,
+    markupBrandSurfaces: 0,
+    flightBrandSurfaces: 0,
+    hydratedBrandSurfaces: null,
+    preservedAfter: 0,
+    unexplainedAfter: 0,
+  };
+  if (brand === undefined) {
+    return {
+      file,
+      cleared: false,
+      clearedBy: null,
+      detail: "the build's bake report carries no brand section (built before Task 28 Phase 2)",
+      ...empty,
+    };
+  }
+  const bake = brand.bake ?? null;
+  if (bake === null || bake === undefined) {
+    return {
+      file,
+      cleared: false,
+      clearedBy: null,
+      detail: "the build ran no brand resolver, so no output proves the surface is gone",
+      ...empty,
+    };
+  }
+  const markupBrandSurfaces = markupBrandSurfaceTotal({
+    sourceUrl: 0,
+    bodyAnchorIdentity: 0,
+    visibleText: 0,
+    imageSrcPath: brand.census?.imageSrcPath ?? 0,
+    imageAlt: brand.census?.imageAlt ?? 0,
+    ariaLabel: brand.census?.ariaLabel ?? 0,
+    svgAriaLabel: brand.census?.svgAriaLabel ?? 0,
+    svgSymbolId: brand.census?.svgSymbolId ?? 0,
+    svgText: brand.census?.svgText ?? 0,
+  });
+  const flightBrandSurfaces = flightBrandSurfaceTotal({
+    documents: 0,
+    lengthPrefixedChunks: 0,
+    sourceUrl: 0,
+    brandTokenOccurrences: 0,
+    imageSrcPath: brand.flight?.imageSrcPath ?? 0,
+    imageAlt: brand.flight?.imageAlt ?? 0,
+    ariaLabel: brand.flight?.ariaLabel ?? 0,
+    svgAriaLabel: brand.flight?.svgAriaLabel ?? 0,
+    svgSymbolId: brand.flight?.svgSymbolId ?? 0,
+    svgText: brand.flight?.svgText ?? 0,
+  });
+  // The POST-HYDRATION axis. This is the one that says what a visitor sees:
+  // the SSR markup and the flight are both inputs to it, and a rewrite that
+  // reached the markup but not the flight is clean on `markupBrandSurfaces`
+  // and dirty HERE. `null` when the build carries no hydrated census — an
+  // unmeasured axis is named as unmeasured, never scored as a zero.
+  const hydratedBrandSurfaces =
+    hydrated === undefined || hydrated === null || hydrated.routesMeasured === 0
+      ? null
+      : markupBrandSurfaceTotal({
+          sourceUrl: 0,
+          bodyAnchorIdentity: 0,
+          visibleText: 0,
+          imageSrcPath: hydrated.counts.imageSrcPath ?? 0,
+          imageAlt: hydrated.counts.imageAlt ?? 0,
+          ariaLabel: hydrated.counts.ariaLabel ?? 0,
+          svgAriaLabel: hydrated.counts.svgAriaLabel ?? 0,
+          svgSymbolId: hydrated.counts.svgSymbolId ?? 0,
+          svgText: hydrated.counts.svgText ?? 0,
+        });
+  const unexplainedAfter = bake.residual.unexplainedAfter.length;
+  const irClean = unexplainedAfter === 0;
+  const renderedClean =
+    markupBrandSurfaces === 0 &&
+    flightBrandSurfaces === 0 &&
+    (hydratedBrandSurfaces === null || hydratedBrandSurfaces === 0);
+  const preservedAfter = bake.residual.preservedAfter;
+  // WHAT cleared it, kept separate from WHETHER it cleared.
+  //
+  // BRANCH ORDER IS LOAD-BEARING (Task 28 close-out). `preservedAfter > 0` is
+  // tested FIRST and ALWAYS wins. A PRESERVE decision is an operator ACCEPTING
+  // a known source mark; it is never evidence that the mark is gone, so it can
+  // never produce `output-proof` no matter what the rendered census reads.
+  //
+  // The previous order tested `renderedClean` first, which made the verdict
+  // hostage to the census being complete. It was not: on an image-logo lineage
+  // NO axis measured a brand-named image PATH, so a PRESERVE-everything build
+  // measured all zeros and cleared as `output-proof` / `resolved` / 0 blockers
+  // while the source's own logotype was still in the shipped bytes. The missing
+  // axis is added in `brand-census.ts`, but the ordering is the load-bearing
+  // half: it makes the verdict independent of whether some FUTURE surface is
+  // measured yet. An unmeasured axis can now only ever downgrade a build to
+  // `preserve-acceptance`, never upgrade one to proof.
+  const clearedBy: BrandOutputProof["clearedBy"] = !irClean
+    ? null
+    : preservedAfter > 0
+      ? "preserve-acceptance"
+      : renderedClean
+        ? "output-proof"
+        : null;
+  const cleared = clearedBy !== null;
+  const detail =
+    `hosts before=${bake.hostsBefore}; applied replaced=${bake.applied.replaced} ` +
+    `removed=${bake.applied.removed} preserved=${bake.applied.preserved} ` +
+    `refused=${bake.applied.refused}; unexplained after=${unexplainedAfter}; ` +
+    `exported-html brand surfaces=${markupBrandSurfaces}; rsc-flight brand surfaces=${flightBrandSurfaces}; ` +
+    `post-hydration brand surfaces=${
+      hydratedBrandSurfaces === null
+        ? "not measured (no report/qa.json hydrated census on this build)"
+        : hydratedBrandSurfaces
+    }` +
+    (preservedAfter > 0
+      ? ` (${preservedAfter} host(s) PRESERVED by explicit decision, so a non-zero rendered census ` +
+        "is expected and is reported rather than asserted)"
+      : "") +
+    (clearedBy === "preserve-acceptance"
+      ? renderedClean
+        ? " — ACCEPTED LIMITATION, not resolved: every axis measured above reads 0, but " +
+          `${preservedAfter} host(s) are shipping the source mark by explicit PRESERVE, and a ` +
+          "preserved mark is an operator's acceptance, never proof the mark is gone (a 0 here " +
+          "means only that no axis in this census MEASURES that surface)"
+        : " — ACCEPTED LIMITATION, not resolved: the source mark still renders and this build is " +
+          "cleared only by the operator's explicit PRESERVE"
+      : "");
+  return {
+    file,
+    cleared,
+    clearedBy,
+    detail,
+    irClean,
+    renderedClean,
+    markupBrandSurfaces,
+    flightBrandSurfaces,
+    hydratedBrandSurfaces,
+    preservedAfter,
+    unexplainedAfter,
+  };
+}
+
+/**
+ * The `source-brand-inline-svg` requirement.
+ *
+ * COUNT. It carries BRAND-CARRYING HOSTS, measured on the template's own
+ * runtime IR by the same walker the bake-time resolver uses — not
+ * `inventory.counts.inlineSvgEntries`, which counts every inline SVG, icons
+ * included (207 vs 80 on the accepted linear lineage).
+ *
+ * STATUS. `unresolved` until a REBUILT OUTPUT proves otherwise. It is never
+ * set from the presence of a decision: `proof` is derived from the build's own
+ * bake report, and a REPLACE the resolver refused — or one the census still
+ * sees — leaves the requirement standing with a statusNote saying exactly that.
+ */
+export function sourceBrandAssetRequirement(input: {
+  hosts: readonly BrandHost[];
+  routes: number;
+  templateRunDir: string;
+  inlineSvgEntryCount: number;
+  productionBuildDir: string | null;
+  proof: BrandOutputProof | null;
+}): Requirement {
+  const bySurface: Record<string, number> = {};
+  for (const host of input.hosts) bySurface[host.surface] = (bySurface[host.surface] ?? 0) + 1;
+  const requirement: Requirement = {
+    requirementId: "source-brand-inline-svg",
+    kind: "source-brand-asset",
+    severity: "release-blocking",
+    status: "unresolved",
+    sourceStage: "template",
+    count: input.hosts.length,
+    message:
+      `${input.hosts.length} template host(s) still carry the source brand (` +
+      Object.entries(bySurface)
+        .sort()
+        .map(([surface, count]) => `${surface}:${count}`)
+        .join(", ") +
+      ") — decide each one with authored.brand (REPLACE / REMOVE / PRESERVE) and rebuild; " +
+      "it clears on the REBUILT OUTPUT, never on the decision",
+    resolutionOptions: [
+      'authored.brand[<brandSurfaceId>] = { decision: "REPLACE", replacement: { text | assetId | file } }',
+      'authored.brand[<brandSurfaceId>] = { decision: "REMOVE" } (refused where not structurally safe)',
+      'authored.brand[<brandSurfaceId>] = { decision: "PRESERVE", reason: "<why this source mark may ship>" }',
+    ],
+    evidence: [
+      {
+        file: `${input.templateRunDir}/app/reconstruction-data/route-map.json`,
+        pointer: "brand-carrying-hosts",
+        detail:
+          `${input.hosts.length} host(s) over ${input.routes} route(s); asset inventory ` +
+          `counts.inlineSvgEntries=${input.inlineSvgEntryCount} (icons included, which is why it ` +
+          "is not this blocker's count)",
+      },
+      input.proof === null
+        ? {
+            file: input.productionBuildDir ?? "(no production build yet)",
+            pointer: "report/bake-report.json#brand",
+            detail:
+              "no production build has measured this lineage yet — the requirement cannot clear " +
+              "before an output exists",
+          }
+        : {
+            file: input.proof.file,
+            pointer: "brand.bake.residual + brand.census + brand.flight",
+            detail: input.proof.detail,
+          },
+    ],
+  };
+  if (input.proof !== null && input.proof.clearedBy === "output-proof") {
+    requirement.status = "resolved";
+    requirement.statusNote = `cleared by MEASURED OUTPUT: ${input.proof.detail}`;
+  } else if (input.proof !== null && input.proof.clearedBy === "preserve-acceptance") {
+    // NOT `resolved`. The policy basis for this kind reads "visible
+    // source-brand content must be 0" and the measured output says it is not:
+    // the operator decided to ship the source mark. `accepted-limitation` is
+    // the status this repo already has for exactly that, and it STILL counts
+    // in `releaseBlockers()`, so publishing stays gated while the decision and
+    // its reason stay visible.
+    requirement.status = "accepted-limitation";
+    requirement.statusNote =
+      `ACCEPTED LIMITATION — ${input.proof.preservedAfter} host(s) ship the source mark by ` +
+      "explicit PRESERVE decision, so this is acknowledged rather than resolved" +
+      (input.proof.renderedClean
+        ? " (the rendered census reads 0, but a preserved mark is an acceptance, not proof of " +
+          "removal — the zero says only that no census axis measures that surface)"
+        : "") +
+      `: ${input.proof.detail}`;
+  } else if (input.proof !== null) {
+    requirement.statusNote = `output measured and the surface is STILL present: ${input.proof.detail}`;
+  }
+  return requirement;
 }

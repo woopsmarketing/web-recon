@@ -1,0 +1,121 @@
+{
+  "task": "28.6",
+  "stage": "wave1-foundation",
+  "date": "2026-09-02",
+  "baselineSha": "6c2e723601a0d76431c96a48bbdb4726c02063e7",
+  "branch": "main",
+  "gitMutationsPerformed": false,
+  "orchestratorVerdict": "ACCEPTED_WITH_MANDATORY_CORRECTIONS",
+  "lanes": [
+    {
+      "id": "W1",
+      "name": "Observer CSS truth recovery",
+      "builderStatus": "COMPLETE",
+      "independentVerdict": "PASS_WITH_CORRECTIONS",
+      "headline": {
+        "linear.app/pricing": { "sheets": 81, "cssomBlocked": 30, "recovered": 30, "missed": 0, "nodesWithAuthoredCss": 1363, "nodesObserved": 1363, "priorBaseline": "17 of 1363" },
+        "stripe.com/": { "sheets": 6, "cssomBlocked": 6, "recovered": 6, "missed": 0, "nodesWithAuthoredCss": 1755, "nodesObserved": 1755, "authoredDeclarations": 26377, "priorBaseline": "0 of 2280" }
+      },
+      "acceptanceRule": {
+        "selector": ".PDOlRq_row",
+        "declaration": "grid-template-columns: 2fr repeat(4, 1fr)",
+        "origin": "fetched",
+        "found": true,
+        "mediaPresent": { "(max-width: 1024px)": 707, "(min-width: 1025px)": 2 }
+      },
+      "costPerPage": {
+        "desktopProbe5to7Widths": { "seconds": 3.0, "bytes": 99053 },
+        "mobileProbePass": { "seconds": 5.9, "bytes": 271264 },
+        "domJsonAuthoredDeclarations": { "megabytesPerViewport": 5.06, "note": "verifier-corrected; builder reported 3.75" },
+        "wholeObservationLinearPricingSeconds": 28.7
+      },
+      "schemaVersionBumped": false,
+      "newWrongValuePathIntroduced": {
+        "what": "sheet-level media attribute never read; a CORS <link media=print> is now recovered as a fabricated unconditional declaration",
+        "preExistingHalf": "same-origin <style media=print> has the same bug",
+        "severity": "must-fix-wave2"
+      },
+      "permanentChecksAdded": 0,
+      "retractions": [
+        "28.5C baseline for linear.app/pricing is 17 of 1363, not 34 of 3254",
+        "bytesCaptured is all stylesheet responses in memory (446461), not the bridged blocked-sheet payload (151157)"
+      ],
+      "unannouncedSideEffect": ":root custom-property count 170 -> 358 on linear.app/pricing desktop; moves theme extraction output",
+      "verifierFixtures": "tmp/wr286/W1-verify/ (fixture/, fixture-run.ts, fixture-check.mjs, 44 assertions)"
+    },
+    {
+      "id": "W2",
+      "name": "Media-condition tokenizer",
+      "builderStatus": "COMPLETE",
+      "independentVerdict": "PASS_WITH_CORRECTIONS",
+      "module": "src/sitespec/media-condition.ts",
+      "lines": 995,
+      "externalDeps": 0,
+      "checksAdded": 106,
+      "suiteBefore": 257,
+      "suiteAfter": 363,
+      "keyInvariant": "every bound carries boundary {below, above} with above === below + 1, so (max-width:1024px) and (min-width:1025px) resolve to the same boundary {1024,1025}",
+      "corpusParse": { "observedMediaStrings": 20, "parsedClean": 20, "unparsed": 0, "widthRelevant": 18 },
+      "defectsFound": [
+        "nested-group branch returns width-irrelevant for any paren-balanced garbage, defeating the module's own unparsedCount gate",
+        "foldMediaBreakpoints never consults interval.empty, so an unsatisfiable condition injects two phantom snap targets into the histogram the reconstruction lane snaps band edges to",
+        "print and (min-width:900px) returns widthRelevant true with populated top-level bounds; only alternatives[].screenApplicable disambiguates"
+      ],
+      "integrationStatus": "DEAD_CODE_UNTIL_WAVE2"
+    },
+    {
+      "id": "W3",
+      "name": "Five-width responsive QA harness",
+      "builderStatus": "COMPLETE",
+      "independentVerdict": "PASS_WITH_CORRECTIONS",
+      "subsystem": "src/responsive-qa/",
+      "cli": "pnpm qa:responsive",
+      "widths": [390, 700, 1024, 1100, 1440],
+      "channelReadingsPerPair": 28,
+      "baselineVerdicts": {
+        "/": { "390": "MINOR", "700": "BLOCKER", "1024": "BLOCKER", "1100": "BLOCKER", "1440": "MAJOR" },
+        "/pricing": { "390": "MINOR", "700": "MAJOR", "1024": "BLOCKER", "1100": "BLOCKER", "1440": "MINOR" }
+      },
+      "reproducibility": "10/10 identical verdicts across two independent live runs",
+      "newFindingsNotVisibleTo285C": [
+        "/ at 1440: p90 left-edge delta 55px, worst 405px, threshold 48px; the older clip channel calls the clone better here",
+        "/ at 700: clone renders 84 of the source's 234 visible images (36%, threshold 50%)"
+      ],
+      "instrumentDefects": [
+        "PASS unreachable: pixel-JND fires >=1% on every real reconstruction, observed floor 1.72% on a structurally identical pair. Gates must read summary.blockerPairs and majorPairs.",
+        "probe does not scroll but the full-page screenshot does, so lazy-revealed content is outside every numeric channel on both sides",
+        "measureLandmark silently excludes elements wider than 1.5x viewport, so worse overflow is likelier to be dropped",
+        "the p: tag-path correspondence pass matched 0 nodes on every pair; matchedFraction is not a quality signal"
+      ],
+      "retractions": [
+        "'5/5 exact' reproduction of 28.5C is wrong. 28.5C accepted /pricing baseline was PASS/MAJOR/BLOCKER/BLOCKER/PASS. Honest statement: severity class matched at 5/5 widths, the two PASS widths read MINOR due to the pixel-JND floor.",
+        "trust guard was 'load-bearing': it suppressed one MAJOR finding on each of two pairs and changed no verdict"
+      ],
+      "permanentChecksAdded": 0,
+      "baselineEvidence": "tmp/wr286/w3/baseline/"
+    }
+  ],
+  "regressionPosture": {
+    "suites": [
+      { "name": "sitespec", "checks": 363, "failures": 0, "baseline": 257, "delta": 106 },
+      { "name": "multi-observer", "checks": 62, "failures": 0, "baseline": 62, "delta": 0 },
+      { "name": "custom-properties", "checks": 92, "failures": 0, "baseline": 92, "delta": 0 },
+      { "name": "visual-vocab", "checks": 88, "failures": 0, "baseline": 88, "delta": 0 },
+      { "name": "reconstruction-qa", "checks": 134, "failures": 0, "baseline": 134, "delta": 0 }
+    ],
+    "honestGap": "All 106 new checks belong to one lane. W1 rewrote the observer and added none; W3 built a new subsystem and added none. Two of three Wave 1 deliverables have zero CI coverage."
+  },
+  "wave2Assignments": {
+    "OBS-FIX": ["sheet-level media attribute", "land mobile-probe identity + cascade-position + non-adoption checks", "storage figure 5.06MB/viewport", "bytesBridged", "retract 34-of-3254", "explain custom-property 170->358"],
+    "SPEC": ["unparsed for balanced garbage", "skip empty intervals in fold + emptyIntervalCount", "document screenApplicable trap", "module-relative readFileSync", "boundaryFor degenerate inputs", "NEW: wire authoredBreakpoints histogram into SiteSpec"],
+    "RQA-FIX": ["make PASS reachable or state it is not", "scroll-to-settle lazy content symmetrically", "fix measureLandmark exclusion direction", "fix or label matchedFraction", "correct 5/5-exact claim", "correct composite claim", "downgrade trust-guard claim", "live-source caveat", "merge left/right edge p90"],
+    "RECON": ["R1 hiddenRanges off-by-one (503 nodes on /pricing)", "R2 bidirectional width emit (width:auto is intrinsic, latent)", "R3 active-range verification, delete isAcceptedUnchecked exemption"]
+  },
+  "carriedNotStarted": [
+    "de-duplicated authoredRuleTable",
+    "specificity resolver for the per-element 32-declaration cap (keeps first 32 in sheet order, can drop the winner; 54 elements on Linear, 4 on Stripe)",
+    "barrel re-export of probe helpers from src/observer/index.ts",
+    "transitive descendant unfreeze — PROVEN HARMFUL, must never be built",
+    "grid-track recovery kind + containingBlockGuard relaxation for grid items (71 refusals)"
+  ]
+}

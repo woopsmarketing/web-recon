@@ -1,0 +1,82 @@
+Already up to date
+Done in 153ms using pnpm v11.21.0
+$ tsx src/cli-release-plan.ts data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z
+PROJECT
+  stripe.com-2026-08-19T06-36-35-798Z  —  stripe.com
+  state: PRODUCTION_INPUTS_REQUIRED   target: preview
+
+READY (fresh)
+  reconstruction
+  template
+  content
+  theme
+  seo
+  assets
+  production
+
+NEEDS INPUT
+  [release-blocking] 74
+    content-route-/careers/apply/product-manager-global-expansion-mena/8081418
+    content-route-/careers/listing/product-lead-emea-payments/7768979
+    content-route-/cookie-settings
+    content-route-/customers/hargreaves-lansdown
+    content-route-/en-hk/customers/amp
+    content-route-/fr/resources/more/self-financing-capacity-in-france
+    content-route-/in/resources/more/payment-fraud-red-flags
+    content-route-/industries/media-entertainment
+    content-route-/legal/becs
+    content-route-/newsroom/news/tour-berlin-2025
+    content-route-/resources/more/arr-loans-explained
+    content-route-/resources/more/how-can-my-customers-pay-by-bank-a-guide
+    … and 62 more (see operator-checklist.md)
+  [high-value] 362
+    business-fact-address
+    business-fact-foundingDate
+    business-fact-phone
+    business-fact-prices
+    business-fact-ratings
+    business-fact-reviews
+    business-fact-sameAs
+    business-fact-slot-home.footer.text.ca-residents-1-888-926-2289
+    business-fact-slot-home.footer.text.stripe-llc
+    business-fact-slot-home.main.link.historical-uptime.label
+    business-fact-slot-home.main.text.1-9t
+    business-fact-slot-home.main.text.10k
+    … and 350 more (see operator-checklist.md)
+  [optional] 1
+    social-handle
+
+ROUTES
+  /                                                                                               CONTENT_READY content:injected  seo-needs-input:3  residual-assets:4
+  /careers/apply/product-manager-global-expansion-mena/8081418                                    NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /careers/listing/product-lead-emea-payments/7768979                                             NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /cookie-settings                                                                                NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /customers/hargreaves-lansdown                                                                  NEEDS_INPUT   content:not-injected  seo-needs-input:9  residual-assets:0
+  /en-hk/customers/amp                                                                            NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /fr/resources/more/self-financing-capacity-in-france                                            NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /in/resources/more/payment-fraud-red-flags                                                      NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /industries/media-entertainment                                                                 NEEDS_INPUT   content:not-injected  seo-needs-input:9  residual-assets:0
+  /legal/becs                                                                                     NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /newsroom/news/tour-berlin-2025                                                                 NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /resources/more/arr-loans-explained                                                             NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /resources/more/how-can-my-customers-pay-by-bank-a-guide                                        NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program          NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /resources/more/kit-digital                                                                     NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /resources/more/real-time-payments-explained                                                    NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /resources/more/uk-to-eu-vat-compliance                                                         NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /resources/more/virtual-credit-cards-for-businesses-explained                                   NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it  NEEDS_INPUT   content:not-injected  seo-needs-input:9
+  /zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know                      NEEDS_INPUT   content:not-injected  seo-needs-input:9
+
+NEXT ACTIONS
+  1. resolve production-domain — productionBaseUrl
+  2. resolve font-license-sohne-var — fontDecisions["sohne-var"] = use-fallback-stack (accept the measured fallback)
+  3. resolve font-license-sourcecodepro — fontDecisions["sourcecodepro"] = use-fallback-stack (accept the measured fallback)
+  4. resolve content-route-/careers/apply/product-manager-global-expansion-mena/8081418 — routeContent["/careers/apply/product-manager-global-expansion-mena/8081418"]
+  5. resolve content-route-/careers/listing/product-lead-emea-payments/7768979 — routeContent["/careers/listing/product-lead-emea-payments/7768979"]
+  6. resolve content-route-/cookie-settings — routeContent["/cookie-settings"]
+  7. resolve content-route-/customers/hargreaves-lansdown — routeContent["/customers/hargreaves-lansdown"]
+  8. resolve content-route-/en-hk/customers/amp — routeContent["/en-hk/customers/amp"]
+  9. resolve content-route-/fr/resources/more/self-financing-capacity-in-france — routeContent["/fr/resources/more/self-financing-capacity-in-france"]
+  10. resolve content-route-/in/resources/more/payment-fraud-red-flags — routeContent["/in/resources/more/payment-fraud-red-flags"]
+  11. … and 64 more release-blocking requirement(s) (operator-checklist.md)

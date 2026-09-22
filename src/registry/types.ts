@@ -111,12 +111,13 @@ export const SiteEntrySchema = z
     /** Repo-relative POSIX path of the release project directory. */
     projectDir: z.string().min(1),
     /**
-     * Display name. DERIVED from `siteId` — a customer-facing name has no home
-     * in release-project.json today, and a name stored only here would be a
-     * fact the registry could not rebuild. See changeRequests in the handoff.
+     * Display name, and where it came from. `project-display-name` is the
+     * project's own `displayName` (Task 28 CR3); `derived-from-site-id` is the
+     * fallback for a project that records none. Both are REBUILDABLE from the
+     * artifact — the registry still stores no fact of its own.
      */
     name: z.string().min(1),
-    nameSource: z.literal("derived-from-site-id"),
+    nameSource: z.enum(["derived-from-site-id", "project-display-name"]),
     /** `acceptedLineage.template` verbatim — the template this site came from. */
     templateLineage: z
       .object({ templateId: z.string(), path: z.string(), hash: z.string() })

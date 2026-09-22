@@ -6,6 +6,7 @@ import {
   loadContentRunForSeo,
   loadTemplateForSeo,
   checkForbiddenCopy,
+  checkTitleUniqueness,
   type ProvidedBusinessFacts,
 } from "./production-plan.js";
 import { renderPlanHead } from "./render-head.js";
@@ -35,6 +36,8 @@ export interface CreatePlanRunOptions {
   sourceSnapshotRef: string;
   productionDomain?: string;
   facts?: ProvidedBusinessFacts;
+  /** Routes the operator disabled (Task 28 Phase 6) — see BuildPlanOptions. */
+  disabledRoutes?: readonly string[];
   outputDir?: string;
   runId?: string;
   log?: (line: string) => void;
@@ -108,6 +111,7 @@ export async function createProductionSeoPlanRun(options: CreatePlanRunOptions):
     sourceSnapshot: snapshot,
     productionDomain: options.productionDomain,
     facts: options.facts,
+    ...(options.disabledRoutes !== undefined ? { disabledRoutes: options.disabledRoutes } : {}),
   });
 
   const upstreamTitles = new Map(template.routes.map((r) => [r.key, r.title ?? null]));
@@ -122,6 +126,19 @@ export async function createProductionSeoPlanRun(options: CreatePlanRunOptions):
     renderedSurfaceOf(plan, renderedHead, robotsTxt, sitemap.xml),
   );
   const needsInput = countNeedsInput(plan);
+  // Duplicate-<title> measurement (Task 28 Phase 10 correction). Reported, never
+  // silently zero, and NON-fatal: a duplicate title is a quality defect, not a
+  // forbidden-copy or brand-leak violation, and failing the run would delete a
+  // title rather than fix one. The number rides in the manifest and the log; the
+  // isolated-package QA measures the SERVED titles independently.
+  const titleUniqueness = checkTitleUniqueness(plan);
+  const duplicateTitleRoutes = titleUniqueness.duplicates.reduce(
+    (sum, group) => sum + group.routes.length,
+    0,
+  );
+  const routeDerivedTitles = plan.routes.filter(
+    (route) => route.title.status === "known" && /^content-run:(hero-headline|nav-label)/.test(route.title.basis),
+  ).length;
 
   const outputDir = path.resolve(options.outputDir ?? productionSeoPlanDir(template.sourceHost, runId));
   await mkdir(path.join(outputDir, "report"), { recursive: true });
@@ -154,8 +171,10 @@ export async function createProductionSeoPlanRun(options: CreatePlanRunOptions):
       knownDescriptions: plan.routes.filter((r) => r.description.status === "known").length,
       needsInputDescriptions: plan.routes.filter((r) => r.description.status === "needs-input").length,
       needsInputValues: needsInput.total,
+      duplicateTitleRoutes,
+      routeDerivedTitles,
     },
-    checks: { forbiddenCopy, brandIsolation },
+    checks: { forbiddenCopy, brandIsolation, titleUniqueness },
     files,
   } satisfies ProductionSeoPlanManifest);
 
@@ -171,6 +190,16 @@ export async function createProductionSeoPlanRun(options: CreatePlanRunOptions):
   await writeFile(path.join(outputDir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n", "utf8");
 
   log(`[seo:plan] routes ${plan.routes.length} (injected ${manifest.counts.contentInjectedRoutes}) — needs-input values ${needsInput.total}`);
+  log(
+    `[seo:plan] titles: ${routeDerivedTitles}/${plan.routes.length} from the route's own authored heading, ` +
+      `${titleUniqueness.distinctTitles} distinct across ${titleUniqueness.routesMeasured} route(s)` +
+      (titleUniqueness.pass
+        ? ""
+        : ` — DUPLICATE <title> on ${duplicateTitleRoutes} route(s): ` +
+          titleUniqueness.duplicates
+            .map((group) => `${JSON.stringify(group.title)} on ${group.routes.join(", ")}`)
+            .join(" | ")),
+  );
   log(`[seo:plan] forbidden-copy ${forbiddenCopy.pass ? "PASS" : "FAIL"} (${forbiddenCopy.comparisons} comparisons), brand isolation ${brandIsolation.pass ? "PASS" : "FAIL"} (${brandIsolation.scannedStrings} strings vs ${forbiddenTerms.length} terms)`);
   if (!forbiddenCopy.pass || !brandIsolation.pass) {
     throw new Error(

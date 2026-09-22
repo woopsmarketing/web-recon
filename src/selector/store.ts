@@ -14,6 +14,10 @@ import {
   type PageFamilySet,
   type PageSelection,
 } from "./types.js";
+import {
+  RouteArchetypePlanSchema,
+  type RouteArchetypePlan,
+} from "./route-archetype-plan.js";
 
 /**
  * Selector persistence (Task 07).
@@ -165,4 +169,30 @@ export async function saveSelection(
   );
 
   return { familiesPath, selectionPath };
+}
+
+export interface SavedRouteArchetypePlan {
+  routeArchetypesPath: string;
+}
+
+/**
+ * Validate (zod) and persist route-archetypes.json into the run directory,
+ * following the exact convention `saveSelection` uses above. Additive only —
+ * never touches page-families.json or selected-pages.json.
+ */
+export async function saveRouteArchetypePlan(
+  runDir: string,
+  plan: RouteArchetypePlan,
+): Promise<SavedRouteArchetypePlan> {
+  const validatedPlan = RouteArchetypePlanSchema.parse(plan);
+
+  const routeArchetypesPath = path.join(runDir, "route-archetypes.json");
+
+  await writeFile(
+    routeArchetypesPath,
+    JSON.stringify(validatedPlan, null, 2) + "\n",
+    "utf8",
+  );
+
+  return { routeArchetypesPath };
 }

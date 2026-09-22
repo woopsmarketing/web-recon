@@ -1,0 +1,45 @@
+
+[unit] ProjectFilter contract + pure evaluator
+  ok   E area buckets are half-open [min,max) in the scale unit; units normalized; missing never matches
+  ok   F style: OR within the dimension; no-keyword records never match; vocabulary by frequency then code point
+  ok   G price: derived buckets [min,max), per-unit conversion, missing / other currency never match
+  ok   H type (existing category taxonomy) filter: OR over category ids; SERVICE ontology deferred
+  ok   I keyword finds a project by title (case-insensitive, whitespace-normalized)
+  ok   J keyword finds a project by location
+  ok   K keyword finds a project by style keyword and by scope; Korean substring; tokens AND, never across fields
+  ok   L sort newest = the reader's latest order (publishedAt DESC by instant, id ASC); input order irrelevant; oldest = ASC, id ASC
+  ok   M area/price sorts: missing values LAST in both directions, ties by the default order
+  ok   N OR within one dimension, AND across dimensions
+  ok   O combined filters (type + area + style + price + keyword + sort)
+  ok   P zero result is an honest empty list (valid filter, no match)
+  ok   Q reset: the empty filter is the default view and returns every record in the default order
+  ok   normalize: closed vocabulary (unknown/unavailable dropped), deduped, canonical order, idempotent
+  ok   URL codec: template-owned params, repeated keys, sort/fp omitted at default, round-trip incl. Korean
+  ok   vocabulary lists only options with ≥ 1 record; groups without options are hidden
+
+[static] filter rules live outside React; gate; settings
+  ok   Z the UI uses the shared contract/evaluator; no filtering/sorting rule is re-implemented in template code
+  ok   gate: new allowlist entries are exactly the pure filter module + browser URL door; window/storage/network still refused
+  ok   settings: 1.2.0 filter keys validated strictly; 1.1.0-shaped settings documents stay valid
+
+[integration] fixture packages on the new release
+  ok   release: all three sites pin + were built with the SAME release ≥ 1.2.0 (verified); Step 4 release untouched
+  ok   rollback: each site's previous package = the package of the release before the current one (≥ 1.1.0), intact
+  ok   A unfiltered /portfolio: SSR grid + route pager byte-identical to the previous package; every other non-home page's <main> byte-identical
+  ok   B 173 projects still paginate 30/page unfiltered (static routes, exact order)
+  ok   C filter index = exactly the served projects (large 173, small 12), in the default order, with the vocabulary
+  ok   D public index leaks nothing: no draft/scheduled record, only allowed fields, no body/gallery/quote/source fields
+  ok   parity: evaluator over the SHIPPED index = evaluator over the stored canonical records (fields sufficient, no drift)
+  ok   fixtures exercise the dimensions: several areas/styles/prices/texts, missing values, results + zero result, > 30 matches
+  ok   V no filtered static route explosion: exactly the Step 4 HTML set; route plan unchanged
+  ok   W unfiltered SEO unchanged: sitemap.xml + robots.txt byte-identical to the Step 4 packages
+  ok   fixture-empty: no portfolio route at all (distinct from a filtered-zero view); no index anywhere
+  ok   Y no source dependency/leakage: package QA passed with frozen terms; no source param/API names in template or packages
+  ok   slots: filter copy is section-level (site vs neutral per site); option values are not slotted
+
+[integration] throwaway-root builds (rollback by re-pin to 1.1.0, filters off)
+  ok   re-pin to the Step 4 release builds with the current builder ONLY after the data is migrated to the 1.1.0 shape (strict old schemas; see 04 open items)
+  ok   settings filtersEnabled=false → /portfolio renders the plain Step 4 list (no island, no index), same grid
+  ok   priceScale none → no price filter, no price sort and NO price data in the shipped index
+
+step41: 35 passed, 0 failed

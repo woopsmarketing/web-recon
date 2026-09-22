@@ -1,0 +1,236 @@
+{
+  "task": "28.8 FAST",
+  "title": "FAST RECONSTRUCTION V1 FINISH + TWO-SITE REAL-WORLD VALIDATION",
+  "date": "2026-09-08",
+  "responsivePolicy": {
+    "mobileMaxPx": 800,
+    "desktopMinPx": 801,
+    "truthWidths": [
+      390,
+      1440
+    ],
+    "safetyWidths": [
+      700,
+      800,
+      1024,
+      1100
+    ],
+    "provenance": "product-policy",
+    "thirdDomTree": false
+  },
+  "targets": [
+    "https://channel.io/kr",
+    "https://beomeo.roseeskin.com/"
+  ],
+  "sites": [
+    {
+      "host": "channel.io",
+      "url": "https://channel.io/kr",
+      "runtime": "Next.js + styled-components (animation-heavy)",
+      "accessStatus": "OK",
+      "runs": {
+        "discovery": "2026-09-08T13-12-19-052Z",
+        "observation": "2026-09-08T14-12-04-717Z",
+        "interactionModels": "2026-09-08T14-19-21-630Z",
+        "siteSpec": "2026-09-08T16-33-17-049Z",
+        "reconstruction": "2026-09-08T16-47-36-107Z",
+        "responsiveQa": "2026-09-08T16-48-41-104Z",
+        "responsiveQaControlRubric8": "2026-09-08T18-54-21-769Z",
+        "cloneSafety": "tmp/wr288f/sites/channel.io/clone-safety-164734"
+      },
+      "urlsVerified": 59,
+      "familiesFound": 31,
+      "deepRoutes": [
+        "/kr",
+        "/kr/pricing",
+        "/kr/alf-customer",
+        "/kr/blog/articles/what-is-aicc-1d3e923d"
+      ],
+      "validationSamples": [
+        "/kr/blog/articles/ai-case-daewoong-fa05c2c6"
+      ],
+      "scopedRoutes": 15,
+      "truthWidthQa": {
+        "BLOCKER": 0,
+        "MAJOR": 2,
+        "MINOR": 6,
+        "PASS": 0
+      },
+      "safetyWidths": {
+        "700": "SAFE",
+        "800": "SAFE (hero image absent)",
+        "1024": "USABLE, frozen 1440 canvas, 416px horizontal scroll",
+        "1100": "USABLE, frozen 1440 canvas, 340px horizontal scroll"
+      },
+      "remainingIssues": [
+        "scroll-reveal sections blank in BOTH captures (ADVANCED SOURCE LIMITATION)",
+        "/kr/alf-customer image assets not painted (+5 @390, +10 @1440) MAJOR",
+        "desktop tree frozen 1440 canvas at 1024/1100 (A9 residual)",
+        "4 nested-anchor demotions (inner links non-navigable)"
+      ],
+      "cjkReadable": true,
+      "popupBehaviour": "announcement bar kept on both sides; no modal",
+      "verdict": "READY FOR HUMAN REVIEW",
+      "timingSeconds": {
+        "preflight": 2,
+        "discovery": 127,
+        "observation": 348,
+        "interactions": 91,
+        "siteSpec": 3,
+        "reconstruction": 62,
+        "qa": 342,
+        "cloneSafety": 29,
+        "pipelineTotal": 1004
+      }
+    },
+    {
+      "host": "beomeo.roseeskin.com",
+      "url": "https://beomeo.roseeskin.com/",
+      "runtime": "imweb page builder (asset-heavy)",
+      "accessStatus": "OK",
+      "runs": {
+        "discovery": "2026-09-08T13-12-17-765Z",
+        "observation": "2026-09-08T16-44-02-947Z",
+        "siteSpec": "2026-09-08T16-53-43-839Z",
+        "reconstruction": "2026-09-08T16-54-23-114Z",
+        "responsiveQaRubric7": "2026-09-08T16-58-53-645Z",
+        "responsiveQa": "2026-09-08T18-54-21-770Z",
+        "cloneSafety": "tmp/wr288f/sites/beomeo.roseeskin.com/clone-safety-165420",
+        "lostObservations": [
+          "2026-09-08T14-12-04-715Z",
+          "2026-09-08T16-27-39-064Z"
+        ]
+      },
+      "urlsVerified": 40,
+      "familiesFound": 22,
+      "deepRoutes": [
+        "/",
+        "/17",
+        "/29",
+        "/34",
+        "/16"
+      ],
+      "validationSamples": [
+        "/43"
+      ],
+      "scopedRoutes": 17,
+      "truthWidthQa": {
+        "BLOCKER": 1,
+        "MAJOR": 1,
+        "MINOR": 7,
+        "PASS": 1
+      },
+      "truthWidthQaBeforeCorrection2": {
+        "BLOCKER": 9,
+        "MAJOR": 0,
+        "MINOR": 0,
+        "PASS": 1
+      },
+      "safetyWidths": {
+        "700": "SAFE",
+        "800": "SAFE",
+        "1024": "SAFE (footer photo bleeds 176px)",
+        "1100": "SAFE (100px bleed)"
+      },
+      "remainingIssues": [
+        "home @1440: dark footer band not painted, contact block displaced ~170px (MAJOR)",
+        "home @1440/1024/1100: hero background photo not painted",
+        "home @390: blank-region BLOCKER on a wood-texture block identical on both sides (DOM-only, candidate false positive)",
+        "5 unknown imweb widgets not implemented"
+      ],
+      "cjkReadable": true,
+      "popupBehaviour": "entry popup card kept in the same state on both sides",
+      "verdict": "READY FOR HUMAN REVIEW",
+      "timingSeconds": {
+        "preflight": 2,
+        "discovery": 119,
+        "observation": 542,
+        "interactions": 37,
+        "siteSpec": 5,
+        "reconstruction": 272,
+        "qa": 633,
+        "cloneSafety": 55,
+        "pipelineTotal": 1665,
+        "lostObservationAttempts": 840
+      }
+    }
+  ],
+  "homepageOnly": false,
+  "repeatedPostsDeepCloned": false,
+  "sharedCoreCorrectionsDuringFreshValidation": [
+    {
+      "id": 1,
+      "title": "parser-unstable SPA DOM edges are demoted, not refused",
+      "files": [
+        "src/reconstruction/nesting.ts",
+        "src/reconstruction/compile-runtime-page.ts",
+        "src/reconstruction/compile-node.ts",
+        "src/reconstruction/generate-app.ts",
+        "src/reconstruction/types.ts",
+        "src/reconstruction/validate-output.ts",
+        "scripts/smoke-reconstruction.ts"
+      ],
+      "trigger": "channel.io /kr/alf-customer nested <a>, /kr/pricing <div> in <p>",
+      "negativeControl": "hobbang.net rebuild: 0 demotions, limitations 11->11 (REC 2026-09-08T16-48-42-950Z)",
+      "generic": true
+    },
+    {
+      "id": 2,
+      "title": "<noscript>/<script>/<style>/<template> text is never visible text (RUBRIC_VERSION 8)",
+      "files": [
+        "src/responsive-qa/probe.ts",
+        "src/responsive-qa/capture.ts",
+        "src/responsive-qa/types.ts",
+        "scripts/smoke-responsive-qa.ts"
+      ],
+      "trigger": "roseeskin 9/10 BLOCKER from GTM/pixel noscript markup counted as source text",
+      "negativeControl": "channel.io /kr @390/1440 identical numbers on rubric 8 (QA 2026-09-08T18-54-21-769Z)",
+      "generic": true
+    }
+  ],
+  "hostSpecificCoreHacks": 0,
+  "coreFinish": {
+    "responsiveSwitch": "801 product policy",
+    "cjkRelief": "wr-tx/wr-sf text-box relief",
+    "authoredIntent": "authored-inline-size + var() resolution (A2b)",
+    "qaHonesty": "seoultone @1440 blank-region negative case, BLOCKER corroboration, critical text-collision channel, screenshot-diff uncompared band",
+    "sanity": "CORE V1 FINISH SANITY COMPLETE (linear /pricing 390+1440 MINOR, hobbang 390 + seoultone 1440 CJK readable, linear / @1024 not catastrophic)"
+  },
+  "timingSeconds": {
+    "coreFinish": 868,
+    "channel": 1004,
+    "roseeskin": 2505,
+    "regression": 2029,
+    "total": 29156,
+    "note": "coreFinish = machine-measured runs only (sanity canary 372 + A2b agent 328 + two hobbang controls 168); implementation time is not machine-measured. roseeskin includes the two lost observation attempts (~840 s). total = wall clock from the first discovery run (13:12 UTC) to the final handoff."
+  },
+  "regression": {
+    "assertionSuites": 35,
+    "checks": 4778,
+    "failures": 0,
+    "typecheck": 0,
+    "baseline": {
+      "assertionSuites": 35,
+      "checks": 4663,
+      "failures": 0
+    },
+    "index": "tmp/wr288f/regression/index.tsv"
+  },
+  "humanReview": {
+    "index": "docs/result/28.8-fast/human-review/index.html",
+    "comparisons": 10
+  },
+  "finalVerdict": "READY FOR HUMAN RECONSTRUCTION ACCEPTANCE",
+  "humanAcceptanceRequired": true,
+  "nextStepIfAccepted": "RECONSTRUCTION V1 CLOSED -> SLOT NEUTRALITY",
+  "nextStepIfRejected": "ONLY HUMAN-SELECTED OR CLEAR GENERIC BLOCKER CORRECTION",
+  "reports": [
+    "docs/result/28.8-fast/00-core-finish.md",
+    "docs/result/28.8-fast/01-channel.md",
+    "docs/result/28.8-fast/02-roseeskin.md",
+    "docs/result/28.8-fast/03-cross-site.md",
+    "docs/result/28.8-fast/04-regression.md",
+    "docs/result/28.8-fast/05-final.md"
+  ],
+  "generatedAt": "2026-09-08T21:18:13.746437Z"
+}

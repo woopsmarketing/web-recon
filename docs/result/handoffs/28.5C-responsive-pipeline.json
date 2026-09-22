@@ -1,0 +1,512 @@
+{
+  "schema": "task285c-responsive-pipeline-v1",
+  "producedAt": "2026-08-31",
+  "producedBy": "Task 28.5C Agent A — Responsive Pipeline Archaeologist",
+  "method": "Static CODE TRACE of the current working tree. No browsers run, no suites run, no src/ modified. Empirical rows quoted from docs/result/handoffs/28.5B-responsive-residual.json are used only to corroborate a code-derived prediction, never to derive one.",
+  "scopeNote": "Every claim below carries file:line evidence against the CURRENT tree. Line numbers are as-read on 2026-08-31.",
+
+  "pipelineOverview": [
+    "source browser (Chromium, Playwright) — src/observer/observe-page.ts:214 observeViewport(), one BrowserContext per viewport profile",
+    "deep observation at EXACTLY TWO widths — src/observer/types.ts:112 (desktop 1440x900 DPR1) and :127 (mobile 390x844 DPR3 touch), listed src/observer/types.ts:137 VIEWPORT_PROFILES",
+    "supplemental multi-width geometry probe at FIVE widths — src/observer/types.ts:1103 LAYOUT_PROBE_WIDTHS = [390,768,1024,1440,1920], run by src/observer/observe-page.ts:447 probeLayout()",
+    "SiteSpec compile — src/sitespec/compile-page.ts:199 (per-viewport tree) + :293 computeProbeAttachment (probe attached to the DESKTOP tree only)",
+    "breakpoint inference — src/reconstruction/responsive-plan.ts:35 inferBreakpoint(), called at src/reconstruction/plan-reconstruction.ts:188",
+    "layout-rule inference — src/reconstruction/layout-inference.ts:295 inferLayoutRules(), called at src/reconstruction/plan-reconstruction.ts:357",
+    "post-emit browser truth check at 1440 only — src/reconstruction/layout-truth-check.ts (media-bearing rules exempted at :107)",
+    "generated stylesheet — src/reconstruction/style-generator.ts:176 generateStylesheet (exact computed, verbatim) + src/reconstruction/layout-inference.ts:687 generateLayoutCss (recovered tier) + src/reconstruction/app-template.ts:260 globalsCss (variant switcher)",
+    "reconstruction browser — both viewport subtrees shipped in ONE document, src/reconstruction/runtime-template.ts:313 PageRenderer"
+  ],
+
+  "observationViewports": {
+    "deepObservationWidths": [1440, 390],
+    "evidence": [
+      "src/observer/types.ts:112-119 — DESKTOP_PROFILE { id:'desktop', width:1440, height:900, deviceScaleFactor:1, isMobile:false, hasTouch:false }",
+      "src/observer/types.ts:127-134 — MOBILE_PROFILE { id:'mobile', width:390, height:844, deviceScaleFactor:3, isMobile:true, hasTouch:true }",
+      "src/observer/types.ts:137-140 — VIEWPORT_PROFILES = [DESKTOP_PROFILE, MOBILE_PROFILE]; 'Observed in this order; each gets the identical deep-observation pipeline.'",
+      "src/observer/observe-page.ts:410-424 — observePageWithBrowser loops resolveViewportProfiles(browser) and deep-observes each; there is no third profile and no width parameter",
+      "src/observer/observe-page.ts:384-389 — resolveViewportProfiles only rewrites the mobile userAgent; widths are never overridden at runtime",
+      "src/observer/observe-page.ts:223-233 — each profile gets its own BrowserContext with viewport {width,height} from the profile; locale ko-KR, tz Asia/Seoul, colorScheme light, reducedMotion no-preference pinned (src/observer/types.ts:152-155)"
+    ],
+    "probeWidths": [390, 768, 1024, 1440, 1920],
+    "probeEvidence": [
+      "src/observer/types.ts:1103 — export const LAYOUT_PROBE_WIDTHS: readonly number[] = [390, 768, 1024, 1440, 1920]",
+      "src/observer/layout-probe.ts:221-223 — widths = dedup(options.widths ?? LAYOUT_PROBE_WIDTHS, options.extraWidths ?? []) sorted ascending",
+      "src/observer/layout-probe.ts:224 — the page is LOADED ONCE at DESKTOP_PROFILE.width (1440); each probe width is applied by setViewportSize against the SAME parked element references (:260-269)",
+      "src/observer/layout-probe.ts:181-191 — settle() between resizes is 2 rAF + LAYOUT_PROBE_SETTLE_MS; src/observer/types.ts:1108 LAYOUT_PROBE_SETTLE_MS = 250",
+      "src/observer/types.ts:1104 LAYOUT_PROBE_HEIGHT = 900; src/observer/types.ts:1106 MAX_LAYOUT_PROBE_ELEMENTS = 8000 (walk truncates beyond this, src/observer/layout-probe.ts:109-112)",
+      "src/observer/layout-probe.ts:226-235 — the probe context is DPR 1, isMobile false, hasTouch false at EVERY width, including 390. The 390 probe row is therefore NOT the observed mobile profile (which is DPR 3 + touch + mobile UA)."
+    ],
+    "probeWidthsAreEffectivelyHardcoded": {
+      "claim": "No CLI or orchestrator plumbs probeExtraWidths, so every run in practice probes exactly [390,768,1024,1440,1920].",
+      "evidence": [
+        "src/observer/observe-page.ts:125 — ObserveOptions.probeExtraWidths exists",
+        "src/observer/observe-page.ts:447-449 — it is forwarded to probeLayout when present",
+        "grep of src/ for probeExtraWidths yields only src/observer/observe-page.ts:125 and :448 — no cli-observe.ts, cli-observe-site.ts, multi-observer, or e2e caller ever sets it"
+      ]
+    },
+    "consequence": "Between 1024 and 1440 there is a 416px unmeasured gap, and between 390 and 768 a 378px gap. 1100px — the reported failure width — sits inside the largest gap and was never measured by anything in the pipeline."
+  },
+
+  "viewportBands": {
+    "canonicalBreakpoint": {
+      "value": 915,
+      "rule": "Math.floor((mobile.width + desktop.width) / 2) = floor((390+1440)/2) = 915",
+      "provenance": "inferred (never 'observed'); 'operator-override' when --breakpoint N is passed",
+      "evidence": [
+        "src/reconstruction/responsive-plan.ts:74-81 — { value: Math.floor((mobile.width + desktop.width) / 2), provenance: 'inferred', method: 'observed-endpoint-midpoint' }",
+        "src/reconstruction/responsive-plan.ts:27-28 — BREAKPOINT_CONVENTION = 'mobile: width < breakpoint; desktop: width >= breakpoint'",
+        "src/reconstruction/responsive-plan.ts:39-49 — throws unless BOTH observed endpoints are present; explicitly refuses a conventional 768/1024 fallback",
+        "src/reconstruction/responsive-plan.ts:57-72 — --breakpoint N is recorded as provenance 'operator-override', method 'cli-override'",
+        "src/reconstruction/plan-reconstruction.ts:188-192 — the single call site",
+        "src/cli-reconstruct.ts:61-66, :94, :278 — --breakpoint <px> is the ONLY responsive knob exposed anywhere on the CLI"
+      ]
+    },
+    "generatedBandBoundaries": {
+      "mobileBand": "(max-width: 914.98px)",
+      "desktopBand": "(min-width: 915px)",
+      "evidence": [
+        "src/reconstruction/responsive-plan.ts:92-100 — breakpointMediaQueries(bp) = { desktop: `(min-width: ${bp}px)`, mobile: `(max-width: ${(bp-0.02).toFixed(2)}px)` }",
+        "src/reconstruction/responsive-plan.ts:84-91 — the 0.02px (not 1px) gap is deliberate, so fractional-DPR widths cannot land between the two bands with both variants hidden"
+      ]
+    },
+    "dataWrViewportSemantics": {
+      "attribute": "data-wr-viewport ∈ {\"desktop\",\"mobile\"} on a .wr-variant wrapper div; one wrapper per observed viewport, BOTH present in every rendered page",
+      "activeVariant": "display:contents (generates no box); inactive variant: display:none",
+      "evidence": [
+        "src/reconstruction/runtime-template.ts:313-346 — PageRenderer emits a <div class=\"wr-variant\" data-wr-viewport=\"desktop\"> containing renderNode(page.desktop.doc) AND a sibling <div class=\"wr-variant\" data-wr-viewport=\"mobile\"> containing renderNode(page.mobile.doc)",
+        "src/reconstruction/app-template.ts:294-296 — .wr-variant { display: contents; }",
+        "src/reconstruction/app-template.ts:298-302 — @media (max-width: 914.98px) { [data-wr-viewport=\"desktop\"] { display: none; } }",
+        "src/reconstruction/app-template.ts:304-308 — @media (min-width: 915px) { [data-wr-viewport=\"mobile\"] { display: none; } }",
+        "src/reconstruction/style-generator.ts:223-236 — the docstring states the design plainly: 'PageRenderer renders BOTH observed viewports into the same document as sibling .wr-variant divs ... so there is exactly one :root for two viewports.'"
+      ],
+      "effectiveSemantics": "width < 915px → MOBILE tree, styled entirely with values resolved at 390px. width >= 915px → DESKTOP tree, styled entirely with values resolved at 1440px. There is no third band and no intermediate tree."
+    },
+    "syntheticSubBands": {
+      "what": "Inside the desktop band ONLY, per-node responsive-hidden @media ranges are synthesized from probe visibility toggles.",
+      "boundaryRule": "the arithmetic midpoint, floored, of the two ADJACENT PROBE WIDTHS that straddle the visibility change; the lower edge of a range that starts at the first desktop probe width is that width itself, with no midpoint at all",
+      "evidence": [
+        "src/reconstruction/layout-inference.ts:661-684 — hiddenRanges()",
+        "src/reconstruction/layout-inference.ts:674 — start = previous ? Math.floor((previous.width + entry.width) / 2) : entry.width   ← no-previous case pins the lower edge to the probe width verbatim",
+        "src/reconstruction/layout-inference.ts:677-678 — boundary = Math.floor((sorted[i-1].width + entry.width) / 2); ranges.push(`(min-width: ${start}px) and (max-width: ${boundary - 0.02}px)`)",
+        "src/reconstruction/layout-inference.ts:682 — a still-open range closes as `(min-width: ${start}px)` with no upper bound"
+      ],
+      "workedExampleLinearPricing": {
+        "inputs": "breakpoint 915; probe widths [390,768,1024,1440,1920]",
+        "desktopIdx": "src/reconstruction/layout-inference.ts:324-326 filters to width >= 915 → [1024, 1440, 1920]; 768 and 390 are dropped before hiddenRanges ever runs",
+        "hiddenAt": [1024],
+        "derivedRange": "start = 1024 (no previous entry inside desktopIdx); boundary = floor((1024+1440)/2) = 1232 → \"(min-width: 1024px) and (max-width: 1231.98px)\"",
+        "matchesPriorEvidence": "This is exactly the '1024–1231 synthetic band' named in the 28.5B residual handoff."
+      }
+    }
+  },
+
+  "mediaRuleGeneration": {
+    "totalDistinctMediaEmitters": 2,
+    "emitters": [
+      {
+        "id": "variant-switcher",
+        "writer": "src/reconstruction/app-template.ts:260 globalsCss(), emitting at :298 and :304",
+        "input": "BreakpointSpec from src/reconstruction/responsive-plan.ts:35 inferBreakpoint — i.e. the midpoint of the two OBSERVED VIEWPORT WIDTHS",
+        "values": "(max-width: 914.98px) hides [data-wr-viewport=\"desktop\"]; (min-width: 915px) hides [data-wr-viewport=\"mobile\"]",
+        "callSite": "src/reconstruction/generate-app.ts:196 — const globals = globalsCss(plan.breakpoint, plan.corrections?.css)",
+        "derivedFromSourceCss": false
+      },
+      {
+        "id": "responsive-hidden-tier",
+        "writer": "src/reconstruction/layout-inference.ts:687 generateLayoutCss(), wrapping at :708 — `@media ${rule.media} {\\n${body}\\n}`",
+        "input": "RecoveredLayoutRule.media, set only for kind 'responsive-hidden' by hiddenRanges() from the multi-width GEOMETRY PROBE's per-width visibility bit",
+        "values": "(min-width: Apx) and (max-width: B.98px), or an open-ended (min-width: Apx); A and B are probe widths or floored midpoints of adjacent probe widths",
+        "selector": "src/reconstruction/layout-inference.ts:700-702 — `[data-wr-page=\"P\"][data-wr-viewport=\"desktop\"] [data-wr-node=\"N\"]`, specificity (0,3,0), which OUTRANKS the exact computed class .wr-stXXXXXX at (0,1,0)",
+        "derivedFromSourceCss": false
+      }
+    ],
+    "noSourceMediaIsEverCopied": {
+      "claim": "No code path anywhere in src/ writes a SOURCE stylesheet's @media condition into generated output CSS.",
+      "evidence": [
+        "grep '@media' across src/: the only two template-literal emitters are src/reconstruction/app-template.ts:298/:304 and src/reconstruction/layout-inference.ts:708; every other hit is a comment",
+        "src/theme/stylesheet.ts:9 — that module documents that it emits no @media blocks at all",
+        "src/reconstruction/layout-inference.ts:463 and :541 — the ONLY two reads of a source-captured authored rule's `media` field, and both use it to EXCLUDE the rule (`rule.media === undefined`) from an evidence string"
+      ]
+    },
+    "recoveredTierSpecificityAndPriority": [
+      "src/reconstruction/layout-inference.ts:52-56 — documented priority: (1) recovered rule (0,3,0), (2) observed responsive @media-wrapped rules at the same specificity, (3) exact computed .wr-stXXXXXX (0,1,0) fallback",
+      "Consequence: a synthesized display:none unconditionally beats the source-observed computed style for that node inside its band."
+    ]
+  },
+
+  "sourceResponsiveCapture": {
+    "authoredLayoutRuleChannel": {
+      "what": "The observer walks document.styleSheets in-browser and records, per element, the AUTHORED (verbatim, unresolved) values of a closed allowlist of layout properties from every rule that element matches.",
+      "evidence": [
+        "src/observer/collect-dom.ts:389-397 — for (s over document.styleSheets) { try { visit(sheet.cssRules, undefined) } catch { /* cross-origin: skipped */ } }",
+        "src/observer/collect-dom.ts:338-388 — visit() recurses grouping rules carrying a media condition",
+        "src/observer/collect-dom.ts:401-434 — collectMatchedLayoutRules(el) via el.matches(entry.matchSelector)",
+        "src/observer/types.ts:400-412 — the rationale docstring: 'Computed style destroys responsive semantics: an authored margin: 0 auto arrives as margin-left: 220px, a max-width: min(1200px, 100%) as width: 1200px — correct at the observed viewport and wrong at every other one.' Values recorded VERBATIM including %, vw/vh, calc(), clamp(), min()/max(), auto.",
+        "src/observer/types.ts:414-477 — LAYOUT_RULE_PROPERTIES (width/min-width/max-width/height/min-height/max-height, all margin+padding longhands and logical forms, display, position, inset longhands, flex + all flex longhands, grid-template-*, grid-auto-*, grid-column/row/area, gap/row-gap/column-gap, justify-*/align-*/place-*, overflow/-x/-y, transform, translate, aspect-ratio, box-sizing)"
+      ]
+    },
+    "mediaConditionIsCaptured": {
+      "captured": true,
+      "evidence": [
+        "src/observer/collect-dom.ts:374-378 — condition captured ONLY when (rule as CSSRule).type === 4 (CSSRule.MEDIA_RULE)",
+        "src/observer/collect-dom.ts:379-384 — nested media conditions join with ' and '",
+        "src/observer/collect-dom.ts:367 — the condition is stored on the LayoutRuleEntry as `media`",
+        "src/observer/collect-dom.ts:427 — and copied onto each matched declaration"
+      ]
+    },
+    "containerAndSupportsConditionsAreLost": {
+      "severity": "correctness hazard, not merely a gap",
+      "claim": "@container and @supports blocks have .cssRules, so src/observer/collect-dom.ts:371 recurses INTO them and keeps their declarations, but the type===4 test at :376 fails, so `condition` stays undefined. Their declarations are therefore recorded as if UNCONDITIONAL (or inherit only an outer @media's condition).",
+      "evidence": [
+        "src/observer/collect-dom.ts:371-385",
+        "src/observer/collect-dom.ts:967 — the collector's own comment acknowledges the grouping-rule class includes '@media / @supports / @layer / @container …'"
+      ]
+    },
+    "containerQueriesNotCapturedAtAll": {
+      "evidence": [
+        "grep for 'container-type' / 'container-name' / '@container' across src/ returns only the two comment lines in collect-dom.ts; neither STYLE_WHITELIST (src/observer/types.ts:260-398) nor LAYOUT_RULE_PROPERTIES (src/observer/types.ts:414-477) contains container-type/container-name/container",
+        "Consequence: a source that lays out by container query is observed only as its resolved px at 1440 and 390, with no record that a container query existed."
+      ]
+    },
+    "crossOriginStylesheets": {
+      "behavior": "silently skipped; only the computed-style channel covers their effect, and only at the observed width",
+      "evidence": ["src/observer/collect-dom.ts:389-397 (try/catch with the comment at :394-396: 'Cross-origin stylesheet: unobservable, skipped. The computed-style channel still covers its effects at this viewport.')"]
+    },
+    "mediaConditionedCustomProperties": {
+      "capturedAs": "TWO resolved snapshots (one per observed viewport), never as authored @media variants",
+      "evidence": [
+        "src/observer/collect-dom.ts:200-209 — names discovered from same-origin sheets, VALUES read via getComputedStyle(document.documentElement); the comment states '@media (max-width: 500px) { :root { --brand: … } } override is reflected at the narrow viewport and not at the wide one, which is the whole reason this record is per-viewport'",
+        "src/observer/observe-page.ts:368 — customProperties: raw.customProperties, 'resolved at THIS viewport, never merged with the other'",
+        "src/reconstruction/style-generator.ts:286-343 generateCustomPropertyCss — emitted as [data-wr-page][data-wr-viewport] { --x: v; } blocks, i.e. one frozen value per variant, no media wrapper",
+        "src/observer/types.ts caps: MAX_ROOT_CUSTOM_PROPERTIES / ROOT_CUSTOM_PROPERTY_VALUE_MAX_LEN, applied via src/observer/observe-page.ts:96-98"
+      ],
+      "consequence": "A custom property that the source varies at a third breakpoint is frozen to the 1440px value across 915px..∞ and to the 390px value across 0..914.98px."
+    },
+    "whereAuthoredResponsiveInfoIsDiscarded": {
+      "flow": "collect-dom.ts RawElement.matchedLayoutRules → src/observer/dedupe-styles.ts:100 (el.layoutRules) → ElementObservation.layoutRules (src/observer/types.ts:725) → src/sitespec/compile-viewport.ts:302 (authoredLayout) → src/sitespec/types.ts:659 NodeSchema.authoredLayout",
+      "explicitContract": "src/sitespec/types.ts:654-657 — 'Evidence for layout-rule inference; never merged into the exact-computed style catalog.'",
+      "terminalConsumers": [
+        "src/reconstruction/layout-inference.ts:461-472 — filtered for max-width / margin*:auto, and ONLY to append human-readable strings to `evidence[]` (line 471)",
+        "src/reconstruction/layout-inference.ts:539-550 — the same, for the cap-above-truth-width branch (line 549)"
+      ],
+      "discardPoint": "src/reconstruction/layout-inference.ts:463 and :541 — the predicate `rule.property === 'max-width' && rule.media === undefined` DROPS every media-conditioned authored declaration even from the evidence list. No authored value ever reaches `declarations`; the emitted max-width comes from probe geometry at :451-453 and :531.",
+      "netEffect": "The system captures the source's authored responsive CSS, carries it all the way into the IR, and then uses it exclusively as provenance prose. Zero authored responsive semantics survive into generated CSS."
+    }
+  },
+
+  "visibilityInferencePaths": [
+    {
+      "id": "P0-tag-based-drop (the ONLY node-drop path)",
+      "trigger": "tagName ∈ SKIPPED_TAGS (script, style, noscript, template, head, title, meta, link, base)",
+      "mechanism": "the node is not emitted at all",
+      "scoped": "unconditional",
+      "dropsNodeFromTree": true,
+      "evidence": [
+        "src/reconstruction/compile-node.ts:216-243 — the only `return null` path",
+        "src/reconstruction/react-attributes.ts:111-121 — SKIPPED_TAGS"
+      ],
+      "note": "Tag-based, never visibility-based. No responsive relevance, recorded for completeness."
+    },
+    {
+      "id": "P1-exact-computed-display-none",
+      "trigger": "the source element's COMPUTED display was 'none' (or visibility hidden) at the observation viewport",
+      "mechanism": "the computed style is emitted verbatim into the element's style class",
+      "scoped": "unconditional within its variant subtree (no @media wrapper)",
+      "dropsNodeFromTree": false,
+      "evidence": [
+        "src/observer/types.ts:262 — 'display' is in STYLE_WHITELIST; :415-417 width/min-width/max-width likewise",
+        "src/reconstruction/style-generator.ts:150-164 declarations() — every whitelisted, safe property/value pair is written verbatim",
+        "src/reconstruction/style-generator.ts:191-193 — parts.push(`.${styleClassName(tokenId)}{${body}}`)",
+        "src/reconstruction/compile-node.ts:260-264 — every element receives className wr-stXXXXXX whenever the token has any renderable declaration (src/reconstruction/plan-reconstruction.ts:258-268)",
+        "src/reconstruction/style-generator.ts:115-122 — DOCUMENT_ROOT_DROPPED_PROPERTIES removes width/height/min-*/max-* ONLY for <html>/<body> document-root classes (:110-112, :197-207). Every nested element keeps its resolved px."
+      ],
+      "alsoCarriedVerbatim": "visibility (src/observer/types.ts:381), opacity (:365), content-visibility (:382), clip-path (:367), pointer-events (:396) — each frozen to its value at the single observation width, with no @media wrapper."
+    },
+    {
+      "id": "P1b-hidden-attribute-passthrough",
+      "trigger": "the source element carried the HTML `hidden` (or hidden=\"until-found\") attribute",
+      "mechanism": "the attribute is reproduced; the browser suppresses rendering",
+      "scoped": "unconditional",
+      "dropsNodeFromTree": false,
+      "evidence": [
+        "src/reconstruction/compile-node.ts:291-300",
+        "src/reconstruction/react-attributes.ts:192-194",
+        "src/reconstruction/runtime-template.ts:915-921"
+      ]
+    },
+    {
+      "id": "P2-variant-switcher",
+      "trigger": "viewport width relative to the single inferred breakpoint (915)",
+      "mechanism": "@media hides the whole inactive .wr-variant subtree",
+      "scoped": "@media (max-width: 914.98px) / @media (min-width: 915px)",
+      "dropsNodeFromTree": false,
+      "evidence": ["src/reconstruction/app-template.ts:294-308", "src/reconstruction/runtime-template.ts:313-346"],
+      "note": "This is why the clone's hiddenNodeCount is structurally ~2x the source's — both trees ship in one document."
+    },
+    {
+      "id": "P3-responsive-hidden-recovered-rule",
+      "trigger": "probe visibility bit v==1 at 1440 AND v==0 at at least one, but not all, other probe widths >= breakpoint",
+      "mechanism": "emit display:none inside a synthesized @media band at specificity (0,3,0)",
+      "scoped": "the synthesized band from hiddenRanges()",
+      "dropsNodeFromTree": false,
+      "evidence": [
+        "src/reconstruction/layout-inference.ts:362-380 — the emit block; declarations: { display: 'none' } at :371",
+        "src/reconstruction/layout-inference.ts:363-364 — guard: hiddenEntries.length > 0 && hiddenEntries.length < desktopIdx.length",
+        "src/reconstruction/layout-inference.ts:381-386 — the inverse case (hidden at truth) emits NOTHING, so the tier can only ever ADD hiding, never reveal",
+        "src/reconstruction/layout-inference.ts:661-684 hiddenRanges()",
+        "src/reconstruction/layout-inference.ts:700-708 generateLayoutCss selector + @media wrapper"
+      ],
+      "probeVisibilityDefinition": "src/observer/layout-probe.ts:151-159 — v = (display !== 'none' && visibility !== 'hidden' && visibility !== 'collapse' && rect.width > 0 && rect.height > 0) ? 1 : 0; a node whose reference went stale is counted v=0 and disconnected++ (:139-146)"
+    },
+    {
+      "id": "P4-observed-target-hide-override",
+      "trigger": "runtime interaction state — the explorer SAW a region disappear when a trigger was clicked; the runtime sets data-wr-obs-hide=\"1\"",
+      "mechanism": ".wr-variant [data-wr-obs-hide=\"1\"] { display:none; visibility:hidden }; the same runtime closure also toggles the native hidden attribute and aria-hidden",
+      "scoped": "unconditional CSS, client-side interaction-state driven, not width driven",
+      "dropsNodeFromTree": false,
+      "evidence": [
+        "src/reconstruction/app-template.ts:354-365",
+        "src/reconstruction/runtime-template.ts:693-708 (hide closure; hidden attribute at :701-702, aria-hidden at :695-699 and :681-689)"
+      ]
+    },
+    {
+      "id": "P5-interaction-reveal-override (reveals, does not hide)",
+      "trigger": "[data-wr-reveal=\"1\"][data-wr-revealed=\"1\"] set by the runtime",
+      "mechanism": "display: revert — deliberately the UA default, because the open-state style was never observed",
+      "evidence": ["src/reconstruction/app-template.ts:335-351"]
+    },
+    {
+      "id": "P6-qa-corrections",
+      "trigger": "a QaCorrectionSet from a live QA replay",
+      "mechanism": "scoped [data-wr-viewport][data-wr-page] rules appended verbatim to globals.css",
+      "evidence": ["src/reconstruction/qa-corrections.ts:189", "src/reconstruction/app-template.ts:269-272 + :373"]
+    },
+    {
+      "notPresent": "Nothing prunes a node from the emitted tree on visibility grounds. localVisible / effectiveVisible are recorded and counted but never used as a filter — src/sitespec/compile-viewport.ts:295-296 (copied onto the node), :324-325 and :480-481 (counted only); the emission loops at :327-336 and :339-350 are unconditional. src/reconstruction/compile-runtime-page.ts:29-31 records that localVisible/effectiveVisible/boundingBox are stripped by construction before the runtime IR, so reconstruction cannot filter on them even in principle. Every hide in the clone is CSS or an attribute, and therefore every hide is reversible by CSS."
+    },
+    {
+      "injectionPoint": "src/reconstruction/generate-app.ts:248-254 calls verifyLayoutRules(plan.layout.rules); :256-262 concatenates stylesheet = baseStylesheet + layoutVerification.css and writes GENERATED_STYLES_FILE. This is the single seam where every recovered rule — verified or acceptedUnchecked — enters the shipped stylesheet."
+    }
+  ],
+
+  "duplicateDomVariants": {
+    "keepsMultiplePerViewportSubtrees": true,
+    "count": 2,
+    "howTheySwitch": "pure CSS @media on the wrapper's data-wr-viewport attribute; there is no JS width listener and no hydration-time selection",
+    "evidence": [
+      "src/reconstruction/runtime-template.ts:313-346 — both subtrees are rendered unconditionally by PageRenderer",
+      "src/reconstruction/app-template.ts:294-308 — the switcher",
+      "src/reconstruction/style-generator.ts:223-236 — the design note explaining why custom properties are scoped per variant rather than on :root"
+    ],
+    "consequences": [
+      "Every page ships ~2x the nodes; the 28.5B residual handoff's visibleNodeDefinition section records this explicitly as a reason hiddenNodeCount is not clone-vs-source comparable.",
+      "The recovered layout tier hardcodes data-wr-viewport=\"desktop\" (src/reconstruction/layout-inference.ts:701), so the MOBILE subtree receives ZERO inferred responsive rules of any kind.",
+      "Interaction scoping already respects the split — src/reconstruction/runtime-template.ts:413 and :794 use element.closest('[data-wr-viewport]') so a click in the visible variant cannot address the hidden one.",
+      "layout-truth-check renders ONLY the desktop wrapper (src/reconstruction/layout-truth-check.ts:258, and the note at :246 that the mobile tree is omitted because globals.css hides it at the truth viewport anyway)."
+    ]
+  },
+
+  "layoutInferenceResponsiveness": {
+    "samplesActuallyUsed": {
+      "value": [1024, 1440, 1920],
+      "evidence": [
+        "src/reconstruction/layout-inference.ts:323-327 — desktopIdx = widths.filter(w => w >= input.breakpoint); if (desktopIdx.length < 2) continue",
+        "src/reconstruction/layout-inference.ts:328-329 — a 1440 (TRUTH_WIDTH) sample must be present or the page is skipped entirely",
+        "src/reconstruction/layout-inference.ts:66 — TRUTH_WIDTH = 1440"
+      ],
+      "note": "The 768 and 390 probe rows are discarded by the >= breakpoint filter and never influence any rule. The entire fluid tier stands on THREE samples spanning 1024..1920."
+    },
+    "ruleKinds": [
+      {
+        "kind": "centered-max-width (cap engaged at >= 2 widths)",
+        "emits": "max-width: Npx; margin-left: auto; margin-right: auto; width: auto",
+        "gate": "src/reconstruction/layout-inference.ts:429-444 — width constant within 1px across widths where parentContent - width >= 40px, equal left/right gaps within 2px, parentGrowth >= 40px",
+        "fluid": true,
+        "notGuarded": "src/reconstruction/layout-inference.ts:413-421 — deliberately NOT gated on containingBlockGuard; the browser truth check is its only backstop"
+      },
+      {
+        "kind": "centered-max-width (cap engages only above the truth width)",
+        "emits": "same declarations",
+        "gate": "src/reconstruction/layout-inference.ts:507-526 — w == min(parentContent, cap) at EVERY desktop width within 2px, plus equal gaps wherever engaged",
+        "fluid": true
+      },
+      {
+        "kind": "full-width",
+        "emits": "width: auto",
+        "gate": "src/reconstruction/layout-inference.ts:569-572 — |w - parentContent| <= 2px at every desktop width, parentGrowth >= 40px",
+        "guarded": "src/reconstruction/layout-inference.ts:573-580 — refused when containingBlockGuard fires",
+        "fluid": true
+      },
+      {
+        "kind": "percentage-width",
+        "emits": "width: P%",
+        "gate": "src/reconstruction/layout-inference.ts:598-612 — ratio spread <= 0.01, mean ratio in [0.05, 0.98], parentGrowth >= 40px, nodeGrowth >= 20px",
+        "guarded": "src/reconstruction/layout-inference.ts:613-619",
+        "fluid": true
+      },
+      {
+        "kind": "responsive-hidden",
+        "emits": "display: none inside a synthesized band",
+        "fluid": false,
+        "note": "the only kind that is width-CONDITIONAL rather than width-fluid, and the only kind never verified by a render"
+      }
+    ],
+    "eligibilityFunnel": [
+      "src/reconstruction/layout-inference.ts:317-320 — the page needs an aligned (or partially aligned) probe attachment or it is skipped entirely",
+      "src/reconstruction/layout-inference.ts:338 — the node needs node.probe (probe arrays are attached per node from the DESKTOP tree only)",
+      "src/reconstruction/layout-inference.ts:339 — <html>/<body> excluded",
+      "src/reconstruction/layout-inference.ts:349-356 — sanity gate: |probe width at 1440 - deep-observed width| must be <= 4px",
+      "src/reconstruction/layout-inference.ts:388-391 — the node's computed display must be in BLOCKISH_DISPLAY = {block, flex, grid, flow-root, table} (:142). inline, inline-block, inline-flex, table-cell, list-item nodes get NO geometry rule at all.",
+      "src/reconstruction/layout-inference.ts:393-396 — the PARENT must also carry probe arrays",
+      "src/reconstruction/layout-inference.ts:230-289 containingBlockGuard — refuses grid-item, flex-item-basis-governed, abs-containing-block-not-parent, abs-containing-block-is-padding-box, fixed-position"
+    ],
+    "gridAndFlexHandling": {
+      "summary": "REFUSED, not solved. Grid items and main-axis flex items whose width is basis/grow-governed are excluded from the two dividing branches, and keep their exact 1440px computed pixel width.",
+      "evidence": [
+        "src/reconstruction/layout-inference.ts:266-272 — parent display grid/inline-grid → 'grid-item'; the comment records the proven defect: 'a 624px item inside a 1280px grid emitted as width: 48.61%, which CSS then resolved against the 624px area and rendered at 303.27px'",
+        "src/reconstruction/layout-inference.ts:274-287 — parent display flex/inline-flex with row direction and (flex-grow > 0 or flex-basis !== auto) → 'flex-item-basis-governed'",
+        "src/reconstruction/layout-inference.ts:36-42 — 'Those classes are REFUSED rather than solved: this is not a CSS layout engine, and a refused node simply keeps its exact computed style, which is the module''s existing failure mode.'"
+      ],
+      "consequence": "For a modern grid/flex marketing page, the MAJORITY of interior boxes fall through to the frozen exact-computed tier by design. grid-template-columns is captured as a resolved px track list (e.g. '312px 312px 312px 312px') and re-emitted verbatim — src/observer/types.ts:299 (STYLE_WHITELIST) + src/reconstruction/style-generator.ts:150-164."
+    },
+    "widthMinMaxAndOverflow": {
+      "widths": "width / min-width / max-width are captured as resolved px in STYLE_WHITELIST (src/observer/types.ts:268, :270, :272) and re-emitted verbatim (src/reconstruction/style-generator.ts:191-193). Only <html>/<body> have them stripped (src/reconstruction/style-generator.ts:115-122).",
+      "geometryIsNeverPinnedInline": "boundingBox is never written as a style; grep shows its only reconstruction-side uses are src/reconstruction/layout-inference.ts:350 and :359 (the sanity gate and the truth rect). src/reconstruction/compile-runtime-page.ts:30 records that boundingBox is stripped from the runtime page by construction.",
+      "overflow": "overflow / overflow-x / overflow-y are captured (src/observer/types.ts:284-286, :470-472) and re-emitted verbatim, but the generated app adds NO overflow management of its own: grep for 'overflow' in src/reconstruction/app-template.ts, runtime-template.ts and compile-node.ts returns nothing, and the only max-width in globalsCss is on the .wr-not-found page (src/reconstruction/app-template.ts:370). There is no viewport clamp, no overflow-x:hidden, no min-width:0 normalization.",
+      "consequence": "A desktop tree whose boxes total 1440px is rendered unchanged in a 1100px viewport, so the excess simply overflows the canvas. The 28.5B sweep measured exactly this: /pricing maxContentRight = 1440 at a 1100px viewport."
+    }
+  },
+
+  "knownVsInferredVsDiscarded": {
+    "actuallyKnown": [
+      "The complete DOM, computed style, geometry, visibility, assets, links, frames and shadow inventory at EXACTLY 1440x900 DPR1 non-touch, and again at EXACTLY 390x844 DPR3 touch with a mobile UA (src/observer/types.ts:112-140; src/observer/observe-page.ts:214-373).",
+      "Per element, x / width / visible-bit at 390, 768, 1024, 1440 and 1920, with DOM identity preserved across widths by parked element references (src/observer/layout-probe.ts:95-168, :253-269).",
+      "Per element, the AUTHORED verbatim values of ~50 layout properties from every same-origin stylesheet rule it matches, plus the enclosing @media condition text when the enclosing rule is a real CSSMediaRule (src/observer/collect-dom.ts:338-434; src/observer/types.ts:414-477).",
+      "The resolved value of every discovered :root custom property, once per observed viewport (src/observer/collect-dom.ts:200-209)."
+    ],
+    "inferred": [
+      "ONE breakpoint = floor((390+1440)/2) = 915, from the two observation widths and nothing else (src/reconstruction/responsive-plan.ts:74-81). Explicitly labeled provenance 'inferred', never 'observed' — src/sitespec/types.ts:1595-1609 keeps ResponsiveModel.inferredBreakpoints ALWAYS empty on purpose.",
+      "Per node, one of four fluid width rules or one hidden-band rule, from three probe samples (1024/1440/1920) using fixed pixel tolerances and no scoring (src/reconstruction/layout-inference.ts:295-653).",
+      "Sub-band boundaries for responsive-hidden, as floored midpoints of adjacent probe widths (src/reconstruction/layout-inference.ts:661-684)."
+    ],
+    "discardedOrNeverCaptured": [
+      "Every source @media BREAKPOINT NUMBER. The condition text is captured (collect-dom.ts:374-378) and then read in exactly two places, both of which use it to exclude the rule from an evidence string (layout-inference.ts:463, :541). It never reaches generated CSS.",
+      "Every source @container condition and every @supports condition — recursed into so the declarations survive, but the condition is silently dropped because only type===4 is recognized (collect-dom.ts:371-385). Their declarations are consequently recorded as unconditional.",
+      "container-type / container-name entirely — absent from both STYLE_WHITELIST and LAYOUT_RULE_PROPERTIES.",
+      "All cross-origin stylesheet rules (collect-dom.ts:389-397).",
+      "The authored RESPONSIVE FORM of every value: clamp(), min(), max(), vw/vh, %, calc() are captured verbatim in authoredLayout but never emitted; what is emitted is the browser's resolved px at 1440 or 390 (src/observer/types.ts:404-411 states this consequence outright).",
+      "Any behaviour between 390 and 768, between 768 and 1024, and between 1024 and 1440 — never measured by any channel.",
+      "The mobile tree's responsiveness in full: the recovered tier hardcodes data-wr-viewport=\"desktop\" (layout-inference.ts:701), so nothing fluid is ever emitted for 0..914.98px.",
+      "@media-conditioned custom-property variants beyond the two observed viewports (collect-dom.ts:200-209 captures resolved values only)."
+    ]
+  },
+
+  "frozenBandRootCauseHypothesis": {
+    "statement": "Layout metrics are frozen across 0-914.98px and again across 915px-infinity because the clone's CSS contains exactly ONE width-dependent decision (which of two subtrees to display), and every box inside each subtree is pinned to a pixel value resolved at a single observation width. There is no continuous reflow mechanism, only a two-position switch.",
+    "causalChain": [
+      {
+        "step": 1,
+        "claim": "Only two widths are ever deeply observed.",
+        "evidence": "src/observer/types.ts:112-140 VIEWPORT_PROFILES = [1440x900, 390x844]"
+      },
+      {
+        "step": 2,
+        "claim": "Computed styles are resolved-px by nature, and are emitted verbatim, including width/min-width/max-width/grid-template-columns.",
+        "evidence": "src/observer/types.ts:268/:270/:272/:299 (whitelist) + src/reconstruction/style-generator.ts:150-164, :191-193; the hazard is acknowledged in-repo at src/observer/types.ts:404-411"
+      },
+      {
+        "step": 3,
+        "claim": "Only <html>/<body> are exempted from the pinning, so every interior box keeps its 1440px (or 390px) width.",
+        "evidence": "src/reconstruction/style-generator.ts:110-122, :197-207 DOCUMENT_ROOT_DROPPED_PROPERTIES"
+      },
+      {
+        "step": 4,
+        "claim": "The generated app adds no width normalization, no viewport clamp, and no overflow handling of any kind.",
+        "evidence": "no 'overflow' hit in src/reconstruction/app-template.ts / runtime-template.ts / compile-node.ts; the only max-width in globalsCss is src/reconstruction/app-template.ts:370 on .wr-not-found"
+      },
+      {
+        "step": 5,
+        "claim": "The single escape hatch — the recovered fluid tier — is narrow by construction and desktop-only.",
+        "evidence": "src/reconstruction/layout-inference.ts:701 (desktop-only selector); :323-329 (samples must be >= 915 and include 1440, so only 1024/1440/1920 participate); :388-391 (BLOCKISH_DISPLAY only); :393-396 (parent must have probe data); :230-289 (grid items, basis-governed flex items, fixed and most absolute nodes refused)"
+      },
+      {
+        "step": 6,
+        "claim": "Therefore the mobile band 0..914.98px receives ZERO inferred rules and is 100% frozen at 390px values, and the desktop band 915px..infinity is frozen at 1440px values except for the minority of nodes that cleared the funnel in step 5.",
+        "evidence": "steps 1-5 combined"
+      }
+    ],
+    "corroboration": "docs/result/handoffs/28.5B-responsive-residual.json routes['/pricing'].sweep — 390/500/700/914 are bit-identical (visibleNodeCount 1075, displayNoneCount 240, maxContentRight 1288.79, scrollHeight 7714) and 1024/1100 are bit-identical (1035, 743, 1440, 6360). The clone changes only where a @media boundary sits.",
+    "primaryFixSurfaces": [
+      "src/observer/types.ts:112-140 — the two-endpoint observation policy",
+      "src/reconstruction/responsive-plan.ts:74-81 — the single-midpoint breakpoint",
+      "src/reconstruction/style-generator.ts:115-122 — the exemption list that currently protects only the document root",
+      "src/reconstruction/layout-inference.ts:701 — the hardcoded desktop-only selector",
+      "src/reconstruction/layout-inference.ts:323-327 — the >= breakpoint sample filter that discards the 768 probe row"
+    ]
+  },
+
+  "hiddenColumnRootCauseHypothesis": {
+    "statement": "At 1100px on /pricing the clone hides 503 nodes the source shows because a per-node display:none is synthesized for the band (min-width: 1024px) and (max-width: 1231.98px). That band's UPPER edge is a pure arithmetic midpoint between two probe samples 416px apart, invented by hiddenRanges(); the source's real transition lies in (1024, 1100]. The measurement at 1024 was CORRECT — the interpolation from it is what is wrong — and this rule kind is the one kind the post-emit truth check is structurally unable to verify.",
+    "causalChain": [
+      {
+        "step": 1,
+        "claim": "The probe samples visibility at 1024 and then not again until 1440.",
+        "evidence": "src/observer/types.ts:1103 LAYOUT_PROBE_WIDTHS = [390,768,1024,1440,1920]; no caller ever supplies extraWidths (grep: only src/observer/observe-page.ts:125 and :448)"
+      },
+      {
+        "step": 2,
+        "claim": "Only widths >= breakpoint(915) participate, so the usable desktop samples are [1024, 1440, 1920] and 1024 has no lower neighbour inside the set.",
+        "evidence": "src/reconstruction/layout-inference.ts:323-327"
+      },
+      {
+        "step": 3,
+        "claim": "linear.app /pricing genuinely hides the comparison table at 1024, so v[1024]=0 while v[1440]=1 — the emit condition at :362-364 is satisfied.",
+        "evidence": "src/reconstruction/layout-inference.ts:362-364; corroborated by docs/result/handoffs/28.5B-responsive-residual.json pricingTableProbe.byWidth['1024'].agree === true (clone and live source both narrow at 1024)"
+      },
+      {
+        "step": 4,
+        "claim": "hiddenRanges() then invents BOTH edges. The lower edge is the probe width verbatim because there is no previous entry; the upper edge is floor((1024+1440)/2) = 1232, minus 0.02.",
+        "evidence": "src/reconstruction/layout-inference.ts:674 (start = previous ? midpoint : entry.width) and :677-678 (boundary = midpoint; push `(min-width: ${start}px) and (max-width: ${boundary - 0.02}px)`)",
+        "derivedString": "(min-width: 1024px) and (max-width: 1231.98px)"
+      },
+      {
+        "step": 5,
+        "claim": "The rule is emitted as display:none at specificity (0,3,0), which outranks the node's own exact computed class (0,1,0), so the source-observed visible style cannot win.",
+        "evidence": "src/reconstruction/layout-inference.ts:371 (declarations: { display: 'none' }), :700-702 (selector), :708 (@media wrapper), :52-56 (the documented specificity ordering)"
+      },
+      {
+        "step": 6,
+        "claim": "The post-emit browser truth check CANNOT catch this: it renders only at the truth viewport 1440, where the band by definition does not apply, so responsive-hidden rules are explicitly exempted and shipped unverified.",
+        "evidence": "src/reconstruction/layout-truth-check.ts:107 — isAcceptedUnchecked = rule.kind === 'responsive-hidden' && rule.media !== undefined; :46-50 — 'What it deliberately does NOT check: responsive-hidden rules ... They are accepted unchecked and counted separately (acceptedUnchecked)'; :328-334 and :341; src/reconstruction/generate-app.ts:350-354 — 'acceptedUnchecked is the one population that ships without a render, and only because its @media band cannot apply here.'"
+      },
+      {
+        "step": 7,
+        "claim": "The tier is also asymmetric: it can only ADD hiding. A node hidden at the truth width is skipped outright, so no rule can ever REVEAL a node at an intermediate width.",
+        "evidence": "src/reconstruction/layout-inference.ts:381-386"
+      }
+    ],
+    "corroboration": [
+      "docs/result/handoffs/28.5B-responsive-residual.json routes['/pricing'].sweep — displayNoneCount 240 at 914, 743 at 1024 AND at 1100, back to 240 at 1440. The delta is 503 nodes, present across exactly the predicted band and absent outside it.",
+      "docs/result/handoffs/28.5B-responsive-residual.json pricingTableProbe.verdict — '914 and 1024 AGREE (both narrow) — so the band's LOWER edge is right and its UPPER edge (1231.98) overshoots the source's real transition, which lies in (1024, 1100].'"
+    ],
+    "whyTheLowerEdgeHappensToBeRight": "Accidentally. start = entry.width (src/reconstruction/layout-inference.ts:674) only because the >= breakpoint filter at :326 removed the 768 row; had 768 survived, the lower edge would have been floor((768+1024)/2) = 896 and the clone would additionally have hidden 503 nodes across 896..1024 where the source shows them at 1024. The current lower edge is correct by coincidence of two independent bugs, not by design.",
+    "orthogonalContributorAtTheSameWidth": "Even with the hidden band removed, 1100px would still be wrong: the desktop variant renders 1440px-pinned boxes with no overflow management (see layoutInferenceResponsiveness.widthMinMaxAndOverflow), which the 28.5B sweep measured as maxContentRight 1440 in a 1100px viewport. The band causes the MISSING columns; the pinning causes the CLIPPED/overflowing ones. Both must be addressed.",
+    "primaryFixSurfaces": [
+      "src/reconstruction/layout-inference.ts:661-684 hiddenRanges — the midpoint interpolation; a measured boundary (bisection between the straddling probe widths) or a refusal is the honest alternative",
+      "src/observer/types.ts:1103 LAYOUT_PROBE_WIDTHS — the 416px unmeasured gap between 1024 and 1440",
+      "src/observer/observe-page.ts:125/:448 — probeExtraWidths exists but is plumbed by no CLI",
+      "src/reconstruction/layout-truth-check.ts:107 — the verification hole that lets the one unverified rule kind ship",
+      "src/reconstruction/layout-inference.ts:323-327 — the >= breakpoint sample filter"
+    ]
+  },
+
+  "additionalFindingsForPlanning": [
+    "The probe's 390px row is taken at DPR 1 / isMobile false / desktop UA (src/observer/layout-probe.ts:226-235), while the deep mobile observation is DPR 3 / touch / mobile UA (src/observer/types.ts:127-134). The two 390px measurements are not the same page state; any future mobile-side inference must not assume they are.",
+    "The probe re-measures the SAME parked element references after each resize (src/observer/layout-probe.ts:121, :139-146). A framework that replaces nodes on resize marks them disconnected and they read v=0 at that width AND every wider width, which then fails the vAt(truth)==1 test at src/reconstruction/layout-inference.ts:362 and emits nothing. That failure mode is safe (silently no rule), but it also means node churn silently shrinks the fluid tier with no counter distinguishing it.",
+    "settle() between resizes is 2 rAF + 250ms (src/observer/layout-probe.ts:181-191, src/observer/types.ts:1108), versus SETTLE_MS = 1200 for the deep observation (src/observer/types.ts:175). A slow resize handler could be measured mid-transition.",
+    "MAX_LAYOUT_RULES = 2000 and MAX_MATCHED_RULES_PER_ELEMENT = 32 cap the authored channel (src/observer/types.ts:480-486, enforced src/observer/collect-dom.ts:335-340, :399-421). On a large site the authored index truncates silently.",
+    "The 'flex' shorthand is absent from STYLE_WHITELIST (only flex-grow/flex-shrink/flex-basis are present, src/observer/types.ts:292-294) although it IS in LAYOUT_RULE_PROPERTIES (:442). Not responsive-critical on its own, but it is an asymmetry between the two channels.",
+    "ResponsiveModel.inferredBreakpoints is schema-present and ALWAYS empty (src/sitespec/types.ts:1604-1609). If 28.5C introduces measured breakpoints, that field is the intended home, but the docstring at :1599-1602 requires them to be labeled as the renderer's claim, not the IR's observation.",
+    "The only operator control over responsive behaviour today is --breakpoint <px> (src/cli-reconstruct.ts:61-66, :94, :278). There is no way to add probe widths, disable the responsive-hidden tier, or widen a band from any CLI."
+  ]
+}

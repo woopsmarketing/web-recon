@@ -1,0 +1,201 @@
+Already up to date
+Done in 156ms using pnpm v11.21.0
+$ tsx scripts/smoke-release.ts
+
+== 0. fixture pipeline — REAL reconstruction → template → content → theme → seo → assets → production
+  PASS  fixture template compiled (2 routes)
+  PASS  fixture content run ingested (1 unresolved href)
+  PASS  fixture theme run created
+  PASS  fixture seo plan is preview mode
+  PASS  fixture inventory: favicon replacement-required + font license-needs-review
+  PASS  fixture materialization fetched the hero, skipped the favicon
+  PASS  fixture replacement seam lists favicon + hero
+  PASS  fixture preview production QA passes
+  PASS  fixture preview spec decision is preview
+
+== 1. release-project-v1 + requirement schemas (spec tests 1-3)
+  PASS  1.1 release-project.json validates as release-project-v1
+  PASS  1.2 accepted lineage carries id+path+hash for all 7 stages
+  PASS  1.3 no single boolean ready — closed enum state
+  PASS  2.1 requirements normalize from artifacts (schema-valid, evidence-backed)
+  PASS  3.1 production-resolution-v1 schema accepts an all-optional pack
+  PASS  3.2 resolution schema rejects unknown fields
+
+== 1b. TASK 27 — stable site identity + frozen template report/ exclusion
+  PASS  27.1 project carries a STABLE siteId and revision 2
+  PASS  27.2 projectId is the siteId — NOT the production-spec run id
+  PASS  27.3 project starts with an EMPTY authored block (schema-valid)
+  PASS  27.4 operator-supplied siteId is honored and gets its own project
+  PASS  27.5 the same siteId prepared twice keeps ONE identity (no run-scoped fork)
+  PASS  27.6 prepare recorded report/ in the template artifact exclusions
+  PASS  27.7 a template report/ write does NOT stale or block the frozen template
+  PASS  27.8 a REAL build after template QA still runs (no frozen-drift refusal)
+  PASS  27H.1 prepare recorded report/ + slot-accounting.json in the CONTENT exclusions
+  PASS  27H.2 content QA writes (report/ + slot-accounting.json) do NOT stale content
+  PASS  27H.3 a REAL slot-values.json edit DOES stale content and cascade downstream
+  PASS  27H.4 restoring slot-values.json returns content to fresh (hash, not mtime)
+  PASS  27H.5 a pre-fix recorded exclusion set warns the operator (template + content)
+  PASS  27H.6 a project recorded under the CURRENT sets warns about nothing
+  PASS  27H.7a a real legacy-shaped project (loaded from disk) warns on BOTH stages and is NOT drifted
+  PASS  27H.7b the warning reaches the operator through release:plan (warnings[] AND the rendered screen)
+  PASS  27H.7c the warning reaches the operator through release:build --dry-run
+  PASS  27H.7d following the PRINTED remedy actually CLEARS the warning (content re-hashed under the current set)
+  PASS  27H.7e the re-hash keeps the carried per-stage state (same artifact id/path, carried inputsHash, authored, resolutions)
+  PASS  27H.7f a stage advanced to a DIFFERENT run dir is NOT reverted to the accepted lineage by the re-hash
+  PASS  27H.7g a project recorded under the CURRENT sets emits NO exclusion warning on any surface
+
+== 2. requirement kinds derived from the fixture artifacts (tests 4-9)
+  PASS  4 domain requirement (release-blocking, from seo plan domainState)
+  PASS  5 business-fact requirements (7 canonical facts, high-value)
+  PASS  6 asset requirement: favicon replacement-required is release-blocking
+  PASS  6b asset requirement: hero replacement-recommended is high-value
+  PASS  7 font requirement from font-inventory license[]
+  PASS  8 route-content requirement for the uninjected route
+  PASS  9 multi-subsystem merge: seo + content + assets + fonts in ONE list
+
+== 3. dependency graph + invalidation semantics (tests 12-15)
+  PASS  12.1 graph: template←reconstruction, content←template, theme←template+content
+  PASS  12.2 downstream closure: content → theme+seo+production, never reconstruction
+  PASS  13a field impacts: domain → seo+production ONLY
+  PASS  14a field impacts: image/font → assets+production ONLY
+  PASS  15 theme invalidation: selection → theme+production; content rerun invalidates theme
+  PASS  13b invalidatedStages(domain-only) = [seo, production]
+  PASS  27.9 theme is a live resolution field impact (no longer a dead constant)
+  PASS  27.10 invalidatedStages(theme-only) = [theme, production] EXACTLY
+  PASS  27.11 theme slice IS in the theme stage inputs hash
+  PASS  27.12 theme edit does NOT move reconstruction/template/content/seo/assets input hashes
+  PASS  27.13 an EMPTY authored block hashes identically to no authored block (legacy-safe)
+  PASS  27.14 authored.slotValues IS in the content stage inputs hash (Visual Editor seam)
+
+== 4. stage input hashing (test 16)
+  PASS  16.1 same inputs → same hash (deterministic)
+  PASS  16.2 upstream artifact change → different hash (stale)
+  PASS  16.3 resolution slice change → different hash (stale)
+  PASS  16.4 domain does NOT touch the content stage's inputs
+
+== 5. invalid resolution rejected (test 11)
+  PASS  11.1 non-schema pack rejected by the validator gate
+  PASS  11.2 unknown slot key rejected before any stage runs
+  PASS  11.3 NL seam: manual-json parser enforces the validator too
+
+== 6. preview mode honesty (test 20) + dry-run no-mutation (test 17)
+  PASS  20 preview build stands WITH unresolved factual requirements (noindex policy)
+  PASS  17.1 dry-run mutates NOTHING under the host namespace
+  PASS  17.2 dry-run on the fresh baseline: nothing to run, all stages reused
+  PASS  27P.1 release:plan and release:build --dry-run agree on the ALL-FRESH baseline
+
+== 7. full-resolution pack 1 (everything except the domain) — tests 10, 18, 22, 24
+  PASS  7.0 pricing slot keys discoverable from the template
+  PASS  10.1 resolved requirements carry traceable resolvedBy (spec §11)
+  PASS  10.2 matches cover facts/urls/assets/fonts/routeContent
+  PASS  18a pack1 invalidates content+theme+seo+assets+production, keeps frozen roots
+  PASS  18b dry-run predicts the cascade: run content/theme/seo/assets/production, reuse frozen roots
+  PASS  27P.2 plan and build --dry-run agree on the stage set with a PENDING resolution
+  PASS  27P.3 the agreed set carries the DEPENDENCY CASCADE (theme re-runs only because content will)
+  PASS  27R.1 resolve reports the DERIVED closure: a routeContent pack invalidates theme too
+  PASS  27R.2 all THREE surfaces agree for a routeContent pack (resolve = plan = build --dry-run)
+  PASS  27P.4 the PERSISTED stageStatus carries the cascaded view, not the raw per-stage freshness
+  PASS  18c selective rerun executed: content/theme/seo/assets/production, frozen roots reused
+  PASS  27H.8 the RERUN content artifact records the same exclusion set as prepare
+  PASS  22a after pack1 the ONLY blocker left is the domain
+  PASS  24 operator checklist: Why/How-to-resolve/Expected + resolved strikethroughs
+
+== 8. indexable gate (test 21) — a domain alone must NOT go indexable
+  PASS  21.1 with the domain but unresolved blockers, production is BLOCKED BY them
+  PASS  21.2 seo would still rerun (domain flows to the plan) — but never a fake-indexable compile
+  PASS  21.3 gate project stays PRODUCTION_INPUTS_REQUIRED
+
+== 9. failure recovery (test 19) — retry never re-runs earlier stages
+  PASS  13c domain-only resolution invalidates seo+production ONLY
+  PASS  19.1 failure recorded: failedStage/failureArtifact/retryable (spec §27)
+  PASS  19.2 nothing re-ran before the failure; fresh stages recorded reused (run stops AT the failure)
+  PASS  19.3 retry re-runs ONLY the failed stage + downstream (seo, production)
+  PASS  19.4 failure cleared after the successful retry
+
+== 10. PREVIEW → PRODUCTION_READY (tests 22, 26) + §26 rerun counts
+  PASS  22b synthetic project reached PRODUCTION_READY honestly
+  PASS  22c final spec is indexable with the operator domain and zero blockers
+  PASS  26.1 runtime/hydration production regression: isolated-package QA green
+  PASS  26.2 zero external requests — full asset independence in the READY build
+  PASS  26.3 reconstruction rerun count = 0 and template compile count = 0 (whole scenario)
+  PASS  26.4 domain-only change re-ran seo+production only (content regenerate count 0)
+  PASS  14b image-only resolution invalidates assets+production ONLY
+  PASS  26.5 asset replacement re-ran assets+production only, content/theme/seo reused
+  PASS  22d still PRODUCTION_READY after the asset swap
+  PASS  26.6 the replacement hero bytes actually serve (rewrite applied to the new build)
+  PASS  26.7 sitemap.xml served in the indexable package
+  PASS  20b route readiness: every route READY after full resolution
+
+== 11. technical debt register (spec §30)
+  PASS  30.1 GED-D/E/F/G preserved from the Task 24 artifact (not re-invented)
+  PASS  30.2 register maps defects to affected requirement kinds (GED-F → content-route)
+  PASS  30.3 project embeds the register + blog/collection limitation (spec §31)
+
+== 12. STRIPE CANARY — requirement collection, read-only (tests 23, 25)
+  PASS  23.0 accepted stripe candidate present
+  PASS  23.1 domain requirement iff the seo plan says needs-input
+  PASS  23.2 canonical business-fact count derives from the plan
+  PASS  23.3 content-route requirements = template routes minus content scope
+  PASS  23.4 replacement-image requirements = awaiting replacement-manifest entries
+  PASS  23.5 font-license requirements = license-needs-review families
+  PASS  23.6 inline-SVG brand-mark requirement carries the inventory count
+  PASS  23.7 external-url + slot business-fact requirements = content unresolved split
+  PASS  23.8 og-image / social-handle / organization-logo derived
+  PASS  23.9 stripe stays PRODUCTION_INPUTS_REQUIRED (unresolved release-blocking > 0)
+  PASS  25.1 historical stripe lineage byte-untouched by collection
+  PASS  27.15 all three legacy release projects are on disk
+  PASS  27.16 every legacy (revision-1) project loads and is adapted, never rejected
+  PASS  27.17 the TWO linear.app projects adapt to ONE stable siteId
+  PASS  27.18 loading a legacy project rewrites NOTHING on disk
+  PASS  27.19 a revision from the future is refused, not silently downgraded
+  PASS  25.2 accepted fixture content run untouched (reruns landed in new run dirs)
+  PASS  25.3 accepted production spec/build untouched
+
+== 13. audit trail (spec §28)
+  PASS  28.1 run records intentHash/resolutionHash/input hashes/verdict
+  PASS  28.2 operator overrides recorded (font decision + none invented)
+
+== 14. TASK 27 — authored state, theme authoring, non-destructive prepare
+  PASS  27.20 every pack-supplied slot value is folded into authored.slotValues
+  PASS  27.21 authored.slotValues round-trips through save/load (schema-valid)
+  PASS  27.22 content-runs/<run>/slot-values.json is the DERIVED output of authored.slotValues
+  PASS  27.23 slot-values.json format is UNCHANGED (bare slot-key → value map, no envelope)
+  PASS  27.24 authored slot values actually SERVE in the production package
+  PASS  27.24b a themeable colour token is discoverable from this site's adapter
+  PASS  27.25 a theme edit invalidates [theme, production] and nothing else
+  PASS  27.26 the token landed in authored.theme (authoritative)
+  PASS  27.27 theme stale, production stale — reconstruction/template/content FRESH
+  PASS  27R.3 all THREE surfaces agree for a theme pack — still {theme, production}, never widened
+  PASS  27.28 a LAYOUT value has no token to land in — refused by the contract
+  PASS  27.29 the theme build re-ran theme+production ONLY and reused content
+  PASS  27.30 the authored token is what the new theme overlay paints
+  PASS  27.31 re-prepare lands on the SAME project (identity is stable)
+  PASS  27.32 re-prepare PRESERVES resolutions
+  PASS  27.33 re-prepare PRESERVES authored state (slotValues + theme)
+  PASS  27.34 re-prepare PRESERVES run history (and appends its own run)
+  PASS  27.35 re-prepare PRESERVES the advanced stage artifacts (no lineage regression)
+  PASS  27.36 re-prepare RECOMPUTES requirements (distinct from preserving them)
+  PASS  27.37 the saved project is revision 2 and re-loads without adaptation
+
+== Task 27 — brand-leak requirement kind (GED-F)
+  PASS  27.brand.1 `brand-leak` is a declared requirement kind with a severity basis
+  PASS  27.brand.2 every requirement kind still has a severity policy row
+  PASS  27.brand.3 blocking ONLY for a shipping value on a slot-bound identity surface
+  PASS  27.brand.4 an untouched default and an engine-blocked slot stay NON-blocking
+  PASS  27.brand.5 a finding with NO write target is never release-blocking (the source-brand-asset trap)
+  PASS  27.brand.6 a finding becomes a STRUCTURED requirement with a deterministic artifact-derived id
+  PASS  27.brand.7 requirement ids are stable across re-collection (same report → same ids)
+  PASS  27.brand.8 the non-blocking surfaces stay grouped, non-blocking, and carry the exact count
+  PASS  27.brand.9 every brand requirement validates against the requirement schema
+  PASS  27.brand.10 an AUTHORED replacement matches the blocking brand requirement
+  PASS  27.brand.11 the resolution CLEARS it — the kind has a reachable resolution path
+  PASS  27.brand.12 an acknowledgement records the SVG mark as an accepted limitation
+  PASS  27.brand.13 one slot value resolves EVERY requirement bound to that slot (no silent drop)
+  PASS  27P.5 an authored slot value that matches NO open requirement is reported as unmatched
+  PASS  27P.6 a slot value that DOES bind still matches every bound requirement (27P.5 is not a blanket)
+  PASS  27.brand.14 the stripe lineage brand scan measured real routes and inline SVG
+  PASS  27.brand.15 stripe brand-leak requirement counts are read from the scan, never hardcoded
+  PASS  27R.4 build REFUSES a drifted frozen stage and plan now says so too (no opposite wording)
+  PASS  27R.5 removing the drift clears the frozen block (the probe was the cause)
+
+smoke:release — 162 checks, 0 failures

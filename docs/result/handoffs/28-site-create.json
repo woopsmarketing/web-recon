@@ -1,0 +1,297 @@
+{
+ "schema": "task28-site-create-v1",
+ "phase": "8",
+ "role": "BUILDER — Create Site workflow (ONE BRIEF → A NEW, INDEPENDENT SITE)",
+ "producedAt": "2026-08-27T20:50Z (KST 2026-08-28 05:50)",
+ "summary": "New module src/release/create-site.ts. selectRouteScope() reads the template compiler's OWN per-route scope verdict (site-map.json routes[].scope) — never re-derives it from slot bindings (an earlier measurement during this build proved a binding-count heuristic gets a real shared-page structure-only route WRONG; see routeScopeMeasurement below). createSite() orchestrates: content generation from a Brief (Task 27 §5 seam, unchanged) → production compile against the template's SHARED per-host theme/SEO/asset artifacts (auto-discovered by templateId, never guessed) → registration as a new, independent release project via the existing prepareReleaseProject. One real, end-to-end, brief-only run is the primary proof; nothing here is asserted from mocked data.",
+ "filesChanged": [
+  "src/release/create-site.ts — NEW: selectRouteScope, createSite, findMatchingPageRegionsRun, findMatchingThemeRun, findMatchingSeoPlanRun, newestMaterializationRun, CreateSiteError",
+  "src/release/index.ts — barrel export for create-site.ts (minimal additive edit)",
+  "src/editor/catalog.ts — newestMatchingRegionRun now calls the shared findMatchingPageRegionsRun instead of carrying its own copy of the lookup",
+  "src/editor/server.ts — POST /api/create-site",
+  "scripts/smoke-create-site.ts — NEW suite, 46 checks",
+  "CORRECTION PASS (Phase 7/8 verifier FAIL): src/release/create-site.ts — siteIdFromBrief / resolveCreateSiteIdentity / slugifySiteId replace the undefined-returning siteIdFromWorkingName default; CreateSiteResult gains siteId, siteIdSource, siteIdBase, siteIdDisambiguation",
+  "CORRECTION PASS: src/editor/server.ts — POST /api/create-site returns the four identity fields",
+  "CORRECTION PASS: src/editor/client.ts — Library scan-warning surfaces, adaptation notes on the Site ID / Revision cells, identity line on the create result",
+  "CORRECTION PASS: scripts/smoke-create-site.ts — 46 -> 66 checks (9 browser-driven Library-honesty checks, 10 brief-only identity checks, 1 all-templates collection check)"
+ ],
+ "routeScope": {
+  "algorithm": "For each route in the template's site-map.json routes[]: scope undefined (v1/v2, no policy) or in {core-reconstruct, collection-index, collection-representative} -> included. scope === structure-only -> excluded. `exclude`-scope routes never appear in routes[] at all (reported separately via site-map.json's excludedRoutes[]).",
+  "whyNotSlotBindingCounts": "Measured directly (tmp/wr28/phase78/route-scope-measure.py, kept only as scratch, not shipped): counting page-scope slot bindings per route on the real routePolicy template gives 9 zero-slot routes, not the true 10 — because /resources/more/virtual-credit-cards-for-businesses-explained SHARES its rendered page (and therefore that page's slot bindings) with its family's representative route, /resources/more/arr-loans-explained, yet the compiler's own route-policy verdict correctly marks it structure-only (site-map.json routePolicy.structureOnlySharedPageRoutes: 1 names exactly this case). A binding-count heuristic would have silently promoted it to a full generated page — the exact named failure mode. selectRouteScope() reads the compiler's own `scope` field instead and gets all 10/10 right.",
+  "realMeasurement": {
+   "template": "stripe.com-2026-08-26T22-38-06-075Z (data/stripe.com/recon-templates/2026-08-26T22-38-06-075Z)",
+   "totalRoutes": 20,
+   "includedRoutes": 10,
+   "includedRouteList": [
+    "/",
+    "/careers/apply/product-manager-global-expansion-mena/8081418",
+    "/careers/listing/product-lead-emea-payments/7768979",
+    "/cookie-settings",
+    "/customers/hargreaves-lansdown",
+    "/en-hk/customers/amp",
+    "/industries/media-entertainment",
+    "/legal/becs",
+    "/newsroom/news/tour-berlin-2025",
+    "/resources/more/arr-loans-explained"
+   ],
+   "excludedStructureOnlyRoutes": 10,
+   "excludedStructureOnlyRouteList": [
+    "/fr/resources/more/self-financing-capacity-in-france",
+    "/in/resources/more/payment-fraud-red-flags",
+    "/resources/more/how-can-my-customers-pay-by-bank-a-guide",
+    "/resources/more/how-to-launch-an-issuing-product-what-it-takes-to-build-a-card-program",
+    "/resources/more/kit-digital",
+    "/resources/more/real-time-payments-explained",
+    "/resources/more/uk-to-eu-vat-compliance",
+    "/resources/more/virtual-credit-cards-for-businesses-explained",
+    "/resources/more/what-is-carding-how-this-type-of-fraud-works-and-how-businesses-can-prevent-it",
+    "/zh-hk/resources/more/what-is-a-revenue-share-what-businesses-need-to-know"
+   ],
+   "matchesManifestCounts": "manifest.json counts.slotizedRoutes=10, counts.structureOnlyRoutes=10 — exact agreement, cross-checked by scripts/smoke-create-site.ts",
+   "otherTemplateSample": "data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z carries the identical 10/10 split (an earlier compile of the same route policy) — also measured, not assumed",
+   "v1v2TemplatesSampled": "domainchecker.co.kr (19 routes), linear.app (8), nextjs.org (40), stripe.com 2026-08-18T10-45-40-007Z (20), stripe.com 2026-08-18T08-07-05-671Z (1) — all policyApplied=false, all routes included, 0 excluded, matching the registry's own 'no policy ⇒ every route was slotized' doctrine"
+  },
+  "namedFailureModeGuard": "The suite (scripts/smoke-create-site.ts) asserts explicitly that /resources/more/virtual-credit-cards-for-businesses-explained is excluded and NOT included — the one check that would fail first if this regressed."
+ },
+ "createSiteRun": {
+  "kind": "one real, brief-only, end-to-end run — not a mock, not a dry-run",
+  "template": "data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z (all-core, 20/20 routes included, 0 structure-only — chosen because it already has matching shared theme/SEO/asset artifacts on disk; the structure-only-EXCLUSION property itself is proven separately above on the route-policy template, which has none of those shared artifacts yet)",
+  "brief": {
+   "goal": "Task 28 Phase 8 smoke canary: a payments infrastructure company for online businesses, from startups to large enterprises"
+  },
+  "otherOptionsSupplied": [
+   "siteId",
+   "register"
+  ],
+  "otherOptionsOmitted": [
+   "displayName",
+   "themeRunDir",
+   "seoPlanRunDir",
+   "materializationRunDir",
+   "pageRegionsDir",
+   "projectId"
+  ],
+  "briefFieldsOmitted": [
+   "workingName",
+   "category",
+   "audience",
+   "positioning",
+   "primaryConversion",
+   "tone",
+   "truthMode",
+   "facts"
+  ],
+  "briefGapsReported": 4,
+  "briefGapsAreNeverBlocking": "createSite() proceeded and produced a full site; every omitted field became a reported gap with its stated consequence (Task 27 §5 seam, unchanged)",
+  "contentGeneration": {
+   "provider": "fake (FakeContentGenerator — deterministic, offline; no LLM key exists in this environment, per the Task 28 contract's sanctioned no-key path)",
+   "units": 4699,
+   "batches": 124,
+   "assignedSlots": 6813,
+   "unresolvedSlots": 578,
+   "unresolvedIsHonest": "unresolved-under-verified-only is the CORRECT, non-fabricating outcome for a brief with no supplied `facts` — every unbacked factual claim stayed needs-input rather than being invented"
+  },
+  "productionCompile": {
+   "themeRunDirUsed": "data/stripe.com/theme-runs/2026-08-18T12-07-35-609Z (auto-discovered by templateId match)",
+   "seoPlanRunDirUsed": "data/stripe.com/production-seo-plans/2026-08-18T19-26-12-572Z (auto-discovered by templateId match)",
+   "materializationRunDirUsed": "data/stripe.com/asset-materializations/2026-08-19T05-54-55-204Z (auto-discovered — newest for the host; assets are host-scoped, not template-scoped)",
+   "nextBuildElapsedMs": 3597
+  },
+  "independentProject": {
+   "siteId": "wr28-createsite-suite-01",
+   "siteKey": "stripe.com/wr28-createsite-suite-01",
+   "projectDir": "data/stripe.com/release-projects/wr28-createsite-suite-01",
+   "reprepared": false,
+   "registeredInRealSiteRegistry": true,
+   "contentRunDirIsOwnNewNamespace": true,
+   "requirementsTotal": 1052,
+   "releaseBlockingUnresolved": 55,
+   "releaseState": "PRODUCTION_INPUTS_REQUIRED",
+   "releaseStateIsHonest": "not fabricated PRODUCTION_READY — a fresh brief-only draft correctly needs operator input (domain, facts, etc.) before it could go indexable; this is the same honest verdict release:prepare has always produced for a freshly-prepared candidate"
+  },
+  "templateUnmutated": {
+   "method": "dir-sha256-v1 (src/production/hash.ts hashDirectory, NO exclusions — every file, including report/), computed TWICE independently: once inside createSite() itself, once by the smoke suite around the createSite() call",
+   "templateDir": "data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z",
+   "hashBefore": "864d4e8bdf77aeea38088b14bff10bc701acfccbae4ba3c54556ec98d0ac3e70",
+   "hashAfter": "864d4e8bdf77aeea38088b14bff10bc701acfccbae4ba3c54556ec98d0ac3e70",
+   "identical": true,
+   "sharedArtifactsAlsoUntouched": "theme-run / seo-plan / asset-materialization discovery re-run AFTER createSite and found the identical newest run each time — nothing this Create Site call wrote landed in a way that would shadow them"
+  },
+  "pageRegionsDirRecorded": {
+   "knownTrapFromRecon": "release:build resolves enablement against project.auxiliary.pageRegionsDir while the Visual Editor discovers the newest matching compile independently — two lookups that could silently disagree.",
+   "closure": "ONE function, findMatchingPageRegionsRun (src/release/create-site.ts), is now the only place either side asks the question. src/editor/catalog.ts's newestMatchingRegionRun is a 3-line wrapper around it (no independent copy of the lookup logic remains).",
+   "discovered": "data/stripe.com/page-regions/2026-08-26T16-14-08-675Z (templateId match confirmed: stripe.com-2026-08-18T10-45-40-007Z)",
+   "source": "discovered (no --page-regions / pageRegionsDir was passed — createSite found it itself)",
+   "recordedOnProject": "auxiliary.pageRegionsDir === the discovered run dir, verified by reading the saved release-project.json back, not by trusting createSite's return value alone",
+   "proofOfAgreement": "the smoke suite calls findMatchingPageRegionsRun DIRECTLY (independently of createSite's internal call) BEFORE createSite runs, and asserts createSite's recorded pageRegionsDir equals that independent answer"
+  }
+ },
+ "refusalBehavior": {
+  "case": "createSite() called against the route-policy template (stripe.com-2026-08-26T22-38-06-075Z), which has NO matching theme-run on disk",
+  "result": "threw CreateSiteError naming exactly what was missing ('no theme-run found for this template — supply it explicitly, or run the theme-run pipeline stage for this host/template first')",
+  "neverSilentlySubstitutes": "no fallback to a mismatched theme/seo/asset run was attempted — confirmed by the error message and by the fact that no release project or production-spec was written for this attempt"
+ },
+ "mutationInjectionProofs": [
+  {
+   "target": "src/release/create-site.ts selectRouteScope — the per-route scope loop",
+   "mutation": "structure-only routes unconditionally pushed into includedRoutes (the route-scope classification itself disabled)",
+   "observedFailures": 3,
+   "failedChecks": [
+    "create.routeScope included count matches manifest's slotized count (20 vs 10)",
+    "create.structureOnlyExcluded count matches manifest's structure-only count (0 vs 10)",
+    "create.structureOnlyExcluded — a shared-page structure-only route is NOT promoted to included"
+   ],
+   "restored": "byte-identical — sha256 41dab32fa5f7489de4e4b4c81906a6bd7881fb2184f22566b2acfa3fb3bb4862 before and after (file is untracked/new, so sha256 rather than git diff)",
+   "rerunAfterRestore": "46 checks, 0 failures"
+  },
+  {
+   "target": "src/release/create-site.ts createSite — the prepareReleaseProject options object",
+   "mutation": "the discovered pageRegionsDir silently dropped from the options passed to prepareReleaseProject",
+   "observedFailures": 1,
+   "failedChecks": [
+    "create.pageRegionsDirRecorded — recorded on the project's auxiliary.pageRegionsDir (undefined vs the real discovered run dir)"
+   ],
+   "restored": "byte-identical — same sha256 as above, confirmed with `cmp`",
+   "rerunAfterRestore": "46 checks, 0 failures"
+  },
+  {
+   "target": "src/editor/server.ts GET /api/templates route body",
+   "mutation": "hardcoded to return { templates: [], warnings: [] } regardless of the real registry",
+   "observedFailures": 1,
+   "failedChecks": [
+    "lib.templateLibrary HTTP body matches a fresh scan (0 vs 8)"
+   ],
+   "restored": "byte-identical — verified with `cmp` against a pre-mutation backup copy (server.ts is untracked/new, so git diff shows nothing either way; cmp is the correct check here)",
+   "rerunAfterRestore": "46 checks, 0 failures"
+  },
+  {
+   "target": "src/release/create-site.ts resolveCreateSiteIdentity — the collision step",
+   "mutation": "the `if (!projectExists(...))` guard replaced by `if (true)`, so a derived identity is returned even when the project already exists (the shape of the original blocker)",
+   "observedFailures": 4,
+   "failedChecks": [
+    "create.briefOnlyIdentity — a derived id that already exists on disk is STEPPED PAST, never re-prepared (wr28-createsite-suite-01 -> wr28-createsite-suite-01, stepped past 0)",
+    "create.briefOnlyIdentity — the SECOND brief-only create with the IDENTICAL brief is ALSO a new project (reprepared true)",
+    "create.briefOnlyIdentity — the first site's own lineage is untouched by the second create",
+    "create.briefOnlyIdentity — both sites are registered under their own distinct siteKeys"
+   ],
+   "restored": "byte-identical — sha256 0575fa0a7ffa5bceaecf91cb214a7a5f6fbb9a71e583ba38947a18e11a10ca0b before and after, `cmp` clean (untracked file; sha256/cmp only, never git)",
+   "rerunAfterRestore": "66 checks, 0 failures",
+   "log": "tmp/wr28/fix78/m1.log"
+  },
+  {
+   "target": "src/editor/client.ts loadLibrary — the Site Library warnings argument",
+   "mutation": "reverted to `renderSiteLibrary(r.sites)` — the EXACT original defect the verifier found (the screen discards the scan's warnings)",
+   "observedFailures": 2,
+   "failedChecks": [
+    "lib.warningsSurfaced — an artifact that could NOT be indexed is NAMED on the screen (screen said 'Site Library scan: 0 scan warnings' while one project was missing)",
+    "lib.warningsSurfaced — the dropped row really IS absent from the table (28 rows vs 28 scanned, and the screen still claimed a clean scan)"
+   ],
+   "restored": "byte-identical — sha256 fcefb7bb02b475e876c54535a14ca84208b647027bd35854480fbc8ed090dff2, `cmp` clean",
+   "rerunAfterRestore": "66 checks, 0 failures",
+   "log": "tmp/wr28/fix78/m2.log"
+  },
+  {
+   "target": "src/editor/client.ts renderSiteLibrary — both adaptation notes",
+   "mutation": "the adaptedFromRevision branches on the Site ID cell and the Revision cell deleted (the original defect: 'doc r2' and a host slug printed as if both were on disk)",
+   "observedFailures": 2,
+   "failedChecks": [
+    "lib.adaptationSurfaced — every adapted row SAYS its siteId was derived (0 rows say adapted vs 3 adapted entries)",
+    "lib.adaptationSurfaced — the row names the ON-DISK revision (r1) next to the in-memory one (r2)"
+   ],
+   "restored": "byte-identical — same sha256 as M2, `cmp` clean",
+   "rerunAfterRestore": "66 checks, 0 failures",
+   "log": "tmp/wr28/fix78/m3.log"
+  }
+ ],
+ "processNote": {
+  "gitStashIncident": "While preparing the THIRD mutation proof I ran `git stash push -k -u -- src/editor/server.ts` intending to isolate one file for a diff. The pathspec did not restrict the operation the way I expected: it stashed the WHOLE working tree (every modified tracked file and every untracked file/directory under the repo, including other builders' in-progress work under src/content-injection/**), and the pathspec error printed AFTER the stash had already been created. This is a mutating git operation and the program contract is explicit that there must be ZERO of them. I detected it immediately via `git stash list` / `git status`, ran `git stash pop` to restore everything (a corrective, not a further destructive act), and verified full recovery: every file present, `cmp`/sha256 match on the files I had backups for, no conflict markers anywhere in the tree, `git stash list` empty afterward, and a clean `pnpm typecheck` (exit 0) plus a full rerun of scripts/smoke-create-site.ts (46/46) afterward. I am disclosing this in full rather than omitting it — no data was lost, but the operation itself should not have happened, and I moved to sha256/cmp-based verification (never touching git state) for the remaining mutation proofs."
+ },
+ "testEvidence": {
+  "suite": "scripts/smoke-create-site.ts (npx tsx scripts/smoke-create-site.ts, through tmp/wr28/suite-lock.sh)",
+  "totalChecks": 66,
+  "createChecksCount": 34,
+  "failures": 0,
+  "typecheck": "exit 0 (bash tmp/wr28/suite-lock.sh pnpm typecheck)",
+  "runtimeOfFullSuite": "approx. 3-4 minutes — THREE real createSite runs now (one explicit-identity end-to-end run plus the two brief-only identity runs), each with its own `next build`, plus one real Chromium session for the Library screen",
+  "totalChecksBeforeThisCorrectionPass": 46
+ },
+ "limitations": [
+  "createSite() requires an ALREADY-COMPILED template plus ALREADY-PRODUCED shared theme-run/seo-plan/asset-materialization for that exact host+templateId (auto-discovered, never guessed, refuses honestly when absent — proven above). It does NOT run reconstruction, template compilation, theme extraction, SEO source observation or asset materialization itself — those remain separate, existing pipeline stages an operator (or a future orchestrator) runs once per host before any Create Site call. This is consistent with the Phase 8 recon's finding that today's release:prepare presupposes a produced candidate; createSite() is the brief-driven layer that produces one, but still stands on the existing per-host stages rather than reimplementing them.",
+  "The end-to-end proof was run against ONE real template (stripe.com, all-core, 20 routes, 6875 generated slots). It was not repeated against a template carrying both a route policy AND matching shared artifacts, because no such combination exists on disk yet (the route-policy template is brand new and has no theme-run/seo-plan/asset-materialization of its own) — the refusal check above proves createSite() correctly declines to fake that combination rather than mixing mismatched lineage. Route scope EXCLUSION itself is fully proven (real 10/10 split, real shared-page edge case caught); its interaction with a live production compile on a route-policy template specifically is not yet exercised and is named here as a gap, not silently assumed to work.",
+  "wr28-createsite-suite-01 (and its content-run / production-spec / production-build siblings) is left on disk after this suite runs — by design, matching every other wr28- canary already in this repo, and because the release-project directory is deleted and recreated fresh at the START of each suite run (so re-running the suite never accumulates duplicate projects).",
+  "Content generation used the deterministic fake provider (no LLM key exists in this environment — the contract's sanctioned path). The 516 unresolved (needs-input) slots are the CORRECT behavior of verified-only truth mode with no supplied facts, not a defect; a real operator brief with `facts` supplied would resolve more of them, exercising the same code path with no change needed.",
+  "The brief-only identity proof deliberately used a goal whose derived slug lands in this task's own wr28- namespace, because the program contract reserves the others. The HOST-SLUG write path was therefore never executed by me either — it no longer exists in code (resolveCreateSiteIdentity has no host fallback at all), and the suite asserts data/stripe.com/release-projects/stripe.com does not exist after two brief-only creates.",
+  "Identity resolution is a check-then-write, not a lock: two createSite calls resolving the same derived base id at the same instant could still both pick it. Named honestly; no locking was added, and nothing in this repo runs createSite concurrently today.",
+  "The suite now leaves THREE wr28- projects on disk (wr28-createsite-suite-01, wr28-nameless-brief-canary-a-payments and ...-2), each deleted and recreated at the start of the next run so re-running always proves creation rather than re-preparation."
+ ],
+ "corrections": [
+  {
+   "id": "C0-brief-only-identity",
+   "severity": "BLOCKER (the Phase 7/8 verifier's one blocking finding)",
+   "originalDefectPreserved": {
+    "claimThatWasWrong": "The Phase 10 integration summary said 'the site id now comes from the brief's working name'. It covered only briefs that SUPPLY a working name.",
+    "whatActuallyHappened": "siteIdFromWorkingName(undefined) returned undefined, so release:prepare's own default took over — defaultSiteId(host), the HOST SLUG — and the project directory became data/<host>/release-projects/<host>/. The shipped Create Site form's ONLY required field is the goal, so the advertised minimum input named every site after its source host.",
+    "verifierProof": "a real goal-only createSite recorded siteId 'linear.app'; a second create at the same identity re-prepared the first customer's project in place (reprepared === true, content lineage replaced). scripts/smoke-create-site.ts could not catch it because it always passed siteId explicitly."
+   },
+   "fixedInCode": "src/release/create-site.ts — siteIdFromBrief() + resolveCreateSiteIdentity() replace the undefined-returning helper. A Create Site call NEVER falls back to the host slug and a DERIVED identity never resolves onto an existing release project: workingName slug -> goal-words slug -> site-<10 hex of sha256(goal)> for a goal with no ascii-sluggable words; a derived base id already taken on disk steps to -2, -3, ... and the step is REPORTED (siteIdSource / siteIdBase / siteIdDisambiguation on CreateSiteResult, in the /api/create-site response, and on the Library screen). An EXPLICIT siteId is still honoured verbatim — the caller owns that identity, so re-preparing it is a legitimate outcome and is reported via prepare.reprepared, never disambiguated behind the operator's back.",
+   "measuredProof": {
+    "kind": "TWO REAL, brief-only, end-to-end createSite runs with the IDENTICAL brief (the exact sequence that used to put two customers in one directory)",
+    "brief": {
+     "goal": "wr28 nameless brief canary: a payments company for online businesses"
+    },
+    "template": "data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z",
+    "firstRun": {
+     "siteId": "wr28-nameless-brief-canary-a-payments",
+     "siteIdSource": "goal",
+     "disambiguation": 0,
+     "projectDir": "data/stripe.com/release-projects/wr28-nameless-brief-canary-a-payments",
+     "reprepared": false
+    },
+    "secondRun": {
+     "siteId": "wr28-nameless-brief-canary-a-payments-2",
+     "siteIdSource": "goal",
+     "disambiguation": 1,
+     "projectDir": "data/stripe.com/release-projects/wr28-nameless-brief-canary-a-payments-2",
+     "reprepared": false
+    },
+    "hostSlugProjectAfterBothRuns": "data/stripe.com/release-projects/stripe.com DOES NOT EXIST (asserted by the suite, printed in its measured line)",
+    "firstSitesLineageUntouched": "the first project's acceptedLineage.content.path still names its OWN content run after the second create",
+    "bothRegistered": "stripe.com/wr28-nameless-brief-canary-a-payments and ...-2 are two distinct siteKeys in the real registry scan",
+    "collisionOnRealDisk": "resolveCreateSiteIdentity() was also run against a brief whose goal slugs to EXACTLY the existing project wr28-createsite-suite-01: it stepped past it (disambiguation 1) and returned a projectDir with no release-project.json in it.",
+    "nonAsciiGoal": "a Korean-only goal yields 'site-<hash>' (source 'brief-hash'), still never the host slug",
+    "namespaceNote": "the goal text was chosen so the DERIVED id lands inside this task's own wr28- namespace, because the program contract reserves every other namespace. The derivation exercised is the shipped default; only the words in the goal were chosen."
+   },
+   "suiteChecks": "scripts/smoke-create-site.ts section 'PHASE 8 CORRECTION — a BRIEF-ONLY create is never named after its host' (10 checks)"
+  },
+  {
+   "id": "C-gate789-1",
+   "correctedAt": "2026-08-27T23:27:40.553786Z",
+   "correctedBy": "Task-28 orchestrator, after the Phase-7/8/9 gate blocked on this block",
+   "finding": "createSiteRun.contentGeneration.assignedSlots / .unresolvedSlots and independentProject.requirementsTotal were stale pre-correction figures contradicted by the tree. Each was off by EXACTLY 62 — the Phase 9/10 value-shape correction moving 62 slots from assigned to unresolved — so this block was simply never re-measured during that correction pass, unlike the analogous figures in 28-library.json which were given a point-in-time caveat.",
+   "wasBefore": {
+    "assignedSlots": 6875,
+    "unresolvedSlots": 516,
+    "requirementsTotal": 990
+   },
+   "nowMeasured": {
+    "assignedSlots": 6813,
+    "unresolvedSlots": 578,
+    "requirementsTotal": 1052
+   },
+   "howMeasured": "Re-derived by the orchestrator from the artifacts, not from a report. data/stripe.com/content-runs/2026-08-27T23-17-36-855Z/slot-accounting.json totals: inScopeSlots 9529; byOrigin derived-copy 2525 + generated-marketing 4288 = 6813 assigned (source-preserved 2716 makes up the remaining 9529); byDisposition unresolved 578. data/stripe.com/release-projects/wr28-createsite-suite-01/requirements.json holds 1052 entries (996 high-value, 55 release-blocking, 1 optional) and counts.total 1052. The gate independently observed 6813/578/1052 printed three times by its own smoke:create-site run.",
+   "functionalImpact": "None. No code changed; this was a stale measurement in a shipped handoff."
+  }
+ ],
+ "identity": {
+  "rule": "explicit siteId (verbatim, re-prepare allowed and reported) > brief.workingName slug > the goal's first six words slugged > site-<10 hex of sha256(goal)>. The host slug is NEVER a Create Site fallback.",
+  "collisionPolicy": "a DERIVED identity that already has a release-project.json on disk steps to -2, -3, ... (up to 500, then a named CreateSiteError). An EXPLICIT identity never steps: the operator asked for that project.",
+  "reportedOn": [
+   "CreateSiteResult.siteId / siteIdSource / siteIdBase / siteIdDisambiguation",
+   "POST /api/create-site response (same four fields)",
+   "the Library screen's create result line",
+   "the [create-site] identity: ... log line"
+  ],
+  "sameLookupNoteworthy": "the existence check uses release:prepare's OWN releaseProjectDir()/RELEASE_PROJECT_FILE helpers, so Create Site cannot compute a different project path than the one prepare writes to — the same single-lookup discipline the pageRegionsDir trap closure uses.",
+  "timing": "identity is resolved immediately BEFORE prepareReleaseProject writes (not before the multi-second content/compile stages), so the free-id answer is as fresh as it can be. Two createSite calls running truly concurrently against the same derived base id are still a theoretical race — named, not claimed to be locked."
+ }
+}

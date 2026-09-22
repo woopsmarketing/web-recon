@@ -175,6 +175,8 @@ export async function runFamilyEscalationStage(
           try {
             const observed = await observePageWithBrowser(browser, audit.url, {
               prepareScroll: context.options.prepareScroll,
+              normalizePageState: context.options.normalizePageState ?? true,
+              pageStateEvidenceId: pageId,
             });
             const pageDir = path.join(augmentedDir, "pages", pageId);
             const saved = await saveObservationIntoDir(pageDir, observed);

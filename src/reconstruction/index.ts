@@ -35,10 +35,47 @@ export {
 
 export {
   BREAKPOINT_CONVENTION,
+  breakpointForPage,
   breakpointMediaQueries,
   inferBreakpoint,
+  inferResponsivePlan,
+  V1_RESPONSIVE_POLICY,
   type InferBreakpointOptions,
+  type ResponsiveBreakpointPlan,
 } from "./responsive-plan.js";
+
+// Task 28.7 §26 — the generated app's own stylesheet, including the per-route
+// tree switch it serves.
+export { globalsCss, type RouteBreakpointOverride } from "./app-template.js";
+
+export {
+  FAMILY_CHANGE_MIN_ELEMENTS,
+  FAMILY_CHANGE_MIN_RATIO,
+  TIGHT_BRACKET_MAX_PX,
+  TREE_SWITCH_CANDIDATES_REPORTED,
+  TREE_SWITCH_CHANGE_TOLERANCE_PX,
+  aggregateAuthoredCandidates,
+  chooseTreeSwitch,
+  classifyTreeDivergence,
+  decidePageTreeSwitch,
+  familyChangeSize,
+  familyChangeVerdict,
+  measureFingerprintChange,
+  measureObservedChange,
+  rankFamilyChangeCandidates,
+  rankTreeSwitchCandidates,
+  variantTreeNotObservedCode,
+  type FamilyChangeVerdict,
+  type PageFingerprintChange,
+  type PageObservedChange,
+  type PageTreeSwitch,
+  type ChooseTreeSwitchInput,
+  type TreeDivergence,
+  type TreeDivergenceReport,
+  type TreeSwitchCandidate,
+  type TreeSwitchDecision,
+  type TreeSwitchFallbackReason,
+} from "./tree-switch.js";
 
 export {
   BOOLEAN_ATTRIBUTES,
@@ -66,6 +103,14 @@ export {
 export {
   ALLOWED_CSS_PROPERTIES,
   DOCUMENT_ROOT_DROPPED_PROPERTIES,
+  // Task 28.75 §CANVAS — the document canvas background, re-homed off the
+  // in-flow document-root wrapper onto the real `html` element.
+  DOCUMENT_ROOT_CANVAS_PROPERTIES,
+  CANVAS_REFUSAL_REASONS,
+  paintsBackground,
+  resolveDocumentRootCanvas,
+  type CanvasRefusalReason,
+  type DocumentRootCanvas,
   assertNoMissingStyleTokens,
   documentRootClassName,
   generateStylesheet,
@@ -74,6 +119,11 @@ export {
   styleClassName,
   type GeneratedStyles,
   type GenerateStylesheetInput,
+  // Task 28.8 A3 — text-box block-size relief, in the frozen tier.
+  TEXT_BOX_HEIGHT_VARIANT_CLASS,
+  TEXT_BOX_SHRINK_VARIANT_CLASS,
+  textBoxHeightRelievable,
+  textBoxWidthRelievable,
 } from "./style-generator.js";
 
 export {
@@ -123,6 +173,10 @@ export {
   selectDefaultValue,
   type CompileCounters,
   type CompileNodeContext,
+  // Task 28.8 A3 — the per-node predicates behind the relief variants.
+  hasTextDescendant,
+  textBoxHeightVariantApplies,
+  textBoxShrinkVariantApplies,
 } from "./compile-node.js";
 
 export {
@@ -179,8 +233,140 @@ export {
   type InferLayoutInput,
   type LayoutInferenceCounters,
   type LayoutInferenceResult,
+  LAYOUT_VIEWPORT_IDS,
+  measureParentContentBox,
+  parentPaddingConstancy,
+  type MeasuredContentBox,
+  type ParentPaddingConstancy,
+  MOBILE_TRUTH_WIDTH,
+  VIEWPORT_PASS_REFUSALS,
+  INLINE_SIZE_OUTCOMES,
+  INLINE_SIZE_PRE_STAGE_DROPS,
+  resolveViewportProbe,
+  type InlineSizeOutcome,
+  type InlineSizePreStageDrop,
+  type LayoutViewportId,
+  type ResolvedViewportPass,
+  type ViewportPassRefusal,
   type RecoveredLayoutRule,
+  containingBlockGuard,
+  LAYOUT_GUARD_REASONS,
+  FULL_WIDTH_TOLERANCE_PX,
+  TRUTH_SANITY_TOLERANCE_PX,
+  type LayoutGuardReason,
+  // Task 28.6 R1 — hidden bands as numbers, before they become media strings.
+  bandContains,
+  bandMedia,
+  hiddenBands,
+  type HiddenBand,
+  // Task 28.6 D1 — band edges snapped onto the breakpoints the SOURCE authored.
+  authoredEdgeCandidates,
+  authoredEdgePx,
+  chooseAuthoredEdge,
+  emptyBandSnapAccounting,
+  resolveAuthoredBreakpoints,
+  snapBandEdges,
+  type AuthoredBreakpointProvenance,
+  type BandEdgeDecision,
+  type BandEdgeSource,
+  type BandSnapAccounting,
+  // Task 28.6 R2 — the `width: auto` stretch/intrinsic discriminator.
+  inlineSizeBehaviour,
+  INLINE_SIZE_REFUSAL_REASONS,
+  // Task 28.7 G — the out-of-flow inset equation, read backwards.
+  insetResolvedWidth,
+  INSET_RESOLVED_REFUSAL_REASONS,
+  type InsetContainingBlockKind,
+  type InsetResolvedRefusalReason,
+  type InsetResolvedResult,
+  // Task 28.75 — the in-flow chain root: a gap that stays constant while the
+  // parent grows, decomposed against the box model at the truth width.
+  trackedFillWidth,
+  TRACKED_FILL_REFUSAL_REASONS,
+  type TrackedFillRefusalReason,
+  type TrackedFillResult,
+  // Task 28.75 — the in-flow full-bleed band, co-emitted rather than half-stated.
+  viewportBleedWidth,
+  VIEWPORT_BLEED_REFUSAL_REASONS,
+  type ViewportBleedRefusalReason,
+  type ViewportBleedResult,
+  // Task 28.75 §19 — the damage clamp, the last resort.
+  damageClampWidth,
+  DAMAGE_CLAMP_REFUSAL_REASONS,
+  type DamageClampRefusalReason,
+  type InlineSizeBehaviour,
+  type InlineSizeMode,
+  type InlineSizeReason,
+  // Task 28.6 V2 — refusals of the VALUE, distinct from refusals of the shape.
+  WIDTH_VALUE_REFUSAL_REASONS,
+  type WidthValueReason,
+  // Task 28.6 A5 — grid column tracks recovered from observed child geometry.
+  recoverGridTracks,
+  GRID_TRACK_REFUSAL_REASONS,
+  type GridTrackRecovery,
+  type GridTrackRefusalReason,
+  type GridTrackResult,
+  type RecoveredTrack,
+  type RecoveredRuleKind,
+  // Task 28.75 §03b — band-aware grid column tracks, and the grid ITEM branch.
+  gridAreaFillWidth,
+  GRID_AREA_FILL_REFUSAL_REASONS,
+  type GridAreaFillRefusalReason,
+  type GridAreaFillResult,
+  recoverGridTracksBanded,
+  GRID_BAND_REFUSAL_REASONS,
+  type GridBandRefusalReason,
+  type GridTrackBand,
+  type GridTrackBandResult,
+  // Task 28.7 B2 — span-aware and hidden-child-aware grid track recovery.
+  GRID_SPAN_TOLERANCE_PX,
+  declaredColumnSpan,
+  gridChildRole,
+  type GridChildRole,
+  // Task 28.7 B1 — the residual freeze audit's evidence side, and the bounded
+  // per-node grid refusal log.
+  GRID_TRACK_REFUSALS_REPORTED,
+  RESIDUAL_AUDIT_MAX_NODES_PER_PASS,
+  RESIDUAL_AUDIT_MAX_WIDTHS,
+  RESIDUAL_CLONE_CONSTANT_PX,
+  RESIDUAL_FROZEN_FAMILIES,
+  RESIDUAL_FROZEN_REPORTED,
+  RESIDUAL_SOURCE_CHANGE_MIN_PX,
+  frozenFamilyOf,
+  gridFrozenExcessPx,
+  type GridTrackRefusalRecord,
+  type ResidualAuditNode,
+  type ResidualAuditPass,
+  // Task 28.8 A2 — the authored inline-size fallback.
+  authoredInlineSizeIntent,
+  authoredMediaHolds,
+  AUTHORED_INTENT_PROPERTIES,
+  type AuthoredIntentAnswer,
+  type AuthoredIntentRefusal,
+  type AuthoredIntentDeclarationRefusal,
 } from "./layout-inference.js";
+export {
+  MAX_ROUNDS as LAYOUT_TRUTH_CHECK_MAX_ROUNDS,
+  REGRESSION_EPSILON_PX,
+  isBanded,
+  isBandedGeometry,
+  truthCheckHtml,
+  verifyLayoutRules,
+  // Task 28.7 B1 — the residual freeze audit's measurement side.
+  auditRenderWidths,
+  residualsForPass,
+  summariseResiduals,
+  type ResidualAuditReport,
+  type ResidualConsequence,
+  type ResidualFrozenNode,
+  type BandCheckRejection,
+  type BandRejectionReason,
+  type TruthCheckCounters,
+  type TruthCheckInput,
+  type TruthCheckRejection,
+  type TruthCheckResult,
+  type TruthCheckStatus,
+} from "./layout-truth-check.js";
 export { reconstructionRunDir, siteFolder, siteSlug } from "./store.js";
 
 export {

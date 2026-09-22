@@ -1,0 +1,164 @@
+{
+  "schema": "task28-library-v1",
+  "phase": "7",
+  "role": "BUILDER — Template Library and Site Library, wired into the existing Visual Editor operator app",
+  "producedAt": "2026-08-27T20:50Z (KST 2026-08-28 05:50)",
+  "summary": "Connected src/registry/** (Task 27) to the operator app: two new read-only editor-server routes (GET /api/templates, GET /api/sites), two catalog functions (listEditorTemplates alongside the existing listEditorSites), and a Library screen in the hand-rolled client (client.ts) with Edit Site and Create Site actions. No database, no auth. Every column is a copy or a count off a real artifact — nothing invented, nothing placeholder.",
+  "filesChanged": [
+    "src/editor/catalog.ts — added listEditorTemplates(); rewired newestMatchingRegionRun to call the shared findMatchingPageRegionsRun (see 28-site-create.json)",
+    "src/editor/server.ts — added GET /api/templates, GET /api/sites, POST /api/create-site",
+    "src/editor/client.ts — added a Library overlay (Template Library table + Site Library table), Edit Site and Create Site wiring",
+    "src/registry/index.ts, src/registry/scan.ts, src/registry/store.ts, src/registry/types.ts — untouched by this phase (Task 27 artifact, read-only consumer)"
+  ],
+  "templateLibrary": {
+    "columns": [
+      "template id",
+      "source host",
+      "route count",
+      "core-reconstruct count",
+      "structure-only count",
+      "collection count",
+      "createdAt"
+    ],
+    "dataSource": "src/registry/scan.ts scanTemplates() (a FRESH scan, same idiom listEditorSites already used — never the .registry/*.json cache, so a template compiled since the last register/rebuild still shows up)",
+    "action": "Create Site — opens the brief form inline on the template's row (see 28-site-create.json)",
+    "columnDerivation": {
+      "templateId": "TemplateEntry.templateId (manifest.templateId, verbatim)",
+      "sourceHost": "TemplateEntry.host (manifest.source.host, verbatim)",
+      "routeCount": "TemplateEntry.routeCount (manifest.counts.routes, verbatim)",
+      "coreReconstructCount": "TemplateEntry.slotizedRouteCount — on a v1/v2 template (no route policy) this equals routeCount BY DEFINITION, not a separate measurement (src/registry/scan.ts comment, unchanged this phase)",
+      "structureOnlyCount": "TemplateEntry.structureOnlyRouteCount (manifest.counts.structureOnlyRoutes, 0 by definition when no policy)",
+      "collectionCount": "TemplateEntry.collections.length (site-map.json collections[], 0 when the template has none compiled — honest absence, never backfilled)",
+      "createdAt": "TemplateEntry.createdAt (manifest.createdAt, verbatim)"
+    },
+    "realMeasurement": {
+      "templatesOnDisk": 8,
+      "sampleTemplateId": "stripe.com-2026-08-26T22-38-06-075Z",
+      "sampleRouteCount": 20,
+      "sampleCoreReconstructCount": 10,
+      "sampleStructureOnlyCount": 10,
+      "sampleCollectionCount": 3,
+      "measuredBy": "scripts/smoke-create-site.ts, section 'PHASE 7 — Template Library', re-derived independently from the raw manifest.json/site-map.json and compared field-by-field against listEditorTemplates()'s output",
+      "collectionsAcrossEveryTemplate": "2 of 8 templates carry compiled collections (3 each); 6 carry none — measured across every site-map.json on disk, not sampled (see corrections C1)"
+    }
+  },
+  "siteLibrary": {
+    "columns": [
+      "display name",
+      "siteId (with its adaptation stated when derived)",
+      "source template",
+      "status",
+      "updatedAt",
+      "revision (document revision + authored chain, with the on-disk revision stated when adapted)"
+    ],
+    "dataSource": "src/registry/scan.ts scanSites() via the existing listEditorSites() (unchanged this phase; now also exposed as its own GET /api/sites for the full SiteEntry shape — bootstrap's own inline `sites` array stays the slim site-switcher subset it always was)",
+    "action": "Edit Site — POSTs to the existing /api/select-site (unchanged), opening the project in this editor",
+    "columnDerivation": {
+      "displayName": "SiteEntry.name (project.displayName when recorded, else derived-from-siteId — SiteEntry.nameSource says which)",
+      "siteId": "SiteEntry.siteId (project.siteId, verbatim) — and when SiteEntry.adaptedFromRevision is set the cell SAYS the id was derived from the host by adaptReleaseProject because that r1 document has none on disk (correction C3)",
+      "sourceTemplate": "SiteEntry.templateLineage.templateId (acceptedLineage.template.id, verbatim) — PARTIAL: only the id/path/hash triple is carried; a UI wanting the source template's own host/rootUrl needs a join to the TemplateEntry via that id (recon's own caveat, still true — not closed this phase since Phase 7 does not require it)",
+      "status": "SiteEntry.releaseState (project.releaseState, verbatim, raw string)",
+      "updatedAt": "SiteEntry.updatedAt (project.updatedAt, verbatim)",
+      "revision": "SiteEntry.projectRevision (document) + SiteEntry.revision (authored chain HEAD; a site nobody edited has none) + SiteEntry.adaptedFromRevision, which is stated on the row so 'doc r2' is never read as a fact about the file (correction C3)"
+    },
+    "realMeasurement": {
+      "sitesOnDiskBeforePhase8Run": 25,
+      "sitesOnDiskAfterPhase8Run": 26,
+      "sampleProjectDir": "data/linear.app/release-projects/flowpilot-wr27",
+      "measuredBy": "scripts/smoke-create-site.ts, section 'PHASE 7 — Site Library', re-derived independently from the raw release-project.json and compared field-by-field against listEditorSites()'s output",
+      "sitesOnDiskAtCorrectionTime": 31,
+      "sitesOnDiskBeforePhase8RunNote": "The 25 -> 26 figures above are point-in-time counts from the Phase 8 build and are NOT retroactively checkable (the verifier said so, and I agree); the tree held 31 release projects when this correction pass measured it, several of them written by other Task 28 agents."
+    }
+  },
+  "httpRoutes": [
+    {
+      "route": "GET /api/templates",
+      "requiresOpenSite": false,
+      "returns": "{ templates: TemplateEntry[], warnings: string[] }",
+      "provenNotToTouchRuntime": "startEditorServer's runtime()/openSite() callbacks were stubbed to THROW in the smoke suite and this route still answered 200 — a structural proof, not a comment"
+    },
+    {
+      "route": "GET /api/sites",
+      "requiresOpenSite": false,
+      "returns": "{ sites: SiteEntry[], warnings: string[] }",
+      "provenNotToTouchRuntime": "same stub-throws proof as /api/templates"
+    },
+    {
+      "route": "POST /api/create-site",
+      "requiresOpenSite": "yes (options.runtime() is read unconditionally by the existing route dispatch after /api/select-site, exactly as /api/select-site itself already required — no NEW dependency introduced)",
+      "returns": "see docs/result/handoffs/28-site-create.json"
+    }
+  ],
+  "autoRegistration": {
+    "templateRegistration": "src/cli-compile-recon-template.ts calling registerTemplate — UNCHANGED this phase (Task 28 CR5, carried; carried-items.json already records it as IMPLEMENTED but not exercised end-to-end through the CLI by any suite)",
+    "siteRegistration": "src/release/prepare.ts calling registerSite — UNCHANGED this phase (Task 28 CR4). PROVEN LIVE this phase: createSite()'s call to prepareReleaseProject registered stripe.com/wr28-createsite-suite-01 into the REAL data/.registry/sites.json, verified present by scripts/smoke-create-site.ts reading loadSiteRegistry() directly (check 'lib.autoRegistration — the new site is present in the REAL site registry cache', PASS)."
+  },
+  "noDatabaseNoAuth": "Confirmed unchanged — both new routes and the Library screen read the same filesystem registry every other editor route reads; nothing new was added to persist state, and no session/auth layer exists or was added.",
+  "noInventedColumns": "Every column traces to a named field on TemplateEntry/SiteEntry (src/registry/types.ts, unmodified). No placeholder, no client-side computed value, no column dropped silently. Two honest facts are now STATED ON THE SCREEN rather than only in this document: (a) an artifact the scan could not read is named as missing (C2), and (b) a value that came from adaptReleaseProject's in-memory upgrade of a pre-Task-27 document says so (C3). MEASURED collection counts: 2 of 8 templates carry compiled collections (3 each), 6 carry none (C1 — this document previously said 7 of 8 were empty, which was wrong).",
+  "testEvidence": {
+    "suite": "scripts/smoke-create-site.ts (npx tsx scripts/smoke-create-site.ts, through tmp/wr28/suite-lock.sh)",
+    "checksInThisFile": 66,
+    "checksBeforeThisCorrectionPass": 46,
+    "libraryChecksCount": 32,
+    "libraryChecksBreakdown": "11 Template Library (incl. the new all-templates collection check) + 8 Site Library + 4 editor-server HTTP + 9 browser-driven correction checks",
+    "failures": 0,
+    "typecheck": "exit 0 (bash tmp/wr28/suite-lock.sh pnpm typecheck)",
+    "mutationProofs": "3 in this correction pass (M1 identity, M2 warnings, M3 adaptation — all restored byte-identically by cmp/sha256, never git; see 28-site-create.json mutationInjectionProofs)"
+  },
+  "limitations": [
+    "The Library screen (client.ts) is hand-rolled vanilla JS behind a typed JSON API, matching the file's existing 'wiring only' doctrine. It is syntax-checked (node --check on the emitted program) and — since this correction pass — exercised THROUGH A REAL CHROMIUM against the real editor server: table contents, scan-warning surfacing and the adaptation notes are asserted from the rendered DOM (scripts/smoke-create-site.ts, 'PHASE 7 CORRECTION', 9 checks). The Create Site FORM itself is browser-driven by scripts/smoke-first-draft.ts. What is still NOT browser-driven anywhere: the Library's own 'Edit' button on a Template Library row, and the create form's per-field optionality, which are covered at the data/HTTP level only.",
+    "Site Library's 'source template' column is the templateId/path/hash triple only (Task 27's own limitation, unchanged); a screen wanting the source template's host/route counts alongside a site row needs to join against the Template Library data, which the client does not yet do.",
+    "MEASURED, corrected: 6 of 8 templates carry zero compiled collections and 2 carry 3 each. Zero is honest absence (no collections compiled for that template), not evidence that none exist — but the 'seven of eight' figure this document used to carry was simply wrong (correction C1).",
+    "The Site Library's 'Site ID' column is NOT unique — several siteId values are shared by more than one project on disk (the pre-existing collision the Phase 10 integrator disclosed). siteKey/projectId/projectDir are the unique keys, are present in the payload, and are still shown in no column. Named, not fixed here."
+  ],
+  "corrections": [
+    {
+      "id": "C1-collection-figure",
+      "raisedBy": "Phase 7/8 verifier (FAIL finding: DOC DEFECT)",
+      "originalClaimPreserved": "limitations[2] and noInventedColumns of this document said: 'collection count of 0 for 7/8 templates is honest absence'.",
+      "measuredTruth": "6 of 8 templates on disk carry ZERO compiled collections; TWO carry 3 each — data/stripe.com/recon-templates/2026-08-26T17-16-46-409Z and data/stripe.com/recon-templates/2026-08-26T22-38-06-075Z.",
+      "howMeasured": "every site-map.json under data/*/recon-templates/*/ read directly (8 files), AND re-derived on every suite run by the new check 'lib.columnsTrace collection count matches site-map.json for EVERY template on disk' in scripts/smoke-create-site.ts, which prints the distribution: 'measured: 2 of 8 templates carry compiled collections; 6 carry none'. The figure is no longer prose in a document — it is a number the suite prints and a check that fails if any template's rendered count disagrees with its own site-map.json.",
+      "engineeringDefect": "NONE — the screen rendered 3 correctly for both templates all along. The defect was in this document, and it is the same class of untraceable-figure error the Phase 4/5/6 gate was failed for.",
+      "fixedInCode": "scripts/smoke-create-site.ts (new all-templates check, +1 check)"
+    },
+    {
+      "id": "C2-warnings-dropped",
+      "raisedBy": "Phase 7/8 verifier (FAIL finding: UI HONESTY)",
+      "originalDefectPreserved": "GET /api/sites and GET /api/templates both returned a `warnings` array and src/editor/client.ts's loadLibrary() DISCARDED it: the verifier corrupted a project document, the scan reported 'site ... not indexed: Expected property name...', and the rendered Site Library simply showed one row fewer with no note anywhere in #wr-library-inner. The registry's 'never a silent drop' doctrine held at the scan layer and was lost at the screen.",
+      "fixedInCode": "src/editor/client.ts — renderLibraryWarnings() renders every warning both endpoints return, under its own table (#wr-lib-sites-warnings / #wr-lib-templates-warnings); loadLibrary() and the post-create Site Library refresh both pass `warnings` through; a CLEAN scan is stated explicitly ('0 scan warnings — every artifact found on disk was read and is listed above.') so silence can never be mistaken for cleanliness.",
+      "provenInABrowser": "scripts/smoke-create-site.ts section 'PHASE 7 CORRECTION' drives the REAL client in a REAL Chromium against the REAL editor server with a THROWING runtime (so the Library is proven to need no open site), writes one deliberately unreadable release project under its own wr28- namespace, and asserts the screen NAMES it and reports the count of what is missing from the table — then removes it.",
+      "measured": {
+        "sitesOnDiskAtMeasurement": 31,
+        "templatesOnDisk": 8,
+        "warningsOnACleanTree": 0,
+        "warningsWithOneUnreadableProject": 1,
+        "warningTextRendered": "site data/stripe.com/release-projects/<the unreadable project> not indexed: Expected property name or '}' in JSON at position 2 (line 1 column 3)",
+        "mutationProof": "reverting loadLibrary() to the old `renderSiteLibrary(r.sites)` (the exact original defect) makes 2 checks FAIL: the screen claims '0 scan warnings' while a project is missing from the table (see mutationInjectionProofs in 28-site-create.json, M2)."
+      }
+    },
+    {
+      "id": "C3-adaptation-not-surfaced",
+      "raisedBy": "Phase 7/8 verifier (FAIL finding: UI HONESTY)",
+      "originalDefectPreserved": "For the 3 pre-Task-27 projects the Site Library printed a host-slug Site ID and 'doc r2', although those documents carry NO siteId and NO projectRevision on disk (they are at revision 1). The values are src/release/instance.ts adaptReleaseProject's documented IN-MEMORY upgrade, and `adaptedFromRevision: 1` was already present in the payload the screen received — and dropped.",
+      "fixedInCode": "src/editor/client.ts — when SiteEntry.adaptedFromRevision is set, the Site ID cell says 'adapted — this r<n> document has no siteId on disk; derived from the host' and the Revision cell says 'read as r<m> in memory; the file on disk is at r<n> and was not rewritten'.",
+      "measured": {
+        "adaptedProjectsOnDisk": 3,
+        "adaptedProjects": [
+          "linear.app/linear.app-2026-08-25T23-32-42-075Z",
+          "linear.app/linear.app-2026-08-25T23-54-21-435Z",
+          "stripe.com/stripe.com-2026-08-19T06-36-35-798Z"
+        ],
+        "onDiskRevision": 1,
+        "inMemoryRevision": 2,
+        "browserCheck": "the suite reads every rendered row's text and asserts EXACTLY the adapted rows say so (3 of 3, and no other row claims it), and that the sample row names r1 next to doc r2 and the words 'not rewritten'.",
+        "mutationProof": "removing both adaptation lines makes 2 checks FAIL ('0 rows say adapted vs 3 adapted entries') — see mutationInjectionProofs in 28-site-create.json, M3."
+      }
+    }
+  ],
+  "scanWarnings": {
+    "doctrine": "The registry never silently drops an artifact it could not read, and NEITHER DOES THE SCREEN (correction C2).",
+    "surface": "#wr-lib-sites-warnings and #wr-lib-templates-warnings, rendered under their tables by renderLibraryWarnings() in src/editor/client.ts",
+    "cleanTreeStatesItself": "'<Library> scan: 0 scan warnings — every artifact found on disk was read and is listed above.'",
+    "dirtyTreeNamesEveryOne": "'<Library> scan: N artifact(s) on disk could NOT be indexed and are therefore MISSING from the table above.' followed by each warning verbatim"
+  }
+}

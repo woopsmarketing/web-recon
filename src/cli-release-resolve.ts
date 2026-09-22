@@ -33,6 +33,10 @@ async function main(): Promise<void> {
     console.log(`  unmatched:   ${result.unmatchedFields.join(", ")}`);
   }
   console.log(`  invalidated: ${result.invalidated.join(", ") || "(no stage)"}`);
+  // This command REWRITES requirements.json, so it says what the file now
+  // says (Task 28 §1B) — a rewrite that reports no total is how a CLI number
+  // and a file number end up describing different collections.
+  console.log(`  requirements: ${result.requirementsCount} (as now persisted)`);
   console.log(`  state:       ${result.project.releaseState}`);
 }
 

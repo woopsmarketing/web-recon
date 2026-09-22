@@ -1,0 +1,498 @@
+{
+  "schema": "task28-gate-phase456-v1",
+  "role": "FRESH GATE AGENT for Task-28 Phases 4 (Visual Editor V1), 5 (region enablement) and 6 (route enablement). Implemented nothing, verified no one's prose — measured the tree as it stands.",
+  "producedAt": "2026-08-28T (local 03:49-04:20 KST, darwin 25.2.0, Node 22.22.3, pnpm 11.21.0)",
+  "typecheck": "exit 0",
+  "typecheckEvidence": "bash tmp/wr28/suite-lock.sh pnpm typecheck -> `$ tsc --noEmit`, no diagnostics, rc 0. Run TWICE: once at 03:49 as the head of the battery, and AGAIN at 04:16 because a concurrent agent edited src/editor/client.ts and scripts/smoke-editor-integration.ts at 03:56, mid-battery. Both runs exit 0; the second covers the current bytes.",
+  "countDerivation": "Every `checks` value was re-derived by me with `grep -cE '^  PASS '` on the suite's captured raw stdout and `failures` with `grep -cE '^  FAIL '` — anchored at line start, never read from the suite's own summary line (which I recorded separately and found to agree in every case). Anchoring matters: smoke-content-injection's raw log contains 2 UNanchored '  FAIL ' matches which are `[content:qa]   FAIL — …` diagnostic lines emitted inside intentional NEGATIVE fixtures, not check failures; the anchored count is 0 and the suite's own summary says 152/152.",
+  "invocation": "26 invocations (typecheck + 25 suites) through bash tmp/wr28/suite-lock.sh, ONE AT A TIME, sequentially, in a single battery; every invocation reported `wr28-lock: acquired after 0s`, so no lock-wait time is folded into any wall-clock figure. Suite set discovered by globbing scripts/smoke-*.ts (26 files) and cross-checked against docs/result/handoffs/28-intel/pending-package-scripts.tsv: the 20 counted originals + authoring-preview, brand-assets, enablement, visual-editor, editor-integration. smoke:playwright skipped by instruction (uncounted, touches the public internet). No suite is uncovered.",
+  "suites": [
+    {
+      "suite": "verifier",
+      "checks": 81,
+      "failures": 0,
+      "seconds": 7,
+      "exitCode": 0,
+      "prevCount": 81,
+      "delta": 0
+    },
+    {
+      "suite": "selector",
+      "checks": 81,
+      "failures": 0,
+      "seconds": 0,
+      "exitCode": 0,
+      "prevCount": 81,
+      "delta": 0
+    },
+    {
+      "suite": "multi-observer",
+      "checks": 62,
+      "failures": 0,
+      "seconds": 27,
+      "exitCode": 0,
+      "prevCount": 62,
+      "delta": 0
+    },
+    {
+      "suite": "interaction-detector",
+      "checks": 92,
+      "failures": 0,
+      "seconds": 0,
+      "exitCode": 0,
+      "prevCount": 92,
+      "delta": 0
+    },
+    {
+      "suite": "interaction-explorer",
+      "checks": 108,
+      "failures": 0,
+      "seconds": 93,
+      "exitCode": 0,
+      "prevCount": 108,
+      "delta": 0
+    },
+    {
+      "suite": "interaction-patterns",
+      "checks": 88,
+      "failures": 0,
+      "seconds": 0,
+      "exitCode": 0,
+      "prevCount": 88,
+      "delta": 0
+    },
+    {
+      "suite": "sitespec",
+      "checks": 257,
+      "failures": 0,
+      "seconds": 1,
+      "exitCode": 0,
+      "prevCount": 257,
+      "delta": 0
+    },
+    {
+      "suite": "reconstruction",
+      "checks": 217,
+      "failures": 0,
+      "seconds": 7,
+      "exitCode": 0,
+      "prevCount": 217,
+      "delta": 0
+    },
+    {
+      "suite": "reconstruction-qa",
+      "checks": 134,
+      "failures": 0,
+      "seconds": 145,
+      "exitCode": 0,
+      "prevCount": 134,
+      "delta": 0
+    },
+    {
+      "suite": "e2e",
+      "checks": 130,
+      "failures": 0,
+      "seconds": 603,
+      "exitCode": 0,
+      "prevCount": 130,
+      "delta": 0
+    },
+    {
+      "suite": "recon-template",
+      "checks": 109,
+      "failures": 0,
+      "seconds": 80,
+      "exitCode": 0,
+      "prevCount": 109,
+      "delta": 0
+    },
+    {
+      "suite": "regions",
+      "checks": 76,
+      "failures": 0,
+      "seconds": 1,
+      "exitCode": 0,
+      "prevCount": 67,
+      "delta": 9
+    },
+    {
+      "suite": "content-injection",
+      "checks": 152,
+      "failures": 0,
+      "seconds": 58,
+      "exitCode": 0,
+      "prevCount": 145,
+      "delta": 7
+    },
+    {
+      "suite": "theme",
+      "checks": 47,
+      "failures": 0,
+      "seconds": 35,
+      "exitCode": 0,
+      "prevCount": 47,
+      "delta": 0
+    },
+    {
+      "suite": "seo",
+      "checks": 104,
+      "failures": 0,
+      "seconds": 1,
+      "exitCode": 0,
+      "prevCount": 97,
+      "delta": 7
+    },
+    {
+      "suite": "assets",
+      "checks": 140,
+      "failures": 0,
+      "seconds": 5,
+      "exitCode": 0,
+      "prevCount": 140,
+      "delta": 0
+    },
+    {
+      "suite": "production",
+      "checks": 129,
+      "failures": 0,
+      "seconds": 4,
+      "exitCode": 0,
+      "prevCount": 123,
+      "delta": 6
+    },
+    {
+      "suite": "release",
+      "checks": 274,
+      "failures": 0,
+      "seconds": 90,
+      "exitCode": 0,
+      "prevCount": 241,
+      "delta": 33
+    },
+    {
+      "suite": "revision",
+      "checks": 36,
+      "failures": 0,
+      "seconds": 1,
+      "exitCode": 0,
+      "prevCount": 36,
+      "delta": 0
+    },
+    {
+      "suite": "registry",
+      "checks": 35,
+      "failures": 0,
+      "seconds": 0,
+      "exitCode": 0,
+      "prevCount": 35,
+      "delta": 0
+    },
+    {
+      "suite": "authoring-preview",
+      "checks": 41,
+      "failures": 0,
+      "seconds": 22,
+      "exitCode": 0,
+      "prevCount": 41,
+      "delta": 0
+    },
+    {
+      "suite": "brand-assets",
+      "checks": 141,
+      "failures": 0,
+      "seconds": 16,
+      "exitCode": 0,
+      "prevCount": 141,
+      "delta": 0
+    },
+    {
+      "suite": "enablement",
+      "checks": 101,
+      "failures": 0,
+      "seconds": 4,
+      "exitCode": 0,
+      "prevCount": null,
+      "delta": null
+    },
+    {
+      "suite": "visual-editor",
+      "checks": 50,
+      "failures": 0,
+      "seconds": 26,
+      "exitCode": 0,
+      "prevCount": null,
+      "delta": null
+    },
+    {
+      "suite": "editor-integration",
+      "checks": 45,
+      "failures": 0,
+      "seconds": 25,
+      "exitCode": 0,
+      "prevCount": null,
+      "delta": null
+    }
+  ],
+  "totalChecks": 2730,
+  "totalFailures": 0,
+  "totalChecksBreakdown": "2,352 across the 20 original counted suites + 378 across the 5 Task-28 suites (authoring-preview 41, brand-assets 141, enablement 101, visual-editor 50, editor-integration 45) = 2,730. The 22-suite / 2,472-check Phase-2/3 baseline grows by +258.",
+  "negativeDeltas": [],
+  "deltaExplanations": [
+    "regions 67 -> 76 (+9): smoke-regions §9, the region artifact's first enablement consumer.",
+    "content-injection 145 -> 152 (+7): the two new slot dispositions and the manifest enablement block (28.P5.CI1-CI7, 28.P6.CI5).",
+    "seo 97 -> 104 (+7): §5b, a disabled route leaving the plan / canonical+og block / sitemap / rendered head (28.P6.S1-S7).",
+    "production 123 -> 129 (+6): pickContentProof never promising a disabled slot, and applyEnablementToApp over a hand-built app copy.",
+    "release 241 -> 274 (+33): +30 from the Phase-5/6 build (28.P5.65-75, 28.P6.20-37) and +3 from the correction round (28.P6.38/38b/38c).",
+    "enablement (101), visual-editor (50), editor-integration (45) are NEW suites that did not exist at the Phase-2/3 gate, so prevCount and delta are null rather than 0.",
+    "The other 16 original suites are delta 0. NO suite decreased, so no decrease had to be adjudicated as deliberate-replacement vs regression.",
+    "editor-integration measures 45 checks, not the 25 its own integration report and two prior verifiers recorded. That is an INCREASE, not a loss: the file has 45 distinct 28.P8.* ids and was edited at 03:56 today by a concurrent agent. It is a new suite outside the baseline, so it produces no delta — but a reader comparing it to the integration report will not reproduce 25."
+  ],
+  "gitMutatingOperations": 0,
+  "gitEvidence": {
+    "logOneline3": "6c2e723 0827 morning / d33abb3 checkpoint: web-recon MVP preview-ready baseline / 2777b41 chore: initialize web-recon foundation (Phase 1)",
+    "headUnchanged": "HEAD is still 6c2e723, identical before and after the battery",
+    "stashList": "empty (0 lines), checked before and after",
+    "reflog": "exactly 3 entries, all pre-session commits (2026-08-27 17:13, 2026-08-26 23:55, 2026-08-13 14:27). No reset / checkout / rebase / merge / stash / commit entry was added.",
+    "statusPorcelain": "72 lines before the battery and 72 after: 46 ' M ' modified tracked + 26 '?? ' untracked. ZERO staged, renamed, deleted or conflicted entries. It becomes 73 with this file.",
+    "operationsIPerformed": "read-only only: git log, git stash list, git reflog, git status --porcelain, git diff --quiet, git show HEAD:<path>",
+    "mutationResidue": "`grep -rn 'MUTANT|SABOTAGE|VFY2-MUTANT' src scripts` returns no matches — no earlier agent's falsifiability battery left code behind."
+  },
+  "aggregationPhase1Intact": {
+    "file": "docs/result/handoffs/24-aggregation-phase1.json",
+    "worktreeSha256": "09e3745e3041d9018640e7027c1fb6ec60617f04d2cbcbd4e421a48b7c8d1c30",
+    "committedBlobSha256": "09e3745e3041d9018640e7027c1fb6ec60617f04d2cbcbd4e421a48b7c8d1c30",
+    "bytes": 22107,
+    "gitDiffQuiet": "exit 0 — byte-identical to the committed blob, re-checked after the whole battery"
+  },
+  "historicalMutationCount": 0,
+  "historicalMutationMethod": "find data -type f -newermt '2026-08-27 17:29:00' (local UTC+9 == 2026-08-27T08:29Z) returned 24,252 files; I grouped every one by its containing run directory (first path segment matching ####-##-##T##-##-##-###Z) and inspected every distinct group. Birth times were NOT used and `git status data/` was NOT used (data/ is gitignored).",
+  "historicalMutationEvidence": {
+    "runDirectoriesTouched": 203,
+    "runDirectoriesWhoseIdPredates20260827": 3,
+    "adjudication": "All three are data/stripe.com/release-projects/wr28-int-stripe/runs/{2026-08-25T12-40-15-656Z, 2026-08-25T12-58-28-566Z, 2026-08-25T13-28-26-494Z} — run directories INSIDE a NEW wr28- prefixed release project that is a COPY of the accepted data/stripe.com/release-projects/stripe.com-2026-08-19T06-36-35-798Z. Copying preserves the source's run ids, which is why the path carries an old date. PROOF THE ORIGINAL IS UNTOUCHED: the source project's own runs/2026-08-25T12-40-15-656Z still has mtime 2026-08-25 21:40:15, while the copy's is 2026-08-28 04:11:43. This is 'read and COPY out of them', exactly as the contract permits. Historical mutation count is therefore 0.",
+    "frozenArtifactsUntouched": "data/*/recon-templates: 0 files newer than the cutoff. data/*/page-regions: 0 files. data/*/reconstructions: 0 files. Exact Reconstruction and the Recon Templates the whole program reads were not written to at all.",
+    "releaseProjectsTouched": "13, EVERY one wr28- prefixed: wr28-vfy2-p56, wr28-verifier-packonly, wr28-assets-runner, wr28-vfy-p56, wr28-brand-assets, wr28-fix-p56, wr28-editor-integration, wr28-visual-editor, wr28-assets-stage, wr28-vfy-p4, wr28-verifier-authored, wr28-fix-p56b, wr28-int-stripe.",
+    "otherTouchedNamespaces": "production-builds and production-specs (every touched run id dated 2026-08-27 or later, plus the wr28-vfy-p4-prod namespace), content-runs (14 dirs, oldest 2026-08-27T17-16-16-532Z), authoring-previews for linear/stripe/domainchecker (Task-28 namespaces), data/.registry/sites.json (a live index), and the wr28-* operator-asset input dirs.",
+    "flowpilotWr27": "data/linear.app/release-projects/flowpilot-wr27 still has NO revisions/ directory (contents: authored, operator-checklist.md, release-project.json, requirements.json, runs, technical-debt.json), so smoke:revision 27A.23 is honestly satisfied — and that suite passed 36/36 in this battery.",
+    "releaseFixture": "data/release-fixture.example does not exist at gate close: smoke:release rm -rf's it in its finally block. Nothing pre-2026-08-27 lives there."
+  },
+  "dataWrSlotEmissionSites": 0,
+  "dataWrSlotEvidence": "`grep -rn data-wr-slot src scripts` returns 16 lines and ZERO is an emission site. 5 are doc comments stating the attribute does not exist (src/regions/enablement.ts:40, src/authoring-preview/bridge.ts:16, src/editor/index.ts:6, src/editor/inversion.ts:4, scripts/smoke-visual-editor.ts:16). 11 are NEGATIVE assertions inside four suites that would FAIL if one were minted (smoke-visual-editor.ts:468/579/640/1054/1057/1058, smoke-authoring-preview.ts:276, smoke-regions.ts:360/771/775, smoke-brand-assets.ts:391). No setAttribute, no props key, no markup template writes, serializes or reads it. Live corroboration: smoke:visual-editor 28.P4.45 measured 0 such elements in the running preview DOM and 0 occurrences in the served HTML, and it passed in this battery. A reader counting raw grep lines will see 16, not 0.",
+  "editorArtifactsInProductionPackage": 0,
+  "editorArtifactsEvidence": {
+    "packageChecked": "data/domainchecker.co.kr/production-builds/2026-08-27T19-09-56-110Z — the MOST RECENT production build under data/*/production-builds/, and the strongest available test because scripts/smoke-authoring-preview.ts §7 baked it DURING this battery, immediately after a real authoring-preview session with the extended bridge loaded.",
+    "scope": "the whole 482-file build tree AND the 198-file shipped package, grep -ral with --binary-files=text",
+    "markersSearched": [
+      "wr-authoring-bridge",
+      "wr-authoring-editor",
+      "WR_AUTHORING_HOT",
+      "WR_AUTHORING_EPOCH_FILE",
+      "__wrAuthoringBridge",
+      "data-wr-editor",
+      "wr-select-mode",
+      "api/preview-value",
+      "api/ai-rewrite",
+      "api/region-enablement",
+      "api/resolve",
+      "wr-region-toggle",
+      "wr-route-toggle",
+      "wr-refusals",
+      "startVisualEditor",
+      "EDITOR_CLIENT",
+      "wr-frame",
+      "wr-left",
+      "wr-right",
+      "data-wr-slot",
+      "slotContentEpoch",
+      "loadPageHot",
+      "src/editor",
+      "authoring-previews"
+    ],
+    "hits": "0 files for 23 of the 24 markers, in both the build tree and the package. The 24th, the bare directory-name fragment 'authoring-previews', matched exactly ONE file — app/.next/cache/turbopack/v16.3.0-d73f5622/00000003.sst, a Turbopack build-cache blob that is NOT in the shipped package (0 package files match). `strings` on it shows the fragment sitting beside '-templates' and 'specs', i.e. a recorded readdir of the data/<host>/ directory, and the SAME file contains 0 occurrences of wr-authoring-bridge, WR_AUTHORING_HOT, data-wr-editor and loadPageHot. It is a sibling directory NAME, not editor bytes.",
+    "corroboration": "The same five-marker grep over the two next-newest builds (data/linear.app/production-builds/2026-08-27T18-46-33-132Z, 429 build files / 214 package files, and …18-21-34-705Z) returns 0 files each. Structurally, src/production/run.ts copies the IMMUTABLE template run, never a patched preview workspace."
+  },
+  "handoffSpotChecks": [
+    {
+      "file": "docs/result/handoffs/28-visual-editor.json",
+      "field": "fixture.template — slot/binding counts of the real linear.app Recon Template",
+      "claimed": "3,079 slots / 9,929 bindings",
+      "measured": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z: slots.json slots=3079, slot-bindings.json bindings=9929",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-visual-editor.json",
+      "field": "domToSlotInversion.measuredOnTheRealTemplate.widenedWithoutTrigger",
+      "claimed": "94 of 262 dynamic bindings would get a STRICTLY WIDER candidate set — i.e. slots that are NOT on that element — if resolved on templateNodeId alone",
+      "measured": "22. Recomputed twice (Python + TypeScript) with the suite's OWN logic, scripts/smoke-visual-editor.ts:305-315: looseKey=pageId|viewport|templateNodeId, tightKey=looseKey|nodeId, widened = count(|loose|>|tight|) = 22. The value 94 is a DIFFERENT, also-real quantity: count(|loose|>1), the bindings whose candidate set is merely AMBIGUOUS without the trigger, = 262-168 = 94. The check itself (28.P4.2) is honest — it asserts widened>0 and prints the true 22 in its detail string; only the handoff narrative carries 94 under the strictly-wider definition. Independently reported as FAILED by the Phase-4 verifier on 2026-08-27 and never corrected (the file has no corrections block).",
+      "agrees": false
+    },
+    {
+      "file": "docs/result/handoffs/28-visual-editor.json",
+      "field": "domToSlotInversion.measuredOnTheRealTemplate — dynamicBindings / soundWithTrigger / singleSlotResolution",
+      "claimed": "262 dynamic bindings; sound 262/262; single-slot 168/262 -> 182/262",
+      "measured": "262 / 262 of 262 / 168 -> 182 — exact",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-visual-editor.json",
+      "field": "multiBinding.provenOn (plan.main.text.projects)",
+      "claimed": "sl002641, 5 bindings: static desktop n000086 + n000098, dynamic-template desktop trigger n000094/t000014, static mobile n000086 + n000098",
+      "measured": "sl002641, exactly 5 bindings on p000006: desktop n000086 static, desktop n000098 static, desktop n000094 dynamic-template templateNodeId t000014, mobile n000086 static, mobile n000098 static",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-visual-editor.json",
+      "field": "inspectors.urlAndCta.groupingIsReal / degradedGroups",
+      "claimed": "1,553 of 3,079 slots across 635 groups; 194 groupIds hold exactly ONE slot, 190 of them image.content; home.main.cta.new-loops = 1 href + 2 labels ('New', 'Loops →')",
+      "measured": "1553 grouped slots / 635 distinct groupIds; 194 one-member groups of which 190 role=image.content; home.main.cta.new-loops.href='/now/introducing-loops' + .label.01='New' + .label.02='Loops →'",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-visual-editor.json",
+      "field": "viewportSemantics.profiles + breakpoint",
+      "claimed": "Desktop 1440x900 / Mobile 390x844 from src/observer/types.ts; breakpoint 915 read from route-map.json",
+      "measured": "src/observer/types.ts:114-130 width 1440 height 900 / width 390 height 844; route-map.json of the linear template carries breakpoint 915",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-visual-editor.json",
+      "field": "architecture.appLocation.code — module count of src/editor/",
+      "claimed": "src/editor/ (13 modules) + src/cli-editor.ts",
+      "measured": "14 modules, 4,970 lines (`ls -1 src/editor/*.ts | wc -l` = 14; `wc -l` total 4970). Traceable to STALENESS, not fabrication: the integration phase added src/editor/enablement.ts and extended client.ts after this handoff was written. The Phase-4 verifier measured 14/4,819 on 2026-08-27; the file has grown again since (client.ts was edited at 03:56 today).",
+      "agrees": false
+    },
+    {
+      "file": "docs/result/handoffs/28-visual-editor.json",
+      "field": "tests.suite — smoke:visual-editor check count",
+      "claimed": "50 checks, 0 failures (ids 28.P4.1 … 28.P4.50)",
+      "measured": "my own locked run: 50 anchored PASS lines, 0 anchored FAIL lines, suite summary 'smoke:visual-editor — 50 checks, 0 failures', rc 0, 26 s",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-visual-editor.json",
+      "field": "performance.table — 'route switch (operator picks a page → the new route is rendered)' 22 ms median / 658 ms max",
+      "claimed": "reps 6, medianMs 22, maxMs 658",
+      "measured": null,
+      "agrees": null,
+      "note": "NOT re-measured by this gate (it needs a live editor + Chromium harness, outside the brief's scope). Traceable to the builder's own samples array in the same file. The Phase-4 verifier re-measured the same operation at 534 ms median / 537 ms max with a stricter wait condition and reported the 22 ms figure as a measurement artifact. Recorded as an open, once-unreproduced performance number, not as an untraceable one."
+    },
+    {
+      "file": "docs/result/handoffs/28-region-enablement.json",
+      "field": "safetyRules[R2].realCounterexample — global-region signal counts on linear",
+      "claimed": "the compiler's strict lift finds 5 global regions of 68; the three-signal union finds 25",
+      "measured": "my own probe calling the product's regionEnablementScope over all 68 regions: scope==='global' 5; union global 25; signal histogram {compiler-scope-global:5, signature-on-multiple-pages:25, global-scope-slot:9}",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-region-enablement.json",
+      "field": "safetyRules[R2] — the eight footer1:self regions",
+      "claimed": "all EIGHT page-scoped footer1:self regions carry the identical 84 global.footer.* slot keys; scope 'routes' at full radius is refused global-region-requires-explicit-global; scope 'global' is accepted with 84 keys and 7 siblingRegionIds",
+      "measured": "8 regions matching *:rgn:footer1:self, every one compiler scope 'page', blast radius exactly one route each; slot-key SET equality across all 8 (not just count), 84 keys each, all global.footer.*; evaluateRegionDisable(p000001:rgn:footer1:self, scope routes ['/']) -> allowed=false ['global-region-requires-explicit-global']; scope global -> allowed=true, effect.slotKeys 84, siblingRegionIds 7",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-region-enablement.json",
+      "field": "safetyRules[R2].measuredSlotSharing / measuredNodePartition",
+      "claimed": "134 of linear's 3,079 slot keys belong to more than one region; 18,458 (page,viewport,node) keys owned by >=1 region on linear and ZERO by more than one (68,949 / 0 on stripe)",
+      "measured": "134 of 3079; my own re-derivation of the byNode map from region roots + subtreeNodeIds: linear 18,458 keys / 0 owned by >1 (matches membership.size exactly); stripe 68,949 / 0",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-region-enablement.json",
+      "field": "safetyRules[R3].realCounterexample — the interaction graph on linear",
+      "claimed": "23 triggers, 39 target edges — 6 same-region, 3 CROSS-region, 14 pointing outside every region, 16 dyn-mount; all three cross edges converge on n001530 in p000001:rgn:main1:div:2>section:3 from n000021 (global nav), n000128 and n001659",
+      "measured": "scanInteractionEdges over 8 pages x 2 viewports: triggers 23, edges 39, channels {obs-existing:14, dyn-mount:16, obs-mount-host:7, target-node:2}; same-region 6, cross-region 3, target-in-no-region 14; the 3 cross edges are exactly n000021[global:rgn:nav1:self] / n000128[p000001:rgn:nav2:self] / n001659[…section:4] -> n001530 [p000001:rgn:main1:div:2>section:3]",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-region-enablement.json",
+      "field": "safetyRules[R3] — refusal, cascade, and the hazards the cascade exposes",
+      "claimed": "disabling that region yields exactly 3 interaction-cut-target-disabled refusals; re-issuing with the named cascade regions then exposes 8 interaction-cut-target-unreachable refusals with cascadeAvailable=false",
+      "measured": "evaluateRegionDisable(p000001:rgn:main1:div:2>section:3, scope global) -> allowed=false, {interaction-cut-target-disabled:3}, cascade offered = [global:rgn:nav1:self, p000001:rgn:nav2:self, p000001:rgn:main1:div:2>section:4]; re-issued with that cascade -> allowed=false, {interaction-cut-target-unreachable:8}, every cascadeAvailable=false",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-region-enablement.json",
+      "field": "safetyRules[R1].realCounterexample — the stripe many-to-one group",
+      "claimed": "20 routes over 18 pages, 2 many-to-one groups (p000012, p000013); the region p000012:rgn:doc:…>article:1 carries 109 slot keys; scope 'routes' naming one route is refused shared-page-blast-radius with wouldAlsoAffect the sibling and cascadeAvailable=false; scope 'global' is allowed with blastRadius naming BOTH routes and pageSourceIds exactly ['p000012']",
+      "measured": "20 routes / 18 pages / 1014 regions; exactly 2 many-to-one groups, p000012<-{arr-loans-explained, virtual-credit-cards-for-businesses-explained} and p000013<-{kit-digital, what-is-carding-…}; the named region has exactly 109 slotKeys; refused branch codes ['global-region-requires-explicit-global','shared-page-blast-radius'], detail.wouldAlsoAffect=['/resources/more/virtual-credit-cards-for-businesses-explained'], cascadeAvailable false; global branch allowed with blastRadius=[both routes], pageSourceIds=['p000012'], slotKeys 109",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-region-enablement.json",
+      "field": "corrections[0].measuredAfter (the region-accounting guard) — real build",
+      "claimed": "region-off build run 2026-08-27T17-50-03-674Z / content run 2026-08-27T17-50-03-834Z: `disabled-region` rows 0, the four global.footer.link.{status,x-twitter,github,youtube}.href keys `unresolved` again, production QA 77/77 proving content-proof:global.footer.link.coding-sessions.label and …customer-requests.label, region still physically removed with regionNodesRemoved=2",
+      "measured": "content run on disk: byDisposition {preserved 875, applied 532, unresolved 117, human-required 1415, disabled-region 0, disabled-route 0, removed 0}, reconciliation.reconciled true with 0 missing; all four blocker keys read `unresolved`; production build 2026-08-27T17-50-04-236Z report/qa.json 77 checks / 0 failures and BOTH named content proofs present; report/enablement.json applied.regionNodesRemoved=2, pageFilesRewritten ['pages/p000002.json'], plan still carries 1 disabledRegionId and 2 disabledNodes with disabledSlotKeys []",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-region-enablement.json",
+      "field": "disableabilityCensusAfterCorrection (the not-a-blanket-refusal proof)",
+      "claimed": "linear 68 regions / 8 routes: scope 'global' allowed 66/68, scope 'routes' at full radius 42/68, refused under both 2/68, single-route disable 8/8. stripe 1,014 regions / 20 routes: 996/1,014, 97/1,014, 18, 20/20",
+      "measured": "my own census through the product's evaluateRegionDisable / evaluateRouteDisable: linear 66 / 42 / 2 / 8-of-8; stripe 996 / 97 / 18 / 20-of-20 — every figure identical",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-route-enablement.json",
+      "field": "navigationCascade.measuredOnLinear",
+      "claimed": "disabling /pricing produces 2 deterministic nav groups (global.header.nav.pricing, global.footer.link.pricing), 28 anchor nodes = 7 ENABLED pages x 2 viewports, each group removing its href + its paired label",
+      "measured": "evaluateRouteDisable(['/pricing']): navCascade has 2 items, slotKeys global.header.nav.pricing.href and global.footer.link.pricing.href, removedSlotKeys 2 each (href + label), nodes 14 each = 28 total, across exactly 7 pageSourceIds (p000001-6, p000008 — the disabled page p000007 is not touched)",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-route-enablement.json",
+      "field": "corrections / serializedMarkupPass — dead-link findings for a NATURAL /pricing disable",
+      "claimed": "0 findings before the correction -> 7 after: one per ENABLED page, mobile viewport, trigger node n000057, slotKey null, reason dynamic-template-host; the nav cascade unchanged at 2 groups / 28 anchors",
+      "measured": "deadLinks.length = 7, byReason {dynamic-template-host: 7}, every finding viewport 'mobile', nodeId 'n000057', slotKey null, href '/pricing', distinct linkingRoutes/pages = 7 (p000001-6, p000008); navCascade still 2 groups / 28 nodes in the same call",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-route-enablement.json",
+      "field": "deadInternalLinks — the requirement raised on a REAL release build",
+      "claimed": "7 release-blocking dead-internal-link requirements on the route-off build of wr28-fix-p56 (run 2026-08-27T17-47-57-525Z), one per linking route, unresolved",
+      "measured": "that run.json on disk: finalVerdict PRODUCTION_INPUTS_REQUIRED, requirementsTotal 393, blockers 95 of which exactly 7 are dead-internal-link (id 'dead-internal-link-/-to-/pricing' and siblings). The project's current requirements.json shows the same 7 retained as `not-applicable` because the project's LATEST build re-enabled /pricing — retention behaving as documented, not deletion.",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-route-enablement.json",
+      "field": "contentStageScope.measuredRoundTrip (the disable/re-enable round trip on wr28-fix-p56b)",
+      "claimed": "disable run 2026-08-27T17-53-55-178Z: validation PASS, 3,079 accounted slots, disabled-route 142, manifest carries 62 withheld (60 values + 2 needs-input), QA 70/70, no pricing.html; re-enable run 2026-08-27T17-54-34-677Z: 62 restored, disabled-route 0, unresolved back to 119, pricing.html exported again, QA 77/77",
+      "measured": "disable content run: manifest.enablement.disabledRoutes ['/pricing'], withheld 62 entries = 60 with a value + 2 with an unresolvedReason; slot-accounting inScopeSlots 3079, reconciled true, byDisposition {applied 532, preserved 873, human-required 1415, unresolved 117, disabled-route 142, disabled-region 0, removed 0}; production build 2026-08-27T17-53-55-555Z QA 70/0 and NO package/site/pricing.html. Re-enable content run: manifest.enablement null, inScopeSlots 3079, reconciled true, disabled-route 0, unresolved 119; production build 2026-08-27T17-54-35-057Z QA 77/0 and package/site/pricing.html PRESENT",
+      "agrees": true
+    },
+    {
+      "file": "docs/result/handoffs/28-route-enablement.json",
+      "field": "disableabilityCensusAfterCorrection (same census, route side)",
+      "claimed": "single-route disable ALLOWED 8/8 on linear and 20/20 on stripe",
+      "measured": "evaluateRouteDisable over every route: linear 8 of 8 allowed, stripe 20 of 20 allowed",
+      "agrees": true
+    }
+  ],
+  "handoffUntraceableNumbers": [
+    "docs/result/handoffs/28-visual-editor.json domToSlotInversion.measuredOnTheRealTemplate.widenedWithoutTrigger = 94, under the definition the same sentence gives ('a STRICTLY WIDER candidate set — i.e. slots that are not on that element'). The value that definition produces on the real artifacts, computed with the suite's own code, is 22. 94 IS reproducible from the same data under a DIFFERENT definition (candidate set merely ambiguous without the trigger, |loose|>1 = 262-168), so the origin is traceable — but a reader checking the handoff's own claim against the tree cannot reproduce it.",
+    "docs/result/handoffs/28-visual-editor.json architecture.appLocation.code = 'src/editor/ (13 modules)'. The tree holds 14 modules / 4,970 lines. Traceable to staleness (the integration phase added src/editor/enablement.ts afterwards), not to a measurement of the current tree."
+  ],
+  "verdict": "FAIL",
+  "blockers": [
+    "HANDOFF HONESTY, docs/result/handoffs/28-visual-editor.json: the sentence 'of 262 dynamic bindings ... 94 would get a STRICTLY WIDER candidate set — i.e. slots that are not on that element' is FALSE as written. Recomputed twice (Python and TypeScript, replicating scripts/smoke-visual-editor.ts:305-315 verbatim) the value is 22; 94 is the count of dynamic bindings whose candidate set is merely AMBIGUOUS without the trigger. The Phase-4 independent verifier reported this on 2026-08-27 and it shipped UNCORRECTED — the file has no corrections block, and the same wrong figure also sits in docs/result/handoffs/28-intel/build-phase4-editor.json. This is the only reason for the FAIL verdict; the remedy is a one-token edit (94 -> 22, or restate the definition as 'ambiguous without the trigger'). NOTHING FUNCTIONAL FAILS: check 28.P4.2 itself is honest (it asserts widened>0 and prints the true 22 in its detail string) and the inversion behaviour it guards is correct.",
+    "HANDOFF STALENESS, same file: architecture.appLocation.code says 'src/editor/ (13 modules)'; the tree holds 14 modules / 4,970 lines. Caused by the integration phase adding src/editor/enablement.ts after the handoff was written. Cheap to fix, and worth fixing together with the above so the file reproduces against the tree."
+  ],
+  "limitations": [
+    "THE VERDICT RESTS ENTIRELY ON TWO DOCUMENTATION STRINGS IN ONE HANDOFF. Every engineering property this gate was asked to measure passed: typecheck exit 0 (twice), 25 suites / 2,730 checks / 0 failures, no negative delta anywhere, zero mutating git operations, zero historical data/ mutation, zero data-wr-slot emission sites, zero editor artifacts in a production package, and every one of the 21 other handoff numbers I spot-checked reproduced exactly against the artifacts. A reader deciding whether the SOFTWARE is in a shippable state should read this as PASS-with-two-doc-fixes; I return FAIL because handoff traceability is an explicit gate criterion in my brief and because this particular number was already reported once and left uncorrected.",
+    "A CONCURRENT AGENT EDITED THE WORKING TREE MID-BATTERY. src/editor/client.ts and scripts/smoke-editor-integration.ts both have mtime 2026-08-28 03:56:18, after my typecheck (03:49) and after ten of the twenty-five suites had already run. src/release/stages.ts changed at 03:46:31, just before the battery. I closed the typecheck gap by re-running it at 04:16 (exit 0) and I note that smoke:visual-editor and smoke:editor-integration both ran AFTER the edit, so they cover the current bytes — but the ten early suites (verifier … reconstruction-qa) were measured against the 03:49 tree. None of them imports src/editor, so the risk is structural rather than observed. Every number in this file is for the bytes present between 03:49 and 04:20 local on 2026-08-28.",
+    "I did NOT re-measure any latency figure. The performance table in 28-visual-editor.json (cold/warm startup, route switch, text/url/theme/image edit visibility, Save transaction) is outside this gate's scope; the one disputed entry (route switch 22 ms median vs the Phase-4 verifier's 534 ms) is recorded in handoffSpotChecks with measured=null rather than endorsed or disputed by me.",
+    "I ran NO falsifiability mutation of my own. Whether the new Phase-4/5/6 checks can fail rests on the mutation evidence recorded by their builders, verifiers and the correction round (Phase 5/6: MUTANT-A/B/C plus the first verifier's two and the second re-verifier's three, all restored byte-identically by sha256; Phase 4: three by the builder and two by its verifier). I confirmed only that no residue survives (`grep -rn 'MUTANT|SABOTAGE' src scripts` = 0) and that the suites pass clean.",
+    "No suite asserts its own total check count (a repo-wide property recorded by the pre-overnight audit). A silently dropped check shows up here only as a negative delta against the 22-suite baseline — the comparison I ran, with zero decreases — but WITHIN a suite a replaced check is indistinguishable from a lost-plus-added pair without reading the diff, which I did not do exhaustively. The clearest instance of this blind spot in the current tree is smoke:editor-integration, which two prior parties recorded at 25 checks and which I measure at 45 with no baseline to compare against.",
+    "The stripe evidence I re-derived is engine-level (loadEnablementInputs / evaluateRegionDisable / evaluateRouteDisable over the real 1,014-region artifact). I exercised NO stripe region or route enablement through a production build, because stripe still has no accepted release project — the same named limitation the Phase-5/6 handoffs carry.",
+    "The three region/route handoffs disclose a shipped consequence that is DETECTED but not solved and that this gate confirms is still true: a route disable leaves the captured mobile-nav template's /pricing link in the package (7 dynamic-template-host findings on real linear), the engine raises 7 release-blocking dead-internal-link requirements that do not clear on the served anchor audit's zero, and a project in that shape cannot honestly reach indexable production until an operator acts. I verified the detection and the requirements; I did not re-drive the Chromium click that a prior verifier used to prove the mounted 404.",
+    "The historical-mutation scan uses a local-clock cutoff of 2026-08-27 17:29:00 (= 2026-08-27T08:29Z on this UTC+9 machine), groups by containing run directory as instructed, and ignores birth times (APFS clonefile makes them unreliable here). It cannot detect an edit made before that cutoff, nor one that preserved the original mtime.",
+    "Wall-clock `seconds` are one rep per suite on one machine with zero lock contention (every invocation acquired the mutex after 0s). They are cost data, not benchmarks, and are not comparable to figures taken under contention.",
+    "smoke:playwright was not run (uncounted, touches the public internet, skipped by standing instruction). The five Task-28 suites remain registered only in docs/result/handoffs/28-intel/pending-package-scripts.tsv; package.json is unedited, so a future runner must invoke them with tsx directly.",
+    "This gate ran no pnpm install, edited no package.json, altered no smoke suite, and performed ZERO mutating git operations. The only file it writes inside the repo is this one."
+  ],
+  "evidenceOnDisk": {
+    "logs": "<scratchpad>/gate456/logs/*.log — 26 raw logs, one per locked invocation (25 suites + typecheck)",
+    "driver": "<scratchpad>/gate456/battery.sh (the sequential locked battery), results.tsv (name / rc / wall seconds), counts.sh (the anchored PASS/FAIL re-derivation), suites.json",
+    "probes": "<scratchpad>/gate456/probe-regions.mts (global signals, slot sharing, interaction census, footer key sets), probe-partition.mts (the 18,458 / 68,949 node-partition re-derivation), probe-route.mts (nav cascade, dead links, linear disableability census), probe-stripe.mts (stripe census + the many-to-one refused/safe branches), probe-cross.mts (the 3 cross-region edges), probe-cut.mts (interaction-cut refusal, cascade and the hazards it exposes), hist.sh (the mtime scan grouped by run directory)"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "schema": "task287-start-v1",
+  "task": "28.7 — Reconstruction Core Correction / Normal Page State / Frozen Value Closure / Honest QA / Fast Multi-Site Verification",
+  "phase": "PHASE 1 — EXACT RECONSTRUCTION ONLY",
+  "baselineSha": "6c2e723601a0d76431c96a48bbdb4726c02063e7",
+  "branch": "main",
+  "startedAt": "2026-09-04T13:28:59Z",
+  "startedAtLocal": "2026-09-04T22:28:59+0900",
+  "gitStatus": {
+    "modifiedTracked": 97,
+    "untrackedPaths": 126,
+    "snapshotFile": "tmp/wr287/git-status-at-start.txt",
+    "mutatingOperationsPlanned": 0
+  },
+  "machine": {
+    "model": "Mac16,11",
+    "logicalCpus": 14,
+    "memoryBytes": 68719476736,
+    "freeDiskGiB": 715,
+    "node": "v22.22.3",
+    "pnpm": "11.21.0",
+    "loadAverageAtStart": [3.78, 4.11, 4.50],
+    "cachedSiteDataDomains": 15
+  },
+  "priorVerdict": {
+    "task": "28.6",
+    "verdict": "NOT READY — ENGINE BLOCKERS REMAIN",
+    "report": "docs/result/28.6-reconstruction-v1-closure-2026-09-04.md",
+    "pairs": { "blocker": 43, "major": 32, "minor": 9, "pass": 0, "measurementFailed": 2, "total": 86 },
+    "worseThanSelfCheckFloor": 70
+  },
+  "regressionBaseline": {
+    "source": "docs/result/handoffs/28.5B-regression.json",
+    "suites": 34,
+    "checks": 3354,
+    "failures": 0,
+    "typecheckExit": 0,
+    "note": "28.6 ran NO full regression (only smoke-multi-observer 173/173, smoke-responsive-qa 120/120, tsc 0). 36 smoke-*.ts files exist on disk today vs 34 counted in 28.5B; the 28.7 final regression must enumerate all 36 and account for the delta."
+  },
+  "suitesOnDiskAtStart": 36,
+  "openDefectsCarriedIn": [
+    { "id": "A10-residual", "priority": "P0", "summary": "prepareScroll navigation destroys the execution context and loses the whole route observation" },
+    { "id": "A9", "priority": "P0", "summary": "a refused layout recovery ships the exact tier's 1440-frozen px, unchecked at every other width" },
+    { "id": "A5/A9-2", "priority": "P1", "summary": "recoverGridTracks refuses layouts with hidden children and spanning children" },
+    { "id": "A14", "priority": "P1", "summary": "QA grades a route the clone never built (HTTP 404) as content loss" },
+    { "id": "A15", "priority": "P1", "summary": "an unstable source capture is graded as stable truth" },
+    { "id": "A11", "priority": "P1", "summary": "overlap-excess-ratio conflates duplicate image layers with layout collapse" },
+    { "id": "B5", "priority": "P1", "summary": "modal/entry popups are flagged but baked into the reconstruction" },
+    { "id": "B4", "priority": "P1", "summary": "scroll-reveal re-hide state can be baked blank; two-instant verify gate not built" },
+    { "id": "A12", "priority": "P2-conditional", "summary": "one site-wide responsive tree switch where routes disagree" },
+    { "id": "A13", "priority": "P2-conditional", "summary": "mobile layout probe ceiling frozen at 914 below the tree switch" }
+  ],
+  "closedDoNotReinvestigate": ["B1", "B2", "B3", "A1", "A2", "A3", "A7", "A8"],
+  "wontfixProvenHarmful": ["A4 transitive descendant unfreeze", "containingBlockGuard relaxation"],
+  "sitesInScope": ["linear.app", "hobbang.net", "gs.severance.healthcare", "seoultone.kr"],
+  "sitesReservedForTask288": ["channel.io", "toss.im", "vipgunma.com", "beomeo.roseeskin.com"],
+  "outputNamespaces": {
+    "reports": "docs/result/28.7/",
+    "handoffs": "docs/result/handoffs/28.7-*.json",
+    "evidence": "docs/result/28.7/evidence/",
+    "humanReview": "docs/result/28.7/human-review/",
+    "scratch": "tmp/wr287/",
+    "ideaLane": "tmp/wr287-ideas/"
+  }
+}

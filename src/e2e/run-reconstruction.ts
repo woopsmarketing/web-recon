@@ -122,7 +122,18 @@ export async function runReconstructionStage(
             observedTargetsHostMounted: plan.interactions.observedTargetsHostMounted,
             observedTargetsCaptureExpanded:
               plan.interactions.observedTargetsCaptureExpanded,
-            layoutRecoveredRules: plan.layout.rules.length,
+            // Task 28.5B (D8) — what SHIPPED, not what inference proposed. The
+            // post-emit truth check drops any recovered rule it measured
+            // regressing or could not measure at all, so `plan.layout.rules`
+            // (post-guard, pre-check) over-reports the stylesheet. Candidates
+            // and both refusal channels are reported alongside, labelled.
+            layoutRecoveredRules: generated.layoutVerification.counters.acceptedRules,
+            layoutCandidateRules: generated.layoutVerification.counters.candidateRules,
+            layoutRejectedByGuard: plan.layout.counters.guardRefusals,
+            layoutRejectedByTruthCheck:
+              generated.layoutVerification.counters.rejectedByTruthCheck,
+            layoutRejectedUnverifiable:
+              generated.layoutVerification.counters.rejectedUnverifiable,
             layoutPagesWithAlignedProbe: plan.layout.counters.pagesWithAlignedProbe,
             assetDownloads: 0,
           },

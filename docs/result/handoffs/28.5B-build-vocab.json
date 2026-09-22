@@ -1,0 +1,125 @@
+{
+  "schema": "task285b-build-vocab-v1",
+  "task": "28.5B — Observer visual vocabulary (Changes 1 and 2)",
+  "producedAt": "2026-08-29",
+  "platform": "darwin (macOS); chromium 151.0.7922.34 via playwright",
+  "status": "PASS",
+  "filesChanged": [
+    {
+      "path": "src/observer/types.ts",
+      "change": "CHANGE 2 — STYLE_WHITELIST typography additions",
+      "lines": "340-349 (comment 340-346, entries 347-349: text-wrap-mode, text-wrap-style, -webkit-font-smoothing), appended to the existing Typography group after \"color\"",
+      "countBefore": 111,
+      "countAfter": 114
+    },
+    {
+      "path": "src/observer/types.ts",
+      "change": "CHANGE 1 — PSEUDO_STYLE_WHITELIST suppression additions",
+      "lines": "528-536 (Task-16 deferral comment extended to record that Task 28.5A is the measurement that asked), 539-540 (entries: opacity, visibility)",
+      "countBefore": 18,
+      "countAfter": 20
+    },
+    {
+      "path": "scripts/smoke-visual-vocab.ts",
+      "change": "NEW — proof suite (fixture server + real observation + real SiteSpec + real generated CSS + real chromium)",
+      "lines": "new file, 1-795"
+    },
+    {
+      "path": "docs/result/handoffs/28.5B-build-vocab.json",
+      "change": "NEW — this handoff"
+    }
+  ],
+  "whitelistCounts": {
+    "STYLE_WHITELIST": {
+      "before": 111,
+      "after": 114
+    },
+    "PSEUDO_STYLE_WHITELIST": {
+      "before": 18,
+      "after": 20
+    },
+    "LAYOUT_RULE_PROPERTIES": {
+      "before": 62,
+      "after": 62,
+      "note": "untouched"
+    }
+  },
+  "outOfScopeConfirmed": [
+    "No font binary, @font-face, font-display or src property was added — font licensing decision stays deferred.",
+    "No site-specific selector or value anywhere; the fixture uses generic class names and the generic `monospace` family."
+  ],
+  "hazards": [
+    {
+      "kind": "hardcoded-whitelist-length",
+      "found": false,
+      "detail": "grep of src/ and scripts/ for 111 / 18 / any `WHITELIST.length` comparison found NO count assertion on either whitelist. Every hit for `111` is unrelated (measured pixel widths in scripts/smoke-reconstruction-qa.ts:706,740; an IPv6 literal in scripts/smoke-assets.ts:149; Task-12 item numbers in comments).",
+      "breaks": false
+    },
+    {
+      "kind": "membership-assertion",
+      "location": "scripts/smoke-e2e.ts:751",
+      "detail": "`check(`${property} is observed`, STYLE_WHITELIST.includes(property))` over the nine Task-16 grid properties. Membership only, no count — additions cannot invalidate it.",
+      "breaks": false
+    },
+    {
+      "kind": "derived-constant",
+      "location": "src/reconstruction-qa/capture-page.ts:46 (QA_STYLE_PROPERTIES) and src/reconstruction-qa/interaction-qa.ts:71 (TARGET_STATE_STYLE_PROPERTIES)",
+      "detail": "Both are `= STYLE_WHITELIST` aliases, so they widen automatically. NO code change needed, but this is a BEHAVIOURAL hazard for the orchestrator: reconstruction QA and interaction target-state QA now compare 3 more properties per element (and the pseudo channel 2 more), so mismatch counts on any existing QA baseline artifact under data/ are computed over a different property set than they were. Not an invalidated assertion — a stale baseline.",
+      "breaks": false
+    },
+    {
+      "kind": "declaration-order-coupling",
+      "location": "src/reconstruction/style-generator.ts declarations() (properties emitted in sorted name order)",
+      "detail": "`white-space` sorts AFTER `text-wrap-mode` and is a shorthand for white-space-collapse + text-wrap-mode, so the emitted `white-space` wins over the emitted `text-wrap-mode`. This is benign today because the browser's computed `white-space` serialization already reflects the observed text-wrap-mode (a nowrap source computes white-space:nowrap), so the two never disagree. It does mean text-wrap-mode is effectively carried by white-space and text-wrap-style is the load-bearing new property. Named here so a future change to either does not silently break balance.",
+      "breaks": false
+    }
+  ],
+  "capturePathConfirmation": {
+    "verdict": "GENERIC — the additions flow end to end with no further code change; no file outside the owned set needs editing.",
+    "evidence": [
+      "src/observer/collect-dom.ts:394-404 — collectStyles(cs, whitelist) loops the supplied list and calls getPropertyValue; no property is named in code.",
+      "src/observer/collect-dom.ts:534 (element), :605 / :613 (::before / ::after) — the same generic collector serves both channels.",
+      "src/observer/observe-page.ts:82-83 — COLLECT_CONFIG passes STYLE_WHITELIST / PSEUDO_STYLE_WHITELIST straight through.",
+      "src/observer/types.ts:578 — ComputedStyleObservationSchema is z.record(string,string): an open map, no enumerated keys.",
+      "src/observer/dedupe-styles.ts:61-83 — interns whole style maps by canonical key; no per-property filter.",
+      "src/sitespec/style-catalog.ts (canonicalStyleKey / intern / finalize) — whole-map identity, no property filter; src/sitespec/compile-viewport.ts:203-235 passes element and pseudo maps through unchanged.",
+      "src/reconstruction/style-generator.ts:40-44 — ALLOWED_CSS_PROPERTIES = new Set([...STYLE_WHITELIST, ...PSEUDO_STYLE_WHITELIST]), so both changes widen the generator automatically; the PROPERTY_NAME regex /^-{0,2}[a-zA-Z][a-zA-Z0-9-]*$/ accepts -webkit-font-smoothing (same shape as the pre-existing -webkit-mask-* entries).",
+      "src/reconstruction/pseudo-generator.ts:80-100 — emits every token property that passes isSafeCssProperty (the same union) and isSafeCssValue; opacity:0 / visibility:hidden pass both.",
+      "isSafeCssValue rejects only ; { } newline and <\\/style — none of the new values (0, hidden, balance, wrap, auto, antialiased) is affected."
+    ]
+  },
+  "suite": {
+    "name": "scripts/smoke-visual-vocab.ts",
+    "command": "npx tsx scripts/smoke-visual-vocab.ts",
+    "checks": 88,
+    "passed": 88,
+    "failed": 0,
+    "result": "PASS",
+    "chain": "local node:http fixture -> real observePage() in chromium -> real compileViewport() + StyleCatalogBuilder/AssetCatalogBuilder + the compile-site key->id resolution -> real generateStylesheet() / generatePseudoStyles() -> that CSS plus a mechanical serialization of the COMPILED node tree, served over the same fixture server and loaded in chromium",
+    "noHandBuiltObservation": true,
+    "sections": [
+      "§1 whitelist vocabulary (6 checks)",
+      "§2 real observation carries the new properties, incl. per-pseudo opacity/visibility and per-element text-wrap-*/-webkit-font-smoothing (26 checks)",
+      "§3 real SiteSpec style catalog carries them (13 checks)",
+      "§4 real generated element CSS and pseudo CSS contain them, and the pseudo rules are addressed by the real pseudoSelector() (13 checks)",
+      "§5 real chromium: clone pseudo opacity/visibility/content match the source case by case, the visible control is NOT over-suppressed, text-wrap-style survives AND still changes the line boxes (clone line-box widths byte-identical to the source's for both the balanced and the unbalanced headline), smoothing computed value matches (30 checks)"
+    ],
+    "negativeControl": "With the five new entries temporarily removed from the two whitelists the same suite reports 44 passed / 44 failed (clone pseudos revert to opacity 1 / visibility visible, clone text-wrap-style reverts to auto, clone smoothing reverts to auto, clone line boxes stop matching the source). The suite is not vacuous. The whitelists were restored immediately and re-verified at 114 / 20."
+  },
+  "typecheck": {
+    "command": "npx tsc --noEmit",
+    "result": "zero diagnostics repo-wide at time of run (scripts/**/*.ts is in tsconfig include; smoke-visual-vocab.ts is type-checked)"
+  },
+  "notes": [
+    "Darwin-only measurement: every -webkit-font-smoothing assertion is a COMPUTED-VALUE assertion measured on macOS chromium 151. No claim is made about how antialiased renders on any other platform, and no pixel comparison of smoothing was performed.",
+    "Pixel assertions were not used for the pseudo cases; per the task brief the computed-style equality between source and clone (case by case, including an ::after channel case) is the proof, plus an explicit over-suppression guard on the fully visible control pseudo.",
+    "The fixture pins font-family: monospace so source and clone measure identical glyph metrics; that is what makes the byte-identical line-box comparison meaningful. Fonts themselves remain out of scope.",
+    "The suite renders the compiled node tree itself rather than running `next build`: it deliberately does NOT import src/reconstruction/layout-inference.ts, asset-resolver.ts or compile-node.ts, so it stays green independently of the other 28.5B builders working in those files. The class names come from the real styleClassName()/documentRootClassName() and every pseudo selector is asserted against the real pseudoSelector(), so a generator/DOM mismatch fails rather than being papered over.",
+    "No git operation was performed. Temp files were written under tmp/wr285b/vocab/ and removed."
+  ],
+  "residualRisks": [
+    "Reconstruction QA / interaction target-state QA baselines recorded before this change compared 111 element properties; they now compare 114. Any stored mismatch count is not directly comparable.",
+    "text-wrap-mode is effectively overridden by the alphabetically later `white-space` shorthand in generated rules (benign today — see hazards).",
+    "Observation payload grows by 3 element properties and 2 pseudo properties per distinct style map; the shared style table absorbs most of this, but token counts may rise slightly where two elements previously deduped and now differ only in a new property."
+  ]
+}

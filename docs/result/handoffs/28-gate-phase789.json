@@ -1,0 +1,532 @@
+{
+ "schema": "task28-gate-phase789-v1",
+ "role": "FRESH GATE AGENT for Task 28 Phases 7, 8 and 9 — implemented nothing, verified only the tree",
+ "producedAt": "2026-08-27T23:30:00Z",
+ "typecheck": "exit 0",
+ "typecheckEvidence": "bash tmp/wr28/suite-lock.sh pnpm typecheck -> exit 0 (log: scratchpad/gate789/logs/typecheck.log, body '$ tsc --noEmit'). Cross-checked with a direct `npx tsc --noEmit` -> exit 0, zero diagnostics printed.",
+ "countDerivation": "Every count re-derived from the RAW log by `grep -cE '^ {2}PASS {2}'` / `'^ {2}FAIL {2}'`, then compared with each suite's own summary line. All 27 agreed exactly. KNOWN TRAP HANDLED: scripts/smoke-content-injection.ts prints two `  [content:qa]   FAIL — ...` lines from a deliberate negative fixture; the anchored regex excludes them (161 counted == 161 in the summary line). Every FAIL-containing line in every log was read and classified: 5 in content-injection (2 are the content:qa fixture lines, 3 are PASS labels whose text contains the word FAIL), 1 in content-generation (a PASS label), 1 in sitespec (a section heading). Zero real check failures.",
+ "invocation": "Each suite run ONE AT A TIME through `bash tmp/wr28/suite-lock.sh npx tsx scripts/smoke-<suite>.ts` by a serial driver (scratchpad/gate789/run-suites.sh); one lock acquisition per suite. Battery start 2026-08-27T23:06:41Z, end 2026-08-27T23:18:19Z. No suite exited non-zero; no exit 99 (lock timeout) occurred.",
+ "suites": [
+  {
+   "suite": "verifier",
+   "checks": 81,
+   "failures": 0,
+   "seconds": 7,
+   "prevCount": 81,
+   "delta": 0
+  },
+  {
+   "suite": "selector",
+   "checks": 81,
+   "failures": 0,
+   "seconds": 1,
+   "prevCount": 81,
+   "delta": 0
+  },
+  {
+   "suite": "multi-observer",
+   "checks": 62,
+   "failures": 0,
+   "seconds": 26,
+   "prevCount": 62,
+   "delta": 0
+  },
+  {
+   "suite": "interaction-detector",
+   "checks": 92,
+   "failures": 0,
+   "seconds": 1,
+   "prevCount": 92,
+   "delta": 0
+  },
+  {
+   "suite": "interaction-explorer",
+   "checks": 108,
+   "failures": 0,
+   "seconds": 93,
+   "prevCount": 108,
+   "delta": 0
+  },
+  {
+   "suite": "interaction-patterns",
+   "checks": 88,
+   "failures": 0,
+   "seconds": 0,
+   "prevCount": 88,
+   "delta": 0
+  },
+  {
+   "suite": "sitespec",
+   "checks": 257,
+   "failures": 0,
+   "seconds": 1,
+   "prevCount": 257,
+   "delta": 0
+  },
+  {
+   "suite": "reconstruction",
+   "checks": 217,
+   "failures": 0,
+   "seconds": 7,
+   "prevCount": 217,
+   "delta": 0
+  },
+  {
+   "suite": "reconstruction-qa",
+   "checks": 134,
+   "failures": 0,
+   "seconds": 145,
+   "prevCount": 134,
+   "delta": 0
+  },
+  {
+   "suite": "recon-template",
+   "checks": 109,
+   "failures": 0,
+   "seconds": 80,
+   "prevCount": 109,
+   "delta": 0
+  },
+  {
+   "suite": "regions",
+   "checks": 76,
+   "failures": 0,
+   "seconds": 0,
+   "prevCount": 76,
+   "delta": 0
+  },
+  {
+   "suite": "content-injection",
+   "checks": 161,
+   "failures": 0,
+   "seconds": 59,
+   "prevCount": 152,
+   "delta": 9
+  },
+  {
+   "suite": "content-generation",
+   "checks": 50,
+   "failures": 0,
+   "seconds": 1,
+   "prevCount": null,
+   "delta": null,
+   "new": true
+  },
+  {
+   "suite": "theme",
+   "checks": 47,
+   "failures": 0,
+   "seconds": 36,
+   "prevCount": 47,
+   "delta": 0
+  },
+  {
+   "suite": "seo",
+   "checks": 104,
+   "failures": 0,
+   "seconds": 1,
+   "prevCount": 104,
+   "delta": 0
+  },
+  {
+   "suite": "assets",
+   "checks": 140,
+   "failures": 0,
+   "seconds": 5,
+   "prevCount": 140,
+   "delta": 0
+  },
+  {
+   "suite": "production",
+   "checks": 129,
+   "failures": 0,
+   "seconds": 4,
+   "prevCount": 129,
+   "delta": 0
+  },
+  {
+   "suite": "release",
+   "checks": 274,
+   "failures": 0,
+   "seconds": 90,
+   "prevCount": 274,
+   "delta": 0
+  },
+  {
+   "suite": "revision",
+   "checks": 36,
+   "failures": 0,
+   "seconds": 1,
+   "prevCount": 36,
+   "delta": 0
+  },
+  {
+   "suite": "registry",
+   "checks": 35,
+   "failures": 0,
+   "seconds": 1,
+   "prevCount": 35,
+   "delta": 0
+  },
+  {
+   "suite": "authoring-preview",
+   "checks": 41,
+   "failures": 0,
+   "seconds": 22,
+   "prevCount": 41,
+   "delta": 0
+  },
+  {
+   "suite": "brand-assets",
+   "checks": 141,
+   "failures": 0,
+   "seconds": 15,
+   "prevCount": 141,
+   "delta": 0
+  },
+  {
+   "suite": "visual-editor",
+   "checks": 50,
+   "failures": 0,
+   "seconds": 26,
+   "prevCount": 50,
+   "delta": 0
+  },
+  {
+   "suite": "enablement",
+   "checks": 101,
+   "failures": 0,
+   "seconds": 5,
+   "prevCount": 101,
+   "delta": 0
+  },
+  {
+   "suite": "editor-integration",
+   "checks": 45,
+   "failures": 0,
+   "seconds": 26,
+   "prevCount": 45,
+   "delta": 0
+  },
+  {
+   "suite": "create-site",
+   "checks": 66,
+   "failures": 0,
+   "seconds": 33,
+   "prevCount": null,
+   "delta": null,
+   "new": true
+  },
+  {
+   "suite": "first-draft",
+   "checks": 34,
+   "failures": 0,
+   "seconds": 12,
+   "prevCount": null,
+   "delta": null,
+   "new": true
+  }
+ ],
+ "skippedSuites": [
+  {
+   "suite": "e2e",
+   "reason": "DELIBERATE, USER-APPROVED SCOPE REDUCTION FOR THIS GATE ONLY. smoke:e2e costs 611 s in the Phase-4/5/6 baseline (54% of the whole battery) and nothing in Phases 7/8/9 touches reconstruction end-to-end: no file changed by these phases lives under src/observer, src/selector, src/verifier, src/reconstruction, src/sitespec, src/interaction-* or src/recon-template. NOT run here and NOT claimed passing.",
+   "deferredTo": "final regression — the complete battery INCLUDING e2e must run there",
+   "baselineCarried": 130
+  },
+  {
+   "suite": "playwright",
+   "reason": "smoke:playwright is an environment probe, not a counted gate suite: it does not appear in docs/result/handoffs/28-gate-phase456.json .suites[]. Excluded by the task instruction. Disclosed here so the 27-suite figure is never read as 'every scripts/smoke-*.ts file'.",
+   "deferredTo": "n/a",
+   "baselineCarried": 0
+  }
+ ],
+ "totalChecks": 2759,
+ "totalFailures": 0,
+ "totalChecksNote": "27 suites actually run. The Phase-4/5/6 baseline totalled 2,730 checks over 25 suites INCLUDING e2e's 130. Like-for-like: baseline minus e2e = 2,600 over 24 suites; this gate ran those 24 (2,609 checks — the +9 is content-injection's Phase 9 growth) plus 3 suites that did not exist at that gate (content-generation 50, create-site 66, first-draft 34) = 2,759.",
+ "negativeDeltas": [],
+ "deltaExplanations": [
+  {
+   "suite": "content-injection",
+   "delta": 9,
+   "explanation": "Phase 9 added 9 checks (28.P9.1-P9.9: brief-derived site level with per-field provenance, chain closure with NO region layer, one page level per scoped route, the cross-page review written beside brand-leak.json, the review never rewriting a value, two NEGATIVE review-error checks, an unknown-top-level-key rejection, and an authored result surviving the batch executor). Baseline 152 -> 161. Justified growth, no existing check weakened."
+  },
+  {
+   "suite": "content-generation",
+   "delta": null,
+   "explanation": "NEW suite (Phase 9, offline full-site canary). 50 checks; the Phase 9 handoff's own measured.suites block still records the pre-correction 40 — see handoffUntraceableNumbers."
+  },
+  {
+   "suite": "create-site",
+   "delta": null,
+   "explanation": "NEW suite (Phase 7/8). 66 checks (46 at the Phase 8 build, +20 in the Phase 7/8 correction pass)."
+  },
+  {
+   "suite": "first-draft",
+   "delta": null,
+   "explanation": "NEW suite (Phase 10 integration). 34 checks (29 at the integration build, +5 in the Phase 9/10 correction pass)."
+  }
+ ],
+ "gitMutatingOperations": 0,
+ "gitEvidence": "BEFORE: HEAD 6c2e723601a0d76431c96a48bbdb4726c02063e7, `git stash list` empty, `git status --porcelain` 92 entries, `git reflog` exactly 3 entries (the 3 commits — no reset, rebase or checkout). AFTER the full battery: HEAD 6c2e723601a0d76431c96a48bbdb4726c02063e7, stash empty, reflog still exactly the same 3 commit entries, porcelain 92 entries. After writing THIS file the porcelain count is 93 — the +1 is this handoff itself, untracked; nothing else changed. This gate issued ONLY read-only git commands (log, status, stash list, reflog, rev-parse, show HEAD:<path>). package.json and pnpm-lock.yaml are unmodified (`git status --porcelain -- package.json pnpm-lock.yaml` empty) and no dependency was added — deps remain next/react/react-dom/playwright/parse5/zod/pino/pngjs/firecrawl/dotenv with tsx+typescript in dev. A vendor-SDK grep over src/ and scripts/ (@anthropic-ai|openai|@google/gener|mistralai|cohere-ai|langchain|bedrock|replicate) returns only 4 hits, every one a NEGATIVE assertion inside a smoke suite.",
+ "aggregationPhase1Intact": true,
+ "aggregationPhase1Evidence": "docs/result/handoffs/24-aggregation-phase1.json worktree sha256 09e3745e3041d9018640e7027c1fb6ec60617f04d2cbcbd4e421a48b7c8d1c30 == `git show HEAD:docs/result/handoffs/24-aggregation-phase1.json | shasum -a 256` 09e3745e...1c30, measured BEFORE and AFTER the battery. `git status --porcelain` for that path is empty.",
+ "historicalMutationCount": 0,
+ "historicalMutationMethod": "data/ is gitignored, so `git status --porcelain data/` is vacuous. Instead: `find data -type f ! -newermt @1787756400 -exec stat -f '%m %z %N' {} +` (cutoff = 2026-08-27T00:00:00 local), snapshotted before the battery and again after. A historical file that was rewritten would have its mtime pushed past the cutoff and would DROP OUT of the set, so a count decrease or any line diff detects mutation.",
+ "historicalMutationEvidence": "27,404 files before, 27,404 files after; `diff` of the two sorted snapshots is EMPTY (0 lines). Independently: dir-sha256-v1-equivalent hashes (my own python implementation, verified to reproduce the repo's hashDirectory) over all 8 recon-template directories are byte-identical before and after the battery — e.g. data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z 864d4e8bdf77aeea38088b14bff10bc701acfccbae4ba3c54556ec98d0ac3e70 (190 files), data/linear.app/recon-templates/2026-08-25T21-53-26-980Z 35f4ac13b81ddd7870ebbaa7b339babd54d866fb71daffa28182226e2e8f5258 (180 files). The Recon Template is proven IMMUTABLE across 3 real createSite pipelines, a real browser Create Site journey and 27 suite runs.",
+ "dataWrSlotEmissionSites": 0,
+ "dataWrSlotEvidence": "`grep -rIn 'data-wr-slot' src scripts` returns EXACTLY 16 hits, each read and classified. DOC COMMENTS (6): src/regions/enablement.ts:40, src/authoring-preview/bridge.ts:16, src/editor/index.ts:6, src/editor/inversion.ts:4, scripts/smoke-visual-editor.ts:16, and the counter's own guard. NEGATIVE ASSERTIONS (10): smoke-visual-editor.ts:468 (bridge sample must not contain it), :579 (highlight CSS must not), :640+:1057-1058 (28.P4.19 counts attributes on customer elements and 28.P4.45 asserts document.querySelectorAll('[data-wr-slot]').length === 0 AND the served HTML contains 0 occurrences), :1054, smoke-authoring-preview.ts:276, smoke-regions.ts:360/771/775, smoke-brand-assets.ts:391. NO EMISSION SITE: zero setAttribute/createAttribute/string-concatenation writes of the attribute anywhere, and `grep -rIn 'wrSlot' src scripts` (the dataset spelling) returns nothing at all.",
+ "editorArtifactsInProductionPackage": 0,
+ "editorArtifactsEvidence": "Most recent production package on disk after the battery: data/linear.app/production-builds/2026-08-27T23-18-09-979Z (219 files under package/), produced by the smoke:first-draft Create Site journey in THIS gate's run — i.e. the highest-risk case, a package baked right after a live editor/preview session. `grep -rc --binary-files=text -F` over package/ for 14 markers returned 0 occurrences for every one: wr-authoring-bridge (BRIDGE_MARKER), WR_AUTHORING_HOT (AUTHORING_PATCH_MARKER), data-wr-editor, wr-editor, wr-lib-, wr-library, startVisualEditor, api/select-site, api/create-site, api/region-enablement, EditorRuntime, authoring-preview, editor/client, data-wr-slot. Greps proven NON-VACUOUS: every one of those markers is present in src/ or scripts/ (2-7 files each). The same greps over the WHOLE build directory (app/ workspace included) are also 0. FULL DISCLOSURE of the one near-hit I found elsewhere: on an unrelated older package, data/domainchecker.co.kr/production-builds/2026-08-27T22-59-50-379Z, the literal string 'authoring-previews' appears once inside app/.next/cache/turbopack/00000003.sst — a turbopack build-cache blob holding a fragment of directory-name strings, in the build workspace, NOT in package/, and not the operator app.",
+ "priorGateBlockerClosed": {
+  "figure": "widenedWithoutTrigger",
+  "recomputed": 22,
+  "closed": true,
+  "method": "Recomputed MYSELF in python from the raw data/linear.app/recon-templates/2026-08-25T21-53-26-980Z/slot-bindings.json (the file scripts/smoke-visual-editor.ts:67 names), replicating scripts/smoke-visual-editor.ts:305-316 exactly: looseKey = pageId|viewport|templateNodeId, tightKey = looseKey|nodeId, widened = bindings where |loose candidate set| > |tight candidate set|.",
+  "measured": {
+   "bindingsTotal": 9929,
+   "dynamicTemplateBindings": 262,
+   "soundWithTrigger": 262,
+   "looseUnique": 168,
+   "tightUnique": 182,
+   "widenedWithoutTrigger": 22,
+   "ambiguousWithoutTrigger": 94
+  },
+  "verdict": "CLOSED. 28-visual-editor.json now reads widenedWithoutTrigger 22 and carries a SEPARATE ambiguousWithoutTrigger of 94, plus a corrections[] block that preserves the original wrong claim ('94 ... STRICTLY WIDER'), names who raised it and states the functional impact as none. All six of my independently recomputed figures agree with the corrected document to the unit. Check 28.P4.2 was and is honest: it asserts widened > 0 and prints the true 22 in its detail string, and it passed in my own run (visual-editor 50/50)."
+ },
+ "handoffSpotChecks": [
+  {
+   "file": "28-library.json",
+   "field": "templateLibrary.realMeasurement.templatesOnDisk",
+   "claimed": "8",
+   "measured": "8 manifest.json files under data/*/recon-templates/*/",
+   "agrees": true
+  },
+  {
+   "file": "28-library.json",
+   "field": "templateLibrary.realMeasurement.collectionsAcrossEveryTemplate",
+   "claimed": "2 of 8 carry compiled collections (3 each); 6 carry none",
+   "measured": "read all 8 site-map.json: stripe.com 2026-08-26T17-16-46-409Z = 3 and stripe.com 2026-08-26T22-38-06-075Z = 3; the other 6 = 0",
+   "agrees": true
+  },
+  {
+   "file": "28-library.json",
+   "field": "templateLibrary.realMeasurement sample stripe.com-2026-08-26T22-38-06-075Z (routes/core/structure-only/collections)",
+   "claimed": "20 / 10 / 10 / 3",
+   "measured": "manifest counts.routes 20, counts.slotizedRoutes 10, counts.structureOnlyRoutes 10; site-map collections 3",
+   "agrees": true
+  },
+  {
+   "file": "28-library.json",
+   "field": "siteLibrary.realMeasurement.sitesOnDiskAtCorrectionTime",
+   "claimed": "31",
+   "measured": "31 release-project.json files on disk when this gate started",
+   "agrees": true
+  },
+  {
+   "file": "28-library.json",
+   "field": "testEvidence.checksInThisFile",
+   "claimed": "66",
+   "measured": "smoke:create-site 66 PASS / 0 FAIL, re-derived from raw lines",
+   "agrees": true
+  },
+  {
+   "file": "28-library.json",
+   "field": "corrections C2 / scanWarnings surface exists in code",
+   "claimed": "renderLibraryWarnings() renders warnings under each table; a clean scan states itself",
+   "measured": "src/editor/client.ts:1026 renderLibraryWarnings, :1031 the '0 scan warnings' sentence, :1083 and :1250 the two call sites, :129/:133 the two containers",
+   "agrees": true
+  },
+  {
+   "file": "28-site-create.json",
+   "field": "routeScope.realMeasurement (total/included/excluded + the named shared-page case)",
+   "claimed": "20 / 10 / 10, /resources/more/virtual-credit-cards-for-businesses-explained excluded",
+   "measured": "site-map.json scope counts core-reconstruct 9 + collection-representative 1 = 10 included, structure-only 10, excludedRoutes[] empty; the named route IS in the structure-only set",
+   "agrees": true
+  },
+  {
+   "file": "28-site-create.json",
+   "field": "createSiteRun.templateUnmutated.hashBefore/hashAfter",
+   "claimed": "864d4e8bdf77aeea38088b14bff10bc701acfccbae4ba3c54556ec98d0ac3e70",
+   "measured": "identical, computed twice — once with the repo's own hashDirectory (190 files) and once with my own independent python dir-sha256-v1 implementation",
+   "agrees": true
+  },
+  {
+   "file": "28-site-create.json",
+   "field": "identity.rule ('the host slug is NEVER a Create Site fallback')",
+   "claimed": "no data/<host>/release-projects/<host> directory; two identical brief-only creates land on distinct projects",
+   "measured": "no host-slug project exists for stripe.com, linear.app, nextjs.org or domainchecker.co.kr; wr28-nameless-brief-canary-a-payments and ...-2 both exist; this gate's own suite run logged 'identity: ...-2 (source goal, base ... was already taken — stepped past 1 existing project(s))' and both creates reported a new project",
+   "agrees": true
+  },
+  {
+   "file": "28-site-create.json",
+   "field": "createSiteRun.contentGeneration.assignedSlots / unresolvedSlots / independentProject.requirementsTotal",
+   "claimed": "6875 / 516 / 990",
+   "measured": "6813 / 578 / 1052 — printed three times by this gate's own smoke:create-site run (the suite runs the identical pipeline three times) and confirmed in data/stripe.com/release-projects/wr28-createsite-suite-01/requirements.json (1052 items, of which 55 severity=release-blocking)",
+   "agrees": false
+  },
+  {
+   "file": "28-site-create.json",
+   "field": "createSiteRun.independentProject.releaseBlockingUnresolved",
+   "claimed": "55",
+   "measured": "55 requirements with severity 'release-blocking'",
+   "agrees": true
+  },
+  {
+   "file": "28-content-generation.json",
+   "field": "measured.fullSiteCanary byDisposition / byOrigin / inScopeSlots",
+   "claimed": "3079 in scope; applied 566, preserved 1020, removed 0, human-required 1493, unresolved 0; user-provided 0, derived-copy 721, generated-marketing 739, synthetic-fact 52, source-preserved 1567",
+   "measured": "re-folded from the 3,079 rows of data/linear.app/content-runs/wr28-phase9-fullsite/slot-accounting.json myself: identical in every bucket; 3,079 unique slot keys; inScopeSlots == template manifest counts.slots (3079) and human-required == counts.reviewSlots (1493)",
+   "agrees": true
+  },
+  {
+   "file": "28-content-generation.json",
+   "field": "measured.disabledCanary",
+   "claimed": "inScope 3079 unchanged; disabled-route 227, disabled-region 6, unresolved 0, removed 0; templateCoverage scopedTemplateSlots 2852 / accountedOutsideScope 227 / complete",
+   "measured": "identical, read from wr28-phase9-disabled/slot-accounting.json",
+   "agrees": true
+  },
+  {
+   "file": "28-content-generation.json",
+   "field": "findings F1 — the 117 needs-input split",
+   "claimed": "106 hash + 11 external + 0 other",
+   "measured": "classified the 117 unresolved entries of the pinned base generation-result.json against the template's own slots.json urlKind: exactly {hash: 106, external: 11}, no third bucket. Base also carries 1,395 slotValues as claimed.",
+   "agrees": true
+  },
+  {
+   "file": "28-content-generation.json",
+   "field": "howTheAuthoredResultWasProduced — delta reproducibility and base pin",
+   "claimed": "delta sha256 ad7d11c4d2b6a2...; base pin b14274e0c42e6f...",
+   "measured": "shasum of docs/result/handoffs/28-intel/phase9/authoring-delta.json = ad7d11c4d2b6a248cb21863bde7c045e2b2fd58b130d5f6281edbd8715971572; the delta's base.sha256 b14274e0c42e6fa1fe3d38ee3a24b25ceaaa843f60ee2caf0bc0468ba9563e59 equals the actual sha256 of data/linear.app/content-runs/2026-08-25T21-54-40-120Z/generation-result.json",
+   "agrees": true
+  },
+  {
+   "file": "28-content-generation.json",
+   "field": "measured.fullSiteCanary.authoringPlan",
+   "claimed": "levels 6, pagePlans 8, regions 48, units 1202, distinctSlotKeys 1586, closureComplete true, 0 orphans",
+   "measured": "authoring-plan.json levels[] length 6; closure {pagePlans 8, regions 48, units 1202, slotKeys 1586, orphanRegionIds [], orphanUnitIds [], routesWithoutPagePlan [], complete true}",
+   "agrees": true
+  },
+  {
+   "file": "28-content-generation.json",
+   "field": "measured.suites[content-generation].checks",
+   "claimed": "40",
+   "measured": "50 (this gate's run, re-derived from raw PASS lines)",
+   "agrees": false,
+   "note": "STALE BUT DISCLOSED ELSEWHERE IN THE SAME FILE: headline and corrections C1 both say 'Suite: 40 -> 50 checks'. Recorded, not counted as an untraceable number."
+  },
+  {
+   "file": "28-first-draft.json",
+   "field": "perRouteAccounting.rows (9 rows) and their totals",
+   "claimed": "(global) 131/131/46/0; / 463/226/159/3; /changelog 1011/612/407/3; /customers 475/89/42/3; /customers/automattic 97/72/24/1; /integrations 459/59/30/0; /plan 227/174/122/0; /pricing 140/56/37/6; /security 76/72/57/4",
+   "measured": "re-folded by me from data/linear.app/content-runs/2026-08-27T22-45-22-289Z/slot-accounting.json's own rows, with `changed` recomputed against the template's defaults: every cell identical. Totals 3079 in scope / 1491 filled / 924 changed / 20 unresolved, matching applied 924 + preserved 642 + human-required 1493 + unresolved 20 = 3079, reconciled true, templateCoverage complete.",
+   "agrees": true
+  },
+  {
+   "file": "28-first-draft.json",
+   "field": "siteCreated.requirements",
+   "claimed": "287",
+   "measured": "data/linear.app/release-projects/millwright/requirements.json holds exactly 287 items",
+   "agrees": true
+  },
+  {
+   "file": "28-first-draft.json",
+   "field": "valueShapedSlots — UNRESOLVED 20 = 4 external destinations + 16 fact-bearing, and the six slots pinned by name",
+   "claimed": "pricing 16-per-user-month / 250-issues, security iso-27001-certified, customers.main.text.50 all needs-input; changelog august-20-2026 and 00-17 kept verbatim",
+   "measured": "the run's generation-result.json holds exactly 20 unresolved: 4 'external destination' (changelog ios/android/mcp-specification, customers-automattic cta) + 16 'needs factual input: <shape> value — the source site states \"...\"'. All six named slots behave exactly as claimed (the four unresolved with the source figure quoted; the two preserved as derived-copy at 'August 20, 2026' and '00:17').",
+   "agrees": true
+  },
+  {
+   "file": "28-first-draft.json",
+   "field": "corrections C3 — the brand residual split",
+   "claimed": "writtenTextValuesCarryingSourceBrand 0, writtenUrlValuesCarryingSourceBrand 8, all 8 flagged; brand-leak 96 -> 97 warnings; 130 review-flagged text slots still carry the token",
+   "measured": "0 written text values carry a word-boundary 'linear'; exactly 8 written url values do and all 8 appear in the run's own report/brand-leak.json (97 warnings); 130 review-editability text slots carry it in their default",
+   "agrees": true
+  },
+  {
+   "file": "28-first-draft.json",
+   "field": "valueShapedSlots.measuredOnThisDraft.defaultsWithANumberReplacedByANumberFreeValue.note",
+   "claimed": "'The 23 that remain are PROSE, not value slots: changelog body sentences that happened to contain a figure ... and two source product headlines'",
+   "measured": "the COUNT 23 is correct and reproduces on all three draft runs on disk (22-35-55-604Z, 22-45-22-289Z, 22-49-31-434Z). The CLASSIFICATION does not survive the artifact: at least 3 of the 23 are neither prose nor either named category — changelog.main.text.1-9 ('1–9' -> 'Data'), customers-automattic.main.text.san-francisco-2005 ('San Francisco, 2005' -> 'Rockwell FactoryTalk'), plan.main.text.feb-3-2026-paul-meg-julian ('Feb 3, 2026 · @paul @meg @julian' -> 'Mid-size discrete, standardized.'), all three editable/applied. The note's two named categories account for only 11 of the 23 (9 changelog sentences + 2 headlines); 4 more are /customers link labels.",
+   "agrees": false
+  }
+ ],
+ "handoffUntraceableNumbers": [
+  {
+   "file": "28-first-draft.json",
+   "field": "valueShapedSlots.measuredOnThisDraft.defaultsWithANumberReplacedByANumberFreeValue.note",
+   "severity": "BLOCKER",
+   "why": "This is the Phase 9/10 second re-verifier's recorded FAIL finding, and it shipped UNCORRECTED — there is no corrections[] entry addressing it (the file carries C0-C4, none of which touches this note). The claim sits in the one paragraph that tells a reader what the residual of the corrected value-shape defect is, and it is falsified by the artifacts it describes."
+  },
+  {
+   "file": "28-site-create.json",
+   "field": "createSiteRun.contentGeneration.assignedSlots (6875), createSiteRun.contentGeneration.unresolvedSlots (516), createSiteRun.independentProject.requirementsTotal (990)",
+   "severity": "BLOCKER",
+   "why": "All three are contradicted by the tree: the same suite's own canary now measures 6813 / 578 / 1052, three times in one run. The deltas are exactly 62 each (62 slots moved from assigned to unresolved), i.e. precisely the Phase 9/10 value-shape correction — which was never propagated into this block. The block carries no point-in-time caveat, unlike siteLibrary.realMeasurement.sitesOnDiskBeforePhase8Run in 28-library.json, which the same correction pass DID explicitly mark as not retroactively checkable. A reader checking data/stripe.com/release-projects/wr28-createsite-suite-01/requirements.json finds 1052, not 990."
+  },
+  {
+   "file": "28-content-generation.json",
+   "field": "measured.suites[content-generation].checks (40)",
+   "severity": "disclosed-elsewhere, not counted as a blocker",
+   "why": "Stale pre-correction figure, but the same document's headline and corrections C1 both state 'Suite: 40 -> 50 checks'. Recorded for completeness."
+  },
+  {
+   "file": "28-first-draft.json",
+   "field": "tests.regression.suites[] content-generation 40 / create-site 46",
+   "severity": "disclosed-elsewhere, not counted as a blocker",
+   "why": "Superseded explicitly by tests.correctionPass, which records 50 and 66 and even names the concurrent session responsible for the create-site growth."
+  }
+ ],
+ "leakedProcesses": [
+  {
+   "pid": 8036,
+   "ppid": 1,
+   "age": "10h36m at the end of this gate (started long before this session)",
+   "command": "node --env-file=/Users/woops/projects/site-factory-next/.env .../boostweb-runner.mjs --zone=boostweb.co.kr",
+   "port": "none observed; not a web server started by this repo",
+   "mine": false
+  },
+  {
+   "pid": 8038,
+   "ppid": 1,
+   "age": "10h36m at the end of this gate",
+   "command": "node .../site-factory-next/scripts/domain-connect-runner.mjs --poll=60000",
+   "port": "none observed",
+   "mine": false
+  }
+ ],
+ "leakedProcessesEvidence": "`ps -eo pid,ppid,etime,command | awk '$2==1 && /next|chromium|playwright|tsx/'` run before the battery and again after it returned the SAME two PPID-1 node runners from the unrelated site-factory-next project, already 10h+ old when this gate started. ZERO next / chromium / playwright / tsx processes of this gate's own survive: every browser and preview server is started and reaped inside the suites' own finally blocks. I did not kill the two foreign runners because they are not mine.",
+ "measurementIntegrity": {
+  "noSilentCaps": "Two coverage bounds, both stated: (1) smoke:e2e was skipped by explicit user approval and is recorded in skippedSuites with its carried baseline of 130; (2) smoke:playwright is not a counted gate suite and was not run. Nothing else was sampled, truncated or top-N'd — all 27 counted suites ran in full, one at a time.",
+  "exitCodeIsNotProof": "No suite's exit code was trusted. Every count was re-derived by grepping anchored PASS/FAIL lines out of the raw log and then compared with the suite's own summary line; all 27 agreed.",
+  "runtimeDisagreement": "28-site-create.json testEvidence says smoke:create-site takes 'approx. 3-4 minutes'. I measured 33 s wall (08:17:34Z -> 08:18:07Z), cross-checked against the mtimes of the three release projects it created inside that window (08:17:46Z and 08:18:06Z). smoke:first-draft took 12 s wall with a real Chromium journey (its own instrumentation recorded createSiteMs 5788 and a real `next build` of 2837 ms). The suites are doing the full work; the machine was warm. Reported because my number disagrees with the document's."
+ },
+ "verdict": "FAIL",
+ "blockers": [
+  "HANDOFF TRACEABILITY (28-first-draft.json): valueShapedSlots.measuredOnThisDraft.defaultsWithANumberReplacedByANumberFreeValue.note asserts 'The 23 that remain are PROSE, not value slots', enumerating only changelog body sentences and two source product headlines. Measured on all three Millwright draft runs on disk: the count 23 is right; the classification is not. changelog.main.text.1-9 ('1–9' -> 'Data'), customers-automattic.main.text.san-francisco-2005 ('San Francisco, 2005' -> 'Rockwell FactoryTalk') and plan.main.text.feb-3-2026-paul-meg-julian ('Feb 3, 2026 · @paul @meg @julian' -> 'Mid-size discrete, standardized.') are editable, applied, customer-visible slots that are neither prose nor in either named category, and four /customers link labels are unaccounted for as well — the enumeration covers 11 of 23. This is the Phase 9/10 second re-verifier's own recorded FAIL and it SHIPPED UNCORRECTED: 28-first-draft.json carries corrections C0-C4 and none of them touches this note. Under the standard the Phase 4/5/6 gate was failed by, an untraceable figure in a shipped handoff is a blocker, and an uncorrected verifier finding is itself the defect. FIX (small, no re-run of anything): re-enumerate the residual as measured, and optionally extend two writer patterns (an en dash in the numeric-chrome class; a '·'-separated handle byline in the attribution class).",
+  "HANDOFF TRACEABILITY (28-site-create.json): createSiteRun records assignedSlots 6875, unresolvedSlots 516 and requirementsTotal 990 for the wr28-createsite-suite-01 canary. The tree produces 6813 / 578 / 1052 — printed three times in this gate's own smoke:create-site run and confirmed by reading requirements.json (1052 items, 55 release-blocking). Each delta is exactly 62, i.e. precisely the Phase 9/10 value-shape correction, which was never propagated into this block; the block carries no point-in-time caveat even though the same correction pass explicitly added one to the analogous figures in 28-library.json. FIX: re-measure the three figures (or mark the block as a point-in-time record of the Phase 8 build with the corrected numbers alongside)."
+ ],
+ "engineeringVerdict": "Every ENGINEERING property this gate was asked to check PASSES. typecheck exit 0; 27 suites / 2,759 checks / 0 failures with zero negative deltas against the Phase-4/5/6 baseline; git untouched (HEAD, stash, reflog, porcelain count all identical before and after); 24-aggregation-phase1.json byte-identical to its committed blob; 0 pre-2026-08-27 data/ files mutated across 27,404 tracked files; all 8 recon templates byte-identical after 3 createSite pipelines and a real browser Create Site journey; 0 data-wr-slot emission sites (16 grep hits, all doc comments or negative assertions); 0 editor/bridge/operator-app markers in the newest production package — the one baked by this gate's own journey run; and the prior gate's sole blocker independently recomputed and CLOSED (widened 22, ambiguous 94). The FAIL is narrow and entirely in reporting.",
+ "limitations": [
+  "smoke:e2e NOT RUN (user-approved skip, 611 s baseline, 130 checks carried). The complete battery including e2e MUST run at the final regression. I do not claim e2e passing.",
+  "smoke:playwright NOT RUN (environment probe, not a counted gate suite).",
+  "I ran ZERO mutation-injection proofs of my own. The builders' and prior verifiers' break/restore evidence is recorded in their handoffs; this gate verified the tree's state and its measurable properties, not the sensitivity of every individual new check. Stated so no one reads this gate as re-proving the seven mutation cycles the prior verifiers ran.",
+  "The value-shape classifier figures 443 / 0 / 16 / 211 in 28-first-draft.json are measured with the SAME valueShapeOf() the writer consults, so '0 of 443 overwritten' is partly definitional (the prior verifier named this too). The independent axis — number-bearing defaults replaced by number-free values — I measured myself: 23, and that is where the blocker above lives.",
+  "NO BROWSER LAYOUT QA over the Millwright draft or the 8-route canary. Both builders and both prior verifiers declared this gap; this gate did not close it and did not attempt to. runContentLayoutQa is exercised only on the synthetic fixture inside smoke:content-injection (where I did observe it fail and recover in the raw log: '§17 intentional overflow makes layout QA FAIL' followed by '§18 layout QA passes after ONE repair iteration').",
+  "The point-in-time counts 28-library.json calls out itself (sitesOnDiskBeforePhase8Run 25 -> 26) remain UNVERIFIABLE retroactively; the tree held 31 release projects when this gate started. The document already says so.",
+  "This gate wrote nothing into data/ by hand. The 27 suites wrote their own fixtures and canaries — all under wr28- namespaces, the millwright suite project, or today-dated run ids — and data/.registry/*.json is the live index those suites auto-register into (pre-existing behaviour). Nothing predating 2026-08-27 was written, proven above.",
+  "Scratch evidence for this gate lives outside the repo, in the session scratchpad (gate789/: run-suites.sh, dirhash.py, logs/ with the raw output of all 27 suites plus typecheck, historical-{before,after}.txt, template-hashes-{before,after}.txt). One helper, tmp/wr28/gate789-hash.ts, was written inside the repo's tmp/ tree."
+ ],
+ "postGateResolution": {
+  "resolvedAt": "2026-08-27T23:28:12.068889Z",
+  "resolvedBy": "Task-28 orchestrator",
+  "blockers": [
+   "28-first-draft.json residual-23 misclassification",
+   "28-site-create.json stale createSiteRun figures"
+  ],
+  "action": "Both were handoff-traceability defects, no functional failure. Orchestrator re-measured both from artifacts rather than reports: the 23 residual slots were re-enumerated one by one from slot-values.json vs default-content.json (14 prose / 2 source headlines / 4 link labels / 3 numeric-chrome-or-attribution = 23, plus one href hit outside the text-slot metric, which is why a naive sweep returns 24); and slot-accounting.json totals gave assigned 6813 (derived-copy 2525 + generated-marketing 4288) and unresolved 578, with requirements.json holding 1052. Both handoffs corrected with corrections[] blocks preserving the wrong claims.",
+  "verdictStands": "This gate's FAIL is left AS RECORDED. The orchestrator does not overturn its own gate; the final audit re-checks both.",
+  "systemicFinding": "SECOND OCCURRENCE of the same pattern: a verifier recorded a finding and it shipped UNCORRECTED into a handoff (first: widenedWithoutTrigger 94-vs-22). The correction loop fixes CODE reliably but has been leaking DOCUMENTATION findings. Must be named in the final report.",
+  "engineeringPropertiesAtThisGate": "27 suites / 2759 checks / 0 failures / typecheck exit 0; 0 negative deltas; 0 git ops; 0 historical mutation (27,404 files mtime-identical before and after); Recon Template proven byte-immutable across 3 createSite pipelines; 0 data-wr-slot emission sites; 0 editor artifacts in the newest production package (14 markers, all proven non-vacuous)"
+ }
+}

@@ -1,0 +1,574 @@
+{
+ "schema": "task28-region-enablement-v1",
+ "phase": "Task 28 Phase 5 — SAFE REGION ENABLEMENT",
+ "role": "BUILDER (Phases 5 and 6). Implemented src/regions/enablement.ts, src/production/enablement.ts, src/release/enablement.ts and the plumbing; wrote scripts/smoke-enablement.ts and extended smoke-release / smoke-regions / smoke-production / smoke-seo / smoke-content-injection.",
+ "producedAt": "2026-08-28 (local, darwin 25.2.0, Node 22, pnpm 11)",
+ "model": {
+  "statement": "The operator's \"이 섹션 필요 없으니까 삭제\" is recorded as a DISABLE of a PageRegion id. The Recon Template is never mutated; the disable becomes physical only in the BUILD COPY of the app, at the same point in the bake where bakeContent / bakeSeoTitles / bakeBrand already mutate that copy.",
+  "authoredField": "authored.disabledRegions?: Record<regionId, { scope: 'global'|'routes', routes?: string[], reason?, note?, updatedAt }>",
+  "separateFromRoutes": "authored.disabledRoutes and authored.disabledRegions are TWO optional fields, never one mixed map: they stale different stages, are refused for different reasons, and one map could not express 'this region is off everywhere' and 'this page is off' without one of them lying.",
+  "absentWhenEmpty": "Both fields are optional and DELETED when their last entry goes, following the authored.assets / authored.brand precedent exactly (src/release/types.ts AuthoredStateSchema is .strict() and hashAuthoredState hashes the snapshot as captured, so a required-but-empty map would change the hash of every historical authored state and manufacture a spurious revision on the next prepare). Proven by smoke:enablement 28.P5.1 / 28.P5.4 / 28.P5.9.",
+  "noDerivationEvidenceStored": "A disabled-region record stores NO node ids, slot keys, page ids or interaction facts. Everything is re-derived from the artifacts on every resolve, so a template recompile that moved an id is CAUGHT rather than applied blind (smoke:enablement 28.P5.12 refuses an extra `nodeIds` key; smoke:release 28.P5.68 proves a stale id disables nothing and is refused at resolve time).",
+  "writeApi": "src/release/authored.ts — setAuthoredRegionDisabled / removeAuthoredRegionDisabled plus the `disable-region` / `enable-region` AuthoredEdit ops. Every function reports whether anything changed; a route list is deduped and sorted before comparison so re-issuing the same decision in a different order is a NO-OP (28.P5.6, 28.P5.7).",
+  "resolution": "src/release/enablement.ts `resolveEnablement(authored, inputs)` → { plan, refusals, regionEffects, route, disabledSlots, warnings }. It is re-run and re-SAFETY-CHECKED on every build (build.ts memoizes it per build), never trusted because an edit was once accepted.",
+  "application": "src/production/enablement.ts `applyEnablementToApp(appDir, plan)` removes the region ROOT node (and with it the whole subtree) from the build copy's page trees. A render-time 'hidden' flag was rejected: it would leave the markup in the shipped bytes, where the bake's own source-brand census still counts it and 'view source' contradicts what the operator was told."
+ },
+ "safetyRules": [
+  {
+   "id": "R1-shared-page-blast-radius",
+   "rule": "A region's ROUTE BLAST RADIUS is region.pages[].routes (RegionPageSchema: 'Many routes -> one pageSourceId. Never collapsed to the first one.'). It is NOT slot.route (the recon-template grouping records the FIRST route serving a page) and it is NOT derivable from the regionId, which is namespaced by pageSourceId and cannot name a route at all. A request naming a STRICT SUBSET of the radius is REFUSED with code `shared-page-blast-radius`.",
+   "realCounterexample": "data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z + page-regions/2026-08-26T16-14-08-675Z. MEASURED: 20 routes over 18 pages, 2 MANY-TO-ONE groups (p000012 <- 2 routes, p000013 <- 2 routes). The chosen region p000012:rgn:doc:div:1>div:1>section:2>div:1>div:2>div:1>div:1>div:2>article:1 carries 109 slot keys and renders on /resources/more/arr-loans-explained AND /resources/more/virtual-credit-cards-for-businesses-explained.",
+   "refusedBranch": "scope 'routes' naming only /resources/more/arr-loans-explained -> allowed=false, refusal.detail.wouldAlsoAffect = ['/resources/more/virtual-credit-cards-for-businesses-explained'], cascadeAvailable=false, and the message states the reason (the id is namespaced by pageSourceId). smoke:enablement 28.P5.56 / 28.P5.57 / 28.P5.58.",
+   "safeBranch": "scope 'global' on the same region -> allowed=true, effect.blastRadius names BOTH routes, effect.pageSourceIds is exactly ['p000012'] and every removed occurrence is on p000012 — no phantom per-route copy. smoke:enablement 28.P5.59 / 28.P5.60.",
+   "alsoRefused": "Naming a route the region does not render on is refused as `route-not-in-region-radius` (28.P5.61) — a no-op recorded as a decision is still a lie."
+  },
+  {
+   "id": "R2-global-region-scope",
+   "rule": "A region is GLOBAL FOR ENABLEMENT when ANY of three signals fires (the widest answer, never the narrowest): (i) region.scope === 'global' (the compiler's strict lift); (ii) a member slot key whose slots.json scope is `global`; (iii) the region's (landmarkKey, childPath) signature occurring on >= 2 distinct pageSourceIds. Such a region may ONLY be disabled with scope 'global' — `scope: \"routes\"` reads as 'for these routes and not the others', which cannot be true of it whatever route list accompanies it.",
+   "whyNotTheCompiler": "REGION_COMPILER_VERSION exists because a selection-policy change MOVES EVERY ID, and an authored decision keyed on a moved id addresses nothing. The compiler, its policy and its ids are untouched.",
+   "realCounterexample": "linear.app 2026-08-25T21-53-26-980Z + page-regions 2026-08-26T16-14-07-901Z. MEASURED: the compiler's strict lift finds 5 global regions of 68; the three-signal union finds 25. All EIGHT page-scoped `footer1:self` regions are recovered by signal (ii) — each carries the identical 84 `global.footer.*` slot keys, and only a single element-count difference on /changelog keeps them page-scoped for the compiler.",
+   "measuredSlotSharing": "134 of linear's 3,079 slot keys belong to more than one region, and the 84 `global.footer.*` keys are each owned by ALL EIGHT footer regions (smoke:enablement 28.P5.28 / 28.P5.28b). region-plan.ts maps a slotKey to its FIRST owning region, which would under-report the affected set by 7x — this analysis builds its own many-to-many map instead.",
+   "refusedBranch": "p000001:rgn:footer1:self with scope 'routes' covering its WHOLE blast radius is still refused as `global-region-requires-explicit-global` (28.P5.41).",
+   "safeBranch": "The same footer with scope 'global' is accepted: 84 slot keys, 2 occurrences (desktop + mobile), and effect.siblingRegionIds names the 7 OTHER footer ids (28.P5.42 / 28.P5.43 / 28.P5.44). The engine never pretends one id is the whole footer.",
+   "measuredNodePartition": "On BOTH real templates the compiler PARTITIONS the covered nodes: 18,458 (page,viewport,node) keys are owned by >= 1 region on linear and ZERO by more than one (68,949 / 0 on stripe). The membership map is still built many-to-many, because nesting is possible and the SLOT layer is genuinely shared."
+  },
+  {
+   "id": "R3-interaction-cut",
+   "rule": "There is no interaction-graph artifact — the graph is `data-wr-*` props on the runtime IR. `scanInteractionEdges` reads all three target channels: `data-wr-target-node`, `data-wr-obs[].i` (a generated DOM id `wr-<pageId>-<viewport>-<nodeId>`) and `data-wr-obs[].hn` (the mount host). A `data-wr-dyn-id` mount names no static target and travels with its trigger. REFUSED when an ENABLED trigger's target (or mount host) is inside the disabled subtree, and when a target that STARTS HIDDEN loses every trigger that could reveal it.",
+   "realCounterexample": "linear.app homepage. MEASURED over all 8 pages x 2 viewports: 23 triggers, 39 target edges — 6 same-region, 3 CROSS-region, 14 pointing at a node OUTSIDE every region, 16 dyn-mount with no static target. All THREE cross-region edges converge on n001530 in p000001:rgn:main1:div:2>section:3, triggered from n000021 (in the GLOBAL region global:rgn:nav1:self, which renders on all 8 routes), n000128 (p000001:rgn:nav2:self) and n001659 (p000001:rgn:main1:div:2>section:4).",
+   "refusedBranch": "Disabling p000001:rgn:main1:div:2>section:3 produces exactly 3 `interaction-cut-target-disabled` refusals, each machine-readable with the trigger node, the trigger's regions, the target node and the channel, and each naming the cascade region that would make it safe (28.P5.34 / 28.P5.35 / 28.P5.36).",
+   "cascade": "Re-issuing the SAME disable together with the 3 named cascade regions CLEARS every target-disabled cut (28.P5.37) — and then exposes a second hazard the engine refuses rather than waves through: 8 `interaction-cut-target-unreachable` refusals with cascadeAvailable=false, because disabling the global nav orphans one hidden target per page and those targets belong to no region (28.P5.38).",
+   "safeBranch": "The neighbouring section p000001:rgn:main1:div:2>section:4 disables cleanly — allowed, zero refusals, 670 nodes and 73 slot keys removed (28.P5.39). Its 2 disabled triggers whose targets SURVIVE are REPORTED as `orphanedTargets`, never silently accepted (28.P5.40)."
+  },
+  {
+   "id": "R4-unknown-and-uncompiled",
+   "rule": "A region id this template does not have is REFUSED as `unknown-region`; a project with no page-regions artifact refuses EVERY region edit as `regions-not-compiled` rather than silently ignoring it.",
+   "evidence": "smoke:enablement 28.P5.45 / 28.P5.46; smoke:release 28.P5.68 proves it end to end — a stale region id recorded in authored state is refused at resolve time and disables nothing."
+  }
+ ],
+ "refusalCodes": [
+  "regions-not-compiled",
+  "unknown-region",
+  "unknown-route",
+  "shared-page-blast-radius",
+  "global-region-requires-explicit-global",
+  "route-not-in-region-radius",
+  "interaction-cut-target-disabled",
+  "interaction-cut-mount-host-disabled",
+  "interaction-cut-target-unreachable",
+  "last-route"
+ ],
+ "refusalShape": "{ code, subject, message, requestedRoutes, affectedRoutes, cascadeRegionIds, cascadeAvailable, detail } — cascadeAvailable is explicitly FALSE when no cascade can make the request safe (a target that belongs to no region), so a blind spot blocks instead of decorating.",
+ "accountingDispositions": {
+  "added": [
+   "disabled-region",
+   "disabled-route"
+  ],
+  "whyNotRemoved": "`removed` has exactly one producer (accounting.ts: isEmptyValue(value)) and means AN EMPTY VALUE IN A STILL-RENDERED NODE. Reusing it would make an intentionally emptied headline and a physically deleted section indistinguishable in the one artifact whose whole purpose is that they are distinguishable.",
+  "denominator": "A disabled slot stays IN the in-scope population. `inScopeSlotKeys(unitsFile, disabledSlotKeys)` ADDS keys the unit builder no longer sees (a disabled route leaves the content scope), so a disabled slot moves between disposition buckets and never falls out of the total. The reconciliation block still proves originTotal === dispositionTotal === inScopeSlots.",
+  "precedence": "ENABLEMENT WINS over the value-based classification, but ONLY for a slot this plan actually stops rendering. A disabled slot is not `applied` (nothing renders), not `preserved` (the source default does not render either) and above all not `unresolved` — leaving a deliberately deleted section demanding operator input would block a production build on work the operator already decided against. CORRECTED 2026-08-28 (verifier finding, see `corrections`): the region branch had NO guard, so a slot key that is also bound OUTSIDE the disabled region was marked `disabled-region` while it still shipped. `resolveEnablement` now marks `disabled-region` only when EVERY BINDING of the key is inside a node this plan removes or on a page this plan deletes — the same standard the route branch always held. The sentence above is therefore true of the rows that carry the disposition, and was FALSE of 84 rows before the correction.",
+  "carrier": "content-run manifest `enablement` (optional, absent on every run on disk), written by prepareContentRun. buildSlotAccounting is called from ingestGenerationResult, which sees the manifest and not the release project.",
+  "measuredEndToEnd": "smoke:release 28.P5.72 / 28.P6.31 / 28.P5.73 / 28.P5.74 on the REAL fixture build: every slot in the disabled region is `disabled-region`, at least one slot is `disabled-route`, the account reconciles, and NO disabled slot was folded into `removed`.",
+  "guard": "MEASURED on the real linear template: disabling ONE of the 8 `*:rgn:footer1:self` regions (blast radius /changelog) names 84 `global.footer.*` member slot keys, and all 84 are bound on the other 7 ENABLED routes. Before the correction all 84 became `disabled-region`; after it, 0 do, the survivors are reported in `ResolvedEnablement.warnings`, and the plan still removes the region physically (2 region-root nodes). The guard is not a blanket: with /pricing ALSO disabled, the footer keys bound nowhere the plan still renders do land as `disabled-region` (smoke:enablement 28.P6.45–28.P6.49)."
+ },
+ "cascadeSitesTouched": [
+  "src/release/types.ts — DisabledRegionSchema / DisabledRouteSchema, AuthoredState.disabledRegions/.disabledRoutes, auxiliary.pageRegionsDir, REQUIREMENT_KINDS + SEVERITY_POLICY `dead-internal-link`",
+  "src/release/authored.ts — set/removeAuthoredRegionDisabled, set/removeAuthoredRouteDisabled, 4 new AuthoredEdit ops",
+  "src/release/graph.ts — AUTHORED_DISABLED_ROUTE_IMPACTS [content,seo,assets,production], AUTHORED_DISABLED_REGION_IMPACTS [content,assets,production], both registered in AUTHORED_FIELD_IMPACTS and detected by authoredInvalidatedStages",
+  "src/release/freshness.ts — authoredEnablementSlice folded into the content / assets / production input slices, disabledRoutes into the seo slice; absent-when-empty so every inputsHash recorded before this feature recomputes identically",
+  "src/release/revisions.ts — routesDisabled / routesReEnabled / regionsDisabled / regionsChanged / regionsReEnabled (all optional, because the schema is .strict() and every revision on disk predates them)",
+  "src/release/enablement.ts — NEW: loadEnablementInputs, evaluateRegionDisable, evaluateRouteDisable, resolveEnablement, resolveEnablementForProject, enablementCollectInput",
+  "src/release/build.ts — one memoized, re-safety-checked enablement per build, on StageRunnerContext (REQUIRED, not optional: forgetting it ships a section the operator deleted)",
+  "src/release/stages.ts — content scope filter + prepareContentRun enablement, seo disabledRoutes, production enablement plan",
+  "src/release/prepare.ts — --page-regions carried like displayName; preserved counts name both new fields; requirements recomputed over the ENABLED routes",
+  "src/release/plan.ts, src/release/resolve.ts — the same resolution, so the surface and the build cannot disagree",
+  "src/release/collect.ts — route population filtered; dead-internal-link requirements",
+  "src/regions/enablement.ts — NEW: membership, interaction scan, global signals, blast radius (READ-ONLY over the artifact; the compiler is untouched)",
+  "src/production/enablement.ts — NEW: EnablementPlan + applyEnablementToApp",
+  "src/production/run.ts — the plan applied immediately after copyTemplateApp and BEFORE bakeSeoTitles; report/enablement.json; pickContentProof no longer promises a disabled slot",
+  "src/production/qa.ts — site-wide `siteLinks` audit over every served route via src/seo/link-qa.ts auditAnchors",
+  "src/seo/production-plan.ts + src/seo/run.ts — disabledRoutes filters template.routes before THE route loop, which is the single place every per-route SEO surface is produced",
+  "src/content-injection/types.ts — SLOT_DISPOSITIONS + ContentRunManifest.enablement",
+  "src/content-injection/accounting.ts — inScopeSlotKeys widening + the enablement-wins branch",
+  "src/content-injection/packet.ts — prepareContentRun `enablement` option, recorded on the manifest",
+  "src/cli-release-prepare.ts — --page-regions"
+ ],
+ "blockingPrerequisiteResolved": {
+  "finding": "The enablement-safety recon reported that page-regions.json was not wired into the release project at all (zero references in src/release and src/production) and that `find data -name region-plan.json` returned nothing.",
+  "fix": "auxiliary.pageRegionsDir is now a first-class, OPTIONAL release-project field, set by `pnpm release:prepare --page-regions <dir>` and CARRIED on a re-prepare. A project without it refuses every region edit with `regions-not-compiled` instead of silently ignoring it.",
+  "evidence": "smoke:release 28.P5.66 (prepare records it), smoke:enablement 28.P5.46 (a project with no compile refuses)."
+ },
+ "testsAdded": {
+  "newSuite": "scripts/smoke-enablement.ts — 88 checks, 0 failures. Registered in docs/result/handoffs/28-intel/pending-package-scripts.tsv (package.json was not edited); run with `npx tsx scripts/smoke-enablement.ts` through the mutex.",
+  "sections": [
+   "§1 the authored model — absent-when-empty, idempotent, schema-enforced (14 checks)",
+   "§2 freshness + impact prediction (10)",
+   "§3 the revision chain in both directions (5)",
+   "§4 REAL linear.app region analysis: membership, slot sharing, global signals, the interaction census (8)",
+   "§5 interaction cut safety — refuse, cascade, safe branch (7)",
+   "§6 global region safety (6)",
+   "§7 SHARED PAGE (stripe many-to-one) — refused branch and safe branch (8)",
+   "§8 route enablement on the real linear template (11)",
+   "§9 the disable made PHYSICAL on a scratch copy of the template app (8)",
+   "§10 slot accounting (7)",
+   "§11 REGION OFF / ROUTE OFF in the real authoring PREVIEW (6)"
+  ],
+  "extendedSuites": {
+   "smoke-release.ts": "+30 (241 -> 271): §Task 28 Phases 5+6 — a real region compile of the fixture template, prepare --page-regions, a stale-id refusal, one batch of both edits, a REAL build read back from run.json, and the artifacts it produced",
+   "smoke-regions.ts": "+9 (67 -> 76): §9 the artifact's first consumer — membership, blast radius on the SHARED page, the global-signal vocabulary, the interaction scan on a fixture with no triggers",
+   "smoke-production.ts": "+6 (123 -> 129): pickContentProof never promises a disabled slot; applyEnablementToApp over a hand-built app copy including the nested nav-inside-disabled-region case",
+   "smoke-seo.ts": "+7 (97 -> 104): §5b a disabled route leaves the plan, the sitemap, the rendered head, and nothing else moves",
+   "smoke-content-injection.ts": "+7 (145 -> 152): the manifest carries the enablement, both dispositions land, enablement wins, the account reconciles, a stale key invents no row"
+  }
+ },
+ "falsifiability": [
+  {
+   "mutation": "src/release/enablement.ts — `if (false && missing.length > 0 …)` (narrow the shared-page detector)",
+   "result": "smoke:enablement 88 checks / 3 failures — 28.P5.56, 28.P5.57, 28.P5.58",
+   "restore": "sha256 back to 6488d961356915c3e252b3b4bc2a876a5c714a3b019b946843a16e4c79489deb (byte-identical to the pre-sabotage capture)"
+  },
+  {
+   "mutation": "src/production/enablement.ts — the region-root ids are never added to the removal set",
+   "result": "smoke:production 129 checks / 3 failures — 28.P5.PR4, 28.P6.PR5, 28.P6.PR6",
+   "restore": "sha256 back to f86109bd75bda1865de1863725651c769247e094eff4c8b67f6dc54564327179"
+  },
+  {
+   "mutation": "src/content-injection/accounting.ts — the enablement-wins branch never fires",
+   "result": "smoke:content-injection 152 checks / 2 failures — 28.P5.CI2, 28.P5.CI7",
+   "restore": "sha256 back to 29b79c4dac886cc1559cb6c05238ebed2ad1377d5529f3db07be533d6761d6a0"
+  },
+  {
+   "mutation": "src/seo/production-plan.ts — disabledRoutes is ignored",
+   "result": "smoke:seo 104 checks / 5 failures — 28.P6.S1, S2, S3, S4, S6",
+   "restore": "sha256 back to fe5463122c39170ce80293f7cc8cc657a1dc508d7e2902211f47aa51d253b222"
+  }
+ ],
+ "mutationResidue": "`grep -rn 'MUTANT|SABOTAGE' src scripts` returns nothing. Each restore was verified by sha256 against tmp/wr28/p56/pre-sabotage.sha at the moment it was made (all 6 tracked files reported OK). src/release/enablement.ts was edited AGAIN afterwards, for an unrelated reason (a RECORDED but MISSING page-regions file now behaves like no artifact instead of throwing), so its current hash is bfea11659a7ed8aa4eeda5d07f94e854ee1fc9a2ae3f0838d6476bca8a2e73b6, not the pre-sabotage 6488d961356915c3e252b3b4bc2a876a5c714a3b019b946843a16e4c79489deb. That is a deliberate later change, not sabotage residue, and it is recorded here rather than left to look like drift.",
+ "limitations": [
+  "A region id is namespaced by pageSourceId, so `scope: \"global\"` means 'everywhere THIS REGION ID exists', not 'everywhere this CONTENT exists'. On linear the footer is 8 distinct ids and disabling one removes the footer from one page. The effect names the other 7 as `siblingRegionIds` so an operator surface can offer the whole set, but the engine does NOT auto-expand to them — that is a UI decision I did not make on the operator's behalf.",
+  "Signal (iii) — the (landmark, childPath) signature on >= 2 pages — fires on EVERY region of the four-page smoke-regions fixture, whose pages are structurally near-identical. On such a site no region can be disabled per-route at all. That is the union being deliberately wide; it is measured and printed rather than tuned away.",
+  "The interaction cut is only as complete as the OBSERVATION was. 14 of linear's 39 edges and, per the enablement recon, 39 of stripe's 59 point at a node outside every region (usually n000002, the adapted document root). Those are refused with cascadeAvailable=false rather than resolved. Content mounted from a `data-wr-dyn-template` string has NO static region membership at all and cannot be reasoned about by region id.",
+  "`interaction-cut-target-unreachable` uses `data-wr-hidden` / `data-wr-reveal` as the 'starts hidden' signal. A target hidden purely by CSS with no such prop is not detected, so that rule is a floor, not a ceiling.",
+  "The stripe region measurements come from the 2026-08-18T10-45-40-007Z template (9,529 slots, 1,014 regions), because that is the only stripe template with a page-regions compile on disk. Route -> pageSourceId sharing is identical in the newer templates, so the many-to-one property transfers; the region counts do not.",
+  "The end-to-end production proof in smoke:release disables the SMALLEST home-page region with content, not the largest. Reason, measured: the fixture's whole home page is a hero plus a tagline and the hero region owns every element carrying a themed style token, so disabling it makes production QA's `theme-computed-paint` fail honestly ('no probe class found in DOM') and the build is not adopted. That is a property of a 2-route fixture, not of the feature; the large-region removal (670 nodes, 73 slot keys) is proven against the real linear template in smoke:enablement §9 and §11 instead.",
+  "REGION OFF IN PREVIEW is proven against the REAL Phase-3 authoring preview by applying the plan to the preview workspace's `app/reconstruction-data` between two sessions (the template app is `dynamic = \"force-dynamic\"`, so the route table and the page trees are read per request). src/authoring-preview/ was NOT edited — it is another builder's file — so the preview does not yet resolve enablement on its own; a caller must apply the plan to the workspace. That wiring is a named gap, not a claim.",
+  "`applyEnablementToApp` deletes an orphaned page TREE from the build copy. It does not attempt to renumber or garbage-collect anything else in the app; unreferenced style tokens for a disabled region remain in the generated stylesheet.",
+  "No region enablement has been exercised on the stripe lineage through a real production build — stripe has no accepted release project and a compile of that template was out of budget. The stripe evidence is analysis-only (both branches of the shared-page rule).",
+  "CORRECTED: the accounting precedence sentence ('not `preserved` — the source default does not render either') was FALSE for 84 slot keys before 2026-08-28. It is now true of every row that carries `disabled-region`, because the disposition is only assigned when no binding of the key survives the plan. A region-member key that survives elsewhere is reported in `ResolvedEnablement.warnings` and keeps its ordinary disposition — including `unresolved`, which is what put four customer-facing blockers back on the board.",
+  "The guard is binding-based. A slot with NO bindings at all is vacuously 'bound nowhere this build still renders' and would be marked `disabled-region`; on the real templates every region-member key is derived from bindings, so the case does not arise, but it is a hole in the reasoning rather than a measured impossibility.",
+  "The survivor warning is an operator-facing string on the resolved enablement, not a requirement. An operator who disables one footer id still gets the footer removed from ONE page only; the engine names the 7 sibling ids and now also names the 84 keys that keep rendering, but it still does not auto-expand to the siblings."
+ ],
+ "runIdsAndPaths": {
+  "linearTemplate": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z",
+  "linearRegions": "data/linear.app/page-regions/2026-08-26T16-14-07-901Z",
+  "stripeTemplate": "data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z",
+  "stripeRegions": "data/stripe.com/page-regions/2026-08-26T16-14-08-675Z",
+  "previewWorkspaceWritten": "data/linear.app/authoring-previews/wr28-p56 (NEW wr28- namespace)",
+  "newSuite": "scripts/smoke-enablement.ts"
+ },
+ "regression": {
+  "invocation": "Every suite and every typecheck went through bash tmp/wr28/suite-lock.sh, ONE AT A TIME, in a single sequential battery (tmp/wr28/p56/battery.sh). smoke:playwright and smoke:visual-editor were not run (the first touches the public internet and is uncounted; the second is another builder's in-flight suite).",
+  "countDerivation": "Every `checks` value was re-derived with `grep -cE '^  PASS '` and `failures` with `grep -cE '^  FAIL '` over each suite's captured raw stdout, never read from a suite's own summary line. The `^  ` anchor is what keeps content-injection's two `[content:qa]   FAIL —` diagnostic lines (emitted INSIDE intentional negative fixtures) out of the failure count.",
+  "typecheck": "exit 0 (bash tmp/wr28/suite-lock.sh pnpm typecheck, run last, after every source edit)",
+  "baseline": "docs/result/handoffs/28-gate-phase23.json — 22 suites / 2,472 checks / 0 failures",
+  "result": "23 suites / 2,619 checks / 0 failures / all rc=0",
+  "suites": [
+   {
+    "suite": "verifier",
+    "checks": 81,
+    "failures": 0,
+    "baseline": 81,
+    "delta": 0,
+    "seconds": 7
+   },
+   {
+    "suite": "selector",
+    "checks": 81,
+    "failures": 0,
+    "baseline": 81,
+    "delta": 0,
+    "seconds": 0
+   },
+   {
+    "suite": "multi-observer",
+    "checks": 62,
+    "failures": 0,
+    "baseline": 62,
+    "delta": 0,
+    "seconds": 27
+   },
+   {
+    "suite": "interaction-detector",
+    "checks": 92,
+    "failures": 0,
+    "baseline": 92,
+    "delta": 0,
+    "seconds": 1
+   },
+   {
+    "suite": "interaction-explorer",
+    "checks": 108,
+    "failures": 0,
+    "baseline": 108,
+    "delta": 0,
+    "seconds": 93
+   },
+   {
+    "suite": "interaction-patterns",
+    "checks": 88,
+    "failures": 0,
+    "baseline": 88,
+    "delta": 0,
+    "seconds": 0
+   },
+   {
+    "suite": "sitespec",
+    "checks": 257,
+    "failures": 0,
+    "baseline": 257,
+    "delta": 0,
+    "seconds": 0
+   },
+   {
+    "suite": "reconstruction",
+    "checks": 217,
+    "failures": 0,
+    "baseline": 217,
+    "delta": 0,
+    "seconds": 7
+   },
+   {
+    "suite": "reconstruction-qa",
+    "checks": 134,
+    "failures": 0,
+    "baseline": 134,
+    "delta": 0,
+    "seconds": 145
+   },
+   {
+    "suite": "recon-template",
+    "checks": 109,
+    "failures": 0,
+    "baseline": 109,
+    "delta": 0,
+    "seconds": 80
+   },
+   {
+    "suite": "regions",
+    "checks": 76,
+    "failures": 0,
+    "baseline": 67,
+    "delta": 9,
+    "seconds": 0
+   },
+   {
+    "suite": "content-injection",
+    "checks": 152,
+    "failures": 0,
+    "baseline": 145,
+    "delta": 7,
+    "seconds": 58
+   },
+   {
+    "suite": "theme",
+    "checks": 47,
+    "failures": 0,
+    "baseline": 47,
+    "delta": 0,
+    "seconds": 35
+   },
+   {
+    "suite": "seo",
+    "checks": 104,
+    "failures": 0,
+    "baseline": 97,
+    "delta": 7,
+    "seconds": 2
+   },
+   {
+    "suite": "assets",
+    "checks": 140,
+    "failures": 0,
+    "baseline": 140,
+    "delta": 0,
+    "seconds": 5
+   },
+   {
+    "suite": "production",
+    "checks": 129,
+    "failures": 0,
+    "baseline": 123,
+    "delta": 6,
+    "seconds": 3
+   },
+   {
+    "suite": "release",
+    "checks": 271,
+    "failures": 0,
+    "baseline": 241,
+    "delta": 30,
+    "seconds": 90
+   },
+   {
+    "suite": "revision",
+    "checks": 36,
+    "failures": 0,
+    "baseline": 36,
+    "delta": 0,
+    "seconds": 2
+   },
+   {
+    "suite": "registry",
+    "checks": 35,
+    "failures": 0,
+    "baseline": 35,
+    "delta": 0,
+    "seconds": 0
+   },
+   {
+    "suite": "authoring-preview",
+    "checks": 41,
+    "failures": 0,
+    "baseline": 41,
+    "delta": 0,
+    "seconds": 23
+   },
+   {
+    "suite": "brand-assets",
+    "checks": 141,
+    "failures": 0,
+    "baseline": 141,
+    "delta": 0,
+    "seconds": 15
+   },
+   {
+    "suite": "enablement",
+    "checks": 88,
+    "failures": 0,
+    "baseline": null,
+    "delta": "NEW",
+    "seconds": 5
+   },
+   {
+    "suite": "e2e",
+    "checks": 130,
+    "failures": 0,
+    "baseline": 130,
+    "delta": 0,
+    "seconds": 622
+   }
+  ],
+  "negativeDeltas": [],
+  "deltaExplanation": "+59 across five existing suites (regions +9, content-injection +7, seo +7, production +6, release +30) and +88 in the new smoke:enablement suite. No suite decreased, so no decrease had to be adjudicated as replacement-vs-regression.",
+  "wallClockCaveat": "Single-machine, one run per suite, under the mutex with other Task-28 agents active. The 5 s for smoke:enablement includes TWO real authoring-preview sessions (the workspace is rm -rf'd and re-materialized first), so it is a real number but not a benchmark.",
+  "gitMutatingOperations": 0,
+  "gitEvidence": "HEAD is still 6c2e723 ('0827 morning'); `git stash list` is empty; the only git commands run were log / status / diff-free inspection. Task-28 results stay uncommitted.",
+  "dataWrites": "Only NEW 2026-08-27/28 run ids and wr28- namespaces. The one namespace this phase created is data/linear.app/authoring-previews/wr28-p56. `find data -type f -newer src/regions/enablement.ts`, grouped by containing run directory, touched ZERO run directory whose id predates 2026-08-27. data/linear.app/release-projects/flowpilot-wr27 still has NO revisions/ directory, so smoke:revision 27A.23 is honestly satisfied (that suite passed 36/36 in this battery).",
+  "dataWrSlot": "`grep -rn data-wr-slot src scripts` matches 2 lines from this phase: a doc comment in src/regions/enablement.ts stating that membership is derived by walking the tree rather than from an attribute, and a NEGATIVE assertion in scripts/smoke-regions.ts §9 that would FAIL if one were minted. Zero emission sites were added."
+ },
+ "corrections": [
+  {
+   "finding": "VERIFIER FAIL (2026-08-27): region slot accounting marked slots `disabled-region` that are still rendered. Disabling p000002:rgn:footer1:self marked 84 global.footer.* keys disabled while 84/84 still rendered on 7 enabled routes; because classify() gives the enablement branch absolute precedence, 4 customer-facing needs-input BLOCKERS (global.footer.link.{status,x-twitter,github,youtube}.href) stopped being `unresolved`, and pickContentProof stopped promising two footer keys, so production QA lost both footer content proofs on all 8 routes.",
+   "fixedIn": "src/release/enablement.ts resolveEnablement — the region branch now computes the node ids this plan physically removes (region-root subtrees + removed nav subtrees) and the pages it deletes, and marks `disabled-region` only when NO binding of the slot survives.",
+   "measuredAfter": {
+    "engine": "smoke:enablement 28.P6.45: footer region OFF on linear → 84 member slot keys, 0 accounted disabled, 84 reported as still bound on an enabled route. 28.P6.46: the 4 blocker keys are absent from plan.disabledSlotKeys. 28.P6.47: the survivors are named in a warning. 28.P6.48: the plan still carries 2 disabledNodes / 1 disabledRegionId — the guard narrows the ACCOUNTING, never the plan. 28.P6.49: with /pricing also off, the keys bound nowhere the plan renders ARE `disabled-region`.",
+    "realBuild": "release project data/linear.app/release-projects/wr28-fix-p56, region-off build run 2026-08-27T17-50-03-674Z (production build 2026-08-27T17-50-04-236Z). Content run 2026-08-27T17-50-03-834Z: `disabled-region` rows 0, and global.footer.link.{status,x-twitter,github,youtube}.href are all `unresolved` again. Production QA 77/77 and it PROVES content-proof:global.footer.link.coding-sessions.label and content-proof:global.footer.link.customer-requests.label — the two proofs the verifier measured as LOST. The region is still physically removed: report/enablement.json regionNodesRemoved=2, and changelog.html's 'footer' occurrences are 0 while index/customers/plan/security/integrations keep 6.",
+    "engineWarning": "[release] enablement WARNING — 84 slot key(s) inside a disabled region are ALSO bound outside it and still render — they keep their ordinary disposition (a global slot key is not namespaced by page, unlike the region id): global.footer.link.about.href, … +76 more"
+   },
+   "honestyNote": "The verifier's numbers are PRESERVED, not overwritten: on their project (wr28-vfy-p56) the defect moved unresolved 119 → 115. On my project (wr28-fix-p56, prepared from the same accepted spec 2026-08-25T23-54-21-435Z) the corrected region-off build reports unresolved 117 with disabled-region 0. The two projects differ in what else was disabled at the time; the load-bearing claim — that no blocker goes quiet for content that still ships — is measured on mine."
+  }
+ ],
+ "regressionAfterCorrection": {
+  "role": "FRESH CORRECTION AGENT re-run, 2026-08-28 (local UTC+9). Only the suites the correction can reach were re-run; the ten listed under `notRerun` import nothing from src/release or src/content-injection (grep -cE 'release/|content-injection/' = 0 for each), so their gate counts are carried, not re-measured.",
+  "invocation": "Every invocation went through bash tmp/wr28/suite-lock.sh, ONE AT A TIME. Counts re-derived with grep -cE '^  PASS ' / '^  FAIL ' over each captured raw log (tmp/wr28/fix56/logs/*.log), never from a suite's own summary line.",
+  "typecheck": "exit 0 (run after every source edit; final run after the last restore)",
+  "baseline": "docs/result/handoffs/28-gate-phase23.json (22 suites / 2,472) and the builder's post-Phase-5/6 23-suite / 2,619 figure, which an independent verifier re-derived and confirmed.",
+  "rerun": [
+   {
+    "suite": "enablement",
+    "checks": 101,
+    "failures": 0,
+    "previous": 88,
+    "delta": 13
+   },
+   {
+    "suite": "release",
+    "checks": 274,
+    "failures": 0,
+    "previous": 271,
+    "delta": 3
+   },
+   {
+    "suite": "content-injection",
+    "checks": 152,
+    "failures": 0,
+    "previous": 152,
+    "delta": 0
+   },
+   {
+    "suite": "production",
+    "checks": 129,
+    "failures": 0,
+    "previous": 129,
+    "delta": 0
+   },
+   {
+    "suite": "seo",
+    "checks": 104,
+    "failures": 0,
+    "previous": 104,
+    "delta": 0
+   },
+   {
+    "suite": "regions",
+    "checks": 76,
+    "failures": 0,
+    "previous": 76,
+    "delta": 0
+   },
+   {
+    "suite": "revision",
+    "checks": 36,
+    "failures": 0,
+    "previous": 36,
+    "delta": 0
+   },
+   {
+    "suite": "registry",
+    "checks": 35,
+    "failures": 0,
+    "previous": 35,
+    "delta": 0
+   },
+   {
+    "suite": "theme",
+    "checks": 47,
+    "failures": 0,
+    "previous": 47,
+    "delta": 0
+   },
+   {
+    "suite": "assets",
+    "checks": 140,
+    "failures": 0,
+    "previous": 140,
+    "delta": 0
+   },
+   {
+    "suite": "recon-template",
+    "checks": 109,
+    "failures": 0,
+    "previous": 109,
+    "delta": 0
+   },
+   {
+    "suite": "authoring-preview",
+    "checks": 41,
+    "failures": 0,
+    "previous": 41,
+    "delta": 0
+   },
+   {
+    "suite": "brand-assets",
+    "checks": 141,
+    "failures": 0,
+    "previous": 141,
+    "delta": 0
+   }
+  ],
+  "notRerun": [
+   {
+    "suite": "verifier",
+    "checks": 81,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "selector",
+    "checks": 81,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "multi-observer",
+    "checks": 62,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "interaction-detector",
+    "checks": 92,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "interaction-explorer",
+    "checks": 108,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "interaction-patterns",
+    "checks": 88,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "sitespec",
+    "checks": 257,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "reconstruction",
+    "checks": 217,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "reconstruction-qa",
+    "checks": 134,
+    "reason": "imports nothing from src/release or src/content-injection"
+   },
+   {
+    "suite": "e2e",
+    "checks": 130,
+    "reason": "imports nothing from src/release or src/content-injection"
+   }
+  ],
+  "gateTotalAfterCorrection": 2635,
+  "gateTotalDerivation": "2,619 (verified 23-suite total) + 13 (enablement 88 -> 101) + 3 (release 271 -> 274) = 2,635 checks / 0 failures across 23 suites. No suite decreased.",
+  "nonGateSuites": [
+   {
+    "suite": "visual-editor",
+    "checks": 50,
+    "failures": 0
+   },
+   {
+    "suite": "editor-integration",
+    "checks": 25,
+    "failures": 0
+   }
+  ],
+  "notRun": "smoke:playwright (touches the public internet, uncounted by standing instruction)."
+ },
+ "falsifiabilityAfterCorrection": {
+  "method": "Three independent mutations, each run alone through the mutex, then restored and PROVEN byte-identical with shasum -a 256 -c (tmp/wr28/fix56/pre-sabotage.sha, 7 files, all OK) with `grep -rn MUTANT src scripts` = 0 afterwards. A whole-tree git diff is not valid evidence here — other Task-28 agents write the same working tree concurrently.",
+  "mutations": [
+   {
+    "id": "MUTANT-A",
+    "what": "src/release/enablement.ts — the serialized-markup pass collects no carriers (`carriers.length = 0`)",
+    "result": "smoke:enablement 99 PASS / 2 FAIL, rc 1 — 28.P6.40 and 28.P6.41"
+   },
+   {
+    "id": "MUTANT-B",
+    "what": "src/release/enablement.ts — the region-accounting guard is bypassed (`survivors` forced empty), i.e. the pre-correction behaviour",
+    "result": "smoke:enablement 98 PASS / 3 FAIL, rc 1 — 28.P6.45, 28.P6.46, 28.P6.47"
+   },
+   {
+    "id": "MUTANT-C",
+    "what": "src/release/stages.ts — the previous run's disabled routes are not read back, i.e. the scope narrowing becomes permanent",
+    "result": "smoke:release 272 PASS / 2 FAIL, rc 1 — 28.P6.38b and 28.P6.38c"
+   }
+  ],
+  "restoreProof": "shasum -a 256 -c OK for src/release/enablement.ts, src/release/collect.ts, src/release/stages.ts, src/content-injection/types.ts, src/content-injection/packet.ts, scripts/smoke-enablement.ts, scripts/smoke-release.ts; smoke:enablement back to 101/0 and smoke:release back to 274/0, typecheck exit 0."
+ },
+ "disableabilityCensusAfterCorrection": {
+  "why": "The correction must not turn a safety rule into a blanket refusal. Re-measured with my own probe (tmp/wr28/fix56/census.ts) AFTER the fixes, calling the product's own evaluateRegionDisable / evaluateRouteDisable over every region and every route.",
+  "linear": "68 regions / 8 routes — scope 'global' ALLOWED 66/68 (97.1%), scope 'routes' at full blast radius ALLOWED 42/68, refused under BOTH scopes 2/68, single-route disable ALLOWED 8/8.",
+  "stripe": "1,014 regions / 20 routes — scope 'global' ALLOWED 996/1,014 (98.2%), scope 'routes' at full radius ALLOWED 97/1,014, refused under BOTH scopes 18/1,014, single-route disable ALLOWED 20/20.",
+  "agreement": "Identical to the independent verifier's pre-correction census, which is the point: the corrections widen DETECTION and narrow one ACCOUNTING claim; they change no refusal."
+ }
+}

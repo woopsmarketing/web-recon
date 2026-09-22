@@ -1,0 +1,1203 @@
+{
+ "schema": "task28-final-v1",
+ "task": "TASK 28 — VISUAL PRODUCTION WORKFLOW",
+ "report": "docs/result/28-visual-production-workflow-2026-08-28.md",
+ "producedAt": "2026-08-28",
+ "producedBy": "report agent (close-out). Wrote two documents and no source code, no suite and no existing handoff.",
+ "baselineSha": "6c2e723601a0d76431c96a48bbdb4726c02063e7",
+ "headAtCompletion": "6c2e723601a0d76431c96a48bbdb4726c02063e7 — unchanged; all Task-28 work is an UNCOMMITTED working tree (51 modified tracked files, 50 untracked paths, re-counted by this agent with git status --porcelain)",
+ "verdict": "READY FOR FIRST PRODUCTION PILOT",
+ "verdictSource": "Re-adjudication by an independent final adjudicator who implemented nothing. They read all three code sites directly (src/production/brand-census.ts, src/content-injection/brand-surfaces.ts, src/release/brand-scan.ts), ran SEVEN false-zero attacks of their own design against the shipped functions, re-derived the canary requirement end to end under the new instrument, independently fuzzed the matcher for narrowing, re-ran typecheck and the full 29-suite battery through the mutex, and re-checked the git-orphan, historical-data and package.json clauses themselves. The earlier NOT READY adjudication (four-auditor panel plus an independent final-regression agent) stands as the record of the state before the fix.",
+ "task27Carry": {
+  "changeRequestsTotal": 8,
+  "changeRequestsClosed": 8,
+  "changeRequestsSuperseded": 0,
+  "requirementDriftResolved": true,
+  "assetsRunnerRealData": true,
+  "evidence": {
+   "changeRequests": "docs/result/handoffs/28-carried-items.json .changeRequests — total 8, implemented 8, superseded 0, blocked 0, each with a file:line citation. Measured by a fresh Phase-1 gate agent who implemented nothing.",
+   "requirementDrift": "Root cause: post-write requirement addition by a LATER command. flowpilot-wr27/requirements.json holds 380 entries / 380 unique ids with generatedAt equal to the createdAt of runs/2026-08-26T19-26-48-957Z (kind=build), not of the 19:23:06 prepare whose log said 378. The +2 is real: onlyInBuild = ['security.main.text.linear-undergoes-regular-service','security.main.text.iso-27001-certified'], onlyInAccepted = []. Fixed generically at requirements.ts:255/281-287/297 + types.ts:177-186/536; 14 new checks release:28.1B.1…14. grep for 378/380 over src+scripts returns one doc comment and no code literal.",
+   "assetsRunner": "run 2026-08-27T09-38-59-489Z, materialization 2026-08-27T09-38-59-492Z, project data/linear.app/release-projects/wr28-assets-stage. rerunStages=['assets','production']; stale trigger legitimate; production consumed; reused on a second run.",
+   "assetsRunnerDefectsFound": [
+    "DEFECT-1 (fixed): the operator record was APPENDED beside the existing manifest record — pre-fix run 2026-08-27T09-34-50-356Z has 2 records for ai000036 and 242 entries; post-fix has 1 record and 241 entries.",
+    "DEFECT-2 (fixed): counts were copied forward — pre-fix reported counts.totalBytes 209,680,490 against its own media dir of 209,680,669 bytes; post-fix reports 156 unique files / 209,680,669 bytes, independently re-measured against the directory."
+   ]
+  },
+  "carriedLimitations": [
+   "CR5 (registerTemplate from the compile CLI) is implemented but NO suite spawns the CLI itself, so it is not covered end to end.",
+   "scripts/smoke-release.ts:3415-3417 still asserts the assets runner 'had never executed on any pipeline', which the Phase-1C verifier falsified against pre-existing checks 14b/26.5/26.6. Still in the tree today (re-read by this agent); 28-carried-items.json records no correction."
+  ]
+ },
+ "brandAssets": {
+  "replacementPath": "src/production/brand-bake.ts bakeBrand(), spliced into src/production/run.ts between bakeSeoTitles and convertToStaticExport, mutating the BUILD COPY's page IR — the head, SSR HTML, inlined self.__next_f.push flight chunks and exported .txt flight all derive from it, so one write reaches every encoding. Whole-asset REPLACE / REMOVE / PRESERVE only; there is no SVG path editor. Requirement evaluation lives in src/release/brand-scan.ts evaluateBrandOutputProof + sourceBrandAssetRequirement; census in src/production/brand-census.ts.",
+  "imageLogo": {
+   "resolverCoverage": "COVERED and proven on real data: REPLACE rewrites src to a self-hosted /wr/brand/<sha>.<ext> and drops srcset; REMOVE is refused unconditionally (the element carries layout). Proven by two real `next build`s of a 1-route copy of the real accepted nextjs.org template — before: 4 hosts, 0 replaced, unexplained 4, blockers 1, logotype still shipping; after: 4 replaced, 0 refused, 0 unexplained, blockers 0, logotype gone, no srcset re-introducing it.",
+   "censusCoverage": "NOW COVERED (Task 28 close-out). A rendered `imageSrcPath` axis was added to BOTH BrandSurfaceCounts and BrandFlightCounts, measured with the DETECTOR'S OWN scanImageLogo so the census cannot drift blinder than detection; one count per <img>; reads only true src/srcset (data-src deliberately NOT read, so the census is EQUAL to detection and never wider). It is summed into markupBrandSurfaceTotal and flightBrandSurfaceTotal. It is NOT the sourceUrl axis: a self-hosted /static/AcmeLogo.svg is not a source-host URL at all, so self-hosting can no longer erase the only axis that saw anything. PREVIOUSLY (as adjudicated NOT READY): 'NOT COVERED — THE BLOCKING DEFECT. No census axis measures an <img> whose src PATH names the brand.'",
+   "realHostsMeasured": {
+    "nextjs.org": 160,
+    "linear.app": 0,
+    "stripe.com": 0,
+    "domainchecker.co.kr": 0
+   }
+  },
+  "inlineSvgLogo": {
+   "resolved": true,
+   "surfaces": [
+    "svg-aria-label",
+    "svg-symbol-id",
+    "svg-text"
+   ],
+   "evidence": "Real linear lineage (project wr28-brand-assets, run/build 2026-08-27T12-36-06-105Z): 80 brand-carrying hosts (svg-aria-label 48, svg-symbol-id 16, image-alt 14, aria-label 2); 64 REPLACE + 16 REMOVE applied; 80 nodes rewritten over 8 pages; 32 symbol ids renamed; residual hostsAfter 0, unexplainedAfter 0; exported-HTML 0; RSC flight 0 over 46 flight documents / 1,083 length-prefixed chunks; post-hydration 0 over 8 routes; 0 divergent routes; 0 hydration errors; blockers 1 -> 0. On the Switchyard canary build 2026-08-28T00-24-48-338Z: hostsBefore 74, replaced 74, refused 0, symbolIdsRenamed 28, unexplainedAfter []. Auditor 3 independently re-censused the SHIPPED bytes with the product's own functions over all 9 served HTML files and every .txt flight file: markup 0, inline-flight 0, .txt-flight 0, and raw greps for <symbol id=*linear*> and <svg aria-label=*linear*> both 0. Task 27's recorded dead end is genuinely closed for this surface class."
+  },
+  "requirementClearsOnOutputProof": {
+   "value": "YES — for all six resolvable brand surfaces. This was the failing bar clause; it is now closed and re-adjudicated.",
+   "worksFor": "ALL SIX entries of RESOLVABLE_BRAND_SURFACES — image-logo, image-alt, aria-label, svg-aria-label, svg-text, svg-symbol-id — each now has a matching census axis on the markup encoding AND the flight encoding, and markupBrandSurfaceTotal / flightBrandSurfaceTotal each sum exactly those six. That completeness is the property that was false before. The negative test still bites: a REPLACE naming a non-existent asset gives applied.refused=1, unexplainedAfter=1, blockers 1 — and that refused <img> logo is now VISIBLE to the rendered census too, where before only the IR-set proof caught it.",
+   "failsFor": "NOTHING within the six resolvable surfaces. Residual coverage limits are named honestly and are SYMMETRIC (undetected AND uncensused, so neither is blind alone): a brand logo delivered via CSS background-image, <object>, or an inline <image href>. Confirmed by the adjudicator: no detector and no census axis exists for that class anywhere in src/. Crucially it no longer reopens the defect — the preservedAfter ordering makes the verdict independent of the census, proven by the adjudicator's sixth attack (a mark hidden in a CSS background-image under PRESERVE still lands accepted-limitation with 1 blocker).",
+   "rootCause": [
+    "src/production/brand-census.ts:376 markupBrandSurfaceTotal = svgAriaLabel + svgSymbolId + svgText + imageAlt + ariaLabel — deliberately excludes sourceUrl (verified by reading the file).",
+    "There is NO census axis at all for an <img> whose src PATH names the brand, although image-logo is the FIRST entry of RESOLVABLE_BRAND_SURFACES and the resolver rewrites props.src for it.",
+    "Detection/clearing matcher asymmetry: scanImageLogo uses firstBrandTokenInIdentifier, the imageAlt census axis uses firstBrandToken.",
+    "src/release/brand-scan.ts:770-777 tests renderedClean BEFORE preservedAfter, so a preserve whose surface the census cannot see is scored as positive output proof; :878-891 then maps clearedBy='output-proof' to status='resolved'."
+   ],
+   "reproduction": "Auditor 3, twice, on the REAL accepted nextjs.org template with real next builds. Run A (PRESERVE on all 4 hosts): censusServedHtml = {sourceUrl:88, all others 0}, irClean true, renderedClean true, clearedBy 'output-proof', status 'resolved', releaseBlockers 0, and site/index.html still ships nextjs-logotype-light/-dark. Run B (asset stage simulated, all 146 source-host URLs self-hosted): EVERY axis including sourceUrl reads 0, still 'output-proof', still resolved, 0 blockers, both the Next.js and Vercel logotypes still shipping. Scripts: tmp/audit-brand/negative.ts, tmp/audit-brand/preserve-selfhosted.ts. The adjudicator reproduced the measurement layer independently with the shipped functions.",
+   "contradictedShippedClaim": "docs/result/handoffs/28-brand-assets.json .clearingRule and .limitations both state 'PRESERVE-everything is not a path to PRODUCTION_READY and the requirement never reads resolved while the source mark is shipping'. That is false for image-logo surfaces.",
+   "minimalFix": [
+    "Make preservedAfter > 0 always yield 'preserve-acceptance' — preserving a mark is by definition not output proof that it is gone.",
+    "Add a rendered axis for an <img> whose src PATH carries a brand token, host-independent so self-hosting cannot erase it.",
+    "Use firstBrandTokenInIdentifier on the imageAlt axis so clearing is at least as sensitive as detection.",
+    "Then re-run the nextjs PRESERVE fixture and REQUIRE status='accepted-limitation'."
+   ],
+   "notABackstop": "src/assets/classify.ts:89-104 (R4) classifies a brand-named/logo-named file as 'replacement-required', which SEVERITY_POLICY makes release-blocking as kind 'replacement-image'. It usually fires as a second net on the same filename signal in a full pipeline, but it lives in a different stage, is silent for a brand-named surface the asset inventory does not carry, and does not make the brand instrument sound.",
+   "failsForBeforeTheFix": "image-logo. A PRESERVE (or any decided image-logo host) on such a lineage yielded clearedBy='output-proof' -> status='resolved' -> 0 source-brand blockers WHILE THE SOURCE'S LOGOTYPE WAS STILL IN THE SHIPPED HTML. Retained verbatim as the record of the failing clause.",
+   "minimalFixApplied": true,
+   "statusNow": "CLOSED — fixed, falsified five independent ways, re-adjudicated. See d.closeOutFix."
+  },
+  "severityIntegrity": "NO severity downgraded. SEVERITY_POLICY parsed out of both `git show HEAD:src/release/types.ts` and the worktree: all 12 pre-existing kinds byte-identical, including source-brand-asset still 'release-blocking' with its basis string unedited. The 13th kind, dead-internal-link, is NEW and is release-blocking.",
+  "detectorNotNarrowedIntoSilence": "Scanner re-run by auditor 3 on all four accepted templates, host-only vs declared-title-widened tokens: linear 80->80, stripe 195->195, nextjs 160->190, domainchecker 0->38. Every published figure reproduces exactly and no real lineage in this repo now yields 0 hosts.",
+  "surfacesNotCovered": [
+   "arbitrary SVG <path> geometry that draws the source mark without naming the brand — detection limit, out of scope by the settled 'no SVG path editor' constraint",
+   "dynamic-template-content — UNOWNED: no artifact records brand inside dynamically-mounted region content separately from its host route",
+   "attribute-value-text (e.g. placeholder=) — UNOWNED and UNCOUNTED, found by a verifier in this phase's OWN proof build; now declared in the bake report's SURFACES_NOT_RESOLVED with a check asserting the declaration",
+   "icon-SPRITE hosts: whole-host REPLACE/REMOVE refused (the linear sprite is 184 KB / 264 symbols of which 2 are brand-named); only brand-named symbol ids are deterministically resolvable",
+   "source brand inside an editable url slot's query string (canary F5b) and XMP metadata inside a shipped .mp4 (canary F5d) — no detector"
+  ],
+  "tokenBlindnessWarningIsLogOnly": "src/release/collect.ts:724-733 warns when a template has inline-SVG entries but zero detected brand hosts, but the warnings array reaches only stdout. No requirements.json on disk contains it, so an operator reading the artifact cannot see that the axis measured nothing."
+ },
+ "preview": {
+  "implemented": true,
+  "module": "src/authoring-preview/",
+  "hydrationSafe": true,
+  "hydrationEvidence": "0 console errors and 0 hydration errors on initial load and after all 15 benchmark edits (Playwright console/weberror/pageerror listeners, classifier identical to src/recon-template/parity-qa.ts); 0 of each across all 7 served routes of the isolated production package; 0 `[wr-slot]` applier guard warnings in every run. Independently: auditor 2 measured 0 console errors / 0 warnings / 0 pageerrors / 0 hydration-shaped messages across all 8 routes, all four inspector tabs, the mobile viewport, QA mode and the Library modal — after first self-testing the listener by injecting a console.error into BOTH the iframe and the editor page.",
+  "initialStartupMs": 617,
+  "textEditMedianMs": 144,
+  "urlEditMedianMs": 138,
+  "themeEditMedianMs": 71,
+  "imageEditMedianMs": 5,
+  "measurementBasis": "Builder figures, n=6 each, wall clock around the REAL preview with a REAL Chromium; setup INCLUDED. Site domainchecker.co.kr (19 routes), darwin 25.2.0, Node 22, next 16.3.0, loopback, with other Task-28 phases running concurrently on the same machine.",
+  "independentReMeasurement": {
+   "byWhom": "auditor 3, n=5 each, own harness (tmp/audit-preview/bench.ts, cold.ts)",
+   "initialStartupMs": 612,
+   "textEditMedianMs": 144,
+   "urlEditMedianMs": 141,
+   "themeEditMedianMs": 57,
+   "coldMaterializeMs": "4,215 median under contention from a parallel auditor; 3,233/3,304 uncontended, matching the builder's 3,249-3,335"
+  },
+  "disputedFigures": [
+   {
+    "field": "textEditMedianMs",
+    "shipped": "144 median / 150 max (n=6)",
+    "verifierMeasured": "180 median / 211 max / 170 min (n=6) — every sample above the claimed MAXIMUM; the verifier asked for a range or a re-measurement",
+    "thirdMeasurement": "auditor 3 independently measured 144 median (n=5), agreeing with the builder",
+    "state": "STILL UNCORRECTED IN THE HANDOFF. docs/result/handoffs/28-preview-runtime.json has no corrections block and the string '180' does not occur in it (re-checked by this agent). The Phase-2/3 gate recorded the finding as still open and returned PASS anyway."
+   },
+   {
+    "field": "28-visual-editor.json .performance.routeSwitchNote",
+    "shipped": "route switch is 22 ms median / 658 ms max … repeat visits are single-digit ms",
+    "verifierMeasured": "534 ms median / 537 ms max, pre-warmed with a strict wait; the verifier called 22 ms a measurement artifact",
+    "state": "STILL UNCORRECTED (re-read by this agent). Two gates recorded it open."
+   }
+  ],
+  "coldMaterializeMs": 3275,
+  "coldMaterializeNote": "ONE-TIME per template: rm -rf + copy the 39 MB app + two anchored patches + `next build` + start + first page. Paid once, then reused. NOT part of an edit.",
+  "consecutiveEditsStayVisible": "5 consecutive setSlotValue calls on ONE running session, each with a fresh marker, seen in 162/146/143/144/142 ms with no worker restart — the epoch invalidation does not decay after the first edit.",
+  "productionBakeUnaffected": "Proven, not argued: after a full preview session the suite runs the REAL runProductionCompile on the same lineage and walks every file of the produced package (198 files, 22,042,083 bytes) — 0 bridge marker, 0 authoring patch marker, 0 WR_AUTHORING_EPOCH_FILE — and byte-compares the template run before and after. Reproduced across 3 more compiles.",
+  "editorAbsentFromProduction": "Independently re-proven by auditor 3 with 35 markers, each first proven non-vacuous in src/ or scripts/, grepped --binary-files=text across FOUR packages (220/439/354/198 files). ZERO hits for 34 of 35; the single hit is theme-overlay.css, a legitimate PRODUCTION artifact (src/theme/types.ts:58 THEME_OVERLAY_FILE, written by src/production/bake.ts:100, served at src/production/patch.ts:120) that merely shares a filename with the preview overlay.",
+  "noDataWrSlot": "0 emission sites. 16 grep hits across src+scripts, all doc comments or negative assertions; all 37 setAttribute call sites enumerated, none names it; smoke-visual-editor.ts:1054-1058 evaluates document.querySelectorAll('[data-wr-slot]').length in a real Chromium frame and requires 0, and requires the preview HTML string not to contain it."
+ },
+ "editor": {
+  "implemented": true,
+  "module": "src/editor/ — 14 modules, 5,491 lines as measured in the tree today (the handoff's corrected '14 modules, 4,983 lines' is itself stale) — plus src/cli-editor.ts",
+  "actualRenderedPreview": true,
+  "desktopMobile": true,
+  "hoverHighlight": true,
+  "domToSlot": true,
+  "multiBinding": true,
+  "textEdit": true,
+  "urlEdit": true,
+  "imageEdit": true,
+  "logoEdit": true,
+  "themeEdit": true,
+  "regionPanel": true,
+  "revision": true,
+  "undo": true,
+  "aiRewrite": true,
+  "evidence": {
+   "actualRenderedPreview": "The preview is the patched template copy served by a real `next start` behind a stable-URL proxy, embedded in an iframe on its OWN 127.0.0.1 origin (two ports, two origins, one postMessage channel). 28.P4.44 proves an un-allowlisted origin receives nothing and cannot command the bridge.",
+   "desktopMobile": "Hover geometry delta measured at BOTH desktop 1440x900 and mobile 390x844, 13 probe kinds each; multi-binding one-edit-updates-all rendered in a real browser in BOTH the desktop and mobile trees. BOUND: auditor 2's DOM->slot clicks, inspector drives, revision/undo steps and enablement toggles were all performed at desktop 1440x900; the mobile tree was visited only in the 0-message error census.",
+   "hoverHighlight": "ONE <style data-wr-editor-style=\"1\"> in <head>, text content rewritten per hover to an outline rule targeting the EXISTING data-wr-node attribute. ZERO attributes set on any customer element, ZERO nodes inserted into the customer subtree. Measured geometry delta EXACTLY 0 over ~32,000 numbers (every element's rect + 6 document metrics, 8,010 elements) at both viewports, with a noise floor of 0 — and the probe is DEMONSTRATED ABLE TO FAIL: re-injecting an outline->border break produced a 4.0001220703125 px delta at section#n000004.",
+   "domToSlot": "slot-bindings inversion, no new DOM attribute. 9,929 bindings -> 9,929 distinct occurrence keys, 0 keys spanning more than one slot. 262 dynamic bindings, 262/262 sound with the recovered trigger; 22 would be strictly WIDER and 94 merely AMBIGUOUS without it; single-slot 168/262 -> 182/262. Auditor 2 re-implemented the inversion from the raw artifacts and matched the editor on a static node, a 2-slot anchor and a mounted data-wr-dyn-node element (triggerRecovered=true).",
+   "multiBinding": "plan.main.text.projects, 5 bindings (2 static desktop, 1 dynamic-template desktop, 2 static mobile). The inspector shows '5 rendered bindings' AND '3 in this view'. ONE Save took the served /plan from 0 occurrences to 5+, rendered in both viewport trees. The editor writes ONE authored.slotValues entry; the template's applier fans it out with its expectedValue guard. Same mechanism covers the aria-hidden paint twin.",
+   "textEdit": "auditor 2: authored.slotValues['global.header.nav.customers.label'] set, revision r004, and the re-fetched preview really serves the string.",
+   "urlEdit": "auditor 2: the Destination field of a urlKind=internal slot -> authored.slotValues['global.header.nav.customers.href'] = '/audit-dest-…', revision r005. A suite check asserts a URL edit lands on the href slot, not its label sibling. Groups are real: 1,553 of 3,079 linear slots across 635 groups; a CTA can carry 1 href + N labels; 194 groupIds hold exactly one slot and degrade to the single-slot form.",
+   "imageEdit": "auditor 2: authored.assets gained ai000036 = {file: …/audit-red.png, alt: 'AUDIT alt text'}, revision r006, with authored.slotValues for that image key ABSENT. The suite asserts the replacement repaints the rendered pixel.",
+   "logoEdit": "auditor 2: authored.brand['bs-image-alt-7d6c73065975'] = {decision:'REMOVE', updatedAt}, revision r007. The suite asserts a PRESERVE with no reason is REFUSED. On the canary, 80 whole-host decisions went through POST /api/brand.",
+   "themeEdit": "auditor 2: authored.theme.tokens['color.canvas'] = '#0f9d58', revision r008. The overlay is generated by generateThemeOverlay — the same pure function the theme StageRunner calls — so preview and bake cannot diverge; the served HTML is byte-identical by construction.",
+   "regionPanel": "Every refusal is carried whole from the engine to the browser with its code, reason, affected routes and remedy, rendered in a persistent #wr-refusals panel. Auditor 2 confirmed the rendered code set equalled the engine's set EXACTLY in three cases (2, 2 and 10 refusals) and survived two full inspector re-renders.",
+   "revision": "Keystrokes write the preview overlay only (POST /api/preview-value, debounced 250 ms) — 7 keystrokes produced 0 revisions while the typed value WAS served and was NOT in the authoritative state. An explicit Save appends exactly one revision, and none when nothing moved. Auditor 2: three Saves grew the chain 9 -> 12 with every earlier record byte-identical.",
+   "undo": "restoreAuthoredRevision APPENDS the earlier snapshot as a new head (origin='restore', restoredFrom set), leaving every prior record byte-identical. The one-step-toggle defect (undoLastRevision returning chain[length-2]) was found and carried honestly, then FIXED by a transitive backward walk (src/editor/commit.ts undoCursorIndex). Auditor 2 re-proved the fix: three Undos walked the authored value through THREE DIFFERENT states (set size 3), chain 12 -> 15 with tail r012<-r010, r013<-r009, r014<-r008, and three distinct authoredStateHash values.",
+   "aiRewrite": "POST /api/ai-rewrite on the EXISTING provider-neutral ContentGenerator seam. No LLM key exists in this repo and no vendor SDK was added; it runs with --provider fake or an operator-authored generation-result.json. The request carries the customer brief verbatim (a REFUSAL, not an invented brief, when none exists), the SiteContentPlan, the route, the selected PageRegion, the contained Content Units, each unit slot's recorded constraints, CONTENT_POLICY and the run's own instructions. The response is KEYED STRUCTURED SLOT VALUES: any key outside the requested scope is listed in outOfScope and REFUSED — never split, truncated or reassigned — and unresolved entries stay unresolved. NOTHING is applied by the call: the operator applies through the ordinary Save path, so an AI rewrite creates exactly one revision like any other edit. Asserted by 28.P4.48/49/50. BOUND: no auditor drove /api/ai-rewrite; it is proven by the suite only."
+  },
+  "authority": "release-project remains the single authority. No src/site-instance exists; the only two mentions of the name in the tree are deliberate refusals to create one (src/release/instance.ts:4, src/editor/catalog.ts:5). The ONLY persistence calls in src/editor are commitAuthoredEdits / commitAuthoredState / restoreAuthoredRevision from src/release.",
+  "templateAndHistoryUntouched": "Auditor 2 took a per-file sha256 manifest of all 180 files of the linear Recon Template before and after 3 full editing sessions, 1 enablement session, an 8-route error census and a stripe session: manifest sha256 4cbda4d805cd6a7c65…, diff empty. Zero files newer than the session marker under 11 content/reconstruction/region/theme/asset/build directories. Every pinned lineage artifact of both edited projects recomputes to its recorded hash (template d1b6027dabc5…, content run c93cd1176a20…, assets 5d1a82b01a0b… over 163 files, production build 51fa85c328bb… over 223 files). release:plan then reports content/theme/seo/assets/production as STALE (will re-run on release:build).",
+  "typecheckBoundary": "pnpm typecheck covers src/**/*.ts and scripts/**/*.ts. The browser half lives inside `export const EDITOR_CLIENT_JS =` as a template string and is OUTSIDE the type system; the Playwright checks in smoke-editor-integration and smoke-visual-editor are the only evidence the client sends the right bodies.",
+  "knownDefects": [
+   "Group-form save writes the UNTOUCHED sibling slots as authored values. Measured by auditor 2: changing only the label textarea produced revision r004 containing BOTH the new label and 'global.header.nav.customers.href': '/customers' — the template default, never typed. Overstates authored counts and freezes a template default as a human decision.",
+   "No check in scripts/smoke-visual-editor.ts clicks a mounted dynamic-template element in a browser: 'dynTrigger' appears only at :345 (server-side unit test, dynTrigger: null) and 'data-wr-dyn' only at :1057 (a negative data-wr-slot assertion). recoverTrigger() has ZERO automated coverage. Verified by this agent. Absent from that handoff's 11 limitations.",
+   "The Brand panel caps rows at 25 PER SURFACE (canary: 104 rows of 267, truncated=163), so an operator working only through the rendered list cannot reach every host.",
+   "A refusal's one-line #wr-status summary can be clobbered by an asynchronous preview-ready event; only the persistent #wr-refusals panel is reliable."
+  ]
+ },
+ "enablement": {
+  "region": true,
+  "route": true,
+  "sharedPageSafety": true,
+  "interactionCutSafety": true,
+  "globalRegionSafety": true,
+  "seoCascade": true,
+  "navigationCascade": true,
+  "slotAccountingCascade": true,
+  "model": "authored.disabledRegions and authored.disabledRoutes are TWO optional, absent-when-empty maps, never one mixed map. The Recon Template is never mutated; a disable becomes physical only in the BUILD COPY, at the same point in the bake where bakeContent/bakeSeoTitles/bakeBrand already mutate it. applyEnablementToApp removes the region ROOT node and its subtree; a render-time 'hidden' flag was REJECTED because it leaves the markup in the shipped bytes. A disabled-region record stores NO node ids, slot keys, page ids or interaction facts — everything is re-derived on every resolve, so a template recompile that moved an id is CAUGHT rather than applied blind. Resolution is re-run and re-SAFETY-CHECKED on every build, never trusted because an edit was once accepted.",
+  "refusalCensusOnRealData": {
+   "byWhom": "auditor 2, evaluateRegionDisable over every (region, viewing-route) pair from a clean authored state on data/linear.app/page-regions/2026-08-26T16-14-07-901Z (68 regions, 8 routes)",
+   "pairs": 103,
+   "allowed": 42,
+   "refused": 61,
+   "regionsDisableableFromAtLeastOneRoute": 42,
+   "regionsNeverDisableable": 26,
+   "allowedPerRoute": {
+    "/": 14,
+    "/plan": 11,
+    "/pricing": 11,
+    "/customers/automattic": 4,
+    "/security": 2,
+    "otherThree": 0
+   },
+   "refusalCodes": {
+    "interaction-cut-target-unreachable": 64,
+    "global-region-requires-explicit-global": 60,
+    "shared-page-blast-radius": 40,
+    "interaction-cut-target-disabled": 3
+   },
+   "uiAgreement": "All three refusal codes were then produced by clicking the real toggle, and the RENDERED code set equalled the engine's set exactly in each case (2, 2 and 10). Nothing was written on any refusal (revisions stayed at 4, authored.disabledRegions stayed empty). The positive case really disabled through the UI: 'disabled 1 region(s) on 1 route(s), 1 slot(s) (revision r004)', root node n000487 present before and gone after."
+  },
+  "sharedPageSafetyDetail": "A region's route blast radius is region.pages[].routes — NOT slot.route and NOT derivable from the regionId, which is namespaced by pageSourceId and cannot name a route at all. A request naming a STRICT SUBSET is refused with shared-page-blast-radius; naming a route the region does not render on is refused as route-not-in-region-radius. Real counterexample: stripe, 20 routes over 18 pages, 2 many-to-one groups (p000012, p000013).",
+  "f3ClosedThroughTheUi": {
+   "closed": true,
+   "evidence": "scripts/smoke-editor-integration.ts:998-1174 carries a full §4 stripe UI journey (28.P8.38-44) including a check literally named '28.P8.41 F3 CLOSED'. Auditor 2 INDEPENDENTLY stood up their own Chromium against a fresh stripe release project, discovered the subject from the artifacts, and drove p000012:rgn:aside1:self: both routes served root node n000358 (200) before; the click rendered the refusal naming ONE pageSourceId and BOTH routes with data-wr-affected-routes carrying both, and NOTHING was written (revisions 0 -> 0); taking the remedy gave 'disabled 1 region(s) on 2 route(s)', one revision, n000358 gone from BOTH routes, the other route still 200.",
+   "staleDocument": "docs/result/handoffs/28-resume-state.json — the document the contract tells the next session to read FIRST — still records 'F3 (open)'. So does 28-editor-enablement.json .limitations. BOTH ARE NOW FALSE. Corrected here; those files were not edited by this agent."
+  },
+  "f2StandsAsMeasured": "Taking the offered interaction cascade is itself an edit: the engine re-runs every rule over the whole transaction. On linear, accepting the cascade for two named regions returns 20 refusals, NOT zero. 28.P8.35 asserts the refusal set is non-empty and PRINTS the measured count rather than hard-coding a comfortable zero, and the check text says it must never be softened. Must stay asserted as-is.",
+  "navigationCascadeDetail": "A link to a disabled route is auto-removed ONLY when deterministic: surface is `static` AND the anchor's subtree contains no slot outside that url slot's own groupId (so the paired label is never orphaned). Everything else becomes an ACTIONABLE requirement of the NEW kind dead-internal-link, severity release-blocking — because 'silently pointing it at the homepage is the one thing this engine must never do'. Five reasons: slot-host-carries-unrelated-slots, anchor-has-no-slot, dynamic-template-host, paint-twin-host, serialized-markup-host (added by a 2026-08-28 correction after a verifier found the gap). Measured on linear: disabling /pricing produces 2 deterministic nav groups, 28 anchor nodes (7 enabled pages x 2 viewports), 0 dead-link findings, and ZERO anchors anywhere still pointing at /pricing. No code path anywhere rewrites a link to '/'.",
+  "seoCascadeDetail": "ONE filter in src/seo/production-plan.ts applied to template.routes BEFORE the route loop — the single place title/description/robots/canonical/openGraph/twitter/JSON-LD are produced. robots-sitemap.ts builds the urlset from plan.routes and render-head.ts iterates plan.routes, so one filter removes the route from all of them. Measured on the real fixture build: seo routes 2->1, sitemap exactly 1 <url>, 1 head block not 2, pricing.html ABSENT from the package, deploy manifest 1 route, production QA 0 failures, and re-enabling restores both. On the canary: 7 <url> entries, customers/automattic.html absent, 0 references in any remaining head block.",
+  "slotAccountingCascadeDetail": "Disabled surfaces are accounted SEPARATELY and are not hidden: on the canary content run, byDisposition.unresolved=0 with disabled-route=100 and disabled-region=72, reconciling over the whole 3,079-slot template (templateCoverage.complete=true, unaccountedSlotKeys=[]). The Phase-5/6 correction round proved this the hard way: after the region-off fix, the post-fix run 2026-08-27T17-50-03-834Z has disabled-region=0 and unresolved=117 with all four named blocker keys (global.footer.link.{status,x-twitter,github,youtube}.href) back to 'unresolved' — auditor 4 re-derived this from the artifact.",
+  "correctionRound": "An independent verifier returned THREE release-blocking failures on Phases 5/6; all three are fixed in code and answered in corrections[] with the verifier's own numbers preserved. Code confirmed by auditor 4: hrefsInSerializedMarkup at src/release/enablement.ts:721 with the third pass at :1015 and the new reason 'serialized-markup-host' at :683, consumed as a blind clearing channel at src/release/collect.ts:471/508; checks 28.P6.45-49 at scripts/smoke-enablement.ts:1303-1336.",
+  "bounds": [
+   "Route ON/OFF is covered at ENGINE and SUITE level only (33 §P6 checks in scripts/smoke-enablement.ts). NO auditor drove a route disable through the UI, and the F2 cascade re-adjudication was not re-driven through the UI either.",
+   "The 42/68 disableability figure is an ENGINE census (evaluateRegionDisable, the same function the editor's port calls), not 103 UI clicks; four of its predictions were confirmed identical in the real UI.",
+   "The fork left widenedToBlastRadius computed but unreadable: the identifier appears ONLY in src/editor/enablement.ts, the adapter drops it, and because the client always sends routes:[S.route] it can never become true through the UI. No current behaviour is wrong; a future caller omitting routes would widen silently. DO NOT DELETE THE FLAG — wire it."
+  ]
+ },
+ "library": {
+  "templates": true,
+  "sites": true,
+  "autoRegistration": true,
+  "evidence": {
+   "templates": "GET /api/templates + listEditorTemplates(), backed by a FRESH scanTemplates() rather than the .registry cache. Columns: template id, source host, route count, core-reconstruct count, structure-only count, collection count, createdAt — every one traced to a named TemplateEntry field, nothing invented. Measured: 8 templates on disk (re-counted by this agent: 8 recon-templates directories). Sample stripe.com-2026-08-26T22-38-06-075Z: 20 routes / 10 core-reconstruct / 10 structure-only / 3 collections. Across every site-map.json on disk: 2 of 8 carry compiled collections (3 each), 6 carry none — corrected from a wrong '7 of 8' with a corrections block, and independently re-derived by auditor 4.",
+   "sites": "GET /api/sites + the existing listEditorSites(). Columns: display name, siteId (with its adaptation stated when derived), source template, status, updatedAt, revision (document + authored chain HEAD). Two honest facts are printed ON THE SCREEN: an artifact the scan could not read is named as missing, and a value that came from adaptReleaseProject's in-memory upgrade says so.",
+   "autoRegistration": "Site registration PROVEN LIVE: createSite()'s call to prepareReleaseProject registered stripe.com/wr28-createsite-suite-01 into the REAL data/.registry/sites.json, verified by the suite reading loadSiteRegistry() directly. Template registration (CR5) is implemented in src/cli-compile-recon-template.ts:183-186 but is NOT exercised end-to-end through the CLI by any suite.",
+   "structuralProof": "startEditorServer's runtime()/openSite() callbacks were stubbed to THROW and both new routes still answered 200 — a structural proof that the Library does not require an open site, not a comment."
+  },
+  "noDatabaseNoAuth": "Confirmed unchanged. Both new routes and the Library screen read the same filesystem registry every other editor route reads. Nothing was added to persist state; no session or auth layer exists or was added.",
+  "knownDefects": [
+   "The Site ID column is NOT unique — several siteId values are shared by more than one project on disk. siteKey / projectId / projectDir are the unique keys, are present in the payload, and are shown in no column.",
+   "The Site Library's 'source template' column carries only the templateId/path/hash triple; a screen wanting the source template's host/route counts must join against the Template Library data, which the client does not do.",
+   "Site counts in 28-library.json are explicitly point-in-time (25 -> 26 at the Phase-8 run, 31 at correction time) and the document says they are not retroactively checkable. This agent measured 39 release projects on disk today, inflated by suite fixtures and three audit projects.",
+   "Not browser-driven anywhere: the Library's 'Edit' button on a Template Library row, and the create form's per-field optionality (covered at data/HTTP level only)."
+  ]
+ },
+ "siteCreation": {
+  "implemented": true,
+  "oneBriefFirstDraft": true,
+  "fullEnabledCoreRoutesGenerated": true,
+  "module": "src/release/create-site.ts",
+  "routeScope": "selectRouteScope() reads the template compiler's OWN per-route scope verdict from site-map.json and never re-derives it from slot bindings. This is evidence-driven: a binding-count heuristic was MEASURED and got a real case wrong — /resources/more/virtual-credit-cards-for-businesses-explained shares its rendered page with its family's representative, so the heuristic finds 9 zero-slot routes where the truth is 10. Reading the compiler's own scope gets 10/10 right. Measured on stripe.com-2026-08-26T22-38-06-075Z: 20 routes, 10 included, 10 structure-only EXCLUDED — which produced ZERO content units, ZERO slot-accounting rows and ZERO PageContentPlans while all 10 remain routes of the reconstructed app.",
+  "identity": "explicit siteId (verbatim, re-prepare allowed and REPORTED) > brief.workingName slug > the goal's first six words slugged > site-<10 hex>. The HOST SLUG is never a fallback — that was a real defect found on the first journey run, where a second Create Site from the same template re-prepared the first customer's project. A derived identity that already exists steps to -2, -3 (up to 500, then a named error); an explicit one never steps. All four identity fields are reported on the API response, the Library screen and the log line.",
+  "refusesRatherThanSubstitutes": "Called against a template with no matching theme run, createSite() threw CreateSiteError naming exactly what was missing; no release project and no production spec was written for the attempt.",
+  "createSiteRun": {
+   "template": "data/stripe.com/recon-templates/2026-08-18T10-45-40-007Z",
+   "provider": "fake (deterministic, offline — no LLM key exists in this environment)",
+   "units": 4699,
+   "batches": 124,
+   "assignedSlots": 6813,
+   "unresolvedSlots": 578,
+   "requirementsTotal": 1052,
+   "releaseBlockingUnresolved": 55,
+   "nextBuildElapsedMs": 3597,
+   "verification": "Auditor 4 re-derived all of it from the artifacts: slot-accounting.json byOrigin derived-copy 2525 + generated-marketing 4288 = 6813; byDisposition unresolved 578; requirements.json counts.total 1052 with 1052 array entries. The project was REGENERATED by the final regression battery on a fresh content run and still yields 1052 — reproducible, not a frozen snapshot. The superseded figures 6875/516/990 are preserved in corrections[1].wasBefore.",
+   "unresolvedIsHonest": "578 unresolved is the CORRECT non-fabricating outcome for a brief with no supplied facts: every unbacked factual claim stayed needs-input rather than being invented."
+  },
+  "firstDraft": {
+   "customer": "Millwright — a coherent independent FICTIONAL business (AI workflow automation for discrete manufacturing), not Linear or Stripe reworded",
+   "brief": "docs/result/handoffs/28-intel/phase10-brief.json — 47 facts, truth mode verified-only, TYPED INTO THE CREATE SITE FORM in the Library screen by Playwright and POSTed to the same /api/create-site endpoint the editor's own client calls. No CLI, no fixture. 0 brief gaps, 0 questions asked.",
+   "siteKey": "linear.app/millwright",
+   "releaseState": "PRODUCTION_INPUTS_REQUIRED",
+   "requirements": 287,
+   "requirementsCaveat": "287 is NOT reproducible from the project directory the document cites: smoke:first-draft recreates data/linear.app/release-projects/millwright on newer lineage every run and it now holds 202. The 287 IS traceable in wr28-seo-canary / wr28-seo-corr / wr28-seo-preview / wr28-vfyp10. The document carries no point-in-time caveat.",
+   "routesCovered": 8,
+   "renderedInBrowser": "/pricing 5/5 route-specific values rendered, /security 28/28, /plan 36/40, 0 browser runtime errors. The measurement itself was fixed first: the initial version matched the iframe URL by PREFIX, got the previous route's frame back three times and reported three byte-identical pages; it now compares the frame URL exactly and asserts the three documents differ.",
+   "timingsCold": {
+    "editorStartupMs": 2841,
+    "previewStartMs": 2729,
+    "createSiteMs": 5544,
+    "openNewSiteMs": 2967
+   },
+   "timingsWarm": {
+    "editorStartupMs": 452,
+    "previewStartMs": 343,
+    "createSiteMs": 5694,
+    "openNewSiteMs": 731
+   },
+   "seamGapsFoundAndFixed": [
+    "Create Site's only wired provider was FakeContentGenerator, so ONE BRIEF produced a site whose every text slot read 'Fake …'. src/content-injection/brief-writer.ts now composes the draft from the operator's own brief and is the DEFAULT.",
+    "The Visual Editor seeded its preview from authored.slotValues ALONE, so a freshly created site opened showing the SOURCE site's copy while the bake would have shipped the draft. The editor now layers the content run's overlay under the authored edits in the same order src/production/bake.ts stacks them, and the inspector reports which layer a value came from.",
+    "Create Site defaulted its siteId to the HOST SLUG, so a second Create Site from the same template re-prepared the first customer's project (measured on the first journey run, which wrote data/linear.app/release-projects/linear.app)."
+   ]
+  },
+  "fullSiteContentGeneration": {
+   "runDir": "data/linear.app/content-runs/wr28-phase9-fullsite",
+   "inScopeSlots": 3079,
+   "contentUnits": 1202,
+   "slotValues": 1512,
+   "imageBriefs": 73,
+   "byDisposition": {
+    "applied": 566,
+    "preserved": 1020,
+    "removed": 0,
+    "human-required": 1493,
+    "unresolved": 0,
+    "disabled-region": 0,
+    "disabled-route": 0
+   },
+   "byOrigin": {
+    "user-provided": 0,
+    "derived-copy": 721,
+    "generated-marketing": 739,
+    "synthetic-fact": 52,
+    "source-preserved": 1567
+   },
+   "authoringPlan": {
+    "levels": 6,
+    "pagePlans": 8,
+    "regions": 48,
+    "units": 1202,
+    "distinctSlotKeys": 1586,
+    "orphanUnits": 0,
+    "orphanRegions": 0,
+    "closureComplete": true
+   },
+   "consistencyReview": {
+    "checks": 10,
+    "errors": 0,
+    "warnings": 1
+   },
+   "verification": "Auditor 4 re-derived every figure in this block to the unit from the artifact.",
+   "findings": [
+    "F1: 106 of the 117 needs-input entries on the prior linear run were a MANUFACTURED blocker — every one an in-page anchor or skip-to-content target, which carries no fact and has exactly one correct value. The prior INPUTS_REQUIRED figure was inflated by ~90%. The 11 real ones are individually decided and rationalised.",
+    "F2: one external destination (a public protocol specification) was deliberately NOT rebranded, carried verbatim as derived-copy and explicitly NOT marked synthetic, because marking it so would falsely claim the engine invented a destination it did not.",
+    "F3 (FIXED): a source statistic survived because it EQUALLED the source default — verified-only does NOT protect a rebranded page from carrying the source's statistics unchanged. src/content-injection/truth-mode.ts now records source-fact-carried-over in BOTH modes and refuses it under verified-only."
+   ],
+   "valueShapeGuard": "A verifier found two of eight routes unusable (the pricing table read '$10 per user/month' -> 'Shorter changeovers'; the changelog date column read 'August 20, 2026' -> 'Paper traveller'). brief-writer.ts now classifies a source value's SHAPE before composing: fact-bearing shapes become NAMED needs-input quoting the source figure; chrome shapes are kept verbatim. Measured on the draft: 443 value-shaped text slots, 0 overwritten with composed copy, 16 fact-bearing named needs-input, 211 chrome kept verbatim, with six named slots pinned by the suite.",
+   "bounds": [
+    "The Phase-9 canary suite is OFFLINE: it starts no browser and does NOT run runContentLayoutQa over the 8-route canary, so LAYOUT SAFETY OF THE NEW VALUES IS UNVERIFIED IN A BROWSER. Still open after the correction pass.",
+    "1,020 preserved = 946 written-identical-to-source-default + 74 no-value-produced; 1,493 stay human-required. UNRESOLVED = 0 was NOT achieved by writing new copy for every slot.",
+    "Only linear.app was exercised at full-site scale; stripe, nextjs and domainchecker were not."
+   ]
+  }
+ },
+ "production": {
+  "assetsRunnerExecuted": true,
+  "productionSeoExecuted": true,
+  "fullLocalCanary": true,
+  "unresolvedCustomerSlots": 0,
+  "sourceBrandBlockers": 0,
+  "sourceBrandAssetBlockers": 0,
+  "deadInternalLinks": 0,
+  "runtimeErrors": 0,
+  "hydrationErrors": 0,
+  "canary": {
+   "customer": "Switchyard — a THIRD independent fictional business (dispatch workflow for freight brokerages), deliberately not Millwright reworded, on a project no earlier phase had touched",
+   "projectDir": "data/linear.app/release-projects/wr28-switchyard",
+   "template": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z (no new source crawl was created)",
+   "productionBuild": "data/linear.app/production-builds/2026-08-28T00-24-48-338Z",
+   "releaseState": "PRODUCTION_READY",
+   "target": "indexable-production on switchyard-canary.example (reserved .example TLD; no DNS lookup anywhere)",
+   "specDecision": "indexable",
+   "specBlockers": 0,
+   "isolatedPackageQa": "70/70 checks, 0 failures, over 7 served routes",
+   "revisions": 112,
+   "authored": {
+    "slotValues": 151,
+    "theme": 1,
+    "assets": 224,
+    "brand": 80,
+    "disabledRoutes": 1,
+    "disabledRegions": 1
+   },
+   "oneBriefToDraft": "1,491 slot values across 8 routes in 5,868 ms"
+  },
+  "gatesAllZero": 13,
+  "gatesProvenToFire": 13,
+  "gatesEvidence": "All 13 canary zero-gates were re-derived at 0 from the raw artifacts by the phase-10/11 gate agent AND independently by auditor 3 (who transcribed the formulas into their own harness, tmp/audit-gates/gates.ts, and reproduced the suite's exact values on the unmodified artifacts). Auditor 3 then did what NO gate did — proved ALL 13 FIRE under injected conditions (the brief asked for 4): G5 on an injected anchor to the disabled route, G6 on an injected sitemap <url>, G8 on a rewritten canonical, G10 on a deleted authored value (naming the slot), G13 on an injected recon-template path, G7 on a re-inserted disabled-region root node id; on scratch qa.json copies G9 fired 3 then 2, G11 fired 4, G12 fired 1, G4 fired 1; on the requirement artifacts G1 fired 5, G2 fired 1, G3 fired 1. Every injection went into a scratch copy in /private/tmp, never into data/, and was reverted byte-identically with cmp.",
+  "gateWordingCaveats": [
+   "G4's 'anchors pointing at the disabled route' half reads a previously RECORDED report/qa.json, so it cannot detect a link entering the package after QA ran. G5 covers the same condition on the live bytes, so nothing escapes overall; the wording overstates freshness.",
+   "G2 counts only RELEASE-BLOCKING unresolved brand-leak requirements. Six brand-leak requirements are unresolved on the shipped package, all high-value by SEVERITY_POLICY and none re-priced. The gate's own source text discloses this; the LABEL, read alone, invites 'no source-brand leaks'."
+  ],
+  "sourceBrandAssetBlockersCaveat": "RESOLVED. The 0 on this package was always honest (REPLACE on all 74 hosts, preservedAfter=0). The INSTRUMENT that produces it is now sound as well, and the zero SURVIVES THE STRICTER INSTRUMENT: the final adjudicator re-censused the shipped package's 9 served HTML files with the NEW axes and re-derived the requirement end to end against data/linear.app/production-builds/2026-08-28T00-24-48-338Z — hostsBefore 74, replaced 74, preservedAfter 0, imageSrcPath 0, every axis 0, markupBrandSurfaceTotal 0, clearedBy='output-proof', renderedClean=true, status='resolved', releaseBlockers 0. The independent verifier re-derived the same result separately. (The 48-290 case-insensitive 'linear' hits per file are every one of them the SVG element name <linearGradient>, inside tags the census strips — checked by hand by the adjudicator.) PREVIOUSLY: 'the INSTRUMENT that produces the zero can return a FALSE zero on an image-logo lineage.'",
+  "packageIndependence": "Auditor 3 copied the 439-file / 245 MB package OUTSIDE the repo, statically scanned it (0 files contain the repo's absolute path, 0 contain recon-templates / reconstructions / asset-materializations), then started the package's OWN server.mjs under sandbox-exec with file-read* on the repo's data/ DENIED — proving the denial real first (readdirSync on data/ -> EPERM; readFileSync of the source template manifest -> EPERM). Result: all 7 routes 200 with titles matching deploy-manifest.json, plus robots.txt, sitemap.xml, the theme overlay and every sampled chunk and media asset; in Chromium, 0 console errors, 0 hydration errors, ZERO off-origin network requests. The one requestfailed event is a net::ERR_ABORTED on an .mp4 preload whose file serves 200 on direct fetch — the same caveat the canary handoff already records as G11's verifierCaveat.",
+  "productionSeo": {
+   "bothDirectionsProven": true,
+   "direction1": "With only productionBaseUrl resolved (2 font + 84 asset release-blocking requirements open): dry run printed BLOCKED BY production with 86 ids, and the REAL build ran and reported blocked: production / PRODUCTION_INPUTS_REQUIRED, with stageStatus.production still pinned to the old preview-decision artifact and NO new spec directory created. A domain alone flips the PLAN's mode; the servable BUILD never regenerates while blockers remain.",
+   "direction2": "With the full pack resolved: zero entries under BLOCKED BY, the real build ran, isolated-package QA 77/77, indexabilityGate.decision 'indexable', blockers [].",
+   "schemaEnforcement": "productionSpecSchema REFUSES an 'indexable' spec that names even one blocker — auditor 3 injected a blocker into the real indexable spec and safeParse returned false with the refinement's message. applyBlocking + releaseBlockers behave in both directions: 2 unresolved release-blocking reqs -> production stage 'blocked' naming both ids; 0 -> 'fresh'; an 'accepted-limitation' status STILL blocks; target 'preview' does not.",
+   "previewIsNoindex": "Preview build 2026-08-28T01-29-07-998Z: noindex,nofollow on every content route, canonical ABSENT, og:url ABSENT, robots.txt Disallow all with NO Sitemap line, site/sitemap.xml ABSENT (only a non-final sitemap.preview.xml). Indexable build 2026-08-28T01-28-16-178Z: index,follow, canonical + og:url on the production domain, robots Allow + Sitemap, sitemap with 7 urls. 404/_not-found are noindex in BOTH.",
+   "perRouteTitleDefectFoundAndFixed": "A verifier found EVERY route serving the identical <title> while the phase reported them as per-route; the plan's own basis field said content-run:sitePlan.siteIdentity, a SITE-level string. Duplicate <title> across every indexable route is a real SEO defect and NO check in the program measured title uniqueness. Fixed: deriveRouteHeadings(units, slotValues) derives a per-route title from the CUSTOMER'S OWN authored content (hero headline, then a nav label whose sibling .href value is exactly this route key), home keeping the site-level title; a candidate that is empty, head-unsafe or over 70 chars is REJECTED with the fallback stated in its own basis. New detector checkTitleUniqueness at src/seo/production-plan.ts:520 (wired at src/seo/run.ts:134) and title-uniqueness-measured at src/production/qa.ts:731 — all three line anchors verified by auditor 4 and by this agent. Later builds carry 8/8 and 7/7 distinct titles.",
+   "sourceDomainAbsence": "0 occurrences of the source host and 0 word-boundary occurrences of the source brand word inside every head block, every <title>, sitemap.xml and robots.txt, on three separate builds. Whole-package: 18 occurrences of 'linear.app' — NOT the 12 originally shipped; auditor 4 re-ran grep -rIoa on all three builds and got exactly 18 each time. None is an SEO surface.",
+   "indexableIsNotShippable": "DISCLOSED: the indexable package still carries the source brand in its BODY — 752 word-boundary occurrences across the 7 served route HTML files of build 2026-08-28T01-28-16-178Z. None is an SEO surface, the source-brand-inline-svg requirement stayed OPEN, and releaseState correctly stayed PRODUCTION_INPUTS_REQUIRED.",
+   "buildTimings": [
+    {
+     "build": "2026-08-28T01-27-04-359Z",
+     "routes": 8,
+     "mode": "indexable production",
+     "nextBuildMs": 2706,
+     "log": "tmp/wr28/p10-corr/build-enabled-8routes.log:111"
+    },
+    {
+     "build": "2026-08-28T01-28-16-178Z",
+     "routes": 7,
+     "mode": "indexable production after disabling /customers/automattic",
+     "nextBuildMs": 2864,
+     "log": "tmp/wr28/p10-corr/build-disabled-7routes.log:113"
+    },
+    {
+     "build": "2026-08-28T01-29-07-998Z",
+     "routes": 8,
+     "mode": "preview control",
+     "nextBuildMs": 2706,
+     "log": "tmp/wr28/p10-corr/preview-control.log:10"
+    }
+   ],
+   "withdrawnFigures": "The original pair (2859 ms / 2723 ms) is explicitly WITHDRAWN as mis-attributed; the three rows above each cite a retained log line, all three read by auditor 4."
+  },
+  "honestNonZerosCarried": [
+   "F1 + F8 — the paint-twin gap: 481 of the 2,301 enabled text slots bind ONLY a 1x1 node; the operator wrote 30 of them, and 6 authored values ship BESIDE the source value they replaced, including the whole /pricing price list. Owner src/recon-template/twin-binding.ts — BLOCKED: the Recon Template is immutable and Exact Reconstruction is FROZEN by contract. Asserted by 28.P11.11 / 28.P11.29.",
+   "F3 — 1,287 enabled text slots serve their source default verbatim, 661 of them long and visible. Both filters producing the 661 are now printed in the check's own detail line after a verifier caught a silent cap. Asserted by 28.P11.13 / 28.P11.25.",
+   "F4 — 1,038 internal anchors over 178 destinations 404, one of them the journey's own CTA, accepted with a validator WARNING only. broken-internal-route should collect a requirement, not warn. Asserted by 28.P11.14 / 28.P11.15.",
+   "F5a/F5b/F5c/F5d — four source-brand surfaces with no detector and no census axis: a placeholder attribute, an editable url slot's query string, a serialized-props image alt, and XMP metadata inside a shipped .mp4. Asserted by 28.P11.18 / 28.P11.19 / 28.P11.26 / 28.P11.27.",
+   "F9 — the package's 7 indexable routes carry identical <title>s. The detectors now exist; the package predates them and has not been rebaked. NOT an open detector gap. Asserted by 28.P11.30, which this agent's colleagues re-ran (46/46, exit 0).",
+   "F10 — 189.1 MB of source-owned audio/video ships; 169 of 380 media files (195.2 MB) are referenced by nothing. Auditor 4 re-derived all three figures over the package: 380 media files / 209,908,935 B; 15 audio-video / 198,293,329 B; 169 unreferenced / 204,637,645 B.",
+   "F11 — 5 of 7 acceptedLineage refs are older than what shipped."
+  ]
+ },
+ "regression": {
+  "baselineChecks": 2151,
+  "finalChecks": 2970,
+  "failures": 0,
+  "negativeDeltas": 0,
+  "suites": 29,
+  "baselineSuites": 20,
+  "checkGrowth": 797,
+  "typecheck": "exit 0 — tsc --noEmit emitted zero diagnostic lines; the runner recorded the exit code verbatim into timing.tsv",
+  "batterySeconds": 1363,
+  "vsGateDrift": "ZERO. Every one of the 28 suites the phase-10/11 gate measured reproduced its EXACT count in the final battery (vsGateDelta = 0 for all 28).",
+  "arithmetic": "2,151 + 223 (growth on pre-existing suites) + 574 (nine new suites) = 2,948; cross-check 2,818 (gate-phase1011, e2e excluded) + 130 (e2e, measured) = 2,948. This agent re-summed the shipped table independently: 29 rows, 2,948 checks, 0 failures, and the 20 Task-27 rows sum to exactly 2,151.",
+  "e2e": {
+   "ran": true,
+   "checks": 130,
+   "failures": 0,
+   "exitCode": 0,
+   "seconds": 626,
+   "deferral": "smoke:e2e was CARRIED (asserted without running) at exactly TWO gates — phase-7/8/9 and phase-10/11 — AT THE USER'S EXPLICIT DIRECTION. It DID run at 130 checks at the phase-2/3 and phase-4/5/6 gates.",
+   "repaid": "THE FINAL REGRESSION RAN IT IN FULL: 130/130 checks, 0 failures, final line '[smoke:e2e] OK', and a name-level diff vs the committed Task-27 log of 0 removed / 0 added — all 130 names identical. It cost 46.1% of the 1,359 s of suite time. It is fully local (own 127.0.0.1 node http server + real Chromium; it asserts 'the run records 0 Firecrawl calls'). NO CARRIED DEFERRALS REMAIN."
+  },
+  "countingMethod": "Anchored regexes /^  PASS  / and /^  FAIL  / applied to each raw stdout log, then cross-checked against each suite's own trailer. Two trailer formats exist ('N/N checks passed' on 19 suites, '<name> — N checks, 0 failures' on 10) and ALL 29 agreed exactly. Seven FAIL-containing lines exist across all 29 logs, each read individually: 4 are genuine PASS check lines whose text contains the word FAIL, and 3 are not check lines at all (two [content:qa] diagnostics from a DELIBERATE negative fixture, one section heading). 0 real check failures.",
+  "checkNameLevelDiff": "A check NO gate performed, because a count-only comparison cannot see a check swapped out underneath a non-negative delta. For all 20 pre-existing suites the full SET of check names was diffed against the committed Task-27 logs. 18 showed 0 removals. Two showed one, both traced to source and both benign: release 23.6 was replaced by THREE checks 23.6/23.6b/23.6c (a deliberate Phase-2 correction — the old assertion counted every inline SVG including icons; coverage went 1->3, and 23.6c explicitly asserts the old inventory count is still cited 'so nothing was hidden'); and reconstruction 'next build PASS (2273 ms)' -> '(2838 ms)', a check NAME embedding a measured duration (three agents measured three different values, proving it is a label).",
+  "uncountedSuites": [
+   {
+    "suite": "playwright",
+    "counted": false,
+    "ran": true,
+    "exitCode": 0,
+    "reason": "a Phase-1 ENVIRONMENT PROBE that emits ZERO check lines, so it contributes 0 to any total. It is the ONLY suite that touches the public internet. Run through the mutex, deliberately and separately, and disclosed so '29 suites' is never misread as 'every scripts/smoke-*.ts file' — 30 such files exist."
+   }
+  ],
+  "independentReproduction": "15 of the 29 suites were re-run by four agents OTHER than the regression author, with ZERO disagreements: auditor 1 (selector 81, sitespec 257, reconstruction 217, recon-template 109 = 664 checks), auditor 2 (enablement 101, create-site 66, visual-editor 50, editor-integration 45, authoring-preview 41 = 303 checks), auditor 4 (seo 113, production-canary 46), the adjudicator (registry 35, revision 36).",
+  "singleRunCaveat": "Each suite ran ONCE, so a flaky-but-passing check would not be caught. No suite showed any sign of flake: all 29 exit codes 0, all 29 trailers agreed with the anchored counts, and all 20 pre-existing suites reproduced their Task-27 name sets.",
+  "logRetentionCaveat": "The Task-28 raw regression logs are NOT retained in the repo (docs/result/handoffs/final-regression-logs/ holds the Task-24-era set: 16 logs, 1,671 anchored PASS, counted by the adjudicator). The 2,948 total therefore rests on 15 of 29 suites reproduced by other agents plus arithmetic closure with the gate table.",
+  "perSuite": [
+   {
+    "suite": "verifier",
+    "task27": 81,
+    "task28": 81,
+    "delta": 0,
+    "failures": 0,
+    "seconds": 7,
+    "exitCode": 0,
+    "trailer": "81/81 checks passed",
+    "gatePhase1011Baseline": 81,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "selector",
+    "task27": 81,
+    "task28": 81,
+    "delta": 0,
+    "failures": 0,
+    "seconds": 0,
+    "exitCode": 0,
+    "trailer": "81/81 checks passed",
+    "gatePhase1011Baseline": 81,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "multi-observer",
+    "task27": 62,
+    "task28": 62,
+    "delta": 0,
+    "failures": 0,
+    "seconds": 27,
+    "exitCode": 0,
+    "trailer": "62/62 checks passed",
+    "gatePhase1011Baseline": 62,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "interaction-detector",
+    "task27": 92,
+    "task28": 92,
+    "delta": 0,
+    "failures": 0,
+    "seconds": 1,
+    "exitCode": 0,
+    "trailer": "92/92 checks passed",
+    "gatePhase1011Baseline": 92,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "interaction-explorer",
+    "task27": 108,
+    "task28": 108,
+    "delta": 0,
+    "failures": 0,
+    "seconds": 93,
+    "exitCode": 0,
+    "trailer": "108/108 checks passed",
+    "gatePhase1011Baseline": 108,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "interaction-patterns",
+    "task27": 88,
+    "task28": 88,
+    "delta": 0,
+    "failures": 0,
+    "seconds": 1,
+    "exitCode": 0,
+    "trailer": "88/88 checks passed",
+    "gatePhase1011Baseline": 88,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "sitespec",
+    "task27": 257,
+    "task28": 257,
+    "delta": 0,
+    "failures": 0,
+    "seconds": 0,
+    "exitCode": 0,
+    "trailer": "257/257 checks passed",
+    "gatePhase1011Baseline": 257,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "reconstruction",
+    "task27": 217,
+    "task28": 217,
+    "delta": 0,
+    "failures": 0,
+    "seconds": 8,
+    "exitCode": 0,
+    "trailer": "217/217 checks passed",
+    "gatePhase1011Baseline": 217,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "reconstruction-qa",
+    "task27": 134,
+    "task28": 134,
+    "delta": 0,
+    "failures": 0,
+    "seconds": 146,
+    "exitCode": 0,
+    "trailer": "134/134 checks passed",
+    "gatePhase1011Baseline": 134,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "e2e",
+    "task27": 130,
+    "task28": 130,
+    "delta": 0,
+    "failures": 0,
+    "seconds": 626,
+    "exitCode": 0,
+    "trailer": "130/130 checks passed",
+    "gatePhase1011Baseline": null,
+    "vsGateDelta": null
+   },
+   {
+    "suite": "recon-template",
+    "task27": 109,
+    "task28": 109,
+    "delta": 0,
+    "failures": 0,
+    "seconds": 81,
+    "exitCode": 0,
+    "trailer": "109/109 checks passed",
+    "gatePhase1011Baseline": 109,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "regions",
+    "task27": 67,
+    "task28": 76,
+    "delta": 9,
+    "failures": 0,
+    "seconds": 1,
+    "exitCode": 0,
+    "trailer": "76/76 checks passed",
+    "gatePhase1011Baseline": 76,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "content-injection",
+    "task27": 128,
+    "task28": 161,
+    "delta": 33,
+    "failures": 0,
+    "seconds": 59,
+    "exitCode": 0,
+    "trailer": "161/161 checks passed",
+    "gatePhase1011Baseline": 161,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "content-generation",
+    "task27": null,
+    "task28": 50,
+    "delta": null,
+    "failures": 0,
+    "seconds": 1,
+    "exitCode": 0,
+    "trailer": "50/50 checks passed",
+    "gatePhase1011Baseline": 50,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "theme",
+    "task27": 47,
+    "task28": 47,
+    "delta": 0,
+    "failures": 0,
+    "seconds": 36,
+    "exitCode": 0,
+    "trailer": "47/47 checks passed",
+    "gatePhase1011Baseline": 47,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "seo",
+    "task27": 97,
+    "task28": 113,
+    "delta": 16,
+    "failures": 0,
+    "seconds": 2,
+    "exitCode": 0,
+    "trailer": "113/113 checks passed",
+    "gatePhase1011Baseline": 113,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "assets",
+    "task27": 140,
+    "task28": 140,
+    "delta": 0,
+    "failures": 0,
+    "seconds": 5,
+    "exitCode": 0,
+    "trailer": "140/140 checks passed",
+    "gatePhase1011Baseline": 140,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "production",
+    "task27": 100,
+    "task28": 132,
+    "delta": 32,
+    "failures": 0,
+    "seconds": 3,
+    "exitCode": 0,
+    "trailer": "132 checks, 0 failures",
+    "gatePhase1011Baseline": 132,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "release",
+    "task27": 162,
+    "task28": 275,
+    "delta": 113,
+    "failures": 0,
+    "seconds": 92,
+    "exitCode": 0,
+    "trailer": "275 checks, 0 failures",
+    "gatePhase1011Baseline": 275,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "revision",
+    "task27": 24,
+    "task28": 36,
+    "delta": 12,
+    "failures": 0,
+    "seconds": 2,
+    "exitCode": 0,
+    "trailer": "36 checks, 0 failures",
+    "gatePhase1011Baseline": 36,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "registry",
+    "task27": 27,
+    "task28": 35,
+    "delta": 8,
+    "failures": 0,
+    "seconds": 0,
+    "exitCode": 0,
+    "trailer": "35 checks, 0 failures",
+    "gatePhase1011Baseline": 35,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "authoring-preview",
+    "task27": null,
+    "task28": 41,
+    "delta": null,
+    "failures": 0,
+    "seconds": 24,
+    "exitCode": 0,
+    "trailer": "41 checks, 0 failures",
+    "gatePhase1011Baseline": 41,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "brand-assets",
+    "task27": null,
+    "task28": 141,
+    "delta": null,
+    "failures": 0,
+    "seconds": 16,
+    "exitCode": 0,
+    "trailer": "141 checks, 0 failures",
+    "gatePhase1011Baseline": 141,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "visual-editor",
+    "task27": null,
+    "task28": 50,
+    "delta": null,
+    "failures": 0,
+    "seconds": 27,
+    "exitCode": 0,
+    "trailer": "50 checks, 0 failures",
+    "gatePhase1011Baseline": 50,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "enablement",
+    "task27": null,
+    "task28": 101,
+    "delta": null,
+    "failures": 0,
+    "seconds": 6,
+    "exitCode": 0,
+    "trailer": "101/101 checks passed",
+    "gatePhase1011Baseline": 101,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "editor-integration",
+    "task27": null,
+    "task28": 45,
+    "delta": null,
+    "failures": 0,
+    "seconds": 28,
+    "exitCode": 0,
+    "trailer": "45 checks, 0 failures",
+    "gatePhase1011Baseline": 45,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "create-site",
+    "task27": null,
+    "task28": 66,
+    "delta": null,
+    "failures": 0,
+    "seconds": 38,
+    "exitCode": 0,
+    "trailer": "66 checks, 0 failures",
+    "gatePhase1011Baseline": 66,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "first-draft",
+    "task27": null,
+    "task28": 34,
+    "delta": null,
+    "failures": 0,
+    "seconds": 15,
+    "exitCode": 0,
+    "trailer": "34 checks, 0 failures",
+    "gatePhase1011Baseline": 34,
+    "vsGateDelta": 0
+   },
+   {
+    "suite": "production-canary",
+    "task27": null,
+    "task28": 46,
+    "delta": null,
+    "failures": 0,
+    "seconds": 14,
+    "exitCode": 0,
+    "trailer": "46/46 checks passed",
+    "gatePhase1011Baseline": 46,
+    "vsGateDelta": 0
+   }
+  ],
+  "perSuiteSource": "docs/result/handoffs/28-final-regression.json .suites — re-summed independently by this agent.",
+  "finalChecksBeforeCloseOutFix": 2948,
+  "suitesAfterCloseOutFix": 29,
+  "failuresAfterCloseOutFix": 0,
+  "negativeDeltasAfterCloseOutFix": 0,
+  "closeOutDelta": "+22 vs the 2,948 pre-fix baseline, ALL newly added: smoke-brand-assets 141 -> 162 (+21), smoke-production 132 -> 133 (+1), all 27 other suites delta 0. Re-run in full by the final adjudicator, one suite at a time through tmp/wr28/suite-lock.sh, with counts taken from the anchored regexes /^  PASS  / and /^  FAIL  / on each raw log rather than any suite's own summary line. typecheck exit 0. 2,970 — NOT 2,948 — is the baseline a future task must protect.",
+  "closeOutBatteryMeasuredBy": "The FINAL ADJUDICATOR personally, not carried from the fix or the verifier. All 29 counted suites were re-run one at a time through tmp/wr28/suite-lock.sh — INCLUDING smoke:e2e, which ran detached and returned 130/130 — plus `pnpm typecheck` (exit 0). Every suite exited 0. Counts were taken from the anchored regexes /^  PASS  / and /^  FAIL  / on each raw log. Result: 29 suites, 2,970 checks, 0 failures, 0 non-zero exits, 0 negative deltas against the 2,948 per-suite table; the only two deltas are brand-assets +21 and production +1, both additions. No processes leaked; the mutex lock is released."
+ },
+ "historicalMutationCount": 0,
+ "historicalIntegrityEvidence": {
+  "method": "Auditor 1 swept data/ for mtimes at or after the program start (2026-08-27T08:29:44Z = 17:29:44 KST): 120,363 files reduced to 1,005 distinct containing run directories. Grouped by containing run directory — never `git status --porcelain data/`, which is VACUOUS because data/ is gitignored, and never birth time, which APFS clonefile preserves from the source.",
+  "result": "EVERY touched run-id-shaped directory is stamped 2026-08-27 (418) or 2026-08-28 (111). The EARLIEST touched run id is 2026-08-27T09-34-50-356Z, after the 08:29:44Z start. ZERO touched directories carry a run id of 2026-08-26 or earlier. Every remaining touched path is an explicit Task-28 namespace (wr28-*, millwright, data/.registry, suite-fixture-backups).",
+  "kstUtcTrap": "HIT AND CORRECTED, twice. Run ids are UTC and mtimes are KST (+9), so a naive local-date sweep falsely flags 2026-08-26-UTC-evening runs: two recon-template dirs with KST mtimes of 2026-08-27 02:25:41 and 07:38:07 are in fact 2026-08-26T17:25:41Z and 2026-08-26T22:38:07Z. Auditor 1 also caught a bug in their OWN first sweep (an awk string-vs-number comparison flagged ~330 dirs); redone numerically the count is zero.",
+  "reconTemplateImmutability": "All 8 accepted Recon Templates byte-identical: per-file sha256 rolled into one tree hash, taken before and after a suite battery — identical both times — and `find data -path '*recon-templates*' -newermt <program start>` returns ZERO files. THIS AGENT re-ran that find on all 8 directories and got 0 files newer than program start in every one.",
+  "reconTemplateTreeHashes": {
+   "domainchecker.co.kr/2026-08-19T07-14-22-868Z": "864cb7b2…",
+   "linear.app/2026-08-25T21-53-26-980Z": "4cbda4d8…",
+   "nextjs.org/2026-08-19T07-12-35-732Z": "b577b272…",
+   "stripe.com/2026-08-18T07-59-02-437Z": "6d5fe1d5…",
+   "stripe.com/2026-08-18T08-07-05-671Z": "4b80c942…",
+   "stripe.com/2026-08-18T10-45-40-007Z": "c0063b39…",
+   "stripe.com/2026-08-26T17-16-46-409Z": "c05fab37…",
+   "stripe.com/2026-08-26T22-38-06-075Z": "74f7eb66…",
+   "note": "Recorded so a future audit has the anchor this one lacked. data/ is gitignored, so no committed pre-Task-28 hash exists to compare against: it is proven these were not written during Task 28 and are stable across a battery, NOT cryptographically proven equal to their original Task-18/25 state."
+  },
+  "doNotTouchFile": "docs/result/handoffs/24-aggregation-phase1.json is byte-identical to its committed blob: git hash-object of the worktree file == git rev-parse HEAD:<path> == 0322639753518bb96f90f42d8e451bffda9aacd3; sha256 09e3745e3041d9018640e7027c1fb6ec60617f04d2cbcbd4e421a48b7c8d1c30, 22,107 bytes, mtime Aug 19 16:40:49 KST. Measured before AND after the final battery, and re-measured by three separate agents.",
+  "noNewDependencies": "package.json and pnpm-lock.yaml show no diff and no git-status entry; the lockfile is byte-identical (sha256 8660b556d29053b64ba4e6542a91f1521d33d50121e1d28d101ed795e88959b9). node_modules/.pnpm untouched since 2026-08-14; zero package directories created since program start. 17 declared direct dependencies, 17 installed, none undeclared, none missing. ZERO imports of any vendor LLM SDK (openai, @anthropic-ai, @google, cohere, mistralai, langchain, replicate, groq-sdk, together-ai) anywhere in src or scripts, and none present in node_modules.",
+  "noSecrets": "src/config/env.ts declares exactly ONE variable — FIRECRAWL_API_KEY, optional — with an explicit 'never log or print the resolved key' contract and errors that emit only variable NAMES. The complete set of process.env reads across src+scripts is WR_SLOT_VALUES_FILE, WR_SEO_FIXTURE_OUT, WR_AUTHORING_HOT, PORT, PATH. .env is gitignored and untracked; the only tracked env file is .env.example whose entire contents are 'FIRECRAWL_API_KEY='. A secret-shaped regex scan (sk-, sk-ant-, fc-, AKIA, ghp_, AIza, Bearer) over the tracked diff, every new untracked source path, and src/scripts/docs/tmp returned ZERO hits.",
+  "engineFrozen": "No semantic change to src/reconstruction/, src/selector/, src/sitespec/ or src/schema/: `git diff --stat 6c2e723` over all four produced NO output and `git status --porcelain` over them produced NO output — no modifications AND no untracked additions. Confirmed by execution too: selector 81, sitespec 257, reconstruction 217, recon-template 109 (664 checks, 0 failures), with name-level diffs of 0 removed / 0 added except the reconstruction duration label. The only edit near the surface is src/recon-template/parity-qa.ts (+6 lines) adding `output: () => string` to a TEST-HARNESS interface — purely additive.",
+  "slotSchemaUnchanged": "src/recon-template/types.ts is BYTE-IDENTICAL to its baseline blob (sha256 d183923e0274f05ad6abbbc4449863e0719debdee900c3d6afaa7d845a173506 on both). SLOT_SCHEMA_VERSION = 2, ACCEPTED_SLOT_SCHEMA_VERSIONS = [1,2], RECON_TEMPLATE_SCHEMA_VERSION = 1, TEMPLATE_COMPILER_VERSION = 3. Auditor 1 safeParse'd every slots.json / slot-bindings.json / manifest.json in all 8 template dirs with the SHIPPED zod schemas: 24 artifacts, 24 OK, 0 FAIL — spanning both schema generations (stripe 2026-08-18T07-59-02-437Z parses at slotSchemaVersion=1 with 9,529 slots / 24,512 bindings; nextjs 2026-08-19T07-12-35-732Z at v2 with 12,933 slots / 48,552 bindings).",
+  "closeOutRecheck": "The final adjudicator swept data/ independently at re-adjudication: ZERO run directories named before 2026-08-27 were modified after the close-out work began. docs/result/handoffs/24-aggregation-phase1.json is still byte-identical to its committed blob (0322639753518bb96f90f42d8e451bffda9aacd3). package.json and pnpm-lock.yaml still show no diff and no git-status entry."
+ },
+ "gitMutatingOperations": 1,
+ "gitMutatingOperationsDetail": {
+  "contract": "ZERO mutating git operations for the whole program.",
+  "violated": true,
+  "what": "A `git stash push --include-untracked` scoped to src/editor/server.ts ran in this repo at 2026-08-28 05:49:35 KST and was reversed (`git stash pop`) roughly 36 s later.",
+  "evidence": "Three orphaned objects, all with committer time 1787863775 +0900 = 2026-08-28 05:49:35 KST, READ DIRECTLY BY THIS AGENT with git cat-file -p: 8b0a20decee705e7181b3ce85dd478c42da8dfcd is a PARENTLESS commit whose message is the literal untracked-stash message 'untracked files on main: 6c2e723 0827 morning' and whose tree f059c733… contains EXACTLY ONE FILE, src/editor/server.ts (blob 388712e5…, 26,780 bytes); 708dd2ffe66fb972a92865f5b97489694d55f19c is 'index on main: …' with parent 6c2e723 and tree af470ab == HEAD's tree; 27fbfe2c86cf669a523bb0a24fc8e69e1fbafbad is a THREE-PARENT commit 'WIP on main: …' joining 6c2e723 + 708dd2f + 8b0a20d. Auditor 1 reproduced the shape deterministically in a throwaway repo OUTSIDE the project: `git stash create` returns empty with only untracked changes and has no -u, so it cannot produce this; `git stash push -u -- src/editor/server.ts` produces it exactly, and after `git stash pop` the stash list is empty, refs/stash and its reflog are deleted, the file is restored and the objects survive orphaned — precisely the observed state. Two objects from the user's own commit were FRESHENED at 05:50:11, the same second .git/index was rewritten.",
+  "harm": "NONE to content. HEAD, refs/heads/main and both remote refs are still 6c2e723601a0d76431c96a48bbdb4726c02063e7; the reflog holds exactly 3 pre-Task-28 entries; git stash list is empty; the stashed tree equals HEAD's tree so nothing tracked was rolled back; src/editor/server.ts is present and larger now (29,215 bytes) and was developed further after the event; the working tree is intact at 51 modified + 50 untracked.",
+  "actor": "UNKNOWN and NOT ATTRIBUTED. It may have been a program agent or the editor/IDE/harness. Two Task-28 files were written in the same 05:45-05:55 window, so an agent was active — correlation, not proof.",
+  "verificationFailure": "docs/result/handoffs/28-final-regression.json ships 'Zero mutating git operations (item 6)' as VERIFIED, resting on `git stash list` + `git reflog` + a HEAD comparison — all three of which a popped stash erases BY DESIGN. This is the program's own named systemic failure mode recurring inside the close-out itself.",
+  "allOtherGitActivity": "Read-only inspection. No commit, reset, checkout, merge, rebase, clean or push at any point; the reflog is unchanged at 3 entries; origin/main's reflog ends at the user's own push of 6c2e723.",
+  "closeOutRecheck": "Re-verified by the final adjudicator at re-adjudication: `git fsck --unreachable` reports exactly THREE unreachable commits — 8b0a20d, 27fbfe2, 708dd2f — all with committer time 1787863775 +0900 = 2026-08-28 05:49:35 KST, i.e. the one already-known event. ZERO new orphans. .git/refs/stash does not exist; .git/ORIG_HEAD and .git/MERGE_HEAD do not exist; the HEAD reflog still holds exactly 3 pre-Task-28 entries ending at 'commit: 0827 morning'. The close-out fix, its independent verification and this re-adjudication together added ZERO further mutating git operations.",
+  "doesItBlockReady": "NO — reasoned explicitly rather than left implicit. It is a real PROCESS-contract violation and is not written off, but it is NOT one of the twenty READY bar clauses, and it caused NO content harm: HEAD, refs/heads/main and both remote refs are still 6c2e723; no commit/reset/checkout/clean/push ever ran; the stashed tree equalled HEAD's tree; exactly 3 orphans exist, all from that single event. It altered no artifact and no measurement, so it cannot make any bar clause false. It carries forward as the HIGHEST item of remainingRisks and step 1 of nextTask, because the danger it points at — an uncommitted tree holding four tasks of work — is entirely real."
+ },
+ "sessionFork": {
+  "occurred": true,
+  "cause": "A `claude --resume` over SSH while the ORIGINAL session was still live forked the program. Two halves wrote src/editor/** concurrently for roughly 13 minutes.",
+  "windowOpened": "2026-08-28T01:22+09:00",
+  "windowStillOpenAt": "2026-08-28T03:10+09:00 — the reconciliation agent recorded that its own contract's claim of 02:05 was FALSE and that the other half was still holding the mutex, editing src/release/collect.ts and running mutation batteries during its reconciliation.",
+  "detectedBy": "A cross-session collision report: process ancestry (pid 47230 running bash tmp/wr28/suite-lock.sh under a `claude --resume` started 21:44:48 under a local terminal), captured argv showing the other half rewriting a brand-message string in src/release/collect.ts, source mtimes 30 s before the reconciliation agent's first measurement, and the mutex re-acquired by the other half at pids 47230/49693/51454/59292 between 03:00 and 03:08.",
+  "resolution": "Both halves stood down; the user chose which continued; the tree was reconciled. Recorded in docs/result/handoffs/28-reconciliation.json.",
+  "concurrentEditorWrites": {
+   "sshResumedHalf": [
+    "src/editor/panels.ts 01:32:29",
+    "src/editor/region-enablement.ts 01:32:29",
+    "src/editor/runtime.ts 01:32:51",
+    "src/editor/server.ts 01:33:21",
+    "src/authoring-preview/session.ts 01:26:45",
+    "scripts/smoke-visual-editor.ts 00:45:56"
+   ],
+   "originalHalf": [
+    "src/editor/enablement.ts 02:02:30",
+    "src/editor/client.ts 02:02:30",
+    "scripts/smoke-editor-integration.ts 01:58:58",
+    "scripts/smoke-enablement.ts 02:57:46 (grown AFTER its own 02:05 handoff)",
+    "scripts/smoke-release.ts 02:58:15",
+    "src/release/collect.ts 03:00:10"
+   ],
+   "crossWritten": "src/editor/commit.ts (02:30:58) and src/editor/inversion.ts (02:30:32) — files the contract and the enablement handoff both call the SSH half's, edited inside a window when only the OTHER half was active, and claimed by NO handoff. Resolution: F1 semantics INTACT (undoLastRevision still returned chain[length-2] at commit.ts:143 at that moment); no orphaned or dangling exports; typecheck exit 0; smoke:visual-editor 50/0 still passed over inversion.ts."
+  },
+  "measurementIntegrityUnderTheFork": "The reconciliation agent ran typecheck + five suites inside ONE mutex hold and took a sha256 of every src/**/*.ts and scripts/**/*.ts at acquisition, at release and again at 03:07:38 — IDENTICAL all three times — and stated in writing that its numbers describe a real currently-present byte state, not a guarantee about the tree one minute later, and that any later agent must re-derive rather than cite it.",
+  "whatSurvived": "typecheck exit 0; five suites re-derived under one mutex hold — visual-editor 50, editor-integration 25, enablement 101, authoring-preview 41, brand-assets 141 = 358 checks / 0 failures; ZERO orphaned exports across every export in src/editor/*.ts; F1, F2 and F3 all confirmed intact and still asserted rather than quietly closed.",
+  "residue": [
+   "RegionToggleRequest declares `route?: string` documented as the default disable scope, but RegionEnablementWriteRequest has no such field and the server does not forward it, so request.route is ALWAYS undefined on every HTTP path. The client works around it by sending routes:[S.route], which the server does forward — scope selection is fully closed by the workaround.",
+   "widenedToBlastRadius is computed and returned, commented as existing 'because a silent widening is exactly the failure' — and the identifier appears NOWHERE else in src/ or scripts/. It is dropped at the adapter and cannot become true through the UI anyway. No current behaviour is wrong; a future caller omitting routes would widen silently. DO NOT DELETE THE FLAG — wire it.",
+   "Two mechanisms for one job (route singular and routes array), documented honestly in the client as 'ignored where unread' — the residue of two halves converging on the same requirement independently.",
+   "Author attribution is unrecoverable from the documents: 19 of 20 Task-28 handoffs declare no producedBy, and five share batch-write mtimes that are copy timestamps carrying no authorship information.",
+   "Three orphaned `next start` servers (PPID 1, ports 61590/61930/62026) were left listening and deliberately NOT killed, because the other half was mid-suite and killing a listening server could have failed its run and been misread as a regression."
+  ],
+  "lesson": "Before resuming, confirm no other Claude Code session is live on this repo (ListAgents, or /tmp/cc-socks). A second live session forks the program."
+ },
+ "systemicLeak": {
+  "statement": "Three consecutive gates failed on HANDOFF TRACEABILITY, never on code. Each correction pass answered ITS OWN verifier line by line and none answered the RE-VERIFICATION that followed it. A re-verification is a verification.",
+  "auditorFinding": "STILL OPEN — materially reduced, not closed (auditor 4, the handoff-traceability auditor).",
+  "closed": [
+   "Every finding a GATE failed on is genuinely fixed and independently reproducible. Auditor 4 re-derived all six orchestrator corrections from the artifacts and every one holds: widenedWithoutTrigger 22 / ambiguousWithoutTrigger 94 (re-implemented from the raw 9,929-binding file); createSiteRun 6,813 / 578 / 1,052; the residual-23 breakdown 14 prose + 2 headlines + 4 link labels + 3 numeric-chrome (+1 href outside the text-slot metric, which is why a naive sweep returns 24); programTotalArithmetic 2,818; checkTitleUniqueness genuinely exists at src/seo/production-plan.ts:520 with title-uniqueness-measured at src/production/qa.ts:731; and the seo row is really 113 (auditor 4 ran the suite: 113 PASS / 0 FAIL). Every wrong sentence is preserved verbatim in a corrections block.",
+   "Every LAST-verifier finding in Phases 2, 5/6, 7/8, 9, 10 and 11 is answered in code AND in the shipped handoff with the original claim preserved."
+  ],
+  "stillStanding": [
+   {
+    "item": "scripts/smoke-release.ts:3415-3417 still asserts the assets runner 'had never executed on any pipeline'",
+    "refutedBy": "Phase-1C verifier, against pre-existing checks 14b/26.5/26.6",
+    "verifiedInTreeToday": true,
+    "documentSilent": "28-carried-items.json has no mention and no corrections block"
+   },
+   {
+    "item": "src/release/graph.ts:72 still reads 'reruns the production compile, which today reproduces the same bytes'",
+    "refutedBy": "the substrate verifier, which measured a brand-only rerun differing in 52 paths",
+    "verifiedInTreeToday": true,
+    "documentSilent": "the same wording sits in 28-intel/build-authored-state.json:128; the verifier's own report is on disk at 28-intel/verify-authored-state.json:79-85, so the contradiction is discoverable but was never corrected"
+   },
+   {
+    "item": "28-preview-runtime.json still ships textEditMs {median:144, max:150}",
+    "refutedBy": "the Phase-3 verifier, which measured 180 median / 211 max / 170 min with EVERY sample above the claimed maximum and asked for a range or a re-measurement",
+    "verifiedInTreeToday": true,
+    "documentSilent": "no corrections block; the string '180' occurs ZERO times in the file. No correction agent ever ran on Phase 3. The Phase-2/3 gate recorded it as still open and returned PASS anyway.",
+    "note": "auditor 3 independently re-measured 144 median (n=5), agreeing with the builder — but the traceability defect stands regardless of which number is right"
+   },
+   {
+    "item": "28-visual-editor.json still ships routeSwitchNote '22 ms median / 658 ms max … repeat visits are single-digit ms'",
+    "refutedBy": "the Phase-4 verifier's pre-warmed, strict-wait re-measurement of 534 ms median / 537 ms max, which called 22 ms a measurement artifact",
+    "verifiedInTreeToday": true,
+    "documentSilent": "corrections[] holds only the widenedWithoutTrigger entry; '534' occurs zero times. Two gates recorded it open"
+   },
+   {
+    "item": "No check in scripts/smoke-visual-editor.ts clicks a mounted dynamic-template element in a browser, so recoverTrigger() has ZERO automated coverage",
+    "refutedBy": "the Phase-4 verifier, which asked for one check clicking trigger n000021",
+    "verifiedInTreeToday": true,
+    "documentSilent": "absent from that handoff's 11 limitations. Mitigating: three independent agents drove the path live, so the exposure is SILENT REGRESSION, not a broken feature"
+   }
+  ],
+  "distribution": "FOUR of the five sit in Phases 1-4, i.e. BEFORE the leak was named. The discipline visibly took hold from Phase 5 onward. The remedy gate 1011 prescribed ('diff the LAST verifier report's failures[] against the document') was applied to the phases that gate named and never retroactively.",
+  "newInstancesInTheCloseOut": [
+   "docs/result/handoffs/28-final-regression.json ships 'Zero mutating git operations' as VERIFIED on evidence that structurally cannot detect a popped stash.",
+   "docs/result/handoffs/28-resume-state.json — the designated read-first document — still records F3 as open when scripts/smoke-editor-integration.ts:28.P8.41 ('F3 CLOSED') and an independent UI re-drive both close it."
+  ],
+  "residualFigureStaleness": [
+   "28-visual-editor.json's CORRECTED 'src/editor/ (14 modules, 4,983 lines)' is itself stale — the tree holds 14 modules / 5,491 lines (measured by this agent).",
+   "28-brand-assets.json gives 109, 117 and 141 for the same suite with no timestamps; the newest (141) matches the tree.",
+   "28-first-draft.json's 287 requirements is not reproducible from the project directory it cites (now 202).",
+   "28-gate-phase1011.json .countDerivation says '4 such lines are NOT check lines' and enumerates three — caught independently by the regression agent and auditor 4; the 2,818 total is unaffected.",
+   "28-final-regression.json describes docs/result/handoffs/27-regression-logs/final-2/*.log as 'committed' when only STATUS is tracked there; the logs are untracked working-tree files. Mitigated: all carry mtimes before program start and none was altered during Task 28."
+  ]
+ },
+ "fourDefectsCaughtByAdversarialVerification": [
+  {
+   "id": 1,
+   "title": "A source-brand blocker silenced by a narrowed trigger",
+   "what": "The Phase-2 builder replaced the requirement trigger inlineSvgEntries>0 with brandCarryingHostCount>0; the consequence — that a lineage the token detector cannot see raises NO source-brand requirement at all — was recorded nowhere.",
+   "verifierEvidence": "data/domainchecker.co.kr/recon-templates/2026-08-19T07-14-22-868Z: 794 inline-SVG nodes, 0 brand-carrying hosts, requirement NOT EMITTED — while that template's home link ships aria-label='도메인체커 홈', the site's own brand in Korean, on a surface RESOLVABLE_BRAND_SURFACES claims to own.",
+   "reproduced": "By the correction agent (0 hosts; raw grep of pages/p000001.json: 2x that aria-label) and by auditor 3 (0->38 after the fix).",
+   "outcome": "NOT JUST NAMED — CLOSED. Detection tokens are now the host label WIDENED by the name the source declares in its own route-map titles, with a deliberately conservative rule (trailing segment after | · • – —, with the ASCII hyphen NOT a separator; accepted only when it recurs across >=2 titles AND >=50% of titled routes). Measured effect: linear 80->80, stripe 195->195, domainchecker 0->38, nextjs 160->190. The remaining blind case is named, and collect.ts now warns when a template has inline SVGs and zero hosts (though that warning is log-only — a standing minor defect)."
+  },
+  {
+   "id": 2,
+   "title": "A false measured claim the phase's own scanner falsified in seconds",
+   "what": "The Phase-2 handoff, the suite header AND the product's own doc comments asserted AS A MEASURED FACT, with a named grep as evidence, that no accepted template in this repo ships its own logo as an <img>.",
+   "verifierEvidence": "scanAppBrandHosts('data/nextjs.org/recon-templates/2026-08-19T07-12-35-732Z/app','nextjs.org') returns 160 image-logo hosts across 40 routes on two source logotype files (alt='NextjsLogotype', nodes n000015/n000016). The claim was false by 160 hits, and the artifact had been in this repo the whole time.",
+   "reproduced": "By the correction agent independently, and again by auditor 3.",
+   "outcome": "The false claim is corrected AND PRESERVED AS AN ERROR, not erased, in three files, and the surface now runs on that real lineage: two real next builds of a 1-route copy — before 4 hosts / 0 replaced / unexplained 4 / blockers 1 / logotype shipping; after 4 replaced / 0 refused / 0 unexplained / blockers 0 / logotype gone / self-hosted src / no srcset re-introducing it.",
+   "irony": "The very lineage this defect exposed is the one on which auditor 3 later found the BLOCKING preserve-clearing defect. Running the weakest surface on real data was right, and it was still not enough."
+  },
+  {
+   "id": 3,
+   "title": "A region refusal rendering 1 of the 2 refusals the engine produced",
+   "what": "The engine returned TWO refusals for a single click — a global-region refusal AND a shared-page blast-radius refusal — and the operator was shown one. The most dangerous shape of UI defect in this program: the operator reads a complete-looking explanation and acts on half the truth.",
+   "outcome": "Guarded by scripts/smoke-editor-integration.ts 28.P8.9, which asserts that THE SAME CLICK also names every other route that would be physically changed, that the panel contains the shared-page-blast-radius code and the phrase 'would be physically changed too', that EVERY affected route appears in the rendered text, and that the remedy label is offered — printing the full set of rendered codes in its detail line. Read directly by this agent at scripts/smoke-editor-integration.ts:596-615.",
+   "independentReDrive": "Auditor 2 confirmed in the real UI that the RENDERED code set equalled the engine's set EXACTLY in three separate refusal cases (2, 2 and 10 refusals), each carrying its own specific reason, and every one surviving two full inspector re-renders.",
+   "sourceOfDescription": "docs/result/handoffs/28-resume-state.json .hardEarnedLessons records this as one of the four; the check above is the standing guard."
+  },
+  {
+   "id": 4,
+   "title": "A verifier finding that shipped uncorrected — TWICE",
+   "what": "28-visual-editor.json asserted '94 of 262 dynamic bindings would get a STRICTLY WIDER candidate set'. The true value is 22; 94 is the count that is merely AMBIGUOUS without the trigger. Every neighbouring figure reproduces exactly (262 dynamic, 262/262 sound, 168 -> 182), which is what makes it a mislabel rather than a different definition.",
+   "chain": "The Phase-4 verifier reported it -> shipped uncorrected. The 04:17 gate agent reported it and FAILED the gate -> shipped uncorrected again. The next gate agent, the THIRD independent agent, recomputed it in Python from the raw slot-bindings.json replicating the suite's own lines verbatim and FAILED the gate again. The orchestrator recomputed it a fourth time and corrected it with a corrections block. Auditor 4 has now recomputed it a FIFTH time and confirms 22 / 94.",
+   "outcome": "Nothing functional ever failed — check 28.P4.2 is itself honest and prints the true 22 in its detail string. The defect was purely that a finding, once recorded, was not carried into the document. That is the systemic leak, first observed here and still not fully closed."
+  }
+ ],
+ "gates": {
+  "note": "FIVE gate files exist, not four: the phase-4/5/6 gate was run twice and both records were kept. All five are listed. Auditor 4 confirmed no verdict was retroactively flipped — four record FAIL and still do, and every verdict matches its own agent journal exactly.",
+  "files": [
+   {
+    "file": "docs/result/handoffs/28-gate-phase23.json",
+    "verdict": "PASS",
+    "suites": 22,
+    "checks": 2472,
+    "blockers": [],
+    "postGateResolution": null,
+    "note": "It recorded the Phase-3 latency finding as still open in .handoffUntraceableNumbers and returned PASS anyway."
+   },
+   {
+    "file": "docs/result/handoffs/28-gate-phase456-prior-0417.json",
+    "verdict": "FAIL",
+    "suites": 25,
+    "checks": 2730,
+    "blockers": [
+     "widenedWithoutTrigger 94 vs true 22",
+     "stale 'src/editor/ (13 modules)'"
+    ],
+    "postGateResolution": null
+   },
+   {
+    "file": "docs/result/handoffs/28-gate-phase456.json",
+    "verdict": "FAIL",
+    "suites": 25,
+    "checks": 2730,
+    "blockers": [
+     "the same widenedWithoutTrigger figure — third independent agent to report it"
+    ],
+    "postGateResolution": {
+     "resolvedAt": "2026-08-27T20:22:31.775954Z",
+     "resolvedBy": "Task-28 orchestrator",
+     "action": "Recomputed independently a FOURTH time from the raw slot-bindings.json; corrected 28-visual-editor.json and 28-intel/build-phase4-editor.json, added the missing ambiguousWithoutTrigger field, refreshed '13 modules' to '14 modules, 4,983 lines', all in a corrections[] block rather than a silent overwrite.",
+     "verdictStands": "FAIL left AS RECORDED. The orchestrator does not overturn its own gate.",
+     "engineeringPropertiesAtThisGate": "25 suites / 2,730 checks / 0 failures / typecheck exit 0; 0 negative deltas; 0 git ops; 0 historical mutation; 0 data-wr-slot emission sites; 0 editor artifacts in 2 production packages"
+    }
+   },
+   {
+    "file": "docs/result/handoffs/28-gate-phase789.json",
+    "verdict": "FAIL",
+    "engineeringVerdict": "Every ENGINEERING property PASSES",
+    "suites": 27,
+    "checks": 2759,
+    "blockers": [
+     "28-first-draft.json residual-23 misclassification (the Phase-9/10 second re-verifier's own recorded FAIL, shipped uncorrected)",
+     "28-site-create.json stale createSiteRun figures"
+    ],
+    "postGateResolution": {
+     "resolvedAt": "2026-08-27T23:28:12.068889Z",
+     "resolvedBy": "Task-28 orchestrator",
+     "action": "Both re-measured from artifacts rather than reports: the 23 residual slots re-enumerated one by one (14 prose / 2 source headlines / 4 link labels / 3 numeric-chrome-or-attribution, plus one href outside the text-slot metric); slot-accounting.json gave assigned 6,813 and unresolved 578, requirements.json 1,052. Both handoffs corrected with corrections[] blocks preserving the wrong claims.",
+     "verdictStands": "FAIL left AS RECORDED.",
+     "systemicFinding": "SECOND OCCURRENCE of the same pattern: a verifier recorded a finding and it shipped UNCORRECTED into a handoff."
+    }
+   },
+   {
+    "file": "docs/result/handoffs/28-gate-phase1011.json",
+    "verdict": "FAIL",
+    "engineeringVerdict": "PASS — 'Phases 10 and 11 are sound and I could not manufacture a way to break them.'",
+    "suites": 28,
+    "checks": 2818,
+    "blockers": [
+     "programTotalArithmetic 2,811 vs measured 2,818",
+     "F9 / openItemsCarriedForward[5] / SHIPPED CHECK 28.P11.30 falsely claimed no title-uniqueness check exists anywhere",
+     "suitesRerunAfterTheCodeChange seo row 107 vs measured 113"
+    ],
+    "postGateResolution": {
+     "resolvedAt": "2026-08-28T12:03:39.494953Z",
+     "resolvedBy": "Task-28 orchestrator",
+     "action": "All three corrected. seo re-measured directly (113 PASS / 0 FAIL). checkTitleUniqueness confirmed at src/seo/production-plan.ts:520 (wired src/seo/run.ts:9,134) and title-uniqueness-measured at src/production/qa.ts:731, so the program-wide claim was false; F9, the carried item AND the shipped check were rescoped to the artifact. Suite re-run 46/46, typecheck exit 0. A corrections[] entry preserves every wrong sentence verbatim.",
+     "verdictStands": "FAIL left AS RECORDED. The orchestrator does not overturn its own gate; the final audit re-checks all three.",
+     "systemicRootCause": "THIRD consecutive gate failed on handoff traceability, and the SECOND recurrence after the leak was named in the program contract. Root cause: every correction pass answered ITS OWN verifier and none answered the RE-VERIFICATION that followed."
+    }
+   }
+  ]
+ },
+ "closeOutPanel": {
+  "finalRegression": {
+   "agent": "independent regression agent",
+   "verdict": "PASS",
+   "result": "29 suites / 2,948 checks / 0 failures / typecheck exit 0; e2e deferral repaid"
+  },
+  "audits": [
+   {
+    "area": "Engine integrity and historical truth",
+    "verdict": "ACCEPT_WITH_FINDINGS",
+    "majorFinding": "the git stash mutation and the final regression's VERIFIED claim over it"
+   },
+   {
+    "area": "Site authoring, Visual Editor and region/route enablement",
+    "verdict": "ACCEPT_WITH_FINDINGS",
+    "note": "drove the real CLI with Playwright rather than reading handoffs; closed the F3 open item through the UI"
+   },
+   {
+    "area": "Brand independence, fast preview, production SEO and the production canary",
+    "verdict": "REJECT",
+    "blockingFinding": "the PRESERVE / image-logo clearing defect"
+   },
+   {
+    "area": "Handoff traceability and the systemic verifier-finding leak",
+    "verdict": "ACCEPT_WITH_FINDINGS",
+    "note": "re-derived ~40 figures; found the leak materially reduced but STILL OPEN with five standing items"
+   }
+  ],
+  "adjudication": "FAIL — 'NOT READY — VISUAL PRODUCTION WORKFLOW INCOMPLETE'. The adjudicator re-measured the disputed claims themselves (the census/matcher probe with the shipped functions, the three stash objects, the four standing verifier findings, 28.P8.41 vs 28-resume-state.json, smoke-registry 35/0 and smoke-revision 36/0 through the mutex, 0 files newer than program start in all 8 recon-template dirs, the 24-aggregation-phase1.json blob equality) and resolved every disagreement: auditor 1 right on git, auditor 3 right on brand PRESERVE (root cause extended), auditor 2 right on F3.",
+  "reAdjudication": {
+   "agent": "final adjudicator (implemented nothing; issued the program's release verdict)",
+   "verdict": "READY FOR FIRST PRODUCTION PILOT",
+   "supersedes": "closeOutPanel.adjudication — 'FAIL / NOT READY — VISUAL PRODUCTION WORKFLOW INCOMPLETE', which stands as the record of the state BEFORE the close-out fix and is not erased.",
+   "independentWork": "Read all three code sites directly; ran SEVEN false-zero attacks of their own design against the shipped functions (each census derived from real HTML, not hand-fed numbers), including one — a mark hidden in a CSS background-image, a surface NO axis measures even now — that the ordering fix catches anyway, and a CONTROL proving a genuine REPLACE still clears with 0 blockers; re-fuzzed the matcher over 65,536 strings (0 narrowing, 23,979 widening); re-derived the canary requirement end to end under the new instrument from the shipped bytes; re-ran typecheck and the full 29-suite battery through the mutex; and re-checked the git-orphan, historical-data-mutation, do-not-touch-file and package.json clauses personally.",
+   "clausesMet": "20 of 20."
+  }
+ },
+ "remainingRisks": [
+  "CLOSED — image-logo brand surfaces had no clearing measurement. This WAS the one failing bar clause; it is fixed, falsified five independent ways and re-adjudicated (see closeOutFix). Retained because the CLASS of defect — an instrument blind on exactly the surface it certifies, while every suite passes — is the one to keep watching for.",
+  "CLOSED — 'source brand asset blockers = 0' is now certifiable as an instrument, not just as a number on one package. Every one of the six resolvable brand surfaces has a matching census axis on both encodings, and preservedAfter>0 outranks the census entirely, so an UNMEASURED surface can only downgrade a build to accepted-limitation and can never upgrade one to proof.",
+  "HIGHEST REMAINING RISK. A mutating git operation occurred once (stash push+pop, 2026-08-28 05:49:35 KST) and the final regression certified the opposite on evidence a popped stash erases by design. ALL TASK-28 WORK INCLUDING THE CLOSE-OUT FIX IS STILL AN UNCOMMITTED WORKING TREE. One stray git checkout/clean/stash destroys the whole program's output. COMMIT FIRST, BEFORE ANYTHING ELSE. Re-verified at re-adjudication: exactly 3 unreachable commits, all stamped 1787863775 = the single known event; ZERO new orphans; no refs/stash, no ORIG_HEAD, reflog still 3 pre-Task-28 entries.",
+  "The systemic handoff-traceability leak is STILL OPEN: five standing verifier findings (four of them in Phases 1-4), plus two NEW instances inside the close-out itself.",
+  "The paint-twin gap (canary F1/F8): 481 of 2,301 enabled text slots bind ONLY a 1x1 node; 6 authored values ship BESIDE the source value they replaced, including the whole /pricing price list. BLOCKED by contract — the Recon Template is immutable and Exact Reconstruction is FROZEN.",
+  "1,038 internal anchors over 178 destinations 404 on the canary, one of them the journey's own CTA, accepted with a validator WARNING only. broken-internal-route should collect a requirement, not warn.",
+  "Group-form save writes UNTOUCHED sibling slots as authored values, overstating authored counts and freezing template defaults as human decisions.",
+  "Undo and revision append are O(n) per call (the chain is re-read every time), with a 112-revision project already on disk.",
+  "recoverTrigger() — the in-page mechanism the headline DOM->Slot claim rests on — has ZERO automated browser coverage; a regression would be silent.",
+  "Layout QA (runContentLayoutQa) never ran over generated full-site content: neither the 8-route Phase-9 canary nor the Millwright draft.",
+  "Preview worker processes can survive a session: two orphaned `npm exec next start` (PPID 1) left by an auditor's ten driver runs and three left by the fork. The clean Ctrl-C path reaps correctly (SIGINT -> exit 0 in 101 ms), so the leak is intermittent and attribution is unresolved.",
+  "scripts/smoke-release.ts rm -rf's a FIXED fixture path at startup and in finally — two concurrent runs destroy each other. All runs must go through tmp/wr28/suite-lock.sh. Worth fixing before any parallel CI.",
+  "The brand token-blindness warning is log-only and reaches no artifact, so an operator reading requirements.json cannot see that the axis measured nothing.",
+  "Canary gate G4's anchor half reads a RECORDED report/qa.json rather than the live package (G5 covers the same condition live); gate G2's label reads as 'no source-brand leaks' while counting only release-blocking ones — 6 unresolved high-value brand-leak requirements exist.",
+  "Three unowned/undetected brand surfaces (unlabelled SVG path geometry, dynamic-template region content, attribute-value text) plus source brand inside an editable url slot's query string and XMP metadata inside a shipped .mp4.",
+  "189.1 MB of source-owned audio/video ships; 169 of 380 media files (195.2 MB) are referenced by nothing.",
+  "Site IDs are NOT unique across projects on disk; the unique keys (siteKey/projectId/projectDir) are shown in no column.",
+  "28-first-draft.json's 287 requirements is not reproducible from the project directory it cites (that project is rewritten by smoke:first-draft on every run and now holds 202); no point-in-time caveat.",
+  "Route ON/OFF was NEVER driven through the UI by any auditor — suite-level coverage only (33 §P6 checks). The F2 cascade re-adjudication was likewise not re-driven through the UI.",
+  "No atomic writes or locking anywhere in the repo (pre-existing, repo-wide); two concurrent createSite calls against the same derived id are a named theoretical race.",
+  "Only linear.app was exercised at full-site content scale; stripe.com, nextjs.org and domainchecker.co.kr were not. The editor journey is proven on linear (plus stripe for F3) at desktop 1440x900 only.",
+  "The Task-28 raw regression logs are not retained in the repo, so the 2,948 total rests on 15 of 29 suites reproduced by other agents plus arithmetic closure with the gate table.",
+  "The Brand panel caps rows at 25 per surface (canary: 104 of 267 rows, truncated=163), so an operator working only through the rendered list cannot reach every host.",
+  "Every measurement in this program was taken ONCE per suite; no flake sampling was performed anywhere.",
+  "NEW/CARRIED — a brand logo delivered via CSS background-image, <object>, or an inline <image href> is still neither detected nor censused. A real uncovered surface class, disclosed rather than papered over. SYMMETRIC: detection and census are equally blind. It does NOT reopen the fixed defect (the preservedAfter ordering protects it, proven by attack); the exposure is a lineage where such a mark is never detected as a host at all, so no decision and no residual ever names it.",
+  "NEW — a production build baked BEFORE the close-out fix has no imageSrcPath field in its stored bake report and reads 0 on the new axis (brand.census?.imageSrcPath ?? 0). Such a build must be REBUILT to be measured on it. The ordering fix protects it regardless, since it consults no census. The one accepted build in the tree was re-censused from its shipped bytes and is genuinely 0.",
+  "NEW — smoke-production-canary reads STORED artifacts (release-project.json, requirements.json) and does NOT re-derive requirements through brand-scan.ts. Its pass is therefore NOT evidence that a change to the clearing instrument is safe. Re-derive against the build the requirement's evidence names.",
+  "NEW — the widened identifier matcher errs toward BLOCKING, never toward clearing. On a lineage whose brand token is also a common technical word (e.g. 'linear'), a genuinely neutral asset whose filename merely CONTAINS the token (/wr/assets/linearGradientBg.svg) counts as 1 on imageSrcPath and an operator must adjudicate it. Confirmed by adjudicator probe. That is a false NON-zero, never a false zero — the correct direction for a release blocker.",
+  "NEW — smoke-editor-integration flaked once during the close-out: exit 1 at 32 PASS / 0 FAIL with 'page.waitForFunction: Timeout 120000ms exceeded' in the real-browser journey; no check failed, the suite aborted. Re-ran clean at 45/45 twice. The timing-out step touches no brand code. Reported, not dropped.",
+  "OPERATOR-VISIBLE, NOT A REGRESSION — the alt-matcher alignment raises nextjs.org's full-template brand host count 190 -> 510 (image-alt 20 -> 340; image-logo unchanged at 160). Those are 320 additional REAL alt='NextjsLogotype' surfaces that now need operator decisions. linear.app (80), stripe.com (195) and domainchecker.co.kr (38) show zero churn."
+ ],
+ "deferred": [
+  "CMS: none was built or attempted. No database — every screen reads the same filesystem registry every other editor route reads, and nothing was added to persist state. No content approval workflow: the editor records NOTHING about human approval and says so in words on the panel.",
+  "SaaS: none was built or attempted. No authentication, no sessions, no multi-tenancy, no identity model — the editor is a local node:http server on 127.0.0.1. No hosted publishing, no deploy target, no CDN integration, no domain provisioning; .example domains were used throughout and no DNS lookup was ever performed. No concurrent-editor model and no locking anywhere in the repo.",
+  "Live LLM content generation: no vendor SDK and no LLM key exist in this environment. Generation runs on the provider-neutral ContentGenerator seam with brief-writer, fake, or an operator-authored generation-result.json.",
+  "Full blog / collection engine — detection and representation only, carried from Task 27 (2 of 8 templates carry compiled collections).",
+  "GED-F anchor neutralization — detector-only, default OFF, carried from Task 27.",
+  "A browser layout-QA pass over generated full-site content (runContentLayoutQa on a real draft).",
+  "A dynamic-template browser-click check, a UI-driven route disable, and a UI-driven F2 cascade re-adjudication.",
+  "Wiring widenedToBlastRadius through the region-enablement port so the anti-silent-widening guard is readable.",
+  "Full-site content generation on any template other than linear.app.",
+  "Media pruning and audio/video asset resolution (canary F10).",
+  "Paint-twin co-binding repair (canary F1/F8) — blocked while Exact Reconstruction is frozen."
+ ],
+ "nextTask": "TASK 29 — FIRST REAL PRODUCTION PILOT. The brand-clearing-soundness work that Task 29 was originally going to open with is DONE and re-adjudicated, so the order changes: (1) COMMIT THE TREE, BEFORE ANYTHING ELSE — now the single highest-risk item in the program; every artifact of Tasks 25-28 including the close-out fix is an uncommitted working tree and a mutating git operation has already run in this repo once. (2) Run the pilot on a NON-LINEAR lineage — nextjs.org is the obvious choice, precisely because it is the lineage that exposed the brand defect and the one the alt widening changed most; expect 510 real brand decisions, which is the honest count and is the point of the pilot. (3) REBUILD, do not trust, any production build baked before the close-out fix. (4) Close the five standing handoff-leak items by the remedy gate 1011 prescribed, and correct 28-final-regression.json's git claim. (5) Add the coverage that is one check each: a browser click on a mounted dynamic-template element; a route disable driven through the UI; runContentLayoutQa over a generated full-site draft. (6) Then the real product risks a paying pilot would feel: the 1,038 404-ing internal anchors that collect only a warning; the paint-twin gap (F1/F8); the 189.1 MB of unreferenced source-owned media. Deliberately NOT next: any CMS/SaaS/auth/hosting work.",
+ "verdictHistory": "This program's own final adjudication returned 'NOT READY — VISUAL PRODUCTION WORKFLOW INCOMPLETE' on 2026-08-28, failing EXACTLY ONE of the twenty bar clauses: 'source-brand-asset resolution works' (and with it the derived 'source brand asset blockers = 0'). That clause was then root-caused, fixed in the adjudicator's prescribed order, falsified five independent ways, and RE-ADJUDICATED to the verdict above. The NOT READY verdict is not erased; see closeOutFix and the report's 'THE CLOSE-OUT' section. The report and this handoff carry the same verdict string character-for-character.",
+ "closeOutFix": {
+  "what": "The Task-28 close-out: the ONE failing bar clause ('source-brand-asset resolution works') was closed and the program re-adjudicated from NOT READY to READY FOR FIRST PRODUCTION PILOT.",
+  "whoFoundTheDefect": "INDEPENDENT ADVERSARIAL VERIFICATION, not the builder and not the suites. All 2,948 checks passed while the defect was live, because the suite that should have caught it contained a check (smoke-brand-assets §3b) asserting the OPPOSITE of correct behaviour — that assertion WAS the defect. Auditor 3 returned a REJECT after reproducing it TWICE on the real accepted nextjs.org template with real `next build`s; the Task-28 adjudicator then root-caused it to four independent causes read directly in source.",
+  "theDefect": "On an image-logo lineage a PRESERVE-everything decision cleared the release-blocking source-brand requirement as status='resolved' / clearedBy='output-proof' with 0 blockers WHILE THE SOURCE'S OWN LOGOTYPE WAS STILL SHIPPING IN THE PACKAGE. The linear canary's zero was always honest; the INSTRUMENT that produced it was what was broken.",
+  "fourCauses": [
+   "markupBrandSurfaceTotal excluded the sourceUrl axis (src/production/brand-census.ts).",
+   "There was NO census axis at all for an <img> whose src PATH names the brand, although image-logo is the FIRST entry of RESOLVABLE_BRAND_SURFACES and the resolver rewrites props.src for it.",
+   "Detection/clearing matcher asymmetry: firstBrandTokenInIdentifier vs firstBrandToken (src/content-injection/brand-surfaces.ts).",
+   "src/release/brand-scan.ts tested renderedClean BEFORE preservedAfter, so a preserve whose surface the census could not see was scored as positive output proof."
+  ],
+  "fourSubFixes": [
+   "(i)+(iv), ONE edit in evaluateBrandOutputProof (src/release/brand-scan.ts, now ~lines 789-795): preservedAfter>0 is tested FIRST and ALWAYS wins over renderedClean. preserve-acceptance was NOT given another route to clear — it still maps to 'accepted-limitation', which releaseBlockers() still counts. THIS IS THE LOAD-BEARING HALF: it makes the verdict independent of whether any given surface is measured yet, so an unmeasured axis can only DOWNGRADE a build, never upgrade one to proof.",
+   "(ii) a new imageSrcPath axis on BOTH BrandSurfaceCounts and BrandFlightCounts plus exported countBrandNamedImagePaths() (src/production/brand-census.ts), wired through censusServedHtml, censusFlightPayload, summarizeBrandCensus, emptyFlightCounts, addFlightCounts, markupBrandSurfaceTotal, flightBrandSurfaceTotal and all three axes in brand-scan. Measured with the DETECTOR'S OWN scanImageLogo so the census cannot drift blinder than detection; one count per <img>; reads only true src/srcset (data-src NOT read), so it is EQUAL to detection and never wider.",
+   "(iii) the alt matcher aligned with the detector (src/content-injection/brand-surfaces.ts). CORRECTED IN THE ACT OF APPLYING IT: on alt, census and detector were ALREADY equal (both weak). The real asymmetry was inside brand-surfaces.ts — the same <img>'s src PATH used the identifier matcher while its alt used the word-boundary one, so the two were blind TOGETHER. Both are now firstBrandTokenInIdentifier.",
+   "Plus 22 new regression checks (28.X1 .. 28.X12) in scripts/smoke-brand-assets.ts and 1 in scripts/smoke-production.ts."
+  ],
+  "filesChanged": [
+   "src/release/brand-scan.ts",
+   "src/production/brand-census.ts",
+   "src/content-injection/brand-surfaces.ts",
+   "scripts/smoke-brand-assets.ts",
+   "scripts/smoke-production.ts"
+  ],
+  "soundnessProperty": "THE INSTRUMENT IS NOW COMPLETE WITH RESPECT TO WHAT THE RESOLVER CLAIMS TO RESOLVE. Each of the six entries of RESOLVABLE_BRAND_SURFACES — image-logo, image-alt, aria-label, svg-aria-label, svg-text, svg-symbol-id — has a matching census axis on the markup encoding AND the flight encoding, and markupBrandSurfaceTotal / flightBrandSurfaceTotal each sum exactly those six. Verified by the final adjudicator reading both functions. That equality is the property that was false before.",
+  "verification": {
+   "byTheFixAgent": "Reproduced the defect FIRST rather than assuming it, then three mutation tests each restored byte-identically with sha256 verification: reverting the branch order failed 3 checks; dropping imageSrcPath from the total failed 2; reverting the alt matcher failed 4.",
+   "byTheIndependentVerifier": "Rebuilt the PRE-FIX code in an isolated copy (never in the repo) and attacked BOTH versions. Five hand-built false-zero scenarios; a 4,116-case exhaustive input matrix over every combination evaluateBrandOutputProof consults (PRE: 144 cases cleared as output-proof with a preserved mark and 72 landed 'resolved'; POST: 0 and 0); a 63,918-string matcher fuzz (0 narrowing, 19,554 widening); two further in-repo mutation tests (removing the srcset read, removing the flight src loop), each failing exactly the one check that names it. Verdict PASS with 17 VERIFIED / 0 FAILED.",
+   "byTheFinalAdjudicator": "Read all three code sites directly, then ran SEVEN false-zero attacks of their own design against the shipped functions, each census derived from real HTML rather than hand-fed numbers. Independently re-fuzzed the matcher over 65,536 generated strings: 0 narrowing cases, 23,979 widening — a strict superset. Independently re-derived the canary requirement end to end under the new instrument. Independently re-ran typecheck and the full 29-suite battery through the mutex, and re-checked the git-orphan, historical-data-mutation and package.json clauses."
+  },
+  "adjudicatorAttacks": [
+   "brand logo on a THIRD-PARTY CDN absolute URL with a query string and NO alt, spotless bake report (preservedAfter=0, refused=0, unexplainedAfter=0): old instrument output-proof/resolved/0 blockers -> NOW null/unresolved/1 blocker.",
+   "brand-named path dirty on ONLY 1 of 3 routes, spotless bake: old resolved/0 -> NOW unresolved/1 (the per-route fold works).",
+   "brand path reachable ONLY via srcset, plus a camel-cased alt: NOW unresolved/1 (imageSrcPath 1, imageAlt 1).",
+   "brand path present ONLY in the RSC flight payload, markup clean, spotless bake: old resolved/0 -> NOW unresolved/1.",
+   "PRESERVE-everything with a fully clean census — THE EXACT DEFECT SHAPE: old output-proof/RESOLVED/0 -> NOW preserve-acceptance/ACCEPTED-LIMITATION/1.",
+   "PRESERVE-everything with the mark in a CSS background-image — A SURFACE NO AXIS MEASURES EVEN NOW: old output-proof/resolved/0 -> NOW preserve-acceptance/accepted-limitation/1. THE MOST IMPORTANT ROW: the ordering fix catches a surface the census still cannot see.",
+   "CONTROL, NO FALSE POSITIVE — a genuine REPLACE that truly removes the mark: output-proof/resolved/0 blockers, IDENTICAL before and after. Nothing was over-corrected."
+  ],
+  "noWeakening": {
+   "severity": "SEVERITY_POLICY['source-brand-asset'] is BYTE-IDENTICAL to the committed baseline: severity 'release-blocking', basis '§19: visible source-brand content must be 0 — inline-SVG marks are outside the asset layer'. Re-checked by the final adjudicator against `git show HEAD:src/release/types.ts`.",
+   "blockerCounting": "releaseBlockers() still counts 'accepted-limitation' — asserted live, not assumed.",
+   "detectorsWidenedNotNarrowed": "Strict superset, proven twice independently by fuzz. Real-lineage host counts PRE vs POST: linear.app 80->80, stripe.com 195->195, domainchecker.co.kr 38->38, nextjs.org 190->510 (image-alt 20->340, image-logo 160 unchanged). Widening only.",
+   "rewrittenChecks": "THREE existing checks were REWRITTEN, none deleted or weakened, and each hunk's check count went UP. (a) §3b asserted the OPPOSITE of the fix — that assertion WAS the defect — so it became 28.X1 asserting the inverse. (b) §5b 'the rendered census ALONE would have passed this build' became FALSE once the axis existed; replaced by 28.X11 + 28.X11b, which assert the old blind spot EXPLICITLY by subtracting the new axis back out. (c) §5e's proxy 'image-logo count === total host count' stopped holding after the alt alignment; replaced with EXACT per-surface counts, which is stronger.",
+   "guardNotWeakened": "A first draft of check 28.X5b wrote `census.sourceUrl === 0` and TRIPPED smoke-production's existing 'no BLANKET source-host assertion' source-tree guard. The guard was NOT weakened, disabled or exempted — the CHECK was restated through isSourceHostUrl(...) === false. The adjudicator confirmed the guard still walks the entire real src/ and scripts/ trees with no exemption list."
+  },
+  "residualLimits": [
+   "A brand logo delivered via CSS background-image, <object>, or an inline <image href> is still neither detected nor censused — a real uncovered surface class, SYMMETRIC (neither is blind alone), and no longer able to reopen the defect because the preservedAfter ordering does not consult the census.",
+   "A bake report written BEFORE this fix has no imageSrcPath field and reads 0 on the new axis; a stored pre-fix build needs a REBUILD to be measured on it.",
+   "The new axis reads only <img> src/srcset, matching scanImageLogo exactly.",
+   "The identifier matcher on a PATH errs toward blocking: a neutral asset whose filename merely contains the brand token counts as 1. A false NON-zero, never a false zero."
+  ],
+  "regressionAfterFix": {
+   "countedSuites": 29,
+   "checks": 2970,
+   "failures": 0,
+   "typecheckExit": 0,
+   "negativeDeltas": 0,
+   "deltaVsPriorBaseline": "+22 vs 2,948, ALL newly added: smoke-brand-assets 141 -> 162 (+21), smoke-production 132 -> 133 (+1), all 27 other suites delta 0.",
+   "note": "2,970 — not 2,948 — is the baseline a future task must protect."
+  },
+  "contractCompliance": "0 mutating git operations by the fix, the verification or the re-adjudication (git fsck re-run at re-adjudication: exactly 3 unreachable commits, all stamped 1787863775 = the single known earlier event, ZERO new orphans; no refs/stash, no ORIG_HEAD, no MERGE_HEAD; HEAD reflog still 3 pre-Task-28 entries). 0 installs; package.json and pnpm-lock.yaml byte-identical with no git-status entry; docs/result/handoffs/24-aggregation-phase1.json byte-identical to its committed blob (0322639753518bb96f90f42d8e451bffda9aacd3); ZERO data/ run directories named before 2026-08-27 modified (swept by the adjudicator).",
+  "evidenceFiles": [
+   "docs/result/handoffs/28-brand-clearing-fix.json"
+  ]
+ },
+ "historicalMutationCountAfterCloseOut": 0
+}

@@ -1,0 +1,468 @@
+{
+  "task": "28.75 — JS-dependent content root cause",
+  "generatedAt": "2026-09-05",
+  "lane": "read-only diagnostic; no src/ or scripts/ mutations; no git operations",
+  "runIdsInspected": {
+    "gs.severance.healthcare": {
+      "siteObservation": "2026-09-04T18-13-50-154Z",
+      "siteSpec": "2026-09-04T18-14-45-426Z",
+      "reconstruction": "2026-09-04T18-14-47-300Z",
+      "responsiveQa": "2026-09-04T18-15-04-161Z",
+      "responsiveQaSelfCheckFloor": "2026-09-04T18-15-04-162Z",
+      "servedFrom": "existing .next build in data/gs.severance.healthcare/reconstructions/2026-09-04T18-14-47-300Z/app (next start :53991); no rebuild triggered by this lane"
+    },
+    "seoultone.kr": {
+      "siteObservation": "2026-09-04T18-13-50-161Z",
+      "siteSpec": "2026-09-04T18-17-20-905Z",
+      "reconstruction": "2026-09-04T18-17-23-059Z",
+      "responsiveQa": "2026-09-04T18-18-47-244Z",
+      "servedFrom": "existing .next build in data/seoultone.kr/reconstructions/2026-09-04T18-17-23-059Z/app (next start :53992); no rebuild triggered by this lane"
+    },
+    "liveSourceProbed": [
+      "https://gs.severance.healthcare/gs/index.do",
+      "http://seoultone.kr/"
+    ],
+    "scratchEvidenceDir": "tmp/wr2875/js-content/"
+  },
+  "regions": [
+    {
+      "name": "severance-hero",
+      "site": "gs.severance.healthcare",
+      "route": "/gs/index.do",
+      "widths": [
+        1100,
+        1440
+      ],
+      "widthsCorrect": [
+        390
+      ],
+      "category": "C",
+      "owner": "reconstruction",
+      "mechanism": "The observed <body> is re-emitted as an in-flow <div> that keeps background-color: rgb(255,255,255). In the source that background propagates to the canvas and paints below negative-z-index content; as an ordinary block background it paints ABOVE z-index:-1, burying the hero photo (z-index:-1) and leaving the hero's rgb(255,255,255) headline white-on-white.",
+      "contentLocationInClone": {
+        "image": {
+          "node": "n002542",
+          "tag": "img",
+          "src": "https://gs.severance.healthcare/_res/yuhs/gs/img/home/main1.png",
+          "rect": {
+            "x": -240,
+            "y": 215,
+            "w": 1920,
+            "h": 500
+          },
+          "opacity": 1,
+          "visibility": "visible",
+          "zIndex": -1,
+          "clip": "none",
+          "transform": "none",
+          "loaded": true,
+          "naturalWidth": 1920
+        },
+        "headline": {
+          "node": "n002547",
+          "tag": "strong",
+          "text": "어려운 병 잘 치료하는",
+          "rect": {
+            "x": 80,
+            "y": 366,
+            "w": 573,
+            "h": 78
+          },
+          "color": "rgb(255,255,255)"
+        },
+        "occluder": {
+          "node": "n000003",
+          "attr": "data-wr-doc-tag=body",
+          "class": "wr-doc-st000142",
+          "backgroundColor": "rgb(255,255,255)",
+          "position": "static",
+          "display": "block"
+        },
+        "summary": "Present at exactly the source geometry. Not displaced, not clipped, not opacity-hidden. Invisible purely because of paint order."
+      },
+      "recoveryFeasible": true,
+      "recoveryNotes": "Demonstrated at runtime on the served clone: moving the body-div's background-color onto document.documentElement and setting the div transparent restored photo + headline + sub-headline (tmp/wr2875/js-content/hero-bodybg-experiment.png).",
+      "proposedFix": {
+        "file": "src/reconstruction/style-generator.ts",
+        "function": "generateStylesheet / DOCUMENT_ROOT_DROPPED_PROPERTIES / DOC_SKIP (lines 115, 168, 175)",
+        "change": "Add DOCUMENT_ROOT_CANVAS_PROPERTIES = [background-color, background-image, background-size, background-position, background-repeat] to DOC_SKIP so a .wr-doc-* class never paints them as an in-flow block background, and emit one extra `html{...}` rule carrying the propagating element's background (observed <html>'s if not fully transparent with background-image:none, else observed <body>'s). Move it, never merely drop it — dropping is right for a white body and wrong for a dark one."
+      },
+      "evidence": [
+        "data/gs.severance.healthcare/site-observations/2026-09-04T18-13-50-154Z/pages/p000001/viewports/desktop/dom.json — e001001 img z-index:-1, bb (-240,215,1920,500), effectiveVisible true",
+        "data/gs.severance.healthcare/site-observations/2026-09-04T18-13-50-154Z/pages/p000001/viewports/desktop/styles.json — e000002 body background-color rgb(255,255,255); e001004/5/7 color rgb(255,255,255)",
+        "data/gs.severance.healthcare/reconstructions/2026-09-04T18-14-47-300Z/app/public/wr/generated-styles.css:272 — .wr-st000277 z-index:-1; and .wr-doc-st000142 background-color:rgb(255,255,255)",
+        "src/reconstruction/compile-node.ts:561-598 compileDocumentRoot — html/body emitted as div with data-wr-doc-tag",
+        "src/reconstruction/style-generator.ts:110-122 documentRootClassName / DOCUMENT_ROOT_DROPPED_PROPERTIES — only width/height/min-*/max-* dropped",
+        "tmp/wr2875/js-content/repro-zindex.png (white) vs repro-zindex-control.png (renders) — isolated 12-line reproduction of the paint-order flip",
+        "tmp/wr2875/js-content/hero-bodybg-experiment.png — runtime cure on the served clone",
+        "CONTROL: data/.../viewports/mobile/dom.json — mobile hero img e001002 is position:static; z-index:auto, and the clone renders it correctly at 390. Defect appears exactly where z-index < 0.",
+        "QA channel image-layer-state: clone 0 failed / 27 loaded of 27 — the asset decoded; occlusion, not a load failure",
+        "QA channel opacity-hidden-text-chars: 0 on both sides @1440 — not an opacity story"
+      ],
+      "killedHypotheses": [
+        "asset load failure (naturalWidth 1920, complete true)",
+        "displacement (geometry identical to source)",
+        "carousel/slider (the hero has one <img> and a text block; no track, no transform)",
+        "scroll-reveal / opacity (opacity-hidden-text-chars 0 on both sides)"
+      ]
+    },
+    {
+      "name": "severance-news",
+      "site": "gs.severance.healthcare",
+      "route": "/gs/index.do",
+      "widths": [
+        1100,
+        1440
+      ],
+      "category": "C",
+      "owner": "observer",
+      "mechanism": "float is absent from the Observer's STYLE_WHITELIST, so slick's `.slick-slide { float: left }` is never recorded. In the clone the slides are display:block/position:static and stack VERTICALLY at the track's origin; the track's transform translateX(-981px) puts that origin at x = -543, and .slick-list { overflow: hidden } (box x in [408,1440]) clips every card out of view.",
+      "contentLocationInClone": {
+        "track": {
+          "node": "n002964",
+          "width": "50000px",
+          "transform": "matrix(1, 0, 0, 1, -981, 0)",
+          "elementChildren": 23
+        },
+        "slides": [
+          {
+            "node": "n002965",
+            "rect": {
+              "x": -573,
+              "y": 1581,
+              "w": 327,
+              "h": 231
+            }
+          },
+          {
+            "node": "n002984",
+            "rect": {
+              "x": -573,
+              "y": 1832,
+              "w": 327,
+              "h": 231
+            }
+          },
+          {
+            "node": "n003003",
+            "rect": {
+              "x": -573,
+              "y": 2083,
+              "w": 327,
+              "h": 231
+            }
+          },
+          {
+            "node": "n003022",
+            "rect": {
+              "x": -573,
+              "y": 2334,
+              "w": 327,
+              "h": 231
+            }
+          }
+        ],
+        "sampleLeaf": {
+          "node": "n003031",
+          "text": "[강남세브란스] '뇌경색', 원인부터 예방·치료까지",
+          "cloneRect": {
+            "x": -543,
+            "y": 2371,
+            "w": 237,
+            "h": 56
+          },
+          "sourceRect": {
+            "x": 438,
+            "y": 1617.5,
+            "w": 237,
+            "h": 56
+          },
+          "opacity": 1,
+          "visibility": "visible"
+        },
+        "clippedBy": ".slick-list, overflow:hidden, x in [408,1440]",
+        "summary": "Present, opacity 1, displaced left by exactly the track's -981px and stacked +251px per slide, then clipped."
+      },
+      "recoveryFeasible": true,
+      "recoveryNotes": "Runtime proof: injecting only `float:left` on the track's element children moved n003031 to x=438,y=1618 (source geometry to the pixel) and the slick-cloned copy to x=3708 (source e001333 x=3708). Screenshot tmp/wr2875/js-content/clone-float-after-crop.png.",
+      "proposedFix": {
+        "file": "src/observer/types.ts",
+        "function": "STYLE_WHITELIST (line 430)",
+        "change": "Add \"float\" and \"clear\" to the Layout block. MIRROR them into QA_STYLE_PROPERTIES in src/reconstruction-qa/capture-page.ts (the 28.5B superset invariant asserted by smoke-qa-independence). No downstream change needed: ALLOWED_CSS_PROPERTIES in src/reconstruction/style-generator.ts derives from STYLE_WHITELIST. Recommended alongside: promote \"text-indent\" from QA_ONLY_STYLE_PROPERTIES — slick arrows use text-indent:-9999px and without it the clone paints literal 'Previous'/'Next' inside the 60px circles."
+      },
+      "evidence": [
+        "LIVE SOURCE tmp/wr2875/js-content/probe-sev.mjs — .slick-slide computed float: 'left'; .slick-track width 50000px transform matrix(1,0,0,1,-981,0); .slick-list overflow hidden",
+        "src/observer/types.ts:430-582 STYLE_WHITELIST — 119 properties, no 'float', no 'clear'",
+        "src/reconstruction-qa/capture-page.ts:150-330 QA_STYLE_PROPERTIES + QA_ONLY_STYLE_PROPERTIES — no 'float' either; QA is blind to it too",
+        "data/gs.severance.healthcare/site-specs/2026-09-04T18-14-45-426Z/style-catalog.json — 0 occurrences of 'float'",
+        "SERVED CLONE tmp/wr2875/js-content/probe-clone-float.mjs — track n002964 children stacked at x=-573, y=1581+251n",
+        "QA @1440: missing-text-ratio 0 (0/2644), matched-fraction 1 (202/202), visible-text-ratio 1 — the cards ARE in the clone DOM",
+        "QA @1440: offscreen-nodes source 259 / clone 0; offscreen-text-excess-chars -1508; contentMaxRight source 6888 / clone 1680",
+        "QA @1440: overlap-excess-ratio BLOCKER 0.3425 (clone 111 pairs / 50.41% vs source 31 / 16.16%) — the stacked slides piled on one x",
+        "QA @1440: left-edge-delta-median-px 1542, left-edge-delta-p90-px 5397, position-delta-offviewport-p90-px 6213 over 92 off-viewport pairs"
+      ]
+    },
+    {
+      "name": "severance-promo-carousel",
+      "site": "gs.severance.healthcare",
+      "route": "/gs/index.do",
+      "widths": [
+        1100,
+        1440
+      ],
+      "category": "C",
+      "owner": "observer",
+      "mechanism": "Same missing `float` on a second slick track: width 50000px, transform translateX(-777px), children stacked vertically at x = -560 (+417px each) and clipped by the track's .slick-list. The blurred background image and the dot pager survive because neither sits inside the track.",
+      "contentLocationInClone": {
+        "track": {
+          "node": "n003413",
+          "width": "50000px",
+          "transform": "matrix(1, 0, 0, 1, -777, 0)",
+          "elementChildren": 21
+        },
+        "slides": [
+          {
+            "node": "n003414",
+            "rect": {
+              "x": -560,
+              "y": 1937,
+              "w": 229,
+              "h": 417
+            }
+          },
+          {
+            "node": "n003420",
+            "rect": {
+              "x": -560,
+              "y": 2354,
+              "w": 229,
+              "h": 417
+            }
+          },
+          {
+            "node": "n003424",
+            "rect": {
+              "x": -560,
+              "y": 2771,
+              "w": 229,
+              "h": 417
+            }
+          },
+          {
+            "node": "n003430",
+            "rect": {
+              "x": -560,
+              "y": 3188,
+              "w": 229,
+              "h": 417
+            }
+          }
+        ],
+        "summary": "Present, opacity 1, off-screen left and stacked; clipped by the slick-list ancestor."
+      },
+      "recoveryFeasible": true,
+      "recoveryNotes": "Cured by the same one-property fix as severance-news; all four oval cards render over the blurred lobby photo (tmp/wr2875/js-content/clone-float-after-crop.png). A THIRD instance of the same defect on the same page — the '건강정보' mini-carousel, track n002714, width 5397px, translateX(-771px), children at x=-342 (+113.75px) — is cured identically. Which slide is 'active' is frozen at whatever the observation captured; that is category-E carousel state and the existing behaviour is safe.",
+      "proposedFix": {
+        "file": "src/observer/types.ts",
+        "function": "STYLE_WHITELIST (line 430)",
+        "change": "Same as severance-news — add \"float\" and \"clear\"; one fix covers all three tracks on this page and every float-based carousel in the corpus."
+      },
+      "evidence": [
+        "LIVE SOURCE tmp/wr2875/js-content/probe-sev.mjs allSlickTracks — three tracks on the page: 5397px/translateX(-645.978), 50000px/translateX(-981), 50000px/translateX(-633.254); all slides float:left",
+        "SERVED CLONE tmp/wr2875/js-content/probe-clone-float.mjs — n003413 children at x=-560, y=1937+417n; n002714 children at x=-342, y=1248+113.75n",
+        "tmp/wr2875/js-content/clone-float-after-crop.png — cards restored by float:left alone"
+      ]
+    },
+    {
+      "name": "seoultone-doctor-bio",
+      "site": "seoultone.kr",
+      "route": "/",
+      "widths": [
+        390,
+        1440
+      ],
+      "category": "A",
+      "owner": "observer",
+      "mechanism": "seoultone sets html{scroll-behavior:smooth}. runScrollPass issues window.scrollBy(0, step) and reads window.scrollY in the SAME evaluate, so the animated scroll reports moved===0 and `if (m.moved <= 0) break;` ends the pass after one step (scrollSteps 1, scrollDistancePx 0 at BOTH viewports). ScrollReveal (<html class=\"sr\">) therefore never fires below ~1,600px, the collector records opacity:0 + translateY(-25px) on the reveal wrappers, and the SiteSpec and clone bake that in faithfully.",
+      "contentLocationInClone": {
+        "summary": "Present at correct geometry, opacity 0, translateY(-25px), no clip, not offscreen. 69 zero-opacity nodes in the clone (matches QA clone.zeroOpacityNodes 69) against 18/19 in the source.",
+        "desktopSubtree": [
+          {
+            "node": "n000569",
+            "what": "doctor bio wrapper div.text",
+            "rect": {
+              "x": 701,
+              "y": 1735,
+              "w": 542,
+              "h": 529
+            },
+            "chars": 684,
+            "opacity": 0,
+            "transform": "translateY(-25px)"
+          },
+          {
+            "node": "n000691",
+            "what": "처음으로 만나보는 / 깨끗한 피부과학",
+            "rect": {
+              "x": 720,
+              "y": 2518,
+              "w": 720,
+              "h": 155
+            },
+            "chars": 57,
+            "opacity": 0
+          },
+          {
+            "node": "n000707",
+            "what": "서울톤피부과의 약속",
+            "rect": {
+              "x": 0,
+              "y": 3007,
+              "w": 720,
+              "h": 329
+            },
+            "chars": 270,
+            "opacity": 0
+          },
+          {
+            "node": "n000813",
+            "what": "고객센터",
+            "rect": {
+              "x": 792,
+              "y": 3536,
+              "w": 256,
+              "h": 493
+            },
+            "chars": 1072,
+            "opacity": 0
+          },
+          {
+            "node": "n001011",
+            "what": "서울톤피부과에서 최고의 당신을 찾으세요!",
+            "rect": {
+              "x": 0,
+              "y": 4236,
+              "w": 1440,
+              "h": 38
+            },
+            "chars": 22,
+            "opacity": 0
+          },
+          {
+            "node": "n000585..n000628",
+            "what": "20 credential <li> items, each individually revealed by ScrollReveal",
+            "rect": {
+              "x": 701,
+              "y": 1828,
+              "w": 296,
+              "h": 23
+            },
+            "opacity": 0
+          }
+        ]
+      },
+      "recoveryFeasible": true,
+      "recoveryNotes": "Measured on the LIVE source. Observer policy today: 36 zero-opacity elements / 3,642 zero-opacity chars. With behavior:'instant' at 0.85vh/250ms: 19 / 1,131 and all five div.text wrappers reveal. With behavior:'instant' at 0.5vh/700ms: 5 / 69, and the 5 survivors are two empty span.swiper-notification aria live regions and one inactive swiper-slide, which SHOULD stay hidden. ScrollReveal is reset:false, so a scroll-to-bottom-and-return leaves everything revealed at the moment the collector runs.",
+      "proposedFix": {
+        "file": "src/observer/layout-probe.ts",
+        "function": "runScrollPass (line 313; scroll issue at 326-336, progress break at 370)",
+        "change": "(1) Issue the scroll as window.scrollTo({top: window.scrollY + step, behavior: 'instant'}) so an author's scroll-behavior:smooth cannot fake moved===0. (2) Compute `moved` from a SECOND page.evaluate taken AFTER the existing SCROLL_STEP_SETTLE_MS wait, and only then apply `if (moved <= 0) break;` — the QA capture already behaves this way (src/responsive-qa/capture.ts:271-289 never breaks on non-progress) and reaches the bottom of this exact page in 11 steps. (3) DWELL: SCROLL_STEP_FRACTION 0.85 / SCROLL_STEP_SETTLE_MS 250 (src/observer/types.ts:264,268) leaves staggered per-item reveals unfinished; lower the fraction and raise the dwell, or add a bounded second slow pass (SCROLL_MAX_TOTAL_MS 15000 already caps cost). (4) OBSERVABILITY: the reveal probe (layout-probe.ts:100-144) seeds candidates only from class/style MutationObserver records, so it can only report revealed-then-re-hidden and can never see never-revealed. Add a never-revealed census beside regressedAfterReturn; the raw material already exists as paintSuppression.suppressedBelowFold 78 with scrollRevealMarked 0."
+      },
+      "evidence": [
+        "data/seoultone.kr/site-observations/2026-09-04T18-13-50-161Z/pages/p000001/observation.json — loadStrategy.scrollSteps 1, scrollDistancePx 0, prepareScrollStatus prepare-scroll-complete, at BOTH viewports (docH 4892 / 5632); scrollReveal.samples 1",
+        "same file — paintSuppression: sizedElements 450, suppressedElements 88, suppressedByOpacity 30, suppressedBelowFold 78, scrollRevealMarked 0",
+        "CONTRAST same field on severance: scrollSteps 3 / 1800px desktop, 5 / 3081px mobile — the bug is site-conditional on scroll-behavior:smooth",
+        "LIVE SOURCE tmp/wr2875/js-content/probe-st-scroll.mjs — html scrollBehavior 'smooth'; replaying the observer step reports moved:0 three times while scrollY is actually 714 / 1412 / 2112 after the 250ms wait",
+        "LIVE SOURCE tmp/wr2875/js-content/probe-st.mjs — <html class='sr'>, zero-opacity 36 at top -> 20 at bottom -> 16 back at top: ScrollReveal is reset:false",
+        "LIVE SOURCE tmp/wr2875/js-content/probe-st-fix.mjs and probe-st-dwell.mjs — instant-behavior scroll drops zero-opacity chars 3642 -> 1131 -> 69",
+        "src/observer/layout-probe.ts:313 runScrollPass, :326-336 scrollBy + synchronous read, :370 `if (m.moved <= 0) break;`",
+        "src/observer/layout-probe.ts:100-144 installRevealProbeInBrowser — candidates seeded ONLY by class/style mutations, so never-revealed elements are unreachable; this is why regressedAfterReturn is honestly 0",
+        "src/responsive-qa/capture.ts:271-289 — the QA scroll uses window.scrollTo and never breaks on non-progress; QA sourceProvenance.scroll reports 11 steps / 3992px @1440 and 13 / 4779px @390, both reachedBottom true",
+        "data/seoultone.kr/site-observations/.../viewports/desktop/dom.json + styles.json — e000261/e000308/e000314/e000390 div.text opacity 0 transform matrix(1,0,0,1,0,-25); children localVisible true, effectiveVisible FALSE; e000467 opacity 0 on itself",
+        "data/seoultone.kr/reconstructions/2026-09-04T18-17-23-059Z/app/public/wr/generated-styles.css — .wr-st000750/.wr-st000531/.wr-st000413 all opacity:0; transform:matrix(1,0,0,1,0,-25)",
+        "SERVED CLONE tmp/wr2875/js-content/probe-clone-st2.mjs — 69 outermost zero-opacity subtrees, geometry correct, full node list",
+        "QA @1440 visible-text-ratio 0.7496 (clone 961 chars vs source 1282); @390 0.69 (888 vs 1287) — the channel saw it and does not fire"
+      ]
+    }
+  ],
+  "seoultonePopupSplit": {
+    "width": 390,
+    "sourceVisibleChars": 1287,
+    "missingChars": 393,
+    "missingRatio": 0.3054,
+    "popupAttributedChars": 37,
+    "popupAttributedStrings": 4,
+    "popupAttributedRatio": 0.0288,
+    "popupAttributedRatioLowerBound": 0.0163,
+    "popupAttributedRatioUpperBound": 0.0319,
+    "realContentLossChars": 356,
+    "realContentLossRatio": 0.2766,
+    "crossCheckAt1440": {
+      "sourceVisibleChars": 1282,
+      "missingChars": 356,
+      "missingRatio": 0.2777,
+      "popupAttributedChars": 0,
+      "realContentLossRatio": 0.2777,
+      "note": "the popup is present in BOTH source and clone at 1440, so it contributes nothing; subtracting the 390-vs-1440 delta (37 chars / 4 strings) from 390 lands exactly on 1440's 356 chars, which is the self-check for this split"
+    },
+    "popupIdentity": {
+      "element": "section#popup_slider",
+      "position": "absolute",
+      "zIndex": 999999,
+      "observationDesktop": "visible, bb (470,80,500,813.36), 41 chars over 7 leaves: 가을이벤트(5) 자세히보기(5) 압토스(3) 리프팅센터(5) '시간 동안 다시 열람하지 않습니다.'(19) 24(2) 닫기(2)",
+      "observationMobile": "display:none, bb 0x0 — the clone's mobile subtree correctly renders nothing",
+      "qaSourceCapture390": "popup ON SCREEN (images/01-seoultone-kr-root-390-source.png); clone does not show it — this is the asymmetry"
+    },
+    "honestyNotes": [
+      "The source's OWN QA capture still carried zeroOpacityNodes 18/19 and opacityHiddenTextChars 521/535 — the same ScrollReveal stagger a 250ms-per-step scroll leaves behind. Those characters are excluded from the missing-text census on BOTH sides (item G1), so the true content loss is UNDERSTATED by roughly that amount.",
+      "The popup could not be reproduced on any fresh Playwright load of http://seoultone.kr/ on 2026-09-05 at 390 or 1440, so which of the 7 popup strings the QA 390 capture actually painted is unknown; the range 21-41 chars brackets it and the artifact's own 37-char delta is the point estimate."
+    ]
+  },
+  "crossCuttingFindings": [
+    {
+      "id": "float-clear-not-observed",
+      "statement": "float and clear are in NEITHER the Observer STYLE_WHITELIST (src/observer/types.ts:430-582) NOR the QA property list (src/reconstruction-qa/capture-page.ts:150-330). Every float-based carousel or legacy float grid in the corpus fails the same way and no channel can name it.",
+      "severity": "P0"
+    },
+    {
+      "id": "text-indent-not-observed",
+      "statement": "text-indent is in the QA-only tail but not in the Observer whitelist. slick arrows use text-indent:-9999px; overflow:hidden, so the clone paints literal 'Previous'/'Next' inside the 60px circles — the artefact in the 28.7 review pack. It also explains contentMinLeft -9999 on both sides of the severance census.",
+      "severity": "P1"
+    },
+    {
+      "id": "no-paint-occlusion-channel",
+      "statement": "Nothing in the 40-channel responsive-QA roster measures paint occlusion or z-order. image-presence-ratio counts image leaves with a box, so a fully buried image counts as present; missing-text-ratio counts text at token boundaries, so white-on-white counts as painted. This is why the instrument reported image-presence-ratio 1 / missing-text-ratio 0 / visible-text-ratio 1 on a page with a blank hero.",
+      "severity": "P1"
+    },
+    {
+      "id": "observer-and-qa-scroll-policies-diverge",
+      "statement": "The Observer's preparation scroll (src/observer/layout-probe.ts:313 runScrollPass) breaks on a synchronously-read moved<=0; the QA capture scroll (src/responsive-qa/capture.ts:271-289) does not break at all. On seoultone that difference is 0px vs 3992px of travel, i.e. the QA measures a well-scrolled source against a clone baked from a never-scrolled observation.",
+      "severity": "P0"
+    },
+    {
+      "id": "reveal-metric-answers-the-wrong-question",
+      "statement": "regressedAfterReturn can only ever count revealed-then-re-hidden elements, because the reveal probe seeds candidates from a class/style MutationObserver. Never-revealed elements are structurally invisible to it. paintSuppression.suppressedBelowFold (78) with scrollRevealMarked (0) already carries the signal and nothing consumes it.",
+      "severity": "P1"
+    }
+  ],
+  "mustNotBuild": [
+    "No React/Vue/jQuery/slick/ScrollReveal runtime emulator — all four regions are cured by two CSS properties, one re-homed declaration and one scroll-loop fix; none needs the source's JavaScript re-executed.",
+    "No universal responsive solver — every geometry in all four regions is already exact at the observed widths.",
+    "No per-site special cases — no .slick-slide rule, no html.sr detection, no site-name branch.",
+    "No 'reveal-everything' hack — do not force opacity:1 on captured elements and do not strip opacity:0 in the compiler; that fabricates a state the source never had and would un-hide genuinely hidden carousel slides."
+  ],
+  "unknowns": [
+    "Which of the 7 popup strings the QA's 390 source capture actually painted — the popup did not fire on any fresh load on 2026-09-05, so the split is a bounded range (21-41 chars) with the artifact's 37-char width-delta as the point estimate. Why it fires for some loads and not others was not determined.",
+    "Whether float's absence causes further defects elsewhere in the corpus. Three tracks on one severance page are proven; the corpus was not swept. A float-based multi-column grid or nav would fail identically and nothing in the artifacts would say so.",
+    "How much of severance's remaining 33.45% pixel residual the two fixes remove — that needs a responsive-QA rerun after the code change, out of this read-only lane's scope.",
+    "Whether the 28.7 A4 reveal-regression policy (src/observer/dedupe-styles.ts:210-256) behaves well once the scroll is fixed and far more elements become reveal candidates; that path has not been exercised at that volume.",
+    "The dwell time that finishes ScrollReveal-style staggers generically. 0.5vh/700ms works on seoultone; the right value is a corpus question.",
+    "Why the clone's severance header wraps to two rows and overlaps the hero once the hero is restored — a pre-existing defect the white band was hiding, not investigated."
+  ],
+  "verdictLines": [
+    "REGION severance-hero — CATEGORY C — OWNER reconstruction — the observed <body>'s background is emitted as an in-flow block background instead of being propagated to the document canvas, so it paints over the z-index:-1 hero image and the hero's white text is left white-on-white.",
+    "REGION severance-news — CATEGORY C — OWNER observer — float is absent from the Observer's computed-style whitelist, so slick's float:left slides stack vertically at the track origin, land at x = -543 under the track's translateX(-981px), and are clipped away by .slick-list{overflow:hidden}.",
+    "REGION severance-promo-carousel — CATEGORY C — OWNER observer — the same missing float:left on a second slick track (translateX(-777px)) stacks its cards at x = -560 where the track's clipping ancestor removes them; the background and dot pager survive because they sit outside the track.",
+    "REGION seoultone-doctor-bio — CATEGORY A — OWNER observer — html{scroll-behavior:smooth} makes window.scrollBy asynchronous, runScrollPass reads window.scrollY synchronously and breaks on moved<=0 after one step (0px travelled), so ScrollReveal never fires below the fold and the collector records opacity:0 for the bio block and four headings."
+  ]
+}

@@ -1,0 +1,43 @@
+// recon-runtime — serves published Site Build Packages from R2 (see src/index.ts).
+// Source of truth for the Worker's Cloudflare configuration.
+//
+// Default (no --env): NO routes, NO custom domains, workers.dev and preview URLs OFF, so
+// `wrangler deploy` of this config alone would expose nothing. A hostname is attached only by
+// the explicit `pilot` environment below, whose route is left commented out until the live
+// deploy plan (docs/result/static-deployment-foundation/07-live-deploy-plan.md) is executed.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "recon-runtime",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-15",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  // The Worker logs one JSON line per response with status >= 400 (src/index.ts). To log every
+  // response while diagnosing, add to the environment in use:  "vars": { "LOG_ALL": "1" }
+  "r2_buckets": [
+    { "binding": "SITES", "bucket_name": "boost-sites-artifacts" }
+  ],
+  "env": {
+    "pilot": {
+      "name": "recon-runtime-pilot",
+      "workers_dev": false,
+      "preview_urls": false,
+      "r2_buckets": [
+        { "binding": "SITES", "bucket_name": "boost-sites-artifacts" }
+      ]
+      // Exact-hostname pilot attachment — enable ONLY during the live run (07-live-deploy-plan.md).
+      // Pick ONE form. Never a wildcard, never a pattern that an existing Worker already serves.
+      //
+      // (a) The zone has NO Worker route that matches the pilot hostname → Workers Custom Domain
+      //     (Cloudflare creates the proxied DNS record and the certificate):
+      // ,"routes": [ { "pattern": "<pilot-hostname>", "custom_domain": true } ]
+      //
+      // (b) The zone HAS a route that matches it (e.g. a wildcard "*.<zone>/*" owned by another
+      //     product): a Custom Domain Worker is treated as an ORIGIN and that route's Worker would
+      //     run first. Use an exact route instead — the most specific pattern wins — and create a
+      //     proxied DNS record for the hostname by hand:
+      // ,"routes": [ { "pattern": "<pilot-hostname>/*", "zone_name": "<zone>" } ]
+    }
+  }
+}

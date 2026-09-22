@@ -1,0 +1,187 @@
+{
+  "schema": "task285b-build-qa-integration-v1",
+  "producedAt": "2026-08-29T00:00:00.000Z",
+  "change": "Task 28.5B change 6 — INTEGRATION pass: make the decoupled QA vocabulary REACHED by real runs (changes A, B, C)",
+  "filesChanged": [
+    {
+      "file": "src/reconstruction-qa/qa-page.ts",
+      "change": "A",
+      "edits": [
+        "L10-15 imports compareCapturedStyles + QA_ONLY_STYLE_PROPERTIES + QaRawCapture from capture-page.js",
+        "L27-36 imports QA_ONLY_STYLE_SAMPLE_LIMIT + the two new types from types.js",
+        "L200-261 module doc for the browser-to-browser QA-only comparison: why it exists, which pairing is REUSED, why it re-enters compareCapturedStyles",
+        "L262-373 compareQaOnlyStyles() — pure, exported; re-keys both element maps onto the shared SiteSpec node id and delegates to compareCapturedStyles with properties=QA_ONLY_STYLE_PROPERTIES, maxMismatches=50",
+        "L451-478 wired INSIDE qaOnePage (the single entry run-qa.ts:277 calls for every page x viewport), between the live-original alignment block and the asset diff",
+        "L647-661 the results are written into the returned QaPageResult"
+      ]
+    },
+    {
+      "file": "src/reconstruction-qa/types.ts",
+      "change": "A",
+      "edits": [
+        "L794-833 QaOnlyStyleSampleSchema, QA_ONLY_STYLE_SAMPLE_LIMIT = 50, QaOnlyStyleUnavailableReasonSchema (no-clone-capture | no-live-original | source-not-aligned | no-comparable-nodes)",
+        "L885-913 nine ADDITIVE fields on QaPageResultSchema, every one .optional()"
+      ]
+    },
+    {
+      "file": "src/reconstruction-qa/summarize.ts",
+      "change": "A",
+      "edits": [
+        "L110-140 LiveFidelitySchema gains five optional QA-only fields, with an explicit POPULATION NOTE (structurally-aligned pages, not the drift-free subset the neighbouring fields use)",
+        "L426-452 summarizeLiveFidelity accumulates them; a run that recorded no verdict at all leaves EVERY counter absent rather than 0",
+        "L670-690 worstPages visual detail prints ` · QA-only style <n> of <m>` beside @1 / @16 / dE76, and prints `unavailable (<reason>)` rather than 0"
+      ]
+    },
+    {
+      "file": "src/reconstruction-qa/interaction-qa.ts",
+      "change": "B",
+      "edits": [
+        "L4 the observer/types.js import is now { SKIP_TAGS, type ViewportProfile } — STYLE_WHITELIST is gone",
+        "L23 newQaContext import extended with QA_STYLE_PROPERTIES from capture-page.js",
+        "L71-94 TARGET_STATE_STYLE_PROPERTIES is now QA's own vocabulary (QA_STYLE_PROPERTIES) with a rationale comment; SKIP_TAGS at L248 is the only remaining observer use"
+      ]
+    },
+    {
+      "file": "src/cli-qa-reconstruction.ts",
+      "change": "C",
+      "edits": [
+        "L124-134 channel() helper — prints `n/a` for an unmeasured channel, never 0",
+        "L164-176 snapshot-fidelity headline now prints @1, @16, dE76>2.3 ratio median and dE76 mean median side by side",
+        "L193-210 live-fidelity headline prints @1 / @16 / dE76>2.3 plus the QA-only style total, median, compared-pair denominator and unavailable count"
+      ]
+    },
+    {
+      "file": "src/reconstruction-qa/index.ts",
+      "change": "A",
+      "edits": ["L248 additive re-export of compareQaOnlyStyles"]
+    },
+    {
+      "file": "scripts/smoke-qa-independence.ts",
+      "change": "proof",
+      "edits": [
+        "ADDITIVE ONLY — no existing check was weakened or removed (62 -> 101)",
+        "imports extended; the fixture server gained an /integration/clone route",
+        "integrationCloneHtml() — a clone shaped the way Task 14 shapes one (data-wr-viewport / data-wr-node / data-wr-doc-tag), identical to /original in every observer property and differing ONLY in the QA-only tail",
+        "section 6 testRealRunIntegration() — drives qaOnePage itself; 22 checks",
+        "section 7 — summary + printed output; 9 checks",
+        "section 8 testInteractionAxisDecoupled() — source-text + no-coverage-loss; 7 checks"
+      ]
+    },
+    {
+      "file": "docs/result/handoffs/28.5B-build-qa-integration.json",
+      "change": "handoff",
+      "edits": ["NEW — this file"]
+    }
+  ],
+
+  "pairingMechanism": {
+    "reused": true,
+    "invented": false,
+    "identity": "SiteSpec nodeId",
+    "cloneSide": "mapCloneNodes() -> mapping.byNodeId (map-clone-nodes.ts). A LOOKUP, not an inference: Task 14 stamps every emitted element with data-wr-node=\"<nodeId>\" and capture-clone.ts scopes the query to the active viewport variant.",
+    "originalSide": "alignLiveOriginal() -> alignment.byNodeId (align-original.ts). Index-for-index against the SiteSpec's document-order element list, admitted ONLY after Task 13's three conditions all hold exactly: element count, tag sequence, parent relation. There is no fuzzy matching anywhere in it.",
+    "precedent": "diffAssets (qa-page.ts:479-492) already pairs these two exact maps for the original-vs-clone asset axis. This change adds a second consumer of the same pairing; no new matcher exists in the repo after it.",
+    "nodeSet": "mapping.comparableNodeIds — the same set the snapshot style and geometry diffs use (present in the clone AND effectiveVisible in the snapshot), so a QA-only finding sits on a node the rest of the report already discusses.",
+    "whyCompareCapturedStylesNeededRekeying": "compareCapturedStyles keys off element.key, which is a document-order INDEX on the original side and a node id on the clone side — two different id spaces. compareQaOnlyStyles re-presents both element maps as captures whose keys are the shared nodeId. Nothing else about the records is transformed, and compareCapturedStyles' own tag-mismatch guard still fires (the html/body document-root wrappers are div in the clone, so they are counted in qaOnlyStyleTagMismatchedNodes and NOT compared).",
+    "degradation": "qaOnlyStyleComparison: \"unavailable\" with a named reason whenever the pairing cannot be established — no clone capture, no live/stored original, structural drift, or zero comparable nodes. No mismatch count is emitted in that case (absent, not 0)."
+  },
+
+  "newFields": {
+    "QaPageResult (all .optional())": [
+      "qaOnlyStyleComparison: \"compared\" | \"unavailable\"",
+      "qaOnlyStyleUnavailableReason: no-clone-capture | no-live-original | source-not-aligned | no-comparable-nodes",
+      "qaOnlyStyleOriginalSource: \"live\" | \"stored\"",
+      "qaOnlyStyleComparedNodes",
+      "qaOnlyStyleComparedProperties",
+      "qaOnlyStyleMismatches (UNCAPPED total, read off the per-property counter)",
+      "qaOnlyStyleTagMismatchedNodes",
+      "qaOnlyStyleByProperty (uncapped, sorted)",
+      "qaOnlyStyleSamples (capped at 50/page, deterministic: document order x sorted property; each carries nodeId, tagName, property, original, clone)"
+    ],
+    "LiveFidelity summary (all .optional())": [
+      "qaOnlyStyleComparedPairs",
+      "qaOnlyStyleUnavailablePairs",
+      "qaOnlyStyleMismatchTotal",
+      "qaOnlyStyleMismatchMedian",
+      "qaOnlyStyleMismatchByProperty"
+    ],
+    "exports": ["compareQaOnlyStyles (qa-page.ts, via index.ts)", "QA_ONLY_STYLE_SAMPLE_LIMIT, QaOnlyStyleSample, QaOnlyStyleUnavailableReason (types.ts, via the existing export *)"],
+    "historicalArtifacts": "Re-verified on the real 2026-08-25 linear.app run: 16/16 QaPageResult files parse through the CURRENT schema, and summarizeLiveFidelity over them leaves every QA-only counter ABSENT rather than 0."
+  },
+
+  "suite": {
+    "name": "scripts/smoke-qa-independence.ts",
+    "command": "npx tsx scripts/smoke-qa-independence.ts",
+    "checks": 101,
+    "passed": 101,
+    "failed": 0,
+    "wasBefore": 62,
+    "added": 39,
+    "weakenedOrRemoved": 0,
+    "mandatedProofs": {
+      "1-realRunPathInvokesIt": "section 6 calls qaOnePage — the entry run-qa.ts uses in production — over a live original and a real served clone, and asserts qaOnlyStyleComparison/Mismatches/ByProperty/Samples on the RETURNED QaPageResult. It calls neither compareCapturedStyles nor compareQaOnlyStyles directly, so removing the wiring fails it. Cross-check in the same run: result.style.byProperty (the SiteSpec-driven axis) names none of the QA-only properties. Also asserts the honest-degradation branch through the same entry point (useLiveOriginal:false, no stored original -> \"unavailable\", \"no-live-original\", mismatch count undefined).",
+      "2-interactionNoLongerImportsStyleWhitelist": "section 8 parses interaction-qa.ts source: no import statement contains STYLE_WHITELIST, the alias assignment is gone, the constant is not reference-equal to STYLE_WHITELIST, AND every property STYLE_WHITELIST contains is still present (no coverage loss), plus the QA-only tail is now covered and the list has no duplicates.",
+      "3-summarizeOutputIncludesNewCounters": "section 7 asserts summarizeLiveFidelity's five counters over the two real results, that a pre-28.5B page leaves them absent rather than 0, and that worstPages' printed detail contains the QA-only channel and prints \"unavailable\" rather than 0."
+    }
+  },
+
+  "regression": {
+    "smokeReconstructionQa": "npx tsx scripts/smoke-reconstruction-qa.ts — 134/134 PASS, 0 FAIL, BOTH halves. The three live-half failures the 28.5B verifier attributed to the concurrently-authored src/reconstruction/layout-truth-check.ts now pass; among them 'the clone's display: revert differs from the observed flex' and 'an open-state style correction is therefore proposed', which exercise the interaction target-state path change B touches.",
+    "typecheck": "npx tsc --noEmit over the whole repo — exit 0, CLEAN. No diagnostics in any file, including the concurrent builders' (asset-resolver / compile-node / observer / sitespec / style-generator / plan-reconstruction / generate-app) at the time of this run.",
+    "historicalParse": "16/16 real QaPageResult artifacts from data/linear.app/reconstruction-qa/2026-08-25T20-30-41-209Z parse unchanged."
+  },
+
+  "filesNotTouched": [
+    "src/reconstruction/asset-resolver.ts",
+    "src/reconstruction/compile-node.ts",
+    "src/observer/*",
+    "src/sitespec/*",
+    "src/reconstruction/style-generator.ts",
+    "src/reconstruction/plan-reconstruction.ts",
+    "src/reconstruction/generate-app.ts",
+    "data/**",
+    "package.json",
+    "every smoke suite except scripts/smoke-qa-independence.ts (additive only)"
+  ],
+  "gitOperations": "none",
+
+  "risks": [
+    {
+      "severity": "medium",
+      "title": "The comparison is only as available as the structural alignment",
+      "detail": "qaOnlyStyleComparison is \"compared\" only when alignLiveOriginal succeeded, i.e. the live site's DOM still matches the SiteSpec exactly in count, tag sequence and parent relation. On a real, actively-changing site (the linear.app / stripe pilots) many pages drift structurally, so the honest answer for them will be \"unavailable (source-not-aligned)\" and the QA-only tail stays unverified there. That is the correct answer rather than a fabricated 0, but it means this channel's REACH on a live production site is bounded by drift and is not yet measured on one. The suite proves the mechanism, not its yield."
+    },
+    {
+      "severity": "medium",
+      "title": "Population mismatch inside LiveFidelity",
+      "detail": "The neighbouring liveFidelity fields are computed over drift-FREE pages only; the QA-only counters are computed over every page that recorded a verdict (the structurally-aligned bar, which is what the pairing needs). Both the schema comment and the CLI line disclose the denominators, but a reader who assumes one population for the whole section could misread the total. An alternative was to restrict it to the drift-free subset, which would report nothing at all on most real sites."
+    },
+    {
+      "severity": "low",
+      "title": "Document-root wrappers are never compared",
+      "detail": "Task 14 renders <html>/<body> as div wrappers, so compareCapturedStyles' tag guard excludes them and their QA-only properties (a body-level text-shadow or background-clip, say) are silently uncompared. The count is surfaced as qaOnlyStyleTagMismatchedNodes rather than hidden, but it is a real hole in coverage that mirrors the documentRootAdapted handling in style-diff.ts and was NOT extended here."
+    },
+    {
+      "severity": "low",
+      "title": "The sample list is capped, the totals are not",
+      "detail": "qaOnlyStyleSamples is capped at 50/page and is deterministic (document order x sorted property), which means on a page with a body-inherited difference the 50 samples can all land on one property and one subtree. The uncapped qaOnlyStyleByProperty is the field to read for scope. There is no inherited-cause grouping here of the kind style-diff.ts does for the spec axis — a wrong inherited text-decoration-color would be reported once per descendant."
+    },
+    {
+      "severity": "low",
+      "title": "Change B widens the interaction capture to 144 properties",
+      "detail": "TARGET_STATE_STYLE_PROPERTIES is now a strict superset of what it was, so open-state comparison can newly report differences on properties it previously ignored — including benign engine defaults. On this repo's fixture suite it changed no verdict (134/134), but the first real interaction-heavy run may surface new target-state style mismatches, and some of them will be noise rather than defects. The cost side is negligible (30 extra getPropertyValue calls on ONE element per replay side)."
+    },
+    {
+      "severity": "low",
+      "title": "Capture-time cost on the page axis is still unmeasured on a real site",
+      "detail": "Carried forward unchanged from the build handoff: the 30 extra properties per element per capture were never timed on a real full-site run, and this change adds a per-page O(comparable nodes x 30) string comparison on top. Both are cheap in principle; neither has a number."
+    }
+  ],
+
+  "followUps": [
+    "Measure the QA-only channel's yield on a real pilot (linear.app / stripe) and see how many pages report \"unavailable (source-not-aligned)\" versus a real count.",
+    "Consider promoting recurring QA-only mismatch properties into the Observer's STYLE_WHITELIST — the feedback loop the decoupling exists to create; qaOnlyStyleMismatchByProperty in the summary is the input for it.",
+    "Consider a document-root adaptation for the QA-only axis so <html>/<body> wrappers stop being excluded wholesale.",
+    "Consider emitting a QaDiff for a QA-only mismatch so it can be classified and proposed as a correction; today it is reported but never becomes a correction candidate."
+  ]
+}

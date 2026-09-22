@@ -1,0 +1,18 @@
+# Task 28.6 — File / Agent Ownership Map (v1, before edits)
+
+Rule: ONE integration owner per production subsystem at a time. Parallel agents may read anything, and may write only inside their own lane directories. Core corrections flow: site verifier → generic defect report → central engine lane → fresh verification → core freeze → site reruns.
+
+| Lane | Owner (one agent at a time) | Writable paths | Notes |
+|---|---|---|---|
+| OBS — observer / probe / authored capture | engine-observer builder | `src/observer/collect-dom.ts`, `src/observer/observe-page.ts`, `src/observer/layout-probe.ts`, `src/observer/types.ts`, `src/observer/store.ts`, `src/multi-observer/observe-selected-pages.ts`, `src/cli-observe-site.ts` | CORS fallback, @container/@supports hazard, probe extra widths, stylesheet coverage counters. Shared surface: serialize after SPEC lane reads its shapes. |
+| SPEC — SiteSpec compiler | engine-spec builder | `src/sitespec/**` | Additive optional fields only (authored breakpoints, container condition, coverage). Runs AFTER OBS lands its output shape. |
+| RECON — layout inference + truth check + generator | engine-recon builder | `src/reconstruction/layout-inference.ts`, `src/reconstruction/layout-truth-check.ts`, `src/reconstruction/generate-app.ts`, `src/reconstruction/plan-reconstruction.ts`, `src/reconstruction/style-generator.ts`, `src/reconstruction/compile-node.ts`, `src/cli-reconstruct.ts` | hiddenRanges positive-evidence bands, preserved responsive facts tier, coherent unfreeze, multi-width active-range truth check, mobile-subtree rules. Serial with SPEC. |
+| RQA — responsive five-width QA harness (new) | qa-harness builder | `src/responsive-qa/**` (new), `src/cli-qa-responsive.ts` (new), `scripts/smoke-responsive-qa.ts` (new) | Independent of engine lanes; may run concurrently with OBS/RECON. Must not touch `src/reconstruction-qa/**`. |
+| TEST — new regression suites | test builder(s) | `scripts/smoke-responsive-truth.ts` (new), `scripts/smoke-switch-fixture.ts` (new), `scripts/smoke-logo-footer.ts` (new), `package.json` scripts block (single writer, one edit at the end) | Fixtures under `tmp/wr286/fixtures/` or in-memory; verified independently for honesty. |
+| SITE-<host> — pilot lanes | one site agent per host | `data/<host>/**` (own namespace), `docs/result/28.6/sites/<safe-host>/**`, `docs/result/28.6/human-review/<safe-host>/**`, `docs/result/handoffs/28.6-site-<safe-host>.json`, `tmp/wr286/sites/<safe-host>/**` | NEVER edit `src/`. Generic defects → GENERIC_DEFECT_REQUEST file in own lane dir. |
+| LINEAR — Linear closure lane | linear runner | `data/linear.app/**` (new run namespaces only), `docs/result/28.6/01-linear-responsive-closure.md`, `docs/result/28.6/human-review/linear/**`, `docs/result/handoffs/28.6-linear.json`, `tmp/wr286/linear/**` | Runs only against frozen core. |
+| IDEAS | experimenters | `tmp/wr286-ideas/<idea-id>/**`, `docs/result/28.6/ideas/<idea-id>.md` | Never `src/`. |
+| AUDIT | fresh verifiers / auditors / adjudicator | `docs/result/28.6/04-*.md`, `05-*.md`, `06-*.md`, matching handoffs | Read-only elsewhere. |
+| ORCH | orchestrator (this session) | everything else under `docs/result/28.6/**`, `docs/result/handoffs/28.6-*.json`, `docs/result/28.6-reconstruction-v1-closure-2026-09-02.md`, this map | Gate decisions, freezes, final verdict. |
+
+Frozen / do-not-touch in 28.6: `src/recon-template/**`, `src/content-injection/**`, `src/editor/**`, `src/authoring-preview/**`, `src/release/**`, `src/production/**`, `src/theme/**`, `src/seo/**`, `src/assets/**`, all historical `docs/result/*` except new 28.6 files, all existing `data/**` run directories (new runs only), `tmp/wr-responsive-investigation/**` (28.5C evidence).

@@ -137,6 +137,23 @@ export interface ScanResult<T> {
   warnings: string[];
 }
 
+/**
+ * Would `scanTemplates` ever find this template run directory again?
+ *
+ * True only for `<data-root>/<host>/recon-templates/<run-id>`. Task 28 CR5:
+ * `compile:recon-template` accepts `--output`, which can place a run anywhere,
+ * and registering such a run would produce a row `rebuildRegistry` silently
+ * drops — breaking the registry's own "a lost index is rebuilt from the
+ * artifacts" guarantee. Callers use this to skip registration and SAY SO
+ * rather than write a row that only survives until the next rebuild.
+ */
+export function isScannableTemplateDir(runDir: string, options?: RegistryOptions): boolean {
+  const relative = path.relative(path.resolve(dataRootOf(options)), path.resolve(runDir));
+  if (relative.startsWith("..") || path.isAbsolute(relative)) return false;
+  const segments = relative.split(path.sep);
+  return segments.length === 3 && segments[1] === RECON_TEMPLATES_DIR;
+}
+
 /** Every template under the data root, sorted by templateId. */
 export async function scanTemplates(options?: RegistryOptions): Promise<ScanResult<TemplateEntry>> {
   const root = dataRootOf(options);
@@ -197,8 +214,9 @@ export async function siteEntryFromDisk(projectDir: string): Promise<SiteEntry> 
     projectId: project.projectId,
     host: project.source.host,
     projectDir: posixPath(projectDir),
-    name: project.siteId,
-    nameSource: "derived-from-site-id",
+    // CR3: a recorded displayName wins; without one the derivation is unchanged.
+    name: project.displayName ?? project.siteId,
+    nameSource: project.displayName !== undefined ? "project-display-name" : "derived-from-site-id",
     templateLineage: { templateId: template.id, path: template.path, hash: template.hash },
     releaseState: project.releaseState,
     createdAt: project.createdAt,

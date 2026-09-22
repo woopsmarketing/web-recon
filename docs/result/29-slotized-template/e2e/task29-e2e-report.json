@@ -1,0 +1,766 @@
+{
+  "schemaVersion": 1,
+  "schemaName": "task29-e2e-report-v1",
+  "createdAt": "2026-09-12T22:09:03.352Z",
+  "durationMs": 38426,
+  "args": {
+    "sites": [
+      "rosee",
+      "channel"
+    ],
+    "only": "both",
+    "skipBuild": false,
+    "strictOverflow": false
+  },
+  "gates": {
+    "S1": {
+      "verdict": "PASS",
+      "detail": "rosee: present; channel: present"
+    },
+    "S2": {
+      "verdict": "PASS",
+      "detail": "default render text provenance worst 100.00% over 6 measurements (FAIL <95%, target ≥99%)"
+    },
+    "S3": {
+      "verdict": "PASS",
+      "detail": "rosee: 5 driven, +3/-5, 5 reordered; channel: 4 driven, +6/-6, 4 reordered · duplicate ids introduced 0"
+    },
+    "S4": {
+      "verdict": "PASS",
+      "detail": "default theme adds 0 bytes: true; mutated theme visible on 6/6 measurements — rosee: default css 12709582 B identical; rosee: overlay css +506144 B; rosee /17@390: 456/798 nodes repainted (color true, font false); rosee /34@390: 487/800 nodes repainted (color true, font false); rosee /17@1440: 791/798 nodes repainted (color true, font true); rosee /34@1440: 792/800 nodes repainted (color true, font true); channel: default css 8364801 B identical; channel: overlay css +261935 B; channel /kr/pricing@390: 779/800 nodes repainted (color true, font true); channel /kr/pricing@1440: 780/800 nodes repainted (color true, font true)"
+    },
+    "S5": {
+      "verdict": "PASS",
+      "detail": "every NEW-render check passed (render, overflow, ids, content volume, injected strings, identity, media, overlap)"
+    }
+  },
+  "sites": [
+    {
+      "site": "rosee",
+      "host": "beomeo.roseeskin.com",
+      "runDir": "data/beomeo.roseeskin.com/slotized-templates/2026-09-12T21-31-21-048Z",
+      "rootUrl": "https://beomeo.roseeskin.com/",
+      "routes": [
+        "/17",
+        "/34"
+      ],
+      "variants": [
+        {
+          "variant": "default",
+          "outDir": "tmp/wr29/e2e/rosee-default",
+          "newPackSource": "content-packs/default.json",
+          "themePackSource": "theme-packs/default.json",
+          "render": {
+            "durationMs": 109,
+            "applied": 8833,
+            "skipped": 0,
+            "failed": 0,
+            "overrides": 0,
+            "warnings": 0,
+            "repeatersDriven": 0,
+            "repeaterAdded": 0,
+            "repeaterRemoved": 0,
+            "repeaterReordered": 0,
+            "duplicateIdsBaseline": 0,
+            "duplicateIdsIntroduced": 0
+          },
+          "buildMs": 2260,
+          "stylesheetBytes": 12709582,
+          "observations": [
+            {
+              "route": "/17",
+              "width": 390,
+              "status": 200,
+              "consoleErrors": 0,
+              "consoleErrorSamples": [],
+              "pageErrors": 0,
+              "pageErrorSamples": [],
+              "screenshot": "screenshots/rosee-17-390-default.png",
+              "metrics": {
+                "activeViewport": "mobile",
+                "variantCount": 2,
+                "hasBody": true,
+                "nodeCount": 1841,
+                "scrollWidth": 390,
+                "innerWidth": 390,
+                "overflowPx": 0,
+                "docHeight": 4490,
+                "duplicateIds": 0,
+                "duplicateIdSamples": [],
+                "visibleTextLength": 587,
+                "visibleElements": 443,
+                "imgCount": 22,
+                "backgroundImageCount": 1,
+                "brokenImgCount": 0,
+                "overlapPairs": 12,
+                "overlapSamples": [
+                  "의료진 소개 ⟂ 진료시간·위치",
+                  "진료시간·위치 ⟂ 범어로제피부과의",
+                  "진료 프로세스 ⟂ 진료시간과 정확한 위치를 확인하세요.",
+                  "학회·논문 ⟂ 병원",
+                  "학회·논문 ⟂ 월 - 금"
+                ],
+                "clippedElements": 4,
+                "bodyColor": "rgb(0, 0, 0)",
+                "bodyFontFamily": "Times",
+                "headingColor": "rgb(91, 91, 91)",
+                "sampledTextElements": 62,
+                "neutrality": {
+                  "matchedChars": 1681,
+                  "totalChars": 1681,
+                  "unmatchedSamples": []
+                },
+                "leaks": {
+                  "text": [],
+                  "externalUrl": [],
+                  "localUrl": []
+                },
+                "paintSampledNodes": 800
+              }
+            },
+            {
+              "route": "/34",
+              "width": 390,
+              "status": 200,
+              "consoleErrors": 0,
+              "consoleErrorSamples": [],
+              "pageErrors": 0,
+              "pageErrorSamples": [],
+              "screenshot": "screenshots/rosee-34-390-default.png",
+              "metrics": {
+                "activeViewport": "mobile",
+                "variantCount": 2,
+                "hasBody": true,
+                "nodeCount": 1425,
+                "scrollWidth": 390,
+                "innerWidth": 390,
+                "overflowPx": 0,
+                "docHeight": 6963,
+                "duplicateIds": 0,
+                "duplicateIdSamples": [],
+                "visibleTextLength": 361,
+                "visibleElements": 190,
+                "imgCount": 26,
+                "backgroundImageCount": 0,
+                "brokenImgCount": 0,
+                "overlapPairs": 0,
+                "overlapSamples": [],
+                "clippedElements": 4,
+                "bodyColor": "rgb(0, 0, 0)",
+                "bodyFontFamily": "Times",
+                "headingColor": "",
+                "sampledTextElements": 31,
+                "neutrality": {
+                  "matchedChars": 1225,
+                  "totalChars": 1225,
+                  "unmatchedSamples": []
+                },
+                "leaks": {
+                  "text": [],
+                  "externalUrl": [],
+                  "localUrl": []
+                },
+                "paintSampledNodes": 800
+              }
+            },
+            {
+              "route": "/17",
+              "width": 1440,
+              "status": 200,
+              "consoleErrors": 0,
+              "consoleErrorSamples": [],
+              "pageErrors": 0,
+              "pageErrorSamples": [],
+              "screenshot": "screenshots/rosee-17-1440-default.png",
+              "viewportShot": "screenshots/rosee-17-1440-default-viewport.png",
+              "metrics": {
+                "activeViewport": "desktop",
+                "variantCount": 2,
+                "hasBody": true,
+                "nodeCount": 1841,
+                "scrollWidth": 1440,
+                "innerWidth": 1440,
+                "overflowPx": 0,
+                "docHeight": 3896,
+                "duplicateIds": 0,
+                "duplicateIdSamples": [],
+                "visibleTextLength": 546,
+                "visibleElements": 437,
+                "imgCount": 22,
+                "backgroundImageCount": 1,
+                "brokenImgCount": 0,
+                "overlapPairs": 0,
+                "overlapSamples": [],
+                "clippedElements": 1,
+                "bodyColor": "rgb(0, 0, 0)",
+                "bodyFontFamily": "Times",
+                "headingColor": "rgb(91, 91, 91)",
+                "sampledTextElements": 47,
+                "neutrality": {
+                  "matchedChars": 1715,
+                  "totalChars": 1715,
+                  "unmatchedSamples": []
+                },
+                "leaks": {
+                  "text": [],
+                  "externalUrl": [],
+                  "localUrl": []
+                },
+                "paintSampledNodes": 800
+              }
+            },
+            {
+              "route": "/34",
+              "width": 1440,
+              "status": 200,
+              "consoleErrors": 0,
+              "consoleErrorSamples": [],
+              "pageErrors": 0,
+              "pageErrorSamples": [],
+              "screenshot": "screenshots/rosee-34-1440-default.png",
+              "viewportShot": "screenshots/rosee-34-1440-default-viewport.png",
+              "metrics": {
+                "activeViewport": "desktop",
+                "variantCount": 2,
+                "hasBody": true,
+                "nodeCount": 1425,
+                "scrollWidth": 1440,
+                "innerWidth": 1440,
+                "overflowPx": 0,
+                "docHeight": 9902,
+                "duplicateIds": 0,
+                "duplicateIdSamples": [],
+                "visibleTextLength": 262,
+                "visibleElements": 290,
+                "imgCount": 25,
+                "backgroundImageCount": 3,
+                "brokenImgCount": 0,
+                "overlapPairs": 0,
+                "overlapSamples": [],
+                "clippedElements": 1,
+                "bodyColor": "rgb(0, 0, 0)",
+                "bodyFontFamily": "Times",
+                "headingColor": "",
+                "sampledTextElements": 22,
+                "neutrality": {
+                  "matchedChars": 1259,
+                  "totalChars": 1259,
+                  "unmatchedSamples": []
+                },
+                "leaks": {
+                  "text": [],
+                  "externalUrl": [],
+                  "localUrl": []
+                },
+                "paintSampledNodes": 800
+              }
+            }
+          ]
+        },
+        {
+          "variant": "new",
+          "outDir": "tmp/wr29/e2e/rosee-new",
+          "newPackSource": "content-packs/realistic.json",
+          "themePackSource": "theme-packs/mutated.json",
+          "render": {
+            "durationMs": 139,
+            "applied": 9292,
+            "skipped": 74,
+            "failed": 0,
+            "overrides": 499,
+            "warnings": 2,
+            "repeatersDriven": 5,
+            "repeaterAdded": 3,
+            "repeaterRemoved": 5,
+            "repeaterReordered": 5,
+            "duplicateIdsBaseline": 0,
+            "duplicateIdsIntroduced": 0
+          },
+          "buildMs": 2253,
+          "stylesheetBytes": 13215726,
+          "observations": [
+            {
+              "route": "/17",
+              "width": 390,
+              "status": 200,
+              "consoleErrors": 0,
+              "consoleErrorSamples": [],
+              "pageErrors": 0,
+              "pageErrorSamples": [],
+              "screenshot": "screenshots/rosee-17-390-new.png",
+              "metrics": {
+                "activeViewport": "mobile",
+                "variantCount": 2,
+                "hasBody": true,
+                "nodeCount": 1839,
+                "scrollWidth": 390,
+                "innerWidth": 390,
+                "overflowPx": 0,
+                "docHeight": 4490,
+                "duplicateIds": 0,
+                "duplicateIdSamples": [],
+                "visibleTextLength": 561,
+                "visibleElements": 441,
+                "imgCount": 22,
+                "backgroundImageCount": 1,
+                "brokenImgCount": 0,
+                "overlapPairs": 10,
+                "overlapSamples": [
+                  "브랜드 소개 ⟂ 쇼룸 안내",
+                  "쇼룸 안내 ⟂ 루멘 아틀리에의",
+                  "설계 프로세스 ⟂ 관람 시간과 오시는 길을 확인하세요.",
+                  "저널 ⟂ 쇼룸",
+                  "저널 ⟂ 월 - 금"
+                ],
+                "clippedElements": 5,
+                "bodyColor": "rgb(0, 0, 0)",
+                "bodyFontFamily": "Times",
+                "headingColor": "rgb(43, 45, 66)",
+                "sampledTextElements": 61,
+                "neutrality": {
+                  "matchedChars": 0,
+                  "totalChars": 0,
+                  "unmatchedSamples": []
+                },
+                "leaks": {
+                  "text": [],
+                  "externalUrl": [],
+                  "localUrl": []
+                },
+                "paintSampledNodes": 800
+              }
+            },
+            {
+              "route": "/34",
+              "width": 390,
+              "status": 200,
+              "consoleErrors": 0,
+              "consoleErrorSamples": [],
+              "pageErrors": 0,
+              "pageErrorSamples": [],
+              "screenshot": "screenshots/rosee-34-390-new.png",
+              "metrics": {
+                "activeViewport": "mobile",
+                "variantCount": 2,
+                "hasBody": true,
+                "nodeCount": 1425,
+                "scrollWidth": 390,
+                "innerWidth": 390,
+                "overflowPx": 0,
+                "docHeight": 6963,
+                "duplicateIds": 0,
+                "duplicateIdSamples": [],
+                "visibleTextLength": 304,
+                "visibleElements": 190,
+                "imgCount": 26,
+                "backgroundImageCount": 0,
+                "brokenImgCount": 0,
+                "overlapPairs": 0,
+                "overlapSamples": [],
+                "clippedElements": 4,
+                "bodyColor": "rgb(0, 0, 0)",
+                "bodyFontFamily": "Times",
+                "headingColor": "",
+                "sampledTextElements": 31,
+                "neutrality": {
+                  "matchedChars": 0,
+                  "totalChars": 0,
+                  "unmatchedSamples": []
+                },
+                "leaks": {
+                  "text": [],
+                  "externalUrl": [],
+                  "localUrl": []
+                },
+                "paintSampledNodes": 800
+              }
+            },
+            {
+              "route": "/17",
+              "width": 1440,
+              "status": 200,
+              "consoleErrors": 0,
+              "consoleErrorSamples": [],
+              "pageErrors": 0,
+              "pageErrorSamples": [],
+              "screenshot": "screenshots/rosee-17-1440-new.png",
+              "viewportShot": "screenshots/rosee-17-1440-new-viewport.png",
+              "metrics": {
+                "activeViewport": "desktop",
+                "variantCount": 2,
+                "hasBody": true,
+                "nodeCount": 1839,
+                "scrollWidth": 1440,
+                "innerWidth": 1440,
+                "overflowPx": 0,
+                "docHeight": 3896,
+                "duplicateIds": 0,
+                "duplicateIdSamples": [],
+                "visibleTextLength": 499,
+                "visibleElements": 437,
+                "imgCount": 22,
+                "backgroundImageCount": 1,
+                "brokenImgCount": 0,
+                "overlapPairs": 0,
+                "overlapSamples": [],
+                "clippedElements": 1,
+                "bodyColor": "rgb(0, 0, 0)",
+                "bodyFontFamily": "Times",
+                "headingColor": "rgb(43, 45, 66)",
+                "sampledTextElements": 47,
+                "neutrality": {
+                  "matchedChars": 0,
+                  "totalChars": 0,
+                  "unmatchedSamples": []
+                },
+                "leaks": {
+                  "text": [],
+                  "externalUrl": [],
+                  "localUrl": []
+                },
+                "paintSampledNodes": 800
+              }
+            },
+            {
+              "route": "/34",
+              "width": 1440,
+              "status": 200,
+              "consoleErrors": 0,
+              "consoleErrorSamples": [],
+              "pageErrors": 0,
+              "pageErrorSamples": [],
+              "screenshot": "screenshots/rosee-34-1440-new.png",
+              "viewportShot": "screenshots/rosee-34-1440-new-viewport.png",
+              "metrics": {
+                "activeViewport": "desktop",
+                "variantCount": 2,
+                "hasBody": true,
+                "nodeCount": 1425,
+                "scrollWidth": 1440,
+                "innerWidth": 1440,
+                "overflowPx": 0,
+                "docHeight": 9902,
+                "duplicateIds": 0,
+                "duplicateIdSamples": [],
+                "visibleTextLength": 232,
+                "visibleElements": 290,
+                "imgCount": 25,
+                "backgroundImageCount": 3,
+                "brokenImgCount": 0,
+                "overlapPairs": 0,
+                "overlapSamples": [],
+                "clippedElements": 1,
+                "bodyColor": "rgb(0, 0, 0)",
+                "bodyFontFamily": "Times",
+                "headingColor": "",
+                "sampledTextElements": 22,
+                "neutrality": {
+                  "matchedChars": 0,
+                  "totalChars": 0,
+                  "unmatchedSamples": []
+                },
+                "leaks": {
+                  "text": [],
+                  "externalUrl": [],
+                  "localUrl": []
+                },
+                "paintSampledNodes": 800
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "site": "channel",
+      "host": "channel.io",
+      "runDir": "data/channel.io/slotized-templates/2026-09-12T21-31-22-344Z",
+      "rootUrl": "https://channel.io/kr",
+      "routes": [
+        "/kr/pricing"
+      ],
+      "variants": [
+        {
+          "variant": "default",
+          "outDir": "tmp/wr29/e2e/channel-default",
+          "newPackSource": "content-packs/default.json",
+          "themePackSource": "theme-packs/default.json",
+          "render": {
+            "durationMs": 66,
+            "applied": 4674,
+            "skipped": 0,
+            "failed": 0,
+            "overrides": 0,
+            "warnings": 0,
+            "repeatersDriven": 0,
+            "repeaterAdded": 0,
+            "repeaterRemoved": 0,
+            "repeaterReordered": 0,
+            "duplicateIdsBaseline": 0,
+            "duplicateIdsIntroduced": 0
+          },
+          "buildMs": 2284,
+          "stylesheetBytes": 8364801,
+          "observations": [
+            {
+              "route": "/kr/pricing",
+              "width": 390,
+              "status": 200,
+              "consoleErrors": 0,
+              "consoleErrorSamples": [],
+              "pageErrors": 0,
+              "pageErrorSamples": [],
+              "screenshot": "screenshots/channel-kr-pricing-390-default.png",
+              "metrics": {
+                "activeViewport": "mobile",
+                "variantCount": 2,
+                "hasBody": true,
+                "nodeCount": 1470,
+                "scrollWidth": 390,
+                "innerWidth": 390,
+                "overflowPx": 0,
+                "docHeight": 13001,
+                "duplicateIds": 8,
+                "duplicateIdSamples": [
+                  "r0-logo-bg×2",
+                  "r0-logo-stroke1×2",
+                  "r0-logo-stroke2×2",
+                  "r0-logo-face×2",
+                  "r2-logo-bg×2",
+                  "r2-logo-stroke1×2",
+                  "r2-logo-stroke2×2",
+                  "r2-logo-face×2"
+                ],
+                "visibleTextLength": 4140,
+                "visibleElements": 1060,
+                "imgCount": 14,
+                "backgroundImageCount": 3,
+                "brokenImgCount": 9,
+                "overlapPairs": 0,
+                "overlapSamples": [],
+                "clippedElements": 1,
+                "bodyColor": "rgb(0, 0, 0)",
+                "bodyFontFamily": "Times",
+                "headingColor": "rgb(28, 84, 90)",
+                "sampledTextElements": 277,
+                "neutrality": {
+                  "matchedChars": 4423,
+                  "totalChars": 4423,
+                  "unmatchedSamples": []
+                },
+                "leaks": {
+                  "text": [],
+                  "externalUrl": [],
+                  "localUrl": []
+                },
+                "paintSampledNodes": 800
+              }
+            },
+            {
+              "route": "/kr/pricing",
+              "width": 1440,
+              "status": 200,
+              "consoleErrors": 0,
+              "consoleErrorSamples": [],
+              "pageErrors": 0,
+              "pageErrorSamples": [],
+              "screenshot": "screenshots/channel-kr-pricing-1440-default.png",
+              "viewportShot": "screenshots/channel-kr-pricing-1440-default-viewport.png",
+              "metrics": {
+                "activeViewport": "desktop",
+                "variantCount": 2,
+                "hasBody": true,
+                "nodeCount": 1470,
+                "scrollWidth": 1440,
+                "innerWidth": 1440,
+                "overflowPx": 0,
+                "docHeight": 10119,
+                "duplicateIds": 8,
+                "duplicateIdSamples": [
+                  "r0-logo-bg×2",
+                  "r0-logo-stroke1×2",
+                  "r0-logo-stroke2×2",
+                  "r0-logo-face×2",
+                  "r2-logo-bg×2",
+                  "r2-logo-stroke1×2",
+                  "r2-logo-stroke2×2",
+                  "r2-logo-face×2"
+                ],
+                "visibleTextLength": 4308,
+                "visibleElements": 1385,
+                "imgCount": 14,
+                "backgroundImageCount": 2,
+                "brokenImgCount": 8,
+                "overlapPairs": 0,
+                "overlapSamples": [],
+                "clippedElements": 1,
+                "bodyColor": "rgb(0, 0, 0)",
+                "bodyFontFamily": "Times",
+                "headingColor": "rgb(28, 84, 90)",
+                "sampledTextElements": 300,
+                "neutrality": {
+                  "matchedChars": 4426,
+                  "totalChars": 4426,
+                  "unmatchedSamples": []
+                },
+                "leaks": {
+                  "text": [],
+                  "externalUrl": [],
+                  "localUrl": []
+                },
+                "paintSampledNodes": 800
+              }
+            }
+          ]
+        },
+        {
+          "variant": "new",
+          "outDir": "tmp/wr29/e2e/channel-new",
+          "newPackSource": "content-packs/realistic.json",
+          "themePackSource": "theme-packs/mutated.json",
+          "render": {
+            "durationMs": 79,
+            "applied": 4674,
+            "skipped": 48,
+            "failed": 0,
+            "overrides": 28,
+            "warnings": 5,
+            "repeatersDriven": 4,
+            "repeaterAdded": 6,
+            "repeaterRemoved": 6,
+            "repeaterReordered": 4,
+            "duplicateIdsBaseline": 0,
+            "duplicateIdsIntroduced": 0
+          },
+          "buildMs": 2270,
+          "stylesheetBytes": 8626736,
+          "observations": [
+            {
+              "route": "/kr/pricing",
+              "width": 390,
+              "status": 200,
+              "consoleErrors": 0,
+              "consoleErrorSamples": [],
+              "pageErrors": 0,
+              "pageErrorSamples": [],
+              "screenshot": "screenshots/channel-kr-pricing-390-new.png",
+              "metrics": {
+                "activeViewport": "mobile",
+                "variantCount": 2,
+                "hasBody": true,
+                "nodeCount": 1470,
+                "scrollWidth": 390,
+                "innerWidth": 390,
+                "overflowPx": 0,
+                "docHeight": 13745,
+                "duplicateIds": 8,
+                "duplicateIdSamples": [
+                  "r0-logo-bg×2",
+                  "r0-logo-stroke1×2",
+                  "r0-logo-stroke2×2",
+                  "r0-logo-face×2",
+                  "r2-logo-bg×2",
+                  "r2-logo-stroke1×2",
+                  "r2-logo-stroke2×2",
+                  "r2-logo-face×2"
+                ],
+                "visibleTextLength": 4135,
+                "visibleElements": 1060,
+                "imgCount": 14,
+                "backgroundImageCount": 3,
+                "brokenImgCount": 6,
+                "overlapPairs": 0,
+                "overlapSamples": [],
+                "clippedElements": 2,
+                "bodyColor": "rgb(0, 0, 0)",
+                "bodyFontFamily": "Times",
+                "headingColor": "rgb(28, 84, 90)",
+                "sampledTextElements": 277,
+                "neutrality": {
+                  "matchedChars": 0,
+                  "totalChars": 0,
+                  "unmatchedSamples": []
+                },
+                "leaks": {
+                  "text": [],
+                  "externalUrl": [],
+                  "localUrl": []
+                },
+                "paintSampledNodes": 800
+              }
+            },
+            {
+              "route": "/kr/pricing",
+              "width": 1440,
+              "status": 200,
+              "consoleErrors": 0,
+              "consoleErrorSamples": [],
+              "pageErrors": 0,
+              "pageErrorSamples": [],
+              "screenshot": "screenshots/channel-kr-pricing-1440-new.png",
+              "viewportShot": "screenshots/channel-kr-pricing-1440-new-viewport.png",
+              "metrics": {
+                "activeViewport": "desktop",
+                "variantCount": 2,
+                "hasBody": true,
+                "nodeCount": 1470,
+                "scrollWidth": 1440,
+                "innerWidth": 1440,
+                "overflowPx": 0,
+                "docHeight": 10807,
+                "duplicateIds": 8,
+                "duplicateIdSamples": [
+                  "r0-logo-bg×2",
+                  "r0-logo-stroke1×2",
+                  "r0-logo-stroke2×2",
+                  "r0-logo-face×2",
+                  "r2-logo-bg×2",
+                  "r2-logo-stroke1×2",
+                  "r2-logo-stroke2×2",
+                  "r2-logo-face×2"
+                ],
+                "visibleTextLength": 4262,
+                "visibleElements": 1385,
+                "imgCount": 14,
+                "backgroundImageCount": 2,
+                "brokenImgCount": 6,
+                "overlapPairs": 0,
+                "overlapSamples": [],
+                "clippedElements": 4,
+                "bodyColor": "rgb(0, 0, 0)",
+                "bodyFontFamily": "Times",
+                "headingColor": "rgb(28, 84, 90)",
+                "sampledTextElements": 300,
+                "neutrality": {
+                  "matchedChars": 0,
+                  "totalChars": 0,
+                  "unmatchedSamples": []
+                },
+                "leaks": {
+                  "text": [],
+                  "externalUrl": [],
+                  "localUrl": []
+                },
+                "paintSampledNodes": 800
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "code": "BROKEN_IMAGES",
+      "severity": "WARN",
+      "where": "channel/new /kr/pricing@390",
+      "detail": "new 6 / baseline 9 img with naturalWidth 0"
+    },
+    {
+      "code": "BROKEN_IMAGES",
+      "severity": "WARN",
+      "where": "channel/new /kr/pricing@1440",
+      "detail": "new 6 / baseline 8 img with naturalWidth 0"
+    }
+  ]
+}

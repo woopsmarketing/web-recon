@@ -1,0 +1,510 @@
+{
+ "schema": "task28-final-regression-v1",
+ "role": "FINAL REGRESSION AGENT — implemented nothing in this program, changed nothing now. Read-only measurement.",
+ "producedAt": "2026-08-28T12:35:33.492Z",
+ "producedBy": "Task-28 final regression agent (independent of the orchestrator that closed the intermediate gates)",
+ "headline": "29 counted suites / 2,948 checks / 0 failures / typecheck exit 0 / 0 negative deltas. smoke:e2e RAN — the deferral carried at the last two intermediate gates is repaid.",
+ "typecheck": {
+  "command": "bash /Users/woops/projects/web-recon/tmp/wr28/suite-lock.sh pnpm typecheck",
+  "exitCode": 0,
+  "seconds": 4,
+  "rawLog": "wr28-lock: acquired after 0s -> pnpm typecheck | Already up to date | Done in 169ms using pnpm v11.21.0 | $ tsc --noEmit | wr28-lock: released (exit 0)",
+  "evidence": "tsc --noEmit emitted zero diagnostic lines; the exit code was captured by the runner into timing.tsv as the row 'typecheck<TAB>0<TAB>4'.",
+  "note": "The 'Already up to date / Done in 169ms' lines are pnpm 11 verifying dependencies before running the script. NO install was performed (there was nothing to do), and the identical two lines appear in the committed Task-27 logs, so this is pre-existing pnpm behaviour and not an action of this agent. package.json declares no pre/post hooks and the repo has no .npmrc."
+ },
+ "invocation": {
+  "mutex": "EVERY invocation — typecheck, all 29 counted suites, and the uncounted playwright probe — went through bash /Users/woops/projects/web-recon/tmp/wr28/suite-lock.sh. Suites ran STRICTLY ONE AT A TIME, sequentially, from a single runner script. Lock acquisition was 0s for every invocation (the battery was the only holder).",
+  "runner": "a throwaway harness in the agent scratchpad (run-battery.sh); it only invokes suites and records exit code plus wall seconds, and does not interpret suite output",
+  "suiteInvocation": "npx tsx /Users/woops/projects/web-recon/scripts/smoke-<name>.ts — NOT pnpm run, because the nine Task-28 suites are deliberately absent from package.json (the program contract forbids editing it); they are listed in docs/result/handoffs/28-intel/pending-package-scripts.tsv.",
+  "discovery": "Suites were discovered by globbing scripts/smoke-*.ts (30 files) and cross-checking against 28-intel/pending-package-scripts.tsv and the package.json scripts block. 30 files minus 1 uncounted (playwright) = 29 counted suites, all run.",
+  "rawLogs": "agent scratchpad reglogs/<suite>.log — OUTSIDE the repo. This agent wrote exactly one file into the repo: this handoff."
+ },
+ "method": {
+  "counting": "Every count was RE-DERIVED by this agent from each suite's raw stdout with the anchored regexes /^  PASS  / and /^  FAIL  / (exactly two leading spaces, the literal token, exactly two trailing spaces). No primary figure was read from a suite's own summary line.",
+  "crossCheck": "Each anchored count was then INDEPENDENTLY cross-checked against that suite's own trailer line. Two trailer formats exist in this repo: 'N/N checks passed' (19 suites) and 'smoke:<name> — N checks, 0 failures' / 'N checks, 0 failures' (10 suites). ALL 29 trailers agreed EXACTLY with the anchored count. Zero disagreements.",
+  "failClassification": "Every line containing the substring FAIL in every one of the 29 logs was read individually and classified. TOTAL FAIL-CONTAINING LINES: 7. (a) 4 are genuine PASS CHECK LINES whose descriptive text happens to contain the word FAIL/FAILS/FAILING: content-generation:64 'P9.F4 the SAME review FAILS a homepage-only site with one route-uncovered ERROR per untouched route'; content-injection:74 '19.1.4b far-section duplicate is a NON-FAILING remnant (mockup shape)'; content-injection:95 '§17 intentional overflow makes layout QA FAIL'; content-injection:127 '§1 a conflicting recombination FAILS the run'. The anchored PASS regex correctly counts all 4 as passes. (b) 3 are NOT check lines at all: content-injection:87 and :89 are '[content:qa]   FAIL — unslotted duplicate text desync: ...' diagnostics printed by the DELIBERATE NEGATIVE FIXTURE (they carry a [content:qa] prefix, so they do not match the anchored FAIL regex), and sitespec:278 is the section heading '§90 a pattern whose trigger is not in the tree FAILS the compile'. (c) 0 are real check failures. smoke:e2e contained ZERO FAIL-containing lines.",
+  "failClassificationCounts": {
+   "totalFailContainingLines": 7,
+   "passCheckLinesContainingTheWordFail": 4,
+   "nonCheckLines": 3,
+   "realCheckFailures": 0
+  },
+  "failClassificationNoteVsGate": "docs/result/handoffs/28-gate-phase1011.json .countDerivation states '4 such lines are NOT check lines' but then enumerates only three (2 content-injection diagnostics + 1 sitespec heading). This agent independently measures 3 non-check lines and 4 PASS-labels-containing-FAIL; the gate's PASS-label figure of 4 matches exactly. The gate prose is off by one against its own enumeration. This is a wording nit in a shipped document, NOT a regression and NOT a count error — the gate's 2,818 total is independently confirmed correct here.",
+  "timing": "Wall-clock seconds per suite measured by the runner around the locked invocation (date +%s before and after), so they INCLUDE lock acquisition (0s in every case).",
+  "deltaBaseline": "Task-27 counts are the SECOND element of each pair in docs/result/handoffs/27-final.json .regression.perSuite. A null/absent entry means the suite did not exist in Task 27.",
+  "nameLevelDiff": "BEYOND what any gate did: for all 20 suites that existed in Task 27, this agent diffed the SET OF CHECK NAMES against the committed Task-27 raw logs in docs/result/handoffs/27-regression-logs/final-2/regression-<suite>.log, to catch a check silently REPLACED underneath an unchanged or positive count. Two suites showed a removed name; both were traced to source and both are benign (see checkNameLevelFindings)."
+ },
+ "suites": [
+  {
+   "suite": "verifier",
+   "task27": 81,
+   "task28": 81,
+   "delta": 0,
+   "failures": 0,
+   "seconds": 7,
+   "exitCode": 0,
+   "trailer": "81/81 checks passed",
+   "gatePhase1011Baseline": 81,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "selector",
+   "task27": 81,
+   "task28": 81,
+   "delta": 0,
+   "failures": 0,
+   "seconds": 0,
+   "exitCode": 0,
+   "trailer": "81/81 checks passed",
+   "gatePhase1011Baseline": 81,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "multi-observer",
+   "task27": 62,
+   "task28": 62,
+   "delta": 0,
+   "failures": 0,
+   "seconds": 27,
+   "exitCode": 0,
+   "trailer": "62/62 checks passed",
+   "gatePhase1011Baseline": 62,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "interaction-detector",
+   "task27": 92,
+   "task28": 92,
+   "delta": 0,
+   "failures": 0,
+   "seconds": 1,
+   "exitCode": 0,
+   "trailer": "92/92 checks passed",
+   "gatePhase1011Baseline": 92,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "interaction-explorer",
+   "task27": 108,
+   "task28": 108,
+   "delta": 0,
+   "failures": 0,
+   "seconds": 93,
+   "exitCode": 0,
+   "trailer": "108/108 checks passed",
+   "gatePhase1011Baseline": 108,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "interaction-patterns",
+   "task27": 88,
+   "task28": 88,
+   "delta": 0,
+   "failures": 0,
+   "seconds": 1,
+   "exitCode": 0,
+   "trailer": "88/88 checks passed",
+   "gatePhase1011Baseline": 88,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "sitespec",
+   "task27": 257,
+   "task28": 257,
+   "delta": 0,
+   "failures": 0,
+   "seconds": 0,
+   "exitCode": 0,
+   "trailer": "257/257 checks passed",
+   "gatePhase1011Baseline": 257,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "reconstruction",
+   "task27": 217,
+   "task28": 217,
+   "delta": 0,
+   "failures": 0,
+   "seconds": 8,
+   "exitCode": 0,
+   "trailer": "217/217 checks passed",
+   "gatePhase1011Baseline": 217,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "reconstruction-qa",
+   "task27": 134,
+   "task28": 134,
+   "delta": 0,
+   "failures": 0,
+   "seconds": 146,
+   "exitCode": 0,
+   "trailer": "134/134 checks passed",
+   "gatePhase1011Baseline": 134,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "e2e",
+   "task27": 130,
+   "task28": 130,
+   "delta": 0,
+   "failures": 0,
+   "seconds": 626,
+   "exitCode": 0,
+   "trailer": "130/130 checks passed",
+   "gatePhase1011Baseline": null,
+   "vsGateDelta": null
+  },
+  {
+   "suite": "recon-template",
+   "task27": 109,
+   "task28": 109,
+   "delta": 0,
+   "failures": 0,
+   "seconds": 81,
+   "exitCode": 0,
+   "trailer": "109/109 checks passed",
+   "gatePhase1011Baseline": 109,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "regions",
+   "task27": 67,
+   "task28": 76,
+   "delta": 9,
+   "failures": 0,
+   "seconds": 1,
+   "exitCode": 0,
+   "trailer": "76/76 checks passed",
+   "gatePhase1011Baseline": 76,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "content-injection",
+   "task27": 128,
+   "task28": 161,
+   "delta": 33,
+   "failures": 0,
+   "seconds": 59,
+   "exitCode": 0,
+   "trailer": "161/161 checks passed",
+   "gatePhase1011Baseline": 161,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "content-generation",
+   "task27": null,
+   "task28": 50,
+   "delta": null,
+   "failures": 0,
+   "seconds": 1,
+   "exitCode": 0,
+   "trailer": "50/50 checks passed",
+   "gatePhase1011Baseline": 50,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "theme",
+   "task27": 47,
+   "task28": 47,
+   "delta": 0,
+   "failures": 0,
+   "seconds": 36,
+   "exitCode": 0,
+   "trailer": "47/47 checks passed",
+   "gatePhase1011Baseline": 47,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "seo",
+   "task27": 97,
+   "task28": 113,
+   "delta": 16,
+   "failures": 0,
+   "seconds": 2,
+   "exitCode": 0,
+   "trailer": "113/113 checks passed",
+   "gatePhase1011Baseline": 113,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "assets",
+   "task27": 140,
+   "task28": 140,
+   "delta": 0,
+   "failures": 0,
+   "seconds": 5,
+   "exitCode": 0,
+   "trailer": "140/140 checks passed",
+   "gatePhase1011Baseline": 140,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "production",
+   "task27": 100,
+   "task28": 132,
+   "delta": 32,
+   "failures": 0,
+   "seconds": 3,
+   "exitCode": 0,
+   "trailer": "132 checks, 0 failures",
+   "gatePhase1011Baseline": 132,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "release",
+   "task27": 162,
+   "task28": 275,
+   "delta": 113,
+   "failures": 0,
+   "seconds": 92,
+   "exitCode": 0,
+   "trailer": "275 checks, 0 failures",
+   "gatePhase1011Baseline": 275,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "revision",
+   "task27": 24,
+   "task28": 36,
+   "delta": 12,
+   "failures": 0,
+   "seconds": 2,
+   "exitCode": 0,
+   "trailer": "36 checks, 0 failures",
+   "gatePhase1011Baseline": 36,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "registry",
+   "task27": 27,
+   "task28": 35,
+   "delta": 8,
+   "failures": 0,
+   "seconds": 0,
+   "exitCode": 0,
+   "trailer": "35 checks, 0 failures",
+   "gatePhase1011Baseline": 35,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "authoring-preview",
+   "task27": null,
+   "task28": 41,
+   "delta": null,
+   "failures": 0,
+   "seconds": 24,
+   "exitCode": 0,
+   "trailer": "41 checks, 0 failures",
+   "gatePhase1011Baseline": 41,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "brand-assets",
+   "task27": null,
+   "task28": 141,
+   "delta": null,
+   "failures": 0,
+   "seconds": 16,
+   "exitCode": 0,
+   "trailer": "141 checks, 0 failures",
+   "gatePhase1011Baseline": 141,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "visual-editor",
+   "task27": null,
+   "task28": 50,
+   "delta": null,
+   "failures": 0,
+   "seconds": 27,
+   "exitCode": 0,
+   "trailer": "50 checks, 0 failures",
+   "gatePhase1011Baseline": 50,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "enablement",
+   "task27": null,
+   "task28": 101,
+   "delta": null,
+   "failures": 0,
+   "seconds": 6,
+   "exitCode": 0,
+   "trailer": "101/101 checks passed",
+   "gatePhase1011Baseline": 101,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "editor-integration",
+   "task27": null,
+   "task28": 45,
+   "delta": null,
+   "failures": 0,
+   "seconds": 28,
+   "exitCode": 0,
+   "trailer": "45 checks, 0 failures",
+   "gatePhase1011Baseline": 45,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "create-site",
+   "task27": null,
+   "task28": 66,
+   "delta": null,
+   "failures": 0,
+   "seconds": 38,
+   "exitCode": 0,
+   "trailer": "66 checks, 0 failures",
+   "gatePhase1011Baseline": 66,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "first-draft",
+   "task27": null,
+   "task28": 34,
+   "delta": null,
+   "failures": 0,
+   "seconds": 15,
+   "exitCode": 0,
+   "trailer": "34 checks, 0 failures",
+   "gatePhase1011Baseline": 34,
+   "vsGateDelta": 0
+  },
+  {
+   "suite": "production-canary",
+   "task27": null,
+   "task28": 46,
+   "delta": null,
+   "failures": 0,
+   "seconds": 14,
+   "exitCode": 0,
+   "trailer": "46/46 checks passed",
+   "gatePhase1011Baseline": 46,
+   "vsGateDelta": 0
+  }
+ ],
+ "totals": {
+  "countedSuites": 29,
+  "totalChecks": 2948,
+  "totalFailures": 0,
+  "typecheckExit": 0,
+  "task27Suites": 20,
+  "task27Checks": 2151,
+  "suiteGrowth": 9,
+  "checkGrowth": 797,
+  "growthOnPreexistingSuites": 223,
+  "checksFromNewSuites": 574,
+  "batterySeconds": 1363,
+  "arithmetic": "2,151 (Task-27) + 223 (growth on pre-existing suites) + 574 (nine new Task-28 suites) = 2,948",
+  "arithmeticCrossCheck": "2,818 (gate-phase1011, e2e excluded) + 130 (smoke:e2e, measured here) = 2,948. The carried e2e figure is now confirmed by direct measurement rather than carried forward."
+ },
+ "e2eDeferralRepaid": {
+  "status": "RUN AND PASSED",
+  "checks": 130,
+  "failures": 0,
+  "exitCode": 0,
+  "seconds": 626,
+  "trailer": "130/130 checks passed",
+  "finalLine": "[smoke:e2e] OK",
+  "task27Count": 130,
+  "delta": 0,
+  "nameLevelDiffVsTask27": "0 removed, 0 added — all 130 check names identical to the committed Task-27 log.",
+  "note": "smoke:e2e was CARRIED (not run) at exactly TWO gates — phase-7/8/9 and phase-10/11 — at the user's direction; it DID run, at 130 checks, at the phase-2/3 and phase-4/5/6 gates. It ran here in full. It cost 626 s, 46.1% of the 1,359 s of suite time (1,363 s including typecheck). It is fully local: it stands up its own 127.0.0.1 node http server, drives real Chromium, and asserts 'the run records 0 Firecrawl calls (local discovery provider)'. It touches no public network."
+ },
+ "negativeDeltas": {
+  "count": 0,
+  "list": [],
+  "statement": "ZERO negative count deltas against Task 27, and ZERO drift against the phase-10/11 gate: every one of the 28 suites that gate measured reproduced its EXACT count here (vsGateDelta = 0 for all 28)."
+ },
+ "deltaExplanations": [
+  "regions 67 -> 76 (+9): 9 added check names, 0 removed. Lineage: 67 at Task-27 final and still 67 at the phase-2/3 gate; +9 at the phase-4/5/6 gate from Phase-5 region enablement.",
+  "content-injection 128 -> 161 (+33): 33 added, 0 removed. Lineage 128 -> 138 (Phase 1) -> 145 (gate23) -> 152 (gate456) -> 161 (gate789, Phase-9 content generation).",
+  "seo 97 -> 113 (+16): 16 added, 0 removed. Lineage 97 -> 97 (gate23) -> 104 (gate456) -> 104 (gate789) -> 113 (Phase 10 production-mode SEO, including the 6 checks of section 5c added by the Phase-10 correction).",
+  "production 100 -> 132 (+32): 32 added, 0 removed. Lineage 100 -> 106 (Phase 1) -> 123 (gate23) -> 129 (gate456) -> 132 (Phase 10 schema hardening 28.P10.1-3).",
+  "release 162 -> 275 (+113): 114 added, 1 removed (net +113). The single removal is a DELIBERATE, JUSTIFIED, EVIDENCE-PRESERVING REPLACEMENT — see checkNameLevelFindings. Lineage 162 -> 202 (Phase 1) -> 241 (gate23) -> 274 (gate456) -> 275 (Phase 10).",
+  "revision 24 -> 36 (+12): 12 added, 0 removed. Lineage 24 -> 29 (Phase 1) -> 36 (gate23, authored-substrate checks 28.P2.R*).",
+  "registry 27 -> 35 (+8): 8 added, 0 removed. Phase 1.",
+  "NINE NEW SUITES with no Task-27 baseline, 574 checks in total: authoring-preview 41 (Phase 3), brand-assets 141 (Phase 2), visual-editor 50 (Phase 4), enablement 101 (Phases 5+6), editor-integration 45 (Phase 4), create-site 66 (Phase 8), content-generation 50 (Phase 9), first-draft 34 (Phase 10), production-canary 46 (Phase 11).",
+  "THIRTEEN suites unchanged at 0 delta with an identical check-name set versus the committed Task-27 logs: verifier 81, selector 81, multi-observer 62, interaction-detector 92, interaction-explorer 108, interaction-patterns 88, sitespec 257, reconstruction 217 (see the timing-in-name note), reconstruction-qa 134, e2e 130, recon-template 109, theme 47, assets 140."
+ ],
+ "checkNameLevelFindings": [
+  {
+   "suite": "release",
+   "removedFromTask27": "23.6 inline-SVG brand-mark requirement carries the inventory count",
+   "replacedBy": [
+    "23.6 the source-brand requirement carries the BRAND-CARRYING HOST count (re-derived here)",
+    "23.6b and that count is strictly smaller than the inline-svg entry count it replaced",
+    "23.6c the inventory count is still CITED as evidence, so nothing was hidden"
+   ],
+   "classification": "DELIBERATE JUSTIFIED REPLACEMENT — NOT a regression",
+   "evidence": "scripts/smoke-release.ts lines 2485-2510. The source comment states that the old assertion counted every inline SVG on the site (icons included), which is not a count of source-brand marks, and that the requirement now carries brand-CARRYING hosts measured by the same walker the bake-time resolver uses. Coverage INCREASED from 1 check to 3, and 23.6c explicitly asserts that the OLD inventory count is still cited as evidence (counts.inlineSvgEntries=...), so the replaced measurement was not hidden. This is the Phase-2 source-brand-resolution work.",
+   "netEffect": "+2 checks at the same id; the overall release delta remains +113"
+  },
+  {
+   "suite": "reconstruction",
+   "removedFromTask27": "next build PASS (2273 ms) with the SiteSpec deleted",
+   "replacedBy": [
+    "next build PASS (2838 ms) with the SiteSpec deleted"
+   ],
+   "classification": "NOT A CHANGE AT ALL — the check NAME embeds a measured build duration, so the label differs run to run",
+   "evidence": "reglogs/reconstruction.log line 161. The count is unchanged at 217 -> 217; the 1-removed/1-added is purely an artifact of a non-deterministic check label.",
+   "note": "Minor hygiene observation for the final report, not a defect: embedding a measured millisecond value in a check NAME makes name-level regression diffing noisy. The assertion itself is unchanged."
+  }
+ ],
+ "uncountedSuites": [
+  {
+   "suite": "playwright",
+   "counted": false,
+   "ran": true,
+   "exitCode": 0,
+   "output": "[smoke] OK — Chromium launched, title: \"Example Domain\"",
+   "reason": "smoke:playwright is a Phase-1 ENVIRONMENT PROBE, not a counted gate suite. It emits ZERO check lines (scripts/smoke-playwright.ts contains no PASS emission at all; it prints one OK line), so it contributes 0 to any total and cannot change the count in either direction. It is the ONLY suite that touches the public internet — it loads https://example.com.",
+   "disclosure": "THIS AGENT DID RUN IT, through the mutex, deliberately and separately AFTER the counted battery, and it is EXCLUDED from the 29-suite / 2,948-check total. Reported explicitly so the 29-suite figure is never misread as 'every scripts/smoke-*.ts file' — 30 such files exist. It closed its own browser; no process leaked."
+  }
+ ],
+ "gitMutatingOperations": {
+  "count": 0,
+  "logBefore": "6c2e723 0827 morning | d33abb3 checkpoint: web-recon MVP preview-ready baseline | 2777b41 chore: initialize web-recon foundation (Phase 1)",
+  "logAfter": "IDENTICAL — 6c2e723 0827 morning | d33abb3 checkpoint: web-recon MVP preview-ready baseline | 2777b41 chore: initialize web-recon foundation (Phase 1)",
+  "head": "6c2e723601a0d76431c96a48bbdb4726c02063e7 (equals docs/result/handoffs/28-start.json .baselineSha)",
+  "branch": "main",
+  "stashList": "EMPTY — git stash list printed nothing, both before and after the battery",
+  "reflog": "EXACTLY THREE ENTRIES, all pre-Task-28 commits, unchanged before and after: '6c2e723 HEAD@{0}: commit: 0827 morning' | 'd33abb3 HEAD@{1}: commit: checkpoint: web-recon MVP preview-ready baseline' | '2777b41 HEAD@{2}: commit (initial): chore: initialize web-recon foundation (Phase 1)'. No commit, reset, checkout, merge, rebase or stash entry was added by this agent or by anything in Task 28.",
+  "workingTree": "51 modified tracked files plus 49 untracked paths — the entire Task-28 result, left UNCOMMITTED for the user to review, exactly as the contract requires. The 46/32 figures in 28-resume-state.json predate Phases 10-11 and the later handoff files, so the higher numbers are expected."
+ },
+ "aggregationPhase1Intact": {
+  "file": "docs/result/handoffs/24-aggregation-phase1.json",
+  "identical": true,
+  "committedBlobSha": "0322639753518bb96f90f42d8e451bffda9aacd3",
+  "worktreeHashObject": "0322639753518bb96f90f42d8e451bffda9aacd3",
+  "sha256": "09e3745e3041d9018640e7027c1fb6ec60617f04d2cbcbd4e421a48b7c8d1c30",
+  "bytes": 22107,
+  "mtime": "Aug 19 16:40:49 2026 KST — untouched since Task 24",
+  "gitDiff": "git diff HEAD -- docs/result/handoffs/24-aggregation-phase1.json produced NO output",
+  "method": "git hash-object of the worktree file compared against git rev-parse HEAD:<path>. Equal blob sha means byte-identical. Measured BEFORE and AFTER the battery; identical both times."
+ },
+ "repoMutationByThisRun": {
+  "sourceScriptsDocs": "ZERO. 'find src scripts docs -type f -newermt 2026-08-28T21:05:00' returned NOTHING, and no path listed by git status --porcelain has an mtime inside the battery window. No source file, no smoke suite and no document was modified by the regression run.",
+  "reconTemplatesImmutable": "ZERO recon-template run directories were written: 'find data/*/recon-templates -newermt <battery start>' returned nothing. In particular data/linear.app/recon-templates/2026-08-25T21-53-26-980Z still carries mtime Aug 26 06:53:27.",
+  "dataWrites": "EXPECTED and disclosed: the suites wrote into 35 data/ leaf paths, all their own fixtures. 34 are unambiguously current — Task-28 'wr28-*' scratch fixtures, 'millwright', data/.registry/sites.json, and eleven fresh run ids stamped 2026-08-28T12:16-12:18Z, which is 21:16-21:18 KST, i.e. created BY this battery. Run ids are UTC and mtimes are KST (+9), so the two representations differ by nine hours by design.",
+  "singleFlaggedPath": "data/linear.app/authoring-previews/wr28-editor-2026-08-25T21-53-26-980Z LOOKS historical because its NAME embeds the source template run id. It is not: it is a Task-28 preview WORKSPACE created 2026-08-28 06:40 and named after the recon-template it patches. The battery rewrote exactly 3 files inside it — overlay/slot-values.json, overlay/theme-overlay.css and overlay/authoring-epoch — which is the authoring-preview overlay doing its normal job. The other 180 files were untouched, and the SOURCE template run it is named after was not written to at all.",
+  "historicalResearchRunsMutated": 0
+ },
+ "leakedProcesses": {
+  "count": 0,
+  "evidence": "ps -eo pid,ppid,etime,command filtered for tsx / headless_shell / next-server / smoke- / playwright (excluding the user's own desktop Google Chrome) returned NOTHING after the counted battery, and again after the playwright probe. The mutex lock directory tmp/wr28/.suite.lock was released (absent). smoke:editor-integration reaped 3 of its own children and said so in its log: 'reaped 3 surviving child process(es): 42721, 43288, 43261'.",
+  "spawnedByThisAgent": "the 29 counted suites plus 1 playwright probe, all via the mutex; all exited on their own and all are gone."
+ },
+ "boundsAndCaps": {
+  "declared": "NO SILENT CAPS. Nothing about this battery was bounded or sampled: all 29 counted suites ran to completion, each exactly once, sequentially, and every check line in every log was counted.",
+  "notRunAsCounted": [
+   "smoke:playwright — an uncounted 0-check environment probe; it was nonetheless executed and is reported under uncountedSuites"
+  ],
+  "singleRunCaveat": "Each suite was run ONCE. A flaky check that happened to pass on this run would not be detected by this battery. No suite showed any sign of flake: all 29 exit codes were 0, all 29 trailers agreed with the anchored counts, and all 20 pre-existing suites reproduced their Task-27 check-name sets.",
+  "notInScope": "This agent did NOT re-adjudicate engineering claims made in the phase handoffs (canary zero-gates, editor-artifact absence, requirement counts, the enablement F2/F3 findings). That is the final audit's job. This document reports MEASURED regression facts only."
+ },
+ "verdict": "PASS",
+ "verdictBasis": "typecheck exit 0; 29 of 29 counted suites exit 0; 2,948 of 2,948 checks passed; 0 check failures; 0 negative deltas against Task 27 and 0 drift against the phase-10/11 gate; the two name-level removals both traced to source and both benign; 0 mutating git operations; 24-aggregation-phase1.json byte-identical; 0 leaked processes.",
+ "carriedDeferralsRemaining": "NONE. smoke:e2e was the only carried suite and it ran here."
+}

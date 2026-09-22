@@ -26,6 +26,7 @@ import {
   ReleaseProjectSchema,
   emptyAuthoredState,
   type AppliedResolution,
+  type AuthoredAsset,
   type AuthoredState,
   type AuthoredTheme,
   type ProductionResolution,
@@ -86,15 +87,60 @@ export function foldResolutionIntoAuthored(
     resolution.theme === undefined
       ? authored.theme
       : mergeAuthoredTheme(authored.theme, resolution.theme);
+  const assets = foldResolutionAssets(authored, resolution, at);
   const changed =
     Object.keys(slotValues).length !== Object.keys(authored.slotValues).length ||
     JSON.stringify(slotValues) !== JSON.stringify(authored.slotValues) ||
-    JSON.stringify(theme) !== JSON.stringify(authored.theme);
+    JSON.stringify(theme) !== JSON.stringify(authored.theme) ||
+    JSON.stringify(assets ?? null) !== JSON.stringify(authored.assets ?? null);
+  // `...authored` FIRST so every authored field this fold does not own —
+  // `brand` today, whatever Phase 3+ adds tomorrow — is carried rather than
+  // silently dropped by an object literal that forgot it. The pre-Task-28
+  // version of this function listed its three fields explicitly, which is
+  // exactly the shape that loses a new one.
   return AuthoredStateSchema.parse({
+    ...authored,
     slotValues,
     theme,
+    ...(assets !== undefined ? { assets } : {}),
     updatedAt: changed ? at : authored.updatedAt,
   });
+}
+
+/**
+ * Fold a pack's `assets` into `authored.assets` (Task 28 Phase 2).
+ *
+ * Same doctrine as slot values and theme: the value ARRIVES through a pack and
+ * the pack stays the immutable audit record of how it arrived, but the
+ * authoritative home is `authored`. Idempotent — re-applying a pack that
+ * changes nothing leaves each entry's `updatedAt` where it was, so a
+ * re-resolve cannot manufacture an authored-state revision.
+ *
+ * `alt` is PRESERVED from the existing authored entry: a resolution pack has
+ * no alt field, so a pack re-supplying the same file must not erase alt text
+ * the editor already wrote.
+ */
+function foldResolutionAssets(
+  authored: AuthoredState,
+  resolution: ProductionResolution,
+  at: string,
+): Record<string, AuthoredAsset> | undefined {
+  const packAssets = resolution.assets ?? {};
+  if (Object.keys(packAssets).length === 0) return authored.assets;
+  const merged: Record<string, AuthoredAsset> = { ...(authored.assets ?? {}) };
+  for (const [assetId, value] of Object.entries(packAssets)) {
+    const file = typeof value === "string" ? value : value.file;
+    const note = typeof value === "string" ? undefined : value.note;
+    const before = merged[assetId];
+    const moved = before === undefined || before.file !== file || before.note !== note;
+    merged[assetId] = {
+      file,
+      ...(before?.alt !== undefined ? { alt: before.alt } : {}),
+      ...(note !== undefined ? { note } : {}),
+      updatedAt: moved ? at : before.updatedAt,
+    };
+  }
+  return merged;
 }
 
 /** Replay every applied pack into an authored block (revision-1 adoption). */

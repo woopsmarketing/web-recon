@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Task 28.8 FAST — Reconstruction V1 human review (Channel Talk + RoseeSkin)</title>
+<style>
+:root { --bg:#fff; --fg:#16181d; --mut:#6b7280; --line:#e4e6eb; --b:#b91c1c; --m:#b45309; --mi:#4b5563; --p:#047857; }
+* { box-sizing:border-box }
+body { margin:0; font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--fg); background:var(--bg) }
+.wrap { max-width:1500px; margin:0 auto; padding:24px }
+h1 { font-size:22px; margin:0 0 4px }
+h2 { font-size:19px; margin:40px 0 6px; padding-top:12px; border-top:2px solid var(--line) }
+h3 { font-size:15px; margin:0; font-weight:600 }
+a { color:#1d4ed8 }
+.sub { color:var(--mut); margin:0 0 18px }
+.nav { position:sticky; top:0; background:var(--bg); border-bottom:1px solid var(--line); padding:8px 0; margin-bottom:16px; font-size:13px; z-index:5 }
+.instr { background:#f7f8fa; border:1px solid var(--line); border-radius:8px; padding:14px 18px; margin:16px 0 }
+.tag { font-size:11px; font-weight:600; background:#eef1f5; color:#374151; border-radius:10px; padding:2px 8px; margin-left:8px; vertical-align:middle }
+.meta { margin:2px 0; color:var(--mut); font-size:12.5px }
+.dims { margin:2px 0 8px; font-size:12.5px; color:#374151 }
+.dims.mismatch { color:#7c2d12; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; padding:6px 9px }
+.warn { color:var(--b); font-weight:600 }
+.cov-none { color:var(--mut); font-style:italic }
+article.pair { border:1px solid var(--line); border-radius:8px; padding:12px; margin:14px 0 }
+article.pair > header { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px }
+.w { color:var(--mut); font-weight:500 }
+.v { font-size:11px; font-weight:700; border-radius:4px; padding:2px 7px; color:#fff }
+.v-failed { background:#111827 } .v-blocker { background:var(--b) } .v-major { background:var(--m) }
+.v-minor { background:var(--mi) } .v-pass { background:var(--p) }
+.floor { font-size:12px; color:var(--mut) }
+ul.findings { margin:0 0 10px; padding-left:18px; font-size:13px }
+ul.findings li { margin:2px 0 }
+.findings.none { color:var(--p); font-size:13px; margin:0 0 10px }
+b.s-blocker { color:var(--b) } b.s-major { color:var(--m) } b.s-minor { color:var(--mi) }
+code { font:12px ui-monospace,SFMono-Regular,Menlo,monospace; background:#f3f4f6; padding:1px 4px; border-radius:3px }
+.cmp { display:grid; grid-template-columns:1fr 1fr; gap:10px }
+.cmp figure { margin:0; min-width:0 }
+figcaption { font-size:11.5px; font-weight:700; letter-spacing:.03em; color:var(--mut); margin-bottom:4px }
+.pane { height:70vh; overflow:auto; border:1px solid var(--line); border-radius:5px; background:#fafafa }
+.pane img { display:block; width:100%; height:auto }
+@media (max-width:900px) { .cmp { grid-template-columns:1fr } .pane { height:50vh } }
+table.sum { border-collapse:collapse; width:100%; margin:14px 0 8px; font-size:13px }
+table.sum th, table.sum td { border:1px solid var(--line); padding:6px 9px; text-align:left }
+table.sum th { background:#f7f8fa; font-weight:600 }
+td.num { text-align:right; font-variant-numeric:tabular-nums }
+</style></head><body><div class="wrap">
+<h1>Task 28.8 FAST — Reconstruction V1 human review (Channel Talk + RoseeSkin)</h1>
+<p class="sub">Generated 2026-09-09 04:08. 10 pairs across 2 sites (budget 10).
+Every grade and number here is read from a responsive-qa.json artifact. Image dimensions are read from the PNGs themselves.</p>
+<div class="nav"><a href="#channel">channel.io</a> · <a href="#roseeskin">beomeo.roseeskin.com</a></div>
+<div class="instr">
+<h2 style="border:0;margin-top:0">Reviewer instructions</h2>
+<p><b>Judge each SOURCE | FINAL pair on these questions (Task 28.8 FAST item 57):</b></p>
+<ol>
+<li><b>Overall similarity</b> — does the FINAL look like the same professionally designed page as the SOURCE?</li>
+<li><b>Header / navigation</b> — logo, menu items, call-to-action present and in the right place?</li>
+<li><b>Hero</b> — headline, sub-copy, primary image/mockup present?</li>
+<li><b>Content</b> — the same sections in the same order, nothing major missing or duplicated?</li>
+<li><b>Mobile (390) usability</b> — readable, single-column where the source is, nothing sliced off the right edge?</li>
+<li><b>Desktop (1440) usability</b> — natural width usage, columns intact, nothing crammed into a fraction of the viewport?</li>
+<li><b>Internal page layout</b> — the pricing / product / clinic pages keep their structure?</li>
+<li><b>Images</b> — photos, screenshots and icons painted (blank cards where the source shows a picture are a defect)?</li>
+<li><b>Footer</b> — present, with its links and legal text?</li>
+<li><b>Korean readability</b> — Korean text readable, no overlapping or clipped glyphs, tables (진료시간) intact?</li>
+</ol>
+<p><b>Ignore:</b> 1–2 px offsets, font family / weight differences and the line breaks they cause, anti-aliasing, small shadow or border differences, carousel / marquee / animation phase, video frame timing.</p>
+<p><b>Two facts the machine already knows (read before grading):</b></p>
+<ul>
+<li><b>Channel Talk (channel.io):</b> the SOURCE capture itself is blank for most of the home page's middle (about 8,700 of 12,500 px at 390) because the site reveals those sections with scroll-triggered animations the capture does not trigger. A blank middle on BOTH sides is the capture policy, not a clone defect ("ADVANCED SOURCE LIMITATION"). Judge the parts both sides show: header, hero, logo wall, AI section, footer. The <code>/kr/alf-customer</code> pair shows real blank image cards in the FINAL — that IS a defect.</li>
+<li><b>RoseeSkin (beomeo.roseeskin.com):</b> the 진료시간 변경 안내 popup card is kept on both sides on purpose. On the home page at 1440 the FINAL is missing the hero background photo and the dark footer band — real defects. On the home page at 390 the machine's BLOCKER grade points at a wood-texture block that is empty on both sides — judge it with your eyes.</li>
+</ul>
+<p><b>Grades:</b> PASS · MINOR · MAJOR · BLOCKER. The machine verdict and floor verdict shown are the
+responsive-QA rubric's output — a pointer, not a conclusion. Your eye overrides the grade.</p>
+<p><b>Canvas honesty:</b> 1 of 10 pairs render at different SOURCE/FINAL canvas widths.
+Those carry an orange banner. Do not read pixel or position numbers on a banner-marked pair.</p>
+</div>
+<h2 style="border:0;margin-top:0">Runs excluded from this pack</h2>
+<p class="meta"><code>2026-09-03T11-42-06-649Z</code> — seoultone.kr — INVALID. A shell pipeline swallowed a failed `pnpm reconstruct` (no `set -o pipefail`), so this run graded the PREVIOUS DAY&#x27;s reconstruction against a freshly captured source. The 28.6 and 28.7 packs already exclude it; carried forward here unchanged.</p>
+
+<table class="sum">
+<thead><tr><th>site</th><th>required</th><th>selected</th><th>measured</th><th>failed</th><th>not included (budget)</th></tr></thead>
+<tbody><tr><td><a href="#channel">channel.io</a></td><td class="num">4</td><td class="num">5</td><td class="num">5</td><td class="num">0</td><td class="num">3</td></tr><tr><td><a href="#roseeskin">beomeo.roseeskin.com</a></td><td class="num">4</td><td class="num">5</td><td class="num">5</td><td class="num">0</td><td class="num">5</td></tr></tbody></table>
+<section id="channel"><h2>channel.io <span class="tag">required 4, selected 5</span></h2>
+<p class="meta">coverage (run <code>2026-09-08T16-48-41-104Z</code>): pairsTotal=8, pairsGraded=8, pairsCloneRouteMissing=0, pairsSourceCaptureUnstable=0, pairsMeasurementFailed=0, pairsAccountedFor=8, conserved=True, pairsVerdicted=8, pairsStabilityUntested=8, duplicateImageStackPairsDemoted=0, failedImageLayerOverlapPairsDemoted=0, overlapFindingsDemoted=0, overlapDemotionsRegraded=0, unstableFindingsDemoted=0</p>
+<p class="meta">Also measured but not included in this pack (budget): /kr/alf-customer@390 (MAJOR), /kr/blog/articles/what-is-aicc-1d3e923d@390 (MINOR), /kr/blog/articles/what-is-aicc-1d3e923d@1440 (MINOR)</p>
+<article class="pair" data-v="MINOR">
+<header><h3>/kr <span class="w">@390</span></h3><span class="v v-minor">MINOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-08T16-48-41-104Z</code></span></header>
+<p class="dims">requested viewport <b>390</b> · SOURCE: <b>390</b> × 12544 actual · FINAL: <b>390</b> × 12868 actual</p>
+<ul class="findings"><li><b class="s-minor">MINOR</b> <code>column-container-mode-delta</code> value=1 threshold=1 — a matched container lays its children out as 2 row(s) of 3 where the source uses 3 row(s) of 2 (delta 1, threshold 1) — a different responsive layout mode</li><li><b class="s-minor">MINOR</b> <code>missing-text-ratio</code> value=0.0135 threshold=0.0001 — 1.35% of the source&#x27;s visible text is missing from the clone (threshold 0.01%)</li><li><b class="s-minor">MINOR</b> <code>overlap-excess-ratio</code> value=0.0026 threshold=0.001 — visible boxes overlap over 0.26% more of the viewport than the source&#x27;s do (threshold 0.10%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.03707 threshold=0.01 — 3.71% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 44% of it sits on source edges</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE — 390×12544 actual</figcaption><div class="pane"><img loading="lazy" src="channel/shots/2026-09-08T16-48-41-104Z-kr-390-01-channel-io-kr-390-source.png" alt=""></div></figure><figure><figcaption>FINAL (CLONE) — 390×12868 actual</figcaption><div class="pane"><img loading="lazy" src="channel/shots/2026-09-08T16-48-41-104Z-kr-390-01-channel-io-kr-390-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MINOR">
+<header><h3>/kr <span class="w">@1440</span></h3><span class="v v-minor">MINOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-08T16-48-41-104Z</code></span></header>
+<p class="dims">requested viewport <b>1440</b> · SOURCE: <b>1440</b> × 10398 actual · FINAL: <b>1440</b> × 10794 actual</p>
+<ul class="findings"><li><b class="s-minor">MINOR</b> <code>missing-text-ratio</code> value=0.0097 threshold=0.0001 — 0.97% of the source&#x27;s visible text is missing from the clone (threshold 0.01%)</li><li><b class="s-minor">MINOR</b> <code>overlap-excess-ratio</code> value=0.0014 threshold=0.001 — visible boxes overlap over 0.14% more of the viewport than the source&#x27;s do (threshold 0.10%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.05655 threshold=0.01 — 5.65% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 27% of it sits on source edges</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE — 1440×10398 actual</figcaption><div class="pane"><img loading="lazy" src="channel/shots/2026-09-08T16-48-41-104Z-kr-1440-02-channel-io-kr-1440-source.png" alt=""></div></figure><figure><figcaption>FINAL (CLONE) — 1440×10794 actual</figcaption><div class="pane"><img loading="lazy" src="channel/shots/2026-09-08T16-48-41-104Z-kr-1440-02-channel-io-kr-1440-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MAJOR">
+<header><h3>/kr/alf-customer <span class="w">@1440</span></h3><span class="v v-major">MAJOR</span><span class="floor">floor: <span class="v v-minor">MINOR</span></span><span class="meta">run <code>2026-09-08T16-48-41-104Z</code></span></header>
+<p class="dims">requested viewport <b>1440</b> · SOURCE: <b>1440</b> × 11497 actual · FINAL: <b>1440</b> × 11497 actual</p>
+<ul class="findings"><li><b class="s-major">MAJOR</b> <code>image-layer-state</code> value=10 threshold=1 — 10 more image asset(s) failed to paint in the clone than in the source (13 against 3, threshold 1)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.08722 threshold=0.01 — 8.72% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 33% of it sits on source edges</li><li><b class="s-minor">MINOR</b> <code>position-delta-p90-px</code> value=30 threshold=8 — 9 in 10 of the 163 on-viewport matched boxes land within 30px of their source edge and the rest are worse, up to 1014px (threshold 8px; left p90 19px, right p90 30px — these two move together on a displaced block and are ONE finding)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE — 1440×11497 actual</figcaption><div class="pane"><img loading="lazy" src="channel/shots/2026-09-08T16-48-41-104Z-kr_alf-customer-1440-06-channel-io-kr-alf-customer-1440-source.png" alt=""></div></figure><figure><figcaption>FINAL (CLONE) — 1440×11497 actual</figcaption><div class="pane"><img loading="lazy" src="channel/shots/2026-09-08T16-48-41-104Z-kr_alf-customer-1440-06-channel-io-kr-alf-customer-1440-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MINOR">
+<header><h3>/kr/pricing <span class="w">@390</span></h3><span class="v v-minor">MINOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-08T16-48-41-104Z</code></span></header>
+<p class="dims">requested viewport <b>390</b> · SOURCE: <b>390</b> × 12989 actual · FINAL: <b>390</b> × 13001 actual</p>
+<ul class="findings"><li><b class="s-minor">MINOR</b> <code>missing-text-ratio</code> value=0.0065 threshold=0.0001 — 0.65% of the source&#x27;s visible text is missing from the clone (threshold 0.01%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.1584 threshold=0.01 — 15.84% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 46% of it sits on source edges</li><li><b class="s-minor">MINOR</b> <code>position-delta-p90-px</code> value=9 threshold=8 — 9 in 10 of the 280 on-viewport matched boxes land within 9px of their source edge and the rest are worse, up to 700px (threshold 8px; left p90 3px, right p90 9px — these two move together on a displaced block and are ONE finding)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE — 390×12989 actual</figcaption><div class="pane"><img loading="lazy" src="channel/shots/2026-09-08T16-48-41-104Z-kr_pricing-390-03-channel-io-kr-pricing-390-source.png" alt=""></div></figure><figure><figcaption>FINAL (CLONE) — 390×13001 actual</figcaption><div class="pane"><img loading="lazy" src="channel/shots/2026-09-08T16-48-41-104Z-kr_pricing-390-03-channel-io-kr-pricing-390-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MINOR">
+<header><h3>/kr/pricing <span class="w">@1440</span></h3><span class="v v-minor">MINOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-08T16-48-41-104Z</code></span></header>
+<p class="dims">requested viewport <b>1440</b> · SOURCE: <b>1440</b> × 10111 actual · FINAL: <b>1440</b> × 10119 actual</p>
+<ul class="findings"><li><b class="s-minor">MINOR</b> <code>missing-text-ratio</code> value=0.0062 threshold=0.0001 — 0.62% of the source&#x27;s visible text is missing from the clone (threshold 0.01%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.08017 threshold=0.01 — 8.02% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 41% of it sits on source edges</li><li><b class="s-minor">MINOR</b> <code>position-delta-p90-px</code> value=36 threshold=8 — 9 in 10 of the 320 on-viewport matched boxes land within 36px of their source edge and the rest are worse, up to 760px (threshold 8px; left p90 8px, right p90 36px — these two move together on a displaced block and are ONE finding)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE — 1440×10111 actual</figcaption><div class="pane"><img loading="lazy" src="channel/shots/2026-09-08T16-48-41-104Z-kr_pricing-1440-04-channel-io-kr-pricing-1440-source.png" alt=""></div></figure><figure><figcaption>FINAL (CLONE) — 1440×10119 actual</figcaption><div class="pane"><img loading="lazy" src="channel/shots/2026-09-08T16-48-41-104Z-kr_pricing-1440-04-channel-io-kr-pricing-1440-final.png" alt=""></div></figure></div>
+</article>
+</section><section id="roseeskin"><h2>beomeo.roseeskin.com <span class="tag">required 4, selected 5</span></h2>
+<p class="meta">coverage (run <code>2026-09-08T18-54-21-770Z</code>): pairsTotal=10, pairsGraded=10, pairsCloneRouteMissing=0, pairsSourceCaptureUnstable=0, pairsMeasurementFailed=0, pairsAccountedFor=10, conserved=True, pairsVerdicted=10, pairsStabilityUntested=10, duplicateImageStackPairsDemoted=0, failedImageLayerOverlapPairsDemoted=0, overlapFindingsDemoted=0, overlapDemotionsRegraded=0, unstableFindingsDemoted=0</p>
+<p class="meta">Also measured but not included in this pack (budget): /16@390 (MINOR), /16@1440 (MINOR), /29@390 (MINOR), /34@390 (MINOR), /29@1440 (PASS)</p>
+<article class="pair" data-v="BLOCKER">
+<header><h3>/ <span class="w">@390</span></h3><span class="v v-blocker">BLOCKER</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-08T18-54-21-770Z</code></span></header>
+<p class="dims mismatch">requested viewport <b>390</b> · SOURCE: <b>392</b> × 10833 actual · FINAL: <b>390</b> × 10829 actual — <b>WIDTH MISMATCH (392 vs 390).</b> The two panels are DIFFERENT canvases. Any pixel- or position-based number on this pair compares two different layouts and must not be read as a like-for-like measurement.</p>
+<ul class="findings"><li><b class="s-blocker">BLOCKER</b> <code>blank-region-ratio</code> value=0.6756 threshold=0.25 — 1 region(s) the source fills are empty in the clone, covering 68% of a viewport (threshold 25%): div[23] (390×608 at y=8764, 68% of a viewport, absent, seen by dom, source paint 69%/4 leaves → clone 0%/0, source ink 81.7% → clone ink 75.6%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.1815 threshold=0.01 — 18.15% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 52% of it sits on source edges</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE — 392×10833 actual</figcaption><div class="pane"><img loading="lazy" src="roseeskin/shots/2026-09-08T18-54-21-770Z-root-390-01-beomeo-roseeskin-com-root-390-source.png" alt=""></div></figure><figure><figcaption>FINAL (CLONE) — 390×10829 actual</figcaption><div class="pane"><img loading="lazy" src="roseeskin/shots/2026-09-08T18-54-21-770Z-root-390-01-beomeo-roseeskin-com-root-390-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MAJOR">
+<header><h3>/ <span class="w">@1440</span></h3><span class="v v-major">MAJOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-08T18-54-21-770Z</code></span></header>
+<p class="dims">requested viewport <b>1440</b> · SOURCE: <b>1440</b> × 16901 actual · FINAL: <b>1440</b> × 17204 actual</p>
+<ul class="findings"><li><b class="s-major">MAJOR</b> <code>blank-region-ratio</code> value=0.1989 threshold=0.1 — 1 region(s) the source fills are empty in the clone, covering 20% of a viewport (threshold 10%): footer (1440×179 at y=16722, 20% of a viewport, absent, seen by dom, source paint 34%/7 leaves → clone 0%/0, source ink 2.5% → clone ink 34.7%)</li><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.3481 threshold=0.01 — 34.81% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 4% of it sits on source edges</li><li><b class="s-minor">MINOR</b> <code>position-delta-p90-px</code> value=18 threshold=8 — 9 in 10 of the 64 on-viewport matched boxes land within 18px of their source edge and the rest are worse, up to 605px (threshold 8px; left p90 18px, right p90 18px — these two move together on a displaced block and are ONE finding)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE — 1440×16901 actual</figcaption><div class="pane"><img loading="lazy" src="roseeskin/shots/2026-09-08T18-54-21-770Z-root-1440-02-beomeo-roseeskin-com-root-1440-source.png" alt=""></div></figure><figure><figcaption>FINAL (CLONE) — 1440×17204 actual</figcaption><div class="pane"><img loading="lazy" src="roseeskin/shots/2026-09-08T18-54-21-770Z-root-1440-02-beomeo-roseeskin-com-root-1440-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MINOR">
+<header><h3>/17 <span class="w">@390</span></h3><span class="v v-minor">MINOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-08T18-54-21-770Z</code></span></header>
+<p class="dims">requested viewport <b>390</b> · SOURCE: <b>390</b> × 4491 actual · FINAL: <b>390</b> × 4490 actual</p>
+<ul class="findings"><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.06258 threshold=0.01 — 6.26% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 51% of it sits on source edges</li><li><b class="s-minor">MINOR</b> <code>position-delta-p90-px</code> value=9 threshold=8 — 9 in 10 of the 55 on-viewport matched boxes land within 9px of their source edge and the rest are worse, up to 260px (threshold 8px; left p90 6px, right p90 9px — these two move together on a displaced block and are ONE finding)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE — 390×4491 actual</figcaption><div class="pane"><img loading="lazy" src="roseeskin/shots/2026-09-08T18-54-21-770Z-17-390-03-beomeo-roseeskin-com-17-390-source.png" alt=""></div></figure><figure><figcaption>FINAL (CLONE) — 390×4490 actual</figcaption><div class="pane"><img loading="lazy" src="roseeskin/shots/2026-09-08T18-54-21-770Z-17-390-03-beomeo-roseeskin-com-17-390-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MINOR">
+<header><h3>/17 <span class="w">@1440</span></h3><span class="v v-minor">MINOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-08T18-54-21-770Z</code></span></header>
+<p class="dims">requested viewport <b>1440</b> · SOURCE: <b>1440</b> × 3896 actual · FINAL: <b>1440</b> × 3896 actual</p>
+<ul class="findings"><li><b class="s-minor">MINOR</b> <code>pixel-residual-difference-ratio</code> value=0.01125 threshold=0.01 — 1.12% of the compared pixels carry a difference that survives a 1px displacement search (threshold 1%); 77% of it sits on source edges</li><li><b class="s-minor">MINOR</b> <code>position-delta-p90-px</code> value=14 threshold=8 — 9 in 10 of the 56 on-viewport matched boxes land within 14px of their source edge and the rest are worse, up to 21px (threshold 8px; left p90 4px, right p90 14px — these two move together on a displaced block and are ONE finding)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE — 1440×3896 actual</figcaption><div class="pane"><img loading="lazy" src="roseeskin/shots/2026-09-08T18-54-21-770Z-17-1440-04-beomeo-roseeskin-com-17-1440-source.png" alt=""></div></figure><figure><figcaption>FINAL (CLONE) — 1440×3896 actual</figcaption><div class="pane"><img loading="lazy" src="roseeskin/shots/2026-09-08T18-54-21-770Z-17-1440-04-beomeo-roseeskin-com-17-1440-final.png" alt=""></div></figure></div>
+</article>
+<article class="pair" data-v="MINOR">
+<header><h3>/34 <span class="w">@1440</span></h3><span class="v v-minor">MINOR</span><span class="floor">floor: <span class="v v-pass">PASS</span></span><span class="meta">run <code>2026-09-08T18-54-21-770Z</code></span></header>
+<p class="dims">requested viewport <b>1440</b> · SOURCE: <b>1440</b> × 9902 actual · FINAL: <b>1440</b> × 9902 actual</p>
+<ul class="findings"><li><b class="s-minor">MINOR</b> <code>position-delta-p90-px</code> value=8 threshold=8 — 9 in 10 of the 36 on-viewport matched boxes land within 8px of their source edge and the rest are worse, up to 21px (threshold 8px; left p90 7px, right p90 8px — these two move together on a displaced block and are ONE finding)</li></ul>
+<div class="cmp"><figure><figcaption>SOURCE — 1440×9902 actual</figcaption><div class="pane"><img loading="lazy" src="roseeskin/shots/2026-09-08T18-54-21-770Z-34-1440-08-beomeo-roseeskin-com-34-1440-source.png" alt=""></div></figure><figure><figcaption>FINAL (CLONE) — 1440×9902 actual</figcaption><div class="pane"><img loading="lazy" src="roseeskin/shots/2026-09-08T18-54-21-770Z-34-1440-08-beomeo-roseeskin-com-34-1440-final.png" alt=""></div></figure></div>
+</article>
+</section>
+</div></body></html>

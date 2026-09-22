@@ -1,0 +1,241 @@
+{
+ "schema": "task28.5-verify-C5-LAYOUTINF-measurement-v1",
+ "lens": "MEASUREMENT (adversarial re-derivation; wave-1 scripts not reused)",
+ "harness": {
+  "port": 51877,
+  "viewport": "1440x900 DSF1",
+  "browser": "playwright 1.62.1 chromium",
+  "counterfactual": "CSSOM deleteRule on rules matching ^\\[data-wr-page=\"..\"\\]\\[data-wr-viewport=\"..\"\\] \\[data-wr-node=\"..\"\\]$ \u2014 simulation only, src/ untouched",
+  "scripts": [
+   "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/verify-C5-LAYOUTINF-measurement/count.mjs",
+   "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/verify-C5-LAYOUTINF-measurement/measure2.mjs",
+   "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/verify-C5-LAYOUTINF-measurement/pixdiff.mjs",
+   "/Users/woops/projects/web-recon/tmp/wr-visual-fidelity-investigation/verify-C5-LAYOUTINF-measurement/thresh.mjs"
+  ]
+ },
+ "ruleCensus": {
+  "totalBlocks": 1910,
+  "widthAuto": 1148,
+  "widthPercent": 52,
+  "displayNone": 710,
+  "byKind": {
+   "full-width": 1106,
+   "centered-max-width": 42,
+   "percentage-width": 52,
+   "responsive-hidden": 710
+  },
+  "distinctPageNodePairs": 1865,
+  "liveAt1440": 1200,
+  "mediaGatedOff1440": {
+   "(min-width:1024px) and (max-width:1231.98px)": 709,
+   "(min-width:1680px)": 1
+  },
+  "exactTierBlocks": 4265,
+  "exactTierSelectorForm": ".wr-stXXXXXX (0,1,0)"
+ },
+ "widthErrorAt1440_sumAbs": {
+  "p000001": {
+   "asBuilt": 1309.9,
+   "recoveredErased": 191.4,
+   "nodesWithWidthErrGt1_asBuilt": 31,
+   "nodesWithWidthErrGt1_erased": 25,
+   "nodesChangedByTier": 6
+  },
+  "p000002": {
+   "asBuilt": 110096.9,
+   "recoveredErased": 1199.5,
+   "nodesWithWidthErrGt1_asBuilt": 483,
+   "nodesWithWidthErrGt1_erased": 125,
+   "nodesChangedByTier": 391
+  },
+  "p000003": {
+   "asBuilt": 507.7,
+   "recoveredErased": 143.8,
+   "nodesWithWidthErrGt1_asBuilt": 43,
+   "nodesWithWidthErrGt1_erased": 37,
+   "nodesChangedByTier": 6
+  },
+  "p000004": {
+   "asBuilt": 39.8,
+   "recoveredErased": 38.3,
+   "nodesWithWidthErrGt1_asBuilt": 11,
+   "nodesWithWidthErrGt1_erased": 11,
+   "nodesChangedByTier": 0
+  },
+  "p000005": {
+   "asBuilt": 180.2,
+   "recoveredErased": 178.7,
+   "nodesWithWidthErrGt1_asBuilt": 35,
+   "nodesWithWidthErrGt1_erased": 35,
+   "nodesChangedByTier": 0
+  },
+  "p000006": {
+   "asBuilt": 296.3,
+   "recoveredErased": 75.7,
+   "nodesWithWidthErrGt1_asBuilt": 21,
+   "nodesWithWidthErrGt1_erased": 15,
+   "nodesChangedByTier": 6
+  },
+  "p000007": {
+   "asBuilt": 885.3,
+   "recoveredErased": 344.8,
+   "nodesWithWidthErrGt1_asBuilt": 18,
+   "nodesWithWidthErrGt1_erased": 17,
+   "nodesChangedByTier": 1
+  },
+  "p000008": {
+   "asBuilt": 50.8,
+   "recoveredErased": 49.3,
+   "nodesWithWidthErrGt1_asBuilt": 8,
+   "nodesWithWidthErrGt1_erased": 8,
+   "nodesChangedByTier": 0
+  }
+ },
+ "nodeLevelNet": {
+  "madeWorseByTier": 409,
+  "madeBetterByTier": 1
+ },
+ "n000668": {
+  "cssLine": 7145,
+  "decl": "width: 48.61%",
+  "observedWidthPx": 624,
+  "asBuiltWidthPx": 303.27,
+  "erasedWidthPx": 624,
+  "derivation": {
+   "parentNode": "n000663",
+   "parentProbeW": [
+    342,
+    696,
+    952,
+    1280,
+    1280
+   ],
+   "probeWidths": [
+    390,
+    768,
+    1024,
+    1440,
+    1920
+   ],
+   "parentPaddingPx": 0,
+   "parentContentAt1440": 1280.0,
+   "desktopRatios_1024_1440_1920": [
+    0.4832,
+    0.4875,
+    0.4875
+   ],
+   "meanRatio": 0.48607,
+   "emitted": "48.61%",
+   "trueRatioAt1440": 0.4875,
+   "selfInflictedErrorEvenInCorrectCB_px": 0.9
+  },
+  "application": {
+   "parentDisplay": "grid",
+   "gridTemplateColumns": "12 x 77.3125px",
+   "gapPx": 32.02,
+   "gridAreaPx": 623.88,
+   "resolved": "0.4861 * 623.88 = 303.27"
+  },
+  "siblings": {
+   "width48.61%_nodes": 10,
+   "width22.91%_nodes": 10,
+   "22.91%_observed": 296,
+   "22.91%_asBuilt": 67.8,
+   "width20%_nodes": 8
+  }
+ },
+ "n000328_pricing": {
+  "cssSelectorLine": 11068,
+  "declLine": 11069,
+  "decl": "width: auto",
+  "tag": "ul",
+  "class": "wr-st000717",
+  "display": "flex",
+  "justifyContent": "space-between",
+  "parentDisplay": "grid",
+  "parentJustifyItems": "center",
+  "children": 8,
+  "svgLogos": 8,
+  "observedWidthPx": 1344,
+  "asBuiltWidthPx": 805,
+  "erasedWidthPx": 1344,
+  "errorPx": -539
+ },
+ "frozenHeightInteraction": {
+  "n000668_observedH": 3377.06,
+  "asBuiltH": 3377.05,
+  "erasedH": 3377.05,
+  "docHeight_asBuilt": 25343,
+  "docHeight_erased": 25343,
+  "docHeight_observed": 25342,
+  "consequence": "halved column reflows text INSIDE a pinned-height box -> overlap, not page growth"
+ },
+ "pixelAttribution_r000002_desktop": {
+  "comparator": "max-channel abs delta vs ACCEPTED_OBSERVATION p000002/desktop/screenshot.png, full page, common area 1440x25342",
+  "changedRatio_byThreshold": {
+   "0": {
+    "asBuilt": 0.1757,
+    "erased": 0.1612
+   },
+   "2": {
+    "asBuilt": 0.1344,
+    "erased": 0.1225
+   },
+   "4": {
+    "asBuilt": 0.122,
+    "erased": 0.1112
+   },
+   "8": {
+    "asBuilt": 0.0878,
+    "erased": 0.0797
+   },
+   "16": {
+    "asBuilt": 0.0547,
+    "erased": 0.0487
+   },
+   "32": {
+    "asBuilt": 0.0417,
+    "erased": 0.0359
+   }
+  },
+  "relativeReductionPct": {
+   "0": 8.3,
+   "2": 8.9,
+   "4": 8.9,
+   "8": 9.2,
+   "16": 11.0,
+   "32": 13.9
+  },
+  "isolation": "erasing only the 52 percentage rules reproduces the full erasure exactly (0.0743 @meanCh thr8) -> percentage rules are the sole pixel-visible cause on this route",
+  "note": "wave-1 reported 0.1491 for this pair; my thr-0 max-channel gives 0.1757. Absolute scales differ by comparator, relative reduction is threshold-robust."
+ },
+ "pixelAttribution_otherRoutes_meanChannelThr8": {
+  "p000001": {
+   "asBuilt": 0.054,
+   "erased": 0.0539
+  },
+  "p000003": {
+   "asBuilt": 0.4883,
+   "erased": 0.4883
+  },
+  "p000006": {
+   "asBuilt": 0.2994,
+   "erased": 0.2986
+  },
+  "p000007": {
+   "asBuilt": 0.3729,
+   "erased": 0.3717
+  }
+ },
+ "auditVerdictCheck": {
+  "verdictTally": {
+   "obviously-different": 17,
+   "unusable": 1,
+   "minor-visible-differences": 1
+  },
+  "soleUnusable": "r000002 /changelog desktop",
+  "itsChangedRatio": 0.1491,
+  "rankAmong19Pairs": 8
+ },
+ "visualEvidence": "docs/result/28.5-visual-fidelity-evidence/verify-C5-LAYOUTINF-measurement/changelog-entry-src-vs-asbuilt-vs-recoveredErased.png (top=ACCEPTED_OBSERVATION, mid=as-built, bottom=recovered tier erased)"
+}

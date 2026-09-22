@@ -1,7 +1,9 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { buildSlotAccounting } from "./accounting.js";
-import { detectSourceBrandLeaks } from "./brand-leak.js";
+import { reviewCrossPageConsistency } from "./consistency.js";
+import { buildAuthoringPlan } from "./plan.js";
+import { detectSourceBrandLeaks, detectTemplateBrandSurfaceLeaks } from "./brand-leak.js";
 import { loadReconTemplate, type LoadedReconTemplate } from "./load-template.js";
 import { applyTruthMode, resolveTruthMode } from "./truth-mode.js";
 import { buildOverlayValues, changedKeys, effectiveSlotValues } from "./overlay.js";
@@ -9,7 +11,12 @@ import { buildOperatorReview } from "./report.js";
 import { validateGenerationResult, validateSlotAssignments } from "./validate.js";
 import type { SlotValue } from "../recon-template/types.js";
 import {
+  AUTHORING_PLAN_FILE,
+  AuthoringPlanFileSchema,
+  REGION_PLAN_FILE,
+  RegionPlanFileSchema,
   BRAND_LEAK_REPORT_FILE,
+  CONSISTENCY_REPORT_FILE,
   CONTENT_POLICY_FILE,
   CONTENT_REPORT_DIR,
   CONTENT_RUN_MANIFEST_FILE,
@@ -36,9 +43,12 @@ import {
   type ContentIntent,
   type ContentPolicy,
   type ContentRunManifest,
+  type AuthoringPlanFile,
+  type ConsistencyReport,
   type ContentUnitsFile,
   type GenerationRequest,
   type LayoutQaReport,
+  type RegionPlanFile,
   type SlotAccountingFile,
   type TruthModeDecision,
   type ValidationReport,
@@ -60,6 +70,13 @@ export interface LoadedContentRun {
   request: GenerationRequest;
   template: LoadedReconTemplate;
   result?: ContentGenerationResult;
+  /**
+   * Task 28 Phase 9: the derivation chain the packet emitted. Optional because
+   * every Task 19-27 run on disk predates the artifact and must still load.
+   */
+  authoringPlan?: AuthoringPlanFile;
+  /** Task 27: the RegionPlan layer, when a page-regions artifact was supplied. */
+  regionPlan?: RegionPlanFile;
   /**
    * Task 27 §4: what the run's truth mode decided, per slot. Populated by
    * `ingestGenerationResult`; empty on a run loaded straight off disk, because
@@ -111,7 +128,35 @@ export async function loadContentRun(runRef: string): Promise<LoadedContentRun> 
   } catch {
     result = undefined;
   }
-  return { runDir, manifest, intent, policy, unitsFile, request, template, result };
+  let regionPlan: RegionPlanFile | undefined;
+  try {
+    regionPlan = RegionPlanFileSchema.parse(await readJson(path.join(runDir, REGION_PLAN_FILE)));
+  } catch {
+    regionPlan = undefined;
+  }
+  let authoringPlan: AuthoringPlanFile | undefined;
+  try {
+    authoringPlan = AuthoringPlanFileSchema.parse(
+      await readJson(path.join(runDir, AUTHORING_PLAN_FILE)),
+    );
+  } catch {
+    // A run prepared before Task 28 Phase 9 has no plan on disk. That is an
+    // absence, not a defect: the consistency review falls back to the site
+    // plan the result carries and says which source it read.
+    authoringPlan = undefined;
+  }
+  return {
+    runDir,
+    manifest,
+    intent,
+    policy,
+    unitsFile,
+    request,
+    template,
+    result,
+    ...(authoringPlan !== undefined ? { authoringPlan } : {}),
+    ...(regionPlan !== undefined ? { regionPlan } : {}),
+  };
 }
 
 async function writeRunJson(runDir: string, name: string, value: unknown): Promise<void> {
@@ -133,6 +178,8 @@ export interface IngestOutcome {
   changed: Set<string>;
   /** Task 27 §2: the sibling account of every in-scope slot. */
   accounting: SlotAccountingFile;
+  /** Task 28 Phase 9: the cross-page consistency review (reported, not gated). */
+  consistency: ConsistencyReport;
 }
 
 async function writeReviewArtifacts(
@@ -140,7 +187,7 @@ async function writeReviewArtifacts(
   validation: ValidationReport,
   overlay: Record<string, SlotValue>,
   layoutQa?: LayoutQaReport,
-): Promise<{ changed: Set<string>; accounting: SlotAccountingFile }> {
+): Promise<{ changed: Set<string>; accounting: SlotAccountingFile; consistency: ConsistencyReport }> {
   const reportDir = path.join(run.runDir, CONTENT_REPORT_DIR);
   await mkdir(reportDir, { recursive: true });
   const changed = changedKeys(run.template, overlay);
@@ -152,12 +199,17 @@ async function writeReviewArtifacts(
       .filter((u) => u.reason.toLowerCase().includes(ENGINE_LIMITATION_MARKER))
       .map((u) => u.slotKey),
   );
+  // Task 28 CR8: the inline-SVG / attribute surfaces that carry the source mark
+  // but bind to no slot. Read from the template's runtime IR (read-only), so a
+  // template with no runtime data simply contributes nothing.
+  const surfaceWarnings = await detectTemplateBrandSurfaceLeaks(run.template);
   const brandLeak = detectSourceBrandLeaks(
     run.template,
     run.unitsFile,
     effective,
     changed,
     engineBlockedKeys,
+    surfaceWarnings,
   );
   const review = buildOperatorReview({
     manifest: run.manifest,
@@ -185,7 +237,45 @@ async function writeReviewArtifacts(
     syntheticKeys: new Set(run.result?.synthetic ?? []),
     manualEdits: run.manifest.manualEdits,
   });
+  // Task 28 Phase 9: the authoring plan is REBUILT here with the SiteContentPlan
+  // the generator actually produced. At prepare time no plan exists yet, so the
+  // page level knows the route but not what the page is FOR; once a result is
+  // in, the chain can carry the real PageContentPlan and the closure can say
+  // honestly which routes still have none. The rebuild is the same deterministic
+  // function — nothing is grafted on.
+  if (run.authoringPlan !== undefined && run.result !== undefined) {
+    const rebuilt = buildAuthoringPlan({
+      runId: run.manifest.runId,
+      templateId: run.manifest.templateId,
+      scopedRoutes: run.manifest.scopedRoutes,
+      intent: run.intent,
+      briefGaps: run.authoringPlan.brief.gaps,
+      unitsFile: run.unitsFile,
+      ...(run.regionPlan !== undefined ? { regionPlan: run.regionPlan } : {}),
+      sitePlan: run.result.sitePlan,
+    });
+    run.authoringPlan = rebuilt;
+    await writeRunJson(run.runDir, AUTHORING_PLAN_FILE, rebuilt);
+  }
+
+  // Task 28 Phase 9: the CROSS-PAGE review pass. Deterministic, reads only
+  // artifacts this run already produced, and REPORTS — it never rewrites a
+  // value and never fails an ingest, exactly like the brand-leak scan beside it.
+  const consistency = reviewCrossPageConsistency({
+    runId: run.manifest.runId,
+    templateId: run.manifest.templateId,
+    scopedRoutes: run.manifest.scopedRoutes,
+    template: run.template,
+    unitsFile: run.unitsFile,
+    overlay,
+    changed,
+    ...(run.authoringPlan !== undefined ? { plan: run.authoringPlan } : {}),
+    ...(run.result !== undefined ? { sitePlan: run.result.sitePlan } : {}),
+    disabledSlotKeys: (run.manifest.enablement?.disabledSlots ?? []).map((slot) => slot.slotKey),
+    disabledRoutes: run.manifest.enablement?.disabledRoutes ?? [],
+  });
   await writeRunJson(run.runDir, SLOT_ACCOUNTING_FILE, accounting);
+  await writeRunJson(run.runDir, path.join(CONTENT_REPORT_DIR, CONSISTENCY_REPORT_FILE), consistency);
   await writeRunJson(run.runDir, path.join(CONTENT_REPORT_DIR, VALIDATION_REPORT_FILE), validation);
   await writeRunJson(run.runDir, path.join(CONTENT_REPORT_DIR, BRAND_LEAK_REPORT_FILE), brandLeak);
   await writeRunJson(run.runDir, path.join(CONTENT_REPORT_DIR, OPERATOR_REVIEW_JSON_FILE), review.json);
@@ -214,8 +304,16 @@ async function writeReviewArtifacts(
       reconciled: accounting.reconciliation.reconciled,
       ambiguousSlots: accounting.scopeHonesty.ambiguousSlots,
     },
+    consistency: {
+      file: `${CONTENT_REPORT_DIR}/${CONSISTENCY_REPORT_FILE}`,
+      pass: consistency.pass,
+      errors: consistency.counts.errors,
+      warnings: consistency.counts.warnings,
+      routesCovered: consistency.routeCoverage.filter((entry) => entry.writtenSlots > 0).length,
+      routesInScope: consistency.routeCoverage.length,
+    },
   }));
-  return { changed, accounting };
+  return { changed, accounting, consistency };
 }
 
 /**
@@ -247,7 +345,7 @@ export async function ingestGenerationResult(
   if (validation.pass) {
     await writeRunJson(run.runDir, SLOT_VALUES_FILE, overlay);
   }
-  const { changed, accounting } = await writeReviewArtifacts(
+  const { changed, accounting, consistency } = await writeReviewArtifacts(
     run,
     validation,
     validation.pass ? overlay : {},
@@ -257,7 +355,7 @@ export async function ingestGenerationResult(
       `generation result failed validation with ${validation.errors.length} error(s); see report/${VALIDATION_REPORT_FILE}`,
     );
   }
-  return { validation, overlay, changed, accounting };
+  return { validation, overlay, changed, accounting, consistency };
 }
 
 /**
@@ -307,13 +405,13 @@ export async function revalidateSlotValues(run: LoadedContentRun): Promise<Inges
     { manual: manualEdits },
   );
   await updateManifest(run, (m) => ({ ...m, manualEdits }));
-  const { changed, accounting } = await writeReviewArtifacts(run, validation, overlay);
+  const { changed, accounting, consistency } = await writeReviewArtifacts(run, validation, overlay);
   if (!validation.pass) {
     throw new ContentValidationError(
       `slot-values.json failed validation with ${validation.errors.length} error(s); see report/${VALIDATION_REPORT_FILE}`,
     );
   }
-  return { validation, overlay, changed, accounting };
+  return { validation, overlay, changed, accounting, consistency };
 }
 
 /** Persist a layout QA report and refresh manifest + operator review. */

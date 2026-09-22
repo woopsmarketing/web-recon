@@ -122,6 +122,11 @@ export async function buildApp(appDir: string, force: boolean, log: (l: string) 
 
 interface RunningApp {
   baseUrl: string;
+  /** Everything the `next start` child wrote to stdout/stderr so far.
+   *  Task 28 Phase 3: the authoring preview asserts that a hot content edit
+   *  produces ZERO `[wr-slot]` guard warnings, and that is the only place the
+   *  applier reports a refused write. Existing callers may ignore it. */
+  output: () => string;
   stop: () => Promise<void>;
 }
 
@@ -162,6 +167,7 @@ export async function startApp(appDir: string, extraEnv: Record<string, string> 
   }
   return {
     baseUrl,
+    output: () => serverOutput,
     stop: async () => {
       if (exited) return;
       child.kill("SIGTERM");

@@ -15,13 +15,15 @@ import path from "node:path";
 import { chromium, type Browser, type Page } from "playwright";
 
 import { normalizeResidualUrl } from "../assets/residual-report.js";
+import { auditAnchors } from "../seo/link-qa.js";
+import { brandTokensFromHost } from "../content-injection/brand-surfaces.js";
 import {
-  brandTokensFromHost,
-  firstBrandToken,
-  isSourceHostUrl,
-  scanBodyAnchorIdentity,
-  scanInlineSvgMarkup,
-} from "../content-injection/brand-surfaces.js";
+  censusServedHtml,
+  markupBrandSurfaceTotal,
+  summarizeBrandCensus,
+  type BrandSurfaceCensus,
+  type BrandSurfaceCounts,
+} from "./brand-census.js";
 import { SERVER_READY_PREFIX } from "./static-server.js";
 import type { DeployManifest } from "./types.js";
 
@@ -64,6 +66,27 @@ export interface ProductionQaReport {
     outOfTableCount: number;
     externalCount: number;
   };
+  /**
+   * SITE-WIDE internal-link audit (Task 28 Phase 6).
+   *
+   * `internalLinks` above scans anchors on `/` only. This one classifies EVERY
+   * anchor on EVERY served route through `auditAnchors` (src/seo/link-qa.ts —
+   * reused, not re-implemented) and names each internal href the route table
+   * cannot answer, with the route it was found on.
+   *
+   * This is the honest clearing evidence for a `dead-internal-link`
+   * requirement: the requirement clears when the SERVED package carries no
+   * link to the disabled route, never because a disable was requested.
+   */
+  siteLinks: {
+    routesAudited: number;
+    anchors: number;
+    routeResolves: number;
+    /** `<route found on> -> <href>` for every internal href with no route. */
+    brokenInternal: string[];
+    /** Distinct normalized internal paths the route table does not contain. */
+    brokenInternalTargets: string[];
+  };
   sourceHostMentionsInHtml: number;
   /**
    * Task 27 (audit finding BRAND-COUNT) — a per-surface census of the source
@@ -79,6 +102,22 @@ export interface ProductionQaReport {
    * replacement-image requirements) — not a blanket string count.
    */
   brandSurfaceCensus: BrandSurfaceCensus;
+  /**
+   * The same census over the POST-HYDRATION DOM (Task 28 Phase 2) — what
+   * actually renders, rather than the bytes the server sent. This is the axis
+   * the source-brand clearing rule cross-checks against, because an IR rewrite
+   * that reached the SSR markup but not the RSC flight shows up HERE and
+   * nowhere else.
+   */
+  brandSurfaceCensusHydrated: BrandSurfaceCensus;
+  /**
+   * Routes whose served-bytes census and post-hydration census disagree, with
+   * both totals. A non-empty list is the "it reverted on hydration" signal (or
+   * its mirror: client-only brand markup a crawler never sees). REPORTED, not
+   * gated — the gate that consumes it is
+   * `evaluateBrandOutputProof` in the release layer.
+   */
+  brandCensusHydrationDivergence: Array<{ route: string; served: number; hydrated: number }>;
 }
 
 export interface LaunchedPackage {
@@ -239,101 +278,50 @@ export function summarizeResidualRequests(
   return files;
 }
 
-export interface BrandSurfaceCounts {
-  sourceUrl: number;
-  bodyAnchorIdentity: number;
-  visibleText: number;
-  imageAlt: number;
-  ariaLabel: number;
-  svgAriaLabel: number;
-  svgSymbolId: number;
-  svgText: number;
-}
-
-export interface BrandSurfaceCensus extends BrandSurfaceCounts {
-  brandTokens: string[];
-  routesMeasured: number;
-  byRoute: Array<BrandSurfaceCounts & { route: string }>;
-}
-
-const SVG_BLOCK = /<svg\b[\s\S]*?<\/svg>/gi;
-const ANY_ARIA_LABEL = /\baria-label\s*=\s*"([^"]*)"/g;
-const IMG_ALT = /<img\b[^>]*?\balt\s*=\s*"([^"]*)"/gi;
-const URL_ATTR = /\b(?:href|src|poster|action)\s*=\s*"([^"]*)"/gi;
-
-/**
- * Census ONE served html document. Everything is derived from the document
- * itself — no host list, no hardcoded brand (the tokens come from the
- * deploy manifest's `sourceHost`).
- */
-export function censusServedHtml(
-  html: string,
-  sourceHost: string,
-  brandTokens: readonly string[],
-): BrandSurfaceCounts {
-  const counts: BrandSurfaceCounts = {
-    sourceUrl: 0,
-    bodyAnchorIdentity: 0,
-    visibleText: 0,
-    imageAlt: 0,
-    ariaLabel: 0,
-    svgAriaLabel: 0,
-    svgSymbolId: 0,
-    svgText: 0,
-  };
-  const svgBlocks = html.match(SVG_BLOCK) ?? [];
-  for (const block of svgBlocks) {
-    for (const hit of scanInlineSvgMarkup(block, brandTokens)) {
-      if (hit.surface === "svg-aria-label") counts.svgAriaLabel += 1;
-      else if (hit.surface === "svg-symbol-id") counts.svgSymbolId += 1;
-      else counts.svgText += 1;
-    }
-  }
-  // aria-label OUTSIDE inline SVG (the SVG ones are counted on their own axis).
-  const outsideSvg = html.replace(SVG_BLOCK, "");
-  for (const match of outsideSvg.matchAll(ANY_ARIA_LABEL)) {
-    if (firstBrandToken(match[1], brandTokens) !== undefined) counts.ariaLabel += 1;
-  }
-  for (const match of html.matchAll(IMG_ALT)) {
-    if (firstBrandToken(match[1], brandTokens) !== undefined) counts.imageAlt += 1;
-  }
-  for (const match of html.matchAll(URL_ATTR)) {
-    if (isSourceHostUrl(match[1], sourceHost)) counts.sourceUrl += 1;
-  }
-  counts.bodyAnchorIdentity = scanBodyAnchorIdentity(html, sourceHost).length;
-  const text = outsideSvg.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<[^>]*>/g, " ");
-  for (const token of brandTokens) {
-    const matches = text.match(new RegExp(`(^|[^a-z0-9])${token}([^a-z0-9]|$)`, "gi"));
-    counts.visibleText += matches?.length ?? 0;
-  }
-  return counts;
-}
-
-/** Fold per-route counts into the report-level census. */
-export function summarizeBrandCensus(
-  brandTokens: readonly string[],
-  byRoute: BrandSurfaceCensus["byRoute"],
-): BrandSurfaceCensus {
-  const total = (pick: (row: BrandSurfaceCounts) => number): number =>
-    byRoute.reduce((sum, row) => sum + pick(row), 0);
-  return {
-    brandTokens: [...brandTokens],
-    routesMeasured: byRoute.length,
-    sourceUrl: total((row) => row.sourceUrl),
-    bodyAnchorIdentity: total((row) => row.bodyAnchorIdentity),
-    visibleText: total((row) => row.visibleText),
-    imageAlt: total((row) => row.imageAlt),
-    ariaLabel: total((row) => row.ariaLabel),
-    svgAriaLabel: total((row) => row.svgAriaLabel),
-    svgSymbolId: total((row) => row.svgSymbolId),
-    svgText: total((row) => row.svgText),
-    byRoute,
-  };
-}
+// The census primitives live in `brand-census.ts` (Task 28 CR7) so the bake can
+// measure its own static export with the SAME code, without importing this
+// module (and Playwright) into the compile path. Re-exported here because
+// `censusServedHtml` / `summarizeBrandCensus` are part of this module's
+// published surface (scripts/smoke-production.ts imports them from here).
+export {
+  censusServedHtml,
+  summarizeBrandCensus,
+  type BrandSurfaceCensus,
+  type BrandSurfaceCounts,
+};
 
 export interface QaOptions {
   packageDir: string;
   log?: (line: string) => void;
+  /**
+   * The token set the brand RESOLVER ran with (Task 28 Phase 2 correction).
+   * Omitted, QA recovers them from the sibling `report/bake-report.json` of
+   * the same build and falls back to the host-derived tokens. Host-only tokens
+   * would make this census blind to a brand name the source declares but does
+   * not spell the way its domain is spelled.
+   */
+  brandTokens?: readonly string[];
+}
+
+/**
+ * The tokens the build's own brand resolver used, read from the build's
+ * `report/bake-report.json` (the package dir is `<build>/package`). Returns
+ * `null` when there is no such report — an older build, or a package copied
+ * away from its build directory — and the caller falls back to host tokens.
+ */
+async function resolverBrandTokens(packageDir: string): Promise<string[] | null> {
+  const reportFile = path.join(packageDir, "..", "report", "bake-report.json");
+  try {
+    const report = JSON.parse(await readFile(reportFile, "utf8")) as {
+      brand?: { bake?: { brandTokens?: unknown } | null };
+    };
+    const tokens = report.brand?.bake?.brandTokens;
+    if (!Array.isArray(tokens)) return null;
+    const strings = tokens.filter((token): token is string => typeof token === "string");
+    return strings.length > 0 ? strings : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function runProductionQa(options: QaOptions): Promise<ProductionQaReport> {
@@ -358,9 +346,33 @@ export async function runProductionQa(options: QaOptions): Promise<ProductionQaR
   const routeCensus: ProductionQaReport["routeCensus"] = [];
   const externalRequestsByHost: Record<string, number> = {};
   const internalLinks = { inTableChecked: 0, inTableBroken: [] as string[], outOfTableCount: 0, externalCount: 0 };
+  const siteLinks = {
+    routesAudited: 0,
+    anchors: 0,
+    routeResolves: 0,
+    brokenInternal: [] as string[],
+    brokenInternalTargets: [] as string[],
+  };
   let sourceHostMentionsInHtml = 0;
-  const brandTokens = brandTokensFromHost(manifest.sourceHost);
+  const brandTokens =
+    options.brandTokens ??
+    (await resolverBrandTokens(options.packageDir)) ??
+    brandTokensFromHost(manifest.sourceHost);
   const brandByRoute: BrandSurfaceCensus["byRoute"] = [];
+  /**
+   * The SAME census, taken over the POST-HYDRATION DOM (Task 28 Phase 2).
+   *
+   * WHY BOTH. `brandByRoute` above reads the bytes the server sent. Under the
+   * App Router those bytes are only half the story: the RSC flight payload
+   * arrives alongside them (as `self.__next_f.push(...)` chunks and
+   * `text/x-component` responses) and React reconciles the DOM from it, so a
+   * brand rewrite that reached the SSR markup but missed the flight produces
+   * markup that looks clean and a DOM that reverts. Measuring only the served
+   * bytes cannot see that; measuring only the hydrated DOM cannot see what a
+   * crawler with JS disabled gets. Both are measured, and a route where they
+   * DISAGREE is named in `brandCensusHydrationDivergence`.
+   */
+  const brandHydratedByRoute: BrandSurfaceCensus["byRoute"] = [];
 
   let browser: Browser | null = null;
   try {
@@ -369,6 +381,14 @@ export async function runProductionQa(options: QaOptions): Promise<ProductionQaR
     // uninjected routes and is never invented — assert consistency, not
     // unconditional presence).
     const servedHasDescription = new Map<string, boolean>();
+    // Served <title> per route (Task 28 Phase 10 correction): measured from the
+    // BYTES a crawler receives, not from the manifest's expectation, so a plan
+    // that promises unique titles and a package that serves one repeated string
+    // cannot agree with each other by construction.
+    const servedTitleByRoute = new Map<string, string>();
+    const servedRouteKeys = new Set(
+      manifest.routes.map((route) => route.route.replace(/\/+$/, "") || "/"),
+    );
     for (const route of manifest.routes) {
       const response = await fetch(launched.baseUrl + route.route);
       const body = await response.text();
@@ -384,6 +404,8 @@ export async function runProductionQa(options: QaOptions): Promise<ProductionQaR
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")}</title>`;
       check(`title-served:${route.route}`, body.includes(titleNeedle), route.expectedTitle.slice(0, 60));
+      const servedTitle = /<title>([^<]*)<\/title>/.exec(body)?.[1] ?? "";
+      servedTitleByRoute.set(route.route, servedTitle);
       check(`head-block:${route.route}`, body.includes(route.headMarker), "");
       check(
         `robots-meta:${route.route}`,
@@ -392,7 +414,21 @@ export async function runProductionQa(options: QaOptions): Promise<ProductionQaR
       );
       sourceHostMentionsInHtml += body.split(manifest.sourceHost).length - 1;
       brandByRoute.push({ route: route.route, ...censusServedHtml(body, manifest.sourceHost, brandTokens) });
+      // Site-wide link audit (Task 28 Phase 6) — every anchor on every route,
+      // classified against the SERVED route table.
+      const linkAudit = auditAnchors(body, servedRouteKeys, manifest.sourceHost);
+      siteLinks.routesAudited += 1;
+      siteLinks.anchors += linkAudit.anchors;
+      siteLinks.routeResolves += linkAudit.routeResolves;
+      for (const broken of linkAudit.brokenInternal) {
+        siteLinks.brokenInternal.push(`${route.route} -> ${broken.href}`);
+        const normalized = broken.href.split("?")[0].split("#")[0].replace(/\/+$/, "") || "/";
+        if (!siteLinks.brokenInternalTargets.includes(normalized)) {
+          siteLinks.brokenInternalTargets.push(normalized);
+        }
+      }
     }
+    siteLinks.brokenInternalTargets.sort();
     const robots = await fetch(launched.baseUrl + "/robots.txt");
     const robotsBody = await robots.text();
     check(
@@ -443,6 +479,15 @@ export async function runProductionQa(options: QaOptions): Promise<ProductionQaR
         timeout: 60_000,
       });
       await settle(page);
+      // Post-hydration brand census: read what React actually rendered, not
+      // what the server sent. `outerHTML` of the live document, censused with
+      // the identical function the served-bytes axis uses, so the two numbers
+      // are comparable by construction.
+      const hydratedDom = await page.evaluate(() => document.documentElement.outerHTML);
+      brandHydratedByRoute.push({
+        route: route.route,
+        ...censusServedHtml(hydratedDom, manifest.sourceHost, brandTokens),
+      });
       const title = await page.title();
       const titleOk = title === route.expectedTitle;
       check(`browser-title:${route.route}`, titleOk, title.slice(0, 60));
@@ -638,6 +683,62 @@ export async function runProductionQa(options: QaOptions): Promise<ProductionQaR
     // number in the report is vacuous, which is the failure mode the audit
     // found in `external-requests-only-known-residual`.
     const brandSurfaceCensus = summarizeBrandCensus(brandTokens, brandByRoute);
+    const brandSurfaceCensusHydrated = summarizeBrandCensus(brandTokens, brandHydratedByRoute);
+    const servedTotalByRoute = new Map(
+      brandByRoute.map((row) => [row.route, markupBrandSurfaceTotal(row)] as const),
+    );
+    const brandCensusHydrationDivergence = brandHydratedByRoute
+      .map((row) => ({
+        route: row.route,
+        served: servedTotalByRoute.get(row.route) ?? 0,
+        hydrated: markupBrandSurfaceTotal(row),
+      }))
+      .filter((row) => row.served !== row.hydrated);
+    // Same stance as the served census: the check asserts the measurement RAN
+    // on every route, never that the number is zero. A vacuous census (fewer
+    // routes measured than the manifest declares) is the failure this catches.
+    check(
+      "brand-surface-census-hydrated-measured",
+      brandSurfaceCensusHydrated.routesMeasured === manifest.routes.length,
+      `routes=${brandSurfaceCensusHydrated.routesMeasured}/${manifest.routes.length} ` +
+        `post-hydration brand surfaces=${markupBrandSurfaceTotal(brandSurfaceCensusHydrated)} ` +
+        `(served ${markupBrandSurfaceTotal(brandSurfaceCensus)}); divergent routes=` +
+        (brandCensusHydrationDivergence.length === 0
+          ? "none"
+          : brandCensusHydrationDivergence
+              .map((row) => `${row.route} served=${row.served} hydrated=${row.hydrated}`)
+              .join(", ")),
+    );
+    // ---- served-<title> uniqueness (Task 28 Phase 10 correction) ----------
+    //
+    // Two indexable routes serving the same <title> is a real SEO defect, and
+    // until this check existed nothing in the program measured it — a package
+    // whose every route carried one identical title passed every suite. Same
+    // stance as the brand census: the check asserts the measurement RAN on
+    // every route and NAMES every duplicate group; it does not assert the
+    // number is zero, because a route with no authored heading legitimately
+    // falls back to the site-level title and inventing one to break a tie is
+    // forbidden. `duplicate-title-groups=` in the detail is the number to read.
+    const titleGroups = new Map<string, string[]>();
+    for (const [route, title] of servedTitleByRoute) {
+      const routes = titleGroups.get(title);
+      if (routes === undefined) titleGroups.set(title, [route]);
+      else routes.push(route);
+    }
+    const duplicateTitleGroups = [...titleGroups.entries()].filter(([, routes]) => routes.length > 1);
+    const duplicateTitleRoutes = duplicateTitleGroups.reduce((sum, [, routes]) => sum + routes.length, 0);
+    check(
+      "title-uniqueness-measured",
+      servedTitleByRoute.size === manifest.routes.length &&
+        [...servedTitleByRoute.values()].every((title) => title.trim() !== ""),
+      `routes=${servedTitleByRoute.size}/${manifest.routes.length} distinct=${titleGroups.size} ` +
+        `duplicate-title-groups=${duplicateTitleGroups.length} duplicate-title-routes=${duplicateTitleRoutes}` +
+        (duplicateTitleGroups.length === 0
+          ? ""
+          : ` — ${duplicateTitleGroups
+              .map(([title, routes]) => `${JSON.stringify(title.slice(0, 60))} on ${routes.join(", ")}`)
+              .join(" | ")}`),
+    );
     check(
       "brand-surface-census-measured",
       brandSurfaceCensus.routesMeasured === manifest.routes.length,
@@ -662,8 +763,11 @@ export async function runProductionQa(options: QaOptions): Promise<ProductionQaR
       residualRequestFiles,
       unexpectedExternalHosts,
       internalLinks,
+      siteLinks,
       sourceHostMentionsInHtml,
       brandSurfaceCensus,
+      brandSurfaceCensusHydrated,
+      brandCensusHydrationDivergence,
     };
   } finally {
     await browser?.close();

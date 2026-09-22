@@ -121,6 +121,17 @@ function printUsage(): void {
   console.log("  06–14 artifact is ever modified.");
 }
 
+/**
+ * Task 28.5B change 6 — `n/a` for a channel this run never measured.
+ *
+ * A pre-28.5B artifact, or a run where nothing was comparable, must not read as
+ * a perfect 0. Every new channel is optional in the schema for exactly that
+ * reason, and this is the printing half of it.
+ */
+function channel(value: number | undefined): string {
+  return value === undefined ? "n/a" : String(value);
+}
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
@@ -150,7 +161,19 @@ function reportRun(result: QaRunResult): void {
   console.log(`  geometry max delta         ${fidelity.geometryMaxDelta}px`);
   console.log(`  document height Δ median   ${fidelity.documentHeightDeltaMedian}px`);
   console.log(`  screenshot mean Δ median   ${fidelity.screenshotMeanDeltaMedian}`);
-  console.log(`  changed pixel ratio median ${fidelity.screenshotChangedRatioMedian}`);
+  /*
+   * Task 28.5B change 6 — four channels, not one scalar.
+   *
+   * 28.5A measured the historical @1 ratio saturating near 1.0 on renders a
+   * human calls identical, so a headline that prints it alone is misleading in
+   * exactly the case that matters. @1 is kept (artifact continuity, and it is
+   * still the ranking key) and printed BESIDE the amplitude gate and the two
+   * perceptual channels. They disagree on purpose.
+   */
+  console.log(`  changed pixel ratio median @1     ${fidelity.screenshotChangedRatioMedian}`);
+  console.log(`  …≥16/255 amplitude       @16    ${channel(fidelity.screenshotChangedRatioAt16Median)}`);
+  console.log(`  …ΔE76 > 2.3 (JND) ratio median   ${channel(fidelity.screenshotDeltaE76AboveJndRatioMedian)}`);
+  console.log(`  …ΔE76 mean, median over pages    ${channel(fidelity.screenshotDeltaE76MeanMedian)}`);
   console.log(`  asset failures             ${fidelity.assetFailures}`);
   console.log(`  clone JS runtime errors    ${fidelity.runtimeErrors}`);
   console.log(`  blocked-asset console msgs ${fidelity.blockedAssetMessages} (not JS — item 54)`);
@@ -170,7 +193,20 @@ function reportRun(result: QaRunResult): void {
   console.log("Live fidelity (drift-free pages only — never mixed with the above)");
   console.log(`  comparable pairs           ${baseline.liveFidelity.comparablePairs}`);
   console.log(`  content exact ratio        ${baseline.liveFidelity.contentExactRatio}`);
-  console.log(`  changed pixel ratio median ${baseline.liveFidelity.screenshotChangedRatioMedian}`);
+  console.log(`  changed pixel ratio median @1     ${baseline.liveFidelity.screenshotChangedRatioMedian}`);
+  console.log(`  …≥16/255 amplitude       @16    ${channel(baseline.liveFidelity.screenshotChangedRatioAt16Median)}`);
+  console.log(`  …ΔE76 > 2.3 (JND) ratio median   ${channel(baseline.liveFidelity.screenshotDeltaE76AboveJndRatioMedian)}`);
+  /*
+   * Task 28.5B change 6 (integration) — the browser-to-browser QA-only style
+   * channel. Its denominator is printed with it: "0 mismatches" over 0 compared
+   * pairs is not a pass, and the unavailable count says so out loud.
+   */
+  console.log(
+    `  QA-only style mismatches   ${channel(baseline.liveFidelity.qaOnlyStyleMismatchTotal)}` +
+      ` (median ${channel(baseline.liveFidelity.qaOnlyStyleMismatchMedian)}` +
+      ` over ${channel(baseline.liveFidelity.qaOnlyStyleComparedPairs)} pairs,` +
+      ` ${channel(baseline.liveFidelity.qaOnlyStyleUnavailablePairs)} unavailable)`,
+  );
 
   console.log("");
   console.log("Behavior equivalence (a DIFFERENT axis from Task 14's binding count)");

@@ -1,0 +1,197 @@
+{
+  "task": "28.75 — generic blank-region QA channel",
+  "report": "docs/result/28.75/01-blank-region-channel.md",
+  "implemented": true,
+  "channelIds": [
+    "blank-region-ratio",
+    "blank-region-count",
+    "blank-region-largest-viewport-ratio",
+    "blank-region-displaced-count",
+    "blank-region-absent-count",
+    "blank-region-ink-only-count",
+    "region-census-selected"
+  ],
+  "firedChannelId": "blank-region-ratio",
+  "recordedOnlyChannelIds": [
+    "blank-region-count",
+    "blank-region-largest-viewport-ratio",
+    "blank-region-displaced-count",
+    "blank-region-absent-count",
+    "blank-region-ink-only-count",
+    "region-census-selected"
+  ],
+  "rubricVersionBefore": 4,
+  "rubricVersionAfter": 5,
+  "thresholds": {
+    "census": {
+      "REGION_MIN_WIDTH_RATIO": 0.2,
+      "REGION_MIN_HEIGHT_PX": 60,
+      "REGION_MIN_VIEWPORT_AREA_RATIO": 0.02,
+      "REGION_BOX_DEDUPE_PX": 4,
+      "MAX_REGIONS": 400
+    },
+    "domLeg": {
+      "REGION_PAINT_GRID": 32,
+      "REGION_BACKDROP_AREA_FACTOR": 2,
+      "REGION_SOURCE_PAINT_RATIO": 0.06,
+      "REGION_SOURCE_MIN_LEAVES": 3,
+      "REGION_SOURCE_MIN_CHARS": 20,
+      "REGION_SOURCE_MIN_DESCENDANTS": 3,
+      "REGION_CLONE_BLANK_PAINT_RATIO": 0.02,
+      "REGION_CLONE_BLANK_RETAINED_RATIO": 0.15,
+      "REGION_CLONE_BLANK_LEAF_RETAINED_RATIO": 0.1,
+      "REGION_CLONE_BLANK_MIN_LEAF_ALLOWANCE": 2
+    },
+    "inkLeg": {
+      "REGION_INK_SAMPLE_BUDGET": 40000,
+      "REGION_INK_HISTOGRAM_BITS": 5,
+      "REGION_INK_MIN_SAMPLES": 400,
+      "REGION_SOURCE_INK_RATIO": 0.03,
+      "REGION_CLONE_BLANK_INK_RATIO": 0.05,
+      "REGION_CLONE_BLANK_INK_RETAINED_RATIO": 0.15,
+      "REGION_INK_DOM_COVERAGE_MIN": 0.8,
+      "REGION_INK_IMAGE_SCALE_TOLERANCE": 0.02,
+      "DELTA_E76_JND_THRESHOLD": 2.3
+    },
+    "correspondence": {
+      "MIN_REGION_SUFFIX_SEGMENTS": 2,
+      "REGION_FALLBACK_HEIGHT_TOLERANCE": 0.15,
+      "REGION_ALIGNMENT_TOLERANCE_PX": 16,
+      "REGION_ALIGNMENT_MIN_PAIRS": 3,
+      "REGION_MAP_SCALE_TOLERANCE": 1.35
+    },
+    "bands": {
+      "REGION_BLANK_MIN_VIEWPORT_AREA_RATIO": 0.02,
+      "BLANK_REGION_MINOR_RATIO": 0.02,
+      "BLANK_REGION_MAJOR_RATIO": 0.1,
+      "BLANK_REGION_BLOCKER_RATIO": 0.25
+    }
+  },
+  "correspondenceMechanism": {
+    "chosen": "tag-path SUFFIX >= 2 segments, greedy one-to-one, tie-broken by geometric IoU then sibling-ordinal distance",
+    "fallbacks": [
+      "ancestor-mapped: source box mapped through the nearest PAIRED ancestor region, scale guard 1.35",
+      "source-rect: the raw source rectangle, gated on alignedGeometry (page heights within 15%, >= 3 pairs, both median offsets <= 16px)"
+    ],
+    "rejected": {
+      "exact-structural-path": "0% hit rate on every one of the 6 measured pairs — the generator bolts a fixed shell prefix onto every clone path",
+      "suffix-k1": "one tag name; pairs unrelated divs",
+      "suffix-k3-k4": "loses 8-13 points (k=3) and up to half the census (k=4) for no measured precision gain",
+      "leaf-set-carry": "yields no box, swings 38-92% across pairs, and answers the question missing-text-ratio already answers (0.0 on the pair this channel exists for)",
+      "raw-rectangle-ungated": "off by 5,269px and 8,666px on hobbang.net; kept only behind alignedGeometry"
+    },
+    "hitRates": {
+      "severance@1440": { "regions": 49, "exact": 0.0, "suffix2": 0.71, "leafCarry": 0.92 },
+      "severance@1100": { "regions": 58, "exact": 0.0, "suffix2": 0.66, "leafCarry": 0.66 },
+      "linearPricing@1440": { "regions": 26, "exact": 0.0, "suffix2": 0.96, "leafCarry": 0.38 },
+      "linearPricing@390": { "regions": 49, "exact": 0.0, "suffix2": 0.98, "leafCarry": 0.65 },
+      "hobbang@1440": { "regions": 71, "exact": 0.0, "suffix2": 0.96, "leafCarry": 0.92 },
+      "hobbang@390": { "regions": 96, "exact": 0.0, "suffix2": 0.97, "leafCarry": 0.82 }
+    }
+  },
+  "evidenceLegs": {
+    "dom": "region paint occupancy + painted-leaf count + characters/image leaves + visible DOM descendants, source and clone",
+    "ink": "region-level screenshot occupancy: fraction of sampled pixels beyond the CIE Lab dE76 JND from the region's own modal colour",
+    "selfConsistent": "a region populated only by ink is judged only by ink; one populated only by the DOM only by the DOM",
+    "inkPrecondition": "inkTrustOf(side): screenshot present, same height and >= viewport width (tol 0.02), and min(deepest painted leaf, scrollHeight)/scrollHeight >= 0.8"
+  },
+  "perMechanismCoverage": {
+    "paint-occlusion (severance hero)": { "dom": false, "ink": true, "caughtBy": "INK ONLY" },
+    "real-displacement (severance carousel)": { "dom": true, "ink": false, "caughtBy": "DOM ONLY" },
+    "real-displacement (severance NEWS band)": { "dom": "nested sub-region only", "ink": true, "caughtBy": "BOTH, different granularity" },
+    "genuine-absence-via-opacity (seoultone doctor block)": { "dom": "expected", "ink": "expected", "caughtBy": "NOT MEASURED — source origin offline" },
+    "singleChannelMechanisms": ["paint-occlusion"],
+    "evidence": "with screenshots the severance pairs report 1.4533 over 3 regions; without them 0.6435/0.6473 over 2, and the hero is not among them"
+  },
+  "acceptancePairs": [
+    { "site": "gs.severance.healthcare", "route": "/gs/index.do", "width": 1100, "required": "MUST_FIRE", "fired": true, "value": 1.4533, "severity": "BLOCKER", "regions": ["div/article/div", "div/article/div[2]", "div/article/div[3]/div/div/div"], "runId": "2026-09-04T22-53-01-661Z" },
+    { "site": "gs.severance.healthcare", "route": "/gs/index.do", "width": 1440, "required": "MUST_FIRE", "fired": true, "value": 1.4533, "severity": "BLOCKER", "regions": ["div/article/div", "div/article/div[2]", "div/article/div[3]/div/div/div"], "runId": "2026-09-04T22-53-01-661Z" },
+    { "site": "seoultone.kr", "route": "/", "width": 390, "required": "MUST_FIRE", "fired": null, "value": null, "severity": null, "regions": [], "runId": null, "status": "NOT_MEASURED", "reason": "seoultone.kr served a Cafe24 outage page for the whole verification window (12 retry attempts; TLS handshake fails, curl exit 35). Every capture returns a 907px placeholder with 10 leaves instead of the 5,632px page." },
+    { "site": "seoultone.kr", "route": "/", "width": 1440, "required": "MUST_FIRE", "fired": null, "value": null, "severity": null, "regions": [], "runId": null, "status": "NOT_MEASURED", "reason": "same outage; 937px placeholder with 10 leaves instead of the 4,892px page" },
+    { "site": "linear.app", "route": "/pricing", "width": 390, "required": "MUST_NOT_FIRE", "fired": false, "value": 0, "severity": null, "regions": [], "runId": "2026-09-04T22-53-25-263Z" },
+    { "site": "linear.app", "route": "/pricing", "width": 1440, "required": "MUST_NOT_FIRE", "fired": false, "value": 0, "severity": null, "regions": [], "runId": "2026-09-04T22-53-25-263Z" },
+    { "site": "hobbang.net", "route": "/", "width": 390, "required": "MUST_NOT_FIRE", "fired": false, "value": 0, "severity": null, "regions": [], "runId": "2026-09-04T22-53-52-081Z" },
+    { "site": "hobbang.net", "route": "/", "width": 1440, "required": "MUST_NOT_FIRE", "fired": false, "value": 0, "severity": null, "regions": [], "runId": "2026-09-04T22-53-52-081Z" }
+  ],
+  "acceptanceSummary": { "mustFire": 4, "mustFireVerified": 2, "mustFireNotMeasured": 2, "mustNotFire": 4, "mustNotFireVerified": 4, "falsePositives": 0 },
+  "smokeChecksBefore": 205,
+  "smokeChecksAfter": 271,
+  "prefixFailureCount": 21,
+  "prefixBaseline": { "method": "mechanism reverted IN PLACE: MAX_REGIONS -> 0 in the probe's in-page default, detectBlankRegions short-circuited to a zero result", "passed": 250, "total": 271, "failed": 21, "restoredVerifiedWith": "shasum -a 256 -c", "srcFilesMatchedByteForByte": 7, "smokeScriptDeltaExplained": "eight regions[0]!.x changed to regions[0]?.x so a mechanism-off run FAILS rather than throwing at the 4th check; weakens no assertion" },
+  "typecheckExit": 0,
+  "typecheckNote": "npx tsc --noEmit produces zero diagnostics repo-wide at completion",
+  "runIds": {
+    "responsiveQa": {
+      "gs.severance.healthcare": "2026-09-04T22-53-01-661Z",
+      "linear.app": "2026-09-04T22-53-25-263Z",
+      "hobbang.net": "2026-09-04T22-53-52-081Z"
+    },
+    "reconstructions": {
+      "gs.severance.healthcare": "2026-09-04T18-14-47-300Z",
+      "seoultone.kr": "2026-09-04T18-17-23-059Z",
+      "linear.app": "2026-09-04T17-24-33-839Z",
+      "hobbang.net": "2026-09-04T18-16-31-732Z"
+    }
+  },
+  "regionCensusAccounting": {
+    "sidesMeasured": 12,
+    "examined": 32652,
+    "selected": 790,
+    "rejected": 31862,
+    "conserved": true,
+    "rejectedByReason": {
+      "not-visible": 15854,
+      "inside-svg": 7686,
+      "no-element-children": 3372,
+      "too-narrow": 1654,
+      "offscreen": 1206,
+      "too-short": 1087,
+      "media-element": 866,
+      "duplicate-of-selected-ancestor": 126,
+      "too-small": 11,
+      "cap-reached": 0
+    }
+  },
+  "paintSuppressionFinding": {
+    "question": "is the observer's already-recorded paintSuppression.suppressedBelowFold usable as corroborating evidence?",
+    "answer": "site-level DIAGNOSTIC only, not an evidence leg, and not redundant with the new census",
+    "reasons": [
+      "it measures the SOURCE capture, not the clone — a perfect clone would carry the same count",
+      "it is a scalar per viewport: it names no element, no box and no area, so it cannot be banded or localised",
+      "it is not necessary: severance MOBILE is 0 while the hero-occlusion defect is present at both widths",
+      "it lives in site-observations/<run>/pages/pNNNNNN/observation.json, a different artifact captured at a different time than the QA run"
+    ],
+    "measured": {
+      "gs.severance.healthcare": { "desktop": { "sized": 804, "suppressed": 210, "belowFold": 75, "ratio": 0.093 }, "mobile": { "sized": 594, "suppressed": 50, "belowFold": 0, "ratio": 0 } },
+      "seoultone.kr": { "desktop": { "sized": 428, "suppressed": 88, "belowFold": 78, "ratio": 0.182 }, "mobile": { "sized": 434, "suppressed": 88, "belowFold": 78, "ratio": 0.18 } },
+      "linear.app": { "desktop": { "sized": 2077, "suppressed": 14, "belowFold": 11, "ratio": 0.005 }, "mobile": { "sized": 710, "suppressed": 12, "belowFold": 9, "ratio": 0.013 } },
+      "hobbang.net": { "desktop": { "sized": 812, "suppressed": 28, "belowFold": 0, "ratio": 0 }, "mobile": { "sized": 767, "suppressed": 0, "belowFold": 0, "ratio": 0 } }
+    },
+    "recommendation": "surface it in the responsive-qa run artifact as CONTEXT beside the blank-region reading, without letting it move a band"
+  },
+  "falsePositivesFoundAndCured": [
+    { "site": "hobbang.net", "width": 1440, "region": "main/section[10]", "value": 1.1711, "wouldHaveBeen": "BLOCKER", "rootCause": "the SOURCE census reaches y=5,574 on a 10,863px page (51%) — the bottom half revealed itself after the probe and before the screenshot, so every box below that point names the wrong pixels", "cure": "REGION_INK_DOM_COVERAGE_MIN = 0.8" },
+    { "site": "hobbang.net", "width": 390, "region": "main/section[12]/div/div/table/tbody/tr[3]", "value": 0.0838, "wouldHaveBeen": "MINOR", "rootCause": "same (50% coverage on a 17,167px page)", "cure": "REGION_INK_DOM_COVERAGE_MIN = 0.8" }
+  ],
+  "guardsMeasuredAndRejected": [
+    { "guard": "residual of the region's offset from the page's median offset", "why": "both hobbang findings sit at residual 0px (median 5,269/8,666, region 5,269/8,667) — separates nothing" },
+    { "guard": "per-region DOM-vs-screenshot agreement ratio", "why": "healthy dark-theme linear.app scores 0.30-0.74 and misaligned hobbang scores 0.93 — separates nothing, in the wrong direction" }
+  ],
+  "filesChanged": [
+    "src/responsive-qa/probe.ts",
+    "src/responsive-qa/blank-region.ts (new)",
+    "src/responsive-qa/types.ts",
+    "src/responsive-qa/classify.ts",
+    "src/responsive-qa/run.ts",
+    "src/responsive-qa/index.ts",
+    "scripts/smoke-responsive-qa.ts"
+  ],
+  "notTouched": ["src/responsive-qa/overlap.ts", "src/responsive-qa/pixel-gate.ts", "src/responsive-qa/capture.ts", "src/responsive-qa/composite.ts", "src/reconstruction/**", "src/observer/**"],
+  "gitMutations": "none",
+  "carryForward": [
+    "re-run the two seoultone acceptance pairs when seoultone.kr is reachable: npx tsx src/cli-qa-responsive.ts data/seoultone.kr/reconstructions/2026-09-04T18-17-23-059Z --routes / --widths 390,1440",
+    "paint occlusion is caught by ONE channel (ink). If the ink leg goes quiet on a fresh site the rubric returns to grading the severance hero healthy — the caveat says so, but nothing forces a re-capture",
+    "the DOM leg is not gated by capture staleness; a page that grows between the SOURCE probe and the CLONE probe is unmeasured risk",
+    "consider surfacing paintSuppression.suppressedBelowFold as run-artifact context"
+  ]
+}

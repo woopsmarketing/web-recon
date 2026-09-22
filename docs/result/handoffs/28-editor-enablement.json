@@ -1,0 +1,100 @@
+{
+  "schemaName": "task28-handoff-v1",
+  "phase": "Task 28 — INTEGRATION: the region/route enablement seam, closed",
+  "producedAt": "2026-08-28T02:06:00+09:00",
+  "producedBy": "integration builder (session web-recon-33)",
+  "verdict": "ENABLEMENT WIRED END TO END IN THE OPERATOR APP — 25/25 new integration checks, 0 failures",
+  "whatWasClosed": {
+    "before": "The enablement ENGINE (src/release/enablement.ts + src/production/enablement.ts + authored.ts) and the Visual Editor were built behind a file boundary. The editor's Region panel called a PORT that was documented but unwired, route enablement was not wired at all, refusals had nowhere to be displayed, and the authoring preview did not resolve enablement, so a recorded disable was invisible in the preview.",
+    "after": "One module (src/editor/enablement.ts) makes the editor a CONSUMER of the engine: the same evaluate/resolve functions release:plan and release:build call, over the same page-regions artifact the project records, with every refusal carried whole to the browser and every acceptance recorded through commitAuthoredEdits. The preview is made to agree with the authored state by applying the engine's own plan to the preview app copy and swapping the worker behind the stable proxy url."
+  },
+  "filesOwnedByThisPhase": [
+    "src/editor/enablement.ts (new — the join)",
+    "src/editor/client.ts (refusal UI, route toggles, explicit route scope, iframe reload)",
+    "scripts/smoke-editor-integration.ts (new suite, 25 checks)",
+    "docs/result/handoffs/28-intel/pending-package-scripts.tsv (one appended line)"
+  ],
+  "filesWrittenByTheParallelBuilder": [
+    "src/editor/panels.ts, region-enablement.ts, runtime.ts, server.ts (adapted onto this module's API)",
+    "src/authoring-preview/session.ts (appDir + restartWorker exposed)"
+  ],
+  "regression": {
+    "smoke:editor-integration": "25 checks / 0 failures (NEW)",
+    "smoke:visual-editor": "50 / 0 (unchanged, re-run after the client.ts edits)",
+    "smoke:authoring-preview": "41 / 0 (unchanged)",
+    "smoke:enablement": "88 / 0 (unchanged)",
+    "typecheck": "exit 0"
+  },
+  "measuredOnRealArtifacts": {
+    "template": "data/linear.app/recon-templates/2026-08-25T21-53-26-980Z (8 routes, 3079 slots, 9929 bindings)",
+    "pageRegions": "data/linear.app/page-regions/2026-08-26T16-14-07-901Z (68 regions, 25 on p000001)",
+    "regionsOnHomePage": "14 of 25 disable cleanly with scope routes ['/']; 11 refuse",
+    "refusalCodesReachableFromTheUI": {
+      "global-region-requires-explicit-global": 10,
+      "shared-page-blast-radius": 5,
+      "interaction-cut-target-disabled": 3,
+      "interaction-cut-target-unreachable": 8
+    },
+    "routeDisable": "/pricing — allowed, 2 nav-cascade groups / 28 anchor nodes, 0 dead links with this project's authored slot values, orphan page p000007",
+    "latency": {
+      "regionDisableVisibleInPreview": "median 531 ms / max 534 ms over 5 reps",
+      "regionReEnableVisibleInPreview": "median 535 ms / max 548 ms over 5 reps",
+      "routeDisableVisibleAs404": "median 427 ms / max 433 ms over 3 reps",
+      "noOpSync": "median 1 ms / max 1 ms over 5 reps",
+      "editorWarmStart": "478 ms",
+      "method": "wall clock around commit + refreshProject + syncPreviewEnablement + the first byte of the re-served page, asserting the region root is actually gone / back on every rep"
+    }
+  },
+  "designDecisions": [
+    {
+      "decision": "The editor evaluates against auxiliary.pageRegionsDir, and RECORDS it on the project on the first enablement edit when it is absent.",
+      "why": "release:build resolves enablement against the project's own reference (build.ts:238) while the editor catalog discovers the newest matching compile. Left alone, the editor would accept a disable the build refuses with regions-not-compiled. Writing the field is what release:prepare --page-regions already does; it happens on a WRITE, never on a read."
+    },
+    {
+      "decision": "\"Disable region\" means ON THE PAGE THE OPERATOR IS LOOKING AT — the client sends an explicit route list.",
+      "why": "rule 1 (shared-page-blast-radius) only fires on a PARTIAL route list. A caller that always asks for the whole blast radius can never be told the other routes were in scope. MEASURED: without it the UI rendered 1 refusal where the engine produces 2."
+    },
+    {
+      "decision": "The preview is synced by applying the engine's plan to <previewDir>/app and RESTARTING the worker, always from the pristine template.",
+      "why": "The authoring patch memoizes the RAW page JSON for the process lifetime (rawCache), so the epoch seam cannot see a structural change; and applyEnablementToApp deletes nodes and page files, so a re-enable cannot be undone in place. A marker in overlay/ makes the workspace self-healing after a killed session, and makes the sync a 1 ms no-op when nothing moved."
+    },
+    {
+      "decision": "Refusals render in their own container (#wr-refusals) between the tab bar and the panel, not in the status line.",
+      "why": "A panel re-render wipes the panel; a status line is overwritten by the next action. A refusal has to survive until the operator acts on it, and it carries the engine's message verbatim, the routes in scope, the cascade, and exactly one offer — or the sentence saying no re-issue can be safe."
+    }
+  ],
+  "findings": [
+    {
+      "id": "undo-is-a-one-step-toggle",
+      "severity": "operator-visible limitation, NOT fixed here",
+      "what": "undoLastRevision always restores chain[length-2] and appends it, so pressing Undo twice restores the state the first Undo undid. MEASURED in the journey: after undo #2 the route AND the region are disabled again and /pricing is back to 404.",
+      "where": "src/editor/commit.ts undoLastRevision (visual-editor builder's file — left untouched)",
+      "asserted": "28.P8.19 asserts the ACTUAL semantics rather than the expected ones"
+    },
+    {
+      "id": "cascade-re-adjudicates",
+      "severity": "expected engine behaviour, corrected expectation",
+      "what": "Taking the offered interaction cascade is itself an edit: the engine re-runs every rule over the whole transaction. On linear, accepting the cascade for p000001:rgn:main1:div:2>section:3 + global:rgn:nav1:self returns 20 refusals, not zero. The operator is not waved through, and the hazard no cascade can fix carries no retry of its own.",
+      "asserted": "28.P8.11"
+    },
+    {
+      "id": "route-not-forwarded",
+      "severity": "real defect, fixed from the client side",
+      "what": "src/editor/server.ts forwards scope/routes/cascadeRegionIds/reason to the region port but not `route`, and RegionEnablementWriteRequest has no such field. Fixed by having the client send `routes: [S.route]`, which the server already forwards; no file of the parallel builder was edited."
+    }
+  ],
+  "limitations": [
+    "On linear no page is served by more than one route, so shared-page-blast-radius arises here from a MULTI-PAGE GLOBAL region (its blast radius is all 8 routes) rather than from the stripe route->pageSourceId many-to-one shape. The refusal, its message and its remedy are the engine's own and are rendered in the real UI; the many-to-one shape itself is proven on stripe by smoke:enablement 28.P5.56-58.",
+    "The journey is proven on ONE template (linear.app) in ONE browser profile (desktop 1440x900). The mobile tree is disabled by the same plan (both viewport occurrences are removed) but the journey does not re-drive the whole sequence at 390 px.",
+    "A brand/logo decision and a theme token still do not participate in this sync — they are not structural. Only region and route enablement restart the preview worker.",
+    "syncPreviewEnablement restores the whole 8.1 MB reconstruction-data directory when the plan changes. That is why a toggle costs ~0.5 s rather than ~0.1 s; it was chosen over a per-file restore because it is the only form that cannot leave a partially-applied tree.",
+    "The editor writes auxiliary.pageRegionsDir on the first enablement edit. For a project whose region compile is older than its template, that records the OLD compile — the divergence is reported by pageRegionsBinding but the editor does not choose the newer artifact on the operator's behalf.",
+    "This tree was being written by a second agent throughout this phase; the suite numbers above are for the bytes present at 01:55-02:06 on 2026-08-28 and were re-verified by sha256 after the falsifiability injections."
+  ],
+  "falsifiability": {
+    "method": "two independent breaks injected, one run, restored byte-identically (shasum -a 256 -c: all three files OK, 0 occurrences of the marker afterwards)",
+    "breakA": "syncPreviewEnablement stops restarting the preview worker -> 28.P8.15 (region vanishes), 28.P8.17 (route 404 + nav anchors), 28.P8.19 FAIL",
+    "breakB": "the refusal renderer becomes a no-op (refusal reported only in the status line) -> 28.P8.8, 28.P8.9, 28.P8.10, 28.P8.11 FAIL",
+    "cleanRun": "25 checks / 0 failures"
+  }
+}

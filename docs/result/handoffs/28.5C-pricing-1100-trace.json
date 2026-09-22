@@ -1,0 +1,880 @@
+{
+  "schema": "task285c-pricing-1100-trace-v1",
+  "producedAt": "2026-08-31T14:47:55.328Z",
+  "agent": "Agent B — 1100px pricing failure tracer",
+  "route": "/pricing",
+  "pageId": "p000007",
+  "primaryWidth": 1100,
+  "lineage": {
+    "observation": "data/linear.app/site-observations/2026-08-30T15-52-54-381Z",
+    "siteSpec": "data/linear.app/site-specs/2026-08-30T15-56-23-933Z",
+    "reconstruction": "data/linear.app/reconstructions/2026-08-30T15-56-29-877Z",
+    "qaRun": "data/linear.app/reconstruction-qa/2026-08-30T15-57-54-926Z",
+    "orientation": "docs/result/handoffs/28.5B-responsive-residual.json"
+  },
+  "method": {
+    "servedFrom": "tmp/wr-responsive-investigation/agent-b/app — verbatim copy of the reconstruction's app/, served with the project's own mechanism (next start on the prebuilt .next, no rebuild), port 4610. data/ was never written to.",
+    "startCloneReference": "src/reconstruction-qa/start-clone.ts:126 startClone()",
+    "loadPolicy": "goto(load) -> bounded networkidle (8s) -> bounded fonts.ready (5s) -> 1200ms settle -> 2 rAF — the same policy as src/reconstruction-qa/capture-page.ts:753 stabilize().",
+    "context": "deviceScaleFactor 1, isMobile false, hasTouch false, locale ko-KR, timezone Asia/Seoul, colorScheme light, reducedMotion reduce — identical on both sides at every width.",
+    "sourceIsLive": "Source rows are CURRENT_SOURCE (https://linear.app/pricing fetched 2026-08-31), used as a responsive-behaviour reference, never as historical truth.",
+    "ruleEvidence": "Matched CSS rules read over CDP (DOM.querySelectorAll + CSS.getMatchedStylesForNode), which reports cross-origin stylesheets that document.styleSheets refuses.",
+    "screenshots": "playwright fullPage PNG, deviceScaleFactor 1, no clip."
+  },
+  "firstLossStage": "observation",
+  "firstLossStatement": "The failure is not a wrong value anywhere in the chain — it is a MISSING SAMPLE. The layout probe samples [390, 768, 1024, 1440, 1920]. The source's real breakpoint for the pricing comparison table is 1025px, which falls in the unsampled gap (1024, 1440). Every downstream stage is faithful to the samples it was given: the observation correctly records hidden@1024 / visible@1440, the SiteSpec carries that verbatim, and the reconstruction then INFERS the boundary at the arithmetic midpoint 1232. The inference is where the defect becomes VISIBLE (materializationStage), but the information that would have placed the boundary at 1025 was already absent from the pipeline at the observation stage.",
+  "materializationStage": "reconstruction",
+  "materializationStatement": "src/reconstruction/layout-inference.ts hiddenRanges() converts hidden probe widths into an @media band by flooring the midpoint between the last hidden and the first visible sample: floor((1024+1440)/2) = 1232, minus 0.02 => (min-width: 1024px) and (max-width: 1231.98px). The band overshoots the true 1025px boundary by 207px on the upper edge and undershoots it by 109px on the lower edge (the band starts at 1024, but the desktop variant becomes active at 915).",
+  "representativeNodes": [
+    {
+      "id": "comparison-table-header-row-label",
+      "humanDescription": "The 'Features' label cell in the pricing comparison table's header row (Features | Free | Basic | Business | Enterprise).",
+      "stage1_sourceAt1100": {
+        "selectorPath": "div._7bwwmq_root._7bwwmq_homepage:nth-of-type(4) > div.PDOlRq_table:nth-of-type(6) > div:nth-of-type(1) > div.PDOlRq_sticky:nth-of-type(2) > div.PDOlRq_stickyContent > div.hide-laptop.PDOlRq_row:nth-of-type(1) > div.PDOlRq_labelHeader:nth-of-type(1) > span.sc-KOGVz.jJWmbG",
+        "text": "Features",
+        "computed": {
+          "display": "inline",
+          "visibility": "visible",
+          "visible": true
+        },
+        "bbox": {
+          "x": 42,
+          "y": 1486.91,
+          "w": 94.08,
+          "h": 29
+        },
+        "controllingAncestor": "div.hide-laptop.PDOlRq_row (the header row itself)",
+        "matchedResponsiveRules": [
+          {
+            "at": 1024,
+            "media": "(max-width: 1024px)",
+            "selector": "[data-hide=\"laptop\"], .hide-laptop",
+            "cssText": "display: none !important",
+            "effect": "header row hidden — matches at 1024 and below"
+          },
+          {
+            "at": 1024,
+            "media": "(max-width: 1024px)",
+            "selector": ".PDOlRq_row",
+            "cssText": "justify-content: space-between; display: flex",
+            "effect": "the narrow-layout row shape"
+          },
+          {
+            "at": 1100,
+            "media": "(max-width: 1024px)",
+            "selector": "[data-hide=\"laptop\"], .hide-laptop",
+            "matches": false,
+            "effect": "does NOT match at 1100 — header row is shown (display: grid via .PDOlRq_row)"
+          },
+          {
+            "at": 1100,
+            "media": "(min-width: 1025px)",
+            "selector": "[data-show=\"laptop\"], .show-laptop",
+            "cssText": "display: none !important",
+            "effect": "the complementary rule: the narrow plan-picker row is hidden from 1025 up. The pair proves the source breakpoint is exactly 1025px."
+          }
+        ],
+        "sourceBreakpointPx": 1025
+      },
+      "stage2_observation": {
+        "file": "data/linear.app/site-observations/2026-08-30T15-52-54-381Z/pages/p000007/layout-probe.json",
+        "probeWidths": [
+          390,
+          768,
+          1024,
+          1440,
+          1920
+        ],
+        "probeWidthsConstant": "src/observer/types.ts:1103 LAYOUT_PROBE_WIDTHS",
+        "recordedVisibility": {
+          "390": 0,
+          "768": 0,
+          "1024": 0,
+          "1440": 1,
+          "1920": 1
+        },
+        "deepObservationViewports": {
+          "desktop1440": "captured, node present and visible",
+          "mobile390": "captured, node present but hidden by the source's own narrow-layout rule"
+        },
+        "verdict": "CORRECT for every width it sampled. No sample exists in (1024, 1440), so nothing in the observation records that the node is visible at 1100. This is the first stage at which 'visible in source @1100' has no representation."
+      },
+      "stage3_siteSpec": {
+        "file": "data/linear.app/site-specs/2026-08-30T15-56-23-933Z/pages/p000007.json",
+        "nodeId": "n000359",
+        "viewport": "desktop",
+        "tagName": "span",
+        "probe": {
+          "x": [
+            0,
+            0,
+            0,
+            80,
+            320
+          ],
+          "w": [
+            0,
+            0,
+            0,
+            94.08,
+            94.08
+          ],
+          "v": [
+            0,
+            0,
+            0,
+            1,
+            1
+          ]
+        },
+        "boundingBox": {
+          "x": 80,
+          "y": 1467.41,
+          "width": 94.08,
+          "height": 29
+        },
+        "styleTokenId": "st003492",
+        "styleTokenDisplay": "inline",
+        "layoutProbeAlignment": {
+          "aligned": true,
+          "alignedElementCount": 1363,
+          "elementCount": 1363
+        },
+        "variantHandling": "Per-viewport variants: the node exists once in the desktop subtree (st003492, display:inline) and once in the mobile subtree (st003493). No merge, no loss. The SiteSpec carries the probe array verbatim — it does not interpolate.",
+        "verdict": "faithful; carries the same 3-sample desktop grid and no more."
+      },
+      "stage4_generatedOutput": {
+        "domFile": "data/linear.app/reconstructions/2026-08-30T15-56-29-877Z/app (Next app; node rendered as <span class=\"wr-st003492\" data-wr-node=\"n000359\"> inside [data-wr-page=\"p000007\"][data-wr-viewport=\"desktop\"])",
+        "cssFile": "data/linear.app/reconstructions/2026-08-30T15-56-29-877Z/app/public/wr/generated-styles.css",
+        "cssLines": "13541-13545",
+        "exactRule": "@media (min-width: 1024px) and (max-width: 1231.98px) {\n[data-wr-page=\"p000007\"][data-wr-viewport=\"desktop\"] [data-wr-node=\"n000359\"] {\n  display: none;\n}\n}",
+        "siblingRulesForTheSameRow": [
+          {
+            "cssLines": "13531-13535",
+            "node": "n000357",
+            "note": "the header ROW container",
+            "exactRule": "@media (min-width: 1024px) and (max-width: 1231.98px) {\n[data-wr-page=\"p000007\"][data-wr-viewport=\"desktop\"] [data-wr-node=\"n000357\"] {\n  display: none;\n}\n}"
+          },
+          {
+            "cssLines": "13536-13540",
+            "node": "n000358",
+            "note": "the label cell",
+            "exactRule": "@media (min-width: 1024px) and (max-width: 1231.98px) {\n[data-wr-page=\"p000007\"][data-wr-viewport=\"desktop\"] [data-wr-node=\"n000358\"] {\n  display: none;\n}\n}"
+          }
+        ],
+        "ruleShape": "One @media block per node — the generator emits a per-node display:none rather than reproducing the source's single class rule, so the whole subtree is hidden node-by-node.",
+        "countAtThisBand": {
+          "totalInSheet": 738,
+          "byPage": {
+            "p000001": 38,
+            "p000002": 11,
+            "p000003": 52,
+            "p000004": 8,
+            "p000005": 70,
+            "p000006": 48,
+            "p000007": 503,
+            "p000008": 8
+          },
+          "note": "503 rules on /pricing alone — exactly the '~503 extra hidden nodes' the earlier evidence reported. Every one of the sheet's 738 @media blocks sits at this single synthetic band; the sheet contains no other breakpoint."
+        }
+      },
+      "stage5_finalBrowser": {
+        "url": "http://127.0.0.1:4610/pricing @ 1100x900",
+        "computed": {
+          "display": "none",
+          "visibility": "visible",
+          "visible": false
+        },
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "winningRule": {
+          "selector": "[data-wr-page=\"p000007\"][data-wr-viewport=\"desktop\"] [data-wr-node=\"n000359\"]",
+          "media": "(min-width: 1024px) and (max-width: 1231.98px)",
+          "cssText": "display: none;",
+          "source": "public/wr/generated-styles.css",
+          "note": "CDP CSS.getMatchedStylesForNode at 1100 returns this as the ONLY display-affecting matched rule. At 1440 the same query returns no media rule at all and the node renders (display:inline, bbox 80,1467.39 90.25x28)."
+        },
+        "ancestorChainAt1100": "n000359(span, none) < n000358(div, none) < n000357(div, none) < n000356(div, block) < n000355(div, block) — three stacked per-node band rules, all three from the same generator pass."
+      }
+    },
+    {
+      "id": "comparison-table-Basic-plan-column-header",
+      "humanDescription": "The 'Basic' plan-name cell in the comparison table header row — representative of the hidden plan columns (Basic / Business / Enterprise).",
+      "stage1_sourceAt1100": {
+        "selectorPath": "div.PDOlRq_sticky:nth-of-type(2) > div.PDOlRq_stickyContent > div.hide-laptop.PDOlRq_row:nth-of-type(1) > div.PDOlRq_planHeaderContainer:nth-of-type(3) > span.sc-KOGVz.jJWmbG",
+        "text": "Basic",
+        "computed": {
+          "display": "block",
+          "visibility": "visible",
+          "visible": true
+        },
+        "bbox": {
+          "x": 582,
+          "y": 1485.91,
+          "w": 58.48,
+          "h": 31.91
+        },
+        "controllingAncestorRule": "the same @media (max-width: 1024px) { [data-hide=\"laptop\"], .hide-laptop { display:none !important } } — one source rule governs the entire header row."
+      },
+      "stage2_observation": {
+        "recordedVisibility": {
+          "390": 0,
+          "768": 0,
+          "1024": 0,
+          "1440": 1,
+          "1920": 1
+        },
+        "verdict": "identical shape to the header label — correct at every sampled width, silent at 1100."
+      },
+      "stage3_siteSpec": {
+        "nodeId": "n000365",
+        "viewport": "desktop",
+        "probe": {
+          "x": [
+            0,
+            0,
+            0,
+            752,
+            992
+          ],
+          "w": [
+            0,
+            0,
+            0,
+            58.48,
+            58.48
+          ],
+          "v": [
+            0,
+            0,
+            0,
+            1,
+            1
+          ]
+        },
+        "boundingBox": {
+          "x": 752,
+          "y": 1466.41,
+          "width": 58.48,
+          "height": 31.91
+        },
+        "styleTokenId": "st003274",
+        "styleTokenDisplay": "block"
+      },
+      "stage4_generatedOutput": {
+        "cssFile": "data/linear.app/reconstructions/2026-08-30T15-56-29-877Z/app/public/wr/generated-styles.css",
+        "cssLines": "13561-13565",
+        "exactRule": "@media (min-width: 1024px) and (max-width: 1231.98px) {\n[data-wr-page=\"p000007\"][data-wr-viewport=\"desktop\"] [data-wr-node=\"n000365\"] {\n  display: none;\n}\n}"
+      },
+      "stage5_finalBrowser": {
+        "computed": {
+          "display": "none",
+          "visible": false
+        },
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "winningRule": {
+          "selector": "[data-wr-page=\"p000007\"][data-wr-viewport=\"desktop\"] [data-wr-node=\"n000365\"]",
+          "media": "(min-width: 1024px) and (max-width: 1231.98px)",
+          "cssText": "display: none;"
+        }
+      }
+    }
+  ],
+  "creatingCodePath": {
+    "summary": "One function, one arithmetic convention. hiddenRanges() in the layout inference turns the probe's hidden-width set into an @media band by flooring the midpoint between adjacent samples. With samples {1024 hidden, 1440 visible} the midpoint is 1232, so the band runs 1024..1231.98 — 207px past the source's real 1025px boundary.",
+    "chain": [
+      {
+        "step": 1,
+        "role": "defines the sample grid the whole inference is built on",
+        "file": "src/observer/types.ts",
+        "line": 1103,
+        "code": "export const LAYOUT_PROBE_WIDTHS: readonly number[] = [390, 768, 1024, 1440, 1920];",
+        "why": "No sample between 1024 and 1440. The source's pricing breakpoint (1025) and the whole 'laptop' band live inside that gap, so no measurement downstream can see them."
+      },
+      {
+        "step": 2,
+        "role": "selects the desktop sample subset",
+        "file": "src/reconstruction/layout-inference.ts",
+        "line": 324,
+        "code": "const desktopIdx = widths.map((width, i) => ({ width, i })).filter((entry) => entry.width >= input.breakpoint);",
+        "why": "breakpoint is 915 (the inferred mobile/desktop switch), so desktopIdx = [1024, 1440, 1920] — three samples spanning 896px of viewport range."
+      },
+      {
+        "step": 3,
+        "role": "emits the responsive-hidden rule",
+        "file": "src/reconstruction/layout-inference.ts",
+        "lines": "363-380",
+        "code": "const hiddenEntries = desktopIdx.filter((entry) => vAt(entry.i) === 0);\nif (hiddenEntries.length > 0 && hiddenEntries.length < desktopIdx.length) {\n  for (const media of hiddenRanges(desktopIdx, hiddenEntries)) {\n    rules.push({ ..., kind: \"responsive-hidden\", declarations: { display: \"none\" }, media, ... });",
+        "why": "n000359 is visible at the truth width (1440) and hidden at 1024, so it qualifies. Evidence string stored on the rule: 'visible at 1440px, hidden at 1024px'."
+      },
+      {
+        "step": 4,
+        "role": "THE RULE-CREATING LINE — computes the band bounds",
+        "file": "src/reconstruction/layout-inference.ts",
+        "lines": "661-684 (function hiddenRanges), decisive lines 674 and 677-678",
+        "code": "start = previous ? Math.floor((previous.width + entry.width) / 2) : entry.width;   // line 674\nconst boundary = Math.floor((sorted[i - 1]!.width + entry.width) / 2);            // line 677\nranges.push(`(min-width: ${start}px) and (max-width: ${boundary - 0.02}px)`);      // line 678",
+        "arithmetic": "sorted desktop = [1024(hidden), 1440(visible), 1920(visible)]. i=0: hidden, no previous sample inside desktopIdx, so start = 1024 (the sample width itself, NOT a midpoint). i=1: visible, boundary = floor((1024 + 1440) / 2) = 1232. Emitted: (min-width: 1024px) and (max-width: 1231.98px).",
+        "why": "The midpoint convention is a reasonable default when samples are dense; here the adjacent samples are 416px apart, so the midpoint is a 208px-wide guess in each direction. The upper edge lands 207px past the truth. The lower edge is worse-shaped than a midpoint: because 1024 is the FIRST desktop sample, the `previous ? ... : entry.width` fallback pins the band's start to 1024 exactly, leaving 915..1023.98 uncovered — a stretch where the desktop variant is live but the hide band is not, so the clone SHOWS the table the source hides."
+      },
+      {
+        "step": 5,
+        "role": "renders the rule text into the shipped sheet",
+        "file": "src/reconstruction/layout-inference.ts",
+        "lines": "687-712 (generateLayoutCss)",
+        "code": "const selector = `[data-wr-page=\"${rule.pageId}\"][data-wr-viewport=\"desktop\"] [data-wr-node=\"${rule.nodeId}\"]`;\n...\nlines.push(rule.media !== undefined ? `@media ${rule.media} {\\n${body}\\n}` : body);",
+        "why": "One @media block per node at specificity (0,3,0) so it outranks the exact-style class. 738 such blocks ship; 503 of them are on p000007."
+      },
+      {
+        "step": 6,
+        "role": "the gate that does not gate",
+        "file": "src/reconstruction/layout-truth-check.ts",
+        "lines": "46-51, 100-107, 400",
+        "code": "isResponsiveHidden = rule.kind === \"responsive-hidden\" && rule.media !== undefined;  // line 107\n// documented: \"What it deliberately does NOT check: `responsive-hidden` rules ... They are accepted unchecked and counted separately (`acceptedUnchecked`).\"",
+        "why": "The truth check re-renders only at the truth width (1440). A band that by construction cannot match at 1440 is unfalsifiable there, so every responsive-hidden rule ships unverified BY DESIGN. Nothing in the pipeline ever renders at a width inside the band and compares against the source, which is why a 207px overshoot on the most content-dense page in the site survived to release."
+      }
+    ],
+    "rootCauseOneLine": "A 5-point probe grid with a 416px hole between 1024 and 1440, plus a midpoint interpolation that ships unverified because the only verification width (1440) lies outside every band it produces."
+  },
+  "generatedRuleEvidence": {
+    "file": "data/linear.app/reconstructions/2026-08-30T15-56-29-877Z/app/public/wr/generated-styles.css",
+    "servedAs": "/wr/generated-styles.css",
+    "headerRowLabel": {
+      "lines": "13541-13545",
+      "text": "@media (min-width: 1024px) and (max-width: 1231.98px) {\n[data-wr-page=\"p000007\"][data-wr-viewport=\"desktop\"] [data-wr-node=\"n000359\"] {\n  display: none;\n}\n}"
+    },
+    "headerRowContainer": {
+      "lines": "13531-13535",
+      "text": "@media (min-width: 1024px) and (max-width: 1231.98px) {\n[data-wr-page=\"p000007\"][data-wr-viewport=\"desktop\"] [data-wr-node=\"n000357\"] {\n  display: none;\n}\n}"
+    },
+    "basicPlanColumn": {
+      "lines": "13561-13565",
+      "text": "@media (min-width: 1024px) and (max-width: 1231.98px) {\n[data-wr-page=\"p000007\"][data-wr-viewport=\"desktop\"] [data-wr-node=\"n000365\"] {\n  display: none;\n}\n}"
+    },
+    "sourceCounterpart": {
+      "note": "What the source actually does — one class rule, one breakpoint, exactly 1025px. Read over CDP from linear.app's own stylesheets.",
+      "hide": "@media (max-width: 1024px) { [data-hide=\"laptop\"], .hide-laptop { display: none !important } }",
+      "show": "@media (min-width: 1025px) { [data-show=\"laptop\"], .show-laptop { display: none !important } }"
+    },
+    "bandTotals": {
+      "mediaBlocksInSheet": 738,
+      "allAtOneBand": "(min-width: 1024px) and (max-width: 1231.98px)",
+      "onPricing": 503
+    }
+  },
+  "bandEdgeProbe": {
+    "probeMethod": "Loaded the served clone at 7 widths and read computed display of [data-wr-viewport=desktop] [data-wr-node=n000359].",
+    "clone": [
+      {
+        "width": 950,
+        "headerRowDisplay": "inline",
+        "visibleTextChars": 2672
+      },
+      {
+        "width": 1000,
+        "headerRowDisplay": "inline",
+        "visibleTextChars": 2672
+      },
+      {
+        "width": 1023,
+        "headerRowDisplay": "inline",
+        "visibleTextChars": 2672
+      },
+      {
+        "width": 1024,
+        "headerRowDisplay": "none",
+        "visibleTextChars": 2348
+      },
+      {
+        "width": 1025,
+        "headerRowDisplay": "none",
+        "visibleTextChars": 2348
+      },
+      {
+        "width": 1231,
+        "headerRowDisplay": "none",
+        "visibleTextChars": 2348
+      },
+      {
+        "width": 1232,
+        "headerRowDisplay": "inline",
+        "visibleTextChars": 2672
+      }
+    ],
+    "source": [
+      {
+        "width": 1024,
+        "hideLaptopRowDisplay": "none",
+        "showLaptopRowDisplay": "flex"
+      },
+      {
+        "width": 1025,
+        "hideLaptopRowDisplay": "grid",
+        "showLaptopRowDisplay": "none"
+      },
+      {
+        "width": 1026,
+        "hideLaptopRowDisplay": "grid",
+        "showLaptopRowDisplay": "none"
+      },
+      {
+        "width": 1032,
+        "hideLaptopRowDisplay": "grid",
+        "showLaptopRowDisplay": "none"
+      },
+      {
+        "width": 1040,
+        "hideLaptopRowDisplay": "grid",
+        "showLaptopRowDisplay": "none"
+      }
+    ],
+    "sourceTransitionPx": 1025,
+    "cloneHiddenBand": "[1024px, 1231.98px]",
+    "twoSidedError": {
+      "upperEdge": "clone keeps the table hidden from 1025 to 1231.98 where the source already shows it — the visible 286-char / 4-column loss at 1100.",
+      "lowerEdge": "clone SHOWS the table from 915 to 1023.98 (desktop variant active, band not yet entered) where the source hides it — the inverse error, unmeasured until now."
+    }
+  },
+  "perWidthMatrix": {
+    "390": {
+      "source": {
+        "scrollHeight": 7714,
+        "visibleTextChars": 2328,
+        "totalElements": 3213,
+        "visibleNodeCount": 1071,
+        "hiddenNodeCount": 2142,
+        "displayNoneCount": 774,
+        "headerRowLabelDisplay": "inline",
+        "headerRowLabelEffectivelyVisible": false,
+        "headerRowLabelHiddenBy": {
+          "wrNode": null,
+          "display": "none",
+          "path": "div._5l06ia_container:nth-of-type(1) > main._5l06ia_content > div._7bwwmq_root._7bwwmq_homepage:nth-of-type(4) > div.PDOlRq_table:nth-of-type(6) > div:nth-of-type(1) > div.PDOlRq_sticky:nth-of-type(2) > div.PDOlRq_stickyContent > div.hide-laptop.PDOlRq_row:nth-of-type(1)"
+        },
+        "headerRowLabelBbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "basicColumnDisplay": "block",
+        "basicColumnEffectivelyVisible": false,
+        "basicColumnBbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "screenshot": "tmp/wr-responsive-investigation/agent-b/shots/source-390.png"
+      },
+      "current": {
+        "scrollHeight": 7714,
+        "visibleTextChars": 2366,
+        "totalElements": 5977,
+        "visibleNodeCount": 1075,
+        "hiddenNodeCount": 4902,
+        "displayNoneCount": 240,
+        "activeVariant": "mobile",
+        "headerRowLabelDisplay": "inline",
+        "headerRowLabelEffectivelyVisible": false,
+        "headerRowLabelHiddenBy": {
+          "wrNode": null,
+          "display": "none",
+          "path": "html > body > div.wr-variant:nth-of-type(2)"
+        },
+        "headerRowLabelBbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "basicColumnDisplay": "block",
+        "basicColumnEffectivelyVisible": false,
+        "basicColumnBbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "screenshot": "tmp/wr-responsive-investigation/agent-b/shots/current-390.png"
+      },
+      "delta": {
+        "scrollHeight": 0,
+        "visibleTextChars": 38,
+        "displayNoneCount": -534
+      }
+    },
+    "700": {
+      "source": {
+        "scrollHeight": 7795,
+        "visibleTextChars": 2337,
+        "totalElements": 3213,
+        "visibleNodeCount": 1075,
+        "hiddenNodeCount": 2138,
+        "displayNoneCount": 770,
+        "headerRowLabelDisplay": "inline",
+        "headerRowLabelEffectivelyVisible": false,
+        "headerRowLabelHiddenBy": {
+          "wrNode": null,
+          "display": "none",
+          "path": "div._5l06ia_container:nth-of-type(1) > main._5l06ia_content > div._7bwwmq_root._7bwwmq_homepage:nth-of-type(4) > div.PDOlRq_table:nth-of-type(6) > div:nth-of-type(1) > div.PDOlRq_sticky:nth-of-type(2) > div.PDOlRq_stickyContent > div.hide-laptop.PDOlRq_row:nth-of-type(1)"
+        },
+        "headerRowLabelBbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "basicColumnDisplay": "block",
+        "basicColumnEffectivelyVisible": false,
+        "basicColumnBbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "screenshot": "tmp/wr-responsive-investigation/agent-b/shots/source-700.png"
+      },
+      "current": {
+        "scrollHeight": 7714,
+        "visibleTextChars": 2366,
+        "totalElements": 5977,
+        "visibleNodeCount": 1075,
+        "hiddenNodeCount": 4902,
+        "displayNoneCount": 240,
+        "activeVariant": "mobile",
+        "headerRowLabelDisplay": "inline",
+        "headerRowLabelEffectivelyVisible": false,
+        "headerRowLabelHiddenBy": {
+          "wrNode": null,
+          "display": "none",
+          "path": "html > body > div.wr-variant:nth-of-type(2)"
+        },
+        "headerRowLabelBbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "basicColumnDisplay": "block",
+        "basicColumnEffectivelyVisible": false,
+        "basicColumnBbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "screenshot": "tmp/wr-responsive-investigation/agent-b/shots/current-700.png"
+      },
+      "delta": {
+        "scrollHeight": -81,
+        "visibleTextChars": 29,
+        "displayNoneCount": -530
+      }
+    },
+    "1024": {
+      "source": {
+        "scrollHeight": 6990,
+        "visibleTextChars": 2381,
+        "totalElements": 3225,
+        "visibleNodeCount": 1050,
+        "hiddenNodeCount": 2175,
+        "displayNoneCount": 777,
+        "headerRowLabelDisplay": "inline",
+        "headerRowLabelEffectivelyVisible": false,
+        "headerRowLabelHiddenBy": {
+          "wrNode": null,
+          "display": "none",
+          "path": "div._5l06ia_container:nth-of-type(1) > main._5l06ia_content > div._7bwwmq_root._7bwwmq_homepage:nth-of-type(4) > div.PDOlRq_table:nth-of-type(6) > div:nth-of-type(1) > div.PDOlRq_sticky:nth-of-type(2) > div.PDOlRq_stickyContent > div.hide-laptop.PDOlRq_row:nth-of-type(1)"
+        },
+        "headerRowLabelBbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "basicColumnDisplay": "block",
+        "basicColumnEffectivelyVisible": false,
+        "basicColumnBbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "screenshot": "tmp/wr-responsive-investigation/agent-b/shots/source-1024.png"
+      },
+      "current": {
+        "scrollHeight": 6360,
+        "visibleTextChars": 2348,
+        "totalElements": 5977,
+        "visibleNodeCount": 1035,
+        "hiddenNodeCount": 4942,
+        "displayNoneCount": 743,
+        "activeVariant": "desktop",
+        "headerRowLabelDisplay": "none",
+        "headerRowLabelEffectivelyVisible": false,
+        "headerRowLabelHiddenBy": {
+          "wrNode": "n000359",
+          "display": "none",
+          "path": "div.wr-st003148[data-wr-node=\"n000339\"]:nth-of-type(4) > div.wr-st001353[data-wr-node=\"n000352\"]:nth-of-type(6) > div.wr-st003122[data-wr-node=\"n000353\"]:nth-of-type(1) > div.wr-st003163[data-wr-node=\"n000355\"]:nth-of-type(2) > div.wr-st002577[data-wr-node=\"n000356\"] > div.wr-st002620[data-wr-node=\"n000357\"]:nth-of-type(1) > div.wr-st003162[data-wr-node=\"n000358\"]:nth-of-type(1) > span.wr-st003492[data-wr-node=\"n000359\"]"
+        },
+        "headerRowLabelBbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "basicColumnDisplay": "none",
+        "basicColumnEffectivelyVisible": false,
+        "basicColumnBbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "screenshot": "tmp/wr-responsive-investigation/agent-b/shots/current-1024.png"
+      },
+      "delta": {
+        "scrollHeight": -630,
+        "visibleTextChars": -33,
+        "displayNoneCount": -34
+      }
+    },
+    "1100": {
+      "source": {
+        "scrollHeight": 6323,
+        "visibleTextChars": 2634,
+        "totalElements": 3246,
+        "visibleNodeCount": 1702,
+        "hiddenNodeCount": 1544,
+        "displayNoneCount": 626,
+        "headerRowLabelDisplay": "inline",
+        "headerRowLabelEffectivelyVisible": true,
+        "headerRowLabelHiddenBy": null,
+        "headerRowLabelBbox": {
+          "x": 42,
+          "y": 1486.91,
+          "w": 94.08,
+          "h": 29
+        },
+        "basicColumnDisplay": "block",
+        "basicColumnEffectivelyVisible": true,
+        "basicColumnBbox": {
+          "x": 582,
+          "y": 1485.91,
+          "w": 58.48,
+          "h": 31.91
+        },
+        "screenshot": "tmp/wr-responsive-investigation/agent-b/shots/source-1100.png"
+      },
+      "current": {
+        "scrollHeight": 6360,
+        "visibleTextChars": 2348,
+        "totalElements": 5977,
+        "visibleNodeCount": 1035,
+        "hiddenNodeCount": 4942,
+        "displayNoneCount": 743,
+        "activeVariant": "desktop",
+        "headerRowLabelDisplay": "none",
+        "headerRowLabelEffectivelyVisible": false,
+        "headerRowLabelHiddenBy": {
+          "wrNode": "n000359",
+          "display": "none",
+          "path": "div.wr-st003148[data-wr-node=\"n000339\"]:nth-of-type(4) > div.wr-st001353[data-wr-node=\"n000352\"]:nth-of-type(6) > div.wr-st003122[data-wr-node=\"n000353\"]:nth-of-type(1) > div.wr-st003163[data-wr-node=\"n000355\"]:nth-of-type(2) > div.wr-st002577[data-wr-node=\"n000356\"] > div.wr-st002620[data-wr-node=\"n000357\"]:nth-of-type(1) > div.wr-st003162[data-wr-node=\"n000358\"]:nth-of-type(1) > span.wr-st003492[data-wr-node=\"n000359\"]"
+        },
+        "headerRowLabelBbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "basicColumnDisplay": "none",
+        "basicColumnEffectivelyVisible": false,
+        "basicColumnBbox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "screenshot": "tmp/wr-responsive-investigation/agent-b/shots/current-1100.png"
+      },
+      "delta": {
+        "scrollHeight": 37,
+        "visibleTextChars": -286,
+        "displayNoneCount": 117
+      }
+    },
+    "1440": {
+      "source": {
+        "scrollHeight": 6360,
+        "visibleTextChars": 2634,
+        "totalElements": 3246,
+        "visibleNodeCount": 1702,
+        "hiddenNodeCount": 1544,
+        "displayNoneCount": 626,
+        "headerRowLabelDisplay": "inline",
+        "headerRowLabelEffectivelyVisible": true,
+        "headerRowLabelHiddenBy": null,
+        "headerRowLabelBbox": {
+          "x": 80,
+          "y": 1467.41,
+          "w": 94.08,
+          "h": 29
+        },
+        "basicColumnDisplay": "block",
+        "basicColumnEffectivelyVisible": true,
+        "basicColumnBbox": {
+          "x": 752,
+          "y": 1466.41,
+          "w": 58.48,
+          "h": 31.91
+        },
+        "screenshot": "tmp/wr-responsive-investigation/agent-b/shots/source-1440.png"
+      },
+      "current": {
+        "scrollHeight": 6360,
+        "visibleTextChars": 2672,
+        "totalElements": 5977,
+        "visibleNodeCount": 1706,
+        "hiddenNodeCount": 4271,
+        "displayNoneCount": 240,
+        "activeVariant": "desktop",
+        "headerRowLabelDisplay": "inline",
+        "headerRowLabelEffectivelyVisible": true,
+        "headerRowLabelHiddenBy": null,
+        "headerRowLabelBbox": {
+          "x": 80,
+          "y": 1467.39,
+          "w": 90.25,
+          "h": 28
+        },
+        "basicColumnDisplay": "block",
+        "basicColumnEffectivelyVisible": true,
+        "basicColumnBbox": {
+          "x": 752,
+          "y": 1466.39,
+          "w": 58.48,
+          "h": 31.89
+        },
+        "screenshot": "tmp/wr-responsive-investigation/agent-b/shots/current-1440.png"
+      },
+      "delta": {
+        "scrollHeight": 0,
+        "visibleTextChars": 38,
+        "displayNoneCount": -386
+      }
+    }
+  },
+  "perWidthMatrixLegend": {
+    "widths": [
+      390,
+      700,
+      1024,
+      1100,
+      1440
+    ],
+    "fields": "scrollHeight, visibleTextChars (body.innerText whitespace-collapsed length), totalElements, visibleNodeCount, hiddenNodeCount, displayNoneCount, activeVariant (clone only), headerRowLabelDisplay/EffectivelyVisible/Bbox, basicColumnDisplay/EffectivelyVisible/Bbox.",
+    "hiddenNodeCountCaveat": "hiddenNodeCount is NOT comparable clone-vs-source: the clone ships both observed viewport trees in one document (5,977 elements vs the source's 3,246) and hides one. Compare hiddenNodeCount only ACROSS WIDTHS ON THE SAME SIDE. displayNoneCount and visibleTextChars are the cross-side channels.",
+    "displayCaveat": "headerRowLabelDisplay is the element's OWN computed display; it can read 'inline' while an ancestor is display:none. headerRowLabelEffectivelyVisible is the authoritative flag (display chain + offsetParent + non-zero rect)."
+  },
+  "perWidthSummary": [
+    {
+      "width": 390,
+      "sourceVisible": false,
+      "cloneVisible": false,
+      "agree": true,
+      "sourceTextChars": 2328,
+      "cloneTextChars": 2366,
+      "sourceScrollHeight": 7714,
+      "cloneScrollHeight": 7714
+    },
+    {
+      "width": 700,
+      "sourceVisible": false,
+      "cloneVisible": false,
+      "agree": true,
+      "sourceTextChars": 2337,
+      "cloneTextChars": 2366,
+      "sourceScrollHeight": 7795,
+      "cloneScrollHeight": 7714
+    },
+    {
+      "width": 1024,
+      "sourceVisible": false,
+      "cloneVisible": false,
+      "agree": true,
+      "sourceTextChars": 2381,
+      "cloneTextChars": 2348,
+      "sourceScrollHeight": 6990,
+      "cloneScrollHeight": 6360
+    },
+    {
+      "width": 1100,
+      "sourceVisible": true,
+      "cloneVisible": false,
+      "agree": false,
+      "sourceTextChars": 2634,
+      "cloneTextChars": 2348,
+      "sourceScrollHeight": 6323,
+      "cloneScrollHeight": 6360,
+      "textLoss": 286
+    },
+    {
+      "width": 1440,
+      "sourceVisible": true,
+      "cloneVisible": true,
+      "agree": true,
+      "sourceTextChars": 2634,
+      "cloneTextChars": 2672,
+      "sourceScrollHeight": 6360,
+      "cloneScrollHeight": 6360
+    }
+  ],
+  "screenshotPaths": {
+    "dir": "tmp/wr-responsive-investigation/agent-b/shots",
+    "absoluteDir": "/Users/woops/projects/web-recon/tmp/wr-responsive-investigation/agent-b/shots",
+    "format": "full-page PNG, deviceScaleFactor 1",
+    "source": {
+      "390": "tmp/wr-responsive-investigation/agent-b/shots/source-390.png",
+      "700": "tmp/wr-responsive-investigation/agent-b/shots/source-700.png",
+      "1024": "tmp/wr-responsive-investigation/agent-b/shots/source-1024.png",
+      "1100": "tmp/wr-responsive-investigation/agent-b/shots/source-1100.png",
+      "1440": "tmp/wr-responsive-investigation/agent-b/shots/source-1440.png"
+    },
+    "current": {
+      "390": "tmp/wr-responsive-investigation/agent-b/shots/current-390.png",
+      "700": "tmp/wr-responsive-investigation/agent-b/shots/current-700.png",
+      "1024": "tmp/wr-responsive-investigation/agent-b/shots/current-1024.png",
+      "1100": "tmp/wr-responsive-investigation/agent-b/shots/current-1100.png",
+      "1440": "tmp/wr-responsive-investigation/agent-b/shots/current-1440.png"
+    }
+  },
+  "rawArtifacts": {
+    "sourceScan": "tmp/wr-responsive-investigation/agent-b/raw-source.json",
+    "cloneScan": "tmp/wr-responsive-investigation/agent-b/raw-clone.json",
+    "sourceRules": "tmp/wr-responsive-investigation/agent-b/source-rules.json",
+    "cloneAncestorChainAndMatchedRules": "tmp/wr-responsive-investigation/agent-b/clone-chain.json",
+    "matrix": "tmp/wr-responsive-investigation/agent-b/matrix.json",
+    "scripts": [
+      "tmp/wr-responsive-investigation/agent-b/trace.mjs",
+      "tmp/wr-responsive-investigation/agent-b/srcrule2.mjs",
+      "tmp/wr-responsive-investigation/agent-b/clonechain.mjs",
+      "tmp/wr-responsive-investigation/agent-b/assemble.mjs"
+    ]
+  },
+  "notFixed": true,
+  "notes": [
+    "Nothing under src/ was modified. No git operation was run. data/ was read only.",
+    "Reproduces the 28.5B pricingTableProbe exactly: clone 2348 vs source 2634 visible chars at 1100 (28.5B measured 2351 vs 2637 — same defect, same magnitude, 3-char drift from live-source churn).",
+    "The band's LOWER edge is also wrong, in the opposite direction: between 915 and 1023.98 the clone shows the comparison table (visibleTextChars 2672 at 950/1000/1023) while the source hides it (max-width:1024). 28.5B concluded 'the band's lower edge is right' from the 914/1024 sample pair; that pair straddles the error rather than bracketing it. Any fix must move BOTH edges to 1025, not just the upper one.",
+    "responsive-hidden rules ship unverified by documented design (layout-truth-check.ts:46-51). Widening the probe grid without adding an in-band verification width would only move the guess, not prove it."
+  ]
+}

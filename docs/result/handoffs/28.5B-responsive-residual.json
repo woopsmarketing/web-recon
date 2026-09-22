@@ -1,0 +1,6163 @@
+{
+  "schema": "task285b-responsive-residual-v1",
+  "producedAt": "2026-08-30T16:46:37.557Z",
+  "app": "2026-08-30T15-56-29-877Z",
+  "appServedFrom": "tmp/wr285b/sweep/app — a verbatim copy of data/linear.app/reconstructions/2026-08-30T15-56-29-877Z/app, served with the project's own startClone (next start, prebuilt .next, buildMs=0). data/ was never written to.",
+  "purpose": "Document the RESIDUAL responsive behaviour of the Wave-1 hardened reconstruction and preserve evidence for the 28.5C responsive decision. This sweep does NOT fix anything and does NOT claim anything is fixed.",
+  "notClaimedFixed": true,
+  "method": {
+    "widths": [
+      390,
+      500,
+      700,
+      914,
+      1024,
+      1100,
+      1440,
+      1920
+    ],
+    "viewportHeight": 900,
+    "deviceScaleFactor": 1,
+    "contextSettings": "isMobile=false, hasTouch=false, locale ko-KR, timezone Asia/Seoul, colorScheme/reducedMotion pinned — identical on the clone side and the live-source side, so every clone-vs-source pair at a width is apples-to-apples.",
+    "loadPolicy": "project capture path: gotoQa(load) -> stabilize(bounded networkidle -> bounded fonts.ready -> settle -> 2 rAF). No scrolling, no clicking, no request interception (the QA capture policy).",
+    "screenshots": "playwright fullPage PNG, no clip, no animation freezing (the Observer's own policy).",
+    "diffModule": "src/reconstruction-qa/screenshot-diff.ts measurePair/renderDiffImage (unmodified).",
+    "caveats": [
+      "DSF 1 + isMobile=false is applied at EVERY width including 390, per the sweep spec. That is NOT the observed mobile profile (390 / DSF 3 / touch / mobile UA), so numbers at 390 here are not directly comparable to the published mobile fidelity numbers. Both sides get the same treatment, so the clone-vs-source comparison is still valid.",
+      "Live-source rows are CURRENT_SOURCE (captured 2026-08-31), not the accepted observation. They are used as a responsive-behaviour reference, never as historical truth.",
+      "No scrolling means lazily-hydrated below-the-fold content may differ between capture and a human scroll-through, on both sides equally."
+    ]
+  },
+  "visibleNodeDefinition": "An element counts as VISIBLE when ALL hold: (1) computed display !== 'none'; (2) it participates in layout — offsetParent !== null, OR computed position is 'fixed'/'sticky', OR it is <html>/<body>; (3) getBoundingClientRect() has width > 0 AND height > 0. hiddenNodeCount = totalElements - visibleNodeCount, where totalElements = document.querySelectorAll('*').length. Consequence recorded on purpose: display:contents wrappers (the clone's .wr-variant / .wr-svg-host / .wr-nest, and any source equivalent) generate no box and are therefore counted as HIDDEN on both sides; displayContentsCount is reported separately so the count can be read either way. This also means the clone's hiddenNodeCount is structurally ~2x the source's, because the clone ships BOTH observed viewport trees in one document and hides one — hiddenNodeCount is therefore only comparable ACROSS WIDTHS ON THE SAME SIDE, never clone-vs-source. displayNoneCount is the cross-side-comparable channel.",
+  "routes": {
+    "/": {
+      "sweep": [
+        {
+          "width": 390,
+          "scrollHeight": 5876,
+          "visibleNodeCount": 926,
+          "hiddenNodeCount": 8395,
+          "totalElements": 9321,
+          "displayNoneCount": 120,
+          "displayContentsCount": 457,
+          "zeroRectCount": 4519,
+          "activeVariant": "mobile",
+          "maxContentRight": 1303.58,
+          "visibleTextLength": 3538,
+          "landmarks": {
+            "header": {
+              "count": 8,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 4998.13
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 4998.13,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 500,
+          "scrollHeight": 5876,
+          "visibleNodeCount": 926,
+          "hiddenNodeCount": 8395,
+          "totalElements": 9321,
+          "displayNoneCount": 120,
+          "displayContentsCount": 457,
+          "zeroRectCount": 4519,
+          "activeVariant": "mobile",
+          "maxContentRight": 1303.58,
+          "visibleTextLength": 3538,
+          "landmarks": {
+            "header": {
+              "count": 8,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 4998.13
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 4998.13,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 700,
+          "scrollHeight": 5876,
+          "visibleNodeCount": 926,
+          "hiddenNodeCount": 8395,
+          "totalElements": 9321,
+          "displayNoneCount": 120,
+          "displayContentsCount": 457,
+          "zeroRectCount": 4519,
+          "activeVariant": "mobile",
+          "maxContentRight": 1303.58,
+          "visibleTextLength": 3538,
+          "landmarks": {
+            "header": {
+              "count": 8,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 4998.13
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 4998.13,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 914,
+          "scrollHeight": 5876,
+          "visibleNodeCount": 926,
+          "hiddenNodeCount": 8395,
+          "totalElements": 9321,
+          "displayNoneCount": 120,
+          "displayContentsCount": 457,
+          "zeroRectCount": 4519,
+          "activeVariant": "mobile",
+          "maxContentRight": 1303.58,
+          "visibleTextLength": 3538,
+          "landmarks": {
+            "header": {
+              "count": 8,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 4998.13
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 4998.13,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1024,
+          "scrollHeight": 9960,
+          "visibleNodeCount": 2759,
+          "hiddenNodeCount": 6562,
+          "totalElements": 9321,
+          "displayNoneCount": 158,
+          "displayContentsCount": 457,
+          "zeroRectCount": 3883,
+          "activeVariant": "desktop",
+          "maxContentRight": 1838,
+          "visibleTextLength": 8409,
+          "landmarks": {
+            "header": {
+              "count": 8,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 9466.27
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 9466.27,
+                "w": 1024,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1100,
+          "scrollHeight": 9960,
+          "visibleNodeCount": 2759,
+          "hiddenNodeCount": 6562,
+          "totalElements": 9321,
+          "displayNoneCount": 158,
+          "displayContentsCount": 457,
+          "zeroRectCount": 3883,
+          "activeVariant": "desktop",
+          "maxContentRight": 1838,
+          "visibleTextLength": 8409,
+          "landmarks": {
+            "header": {
+              "count": 8,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1100,
+                "h": 9466.27
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 9466.27,
+                "w": 1100,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1440,
+          "scrollHeight": 9960,
+          "visibleNodeCount": 2979,
+          "hiddenNodeCount": 6342,
+          "totalElements": 9321,
+          "displayNoneCount": 120,
+          "displayContentsCount": 457,
+          "zeroRectCount": 3702,
+          "activeVariant": "desktop",
+          "maxContentRight": 1840,
+          "visibleTextLength": 8745,
+          "landmarks": {
+            "header": {
+              "count": 8,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 9466.27
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 9466.27,
+                "w": 1440,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1920,
+          "scrollHeight": 9960,
+          "visibleNodeCount": 2979,
+          "hiddenNodeCount": 6342,
+          "totalElements": 9321,
+          "displayNoneCount": 120,
+          "displayContentsCount": 457,
+          "zeroRectCount": 3702,
+          "activeVariant": "desktop",
+          "maxContentRight": 2080,
+          "visibleTextLength": 8745,
+          "landmarks": {
+            "header": {
+              "count": 8,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 9466.27
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 9466.27,
+                "w": 1440,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        }
+      ],
+      "discontinuities": [
+        {
+          "kind": "scrollHeight-cliff",
+          "band": "914->1024",
+          "from": 5876,
+          "to": 9960,
+          "relativeChange": 0.695,
+          "threshold": "|Δ|/prev > 0.25"
+        },
+        {
+          "kind": "visible-node-recovery",
+          "band": "914->1024",
+          "from": 926,
+          "to": 2759,
+          "relativeChange": 1.9795,
+          "displayNoneFrom": 120,
+          "displayNoneTo": 158,
+          "note": "nodes returning as a synthetic @media band is exited"
+        },
+        {
+          "kind": "variant-switch",
+          "band": "914->1024",
+          "from": "mobile",
+          "to": "desktop"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "390..914",
+          "widths": [
+            390,
+            500,
+            700,
+            914
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 5876,
+          "visibleNodeCount": 926,
+          "displayNoneCount": 120,
+          "visibleTextLength": 3538,
+          "maxContentRightRange": [
+            1303.58,
+            1303.58
+          ],
+          "maxContentRightNote": "constant — nothing at all changes inside the band"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1024..1100",
+          "widths": [
+            1024,
+            1100
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 9960,
+          "visibleNodeCount": 2759,
+          "displayNoneCount": 158,
+          "visibleTextLength": 8409,
+          "maxContentRightRange": [
+            1838,
+            1838
+          ],
+          "maxContentRightNote": "constant — nothing at all changes inside the band"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1440..1920",
+          "widths": [
+            1440,
+            1920
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 9960,
+          "visibleNodeCount": 2979,
+          "displayNoneCount": 120,
+          "visibleTextLength": 8745,
+          "maxContentRightRange": [
+            1840,
+            2080
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        },
+        {
+          "kind": "landmark-collapse",
+          "landmark": "main",
+          "rule": "|main.width / viewport.width - 1| > 0.05",
+          "widths": [
+            {
+              "width": 500,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.78,
+              "deficitPx": 110,
+              "maxContentRight": 1303.58
+            },
+            {
+              "width": 700,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.5571,
+              "deficitPx": 310,
+              "maxContentRight": 1303.58
+            },
+            {
+              "width": 914,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.4267,
+              "deficitPx": 524,
+              "maxContentRight": 1303.58
+            }
+          ],
+          "note": "this is the 28.5A left-pinned-column defect: <main> keeps its 390px observed width while the canvas grows"
+        }
+      ],
+      "screenshotTruthAtSweepWidths": "no screenshot truth captured at sweep widths — DOM metrics only"
+    },
+    "/changelog": {
+      "sweep": [
+        {
+          "width": 390,
+          "scrollHeight": 24482,
+          "visibleNodeCount": 2111,
+          "hiddenNodeCount": 4458,
+          "totalElements": 6569,
+          "displayNoneCount": 132,
+          "displayContentsCount": 211,
+          "zeroRectCount": 1944,
+          "activeVariant": "mobile",
+          "maxContentRight": 553.34,
+          "visibleTextLength": 18946,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 23604.3
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 23604.3,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 500,
+          "scrollHeight": 24482,
+          "visibleNodeCount": 2111,
+          "hiddenNodeCount": 4458,
+          "totalElements": 6569,
+          "displayNoneCount": 132,
+          "displayContentsCount": 211,
+          "zeroRectCount": 1944,
+          "activeVariant": "mobile",
+          "maxContentRight": 553.34,
+          "visibleTextLength": 18946,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 23604.3
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 23604.3,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 700,
+          "scrollHeight": 24482,
+          "visibleNodeCount": 2111,
+          "hiddenNodeCount": 4458,
+          "totalElements": 6569,
+          "displayNoneCount": 132,
+          "displayContentsCount": 211,
+          "zeroRectCount": 1944,
+          "activeVariant": "mobile",
+          "maxContentRight": 700,
+          "visibleTextLength": 18946,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 23604.3
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 23604.3,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 914,
+          "scrollHeight": 24482,
+          "visibleNodeCount": 2111,
+          "hiddenNodeCount": 4458,
+          "totalElements": 6569,
+          "displayNoneCount": 132,
+          "displayContentsCount": 211,
+          "zeroRectCount": 1944,
+          "activeVariant": "mobile",
+          "maxContentRight": 914,
+          "visibleTextLength": 18946,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 23604.3
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 23604.3,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1024,
+          "scrollHeight": 25343,
+          "visibleNodeCount": 2131,
+          "hiddenNodeCount": 4438,
+          "totalElements": 6569,
+          "displayNoneCount": 143,
+          "displayContentsCount": 211,
+          "zeroRectCount": 1930,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 18971,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 24840
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 24840,
+                "w": 1024,
+                "h": 502.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1100,
+          "scrollHeight": 25343,
+          "visibleNodeCount": 2131,
+          "hiddenNodeCount": 4438,
+          "totalElements": 6569,
+          "displayNoneCount": 143,
+          "displayContentsCount": 211,
+          "zeroRectCount": 1930,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 18971,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1100,
+                "h": 24840
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 24840,
+                "w": 1100,
+                "h": 502.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1440,
+          "scrollHeight": 25343,
+          "visibleNodeCount": 2143,
+          "hiddenNodeCount": 4426,
+          "totalElements": 6569,
+          "displayNoneCount": 132,
+          "displayContentsCount": 211,
+          "zeroRectCount": 1929,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 19005,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 24840
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 24840,
+                "w": 1440,
+                "h": 502.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1920,
+          "scrollHeight": 25343,
+          "visibleNodeCount": 2143,
+          "hiddenNodeCount": 4426,
+          "totalElements": 6569,
+          "displayNoneCount": 132,
+          "displayContentsCount": 211,
+          "zeroRectCount": 1929,
+          "activeVariant": "desktop",
+          "maxContentRight": 1920,
+          "visibleTextLength": 19005,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 24840
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 24840,
+                "w": 1920,
+                "h": 502.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        }
+      ],
+      "discontinuities": [
+        {
+          "kind": "variant-switch",
+          "band": "914->1024",
+          "from": "mobile",
+          "to": "desktop"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "390..914",
+          "widths": [
+            390,
+            500,
+            700,
+            914
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 24482,
+          "visibleNodeCount": 2111,
+          "displayNoneCount": 132,
+          "visibleTextLength": 18946,
+          "maxContentRightRange": [
+            553.34,
+            914
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1024..1100",
+          "widths": [
+            1024,
+            1100
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 25343,
+          "visibleNodeCount": 2131,
+          "displayNoneCount": 143,
+          "visibleTextLength": 18971,
+          "maxContentRightRange": [
+            1440,
+            1440
+          ],
+          "maxContentRightNote": "constant — nothing at all changes inside the band"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1440..1920",
+          "widths": [
+            1440,
+            1920
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 25343,
+          "visibleNodeCount": 2143,
+          "displayNoneCount": 132,
+          "visibleTextLength": 19005,
+          "maxContentRightRange": [
+            1440,
+            1920
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        },
+        {
+          "kind": "landmark-collapse",
+          "landmark": "main",
+          "rule": "|main.width / viewport.width - 1| > 0.05",
+          "widths": [
+            {
+              "width": 500,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.78,
+              "deficitPx": 110,
+              "maxContentRight": 553.34
+            },
+            {
+              "width": 700,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.5571,
+              "deficitPx": 310,
+              "maxContentRight": 700
+            },
+            {
+              "width": 914,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.4267,
+              "deficitPx": 524,
+              "maxContentRight": 914
+            }
+          ],
+          "note": "this is the 28.5A left-pinned-column defect: <main> keeps its 390px observed width while the canvas grows"
+        }
+      ],
+      "screenshotTruthAtSweepWidths": "no clone screenshot captured at sweep widths (metrics only); live-source full-page captured at all 8 widths"
+    },
+    "/customers": {
+      "sweep": [
+        {
+          "width": 390,
+          "scrollHeight": 8049,
+          "visibleNodeCount": 562,
+          "hiddenNodeCount": 2562,
+          "totalElements": 3124,
+          "displayNoneCount": 88,
+          "displayContentsCount": 59,
+          "zeroRectCount": 1732,
+          "activeVariant": "mobile",
+          "maxContentRight": 1276.35,
+          "visibleTextLength": 1917,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 672,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 672,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 7171.16
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 7171.16,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 24,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 500,
+          "scrollHeight": 8049,
+          "visibleNodeCount": 562,
+          "hiddenNodeCount": 2562,
+          "totalElements": 3124,
+          "displayNoneCount": 88,
+          "displayContentsCount": 59,
+          "zeroRectCount": 1732,
+          "activeVariant": "mobile",
+          "maxContentRight": 1276.35,
+          "visibleTextLength": 1917,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 672,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 672,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 7171.16
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 7171.16,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 24,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 700,
+          "scrollHeight": 8049,
+          "visibleNodeCount": 562,
+          "hiddenNodeCount": 2562,
+          "totalElements": 3124,
+          "displayNoneCount": 88,
+          "displayContentsCount": 59,
+          "zeroRectCount": 1732,
+          "activeVariant": "mobile",
+          "maxContentRight": 1276.35,
+          "visibleTextLength": 1917,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 672,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 672,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 7171.16
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 7171.16,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 24,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 914,
+          "scrollHeight": 8049,
+          "visibleNodeCount": 562,
+          "hiddenNodeCount": 2562,
+          "totalElements": 3124,
+          "displayNoneCount": 88,
+          "displayContentsCount": 59,
+          "zeroRectCount": 1732,
+          "activeVariant": "mobile",
+          "maxContentRight": 1276.35,
+          "visibleTextLength": 1917,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 672,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 672,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 7171.16
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 7171.16,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 24,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1024,
+          "scrollHeight": 4886,
+          "visibleNodeCount": 566,
+          "hiddenNodeCount": 2558,
+          "totalElements": 3124,
+          "displayNoneCount": 140,
+          "displayContentsCount": 59,
+          "zeroRectCount": 1756,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 2127,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 4391.75
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 4391.75,
+                "w": 1024,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 24,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1100,
+          "scrollHeight": 4886,
+          "visibleNodeCount": 566,
+          "hiddenNodeCount": 2558,
+          "totalElements": 3124,
+          "displayNoneCount": 140,
+          "displayContentsCount": 59,
+          "zeroRectCount": 1756,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 2127,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1100,
+                "h": 4391.75
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 4391.75,
+                "w": 1100,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 24,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1440,
+          "scrollHeight": 4886,
+          "visibleNodeCount": 618,
+          "hiddenNodeCount": 2506,
+          "totalElements": 3124,
+          "displayNoneCount": 88,
+          "displayContentsCount": 59,
+          "zeroRectCount": 1756,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 3016,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 4391.75
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 4391.75,
+                "w": 1440,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 24,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1920,
+          "scrollHeight": 4886,
+          "visibleNodeCount": 618,
+          "hiddenNodeCount": 2506,
+          "totalElements": 3124,
+          "displayNoneCount": 88,
+          "displayContentsCount": 59,
+          "zeroRectCount": 1756,
+          "activeVariant": "desktop",
+          "maxContentRight": 1920,
+          "visibleTextLength": 3016,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 4391.75
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 4391.75,
+                "w": 1920,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 24,
+          "pageErrors": 0,
+          "ok": true
+        }
+      ],
+      "discontinuities": [
+        {
+          "kind": "scrollHeight-cliff",
+          "band": "914->1024",
+          "from": 8049,
+          "to": 4886,
+          "relativeChange": -0.393,
+          "threshold": "|Δ|/prev > 0.25"
+        },
+        {
+          "kind": "variant-switch",
+          "band": "914->1024",
+          "from": "mobile",
+          "to": "desktop"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "390..914",
+          "widths": [
+            390,
+            500,
+            700,
+            914
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 8049,
+          "visibleNodeCount": 562,
+          "displayNoneCount": 88,
+          "visibleTextLength": 1917,
+          "maxContentRightRange": [
+            1276.35,
+            1276.35
+          ],
+          "maxContentRightNote": "constant — nothing at all changes inside the band"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1024..1100",
+          "widths": [
+            1024,
+            1100
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 4886,
+          "visibleNodeCount": 566,
+          "displayNoneCount": 140,
+          "visibleTextLength": 2127,
+          "maxContentRightRange": [
+            1440,
+            1440
+          ],
+          "maxContentRightNote": "constant — nothing at all changes inside the band"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1440..1920",
+          "widths": [
+            1440,
+            1920
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 4886,
+          "visibleNodeCount": 618,
+          "displayNoneCount": 88,
+          "visibleTextLength": 3016,
+          "maxContentRightRange": [
+            1440,
+            1920
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        },
+        {
+          "kind": "landmark-collapse",
+          "landmark": "main",
+          "rule": "|main.width / viewport.width - 1| > 0.05",
+          "widths": [
+            {
+              "width": 500,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.78,
+              "deficitPx": 110,
+              "maxContentRight": 1276.35
+            },
+            {
+              "width": 700,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.5571,
+              "deficitPx": 310,
+              "maxContentRight": 1276.35
+            },
+            {
+              "width": 914,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.4267,
+              "deficitPx": 524,
+              "maxContentRight": 1276.35
+            }
+          ],
+          "note": "this is the 28.5A left-pinned-column defect: <main> keeps its 390px observed width while the canvas grows"
+        }
+      ],
+      "screenshotTruthAtSweepWidths": "no screenshot truth captured at sweep widths — DOM metrics only"
+    },
+    "/customers/automattic": {
+      "sweep": [
+        {
+          "width": 390,
+          "scrollHeight": 6320,
+          "visibleNodeCount": 269,
+          "hiddenNodeCount": 1993,
+          "totalElements": 2262,
+          "displayNoneCount": 48,
+          "displayContentsCount": 31,
+          "zeroRectCount": 1622,
+          "activeVariant": "mobile",
+          "maxContentRight": 395,
+          "visibleTextLength": 6307,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 5442.16
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 5442.16,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 500,
+          "scrollHeight": 6320,
+          "visibleNodeCount": 269,
+          "hiddenNodeCount": 1993,
+          "totalElements": 2262,
+          "displayNoneCount": 48,
+          "displayContentsCount": 31,
+          "zeroRectCount": 1622,
+          "activeVariant": "mobile",
+          "maxContentRight": 500,
+          "visibleTextLength": 6307,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 5442.16
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 5442.16,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 700,
+          "scrollHeight": 6320,
+          "visibleNodeCount": 269,
+          "hiddenNodeCount": 1993,
+          "totalElements": 2262,
+          "displayNoneCount": 48,
+          "displayContentsCount": 31,
+          "zeroRectCount": 1622,
+          "activeVariant": "mobile",
+          "maxContentRight": 700,
+          "visibleTextLength": 6307,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 5442.16
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 5442.16,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 914,
+          "scrollHeight": 6320,
+          "visibleNodeCount": 269,
+          "hiddenNodeCount": 1993,
+          "totalElements": 2262,
+          "displayNoneCount": 48,
+          "displayContentsCount": 31,
+          "zeroRectCount": 1622,
+          "activeVariant": "mobile",
+          "maxContentRight": 914,
+          "visibleTextLength": 6307,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 5442.16
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 5442.16,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1024,
+          "scrollHeight": 5242,
+          "visibleNodeCount": 271,
+          "hiddenNodeCount": 1991,
+          "totalElements": 2262,
+          "displayNoneCount": 56,
+          "displayContentsCount": 31,
+          "zeroRectCount": 1624,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 6332,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 4748.16
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 4748.16,
+                "w": 1024,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1100,
+          "scrollHeight": 5242,
+          "visibleNodeCount": 271,
+          "hiddenNodeCount": 1991,
+          "totalElements": 2262,
+          "displayNoneCount": 56,
+          "displayContentsCount": 31,
+          "zeroRectCount": 1624,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 6332,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1100,
+                "h": 4748.16
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 4748.16,
+                "w": 1100,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1440,
+          "scrollHeight": 5242,
+          "visibleNodeCount": 279,
+          "hiddenNodeCount": 1983,
+          "totalElements": 2262,
+          "displayNoneCount": 48,
+          "displayContentsCount": 31,
+          "zeroRectCount": 1624,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 6358,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 4748.16
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 4748.16,
+                "w": 1440,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1920,
+          "scrollHeight": 5242,
+          "visibleNodeCount": 279,
+          "hiddenNodeCount": 1983,
+          "totalElements": 2262,
+          "displayNoneCount": 48,
+          "displayContentsCount": 31,
+          "zeroRectCount": 1624,
+          "activeVariant": "desktop",
+          "maxContentRight": 1920,
+          "visibleTextLength": 6358,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 2,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 4748.16
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 4748.16,
+                "w": 1920,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        }
+      ],
+      "discontinuities": [
+        {
+          "kind": "variant-switch",
+          "band": "914->1024",
+          "from": "mobile",
+          "to": "desktop"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "390..914",
+          "widths": [
+            390,
+            500,
+            700,
+            914
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 6320,
+          "visibleNodeCount": 269,
+          "displayNoneCount": 48,
+          "visibleTextLength": 6307,
+          "maxContentRightRange": [
+            395,
+            914
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1024..1100",
+          "widths": [
+            1024,
+            1100
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 5242,
+          "visibleNodeCount": 271,
+          "displayNoneCount": 56,
+          "visibleTextLength": 6332,
+          "maxContentRightRange": [
+            1440,
+            1440
+          ],
+          "maxContentRightNote": "constant — nothing at all changes inside the band"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1440..1920",
+          "widths": [
+            1440,
+            1920
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 5242,
+          "visibleNodeCount": 279,
+          "displayNoneCount": 48,
+          "visibleTextLength": 6358,
+          "maxContentRightRange": [
+            1440,
+            1920
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        },
+        {
+          "kind": "landmark-collapse",
+          "landmark": "main",
+          "rule": "|main.width / viewport.width - 1| > 0.05",
+          "widths": [
+            {
+              "width": 500,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.78,
+              "deficitPx": 110,
+              "maxContentRight": 500
+            },
+            {
+              "width": 700,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.5571,
+              "deficitPx": 310,
+              "maxContentRight": 700
+            },
+            {
+              "width": 914,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.4267,
+              "deficitPx": 524,
+              "maxContentRight": 914
+            }
+          ],
+          "note": "this is the 28.5A left-pinned-column defect: <main> keeps its 390px observed width while the canvas grows"
+        }
+      ],
+      "screenshotTruthAtSweepWidths": "no screenshot truth captured at sweep widths — DOM metrics only"
+    },
+    "/integrations": {
+      "sweep": [
+        {
+          "width": 390,
+          "scrollHeight": 15622,
+          "visibleNodeCount": 1096,
+          "hiddenNodeCount": 3191,
+          "totalElements": 4287,
+          "displayNoneCount": 155,
+          "displayContentsCount": 93,
+          "zeroRectCount": 1743,
+          "activeVariant": "mobile",
+          "maxContentRight": 395,
+          "visibleTextLength": 6923,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 14744.89
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 14744.89,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 500,
+          "scrollHeight": 15622,
+          "visibleNodeCount": 1096,
+          "hiddenNodeCount": 3191,
+          "totalElements": 4287,
+          "displayNoneCount": 155,
+          "displayContentsCount": 93,
+          "zeroRectCount": 1743,
+          "activeVariant": "mobile",
+          "maxContentRight": 500,
+          "visibleTextLength": 6923,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 14744.89
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 14744.89,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 700,
+          "scrollHeight": 15622,
+          "visibleNodeCount": 1096,
+          "hiddenNodeCount": 3191,
+          "totalElements": 4287,
+          "displayNoneCount": 155,
+          "displayContentsCount": 93,
+          "zeroRectCount": 1743,
+          "activeVariant": "mobile",
+          "maxContentRight": 700,
+          "visibleTextLength": 6923,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 14744.89
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 14744.89,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 914,
+          "scrollHeight": 15622,
+          "visibleNodeCount": 1096,
+          "hiddenNodeCount": 3191,
+          "totalElements": 4287,
+          "displayNoneCount": 155,
+          "displayContentsCount": 93,
+          "zeroRectCount": 1743,
+          "activeVariant": "mobile",
+          "maxContentRight": 914,
+          "visibleTextLength": 6923,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 14744.89
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 14744.89,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1024,
+          "scrollHeight": 11059,
+          "visibleNodeCount": 1129,
+          "hiddenNodeCount": 3158,
+          "totalElements": 4287,
+          "displayNoneCount": 225,
+          "displayContentsCount": 93,
+          "zeroRectCount": 1722,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 7064,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 10564.89
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 10564.89,
+                "w": 1024,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1100,
+          "scrollHeight": 11059,
+          "visibleNodeCount": 1129,
+          "hiddenNodeCount": 3158,
+          "totalElements": 4287,
+          "displayNoneCount": 225,
+          "displayContentsCount": 93,
+          "zeroRectCount": 1722,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 7064,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1100,
+                "h": 10564.89
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 10564.89,
+                "w": 1100,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1440,
+          "scrollHeight": 11059,
+          "visibleNodeCount": 1199,
+          "hiddenNodeCount": 3088,
+          "totalElements": 4287,
+          "displayNoneCount": 155,
+          "displayContentsCount": 93,
+          "zeroRectCount": 1722,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 7253,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 10564.89
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 10564.89,
+                "w": 1440,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1920,
+          "scrollHeight": 11059,
+          "visibleNodeCount": 1199,
+          "hiddenNodeCount": 3088,
+          "totalElements": 4287,
+          "displayNoneCount": 155,
+          "displayContentsCount": 93,
+          "zeroRectCount": 1722,
+          "activeVariant": "desktop",
+          "maxContentRight": 1920,
+          "visibleTextLength": 7253,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 10564.89
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 10564.89,
+                "w": 1920,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        }
+      ],
+      "discontinuities": [
+        {
+          "kind": "scrollHeight-cliff",
+          "band": "914->1024",
+          "from": 15622,
+          "to": 11059,
+          "relativeChange": -0.2921,
+          "threshold": "|Δ|/prev > 0.25"
+        },
+        {
+          "kind": "variant-switch",
+          "band": "914->1024",
+          "from": "mobile",
+          "to": "desktop"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "390..914",
+          "widths": [
+            390,
+            500,
+            700,
+            914
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 15622,
+          "visibleNodeCount": 1096,
+          "displayNoneCount": 155,
+          "visibleTextLength": 6923,
+          "maxContentRightRange": [
+            395,
+            914
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1024..1100",
+          "widths": [
+            1024,
+            1100
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 11059,
+          "visibleNodeCount": 1129,
+          "displayNoneCount": 225,
+          "visibleTextLength": 7064,
+          "maxContentRightRange": [
+            1440,
+            1440
+          ],
+          "maxContentRightNote": "constant — nothing at all changes inside the band"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1440..1920",
+          "widths": [
+            1440,
+            1920
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 11059,
+          "visibleNodeCount": 1199,
+          "displayNoneCount": 155,
+          "visibleTextLength": 7253,
+          "maxContentRightRange": [
+            1440,
+            1920
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        },
+        {
+          "kind": "landmark-collapse",
+          "landmark": "main",
+          "rule": "|main.width / viewport.width - 1| > 0.05",
+          "widths": [
+            {
+              "width": 500,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.78,
+              "deficitPx": 110,
+              "maxContentRight": 500
+            },
+            {
+              "width": 700,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.5571,
+              "deficitPx": 310,
+              "maxContentRight": 700
+            },
+            {
+              "width": 914,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.4267,
+              "deficitPx": 524,
+              "maxContentRight": 914
+            }
+          ],
+          "note": "this is the 28.5A left-pinned-column defect: <main> keeps its 390px observed width while the canvas grows"
+        }
+      ],
+      "screenshotTruthAtSweepWidths": "no screenshot truth captured at sweep widths — DOM metrics only"
+    },
+    "/plan": {
+      "sweep": [
+        {
+          "width": 390,
+          "scrollHeight": 13050,
+          "visibleNodeCount": 466,
+          "hiddenNodeCount": 3689,
+          "totalElements": 4155,
+          "displayNoneCount": 101,
+          "displayContentsCount": 137,
+          "zeroRectCount": 2371,
+          "activeVariant": "mobile",
+          "maxContentRight": 992,
+          "visibleTextLength": 4280,
+          "landmarks": {
+            "header": {
+              "count": 3,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 7,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 12172.5
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 12172.5,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 500,
+          "scrollHeight": 13050,
+          "visibleNodeCount": 466,
+          "hiddenNodeCount": 3689,
+          "totalElements": 4155,
+          "displayNoneCount": 101,
+          "displayContentsCount": 137,
+          "zeroRectCount": 2371,
+          "activeVariant": "mobile",
+          "maxContentRight": 992,
+          "visibleTextLength": 4280,
+          "landmarks": {
+            "header": {
+              "count": 3,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 7,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 12172.5
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 12172.5,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 700,
+          "scrollHeight": 13050,
+          "visibleNodeCount": 466,
+          "hiddenNodeCount": 3689,
+          "totalElements": 4155,
+          "displayNoneCount": 101,
+          "displayContentsCount": 137,
+          "zeroRectCount": 2371,
+          "activeVariant": "mobile",
+          "maxContentRight": 992,
+          "visibleTextLength": 4280,
+          "landmarks": {
+            "header": {
+              "count": 3,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 7,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 12172.5
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 12172.5,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 914,
+          "scrollHeight": 13050,
+          "visibleNodeCount": 466,
+          "hiddenNodeCount": 3689,
+          "totalElements": 4155,
+          "displayNoneCount": 101,
+          "displayContentsCount": 137,
+          "zeroRectCount": 2371,
+          "activeVariant": "mobile",
+          "maxContentRight": 992,
+          "visibleTextLength": 4280,
+          "landmarks": {
+            "header": {
+              "count": 3,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 7,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 12172.5
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 12172.5,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1024,
+          "scrollHeight": 14771,
+          "visibleNodeCount": 721,
+          "hiddenNodeCount": 3434,
+          "totalElements": 4155,
+          "displayNoneCount": 149,
+          "displayContentsCount": 137,
+          "zeroRectCount": 2309,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 5865,
+          "landmarks": {
+            "header": {
+              "count": 3,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 7,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 14276.8
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 14276.8,
+                "w": 1024,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1100,
+          "scrollHeight": 14771,
+          "visibleNodeCount": 721,
+          "hiddenNodeCount": 3434,
+          "totalElements": 4155,
+          "displayNoneCount": 149,
+          "displayContentsCount": 137,
+          "zeroRectCount": 2309,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 5865,
+          "landmarks": {
+            "header": {
+              "count": 3,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 7,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1100,
+                "h": 14276.8
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 14276.8,
+                "w": 1100,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1440,
+          "scrollHeight": 14771,
+          "visibleNodeCount": 775,
+          "hiddenNodeCount": 3380,
+          "totalElements": 4155,
+          "displayNoneCount": 101,
+          "displayContentsCount": 137,
+          "zeroRectCount": 2303,
+          "activeVariant": "desktop",
+          "maxContentRight": 1492,
+          "visibleTextLength": 6247,
+          "landmarks": {
+            "header": {
+              "count": 3,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 7,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 14276.8
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 14276.8,
+                "w": 1440,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1920,
+          "scrollHeight": 14771,
+          "visibleNodeCount": 775,
+          "hiddenNodeCount": 3380,
+          "totalElements": 4155,
+          "displayNoneCount": 101,
+          "displayContentsCount": 137,
+          "zeroRectCount": 2303,
+          "activeVariant": "desktop",
+          "maxContentRight": 1920,
+          "visibleTextLength": 6247,
+          "landmarks": {
+            "header": {
+              "count": 3,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 7,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 14276.8
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 14276.8,
+                "w": 1920,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        }
+      ],
+      "discontinuities": [
+        {
+          "kind": "visible-node-recovery",
+          "band": "914->1024",
+          "from": 466,
+          "to": 721,
+          "relativeChange": 0.5472,
+          "displayNoneFrom": 101,
+          "displayNoneTo": 149,
+          "note": "nodes returning as a synthetic @media band is exited"
+        },
+        {
+          "kind": "variant-switch",
+          "band": "914->1024",
+          "from": "mobile",
+          "to": "desktop"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "390..914",
+          "widths": [
+            390,
+            500,
+            700,
+            914
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 13050,
+          "visibleNodeCount": 466,
+          "displayNoneCount": 101,
+          "visibleTextLength": 4280,
+          "maxContentRightRange": [
+            992,
+            992
+          ],
+          "maxContentRightNote": "constant — nothing at all changes inside the band"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1024..1100",
+          "widths": [
+            1024,
+            1100
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 14771,
+          "visibleNodeCount": 721,
+          "displayNoneCount": 149,
+          "visibleTextLength": 5865,
+          "maxContentRightRange": [
+            1440,
+            1440
+          ],
+          "maxContentRightNote": "constant — nothing at all changes inside the band"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1440..1920",
+          "widths": [
+            1440,
+            1920
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 14771,
+          "visibleNodeCount": 775,
+          "displayNoneCount": 101,
+          "visibleTextLength": 6247,
+          "maxContentRightRange": [
+            1492,
+            1920
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        },
+        {
+          "kind": "landmark-collapse",
+          "landmark": "main",
+          "rule": "|main.width / viewport.width - 1| > 0.05",
+          "widths": [
+            {
+              "width": 500,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.78,
+              "deficitPx": 110,
+              "maxContentRight": 992
+            },
+            {
+              "width": 700,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.5571,
+              "deficitPx": 310,
+              "maxContentRight": 992
+            },
+            {
+              "width": 914,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.4267,
+              "deficitPx": 524,
+              "maxContentRight": 992
+            }
+          ],
+          "note": "this is the 28.5A left-pinned-column defect: <main> keeps its 390px observed width while the canvas grows"
+        }
+      ],
+      "screenshotTruthAtSweepWidths": "no screenshot truth captured at sweep widths — DOM metrics only"
+    },
+    "/pricing": {
+      "sweep": [
+        {
+          "width": 390,
+          "scrollHeight": 7714,
+          "visibleNodeCount": 1075,
+          "hiddenNodeCount": 4902,
+          "totalElements": 5977,
+          "displayNoneCount": 240,
+          "displayContentsCount": 687,
+          "zeroRectCount": 2799,
+          "activeVariant": "mobile",
+          "maxContentRight": 1288.79,
+          "visibleTextLength": 2369,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 6836.47
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 6836.47,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/clone-pricing-390.png",
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 500,
+          "scrollHeight": 7714,
+          "visibleNodeCount": 1075,
+          "hiddenNodeCount": 4902,
+          "totalElements": 5977,
+          "displayNoneCount": 240,
+          "displayContentsCount": 687,
+          "zeroRectCount": 2799,
+          "activeVariant": "mobile",
+          "maxContentRight": 1288.79,
+          "visibleTextLength": 2369,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 6836.47
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 6836.47,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/clone-pricing-500.png",
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 700,
+          "scrollHeight": 7714,
+          "visibleNodeCount": 1075,
+          "hiddenNodeCount": 4902,
+          "totalElements": 5977,
+          "displayNoneCount": 240,
+          "displayContentsCount": 687,
+          "zeroRectCount": 2799,
+          "activeVariant": "mobile",
+          "maxContentRight": 1288.79,
+          "visibleTextLength": 2369,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 6836.47
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 6836.47,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/clone-pricing-700.png",
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 914,
+          "scrollHeight": 7714,
+          "visibleNodeCount": 1075,
+          "hiddenNodeCount": 4902,
+          "totalElements": 5977,
+          "displayNoneCount": 240,
+          "displayContentsCount": 687,
+          "zeroRectCount": 2799,
+          "activeVariant": "mobile",
+          "maxContentRight": 1288.79,
+          "visibleTextLength": 2369,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 6836.47
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 6836.47,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/clone-pricing-914.png",
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1024,
+          "scrollHeight": 6360,
+          "visibleNodeCount": 1035,
+          "hiddenNodeCount": 4942,
+          "totalElements": 5977,
+          "displayNoneCount": 743,
+          "displayContentsCount": 687,
+          "zeroRectCount": 2657,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 2351,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 5865.55
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 5865.55,
+                "w": 1024,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/clone-pricing-1024.png",
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1100,
+          "scrollHeight": 6360,
+          "visibleNodeCount": 1035,
+          "hiddenNodeCount": 4942,
+          "totalElements": 5977,
+          "displayNoneCount": 743,
+          "displayContentsCount": 687,
+          "zeroRectCount": 2657,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 2351,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1100,
+                "h": 5865.55
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 5865.55,
+                "w": 1100,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/clone-pricing-1100.png",
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1440,
+          "scrollHeight": 6360,
+          "visibleNodeCount": 1706,
+          "hiddenNodeCount": 4271,
+          "totalElements": 5977,
+          "displayNoneCount": 240,
+          "displayContentsCount": 687,
+          "zeroRectCount": 2489,
+          "activeVariant": "desktop",
+          "maxContentRight": 1440,
+          "visibleTextLength": 2675,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 5865.55
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 5865.55,
+                "w": 1440,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/clone-pricing-1440.png",
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1920,
+          "scrollHeight": 6360,
+          "visibleNodeCount": 1706,
+          "hiddenNodeCount": 4271,
+          "totalElements": 5977,
+          "displayNoneCount": 240,
+          "displayContentsCount": 687,
+          "zeroRectCount": 2489,
+          "activeVariant": "desktop",
+          "maxContentRight": 1920,
+          "visibleTextLength": 2675,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 5865.55
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 5865.55,
+                "w": 1920,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/clone-pricing-1920.png",
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        }
+      ],
+      "discontinuities": [
+        {
+          "kind": "variant-switch",
+          "band": "914->1024",
+          "from": "mobile",
+          "to": "desktop"
+        },
+        {
+          "kind": "visible-node-recovery",
+          "band": "1100->1440",
+          "from": 1035,
+          "to": 1706,
+          "relativeChange": 0.6483,
+          "displayNoneFrom": 743,
+          "displayNoneTo": 240,
+          "note": "nodes returning as a synthetic @media band is exited"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "390..914",
+          "widths": [
+            390,
+            500,
+            700,
+            914
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 7714,
+          "visibleNodeCount": 1075,
+          "displayNoneCount": 240,
+          "visibleTextLength": 2369,
+          "maxContentRightRange": [
+            1288.79,
+            1288.79
+          ],
+          "maxContentRightNote": "constant — nothing at all changes inside the band"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1024..1100",
+          "widths": [
+            1024,
+            1100
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 6360,
+          "visibleNodeCount": 1035,
+          "displayNoneCount": 743,
+          "visibleTextLength": 2351,
+          "maxContentRightRange": [
+            1440,
+            1440
+          ],
+          "maxContentRightNote": "constant — nothing at all changes inside the band"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1440..1920",
+          "widths": [
+            1440,
+            1920
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 6360,
+          "visibleNodeCount": 1706,
+          "displayNoneCount": 240,
+          "visibleTextLength": 2675,
+          "maxContentRightRange": [
+            1440,
+            1920
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        },
+        {
+          "kind": "landmark-collapse",
+          "landmark": "main",
+          "rule": "|main.width / viewport.width - 1| > 0.05",
+          "widths": [
+            {
+              "width": 500,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.78,
+              "deficitPx": 110,
+              "maxContentRight": 1288.79
+            },
+            {
+              "width": 700,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.5571,
+              "deficitPx": 310,
+              "maxContentRight": 1288.79
+            },
+            {
+              "width": 914,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.4267,
+              "deficitPx": 524,
+              "maxContentRight": 1288.79
+            }
+          ],
+          "note": "this is the 28.5A left-pinned-column defect: <main> keeps its 390px observed width while the canvas grows"
+        }
+      ],
+      "screenshotTruthAtSweepWidths": "clone full-page captured at all 8 widths; live-source full-page captured at all 8 widths; diffed"
+    },
+    "/security": {
+      "sweep": [
+        {
+          "width": 390,
+          "scrollHeight": 4783,
+          "visibleNodeCount": 380,
+          "hiddenNodeCount": 2183,
+          "totalElements": 2563,
+          "displayNoneCount": 43,
+          "displayContentsCount": 89,
+          "zeroRectCount": 1727,
+          "activeVariant": "mobile",
+          "maxContentRight": 2898.48,
+          "visibleTextLength": 3110,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 3905.41
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 3905.41,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 500,
+          "scrollHeight": 4783,
+          "visibleNodeCount": 380,
+          "hiddenNodeCount": 2183,
+          "totalElements": 2563,
+          "displayNoneCount": 43,
+          "displayContentsCount": 89,
+          "zeroRectCount": 1727,
+          "activeVariant": "mobile",
+          "maxContentRight": 2898.48,
+          "visibleTextLength": 3110,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 3905.41
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 3905.41,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 700,
+          "scrollHeight": 4783,
+          "visibleNodeCount": 380,
+          "hiddenNodeCount": 2183,
+          "totalElements": 2563,
+          "displayNoneCount": 43,
+          "displayContentsCount": 89,
+          "zeroRectCount": 1727,
+          "activeVariant": "mobile",
+          "maxContentRight": 2898.48,
+          "visibleTextLength": 3110,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 3905.41
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 3905.41,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 914,
+          "scrollHeight": 4783,
+          "visibleNodeCount": 380,
+          "hiddenNodeCount": 2183,
+          "totalElements": 2563,
+          "displayNoneCount": 43,
+          "displayContentsCount": 89,
+          "zeroRectCount": 1727,
+          "activeVariant": "mobile",
+          "maxContentRight": 2898.48,
+          "visibleTextLength": 3110,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 3905.41
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 3905.41,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1024,
+          "scrollHeight": 3231,
+          "visibleNodeCount": 380,
+          "hiddenNodeCount": 2183,
+          "totalElements": 2563,
+          "displayNoneCount": 51,
+          "displayContentsCount": 89,
+          "zeroRectCount": 1729,
+          "activeVariant": "desktop",
+          "maxContentRight": 2900.99,
+          "visibleTextLength": 3135,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 2736.55
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 2736.55,
+                "w": 1024,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1100,
+          "scrollHeight": 3231,
+          "visibleNodeCount": 380,
+          "hiddenNodeCount": 2183,
+          "totalElements": 2563,
+          "displayNoneCount": 51,
+          "displayContentsCount": 89,
+          "zeroRectCount": 1729,
+          "activeVariant": "desktop",
+          "maxContentRight": 2938.99,
+          "visibleTextLength": 3135,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1100,
+                "h": 2736.55
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 2736.55,
+                "w": 1100,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1440,
+          "scrollHeight": 3231,
+          "visibleNodeCount": 388,
+          "hiddenNodeCount": 2175,
+          "totalElements": 2563,
+          "displayNoneCount": 43,
+          "displayContentsCount": 89,
+          "zeroRectCount": 1729,
+          "activeVariant": "desktop",
+          "maxContentRight": 3108.99,
+          "visibleTextLength": 3161,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 2736.55
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 2736.55,
+                "w": 1440,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        },
+        {
+          "width": 1920,
+          "scrollHeight": 3231,
+          "visibleNodeCount": 388,
+          "hiddenNodeCount": 2175,
+          "totalElements": 2563,
+          "displayNoneCount": 43,
+          "displayContentsCount": 89,
+          "zeroRectCount": 1729,
+          "activeVariant": "desktop",
+          "maxContentRight": 3348.99,
+          "visibleTextLength": 3161,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 2736.55
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 2736.55,
+                "w": 1920,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "ok": true
+        }
+      ],
+      "discontinuities": [
+        {
+          "kind": "scrollHeight-cliff",
+          "band": "914->1024",
+          "from": 4783,
+          "to": 3231,
+          "relativeChange": -0.3245,
+          "threshold": "|Δ|/prev > 0.25"
+        },
+        {
+          "kind": "variant-switch",
+          "band": "914->1024",
+          "from": "mobile",
+          "to": "desktop"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "390..914",
+          "widths": [
+            390,
+            500,
+            700,
+            914
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 4783,
+          "visibleNodeCount": 380,
+          "displayNoneCount": 43,
+          "visibleTextLength": 3110,
+          "maxContentRightRange": [
+            2898.48,
+            2898.48
+          ],
+          "maxContentRightNote": "constant — nothing at all changes inside the band"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1024..1100",
+          "widths": [
+            1024,
+            1100
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 3231,
+          "visibleNodeCount": 380,
+          "displayNoneCount": 51,
+          "visibleTextLength": 3135,
+          "maxContentRightRange": [
+            2900.99,
+            2938.99
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1440..1920",
+          "widths": [
+            1440,
+            1920
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 3231,
+          "visibleNodeCount": 388,
+          "displayNoneCount": 43,
+          "visibleTextLength": 3161,
+          "maxContentRightRange": [
+            3108.99,
+            3348.99
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        },
+        {
+          "kind": "landmark-collapse",
+          "landmark": "main",
+          "rule": "|main.width / viewport.width - 1| > 0.05",
+          "widths": [
+            {
+              "width": 500,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.78,
+              "deficitPx": 110,
+              "maxContentRight": 2898.48
+            },
+            {
+              "width": 700,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.5571,
+              "deficitPx": 310,
+              "maxContentRight": 2898.48
+            },
+            {
+              "width": 914,
+              "mainWidth": 390,
+              "mainWidthOverViewport": 0.4267,
+              "deficitPx": 524,
+              "maxContentRight": 2898.48
+            }
+          ],
+          "note": "this is the 28.5A left-pinned-column defect: <main> keeps its 390px observed width while the canvas grows"
+        }
+      ],
+      "screenshotTruthAtSweepWidths": "no screenshot truth captured at sweep widths — DOM metrics only"
+    }
+  },
+  "sourceTruth": {
+    "/pricing": {
+      "sweep": [
+        {
+          "width": 390,
+          "scrollHeight": 7714,
+          "visibleNodeCount": 1071,
+          "hiddenNodeCount": 2142,
+          "totalElements": 3213,
+          "displayNoneCount": 774,
+          "maxContentRight": 1280.47,
+          "visibleTextLength": 2331,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 6836.47
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 6836.47,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-pricing-390.png",
+          "ok": true
+        },
+        {
+          "width": 500,
+          "scrollHeight": 7714,
+          "visibleNodeCount": 1071,
+          "hiddenNodeCount": 2142,
+          "totalElements": 3213,
+          "displayNoneCount": 774,
+          "maxContentRight": 1292.47,
+          "visibleTextLength": 2331,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 500,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 500,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 500,
+                "h": 6836.47
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 6836.47,
+                "w": 500,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-pricing-500.png",
+          "ok": true
+        },
+        {
+          "width": 700,
+          "scrollHeight": 7795,
+          "visibleNodeCount": 1075,
+          "hiddenNodeCount": 2138,
+          "totalElements": 3213,
+          "displayNoneCount": 770,
+          "maxContentRight": 1313.14,
+          "visibleTextLength": 2340,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 700,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 700,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 700,
+                "h": 7020.88
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 7020.88,
+                "w": 700,
+                "h": 774
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-pricing-700.png",
+          "ok": true
+        },
+        {
+          "width": 914,
+          "scrollHeight": 6990,
+          "visibleNodeCount": 1050,
+          "hiddenNodeCount": 2175,
+          "totalElements": 3225,
+          "displayNoneCount": 777,
+          "maxContentRight": 914,
+          "visibleTextLength": 2384,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 914,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 914,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 914,
+                "h": 6248.06
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 6248.06,
+                "w": 914,
+                "h": 742
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-pricing-914.png",
+          "ok": true
+        },
+        {
+          "width": 1024,
+          "scrollHeight": 6990,
+          "visibleNodeCount": 1050,
+          "hiddenNodeCount": 2175,
+          "totalElements": 3225,
+          "displayNoneCount": 777,
+          "maxContentRight": 1024,
+          "visibleTextLength": 2384,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 6248.06
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 6248.06,
+                "w": 1024,
+                "h": 742
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-pricing-1024.png",
+          "ok": true
+        },
+        {
+          "width": 1100,
+          "scrollHeight": 6323,
+          "visibleNodeCount": 1702,
+          "hiddenNodeCount": 1544,
+          "totalElements": 3246,
+          "displayNoneCount": 626,
+          "maxContentRight": 1100,
+          "visibleTextLength": 2637,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1100,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1100,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1100,
+                "h": 5829.06
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 5829.06,
+                "w": 1100,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-pricing-1100.png",
+          "ok": true
+        },
+        {
+          "width": 1440,
+          "scrollHeight": 6360,
+          "visibleNodeCount": 1702,
+          "hiddenNodeCount": 1544,
+          "totalElements": 3246,
+          "displayNoneCount": 626,
+          "maxContentRight": 1440,
+          "visibleTextLength": 2637,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 5865.56
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 5865.56,
+                "w": 1440,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-pricing-1440.png",
+          "ok": true
+        },
+        {
+          "width": 1920,
+          "scrollHeight": 6360,
+          "visibleNodeCount": 1702,
+          "hiddenNodeCount": 1544,
+          "totalElements": 3246,
+          "displayNoneCount": 626,
+          "maxContentRight": 1920,
+          "visibleTextLength": 2637,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 5865.56
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 5865.56,
+                "w": 1920,
+                "h": 494
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-pricing-1920.png",
+          "ok": true
+        }
+      ],
+      "discontinuities": [
+        {
+          "kind": "visible-node-recovery",
+          "band": "1024->1100",
+          "from": 1050,
+          "to": 1702,
+          "relativeChange": 0.621,
+          "displayNoneFrom": 777,
+          "displayNoneTo": 626,
+          "note": "nodes returning as a synthetic @media band is exited"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "390..500",
+          "widths": [
+            390,
+            500
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 7714,
+          "visibleNodeCount": 1071,
+          "displayNoneCount": 774,
+          "visibleTextLength": 2331,
+          "maxContentRightRange": [
+            1280.47,
+            1292.47
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "914..1024",
+          "widths": [
+            914,
+            1024
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 6990,
+          "visibleNodeCount": 1050,
+          "displayNoneCount": 777,
+          "visibleTextLength": 2384,
+          "maxContentRightRange": [
+            914,
+            1024
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        },
+        {
+          "kind": "frozen-band",
+          "band": "1440..1920",
+          "widths": [
+            1440,
+            1920
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 6360,
+          "visibleNodeCount": 1702,
+          "displayNoneCount": 626,
+          "visibleTextLength": 2637,
+          "maxContentRightRange": [
+            1440,
+            1920
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        }
+      ],
+      "cloneVsSource": [
+        {
+          "width": 390,
+          "commonAreaRatio": 1,
+          "at1": 0.0502,
+          "at16": 0.0371,
+          "deltaE76Mean": 1.4674,
+          "deltaE76AboveJndRatio": 0.0408,
+          "deltaE76AboveVisibleRatio": 0.0341,
+          "meanMaxChannelDelta": 3.6493,
+          "sourceHeight": 7714,
+          "cloneHeight": 7714,
+          "heightDelta": 0,
+          "diffImage": "diff-pricing-390.png"
+        },
+        {
+          "width": 500,
+          "commonAreaRatio": 1,
+          "at1": 0.0594,
+          "at16": 0.0387,
+          "deltaE76Mean": 1.8372,
+          "deltaE76AboveJndRatio": 0.048,
+          "deltaE76AboveVisibleRatio": 0.0359,
+          "meanMaxChannelDelta": 4.5738,
+          "sourceHeight": 7714,
+          "cloneHeight": 7714,
+          "heightDelta": 0,
+          "diffImage": "diff-pricing-500.png"
+        },
+        {
+          "width": 700,
+          "commonAreaRatio": 0.9896,
+          "at1": 0.0881,
+          "at16": 0.0446,
+          "deltaE76Mean": 2.469,
+          "deltaE76AboveJndRatio": 0.0671,
+          "deltaE76AboveVisibleRatio": 0.0413,
+          "meanMaxChannelDelta": 6.1579,
+          "sourceHeight": 7795,
+          "cloneHeight": 7714,
+          "heightDelta": -81,
+          "diffImage": "diff-pricing-700.png"
+        },
+        {
+          "width": 914,
+          "commonAreaRatio": 0.9061,
+          "at1": 0.0846,
+          "at16": 0.0376,
+          "deltaE76Mean": 2.2009,
+          "deltaE76AboveJndRatio": 0.0627,
+          "deltaE76AboveVisibleRatio": 0.0353,
+          "meanMaxChannelDelta": 5.5035,
+          "sourceHeight": 6990,
+          "cloneHeight": 7714,
+          "heightDelta": 724,
+          "diffImage": "diff-pricing-914.png"
+        },
+        {
+          "width": 1024,
+          "commonAreaRatio": 0.9099,
+          "at1": 0.0738,
+          "at16": 0.0378,
+          "deltaE76Mean": 2.2846,
+          "deltaE76AboveJndRatio": 0.0581,
+          "deltaE76AboveVisibleRatio": 0.0359,
+          "meanMaxChannelDelta": 5.7095,
+          "sourceHeight": 6990,
+          "cloneHeight": 6360,
+          "heightDelta": -630,
+          "diffImage": "diff-pricing-1024.png"
+        },
+        {
+          "width": 1100,
+          "commonAreaRatio": 0.9942,
+          "at1": 0.0667,
+          "at16": 0.043,
+          "deltaE76Mean": 2.4533,
+          "deltaE76AboveJndRatio": 0.0532,
+          "deltaE76AboveVisibleRatio": 0.0409,
+          "meanMaxChannelDelta": 6.118,
+          "sourceHeight": 6323,
+          "cloneHeight": 6360,
+          "heightDelta": 37,
+          "diffImage": "diff-pricing-1100.png"
+        },
+        {
+          "width": 1440,
+          "commonAreaRatio": 1,
+          "at1": 0.0266,
+          "at16": 0.0158,
+          "deltaE76Mean": 0.7039,
+          "deltaE76AboveJndRatio": 0.0172,
+          "deltaE76AboveVisibleRatio": 0.0146,
+          "meanMaxChannelDelta": 1.7595,
+          "sourceHeight": 6360,
+          "cloneHeight": 6360,
+          "heightDelta": 0,
+          "diffImage": "diff-pricing-1440.png"
+        },
+        {
+          "width": 1920,
+          "commonAreaRatio": 1,
+          "at1": 0.0249,
+          "at16": 0.0125,
+          "deltaE76Mean": 0.5726,
+          "deltaE76AboveJndRatio": 0.0135,
+          "deltaE76AboveVisibleRatio": 0.0115,
+          "meanMaxChannelDelta": 1.432,
+          "sourceHeight": 6360,
+          "cloneHeight": 6360,
+          "heightDelta": 0,
+          "diffImage": "diff-pricing-1920.png"
+        }
+      ]
+    },
+    "/changelog": {
+      "sweep": [
+        {
+          "width": 390,
+          "scrollHeight": 24482,
+          "visibleNodeCount": 2109,
+          "hiddenNodeCount": 2227,
+          "totalElements": 4336,
+          "displayNoneCount": 1235,
+          "maxContentRight": 564.23,
+          "visibleTextLength": 18946,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 390,
+                "h": 23604.28
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 23604.28,
+                "w": 390,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-changelog-390.png",
+          "ok": true
+        },
+        {
+          "width": 500,
+          "scrollHeight": 23636,
+          "visibleNodeCount": 2109,
+          "hiddenNodeCount": 2227,
+          "totalElements": 4336,
+          "displayNoneCount": 1235,
+          "maxContentRight": 564.23,
+          "visibleTextLength": 18946,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 500,
+                "h": 65
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 500,
+                "h": 64
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 500,
+                "h": 22758.42
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 22758.42,
+                "w": 500,
+                "h": 877.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-changelog-500.png",
+          "ok": true
+        },
+        {
+          "width": 700,
+          "scrollHeight": 24253,
+          "visibleNodeCount": 2133,
+          "hiddenNodeCount": 2203,
+          "totalElements": 4336,
+          "displayNoneCount": 1222,
+          "maxContentRight": 700,
+          "visibleTextLength": 18955,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 700,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 700,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 700,
+                "h": 23450.7
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 23450.7,
+                "w": 700,
+                "h": 802
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-changelog-700.png",
+          "ok": true
+        },
+        {
+          "width": 914,
+          "scrollHeight": 26267,
+          "visibleNodeCount": 2140,
+          "hiddenNodeCount": 2215,
+          "totalElements": 4355,
+          "displayNoneCount": 1235,
+          "maxContentRight": 914,
+          "visibleTextLength": 18999,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 914,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 914,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 914,
+                "h": 25496.97
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 25496.97,
+                "w": 914,
+                "h": 770
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-changelog-914.png",
+          "ok": true
+        },
+        {
+          "width": 1024,
+          "scrollHeight": 25657,
+          "visibleNodeCount": 2140,
+          "hiddenNodeCount": 2215,
+          "totalElements": 4355,
+          "displayNoneCount": 1235,
+          "maxContentRight": 1024,
+          "visibleTextLength": 18999,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 24886.5
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 24886.5,
+                "w": 1024,
+                "h": 770
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-changelog-1024.png",
+          "ok": true
+        },
+        {
+          "width": 1100,
+          "scrollHeight": 25308,
+          "visibleNodeCount": 2141,
+          "hiddenNodeCount": 2214,
+          "totalElements": 4355,
+          "displayNoneCount": 1233,
+          "maxContentRight": 1100,
+          "visibleTextLength": 19005,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1100,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1100,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1100,
+                "h": 24805.64
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 24805.64,
+                "w": 1100,
+                "h": 502.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-changelog-1100.png",
+          "ok": true
+        },
+        {
+          "width": 1440,
+          "scrollHeight": 25342,
+          "visibleNodeCount": 2141,
+          "hiddenNodeCount": 2214,
+          "totalElements": 4355,
+          "displayNoneCount": 1233,
+          "maxContentRight": 1440,
+          "visibleTextLength": 19005,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 24839.98
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 24839.98,
+                "w": 1440,
+                "h": 502.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-changelog-1440.png",
+          "ok": true
+        },
+        {
+          "width": 1920,
+          "scrollHeight": 25342,
+          "visibleNodeCount": 2141,
+          "hiddenNodeCount": 2214,
+          "totalElements": 4355,
+          "displayNoneCount": 1233,
+          "maxContentRight": 1920,
+          "visibleTextLength": 19005,
+          "landmarks": {
+            "header": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 73
+              }
+            },
+            "nav": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 72
+              }
+            },
+            "main": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 24839.98
+              }
+            },
+            "footer": {
+              "count": 1,
+              "rect": {
+                "x": 0,
+                "y": 24839.98,
+                "w": 1920,
+                "h": 502.5
+              }
+            },
+            "[role=banner]": {
+              "count": 0,
+              "rect": null
+            },
+            "[role=main]": {
+              "count": 0,
+              "rect": null
+            }
+          },
+          "screenshot": "docs/result/28.5B-attribution/sweep/source-changelog-1920.png",
+          "ok": true
+        }
+      ],
+      "discontinuities": [
+        {
+          "kind": "frozen-band",
+          "band": "1440..1920",
+          "widths": [
+            1440,
+            1920
+          ],
+          "note": "scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL across these widths — the layout does not reflow at all inside the band",
+          "scrollHeight": 25342,
+          "visibleNodeCount": 2141,
+          "displayNoneCount": 1233,
+          "visibleTextLength": 19005,
+          "maxContentRightRange": [
+            1440,
+            1920
+          ],
+          "maxContentRightNote": "only the far edge of a full-bleed element tracks the canvas; the content column itself does not move"
+        }
+      ]
+    },
+    "otherRoutes": {
+      "routes": [
+        "/",
+        "/customers",
+        "/customers/automattic",
+        "/integrations",
+        "/plan",
+        "/security"
+      ],
+      "status": "no screenshot truth captured at sweep widths",
+      "note": "clone-side DOM metrics were swept for all 8 routes; only /pricing and /changelog have a live-source counterpart in this task."
+    }
+  },
+  "pricingTableProbe": {
+    "what": "28.5A reported that inside the 1024-1231.98px synthetic @media band the clone's /pricing plan-comparison table loses its header row and three of four plan columns. This probe counts VISIBLE leaf elements whose exact text is a plan name, on both sides, at 5 widths.",
+    "note": "The comparison table is a CSS grid of <div>s, not a <table> — visibleTables is 0 on both sides at every width, so plan-name occurrences are the addressable proxy. A count of 1 per plan means only the plan CARDS are shown; 2 (3 for Enterprise) means the comparison table's header row is present too.",
+    "byWidth": {
+      "914": {
+        "clone": {
+          "Free": 1,
+          "Basic": 1,
+          "Business": 1,
+          "Enterprise": 2
+        },
+        "source": {
+          "Free": 1,
+          "Basic": 1,
+          "Business": 1,
+          "Enterprise": 2
+        },
+        "cloneActiveTextLength": 2369,
+        "sourceActiveTextLength": 2384,
+        "agree": true
+      },
+      "1024": {
+        "clone": {
+          "Free": 1,
+          "Basic": 1,
+          "Business": 1,
+          "Enterprise": 2
+        },
+        "source": {
+          "Free": 1,
+          "Basic": 1,
+          "Business": 1,
+          "Enterprise": 2
+        },
+        "cloneActiveTextLength": 2351,
+        "sourceActiveTextLength": 2384,
+        "agree": true
+      },
+      "1100": {
+        "clone": {
+          "Free": 1,
+          "Basic": 1,
+          "Business": 1,
+          "Enterprise": 2
+        },
+        "source": {
+          "Free": 2,
+          "Basic": 2,
+          "Business": 2,
+          "Enterprise": 3
+        },
+        "cloneActiveTextLength": 2351,
+        "sourceActiveTextLength": 2637,
+        "agree": false
+      },
+      "1232": {
+        "clone": {
+          "Free": 2,
+          "Basic": 2,
+          "Business": 2,
+          "Enterprise": 3
+        },
+        "source": {
+          "Free": 2,
+          "Basic": 2,
+          "Business": 2,
+          "Enterprise": 3
+        },
+        "cloneActiveTextLength": 2675,
+        "sourceActiveTextLength": 2637,
+        "agree": true
+      },
+      "1440": {
+        "clone": {
+          "Free": 2,
+          "Basic": 2,
+          "Business": 2,
+          "Enterprise": 3
+        },
+        "source": {
+          "Free": 2,
+          "Basic": 2,
+          "Business": 2,
+          "Enterprise": 3
+        },
+        "cloneActiveTextLength": 2675,
+        "sourceActiveTextLength": 2637,
+        "agree": true
+      }
+    },
+    "verdict": "The clone's comparison table appears only at >=1232px; the live source's appears by 1100px. 914 and 1024 AGREE (both narrow) — so the band's LOWER edge is right and its UPPER edge (1231.98) overshoots the source's real transition, which lies in (1024, 1100]. At 1100 the clone shows 1 of 4 plan columns and no header row, and carries 286 fewer characters of visible text than the source (2351 vs 2637). 28.5A measured 274 characters lost in the same band; 286 today is the same defect at the same magnitude, not a new one.",
+    "evidenceImages": [
+      "docs/result/28.5B-attribution/sweep/crop-table-source-1100.png",
+      "docs/result/28.5B-attribution/sweep/crop-table-clone-1100.png",
+      "docs/result/28.5B-attribution/sweep/crop-table-source-1440.png",
+      "docs/result/28.5B-attribution/sweep/crop-table-clone-1440.png"
+    ],
+    "manualInspectionNote": "Manually inspected crop-table-source-1100.png vs crop-table-clone-1100.png (y 1380..1780 of each full-page capture). SOURCE: a header row reading 'Features | Free | Basic | Business | Enterprise' followed by four populated value columns. CLONE: no header row at all, and only the first value column (Unlimited / 10MB / 250 issues / 2 teams) — Basic, Business and Enterprise are absent, with their space left as empty background. At 1440 the two crops match. This reproduces 28.5A's description exactly."
+  },
+  "stylesheetResidual": {
+    "what": "The mechanism 28.5A named, re-counted in the SHIPPED hardened artifact.",
+    "file": "data/linear.app/reconstructions/2026-08-30T15-56-29-877Z/app/public/wr/generated-styles.css",
+    "mediaBlocks": 738,
+    "allAtBand": "(min-width: 1024px) and (max-width: 1231.98px)",
+    "note": "Every one of the 738 @media blocks in the generated stylesheet is at that single synthetic band; the sheet contains no other breakpoint. app/globals.css adds the 914.98/915 variant switch (2 blocks). 28.5A counted 710 blocks with 709 at the same band. Wave-1 did not remove, narrow or widen this mechanism — it is intact.",
+    "variantSwitch": "app/globals.css: [data-wr-viewport='desktop'] display:none under (max-width: 914.98px); [data-wr-viewport='mobile'] display:none under (min-width: 915px). Breakpoint 915 is inferred (observed-endpoint midpoint of 390 and 1440), not observed."
+  },
+  "comparisonWith285A": {
+    "391-914 dead zone": {
+      "verdict": "same-defect",
+      "finding285A": "at 391-914px all 8 routes render as a 390px column pinned to the left of the canvas; the clone stranded a 390px column on a 914px canvas (/pricing scrollHeight 7712 vs live 6990).",
+      "evidenceNow": "All 8 of 8 routes produce a frozen-band discontinuity spanning 390..914: scrollHeight, visibleNodeCount, displayNoneCount and visibleTextLength are BIT-IDENTICAL at 390, 500, 700 and 914 on every route. On 5 routes (/, /customers, /plan, /pricing, /security) even maxContentRight is constant; on the other 3 (/changelog, /customers/automattic, /integrations) the ONLY thing that changes across the band is the far edge of a full-bleed element tracking the canvas — the content column itself never moves. <main> stays at its observed 390px width at 500, 700 and 914 on all 8 routes (landmark-collapse), while the live source's <main> tracks the viewport exactly (500 -> 500, 700 -> 700, 914 -> 914). /pricing clone scrollHeight at 914 is 7714 against a live 6990 — 28.5A measured 7712 vs 6990, a 2px difference attributable to source drift, so the defect is numerically UNCHANGED. Visual proof: sweep/crop-hero-clone-914.png shows the 390px column with ~524px of empty canvas to its right; sweep/crop-hero-source-914.png shows a full-width 914px layout.",
+      "worseCheck": "NOT worse. The frozen band has the same edges (390..914), the same stranded width (390px), and the same scrollHeight (7714 vs 7712, +2px from source drift). No route gained a new dead zone and no route's dead zone widened.",
+      "improvedCheck": "NOT improved. There is still zero continuous reflow anywhere between 390 and 914 on any of the 8 routes."
+    },
+    "1024-1231 pricing band": {
+      "verdict": "same-defect",
+      "finding285A": "at 1024-1231px /pricing hides 507 nodes and the comparison table loses its header row and three of four plan columns; 274 characters of the plan-comparison table are deleted at every width from 1024 to 1231.98px.",
+      "evidenceNow": "/pricing clone displayNoneCount goes 240 (1440) -> 743 (1024 and 1100), i.e. 503 extra nodes hidden inside the band against 28.5A's 507 — the same mechanism at the same magnitude. visibleNodeCount drops 1706 -> 1035 (-39.3%). Visible text falls 2675 chars (1232) -> 2351 chars (1100), i.e. 286 characters lost against the source's 2637 at the same width (28.5A: 274). The plan-name probe shows the clone at 1 column / no header at 1100 while the source has the full 4-column header row. The 738 synthetic @media blocks producing this are still in the shipped stylesheet.",
+      "worseCheck": "NOT worse. 503 hidden nodes vs 507; 286 lost characters vs 274 (both against a source captured 6 days later, which accounts for the small drift). The band's edges are unchanged.",
+      "improvedCheck": "PARTIALLY REFRAMED, not improved. This sweep adds an edge measurement 28.5A did not have: at 1024 the LIVE SOURCE is also in its narrow layout (source visibleNodeCount 1050 vs clone 1035; plan counts agree exactly), so the band's LOWER edge at 1024 is approximately CORRECT. The defect is entirely in the UPPER edge: the source transitions to the wide comparison layout somewhere in (1024, 1100], while the clone holds the narrow layout until 1232. The mis-served range is therefore ~1100-1231 rather than the full 1024-1231. This is a sharper description of the SAME defect, not a reduction of it — at 1100 the visible loss is total (3 of 4 columns plus the header row)."
+    },
+    "clone-vs-source screenshot fidelity across widths": {
+      "verdict": "same-defect",
+      "evidenceNow": "/pricing @16 by width: 390 0.0371, 500 0.0387, 700 0.0446, 914 0.0376, 1024 0.0378, 1100 0.0430, 1440 0.0158, 1920 0.0125. The two OBSERVED-adjacent widths (1440, 1920) are 2.4-3.6x better than every un-observed width. commonAreaRatio collapses to 0.9061 at 914 (clone 7714 vs source 6990) and 0.9099 at 1024 (clone 6360 vs source 6990) — the two widths where the clone is on the wrong side of a breakpoint. This is the 28.5A shape (fidelity is only defended where the site was observed) reproduced with photographs at widths 28.5A explicitly said were never photographed.",
+      "worseCheck": "NOT worse at the observed widths: @1440 @16 is 0.0158, identical to the 28.5B attribution run's post-Wave-1 number (0.0158, down from the pre-Wave-1 0.0295). Wave-1's gains at observed widths are intact and no un-observed width shows a regression signature (all lie in a narrow 0.037-0.045 band consistent with the un-reflowed layout, not with a new defect)."
+    },
+    "overall": "SAME DEFECT, NOT WORSE, NOT FIXED. Wave-1 improved per-pixel fidelity at the observed widths (1440/1920) and left the responsive mechanism — the 915px variant switch plus 738 synthetic 1024-1231.98px @media blocks — completely intact. Every 28.5A responsive finding reproduces at the same magnitude within source-drift noise. Nothing in this document should be read as a responsive fix."
+  },
+  "anomalies": [
+    "HORIZONTAL OVERFLOW IS PARTLY REAL, NOT PURELY A CLONE DEFECT. At 390 the LIVE SOURCE also overflows: /pricing source maxContentRight 1280.47 vs clone 1288.79, and / source-side overflow is present too. linear.app genuinely runs horizontally-scrolling elements at narrow widths. The clone-specific part is that this overflow PERSISTS unchanged to 914 (clone 1288.79) while the source snaps to the viewport (source maxContentRight 914 at 914). Any 28.5C claim about 'content off-canvas' must separate these two.",
+    "/customers and /customers/automattic get SHORTER when the desktop variant engages: /customers scrollHeight 8049 (390-914) -> 4886 (>=1024), /customers/automattic 6320 -> 5242. These are legitimate variant switches, not losses, but they trip the >25% scrollHeight-cliff rule and must not be read as content deletion.",
+    "/security clone maxContentRight reaches 3348.99 at a 1920 viewport (and 2938.99 at 1100) — ~1429px of content beyond the canvas at 1920, the largest horizontal overflow in the corpus. No live-source counterpart was captured for /security in this task, so whether the source does the same is UNVERIFIED.",
+    "The live source's own /changelog scrollHeight is not monotonic across widths (24482 @390, 23636 @500, 24253 @700, 26267 @914, 25657 @1024, 25308 @1100, 25342 @1440) — a lazily-populated feed measured without scrolling. Clone-vs-source height deltas on /changelog therefore carry real source noise and should not be attributed to the clone.",
+    "The clone's /pricing at 1440 has scrollHeight 6360 and the source 6360 — exact. At 1024 the clone is 6360 and the source 6990: the clone is 630px SHORT because it has already switched to the desktop variant while the source has not. Both a too-tall (914) and a too-short (1024) failure exist within 110px of each other.",
+    "Zero page errors across all 64 clone sweep loads. Console errors are zero on 7 of 8 routes; /customers reports exactly 24 at EVERY width (12 cross-origin CORS-blocked customer-logo SVGs on webassets.linear.app, each producing a CORS message plus a net::ERR_FAILED). Width-invariant, therefore an ASSET-INDEPENDENCE residual, not a responsive one — recorded here only so the 24 is not later mistaken for a responsive failure."
+  ],
+  "runHygiene": {
+    "dataDirWritten": false,
+    "dataDirEvidence": "Every file under data/linear.app/reconstructions/2026-08-30T15-56-29-877Z has mtime 2026-08-31 00:56 (the original build); `find -newermt '2026-08-31 01:30'` returns nothing, and `git status --porcelain data/` is empty. The app was served from a verbatim tmp copy precisely so `next start` could not write a cache into it.",
+    "serversAndBrowsers": "One clone server and one browser at a time; three sequential phases (clone sweep, live-source sweep, table probe), each stopping its server and browser before the next began.",
+    "processAnomaly": "HONEST DISCLOSURE: two FOREIGN processes, pid 53338 (`pnpm start --port 3212`) and its child pid 53352 (next-server v16.3.3), were alive at the start of this task and were gone by the end. They were never targeted: the only kill issued in this task was an explicit `kill 61800 61773` against two of THIS task's own orphaned next-server processes (identified first by `lsof` cwd = tmp/wr285b/sweep/app), and both foreign pids were verified alive immediately after that kill and again after the clone sweep completed. They disappeared at some point during the live-source sweep or the table probe. No signal was sent to them and the system log shows no jetsam record; the most likely cause is memory pressure from the large full-page captures (/changelog full-page PNGs run to ~26,000 px tall). The other foreign process, pid 24704, survived the whole run."
+  },
+  "artifacts": {
+    "cloneSweepRaw": "tmp/wr285b/sweep/clone-sweep.json (64 rows, 8 routes x 8 widths)",
+    "sourceSweepRaw": "tmp/wr285b/sweep/source-sweep.json (16 rows, 2 routes x 8 widths)",
+    "tableProbeRaw": "tmp/wr285b/sweep/table-probe.json",
+    "pricingDiffsRaw": "tmp/wr285b/sweep/pricing-diffs.json",
+    "images": "docs/result/28.5B-attribution/sweep/",
+    "reviewPack": [
+      "docs/result/28.5B-attribution/19-pricing-source-700.png",
+      "docs/result/28.5B-attribution/20-pricing-hardened-700.png",
+      "docs/result/28.5B-attribution/21-pricing-source-1100.png",
+      "docs/result/28.5B-attribution/22-pricing-hardened-1100.png"
+    ]
+  },
+  "notes": "Read hiddenNodeCount only across widths on one side (the clone ships two viewport trees, the source one). displayNoneCount and visibleTextLength are the cross-side-comparable channels. Screenshot verdicts should be read on @16 and dE76>10, never @1. Nothing here was fixed, and no correction was attempted: this document exists so 28.5C can decide what responsive behaviour the engine should target, with the residual measured rather than assumed."
+}

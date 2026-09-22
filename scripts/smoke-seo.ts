@@ -5,6 +5,9 @@ import { chromium } from "playwright";
 import {
   auditAnchors,
   buildProductionSeoPlan,
+  checkTitleUniqueness,
+  deriveRouteHeadings,
+  MAX_ROUTE_HEADING_CHARS,
   checkBrandIsolation,
   checkForbiddenCopy,
   classifySitemap,
@@ -447,6 +450,223 @@ async function main(): Promise<void> {
     check("5 production robots.txt allows and names the sitemap", /^Allow: \/$/m.test(robotsProd) && robotsProd.includes("Sitemap: https://newbrand-prod.example/sitemap.xml"));
     const sitemapProd = generateSitemapXml(prodPlan);
     check("5 production sitemap absolute on the domain", sitemapProd.filename === "sitemap.xml" && sitemapProd.xml.includes("<loc>https://newbrand-prod.example/a</loc>"));
+    check(
+      "5 .example is accepted as a production domain — schema-valid, reserved (RFC 2606), no live DNS required",
+      prodPlan.domainState.productionDomain.value === "newbrand-prod.example" &&
+        prodPlan.routes.every((r) => r.canonical.value?.endsWith(".example/a") || r.canonical.value?.endsWith(".example/")),
+    );
+
+    // Task 28 Phase 10 — og:title / og:description explicit values (not just
+    // "status known"): they must MIRROR the route's own title/description,
+    // never a hardcoded or leftover string.
+    check(
+      "5 og:title / og:description mirror the route title/description exactly",
+      prodPlan.routes.every(
+        (r) => r.openGraph.title.value === r.title.value && r.openGraph.description.value === r.description.value,
+      ),
+      JSON.stringify(prodPlan.routes.map((r) => [r.openGraph.title.value, r.title.value])),
+    );
+
+    // Task 28 Phase 10 — SOURCE DOMAIN absence from every production SEO
+    // surface. `sourceHost` itself is provenance metadata (artifact pathing),
+    // not a rendered surface, so it is the ONE field excluded before the grep.
+    const { sourceHost: _sourceHostProvenance, ...prodPlanSurfaces } = prodPlan;
+    const sourceDomainHits =
+      (JSON.stringify(prodPlanSurfaces).match(new RegExp(HOST.replace(".", "\\."), "g")) ?? []).length +
+      (robotsProd.match(new RegExp(HOST.replace(".", "\\."), "g")) ?? []).length +
+      (sitemapProd.xml.match(new RegExp(HOST.replace(".", "\\."), "g")) ?? []).length;
+    check(
+      `5 source domain (${HOST}) is ABSENT from every production SEO surface (title/description/canonical/og/twitter/jsonLd/robots/sitemap)`,
+      sourceDomainHits === 0,
+      `${sourceDomainHits} occurrence(s)`,
+    );
+
+    // ---- 5c PER-ROUTE TITLES (Task 28 Phase 10 CORRECTION) ---------------
+    //
+    // The shipped Phase-10 build gave every route the IDENTICAL site-level
+    // title `<brand> | <category>` while the handoff described it as
+    // "per-route", and no check in the program measured title uniqueness. A
+    // route's title now comes from that route's OWN authored heading; only the
+    // home route (and a route the content run gave no heading) keeps the
+    // site-level string. Nothing is invented: the heading is a slot value the
+    // content run itself authored.
+    section("5c per-route titles derived from the route's own authored content");
+    const headingUnits = [
+      {
+        route: "/a",
+        kind: "hero",
+        slots: [{ key: "a.main.hero.headline", role: "hero.headline" }],
+      },
+      {
+        route: "/b",
+        kind: "content",
+        slots: [{ key: "b.main.heading.first", role: "heading.secondary" }],
+      },
+      {
+        route: "/long",
+        kind: "hero",
+        slots: [{ key: "long.main.hero.headline", role: "hero.headline" }],
+      },
+      {
+        route: "/unsafe",
+        kind: "hero",
+        slots: [{ key: "unsafe.main.hero.headline", role: "hero.headline" }],
+      },
+    ];
+    const headingSlotValues: Record<string, string> = {
+      "a.main.hero.headline": "가격 안내",
+      "b.main.heading.first": "본문 소제목",
+      "long.main.hero.headline": "x".repeat(MAX_ROUTE_HEADING_CHARS + 1),
+      "unsafe.main.hero.headline": 'quote " and <angle>',
+      "global.header.nav.b.href": "/b",
+      "global.header.nav.b.label": "블로그",
+      "global.header.nav.a.href": "/a",
+      "global.header.nav.a.label": "무시되는 라벨",
+    };
+    const derived = deriveRouteHeadings(headingUnits, headingSlotValues);
+    check(
+      "5c hero headline wins for its own route; a nav label covers a route with no hero",
+      derived["/a"]?.value === "가격 안내" &&
+        derived["/a"]?.rule === "hero-headline" &&
+        derived["/b"]?.value === "블로그" &&
+        derived["/b"]?.rule === "nav-label",
+      JSON.stringify(derived),
+    );
+    check(
+      "5c an over-long or head-unsafe candidate is REJECTED (no truncation, no escaping — the route keeps the site-level title)",
+      derived["/long"] === undefined && derived["/unsafe"] === undefined,
+      JSON.stringify([derived["/long"], derived["/unsafe"]]),
+    );
+    const titledContentRun = {
+      ...contentRun,
+      scopedRoutes: ["/", "/a"],
+      pagePlans: [
+        { route: "/", primaryMessage: "메인 메시지" },
+        { route: "/a", primaryMessage: "A 메시지" },
+      ],
+      routeHeadings: { "/": { value: "무시됨", slotKey: "home.hero", rule: "hero-headline" as const }, "/a": derived["/a"] },
+    };
+    const titledPlan = buildProductionSeoPlan({
+      runId: "2026-08-18T00-00-04-000Z",
+      template,
+      contentRun: titledContentRun,
+      sourceSnapshot: snapshot,
+      productionDomain: "newbrand-prod.example",
+    });
+    const titledHome = titledPlan.routes.find((r) => r.route === "/");
+    const titledA = titledPlan.routes.find((r) => r.route === "/a");
+    check(
+      "5c the route's title is its OWN authored heading + the brand; the home route keeps the site-level title",
+      titledHome?.title.value === "새브랜드 | 테스트 카테고리" &&
+        titledA?.title.value === "가격 안내 | 새브랜드" &&
+        titledA?.title.basis.includes("a.main.hero.headline"),
+      JSON.stringify([titledHome?.title.value, titledA?.title.value, titledA?.title.basis]),
+    );
+    check(
+      "5c og:title / twitter:title follow the per-route title (still mirrors, not the site-level string)",
+      titledA?.openGraph.title.value === "가격 안내 | 새브랜드" &&
+        titledA?.twitter.title.value === "가격 안내 | 새브랜드",
+      JSON.stringify([titledA?.openGraph.title.value, titledA?.twitter.title.value]),
+    );
+    const uniquenessOk = checkTitleUniqueness(titledPlan);
+    check(
+      "5c checkTitleUniqueness passes when every route has its own title",
+      uniquenessOk.pass &&
+        uniquenessOk.routesMeasured === titledPlan.routes.length &&
+        uniquenessOk.distinctTitles === titledPlan.routes.length &&
+        uniquenessOk.duplicates.length === 0,
+      JSON.stringify(uniquenessOk),
+    );
+    // The defect the shipped build actually had: every route on one title.
+    const duplicateTitlePlan = buildProductionSeoPlan({
+      runId: "2026-08-18T00-00-05-000Z",
+      template,
+      contentRun: { ...titledContentRun, routeHeadings: {} },
+      sourceSnapshot: snapshot,
+      productionDomain: "newbrand-prod.example",
+    });
+    const uniquenessBad = checkTitleUniqueness(duplicateTitlePlan);
+    check(
+      "5c checkTitleUniqueness CATCHES the shipped defect: no authored heading anywhere → one identical <title> on every route, named with its routes",
+      !uniquenessBad.pass &&
+        uniquenessBad.duplicates.length === 1 &&
+        uniquenessBad.duplicates[0].title === "새브랜드 | 테스트 카테고리" &&
+        uniquenessBad.duplicates[0].routes.join(",") === "/,/a" &&
+        duplicateTitlePlan.routes.every((r) => r.title.basis.includes("site-level")),
+      JSON.stringify(uniquenessBad),
+    );
+
+    // ---- 5b DISABLED ROUTES (Task 28 Phase 6) -----------------------------
+    section("5b disabled routes leave EVERY per-route SEO surface at once");
+    const disabledPlan = buildProductionSeoPlan({
+      runId: "2026-08-18T00-00-03-000Z",
+      template,
+      contentRun,
+      sourceSnapshot: snapshot,
+      productionDomain: "newbrand-prod.example",
+      disabledRoutes: ["/a"],
+    });
+    check(
+      "28.P6.S1 the disabled route leaves the plan's route list — one filter, applied where the route loop is",
+      disabledPlan.routes.length === prodPlan.routes.length - 1 &&
+        !disabledPlan.routes.some((route) => route.route === "/a"),
+      disabledPlan.routes.map((route) => route.route).join(","),
+    );
+    check(
+      "28.P6.S2 with it goes its title, description, robots meta, CANONICAL, the whole og block, twitter and JSON-LD",
+      !JSON.stringify(disabledPlan.routes).includes('"/a"') &&
+        !JSON.stringify(disabledPlan.routes).includes("newbrand-prod.example/a"),
+      JSON.stringify(disabledPlan.routes.map((route) => route.canonical.value)),
+    );
+    const disabledSitemap = generateSitemapXml(disabledPlan);
+    check(
+      "28.P6.S3 the SITEMAP urlset follows plan.routes — the disabled route has no <url>",
+      !disabledSitemap.xml.includes("<loc>https://newbrand-prod.example/a</loc>") &&
+        (disabledSitemap.xml.match(/<url>/g) ?? []).length === disabledPlan.routes.length,
+      `${(disabledSitemap.xml.match(/<url>/g) ?? []).length} urls for ${disabledPlan.routes.length} routes`,
+    );
+    const disabledHead = renderPlanHead(disabledPlan, new Map(template.routes.map((route) => [route.key, route.title ?? null])));
+    check(
+      "28.P6.S4 the rendered head blocks follow it too — no head is emitted for a route that is not exported",
+      disabledHead.routes.length === disabledPlan.routes.length &&
+        !disabledHead.routes.some((route) => route.route === "/a"),
+      disabledHead.routes.map((route) => route.route).join(","),
+    );
+    check(
+      "28.P6.S5 the ENABLED route is byte-identical to the un-disabled plan — a disable changes nothing else",
+      JSON.stringify(disabledPlan.routes.find((route) => route.route === "/")) ===
+        JSON.stringify(prodPlan.routes.find((route) => route.route === "/")),
+    );
+    let allDisabled = "no throw";
+    try {
+      buildProductionSeoPlan({
+        runId: "2026-08-18T00-00-04-000Z",
+        template,
+        contentRun,
+        sourceSnapshot: snapshot,
+        disabledRoutes: template.routes.map((route) => route.key),
+      });
+    } catch (error) {
+      allDisabled = (error as Error).message;
+    }
+    check(
+      "28.P6.S6 disabling EVERY route is refused rather than producing an empty plan",
+      allDisabled.includes("every route is disabled"),
+      allDisabled.slice(0, 80),
+    );
+    check(
+      "28.P6.S7 an absent disabledRoutes option produces the identical plan (back-compat is structural)",
+      JSON.stringify(
+        buildProductionSeoPlan({
+          runId: "2026-08-18T00-00-02-000Z",
+          template,
+          contentRun,
+          sourceSnapshot: snapshot,
+          productionDomain: "newbrand-prod.example",
+          disabledRoutes: [],
+        }),
+      ) === JSON.stringify(prodPlan),
+    );
 
     // ---- 6 forbidden copy + brand isolation negatives ---------------------
     section("6 forbidden-copy + brand isolation gates");

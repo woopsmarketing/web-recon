@@ -58,7 +58,55 @@ export const SnapshotFidelitySchema = z.object({
   documentHeightDeltaMax: z.number(),
   screenshotMeanDeltaMedian: z.number(),
   screenshotChangedRatioMedian: z.number(),
+  /*
+   * Task 28.5B change 6 — the @1 median above is kept unchanged and joined by
+   * an amplitude-gated and two perceptual medians. They are reported side by
+   * side because they answer different questions: @1 says "did any pixel move
+   * at all", @16 says "did it move enough to see", ΔE76 says "did the colour
+   * change perceptibly". Optional so pre-28.5B summaries still parse.
+   */
+  /** Median per-page ratio of pixels whose max channel delta is ≥ 16/255. */
+  screenshotChangedRatioAt16Median: z.number().optional(),
+  /** Median per-page fraction of pixels with ΔE76 > 2.3 (JND). */
+  screenshotDeltaE76AboveJndRatioMedian: z.number().optional(),
+  /** Median per-page fraction of pixels with ΔE76 > 10 (clearly visible). */
+  screenshotDeltaE76AboveVisibleRatioMedian: z.number().optional(),
+  /** Median per-page mean ΔE76. */
+  screenshotDeltaE76MeanMedian: z.number().optional(),
   screenshotPairsMeasured: z.number().int().nonnegative(),
+  /*
+   * Task 28.6 C5 — the coverage caveat on every pixel median above.
+   *
+   * Those medians are computed over the OVERLAP of two PNGs. If a side stopped
+   * short of the document, the median is still a real number and still speaks
+   * only for the part that was captured. These two fields say how much of the
+   * site the visual figures are a verdict on. Optional so pre-28.6 summaries
+   * still parse; absent means "never measured", not "fully covered".
+   */
+  /**
+   * SNAPSHOT-CLONE page/viewports where a screenshot side was truncated, failed
+   * to capture, or had an unmeasurable document. Counted before the
+   * availability gate, so a pair that could not be measured at all still lands
+   * here rather than vanishing from the run's coverage picture.
+   */
+  screenshotTruncatedPairs: z.number().int().nonnegative().optional(),
+  /**
+   * …of those, how many produced no measurement at all (`available: false`).
+   * The gap in `screenshotPairsMeasured`'s denominator, stated rather than left
+   * to be inferred by subtraction from a number that is not published.
+   */
+  screenshotUnavailablePairs: z.number().int().nonnegative().optional(),
+  /**
+   * Smallest covered fraction across the run's SNAPSHOT-CLONE pairs, 4 decimals.
+   *
+   * The population is named because it is narrower than "the run": the
+   * original-clone and snapshot-original pairs are summarized separately (see
+   * {@link LiveFidelitySchema}), and a pair whose coverage is UNKNOWN carries no
+   * fraction at all and therefore cannot lower this. Absent means no pair
+   * carried a fraction — read `screenshotTruncatedPairs` and
+   * `screenshotUnavailablePairs` before reading its absence as "fully covered".
+   */
+  screenshotMinCoveredFraction: z.number().optional(),
   assetFailures: z.number().int().nonnegative(),
   /** JavaScript errors only. Blocked assets are counted separately (item 54). */
   runtimeErrors: z.number().int().nonnegative(),
@@ -91,6 +139,54 @@ export const LiveFidelitySchema = z.object({
   styleMismatches: z.number().int().nonnegative(),
   geometryP95Median: z.number(),
   screenshotChangedRatioMedian: z.number(),
+  /** Task 28.5B change 6 — the same pair measured at ≥ 16/255 amplitude. */
+  screenshotChangedRatioAt16Median: z.number().optional(),
+  /** Task 28.5B change 6 — …and perceptually, ΔE76 > 2.3. */
+  screenshotDeltaE76AboveJndRatioMedian: z.number().optional(),
+
+  /*
+   * Task 28.6 C5 — the coverage caveat on the three visual medians above.
+   *
+   * They are medians over ORIGINAL-CLONE pairs, and those pairs are computed
+   * over the overlap of two full-page PNGs exactly like the snapshot-clone ones.
+   * When C5 added coverage accounting it added it only to
+   * {@link SnapshotFidelitySchema}, so this half of the report could still read
+   * as a whole-page verdict over a capped, short or unmeasurable capture — the
+   * precise failure C5 exists to remove, left standing in the other summary.
+   *
+   * Same three counters, same population rule, same meaning. Optional so a
+   * pre-28.6 summary parses; absent means "never measured", not "fully covered".
+   */
+  /** ORIGINAL-CLONE page/viewports where a side was truncated, missing or unmeasurable. */
+  screenshotTruncatedPairs: z.number().int().nonnegative().optional(),
+  /** …of those, how many produced no measurement at all. */
+  screenshotUnavailablePairs: z.number().int().nonnegative().optional(),
+  /** Smallest covered fraction across the run's ORIGINAL-CLONE pairs, 4 decimals. */
+  screenshotMinCoveredFraction: z.number().optional(),
+
+  /*
+   * Task 28.5B change 6 (integration) — the QA-only style channel.
+   *
+   * POPULATION NOTE, because it is deliberately different from the fields above:
+   * those are drift-free pages only, while these count every page whose live
+   * original STRUCTURALLY aligned with the SiteSpec, which is the condition the
+   * pairing actually needs. `qaOnlyStyleComparedPairs` is the denominator and
+   * `qaOnlyStyleUnavailablePairs` names what could not be compared at all, so
+   * "0 mismatches" can never be read as "0 out of nothing". Optional, so a
+   * pre-28.5B summary still parses and reads as absent rather than as zero.
+   */
+  /** Page/viewports where the original↔clone QA-only comparison actually ran. */
+  qaOnlyStyleComparedPairs: z.number().int().nonnegative().optional(),
+  /** …and where it could not run; see the per-page `unavailableReason`. */
+  qaOnlyStyleUnavailablePairs: z.number().int().nonnegative().optional(),
+  /** Σ QA-only property mismatches over the compared pairs. Uncapped. */
+  qaOnlyStyleMismatchTotal: z.number().int().nonnegative().optional(),
+  /** Median per-page QA-only mismatch count — never a mean of means. */
+  qaOnlyStyleMismatchMedian: z.number().optional(),
+  /** Non-zero per-property QA-only counts across the site, sorted. */
+  qaOnlyStyleMismatchByProperty: z
+    .record(z.string(), z.number().int().nonnegative())
+    .optional(),
 });
 export type LiveFidelity = z.infer<typeof LiveFidelitySchema>;
 
@@ -222,7 +318,15 @@ export function summarizeSnapshotFidelity(
   const documentHeightDeltas: number[] = [];
   const screenshotMeanDeltas: number[] = [];
   const screenshotChangedRatios: number[] = [];
+  const screenshotChangedRatiosAt16: number[] = [];
+  const screenshotDeltaE76AboveJnd: number[] = [];
+  const screenshotDeltaE76AboveVisible: number[] = [];
+  const screenshotDeltaE76Means: number[] = [];
   let screenshotPairs = 0;
+  let screenshotTruncatedPairs = 0;
+  /** snapshot-clone pairs that could not be measured at all. The denominator's gap. */
+  let screenshotUnavailablePairs = 0;
+  const screenshotCoveredFractions: number[] = [];
 
   for (const page of pages) {
     if (page.status === "complete") completed++;
@@ -270,13 +374,49 @@ export function summarizeSnapshotFidelity(
       );
     }
     for (const metric of page.screenshots) {
-      if (metric.pair !== "snapshot-clone" || !metric.available) continue;
+      if (metric.pair !== "snapshot-clone") continue;
+      /*
+       * Task 28.6 C5 — counted, never inferred from silence. A pre-28.6 metric
+       * has neither field and contributes to neither counter.
+       *
+       * COUNTED BEFORE THE AVAILABILITY GATE, on purpose. The gate used to read
+       * `|| !metric.available`, which skipped exactly the case C5 created: a
+       * page whose clone screenshot failed outright now produces
+       * `available: false` WITH `coverageTruncated: true`, and it contributed
+       * nothing to `screenshotTruncatedPairs` and never lowered
+       * `screenshotMinCoveredFraction`. The per-page finding still fired, but
+       * the run summary — the artifact a reader trusts for the whole-run number
+       * — read as fully covered. A pair that could not be measured is the
+       * strongest possible evidence that the run did not see the whole site.
+       */
+      if (metric.coverageTruncated === true) screenshotTruncatedPairs++;
+      if (metric.coveredFraction !== undefined) {
+        screenshotCoveredFractions.push(metric.coveredFraction);
+      }
+      if (!metric.available) {
+        screenshotUnavailablePairs++;
+        continue;
+      }
       screenshotPairs++;
       if (metric.meanAbsoluteRgbDelta !== undefined) {
         screenshotMeanDeltas.push(metric.meanAbsoluteRgbDelta);
       }
       if (metric.changedPixelRatio !== undefined) {
         screenshotChangedRatios.push(metric.changedPixelRatio);
+      }
+      // Absent on a pre-28.5B artifact — skipped, never defaulted to 0, which
+      // would read as "no visible difference" for a run that never measured.
+      if (metric.changedRatioAt16 !== undefined) {
+        screenshotChangedRatiosAt16.push(metric.changedRatioAt16);
+      }
+      if (metric.deltaE76AboveJndRatio !== undefined) {
+        screenshotDeltaE76AboveJnd.push(metric.deltaE76AboveJndRatio);
+      }
+      if (metric.deltaE76AboveVisibleRatio !== undefined) {
+        screenshotDeltaE76AboveVisible.push(metric.deltaE76AboveVisibleRatio);
+      }
+      if (metric.deltaE76Mean !== undefined) {
+        screenshotDeltaE76Means.push(metric.deltaE76Mean);
       }
     }
   }
@@ -301,7 +441,42 @@ export function summarizeSnapshotFidelity(
       documentHeightDeltas.length === 0 ? 0 : Math.max(...documentHeightDeltas),
     screenshotMeanDeltaMedian: median(screenshotMeanDeltas),
     screenshotChangedRatioMedian: median(screenshotChangedRatios),
+    // Left ABSENT, not 0, when nothing measured the channel — `median([])` is
+    // 0 and a 0 here would read as "no visible difference measured".
+    ...(screenshotChangedRatiosAt16.length > 0
+      ? { screenshotChangedRatioAt16Median: median(screenshotChangedRatiosAt16) }
+      : {}),
+    ...(screenshotDeltaE76AboveJnd.length > 0
+      ? { screenshotDeltaE76AboveJndRatioMedian: median(screenshotDeltaE76AboveJnd) }
+      : {}),
+    ...(screenshotDeltaE76AboveVisible.length > 0
+      ? {
+          screenshotDeltaE76AboveVisibleRatioMedian: median(
+            screenshotDeltaE76AboveVisible,
+          ),
+        }
+      : {}),
+    ...(screenshotDeltaE76Means.length > 0
+      ? { screenshotDeltaE76MeanMedian: median(screenshotDeltaE76Means) }
+      : {}),
     screenshotPairsMeasured: screenshotPairs,
+    /*
+     * Emitted whenever ANY snapshot-clone pair existed, not only when at least
+     * one carried a covered fraction. A run whose pairs were all unmeasurable
+     * has an empty `screenshotCoveredFractions` and a non-zero
+     * `screenshotTruncatedPairs`, and the old condition dropped both — leaving
+     * a summary with no coverage fields at all, which reads as a pre-28.6
+     * artifact rather than as a run that saw nothing.
+     */
+    ...(screenshotPairs + screenshotUnavailablePairs > 0
+      ? {
+          screenshotTruncatedPairs,
+          screenshotUnavailablePairs,
+          ...(screenshotCoveredFractions.length > 0
+            ? { screenshotMinCoveredFraction: Math.min(...screenshotCoveredFractions) }
+            : {}),
+        }
+      : {}),
     assetFailures,
     runtimeErrors,
     blockedAssetMessages,
@@ -332,19 +507,85 @@ export function summarizeLiveFidelity(
   const geometry = comparable
     .map((page) => page.liveFidelity?.geometryP95)
     .filter((value): value is number => value !== undefined);
-  const visual = comparable
-    .map(
-      (page) =>
-        page.screenshots.find((metric) => metric.pair === "original-clone")
-          ?.changedPixelRatio,
-    )
+  const originalClone = comparable
+    .map((page) => page.screenshots.find((metric) => metric.pair === "original-clone"))
+    .filter((metric): metric is NonNullable<typeof metric> => metric !== undefined);
+  /*
+   * Task 28.6 C5 — how much of the page the three visual medians below speak
+   * for. Counted over EVERY original-clone metric, available or not, for the
+   * same reason the snapshot-clone counters are: a pair that could not be
+   * measured is evidence the run did not see the whole site, and dropping it
+   * makes the summary read as fully covered.
+   */
+  let liveTruncatedPairs = 0;
+  let liveUnavailablePairs = 0;
+  const liveCoveredFractions: number[] = [];
+  for (const metric of originalClone) {
+    if (metric.coverageTruncated === true) liveTruncatedPairs++;
+    if (metric.coveredFraction !== undefined) liveCoveredFractions.push(metric.coveredFraction);
+    if (!metric.available) liveUnavailablePairs++;
+  }
+  const visual = originalClone
+    .map((metric) => metric.changedPixelRatio)
     .filter((value): value is number => value !== undefined);
+  const visualAt16 = originalClone
+    .map((metric) => metric.changedRatioAt16)
+    .filter((value): value is number => value !== undefined);
+  const visualJnd = originalClone
+    .map((metric) => metric.deltaE76AboveJndRatio)
+    .filter((value): value is number => value !== undefined);
+  /*
+   * Task 28.5B change 6 (integration). Counted over every page that RECORDED a
+   * verdict, not just the drift-free ones — see the schema's population note.
+   * A page with no `qaOnlyStyleComparison` at all is a pre-28.5B artifact and
+   * contributes to neither counter, which is why both stay absent rather than
+   * becoming 0 on an old run.
+   */
+  const qaOnlyCompared = pages.filter(
+    (page) => page.qaOnlyStyleComparison === "compared",
+  );
+  const qaOnlyUnavailable = pages.filter(
+    (page) => page.qaOnlyStyleComparison === "unavailable",
+  );
+  const qaOnlyCounts = qaOnlyCompared.map((page) => page.qaOnlyStyleMismatches ?? 0);
+  const qaOnlyByProperty: Record<string, number> = {};
+  for (const page of qaOnlyCompared) {
+    for (const [property, count] of Object.entries(page.qaOnlyStyleByProperty ?? {})) {
+      qaOnlyByProperty[property] = (qaOnlyByProperty[property] ?? 0) + count;
+    }
+  }
+  const qaOnlyRecorded = qaOnlyCompared.length + qaOnlyUnavailable.length;
+
   return {
     comparablePairs: comparable.length,
     contentExactRatio: median(ratios),
     styleMismatches,
     geometryP95Median: median(geometry),
     screenshotChangedRatioMedian: median(visual),
+    ...(visualAt16.length > 0
+      ? { screenshotChangedRatioAt16Median: median(visualAt16) }
+      : {}),
+    ...(visualJnd.length > 0
+      ? { screenshotDeltaE76AboveJndRatioMedian: median(visualJnd) }
+      : {}),
+    ...(originalClone.length > 0
+      ? {
+          screenshotTruncatedPairs: liveTruncatedPairs,
+          screenshotUnavailablePairs: liveUnavailablePairs,
+          ...(liveCoveredFractions.length > 0
+            ? { screenshotMinCoveredFraction: Math.min(...liveCoveredFractions) }
+            : {}),
+        }
+      : {}),
+    ...(qaOnlyRecorded > 0
+      ? {
+          qaOnlyStyleComparedPairs: qaOnlyCompared.length,
+          qaOnlyStyleUnavailablePairs: qaOnlyUnavailable.length,
+          qaOnlyStyleMismatchTotal: qaOnlyCounts.reduce((sum, n) => sum + n, 0),
+          qaOnlyStyleMismatchMedian: median(qaOnlyCounts),
+          qaOnlyStyleMismatchByProperty: sortRecord(qaOnlyByProperty),
+        }
+      : {}),
   };
 }
 
@@ -509,6 +750,11 @@ export function summarizeUnknowns(
   };
 }
 
+/** `n/a` rather than 0 for a channel a pre-28.5B artifact never measured. */
+function fmt(value: number | undefined): string {
+  return value === undefined ? "n/a" : String(value);
+}
+
 /** Per-dimension worst lists. Never one merged rank (item 86). */
 export function worstPages(
   pages: readonly QaPageResult[],
@@ -530,7 +776,71 @@ export function worstPages(
         viewport: page.viewport,
         url: page.url,
         value: metric.changedPixelRatio,
-        detail: `mean Δ ${metric.meanAbsoluteRgbDelta ?? 0}, height Δ ${metric.heightDelta ?? 0}px`,
+        /*
+         * Task 28.5B change 6: the rank VALUE is still the historical @1 ratio
+         * (so the ranking is comparable with every earlier run), but the detail
+         * prints the other channels beside it, because @1 alone routinely says
+         * 0.98 for a page a human cannot tell apart. `n/a` marks a pre-28.5B
+         * artifact that never measured the channel.
+         */
+        detail:
+          `@1 ${metric.changedPixelRatio}` +
+          ` · @16 ${fmt(metric.changedRatioAt16)}` +
+          ` · ΔE76>2.3 ${fmt(metric.deltaE76AboveJndRatio)}` +
+          ` · ΔE76>10 ${fmt(metric.deltaE76AboveVisibleRatio)}` +
+          ` · mean ΔE76 ${fmt(metric.deltaE76Mean)}` +
+          ` · mean Δ ${metric.meanAbsoluteRgbDelta ?? 0}` +
+          ` · mean maxΔ ${fmt(metric.meanMaxChannelDelta)}` +
+          ` · common ${fmt(metric.commonAreaRatio)}` +
+          ` · height Δ ${metric.heightDelta ?? 0}px` +
+          /*
+           * Task 28.8 FAST change 3: every ratio to the left of here was computed
+           * over the min-crop of the two captures. This is the strip that crop
+           * left out and how much ink is in it, so a low @1 measured on 700 of
+           * 862 columns can never again read as a whole-image pass. `n/a` marks
+           * a pre-28.8-FAST artifact that never measured the band — it is never
+           * rendered as "none".
+           */
+          ` · uncompared ${
+            metric.uncomparedPixels === undefined
+              ? "n/a"
+              : metric.uncomparedPixels === 0
+                ? "none"
+                : `${metric.uncomparedWidthPx ?? 0}×${metric.uncomparedHeightPx ?? 0}px band, ${metric.uncomparedPixels}px ${
+                    metric.uncomparedMeasured === false
+                      ? "ink unmeasurable"
+                      : `ink ${fmt(metric.uncomparedInkRatio)}${
+                          (metric.uncomparedSampledPixels ?? metric.uncomparedPixels) <
+                          (metric.uncomparedPixels ?? 0)
+                            ? ` (sampled ${metric.uncomparedSampledPixels}px)`
+                            : ""
+                        }`
+                  }`
+          }` +
+          /*
+           * Task 28.6 C5: `common` above is image-to-image. This is
+           * image-to-DOCUMENT, and it is what stops a low @1 in this ranking
+           * from reading as a whole-page pass. `n/a` marks a pre-28.6 artifact
+           * that never measured coverage — it is never rendered as 1.
+           */
+          ` · page covered ${
+            metric.coveredFraction === undefined
+              ? "n/a"
+              : `${metric.coveredFraction}${metric.coverageTruncated ? " TRUNCATED" : ""}`
+          }` +
+          /*
+           * Task 28.5B change 6 (integration): the QA-only style channel prints
+           * beside the pixel channels because it answers the question they
+           * cannot — "did a property the Observer never records differ?".
+           * `unavailable` is printed as such; it is never rendered as 0.
+           */
+          ` · QA-only style ${
+            page.qaOnlyStyleComparison === "compared"
+              ? `${page.qaOnlyStyleMismatches ?? 0} of ${page.qaOnlyStyleComparedProperties ?? 0}`
+              : page.qaOnlyStyleComparison === "unavailable"
+                ? `unavailable (${page.qaOnlyStyleUnavailableReason ?? "unknown"})`
+                : "n/a"
+          }`,
       });
     }
     if (page.geometry.comparedNodes > 0) {

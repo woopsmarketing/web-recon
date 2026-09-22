@@ -1,0 +1,203 @@
+{
+ "status": "DONE",
+ "summary": "Shipped `src/authoring-preview/` — a fast authoring preview that serves the immutable Recon Template plus authored Site state and lightweight theme/asset overlays, with NO build, NO asset copy and NO production package per edit. Architecture: a patched COPY of the template app (two guarded, anchored patches in the src/production/patch.ts style, dead unless WR_AUTHORING_HOT=1) built ONCE, run behind one stable-URL proxy. Content invalidation is an authoring EPOCH read from its own env var WR_AUTHORING_EPOCH_FILE — a tiny file whose entire CONTENT is a monotonic token written AFTER the overlay, which closes the prototyper's named (mtimeMs,size) collision hole and keeps `process.env.WR_SLOT_VALUES_FILE` from appearing twice (the prototype's other named defect). Theme rides the pure `generateThemeOverlay` into an mtime-gated stylesheet append; images ride the EXISTING per-request media read in the proxy, plus the two things that made it dead in a browser: no-store in authoring mode and byte-sniffed content type. The editor bridge is spliced before </head> of HTML responses only (never into RSC flight), posts to each editor origin explicitly (never \"*\"), validates origin AND event.source AND protocol tag, and reports the existing data-wr-node / data-wr-dyn-node plus route/viewport/pageId — no data-wr-slot invented. MEASURED IN A REAL BROWSER, 6 reps each: text 144 ms median / 150 max, url 138/153, theme 71/79, image 5/7, warm preview start 617/627; one-time cold materialize (copy+patch+next build) 3275/3335 (n=3); the avoided baseline, a real production compile of the same lineage, 3759/4049 (n=3, 77 MB build dir). 0 browser runtime errors, 0 hydration errors, 0 `[wr-slot]` guard warnings everywhere. Inertness proven twice: 19/19 routes byte-identical to the PRISTINE template app after normalizing only Next's own build identity (max raw delta 1 char), and a new overlay+epoch changes nothing in a server started without the flag. A REAL production package baked after the preview session contains the bridge 0 times, the patch marker 0 times, WR_AUTHORING_EPOCH_FILE 0 times, and the template run is byte-untouched. New suite scripts/smoke-authoring-preview.ts: 41 checks / 0 failures / ~25 s, with two checks proven falsifiable by deliberate sabotage and exact restore. src/production/patch.ts was NOT touched; package.json was NOT edited; zero git mutations.",
+ "filesChanged": [
+  "/Users/woops/projects/web-recon/src/authoring-preview/patch.ts",
+  "/Users/woops/projects/web-recon/src/authoring-preview/bridge.ts",
+  "/Users/woops/projects/web-recon/src/authoring-preview/workspace.ts",
+  "/Users/woops/projects/web-recon/src/authoring-preview/materialize.ts",
+  "/Users/woops/projects/web-recon/src/authoring-preview/lineage.ts",
+  "/Users/woops/projects/web-recon/src/authoring-preview/serve.ts",
+  "/Users/woops/projects/web-recon/src/authoring-preview/session.ts",
+  "/Users/woops/projects/web-recon/src/authoring-preview/index.ts",
+  "/Users/woops/projects/web-recon/src/recon-template/parity-qa.ts",
+  "/Users/woops/projects/web-recon/scripts/smoke-authoring-preview.ts",
+  "/Users/woops/projects/web-recon/docs/result/handoffs/28-preview-runtime.json",
+  "/Users/woops/projects/web-recon/docs/result/handoffs/28-intel/pending-package-scripts.tsv"
+ ],
+ "items": [
+  {
+   "id": "prev.architecture",
+   "resolution": "IMPLEMENTED",
+   "evidence": "NEW MODULE src/authoring-preview/ (8 files), placed as a sibling of the other serve-boundary owners (src/theme, src/seo, src/assets) because it IS one. preview = immutable Recon Template + authored Site state + lightweight theme/asset overlays. materialize.ts copies <templateRun>/app into data/<host>/authoring-previews/<previewId>/app, applies patch.ts's two anchored patches and runs `next build` ONCE; the reuse key is patchVersion + templateId + the sha256 of the two PRISTINE runtime files, so a recompiled template or a changed patch forces a rebuild rather than serving a stale app. workspace.ts owns the mutable layer (slot-values.json, authoring-epoch, theme-overlay.css, media/ overrides) with atomic write+rename. serve.ts is the single stable-URL proxy; session.ts is the API. The template run is a READ-ONLY input and is byte-checked untouched (28.P3.37, 39 files). Measured warm start 617 ms median / 627 max (n=6) — the whole startAuthoringPreview call plus the first page actually served, nothing excluded. src/recon-template/parity-qa.ts was EXTENDED, not broken: RunningApp gained `output: () => string` (line 129/170) so the preview can assert 0 `[wr-slot]` warnings; every existing field and caller is unchanged and the 5 suites reaching parity-qa still pass at their prior counts."
+  },
+  {
+   "id": "prev.textEdit",
+   "resolution": "IMPLEMENTED",
+   "evidence": "An authored.slotValues edit is one atomic overlay write plus one epoch write. 28.P3.11 asserts the new value is served on the FIRST request after the write (attempts===1); 28.P3.12 that the baseline contained none of it and the bound occurrences did change; 28.P3.14 that reverting to defaults restores the served bytes EXACTLY (byte equality against the pre-edit document — the expectedValue guard round-trips); 28.P3.31 that it is visible in a REAL browser. Requirement-1's negative half is asserted, not assumed: 28.P3.15 .next/BUILD_ID mtime never moved across every edit, 28.P3.16 no new production-builds and no new asset-materializations directory appeared, 28.P3.17 workerStarts()===1. Measured browser-visible 144 ms median / 150 max (n=6, timer starts BEFORE the write, no server pre-warm); server-side first-request 54 ms median / 75 max (n=6)."
+  },
+  {
+   "id": "prev.urlEdit",
+   "resolution": "IMPLEMENTED",
+   "evidence": "A url slot goes through the identical path (it is an attribute binding, guarded on expectedValue the same way). 28.P3.13 asserts the served HTML carries `href=\"<new value>\"` — not merely the string somewhere, which would pass on a substitution proxy that corrupted an unrelated occurrence. Measured browser-visible (Playwright waiting for a[href=\"…\"] to be attached) 138 ms median / 153 max (n=6)."
+  },
+  {
+   "id": "prev.themeEdit",
+   "resolution": "IMPLEMENTED",
+   "evidence": "authored.theme tokens go through lineage.ts authoredThemeOverlayCss → src/theme/overlay.ts generateThemeOverlay — the SAME pure function themeStageRunner calls, so the CSS is byte-identical to what the stage would produce, not an approximation; the expensive half of that stage is writing a run directory, which a preview needs none of. serve.ts re-reads the overlay file whenever its (mtime,size) moves instead of freezing it into a Buffer at construction (the shipped bug in src/theme/serve.ts:64). 28.P3.26 asserts the browser's computed --wr-theme-color-accent-primary changes with NO navigation and workerStarts()===1; 28.P3.27 that BUILD_ID did not move. Measured browser-visible via a <link> swap 71 ms median / 79 max (n=6). The served HTML is byte-identical by construction, so this path cannot affect hydration."
+  },
+  {
+   "id": "prev.imageEdit",
+   "resolution": "IMPLEMENTED",
+   "evidence": "Uses the EXISTING hot seam rather than a new one: serve.ts serves /media/<name> by a per-request readFile, override directory first and the FROZEN materialization second — no media set is copied, one authored replacement is one file write. Two changes make it actually work in a browser: `cache-control: no-store, must-revalidate` in authoring mode (28.P3.30; the shipped src/assets/serve.ts sends `immutable`) and a content type sniffed from the override's BYTES (28.P3.7) because the media name carries the ORIGINAL extension and an operator replacing a .webp with a PNG is ordinary. 28.P3.28 asserts source asset URLs were rewritten to /media paths; 28.P3.29 asserts the RENDERED PIXEL changed — a 1x1 canvas readback returning exactly 200,10,40 — with no navigation, workerStarts()===1 and BUILD_ID unmoved. Measured 5 ms median / 7 max (n=6). lineage.ts loadMaterializationLineage composes the materialization manifest (inventoryId → sourceUrl) with the rewrite map (sourceUrl → /media/<sha>.<ext>) so an authored.assets assetId resolves to the media names it is served at."
+  },
+  {
+   "id": "prev.editorBridge",
+   "resolution": "IMPLEMENTED",
+   "evidence": "src/authoring-preview/bridge.ts renders one <script> spliced before </head> of text/html responses ONLY — never into an RSC flight payload, which React parses as data — following the shipped src/seo/serve.ts head-splice precedent. 28.P3.21 asserts injection in the actual served bytes. Security is asserted structurally AND behaviourally: 28.P3.8 asserts the source never contains postMessage(message, \"*\"), does contain the origin allowlist test and `event.source !== window.parent && event.source !== window.opener`, addresses [data-wr-node],[data-wr-dyn-node], and contains NO data-wr-slot; 28.P3.22/23 drive a real cross-origin editor harness (its own port) that receives `ready` and a `pong` echoing its own token; 28.P3.24 drives a SECOND harness on a non-allowlisted origin which receives NOTHING at all and whose ping is ignored. 28.P3.25 asserts hover AND click report a real node id matching /^n\\d+$/, a dynNode field, route === \"/blog\", viewport === \"desktop\" and a pageId — i.e. exactly the Slot V2 addressing context (pageId, viewport, nodeId) the editor needs to invert slot-bindings.json, with no new DOM attribute. Inbound commands: ping, describe-selection, refresh-styles, refresh-media, reload."
+  },
+  {
+   "id": "prev.bridgeAbsentFromBake",
+   "resolution": "IMPLEMENTED",
+   "evidence": "Proven by baking, not by argument. §7 of the suite runs the REAL runProductionCompile on the same lineage AFTER the full preview session (materialize + text/url/theme/image edits + browser drive) and walks every file of the produced package: 198 files, 22,042,083 bytes, bridge marker 0, authoring patch marker 0, WR_AUTHORING_EPOCH_FILE 0 (28.P3.34/35/36), and the template run byte-compares identical before and after (28.P3.37). Independently reproduced across 3 further compiles (tmp/wr28/preview-scratch/bench2.ts, runs 2026-08-27T12-13-10-354Z / 12-13-14-490Z / 12-13-18-332Z): 0/0/0 each. The structural reason is separation, not a flag: the preview patches a COPY under authoring-previews/ and the production compiler copies the immutable template run. src/production/patch.ts was NOT modified, and the epoch deliberately uses its own env var so `process.env.WR_SLOT_VALUES_FILE` occurs exactly as many times in the patched file as in the pristine one (28.P3.3) — the prototype defect the recon named."
+  },
+  {
+   "id": "prev.hydration",
+   "resolution": "IMPLEMENTED",
+   "evidence": "Real Chromium throughout. Errors collected from BrowserContext 'console' (type error), BrowserContext 'weberror' AND Page 'pageerror', classified with the same /hydrat|minified react error #(418|423|425)/i rule src/recon-template/parity-qa.ts uses. ACTUAL COUNTS: benchmark session (6 reloads + 6 stylesheet swaps + 6 media swaps + hover/click) → 0 runtime errors, 0 hydration errors, 0 `[wr-slot]` warnings; smoke suite 28.P3.32/33 → 0 and 0; linear.app canary 28.P3.41 → 0 and 0. Also 28.P3.18 asserts 0 `[wr-slot]` applier guard warnings across every content edit. Nothing was reported-and-left: no hydration error was ever observed with this design, and the reason is structural — the bridge is the only added markup and it is spliced exactly where the already-shipped SEO proxy splices, the theme path changes no HTML at all, and the content path re-renders server-side so the SSR HTML and the flight payload always agree."
+  },
+  {
+   "id": "prev.noFullBuild",
+   "resolution": "IMPLEMENTED",
+   "evidence": "The smallest safe refresh architecture: overlay indirection, two anchored patches, nothing on the client, and no reconstruction / template compile / theme run / asset materialization / production bake in any edit path. Asserted negatively (28.P3.15 BUILD_ID mtime unmoved, 28.P3.16 no new production-builds or asset-materializations dir, 28.P3.17 workerStarts()===1) and measured positively: text 54 ms server-side / 144 ms browser vs a real production compile of the same lineage at 3759 ms median (n=3) producing a 77.4 MB build directory and a 22.0 MB package. INERTNESS proven twice so the production path is provably unaffected: 28.P3.19 — with WR_AUTHORING_HOT unset the patched app is byte-identical to the PRISTINE template app on all 19 routes after normalizing ONLY Next's own build identity (buildId, chunk file names, webpack module ids), max raw byte delta 1 character; 28.P3.20 — writing a new overlay + epoch changes NOTHING in that same non-hot server, i.e. the documented process-lifetime memoization is intact. The Task-17.1 portal blind spot the prototyper listed as an open risk is now closed: 28.P3.38/39/40 hot-edit a dynamic-template binding on the real linear.app template and a real browser click mounts the portal menu showing the new value, 0 guard warnings, 0 hydration errors."
+  }
+ ],
+ "testsAdded": [
+  "scripts/smoke-authoring-preview.ts 28.P3.1 the immutable template's runtime files are NOT authoring-patched",
+  "scripts/smoke-authoring-preview.ts 28.P3.2 patchSlotContentForAuthoring keeps the original getContract body and adds the epoch gate",
+  "scripts/smoke-authoring-preview.ts 28.P3.3 the authoring epoch has its OWN env var — the patch adds no second WR_SLOT_VALUES_FILE read",
+  "scripts/smoke-authoring-preview.ts 28.P3.4 patchLoadPageForAuthoring keeps the untouched loader for the non-hot path",
+  "scripts/smoke-authoring-preview.ts 28.P3.5 re-applying either patch is REFUSED, loudly",
+  "scripts/smoke-authoring-preview.ts 28.P3.6 a missing anchor is REFUSED, loudly",
+  "scripts/smoke-authoring-preview.ts 28.P3.7 sniffImageContentType reads the BYTES, so a .webp name replaced by a PNG serves as image/png",
+  "scripts/smoke-authoring-preview.ts 28.P3.8 the bridge never posts to \"*\", validates origin AND source, reports data-wr-node / data-wr-dyn-node, and never invents data-wr-slot",
+  "scripts/smoke-authoring-preview.ts 28.P3.9 the preview app was materialized: copied, patched and built ONCE",
+  "scripts/smoke-authoring-preview.ts 28.P3.10 the preview app carries the authoring patch; the template run still does not",
+  "scripts/smoke-authoring-preview.ts 28.P3.11 a text edit is served on the FIRST request after the write",
+  "scripts/smoke-authoring-preview.ts 28.P3.12 exactly the bound occurrences changed — the baseline had none of the new value",
+  "scripts/smoke-authoring-preview.ts 28.P3.13 a url edit is served the same way (href rewritten, guard respected)",
+  "scripts/smoke-authoring-preview.ts 28.P3.14 reverting to the defaults restores the served bytes exactly",
+  "scripts/smoke-authoring-preview.ts 28.P3.15 NO `next build` ran for any edit — .next/BUILD_ID never moved",
+  "scripts/smoke-authoring-preview.ts 28.P3.16 NO production package and NO asset materialization was produced by an edit",
+  "scripts/smoke-authoring-preview.ts 28.P3.17 the preview worker was never restarted for a content edit",
+  "scripts/smoke-authoring-preview.ts 28.P3.18 the applier reported ZERO `[wr-slot]` guard warnings across every edit",
+  "scripts/smoke-authoring-preview.ts 28.P3.19 with WR_AUTHORING_HOT unset the patched app is byte-identical to the PRISTINE template app on every route, after normalizing Next's own build identity only",
+  "scripts/smoke-authoring-preview.ts 28.P3.20 …and the hot seam is genuinely OFF there: a new overlay + epoch changes NOTHING in that server",
+  "scripts/smoke-authoring-preview.ts 28.P3.21 the editor bridge is injected at the SERVE boundary of every preview HTML response",
+  "scripts/smoke-authoring-preview.ts 28.P3.22 the bridge announces itself to the editor origin on load",
+  "scripts/smoke-authoring-preview.ts 28.P3.23 postMessage round trip: the editor's ping is answered with its own echo",
+  "scripts/smoke-authoring-preview.ts 28.P3.24 an un-allowlisted origin gets NOTHING — no report, and its ping is ignored",
+  "scripts/smoke-authoring-preview.ts 28.P3.25 hover AND click report the rendered element's DOM identity plus route and viewport",
+  "scripts/smoke-authoring-preview.ts 28.P3.26 an authored.theme token edit is visible with NO navigation and NO worker restart",
+  "scripts/smoke-authoring-preview.ts 28.P3.27 the theme edit did not rebuild the app either",
+  "scripts/smoke-authoring-preview.ts 28.P3.28 the preview rewrote source asset URLs to local /media paths",
+  "scripts/smoke-authoring-preview.ts 28.P3.29 an authored asset replacement repaints the RENDERED PIXEL with no navigation and no stage rerun",
+  "scripts/smoke-authoring-preview.ts 28.P3.30 authoring-mode media is served no-store",
+  "scripts/smoke-authoring-preview.ts 28.P3.31 a text edit is visible in a REAL browser after the bridge's reload command",
+  "scripts/smoke-authoring-preview.ts 28.P3.32 browser runtime errors: 0",
+  "scripts/smoke-authoring-preview.ts 28.P3.33 hydration errors: 0",
+  "scripts/smoke-authoring-preview.ts 28.P3.34 the production package is real and non-trivial",
+  "scripts/smoke-authoring-preview.ts 28.P3.35 the editor bridge appears 0 times in the production package",
+  "scripts/smoke-authoring-preview.ts 28.P3.36 the authoring hot seam appears 0 times in the production package",
+  "scripts/smoke-authoring-preview.ts 28.P3.37 the immutable template run is byte-untouched by the preview session and the bake",
+  "scripts/smoke-authoring-preview.ts 28.P3.38 a dynamic-template (portal) binding re-applies through the epoch re-parse [linear canary, SKIPPABLE]",
+  "scripts/smoke-authoring-preview.ts 28.P3.39 …with ZERO `[wr-slot]` guard warnings [linear canary, SKIPPABLE]",
+  "scripts/smoke-authoring-preview.ts 28.P3.40 the mounted portal menu renders the hot value in a REAL browser — Task 17.1 blind spot [linear canary, SKIPPABLE]",
+  "scripts/smoke-authoring-preview.ts 28.P3.41 linear canary: browser runtime errors 0, hydration errors 0 [SKIPPABLE]"
+ ],
+ "measurements": [
+  {
+   "metric": "preview initial start (WARM: the whole startAuthoringPreview call — overlay write, `next start` spawn, readiness probe, proxy listen — plus the first page actually served)",
+   "reps": 6,
+   "medianMs": 617,
+   "maxMs": 627,
+   "method": "Wall clock (Date.now) around startAuthoringPreview + fetch(baseUrl + \"/blog\"), then stop; the run asserts materialized===false so no build is hidden inside it. Samples 612/616/621/610/618/627, min 610. Site: domainchecker.co.kr recon-template 2026-08-19T07-14-22-868Z (19 routes, 1957 slots, 4832 bindings). Script tmp/wr28/preview-scratch/bench.ts, raw output tmp/wr28/preview-scratch/bench-final.json."
+  },
+  {
+   "metric": "preview COLD first-ever materialize (rm -rf + copy the 39 MB app + apply both patches + `next build` + start + first page) — ONE-TIME per template, not part of an edit",
+   "reps": 3,
+   "medianMs": 3275,
+   "maxMs": 3335,
+   "method": "Wall clock around the whole call after rm -rf of the preview dir. Samples 3335/3275/3249. Breakdown reported by the session: copy 55/49/70 ms, patch 0/1/0 ms, next build 2638/2590/2558 ms. Reported separately from startup rather than folded into it, because it is paid once and reused by every later session — but it IS reported, not excluded."
+  },
+  {
+   "metric": "text edit -> visible in a real browser (authored.slotValues write -> bridge reload -> new text painted)",
+   "reps": 6,
+   "medianMs": 144,
+   "maxMs": 150,
+   "method": "Playwright, Chromium, preview embedded in a cross-origin editor iframe. Timer starts BEFORE session.setSlotValue and stops when the frame locator for the new text resolves; the server is NOT pre-warmed for that value, so the epoch re-parse is inside the measurement. Samples 150/142/142/150/145/143, min 142."
+  },
+  {
+   "metric": "text edit -> served (server-side, first HTTP request after the overlay+epoch write)",
+   "reps": 6,
+   "medianMs": 54,
+   "maxMs": 75,
+   "method": "Wall clock from before setSlotValue until a fetch of /blog contains the new value; the suite separately asserts this happens on attempt 1 (28.P3.11). Samples 68/75/54/53/54/54, min 53."
+  },
+  {
+   "metric": "url edit -> visible in a real browser (authored url slot -> href attribute present in the DOM)",
+   "reps": 6,
+   "medianMs": 138,
+   "maxMs": 153,
+   "method": "Same harness; Playwright waits for a[href=\"<new value>\"] to be attached inside the preview iframe. Timer starts before the write. Samples 139/139/137/135/153/136, min 135."
+  },
+  {
+   "metric": "theme edit -> visible in a real browser (authored.theme token -> generateThemeOverlay -> stylesheet swap, NO navigation)",
+   "reps": 6,
+   "medianMs": 71,
+   "maxMs": 79,
+   "method": "Timer starts before session.setAuthoredTheme; stops when getComputedStyle(document.documentElement).getPropertyValue('--wr-theme-color-accent-primary') inside the preview iframe equals the new token value exactly. Samples 79/71/71/70/70/71, min 70."
+  },
+  {
+   "metric": "image edit -> visible in a real browser (authored asset replacement -> per-request media read + cache-bust, NO navigation)",
+   "reps": 6,
+   "medianMs": 5,
+   "maxMs": 7,
+   "method": "Timer starts before the media override write; stops when a 1x1 canvas readback of the rendered <img> returns exactly the new RGB. Samples 7/6/5/5/5/5, min 5. Pixel readback rather than naturalWidth because srcset density descriptors make naturalWidth density-corrected and therefore not a direct byte proof."
+  },
+  {
+   "metric": "AVOIDED BASELINE — a real static production package for the same site and lineage (runProductionCompile)",
+   "reps": 3,
+   "medianMs": 3759,
+   "maxMs": 4049,
+   "method": "Wall clock around runProductionCompile (template+content+theme+seo+assets → spec, patched app copy, next build, static export, package assembly). Samples 4049/3759/3721. Each run produced a 482-file / 77.4 MB build directory and a 198-file / 22.0 MB package. This is a SMALL site; a large one costs materially more. Script tmp/wr28/preview-scratch/bench2.ts."
+  }
+ ],
+ "commandsRun": [
+  "bash /Users/woops/projects/web-recon/tmp/wr28/suite-lock.sh npx tsc --noEmit  (exit 0; run 6 times across the work, final run clean)",
+  "bash /Users/woops/projects/web-recon/tmp/wr28/suite-lock.sh npx tsx scripts/smoke-authoring-preview.ts  (final: 41 checks, 0 failures, 0 SKIP, ~25 s)",
+  "bash /Users/woops/projects/web-recon/tmp/wr28/suite-lock.sh npx tsx scripts/smoke-theme.ts  (47/47, exit 0)",
+  "bash /Users/woops/projects/web-recon/tmp/wr28/suite-lock.sh npx tsx scripts/smoke-assets.ts  (140/140, exit 0)",
+  "bash /Users/woops/projects/web-recon/tmp/wr28/suite-lock.sh npx tsx scripts/smoke-seo.ts  (97/97, exit 0)",
+  "bash /Users/woops/projects/web-recon/tmp/wr28/suite-lock.sh npx tsx scripts/smoke-content-injection.ts  (145/145, exit 0)",
+  "bash /Users/woops/projects/web-recon/tmp/wr28/suite-lock.sh npx tsx scripts/smoke-recon-template.ts  (109/109, exit 0)",
+  "npx tsx tmp/wr28/preview-scratch/bench.ts  (the 4 required edit metrics + startup, 6 reps each; raw output bench-final.json)",
+  "npx tsx tmp/wr28/preview-scratch/bench2.ts  (production-compile baseline x3 + bake-absence grep x3)",
+  "npx tsx tmp/wr28/preview-scratch/t6.ts  (non-hot parity: patched vs pristine app across all 19 routes)",
+  "npx tsx tmp/wr28/preview-scratch/t8.ts  (linear.app dynamic-template / portal canary, first prototype)",
+  "shasum -a 256 src/authoring-preview/*.ts src/recon-template/parity-qa.ts scripts/smoke-authoring-preview.ts  (pre/post sabotage capture; diff clean)",
+  "grep -rn WR28-P3-SABOTAGE src scripts  (returns nothing)",
+  "find data -type f -newermt '2026-08-27 11:55:00'  (write audit, grouped by containing run directory)",
+  "git status --porcelain / git diff  (read-only inspection only; ZERO mutating git operations)"
+ ],
+ "limitations": [
+  "EVERY EDIT-LATENCY NUMBER IS ONE MACHINE AND ONE SITE: darwin 25.2.0 / APFS / Node 22 / next 16.3.0 / headless chromium / 127.0.0.1, on domainchecker.co.kr (19 routes, 1957 slots, 4832 bindings, largest page JSON 292 KB), with other Task-28 phases running concurrently on the same box. The linear.app template (8 routes, 2441 text slots, 1.4 MB home page JSON) was exercised for CORRECTNESS only — I did not run the 6-rep benchmark there, so I hold NO measured edit latency for a large page and do not claim one.",
+  "EVERY EDIT METRIC IS A FULL-DOCUMENT NUMBER. A text or url edit re-parses the whole page JSON on the next request and the browser does a full reload. There is no partial, streaming or diff-based DOM update and no debouncing — an un-debounced keystroke-rate editor would re-parse per keystroke. I measured neither debouncing nor incremental update; that is Phase 4 work.",
+  "THE PREVIEW'S /media PATH IS NOT CONTENT-ADDRESSED. An authored image replacement is written to <preview>/overlay/media/<original-name>, so the preview serves different bytes at the frozen materialization's content hash. That is what makes the edit one file write instead of an assets-stage rerun, but it means the preview's media URL does not carry the guarantee the production artifact's does. The assets StageRunner still does the real re-hashed materialization at build time.",
+  "authored.assets IS CONSUMED THROUGH A MAPPING I BUILT, NOT THROUGH THE ASSETS STAGE. loadMaterializationLineage composes manifest (inventoryId → sourceUrl) with rewrite-map (sourceUrl → /media/<sha>.<ext>). The suite drives replaceMedia by the media names actually present in the rendered DOM, so the mapping runs and its rewrite map is what the proxy uses — but the assetId → mediaName step is not independently asserted by its own check. The site-level ids `og-image` / `organization-logo` have no inventory entry and therefore no preview media name at all.",
+  "authored.assets[*].alt STILL HAS NO CONSUMER, here as everywhere. The preview replaces BYTES; it writes no markup. An alt edit changes nothing in the preview, exactly as it changes nothing in the bake.",
+  "authored.brand IS NOT SURFACED IN THE PREVIEW AT ALL. Nothing in src/authoring-preview reads it. A REPLACE/REMOVE/PRESERVE decision is a bake-time IR rewrite owned by the parallel brand builder, so an operator cannot see the effect of a brand decision in this preview.",
+  "SEO IS NOT IN THE PREVIEW. The proxy does not rewrite <title>, does not splice the SEO head block and does not serve /robots.txt — src/seo/serve.ts still owns that and was deliberately not chained in. A preview shows the template's own titles, not the production plan's.",
+  "PAINT-TWIN AND SVG-TEXT BINDINGS WERE NOT DRIVEN THROUGH THE HOT CYCLE. The linear canary closes the dynamic-template / portal gap the Phase-2 prototyper named (28.P3.38/40, in a real browser), but linear carries only 4 paint-twin bindings and the domainchecker fixture has 0 paint-twin and 0 svg-text bindings, so neither surface is covered by a check. They traverse the same applySlotContent path — that is an argument, not evidence.",
+  "CONCURRENCY AND CAPACITY ARE UNMEASURED. One preview server, one browser, one editor. No multi-tenant memory figure, no simultaneous editors, and no test of two writers racing on the same overlay file — the epoch ordering makes a SINGLE writer safe and says nothing about two.",
+  "THE HOT SEAM IS PROCESS-LOCAL AND POLLED. slotContentEpoch is read per loadPage call (a ~1-byte file read); there is no watcher, no push and no cross-process invalidation. Two `next start` processes on the same preview dir would each hold their own epoch state — correct, but untested.",
+  "THE PREVIEW APP IS A FULL COPY OF THE TEMPLATE APP (~82 MB on disk for domainchecker, ~100 MB for linear, per template). The copy measured 49-70 ms on this APFS volume; on a filesystem without cheap clones it will cost materially more and I did not measure that.",
+  "THE PRODUCTION-BAKE BASELINE I MEASURED IS domainchecker's (3759 ms median, 77 MB). It is a small site; the last recorded linear.app bake in this program was ~36 s including the media copy. I did not re-measure linear's bake, so the 'cost avoided' figure quoted here is the SMALL-site figure and understates the gap on a large one.",
+  "NO CLI AND NO RELEASE-PROJECT ENTRYPOINT. startAuthoringPreview takes a template run dir plus authored values; it does not load a ReleaseProject and nothing in src/release calls it. Wiring authored.slotValues / authored.theme / authored.assets straight out of a release project is Phase 4 work.",
+  "package.json WAS NOT EDITED, per the program contract. The suite is registered only by the appended line in docs/result/handoffs/28-intel/pending-package-scripts.tsv; until an integrator applies it, `pnpm smoke:authoring-preview` does not exist and the suite must be run as `npx tsx scripts/smoke-authoring-preview.ts` through the mutex.",
+  "THE §8 LINEAR CANARY IS SKIPPABLE BY DESIGN (prints SKIP and drops 4 checks if the linear template run is deleted), following the smoke-regions §7 precedent. The suite reports 41 checks with the canary and would report 37 without; nothing asserts its own total — the same repo-wide gap the pre-overnight audit recorded.",
+  "REGRESSION SCOPE: I ran typecheck plus the FIVE suites that reach src/recon-template/parity-qa.ts (theme 47, assets 140, seo 97, content-injection 145, recon-template 109 — all 0 failures), found with `grep -rln parity-qa src scripts`, because that is the only shipped file outside my new module I touched. I did NOT run the other suites and hold no fresh evidence about them, so I make no claim about the full regression total. Note content-injection read 145 when I ran it, above the 138 Phase 2 recorded — another phase raised it concurrently; there is no negative delta anywhere I measured.",
+  "28.P3.29 KEPT PASSING UNDER SABOTAGE A (media header forced back to `immutable`). That is honest and worth carrying: a cache-bust query token defeats an immutable header for an img.src swap, so the no-store header is a belt-and-braces correctness property (it matters for a plain reload, which is how the recon measured the stale pixel) rather than the mechanism that makes the pixel change. 28.P3.30 asserts it separately for that reason.",
+  "DISK I ADDED (yours to delete): data/domainchecker.co.kr/authoring-previews/{wr28-smoke, wr28-bench} (~82 MB each), data/linear.app/authoring-previews/wr28-smoke (~100 MB), and four new production runs data/domainchecker.co.kr/production-{builds,specs}/2026-08-27T12-{13-10-354Z,13-14-490Z,13-18-332Z,20-42-447Z} (~77 MB each). Everything is in a NEW namespace or a NEW 2026-08-27 run id; no historical run directory was written. Scratch scripts and logs are under /Users/woops/projects/web-recon/tmp/wr28/preview-scratch/. I deleted my own throwaway wr28-scratch preview dirs and four redundant production runs of my own; nothing belonging to another phase was touched."
+ ]
+}

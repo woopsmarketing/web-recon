@@ -15,6 +15,7 @@ import path from "node:path";
 
 import {
   entriesAgree,
+  isScannableTemplateDir,
   listHosts,
   listSites,
   listTemplates,
@@ -28,6 +29,7 @@ import {
   registryDir,
   scanSites,
   scanTemplates,
+  siteEntryFromDisk,
   siteRegistryFile,
   siteRegistryWarnings,
   sitesWithSiteId,
@@ -395,6 +397,87 @@ async function main(): Promise<void> {
           templateDir: policied.templateDir,
         }),
     );
+    // =====================================================================
+    section("Task 28 CR3/CR4/CR5 — displayName, upsert idempotency");
+    // =====================================================================
+    // CR3: the display name follows the PROJECT. Written into the scratch copy
+    // only — the real project on disk is never touched (27B.26 proves it).
+    const namedFile = path.join(scratchAuthored, "release-project.json");
+    const namedProject = JSON.parse(await readFile(namedFile, "utf8")) as Record<string, unknown>;
+    check(
+      "28.CR3.1 fixture precondition: the copied project records NO displayName",
+      namedProject.displayName === undefined,
+      String(namedProject.displayName),
+    );
+    const derivedEntry = await siteEntryFromDisk(scratchAuthored);
+    check(
+      "28.CR3.2 with no displayName the registry still DERIVES the name from siteId",
+      derivedEntry.name === "flowpilot-wr27" &&
+        derivedEntry.nameSource === "derived-from-site-id",
+      `${derivedEntry.name} / ${derivedEntry.nameSource}`,
+    );
+    await writeFile(
+      namedFile,
+      JSON.stringify({ ...namedProject, displayName: "플로우파일럿" }, null, 2) + "\n",
+      "utf8",
+    );
+    const namedEntry = await siteEntryFromDisk(scratchAuthored);
+    check(
+      "28.CR3.3 a recorded displayName wins, and the source is reported as such",
+      namedEntry.name === "플로우파일럿" && namedEntry.nameSource === "project-display-name",
+      `${namedEntry.name} / ${namedEntry.nameSource}`,
+    );
+    check(
+      "28.CR3.4 the name is REBUILDABLE — the registry stores no fact of its own",
+      (await rebuildRegistry(opts)).sites.entries.find(
+        (entry) => entry.siteKey === "linear.app/flowpilot-wr27",
+      )?.name === "플로우파일럿",
+    );
+    // CR4/CR5: registering twice must upsert, never duplicate — `release:prepare`
+    // and `compile:recon-template` now call these on every run.
+    const sitesBefore = (await listSites(opts)).length;
+    await registerSite(scratchAuthored, opts);
+    await registerSite(scratchAuthored, opts);
+    const sitesAfter = await listSites(opts);
+    check(
+      "28.CR4.1 registerSite twice upserts by siteKey (row count unchanged, name refreshed)",
+      sitesAfter.length === sitesBefore &&
+        sitesAfter.filter((entry) => entry.siteKey === "linear.app/flowpilot-wr27").length === 1 &&
+        sitesAfter.find((entry) => entry.siteKey === "linear.app/flowpilot-wr27")?.name ===
+          "플로우파일럿",
+      `${sitesBefore} → ${sitesAfter.length}`,
+    );
+    const templatesBefore = (await listTemplates(opts)).length;
+    await registerTemplate(scratchPolicied, opts);
+    await registerTemplate(scratchPolicied, opts);
+    const templatesAfter = await listTemplates(opts);
+    check(
+      "28.CR5.1 registerTemplate twice upserts by templateId (row count unchanged)",
+      templatesAfter.length === templatesBefore &&
+        templatesAfter.filter((entry) => entry.templateId === registered.templateId).length === 1,
+      `${templatesBefore} → ${templatesAfter.length}`,
+    );
+
+    // CR5 gate: a template placed outside the scanned namespace by
+    // `--output` must NOT be registered — `rebuildRegistry` could never
+    // re-derive that row, so writing it would break the rebuild guarantee.
+    check(
+      "28.CR5.2 only a run inside <data-root>/<host>/recon-templates/<run-id> is registerable",
+      isScannableTemplateDir(scratchPolicied, opts) &&
+        !isScannableTemplateDir(path.join(scratch, "stripe.com", "elsewhere", "run"), opts) &&
+        !isScannableTemplateDir(path.join(scratch, "stripe.com", "recon-templates"), opts) &&
+        !isScannableTemplateDir(path.resolve("/tmp", "relocated-template"), opts),
+      String(isScannableTemplateDir(scratchPolicied, opts)),
+    );
+    check(
+      "28.CR5.3 the gate is measured against the SAME artifact the scan finds",
+      (await scanTemplates(opts)).entries.length > 0 &&
+        (await scanTemplates(opts)).entries.every((entry) =>
+          isScannableTemplateDir(entry.templateDir, opts),
+        ),
+      JSON.stringify((await scanTemplates(opts)).entries.map((entry) => entry.templateDir)),
+    );
+
     const afterReal = {
       policied: await snapshotTree(POLICIED_TEMPLATE),
       legacyTemplate: await snapshotTree(LEGACY_TEMPLATE),

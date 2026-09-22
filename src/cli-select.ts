@@ -2,8 +2,10 @@ import {
   assertSelectionInvariants,
   buildPageFamilies,
   buildPageSelection,
+  buildRouteArchetypePlan,
   loadSelectionInput,
   saveSelection,
+  saveRouteArchetypePlan,
   type PageFamilyType,
 } from "./selector/index.js";
 
@@ -117,6 +119,9 @@ async function main(): Promise<void> {
 
     const saved = await saveSelection(input.runDir, familySet, selection);
 
+    const routeArchetypePlan = buildRouteArchetypePlan(familySet, selection);
+    const savedPlan = await saveRouteArchetypePlan(input.runDir, routeArchetypePlan);
+
     const percent = (selection.reductionRate * 100).toFixed(1);
     console.log("Page Selection");
     console.log("");
@@ -131,9 +136,17 @@ async function main(): Promise<void> {
       console.log(`${type.padEnd(LABEL_WIDTH)}  ${selection.familyTypeCounts[type]}`);
     }
     console.log("");
+    console.log("");
+    console.log("Route Archetype Plan:");
+    console.log(`Archetypes: ${routeArchetypePlan.summary.totalArchetypes}`);
+    console.log(
+      `Represented without deep reconstruction: ${routeArchetypePlan.summary.representedWithoutDeepReconstructionCount}`,
+    );
+    console.log("");
     console.log("Saved:");
     console.log(saved.familiesPath);
     console.log(saved.selectionPath);
+    console.log(savedPlan.routeArchetypesPath);
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
     process.exitCode = 1;

@@ -12,7 +12,18 @@ import { createHash } from "node:crypto";
  * hand-edited stylesheet would invalidate the extraction evidence.
  */
 
-export type StylesheetSelectorKind = "style-token" | "doc-root" | "node-scoped";
+export type StylesheetSelectorKind =
+  | "style-token"
+  | "doc-root"
+  /**
+   * Task 28.75 §CANVAS — the rule that paints the DOCUMENT CANVAS. The
+   * generator no longer emits the observed root/body background as an in-flow
+   * box background on the `.wr-doc-*` wrapper; it MOVES it onto the real
+   * `html` element, scoped to the page(s) it came from. That paint is the
+   * canvas, not an element surface, and the extractor must read it as such.
+   */
+  | "document-canvas"
+  | "node-scoped";
 
 export interface StylesheetRule {
   /** The selector exactly as written — the overlay reuses it verbatim. */
@@ -36,6 +47,21 @@ export interface ParsedStylesheet {
 
 const TOKEN_RULE = /^\.wr-(st\d+)$/;
 const DOC_RULE = /^\.wr-doc-(st\d+)$/;
+/**
+ * `html:has([data-wr-page="p000001"])` — the generated document-canvas scope.
+ * One rule may carry several page scopes, comma-joined, when the pages share an
+ * identical canvas declaration. Every part must be a generated page scope: this
+ * is reconstruction identity, never an author selector.
+ */
+const CANVAS_SCOPE = /^html:has\(\[data-wr-page="p\d+"\]\)$/;
+
+export function isDocumentCanvasSelector(selector: string): boolean {
+  const parts = selector
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part !== "");
+  return parts.length > 0 && parts.every((part) => CANVAS_SCOPE.test(part));
+}
 
 export function parseGeneratedStylesheet(css: string): ParsedStylesheet {
   const rules: StylesheetRule[] = [];
@@ -65,7 +91,9 @@ export function parseGeneratedStylesheet(css: string): ParsedStylesheet {
       ? "style-token"
       : docMatch
         ? "doc-root"
-        : "node-scoped";
+        : isDocumentCanvasSelector(selector)
+          ? "document-canvas"
+          : "node-scoped";
     rules.push({
       selector,
       kind,

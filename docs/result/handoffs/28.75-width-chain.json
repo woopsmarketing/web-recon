@@ -1,0 +1,898 @@
+{
+ "task": "28.75 \u2014 frozen-width ancestor chain ROOT + document canvas propagation",
+ "lane": "reconstruction (src/reconstruction/**, scripts/smoke-layout-safety.ts, scripts/smoke-reconstruction.ts)",
+ "generatedAt": "2026-09-05",
+ "verdict": "WIDTH MECHANISM SHIPPED AND MEASURED \u2014 PAGE-LEVEL ACCEPTANCE ON linear.app / NOT MET; CANVAS BLOCKER FIXED",
+ "report": "docs/result/28.75/03-frozen-width-chain-root.md",
+ "mechanisms": {
+  "trackedFillWidth": {
+   "kind": "tracked-fill-width",
+   "emits": {
+    "width": "auto"
+   },
+   "population": "in-flow block box under a BANDED parent padding, constant border-box gap across witnessed parent growth, gap decomposes into the box model at the truth width",
+   "refusalReasons": [
+    "auto-does-not-stretch",
+    "fewer-than-three-visible-widths",
+    "width-constant",
+    "negative-gap",
+    "gap-run-unwitnessed",
+    "gap-not-box-model"
+   ]
+  },
+  "viewportBleedWidth": {
+   "kind": "viewport-bleed-width",
+   "emits": {
+    "width": "100vw",
+    "margin-left": "calc(50% - 50vw)",
+    "margin-right": "calc(50% - 50vw)",
+    "left": "0px",
+    "right": "auto"
+   },
+   "population": "in-flow full-bleed band inside a centred parent; the whole declaration set is co-emitted, which dissolves 28.7's 240px-overhang objection",
+   "refusalReasons": [
+    "not-in-flow",
+    "fewer-than-three-visible-widths",
+    "width-constant",
+    "not-viewport-wide",
+    "parent-not-centred",
+    "parent-padding-asymmetric"
+   ]
+  },
+  "damageClampWidth": {
+   "kind": "damage-clamped-width",
+   "emits": {
+    "max-width": "100%"
+   },
+   "policy": "\u00a719 last resort, predicated PER NODE; never blanket",
+   "clampableGuards": [
+    "flex-item-basis-governed",
+    "parent-padding-unreadable",
+    "parent-padding-not-constant"
+   ],
+   "refusalReasons": [
+    "no-frozen-width",
+    "fewer-than-two-visible-widths",
+    "source-width-constant",
+    "frozen-width-not-observed",
+    "source-overflows-parent",
+    "no-material-damage",
+    "containing-block-not-parent",
+    "own-box-unreadable"
+   ],
+   "bugCaughtByTwin": "the containment/damage controls compared against the parent's BORDER box; max-width:100% names its CONTENT box. Measured +62.0px on linear p000001 n000575 at 1280 and +307.9px on its child n000577 at 1101. Fixed with containingBlockAt() = parent border box - frozen padding/border."
+  }
+ },
+ "documentCanvas": {
+  "spec": "CSS 2.1 \u00a714.2 / css-backgrounds \u00a72.11.2 \u2014 the root's background paints the canvas; when the root has none, the body's is propagated",
+  "precedence": "ROOT wins; the body is propagated ONLY when the root paints nothing",
+  "scoping": "one rule per PAGE, html:has([data-wr-page=\"pXXXXXX\"]), grouped by identical declaration text \u2014 a global html{} would tint the 9 hobbang routes that have no body background",
+  "refusalReasons": [
+   "document-root-not-found",
+   "no-background",
+   "viewports-disagree"
+  ],
+  "blockerFixed": "gs.severance.healthcare /gs/index.do \u2014 the opaque body background painted OVER the z-index:-1 hero, white-on-white headline",
+  "paintProof": {
+   "page": "p000001",
+   "viewport": "desktop",
+   "width": 1440,
+   "heroNode": "n002542",
+   "heroRect": [
+    -240,
+    215,
+    1920,
+    500
+   ],
+   "samplesBefore": [
+    [
+     200,
+     300,
+     [
+      255,
+      255,
+      255
+     ]
+    ],
+    [
+     720,
+     300,
+     [
+      255,
+      255,
+      255
+     ]
+    ],
+    [
+     1200,
+     300,
+     [
+      255,
+      255,
+      255
+     ]
+    ],
+    [
+     200,
+     500,
+     [
+      255,
+      255,
+      255
+     ]
+    ],
+    [
+     720,
+     500,
+     [
+      255,
+      255,
+      255
+     ]
+    ],
+    [
+     1200,
+     500,
+     [
+      255,
+      255,
+      255
+     ]
+    ],
+    [
+     720,
+     700,
+     [
+      255,
+      255,
+      255
+     ]
+    ]
+   ],
+   "samplesAfter": [
+    [
+     200,
+     300,
+     [
+      28,
+      26,
+      57
+     ]
+    ],
+    [
+     720,
+     300,
+     [
+      114,
+      119,
+      160
+     ]
+    ],
+    [
+     1200,
+     300,
+     [
+      143,
+      151,
+      196
+     ]
+    ],
+    [
+     200,
+     500,
+     [
+      15,
+      9,
+      32
+     ]
+    ],
+    [
+     720,
+     500,
+     [
+      189,
+      187,
+      195
+     ]
+    ],
+    [
+     1200,
+     500,
+     [
+      63,
+      58,
+      80
+     ]
+    ],
+    [
+     720,
+     700,
+     [
+      47,
+      36,
+      53
+     ]
+    ]
+   ],
+   "method": "1x1 page.screenshot({clip}) decoded with node:zlib inflateSync; natural render, no injection, all network aborted"
+  }
+ },
+ "sites": {
+  "linear.app": {
+   "runs": {
+    "preLane": "2026-09-04T21-58-43-098Z",
+    "flagOff": "2026-09-04T22-18-25-593Z",
+    "widthOnlyNoCanvas": "2026-09-04T22-54-40-705Z",
+    "final": "2026-09-04T22-58-09-200Z"
+   },
+   "stylesheetSha256": {
+    "preLane": "84177a22d896f8056208bd4e5e24b95c73f86f0ea833c17eaa4bb72b37c94773",
+    "flagOff": "84177a22d896f8056208bd4e5e24b95c73f86f0ea833c17eaa4bb72b37c94773",
+    "widthOnlyNoCanvas": "4768c06d21f0f6d57d5bfd891ec5da691795f06e3a2e20488a07dde924fdc215",
+    "final": "0cc5dc767373462d786ec96eb3427ebe9bbf8ff2899954e0dff1637def4a1fa2"
+   },
+   "flagOffByteIdenticalToPreLane": true,
+   "canvasChangedStylesheet": true,
+   "chainAnalysisBefore": {
+    "residualNodes": 2101,
+    "chainRoots": 301,
+    "descendantResidualsUnderRoots": 1800
+   },
+   "chainRootsClosed": {
+    "roots": 21,
+    "ofRoots": 301,
+    "descendantResiduals": 322,
+    "ofDescendantResiduals": 1800
+   },
+   "rulesEmitted": {
+    "trackedFillWidth": 40,
+    "viewportBleedWidth": 8,
+    "damageClampedWidth": 111,
+    "inlineSizeOutcomesSuperseded": 4
+   },
+   "guardRefusals": {
+    "before": 453,
+    "after": 373
+   },
+   "noBranchMatched": {
+    "before": 3654,
+    "after": 3579
+   },
+   "truthCheck": {
+    "rejectedByTruthCheck": 0,
+    "acceptedRegressed": 0
+   },
+   "refusalHistograms": {
+    "trackedFillRefusalsByReason": {
+     "auto-does-not-stretch": 3551,
+     "gap-run-unwitnessed": 18,
+     "negative-gap": 10,
+     "width-constant": 488
+    },
+    "viewportBleedRefusalsByReason": {
+     "fewer-than-three-visible-widths": 12,
+     "not-in-flow": 216,
+     "not-viewport-wide": 657,
+     "width-constant": 3174
+    },
+    "damageClampRefusalsByReason": {
+     "containing-block-not-parent": 490,
+     "fewer-than-two-visible-widths": 44,
+     "no-material-damage": 91,
+     "source-overflows-parent": 32,
+     "source-width-constant": 3335
+    }
+   },
+   "twoDirectionalGeometry": {
+    "comparisons": 82579,
+    "width": {
+     "improved": 882,
+     "worsened": 7,
+     "sumErrBefore": 5714831,
+     "sumErrAfter": 5407503
+    },
+    "x": {
+     "improved": 249,
+     "worsened": 277,
+     "sumErrBefore": 8501127,
+     "sumErrAfter": 8508835
+    },
+    "worstRegressions": [
+     {
+      "viewportId": "desktop",
+      "pageId": "p000001",
+      "nodeId": "n002815",
+      "width": 1101,
+      "sourceW": 549.5,
+      "off": 549.5,
+      "on": 481,
+      "delta": 68.5
+     },
+     {
+      "viewportId": "desktop",
+      "pageId": "p000002",
+      "nodeId": "n000074",
+      "width": 1025,
+      "sourceW": 572.89,
+      "off": 572.89,
+      "on": 552.61,
+      "delta": 20.3
+     },
+     {
+      "viewportId": "desktop",
+      "pageId": "p000002",
+      "nodeId": "n000093",
+      "width": 1025,
+      "sourceW": 328,
+      "off": 328,
+      "on": 316.39,
+      "delta": 11.6
+     },
+     {
+      "viewportId": "desktop",
+      "pageId": "p000002",
+      "nodeId": "n000087",
+      "width": 1025,
+      "sourceW": 142.22,
+      "off": 142.22,
+      "on": 138.25,
+      "delta": 4
+     },
+     {
+      "viewportId": "desktop",
+      "pageId": "p000002",
+      "nodeId": "n000081",
+      "width": 1025,
+      "sourceW": 120.41,
+      "off": 120.39,
+      "on": 116.89,
+      "delta": 3.5
+     },
+     {
+      "viewportId": "desktop",
+      "pageId": "p000002",
+      "nodeId": "n000078",
+      "width": 1025,
+      "sourceW": 75.09,
+      "off": 75.09,
+      "on": 72.52,
+      "delta": 2.6
+     }
+    ]
+   },
+   "canvas": {
+    "source": "root",
+    "pagesWithCanvas": 4,
+    "canvasEntries": 8,
+    "refusalsByReason": {},
+    "docRootTokensRehomed": 8,
+    "canvasRulesEmitted": 1,
+    "declaration": "background-color:rgb(8, 9, 10)"
+   }
+  },
+  "hobbang.net": {
+   "runs": {
+    "preLane": "2026-09-04T21-59-13-014Z",
+    "flagOff": "2026-09-04T22-19-00-628Z",
+    "widthOnlyNoCanvas": "2026-09-04T22-55-13-089Z",
+    "final": "2026-09-04T22-58-42-201Z"
+   },
+   "stylesheetSha256": {
+    "preLane": "ef2361630a3edd4131c5aed6a55e6b7e1342f00d250d94a862df8275ef1f45fa",
+    "flagOff": "ef2361630a3edd4131c5aed6a55e6b7e1342f00d250d94a862df8275ef1f45fa",
+    "widthOnlyNoCanvas": "d0e8e49a98cc22d5bb7b01e1b756566cc2d3fccf60776632db57b3a69a8813d2",
+    "final": "cb01ba54d9d635e196d6ed7ba5eab67d9872687380135669d2cf4362eba9bc10"
+   },
+   "flagOffByteIdenticalToPreLane": true,
+   "canvasChangedStylesheet": true,
+   "chainAnalysisBefore": {
+    "residualNodes": 2304,
+    "chainRoots": 487,
+    "descendantResidualsUnderRoots": 1817
+   },
+   "chainRootsClosed": {
+    "roots": 84,
+    "ofRoots": 487,
+    "descendantResiduals": 678,
+    "ofDescendantResiduals": 1817
+   },
+   "rulesEmitted": {
+    "trackedFillWidth": 84,
+    "viewportBleedWidth": 0,
+    "damageClampedWidth": 0,
+    "inlineSizeOutcomesSuperseded": 0
+   },
+   "guardRefusals": {
+    "before": 174,
+    "after": 174
+   },
+   "noBranchMatched": {
+    "before": 885,
+    "after": 801
+   },
+   "truthCheck": {
+    "rejectedByTruthCheck": 0,
+    "acceptedRegressed": 0
+   },
+   "refusalHistograms": {
+    "trackedFillRefusalsByReason": {
+     "auto-does-not-stretch": 668,
+     "gap-run-unwitnessed": 74,
+     "width-constant": 233
+    },
+    "viewportBleedRefusalsByReason": {
+     "not-in-flow": 12,
+     "not-viewport-wide": 418,
+     "width-constant": 545
+    },
+    "damageClampRefusalsByReason": {
+     "containing-block-not-parent": 343,
+     "no-material-damage": 147,
+     "source-overflows-parent": 10,
+     "source-width-constant": 475
+    }
+   },
+   "twoDirectionalGeometry": {
+    "comparisons": 34466,
+    "width": {
+     "improved": 922,
+     "worsened": 30,
+     "sumErrBefore": 2293677,
+     "sumErrAfter": 2001045
+    },
+    "x": {
+     "improved": 175,
+     "worsened": 25,
+     "sumErrBefore": 1673490,
+     "sumErrAfter": 1633993
+    },
+    "worstRegressions": [
+     {
+      "viewportId": "mobile",
+      "pageId": "p000001",
+      "nodeId": "n001171",
+      "width": 639,
+      "sourceW": 106.97,
+      "off": 87,
+      "on": 147.84,
+      "delta": 20.9
+     },
+     {
+      "viewportId": "mobile",
+      "pageId": "p000001",
+      "nodeId": "n001182",
+      "width": 639,
+      "sourceW": 106.97,
+      "off": 87,
+      "on": 147.84,
+      "delta": 20.9
+     },
+     {
+      "viewportId": "mobile",
+      "pageId": "p000001",
+      "nodeId": "n001190",
+      "width": 639,
+      "sourceW": 106.97,
+      "off": 87,
+      "on": 147.84,
+      "delta": 20.9
+     },
+     {
+      "viewportId": "mobile",
+      "pageId": "p000001",
+      "nodeId": "n001198",
+      "width": 639,
+      "sourceW": 106.97,
+      "off": 87,
+      "on": 147.84,
+      "delta": 20.9
+     },
+     {
+      "viewportId": "mobile",
+      "pageId": "p000001",
+      "nodeId": "n001206",
+      "width": 639,
+      "sourceW": 106.97,
+      "off": 87,
+      "on": 147.84,
+      "delta": 20.9
+     },
+     {
+      "viewportId": "mobile",
+      "pageId": "p000001",
+      "nodeId": "n001171",
+      "width": 640,
+      "sourceW": 107.16,
+      "off": 87,
+      "on": 148.09,
+      "delta": 20.8
+     }
+    ]
+   },
+   "canvas": {
+    "source": "body",
+    "pagesWithCanvas": 1,
+    "canvasEntries": 2,
+    "refusalsByReason": {
+     "no-background": 9
+    },
+    "docRootTokensRehomed": 2,
+    "canvasRulesEmitted": 1,
+    "declaration": "background-color:rgb(246, 247, 249)"
+   }
+  },
+  "gs.severance.healthcare": {
+   "runs": {
+    "preLane": "2026-09-04T22-00-22-073Z",
+    "flagOff": "2026-09-04T22-20-16-979Z",
+    "widthOnlyNoCanvas": "2026-09-04T22-56-21-474Z",
+    "final": "2026-09-04T22-59-51-124Z"
+   },
+   "stylesheetSha256": {
+    "preLane": "bb3b152d076728d957ad6db6acc4c9fd68ad72f26ec3ceb6f09a5fb74ea8e247",
+    "flagOff": "bb3b152d076728d957ad6db6acc4c9fd68ad72f26ec3ceb6f09a5fb74ea8e247",
+    "widthOnlyNoCanvas": "0db4053d01b895bbb9ff38eeb56672eadd5381fe39f2eb8345e5fdad0d1978b0",
+    "final": "1c1882e7d3cdc62676f11d27b1219186ebe0f16527809f103d769c825c9d2d3d"
+   },
+   "flagOffByteIdenticalToPreLane": true,
+   "canvasChangedStylesheet": true,
+   "chainAnalysisBefore": {
+    "residualNodes": 217,
+    "chainRoots": 15,
+    "descendantResidualsUnderRoots": 202
+   },
+   "chainRootsClosed": {
+    "roots": 3,
+    "ofRoots": 15,
+    "descendantResiduals": 123,
+    "ofDescendantResiduals": 202
+   },
+   "rulesEmitted": {
+    "trackedFillWidth": 2,
+    "viewportBleedWidth": 1,
+    "damageClampedWidth": 1,
+    "inlineSizeOutcomesSuperseded": 1
+   },
+   "guardRefusals": {
+    "before": 0,
+    "after": 0
+   },
+   "noBranchMatched": {
+    "before": 689,
+    "after": 686
+   },
+   "truthCheck": {
+    "rejectedByTruthCheck": 0,
+    "acceptedRegressed": 0
+   },
+   "refusalHistograms": {
+    "trackedFillRefusalsByReason": {
+     "auto-does-not-stretch": 242,
+     "fewer-than-three-visible-widths": 10,
+     "gap-run-unwitnessed": 27,
+     "negative-gap": 5,
+     "width-constant": 403
+    },
+    "viewportBleedRefusalsByReason": {
+     "fewer-than-three-visible-widths": 10,
+     "not-in-flow": 61,
+     "not-viewport-wide": 52,
+     "width-constant": 563
+    },
+    "damageClampRefusalsByReason": {
+     "containing-block-not-parent": 1,
+     "fewer-than-two-visible-widths": 12,
+     "no-material-damage": 45,
+     "source-overflows-parent": 7,
+     "source-width-constant": 622
+    }
+   },
+   "twoDirectionalGeometry": {
+    "comparisons": 10408,
+    "width": {
+     "improved": 20,
+     "worsened": 0,
+     "sumErrBefore": 386167,
+     "sumErrAfter": 380305
+    },
+    "x": {
+     "improved": 0,
+     "worsened": 0,
+     "sumErrBefore": 11315818,
+     "sumErrAfter": 11315818
+    },
+    "worstRegressions": []
+   },
+   "canvas": {
+    "source": "body",
+    "pagesWithCanvas": 2,
+    "canvasEntries": 4,
+    "refusalsByReason": {},
+    "docRootTokensRehomed": 4,
+    "canvasRulesEmitted": 1,
+    "declaration": "background-color:rgb(255, 255, 255)"
+   }
+  },
+  "seoultone.kr": {
+   "runs": {
+    "preLane": "2026-09-04T22-00-44-055Z",
+    "flagOff": "2026-09-04T22-20-34-819Z",
+    "widthOnlyNoCanvas": "2026-09-04T22-56-34-653Z",
+    "final": "2026-09-04T23-00-04-830Z"
+   },
+   "stylesheetSha256": {
+    "preLane": "8a1b3905f64647b3863281f198ea2ee109a2123c2573cf1277d4235039708156",
+    "flagOff": "8a1b3905f64647b3863281f198ea2ee109a2123c2573cf1277d4235039708156",
+    "widthOnlyNoCanvas": "36f0ea8bd0594f78969fd4b63ae2261400466987fe6e49eef1b29544792df81a",
+    "final": "36f0ea8bd0594f78969fd4b63ae2261400466987fe6e49eef1b29544792df81a"
+   },
+   "flagOffByteIdenticalToPreLane": true,
+   "canvasChangedStylesheet": false,
+   "chainAnalysisBefore": {
+    "residualNodes": 2305,
+    "chainRoots": 304,
+    "descendantResidualsUnderRoots": 2001
+   },
+   "chainRootsClosed": {
+    "roots": 56,
+    "ofRoots": 304,
+    "descendantResiduals": 517,
+    "ofDescendantResiduals": 2001
+   },
+   "rulesEmitted": {
+    "trackedFillWidth": 77,
+    "viewportBleedWidth": 1,
+    "damageClampedWidth": 38,
+    "inlineSizeOutcomesSuperseded": 5
+   },
+   "guardRefusals": {
+    "before": 90,
+    "after": 11
+   },
+   "noBranchMatched": {
+    "before": 1533,
+    "after": 1501
+   },
+   "truthCheck": {
+    "rejectedByTruthCheck": 0,
+    "acceptedRegressed": 0
+   },
+   "refusalHistograms": {
+    "trackedFillRefusalsByReason": {
+     "auto-does-not-stretch": 925,
+     "gap-run-unwitnessed": 350,
+     "width-constant": 271
+    },
+    "viewportBleedRefusalsByReason": {
+     "not-in-flow": 333,
+     "not-viewport-wide": 586,
+     "width-constant": 626
+    },
+    "damageClampRefusalsByReason": {
+     "containing-block-not-parent": 31,
+     "fewer-than-two-visible-widths": 49,
+     "frozen-width-not-observed": 30,
+     "no-material-damage": 630,
+     "source-overflows-parent": 89,
+     "source-width-constant": 711
+    }
+   },
+   "twoDirectionalGeometry": {
+    "comparisons": 63137,
+    "width": {
+     "improved": 986,
+     "worsened": 0,
+     "sumErrBefore": 6021241,
+     "sumErrAfter": 5783812
+    },
+    "x": {
+     "improved": 2918,
+     "worsened": 424,
+     "sumErrBefore": 13844899,
+     "sumErrAfter": 13256267
+    },
+    "worstRegressions": []
+   },
+   "canvas": {
+    "source": null,
+    "pagesWithCanvas": 0,
+    "canvasEntries": 0,
+    "refusalsByReason": {
+     "no-background": 13
+    },
+    "docRootTokensRehomed": 0,
+    "canvasRulesEmitted": 0,
+    "declaration": null
+   }
+  }
+ },
+ "totals": {
+  "comparisons": 190590,
+  "widthImproved": 2810,
+  "widthWorsened": 37,
+  "sumErrWBefore": 14415916,
+  "sumErrWAfter": 13572665,
+  "xImproved": 3342,
+  "xWorsened": 726
+ },
+ "acceptanceTargets": {
+  "linear./@700": {
+   "met": false,
+   "scrollWidth": "862 -> 862",
+   "maxRight": "1839 -> 1839",
+   "scrollHeight": "9960 -> 9960",
+   "why": "700px is not a probe width; the SOURCE's own desktop DOM has maxRight 1661 at 641 and 1840 at 1440; all 8 outermost overflow roots are refused for named reasons, 4 of them because the source's own box overflows its parent"
+  },
+  "linear./@1024": {
+   "met": false,
+   "scrollWidth": "1024 -> 1024",
+   "maxRight": "1839 -> 1839"
+  },
+  "linear./@1100": {
+   "met": false,
+   "scrollWidth": "1100 -> 1100",
+   "maxRight": "1839 -> 1839"
+  },
+  "linear./pricing@1100": {
+   "met": false,
+   "nodesWiderThanViewport": "76 -> 74",
+   "maxRight": "1438 -> 1390",
+   "remainingRoots": [
+    "n000353",
+    "n001421",
+    "n000324"
+   ],
+   "why": "all three are grid items refused containing-block-not-parent \u2014 the remaining class is GRID TRACK recovery (28.6 A5), not inline size"
+  },
+  "protect.linear./pricing@390": {
+   "held": true,
+   "pageOutcomes": "identical",
+   "worsenedRows": 0
+  },
+  "protect.linear./pricing@1440": {
+   "held": true,
+   "pageOutcomes": "identical",
+   "worsenedRows": 0
+  },
+  "protect.hobbang.body": {
+   "held": true,
+   "note": "922 improved / 30 worsened rows, sum width error -12.8%; the 30 are one subtree under n001156"
+  }
+ },
+ "remainingOverflowRootsLinearHome700": [
+  {
+   "nodeId": "n001526",
+   "tag": "div",
+   "frozen": "1636px",
+   "refusals": {
+    "trackedFill": "auto-does-not-stretch",
+    "viewportBleed": "not-in-flow",
+    "damageClamp": "source-width-constant"
+   }
+  },
+  {
+   "nodeId": "n000678",
+   "tag": "div",
+   "frozen": "1478.39px",
+   "descendants": 339,
+   "refusals": {
+    "trackedFill": "negative-gap",
+    "viewportBleed": "not-viewport-wide",
+    "damageClamp": "source-overflows-parent"
+   }
+  },
+  {
+   "nodeId": "n001173",
+   "tag": "div",
+   "frozen": "1392px",
+   "refusals": {
+    "trackedFill": "negative-gap",
+    "viewportBleed": "not-viewport-wide",
+    "damageClamp": "source-overflows-parent"
+   }
+  },
+  {
+   "nodeId": "n001864",
+   "tag": "div",
+   "frozen": "1392px",
+   "refusals": {
+    "trackedFill": "negative-gap",
+    "viewportBleed": "not-viewport-wide",
+    "damageClamp": "source-overflows-parent"
+   }
+  },
+  {
+   "nodeId": "n000119",
+   "tag": "div",
+   "frozen": "1320px",
+   "refusals": {
+    "trackedFill": "width-constant",
+    "viewportBleed": "width-constant",
+    "damageClamp": "source-width-constant"
+   },
+   "note": "the SOURCE is 1320px at 928 too \u2014 authored, not frozen"
+  },
+  {
+   "nodeId": "n002713",
+   "tag": "div",
+   "frozen": "1280px",
+   "refusals": {
+    "trackedFill": "auto-does-not-stretch",
+    "viewportBleed": "not-in-flow",
+    "damageClamp": "containing-block-not-parent"
+   }
+  },
+  {
+   "nodeId": "n000575",
+   "tag": "h2",
+   "frozen": "1250px",
+   "refusals": {
+    "trackedFill": "gap-run-unwitnessed",
+    "viewportBleed": "not-viewport-wide",
+    "damageClamp": "source-overflows-parent"
+   }
+  },
+  {
+   "nodeId": "n000069",
+   "tag": "span",
+   "frozen": "auto",
+   "refusals": {
+    "trackedFill": "auto-does-not-stretch",
+    "viewportBleed": "not-in-flow",
+    "damageClamp": "no-frozen-width"
+   }
+  }
+ ],
+ "sourceOwnOverflowLinearHome": {
+  "641": 1661,
+  "769": 1661,
+  "928": 1661,
+  "1024": 1661,
+  "1101": 1665,
+  "1280": 1690,
+  "1440": 1840,
+  "1920": 2080,
+  "note": "max right edge over all visible SOURCE nodes, from the probe itself \u2014 the clone's 1839 is the source's own 1840"
+ },
+ "tests": {
+  "smoke-layout-safety": {
+   "before": 325,
+   "after": 394,
+   "added": 69,
+   "status": "PASS"
+  },
+  "smoke-reconstruction": {
+   "checks": 227,
+   "status": "PASS"
+  },
+  "typecheck": "exit 0",
+  "preFixFailureCount": {
+   "failing": 30,
+   "ofNew": 69,
+   "width": 22,
+   "canvas": 8,
+   "method": "hashed layout-inference.ts and style-generator.ts, reverted the predicates in place with an early refusing return, re-ran the suite, restored, verified with shasum -a 256 -c (all OK)"
+  }
+ },
+ "abDiscipline": {
+  "flagsUsed": [
+   "recoverTrackedFillWidth",
+   "recoverViewportBleedWidth",
+   "applyDamageClamp"
+  ],
+  "flagsRemovedOnAdoption": true,
+  "byteIdentityProven": true,
+  "containingBlockGuardUnchanged": true
+ },
+ "risks": [
+  "the damage clamp is the only mechanism that can make a box NARROWER than the frozen pixel; where an ancestor is still wrong in the clone, the cap inherits that error (linear n002815, +68.5px at 1101)",
+  "tracked-fill hands sizing back to the browser, so a descendant that was accidentally right under a frozen ancestor can become wrong (hobbang, 30 rows under n001156)",
+  "both are bounded by verifyLayoutRules(): 0 rejected by truth check and 0 accepted-regressed on every site"
+ ],
+ "nextLane": [
+  "GRID TRACK recovery (recoverGridTracks, 28.6 A5) is the dominant remaining class on linear /pricing at 1100 \u2014 all three remaining outermost roots are grid items in a frozen track",
+  "the tree-switch / breakpoint question owns linear / at 700: the site breakpoint was inferred as 641, so the desktop tree is served at widths where the source's own desktop DOM overflows by 700-1000px",
+  "nodes dropped pre-stage as hidden-at-truth-width (linear n002772, n000582) never reach any inline-size branch and so cannot be recovered by this lane"
+ ],
+ "schedulingNote": "the observer lane is regenerating all four site-specs (float/clear/text-indent whitelist + a scroll fix) after this lane; the A/B comparisons here stay valid as controlled comparisons because both halves were built from the same site-spec, but the absolute numbers are not the final outcome"
+}

@@ -13,6 +13,7 @@ import type {
   ProductionResolution,
   Requirement,
   RequirementsFile,
+  RequirementsProvenance,
 } from "./types.js";
 import {
   RELEASE_REQUIREMENTS_SCHEMA_NAME,
@@ -160,6 +161,18 @@ export function mergeRequirements(
   applied: AppliedResolution[],
   freshConsumingStages: ReadonlySet<string> = new Set(),
 ): Requirement[] {
+  // A duplicate id inside ONE collection is not a merge — it is a silent drop:
+  // the Map below would keep the last writer and the operator would never see
+  // the other gap, while the collection's own array length says otherwise
+  // (Task 28 §1B, the drift class this guard closes). Loud, named, at the
+  // exact point the information would be lost.
+  const collisions = duplicateRequirementIds(collected);
+  if (collisions.length > 0) {
+    throw new Error(
+      `release: requirement collection emitted duplicate requirement id(s): ${collisions.join(", ")} — ` +
+        "merging them would silently discard one gap per collision",
+    );
+  }
   const merged = new Map<string, Requirement>();
   for (const requirement of collected) merged.set(requirement.requirementId, { ...requirement });
 
@@ -219,6 +232,32 @@ export function mergeRequirements(
   });
 }
 
+/**
+ * Requirement kinds whose ONLY resolution is applied BY the production stage
+ * itself (Task 28 Phase 2).
+ *
+ * `source-brand-asset` is the whole population: an authored REPLACE / REMOVE /
+ * PRESERVE decision is applied by the bake-time resolver during the production
+ * compile, and the requirement clears from the REBUILT OUTPUT's own census. If
+ * such a requirement also BLOCKED the production stage from running, it could
+ * never clear — the operator would need a build to prove it, and the blocker
+ * would forbid the build. That is precisely the unclearable shape Task 27
+ * refused to ship, so it is excluded from the production-stage gate ONLY.
+ *
+ * It is NOT excluded from `releaseBlockers`: the release state stays
+ * PRODUCTION_INPUTS_REQUIRED and the spec's indexability gate still carries it
+ * until an output proves it gone. Compiling a candidate is how it is measured;
+ * publishing it is what stays gated.
+ */
+export const PRODUCTION_STAGE_RESOLVED_KINDS = ["source-brand-asset"] as const;
+
+/** Blockers that gate the production STAGE from compiling at all. */
+export function blockersGatingProduction(blockers: Requirement[]): Requirement[] {
+  return blockers.filter(
+    (requirement) => !(PRODUCTION_STAGE_RESOLVED_KINDS as readonly string[]).includes(requirement.kind),
+  );
+}
+
 /** Unresolved release-blocking requirements. `accepted-limitation` still
  *  blocks indexable production (spec §7: blockers must be RESOLVED). */
 export function releaseBlockers(requirements: Requirement[]): Requirement[] {
@@ -230,10 +269,48 @@ export function releaseBlockers(requirements: Requirement[]): Requirement[] {
   );
 }
 
+/**
+ * Requirement ids that appear more than once in a collection (Task 28 §1B).
+ *
+ * Ids are the identity of a requirement everywhere else in the system — the
+ * checklist, `matchResolutionToRequirements`, `run.blockers`, and every
+ * id-keyed merge. A collection carrying the same id twice therefore has an
+ * ARRAY LENGTH that no id-keyed reader can reproduce, and the two views drift
+ * silently. Reported as a list so the offender is named, never a bare count.
+ */
+export function duplicateRequirementIds(requirements: Requirement[]): string[] {
+  const seen = new Map<string, number>();
+  for (const requirement of requirements) {
+    seen.set(requirement.requirementId, (seen.get(requirement.requirementId) ?? 0) + 1);
+  }
+  return [...seen.entries()]
+    .filter(([, occurrences]) => occurrences > 1)
+    .map(([requirementId]) => requirementId)
+    .sort();
+}
+
+/**
+ * The persisted requirements artifact.
+ *
+ * `counts.total` is DERIVED FROM THE UNIQUE ID SET, not from the array length,
+ * and a duplicate id is refused outright — so the number this file reports is
+ * definitionally the number of requirements an id-keyed reader finds in it.
+ * `collectedFrom` records WHICH release run and WHICH stage artifacts the
+ * collection came from, so two honestly-different totals can be told apart
+ * from one total that is wrong.
+ */
 export function buildRequirementsFile(
   projectId: string,
   requirements: Requirement[],
+  collectedFrom?: RequirementsProvenance,
 ): RequirementsFile {
+  const duplicates = duplicateRequirementIds(requirements);
+  if (duplicates.length > 0) {
+    throw new Error(
+      `release: requirements collection produced duplicate requirement id(s): ${duplicates.join(", ")} — ` +
+        "the array length and the id set disagree, so any count written from it would be unreproducible",
+    );
+  }
   const count = (predicate: (requirement: Requirement) => boolean): number =>
     requirements.filter(predicate).length;
   return {
@@ -241,8 +318,9 @@ export function buildRequirementsFile(
     schemaName: RELEASE_REQUIREMENTS_SCHEMA_NAME,
     projectId,
     generatedAt: new Date().toISOString(),
+    ...(collectedFrom !== undefined ? { collectedFrom } : {}),
     counts: {
-      total: requirements.length,
+      total: new Set(requirements.map((requirement) => requirement.requirementId)).size,
       unresolved: count((r) => r.status === "unresolved"),
       resolved: count((r) => r.status === "resolved"),
       acceptedLimitation: count((r) => r.status === "accepted-limitation"),

@@ -84,7 +84,7 @@ function collectOccurrences(sheet: ParsedStylesheet, census: UsageCensus): Occur
     const staticElements =
       rule.kind === "style-token"
         ? (usage?.staticElements ?? 0)
-        : rule.kind === "doc-root"
+        : rule.kind === "doc-root" || rule.kind === "document-canvas"
           ? 1
           : 0;
     const dynamicElements = rule.kind === "style-token" ? (usage?.dynamicElements ?? 0) : 0;
@@ -282,7 +282,13 @@ function assignSemanticTokens(
       // rules (open-state grafts, pseudo bars) have no element count and a
       // revealed-state graft repeats per node, which would inflate a menu
       // panel color above real page surfaces. They still BIND by value.
-      if (occ.rule.kind === "doc-root") bump(docBackground, occ.value, 1);
+      // Task 28.75 §CANVAS — the canvas paint lives on the `html` rule once the
+      // generator promotes it; before that promotion (and whenever it is
+      // refused) it is still the doc-root wrapper's background. Both are the
+      // document background, and both must rank as the canvas.
+      if (occ.rule.kind === "doc-root" || occ.rule.kind === "document-canvas") {
+        bump(docBackground, occ.value, 1);
+      }
       else if (occ.rule.kind === "style-token") bump(backgroundWeight, occ.value, elements);
     } else if (occ.paintKind === "color") {
       bump(borderWeight, occ.colorComponent ?? occ.value, Math.max(elements, 1));
@@ -581,7 +587,13 @@ function bindingFor(context: AssignmentContext, occ: Occurrence): string | null 
     // relationships): document/full-bleed paint stays canvas; ordinary
     // element surfaces are surface.primary; shadow-carrying rules are
     // surface.elevated. A curated theme may keep them equal — or not.
-    if (occ.rule.kind === "doc-root" || occ.rule.pseudo) return "color.canvas";
+    if (
+      occ.rule.kind === "doc-root" ||
+      occ.rule.kind === "document-canvas" ||
+      occ.rule.pseudo
+    ) {
+      return "color.canvas";
+    }
     const shadow = occ.rule.declarations["box-shadow"];
     if (shadow !== undefined && shadow !== "none") return "color.surface.elevated";
     return "color.surface.primary";

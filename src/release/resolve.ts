@@ -10,6 +10,7 @@ import path from "node:path";
 
 import { isSafeThemeValue, isThemeToken } from "../theme/index.js";
 import { collectRequirements } from "./collect.js";
+import { enablementCollectInput, resolveEnablementForProject } from "./enablement.js";
 import { deriveReleaseState } from "./gate.js";
 import { applyBlocking, refreshStageStatuses } from "./freshness.js";
 import { invalidatedStages } from "./graph.js";
@@ -32,6 +33,7 @@ import {
   saveReleaseRun,
   saveRequirementsFile,
 } from "./store.js";
+import { appendAuthoredRevisionIfChanged } from "./revisions.js";
 import { ProductionResolutionSchema } from "./types.js";
 import type { ReleaseStage, ReleaseProject, ReleaseRun } from "./types.js";
 import { productionBuildDir } from "../production/index.js";
@@ -47,6 +49,12 @@ export interface ResolveResult {
   matched: Array<{ requirementId: string; field: string }>;
   unmatchedFields: string[];
   invalidated: ReleaseStage[];
+  /**
+   * The requirement total this resolve WROTE into requirements.json — read
+   * back off the saved file, never computed a second way (Task 28 §1B).
+   * `release:resolve` rewrites that file, so it must say what it now says.
+   */
+  requirementsCount: number;
 }
 
 export async function resolveRelease(
@@ -187,6 +195,18 @@ export async function resolveRelease(
         "replaced by the next release:build",
     );
   }
+  const packAssetCount = Object.keys(resolution.assets ?? {}).length;
+  if (packAssetCount > 0) {
+    // Same doctrine, one field over (Task 28 Phase 2): the pack is the audit
+    // record of HOW the replacement arrived; `authored.assets` is where it now
+    // lives and what `assetsStageRunner` applies.
+    warnings.push(
+      `asset write doctrine: ${packAssetCount} asset replacement(s) folded into the AUTHORITATIVE ` +
+        `authored.assets (project total ${Object.keys(project.authored.assets ?? {}).length}). ` +
+        "The applied pack stays the immutable record of how each file arrived; the derived " +
+        "asset-materialization run is a MATERIALIZED output of the authored map",
+    );
+  }
   if (Object.keys(resolution.theme?.tokens ?? {}).length > 0) {
     log(
       `[release:resolve] theme: ${Object.keys(resolution.theme!.tokens!).length} contract token(s) ` +
@@ -196,6 +216,9 @@ export async function resolveRelease(
 
   // Route readiness + facts for the state derivation (read-only collect).
   const production = project.stageStatus.production?.artifact ?? null;
+  const collectEnablement = enablementCollectInput(
+    await resolveEnablementForProject(project, project.stageStatus.template.artifact!.path),
+  );
   const collected = await collectRequirements({
     host: project.source.host,
     templateRunDir: project.stageStatus.template.artifact!.path,
@@ -205,6 +228,7 @@ export async function resolveRelease(
     materializationRunDir: project.stageStatus.assets.artifact!.path,
     productionSpecFile: production ? path.join(production.path, "production-spec.json") : null,
     productionBuildDir: production ? productionBuildDir(project.source.host, production.id) : null,
+    ...(collectEnablement !== undefined ? { enablement: collectEnablement } : {}),
   });
   project.releaseState = deriveReleaseState({
     stageStatus: project.stageStatus,
@@ -213,6 +237,19 @@ export async function resolveRelease(
   });
   project.updatedAt = new Date().toISOString();
   project.runs.push({ runId, kind: "resolve" });
+
+  // ONE requirements file object: saved, recorded on the run, and reported.
+  // The stage artifacts named here are the ones the read-only collect above
+  // used, which is what makes this total comparable to another run's.
+  const nextRequirementsFile = buildRequirementsFile(project.projectId, requirements, {
+    releaseRunId: runId,
+    releaseRunKind: "resolve",
+    stageArtifacts: Object.fromEntries(
+      Object.entries(project.stageStatus)
+        .filter(([, status]) => status.artifact !== null)
+        .map(([stage, status]) => [stage, status.artifact!.path]),
+    ),
+  });
 
   const run: ReleaseRun = {
     schemaVersion: 1,
@@ -237,12 +274,38 @@ export async function resolveRelease(
     ],
     warnings,
     blockers: blockers.map((requirement) => requirement.requirementId),
+    requirementsTotal: nextRequirementsFile.counts.total,
     finalVerdict: project.releaseState,
     stageExecutions: [],
     failure: project.failure,
   };
 
-  await saveRequirementsFile(projectDir, buildRequirementsFile(project.projectId, requirements));
+  // ---- 6. authored-state revision (Task 28 CR2) ----------------------------
+  // `release:resolve` is a TRANSACTION BOUNDARY: one operator-authored pack in,
+  // one authored state out. The record is written BEFORE the project document
+  // (revisions.ts `commitAuthoredState` states the same ordering rule: a record
+  // with no matching project state is recoverable, a project state with no
+  // record is silently lost history). `…IfChanged` keeps it idempotent — a pack
+  // that moves no authored value appends nothing.
+  try {
+    const revision = await appendAuthoredRevisionIfChanged(projectDir, {
+      siteId: project.siteId,
+      authored: project.authored,
+      origin: "resolve",
+    });
+    if (revision !== null) {
+      log(`[release:resolve] authored revision ${revision.revisionId}: ${revision.summary}`);
+    }
+  } catch (err) {
+    // History is additive: a chain problem must not fail a resolution that
+    // otherwise succeeded, but it must be visible on the operator surface.
+    warnings.push(
+      `authored revision NOT recorded for ${resolutionId}: ${(err as Error).message} — ` +
+        "the authored state below is still authoritative; the undo history is incomplete",
+    );
+  }
+
+  await saveRequirementsFile(projectDir, nextRequirementsFile);
   await saveChecklist(
     projectDir,
     renderOperatorChecklist(project, requirements, collected.routeReadiness, warnings),
@@ -260,5 +323,6 @@ export async function resolveRelease(
     matched: [...matches, ...acknowledgements],
     unmatchedFields,
     invalidated,
+    requirementsCount: nextRequirementsFile.counts.total,
   };
 }

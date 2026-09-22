@@ -122,6 +122,18 @@ const ROUTING: Readonly<
     recommendation: "requires-exact-observation",
     upstream: "selection",
   },
+  /*
+   * Task 28.6 C5. The owner is `qa`, not `reconstruction`: nothing about the
+   * clone is claimed by this finding. What it says is that this QA's own
+   * instrument stopped short of the bottom of the page, so the pixel numbers
+   * beside it describe less than the whole document.
+   * `unsupported-browser-region` is the existing recommendation for "the
+   * browser could not give us this"; there is no correction to propose.
+   */
+  "visual-coverage-truncated": {
+    recommendation: "unsupported-browser-region",
+    upstream: "qa",
+  },
   "runtime-error": { recommendation: "none", upstream: "reconstruction" },
   "environment-unstable": { recommendation: "none", upstream: "qa" },
   unclassified: { recommendation: "none", upstream: "none" },
@@ -153,6 +165,9 @@ const DEFAULT_ELIGIBILITY: Readonly<Record<QaClassification, AutoFixEligibility>
   "dynamic-target-content-unobserved": "not-eligible-no-correction-type",
   "unknown-behavior-gap": "not-eligible-unknown-behavior",
   "family-representation-gap": "not-eligible-family-representation",
+  // The measurement, not the clone, is what fell short — the same reason
+  // `environment-unstable` uses.
+  "visual-coverage-truncated": "not-eligible-unstable-measurement",
   "runtime-error": "not-eligible-no-correction-type",
   "environment-unstable": "not-eligible-unstable-measurement",
   unclassified: "not-eligible-no-correction-type",

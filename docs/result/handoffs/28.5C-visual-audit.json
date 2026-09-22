@@ -1,0 +1,170 @@
+{
+  "task": "28.5C",
+  "route": "/pricing",
+  "site": "linear.app",
+  "auditor": "fresh visual auditor, judged from PNGs only",
+  "auditedAt": "2026-09-01",
+  "method": "Every one of the 15 full-page PNGs was viewed. Comparisons were built as side-by-side composites (source | candidate) sliced into vertical bands at native resolution, plus native-resolution zooms of the nav bar, plan-card feature lists, customer-logo row, comparison-table header, closing CTA and footer. Byte-hashing showed 02==03 (390 current/best identical) and 05==06 (700 current/best identical); classifications below reflect that. Manifest.json was read only to identify which file is which; all classifications here are independent and disagree with it in places.",
+  "summary": "The reconstruction is faithful at 390 and at 1440 (current). It fails in the middle of the range. At 700 the whole page is frozen in the 390 mobile layout inside a 700 viewport, leaving a dead ~310px black band down the entire 7,714px page. At 1024 and 1100 the shipped build overflows horizontally: the nav is cut off and unusable, a whole plan tier is offscreen, footer columns are truncated, and at 1100 the comparison table loses its header row and three of its four plan columns. The BEST experiment fixes the structural failures at 1024 and 1100 - full nav, all four plan cards on-screen, footer columns restored, comparison-table headings and two extra plan columns restored at 1100 - but it introduces two new visible defects everywhere it acts: the closing CTA headline is forced onto one line and clipped offscreen at 1024/1100, and the customer-logo row collapses into a single jammed cluster with logos physically overlapping at 1024/1100/1440. At 1440, where the shipped build was already correct, BEST is a straight regression.",
+  "currentBlockerWidths": [1024, 1100],
+  "bestBlockerWidths": [],
+  "bestVsCurrentVerdict": "Net win at the broken widths, still not clean. Re-audited against the corrected AC5 best images: no width is a BLOCKER any more. AC5 removes both structural failures the previous audit called out - the closing CTA headline wraps to two centred lines and is fully on-screen at 1024/1100/1440, and at 1100 the comparison table renders the complete Features/Free/Basic/Business/Enterprise header with all four value columns on-screen. 1024 goes BLOCKER -> MAJOR and 1100 goes BLOCKER -> MAJOR; 390 and 700 are byte-identical to the shipped build and are unchanged (390 PASS, 700 still the mobile-freeze MAJOR); 1440 is still a regression versus the shipped build (MAJOR) because the customer-logo row collapses there. The blocking defects are gone; what remains is a cluster of horizontal-distribution and vertical-spacing bugs that share one signature - flex justification/gap being lost. Named residuals: (a) the customer-logo row collapses to a zero-gap cluster with the salesforce mark physically overlapping Vercel and Figma at 1024/1100/1440; (b) the header collapses from logo-left/links-right to a centred cluster at 1024/1100/1440; (c) the footer Connect column is clipped mid-word at the right edge at 1100; (d) plan-card feature items and, at 1024, comparison-table value cells lose their row gap and collide when they wrap; (e) the 'Billed yearly' toggle renders as a 4px sliver instead of a pill at 1024/1100/1440. AC5 is adoptable at 1024/1100 on structural grounds and should not be shipped at 1440 in its current form.",
+  "bestReaudit": {
+    "variant": "AC5",
+    "reauditedBy": "fresh re-auditor",
+    "date": "2026-09-01",
+    "method": "Independent re-audit of the replaced best images only. All 15 PNGs were viewed; source-vs-best comparisons were built as side-by-side band composites at every width (proportional bands at 1024 where source is 6,990px and best 6,360px) plus native 1:1 crops of the nav bar, customer-logo row, plan cards, comparison-table header and value cells, closing CTA, and footer right edge. Byte hashes re-confirmed 02==03 at 390 and 05==06 at 700, so AC5 is provably inert at those widths. No classification was carried over from manifest.json or from the earlier audit; the three previously flagged defects were re-checked from the pixels.",
+    "flaggedDefectStatus": {
+      "ctaHeadline": "RESOLVED. At 1024, 1100 and 1440 the closing headline wraps to two centred lines, 'Built for the future.' / 'Available today.', fully on-screen with no clipping. The earlier reports of 'Built for the future. Availabl' (1024) and 'Built for the future. Available to' (1100) do not reproduce in AC5.",
+      "enterpriseColumn1100": "RESOLVED for the comparison table. At 1100 the table renders the full header row 'Features / Free / Basic / Business / Enterprise' and all four plan value columns, with the Enterprise values fully inside the 1100px frame. The other half of the original 1100 finding is NOT resolved: the footer 'Connect' column still overflows the right edge and is sliced mid-word ('Connec', 'Contac', 'Commu', 'X (Twit', 'YouTub'), roughly 25-40px of overflow.",
+      "logoRowJam": "REMAINS at 1024, 1100 and 1440. Verified at native 1:1 resolution: the seven customer logos collapse from an evenly distributed row spanning the content width into a single centred cluster with zero gaps, in which the salesforce cloud mark physically overlaps the end of 'Vercel' and the start of 'Figma' and the trailing wordmarks run together as 'CURSORcoinbaseramp'. Unchanged in character and severity from the previous audit."
+    },
+    "newDefectsNotPreviouslyFlagged": [
+      "Comparison-table value cells lose their row gap and collide when they wrap, at 1024 only: '250 / issues' runs into the '2 teams' row and 'Issues, projects, cycles, / initiatives' runs into 'Customer requests'. The shipped build renders these uncollided.",
+      "Header distribution collapses to a centred cluster at 1024 and 1100 as well as 1440 - the logo is no longer anchored to the left margin and the link group is no longer right-aligned. The previous audit noted this only at 1440 and only as 'shifted right and compressed'; it is systemic and shares its root cause with the logo-row collapse.",
+      "The 'Billed yearly' control renders as a thin ~4px blue sliver instead of a pill toggle at 1024, 1100 and 1440, in the Basic and Business cards. Source and shipped build both render the full toggle."
+    ],
+    "notes": [
+      "The top-level 'summary' field and the per-width 'improvement' fields were left verbatim as instructed; they describe the superseded pre-AC5 best variant and are stale with respect to the CTA-headline and 1100 Enterprise-column findings. 'bestVsCurrentVerdict', 'bestBlockerWidths' and every 'sourceVsBest' block reflect AC5.",
+      "All 'sourceVsCurrent' entries were preserved verbatim and were not re-audited.",
+      "The remaining AC5 defects share one signature - lost flex justification and lost row gaps - so the logo row, the header bar, the wrapped card/table rows and the collapsed toggle are plausibly one fix, not five."
+    ]
+  },
+  "widths": [
+    {
+      "width": 390,
+      "sourceVsCurrent": {
+        "classification": "PASS",
+        "findings": [
+          "Layout, stacking order, section rhythm and full-page height match the source almost exactly across all four plan cards, the single-plan comparison table, the closing CTA and the two-column footer.",
+          "Price strings render as '$10 per user/month' / '$16 per user/month' where the source shows 'US$10' with the '/month' suffix in a lighter grey - a content/typography difference, not layout.",
+          "Body and heading text render marginally heavier and slightly wider than the source (font-weight / fallback metric difference); no reflow results.",
+          "Customer-logo marquee is captured at a different animation offset (source shows OpenAI/Vercel/salesforce/Figma, clone shows Vercel/salesforce/Figma/CURSOR) - a timing artifact, not a defect.",
+          "The comparison-table plan selector renders a doubled/native chevron glyph instead of the source's single custom chevron."
+        ]
+      },
+      "sourceVsBest": {
+        "classification": "PASS",
+        "findings": [
+          "Re-verified against the corrected AC5 best image: 03-pricing-best-390.png is still byte-identical to 02-pricing-current-390.png (md5 714c690b9a286f5d95e2cc714c7ed693). The AC5 patch is inert at this width.",
+          "Visual sanity pass source-vs-best confirms it: identical stacking order and section rhythm through hero, all four plan cards, the single-plan comparison table, the CTA and the footer; same 7,714px page height as the source.",
+          "Only the pre-existing content/typography nuances remain ('$10 per user/month' vs 'US$10', marginally heavier text, marquee captured at a different animation offset). No layout defect."
+        ]
+      },
+      "improvement": "None - the best experiment produced the exact same image as the shipped build at 390. Nothing to gain and nothing lost; mobile was already good."
+    },
+    {
+      "width": 700,
+      "sourceVsCurrent": {
+        "classification": "MAJOR",
+        "findings": [
+          "The entire page is rendered in the 390-wide mobile layout inside a 700px viewport: every section - hero, four plan cards, comparison table, closing CTA, footer - is confined to the left ~390px, leaving a dead black band roughly 310px wide (about 45% of the viewport) running the full 7,714px page height. The source fills the whole 700px.",
+          "Customer-logo row is a narrow strip showing about four logos where the source spreads seven (OpenAI through ramp) across the full width.",
+          "Footer renders as the narrow two-column mobile stack (Product/Features, then Company/Resources, then Connect/Legal) instead of the source's wider multi-column footer with the logo mark on the left.",
+          "Closing CTA headline and its Get started / Contact sales buttons are centered on the 390px column, so they sit left-of-center in the 700px frame rather than centered on the page.",
+          "Comparison table, its 'Free' plan selector, all rows and all values are present and correct - nothing is clipped, nothing is missing, and the nav (logo + Log in + Sign up + hamburger) is fully usable. That is why this is MAJOR and not a BLOCKER, but it is the single most visually obvious failure in the whole set."
+        ]
+      },
+      "sourceVsBest": {
+        "classification": "MAJOR",
+        "findings": [
+          "Re-verified against the corrected AC5 best image: 06-pricing-best-700.png is still byte-identical to 05-pricing-current-700.png (md5 7da554b46944fe2ac344c07df129e75e). AC5 is inert at this width, as intended.",
+          "Visual sanity pass confirms the mobile-subtree freeze is untouched: the whole page still renders in the ~390px mobile layout inside the 700px viewport, leaving a dead black band of roughly 310px down the full 7,714px page, while the source fills all 700px.",
+          "Nothing is clipped or missing and the nav is usable, so this stays MAJOR rather than a BLOCKER - but it is the largest single fidelity gap in the set and AC5 does not address it."
+        ]
+      },
+      "improvement": "None. 700 is the one width where the experiment changed nothing at all - the page still renders at 390 width inside a 700 viewport. This remains the largest single fidelity gap in the set and is untouched by Strategy C."
+    },
+    {
+      "width": 1024,
+      "sourceVsCurrent": {
+        "classification": "BLOCKER",
+        "findings": [
+          "Nav is unusable: it is cut off after 'Customers' - 'Pricing', 'Contact', the divider, 'Log in' and the 'Sign up' button are all offscreen to the right. The source shows the complete nav within 1024.",
+          "Plan cards are laid out 4-across and overflow the viewport: the Enterprise card is entirely offscreen and the Business card's 'Contact sales' button is sliced by the right edge. Only Free, Basic and (partially) Business are visible. The source at 1024 uses a 2x2 grid with all four tiers fully visible.",
+          "Customer-logo row overflows: the last logos are cut at the right edge instead of the source's seven evenly spaced marks.",
+          "Footer is shifted right and truncated: the 'Resources' column is cut mid-word ('Downloa', 'Docume', 'Develope', 'Enterpris') and the 'Connect' and legal columns are entirely offscreen. The source footer fits.",
+          "Comparison table has no visible plan heading - the source's sticky 'Free' plan selector bar is blank/invisible, so the single value column is unlabeled.",
+          "Comparison table body itself is intact and correct (all rows, all section headings, correct check/cross values) but sits in the left ~55% with a large empty right gutter, versus the source which spans the full width.",
+          "Closing CTA block is pushed right so the two-line headline ends flush against the right edge rather than centered as in the source."
+        ]
+      },
+      "sourceVsBest": {
+        "classification": "MAJOR",
+        "findings": [
+          "Judged from the corrected AC5 image 09-pricing-best-1024.png (357,264 bytes, 1024x6360). Nothing is clipped off the right edge anywhere on the page, so this is no longer close to a BLOCKER.",
+          "CONFIRMED FIXED: nav is complete - logo, Product, Resources, Customers, Pricing, Contact, divider, Log in and the Sign up button are all on-screen and usable.",
+          "CONFIRMED FIXED: all four plan cards (Free, Basic, Business, Enterprise) fit inside 1024 with their Get started / Contact sales buttons fully visible. No pricing tier is lost.",
+          "CONFIRMED FIXED: the closing CTA headline wraps to two centred lines, 'Built for the future.' / 'Available today.', entirely on-screen - the previously reported single-line clip to 'Built for the future. Availabl' is gone.",
+          "CONFIRMED FIXED: the footer shows all five link columns (Product, Features, Company, Resources, Connect) fully inside the viewport with no truncated words; the shipped build cut 'Downloa'/'Docume'/'Develope' and pushed Connect offscreen.",
+          "STILL BROKEN - customer-logo row: the seven logos collapse into one centred zero-gap cluster reading 'OpenAI(triangle)VercelFigma(cube)CURSORcoinbaseramp', with the salesforce cloud mark physically overlapping the tail of 'Vercel' and the 'F' of 'Figma'. The source spreads the same seven marks evenly across the content width. Verified at native resolution.",
+          "STILL WRONG GRID: plan cards render as four narrow columns where the source at 1024 uses a 2x2 grid of wide cards. That is what forces the wrapping below.",
+          "STILL COLLIDING: wrapped feature-list items lose their row gap entirely - in Business, 'Private teams and / guests' butts straight into 'Triage Intelligence'; in Enterprise, 'Enterprise-grade / security' butts into 'Advanced org modeling' and 'Migration & onboarding / support' butts into 'Priority support'. Check-mark icons sit out of line with their labels at those rows.",
+          "NEW, not flagged by the previous audit: the same zero-gap collapse now hits the comparison table's value cells. '250 / issues' wraps onto two lines and its second line runs into the '2 teams' row, and 'Issues, projects, cycles, / initiatives' runs into 'Customer requests'. The shipped build renders these on single uncollided lines.",
+          "NEW, not flagged by the previous audit: the header is no longer logo-left / links-right. The whole nav collapses into a centred cluster (logo pushed inward to about x=250 with the links bunched beside it) where source and shipped build anchor the logo at the left margin and right-align the link group.",
+          "NEW, not flagged by the previous audit: the 'Billed yearly' control renders as a thin ~4px blue sliver instead of the source's pill toggle in the Basic and Business cards.",
+          "UNCHANGED from the shipped build: the comparison table has no visible plan heading - the source's sticky 'Free' plan selector with its chevron is blank - so the single value column is unlabeled, and the table still occupies only the left ~55% of the width with a large empty right gutter.",
+          "UNCHANGED from the shipped build (pre-existing, not an AC5 regression): the footer's Legal group (Privacy / Terms / DPA / AUP) is absent at this width; the source shows it as the sixth group in a 3x2 footer arrangement."
+        ]
+      },
+      "improvement": "Large net win here. The shipped build loses an entire pricing tier and the whole right half of the nav offscreen, plus truncated footer columns - a visitor literally cannot see Enterprise pricing or click Sign up. BEST puts all of that back on-screen. The price of that fix is two new cosmetic-to-serious defects: the closing headline now runs off the edge, and the logo row is squashed into an overlapping clump. Structurally much better, visually still not clean."
+    },
+    {
+      "width": 1100,
+      "sourceVsCurrent": {
+        "classification": "BLOCKER",
+        "findings": [
+          "Nav is cut off after 'Pricing'/'Cont…' - Contact, Log in and Sign up are offscreen and unreachable. The source shows the full nav including the 'Now' link.",
+          "Enterprise plan card is clipped to a thin sliver at the right edge: only fragments of the 'E'/'C' headings and a column of check marks are visible; its feature labels and 'Contact sales' button are entirely offscreen. Source shows four complete cards.",
+          "Comparison table is broken. It has NO header row at all - 'Features / Free / Basic / Business / Enterprise' is missing entirely - and only ONE plan value column (Free) is rendered. The Basic, Business and Enterprise columns are absent, not merely clipped. The source at 1100 renders the complete five-column desktop comparison table with per-plan values ('15 pipelines', 'Unlimited', 'Google + SAML', '1 level' / '5 levels', 'Multiple tenants').",
+          "Customer-logo row overflows the right edge, cutting the trailing logos.",
+          "Footer 'Connect' column (Contact us, Community, X, GitHub, YouTube) is entirely offscreen; only Product/Features/Company/Resources are visible where the source shows five columns plus the Privacy/Terms/DPA/AUP legal row.",
+          "Closing CTA block is shifted right rather than centered."
+        ]
+      },
+      "sourceVsBest": {
+        "classification": "MAJOR",
+        "findings": [
+          "Judged from the corrected AC5 image 12-pricing-best-1100.png (414,698 bytes, 1100x6360). Downgraded from BLOCKER: the two structural failures that held 1100 at BLOCKER are both gone.",
+          "CONFIRMED FIXED: nav is complete and usable - logo, Product, Resources, Customers, Pricing, Now, Contact, divider, Log in and Sign up all render on-screen. The shipped build cut off after 'Cont…'.",
+          "CONFIRMED FIXED: all four plan cards render fully with headings, prices, billing rows, feature lists and both CTA buttons; the Enterprise card is no longer a right-edge sliver.",
+          "CONFIRMED FIXED - the flagged Enterprise table column: at native resolution the comparison table renders the complete header row 'Features / Free / Basic / Business / Enterprise' and all FOUR plan value columns, with the Enterprise values ('Unlimited', '5 levels', 'Google + SAML', 'Multiple tenants') fully inside the 1100px frame. Nothing about the Enterprise column is offscreen.",
+          "CONFIRMED FIXED: the closing CTA headline wraps to two centred lines, 'Built for the future.' / 'Available today.', fully on-screen. The previously reported clip to 'Built for the future. Available to' is gone.",
+          "STILL CLIPPED - footer Connect column: at native resolution the fifth footer column overflows the right edge and is sliced mid-word - the heading reads 'Connec', and the links read 'Contac', 'Commu', 'X (Twit', 'GitHub', 'YouTub'. Overflow is small (roughly 25-40px) and every link is still identifiable, which is why this alone does not hold the width at BLOCKER, but it is genuine destructive clipping and the source footer fits.",
+          "STILL BROKEN - customer-logo row: the seven logos collapse into one centred zero-gap cluster with the salesforce cloud mark physically overlapping 'Vercel' and 'Figma', and 'coinbase'/'ramp' butted against 'CURSOR'. The source spaces them evenly across the width.",
+          "STILL COLLIDING: in the Enterprise card, 'Migration & onboarding / support' loses its row gap and butts into 'Priority support' (about 16px apart where every other row is 35px).",
+          "NEW, not flagged by the previous audit: the header is no longer logo-left / links-right - it collapses into a centred cluster, matching the same distribution bug as the logo row.",
+          "NEW, not flagged by the previous audit: the 'Billed yearly' control renders as a thin ~4px blue sliver instead of the source's pill toggle.",
+          "Minor: the comparison-table headings 'Business' and 'Enterprise' carry a faint light background band that the source does not have."
+        ]
+      },
+      "improvement": "The biggest structural gain of the whole experiment, but it does not clear the bar. The shipped build at 1100 shows a headerless one-column table, a nav you cannot use and a sliver of an Enterprise card. BEST restores the nav, all four cards, the table headings and two more plan columns. It still clips the Enterprise table column, the closing headline and the footer Connect column, and it adds the squashed logo row - so 1100 remains a BLOCKER at both, just far less broken."
+    },
+    {
+      "width": 1440,
+      "sourceVsCurrent": {
+        "classification": "PASS",
+        "findings": [
+          "Closest match in the set. Nav, the four-across plan card grid, the evenly spaced seven-logo customer row, the full five-column comparison table (Features / Free / Basic / Business / Enterprise with correct per-plan values including '15 pipelines', 'Google + SAML', '1 level' vs '5 levels', 'Multiple tenants'), the two-line closing CTA headline, and the complete six-group footer with the Privacy/Terms/DPA/AUP legal row all match the source. Page heights are identical (6,360px).",
+          "Minor: the comparison table omits the source's faint vertical column rules and uses slightly wider value columns, so check marks sit a few pixels further left/right than the source.",
+          "Minor: price strings render '$10' / '$16' where the source shows 'US$10' / 'US$16'.",
+          "Minor: the nav block sits a few pixels further right than the source's; no clipping and no overlap.",
+          "No clipping, no missing sections, no whitespace anomalies."
+        ]
+      },
+      "sourceVsBest": {
+        "classification": "MAJOR",
+        "findings": [
+          "Judged from the corrected AC5 image 15-pricing-best-1440.png (434,270 bytes, 1440x6360). Still a regression against the shipped build, which reproduced this width faithfully.",
+          "RESOLVED vs the previous best: the closing CTA headline now wraps to two centred lines, 'Built for the future.' / 'Available today.', matching the source's block shape and vertical rhythm exactly. The single-line flattening reported earlier is gone.",
+          "STILL BROKEN - customer-logo row (verified at native 1:1): source and shipped build both spread OpenAI / Vercel / salesforce / Figma / CURSOR / coinbase / ramp evenly from x=80 to x=1360. AC5 collapses all seven into a centred cluster spanning roughly x=425 to x=1010 with zero gaps - the salesforce cloud mark sits physically on top of the end of 'Vercel' and the start of 'Figma', and 'CURSORcoinbaseramp' run together as one string. This is the single worst defect at this width.",
+          "STILL WRONG - header distribution (verified at native 1:1): source and shipped build anchor the Linear logo at x=80 and right-align the link group ending with Sign up at x=1360. AC5 collapses the whole bar into a centred cluster with the logo at about x=360 and Sign up ending near x=1080, leaving large empty margins on both sides. Same distribution bug as the logo row. Everything remains legible and clickable.",
+          "NEW, not flagged by the previous audit: the 'Billed yearly' control renders as a thin ~4px blue sliver in the Basic and Business cards, where both the source and the shipped build render a proper pill toggle.",
+          "Unaffected and still correct: the four-across plan card grid, the full five-column comparison table with every per-plan value ('15 pipelines', 'Google + SAML', '1 level' vs '5 levels', 'Multiple tenants'), the closing CTA buttons, and the complete footer including the Privacy/Terms/DPA/AUP legal row. Page height matches the source at 6,360px.",
+          "No clipping, no missing sections and no blank areas at this width - the defects are distribution and control-rendering only, which is why this is MAJOR and not a BLOCKER."
+        ]
+      },
+      "improvement": "Negative. 1440 was already a faithful reproduction in the shipped build; the experiment breaks the customer-logo row into overlapping logos and flattens the closing headline. Whatever is fixed at 1024/1100 must not be applied at 1440 in its current form."
+    }
+  ]
+}

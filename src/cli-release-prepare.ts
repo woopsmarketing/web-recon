@@ -1,5 +1,6 @@
 /**
  * pnpm release:prepare <production-spec-run-dir> [--site-id <id>] [--project-id <id>]
+ *                       [--display-name <name>]
  *
  * Scan an accepted production candidate (Task 23 spec + build) and emit the
  * release project: release-project.json + requirements.json +
@@ -22,7 +23,9 @@ async function main(): Promise<void> {
     argv.includes(flag) ? argv[argv.indexOf(flag) + 1] : undefined;
   if (!specRef) {
     console.log(
-      "Usage: pnpm release:prepare <production-spec-run-dir> [--site-id <id>] [--project-id <id>]",
+      "Usage: pnpm release:prepare <production-spec-run-dir> [--site-id <id>] [--project-id <id>] " +
+      "[--page-regions <page-regions-run-dir>] " +
+        "[--display-name <name>]",
     );
     process.exitCode = 2;
     return;
@@ -31,11 +34,22 @@ async function main(): Promise<void> {
     productionSpecRef: specRef,
     ...(value("--site-id") !== undefined ? { siteId: value("--site-id") } : {}),
     ...(value("--project-id") !== undefined ? { projectId: value("--project-id") } : {}),
+    ...(value("--display-name") !== undefined ? { displayName: value("--display-name") } : {}),
+    // Task 28 Phase 5: the page-regions run dir this project's region
+    // enablement addresses. Carried on a re-prepare when omitted.
+    ...(value("--page-regions") !== undefined ? { pageRegionsDir: value("--page-regions") } : {}),
     log: (line) => console.log(line),
   });
   console.log(`\n[release:prepare] project: ${result.projectDir}`);
   console.log(`  siteId:       ${result.project.siteId}${result.reprepared ? " (existing project updated)" : ""}`);
   if (result.reprepared) console.log(`  preserved:    ${result.preserved.join(", ")}`);
+  if (result.project.displayName !== undefined) {
+    console.log(`  displayName:  ${result.project.displayName}`);
+  }
+  console.log(
+    `  registry:     ${result.registeredSiteKey ?? "not indexed"}`,
+  );
+  for (const warning of result.registryWarnings) console.log(`  warning:      ${warning}`);
   console.log(`  state:        ${result.project.releaseState}`);
   console.log(`  requirements: ${result.requirementsCount} (${result.releaseBlockingUnresolved} release-blocking unresolved)`);
   console.log(`  next:         pnpm release:plan ${result.projectDir}`);

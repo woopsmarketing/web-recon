@@ -1,7 +1,8 @@
-import { loadContentRun, revalidateSlotValues } from "./content-injection/index.js";
-// Imported from the module rather than the barrel: index.js does not re-export
-// it yet and this CLI does not own that file (see the handoff's changeRequests).
-import { CONTENT_WRITE_DOCTRINE_WARNING } from "./content-injection/run.js";
+import {
+  CONTENT_WRITE_DOCTRINE_WARNING,
+  loadContentRun,
+  revalidateSlotValues,
+} from "./content-injection/index.js";
 
 /**
  * web-recon Content Injection — validate CLI (Task 19 §29).

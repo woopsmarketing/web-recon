@@ -1,0 +1,1036 @@
+{
+  "kind": "FrontendDataContract",
+  "status": "DIAGNOSTIC — minimum frontend-consumed contract for this captured build; NOT a production API schema",
+  "recoveredFrom": {
+    "scriptsDir": "data/apartmentary.com/2026-09-16T05-27-10-722Z/viewports/desktop/source-package/scripts",
+    "method": "static reading of minified webpack chunks (pages/index sc0028, chunk 7925 sc0027, _app sc0025); offsets are byte offsets re-verified at build time"
+  },
+  "evidenceVerification": {
+    "snippetsVerifiedAtOffset": 80,
+    "problems": []
+  },
+  "endpoints": [
+    {
+      "diagnosticName": "mainBanners",
+      "requestMatcher": {
+        "method": "GET",
+        "origin": "https://dev-api.apartmentary.com",
+        "pathname": "/api/v1/main-banners/action/get-displays",
+        "query": {}
+      },
+      "responseEnvelope": {
+        "data": [
+          "MAIN_BANNER_ITEM"
+        ]
+      },
+      "collectionPath": "data",
+      "totalCountPath": null,
+      "totalCountConsumed": {
+        "bool": false,
+        "evidence": [
+          {
+            "file": "sc0028.dba4c3c5f366.js",
+            "offset": 6075,
+            "snippet": "t=e.data.data,(0,I.z)((function(){y.mainBanners=t}))"
+          }
+        ],
+        "note": "no totalCount read; body.data assigned directly, no ||[] fallback"
+      },
+      "collectionRequired": {
+        "required": true,
+        "type": "array",
+        "why": "N=y.mainBanners; N.length evaluated unguarded during render; null/undefined body.data throws",
+        "evidence": [
+          {
+            "file": "sc0028.dba4c3c5f366.js",
+            "offset": 6238,
+            "snippet": "N.length;var j=-11*Math.max(0,(P==N.length-1?P-1:P)-3)"
+          },
+          {
+            "file": "sc0025.e6a0597718ac.js",
+            "offset": 270979,
+            "snippet": "n=new URL(\"/api/v1/main-banners/action/get-displays\",S)"
+          }
+        ]
+      },
+      "itemRequirement": {
+        "required": true,
+        "why": "W/V read i.isPcVideo etc. on each element unguarded; null element throws",
+        "evidence": [
+          {
+            "file": "sc0028.dba4c3c5f366.js",
+            "offset": 17296,
+            "snippet": "W=function(e){var t,i=e.mainBanner"
+          }
+        ]
+      },
+      "itemFields": [
+        {
+          "path": "isPcVideo",
+          "type": "boolean",
+          "declaredType": "boolean",
+          "kind": "conditional",
+          "required": false,
+          "guard": "truthiness",
+          "usage": "desktop (md) slide renders <video><source src=pcUrl> if truthy else <img>; also stops autoplay and plays video, slideNext on ended",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 17401,
+              "snippet": "i.isPcVideo?(0,r.tZ)(\"video\",{style:{width:\"100%\",objectFit:\"cover\"},muted:!0,playsInline:!0,children:(0,r.tZ)(\"source\",{src:i.pcUrl})})"
+            },
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 6840,
+              "snippet": "if(t&&(m&&t.isPcVideo||!m&&t.isMobileVideo)){e.autoplay.stop();"
+            }
+          ]
+        },
+        {
+          "path": "isMobileVideo",
+          "type": "boolean",
+          "declaredType": "boolean",
+          "kind": "conditional",
+          "required": false,
+          "guard": "truthiness",
+          "usage": "mobile slide renders <video><source src=mobileUrl> if truthy else <img>",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 18743,
+              "snippet": "i.isMobileVideo?(0,r.tZ)(\"video\",{style:{width:\"100%\",objectFit:\"cover\",objectPosition:\"center\",maxHeight:\"630px\"}"
+            }
+          ]
+        },
+        {
+          "path": "pcUrl",
+          "type": "string",
+          "declaredType": "string (absolute URL; image or video)",
+          "kind": "image",
+          "required": false,
+          "guard": "i.pcUrl||portfolio?.pcMainBannerImageUrl||\"\" for img; unguarded as <source src> when isPcVideo",
+          "usage": "desktop hero media src",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 17538,
+              "snippet": "(0,r.tZ)(s.Ee,{src:i.pcUrl||(null===(t=i.portfolio)||void 0===t?void 0:t.pcMainBannerImageUrl)||\"\""
+            }
+          ]
+        },
+        {
+          "path": "mobileUrl",
+          "type": "string",
+          "declaredType": "string (absolute URL; image or video)",
+          "kind": "image",
+          "required": false,
+          "guard": "i.mobileUrl||portfolio?.mobileMainBannerImageUrl||\"\"",
+          "usage": "mobile hero media src",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 18930,
+              "snippet": "(0,r.tZ)(s.Ee,{src:i.mobileUrl||(null===(t=i.portfolio)||void 0===t?void 0:t.mobileMainBannerImageUrl)||\"\""
+            },
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 18891,
+              "snippet": "(0,r.tZ)(\"source\",{src:i.mobileUrl})"
+            }
+          ]
+        },
+        {
+          "path": "portfolio",
+          "type": "object|null",
+          "declaredType": "object|null",
+          "kind": "conditional",
+          "required": false,
+          "guard": "?. everywhere",
+          "usage": "fallback image source + link target for non-GENERAL banners",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 17567,
+              "snippet": "null===(t=i.portfolio)||void 0===t?void 0:t.pcMainBannerImageUrl"
+            }
+          ]
+        },
+        {
+          "path": "portfolio.pcMainBannerImageUrl",
+          "type": "string",
+          "declaredType": "string (absolute URL)",
+          "kind": "image",
+          "required": false,
+          "guard": "?. and ||\"\"",
+          "usage": "desktop img fallback when pcUrl falsy",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 17609,
+              "snippet": "t.pcMainBannerImageUrl)||\"\""
+            }
+          ]
+        },
+        {
+          "path": "portfolio.mobileMainBannerImageUrl",
+          "type": "string",
+          "declaredType": "string (absolute URL)",
+          "kind": "image",
+          "required": false,
+          "guard": "?. and ||\"\"",
+          "usage": "mobile img fallback when mobileUrl falsy",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 19005,
+              "snippet": "t.mobileMainBannerImageUrl)||\"\""
+            }
+          ]
+        },
+        {
+          "path": "portfolio.uuid",
+          "type": "string",
+          "declaredType": "string",
+          "kind": "link",
+          "required": false,
+          "guard": "?. (missing -> pushes \"/portfolio/undefined\")",
+          "usage": "CTA click for type!==\"GENERAL\": router.push(\"/portfolio/\"+uuid)",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 18316,
+              "snippet": "n.push(\"/portfolio/\".concat(null===(t=i.portfolio)||void 0===t?void 0:t.uuid))"
+            }
+          ]
+        },
+        {
+          "path": "text",
+          "type": "string",
+          "declaredType": "string (may contain \"\\n\")",
+          "kind": "display",
+          "required": false,
+          "guard": "none in render (missing renders empty); text?.indexOf guarded in onSlideChange",
+          "usage": "headline",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 17830,
+              "snippet": "color:i.textColor?\"black\":\"white\",style:{fontSize:\"calc(40px + 0.3vw)\",lineHeight:\"calc(40px + 1.3vw)\"},children:i.text}"
+            },
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 7501,
+              "snippet": "y.isMainBannerMultiLineTitle=-1!==(null===(e=t.text)||void 0===e?void 0:e.indexOf(\"\\n\"))"
+            }
+          ]
+        },
+        {
+          "path": "subText",
+          "type": "string",
+          "declaredType": "string",
+          "kind": "display",
+          "required": false,
+          "guard": "none (missing renders empty)",
+          "usage": "sub headline",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 18032,
+              "snippet": "children:i.subText}"
+            }
+          ]
+        },
+        {
+          "path": "textColor",
+          "type": "any",
+          "declaredType": "any (truthiness only)",
+          "kind": "conditional",
+          "required": false,
+          "guard": "truthiness; N[P]?.textColor",
+          "usage": "truthy => black text + black arrow/CTA icons; falsy => white",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 17830,
+              "snippet": "color:i.textColor?\"black\":\"white\""
+            },
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 8422,
+              "snippet": "(null===(t=N[P])||void 0===t?void 0:t.textColor)?(0,r.tZ)(s.Ee,{src:x.Z"
+            }
+          ]
+        },
+        {
+          "path": "type",
+          "type": "string",
+          "declaredType": "string enum; only \"GENERAL\" literal proven",
+          "kind": "behavior",
+          "required": false,
+          "guard": "compared with ===",
+          "usage": "\"GENERAL\" without linkUrl hides CTA; \"GENERAL\" opens linkUrl in new window; any other value => router.push to portfolio",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 18086,
+              "snippet": "\"GENERAL\"!==i.type||i.linkUrl?(0,r.tZ)(u.Z,{paddingLeft:\"8px\""
+            }
+          ]
+        },
+        {
+          "path": "linkUrl",
+          "type": "string",
+          "declaredType": "string (URL)",
+          "kind": "link",
+          "required": false,
+          "guard": "truthiness",
+          "usage": "window.open(linkUrl,\"_blank\") for GENERAL banners",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 18226,
+              "snippet": "var e=window.open(i.linkUrl,\"_blank\",\"noopener,noreferrer\");"
+            }
+          ]
+        }
+      ],
+      "requiredFields": [],
+      "optionalFields": [
+        "isPcVideo",
+        "isMobileVideo",
+        "pcUrl",
+        "mobileUrl",
+        "portfolio",
+        "portfolio.pcMainBannerImageUrl",
+        "portfolio.mobileMainBannerImageUrl",
+        "portfolio.uuid",
+        "text",
+        "subText",
+        "textColor",
+        "type",
+        "linkUrl"
+      ],
+      "conditionalBehaviors": [
+        "Hero Swiper rendered only if N.length>0 (empty array => no hero, no error)",
+        "Desktop (md) renders W; mobile renders V",
+        "isPcVideo/isMobileVideo => <video muted playsInline><source src=pcUrl|mobileUrl></video> (no autoplay attr; code calls play() on init/slide change, stops swiper autoplay until \"ended\")",
+        "CTA \"자세히 보기\" shown iff type!==\"GENERAL\" || linkUrl truthy",
+        "prev/next arrow buttons only on md; icon colour from N[activeIdx]?.textColor",
+        "Dot pagination: Array.from({length:N.length}) dots, windowed with translateX(-11*max(0,idx-3)) and scale 0/0.7/1"
+      ],
+      "conditionalEvidence": [
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 6628,
+          "snippet": "N.length>0&&(0,r.BX)(u.Z,{className:\"swiper-container\""
+        },
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 7960,
+          "snippet": "children:m?(0,r.tZ)(W,{mainBanner:e,bann"
+        },
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 9660,
+          "snippet": "Array.from({length:N.length}).map("
+        }
+      ],
+      "imageRendering": {
+        "component": "s.Ee (module 7359 export $) => plain <img src> when src is a string; spread style maxWidth 100%",
+        "nextImage": false,
+        "evidence": [
+          {
+            "file": "sc0025.e6a0597718ac.js",
+            "offset": 239897,
+            "snippet": "$=function(e){var t=e.src,n=e.className,s=(0,i.Z)(e,[\"src\",\"className\"]),u=s.style;return\"string\"===typeof t?(0,a.tZ)(\"img\","
+          }
+        ],
+        "urlPrefixing": "none; field value used verbatim as src (expected absolute URL)",
+        "videoElement": "raw <video><source src=field></video>"
+      },
+      "uiCardinalityFacts": [
+        "Swiper props: autoplay {delay:5000, disableOnInteraction:true}, loop:true; no slidesPerView (Swiper default 1), no spaceBetween",
+        "Keyboard ArrowLeft/ArrowRight navigates on md",
+        "Dots: one per item, visible window ~5"
+      ],
+      "uiEvidence": [
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 7124,
+          "snippet": "autoplay:{delay:5e3,disableOnInteraction:!0},loop:!0"
+        }
+      ],
+      "capturedDomCardinality": {
+        "swiperSlides": 9,
+        "dataSwiperSlideIndex": "0..8 unique",
+        "swiperSlideDuplicateClass": 0,
+        "videosInHero": 0,
+        "imgsInHero": 9,
+        "note": "Swiper build uses data-swiper-slide-index loop without duplicate slides (no \"swiper-slide-duplicate\" string in sc0026); 9 real banners, all rendered as <img> at desktop"
+      }
+    },
+    {
+      "diagnosticName": "portfoliosArea1",
+      "requestMatcher": {
+        "method": "GET",
+        "origin": "https://dev-api.apartmentary.com",
+        "pathname": "/api/v1/portfolios/action/get-by-paging",
+        "query": {
+          "count": "10",
+          "isBottomArea1Display": "true",
+          "page": "0"
+        }
+      },
+      "responseEnvelope": {
+        "data": {
+          "data": [
+            "PORTFOLIO_ITEM"
+          ],
+          "totalCount": "number (destructured, unused)"
+        }
+      },
+      "collectionPath": "data.data",
+      "totalCountPath": "data.totalCount",
+      "totalCountConsumed": {
+        "bool": false,
+        "evidence": [
+          {
+            "file": "sc0028.dba4c3c5f366.js",
+            "offset": 5366,
+            "snippet": "n=i.data,i.totalCount,(0,I.z)((function(){y.firstPortfolios=n||[]}))"
+          }
+        ],
+        "note": "i.totalCount is a bare expression statement (discarded). body.data must be an object (t.data.data unguarded) but data.data may be null => []"
+      },
+      "collectionRequired": {
+        "required": false,
+        "type": "array|null",
+        "why": "n||[] fallback; but body.data object required (i.data access unguarded)"
+      },
+      "itemRequirement": {
+        "required": true,
+        "why": "e.uuid read unguarded in key; null element throws"
+      },
+      "itemFields": [
+        {
+          "path": "uuid",
+          "type": "string",
+          "declaredType": "string",
+          "kind": "link+key",
+          "required": true,
+          "guard": "none",
+          "usage": "onClick router.push(\"/portfolio/\"+uuid); React key \"${uuid}-${idx}\"",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 11714,
+              "snippet": "S.push(\"/portfolio/\".concat(e.uuid))"
+            },
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 12153,
+              "snippet": "\"\".concat(e.uuid,\"-\").concat(t)"
+            }
+          ]
+        },
+        {
+          "path": "title",
+          "type": "string",
+          "declaredType": "string",
+          "kind": "display",
+          "required": false,
+          "guard": "||\"\"",
+          "usage": "card title (PortfolioItem Q); \"Hong Kong\" literal adds suffix",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 11770,
+              "snippet": "O.PortfolioItem,{title:e.title||\"\""
+            },
+            {
+              "file": "sc0027.f3f2a3778df4.js",
+              "offset": 39524,
+              "snippet": "\"Hong Kong\"===Q?"
+            }
+          ]
+        },
+        {
+          "path": "description",
+          "type": "string",
+          "declaredType": "string",
+          "kind": "display",
+          "required": false,
+          "guard": "||\"\" and x&& in PortfolioItem",
+          "usage": "description block rendered only if truthy",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 11805,
+              "snippet": "description:e.description||\"\""
+            },
+            {
+              "file": "sc0027.f3f2a3778df4.js",
+              "offset": 39276,
+              "snippet": "x&&(0,c.BX)(c.HY,{children:[(0,c.tZ)(s.xv,{variant:f?\"body2\":S?\"body1\":\"caption\",fontFamily:\"SpoqaHanSans\",children:x})"
+            }
+          ]
+        },
+        {
+          "path": "pcThumbnailImageUrl",
+          "type": "string",
+          "declaredType": "string (absolute URL)",
+          "kind": "image",
+          "required": false,
+          "guard": "||\"\" (empty => <img src=\"\">)",
+          "usage": "desktop card image",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 11835,
+              "snippet": "pcImageUrl:e.pcThumbnailImageUrl||\"\""
+            },
+            {
+              "file": "sc0027.f3f2a3778df4.js",
+              "offset": 37875,
+              "snippet": "(0,c.tZ)(s.Ee,{src:S?C:u,style:{width:\"100%\",objectFit:\"cover\",maxHeight:\"100%\",aspectRatio:m?\"\".concat(m):void 0}})"
+            }
+          ]
+        },
+        {
+          "path": "mobileThumbnailImageUrl",
+          "type": "string",
+          "declaredType": "string (absolute URL)",
+          "kind": "image",
+          "required": false,
+          "guard": "||\"\"",
+          "usage": "mobile card image",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 11872,
+              "snippet": "mobileImageUrl:e.mobileThumbnailImageUrl||\"\""
+            }
+          ]
+        },
+        {
+          "path": "pricePerSize",
+          "type": "number",
+          "declaredType": "number (만원/평; must be >=0 when truthy)",
+          "kind": "display",
+          "required": false,
+          "guard": "e?.pricePerSize && filterPrices.filter(...)[0].name — falsy => caption \"평당 undefined|null|0\"; truthy but no range match (negative or non-numeric) => TypeError on [0].name (render crash)",
+          "usage": "caption \"평당 <bucket name>\" via filterPrices ranges [0,180],[180,250],[250,300],[300,350],[350,400],[400]; area1 compares upper bound with <",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 11948,
+              "snippet": "(null===e||void 0===e?void 0:e.pricePerSize)&&L.filterPrices.filter("
+            },
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 12082,
+              "snippet": "e.pricePerSize>=t.range[0]&&e.pricePerSize<t.range[1]}))[0].name)"
+            },
+            {
+              "file": "sc0025.e6a0597718ac.js",
+              "offset": 223730,
+              "snippet": "d=[{key:180,name:\"180\\ub9cc \\uc6d0 \\uc774\\ud558\",range:[0,180]}"
+            }
+          ]
+        }
+      ],
+      "requiredFields": [
+        "uuid"
+      ],
+      "optionalFields": [
+        "title",
+        "description",
+        "pcThumbnailImageUrl",
+        "mobileThumbnailImageUrl",
+        "pricePerSize"
+      ],
+      "conditionalBehaviors": [
+        "Section carousel rendered via `z.length&&(...)`: empty array renders the number 0 as a text node (React renders 0), not null",
+        "md: absolute prev/next arrow buttons; mobile: \"더 보기\" button below",
+        "description paragraph only if truthy; PortfolioItem inquiry/manager buttons not used here (props not passed)"
+      ],
+      "conditionalEvidence": [
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 11433,
+          "snippet": "z.length&&(0,r.BX)(u.Z,{position:\"relative\""
+        }
+      ],
+      "imageRendering": {
+        "component": "PortfolioItem (chunk 7925 module 8101 export lA) -> s.Ee -> plain <img>",
+        "nextImage": false,
+        "urlPrefixing": "none",
+        "aspectRatio": "580/380 default (imageAspectRatio prop not passed); container height set to clientWidth/ratio",
+        "evidence": [
+          {
+            "file": "sc0027.f3f2a3778df4.js",
+            "offset": 37320,
+            "snippet": "w=A.imageAspectRatio,m=void 0===w?580/380:w"
+          }
+        ]
+      },
+      "uiCardinalityFacts": [
+        "Carousel module 3640: slidesPerView = (md?3:1), spaceBetween default 50, centeredSlides false, no loop, no autoplay; animation:false passed (no data-aos)",
+        "progress indicator bar width = swiper.width / (totalCount - (md ? 3-1 : 0)); totalCount prop = items.length. md with 2 items => divide by 0 (Infinity px), 1 item => negative width (invalid, bar invisible), 3 items => full-width (no motion); >=4 items gives a moving indicator",
+        "indicator translateX = barWidth * activeIndex on slide change",
+        "request count=10 => max 10 cards"
+      ],
+      "uiEvidence": [
+        {
+          "file": "sc0027.f3f2a3778df4.js",
+          "offset": 43035,
+          "snippet": "slidesPerView:Q||(y?3:1)"
+        },
+        {
+          "file": "sc0027.f3f2a3778df4.js",
+          "offset": 42681,
+          "snippet": "var i=(s.current.width-(M?2*u:0))/(e-(y?(Q||3)-1:0));z(i)"
+        },
+        {
+          "file": "sc0027.f3f2a3778df4.js",
+          "offset": 42131,
+          "snippet": "I=void 0===E?50:E"
+        },
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 11487,
+          "snippet": "(0,r.tZ)(B.Z,{animation:!1,totalCount:z.length,swiperRef:a"
+        }
+      ],
+      "capturedDomCardinality": {
+        "swiperSlides": 10,
+        "cardImgs": 10
+      }
+    },
+    {
+      "diagnosticName": "portfoliosArea2",
+      "requestMatcher": {
+        "method": "GET",
+        "origin": "https://dev-api.apartmentary.com",
+        "pathname": "/api/v1/portfolios/action/get-by-paging",
+        "query": {
+          "count": "10",
+          "isBottomArea2Display": "true",
+          "page": "0"
+        }
+      },
+      "responseEnvelope": {
+        "data": {
+          "data": [
+            "PORTFOLIO_ITEM"
+          ],
+          "totalCount": "number (destructured, unused)"
+        }
+      },
+      "collectionPath": "data.data",
+      "totalCountPath": "data.totalCount",
+      "totalCountConsumed": {
+        "bool": false,
+        "evidence": [
+          {
+            "file": "sc0028.dba4c3c5f366.js",
+            "offset": 5760,
+            "snippet": "n=i.data,i.totalCount,(0,I.z)((function(){y.secondPortfolios=n||[]}))"
+          }
+        ],
+        "note": "i.totalCount is a bare expression statement (discarded). body.data must be an object (t.data.data unguarded) but data.data may be null => []"
+      },
+      "collectionRequired": {
+        "required": false,
+        "type": "array|null",
+        "why": "n||[] fallback; but body.data object required (i.data access unguarded)"
+      },
+      "itemRequirement": {
+        "required": true,
+        "why": "e.uuid read unguarded in key; null element throws"
+      },
+      "itemFields": [
+        {
+          "path": "uuid",
+          "type": "string",
+          "declaredType": "string",
+          "kind": "link+key",
+          "required": true,
+          "guard": "none",
+          "usage": "onClick router.push(\"/portfolio/\"+uuid); React key \"second-${uuid}-${idx}\"",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 14741,
+              "snippet": "S.push(\"/portfolio/\".concat(e.uuid))"
+            },
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 15181,
+              "snippet": "\"second-\".concat(e.uuid,\"-\").concat(t)"
+            }
+          ]
+        },
+        {
+          "path": "title",
+          "type": "string",
+          "declaredType": "string",
+          "kind": "display",
+          "required": false,
+          "guard": "||\"\"",
+          "usage": "card title (PortfolioItem Q); \"Hong Kong\" literal adds suffix",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 14797,
+              "snippet": "O.PortfolioItem,{title:e.title||\"\""
+            },
+            {
+              "file": "sc0027.f3f2a3778df4.js",
+              "offset": 39524,
+              "snippet": "\"Hong Kong\"===Q?"
+            }
+          ]
+        },
+        {
+          "path": "description",
+          "type": "string",
+          "declaredType": "string",
+          "kind": "display",
+          "required": false,
+          "guard": "||\"\" and x&& in PortfolioItem",
+          "usage": "description block rendered only if truthy",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 14832,
+              "snippet": "description:e.description||\"\""
+            },
+            {
+              "file": "sc0027.f3f2a3778df4.js",
+              "offset": 39276,
+              "snippet": "x&&(0,c.BX)(c.HY,{children:[(0,c.tZ)(s.xv,{variant:f?\"body2\":S?\"body1\":\"caption\",fontFamily:\"SpoqaHanSans\",children:x})"
+            }
+          ]
+        },
+        {
+          "path": "pcThumbnailImageUrl",
+          "type": "string",
+          "declaredType": "string (absolute URL)",
+          "kind": "image",
+          "required": false,
+          "guard": "||\"\" (empty => <img src=\"\">)",
+          "usage": "desktop card image",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 14862,
+              "snippet": "pcImageUrl:e.pcThumbnailImageUrl||\"\""
+            },
+            {
+              "file": "sc0027.f3f2a3778df4.js",
+              "offset": 37875,
+              "snippet": "(0,c.tZ)(s.Ee,{src:S?C:u,style:{width:\"100%\",objectFit:\"cover\",maxHeight:\"100%\",aspectRatio:m?\"\".concat(m):void 0}})"
+            }
+          ]
+        },
+        {
+          "path": "mobileThumbnailImageUrl",
+          "type": "string",
+          "declaredType": "string (absolute URL)",
+          "kind": "image",
+          "required": false,
+          "guard": "||\"\"",
+          "usage": "mobile card image",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 14899,
+              "snippet": "mobileImageUrl:e.mobileThumbnailImageUrl||\"\""
+            }
+          ]
+        },
+        {
+          "path": "pricePerSize",
+          "type": "number",
+          "declaredType": "number (만원/평; must be >=0 when truthy)",
+          "kind": "display",
+          "required": false,
+          "guard": "e?.pricePerSize && filterPrices.filter(...)[0].name — falsy => caption \"평당 undefined|null|0\"; truthy but no range match (negative or non-numeric) => TypeError on [0].name (render crash)",
+          "usage": "caption \"평당 <bucket name>\" via filterPrices ranges [0,180],[180,250],[250,300],[300,350],[350,400],[400]; area2 compares upper bound with <=",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 14975,
+              "snippet": "(null===e||void 0===e?void 0:e.pricePerSize)&&L.filterPrices.filter("
+            },
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 15109,
+              "snippet": "e.pricePerSize>=t.range[0]&&e.pricePerSize<=t.range[1]}))[0].name)"
+            },
+            {
+              "file": "sc0025.e6a0597718ac.js",
+              "offset": 223730,
+              "snippet": "d=[{key:180,name:\"180\\ub9cc \\uc6d0 \\uc774\\ud558\",range:[0,180]}"
+            }
+          ]
+        }
+      ],
+      "requiredFields": [
+        "uuid"
+      ],
+      "optionalFields": [
+        "title",
+        "description",
+        "pcThumbnailImageUrl",
+        "mobileThumbnailImageUrl",
+        "pricePerSize"
+      ],
+      "conditionalBehaviors": [
+        "Section carousel rendered via `E.length&&(...)`: empty array renders the number 0 as a text node (React renders 0), not null",
+        "md: absolute prev/next arrow buttons; mobile: \"더 보기\" button below",
+        "description paragraph only if truthy; PortfolioItem inquiry/manager buttons not used here (props not passed)"
+      ],
+      "conditionalEvidence": [
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 14460,
+          "snippet": "E.length&&(0,r.BX)(u.Z,{position:\"relative\""
+        }
+      ],
+      "imageRendering": {
+        "component": "PortfolioItem (chunk 7925 module 8101 export lA) -> s.Ee -> plain <img>",
+        "nextImage": false,
+        "urlPrefixing": "none",
+        "aspectRatio": "580/380 default (imageAspectRatio prop not passed); container height set to clientWidth/ratio",
+        "evidence": [
+          {
+            "file": "sc0027.f3f2a3778df4.js",
+            "offset": 37320,
+            "snippet": "w=A.imageAspectRatio,m=void 0===w?580/380:w"
+          }
+        ]
+      },
+      "uiCardinalityFacts": [
+        "Carousel module 3640: slidesPerView = (md?3:1), spaceBetween default 50, centeredSlides false, no loop, no autoplay; animation:false passed (no data-aos)",
+        "progress indicator bar width = swiper.width / (totalCount - (md ? 3-1 : 0)); totalCount prop = items.length. md with 2 items => divide by 0 (Infinity px), 1 item => negative width (invalid, bar invisible), 3 items => full-width (no motion); >=4 items gives a moving indicator",
+        "indicator translateX = barWidth * activeIndex on slide change",
+        "request count=10 => max 10 cards"
+      ],
+      "uiEvidence": [
+        {
+          "file": "sc0027.f3f2a3778df4.js",
+          "offset": 43035,
+          "snippet": "slidesPerView:Q||(y?3:1)"
+        },
+        {
+          "file": "sc0027.f3f2a3778df4.js",
+          "offset": 42681,
+          "snippet": "var i=(s.current.width-(M?2*u:0))/(e-(y?(Q||3)-1:0));z(i)"
+        },
+        {
+          "file": "sc0027.f3f2a3778df4.js",
+          "offset": 42131,
+          "snippet": "I=void 0===E?50:E"
+        },
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 14514,
+          "snippet": "(0,r.tZ)(B.Z,{animation:!1,totalCount:E.length,swiperRef:d"
+        }
+      ],
+      "capturedDomCardinality": {
+        "swiperSlides": 4,
+        "cardImgs": 4,
+        "note": "fewer than requested count=10"
+      }
+    },
+    {
+      "diagnosticName": "reviews",
+      "requestMatcher": {
+        "method": "GET",
+        "origin": "https://dev-api.apartmentary.com",
+        "pathname": "/api/v1/reviews/action/get-by-paging",
+        "query": {
+          "count": "6"
+        }
+      },
+      "responseEnvelope": {
+        "data": {
+          "data": [
+            "REVIEW_ITEM"
+          ],
+          "totalCount": "unproven (not read)"
+        }
+      },
+      "collectionPath": "data.data",
+      "totalCountPath": null,
+      "totalCountConsumed": {
+        "bool": false,
+        "evidence": [
+          {
+            "file": "sc0028.dba4c3c5f366.js",
+            "offset": 2212,
+            "snippet": "var t=e.data.data.data;(0,I.z)((function(){n.reviews=t||[]}))"
+          }
+        ],
+        "note": "no totalCount access at all; body.data must be an object"
+      },
+      "collectionRequired": {
+        "required": false,
+        "type": "array|null",
+        "why": "t||[]; section returns null when empty"
+      },
+      "itemRequirement": {
+        "required": true,
+        "why": "j reads i.text unguarded; null element throws (mobile odd tail guarded by o[2*t+1]&&)"
+      },
+      "itemFields": [
+        {
+          "path": "text",
+          "type": "string",
+          "declaredType": "string",
+          "kind": "display",
+          "required": false,
+          "guard": "none (missing renders empty)",
+          "usage": "review body, h4 (md) / body2",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 4513,
+              "snippet": "bold:\"bold\",children:i.text}"
+            }
+          ]
+        },
+        {
+          "path": "customerName",
+          "type": "string",
+          "declaredType": "string",
+          "kind": "display",
+          "required": false,
+          "guard": "none (missing renders \" 님\")",
+          "usage": "\"<customerName> 님\"",
+          "evidence": [
+            {
+              "file": "sc0028.dba4c3c5f366.js",
+              "offset": 4625,
+              "snippet": "children:[i.customerName,\" \\ub2d8\"]"
+            }
+          ]
+        }
+      ],
+      "requiredFields": [],
+      "optionalFields": [
+        "text",
+        "customerName"
+      ],
+      "conditionalBehaviors": [
+        "Section returns null unless reviews.length (o.length?...:null)",
+        "Ordinal label from index: idx<9 ? \"0\"+(idx+1) : idx+1 (not a data field)",
+        "md: one review per slide; mobile: pages of 2 reviews stacked (Math.ceil(n/2) slides), second only if present",
+        "md shows prev/next icon buttons in header; static section images are bundled /_next/static/media/main-customer-review*.jpg (not API)"
+      ],
+      "conditionalEvidence": [
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 2283,
+          "snippet": "o.length?(0,r.BX)(u.Z,{display:\"flex\",justifyContent:\"flex-end\""
+        },
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 4354,
+          "snippet": "children:t<9?\"0\".concat(t+1):t+1"
+        },
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 3778,
+          "snippet": "Array(Math.ceil(o.length/2)).fill(0).map("
+        },
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 1699,
+          "snippet": "E=\"/_next/static/media/main-customer-review.11301dfd.jpg\""
+        }
+      ],
+      "imageRendering": {
+        "none": "no item image fields"
+      },
+      "uiCardinalityFacts": [
+        "Carousel 3640 with totalCount = md ? n : ceil(n/2); slidesPerView md 3 / mobile 1; spaceBetween 50; no loop/autoplay",
+        "md indicator width = width/(n-2): n=3 full width, n=2 Infinity, n=1 negative; mobile width/ceil(n/2)",
+        "request count=6 => max 6"
+      ],
+      "uiEvidence": [
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 3486,
+          "snippet": "totalCount:t?o.length:Math.ceil(o.length/2)"
+        },
+        {
+          "file": "sc0025.e6a0597718ac.js",
+          "offset": 282638,
+          "snippet": "getReviewsByPagingUsingGET1:function(){var t=(0,r.Z)((function(t,n,r,a,s,u){"
+        }
+      ],
+      "capturedDomCardinality": {
+        "swiperSlides": 6,
+        "imgsInSlides": 0
+      }
+    }
+  ],
+  "mediaQueries": [
+    {
+      "literal": "theme.breakpoints.up(\"md\") => \"@media (min-width:900px)\" (MUI default values, no custom breakpoints found)",
+      "evidence": [
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 1992,
+          "snippet": "(0,h.Z)(e.breakpoints.up(\"md\"))"
+        },
+        {
+          "file": "sc0025.e6a0597718ac.js",
+          "offset": 58397,
+          "snippet": "const o={xs:0,sm:600,md:900,lg:1200,xl:1536},i={keys:[\"xs\",\"sm\",\"md\",\"lg\",\"xl\"],up:e=>`@media (min-width:${o[e]}px)`}"
+        }
+      ]
+    },
+    {
+      "literal": "@media (min-width:1920px)",
+      "note": "result discarded in homepage",
+      "evidence": [
+        {
+          "file": "sc0028.dba4c3c5f366.js",
+          "offset": 5071,
+          "snippet": "(0,h.Z)(\"@media (min-width:1920px)\")"
+        }
+      ]
+    },
+    {
+      "literal": "(max-width:1280px)",
+      "note": "PortfolioItem typography variant (combined with md)",
+      "evidence": [
+        {
+          "file": "sc0027.f3f2a3778df4.js",
+          "offset": 37542,
+          "snippet": "f=(0,h.Z)(\"(max-width:1280px)\")&&S"
+        }
+      ]
+    }
+  ],
+  "unproven": [
+    "reviews response totalCount (never accessed)",
+    "main banner \"type\" values other than \"GENERAL\" (no enum literal found in bundles)",
+    "textColor actual type (only truthiness used)",
+    "item fields beyond those listed (e.g. ids, dates) — not read by homepage code",
+    "expected host of banner video URLs: the mp4 requests to apartmentary-static S3 in the capture are explained by a hard-coded <source src> in chunk 7925 (static video section), not by API data; captured hero had 0 videos"
+  ],
+  "notes": [
+    "Service base URL hard-coded https://dev-api.apartmentary.com; axios instance adds Authorization Bearer from accessToken cookie/storage or \"\" ",
+    "e.data is AxiosResponse body: request fn j() in generated client returns axios.request result",
+    "next/image config exists in _app bundle (path /_next/image, loader default, unoptimized false) but no homepage API image goes through it; all use s.Ee -> <img>",
+    "Image URL host observed in capture manifest for jpg/png: media-landing.apartmentary.com (absolute URLs; code does not prefix)",
+    "Portfolio area1 bucket uses < upper bound, area2 uses <=; boundary values (180,250,300,350) pick different buckets",
+    "9267 service registry evidence: {\"file\": \"sc0027.f3f2a3778df4.js\", \"offset\": 260409, \"snippet\": \"var c=\\\"https://dev-api.apartmentary.com\\\"\"}"
+  ]
+}

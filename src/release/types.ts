@@ -103,6 +103,14 @@ export const REQUIREMENT_KINDS = [
   "social-handle",
   "seo-fact",
   "brand-leak",
+  /**
+   * Task 28 Phase 6: an ENABLED page links to a route the operator disabled,
+   * and the removal is not deterministic (the anchor hosting the link also
+   * hosts unrelated slots, or the anchor carries no slot at all). It NEVER
+   * clears because the route was disabled — only when the SERVED candidate's
+   * link QA reports zero `brokenInternal` for it (`src/seo/link-qa.ts`).
+   */
+  "dead-internal-link",
 ] as const;
 export const RequirementKindSchema = z.enum(REQUIREMENT_KINDS);
 export type RequirementKind = z.infer<typeof RequirementKindSchema>;
@@ -160,12 +168,38 @@ export const RequirementSchema = z
   .strict();
 export type Requirement = z.infer<typeof RequirementSchema>;
 
+/**
+ * WHICH collection a requirements.json describes (Task 28 §1B).
+ *
+ * A requirement total is only meaningful relative to the stage artifacts the
+ * gaps were collected from: `release:build` re-collects from the artifacts its
+ * own stage reruns just produced, so the file it writes legitimately differs
+ * from the one `release:prepare` wrote against the accepted lineage. Without
+ * this block the two numbers look like the same number disagreeing with
+ * itself, which is exactly the drift Task 27 recorded and could not explain.
+ *
+ * OPTIONAL because every requirements.json written before Task 28 lacks it and
+ * the schema is `.strict()` — an absent block means "provenance unrecorded",
+ * never "collected from nothing".
+ */
+export const RequirementsProvenanceSchema = z
+  .object({
+    /** The release run that produced this file. */
+    releaseRunId: z.string().min(1),
+    releaseRunKind: z.enum(["prepare", "resolve", "build"]),
+    /** stage -> the artifact directory the gaps were COLLECTED from. */
+    stageArtifacts: z.record(z.string(), z.string()),
+  })
+  .strict();
+export type RequirementsProvenance = z.infer<typeof RequirementsProvenanceSchema>;
+
 export const RequirementsFileSchema = z
   .object({
     schemaVersion: z.literal(RELEASE_SCHEMA_VERSION),
     schemaName: z.literal(RELEASE_REQUIREMENTS_SCHEMA_NAME),
     projectId: z.string(),
     generatedAt: z.string(),
+    collectedFrom: RequirementsProvenanceSchema.optional(),
     counts: z
       .object({
         total: z.number().int().nonnegative(),
@@ -206,6 +240,186 @@ export const AuthoredThemeSchema = z
 export type AuthoredTheme = z.infer<typeof AuthoredThemeSchema>;
 
 /**
+ * An operator-authored ASSET replacement (Task 28 Phase 2).
+ *
+ * KEYED EXACTLY LIKE THE RESOLUTION PACK. `ProductionResolution.assets` is a
+ * map from `assetId` → file, where `assetId` is a replacement-manifest
+ * `entries[].inventoryId` or one of the two site-level ids `og-image` /
+ * `organization-logo` (resolve-assets.ts:129-136 is the only place that
+ * vocabulary is interpreted). `authored.assets` uses the SAME key so the two
+ * are mergeable without a translation table: `assetsStageRunner` applies the
+ * pack's assets first and the authored ones last, so a Visual Editor edit
+ * wins over the pack that first introduced the value — the same precedence
+ * `contentStageRunner` already gives `authored.slotValues`.
+ *
+ * `alt` HAS NO CONSUMER YET and that is recorded rather than implied: the
+ * asset materialization rewrites BYTES keyed on a source URL (assets/rewrite.ts)
+ * and never touches markup, so an `alt` attribute can only be written by a
+ * bake-time IR rewrite. It is stored here because the Visual Editor's "replace
+ * this image" and Phase 2's brand REPLACE payload both need somewhere
+ * authoritative to put it.
+ */
+export const AuthoredAssetSchema = z
+  .object({
+    /** Local replacement file — the same value `ResolutionAsset.file` carries. */
+    file: z.string().min(1),
+    /** Alt text for the surface, where it has one. RECORDED, not yet consumed. */
+    alt: z.string().optional(),
+    note: z.string().optional(),
+    updatedAt: z.string(),
+  })
+  .strict();
+export type AuthoredAsset = z.infer<typeof AuthoredAssetSchema>;
+
+/**
+ * The operator's DECISION about one detected source-brand surface.
+ *
+ *   REPLACE   ship something else in its place (text, or a replacement asset)
+ *   REMOVE    ship the surface empty / absent
+ *   PRESERVE  ship the source's own mark, deliberately — requires a reason
+ *
+ * DETECTION IS NOT STORED HERE. A brand surface's route, node id, matched
+ * value and evidence pointer are DERIVED SOURCE EVIDENCE: re-derivable by
+ * re-running the detector (brand-scan.ts `scanBrandSurfaces`) against the
+ * template lineage, and wrong the moment the lineage moves. Copying it into
+ * mutable customer state would create a second, silently-rotting truth. Only
+ * the decision lives here, addressed by the stable surface id the detector
+ * produces (`brandSurfaceId`, authored.ts).
+ */
+export const BRAND_DECISIONS = ["REPLACE", "REMOVE", "PRESERVE"] as const;
+export const BrandDecisionSchema = z.enum(BRAND_DECISIONS);
+export type BrandDecision = z.infer<typeof BrandDecisionSchema>;
+
+export const AuthoredBrandDecisionSchema = z
+  .object({
+    decision: BrandDecisionSchema,
+    /**
+     * REPLACE payload. `text` covers the textual surfaces (aria-label, svg
+     * <text>/<title>, image alt, visible text); `assetId` points at an
+     * `authored.assets` entry; `file` is a local file for a surface with no
+     * inventory id. At least one is required for REPLACE and none may be
+     * present otherwise — a REMOVE that carries a payload is an editor bug,
+     * not a preference.
+     */
+    replacement: z
+      .object({
+        text: z.string().optional(),
+        assetId: z.string().min(1).optional(),
+        file: z.string().min(1).optional(),
+      })
+      .strict()
+      .optional(),
+    /** PRESERVE only, and REQUIRED there: why this source mark may ship. */
+    reason: z.string().min(1).optional(),
+    note: z.string().optional(),
+    updatedAt: z.string(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    const payload = value.replacement;
+    const hasPayload =
+      payload !== undefined &&
+      (payload.text !== undefined || payload.assetId !== undefined || payload.file !== undefined);
+    if (value.decision === "REPLACE" && !hasPayload) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "brand decision REPLACE requires a replacement payload (replacement.text, " +
+          "replacement.assetId or replacement.file) — a REPLACE with nothing to ship is a gap, " +
+          "not a decision",
+      });
+    }
+    if (value.decision !== "REPLACE" && hasPayload) {
+      ctx.addIssue({
+        code: "custom",
+        message: `brand decision ${value.decision} must not carry a replacement payload`,
+      });
+    }
+    if (value.decision === "PRESERVE" && value.reason === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "brand decision PRESERVE requires an explicit reason — shipping the source's own mark " +
+          "is a decision that must be defensible on the operator checklist",
+      });
+    }
+    if (value.decision !== "PRESERVE" && value.reason !== undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message: `brand decision ${value.decision} must not carry a PRESERVE reason`,
+      });
+    }
+  });
+export type AuthoredBrandDecision = z.infer<typeof AuthoredBrandDecisionSchema>;
+
+// ---------------------------------------------------------------------------
+// Enablement (Task 28 Phases 5 + 6) — "this section / this page is not needed"
+// ---------------------------------------------------------------------------
+
+/**
+ * One DISABLED ROUTE. The key is the route-map `key` (`/pricing`).
+ *
+ * Recorded separately from `disabledRegions` on purpose: they stale different
+ * stages (a route leaves the CONTENT scope, the SEO plan, the sitemap and the
+ * export; a region only stops rendering), they are refused for different
+ * reasons, and a single mixed map could not express "this region is off
+ * everywhere" and "this page is off" without one of them lying.
+ */
+export const DisabledRouteSchema = z
+  .object({
+    reason: z.string().optional(),
+    note: z.string().optional(),
+    updatedAt: z.string(),
+  })
+  .strict();
+export type DisabledRoute = z.infer<typeof DisabledRouteSchema>;
+
+/**
+ * How widely a region disable applies.
+ *
+ *   global  every route that renders the region — the ONLY honest answer for a
+ *           region that is global for enablement purposes, and the only answer
+ *           available at all when the region's page is shared by several routes
+ *   routes  the explicit route list. Accepted only when it covers the region's
+ *           whole blast radius (see `evaluateRegionDisable`), which is what
+ *           makes "disable on /a but not /b" impossible to record as a lie
+ *           rather than merely discouraged.
+ */
+export const REGION_DISABLE_SCOPES = ["global", "routes"] as const;
+export const RegionDisableScopeSchema = z.enum(REGION_DISABLE_SCOPES);
+export type RegionDisableScope = z.infer<typeof RegionDisableScopeSchema>;
+
+export const DisabledRegionSchema = z
+  .object({
+    scope: RegionDisableScopeSchema,
+    /** Required when scope is `routes`; forbidden when scope is `global`. */
+    routes: z.array(z.string().min(1)).optional(),
+    reason: z.string().optional(),
+    note: z.string().optional(),
+    updatedAt: z.string(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.scope === "routes" && (value.routes === undefined || value.routes.length === 0)) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          'region disable scope "routes" requires a non-empty route list — a scoped disable that ' +
+          "names no route is a decision with no subject",
+      });
+    }
+    if (value.scope === "global" && value.routes !== undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          'region disable scope "global" must not carry a route list — it applies to every route ' +
+          "that renders the region, and a list would imply it does not",
+      });
+    }
+  });
+export type DisabledRegion = z.infer<typeof DisabledRegionSchema>;
+
+/**
  * AUTHORITATIVE authored state. This is the future Visual Editor's write
  * target and the single source of truth for the values it owns:
  *
@@ -223,6 +437,41 @@ export const AuthoredStateSchema = z
     /** slot key → authored value (string for text/url slots). */
     slotValues: z.record(z.string(), z.unknown()),
     theme: AuthoredThemeSchema,
+    /**
+     * assetId → authored replacement (Task 28 Phase 2). OPTIONAL, and ABSENT
+     * rather than `{}` when nothing is authored: every release-project.json
+     * already on disk lacks the field (the schema is `.strict()`, so a
+     * REQUIRED one would refuse to load them) and `hashAuthoredState`
+     * (revisions.ts) hashes the snapshot as captured — an empty map would
+     * change the hash of every historical authored state and manufacture a
+     * spurious revision on the next prepare. `removeAuthoredAsset` deletes the
+     * field again when the last entry goes, so the round trip is exact.
+     */
+    assets: z.record(z.string(), AuthoredAssetSchema).optional(),
+    /**
+     * brand surface id → operator decision (Task 28 Phase 2). Absent-when-empty
+     * for exactly the reasons above. The ids come from `brandSurfaceId`
+     * (authored.ts) over the detector's findings; no detection evidence is
+     * stored here.
+     */
+    brand: z.record(z.string(), AuthoredBrandDecisionSchema).optional(),
+    /**
+     * route key -> the operator turned this page OFF (Task 28 Phase 6).
+     * Absent-when-empty for exactly the reasons `assets` is: the schema is
+     * `.strict()`, every release-project.json on disk lacks the field, and
+     * `hashAuthoredState` hashes the snapshot as captured — a required-but-
+     * empty map would change the hash of every historical authored state and
+     * manufacture a spurious revision on the next prepare.
+     */
+    disabledRoutes: z.record(z.string(), DisabledRouteSchema).optional(),
+    /**
+     * PageRegion id -> the operator deleted this section (Task 28 Phase 5).
+     * The id comes from `page-regions.json`; nothing about WHY it was chosen
+     * (node ids, slot keys, the interaction graph) is stored here — that is
+     * all re-derived from the artifacts on every resolve, so a template
+     * recompile that moved an id is caught instead of applied blind.
+     */
+    disabledRegions: z.record(z.string(), DisabledRegionSchema).optional(),
     updatedAt: z.string().nullable(),
   })
   .strict();
@@ -399,6 +648,15 @@ export const ReleaseProjectSchema = z
      */
     siteId: z.string().min(1),
     projectId: z.string().min(1),
+    /**
+     * Human-facing site name (Task 28 CR3) — what a Library UI shows instead of
+     * a host slug. OPTIONAL ON PURPOSE: the schema is `.strict()` and
+     * `adaptReleaseProject` only knows the revision 1→2 upgrade, so a REQUIRED
+     * field would force a revision 3 and break every project already on disk.
+     * Absent means "no name recorded"; the registry then derives the display
+     * name from `siteId`, exactly as it did before this field existed.
+     */
+    displayName: z.string().min(1).optional(),
     createdAt: z.string(),
     updatedAt: z.string(),
     source: z
@@ -427,6 +685,15 @@ export const ReleaseProjectSchema = z
         seoSourceSnapshotDir: z.string(),
         assetInventoryDir: z.string(),
         siteSpecDir: z.string().nullable(),
+        /**
+         * page-regions run dir (Task 28 Phase 5) — the artifact region
+         * enablement addresses. OPTIONAL: the object is `.strict()` and every
+         * project on disk predates it, so a required field would refuse to
+         * load them. Absent means "this project has no region compile", and
+         * every region edit is then refused with `regions-not-compiled`
+         * rather than silently ignored.
+         */
+        pageRegionsDir: z.string().optional(),
       })
       .strict(),
     intent: z
@@ -492,6 +759,13 @@ export const ReleaseRunSchema = z
     warnings: z.array(z.string()),
     /** Unresolved release-blocking requirement ids at the end of the run. */
     blockers: z.array(z.string()),
+    /**
+     * The requirement total this run WROTE into requirements.json (Task 28
+     * §1B). Required: a run that rewrites the requirements file without
+     * recording its own total leaves the operator with a CLI line and a file
+     * that cannot be compared afterwards.
+     */
+    requirementsTotal: z.number().int().nonnegative(),
     finalVerdict: ReleaseStateSchema,
     stageExecutions: z.array(StageExecutionRecordSchema),
     failure: ReleaseFailureSchema.nullable(),
@@ -550,6 +824,13 @@ export const SEVERITY_POLICY: Record<RequirementKind, { severity: RequirementSev
   "seo-fact": {
     severity: "high-value",
     basis: "non-blocking SEO value still needs-input",
+  },
+  "dead-internal-link": {
+    severity: "release-blocking",
+    basis:
+      "\u00a719: a link that answers 404 is a broken production site. It is release-blocking rather " +
+      "than high-value because the alternative — silently pointing it at the homepage — is the one " +
+      "thing this engine must never do",
   },
   "social-handle": {
     severity: "optional",

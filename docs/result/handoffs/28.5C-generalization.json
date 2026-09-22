@@ -1,0 +1,374 @@
+{
+  "task": "28.5C",
+  "agent": "E (generalization verifier)",
+  "generatedAt": "2026-09-01",
+  "site": "stripe.com",
+  "route": "/",
+  "routeChoiceRationale": "The stripe reconstruction has exactly 2 routes (/ and /industries/media-entertainment). The homepage was chosen: it is the multi-column, carousel-heavy, breakpoint-dense route and the canonical landing surface.",
+  "lineage": {
+    "reconstruction": "data/stripe.com/reconstructions/2026-08-30T16-16-41-190Z",
+    "siteSpec": "data/stripe.com/site-specs/2026-08-30T16-16-36-462Z",
+    "probeWidths": [
+      390,
+      768,
+      1024,
+      1440,
+      1920
+    ],
+    "inferredBreakpoint": 915,
+    "truthWidth": 1440
+  },
+  "widths": [
+    700,
+    1100,
+    1440
+  ],
+  "sourceReference": {
+    "700": {
+      "visibleChars": 15190,
+      "hiddenNodes": 51,
+      "totalNodes": 3810,
+      "scrollHeight": 14831,
+      "scrollWidth": 700,
+      "innerWidth": 700,
+      "hOverflow": false,
+      "offscreenNodes": 453,
+      "offscreenTextChars": 1438,
+      "overflowingNodes": 138,
+      "multiColumnContainers": 164,
+      "contentMaxRight": 6209,
+      "contentMinLeft": -62,
+      "rightGutter": -5509
+    },
+    "1100": {
+      "visibleChars": 15296,
+      "hiddenNodes": 39,
+      "totalNodes": 3854,
+      "scrollHeight": 14110,
+      "scrollWidth": 1100,
+      "innerWidth": 1100,
+      "hOverflow": false,
+      "offscreenNodes": 353,
+      "offscreenTextChars": 1038,
+      "overflowingNodes": 35,
+      "multiColumnContainers": 180,
+      "contentMaxRight": 6209,
+      "contentMinLeft": -254,
+      "rightGutter": -5109,
+      "offscreenTextChars_inHorizontalScroller": 1038,
+      "offscreenTextChars_inNormalFlow": 0
+    },
+    "1440": {
+      "visibleChars": 15296,
+      "hiddenNodes": 39,
+      "totalNodes": 3854,
+      "scrollHeight": 14668,
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "hOverflow": false,
+      "offscreenNodes": 327,
+      "offscreenTextChars": 991,
+      "overflowingNodes": 25,
+      "multiColumnContainers": 165,
+      "contentMaxRight": 6280,
+      "contentMinLeft": -221,
+      "rightGutter": -4840,
+      "offscreenTextChars_inHorizontalScroller": 991,
+      "offscreenTextChars_inNormalFlow": 0
+    }
+  },
+  "baseline": {
+    "700": {
+      "visibleChars": 11431,
+      "hiddenNodes": 60,
+      "totalNodes": 5627,
+      "scrollHeight": 20349,
+      "scrollWidth": 700,
+      "innerWidth": 700,
+      "hOverflow": false,
+      "offscreenNodes": 462,
+      "offscreenTextChars": 1757,
+      "overflowingNodes": 33,
+      "multiColumnContainers": 62,
+      "contentMaxRight": 6116,
+      "contentMinLeft": -189,
+      "rightGutter": -5416
+    },
+    "1100": {
+      "visibleChars": 11403,
+      "hiddenNodes": 60,
+      "totalNodes": 5627,
+      "scrollHeight": 14668,
+      "scrollWidth": 1440,
+      "innerWidth": 1100,
+      "hOverflow": true,
+      "offscreenNodes": 446,
+      "offscreenTextChars": 1099,
+      "overflowingNodes": 142,
+      "multiColumnContainers": 83,
+      "contentMaxRight": 6136,
+      "contentMinLeft": -134,
+      "rightGutter": -5036,
+      "offscreenTextChars_inHorizontalScroller": 1062,
+      "offscreenTextChars_inNormalFlow": 37
+    },
+    "1440": {
+      "visibleChars": 11403,
+      "hiddenNodes": 60,
+      "totalNodes": 5627,
+      "scrollHeight": 14668,
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "hOverflow": false,
+      "offscreenNodes": 322,
+      "offscreenTextChars": 991,
+      "overflowingNodes": 26,
+      "multiColumnContainers": 84,
+      "contentMaxRight": 6207,
+      "contentMinLeft": 0,
+      "rightGutter": -4767,
+      "offscreenTextChars_inHorizontalScroller": 991,
+      "offscreenTextChars_inNormalFlow": 0
+    }
+  },
+  "baselineClass": {
+    "700": "BLOCKER",
+    "1100": "BLOCKER",
+    "1440": "MINOR"
+  },
+  "baselineClassWhy": {
+    "700": "Below the 915 subtree breakpoint, so the mobile subtree renders; it is frozen at its 390 capture width, so the entire page renders as a 390px column inside a 700px viewport with ~310px (44%) of dead right gutter for its full 20,349px height (source is 14,831px). Pathological whitespace.",
+    "1100": "Desktop subtree frozen at the 1440 truth width: scrollWidth 1440 vs innerWidth 1100, 142 overflowing nodes, every section clipped at the right edge, and 37 chars of normal-flow content (the cookie banner's 'Reject all' / 'manage cookies' controls) pushed past the right edge and unreachable.",
+    "1440": "Truth width. Matches the source on every metric that matters (offscreen 322 vs source 327 nodes, 991 vs 991 offscreen chars, all of it inside horizontally scrollable carousel tracks, 0 chars lost from normal flow, no horizontal overflow)."
+  },
+  "patched": {
+    "700": {
+      "visibleChars": 11431,
+      "hiddenNodes": 60,
+      "totalNodes": 5627,
+      "scrollHeight": 20349,
+      "scrollWidth": 700,
+      "innerWidth": 700,
+      "hOverflow": false,
+      "offscreenNodes": 462,
+      "offscreenTextChars": 1757,
+      "overflowingNodes": 33,
+      "multiColumnContainers": 62,
+      "contentMaxRight": 6116,
+      "contentMinLeft": -189,
+      "rightGutter": -5416
+    },
+    "1100": {
+      "visibleChars": 11403,
+      "hiddenNodes": 60,
+      "totalNodes": 5627,
+      "scrollHeight": 14668,
+      "scrollWidth": 1271,
+      "innerWidth": 1100,
+      "hOverflow": true,
+      "offscreenNodes": 471,
+      "offscreenTextChars": 2504,
+      "overflowingNodes": 93,
+      "multiColumnContainers": 83,
+      "contentMaxRight": 10214,
+      "contentMinLeft": -123,
+      "rightGutter": -9114,
+      "offscreenTextChars_inHorizontalScroller": 2504,
+      "offscreenTextChars_inNormalFlow": 0
+    },
+    "1440": {
+      "visibleChars": 11403,
+      "hiddenNodes": 60,
+      "totalNodes": 5627,
+      "scrollHeight": 14668,
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "hOverflow": false,
+      "offscreenNodes": 402,
+      "offscreenTextChars": 2377,
+      "overflowingNodes": 32,
+      "multiColumnContainers": 84,
+      "contentMaxRight": 10214,
+      "contentMinLeft": -56,
+      "rightGutter": -8774,
+      "offscreenTextChars_inHorizontalScroller": 2377,
+      "offscreenTextChars_inNormalFlow": 0
+    }
+  },
+  "patchedClass": {
+    "700": "BLOCKER",
+    "1100": "MAJOR",
+    "1440": "MAJOR"
+  },
+  "patchedClassWhy": {
+    "700": "Unchanged. Byte-identical screenshot and byte-identical metrics to baseline: the mechanism only touches the desktop subtree, and 700 renders the mobile subtree. Same residual agent D reported for linear.",
+    "1100": "IMPROVED from BLOCKER. Page overflow halves (scrollWidth 1440 -> 1271), overflowing nodes 142 -> 93, and the 37 normal-flow chars lost at baseline are recovered (flow-offscreen chars 37 -> 0). Text reflows correctly (paragraphs rewrap). Still MAJOR because ~171px of horizontal overflow remains: frozen px survives deeper in the tree, exactly the residual agent D measured on linear.",
+    "1440": "REGRESSED from MINOR. No content is lost (normal-flow offscreen chars stay 0) but the page's centered container is unfrozen with max-width:none, so the left/right gutters collapse (contentMinLeft 0 -> -56) and every section spans wider than the source. Carousel tracks widen too (offscreen chars 991 -> 2377, all still inside horizontal scrollers, i.e. reachable). Visible, uniform fidelity loss at the width that was previously exact."
+  },
+  "patchedNoMaxWidth": {
+    "700": {
+      "visibleChars": 11431,
+      "hiddenNodes": 60,
+      "totalNodes": 5627,
+      "scrollHeight": 20349,
+      "scrollWidth": 700,
+      "innerWidth": 700,
+      "hOverflow": false,
+      "offscreenNodes": 462,
+      "offscreenTextChars": 1757,
+      "overflowingNodes": 33,
+      "multiColumnContainers": 62,
+      "contentMaxRight": 6116,
+      "contentMinLeft": -189,
+      "rightGutter": -5416
+    },
+    "1100": {
+      "visibleChars": 11403,
+      "hiddenNodes": 60,
+      "totalNodes": 5627,
+      "scrollHeight": 14668,
+      "scrollWidth": 1271,
+      "innerWidth": 1100,
+      "hOverflow": true,
+      "offscreenNodes": 447,
+      "offscreenTextChars": 1106,
+      "overflowingNodes": 79,
+      "multiColumnContainers": 83,
+      "contentMaxRight": 6136,
+      "contentMinLeft": -134,
+      "rightGutter": -5036,
+      "offscreenTextChars_inHorizontalScroller": 1106,
+      "offscreenTextChars_inNormalFlow": 0
+    },
+    "1440": {
+      "visibleChars": 11403,
+      "hiddenNodes": 60,
+      "totalNodes": 5627,
+      "scrollHeight": 14668,
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "hOverflow": false,
+      "offscreenNodes": 329,
+      "offscreenTextChars": 1038,
+      "overflowingNodes": 24,
+      "multiColumnContainers": 84,
+      "contentMaxRight": 6207,
+      "contentMinLeft": 0,
+      "rightGutter": -4767,
+      "offscreenTextChars_inHorizontalScroller": 1038,
+      "offscreenTextChars_inNormalFlow": 0
+    }
+  },
+  "patchedNoMaxWidthClass": {
+    "700": "BLOCKER",
+    "1100": "MAJOR",
+    "1440": "MINOR"
+  },
+  "patchedNoMaxWidthWhy": {
+    "700": "Unchanged, as above.",
+    "1100": "Same improvement as the full patch, and slightly better: overflowing nodes 142 -> 79 (vs 93), scrollWidth 1440 -> 1271, flow-offscreen chars 37 -> 0, carousel offscreen chars stay at the baseline level (1106 vs 1099) instead of doubling.",
+    "1440": "Back to baseline: contentMinLeft 0, contentMaxRight 6207 (= baseline), overflowing 24 (baseline 26, source 25), offscreen chars 1038 (baseline/source 991), 0 normal-flow chars lost, screenshot visually identical to baseline. Regression eliminated."
+  },
+  "bandsClamped": 0,
+  "bandsClampedNote": "ZERO. The stripe reconstruction contains no synthetic hidden bands at all: manifest layout.responsiveHidden == 0 and generated-styles.css (9.0 MB) contains 0 occurrences of '@media'. The band-clamp half of the mechanism is a provable no-op on this site - it can neither help nor hurt. The patch script ran unmodified and reported bandsRewritten: 0.",
+  "nodesUnfrozen": 1906,
+  "nodesUnfrozenDetail": {
+    "total": 1906,
+    "evaluatedRoute_p000001": 782,
+    "otherRoute_p000002": 1124,
+    "gridsConvertedToFr": 78,
+    "gridsConverted_p000001": 40,
+    "nodesLeftFrozenAsGenuinelyFixed": 1410,
+    "probePairUsed": [
+      1024,
+      1440
+    ],
+    "rulesEmitted": 1906,
+    "cssAppendedBytes": 246070,
+    "unmatchedSelectors": 0
+  },
+  "regression": true,
+  "regressionDetail": {
+    "answer": "YES, at 1440 only, for the mechanism exactly as agent D emitted it. NO at 1100 (large improvement) and NO at 700 (bit-identical).",
+    "perWidth": {
+      "700": "no change",
+      "1100": "improved (BLOCKER -> MAJOR)",
+      "1440": "regressed (MINOR -> MAJOR)"
+    },
+    "cause": "The unfreeze rule emits `width:auto !important; max-width:none !important`. The `max-width:none` half is unjustified: the frozen style atom's max-width is the source's own computed max-width, so discarding it always destroys a real authored cap. Stripe's page shell is a centered container with a max-width plus side padding; it grows between 1024 and 1440, is therefore correctly detected as fluid, and then loses its cap - so at and above 1440 the gutters collapse. Linear never exposed this because its detection pair was 1440/1920, where its cap was already binding at both samples.",
+    "fixVerified": "Dropping `max-width:none` and emitting only `width:auto` (variant patched-nomaxwidth, port 4752) removes the 1440 regression completely while keeping the entire 1100 gain, and is in fact slightly better at 1100 than the original. Measured, not argued.",
+    "destructive": false,
+    "destructiveNote": "Even in the regressing variant, normal-flow offscreen text stayed 0 at every width. All offscreen text on this page - in the source too - lives inside horizontally scrollable carousel tracks, so the raw offscreenTextChars metric is misleading on stripe; the discriminating metric is offscreen text in NORMAL FLOW."
+  },
+  "linearSpecificDependencies": [
+    {
+      "item": "Algorithm code",
+      "verdict": "NOT linear-specific",
+      "detail": "agent-d/scripts/patch-c3.mjs and patch-c.mjs ran on stripe with zero code edits - only the spec dir and the two probe widths are arguments. The [data-wr-page]/[data-wr-viewport]/[data-wr-node] scoping, the style-catalog shape and the probe arrays were all identical. 0 unmatched selectors, 0 assumption failures."
+    },
+    {
+      "item": "Hidden-band clamp",
+      "verdict": "conditionally inert",
+      "detail": "Fires only when the generator actually synthesized responsive-hidden bands. Linear /pricing had 738; stripe has 0. So half the winning mechanism delivered nothing here. It is not linear-specific in design, but its VALUE was linear-specific."
+    },
+    {
+      "item": "Probe-pair selection",
+      "verdict": "NOT self-determining - the one real external dependency",
+      "detail": "Fluidity detection needs two probe widths both above the site's top AUTHORED layout switch. Linear's is 1024 -> pair (1440,1920), which found only 9 fluid nodes. Stripe's is 940 -> pair (1024,1440), which finds 782 on the homepage; the (1440,1920) pair would have found only 28. Getting this wrong is precisely what produces false-fluid detection. It cannot be read from the IR: stripe's observation carries authoredLayout on 0 of 2280 elements."
+    },
+    {
+      "item": "Observer CORS trap",
+      "verdict": "generalizes - confirmed on a second site",
+      "detail": "All 8 of stripe.com's stylesheets throw on cssRules in-page (readableInPage 0/8), yet all 8 fetch fine directly, yielding 379 @media width conditions and a clean top switch at 940 (min-width:940 in 108 rules, max-width:939 in 11). This is the same defect agent D flagged as a separate high-value bug on linear, now reproduced on stripe."
+    },
+    {
+      "item": "Frozen mobile subtree",
+      "verdict": "generalizes",
+      "detail": "700 is untouched on stripe for the same reason as on linear: generateLayoutCss runs only for the desktop subtree, so the mobile subtree stays frozen at its 390 capture. It is the single largest residual on stripe's homepage (a 390px column in a 700px viewport)."
+    }
+  ],
+  "generalizes": {
+    "verdict": "YES, WITH ONE MANDATORY CORRECTION AND ONE REQUIRED INPUT",
+    "rationale": "The generic algorithm ran on a second, structurally unrelated site with no code changes and no selector assumptions failing, and it converted stripe's 1100 from BLOCKER to MAJOR (page overflow halved, the only normal-flow content loss recovered) while leaving 700 bit-identical. It is not free of risk: as agent D emitted it, it also regressed the 1440 truth width by discarding authored max-width caps - a defect linear's probe pair happened to mask - and dropping the unjustified `max-width:none` declaration removes that regression entirely while keeping the full gain, verified by measurement. The band-clamp half is a no-op on any site the generator did not synthesize hidden bands for, so the fluid-unfreeze half is the part that carries the generalization.",
+    "requiredCorrections": [
+      "Emit `width:auto` only. NEVER emit `max-width:none`: the frozen atom's max-width is the source's own computed cap and discarding it destroys real layout at and above the truth width."
+    ],
+    "requiredInputs": [
+      "The site's top authored layout switch, used to pick the two probe widths. Recover it by fetching every stylesheet href directly (in-page cssRules is CORS-blocked on both sites tested) and histogramming @media width conditions. On stripe this is 940, so the usable pair on the shipped 5-width probe is (1024,1440) - no re-observation needed, unlike linear."
+    ],
+    "residualsThatDoNotGeneralizeAway": [
+      "The mobile subtree stays frozen at its capture width (700 is a BLOCKER on stripe, before and after).",
+      "Frozen px deeper in the tree keeps ~171px of horizontal overflow at 1100."
+    ]
+  },
+  "screenshots": {
+    "dir": "tmp/wr-responsive-investigation/agent-e/shots",
+    "source": [
+      "shots/source-700.png",
+      "shots/source-1100.png",
+      "shots/source-1440.png"
+    ],
+    "baseline": [
+      "shots/baseline-700.png",
+      "shots/baseline-1100.png",
+      "shots/baseline-1440.png"
+    ],
+    "patched": [
+      "shots/patched-700.png",
+      "shots/patched-1100.png",
+      "shots/patched-1440.png"
+    ],
+    "patchedNoMaxWidth": [
+      "shots/patched-nomaxwidth-700.png",
+      "shots/patched-nomaxwidth-1100.png",
+      "shots/patched-nomaxwidth-1440.png"
+    ]
+  },
+  "artifacts": {
+    "apps": "tmp/wr-responsive-investigation/agent-e/{app-base(4750),app-c3(4751),app-c3b(4752)} (disposable copies)",
+    "scripts": "tmp/wr-responsive-investigation/agent-e/scripts/{eval,diag-offscreen,breakpoints,patch-c,patch-c3,patch-c3b}.mjs (patch-c/patch-c3 copied unmodified from agent-d; patch-c3b is patch-c3 with max-width:none removed)",
+    "metrics": "tmp/wr-responsive-investigation/agent-e/out/metrics-*.json, diag-*.json, breakpoints.json",
+    "productionSourceUnchanged": true,
+    "dataUnchanged": true
+  }
+}

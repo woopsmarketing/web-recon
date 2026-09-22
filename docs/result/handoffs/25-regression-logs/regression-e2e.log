@@ -1,0 +1,326 @@
+Already up to date
+Done in 151ms using pnpm v11.21.0
+$ tsx scripts/smoke-e2e.ts
+[smoke:e2e] Task 16 — Full End-to-End Reconstruction
+
+§33 stage registry
+  PASS  the registry describes every stage exactly once, in order
+  PASS  exactly one stage is allowed to call Firecrawl, and it is discovery
+  PASS  the offline stages declare no browser and no network
+
+§60 escalation policy is closed
+  PASS  requires-exact-observation is escalated unconditionally
+  PASS  requires-new-interaction-observation is escalated unconditionally
+  PASS  requires-reobserve is CONDITIONAL, capped at one per route
+  PASS  requires-font-binding-observation is refused, with a stated reason
+  PASS  requires-asset-materialization is refused, with a stated reason
+  PASS  requires-pattern-modeling is refused, with a stated reason
+  PASS  unknown-semantic-gap is refused, with a stated reason
+
+§64 family escalation selection is deterministic and bounded
+  PASS  only MAJOR mismatches are candidates, worst first, capped
+  PASS  a limit of 0 escalates nothing
+  PASS  the same input always selects the same routes
+
+§127 final status is a classification, not a grade
+  PASS  a clean run is complete
+  PASS  a failed stage outranks everything
+  PASS  a failed page makes the run partial, not merely limited
+  PASS  a clone that throws is partial, and is never filed as a known limitation
+  PASS  …and zero clone errors leaves the verdict alone
+  PASS  an observation-boundary finding makes it complete-with-known-limitations
+  PASS  a plain style delta does NOT downgrade the status
+
+Task 17 §2 — Root URL Invariant (candidate seeding)
+  PASS  a provider result without the root still yields root + /a + /b
+  PASS  the seeded result records rootSeeded: true
+  PASS  provider counters still balance and exclude the seed
+  PASS  a provider result that already contains the root is not seeded twice
+  PASS  seeding normalizes the root like any other candidate (no-slash input)
+  PASS  a verified-but-unreconstructed root can never classify complete
+  PASS  …and a reconstructed root leaves the verdict alone
+  PASS  a root that never verified imposes no constraint (pre-Task-17 manifests too)
+
+§22 grid placement properties are in the Observer whitelist
+  PASS  grid-template-areas is observed
+  PASS  grid-area is observed
+  PASS  grid-auto-flow is observed
+  PASS  grid-auto-rows is observed
+  PASS  grid-auto-columns is observed
+  PASS  place-items is observed
+  PASS  place-content is observed
+  PASS  place-self is observed
+  PASS  order is observed
+
+§70 dynamic subtree caps are global constants
+  PASS  element cap is a fixed 300
+  PASS  depth cap is a fixed 12
+  PASS  text cap is a fixed 20,000 characters
+
+[smoke:e2e] fixture at http://127.0.0.1:59992 (6 routes)
+        [e2e] ▶ discovery
+        [e2e]   ! discovery: the provider did not return the input root URL; it was seeded into the candidate set (Root URL Invariant)
+        [e2e] ✔ discovery (1 ms) — ok
+        [e2e] ▶ verification
+        [e2e]   verify [1/6] valid-html http://127.0.0.1:59992/guides
+        [e2e]   verify [2/6] valid-html http://127.0.0.1:59992/
+        [e2e]   verify [3/6] valid-html http://127.0.0.1:59992/guides/beta
+        [e2e]   verify [4/6] valid-html http://127.0.0.1:59992/guides/alpha
+        [e2e]   verify [5/6] valid-html http://127.0.0.1:59992/guides/gamma
+        [e2e]   verify [6/6] valid-html http://127.0.0.1:59992/guides/delta
+        [e2e] ✔ verification (1778 ms) — ok
+        [e2e] ▶ selection
+        [e2e] ✔ selection (6 ms) — ok
+        [e2e] ▶ observation
+        [e2e]   observe [1/4] success p000001 http://127.0.0.1:59992/
+        [e2e]   observe [2/4] success p000002 http://127.0.0.1:59992/guides
+        [e2e]   observe [3/4] success p000004 http://127.0.0.1:59992/guides/delta
+        [e2e]   observe [4/4] success p000003 http://127.0.0.1:59992/guides/beta
+        [e2e] ✔ observation (14497 ms) — ok
+        [e2e] ▶ interaction-detection
+        [e2e] ✔ interaction-detection (27 ms) — ok
+        [e2e] ▶ interaction-exploration
+        [e2e]   explore [1/24] ia000002 changed
+        [e2e]   explore [2/24] ia000001 changed
+        [e2e]   explore [3/24] ia000003 changed
+        [e2e]   explore [4/24] ia000004 changed
+        [e2e]   explore [5/24] ia000005 changed
+        [e2e]   explore [6/24] ia000006 changed
+        [e2e]   explore [7/24] ia000007 changed
+        [e2e]   explore [8/24] ia000008 changed
+        [e2e]   explore [9/24] ia000009 changed
+        [e2e]   explore [10/24] ia000010 changed
+        [e2e]   explore [11/24] ia000012 changed
+        [e2e]   explore [12/24] ia000011 changed
+        [e2e]   explore [13/24] ia000014 changed
+        [e2e]   explore [14/24] ia000013 changed
+        [e2e]   explore [15/24] ia000016 changed
+        [e2e]   explore [16/24] ia000015 changed
+        [e2e]   explore [17/24] ia000018 changed
+        [e2e]   explore [18/24] ia000017 changed
+        [e2e]   explore [19/24] ia000020 changed
+        [e2e]   explore [20/24] ia000019 changed
+        [e2e]   explore [21/24] ia000021 changed
+        [e2e]   explore [22/24] ia000022 changed
+        [e2e]   explore [23/24] ia000023 changed
+        [e2e]   explore [24/24] ia000024 changed
+        [e2e] ✔ interaction-exploration (27297 ms) — ok
+        [e2e] ▶ interaction-modeling
+        [e2e] ✔ interaction-modeling (16 ms) — ok
+        [e2e] ▶ sitespec
+        [e2e] ✔ sitespec (71 ms) — ok
+        [e2e] ▶ reconstruction
+        [e2e] ✔ reconstruction (21 ms) — ok
+        [e2e] ▶ build
+        [e2e] ✔ build (2299 ms) — ok
+        [e2e] ▶ qa
+        [e2e]   [qa] http://127.0.0.1:59992/ — 4 pages, 6 routes
+        [e2e]   [qa] output data/127.0.0.1/reconstruction-qa/2026-08-25T13-04-24-767Z
+        [e2e]   [qa] clone serving on http://127.0.0.1:60075
+        [e2e]   [qa] 8 page/viewport pairs (concurrency 2)
+        [e2e]   [qa]   8/8 page/viewport pairs measured
+        [e2e]   [qa] routes 6/6 rendered
+        [e2e]   [qa] interaction QA — 18 verified pattern(s)
+        [e2e]   [qa] unknown QA — 1 signature representative(s)
+        [e2e]   [qa] family audit — 1 represented route(s)
+        [e2e]   [qa] corrections proposed 5, rejected at proposal 0
+        [e2e]   [qa] q001: applying 5 correction(s)
+        [e2e]   [qa] corrected reconstruction written to data/127.0.0.1/reconstruction-qa/2026-08-25T13-04-24-767Z/iterations/q001/reconstruction (22 files)
+        [e2e]   [qa] next build (data/127.0.0.1/reconstruction-qa/2026-08-25T13-04-24-767Z/iterations/q001/reconstruction/app)
+        [e2e]     next build | ▲ Next.js 16.3.0 (Turbopack)
+        [e2e]     next build | ✓ Running next.config.mjs took 5ms
+        [e2e]     next build |   Creating an optimized production build ...
+        [e2e]     next build | ✓ Compiled successfully in 878ms
+        [e2e]     next build |   Running TypeScript ...
+        [e2e]     next build |   Finished TypeScript in 650ms ...
+        [e2e]     next build |   Collecting page data using 4 workers ...
+        [e2e]     next build |   Generating static pages using 4 workers (0/2) ...
+        [e2e]     next build | ✓ Generating static pages using 4 workers (2/2) in 165ms
+        [e2e]     next build |   Finalizing page optimization ...
+        [e2e]     next build | Route (app)
+        [e2e]     next build | ┌ ○ /_not-found
+        [e2e]     next build | └ ƒ /[[...slug]]
+        [e2e]     next build | ○  (Static)   prerendered as static content
+        [e2e]     next build | ƒ  (Dynamic)  server-rendered on demand
+        [e2e]   [qa] clone serving on http://127.0.0.1:60417
+        [e2e]   [qa] q001: 3 accepted, 2 rejected
+        [e2e]   ! qa: 2 correction(s) were rejected on re-measurement
+        [e2e] ✔ qa (248117 ms) — ok
+        [e2e] ▶ family-escalation
+        [e2e]   escalate [1/1] x000001 http://127.0.0.1:59992/guides/alpha
+        [e2e] ✔ family-escalation (6754 ms) — ok
+        [e2e] re-compiling from the augmented observation (1 exactly-observed route(s))
+        [e2e] ▶ sitespec
+        [e2e]   ! sitespec: stage ran 2 times in this run (family escalation recompiles and re-measures); elapsedMs is the total across all passes
+        [e2e] ✔ sitespec (65 ms) — ok
+        [e2e] ▶ reconstruction
+        [e2e]   ! reconstruction: stage ran 2 times in this run (family escalation recompiles and re-measures); elapsedMs is the total across all passes
+        [e2e] ✔ reconstruction (17 ms) — ok
+        [e2e] ▶ build
+        [e2e]   ! build: stage ran 2 times in this run (family escalation recompiles and re-measures); elapsedMs is the total across all passes
+        [e2e] ✔ build (2313 ms) — ok
+        [e2e] ▶ qa
+        [e2e]   [qa] http://127.0.0.1:59992/ — 5 pages, 6 routes
+        [e2e]   [qa] output data/127.0.0.1/reconstruction-qa/2026-08-25T13-08-42-032Z
+        [e2e]   [qa] clone serving on http://127.0.0.1:60715
+        [e2e]   [qa] 10 page/viewport pairs (concurrency 2)
+        [e2e]   [qa]   10/10 page/viewport pairs measured
+        [e2e]   [qa] routes 6/6 rendered
+        [e2e]   [qa] interaction QA — 18 verified pattern(s)
+        [e2e]   [qa] unknown QA — 1 signature representative(s)
+        [e2e]   [qa] corrections proposed 5, rejected at proposal 0
+        [e2e]   [qa] q001: applying 5 correction(s)
+        [e2e]   [qa] corrected reconstruction written to data/127.0.0.1/reconstruction-qa/2026-08-25T13-08-42-032Z/iterations/q001/reconstruction (23 files)
+        [e2e]   [qa] next build (data/127.0.0.1/reconstruction-qa/2026-08-25T13-08-42-032Z/iterations/q001/reconstruction/app)
+        [e2e]     next build | ▲ Next.js 16.3.0 (Turbopack)
+        [e2e]     next build | ✓ Running next.config.mjs took 5ms
+        [e2e]     next build |   Creating an optimized production build ...
+        [e2e]     next build | ✓ Compiled successfully in 891ms
+        [e2e]     next build |   Running TypeScript ...
+        [e2e]     next build |   Finished TypeScript in 651ms ...
+        [e2e]     next build |   Collecting page data using 4 workers ...
+        [e2e]     next build |   Generating static pages using 4 workers (0/2) ...
+        [e2e]     next build | ✓ Generating static pages using 4 workers (2/2) in 166ms
+        [e2e]     next build |   Finalizing page optimization ...
+        [e2e]     next build | Route (app)
+        [e2e]     next build | ┌ ○ /_not-found
+        [e2e]     next build | └ ƒ /[[...slug]]
+        [e2e]     next build | ○  (Static)   prerendered as static content
+        [e2e]     next build | ƒ  (Dynamic)  server-rendered on demand
+        [e2e]   [qa] clone serving on http://127.0.0.1:61123
+        [e2e]   [qa] q001: 3 accepted, 2 rejected
+        [e2e]   ! qa: stage ran 2 times in this run (family escalation recompiles and re-measures); elapsedMs is the total across all passes
+        [e2e]   ! qa: 2 correction(s) were rejected on re-measurement
+        [e2e] ✔ qa (288974 ms) — ok
+        [e2e] ▶ final-validation
+        [e2e] ✔ final-validation (8 ms) — ok
+        [e2e] complete-with-known-limitations — unknown-behavior-gap ×1
+        [e2e] wrote ../../../../var/folders/73/v_wywp9d00sgmwr6l9hrw89r0000gn/T/web-recon-e2e-O8aBmj/e2e-run/e2e-manifest.json
+
+§35 the manifest is a complete, validated record
+  PASS  e2e-manifest.json re-parses against its own schema
+  PASS  stages are recorded in pipeline order, not completion order
+  PASS  every stage carries elapsed time
+  PASS  the run records 0 AI calls
+  PASS  the run records 0 Firecrawl calls (local discovery provider)
+
+§39 lineage
+  PASS  lineage names the root url
+  PASS  lineage records the discovery artifact
+  PASS  lineage records the verified urls artifact
+  PASS  lineage records the selection artifact
+  PASS  lineage records the observation artifact
+  PASS  lineage records the interaction analysis artifact
+  PASS  lineage records the exploration artifact
+  PASS  lineage records the patterns artifact
+  PASS  lineage records the sitespec artifact
+  PASS  lineage records the reconstruction artifact
+  PASS  lineage records the qa artifact
+  PASS  no lineage path is absolute (a shareable manifest carries no machine layout)
+
+§44 every stage really ran
+  PASS  discovery completed
+  PASS  verification completed
+  PASS  selection completed
+  PASS  observation completed
+  PASS  interaction-detection completed
+  PASS  interaction-exploration completed
+  PASS  interaction-modeling completed
+  PASS  sitespec completed
+  PASS  reconstruction completed
+  PASS  build completed
+  PASS  qa completed
+  PASS  final-validation completed
+
+§95 route coverage
+  PASS  all 6 verified URLs became routes
+  PASS  every generated route rendered
+  PASS  no page failed observation
+
+Task 17 §2 — Root URL Invariant, live
+  PASS  the provider omitted the root and discovery seeded it (rootSeeded count 1)
+  PASS  inputRootIncluded
+  PASS  inputRootVerified
+  PASS  inputRootSelectedOrRepresented
+  PASS  inputRootReconstructed
+  PASS  the seeded root became a real discovered URL (6 candidates from 5 provider links)
+
+Task 17 §4–§10 — user-visible targets and layout recovery, live
+  PASS  at least one observed target became a runtime binding
+  PASS  the CSS-hidden aria panel is a REVEALED observed target
+  PASS  the centered .centered band recovered a layout rule from the probe
+  PASS  trigger-state and visible-target metrics are published separately
+  PASS  at least one pattern's user-visible after-state verifies as equivalent
+  PASS  a pattern with no target evidence counts as not-declared, never equivalent
+
+Task 17.1 — portal mounts, height-0 hosts, trigger-inside-target, live
+  PASS  a portal-mounted region attached under its RESOLVED observed host
+  PASS  no fixture interaction has a user-visible target mismatch
+  PASS  no fixture interaction has a trigger-state mismatch
+  PASS  the swap host that contains its trigger is a NAMED limitation, not a silent pass
+
+§9/§10 A1 — asset occurrence mapping
+  PASS  the same URL on three <img> yields three occurrences
+  PASS  EVERY <img> in the SiteSpec carries an asset reference
+  PASS  no asset reference was lost between the SiteSpec and the clone
+
+§20 A2 — nested scroll state
+  PASS  the Observer found the scroll container
+  PASS  every observed scroll container reached the SiteSpec
+  PASS  the non-zero offset was carried and the clone was told to restore it
+  PASS  QA measured the clone's scroller at the observed offset
+
+§23 A3 — grid placement properties
+  PASS  grid-template-areas reached the SiteSpec style catalog
+  PASS  grid-area reached the SiteSpec style catalog
+  PASS  grid-auto-flow reached the SiteSpec style catalog
+  PASS  place-items reached the SiteSpec style catalog
+  PASS  order reached the SiteSpec style catalog
+
+§78 dynamic target contents
+  PASS  the exploration mounted a dynamic target
+  PASS  its contents were captured and compiled into a template
+
+§75 the SiteSpec carries the new fields
+  PASS  scrollState is on the scroll container and nowhere near every node
+  PASS  scrollState is never on <html> or <body> (item 21)
+  PASS  a dynamic template is present in the interaction spec
+  PASS  the template is marked observed / after-action, never initial DOM
+  PASS  the template holds the menu's real children
+  PASS  the bounded capture did not hit a cap on a small menu
+  PASS  no class / style / data-* / on* attribute survived into the template
+
+§101/§102 behavior
+  PASS  at least one verified pattern was replayed on both sides
+  PASS  the clone mounted OBSERVED children into its dynamic target
+  PASS  no unknown interaction was implemented or promoted
+  PASS  the 메뉴 열기 trigger stayed unknown
+  PASS  every applied correction is one of the three CLOSED types
+  PASS  the clone produced 0 JavaScript runtime errors
+  PASS  content fidelity against the snapshot is exact
+
+§115–§120 the generated app is independent
+  PASS  the independence audit found no upstream artifact reference
+  PASS  no original <script src> survived
+  PASS  no original stylesheet <link> survived
+  PASS  no inline on* handler survived
+  PASS  no form can write to the origin backend
+  PASS  the generated app depends on no origin-stack package
+
+§63/§65 family escalation
+  PASS  a family formed, so some route IS represented rather than observed
+  PASS  the audit found a badly-represented route and the stage ran it
+  PASS  the escalation wrote a NEW augmented observation run, not into the original
+  PASS  the SiteSpec and clone were rebuilt from it (stage ran twice)
+  PASS  escalation is counted in coverage
+
+§93 the final reconstruction is chosen, with a reason
+  PASS  a final reconstruction is named
+  PASS  its kind is baseline, corrected or escalated — never 'the last one'
+
+§127 final status
+  PASS  the run did not fail
+        final status: complete-with-known-limitations
+
+130/130 checks passed
+[smoke:e2e] OK

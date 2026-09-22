@@ -1,0 +1,1902 @@
+{
+  "task": "28.7 B1/B2",
+  "generatedAt": "2026-09-04",
+  "summary": {
+    "b1": "Node-scoped residual freeze audit: report-only, rides the truth check's existing multi-width render loop.",
+    "b2": "Span-aware and hidden-child-aware grid track recovery; the rectangularity assumption is retired."
+  },
+  "sites": {
+    "linear.app": {
+      "runId": "2026-09-04T13-56-34-051Z",
+      "beforeRunId": "2026-09-03T11-43-40-893Z",
+      "b2": {
+        "before": {
+          "gridTrackColumns": 76,
+          "gridTrackRefusals": 407,
+          "gridTrackRefusalsByReason": {
+            "child-count-not-multiple-of-tracks": 34,
+            "children-do-not-tile-tracks": 14,
+            "container-width-constant": 207,
+            "no-computed-tracks": 124,
+            "no-probe": 21,
+            "tracks-not-px": 6,
+            "tracks-not-reproducible-at-every-width": 1
+          },
+          "candidateRules": 1729,
+          "recoveredRules": 1727,
+          "rejectedByTruthCheck": 2
+        },
+        "after": {
+          "gridTrackColumns": 80,
+          "gridTrackRefusals": 403,
+          "gridTrackRefusalsByReason": {
+            "child-probe-missing": 2,
+            "children-do-not-tile-tracks": 12,
+            "container-width-constant": 207,
+            "hidden-child-participates-at-another-width": 13,
+            "no-computed-tracks": 124,
+            "no-probe": 21,
+            "not-every-track-witnessed": 16,
+            "tracks-not-px": 6,
+            "tracks-not-reproducible-at-every-width": 2
+          },
+          "candidateRules": 1733,
+          "recoveredRules": 1731,
+          "rejectedByTruthCheck": 2,
+          "acceptedRegressed": 0
+        },
+        "newlyEmittedRulesSurvivingTruthCheck": 4
+      },
+      "b1": {
+        "residualAuditStatus": "performed",
+        "passes": 8,
+        "nodesOffered": 8825,
+        "nodesMeasured": 6513,
+        "nodesOmitted": 2312,
+        "extraWidthsRendered": 32,
+        "widthsCapped": 46,
+        "truthCheckPagesRendered": 8,
+        "bandWidthsRendered": 9,
+        "residualsDetected": 2995,
+        "residualsReported": 96,
+        "residualsOmitted": 2899,
+        "frozenFamilyHistogram": {
+          "grid-template-columns": 172,
+          "min-width": 89,
+          "width": 2734
+        },
+        "consequenceHistogram": {
+          "neither": 1978,
+          "offscreen": 1017
+        },
+        "topResiduals": [
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000116",
+            "tagName": "div",
+            "parentNodeId": "n000062",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              -2,
+              -2,
+              -2,
+              0,
+              240
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 416,
+            "refusalReason": "inline-size:no-branch-matched"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000117",
+            "tagName": "div",
+            "parentNodeId": "n000116",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              -2,
+              -2,
+              -2,
+              0,
+              240
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 415,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000123",
+            "tagName": "div",
+            "parentNodeId": "n000117",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              -2,
+              -2,
+              -2,
+              0,
+              240
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 409,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000009",
+            "tagName": "header",
+            "parentNodeId": "n000008",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 49,
+            "refusalReason": "inline-size:refused-containing-block-guard"
+          },
+          {
+            "pageId": "p000002",
+            "viewportId": "desktop",
+            "nodeId": "n000009",
+            "tagName": "header",
+            "parentNodeId": "n000008",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1121,
+              1280,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1121,
+              1280,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 49,
+            "refusalReason": "inline-size:refused-containing-block-guard"
+          },
+          {
+            "pageId": "p000003",
+            "viewportId": "desktop",
+            "nodeId": "n000009",
+            "tagName": "header",
+            "parentNodeId": "n000008",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1121,
+              1280,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1121,
+              1280,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 49,
+            "refusalReason": "inline-size:refused-containing-block-guard"
+          },
+          {
+            "pageId": "p000004",
+            "viewportId": "desktop",
+            "nodeId": "n000009",
+            "tagName": "header",
+            "parentNodeId": "n000008",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1121,
+              1280,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1121,
+              1280,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 49,
+            "refusalReason": "inline-size:refused-containing-block-guard"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000010",
+            "tagName": "nav",
+            "parentNodeId": "n000009",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 48,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000002",
+            "viewportId": "desktop",
+            "nodeId": "n000010",
+            "tagName": "nav",
+            "parentNodeId": "n000009",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1121,
+              1280,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1121,
+              1280,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 48,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000003",
+            "viewportId": "desktop",
+            "nodeId": "n000010",
+            "tagName": "nav",
+            "parentNodeId": "n000009",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1121,
+              1280,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1121,
+              1280,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 48,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000004",
+            "viewportId": "desktop",
+            "nodeId": "n000010",
+            "tagName": "nav",
+            "parentNodeId": "n000009",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1121,
+              1280,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1121,
+              1280,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 48,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000671",
+            "tagName": "div",
+            "parentNodeId": "n000061",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              -2,
+              -2,
+              -2,
+              0,
+              240
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 3,
+            "refusalReason": "inline-size:no-branch-matched"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n001167",
+            "tagName": "div",
+            "parentNodeId": "n000061",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              -2,
+              -2,
+              -2,
+              0,
+              240
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 3,
+            "refusalReason": "inline-size:no-branch-matched"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n001526",
+            "tagName": "div",
+            "parentNodeId": "n000061",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              -2,
+              -2,
+              -2,
+              0,
+              240
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 3,
+            "refusalReason": "inline-size:no-branch-matched"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n001872",
+            "tagName": "div",
+            "parentNodeId": "n000061",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "1440px",
+            "widths": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "sourceW": [
+              1025,
+              1280,
+              1281,
+              1440,
+              1920
+            ],
+            "cloneX": [
+              -2,
+              -2,
+              -2,
+              0,
+              240
+            ],
+            "cloneW": [
+              1440,
+              1440,
+              1440,
+              1440,
+              1440
+            ],
+            "absoluteDeltaPx": 480,
+            "relativeDelta": 0.25,
+            "consequence": "offscreen",
+            "descendants": 3,
+            "refusalReason": "inline-size:no-branch-matched"
+          }
+        ],
+        "gridTrackRefusalNodesReported": 86,
+        "gridTrackRefusalNodesOmitted": 317,
+        "topGridRefusalNodes": [
+          {
+            "pageId": "p000001",
+            "viewportId": "mobile",
+            "nodeId": "n000119",
+            "tagName": "div",
+            "reason": "child-probe-missing",
+            "childCount": 7,
+            "frozenTracks": "232px 1072px",
+            "trackCount": 2,
+            "frozenExcessPx": 660,
+            "atWidth": 390
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "mobile",
+            "nodeId": "n000232",
+            "tagName": "div",
+            "reason": "child-probe-missing",
+            "childCount": 2,
+            "frozenTracks": "55.8906px 661.766px 55.8906px 286.469px 9.96875px",
+            "trackCount": 5,
+            "frozenExcessPx": 534.98,
+            "atWidth": 390
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n002947",
+            "tagName": "div",
+            "reason": "children-do-not-tile-tracks",
+            "childCount": 10,
+            "frozenTracks": "224px 224px 224px 224px 224px 224px",
+            "trackCount": 6,
+            "frozenExcessPx": 411,
+            "atWidth": 1025
+          },
+          {
+            "pageId": "p000002",
+            "viewportId": "desktop",
+            "nodeId": "n003541",
+            "tagName": "div",
+            "reason": "children-do-not-tile-tracks",
+            "childCount": 10,
+            "frozenTracks": "224px 224px 224px 224px 224px 224px",
+            "trackCount": 6,
+            "frozenExcessPx": 411,
+            "atWidth": 1025
+          },
+          {
+            "pageId": "p000003",
+            "viewportId": "desktop",
+            "nodeId": "n001467",
+            "tagName": "div",
+            "reason": "children-do-not-tile-tracks",
+            "childCount": 10,
+            "frozenTracks": "224px 224px 224px 224px 224px 224px",
+            "trackCount": 6,
+            "frozenExcessPx": 411,
+            "atWidth": 1025
+          },
+          {
+            "pageId": "p000004",
+            "viewportId": "desktop",
+            "nodeId": "n000332",
+            "tagName": "div",
+            "reason": "children-do-not-tile-tracks",
+            "childCount": 10,
+            "frozenTracks": "224px 224px 224px 224px 224px 224px",
+            "trackCount": 6,
+            "frozenExcessPx": 411,
+            "atWidth": 1025
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n002792",
+            "tagName": "div",
+            "reason": "tracks-not-reproducible-at-every-width",
+            "childCount": 5,
+            "frozenTracks": "272px 272px 272px 272px",
+            "trackCount": 4,
+            "frozenExcessPx": 339,
+            "atWidth": 1025
+          },
+          {
+            "pageId": "p000002",
+            "viewportId": "desktop",
+            "nodeId": "n000104",
+            "tagName": "div",
+            "reason": "not-every-track-witnessed",
+            "childCount": 3,
+            "frozenTracks": "77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px",
+            "trackCount": 12,
+            "frozenExcessPx": 338.94,
+            "atWidth": 1025
+          },
+          {
+            "pageId": "p000002",
+            "viewportId": "desktop",
+            "nodeId": "n000382",
+            "tagName": "div",
+            "reason": "not-every-track-witnessed",
+            "childCount": 3,
+            "frozenTracks": "77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px",
+            "trackCount": 12,
+            "frozenExcessPx": 338.94,
+            "atWidth": 1025
+          },
+          {
+            "pageId": "p000002",
+            "viewportId": "desktop",
+            "nodeId": "n000663",
+            "tagName": "div",
+            "reason": "not-every-track-witnessed",
+            "childCount": 3,
+            "frozenTracks": "77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px 77.3281px",
+            "trackCount": 12,
+            "frozenExcessPx": 338.94,
+            "atWidth": 1025
+          }
+        ]
+      }
+    },
+    "hobbang.net": {
+      "runId": "2026-09-04T13-57-09-329Z",
+      "beforeRunId": "2026-09-03T11-42-38-138Z",
+      "b2": {
+        "before": {
+          "gridTrackColumns": 74,
+          "gridTrackRefusals": 84,
+          "gridTrackRefusalsByReason": {
+            "child-count-not-multiple-of-tracks": 4,
+            "container-width-constant": 22,
+            "no-computed-tracks": 30,
+            "tracks-not-px": 10,
+            "tracks-not-reproducible-at-every-width": 18
+          },
+          "candidateRules": 2033,
+          "recoveredRules": 2033,
+          "rejectedByTruthCheck": 0
+        },
+        "after": {
+          "gridTrackColumns": 77,
+          "gridTrackRefusals": 81,
+          "gridTrackRefusalsByReason": {
+            "container-width-constant": 22,
+            "no-computed-tracks": 30,
+            "tracks-not-px": 10,
+            "tracks-not-reproducible-at-every-width": 19
+          },
+          "candidateRules": 2036,
+          "recoveredRules": 2036,
+          "rejectedByTruthCheck": 0,
+          "acceptedRegressed": 0
+        },
+        "newlyEmittedRulesSurvivingTruthCheck": 3
+      },
+      "b1": {
+        "residualAuditStatus": "performed",
+        "passes": 20,
+        "nodesOffered": 4908,
+        "nodesMeasured": 4908,
+        "nodesOmitted": 0,
+        "extraWidthsRendered": 80,
+        "widthsCapped": 20,
+        "truthCheckPagesRendered": 20,
+        "bandWidthsRendered": 10,
+        "residualsDetected": 2232,
+        "residualsReported": 240,
+        "residualsOmitted": 1992,
+        "frozenFamilyHistogram": {
+          "grid-template-columns": 6,
+          "min-width": 14,
+          "width": 2212
+        },
+        "consequenceHistogram": {
+          "neither": 1696,
+          "offscreen": 536
+        },
+        "topResiduals": [
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000306",
+            "tagName": "aside",
+            "parentNodeId": "n000269",
+            "property": "grid-template-columns",
+            "family": "grid-template-columns",
+            "frozenValue": "425.609px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              24,
+              24,
+              671.19,
+              846.39,
+              1086.39
+            ],
+            "sourceW": [
+              720,
+              975,
+              404.8,
+              425.61,
+              425.61
+            ],
+            "cloneX": [
+              702.39,
+              702.39,
+              702.39,
+              846.39,
+              1086.39
+            ],
+            "cloneW": [
+              425.59,
+              425.59,
+              425.59,
+              425.59,
+              425.59
+            ],
+            "absoluteDeltaPx": 549.41,
+            "relativeDelta": 0.56,
+            "consequence": "offscreen",
+            "descendants": 37,
+            "recoveredKind": "grid-track-columns",
+            "refusalReason": "inline-size:no-branch-matched"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000308",
+            "tagName": "div",
+            "parentNodeId": "n000306",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "425.609px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              24,
+              24,
+              671.19,
+              846.39,
+              1086.39
+            ],
+            "sourceW": [
+              720,
+              975,
+              404.8,
+              425.61,
+              425.61
+            ],
+            "cloneX": [
+              702.39,
+              702.39,
+              702.39,
+              846.39,
+              1086.39
+            ],
+            "cloneW": [
+              425.59,
+              425.59,
+              425.59,
+              425.59,
+              425.59
+            ],
+            "absoluteDeltaPx": 549.41,
+            "relativeDelta": 0.56,
+            "consequence": "offscreen",
+            "descendants": 10,
+            "refusalReason": "inline-size:refused-containing-block-guard"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000320",
+            "tagName": "div",
+            "parentNodeId": "n000306",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "425.609px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              24,
+              24,
+              671.19,
+              846.39,
+              1086.39
+            ],
+            "sourceW": [
+              720,
+              975,
+              404.8,
+              425.61,
+              425.61
+            ],
+            "cloneX": [
+              702.39,
+              702.39,
+              702.39,
+              846.39,
+              1086.39
+            ],
+            "cloneW": [
+              425.59,
+              425.59,
+              425.59,
+              425.59,
+              425.59
+            ],
+            "absoluteDeltaPx": 549.41,
+            "relativeDelta": 0.56,
+            "consequence": "offscreen",
+            "descendants": 10,
+            "refusalReason": "inline-size:refused-containing-block-guard"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000332",
+            "tagName": "div",
+            "parentNodeId": "n000306",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "425.609px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              24,
+              24,
+              671.19,
+              846.39,
+              1086.39
+            ],
+            "sourceW": [
+              720,
+              975,
+              404.8,
+              425.61,
+              425.61
+            ],
+            "cloneX": [
+              702.39,
+              702.39,
+              702.39,
+              846.39,
+              1086.39
+            ],
+            "cloneW": [
+              425.59,
+              425.59,
+              425.59,
+              425.59,
+              425.59
+            ],
+            "absoluteDeltaPx": 549.41,
+            "relativeDelta": 0.56,
+            "consequence": "offscreen",
+            "descendants": 10,
+            "refusalReason": "inline-size:refused-containing-block-guard"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000310",
+            "tagName": "p",
+            "parentNodeId": "n000308",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "383.609px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              45,
+              45,
+              692.19,
+              867.39,
+              1107.39
+            ],
+            "sourceW": [
+              678,
+              933,
+              362.8,
+              383.61,
+              383.61
+            ],
+            "cloneX": [
+              723.39,
+              723.39,
+              723.39,
+              867.39,
+              1107.39
+            ],
+            "cloneW": [
+              383.59,
+              383.59,
+              383.59,
+              383.59,
+              383.59
+            ],
+            "absoluteDeltaPx": 549.41,
+            "relativeDelta": 0.59,
+            "consequence": "offscreen",
+            "descendants": 1,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000313",
+            "tagName": "p",
+            "parentNodeId": "n000308",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "383.609px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              45,
+              45,
+              692.19,
+              867.39,
+              1107.39
+            ],
+            "sourceW": [
+              678,
+              933,
+              362.8,
+              383.61,
+              383.61
+            ],
+            "cloneX": [
+              723.39,
+              723.39,
+              723.39,
+              867.39,
+              1107.39
+            ],
+            "cloneW": [
+              383.59,
+              383.59,
+              383.59,
+              383.59,
+              383.59
+            ],
+            "absoluteDeltaPx": 549.41,
+            "relativeDelta": 0.59,
+            "consequence": "offscreen",
+            "descendants": 1,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000316",
+            "tagName": "p",
+            "parentNodeId": "n000308",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "383.609px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              45,
+              45,
+              692.19,
+              867.39,
+              1107.39
+            ],
+            "sourceW": [
+              678,
+              933,
+              362.8,
+              383.61,
+              383.61
+            ],
+            "cloneX": [
+              723.39,
+              723.39,
+              723.39,
+              867.39,
+              1107.39
+            ],
+            "cloneW": [
+              383.59,
+              383.59,
+              383.59,
+              383.59,
+              383.59
+            ],
+            "absoluteDeltaPx": 549.41,
+            "relativeDelta": 0.59,
+            "consequence": "offscreen",
+            "descendants": 1,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000322",
+            "tagName": "p",
+            "parentNodeId": "n000320",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "383.609px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              45,
+              45,
+              692.19,
+              867.39,
+              1107.39
+            ],
+            "sourceW": [
+              678,
+              933,
+              362.8,
+              383.61,
+              383.61
+            ],
+            "cloneX": [
+              723.39,
+              723.39,
+              723.39,
+              867.39,
+              1107.39
+            ],
+            "cloneW": [
+              383.59,
+              383.59,
+              383.59,
+              383.59,
+              383.59
+            ],
+            "absoluteDeltaPx": 549.41,
+            "relativeDelta": 0.59,
+            "consequence": "offscreen",
+            "descendants": 1,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000325",
+            "tagName": "p",
+            "parentNodeId": "n000320",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "383.609px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              45,
+              45,
+              692.19,
+              867.39,
+              1107.39
+            ],
+            "sourceW": [
+              678,
+              933,
+              362.8,
+              383.61,
+              383.61
+            ],
+            "cloneX": [
+              723.39,
+              723.39,
+              723.39,
+              867.39,
+              1107.39
+            ],
+            "cloneW": [
+              383.59,
+              383.59,
+              383.59,
+              383.59,
+              383.59
+            ],
+            "absoluteDeltaPx": 549.41,
+            "relativeDelta": 0.59,
+            "consequence": "offscreen",
+            "descendants": 1,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000328",
+            "tagName": "p",
+            "parentNodeId": "n000320",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "383.609px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              45,
+              45,
+              692.19,
+              867.39,
+              1107.39
+            ],
+            "sourceW": [
+              678,
+              933,
+              362.8,
+              383.61,
+              383.61
+            ],
+            "cloneX": [
+              723.39,
+              723.39,
+              723.39,
+              867.39,
+              1107.39
+            ],
+            "cloneW": [
+              383.59,
+              383.59,
+              383.59,
+              383.59,
+              383.59
+            ],
+            "absoluteDeltaPx": 549.41,
+            "relativeDelta": 0.59,
+            "consequence": "offscreen",
+            "descendants": 1,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000334",
+            "tagName": "p",
+            "parentNodeId": "n000332",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "383.609px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              45,
+              45,
+              692.19,
+              867.39,
+              1107.39
+            ],
+            "sourceW": [
+              678,
+              933,
+              362.8,
+              383.61,
+              383.61
+            ],
+            "cloneX": [
+              723.39,
+              723.39,
+              723.39,
+              867.39,
+              1107.39
+            ],
+            "cloneW": [
+              383.59,
+              383.59,
+              383.59,
+              383.59,
+              383.59
+            ],
+            "absoluteDeltaPx": 549.41,
+            "relativeDelta": 0.59,
+            "consequence": "offscreen",
+            "descendants": 1,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000337",
+            "tagName": "p",
+            "parentNodeId": "n000332",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "383.609px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              45,
+              45,
+              692.19,
+              867.39,
+              1107.39
+            ],
+            "sourceW": [
+              678,
+              933,
+              362.8,
+              383.61,
+              383.61
+            ],
+            "cloneX": [
+              723.39,
+              723.39,
+              723.39,
+              867.39,
+              1107.39
+            ],
+            "cloneW": [
+              383.59,
+              383.59,
+              383.59,
+              383.59,
+              383.59
+            ],
+            "absoluteDeltaPx": 549.41,
+            "relativeDelta": 0.59,
+            "consequence": "offscreen",
+            "descendants": 1,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000340",
+            "tagName": "p",
+            "parentNodeId": "n000332",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "383.609px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              45,
+              45,
+              692.19,
+              867.39,
+              1107.39
+            ],
+            "sourceW": [
+              678,
+              933,
+              362.8,
+              383.61,
+              383.61
+            ],
+            "cloneX": [
+              723.39,
+              723.39,
+              723.39,
+              867.39,
+              1107.39
+            ],
+            "cloneW": [
+              383.59,
+              383.59,
+              383.59,
+              383.59,
+              383.59
+            ],
+            "absoluteDeltaPx": 549.41,
+            "relativeDelta": 0.59,
+            "consequence": "offscreen",
+            "descendants": 1,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n001303",
+            "tagName": "img",
+            "parentNodeId": "n001301",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "441.328px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              25,
+              25,
+              655.33,
+              829.66,
+              1069.66
+            ],
+            "sourceW": [
+              718,
+              973,
+              419.66,
+              441.33,
+              441.33
+            ],
+            "cloneX": [
+              685.64,
+              685.64,
+              685.64,
+              829.64,
+              1069.64
+            ],
+            "cloneW": [
+              441.28,
+              441.28,
+              441.28,
+              441.28,
+              441.28
+            ],
+            "absoluteDeltaPx": 531.72,
+            "relativeDelta": 0.55,
+            "consequence": "offscreen",
+            "descendants": 0,
+            "recoveredKind": "full-width",
+            "refusalReason": "inline-size:emitted-full-width"
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n001301",
+            "tagName": "figure",
+            "parentNodeId": "n001222",
+            "property": "width",
+            "family": "width",
+            "frozenValue": "443.328px",
+            "widths": [
+              768,
+              1023,
+              1100,
+              1440,
+              1920
+            ],
+            "sourceX": [
+              24,
+              24,
+              654.33,
+              828.66,
+              1068.66
+            ],
+            "sourceW": [
+              720,
+              975,
+              421.66,
+              443.33,
+              443.33
+            ],
+            "cloneX": [
+              684.64,
+              684.64,
+              684.64,
+              828.64,
+              1068.64
+            ],
+            "cloneW": [
+              443.31,
+              443.31,
+              443.31,
+              443.31,
+              443.31
+            ],
+            "absoluteDeltaPx": 531.69,
+            "relativeDelta": 0.55,
+            "consequence": "offscreen",
+            "descendants": 3,
+            "refusalReason": "inline-size:no-branch-matched"
+          }
+        ],
+        "gridTrackRefusalNodesReported": 70,
+        "gridTrackRefusalNodesOmitted": 11,
+        "topGridRefusalNodes": [
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000269",
+            "tagName": "div",
+            "reason": "tracks-not-reproducible-at-every-width",
+            "childCount": 2,
+            "frozenTracks": "638.391px 425.609px",
+            "trackCount": 2,
+            "frozenExcessPx": 384,
+            "atWidth": 768
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000430",
+            "tagName": "div",
+            "reason": "tracks-not-reproducible-at-every-width",
+            "childCount": 11,
+            "frozenTracks": "264px 264px 264px 264px",
+            "trackCount": 4,
+            "frozenExcessPx": 384,
+            "atWidth": 768
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000679",
+            "tagName": "ol",
+            "reason": "tracks-not-reproducible-at-every-width",
+            "childCount": 4,
+            "frozenTracks": "264px 264px 264px 264px",
+            "trackCount": 4,
+            "frozenExcessPx": 384,
+            "atWidth": 768
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000743",
+            "tagName": "dl",
+            "reason": "tracks-not-reproducible-at-every-width",
+            "childCount": 4,
+            "frozenTracks": "264px 264px 264px 264px",
+            "trackCount": 4,
+            "frozenExcessPx": 384,
+            "atWidth": 768
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n001514",
+            "tagName": "div",
+            "reason": "tracks-not-reproducible-at-every-width",
+            "childCount": 2,
+            "frozenTracks": "532px 532px",
+            "trackCount": 2,
+            "frozenExcessPx": 384,
+            "atWidth": 768
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n001610",
+            "tagName": "div",
+            "reason": "tracks-not-reproducible-at-every-width",
+            "childCount": 2,
+            "frozenTracks": "532px 532px",
+            "trackCount": 2,
+            "frozenExcessPx": 384,
+            "atWidth": 768
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n001222",
+            "tagName": "div",
+            "reason": "tracks-not-reproducible-at-every-width",
+            "childCount": 2,
+            "frozenTracks": "620.656px 443.328px",
+            "trackCount": 2,
+            "frozenExcessPx": 383.98,
+            "atWidth": 768
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "mobile",
+            "nodeId": "n000430",
+            "tagName": "div",
+            "reason": "tracks-not-reproducible-at-every-width",
+            "childCount": 11,
+            "frozenTracks": "358px",
+            "trackCount": 1,
+            "frozenExcessPx": 0,
+            "atWidth": 390
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "desktop",
+            "nodeId": "n000435",
+            "tagName": "span",
+            "reason": "container-width-constant",
+            "childCount": 0,
+            "frozenTracks": "28px",
+            "trackCount": 1,
+            "frozenExcessPx": 0,
+            "atWidth": 768
+          },
+          {
+            "pageId": "p000001",
+            "viewportId": "mobile",
+            "nodeId": "n000435",
+            "tagName": "span",
+            "reason": "container-width-constant",
+            "childCount": 0,
+            "frozenTracks": "28px",
+            "trackCount": 1,
+            "frozenExcessPx": 0,
+            "atWidth": 390
+          }
+        ]
+      }
+    }
+  }
+}

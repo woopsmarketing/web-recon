@@ -1,0 +1,46 @@
+Already up to date
+Done in 160ms using pnpm v11.21.0
+$ tsx scripts/smoke-registry.ts
+
+== derives the real artifacts on disk
+  PASS  27B.1 compiler-v3 template entry carries the policy split from manifest.json
+  PASS  27B.2 collections are summarized from site-map.json, not re-derived
+  PASS  27B.3 a pre-policy template indexes with the definitional split, no invented counts
+  PASS  27B.4 scanning the real data root finds both templates and warns on nothing
+  PASS  27B.5 scanning the real data root indexes every release project, legacy included
+  PASS  27B.6 a revision-1 project is adapted in memory (siteId derived, adaptedFrom recorded)
+  PASS  27B.7 siteId collisions among adapted legacy projects are reported, not deduplicated
+
+== register a template, list it, read it back
+  PASS  27B.8 a registry with no index file lists nothing instead of throwing
+  PASS  27B.9 registerTemplate → listTemplates returns the entry it derived
+  PASS  27B.10 readTemplate re-derives from the artifact and the cached entry agrees
+
+== register a site, list it, read it back
+  PASS  27B.11 registerSite carries siteId, template lineage, release state and revision head
+  PASS  27B.12 the site lists, and reads back by siteKey and by unambiguous siteId
+  PASS  27B.13 an ambiguous siteId resolves to nothing rather than to an arbitrary project
+
+== the index rebuilds from disk
+  PASS  27B.14 deleting the index leaves an empty registry, not an error
+  PASS  27B.15 rebuildRegistry restores byte-identical entries from the artifacts alone
+  PASS  27B.16 the rebuilt index is on disk and reloads through its own schema
+  PASS  27B.17 the registry namespace is hidden, so it is never scanned as a host
+
+== artifact wins over a stale entry
+  PASS  27B.18 a tampered template entry loses to manifest.json and is flagged disagreeing
+  PASS  27B.19 listing still shows the stale cache — only a read re-derives
+  PASS  27B.20 a tampered site entry loses to release-project.json and the revision chain
+
+== unregistered artifacts and dangling entries
+  PASS  27B.21 an artifact that was never registered still reads, via a scan
+  PASS  27B.22 an entry whose artifact is gone reads as index-only and says so
+  PASS  27B.23 a rebuild drops the dangling entry, because the scan is the truth
+  PASS  27B.24 an id nothing on disk carries resolves to null, for templates and sites
+
+== determinism and historical artifacts untouched
+  PASS  27B.25 deriving the same artifact twice yields the same entry (no clock inside)
+  PASS  27B.26 every real template run and release project is byte-identical afterwards
+  PASS  27B.27 no revisions/ directory was created in the real release project
+
+smoke:registry — 27 checks, 0 failures

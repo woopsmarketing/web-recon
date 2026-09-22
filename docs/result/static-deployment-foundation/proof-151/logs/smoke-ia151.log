@@ -1,0 +1,80 @@
+site boost-interior-demo · release interior-01-1.5.1-6bbdd07eb9bf · build aa71b829ec70
+
+[A] layout: 6 routes × 5 widths
+  ok   320 /: 200, overflow 0, console 0, non-local 0
+  ok   320 /portfolio: 200, overflow 0, console 0, non-local 0
+  ok   320 /portfolio/suseong-white-34py-apartment-remodeling: 200, overflow 0, console 0, non-local 0
+  ok   320 /3d-portfolio: 200, overflow 0, console 0, non-local 0
+  ok   320 /about: 200, overflow 0, console 0, non-local 0
+  ok   320 /contact: 200, overflow 0, console 0, non-local 0
+  ok   390 /: 200, overflow 0, console 0, non-local 0
+  ok   390 /portfolio: 200, overflow 0, console 0, non-local 0
+  ok   390 /portfolio/suseong-white-34py-apartment-remodeling: 200, overflow 0, console 0, non-local 0
+  ok   390 /3d-portfolio: 200, overflow 0, console 0, non-local 0
+  ok   390 /about: 200, overflow 0, console 0, non-local 0
+  ok   390 /contact: 200, overflow 0, console 0, non-local 0
+  ok   899 /: 200, overflow 0, console 0, non-local 0
+  ok   899 /portfolio: 200, overflow 0, console 0, non-local 0
+  ok   899 /portfolio/suseong-white-34py-apartment-remodeling: 200, overflow 0, console 0, non-local 0
+  ok   899 /3d-portfolio: 200, overflow 0, console 0, non-local 0
+  ok   899 /about: 200, overflow 0, console 0, non-local 0
+  ok   899 /contact: 200, overflow 0, console 0, non-local 0
+  ok   900 /: 200, overflow 0, console 0, non-local 0
+  ok   900 /portfolio: 200, overflow 0, console 0, non-local 0
+  ok   900 /portfolio/suseong-white-34py-apartment-remodeling: 200, overflow 0, console 0, non-local 0
+  ok   900 /3d-portfolio: 200, overflow 0, console 0, non-local 0
+  ok   900 /about: 200, overflow 0, console 0, non-local 0
+  ok   900 /contact: 200, overflow 0, console 0, non-local 0
+  ok   1440 /: 200, overflow 0, console 0, non-local 0
+  ok   1440 /portfolio: 200, overflow 0, console 0, non-local 0
+  ok   1440 /portfolio/suseong-white-34py-apartment-remodeling: 200, overflow 0, console 0, non-local 0
+  ok   1440 /3d-portfolio: 200, overflow 0, console 0, non-local 0
+  ok   1440 /about: 200, overflow 0, console 0, non-local 0
+  ok   1440 /contact: 200, overflow 0, console 0, non-local 0
+
+[B] M1 long mailto guard + copy fallback
+  ok   320: caps — message 500, each one-line field 100
+  ok   320: the would-be mailto is 2699 characters (> 2,000) — no mail link opened, hidden link has no href
+  ok   320: status = too long + nothing sent + the address; no success wording
+  ok   320: fallback shows the address (mailto link, no body) and the composed text read-only
+  ok   320: copy text = subject, blank line, the labelled body with the whole message
+  ok   320: select button focuses and selects the whole text
+  ok   320: fallback shown — overflow 0, no network request, no console error, still on /contact
+  ok   320: a short inquiry afterwards hands off (1 link, ≤ 2,000 chars), status = the hand-off text, fallback gone
+  ok   390: caps — message 500, each one-line field 100
+  ok   390: typing 600 characters into the message stops at 500
+  ok   390: the would-be mailto is 2699 characters (> 2,000) — no mail link opened, hidden link has no href
+  ok   390: status = too long + nothing sent + the address; no success wording
+  ok   390: fallback shows the address (mailto link, no body) and the composed text read-only
+  ok   390: copy text = subject, blank line, the labelled body with the whole message
+  ok   390: select button focuses and selects the whole text
+  ok   390: fallback shown — overflow 0, no network request, no console error, still on /contact
+  ok   390: a short inquiry afterwards hands off (1 link, ≤ 2,000 chars), status = the hand-off text, fallback gone
+  ok   1440: caps — message 500, each one-line field 100
+  ok   1440: the would-be mailto is 2699 characters (> 2,000) — no mail link opened, hidden link has no href
+  ok   1440: status = too long + nothing sent + the address; no success wording
+  ok   1440: fallback shows the address (mailto link, no body) and the composed text read-only
+  ok   1440: copy text = subject, blank line, the labelled body with the whole message
+  ok   1440: select button focuses and selects the whole text
+  ok   1440: fallback shown — overflow 0, no network request, no console error, still on /contact
+  ok   1440: a short inquiry afterwards hands off (1 link, ≤ 2,000 chars), status = the hand-off text, fallback gone
+
+[C] m1 CRLF message body   [D] m2 re-announced status
+  ok   m1: message lines reach the body as CRLF (typed LF and CRLF), no lone LF / CR anywhere
+  ok   m2: every hand-off press re-creates the status text (3 presses → 3 live-region additions, a new node each time), same text
+  ok   m2: repeated too-long presses are announced each time too (2 more additions), no hand-off
+  ok   C/D: no console error
+
+[E] m3 focus after the menu closes
+  ok   390: Esc closes the menu and focus returns to the (visible) menu button
+  ok   resize 390 → 1000 with the menu open: it closes and focus is on a rendered header control (not <body>, not the hidden button)
+  ok   …and Tab continues from there through the header
+  ok   E: no console error
+       focus landed on: a.i1-header__brand /
+
+[F] m4 sitemap vs contact channel
+  ok   fixture-empty: /contact still answers 200 with the unavailable line and no form
+  ok   sitemap lists /contact on the demo and fixture-small (email), not on fixture-empty (no channel)
+       {"boost-interior-demo":{"contactListed":true,"contactStatus":200,"locs":13},"fixture-small":{"contactListed":true,"contactStatus":200,"locs":17},"fixture-empty":{"contactListed":false,"contactStatus":200,"locs":3}}
+
+65 / 65 passed

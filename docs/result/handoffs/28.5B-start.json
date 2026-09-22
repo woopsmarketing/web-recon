@@ -1,0 +1,28 @@
+{
+  "schema": "task285b-start-v1",
+  "task": "TASK 28.5B — GENERIC VISUAL FIDELITY HARDENING — WAVE 1",
+  "producedAt": "2026-08-29T11:31:27Z",
+  "baselineSha": "6c2e723601a0d76431c96a48bbdb4726c02063e7",
+  "branch": "main",
+  "gitStatus": "121 dirty/untracked paths at start (uncommitted Task 25-28.5A working tree, unchanged from Task 28 close-out); no git-mutating operations permitted or planned",
+  "task28RegressionBaseline": {
+    "suites": 29,
+    "checks": 2948,
+    "failures": 0,
+    "source": "docs/result/handoffs/28-final-regression.json headline: '29 counted suites / 2,948 checks / 0 failures / typecheck exit 0 / 0 negative deltas'",
+    "promptDiscrepancy": "Task-28.5B prompt comment said 2,970 checks; repository evidence says 2,948. Per prompt section 3, repository evidence is authoritative."
+  },
+  "task285AVerdict": {
+    "verdict": "RAW RECONSTRUCTION NEEDS TARGETED FIDELITY HARDENING",
+    "report": "docs/result/28.5-visual-reconstruction-root-cause-2026-08-29.md",
+    "handoffs": "docs/result/handoffs/28.5-*.json"
+  },
+  "scope": [
+    "C1: PSEUDO_STYLE_WHITELIST += opacity, visibility",
+    "C2: STYLE_WHITELIST += -webkit-font-smoothing, text-wrap-mode, text-wrap-style",
+    "C3: layout-inference containing-block guards + post-emit browser truth check",
+    "C4: video asset honesty in asset-resolver + unresolved accounting",
+    "C5: per-viewport :root custom property capture/emission",
+    "C6: QA vocabulary decoupled from Observer; @16 + dE76 pixel channels added alongside @1"
+  ]
+}

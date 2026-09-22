@@ -61,8 +61,17 @@ export {
   newQaContext,
   runCapture,
   stabilize,
+  type ScreenshotCapture,
   QA_ATTRIBUTE_NAMES,
   QA_STYLE_PROPERTIES,
+  // Task 28.5B change 6 — QA's own vocabulary and the browser-to-browser
+  // comparison that makes the spec-less half of it verifiable.
+  QA_ONLY_STYLE_PROPERTIES,
+  compareCapturedStyles,
+  unverifiableFromSpecProperties,
+  type CapturedStyleComparison,
+  type CapturedStyleMismatch,
+  type CompareCapturedStylesOptions,
   type PageDiagnostics,
   type QaCapturedElement,
   type QaRawCapture,
@@ -99,9 +108,19 @@ export {
 export {
   compareImages,
   decodePng,
+  deltaE76,
   encodePng,
   measurePair,
+  // Task 28.6 C5 — dimensions without a decode, and the per-pair coverage rule.
+  pairCoverage,
+  readPngDimensions,
   renderDiffImage,
+  srgbToLab,
+  // Task 28.5B change 6 — the thresholds are named, exported constants so a
+  // reader never has to guess what "@16" or "JND" meant in an artifact.
+  CHANGED_PIXEL_AMPLITUDE_THRESHOLD,
+  DELTA_E76_JND_THRESHOLD,
+  DELTA_E76_VISIBLE_THRESHOLD,
   type DecodedImage,
   type ImageComparison,
 } from "./screenshot-diff.js";
@@ -142,7 +161,11 @@ export {
   attachDiffIds,
   collectDataImageCandidates,
   emitPageDiffs,
+  // Task 28.6 C5 — the coverage→finding step, exported so it is testable
+  // directly against the same collector the pipeline uses.
+  emitScreenshotCoverageDiffs,
   type EmitPageDiffsInput,
+  type PageDiffBase,
 } from "./emit-diffs.js";
 
 export {
@@ -230,6 +253,7 @@ export {
 export {
   canvasBackgroundOf,
   canvasMismatchedProperties,
+  compareQaOnlyStyles,
   qaOnePage,
   readSnapshotScreenshot,
   type PageWork,

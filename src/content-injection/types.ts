@@ -70,6 +70,10 @@ export const BATCH_EXECUTION_FILE = "batch-execution.json";
 export const TELEMETRY_FILE = "telemetry.jsonl";
 /** Task 27 §6 (GED-D): why the bounded repair loop stopped, machine-readable. */
 export const REPAIR_STOP_FILE = "repair-stop.json";
+/** Task 28 Phase 9: the derivation chain brief → site → page → region → unit. */
+export const AUTHORING_PLAN_FILE = "authoring-plan.json";
+/** Task 28 Phase 9: the cross-page consistency review pass. */
+export const CONSISTENCY_REPORT_FILE = "consistency.json";
 export const SCREENSHOTS_DIR = "screenshots";
 export const REPAIR_DIR = "repair";
 
@@ -148,7 +152,22 @@ export const TruthModeDecisionSchema = z
     slotKey: z.string(),
     /** Matched claim pattern id, or `declared-synthetic` when the generator said so. */
     claim: z.string(),
-    decision: z.enum(["refused-unresolved", "marked-synthetic", "backed-by-user-fact"]),
+    decision: z.enum([
+      "refused-unresolved",
+      "marked-synthetic",
+      "backed-by-user-fact",
+      /**
+       * Task 28 Phase 9 finding F3, fixed in the correction pass. A value the
+       * provider wrote that is IDENTICAL to the source default and carries a
+       * fact shape is not an invention — it is the SOURCE company's fact
+       * surviving a rebrand on an editable, customer-facing slot. It used to
+       * be kept silently (no decision at all, because "source content that
+       * survived" was treated as another scanner's problem, and the brand-leak
+       * scan only looks for the brand token). It is now RECORDED here in both
+       * modes, and under `verified-only` it is additionally refused.
+       */
+      "source-fact-carried-over",
+    ]),
     detail: z.string(),
   })
   .strict();
@@ -491,19 +510,56 @@ export type ValidationReport = z.infer<typeof ValidationReportSchema>;
  */
 export const ENGINE_LIMITATION_MARKER = "engine-limitation";
 
+/**
+ * One source-brand finding in a content run's report/brand-leak.json.
+ *
+ * TWO SHAPES, one file (Task 28 CR8):
+ *
+ *   SLOT-SCOPED     the original five kinds. `slotKey` names the editable slot
+ *                   whose EFFECTIVE (post-overlay) value still carries the
+ *                   source brand. There is a write target, so an operator can
+ *                   fix it by authoring a value.
+ *   SURFACE-SCOPED  the five surface kinds below, found in the template's
+ *                   runtime IR (an inline SVG's `aria-label` / `<symbol id>` /
+ *                   `<text>`, an `alt`, an `aria-label`). These have NO slot
+ *                   binding — that is precisely why the closed enum used to
+ *                   keep them out of this file — so `slotKey` is NULL and the
+ *                   finding is located by `surface` + `nodeId` (the existing
+ *                   `data-wr-node` identity; no new DOM attribute exists) plus
+ *                   `route`. Recording them is DETECTION ONLY: there is no
+ *                   bake-time rewriter, so they are never emitted at blocker
+ *                   severity — inventing a reachable blocker would repeat the
+ *                   unclearable `source-brand-asset` dead end.
+ */
 export const BrandLeakWarningSchema = z
   .object({
     issue: z.literal("source-brand-leak"),
-    slotKey: z.string(),
+    /** Null for a surface-scoped finding: it binds to no editable slot. */
+    slotKey: z.string().nullable(),
     kind: z.enum([
       "brand-token-in-value",
       "brand-token-in-untouched-default",
       "original-external-url-retained",
       "original-external-url-in-untouched-default",
       "blocked-visible-source-content",
+      // Surface-scoped (Task 28 CR8) — named after BRAND_SURFACES entries.
+      "svg-aria-label",
+      "svg-symbol-id",
+      "svg-text",
+      "image-alt",
+      "aria-label",
     ]),
     /** Default "warning"; `blocked-visible-source-content` is a "blocker". */
     severity: z.enum(["warning", "blocker"]).optional(),
+    /** Surface-scoped findings only: the BRAND_SURFACES entry that matched. */
+    surface: z.string().optional(),
+    /** Surface-scoped findings only: `data-wr-node` identity of the element. */
+    nodeId: z.string().nullable().optional(),
+    /** Surface-scoped findings only: an example route the surface appears on. */
+    route: z.string().optional(),
+    /** Surface-scoped findings only: how many (route, viewport, node) sites
+     *  carry this exact value — the entry is deduplicated by value. */
+    occurrences: z.number().int().positive().optional(),
     detail: z.string(),
   })
   .strict();
@@ -724,6 +780,14 @@ export const ContentRunManifestSchema = z
     intentHash: z.string(),
     scopedRoutes: z.array(z.string()),
     includeReview: z.boolean(),
+    /**
+     * Task 28 Phase 11 — review-flagged slot keys an OPERATOR wrote by hand
+     * and which therefore joined this run's units. Absent means none, which is
+     * what every run before Phase 11 meant. It is recorded so a widening of
+     * the review boundary is always visible in the artifact rather than
+     * inferable only from the units file.
+     */
+    operatorReviewSlotKeys: z.array(z.string()).optional(),
     generator: z
       .object({ name: z.string(), model: z.string().optional() })
       .strict()
@@ -734,6 +798,62 @@ export const ContentRunManifestSchema = z
     repairIterations: z.number(),
     /** Task 27 §4 — absent on every run prepared before Task 27. */
     truthMode: ContentTruthModeSchema.optional(),
+    /**
+     * Task 28 Phases 5 + 6 — the ENABLEMENT this run was prepared under.
+     *
+     * Recorded on the run because `buildSlotAccounting` is called from
+     * `ingestGenerationResult`, which sees the manifest and not the release
+     * project. OPTIONAL: every content run on disk predates it, and absent
+     * means "nothing was disabled", which is what those runs meant.
+     *
+     * `disabledSlots` carries the slot keys whose disposition this run must
+     * report as `disabled-region` / `disabled-route`. They are ADDED to the
+     * in-scope population when the unit builder no longer sees them (a
+     * disabled route leaves the scope), so a disabled slot is accounted for
+     * rather than silently absent.
+     */
+    enablement: z
+      .object({
+        disabledRoutes: z.array(z.string()),
+        disabledSlots: z.array(
+          z
+            .object({
+              slotKey: z.string(),
+              disposition: z.enum(["disabled-region", "disabled-route"]),
+              detail: z.string(),
+            })
+            .strict(),
+        ),
+        disabledRegionIds: z.array(z.string()).optional(),
+        /**
+         * Values the release orchestrator WITHHELD because their route left
+         * the content scope with a disable — carried so a RE-ENABLE is
+         * lossless.
+         *
+         * MEASURED on the real linear lineage: disabling `/pricing` withholds
+         * 60 slot values and 2 needs-input entries. Without this the next
+         * build's base result no longer carries them, and re-enabling the
+         * route would silently return the page to its SOURCE defaults while
+         * reporting success — content loss dressed as a clean build. The
+         * withheld entry is data about a run, never an authored value: it is
+         * re-injected only when the key is back in scope, and
+         * `authored.slotValues` still wins over it.
+         */
+        withheld: z
+          .array(
+            z
+              .object({
+                slotKey: z.string(),
+                value: z.unknown().optional(),
+                source: z.string().optional(),
+                unresolvedReason: z.string().optional(),
+              })
+              .strict(),
+          )
+          .optional(),
+      })
+      .strict()
+      .optional(),
     /** Task 27 §6 (GED-D) — why the repair loop stopped. */
     repairStop: RepairStopSchema.optional(),
     /** Task 27 §1 — one summary line per executed batch run. */
@@ -754,6 +874,23 @@ export const ContentRunManifestSchema = z
         inScopeSlots: z.number(),
         reconciled: z.boolean(),
         ambiguousSlots: z.number(),
+      })
+      .strict()
+      .optional(),
+    /**
+     * Task 28 Phase 9 — the cross-page consistency review's headline numbers.
+     * `routesCovered` vs `routesInScope` is the "not only the homepage"
+     * measurement: a site whose brief produced one written page reports it here
+     * instead of hiding behind a global slot-value total.
+     */
+    consistency: z
+      .object({
+        file: z.string(),
+        pass: z.boolean(),
+        errors: z.number(),
+        warnings: z.number(),
+        routesCovered: z.number(),
+        routesInScope: z.number(),
       })
       .strict()
       .optional(),
@@ -951,12 +1088,26 @@ export const SLOT_ORIGINS = [
 export const SlotOriginSchema = z.enum(SLOT_ORIGINS);
 export type SlotOrigin = z.infer<typeof SlotOriginSchema>;
 
+/**
+ * `removed` MEANS "AN EMPTY VALUE IN A STILL-RENDERED NODE" — accounting.ts is
+ * its only producer and writes it exactly when `isEmptyValue(value)`. Task 28
+ * Phases 5 + 6 therefore add TWO NEW values rather than reusing it: an
+ * intentionally emptied headline and a physically deleted section are the two
+ * things this artifact exists to keep apart, and one enum value cannot express
+ * both. A disabled slot stays in the in-scope denominator; it moves between
+ * disposition buckets, never out of the total.
+ */
 export const SLOT_DISPOSITIONS = [
   "applied",
   "preserved",
   "removed",
   "human-required",
   "unresolved",
+  /** The slot lives in a PageRegion the operator disabled (Phase 5). */
+  "disabled-region",
+  /** Every route that renders this slot is disabled, or it was a nav item
+   *  pointing at one (Phase 6). */
+  "disabled-route",
 ] as const;
 export const SlotDispositionSchema = z.enum(SLOT_DISPOSITIONS);
 export type SlotDisposition = z.infer<typeof SlotDispositionSchema>;
@@ -1016,6 +1167,39 @@ export const SlotAccountingFileSchema = z
         dispositionTotal: z.number(),
         missing: z.array(z.string()),
         doubleCounted: z.array(z.string()),
+        /**
+         * THE DENOMINATOR IS TIED TO THE TEMPLATE, NOT TO ITSELF (Task 28
+         * Phase 9/10 correction). Everything above compares the artifact with
+         * its own `inScopeSlots`, which is self-referential: shrink the
+         * in-scope predicate and every number above still agrees — the
+         * verifier proved exactly that by deleting the review-slot half of
+         * `inScopeSlotKeys()` and watching the account close at 1,586 instead
+         * of 3,079 with `reconciled: true`.
+         *
+         * This block closes that hole inside the ENGINE. The in-scope
+         * population is DERIVED from the template: every template slot that is
+         * global or lives on a scoped route must appear, and any that does not
+         * is NAMED. `complete` is part of `reconciled`, so an account that
+         * closes by exclusion cannot report itself reconciled and the release
+         * stage's existing integrity blocker fires on it.
+         *
+         * Slots ABOVE the expected set are legitimate and are not an error:
+         * a disabled route leaves `scopedRoutes` but its slots are deliberately
+         * added back so they carry an explicit `disabled-route` disposition.
+         */
+        templateCoverage: z
+          .object({
+            /** counts.slots from the template manifest — the whole population. */
+            templateSlots: z.number(),
+            /** Global slots + slots on a scoped route: what MUST be accounted. */
+            scopedTemplateSlots: z.number(),
+            /** Accounted keys that are outside that set (disabled routes). */
+            accountedOutsideScope: z.number(),
+            /** Every scoped template slot key with no row. Names, never a count alone. */
+            unaccountedSlotKeys: z.array(z.string()),
+            complete: z.boolean(),
+          })
+          .strict(),
         reconciled: z.boolean(),
       })
       .strict(),
@@ -1034,6 +1218,301 @@ export const SlotAccountingFileSchema = z
   })
   .strict();
 export type SlotAccountingFile = z.infer<typeof SlotAccountingFileSchema>;
+
+
+// ---------------------------------------------------------------------------
+// Authoring Plan (Task 28 Phase 9) — the derivation chain, made CHECKABLE
+// ---------------------------------------------------------------------------
+
+/**
+ * ONE BRIEF → A COMPLETE SITE.
+ *
+ *   Brief → SiteContentPlan → PageContentPlan → RegionPlan → ContentUnit → Slot
+ *
+ * Every level of that hierarchy already existed as a SCHEMA (Task 19 units,
+ * Task 27 brief / region plan, the generator's site plan). What did not exist
+ * was any artifact showing that a given level was actually DERIVED from the one
+ * above it: the SiteContentPlan arrived inside a generation result as an opaque
+ * blob, page plans were whatever the generator happened to list, and nothing
+ * tied a unit back through a region to a page to the site to the brief.
+ *
+ * This file is that artifact. It is DERIVED and deterministic — no LLM, no
+ * similarity score. It records, per node, the parent it came from and HOW, and
+ * closes the chain in `closure`: an orphan unit, a route with no page plan, or
+ * a region no page claims is NAMED, never silently dropped.
+ *
+ * It is a SIBLING of the packet, exactly like `slot-accounting.json` is a
+ * sibling of `slot-values.json`: nothing downstream is forced to read it and
+ * no existing artifact changes shape because it exists.
+ */
+export const AUTHORING_PLAN_LEVELS = ["brief", "site", "page", "region", "unit", "slot"] as const;
+export const AuthoringPlanLevelSchema = z.enum(AUTHORING_PLAN_LEVELS);
+export type AuthoringPlanLevel = z.infer<typeof AuthoringPlanLevelSchema>;
+
+export const AuthoringPlanBriefLevelSchema = z
+  .object({
+    /** True when an actual brief file was supplied; a raw intent still counts as the goal. */
+    present: z.boolean(),
+    source: z.enum(["brief-file", "raw-intent"]),
+    /** Verbatim. The one input the whole chain hangs from. */
+    goal: z.string(),
+    preferences: z.record(z.string(), z.string()),
+    providedFacts: z.number(),
+    gaps: z.array(BriefGapSchema),
+  })
+  .strict();
+
+export const AuthoringPlanSiteLevelSchema = z
+  .object({
+    planId: z.literal("site"),
+    derivedFrom: z.literal("brief"),
+    derivation: z.string(),
+    /** Where each identity field came from — brief, intent, or a supplied plan. */
+    identityProvenance: z.record(z.string(), z.enum(["brief", "raw-intent", "supplied-plan", "engine-default"])),
+    siteIdentity: z
+      .object({
+        workingName: z.string(),
+        category: z.string(),
+        audience: z.string(),
+        positioning: z.string(),
+      })
+      .strict(),
+    primaryConversion: z.string(),
+    tone: z.array(z.string()),
+    messages: z.array(z.string()),
+    /** True when a SiteContentPlan was supplied (generator/author) rather than derived alone. */
+    supplied: z.boolean(),
+  })
+  .strict();
+
+export const AuthoringPlanPageLevelSchema = z
+  .object({
+    planId: z.string(),
+    route: z.string(),
+    derivedFrom: z.literal("site"),
+    derivation: z.string(),
+    /** True when a PageContentPlan for this route was supplied. */
+    supplied: z.boolean(),
+    plan: PageContentPlanSchema.optional(),
+    regionIds: z.array(z.string()),
+    unitIds: z.array(z.string()),
+    slotKeys: z.number(),
+  })
+  .strict();
+
+export const AuthoringPlanRegionLevelSchema = z
+  .object({
+    regionId: z.string(),
+    scope: z.enum(["global", "page"]),
+    /** `page:<route>` for a page region, `site` for a global one. */
+    derivedFrom: z.string(),
+    derivation: z.string(),
+    routes: z.array(z.string()),
+    unitIds: z.array(z.string()),
+    slotKeys: z.array(z.string()),
+    purpose: z.string(),
+  })
+  .strict();
+
+export const AuthoringPlanUnitLevelSchema = z
+  .object({
+    unitId: z.string(),
+    scope: z.enum(["global", "page"]),
+    route: z.string().optional(),
+    kind: ContentUnitKindSchema,
+    /** The level this unit actually hangs from — a region when one claims it. */
+    parentLevel: z.enum(["region", "page", "site"]),
+    derivedFrom: z.string(),
+    derivation: z.string(),
+    slotKeys: z.array(z.string()),
+  })
+  .strict();
+
+export const AuthoringPlanFileSchema = z
+  .object({
+    schemaVersion: z.literal(CONTENT_SCHEMA_VERSION),
+    schemaName: z.literal("content-authoring-plan-v1"),
+    runId: z.string(),
+    templateId: z.string(),
+    levels: z.array(AuthoringPlanLevelSchema),
+    scopedRoutes: z.array(z.string()),
+    brief: AuthoringPlanBriefLevelSchema,
+    site: AuthoringPlanSiteLevelSchema,
+    pages: z.array(AuthoringPlanPageLevelSchema),
+    regions: z.array(AuthoringPlanRegionLevelSchema),
+    units: z.array(AuthoringPlanUnitLevelSchema),
+    /**
+     * Whether the PageRegion layer was available at all. `absent` is HONEST,
+     * not a failure: a template that was never region-compiled still produces
+     * a complete brief → site → page → unit → slot chain, and the closure
+     * below says so rather than pretending a region layer existed.
+     */
+    regionLayer: z
+      .object({
+        kind: z.enum(["page-regions-artifact", "absent"]),
+        regionsRead: z.number(),
+        unitsClaimedByARegion: z.number(),
+        note: z.string(),
+      })
+      .strict(),
+    closure: z
+      .object({
+        scopedRoutes: z.number(),
+        pagePlans: z.number(),
+        regions: z.number(),
+        units: z.number(),
+        slotKeys: z.number(),
+        /** Units reachable from the site level through page/region parents. */
+        unitsReachable: z.number(),
+        siteDerivedFromBrief: z.boolean(),
+        everyRouteHasAPagePlan: z.boolean(),
+        everyRegionHasAParent: z.boolean(),
+        everyUnitHasExactlyOneParent: z.boolean(),
+        everySlotKeyBelongsToAUnit: z.boolean(),
+        routesWithoutPagePlan: z.array(z.string()),
+        orphanRegionIds: z.array(z.string()),
+        orphanUnitIds: z.array(z.string()),
+        duplicateParentUnitIds: z.array(z.string()),
+        complete: z.boolean(),
+      })
+      .strict(),
+    provenance: z.literal("derived"),
+  })
+  .strict();
+export type AuthoringPlanFile = z.infer<typeof AuthoringPlanFileSchema>;
+export type AuthoringPlanPageLevel = z.infer<typeof AuthoringPlanPageLevelSchema>;
+
+// ---------------------------------------------------------------------------
+// Cross-page consistency review (Task 28 Phase 9)
+// ---------------------------------------------------------------------------
+
+/**
+ * The review pass Content V2 did not have. Layout QA asks "does this value
+ * still fit?", the brand scan asks "did the source mark survive?", the
+ * validator asks "is this value safe?" — none of them asks the question a
+ * reader of a MULTI-PAGE site asks: do these pages belong to the same site?
+ *
+ * Every check is deterministic and reads only artifacts this run already
+ * produced. Findings are REPORTED, not gated: this is a review pass in the
+ * same position as the brand-leak scan, so it never silently rewrites a value
+ * and never blocks an ingest on a judgement call.
+ */
+export const ConsistencyFindingSchema = z
+  .object({
+    code: z.string(),
+    severity: z.enum(["error", "warning"]),
+    route: z.string().optional(),
+    slotKey: z.string().optional(),
+    message: z.string(),
+  })
+  .strict();
+export type ConsistencyFinding = z.infer<typeof ConsistencyFindingSchema>;
+
+export const ConsistencyCheckSchema = z
+  .object({
+    id: z.string(),
+    description: z.string(),
+    /** How many things this check actually looked at — 0 means it saw nothing. */
+    subjects: z.number(),
+    findings: z.number(),
+  })
+  .strict();
+
+export const ConsistencyReportSchema = z
+  .object({
+    schemaVersion: z.literal(CONTENT_SCHEMA_VERSION),
+    schemaName: z.literal("content-consistency-v1"),
+    runId: z.string(),
+    templateId: z.string(),
+    scopedRoutes: z.array(z.string()),
+    checks: z.array(ConsistencyCheckSchema),
+    findings: z.array(ConsistencyFindingSchema),
+    counts: z.object({ errors: z.number(), warnings: z.number() }).strict(),
+    /** Per-route written coverage — the "not only the homepage" evidence. */
+    routeCoverage: z.array(
+      z
+        .object({
+          route: z.string(),
+          inScopeSlots: z.number(),
+          writtenSlots: z.number(),
+          changedSlots: z.number(),
+        })
+        .strict(),
+    ),
+    pass: z.boolean(),
+    provenance: z.literal("derived"),
+  })
+  .strict();
+export type ConsistencyReport = z.infer<typeof ConsistencyReportSchema>;
+
+// ---------------------------------------------------------------------------
+// Authoring delta (Task 28 Phase 9) — a hand-authored result, reproducibly
+// ---------------------------------------------------------------------------
+
+/**
+ * THERE IS NO LLM API KEY in this repo (`src/config/env.ts` declares only
+ * FIRECRAWL_API_KEY), and the program sanctions the overnight agent itself
+ * authoring a structured generation result through the manual seam. The risk
+ * that creates is a 200 KB JSON nobody can tell apart from a live model call.
+ *
+ * An authoring delta closes that: it names the BASE result it starts from with
+ * its sha256, states who authored it and by what procedure, asserts
+ * `liveModelCall: false`, and carries ONLY the values this authoring pass
+ * actually decided — each with a rationale. `composeAuthoredResult` applies it
+ * deterministically, so anyone can re-derive the exact result from base +
+ * delta and see precisely which values a human/agent chose.
+ *
+ * The split is enforced, not stylistic: a `resolution` MUST target a key the
+ * base left `unresolved`, a `rewrite` MUST target a key the base already
+ * valued. A delta that mislabels one is rejected.
+ */
+export const AuthoringDeltaValueSchema = z
+  .object({
+    slotKey: z.string(),
+    value: SlotValueSchema,
+    source: SlotValueSourceSchema,
+    /** Invented fictional detail — recorded, never silent (Task 27 §4). */
+    synthetic: z.boolean().optional(),
+    rationale: z.string().min(1),
+  })
+  .strict();
+export type AuthoringDeltaValue = z.infer<typeof AuthoringDeltaValueSchema>;
+
+export const AuthoringDeltaSchema = z
+  .object({
+    schemaVersion: z.literal(CONTENT_SCHEMA_VERSION),
+    schemaName: z.literal("content-authoring-delta-v1"),
+    authoredBy: z
+      .object({
+        agent: z.string(),
+        procedure: z.string().min(1),
+        /** ALWAYS false here: no vendor SDK and no API key exist in this repo. */
+        liveModelCall: z.literal(false),
+        authoredAt: z.string(),
+      })
+      .strict(),
+    base: z
+      .object({
+        file: z.string(),
+        sha256: z.string(),
+        generator: z.object({ name: z.string(), model: z.string().optional() }).strict(),
+        slotValues: z.number(),
+        unresolved: z.number(),
+      })
+      .strict(),
+    generator: z.object({ name: z.string(), model: z.string().optional() }).strict(),
+    brief: ContentBriefSchema.optional(),
+    sitePlan: SiteContentPlanSchema.optional(),
+    /** Keys the BASE left unresolved that this pass decided. */
+    resolutions: z.array(AuthoringDeltaValueSchema),
+    /** Keys the BASE already valued that this pass rewrote. */
+    rewrites: z.array(AuthoringDeltaValueSchema),
+    /** Keys deliberately LEFT needs-input, with the reason restated. */
+    keepUnresolved: z.array(z.object({ slotKey: z.string(), reason: z.string().min(1) }).strict()),
+    notes: z.array(z.string()),
+  })
+  .strict();
+export type AuthoringDelta = z.infer<typeof AuthoringDeltaSchema>;
 
 // ---------------------------------------------------------------------------
 // Errors

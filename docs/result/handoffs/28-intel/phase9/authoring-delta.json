@@ -1,0 +1,1231 @@
+{
+  "schemaVersion": 1,
+  "schemaName": "content-authoring-delta-v1",
+  "authoredBy": {
+    "agent": "claude-code (Task 28 Phase 9 builder agent)",
+    "procedure": "The builder agent read the prepared Content Task Packet artifacts on disk (content-units.json, generation-request.json, template-summary.json), the Task 26 base generation-result.json and the template's slots.json defaults, and WROTE the values below by hand in this file. No live model API call was made and no vendor SDK exists in this repository (src/config/env.ts declares only FIRECRAWL_API_KEY). The homogeneous in-page-anchor class was expanded mechanically by scripts/build-content-authoring-delta.ts from the single class rule stated below, so the hand-written surface is exactly: this file.",
+    "liveModelCall": false,
+    "authoredAt": "2026-08-28"
+  },
+  "base": {
+    "file": "data/linear.app/content-runs/2026-08-25T21-54-40-120Z/generation-result.json",
+    "sha256": "b14274e0c42e6fa1fe3d38ee3a24b25ceaaa843f60ee2caf0bc0468ba9563e59",
+    "generator": {
+      "name": "claude-code-operator",
+      "model": "claude-fable-5"
+    },
+    "slotValues": 1395,
+    "unresolved": 117
+  },
+  "generator": {
+    "name": "claude-code-operator",
+    "model": "task28-phase9-authoring-delta"
+  },
+  "brief": {
+    "goal": "Recompose this reconstructed site as the complete product site of FlowPilot, an enterprise AI work-automation and AI-agent operations platform, across every core route — home, changelog, customers, the customer story, integrations, plan, pricing and security. Keep the verified layout and interactions exactly as reconstructed; change only what a visitor reads.",
+    "workingName": "FlowPilot",
+    "category": "Enterprise AI work-automation and AI-agent operations platform",
+    "audience": "Enterprise operations teams, IT teams and executives",
+    "positioning": "One dependable platform for automating repetitive work, building and operating AI agents, connecting internal data, running approval workflows and monitoring execution",
+    "primaryConversion": "Product consultation / demo request",
+    "tone": [
+      "professional",
+      "modern",
+      "restrained",
+      "trustworthy"
+    ],
+    "includeReview": false,
+    "truthMode": "synthetic-allowed",
+    "facts": [
+      {
+        "kind": "pilot-brand",
+        "value": "FlowPilot is an internal synthetic pilot brand (synthetic-pilot-brand). It is not a real business."
+      },
+      {
+        "kind": "reserved-domain",
+        "value": "flowpilot.example is the pilot's reserved-TLD domain; it can never collide with a real company."
+      }
+    ]
+  },
+  "sitePlan": {
+    "planVersion": 1,
+    "siteIdentity": {
+      "workingName": "FlowPilot",
+      "category": "Enterprise AI work-automation and AI-agent operations platform",
+      "audience": "Enterprise operations teams, IT teams and executives",
+      "positioning": "One dependable platform for automating repetitive work, building and operating AI agents, connecting internal data, running approval workflows and monitoring execution"
+    },
+    "primaryConversion": "Product consultation / demo request",
+    "tone": [
+      "professional",
+      "modern",
+      "restrained",
+      "trustworthy"
+    ],
+    "messages": [
+      "Automate repetitive work with AI agents your team can trust",
+      "Build and operate AI agents alongside your people",
+      "Connect internal data and tools through governed connectors",
+      "Run approval workflows so people stay accountable for outcomes",
+      "Monitor every run in real time",
+      "Product consultation / demo request"
+    ],
+    "pagePlans": [
+      {
+        "route": "/",
+        "currentPurpose": "Source homepage — product-development platform positioning and signup conversion",
+        "newPurpose": "FlowPilot homepage — AI work-automation positioning and demo-request conversion",
+        "primaryMessage": "Run your operations on autopilot",
+        "secondaryMessages": [
+          "Route every request into structured work",
+          "Automate work across teams and agents",
+          "Approve agent output with confidence",
+          "Understand operations at scale"
+        ],
+        "conversionGoal": "Product consultation / demo request",
+        "contentStrategy": "Keep the verified layout and interactions; rewrite hero, pillars and mock-UI internals as FlowPilot's own automation story."
+      },
+      {
+        "route": "/changelog",
+        "currentPurpose": "Source changelog — dated product release notes",
+        "newPurpose": "FlowPilot changelog — dated release notes that prove the platform ships steadily",
+        "primaryMessage": "FlowPilot ships steadily: agents, approvals, connectors, monitoring",
+        "secondaryMessages": [
+          "Every release names what changed and who it is for",
+          "Agent behaviour changes are called out explicitly"
+        ],
+        "conversionGoal": "Automate repetitive work with AI agents your team can trust",
+        "contentStrategy": "Rewrite each dated entry as a FlowPilot release; keep in-page anchors and dates structurally intact so the changelog's navigation still works."
+      },
+      {
+        "route": "/customers",
+        "currentPurpose": "Source customer index — logos, stories and adoption metrics",
+        "newPurpose": "FlowPilot customer index — pilot customer stories and adoption outcomes",
+        "primaryMessage": "Operations teams that put their routine work on autopilot",
+        "secondaryMessages": [
+          "Stories grouped by industry",
+          "Outcomes stated as measured ratios, not adjectives"
+        ],
+        "conversionGoal": "Product consultation / demo request",
+        "contentStrategy": "Replace every real third-party company with a FlowPilot pilot customer, including the story slugs, so no real business is implied to be a customer."
+      },
+      {
+        "route": "/customers/automattic",
+        "currentPurpose": "Source customer story — one company's migration told as a case study",
+        "newPurpose": "FlowPilot customer story — Northwind Logistics unifying six operations teams",
+        "primaryMessage": "How Northwind Logistics unified six operations teams on FlowPilot",
+        "secondaryMessages": [
+          "A named starting point",
+          "What actually changed",
+          "A quote in the customer's own words"
+        ],
+        "conversionGoal": "Product consultation / demo request",
+        "contentStrategy": "Write the case study as a complete fictional story under synthetic-allowed, every invented detail recorded as synthetic — the page is a real page, not a placeholder frame."
+      },
+      {
+        "route": "/integrations",
+        "currentPurpose": "Source integrations directory — third-party app catalogue",
+        "newPurpose": "FlowPilot connector directory — governed connectors grouped by function",
+        "primaryMessage": "Connect your internal data and tools",
+        "secondaryMessages": [
+          "Connectors grouped by what they are for",
+          "Every connector runs under the same governance"
+        ],
+        "conversionGoal": "Connect internal data and tools through governed connectors",
+        "contentStrategy": "Rewrite category headings and connector descriptions; keep the in-page category anchors byte-identical so the directory's jump links keep working."
+      },
+      {
+        "route": "/plan",
+        "currentPurpose": "Source planning-feature page",
+        "newPurpose": "FlowPilot workflow design page — designing and running workflows end to end",
+        "primaryMessage": "Design and run workflows end to end",
+        "secondaryMessages": [
+          "Model the work before you automate it",
+          "Route approvals to the people accountable for them"
+        ],
+        "conversionGoal": "Run approval workflows so people stay accountable for outcomes",
+        "contentStrategy": "Rewrite the feature narrative as workflow design; keep every screenshot region and interaction untouched."
+      },
+      {
+        "route": "/pricing",
+        "currentPurpose": "Source pricing page — tiers, per-seat prices and feature lists",
+        "newPurpose": "FlowPilot pricing — four tiers with per-seat prices stated as pilot figures",
+        "primaryMessage": "Simple tiers that scale from a first pilot to the whole company",
+        "secondaryMessages": [
+          "Free for a first pilot",
+          "Per-seat pricing on the paid tiers",
+          "Enterprise is quoted"
+        ],
+        "conversionGoal": "Product consultation / demo request",
+        "contentStrategy": "Keep the tier structure; every price is a pilot figure recorded as synthetic, never presented as a verified commercial commitment."
+      },
+      {
+        "route": "/security",
+        "currentPurpose": "Source security page — compliance posture and controls",
+        "newPurpose": "FlowPilot security page — the platform's controls and audit posture",
+        "primaryMessage": "Secure by design. Private by default.",
+        "secondaryMessages": [
+          "Independent audits",
+          "Data residency and retention controls",
+          "Agent actions are logged like human ones"
+        ],
+        "conversionGoal": "Product consultation / demo request",
+        "contentStrategy": "State the audit posture as a pilot claim recorded as synthetic; never assert a certification the operator has not supplied."
+      }
+    ]
+  },
+  "resolutions": [
+    {
+      "slotKey": "global.footer.link.status.href",
+      "value": "https://status.flowpilot.example/",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The footer status link must point at the new brand's own status page. flowpilot.example is a reserved-TLD host that can never resolve to a real company, so inventing it under synthetic-allowed carries no risk of misdirecting a visitor to someone else's service."
+    },
+    {
+      "slotKey": "global.footer.link.x-twitter.href",
+      "value": "https://x.com/flowpilothq",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "A social profile for the pilot brand. Invented and recorded as synthetic; the source destination pointed at the real company's account and could not survive a rebrand."
+    },
+    {
+      "slotKey": "global.footer.link.github.href",
+      "value": "https://github.com/flowpilothq",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "As above: the source's own code-host organisation cannot be carried onto another brand's footer."
+    },
+    {
+      "slotKey": "global.footer.link.youtube.href",
+      "value": "https://www.youtube.com/@flowpilothq",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "As above."
+    },
+    {
+      "slotKey": "changelog.main.link.ios.href",
+      "value": "https://flowpilot.example/download/ios",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The source pointed at a specific App Store listing id. A pilot brand has no store listing, and inventing a numeric store id would name a slot that a real listing could occupy; the brand's own download page is the honest destination."
+    },
+    {
+      "slotKey": "changelog.main.link.android.href",
+      "value": "https://flowpilot.example/download/android",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Same reasoning as the iOS link."
+    },
+    {
+      "slotKey": "changelog.main.link.github-announcement.href",
+      "value": "https://flowpilot.example/changelog/agent-integration",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The source linked a third party's blog post ABOUT the source product. The equivalent for FlowPilot is FlowPilot's own changelog entry; keeping the third-party post would tell a visitor that another company announced this product."
+    },
+    {
+      "slotKey": "changelog.main.link.mcp-specification.href",
+      "value": "https://modelcontextprotocol.io/extensions/auth/enterprise-managed-authorization",
+      "source": "derived-copy",
+      "synthetic": false,
+      "rationale": "NOT invented and NOT rebranded: this is a public third-party PROTOCOL SPECIFICATION, not a source-brand destination. Linking a public spec asserts no fact about FlowPilot, so the correct decision is to carry it forward verbatim as derived-copy. Marking it synthetic would falsely claim the engine invented a destination it did not."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.automattic-com.href",
+      "value": "https://northwind.example/",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The customer story is rewritten as a fictional pilot customer (Northwind Logistics), so its 'company website' link must point at that fictional company on a reserved TLD. Leaving the real customer's domain would present a real business as a FlowPilot customer."
+    },
+    {
+      "slotKey": "security.main.link.request-soc-2.href",
+      "value": "https://trust.flowpilot.example/",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "A trust-portal destination for the pilot brand. The source pointed at the real company's trust portal, which cannot survive a rebrand."
+    },
+    {
+      "slotKey": "security.main.link.request-iso.href",
+      "value": "https://trust.flowpilot.example/",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Same portal as the SOC 2 request link; both requests are served from one trust portal, which is why the two slots share a destination."
+    },
+    {
+      "slotKey": "home.body.link.skip-to-content.href",
+      "value": "#wr-p000001-desktop-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "home.body.link.skip-to-content-2.href",
+      "value": "#wr-p000001-mobile-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n000200.href",
+      "value": "#wr-p000002-desktop-n000200",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n000200.href",
+      "value": "#wr-p000002-mobile-n000200",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n000221.href",
+      "value": "#wr-p000002-desktop-n000221",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n000221.href",
+      "value": "#wr-p000002-mobile-n000221",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n000238.href",
+      "value": "#wr-p000002-desktop-n000238",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n000238.href",
+      "value": "#wr-p000002-mobile-n000238",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n000406.href",
+      "value": "#wr-p000002-desktop-n000406",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n000406.href",
+      "value": "#wr-p000002-mobile-n000406",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n000772.href",
+      "value": "#wr-p000002-desktop-n000772",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n000772.href",
+      "value": "#wr-p000002-mobile-n000772",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n000789.href",
+      "value": "#wr-p000002-desktop-n000789",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n000789.href",
+      "value": "#wr-p000002-mobile-n000789",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n000805.href",
+      "value": "#wr-p000002-desktop-n000805",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n000805.href",
+      "value": "#wr-p000002-mobile-n000805",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n000820.href",
+      "value": "#wr-p000002-desktop-n000820",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n000820.href",
+      "value": "#wr-p000002-mobile-n000820",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n001087.href",
+      "value": "#wr-p000002-desktop-n001087",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n001087.href",
+      "value": "#wr-p000002-mobile-n001087",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n001594.href",
+      "value": "#wr-p000002-desktop-n001594",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n001594.href",
+      "value": "#wr-p000002-mobile-n001594",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n001614.href",
+      "value": "#wr-p000002-desktop-n001614",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n001614.href",
+      "value": "#wr-p000002-mobile-n001614",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n002140.href",
+      "value": "#wr-p000002-desktop-n002140",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n002140.href",
+      "value": "#wr-p000002-mobile-n002140",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n002160.href",
+      "value": "#wr-p000002-desktop-n002160",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n002160.href",
+      "value": "#wr-p000002-mobile-n002160",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n002186.href",
+      "value": "#wr-p000002-desktop-n002186",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n002186.href",
+      "value": "#wr-p000002-mobile-n002186",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n002203.href",
+      "value": "#wr-p000002-desktop-n002203",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n002203.href",
+      "value": "#wr-p000002-mobile-n002203",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n002223.href",
+      "value": "#wr-p000002-desktop-n002223",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n002223.href",
+      "value": "#wr-p000002-mobile-n002223",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n002591.href",
+      "value": "#wr-p000002-desktop-n002591",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n002591.href",
+      "value": "#wr-p000002-mobile-n002591",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n002606.href",
+      "value": "#wr-p000002-desktop-n002606",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n002606.href",
+      "value": "#wr-p000002-mobile-n002606",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n002625.href",
+      "value": "#wr-p000002-desktop-n002625",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n002625.href",
+      "value": "#wr-p000002-mobile-n002625",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n002905.href",
+      "value": "#wr-p000002-desktop-n002905",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n002905.href",
+      "value": "#wr-p000002-mobile-n002905",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n002930.href",
+      "value": "#wr-p000002-desktop-n002930",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n002930.href",
+      "value": "#wr-p000002-mobile-n002930",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n003284.href",
+      "value": "#wr-p000002-desktop-n003284",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n003284.href",
+      "value": "#wr-p000002-mobile-n003284",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n003301.href",
+      "value": "#wr-p000002-desktop-n003301",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n003301.href",
+      "value": "#wr-p000002-mobile-n003301",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-desktop-n003319.href",
+      "value": "#wr-p000002-desktop-n003319",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.main.link.wr-p000002-mobile-n003319.href",
+      "value": "#wr-p000002-mobile-n003319",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.body.link.skip-to-content.href",
+      "value": "#wr-p000002-desktop-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "changelog.body.link.skip-to-content-2.href",
+      "value": "#wr-p000002-mobile-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers.body.link.skip-to-content.href",
+      "value": "#wr-p000003-desktop-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers.body.link.skip-to-content-2.href",
+      "value": "#wr-p000003-mobile-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-desktop-n000117.href",
+      "value": "#wr-p000004-desktop-n000117",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-mobile-n000117.href",
+      "value": "#wr-p000004-mobile-n000117",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-desktop-n000129.href",
+      "value": "#wr-p000004-desktop-n000129",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-mobile-n000129.href",
+      "value": "#wr-p000004-mobile-n000129",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-desktop-n000145.href",
+      "value": "#wr-p000004-desktop-n000145",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-mobile-n000145.href",
+      "value": "#wr-p000004-mobile-n000145",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-desktop-n000159.href",
+      "value": "#wr-p000004-desktop-n000159",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-mobile-n000159.href",
+      "value": "#wr-p000004-mobile-n000159",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-desktop-n000169.href",
+      "value": "#wr-p000004-desktop-n000169",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-mobile-n000169.href",
+      "value": "#wr-p000004-mobile-n000169",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-desktop-n000179.href",
+      "value": "#wr-p000004-desktop-n000179",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-mobile-n000179.href",
+      "value": "#wr-p000004-mobile-n000179",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-desktop-n000189.href",
+      "value": "#wr-p000004-desktop-n000189",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-mobile-n000189.href",
+      "value": "#wr-p000004-mobile-n000189",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-desktop-n000199.href",
+      "value": "#wr-p000004-desktop-n000199",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-mobile-n000199.href",
+      "value": "#wr-p000004-mobile-n000199",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-desktop-n000213.href",
+      "value": "#wr-p000004-desktop-n000213",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.wr-p000004-mobile-n000213.href",
+      "value": "#wr-p000004-mobile-n000213",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.body.link.skip-to-content.href",
+      "value": "#wr-p000004-desktop-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "customers-automattic.body.link.skip-to-content-2.href",
+      "value": "#wr-p000004-mobile-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.essentials.href",
+      "value": "#wr-p000005-desktop-n000157",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.essentials-2.href",
+      "value": "#wr-p000005-mobile-n000157",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.agents.href",
+      "value": "#wr-p000005-desktop-n000271",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.agents-2.href",
+      "value": "#wr-p000005-mobile-n000271",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.ai-clients.href",
+      "value": "#wr-p000005-desktop-n000376",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.ai-clients-2.href",
+      "value": "#wr-p000005-mobile-n000376",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.engineering.href",
+      "value": "#wr-p000005-desktop-n000481",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.engineering-2.href",
+      "value": "#wr-p000005-mobile-n000481",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.linear-crafted.href",
+      "value": "#wr-p000005-desktop-n000594",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.linear-crafted-2.href",
+      "value": "#wr-p000005-mobile-n000594",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.bug-reporting.href",
+      "value": "#wr-p000005-desktop-n000711",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.bug-reporting-2.href",
+      "value": "#wr-p000005-mobile-n000711",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.automations.href",
+      "value": "#wr-p000005-desktop-n000820",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.automations-2.href",
+      "value": "#wr-p000005-mobile-n000820",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.customer-experience.href",
+      "value": "#wr-p000005-desktop-n000931",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.customer-experience-2.href",
+      "value": "#wr-p000005-mobile-n000931",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.security-compliance.href",
+      "value": "#wr-p000005-desktop-n001046",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.security-compliance-2.href",
+      "value": "#wr-p000005-mobile-n001046",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.analytics.href",
+      "value": "#wr-p000005-desktop-n001151",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.analytics-2.href",
+      "value": "#wr-p000005-mobile-n001151",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.collaboration.href",
+      "value": "#wr-p000005-desktop-n001260",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.collaboration-2.href",
+      "value": "#wr-p000005-mobile-n001260",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.media-design.href",
+      "value": "#wr-p000005-desktop-n001373",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.main.link.media-design-2.href",
+      "value": "#wr-p000005-mobile-n001373",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.body.link.skip-to-content.href",
+      "value": "#wr-p000005-desktop-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "integrations.body.link.skip-to-content-2.href",
+      "value": "#wr-p000005-mobile-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "plan.body.link.skip-to-content.href",
+      "value": "#wr-p000006-desktop-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "plan.body.link.skip-to-content-2.href",
+      "value": "#wr-p000006-mobile-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "pricing.body.link.skip-to-content.href",
+      "value": "#wr-p000007-desktop-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "pricing.body.link.skip-to-content-2.href",
+      "value": "#wr-p000007-mobile-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "security.body.link.skip-to-content.href",
+      "value": "#wr-p000008-desktop-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    },
+    {
+      "slotKey": "security.body.link.skip-to-content-2.href",
+      "value": "#wr-p000008-mobile-n000060",
+      "source": "derived-copy",
+      "rationale": "class rule in-page-anchor: An in-page anchor's fragment is the RECONSTRUCTION's own node id (#wr-pNNNNNN-<viewport>-nNNNNNN) or a skip-to-content target. It is not an external destination and no fact about the new brand can change it: rewriting the fragment breaks the anchor, and leaving it needs-input demands an operator input that does not exist. The Task 26 base marked all 106 of these 'needs factual input: external destination for the new brand not provided' — a manufactured blocker on a class that has no factual content at all. Carrying the fragment forward verbatim is derived-copy, and it is the only correct value."
+    }
+  ],
+  "rewrites": [
+    {
+      "slotKey": "customers.main.link.coinbase-s-bet-on-agent-first-developmen.label.01",
+      "value": "Meridian Pay’s bet on agent-first operations",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Replaces a real company's story title with a pilot customer's. Length 44 against a 41-character source string, so the card's line count is unchanged."
+    },
+    {
+      "slotKey": "customers.main.link.coinbase-s-bet-on-agent-first-developmen.href",
+      "value": "/customers/meridian-pay",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The story slug must match the fictional customer; a synthetic site must not route visitors to a slug named after a real business."
+    },
+    {
+      "slotKey": "customers.main.link.why-openai-chose-linear-and-scaled-to-3.label.01",
+      "value": "Why Vantage Health chose FlowPilot for 3,000 staff",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Fictional customer and a fictional seat count; both are invented detail and recorded as synthetic. 49 characters against 49."
+    },
+    {
+      "slotKey": "customers.main.link.why-openai-chose-linear-and-scaled-to-3.href",
+      "value": "/customers/vantage-health",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Slug matches the fictional customer."
+    },
+    {
+      "slotKey": "customers.main.link.boom-supersonic-builds-as-fast-as-it-fli.label.01",
+      "value": "Halcyon Aero automates its hardware intake",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Fictional hardware customer. 42 characters against 42."
+    },
+    {
+      "slotKey": "customers.main.link.boom-supersonic-builds-as-fast-as-it-fli.href",
+      "value": "/customers/halcyon-aero",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Slug matches the fictional customer."
+    },
+    {
+      "slotKey": "customers.main.link.how-teams-at-oscar-left-one-of-the-world.label.01",
+      "value": "How teams at Brightline left their legacy queue",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Fictional customer; the source title also named a specific competitor product, which a synthetic site should not disparage. 47 characters against 70."
+    },
+    {
+      "slotKey": "customers.main.link.how-teams-at-oscar-left-one-of-the-world.href",
+      "value": "/customers/brightline",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Slug matches the fictional customer."
+    },
+    {
+      "slotKey": "customers.main.link.how-cursor-builds-with-linear-watch-vide.label.01",
+      "value": "How Cobalt Studio runs approvals",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Fictional customer. 32 characters against 29."
+    },
+    {
+      "slotKey": "customers.main.link.how-cursor-builds-with-linear-watch-vide.href",
+      "value": "/customers/cobalt-studio",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Slug matches the fictional customer."
+    },
+    {
+      "slotKey": "customers.main.link.the-coding-agent-behind-60-of-ramp-s-mer.label.01",
+      "value": "The agent behind 60% of Northwind’s routine work",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Fictional customer and an invented percentage; the percentage is exactly the kind of claim verified-only refuses, and it is kept here only because this canary runs synthetic-allowed and the invention is recorded. 47 characters against 48."
+    },
+    {
+      "slotKey": "customers.main.link.the-coding-agent-behind-60-of-ramp-s-mer.href",
+      "value": "/customers/northwind-logistics",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Slug matches the fictional customer whose full story this run also writes."
+    },
+    {
+      "slotKey": "customers.main.link.how-automattic-migrated-to-linear-and-un.label.01",
+      "value": "How Northwind Logistics unified six operations teams",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The index card for the customer story this run writes in full; both must name the same fictional company or the site contradicts itself across two pages. 51 characters against 64."
+    },
+    {
+      "slotKey": "customers.main.link.how-automattic-migrated-to-linear-and-un.href",
+      "value": "/customers/automattic",
+      "source": "derived-copy",
+      "synthetic": false,
+      "rationale": "DELIBERATELY NOT rewritten: this href is the one story link that points at a route the template actually renders (/customers/automattic). Renaming it would break the only working customer-story navigation in the reconstruction. The route SLUG is a source artefact the operator renames at the routing layer, not a content value, and the card's visible label already names the fictional customer."
+    },
+    {
+      "slotKey": "customers.main.link.brex-proved-linear-s-impact-with-a-data.label.01",
+      "value": "Meridian Pay proved FlowPilot’s impact in a pilot",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Fictional customer. 48 characters against 53."
+    },
+    {
+      "slotKey": "customers.main.link.brex-proved-linear-s-impact-with-a-data.href",
+      "value": "/customers/meridian-pay",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Slug matches the fictional customer."
+    },
+    {
+      "slotKey": "customers.main.link.how-dandelion-chocolate-scales-craft-wat.label.01",
+      "value": "How Fernwood Coffee scales craft operations",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Fictional customer. 43 characters against 36."
+    },
+    {
+      "slotKey": "customers.main.link.how-dandelion-chocolate-scales-craft-wat.href",
+      "value": "/customers/fernwood-coffee",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Slug matches the fictional customer."
+    },
+    {
+      "slotKey": "customers.main.link.how-opendoor-is-rebuilding-its-product-c.label.01",
+      "value": "How Brightline is rebuilding its operations culture",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Fictional customer, reusing Brightline so the index does not invent twelve unrelated companies. 50 characters against 58."
+    },
+    {
+      "slotKey": "customers.main.link.how-opendoor-is-rebuilding-its-product-c.href",
+      "value": "/customers/brightline",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Slug matches the fictional customer."
+    },
+    {
+      "slotKey": "customers.main.link.cars24-s-push-to-being-ai-native-with-li.label.01",
+      "value": "Kestrel Retail’s push to being AI-native",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Fictional customer. 40 characters against 44."
+    },
+    {
+      "slotKey": "customers.main.link.cars24-s-push-to-being-ai-native-with-li.href",
+      "value": "/customers/kestrel-retail",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Slug matches the fictional customer."
+    },
+    {
+      "slotKey": "customers.main.link.how-scale-compressed-bug-resolution-time.label.01",
+      "value": "How Vantage Health cut resolution time by 52%",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Fictional customer and an invented percentage, recorded as synthetic. 45 characters against 47."
+    },
+    {
+      "slotKey": "customers.main.link.how-scale-compressed-bug-resolution-time.href",
+      "value": "/customers/vantage-health",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Slug matches the fictional customer."
+    },
+    {
+      "slotKey": "customers.main.text.2-0x",
+      "value": "2.1x",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The Task 26 run replaced this adoption metric with an em dash because verified-only refuses an unbacked figure. Under synthetic-allowed the pilot states its own figure and records it as invented — a dash on a metric card is not a complete site."
+    },
+    {
+      "slotKey": "customers.main.text.3-3x",
+      "value": "3.4x",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "As above."
+    },
+    {
+      "slotKey": "customers.main.text.50",
+      "value": "48%",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The base left the SOURCE's own 50% figure standing because a value identical to the source default is not treated as an invention. That is the source company's measured statistic on a page that now belongs to another brand, so this pass replaces it with the pilot's own figure and records the invention."
+    },
+    {
+      "slotKey": "customers.main.text.increase-in-filed-issues",
+      "value": "Increase in filed requests",
+      "source": "generated-marketing",
+      "synthetic": false,
+      "rationale": "A metric LABEL, not a claim: it says what the number above it counts. '(metric pending)' was scaffolding from the verified-only pass and reads as an unfinished page."
+    },
+    {
+      "slotKey": "customers.main.text.faster-issue-resolution",
+      "value": "Faster request resolution",
+      "source": "generated-marketing",
+      "synthetic": false,
+      "rationale": "As above — a label, not a claim."
+    },
+    {
+      "slotKey": "customers.main.text.issues-authored-by-agents",
+      "value": "Work authored by agents",
+      "source": "generated-marketing",
+      "synthetic": false,
+      "rationale": "As above — a label, not a claim."
+    },
+    {
+      "slotKey": "security.main.text.linear-undergoes-regular-service",
+      "value": "FlowPilot undergoes regular Service Organization Controls audits (SOC 2 Type II).",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The audit posture stated as the pilot's own claim. Under verified-only this exact sentence is REFUSED as an unbacked certification claim — that refusal is correct there and is what the two truth modes are for. Here it is kept and recorded as invented. 80 characters against 78."
+    },
+    {
+      "slotKey": "security.main.text.iso-27001-certified",
+      "value": "ISO 27001 certified",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Declared synthetic explicitly. The string is identical to the source default, which means the truth mode's own pattern check would treat it as surviving source content and record no decision; declaring it here forces the invention onto the record rather than letting a certification claim ride on the source's words."
+    },
+    {
+      "slotKey": "customers-automattic.main.text.automattic",
+      "value": "Northwind Logistics",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The customer name on the story page. The Task 26 pass wrote 'Sample' here; a case study whose subject is called Sample is a frame, not a page."
+    },
+    {
+      "slotKey": "customers-automattic.main.hero.headline",
+      "value": "How Northwind Logistics unified six operations teams on FlowPilot",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The story headline, matching the index card on /customers word for word in its subject. 65 characters against 64."
+    },
+    {
+      "slotKey": "customers-automattic.main.hero.description",
+      "value": "Northwind Logistics is a European third-party logistics operator running cross-dock, last-mile and returns operations for retail and industrial shippers. Founded in Rotterdam in 2011, it grew to six regional operations teams that each ran their own intake queue, their own approval chain and their own spreadsheet of exceptions. Adopting FlowPilot gave those six teams one intake, one approval model and one place to see what every automation had actually done.",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The company description that sets up the story. Written at 455 characters against the source's 460 so the hero block's height is unchanged."
+    },
+    {
+      "slotKey": "customers-automattic.main.cta.automattic-com.label.01",
+      "value": "northwind.example",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The visible company-website label must agree with the href this run resolves to https://northwind.example/. 17 characters against 14."
+    },
+    {
+      "slotKey": "customers-automattic.main.text.san-francisco-2005",
+      "value": "Rotterdam, 2011",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The founding fact stated in the description, repeated in the fact strip; the two must agree or the page contradicts itself. 15 characters against 19."
+    },
+    {
+      "slotKey": "customers-automattic.main.text.june-2025",
+      "value": "March 2026",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "When the fictional customer adopted FlowPilot. 10 characters against 9."
+    },
+    {
+      "slotKey": "customers-automattic.main.text.1-400",
+      "value": "1,850",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Company size. An invented headcount, recorded as synthetic. 5 characters against 5."
+    },
+    {
+      "slotKey": "customers-automattic.main.text.automattic-s-challenges",
+      "value": "Northwind’s starting point",
+      "source": "generated-marketing",
+      "synthetic": false,
+      "rationale": "A section heading naming the story's subject; it states no fact beyond the customer name the page already carries. 26 characters against 23."
+    },
+    {
+      "slotKey": "customers-automattic.main.text.for-the-first-time-ever-we-have",
+      "value": "For the first time we can see every exception across all six regions in one queue. It changed what our team argues about in planning.",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The pull quote. A testimonial is exactly the artefact a real site must never fabricate, which is why verified-only refuses it and Task 26 left a placeholder; under synthetic-allowed it is written in full and recorded as invented. 132 characters against 131."
+    },
+    {
+      "slotKey": "customers-automattic.main.text.lance-willett",
+      "value": "Marijke Haan",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The quoted person. Invented, recorded as synthetic, and a name chosen to fit the fictional company's stated Rotterdam origin. 12 characters against 13."
+    },
+    {
+      "slotKey": "customers-automattic.main.text.chief-quality-officer",
+      "value": "Head of Operations",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The quoted person's role. 18 characters against 21."
+    },
+    {
+      "slotKey": "customers-automattic.nav.nav.previous-ramp.label.02",
+      "value": "Meridian",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "The previous-story link should name a story the index actually lists. Task 26 wrote the generic word 'Story' for both links, which made the two navigation arrows indistinguishable. 8 characters against 4."
+    },
+    {
+      "slotKey": "customers-automattic.nav.nav.previous-ramp.href",
+      "value": "/customers/meridian-pay",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Points at the same slug the index card for Meridian Pay uses."
+    },
+    {
+      "slotKey": "customers-automattic.nav.nav.next-brex.label.02",
+      "value": "Kestrel",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "As above, for the next-story link. 7 characters against 4."
+    },
+    {
+      "slotKey": "customers-automattic.nav.nav.next-brex.href",
+      "value": "/customers/kestrel-retail",
+      "source": "generated-marketing",
+      "synthetic": true,
+      "rationale": "Points at the same slug the index card for Kestrel Retail uses."
+    }
+  ],
+  "keepUnresolved": [],
+  "notes": [
+    "CANARY SCOPE: all 8 routes of the linear.app recon template linear.app-2026-08-25T21-53-26-980Z, truth mode synthetic-allowed.",
+    "HAND-WRITTEN SURFACE, stated exactly: this decisions file. It carries 11 hand-written external-destination resolutions, 47 hand-written rewrites, one brief, one SiteContentPlan with 8 PageContentPlans, and ONE class rule that scripts/build-content-authoring-delta.ts expands mechanically over the 106 in-page-anchor slots the base left unresolved.",
+    "BASE: the Task 26 generation result at data/linear.app/content-runs/2026-08-25T21-54-40-120Z/generation-result.json, itself authored through this same manual seam (generator claude-code-operator) and pinned here by sha256. This pass does not re-author its 1,395 values; it resolves what that pass left needs-input and rewrites the placeholders that verified-only forced on it.",
+    "The 106-slot anchor class is the largest single finding of this pass: the base marked every in-page fragment 'needs factual input: external destination for the new brand not provided'. Those slots hold no fact and have exactly one correct value, so they were a manufactured blocker, not a real one.",
+    "expanded from docs/result/handoffs/28-intel/phase9/authoring-decisions.json: 11 hand-written resolution(s) + 106 expanded by class rule in-page-anchor, 47 hand-written rewrite(s)"
+  ]
+}

@@ -1,0 +1,1068 @@
+{
+  "task": "28.5A wave 2 — Agent D experimenter, VARIANT C (hybrid)",
+  "generatedAt": "2026-08-29",
+  "label": "All live captures in this experiment are CURRENT_SOURCE (audit date). The historical truth remains data/linear.app/site-observations/2026-08-25T19-23-01-716Z.",
+  "built": true,
+  "whatVariantCIs": {
+    "paintBaseline": "the source's own settled DOM (documentElement.outerHTML) + the source's own linked stylesheets + self-hosted fonts and images",
+    "webReconLayer": [
+      "data-wr-node identity attribute stamped on every element (1373 nodes on /security, 2830 on /pricing)",
+      "ONE override stylesheet (wr-override.css) linked last in document order: :root token block + generic [data-wr-hidden] rule",
+      "all <script> elements removed (260 on /security, 139 on /pricing)",
+      "CSSOM-only stylesheet text re-materialised into the empty <style> elements that serialise blank"
+    ],
+    "deliberatelyAbsent": [
+      "per-node computed style",
+      "layout inference / recovery rules",
+      "frozen pixel geometry",
+      "any site-specific selector"
+    ]
+  },
+  "referenceUsed": "tmp/wr-visual-fidelity-investigation/substrate/<route>/reference-<route>-<vp>.png",
+  "comparisonRules": "no resize; composite over white; pixel differs when any R/G/B channel differs by >= 1; metrics over overlapping area (screenshot-diff.ts)",
+  "pixelResults": [
+    {
+      "route": "/security (r000008)",
+      "viewport": "desktop",
+      "changedRatio": 0.0025,
+      "meanDelta": 0.3331,
+      "commonAreaRatio": 1,
+      "maxChannelDelta": 247,
+      "baselineChangedRatio": 0.0461,
+      "baselineMeanDelta": 3.92,
+      "baselineCommonAreaRatio": 1,
+      "improvementPct": 94.6,
+      "noiseFloorChangedRatio": 0.0019,
+      "noiseFloorMeanDelta": 0.2422,
+      "ablationNoCssomChangedRatio": 0.063,
+      "ablationNoCssomHeightDelta": 125,
+      "oneDomAllViewportsChangedRatio": 0.0025,
+      "sourceScrollHeight": 3231,
+      "variantScrollHeight": 3231,
+      "scrollHeightDelta": 0,
+      "sourceScrollWidth": 1440,
+      "variantScrollWidth": 1440,
+      "baselineScrollHeight": 3231,
+      "baselineScrollHeightDelta": 0,
+      "externalRequestsAtRuntime": 0,
+      "fontFaceCount": 3,
+      "baselineFontFaceCount": 0
+    },
+    {
+      "route": "/security (r000008)",
+      "viewport": "mobile",
+      "changedRatio": 0.0022,
+      "meanDelta": 0.3679,
+      "commonAreaRatio": 1,
+      "maxChannelDelta": 239,
+      "baselineChangedRatio": 0.0678,
+      "baselineMeanDelta": 7.6363,
+      "baselineCommonAreaRatio": 1,
+      "improvementPct": 96.8,
+      "noiseFloorChangedRatio": 0.0017,
+      "noiseFloorMeanDelta": 0.2733,
+      "ablationNoCssomChangedRatio": 0.1273,
+      "ablationNoCssomHeightDelta": 281,
+      "oneDomAllViewportsChangedRatio": 0.0021,
+      "sourceScrollHeight": 4783,
+      "variantScrollHeight": 4783,
+      "scrollHeightDelta": 0,
+      "sourceScrollWidth": 390,
+      "variantScrollWidth": 390,
+      "baselineScrollHeight": 4783,
+      "baselineScrollHeightDelta": 0,
+      "externalRequestsAtRuntime": 0,
+      "fontFaceCount": 3,
+      "baselineFontFaceCount": 0
+    },
+    {
+      "route": "/security (r000008)",
+      "viewport": "wide",
+      "changedRatio": 0.0018,
+      "meanDelta": 0.2338,
+      "commonAreaRatio": 1,
+      "maxChannelDelta": 247,
+      "baselineChangedRatio": 0.0388,
+      "baselineMeanDelta": 2.94,
+      "baselineCommonAreaRatio": 1,
+      "improvementPct": 95.4,
+      "noiseFloorChangedRatio": 0.0013,
+      "noiseFloorMeanDelta": 0.1695,
+      "ablationNoCssomChangedRatio": 0.0474,
+      "ablationNoCssomHeightDelta": 125,
+      "oneDomAllViewportsChangedRatio": 0.0018,
+      "sourceScrollHeight": 3231,
+      "variantScrollHeight": 3231,
+      "scrollHeightDelta": 0,
+      "sourceScrollWidth": 1920,
+      "variantScrollWidth": 1920,
+      "baselineScrollHeight": 3231,
+      "baselineScrollHeightDelta": 0,
+      "externalRequestsAtRuntime": 0,
+      "fontFaceCount": 3,
+      "baselineFontFaceCount": 0
+    },
+    {
+      "route": "/pricing (r000007)",
+      "viewport": "desktop",
+      "changedRatio": 0.0003,
+      "meanDelta": 0.0338,
+      "commonAreaRatio": 1,
+      "maxChannelDelta": 239,
+      "baselineChangedRatio": 0.3914,
+      "baselineMeanDelta": 8.0356,
+      "baselineCommonAreaRatio": 0.9981,
+      "improvementPct": 99.9,
+      "noiseFloorChangedRatio": 0,
+      "noiseFloorMeanDelta": 0,
+      "ablationNoCssomChangedRatio": 0.0604,
+      "ablationNoCssomHeightDelta": -132,
+      "oneDomAllViewportsChangedRatio": 0.0003,
+      "sourceScrollHeight": 6360,
+      "variantScrollHeight": 6360,
+      "scrollHeightDelta": 0,
+      "sourceScrollWidth": 1440,
+      "variantScrollWidth": 1440,
+      "baselineScrollHeight": 6348,
+      "baselineScrollHeightDelta": -12,
+      "externalRequestsAtRuntime": 0,
+      "fontFaceCount": 3,
+      "baselineFontFaceCount": 0
+    },
+    {
+      "route": "/pricing (r000007)",
+      "viewport": "mobile",
+      "changedRatio": 0.0019,
+      "meanDelta": 0.3383,
+      "commonAreaRatio": 1,
+      "maxChannelDelta": 247,
+      "baselineChangedRatio": 0.3347,
+      "baselineMeanDelta": 8.194,
+      "baselineCommonAreaRatio": 0.9997,
+      "improvementPct": 99.4,
+      "noiseFloorChangedRatio": 0.0008,
+      "noiseFloorMeanDelta": 0.1323,
+      "ablationNoCssomChangedRatio": 0.1021,
+      "ablationNoCssomHeightDelta": 45,
+      "oneDomAllViewportsChangedRatio": 0.0019,
+      "sourceScrollHeight": 7714,
+      "variantScrollHeight": 7714,
+      "scrollHeightDelta": 0,
+      "sourceScrollWidth": 390,
+      "variantScrollWidth": 390,
+      "baselineScrollHeight": 7712,
+      "baselineScrollHeightDelta": -2,
+      "externalRequestsAtRuntime": 0,
+      "fontFaceCount": 3,
+      "baselineFontFaceCount": 0
+    },
+    {
+      "route": "/pricing (r000007)",
+      "viewport": "wide",
+      "changedRatio": 0.0002,
+      "meanDelta": 0.0254,
+      "commonAreaRatio": 1,
+      "maxChannelDelta": 239,
+      "baselineChangedRatio": 0.2982,
+      "baselineMeanDelta": 6.0358,
+      "baselineCommonAreaRatio": 0.9981,
+      "improvementPct": 99.9,
+      "noiseFloorChangedRatio": 0,
+      "noiseFloorMeanDelta": 0,
+      "ablationNoCssomChangedRatio": 0.0478,
+      "ablationNoCssomHeightDelta": -132,
+      "oneDomAllViewportsChangedRatio": 0.0002,
+      "sourceScrollHeight": 6360,
+      "variantScrollHeight": 6360,
+      "scrollHeightDelta": 0,
+      "sourceScrollWidth": 1920,
+      "variantScrollWidth": 1920,
+      "baselineScrollHeight": 6348,
+      "baselineScrollHeightDelta": -12,
+      "externalRequestsAtRuntime": 0,
+      "fontFaceCount": 3,
+      "baselineFontFaceCount": 0
+    }
+  ],
+  "criticalMechanismFinding": {
+    "name": "CSSOM_ONLY_STYLESHEET_LOSS",
+    "statement": "document.documentElement.outerHTML does NOT carry rules inserted through CSSOM insertRule(). linear.app uses styled-components 6.1.24; its <style data-styled=\"active\"> element serialises with an EMPTY text node. Any 'snapshot the DOM plus the linked stylesheets' strategy silently drops every styled-component rule, including the rule that sizes the <h1> on /security.",
+    "measured": {
+      "routes": {
+        "r000008": {
+          "cssomOnlyRules": 61,
+          "cssomOnlyBytes": 7202,
+          "bytesCarriedByOuterHTML": 0
+        },
+        "r000007": {
+          "cssomOnlyRules": 78,
+          "cssomOnlyBytes": 9490,
+          "bytesCarriedByOuterHTML": 0
+        }
+      }
+    },
+    "ablation": "variant C0 (identical build, CSSOM harvest disabled): changedRatio 0.0474-0.1273 and scrollHeight off by up to +281px, versus 0.0002-0.0025 and 0px with the harvest. 20x-300x worse.",
+    "genericFix": "harvest every stylesheet whose ownerNode serialises EMPTY but whose CSSOM has rules, and refill those <style> elements in place (preserves cascade position). No library or site knowledge required — the implemented rule names neither styled-components nor linear.app."
+  },
+  "editability": {
+    "E1_textReflow": {
+      "method": "replaced the text of ONE node addressed only by data-wr-node=wr00189 (the /security <h1>) with a 39-character Korean string; no other change",
+      "desktop": {
+        "h1BoxBefore": {
+          "x": 424,
+          "y": 184,
+          "w": 592,
+          "h": 136
+        },
+        "h1BoxAfter": {
+          "x": 424,
+          "y": 184,
+          "w": 592,
+          "h": 271
+        },
+        "linesBefore": 2,
+        "linesAfter": 4,
+        "scrollHeightBefore": 3231,
+        "scrollHeightAfter": 3366,
+        "overlapsAfterEdit": 0,
+        "horizontalOverflow": false
+      },
+      "mobile": {
+        "h1BoxBefore": {
+          "x": 48,
+          "y": 152,
+          "w": 294,
+          "h": 88
+        },
+        "h1BoxAfter": {
+          "x": 48,
+          "y": 152,
+          "w": 294,
+          "h": 220
+        },
+        "linesBefore": 2,
+        "linesAfter": 5,
+        "scrollHeightBefore": 4783,
+        "scrollHeightAfter": 4915,
+        "overlapsAfterEdit": 0
+      },
+      "verdict": "PASS — real reflow. The heading grew 136->271px (2->4 lines) at desktop and 88->220px (2->5 lines) at mobile, the page grew 3231->3366 and 4783->4915, and every following block moved down. Zero overlaps, no horizontal overflow, text-wrap:balance still honoured. Nothing else broke; the only pixels that changed outside the hero were the downward shift.",
+      "caveat": "Inter has no Hangul, so the Korean glyphs render in the platform fallback face. That is true of the source site too and is not specific to this variant."
+    },
+    "E2_themeOverride": {
+      "method": "wr-override.css :root{} block only. No !important, no source selector, no touching any preserved stylesheet.",
+      "securityRoute": {
+        "tokensResolved": {
+          "brandBg": "#b45309",
+          "accent": "#b45309",
+          "bgPrimary": "#08090a"
+        },
+        "visiblePixelEffect": "NONE — /security paints the brand token on 1 element that is not visible at 1440x900. Honest negative result; the token resolved but reached nothing on screen."
+      },
+      "pricingRoute": {
+        "tokensBefore": {
+          "bgPrimary": "#08090a",
+          "brandBg": "#5e6ad2",
+          "textPrimary": "#f7f8f8"
+        },
+        "tokensAfter": {
+          "bgPrimary": "#101a2e",
+          "brandBg": "#b45309",
+          "textPrimary": "#ffe8c9"
+        },
+        "elementsPaintingTheNewColours": 2266,
+        "svgNodesRecoloured": 955,
+        "pixelEffect": 0.9936,
+        "heightDelta": 0
+      },
+      "verdict": "PASS on a token the page actually paints: 5 token overrides reached 2266 elements (583 div, 260 svg, 695 path, 28 a, 1 button), recoloured 99.36% of the page, and changed geometry by exactly 0px. Document order alone beat the source's own [data-theme=dark] block; no specificity escalation was needed."
+    },
+    "E3_sourceSpecificSelectors": {
+      "question": "does the override layer need any linear.app-specific selector?",
+      "answer": "NO",
+      "evidence": "grep for 'linear' in 20-build.mjs and 30-capture.mjs returns 0 hits. The override layer contains exactly two selectors: ':root' and '[data-wr-hidden=\"true\"]'. The CSSOM refill rule is 'any <style> that serialises empty', not 'the styled-components style tag'.",
+      "residualSiteShapedInputs": [
+        "the CSS custom-property NAMES used in the :root block (--color-bg-primary etc.) are discovered by theme extraction from the source's own stylesheet, not authored per site",
+        "data-wr-node ids are web-recon's own identity, assigned at build time",
+        "the route URLs appear in the harvest script, as inputs, not as selectors"
+      ],
+      "oneNonGenericThingIHadToAdd": "the builder must handle the imagesrcset attribute on <link rel=preload as=image> as well as srcset. Missing it left exactly 1 runtime request to static.linear.app on /pricing. That is an HTML-spec attribute, not a site hack, but it is the class of gap that will keep appearing."
+    }
+  },
+  "footprint": {
+    "buildBytes": 11000000,
+    "perRouteStoredResourceFiles": 352,
+    "perRouteStoredResourceBytes": 6565696,
+    "dedupedAcrossRoutesFiles": 189,
+    "dedupedAcrossRoutesBytes": 3495885,
+    "indexHtmlBytes": {
+      "r000008": 373639,
+      "r000007": 739400
+    },
+    "note": "resources are currently copied per route; a shared resource pool halves it. Served by a 15-line static file server, no framework."
+  },
+  "axesEvidence": {
+    "live_vs_variantC": {
+      "r000008.LIVE_SOURCE": {
+        "elements": 2096,
+        "before": 3,
+        "after": 0,
+        "beforeBox": 3,
+        "afterBox": 0,
+        "svgCount": 45,
+        "svgRendered": 40,
+        "svgPaintNodes": 501,
+        "fontFaces": [
+          "Berkeley Mono|100 900|unloaded",
+          "Inter Variable|100 900|loaded",
+          "Inter Variable|100 900|unloaded"
+        ],
+        "fontStatus": "loaded",
+        "families": {
+          "Inter Variable": 2096
+        },
+        "sticky": 0,
+        "fixed": 3,
+        "scrollHeight": 3231,
+        "interactiveCandidates": {
+          "buttons": 3,
+          "links": 60,
+          "inputs": 0,
+          "details": 0,
+          "ariaExpanded": 3
+        },
+        "hover": {
+          "probed": 8,
+          "changedCount": 7,
+          "detail": [
+            {
+              "text": "",
+              "changed": false,
+              "before": {
+                "i": 0,
+                "text": "",
+                "visible": true,
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Product",
+              "changed": true,
+              "before": {
+                "i": 1,
+                "text": "Product",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Resources",
+              "changed": true,
+              "before": {
+                "i": 2,
+                "text": "Resources",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Customers",
+              "changed": true,
+              "before": {
+                "i": 3,
+                "text": "Customers",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Pricing",
+              "changed": true,
+              "before": {
+                "i": 4,
+                "text": "Pricing",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Now",
+              "changed": true,
+              "before": {
+                "i": 5,
+                "text": "Now",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Contact",
+              "changed": true,
+              "before": {
+                "i": 6,
+                "text": "Contact",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Log in",
+              "changed": true,
+              "before": {
+                "i": 9,
+                "text": "Log in",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            }
+          ]
+        }
+      },
+      "r000008.VARIANT_C": {
+        "elements": 1375,
+        "before": 3,
+        "after": 0,
+        "beforeBox": 3,
+        "afterBox": 0,
+        "svgCount": 45,
+        "svgRendered": 40,
+        "svgPaintNodes": 501,
+        "fontFaces": [
+          "Berkeley Mono|100 900|unloaded",
+          "Inter Variable|100 900|loaded",
+          "Inter Variable|100 900|unloaded"
+        ],
+        "fontStatus": "loaded",
+        "families": {
+          "Inter Variable": 1375
+        },
+        "sticky": 0,
+        "fixed": 3,
+        "scrollHeight": 3231,
+        "interactiveCandidates": {
+          "buttons": 3,
+          "links": 60,
+          "inputs": 0,
+          "details": 0,
+          "ariaExpanded": 3
+        },
+        "hover": {
+          "probed": 8,
+          "changedCount": 7,
+          "detail": [
+            {
+              "text": "",
+              "changed": false,
+              "before": {
+                "i": 0,
+                "text": "",
+                "visible": true,
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Product",
+              "changed": true,
+              "before": {
+                "i": 1,
+                "text": "Product",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Resources",
+              "changed": true,
+              "before": {
+                "i": 2,
+                "text": "Resources",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Customers",
+              "changed": true,
+              "before": {
+                "i": 3,
+                "text": "Customers",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Pricing",
+              "changed": true,
+              "before": {
+                "i": 4,
+                "text": "Pricing",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Now",
+              "changed": true,
+              "before": {
+                "i": 5,
+                "text": "Now",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Contact",
+              "changed": true,
+              "before": {
+                "i": 6,
+                "text": "Contact",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Log in",
+              "changed": true,
+              "before": {
+                "i": 9,
+                "text": "Log in",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            }
+          ]
+        },
+        "jsInteraction": {
+          "attempted": true,
+          "domChanged": false
+        }
+      },
+      "r000007.LIVE_SOURCE": {
+        "elements": 3423,
+        "before": 61,
+        "after": 0,
+        "beforeBox": 61,
+        "afterBox": 0,
+        "svgCount": 338,
+        "svgRendered": 318,
+        "svgPaintNodes": 913,
+        "fontFaces": [
+          "Berkeley Mono|100 900|unloaded",
+          "Inter Variable|100 900|loaded",
+          "Inter Variable|100 900|unloaded"
+        ],
+        "fontStatus": "loaded",
+        "families": {
+          "Inter Variable": 3421
+        },
+        "sticky": 1,
+        "fixed": 3,
+        "scrollHeight": 6360,
+        "interactiveCandidates": {
+          "buttons": 3,
+          "links": 75,
+          "inputs": 3,
+          "details": 0,
+          "ariaExpanded": 3
+        },
+        "hover": {
+          "probed": 8,
+          "changedCount": 7,
+          "detail": [
+            {
+              "text": "",
+              "changed": false,
+              "before": {
+                "i": 0,
+                "text": "",
+                "visible": true,
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Product",
+              "changed": true,
+              "before": {
+                "i": 1,
+                "text": "Product",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Resources",
+              "changed": true,
+              "before": {
+                "i": 2,
+                "text": "Resources",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Customers",
+              "changed": true,
+              "before": {
+                "i": 3,
+                "text": "Customers",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Pricing",
+              "changed": true,
+              "before": {
+                "i": 4,
+                "text": "Pricing",
+                "visible": true,
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Now",
+              "changed": true,
+              "before": {
+                "i": 5,
+                "text": "Now",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Contact",
+              "changed": true,
+              "before": {
+                "i": 6,
+                "text": "Contact",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Log in",
+              "changed": true,
+              "before": {
+                "i": 9,
+                "text": "Log in",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            }
+          ]
+        },
+        "jsInteraction": {
+          "domChanged": true
+        }
+      },
+      "r000007.VARIANT_C": {
+        "elements": 2832,
+        "before": 61,
+        "after": 0,
+        "beforeBox": 61,
+        "afterBox": 0,
+        "svgCount": 338,
+        "svgRendered": 318,
+        "svgPaintNodes": 913,
+        "fontFaces": [
+          "Berkeley Mono|100 900|unloaded",
+          "Inter Variable|100 900|loaded",
+          "Inter Variable|100 900|unloaded"
+        ],
+        "fontStatus": "loaded",
+        "families": {
+          "Inter Variable": 2832
+        },
+        "sticky": 1,
+        "fixed": 3,
+        "scrollHeight": 6360,
+        "interactiveCandidates": {
+          "buttons": 3,
+          "links": 75,
+          "inputs": 3,
+          "details": 0,
+          "ariaExpanded": 3
+        },
+        "hover": {
+          "probed": 8,
+          "changedCount": 7,
+          "detail": [
+            {
+              "text": "",
+              "changed": false,
+              "before": {
+                "i": 0,
+                "text": "",
+                "visible": true,
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Product",
+              "changed": true,
+              "before": {
+                "i": 1,
+                "text": "Product",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Resources",
+              "changed": true,
+              "before": {
+                "i": 2,
+                "text": "Resources",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Customers",
+              "changed": true,
+              "before": {
+                "i": 3,
+                "text": "Customers",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Pricing",
+              "changed": true,
+              "before": {
+                "i": 4,
+                "text": "Pricing",
+                "visible": true,
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Now",
+              "changed": true,
+              "before": {
+                "i": 5,
+                "text": "Now",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Contact",
+              "changed": true,
+              "before": {
+                "i": 6,
+                "text": "Contact",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            },
+            {
+              "text": "Log in",
+              "changed": true,
+              "before": {
+                "i": 9,
+                "text": "Log in",
+                "visible": true,
+                "color": "rgb(138, 143, 152)",
+                "bg": "rgba(0, 0, 0, 0)",
+                "opacity": "1"
+              },
+              "after": {
+                "color": "rgb(247, 248, 248)",
+                "bg": "rgba(255, 255, 255, 0.08)",
+                "opacity": "1"
+              }
+            }
+          ]
+        },
+        "jsInteraction": {
+          "attempted": true,
+          "domChanged": false
+        }
+      }
+    },
+    "acceptedReconstruction": {
+      "r000008.BASELINE_RECON": {
+        "elements": 2563,
+        "before": 6,
+        "after": 0,
+        "svgCount": 90,
+        "svgRendered": 40,
+        "svgPaintNodes": 1000,
+        "fontFaces": [],
+        "fontStatus": "loaded",
+        "sticky": 0,
+        "fixed": 6,
+        "scrollHeight": 3231,
+        "inlineStyledElements": 37,
+        "wrNodes": 732,
+        "hover": {
+          "probed": 8,
+          "changedCount": 0
+        },
+        "jsInteraction": {
+          "domChanged": true
+        }
+      },
+      "r000007.BASELINE_RECON": {
+        "elements": 5971,
+        "before": 122,
+        "after": 0,
+        "svgCount": 682,
+        "svgRendered": 319,
+        "svgPaintNodes": 1812,
+        "fontFaces": [],
+        "fontStatus": "loaded",
+        "sticky": 2,
+        "fixed": 6,
+        "scrollHeight": 6348,
+        "inlineStyledElements": 37,
+        "wrNodes": 2742,
+        "hover": {
+          "probed": 8,
+          "changedCount": 0
+        },
+        "jsInteraction": {
+          "domChanged": true
+        }
+      }
+    }
+  },
+  "evidenceDir": "docs/result/28.5-visual-fidelity-evidence/variant-C-hybrid",
+  "workDir": "tmp/wr-visual-fidelity-investigation/exp-C-hybrid",
+  "scripts": [
+    "10-harvest-cssom.mjs",
+    "20-build.mjs",
+    "30-capture.mjs",
+    "40-baseline-recon.mjs",
+    "50-noisefloor.mjs",
+    "60-bands.mjs",
+    "61-crop.mjs",
+    "62-overview.mjs",
+    "70-editability.mjs",
+    "71-themecrop.mjs",
+    "72-theme2.mjs",
+    "80-axes.mjs",
+    "81-axes-compare.mjs",
+    "82-axes-baseline.mjs",
+    "90-consolidate.mjs"
+  ]
+}

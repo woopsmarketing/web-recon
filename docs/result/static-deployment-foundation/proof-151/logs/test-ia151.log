@@ -1,0 +1,24 @@
+
+[contract] additive patch
+  ok   S1 Template ≥ 1.5.1, same routes as 1.5.0; three new optional contact.page slots with neutral defaults ({email} in tooLong); every 1.5.0 site's slots document still resolves
+
+[release] every earlier release immutable, a Template-only patch
+  ok   R1 every release dir captured before the cut (1.0.0 … 1.5.0) verifies and is byte-identical to the capture; the only new dir is one 1.5.1
+  ok   R2 the 1.5.1 release = the 1.5.0 release except exactly the seven declared Template files (platform runtime, package.json, lockfile byte-identical); every platform/ file captured before the work is unchanged
+  ok   R3 boost-interior-demo pins a verified release ≥ 1.5.1 and its current package was built with it (QA pass); at the 1.5.1 pin, the 1.5.0 package is the rollback (previous)
+
+[site data] only the pin and three contact.page slot values moved
+  ok   D1 every demo site file is byte-identical to the pre-cut capture except site.json (pin only) and slots.json (exactly the three new contact.page values)
+
+[package] the built demo pages
+  ok   P1 same page set and sitemap as the 1.5.0 package (the demo has a contact channel: /contact listed); every page's <main>, header and footer identical to 1.5.0 — except /contact's field caps
+  ok   P2 /contact server HTML: message textarea maxlength 500, each one-line field 100, the select none; empty status; no fallback / copy markup before a press
+
+[fixtures] m4: /contact listed only with a contact channel
+  ok   F1 every fixture's sitemap = its pages exactly, and lists /contact iff the site has a business email; fixture-empty still generates /contact (the unavailable line) and links to it nowhere
+
+[source] client behaviour shape (exercised in the browser by the ia151 smoke)
+  ok   J1 InquiryForm: CRLF message lines, the 2,000-character guard BEFORE the hand-off (no click, no success when too long), the status in a per-press keyed node; MobileMenu: focus returns to the button only when rendered, else a rendered header control / the header
+  ok   C1 stylesheet: the fallback block, its address and select button (44 px target) are styled; nothing of 1.5.0 removed
+
+10 passed, 0 failed

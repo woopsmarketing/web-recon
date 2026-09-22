@@ -1,0 +1,90 @@
+Already up to date
+Done in 157ms using pnpm v11.21.0
+$ tsx scripts/smoke-regions.ts
+
+== §1 selection — the fixture produces visual sections, not a DOM copy
+  PASS  §1 regions are produced
+  PASS  §1 region count is far below the element count (sections, not nodes)
+  PASS  §1 the header collapses to its nav rather than nesting two regions
+  PASS  §1 the shared footer lifts to global
+  PASS  §1 hero / features / cta are three separate page regions
+  PASS  §1 the cta wrapper is UNWRAPPED to its only element child, not doubled
+  PASS  §1 the locale page's differing shell did not block global promotion
+  PASS  §1 the locale page keeps its own page-scoped nav
+  PASS  §1 every region carries a structural hash BESIDE its id, never as it
+  PASS  §1 no DOM attribute is minted anywhere in the artifact
+  PASS  §1 the written bytes validate against the published schema
+
+== §2 DETERMINISM — two compiles of one input are byte-identical
+  PASS  §2 fixture compiles byte-identically
+  PASS  §2 the artifact carries no timestamp (the run id owns the clock)
+  PASS  §2 the compile does not mutate the input trees
+
+== §3 LOCALITY — one node inserted downstream renumbers nothing
+  PASS  §3 no existing region id disappeared
+  PASS  §3 exactly one region id appeared
+  PASS  §3 every pre-existing region kept its slot keys
+  PASS  §3 an UPSTREAM insert still leaves both <section> ids intact (tag:nth, not child index)
+  PASS  §3 negative control: the same-tag sibling DOES shift, and the artifact says so
+  PASS  §3 the shell regions are untouched by either insert
+  PASS  §3 ASYMMETRY: a downstream insert loses NO id, an upstream one does
+  PASS  §3 the upstream loss is exactly the SAME-TAG sibling, not the <section>s
+
+== §4 JOIN — slots reach their region through (pageId, viewport, nodeId)
+  PASS  §4 the hero title joins the hero region and nothing else
+  PASS  §4 the features title joins the features region
+  PASS  §4 the nav logo joins the global nav region on all three shell pages
+  PASS  §4 the footer link joins the global footer region
+  PASS  §4 both viewports of every shell page are joined, not just desktop
+  PASS  §4 each occurrence names the node id it was joined on
+
+== §5 SHARED OWNERSHIP — one page, several routes, all reported
+  PASS  §5 the shared page's region lists BOTH routes
+  PASS  §5 the page coverage table lists both routes too
+  PASS  §5 the shared page is counted ONCE as a page and TWICE as a route
+  PASS  §5 the global regions list the shared page once, with both its routes
+  PASS  §5 the locale route is flagged, the others are not
+
+== §6 ACCOUNTING — joined + orphan + unresolved is the whole population
+  PASS  §6 every binding is accounted for exactly once
+  PASS  §6 the regions' own binding counts sum to the joined total
+  PASS  §6 joined + orphan slots is the whole slot population
+  PASS  §6 the union of the regions' slot keys is exactly the joined slot count
+  PASS  §6 the body-shell binding is reported as an ORPHAN, not silently absorbed
+  PASS  §6 the ghost node id is reported as UNRESOLVED, a different failure
+  PASS  §6 exactly the two planted slots are orphaned
+  PASS  §6 the per-page table sums to the top-level totals
+  PASS  §6 global + page regions is the region total
+  PASS  §6 dropped empty candidates carried no binding (the drop is slot-safe)
+  PASS  §6 the policy that produced these ids is persisted with them
+
+== §7 real template canary (linear.app) — skipped when absent
+  PASS  §7 the real canary compiles byte-identically twice
+  PASS  §7 every real binding is accounted for exactly once
+  PASS  §7 the real regions' binding counts sum to the joined total
+  PASS  §7 joined + orphan slots is the whole real slot population
+  PASS  §7 the real region count is a section-level grouping, not a DOM copy
+  PASS  §7 every real region id is unique
+  PASS  §7 the real canary bytes validate against the published schema
+  PASS  §7 every real route resolves to a loaded page
+  PASS  §7 a DOWNSTREAM <div> insert into every real <main> loses NO region id
+  PASS  §7 an UPSTREAM <div> insert repaths 45 of 68 real regions — same-tag insert
+  NOTE  §7 locality on real markup: upstream insert repaths 45/68 regions (66%), downstream repaths 0. `tag:nth` protects a region only from a DIFFERENT-tag insert.
+  NOTE  §7 linear.app: 68 regions (5 global) · 3079/3079 slots joined · 0 orphan · 1 near-global groups (widest 7/8 pages)
+
+== §8 VIEWPORT ROOT TAG SPLIT — page scope AND global scope
+  PASS  §8 one page: the tag mismatch is COUNTED, not silently merged
+  PASS  §8 one page: both variants are emitted, the mobile one suffixed
+  PASS  §8 one page: each variant carries only its OWN viewport's occurrence
+  PASS  §8 one page: the artifact declares the split in its limitations
+  PASS  §8 REGRESSION: a mismatch on EVERY page no longer aborts the compile
+  PASS  §8 global: both tag variants lift, with distinct ids
+  PASS  §8 global: each lifted variant covers all three pages
+  PASS  §8 global: the mismatch is counted once per page
+  PASS  §8 global: no page-scoped leftovers and every id is unique
+  PASS  §8 tie case: opposite orientations still mint two distinct global ids
+  PASS  §8 tie case: the root tag breaks it — `article` takes the unsuffixed id
+  PASS  §8 tie case: the assignment is deterministic, not iteration-order dependent
+  PASS  §8 the split path mints no id an existing artifact could already hold
+
+67/67 checks passed

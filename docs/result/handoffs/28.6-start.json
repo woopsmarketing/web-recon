@@ -1,0 +1,48 @@
+{
+  "schema": "task286-start-v1",
+  "task": "28.6 — Reconstruction V1 Closure & Real-World Validation",
+  "baselineSha": "6c2e723601a0d76431c96a48bbdb4726c02063e7",
+  "branch": "main",
+  "startedAt": "2026-09-01T20:00:57Z",
+  "startedAtLocal": "2026-09-02T05:00:57+09:00",
+  "gitStatus": {
+    "modifiedTracked": 76,
+    "untrackedPaths": 114,
+    "snapshotFile": "tmp/wr286/git-status-at-start.txt",
+    "mutatingOperationsPlanned": 0
+  },
+  "machine": {
+    "logicalCpus": 14,
+    "memoryBytes": 68719476736,
+    "node": "v22.22.3",
+    "pnpm": "11.21.0",
+    "playwright": "1.62.1",
+    "loadAverageAtStart": [5.24, 3.84, 3.34]
+  },
+  "regressionBaseline": {
+    "source": "docs/result/handoffs/28.5B-regression.json",
+    "suites": 34,
+    "checks": 3354,
+    "failures": 0,
+    "typecheckExit": 0
+  },
+  "priorVerdicts": {
+    "28.5B": "WAVE 1 HARDENING ACCEPTED — READY FOR RESPONSIVE/FONT DECISION",
+    "28.5C": "RESPONSIVE ROOT CAUSE KNOWN — MORE EXPERIMENT NEEDED"
+  },
+  "rootCauseCarriedIn": [
+    "hiddenRanges() midpoint interpolation across unsampled 1024-1440 probe gap (layout-inference.ts:661-684)",
+    "layout-truth-check renders only at 1440; responsive-hidden rules acceptedUnchecked (layout-truth-check.ts:107)",
+    "desktop subtree frozen at 1440px-resolved values; mobile subtree gets zero inferred rules (layout-inference.ts:701)",
+    "CORS cssRules SecurityError blocks authoredLayout capture (collect-dom.ts:389-395); sheets fetch fine"
+  ],
+  "linearScope": {
+    "routes": ["/", "/pricing", "/security", "/changelog"],
+    "widths": [390, 700, 1024, 1100, 1440],
+    "priorPilotScopeDir": "data/linear.app/2026-08-29T12-34-53-000Z-285b-pilot"
+  },
+  "stripeControl": {
+    "priorPilotScopeDir": "data/stripe.com/2026-08-30T16-14-55-000Z-285b-pilot",
+    "routes": ["https://stripe.com/", "https://stripe.com/industries/media-entertainment"]
+  }
+}

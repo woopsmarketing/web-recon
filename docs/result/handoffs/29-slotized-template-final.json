@@ -1,0 +1,203 @@
+{
+  "task": "29",
+  "mode": "FAST",
+  "title": "Slotized Recon Template V1",
+  "reconstructionV1Closed": true,
+  "architecture": {
+    "sharedSchemaIsolatedTemplates": true,
+    "directCompileNoWrapperDom": true,
+    "deterministicTemplateLocalIds": true,
+    "globalsCertainOnly": true,
+    "repeatersPrototypeCloning": true,
+    "themeTokenRiskClassification": true,
+    "crossTemplateComponentSharing": false
+  },
+  "gates": {
+    "slotCompleteness": {
+      "status": "PASS",
+      "evidence": "coverage.json + audits/summary.json: unexplainedUnslotted=0 both sites; 13,885/14,032 eligible surfaces slotted, remaining 147 explicitly classified (infrastructure/aria-hidden)"
+    },
+    "slotNeutrality": {
+      "status": "PASS",
+      "evidence": "render:template --assert-neutral with default content+theme packs: 0 tree changes, 0 route-map changes, 0 css overrides, reconstruction-data byte-identical (diff -rq clean) on both sites, reproven in every phase B/C/D/E1/E2"
+    },
+    "repeaterSafety": {
+      "status": "PASS",
+      "evidence": "final e2e run 2 (EXIT 0): rosee 5 repeaters driven +3/-5/5 reordered, channel 4 driven +6/-6/4 reordered, duplicate ids introduced 0/0; mechanical-pack repeater smokes across 5 representative repeaters also 0 introduced duplicates"
+    },
+    "themeNeutrality": {
+      "status": "PASS",
+      "evidence": "default theme pack compiles to 0 bytes on both sites (byte-identical generated-styles.css: rosee 12,709,582 B, channel 8,364,801 B); mutated pack repaints 456-792/798-800 nodes across 6 measurements (GATE S4 PASS)"
+    },
+    "injectionViability": {
+      "status": "PASS",
+      "evidence": "realistic content pack: 0 applied-binding failures (9292 rosee / 4674 channel), 0 source-identity leaks (sourceLeakageRealistic PASS both sites), independent grep+digit-normalized cross-check 0 hits"
+    }
+  },
+  "coverage": {
+    "eligible": 14032,
+    "slotted": 13885,
+    "unexplainedUnslotted": 0,
+    "classifiedUnslotted": 147,
+    "perTemplate": [
+      {
+        "host": "beomeo.roseeskin.com",
+        "eligible": 9388,
+        "slotted": 9366,
+        "unexplainedUnslotted": 0,
+        "classifiedUnslotted": 22,
+        "classifiedUnslottedReasons": { "infrastructure": 22 }
+      },
+      {
+        "host": "channel.io",
+        "eligible": 4644,
+        "slotted": 4519,
+        "unexplainedUnslotted": 0,
+        "classifiedUnslotted": 125,
+        "classifiedUnslottedReasons": { "aria-hidden": 113, "infrastructure": 12 }
+      }
+    ]
+  },
+  "templates": [
+    {
+      "host": "beomeo.roseeskin.com",
+      "sourceReconstruction": "data/beomeo.roseeskin.com/reconstructions/2026-09-08T16-54-23-114Z",
+      "slotV2Run": "data/beomeo.roseeskin.com/recon-templates/2026-09-12T20-43-19-430Z",
+      "slotizedRun": "data/beomeo.roseeskin.com/slotized-templates/2026-09-12T21-31-21-048Z",
+      "counts": {
+        "slots": 2976,
+        "bindings": 10118,
+        "groups": 740,
+        "repeaters": 198,
+        "themeTokens": 90
+      },
+      "packs": [
+        "content-packs/default.json",
+        "content-packs/mechanical.json",
+        "content-packs/mechanical.expectations.json",
+        "content-packs/realistic.json",
+        "theme-packs/default.json",
+        "theme-packs/mutated.json"
+      ],
+      "renders": {
+        "default": { "applied": 8833, "failed": 0, "cssOverrides": 0, "duplicateIdsIntroduced": 0 },
+        "new": { "contentPack": "realistic.json", "themePack": "mutated.json", "applied": 9292, "failed": 0, "cssOverrides": 499, "repeatersDriven": 5, "itemsAdded": 3, "itemsRemoved": 5, "reordered": 5, "duplicateIdsIntroduced": 0 }
+      },
+      "auditsSummary": {
+        "slotCompleteness": "PASS",
+        "hardcodedContent": "PASS",
+        "sourceLeakageDefault": "REPORT_ONLY",
+        "sourceLeakageMechanical": "REPORT_ONLY",
+        "sourceLeakageRealistic": "PASS",
+        "duplicateIds": "PASS",
+        "contentPackValidation": "PASS",
+        "artifactCompleteness": "PASS",
+        "leaksDefault": 879,
+        "leaksMechanical": 29,
+        "leaksRealistic": 0,
+        "unslottableLeaksRealistic": 9
+      }
+    },
+    {
+      "host": "channel.io",
+      "sourceReconstruction": "data/channel.io/reconstructions/2026-09-08T16-47-36-107Z",
+      "slotV2Run": "data/channel.io/recon-templates/2026-09-12T20-43-19-441Z",
+      "slotizedRun": "data/channel.io/slotized-templates/2026-09-12T21-31-22-344Z",
+      "counts": {
+        "slots": 1788,
+        "bindings": 5347,
+        "groups": 266,
+        "repeaters": 150,
+        "themeTokens": 101
+      },
+      "packs": [
+        "content-packs/default.json",
+        "content-packs/mechanical.json",
+        "content-packs/mechanical.expectations.json",
+        "content-packs/realistic.json",
+        "theme-packs/default.json",
+        "theme-packs/mutated.json"
+      ],
+      "renders": {
+        "default": { "applied": 4674, "failed": 0, "cssOverrides": 0, "duplicateIdsIntroduced": 0 },
+        "new": { "contentPack": "realistic.json", "themePack": "mutated.json", "applied": 4674, "failed": 0, "cssOverrides": 28, "repeatersDriven": 4, "itemsAdded": 6, "itemsRemoved": 6, "reordered": 4, "duplicateIdsIntroduced": 0 }
+      },
+      "auditsSummary": {
+        "slotCompleteness": "PASS",
+        "hardcodedContent": "PASS",
+        "sourceLeakageDefault": "REPORT_ONLY",
+        "sourceLeakageMechanical": "REPORT_ONLY",
+        "sourceLeakageRealistic": "PASS",
+        "duplicateIds": "PASS",
+        "contentPackValidation": "PASS",
+        "artifactCompleteness": "PASS",
+        "leaksDefault": 2398,
+        "leaksMechanical": 45,
+        "leaksRealistic": 0,
+        "unslottableLeaksRealistic": 16
+      }
+    }
+  ],
+  "validationRoutes": [
+    { "template": "beomeo.roseeskin.com", "route": "/17", "pageId": "p000003", "widths": [390, 1440] },
+    { "template": "beomeo.roseeskin.com", "route": "/34", "pageId": "p000005", "widths": [390, 1440] },
+    { "template": "channel.io", "route": "/kr/pricing", "pageId": "p000004", "widths": [390, 1440] }
+  ],
+  "validationPolicy": {
+    "typecheckRuns": 1,
+    "finalE2ERuns": 2,
+    "correctionCycles": 1,
+    "fullHistoricalRegressionRun": false,
+    "reason": "Task 29 FAST speed/token policy"
+  },
+  "newContent": {
+    "mechanicalMutation": "Mechanical pack rewrites every slot to a mechanical marker (M<base36>·<chars> text, local base64 SVG media, rewritten tel/mailto/url) to prove 100% surface coverage: rosee applied 9292/0 failed (3 repeaters driven, -1/+1/reorder each, 0 duplicate ids); channel applied 4674/0 failed (2 repeaters driven, -1/+1/reorder each, 0 duplicate ids). Report-only leakage by design (29/45 leaks, all accounted path/title fragments).",
+    "realisticMutation": "Realistic fixture-corpus pack drives repeaters with add+remove+reorder on validation routes after the E1-fix correction: rosee 5 repeaters driven (+3/-5/5 reordered), channel 4 repeaters driven (+6/-6/4 reordered); 0 applied-binding failures either site; 0 duplicate ids introduced.",
+    "themeMutation": "Mutated theme pack (3 colors + font + radius + shadow, 6 tokens each site) compiles to +506,144 B / ~3,855 rules (rosee) and +261,935 B / ~2,621 rules (channel) of direct CSS overrides; visible repaint measured on 6/6 e2e measurements (456-792 of 798-800 nodes per page/width). Default theme pack compiles to 0 bytes on both sites (byte-identical stylesheet, proven neutral).",
+    "sourceLeakage": "Default pack (=source) REPORT_ONLY: rosee 879 leaks/9 unslottable, channel 2398 leaks/112 unslottable. Realistic pack: 0 leaks on both sites (sourceLeakageRealistic gate PASS), independently cross-checked by grep for brand strings (범어로제/imweb/beomeorosee/채널톡/채널코퍼레이션/Channel Corp, 0 hits) and a digit-normalized scan for the source phone numbers (16444052, 0537541475, 0 hits)."
+  },
+  "humanReview": {
+    "index": "docs/result/29-slotized-template/human-review/index.html"
+  },
+  "manualQACommands": [
+    "pnpm slotize data/beomeo.roseeskin.com/recon-templates/2026-09-12T20-43-19-430Z/manifest.json",
+    "pnpm slotize data/channel.io/recon-templates/2026-09-12T20-43-19-441Z/manifest.json",
+    "pnpm render:template --template data/beomeo.roseeskin.com/slotized-templates/2026-09-12T21-31-21-048Z/manifest.json --content data/beomeo.roseeskin.com/slotized-templates/2026-09-12T21-31-21-048Z/content-packs/default.json --theme data/beomeo.roseeskin.com/slotized-templates/2026-09-12T21-31-21-048Z/theme-packs/default.json --out /tmp/wr29-render-rosee-default --assert-neutral",
+    "pnpm render:template --template data/channel.io/slotized-templates/2026-09-12T21-31-22-344Z/manifest.json --content data/channel.io/slotized-templates/2026-09-12T21-31-22-344Z/content-packs/default.json --theme data/channel.io/slotized-templates/2026-09-12T21-31-22-344Z/theme-packs/default.json --out /tmp/wr29-render-channel-default --assert-neutral",
+    "pnpm render:template --template data/beomeo.roseeskin.com/slotized-templates/2026-09-12T21-31-21-048Z/manifest.json --content data/beomeo.roseeskin.com/slotized-templates/2026-09-12T21-31-21-048Z/content-packs/realistic.json --theme data/beomeo.roseeskin.com/slotized-templates/2026-09-12T21-31-21-048Z/theme-packs/mutated.json --out /tmp/wr29-render-rosee-new",
+    "pnpm render:template --template data/channel.io/slotized-templates/2026-09-12T21-31-22-344Z/manifest.json --content data/channel.io/slotized-templates/2026-09-12T21-31-22-344Z/content-packs/mechanical.json --theme data/channel.io/slotized-templates/2026-09-12T21-31-22-344Z/theme-packs/mutated.json --out /tmp/wr29-render-channel-mechanical",
+    "pnpm template:preview /tmp/wr29-render-rosee-new",
+    "pnpm template:packs data/beomeo.roseeskin.com/slotized-templates/2026-09-12T21-31-21-048Z/manifest.json",
+    "pnpm template:audit data/beomeo.roseeskin.com/slotized-templates/2026-09-12T21-31-21-048Z/manifest.json --render /tmp/wr29-render-rosee-new",
+    "pnpm task29:e2e",
+    "pnpm template:theme data/beomeo.roseeskin.com/slotized-templates/2026-09-12T21-31-21-048Z/manifest.json"
+  ],
+  "knownLimitations": [
+    "number SlotType exists in schema but is never inferred (no provable round-trip neutrality for numeric formatting)",
+    "no rich-text/innerHTML slots in V1 - every text occurrence is a leaf text-run binding",
+    "page metadata coverage is title-only - reconstruction app renders no description/og:* tags",
+    "srcset stripping (stripStaleSrcsets) is a render-time band-aid for 32 channel.io img nodes with bound src but unbound srcset; root fix (emit srcset bindings) not done, inputs frozen",
+    "iframe title is classified infrastructure/embed and unslottable (10 occurrences on channel, e.g. Channel chat)",
+    "3 provenance surfaces per site carry the source host and are not slotted: route-map.json rootUrl/url, package.json name, generated-config.ts SOURCE_ROOT_URL",
+    "repeaters are page-scoped, not merged globally - same nav/footer list on N pages is N separate repeaters",
+    "nested repeaters are both kept as definitions but only one level of a nested pair can be driven per render (REPEATER_NESTED_SKIPPED)",
+    "likelyGlobal backlog of same-value-outside-header/footer slots not auto-merged: rosee 234, channel 115",
+    "realistic content corpus intentionally keeps pure-quantitative text (prices/ranges/units) unchanged - reuses source numbers, not identity",
+    "12-hex slot/binding/group/repeater/token ids (~48 bits) - collisions detected and reported (0 measured) but a later duplicate is dropped, not hard-failed"
+  ],
+  "finalVerdict": "READY FOR SLOTIZED TEMPLATE HUMAN ACCEPTANCE",
+  "humanAcceptanceRequired": true,
+  "createdAt": "2026-09-12T22:11:17.000Z",
+  "sourceHandoffs": [
+    "tmp/wr29/contract.md",
+    "tmp/wr29/state.md",
+    "tmp/wr29/handoffs/A-sonnet-a.md",
+    "tmp/wr29/handoffs/A-sonnet-b.md",
+    "tmp/wr29/handoffs/B.md",
+    "tmp/wr29/handoffs/C.md",
+    "tmp/wr29/handoffs/D.md",
+    "tmp/wr29/handoffs/E1.md",
+    "tmp/wr29/handoffs/E2.md",
+    "tmp/wr29/handoffs/E1-fix.md"
+  ]
+}

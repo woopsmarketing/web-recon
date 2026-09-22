@@ -23,12 +23,14 @@ import {
 import { compileReconTemplate } from "../src/recon-template/index.js";
 import {
   BRAND_SURFACES,
+  brandSurfaceIdOf,
   brandTokensFromHost,
   containsBrandToken,
   firstBrandTokenInIdentifier,
   isSourceHostUrl,
   scanBodyAnchorIdentity,
   scanElementProps,
+  scanImageLogo,
   scanInlineSvgMarkup,
 } from "../src/content-injection/brand-surfaces.js";
 import {
@@ -59,10 +61,18 @@ import {
   buildRegionPlans,
   buildRepairRequest,
   detectSourceBrandLeaks,
+  detectTemplateBrandSurfaceLeaks,
   executeGenerationBatches,
   factClaimIn,
   failureSignatureOf,
+  AuthoredResultGenerator,
+  AuthoringPlanFileSchema,
+  ConsistencyReportSchema,
+  ContentInputError,
+  buildSlotAccounting,
   inScopeSlotKeys,
+  loadManualGenerationResult,
+  reviewCrossPageConsistency,
   ingestGenerationResult,
   intentHash,
   loadContentRun,
@@ -78,9 +88,14 @@ import {
   type ContentGenerationResult,
   type ContentGenerator,
   type ContentUnit,
+  // Task 28 CR6: now ON the barrel. Aliased so the check below can prove the
+  // barrel export and the module export are the same string.
+  CONTENT_WRITE_DOCTRINE_WARNING as BARREL_CONTENT_WRITE_DOCTRINE_WARNING,
 } from "../src/content-injection/index.js";
-// Not re-exported by the content-injection barrel yet — imported from the
-// module it is defined in (see the Task 27 final-residual handoff).
+import {
+  BrandLeakReportSchema,
+  BrandLeakWarningSchema,
+} from "../src/content-injection/types.js";
 import { CONTENT_WRITE_DOCTRINE_WARNING } from "../src/content-injection/run.js";
 import { TelemetryRecorder, parseTelemetryLines } from "../src/telemetry/index.js";
 import { promisify } from "node:util";
@@ -1609,6 +1624,161 @@ async function main(): Promise<void> {
     );
 
     // -----------------------------------------------------------------------
+    section("Task 28 Phases 5 + 6 — a DISABLED slot is accounted for, never absent");
+    // -----------------------------------------------------------------------
+    //
+    // The one property that matters: a section the operator deleted must not
+    // leave its slots demanding operator input, and must not vanish from the
+    // denominator either. `removed` is NOT reused for it — accounting.ts
+    // defines that as an empty value in a still-rendered node, and telling an
+    // emptied headline apart from a deleted section is the whole point of this
+    // artifact.
+    const enRunDir = path.join(fixtureRoot, "content-runs", "run-enablement");
+    const enDisabledKeys = accounting.entries
+      .filter((entry) => entry.disposition !== "human-required")
+      .slice(0, 2)
+      .map((entry) => entry.slotKey);
+    const enPrepared = await prepareContentRun({
+      templateManifestFile: path.join(templateDir, "manifest.json"),
+      rawIntent: INTENT,
+      routes: ["/"],
+      runId: "2026-08-18T00-00-09-000Z",
+      outputDir: enRunDir,
+      enablement: {
+        disabledRoutes: ["/pricing"],
+        disabledSlots: [
+          {
+            slotKey: enDisabledKeys[0],
+            disposition: "disabled-region",
+            detail: "slot lives in disabled region p000001:rgn:main1:section:1",
+          },
+          {
+            slotKey: enDisabledKeys[1],
+            disposition: "disabled-route",
+            detail: "every route rendering this slot is disabled (/pricing)",
+          },
+        ],
+        disabledRegionIds: ["p000001:rgn:main1:section:1"],
+      },
+    });
+    check(
+      "28.P5.CI1 the content run MANIFEST records the enablement it was prepared under",
+      enPrepared.manifest.enablement?.disabledRoutes.join(",") === "/pricing" &&
+        enPrepared.manifest.enablement.disabledSlots.length === 2 &&
+        JSON.parse(await readFile(path.join(enRunDir, "manifest.json"), "utf8")).enablement !== undefined,
+      JSON.stringify(enPrepared.manifest.enablement),
+    );
+    const enRun = await loadContentRun(enRunDir);
+    const enResult = await new FakeContentGenerator().generate({
+      mode: "initial",
+      intent: enRun.intent,
+      policy: CONTENT_POLICY,
+      units: enRun.unitsFile.units,
+      request: enRun.request,
+    });
+    const enOutcome = await ingestGenerationResult(enRun, enResult);
+    const enAccounting = enOutcome.accounting;
+    check(
+      "28.P5.CI2 both disabled slots carry the enablement disposition, and NEITHER is unresolved or removed",
+      enDisabledKeys.every((key) => {
+        const entry = enAccounting.entries.find((candidate) => candidate.slotKey === key);
+        return (
+          entry !== undefined &&
+          (entry.disposition === "disabled-region" || entry.disposition === "disabled-route") &&
+          entry.origin === "source-preserved"
+        );
+      }) &&
+        (enAccounting.totals.byDisposition["disabled-region"] ?? 0) === 1 &&
+        (enAccounting.totals.byDisposition["disabled-route"] ?? 0) === 1,
+      JSON.stringify(enAccounting.totals.byDisposition),
+    );
+    check(
+      "28.P5.CI3 ENABLEMENT WINS over the value-based classification — the same keys were `applied` without it",
+      enDisabledKeys.every((key) => {
+        const before = accounting.entries.find((candidate) => candidate.slotKey === key);
+        return before !== undefined && before.disposition !== "disabled-region" && before.disposition !== "disabled-route";
+      }),
+      enDisabledKeys
+        .map((key) => `${key}=${accounting.entries.find((entry) => entry.slotKey === key)?.disposition}`)
+        .join(" "),
+    );
+    check(
+      "28.P5.CI4 the account still RECONCILES with the new dispositions in the vocabulary",
+      enAccounting.reconciliation.reconciled &&
+        enAccounting.reconciliation.originTotal === enAccounting.reconciliation.inScopeSlots &&
+        enAccounting.reconciliation.dispositionTotal === enAccounting.reconciliation.inScopeSlots &&
+        enAccounting.reconciliation.missing.length === 0 &&
+        enAccounting.dispositionValues.includes("disabled-region") &&
+        enAccounting.dispositionValues.includes("disabled-route"),
+      JSON.stringify(enAccounting.reconciliation),
+    );
+    check(
+      "28.P6.CI5 a disabled slot the unit builder never saw is ADDED to the in-scope population, not dropped",
+      (() => {
+        const outsideKey = [...enRun.template.slotByKey.keys()].find(
+          (key) => !inScopeSlotKeys(enRun.unitsFile).includes(key),
+        );
+        if (outsideKey === undefined) return false;
+        const widened = inScopeSlotKeys(enRun.unitsFile, [outsideKey]);
+        return (
+          widened.length === inScopeSlotKeys(enRun.unitsFile).length + 1 && widened.includes(outsideKey)
+        );
+      })(),
+    );
+    check(
+      "28.P5.CI6 a stale slot key this template does not have invents NO row",
+      (() => {
+        const stale = buildSlotAccounting({
+          manifest: {
+            ...enRun.manifest,
+            enablement: {
+              disabledRoutes: [],
+              disabledSlots: [
+                { slotKey: "not.a.real.slot", disposition: "disabled-region", detail: "stale" },
+              ],
+            },
+          },
+          template: enRun.template,
+          unitsFile: enRun.unitsFile,
+          overlay: enOutcome.overlay,
+          sources: enResult.sources,
+          unresolved: enResult.unresolved,
+          truthMode: "verified-only",
+          truthDecisions: [],
+        });
+        // The key is filtered out BEFORE it can widen the in-scope
+        // population, so it neither invents a row nor shows up as `missing`:
+        // the account is exactly the one this template's slots produce.
+        return (
+          !stale.entries.some((entry) => entry.slotKey === "not.a.real.slot") &&
+          stale.reconciliation.missing.length === 0 &&
+          stale.reconciliation.reconciled
+        );
+      })(),
+    );
+    const enManifestNoEnablement = { ...enRun.manifest };
+    delete (enManifestNoEnablement as { enablement?: unknown }).enablement;
+    const enWithoutEnablement = buildSlotAccounting({
+      manifest: enManifestNoEnablement,
+      template: enRun.template,
+      unitsFile: enRun.unitsFile,
+      overlay: enOutcome.overlay,
+      sources: enResult.sources,
+      unresolved: enResult.unresolved,
+      truthMode: "verified-only",
+      truthDecisions: [],
+    });
+    check(
+      "28.P5.CI7 an ABSENT enablement block produces the account this run would have had before the field existed",
+      (enWithoutEnablement.totals.byDisposition["disabled-region"] ?? 0) === 0 &&
+        (enWithoutEnablement.totals.byDisposition["disabled-route"] ?? 0) === 0 &&
+        enWithoutEnablement.totals.inScopeSlots === enAccounting.totals.inScopeSlots &&
+        JSON.stringify(enWithoutEnablement.totals.byDisposition) !==
+          JSON.stringify(enAccounting.totals.byDisposition),
+      `${JSON.stringify(enWithoutEnablement.totals.byDisposition)} vs ${JSON.stringify(enAccounting.totals.byDisposition)}`,
+    );
+
+    // -----------------------------------------------------------------------
     // Task 27 final residual §29 — the content write doctrine AT THE POINT OF
     // EDIT. release:resolve and release:build already warn the operator who
     // works through the release layer; the operator who only hand-edits
@@ -2100,6 +2270,167 @@ async function main(): Promise<void> {
       );
     }
 
+    // ---------------------------------------------------------------------
+    section("Task 28 Phase 9 — the authoring hierarchy + cross-page review");
+    // ---------------------------------------------------------------------
+    //
+    // Three properties, on the SYNTHETIC fixture where every input is known:
+    // the derivation chain is emitted and closes even with NO region layer;
+    // the cross-page review actually fires on a defect; and the review is a
+    // REPORT — it never rewrote a value or failed the ingest that produced it.
+    {
+      const p9Dir = path.join(fixtureRoot, "content-runs", "run-phase9");
+      const p9Prepared = await prepareContentRun({
+        templateManifestFile: path.join(templateDir, "manifest.json"),
+        rawIntent: INTENT,
+        routes: ["/", "/about"],
+        runId: "2026-08-18T00-00-11-000Z",
+        outputDir: p9Dir,
+        brief: {
+          goal: INTENT,
+          workingName: "Northwind",
+          category: "logistics automation",
+          audience: "operations teams",
+          primaryConversion: "demo request",
+          tone: ["plain", "direct"],
+        },
+      });
+      const p9Plan = AuthoringPlanFileSchema.parse(
+        JSON.parse(await readFile(path.join(p9Dir, "authoring-plan.json"), "utf8")),
+      );
+      check(
+        "28.P9.1 the packet emits the six-level chain and the SITE level is derived FROM THE BRIEF",
+        p9Plan.levels.join(">") === "brief>site>page>region>unit>slot" &&
+          p9Plan.site.derivedFrom === "brief" &&
+          p9Plan.site.siteIdentity.workingName === "Northwind" &&
+          p9Plan.site.identityProvenance["workingName"] === "brief" &&
+          p9Plan.brief.present,
+        JSON.stringify(p9Plan.site.identityProvenance),
+      );
+      check(
+        "28.P9.2 with NO region artifact the chain still CLOSES, and says the layer is absent",
+        p9Plan.regionLayer.kind === "absent" &&
+          p9Plan.regions.length === 0 &&
+          p9Plan.closure.complete &&
+          p9Plan.closure.everyUnitHasExactlyOneParent &&
+          p9Plan.closure.orphanUnitIds.length === 0 &&
+          p9Plan.units.every((unit) =>
+            unit.parentLevel === (unit.scope === "global" ? "site" : "page"),
+          ),
+        JSON.stringify(p9Plan.closure),
+      );
+      check(
+        "28.P9.3 one PAGE level per scoped route, each hanging from the site",
+        p9Plan.pages.length === 2 &&
+          p9Plan.pages.every((page) => page.derivedFrom === "site" && page.unitIds.length > 0) &&
+          p9Plan.pages.map((page) => page.route).sort().join(",") === "/,/about",
+        JSON.stringify(p9Plan.pages.map((page) => `${page.route}:${page.unitIds.length}`)),
+      );
+      const p9Run = await loadContentRun(p9Dir);
+      const p9Result = await new FakeContentGenerator().generate({
+        mode: "initial",
+        intent: p9Run.intent,
+        policy: CONTENT_POLICY,
+        units: p9Run.unitsFile.units,
+        request: p9Run.request,
+      });
+      const p9Outcome = await ingestGenerationResult(p9Run, p9Result);
+      const p9Consistency = ConsistencyReportSchema.parse(
+        JSON.parse(await readFile(path.join(p9Dir, "report", "consistency.json"), "utf8")),
+      );
+      check(
+        "28.P9.4 the ingest writes the cross-page review beside the brand-leak report",
+        p9Consistency.schemaName === "content-consistency-v1" &&
+          p9Consistency.routeCoverage.length === 2 &&
+          p9Consistency.routeCoverage.every((entry) => entry.writtenSlots > 0) &&
+          p9Outcome.validation.pass,
+        JSON.stringify(p9Consistency.routeCoverage),
+      );
+      const p9OnDisk = JSON.parse(
+        await readFile(path.join(p9Dir, "slot-values.json"), "utf8"),
+      ) as Record<string, unknown>;
+      check(
+        "28.P9.5 the review is a REPORT: the ingest passed and the overlay on disk is exactly the generator's",
+        p9Outcome.validation.pass &&
+          p9Consistency.checks.length >= 9 &&
+          p9Outcome.consistency.findings.length === p9Consistency.findings.length &&
+          JSON.stringify(p9OnDisk) === JSON.stringify(p9Outcome.overlay),
+        `${p9Consistency.checks.length} check(s), ${p9Consistency.findings.length} finding(s)`,
+      );
+      // NEGATIVE: the review must actually FIRE. A route with nothing written
+      // is an error; a working name spelled two ways is an error.
+      const oneRouteOnly = reviewCrossPageConsistency({
+        runId: p9Run.manifest.runId,
+        templateId: p9Run.manifest.templateId,
+        scopedRoutes: ["/", "/about"],
+        template: p9Run.template,
+        unitsFile: p9Run.unitsFile,
+        overlay: Object.fromEntries(
+          Object.entries(p9Outcome.overlay).filter(([key]) => !key.startsWith("about.")),
+        ),
+        changed: p9Outcome.changed,
+        plan: p9Plan,
+      });
+      check(
+        "28.P9.6 NEGATIVE — a route with nothing written is a `route-uncovered` ERROR",
+        !oneRouteOnly.pass &&
+          oneRouteOnly.findings.some(
+            (finding) => finding.code === "route-uncovered" && finding.route === "/about",
+          ),
+        JSON.stringify(oneRouteOnly.findings.map((finding) => `${finding.code}@${finding.route ?? "-"}`)),
+      );
+      const heroTextKey = p9Run.unitsFile.units
+        .flatMap((unit) => unit.slots)
+        .find((slot) => slot.type === "text")!.key;
+      const variantReview = reviewCrossPageConsistency({
+        runId: p9Run.manifest.runId,
+        templateId: p9Run.manifest.templateId,
+        scopedRoutes: ["/", "/about"],
+        template: p9Run.template,
+        unitsFile: p9Run.unitsFile,
+        overlay: { ...p9Outcome.overlay, [heroTextKey]: "Welcome to North wind operations" },
+        changed: p9Outcome.changed,
+        plan: p9Plan,
+      });
+      check(
+        "28.P9.7 NEGATIVE — one site spelled two ways is a `site-name-variant` ERROR naming the slot",
+        !variantReview.pass &&
+          variantReview.findings.some(
+            (finding) => finding.code === "site-name-variant" && finding.slotKey === heroTextKey,
+          ),
+        JSON.stringify(variantReview.findings.map((finding) => finding.code)),
+      );
+      // The manual seam REJECTS, it does not silently accept.
+      const badResultFile = path.join(p9Dir, "bad-result.json");
+      await writeFile(badResultFile, JSON.stringify({ ...p9Result, unexpectedKey: true }), "utf8");
+      let seamRejected = false;
+      try {
+        await loadManualGenerationResult(badResultFile);
+      } catch (error) {
+        seamRejected = error instanceof ContentInputError;
+      }
+      check("28.P9.8 the manual ingest seam REJECTS an unknown top-level key", seamRejected);
+      // An authored result served as a PROVIDER, through the packet's batches.
+      const authoredGenerator = new AuthoredResultGenerator(p9Result);
+      const authoredExecution = await executeGenerationBatches({
+        runId: p9Run.manifest.runId,
+        intent: p9Run.intent,
+        policy: CONTENT_POLICY,
+        unitsFile: p9Run.unitsFile,
+        request: p9Run.request,
+        generator: authoredGenerator,
+      });
+      assertNoBatchConflicts(authoredExecution.report);
+      check(
+        "28.P9.9 an AUTHORED result runs through the same batch executor and loses no key",
+        authoredGenerator.unservedKeys().length === 0 &&
+          authoredExecution.report.calls.length === p9Run.request.batches.length &&
+          Object.keys(authoredExecution.result.slotValues).length ===
+            Object.keys(p9Result.slotValues).length,
+        `${authoredGenerator.unservedKeys().length} unserved, ${authoredExecution.report.calls.length} call(s)`,
+      );
+    }
+
     section("template artifact immutability");
     const templateSlotsRaw = await readFile(path.join(templateDir, "slots.json"), "utf8");
     const recompiledDir = path.join(fixtureRoot, "recon-templates", "fixture-b");
@@ -2297,8 +2628,227 @@ async function main(): Promise<void> {
         "27.brand.13 an inline-SVG finding carries DOM identity from data-wr-node (no new attribute)",
         gedFReport.findings.find((finding) => finding.surface === "svg-aria-label")?.nodeId === "n000017",
       );
+      // ---- Task 28 Phase 2: image-logo detection, and the shared id -------
+      const tokens28 = brandTokensFromHost("acme.com");
+      const logoProps = {
+        src: "https://acme.com/static/AcmeLogo.svg",
+        srcset: "https://acme.com/static/AcmeLogo@2x.svg 2x",
+        alt: "Acme logo",
+      };
+      check(
+        "28.P2.CI1 WITHOUT a tag, scanElementProps behaves exactly as before (no image-logo)",
+        scanElementProps(logoProps, tokens28, "acme.com").every((hit) => hit.surface !== "image-logo"),
+        JSON.stringify(scanElementProps(logoProps, tokens28, "acme.com").map((hit) => hit.surface)),
+      );
+      check(
+        "28.P2.CI2 an <img> whose FILE names the brand is an image-logo",
+        scanElementProps(logoProps, tokens28, "acme.com", "img").some((hit) => hit.surface === "image-logo"),
+      );
+      check(
+        "28.P2.CI3 a third-party customer logo (no source token) is NOT one",
+        scanImageLogo({ src: "/cdn/logo-FoxSports-8f2.png" }, tokens28).length === 0,
+      );
+      check(
+        "28.P2.CI4 a non-img element with the same props is not one either",
+        scanElementProps(logoProps, tokens28, "acme.com", "a").every((hit) => hit.surface !== "image-logo"),
+      );
+      check(
+        "28.P2.CI5 camel humps in the file name are split (AcmeLogo matches, AcmeoLogo does not)",
+        scanImageLogo({ src: "/x/AcmeLogo.svg" }, tokens28).length === 1 &&
+          scanImageLogo({ src: "/x/Acmeologo.svg" }, tokens28).length === 0,
+      );
+      check(
+        "28.P2.CI6 the source url surface is still reported alongside it (one file, two surfaces)",
+        scanElementProps(logoProps, tokens28, "acme.com", "img").filter((hit) => hit.surface === "source-url")
+          .length === 2,
+      );
+      check(
+        "28.P2.CI7 brandSurfaceIdOf lives here — ONE derivation for the detector, the write API and the baker",
+        brandSurfaceIdOf({
+          surface: "svg-aria-label",
+          route: "/",
+          nodeId: "n000017",
+          slotKey: null,
+          evidencePointer: "desktop.doc[n000017].v",
+        }) ===
+          brandSurfaceIdOf({
+            surface: "svg-aria-label",
+            route: "/",
+            nodeId: "n000017",
+            slotKey: null,
+            evidencePointer: "desktop.doc[n000017].v",
+          }) &&
+          brandSurfaceIdOf({
+            surface: "svg-aria-label",
+            route: "/",
+            nodeId: "n000017",
+            slotKey: null,
+            evidencePointer: "mobile.doc[n000017].v",
+          }) !==
+            brandSurfaceIdOf({
+              surface: "svg-aria-label",
+              route: "/",
+              nodeId: "n000017",
+              slotKey: null,
+              evidencePointer: "desktop.doc[n000017].v",
+            }),
+      );
     } finally {
       await rm(gedFDir, { recursive: true, force: true });
+    }
+
+    // =====================================================================
+    section("Task 28 CR6/CR8 — doctrine on the barrel, SVG surfaces in brand-leak.json");
+    // =====================================================================
+    check(
+      "28.CR6.1 CONTENT_WRITE_DOCTRINE_WARNING is exported from the content-injection barrel",
+      BARREL_CONTENT_WRITE_DOCTRINE_WARNING === CONTENT_WRITE_DOCTRINE_WARNING &&
+        BARREL_CONTENT_WRITE_DOCTRINE_WARNING.includes("content write doctrine"),
+      BARREL_CONTENT_WRITE_DOCTRINE_WARNING.slice(0, 40),
+    );
+    // ---- CR8: the schema must be able to CARRY a surface-scoped finding ----
+    const surfaceWarningShape = {
+      issue: "source-brand-leak",
+      slotKey: null,
+      kind: "svg-aria-label",
+      severity: "warning",
+      surface: "svg-aria-label",
+      nodeId: "n000017",
+      route: "/",
+      occurrences: 2,
+      detail: "…",
+    };
+    check(
+      "28.CR8.1 brand-leak-v1 accepts a surface-scoped warning with a NULL slotKey",
+      BrandLeakWarningSchema.safeParse(surfaceWarningShape).success,
+      JSON.stringify(BrandLeakWarningSchema.safeParse(surfaceWarningShape).error?.issues ?? []),
+    );
+    check(
+      "28.CR8.2 the kind enum is still CLOSED (an invented kind is rejected)",
+      !BrandLeakWarningSchema.safeParse({ ...surfaceWarningShape, kind: "svg-whatever" }).success &&
+        BrandLeakWarningSchema.safeParse({
+          issue: "source-brand-leak",
+          slotKey: "home.hero.headline",
+          kind: "brand-token-in-value",
+          detail: "legacy shape still valid",
+        }).success,
+    );
+    const cr8Dir = path.join(fixtureRoot, "cr8-surface");
+    try {
+      const cr8Template = path.join(cr8Dir, "template");
+      const pagesDir = path.join(cr8Template, "app", "reconstruction-data", "pages");
+      await mkdir(pagesDir, { recursive: true });
+      await writeFile(
+        path.join(cr8Template, "app", "reconstruction-data", "route-map.json"),
+        JSON.stringify({
+          routes: [
+            { path: "/", pageFile: "pages/p000001.json" },
+            { path: "/pricing", pageFile: "pages/p000002.json" },
+          ],
+        }),
+      );
+      // The SAME mark on two routes — proof the emission deduplicates by value.
+      const svgNode = { k: "e", n: "n000017", t: "span", v: SVG_FIXTURE };
+      const anchorNode = { k: "e", n: "n000018", t: "a", p: { href: "https://linear.app/pricing" } };
+      const altNode = { k: "e", n: "n000019", t: "img", p: { alt: "Linear dashboard" } };
+      for (const file of ["p000001.json", "p000002.json"]) {
+        await writeFile(
+          path.join(pagesDir, file),
+          JSON.stringify({
+            desktop: { doc: { k: "e", n: "n000001", t: "div", c: [svgNode, anchorNode, altNode] } },
+          }),
+        );
+      }
+      const cr8Template_ = {
+        appDir: path.join(cr8Template, "app"),
+        manifest: { source: { host: "linear.app" } },
+      } as unknown as Parameters<typeof detectTemplateBrandSurfaceLeaks>[0];
+      const surfaceWarnings = await detectTemplateBrandSurfaceLeaks(cr8Template_);
+      const kinds = surfaceWarnings.map((warning) => warning.kind).sort();
+      check(
+        "28.CR8.3 the runtime IR's slot-less brand surfaces now reach brand-leak.json",
+        JSON.stringify(kinds) ===
+          JSON.stringify(["image-alt", "svg-aria-label", "svg-symbol-id", "svg-symbol-id", "svg-text", "svg-text"]),
+        JSON.stringify(kinds),
+      );
+      check(
+        "28.CR8.4 every surface finding has a NULL slotKey and a data-wr-node identity",
+        surfaceWarnings.length > 0 &&
+          surfaceWarnings.every((warning) => warning.slotKey === null) &&
+          surfaceWarnings.find((warning) => warning.kind === "svg-aria-label")?.nodeId === "n000017" &&
+          surfaceWarnings.find((warning) => warning.kind === "image-alt")?.nodeId === "n000019",
+        JSON.stringify(surfaceWarnings.map((warning) => [warning.kind, warning.nodeId])),
+      );
+      check(
+        "28.CR8.5 the same mark on two routes is ONE finding carrying occurrences: 2",
+        surfaceWarnings.every((warning) => warning.occurrences === 2),
+        JSON.stringify(surfaceWarnings.map((warning) => [warning.kind, warning.occurrences])),
+      );
+      check(
+        "28.CR8.6 no finding is emitted at BLOCKER severity — there is no rewriter to reach",
+        surfaceWarnings.every((warning) => warning.severity === "warning"),
+        JSON.stringify(surfaceWarnings.map((warning) => warning.severity)),
+      );
+      check(
+        "28.CR8.7 a source-host href is NOT re-reported here (the url slot kinds already own it)",
+        surfaceWarnings.every((warning) => warning.kind !== ("source-url" as never)),
+      );
+      // …and the report still validates with both shapes side by side.
+      const mergedReport = BrandLeakReportSchema.safeParse({
+        schemaVersion: 1,
+        brandTokens: ["linear"],
+        scannedSlots: 1,
+        warnings: [
+          {
+            issue: "source-brand-leak",
+            slotKey: "home.hero.headline",
+            kind: "brand-token-in-value",
+            detail: "slot-scoped",
+          },
+          ...surfaceWarnings,
+        ],
+      });
+      check(
+        "28.CR8.8 one brand-leak.json carries slot-scoped AND surface-scoped findings",
+        mergedReport.success,
+        JSON.stringify(mergedReport.error?.issues ?? []),
+      );
+      // The release layer must not count the same mark twice: section 1 of the
+      // GED-F scan already measured the runtime IR directly.
+      const cr8Content = path.join(cr8Dir, "content");
+      await mkdir(path.join(cr8Content, "report"), { recursive: true });
+      await writeFile(
+        path.join(cr8Content, "content-units.json"),
+        JSON.stringify({ units: [{ scope: "page", route: "/", slots: [{ key: "home.hero.headline" }] }] }),
+      );
+      await writeFile(
+        path.join(cr8Content, "report", "brand-leak.json"),
+        JSON.stringify({
+          warnings: [
+            {
+              issue: "source-brand-leak",
+              slotKey: "home.hero.headline",
+              kind: "brand-token-in-value",
+              detail: "slot-scoped",
+            },
+            ...surfaceWarnings,
+          ],
+        }),
+      );
+      const cr8Scan = await scanBrandSurfaces({
+        host: "linear.app",
+        templateRunDir: cr8Template,
+        contentRunDir: cr8Content,
+      });
+      check(
+        "28.CR8.9 the release scan does NOT double-count a surface it already read from the IR",
+        cr8Scan.counts["svg-aria-label"] === 2 &&
+          cr8Scan.counts["svg-symbol-id"] === 4 &&
+          cr8Scan.counts["visible-text"] === 1,
+        JSON.stringify(cr8Scan.counts),
+      );
+    } finally {
+      await rm(cr8Dir, { recursive: true, force: true });
     }
 
   } finally {

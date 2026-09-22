@@ -1,0 +1,207 @@
+{
+  "schema": "task285b-stripe-run-v1",
+  "generatedAt": "2026-08-30T16:19:35Z",
+  "rootUrl": "https://stripe.com/",
+  "runNote": "Full 7-stage pipeline run in one continuous same-session run, second-site regression check for Task 28.5B (bot-sensitive live site, 2 routes) run immediately after the accepted linear.app 8-route run (docs/result/handoffs/28.5B-linear-run.json). No code changes, no git operations, no smoke suites run. Purpose: prove the six generic Task 28.5B changes did not break a substantially different site, not to compute old-vs-new pixel deltas against the 2026-08-17 stripe lineage (source has drifted since then).",
+  "namespaces": {
+    "pilotScope": "data/stripe.com/2026-08-30T16-14-55-000Z-285b-pilot/",
+    "siteObservation": "data/stripe.com/site-observations/2026-08-30T16-15-30-966Z/",
+    "interactionAnalysis": "data/stripe.com/site-observations/2026-08-30T16-15-30-966Z/interaction-analysis.json",
+    "interactionExploration": "data/stripe.com/interaction-explorations/2026-08-30T16-15-54-848Z/",
+    "interactionModel": "data/stripe.com/interaction-models/2026-08-30T16-16-32-486Z/",
+    "siteSpec": "data/stripe.com/site-specs/2026-08-30T16-16-36-462Z/",
+    "reconstruction": "data/stripe.com/reconstructions/2026-08-30T16-16-41-190Z/",
+    "reconstructionQa": "data/stripe.com/reconstruction-qa/2026-08-30T16-17-33-405Z/"
+  },
+  "environment": {
+    "viewportProfiles": [
+      { "id": "desktop", "width": 1440, "height": 900, "deviceScaleFactor": 1, "isMobile": false, "hasTouch": false },
+      { "id": "mobile", "width": 390, "height": 844, "deviceScaleFactor": 3, "isMobile": true, "hasTouch": true, "userAgent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.34 Mobile Safari/537.36" }
+    ],
+    "locale": "ko-KR",
+    "timezone": "Asia/Seoul",
+    "colorScheme": "light",
+    "reducedMotion": "no-preference",
+    "browser": "chromium",
+    "browserBuildVersion": "151.0.7922.34",
+    "playwrightPackageVersion": "1.62.1",
+    "captureStartedAt": "2026-08-30T16:15:30.967Z",
+    "captureCompletedAt": "2026-08-30T16:15:48.312Z"
+  },
+  "durations": {
+    "stage1_observeSite": { "wallSeconds": 17.3, "source": "script-reported Elapsed" },
+    "stage2_detectInteractions": { "wallSeconds": 0.221, "source": "script-reported Elapsed" },
+    "stage3_exploreInteractions": { "wallSeconds": 33.235, "source": "script-reported Timing wall (46.326s spent in page loads within it)" },
+    "stage4_modelInteractions": { "wallSeconds": 0.118, "source": "script-reported elapsed" },
+    "stage5_compileSitespec": { "wallSeconds": 1.333, "source": "script-reported elapsed, round-trip validation PASS" },
+    "stage6_reconstruct": { "wallSeconds": 4.5, "source": "internal generation 1.961s + next build PASS 2.538s = 4.499s total generation+build", "breakdownMs": { "siteSpecLoadMs": 222, "planMs": 237, "writeMs": 1477, "validateMs": 25, "totalGenerationMs": 1961, "nextBuildMs": 2538 } },
+    "stage7_qaReconstruction": { "wallSeconds": 121.24, "source": "qa-manifest.json timings.totalMs", "breakdownMs": {
+      "loadInputsMs": 248, "cloneBuildMs": 0, "cloneStartMs": 565, "pageQaMs": 62864,
+      "routeCheckMs": 127, "breakpointProbeMs": 5882, "interactionQaMs": 34651, "unknownQaMs": 16785,
+      "familyAuditMs": 0, "totalMs": 121240
+    } },
+    "pipelineTotalWallSeconds_approx": 243.7
+  },
+  "observation": {
+    "routes": [
+      { "routeId": "p000001", "familyId": "f000001", "url": "https://stripe.com/" },
+      { "routeId": "p000002", "familyId": "f000002", "url": "https://stripe.com/industries/media-entertainment" }
+    ],
+    "allRouteStatus": "success (2/2), no failures, no blocking/bot-detection encountered",
+    "customPropertiesPerPageViewport": [
+      { "page": "p000001", "vp": "desktop", "discoveredCount": 0, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 0, "referenceDiscoveredCount": 13, "referenceResolvedCount": 9, "referenceUnresolvedCount": 4, "referenceResolutionConflicts": 0, "resolvedPropertyRecords": 9 },
+      { "page": "p000001", "vp": "mobile",  "discoveredCount": 0, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 0, "referenceDiscoveredCount": 13, "referenceResolvedCount": 9, "referenceUnresolvedCount": 4, "referenceResolutionConflicts": 0, "resolvedPropertyRecords": 9 },
+      { "page": "p000002", "vp": "desktop", "discoveredCount": 27, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 0, "referenceDiscoveredCount": 12, "referenceResolvedCount": 12, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 17, "resolvedPropertyRecords": 39 },
+      { "page": "p000002", "vp": "mobile",  "discoveredCount": 27, "countCapped": false, "valueCappedCount": 0, "unresolvedCount": 0, "referenceDiscoveredCount": 12, "referenceResolvedCount": 12, "referenceUnresolvedCount": 0, "referenceResolutionConflicts": 17, "resolvedPropertyRecords": 39 }
+    ],
+    "capHits": "none — countCapped=false and valueCappedCount=0 on every page/viewport",
+    "detectInteractions": {
+      "candidates": 101, "desktop": 54, "mobile": 47,
+      "priority": { "P1": 48, "P2": 42, "P3": 11 },
+      "visible": 67, "hidden": 34, "operable": 66, "nonOperable": 35,
+      "targets": 16, "controlRelations": 16, "controlRelationsResolved": 16, "controlRelationsUnresolved": 0
+    },
+    "exploreInteractions": {
+      "planned": 15, "executed": 15, "changed": 13, "noChange": 2, "actionabilityError": 0,
+      "changeRate": 0.8667,
+      "byViewport": { "desktop": { "planned": 9, "executed": 9, "changed": 8 }, "mobile": { "planned": 6, "executed": 6, "changed": 5 } },
+      "locatorResolutionRate": 1,
+      "locatorStrategy": { "semanticExact": 7, "structuralPath": 8 },
+      "guardsTriggered": { "navigation": 0, "popup": 0, "download": 0, "writeRequest": 50, "dialog": 0 },
+      "sameDocumentNavigationUnblockable": 0
+    },
+    "modelInteractions": {
+      "plannedActions": 15, "executedActions": 15, "changedActions": 13,
+      "confirmedPatterns": 9, "unknownCases": 6,
+      "coverageOfChanged": 0.6923, "coverageOfExecuted": 0.6,
+      "patternTypes": { "disclosure": 9 },
+      "unknownReasons": { "styleOnlyChange": 2, "unmatchedTransition": 1, "insufficientEvidence": 3 }
+    }
+  },
+  "reconstruction": {
+    "generatedStylesheetPath": "data/stripe.com/reconstructions/2026-08-30T16-16-41-190Z/app/public/wr/generated-styles.css",
+    "generatedStylesheetBytes": 9020636,
+    "layout": {
+      "candidateRules": 726,
+      "acceptedRules": 701,
+      "rejectedByGuard": 225,
+      "rejectedByTruthCheck": 25,
+      "rejectedUnverifiable": 0,
+      "acceptedUnchecked": 0,
+      "acceptedRegressed": 0,
+      "truthCheckStatus": "verified",
+      "truthCheckable": 726,
+      "truthCheckRounds": 4,
+      "truthCheckPagesRendered": 2,
+      "truthCheckConverged": true,
+      "guardRefusalsByReason": {
+        "abs-containing-block-is-padding-box": 4,
+        "abs-containing-block-not-parent": 31,
+        "fixed-position": 3,
+        "flex-item-basis-governed": 14,
+        "grid-item": 173
+      },
+      "note": "acceptedRules(701)+rejectedByGuard(225)+rejectedByTruthCheck(25)=951 reconciles differently than candidateRules(726); manifest reports these as-is (categorization axes overlap — same non-reconciliation noted in the linear run's handoff)."
+    },
+    "customProperties": { "blocks": 4, "declarations": 96, "rejected": 0 },
+    "unresolvedElementAssets": 0,
+    "pseudoRules": 467,
+    "styleRules": 3756,
+    "styleDeclarations": 428148,
+    "otherCounters": {
+      "runtimeElementNodes": 8640, "runtimeTextNodes": 2398, "styledNodes": 8638, "missingStyleRefs": 0,
+      "generatedDomIds": 94, "rewrittenIdrefTokens": 54, "unresolvedIdrefTokens": 0,
+      "patternBindings": 9, "nativeBindings": 0, "scriptedBindings": 9, "unknownBindings": 6,
+      "dynamicTargets": 0, "dynamicTargetsWithContent": 0,
+      "elementAssetsRequested": 1192, "resolvedImageSrc": 190, "resolvedSrcset": 182,
+      "inlineSvgRendered": 906, "remoteAssetUrls": 618, "assetDownloads": 0,
+      "droppedSrcsetCandidates": 48,
+      "internalLinksRewritten": 16, "unresolvedInternalLinks": 920, "externalLinks": 176,
+      "nextBuild": "PASS in 2538 ms"
+    }
+  },
+  "qa": {
+    "summary": {
+      "snapshotFidelity": {
+        "pairs": 4, "completed": 4, "contentExactRatio": 1, "contentMismatchedNodes": 0,
+        "stylePropertiesCompared": 632016, "styleMismatches": 218, "styleSubLayoutUnitMismatches": 962,
+        "geometryMedianOfMedians": 0.015, "geometryMedianOfP95": 1.465, "geometryMaxDelta": 140.96,
+        "documentHeightDeltaMedian": 0.305, "documentHeightDeltaMax": 0.5,
+        "changedRatioAt1_median": 0.0824, "changedRatioAt16_median": 0.0421,
+        "deltaE76AboveJndRatio_median": 0.0488, "deltaE76AboveVisibleRatio_median": 0.0393,
+        "deltaE76Mean_median": 2.0873, "screenshotMeanDelta_median": 4.2917,
+        "assetFailures": 160, "runtimeErrors": 0, "blockedAssetMessages": 0, "unstablePages": 3
+      },
+      "liveFidelity": {
+        "comparablePairs": 0, "contentExactRatio": 0, "styleMismatches": 0,
+        "changedRatioAt1_median": 0, "changedRatioAt16_median": "n/a",
+        "deltaE76AboveJndRatio_median": "n/a",
+        "qaOnlyStyleComparedPairs": 4, "qaOnlyStyleUnavailablePairs": 0,
+        "qaOnlyStyleMismatchTotal": 2973, "qaOnlyStyleMismatchMedian": 741.5,
+        "note": "0 of 4 pairs qualified as drift-free/comparable — every pair had at least 1 changed text node between capture and QA live re-check (site is live/dynamic). Falls back to QA-only style-mismatch counts, all 4 of which were still comparable (0 unavailable)."
+      },
+      "behavior": {
+        "sourcePatternInstances": 9, "attempted": 9,
+        "triggerStateEquivalent": 9, "triggerStateMismatch": 0,
+        "visibleTargetEquivalent": 9, "visibleTargetMismatch": 0,
+        "behaviorEquivalent": 9, "behaviorMismatch": 0,
+        "byPatternType": { "disclosure": 9 },
+        "verdictByPatternType": { "disclosure|equivalent": 9 },
+        "dynamicTargetsCompared": 0
+      },
+      "unknownInteractions": { "signatureGroups": 5, "sampled": 5, "gapsDetected": 3, "cloneNoOp": 5, "autoFixed": 0 },
+      "routes": { "rendered": "2/2" },
+      "familyAudit": { "routesAudited": 0, "majorContentMismatch": 0, "majorStructureMismatch": 0 }
+    },
+    "autoFix": {
+      "iterations": 0, "enabled": true,
+      "proposedCorrections": 0, "appliedCorrections": 0, "rejectedCorrections": 0,
+      "note": "--auto-fix was passed; 0 corrections were proposed (nothing the correction engine judged fixable — all root-cause rows below report autoFixEligible=0), so no correction loop iterations ran."
+    },
+    "perPage": [
+      { "page": "p000001", "url": "https://stripe.com/", "vp": "desktop", "status": "complete", "changedRatio1": 0.0751, "changedRatioAt16": 0.0492, "deltaE76AboveJndRatio": 0.0582, "deltaE76AboveVisibleRatio": 0.0467, "deltaE76Mean": 2.5334, "meanMaxChannelDelta": 6.2624, "commonAreaRatio": 1, "srcHeight": 14668, "cloneHeight": 14668, "heightDelta": 0, "qaOnlyStyleMismatches": 1447, "qaOnlyStyleComparison": "compared", "sourceDriftChangedTextNodes": 6, "sourceDriftChangedStyleProperties": 5, "stabilityMovingNodes": "139/400" },
+      { "page": "p000001", "url": "https://stripe.com/", "vp": "mobile", "status": "complete", "changedRatio1": 0.042, "changedRatioAt16": 0.0177, "deltaE76AboveJndRatio": 0.0242, "deltaE76AboveVisibleRatio": 0.016, "deltaE76Mean": 1.1161, "meanMaxChannelDelta": 2.5462, "commonAreaRatio": 1, "srcHeight": 61047, "cloneHeight": 61047, "heightDelta": 0, "qaOnlyStyleMismatches": 1427, "qaOnlyStyleComparison": "compared", "sourceDriftChangedTextNodes": 6, "sourceDriftChangedStyleProperties": 1, "stabilityMovingNodes": "137/400" },
+      { "page": "p000002", "url": "https://stripe.com/industries/media-entertainment", "vp": "desktop", "status": "complete", "changedRatio1": 0.0897, "changedRatioAt16": 0.035, "deltaE76AboveJndRatio": 0.0394, "deltaE76AboveVisibleRatio": 0.0318, "deltaE76Mean": 1.6411, "meanMaxChannelDelta": 4.3933, "commonAreaRatio": 1, "srcHeight": 10007, "cloneHeight": 10007, "heightDelta": 0, "qaOnlyStyleMismatches": 56, "qaOnlyStyleComparison": "compared", "sourceDriftChangedTextNodes": 1, "sourceDriftChangedStyleProperties": 0, "stabilityMovingNodes": "0/400 (stable)" },
+      { "page": "p000002", "url": "https://stripe.com/industries/media-entertainment", "vp": "mobile", "status": "complete", "changedRatio1": 0.4588, "changedRatioAt16": 0.2008, "deltaE76AboveJndRatio": 0.3855, "deltaE76AboveVisibleRatio": 0.1703, "deltaE76Mean": 11.2994, "meanMaxChannelDelta": 30.4613, "commonAreaRatio": 0.9999, "srcHeight": 41742, "cloneHeight": 41745, "heightDelta": 3, "qaOnlyStyleMismatches": 43, "qaOnlyStyleComparison": "compared", "sourceDriftChangedTextNodes": 1, "sourceDriftChangedStyleProperties": 2008, "stabilityMovingNodes": "47/400", "note": "worst pair by every visual metric; see anomalies — snapshot-vs-live-original comparison shows the live source itself reflowed by -921px height / 2008 style properties (mostly grid-template-columns/rows, transform-origin, width/height) between capture (16:15:31Z) and this page's live re-check (~16:19Z), consistent with a responsive grid/carousel component on this specific route; snapshot-vs-clone diff (0.4588) is larger than snapshot-vs-original diff (0.0133), so a genuine reconstruction-side geometry/layout-cascade component also contributes, not source drift alone" }
+    ],
+    "rootCauses": {
+      "sourceContentDrift": { "occurrences": 18, "affectedPages": 4, "affectedNodes": 28, "autoFixEligible": 0 },
+      "sourceStyleDrift": { "occurrences": 3, "affectedPages": 3, "affectedNodes": 764, "autoFixEligible": 0 },
+      "geometryMismatch": { "occurrences": 26, "affectedPages": 1, "affectedNodes": 64, "autoFixEligible": 0 },
+      "layoutCascade": { "occurrences": 2, "affectedPages": 1, "affectedNodes": 119, "autoFixEligible": 0 },
+      "styleMismatch": { "occurrences": 87, "affectedNodes": 268, "autoFixEligible": 0 },
+      "unknownBehaviorGap": { "occurrences": 3, "affectedNodes": 3, "autoFixEligible": 0 },
+      "environmentUnstable": { "occurrences": 3, "affectedNodes": 323, "autoFixEligible": 0 }
+    }
+  },
+  "verify": {
+    "allTwoRoutesPresent": true,
+    "routesRendered": "2/2",
+    "redirectsOrSubstitutions": "none",
+    "detail": "p000001, p000002 present and consistent across observation, exploration, modeling, sitespec, reconstruction, and QA stages; identical route set as the pilot's selected-pages.json (f000001, f000002, both singleton families)."
+  },
+  "anomalies": [
+    {
+      "type": "worst-fidelity-page-with-mixed-cause",
+      "page": "p000002 mobile (https://stripe.com/industries/media-entertainment)",
+      "detail": "Highest visual delta of all 4 pairs by a wide margin: changedRatio@1=0.4588, deltaE76Mean=11.2994 (next-highest pair is 0.0897/1.6411). Two contributing effects, both recorded honestly and not conflated: (1) genuine live-source drift between capture (16:15:31Z) and this page's QA live re-check — snapshot-vs-original screenshot diff shows height dropped -921px and sourceDrift block shows 2008 style properties changed (grid-template-columns 121, grid-template-rows 53, height 297, transform-origin 739, width 657), consistent with a responsive grid/media component reflowing on the live page; (2) a real reconstruction-side component — the snapshot-vs-clone diff (0.4588) exceeds the snapshot-vs-original drift diff (0.0133), and this is the only page where geometryMismatch (26 occ/64 nodes) and layoutCascade (2 occ/119 nodes) root causes fired (both scoped to 1 affected page). None of these are auto-fix eligible under the current correction engine."
+    },
+    {
+      "type": "unstable-measurement",
+      "detail": "3 of 4 page/viewport pairs flagged environment-unstable during QA's stability recapture pass: p000001/desktop 139/400 sampled nodes still moving, p000001/mobile 137/400, p000002/mobile 47/400 (with -228px document height delta at recapture time). Only p000002/desktop was fully stable (0/400 moving). This is consistent with stripe.com running continuous scroll-triggered/hover animations site-wide; classified upstream=qa, autoFixEligibility=not-eligible-unstable-measurement, not treated as a clone defect."
+    },
+    {
+      "type": "custom-property-reference-conflicts",
+      "page": "p000002 (both viewports)",
+      "detail": "referenceResolutionConflicts=17 on the industries/media-entertainment page (0 on the homepage) — 17 custom-property references had multiple candidate resolved values during observation. discoveredCount also differs sharply by page (0 on homepage vs 27 on industries), and referenceUnresolvedCount=4 on the homepage vs 0 on industries. Recorded as-is for whoever reviews Task 28.5B custom-property numbers next; did not block truthCheckStatus=verified or reconstruction (customPropertyRejected=0 across the whole run)."
+    },
+    {
+      "type": "layout-counter-non-reconciliation",
+      "detail": "reconstruction-manifest.json layout block: acceptedRules(701) + rejectedByGuard(225) + rejectedByTruthCheck(25) = 951 does not equal candidateRules(726) — same overlapping-axis non-reconciliation already flagged in the linear run's handoff (docs/result/handoffs/28.5B-linear-run.json), so this is a stable/expected reporting characteristic rather than a stripe-specific regression."
+    },
+    {
+      "type": "no-crashes-blocking-or-bot-detection",
+      "detail": "No process crashes, no retries needed, all 7 stages completed on first attempt within one continuous session. No bot-detection/blocking encountered at observation (2/2 pages OK, 17.0-17.3s each) or QA (2/2 routes rendered, clone served without incident). truthCheckStatus=verified (not no-candidates or responsive-hidden-only). No customProperties.countCapped=true anywhere across 4 page/viewport records. All 9 verified interaction patterns (disclosure/aria-expanded) reached behaviorEquivalent=9/9, 0 mismatches — same pattern type distribution class as the linear run's disclosure patterns, which is the direct regression signal for the six generic Task 28.5B changes: they behave correctly on a second, substantially different site."
+    }
+  ]
+}

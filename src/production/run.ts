@@ -27,6 +27,20 @@ import {
   routeHtmlFile,
   type RenderedHeadRoute,
 } from "./bake.js";
+import {
+  bakeBrand,
+  publicBrandAssetCopier,
+  scanAppBrandHosts,
+  type BrandBakeReport,
+  type BrandDecisionInput,
+} from "./brand-bake.js";
+import {
+  applyEnablementToApp,
+  emptyEnablementPlan,
+  enablementPlanIsEmpty,
+  type EnablementApplyReport,
+  type EnablementPlan,
+} from "./enablement.js";
 import { hashDirectory, HASH_METHOD, HASH_METHOD_DESCRIPTION } from "./hash.js";
 import { assemblePackage } from "./packaging.js";
 import { THEME_OVERLAY_HREF } from "./patch.js";
@@ -59,6 +73,15 @@ export function pickContentProof(
   overlay: Record<string, unknown>,
   pageId: string,
   count: number,
+  /**
+   * Slot keys the enablement plan stops rendering (Task 28 Phases 5 + 6).
+   *
+   * A proof is a promise QA will hold the served HTML to. A slot inside a
+   * disabled region has a baked value and no node to render it, so promising
+   * it would fail every build that deletes a section — the engine demanding
+   * evidence of content the operator asked it to remove.
+   */
+  disabledSlotKeys: ReadonlySet<string> = new Set(),
 ): Array<{ slotKey: string; value: string }> {
   const keyById = new Map(slots.slots.map((slot) => [slot.id, slot.key]));
   const staticTextKeys = new Set<string>();
@@ -71,6 +94,7 @@ export function pickContentProof(
   }
   const proofs: Array<{ slotKey: string; value: string }> = [];
   for (const key of [...staticTextKeys].sort()) {
+    if (disabledSlotKeys.has(key)) continue;
     const value = overlay[key];
     if (typeof value !== "string") continue;
     if (value.length < 10 || value.length > 120) continue;
@@ -104,6 +128,14 @@ export interface PreviewBlockerInputs {
   /** Routes the content run injected (its scopedRoutes). */
   injectedRoutes: string[];
   inlineSvgEntryCount: number;
+  /**
+   * Brand-CARRYING inline hosts, measured on the template's runtime IR
+   * (Task 28 Phase 2). OPTIONAL so existing callers are unchanged. When it is
+   * supplied and ZERO, the source-brand blocker is DROPPED: a template whose
+   * inline SVGs are all icons has no source-brand asset to resolve, and
+   * `inlineSvgEntryCount` alone never could tell those apart.
+   */
+  brandCarryingHostCount?: number;
 }
 
 export function buildPreviewBlockers(
@@ -143,16 +175,29 @@ export function buildPreviewBlockers(
     },
     {
       id: "source-brand-inline-svg",
-      summary: "inline-SVG brand marks (incl. the source logo) remain in template markup — template-layer limitation",
-      evidence: `asset inventory: ${inputs.inlineSvgEntryCount} inline-svg entries are outside the asset layer (Task 22 report)`,
+      summary:
+        inputs.brandCarryingHostCount === undefined
+          ? "inline-SVG brand marks (incl. the source logo) remain in template markup — template-layer limitation"
+          : `${inputs.brandCarryingHostCount} inline host(s) still carry the source brand — resolve them with authored.brand (REPLACE / REMOVE / PRESERVE)`,
+      evidence:
+        `asset inventory: ${inputs.inlineSvgEntryCount} inline-svg entries are outside the asset layer (Task 22 report)` +
+        (inputs.brandCarryingHostCount === undefined
+          ? ""
+          : `; template runtime IR: ${inputs.brandCarryingHostCount} brand-carrying host(s)`),
     },
   ];
   // A blocker must describe a real gap: with every route content-injected the
   // uninjected-route-content entry would claim "0 of N routes" — that is not a
   // blocker, and emitting it would overstate what is missing.
-  return uninjectedRouteCount === 0
-    ? blockers.filter((blocker) => blocker.id !== "uninjected-route-content")
-    : blockers;
+  const kept =
+    uninjectedRouteCount === 0
+      ? blockers.filter((blocker) => blocker.id !== "uninjected-route-content")
+      : blockers;
+  // Same rule, same reason: a blocker must describe a real gap. With zero
+  // brand-carrying hosts measured there is no source-brand asset to resolve.
+  return inputs.brandCarryingHostCount === 0
+    ? kept.filter((blocker) => blocker.id !== "source-brand-inline-svg")
+    : kept;
 }
 
 export interface CompileOptions {
@@ -164,10 +209,33 @@ export interface CompileOptions {
   materializationRunDir: string;
   runId?: string;
   log?: (line: string) => void;
+  /**
+   * Source-brand resolution (Task 28 Phase 2). `decisions` is the site's
+   * `authored.brand` map, keyed by `brandSurfaceIdOf`; `brandName` is the
+   * site's OWN name, used for the deterministic generated mark when a REPLACE
+   * carries no payload. Absent decisions are absent decisions: the resolver
+   * still runs (so the build MEASURES its brand-carrying hosts) but changes
+   * nothing.
+   */
+  brand?: {
+    decisions?: Record<string, BrandDecisionInput>;
+    brandName?: string | null;
+  };
+  /**
+   * ENABLEMENT (Task 28 Phases 5 + 6) — the disable, made physical.
+   *
+   * Applied to the BUILD COPY of the app immediately after `copyTemplateApp`
+   * and BEFORE `bakeSeoTitles`, so the route table the title bake verifies
+   * against is already the enabled one. The plan is produced and SAFETY-CHECKED
+   * by `src/release/enablement.ts`; nothing is decided here.
+   */
+  enablement?: EnablementPlan;
 }
 
 export interface CompileResult {
   runId: string;
+  /** null when the compile had no enablement plan to apply. */
+  enablement?: EnablementApplyReport | null;
   specDir: string;
   specFile: string;
   buildDir: string;
@@ -219,9 +287,13 @@ export async function runProductionCompile(options: CompileOptions): Promise<Com
   const rewriteMap = await readJson<RewriteMap>(
     path.join(options.materializationRunDir, "rewrite-map.json"),
   );
-  const replacementManifest = await readJson<{ entries: Array<{ classification: string }> }>(
-    path.join(options.materializationRunDir, "replacement-manifest.json"),
-  );
+  const replacementManifest = await readJson<{
+    entries: Array<{
+      inventoryId: string;
+      classification: string;
+      replacement?: { status: string; providedFile: string | null };
+    }>;
+  }>(path.join(options.materializationRunDir, "replacement-manifest.json"));
   // Blocker-summary inputs (GED-B): read from the same lineage artifacts the
   // evidence strings cite, so every number/name in the prose is this site's.
   const inventoryManifest = await readJson<{ counts: Record<string, number> }>(
@@ -259,6 +331,15 @@ export async function runProductionCompile(options: CompileOptions): Promise<Com
   const assetHash = await hashDirectory(options.materializationRunDir);
 
   // ---- 3. indexability gate -------------------------------------------------
+  // The source-brand blocker is counted from BRAND-CARRYING HOSTS, measured on
+  // the template's own runtime IR — not from `inventory.counts.inlineSvgEntries`,
+  // which counts every inline SVG including icons (207 vs 64 on the accepted
+  // linear lineage). Read-only: the template run is never modified.
+  const templateBrandScan = await scanAppBrandHosts(
+    path.join(options.templateRunDir, "app"),
+    options.host,
+  );
+  const brandCarryingHostCount = templateBrandScan.hosts.length;
   const mode = seoPlan.domainState.mode;
   const blockers =
     mode === "preview"
@@ -281,6 +362,7 @@ export async function runProductionCompile(options: CompileOptions): Promise<Com
           contentRunId: contentManifest.runId,
           injectedRoutes: contentManifest.scopedRoutes ?? [],
           inlineSvgEntryCount: inventoryManifest.counts.inlineSvgEntries ?? 0,
+          brandCarryingHostCount,
         })
       : [];
 
@@ -372,21 +454,83 @@ export async function runProductionCompile(options: CompileOptions): Promise<Com
   log("[production] copying template app...");
   await copyTemplateApp(path.join(options.templateRunDir, "app"), appDir);
 
+  // Enablement FIRST: every bake below reads the route table or the page trees,
+  // so a disable that landed after them would be a disable the bake could not
+  // see. A route removed here never reaches bakeSeoTitles, convertToStaticExport,
+  // the export, the head splice, the brand census or QA.
+  const enablementPlan = options.enablement ?? emptyEnablementPlan();
+  const enablementReport = enablementPlanIsEmpty(enablementPlan)
+    ? null
+    : await applyEnablementToApp(appDir, enablementPlan);
+  if (enablementReport !== null) {
+    log(
+      `[production] enablement: ${enablementReport.routesRemoved.length} route(s) off ` +
+        `(${enablementReport.routesRemaining} remain), ${enablementReport.regionNodesRemoved} region root(s) ` +
+        `removed, ${enablementReport.navNodesRemoved} nav host(s) removed, ` +
+        `${enablementReport.pageFilesRemoved.length} orphaned page tree(s) deleted`,
+    );
+    if (
+      enablementReport.regionNodesNotFound.length > 0 ||
+      enablementReport.navNodesNotFound.length > 0 ||
+      enablementReport.routesNotFound.length > 0
+    ) {
+      // Loud, not silent: an id the tree does not carry means the plan was
+      // computed against a different template than the one being baked.
+      throw new Error(
+        "production enablement: the plan named nodes/routes this template does not have — " +
+          `routes ${JSON.stringify(enablementReport.routesNotFound)}, ` +
+          `regionNodes ${enablementReport.regionNodesNotFound.length}, ` +
+          `navNodes ${enablementReport.navNodesNotFound.length}`,
+      );
+    }
+  }
+
   const contentBake = await bakeContent(appDir, path.join(options.contentRunDir, "slot-values.json"));
   const themeOverlayBytes = await bakeTheme(appDir, path.join(options.themeRunDir, "theme-overlay.css"));
   const titleBake = await bakeSeoTitles(appDir, renderedHead.routes);
+  // Source-brand resolution — the SAME shape of change as bakeSeoTitles above:
+  // mutate the build copy's reconstruction data BEFORE `next build`, so the
+  // SSR html, the inlined flight, the `.txt` flight and client-side navigation
+  // all derive from one write. Never the template run.
+  const assetUrls: Record<string, string> = {};
+  for (const entry of replacementManifest.entries) {
+    if (entry.replacement?.status === "provided" && entry.replacement.providedFile) {
+      assetUrls[entry.inventoryId] = entry.replacement.providedFile;
+    }
+  }
+  const brandBake: BrandBakeReport = await bakeBrand({
+    appDir,
+    sourceHost: options.host,
+    decisions: options.brand?.decisions ?? {},
+    brandName: options.brand?.brandName ?? seoPlan.site.siteName.value,
+    assetUrls,
+    publicAssetUrlFor: await publicBrandAssetCopier(appDir),
+    log,
+  });
   await convertToStaticExport(appDir);
   const nextBuildMs = await buildStaticExport(appDir, log);
 
   const outDir = path.join(appDir, "out");
   const media = await copyMedia(path.join(options.materializationRunDir, "media"), outDir);
   const residualHosts = [options.host, ...new Set(rewriteMap.entries.map((entry) => new URL(entry.sourceUrl).host))];
-  const post = await postProcessExport(outDir, renderedHead.routes, rewriteMap, robotsTxt, residualHosts);
+  const post = await postProcessExport(
+    outDir,
+    renderedHead.routes,
+    rewriteMap,
+    robotsTxt,
+    residualHosts,
+    options.host,
+    // The census must run with the tokens the RESOLVER ran with, or a
+    // declared-name brand string could survive the rewrite and still census
+    // zero (Task 28 Phase 2 correction).
+    brandBake.brandTokens,
+  );
   if (mode !== "preview") {
     // Indexable path (Task 25): the plan's FINAL sitemap is a served site file
     // (/sitemap.xml, QA-checked), not a package-only plan artifact.
     await copyFile(path.join(options.seoPlanRunDir, "sitemap.xml"), path.join(outDir, "sitemap.xml"));
   }
+  post.brand.bake = brandBake;
   post.seo.routeTitlesBaked = titleBake.baked;
   post.seo.titleGuardMismatches = titleBake.mismatches;
   if (titleBake.missingRoutes.length > 0) {
@@ -409,7 +553,15 @@ export async function runProductionCompile(options: CompileOptions): Promise<Com
   );
   const homePageId = routeMap.routes.find((route) => route.key === "/")?.pageSourceId;
   const contentProof = homePageId
-    ? pickContentProof(slots, bindings, defaults.values, slotValues, homePageId, 5)
+    ? pickContentProof(
+        slots,
+        bindings,
+        defaults.values,
+        slotValues,
+        homePageId,
+        5,
+        new Set(enablementPlan.disabledSlotKeys),
+      )
     : [];
 
   const deployManifest: DeployManifest = {
@@ -464,6 +616,7 @@ export async function runProductionCompile(options: CompileOptions): Promise<Com
       mediaBytes: media.mediaBytes,
       ...post.assets,
     },
+    brand: post.brand,
     build: {
       mode: "static-export",
       nextBuildMs,
@@ -473,6 +626,19 @@ export async function runProductionCompile(options: CompileOptions): Promise<Com
     },
   };
   await writeJson(path.join(buildDir, "report", "bake-report.json"), bakeReport);
+  if (enablementReport !== null) {
+    // A SEPARATE report file, not a field on bake-report.json: every existing
+    // reader of that schema stays untouched, and the enablement record is the
+    // evidence a Phase-5/6 requirement clears against.
+    await writeJson(path.join(buildDir, "report", "enablement.json"), {
+      schemaVersion: 1,
+      schemaName: "production-enablement-v1",
+      runId,
+      plan: enablementPlan,
+      applied: enablementReport,
+      provenance: "derived",
+    });
+  }
   await writeJson(path.join(buildDir, "manifest.json"), {
     schemaVersion: 1,
     schemaName: "production-build-v1",
@@ -494,5 +660,6 @@ export async function runProductionCompile(options: CompileOptions): Promise<Com
     siteDir,
     spec,
     bakeReport,
+    enablement: enablementReport,
   };
 }

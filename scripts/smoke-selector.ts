@@ -17,15 +17,18 @@ import {
 import {
   PageFamilySetSchema,
   PageSelectionSchema,
+  RouteArchetypePlanSchema,
   assertSelectionInvariants,
   buildPageFamilies,
   buildPageSelection,
+  buildRouteArchetypePlan,
   extractRouteFeatures,
   isSiteRoot,
   saveSelection,
   type PageFamily,
   type PageFamilySet,
   type PageSelection,
+  type RouteArchetypePlan,
 } from "../src/selector/index.js";
 import {
   MAX_ELEMENT_COUNT_RATIO,
@@ -625,6 +628,115 @@ async function main(): Promise<void> {
   check(
     "family ids are deterministic f000001…",
     familySet.families.every((f, i) => f.id === `f${String(i + 1).padStart(6, "0")}`),
+  );
+
+  // ---------------------------------------------------------------- route archetype plan (WP 28.7)
+  // A numbered board: root, an unrelated page, a /notice LIST page, and 40
+  // /notice/<n> DETAIL pages that must collapse into ONE archetype. This shape
+  // (a numbered board, `/notice/1 … /notice/500`) is exactly what no existing
+  // fixture or artifact on disk exercised before this task.
+  const boardRows: FixtureRow[] = [
+    { path: "/", structure: "B_ROOT", text: "B_ROOT_T", skeleton: "B_K_ROOT", landmark: "B_L_ROOT", elements: 200, canonical: `${ROOT}/`, title: "Home" },
+    { path: "/about", structure: "B_ABOUT", text: "B_ABOUT_T", skeleton: "B_K_ABOUT", landmark: "B_L_ABOUT", elements: 120, canonical: `${ROOT}/about`, title: "About" },
+    { path: "/notice", structure: "B_LIST", text: "B_LIST_T", skeleton: "B_K_LIST", landmark: "B_L_LIST", elements: 300, canonical: `${ROOT}/notice`, title: "Notice List" },
+    ...Array.from({ length: 40 }, (_, i) => ({
+      path: `/notice/${i + 1}`,
+      structure: `B_POST_${i + 1}`,
+      text: `B_POST_T_${i + 1}`,
+      skeleton: "B_K_POST",
+      landmark: "B_L_POST",
+      elements: 200 + i, // 200..239, ratio 239/200 = 1.195 — well inside the guard
+      canonical: `${ROOT}/notice/${i + 1}`,
+      title: `Notice ${i + 1}`,
+    })),
+  ];
+  const boardInputs = buildInputs(boardRows);
+  check(
+    "board fixture: 43 verified URLs (root + about + list + 40 detail)",
+    boardInputs.verifiedUrls.count === 43,
+    String(boardInputs.verifiedUrls.count),
+  );
+  const boardRun = run(boardInputs);
+  const boardPlan = buildRouteArchetypePlan(boardRun.familySet, boardRun.selection);
+  check(
+    "route archetype plan: valid against its own zod schema",
+    RouteArchetypePlanSchema.safeParse(boardPlan).success,
+  );
+
+  const noticeListArchetypeId = boardPlan.archetypes.find((a) =>
+    a.representativeRoutes.includes(`${ROOT}/notice`),
+  )?.archetypeId;
+  const noticeDetailArchetype = boardPlan.archetypes.find(
+    (a) => a.routePattern === "/notice/<*>",
+  );
+  check(
+    "board: the 40 /notice/<n> detail pages collapse into ONE archetype",
+    noticeDetailArchetype !== undefined,
+  );
+  check(
+    "board: that archetype's memberCount is exactly 40",
+    noticeDetailArchetype?.memberCount === 40,
+    String(noticeDetailArchetype?.memberCount),
+  );
+  check(
+    "board: that archetype carries 1-2 representativeRoutes, not all 40",
+    (noticeDetailArchetype?.representativeRoutes.length ?? 0) >= 1 &&
+      (noticeDetailArchetype?.representativeRoutes.length ?? 0) <= 2,
+    String(noticeDetailArchetype?.representativeRoutes.length),
+  );
+  check(
+    "board: the LIST page /notice is NOT in the detail archetype",
+    noticeListArchetypeId !== undefined &&
+      noticeListArchetypeId !== noticeDetailArchetype?.archetypeId,
+  );
+  const boardRootArchetype = boardPlan.archetypes.find((a) =>
+    a.representativeRoutes.includes(`${ROOT}/`),
+  );
+  check(
+    "board: the site root is its own archetype and is present",
+    boardRootArchetype !== undefined && boardRootArchetype.memberCount === 1,
+  );
+  check(
+    "board: plan-level summary — 43 discovered routes",
+    boardPlan.summary.totalDiscoveredRoutes === 43,
+    String(boardPlan.summary.totalDiscoveredRoutes),
+  );
+  check(
+    "board: plan-level summary — at least 38 routes represented WITHOUT deep reconstruction (the '500 posts → 2 jobs' number)",
+    boardPlan.summary.representedWithoutDeepReconstructionCount >= 38,
+    String(boardPlan.summary.representedWithoutDeepReconstructionCount),
+  );
+  check(
+    "board: represented-without-deep-reconstruction is exactly 39 in this fixture (40-member archetype, everything else singleton)",
+    boardPlan.summary.representedWithoutDeepReconstructionCount === 39,
+    String(boardPlan.summary.representedWithoutDeepReconstructionCount),
+  );
+  check(
+    "board: every archetype is marked deepReconstruct=true",
+    boardPlan.archetypes.every((a) => a.deepReconstruct === true),
+  );
+
+  // Purity: same persisted inputs (round-tripped through disk, exactly like a
+  // real run reads them back) ⇒ byte-identical plan.
+  let boardTmp: string | undefined;
+  let reloadedBoardPlan: RouteArchetypePlan | undefined;
+  try {
+    boardTmp = await mkdtemp(path.join(tmpdir(), "selector-archetype-smoke-"));
+    await saveSelection(boardTmp, boardRun.familySet, boardRun.selection);
+    const reloadedFamilies = PageFamilySetSchema.parse(
+      JSON.parse(await readFile(path.join(boardTmp, "page-families.json"), "utf8")),
+    );
+    const reloadedSelection = PageSelectionSchema.parse(
+      JSON.parse(await readFile(path.join(boardTmp, "selected-pages.json"), "utf8")),
+    );
+    reloadedBoardPlan = buildRouteArchetypePlan(reloadedFamilies, reloadedSelection);
+  } finally {
+    if (boardTmp) await rm(boardTmp, { recursive: true, force: true });
+  }
+  check(
+    "route archetype plan is a pure projection: rebuilt from disk-round-tripped page-families.json + selected-pages.json is byte-identical",
+    reloadedBoardPlan !== undefined &&
+      JSON.stringify(reloadedBoardPlan) === JSON.stringify(boardPlan),
   );
 
   // ---------------------------------------------------------------- determinism

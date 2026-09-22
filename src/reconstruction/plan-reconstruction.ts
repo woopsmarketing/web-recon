@@ -12,16 +12,25 @@ import {
   type InteractionPlan,
 } from "./interaction-bindings.js";
 import { inferLayoutRules, type LayoutInferenceResult } from "./layout-inference.js";
-import { inferBreakpoint } from "./responsive-plan.js";
+import {
+  inferResponsivePlan,
+  type ResponsiveBreakpointPlan,
+} from "./responsive-plan.js";
 import { buildRoutePlan, type RoutePlan } from "./route-plan.js";
 import {
   DOCUMENT_ROOT_DROPPED_PROPERTIES,
   assertNoMissingStyleTokens,
+  emittedCustomProperties,
+  generateCustomPropertyCss,
   generateStylesheet,
+  resolveDocumentRootCanvas,
+  type CustomPropertyScope,
+  type GeneratedCustomProperties,
   hasRenderableDeclarations,
   isSafeCssProperty,
   isSafeCssValue,
   type GeneratedStyles,
+  type GenerateStylesheetInput,
 } from "./style-generator.js";
 import { generatePseudoStyles, type GeneratedPseudoStyles } from "./pseudo-generator.js";
 import type { ReconstructionInput } from "./load-input.js";
@@ -56,14 +65,37 @@ import {
 
 export interface ReconstructionPlan {
   rootUrl: string;
+  /** The SITE-WIDE switch. Unchanged: `responsive.site` under another name. */
   breakpoint: BreakpointSpec;
+  /**
+   * TASK 28.7 §26 — the switch at BOTH grains, and the single object every layer
+   * reads its width from: the generated `globals.css`, `route-map.json`, the
+   * manifest, and the probe-axis split inside layout inference.
+   *
+   * OPTIONAL so that a plan assembled by hand — a fixture, or any caller written
+   * before §26 — still generates. Its absence means "no route disagreed", which
+   * is the pre-§26 behaviour exactly: the site-wide scalar serves every route.
+   */
+  responsive?: ResponsiveBreakpointPlan;
   routes: RoutePlan;
   /** Compiled runtime pages, in `pageId` order. */
   pages: RuntimePage[];
   /** `pageId` → runtime page file, relative to `reconstruction-data/`. */
   pageFiles: Map<string, string>;
   styles: GeneratedStyles;
+  /**
+   * REC-I2 §C2.4 — the exact input `styles` was generated from, so
+   * `generateApp()` can regenerate the exact tier with the owned-token split
+   * once two-phase verification has accepted ownership plans. Optional: a plan
+   * assembled by hand carries none, and then no plan can be owned.
+   */
+  styleInput?: GenerateStylesheetInput;
   pseudoStyles: GeneratedPseudoStyles;
+  /**
+   * Task 28.5B §5 — the source `:root` custom properties, emitted as one scoped
+   * block per page × viewport. Empty CSS when no observation carried any.
+   */
+  customProperties: GeneratedCustomProperties;
   /** Task 17 §9/§10 — recovered layout rules + their CSS tier. */
   layout: LayoutInferenceResult;
   /** Task 17 §5 — observed open-state paint (reveal roots + descendant graft). */
@@ -177,11 +209,15 @@ export function planReconstruction(
   options: PlanReconstructionOptions = {},
 ): ReconstructionPlan {
   const corrections = buildCorrectionPlan(options.corrections);
-  const breakpoint = inferBreakpoint(input.siteSpec, {
+  // Task 28.6 C1 — the pages go IN, because the switch is now chosen from the
+  // breakpoints their stylesheets authored and corroborated against their probes.
+  const responsive = inferResponsivePlan(input.siteSpec, {
     ...(options.breakpointOverride !== undefined
       ? { override: options.breakpointOverride }
       : {}),
+    pages: input.pages,
   });
+  const breakpoint = responsive.site;
 
   // --- routes ---------------------------------------------------------------
   const pageTitleById = new Map(
@@ -283,6 +319,9 @@ export function planReconstruction(
       links,
       interactions,
       styleRenders,
+      // Task 28.8 A3 — the same catalog the stylesheet writer reads, so the
+      // variant CLASS and the variant RULE are decided from one source.
+      styleLookup: (styleTokenId) => styleById.get(styleTokenId),
       ...(corrections ? { corrections } : {}),
     });
     pages.push(compiled.page);
@@ -301,11 +340,32 @@ export function planReconstruction(
     counters.usedStyleTokens.add(token);
   }
   const usedTokenIds = [...counters.usedStyleTokens].sort();
-  const styles = generateStylesheet({
+  const canvasStyleLookup = new Map(
+    input.styleCatalog.styles.map((token) => [token.styleTokenId, token.properties]),
+  );
+  /*
+   * TASK 28.75 §CANVAS — the document canvas, decided per page from the
+   * document-root/body relationship the CSS spec defines. See
+   * `resolveDocumentRootCanvas()`.
+   */
+  const canvasDecision = resolveDocumentRootCanvas({
+    pages: input.pages,
+    styleLookup: (styleTokenId) => canvasStyleLookup.get(styleTokenId),
+  });
+  const styleInput: GenerateStylesheetInput = {
     styleCatalog: input.styleCatalog,
     usedTokenIds,
     documentRootTokenIds: [...documentRootTokens].sort(),
-  });
+    // Task 28.8 A3 — one variant rule per token some flagged node actually uses.
+    textBoxVariantTokens: {
+      tx: counters.textBoxHeightTokens,
+      sf: counters.textBoxShrinkTokens,
+    },
+    ...(canvasDecision.canvas.length > 0
+      ? { documentRootCanvas: canvasDecision.canvas }
+      : {}),
+  };
+  const styles = generateStylesheet(styleInput);
   assertNoMissingStyleTokens(styles);
   const pseudoStyles = generatePseudoStyles(
     counters.pseudoRules,
@@ -318,6 +378,43 @@ export function planReconstruction(
     );
   }
 
+  // --- source :root custom properties (Task 28.5B §5) ------------------------
+  // Per page AND per viewport. Both viewport subtrees coexist in one generated
+  // document, so a plain `:root` block could not express a media query that
+  // gives `--brand` a different value at 390 than at 1440; a scoped block on
+  // the variant wrapper can, and custom properties inherit down into it.
+  const customPropertyScopes: CustomPropertyScope[] = [];
+  for (const pageId of routes.usedPageIds) {
+    const page = pageById.get(pageId);
+    if (!page) continue;
+    for (const viewportId of ["desktop", "mobile"] as const) {
+      const record = page.viewports[viewportId].customProperties;
+      if (record === undefined || record.properties.length === 0) continue;
+      customPropertyScopes.push({
+        pageId,
+        viewportId,
+        properties: record.properties,
+      });
+    }
+  }
+  const customProperties = generateCustomPropertyCss(customPropertyScopes);
+  /*
+   * TASK 28.8 A2b — the SAME admission predicates `generateCustomPropertyCss`
+   * uses, reused rather than re-derived, so layout inference and the emitted
+   * stylesheet can never disagree about which `--name`s the clone actually
+   * ships for a page × viewport. Re-keyed from `emittedCustomProperties`'s
+   * `pageId|viewportId` to the `pageId:viewportId` shape
+   * `InferLayoutInput.customPropertiesByPage` expects.
+   */
+  const customPropertiesByPage = new Map<string, ReadonlyMap<string, string>>();
+  for (const [key, declared] of emittedCustomProperties(customPropertyScopes)) {
+    const separator = key.indexOf("|");
+    if (separator === -1) continue;
+    const pageId = key.slice(0, separator);
+    const viewportId = key.slice(separator + 1);
+    customPropertiesByPage.set(`${pageId}:${viewportId}`, declared);
+  }
+
   // --- recovered layout rules (Task 17 §9/§10) -------------------------------
   // Deterministic inference over the multi-width probe + authored evidence.
   // Failure to recover anything is the normal fallback: the exact computed CSS
@@ -325,10 +422,31 @@ export function planReconstruction(
   const stylePropertiesByToken = new Map(
     input.styleCatalog.styles.map((token) => [token.styleTokenId, token.properties]),
   );
+  /*
+   * Task 28.6 C2b — the MOBILE truth width comes from the observation, not from
+   * a constant. It is the width the mobile deep observation was taken at, and
+   * therefore the only width the mobile tree's `boundingBox` values anchor to; a
+   * corpus observed at some other endpoint must not be measured against 390.
+   */
+  const observedMobileWidth = input.siteSpec.responsiveModel.observedViewports.find(
+    (profile) => profile.id === "mobile",
+  )?.width;
   const layout = inferLayoutRules({
     pages: input.pages,
     styleLookup: (styleTokenId) => stylePropertiesByToken.get(styleTokenId),
     breakpoint: breakpoint.value,
+    /*
+     * TASK 28.7 §26.5 — THE AGREEMENT. `responsive.byPageId` is the same map the
+     * generated `globals.css` scopes its per-route media queries from and the
+     * same map `route-map.json` publishes. Passing the map itself (rather than a
+     * number re-derived here) is what makes it impossible for the probe axis and
+     * the serving layer to disagree about a route's switch.
+     */
+    breakpointByPageId: responsive.byPageId,
+    ...(observedMobileWidth !== undefined
+      ? { mobileTruthWidth: observedMobileWidth }
+      : {}),
+    customPropertiesByPage,
   });
 
   // Task 17 §5 — observed open-state paint: the reveal roots plus the aligned
@@ -350,6 +468,26 @@ export function planReconstruction(
     // either, and the manifest's `provenance` field is where the two differ.
     "breakpoint-inferred",
   ]);
+  /*
+   * Task 28.6 C1 — a source that serves TWO DOMs makes the tree switch a choice
+   * of structure, and the width at which the source itself swaps them is not
+   * something this pipeline ever observed. Declared only when the measurement
+   * says `dual-dom`, so the code is a fact about THIS site rather than boilerplate.
+   */
+  if (breakpoint.treeDivergence === "dual-dom") {
+    limitations.add("tree-switch-dom-width-not-observed");
+  }
+  /*
+   * TASK 28.7 §26.4 — REFUSING HONESTLY. A route whose own probe watched it
+   * change rendering regime at a width the clone does NOT swap trees at keeps
+   * serving one tree across that width, and neither tree was ever observed
+   * there. Declared only when some route actually has such a width, and the
+   * widths themselves ride in `config.variantTreeNotObserved`, because a closed
+   * vocabulary cannot carry a number.
+   */
+  if (responsive.variantTreeNotObserved.length > 0) {
+    limitations.add("variant-tree-not-observed");
+  }
   const coverage = coverageOf(input);
   if (coverage.familyRepresentedRoutes > 0) {
     limitations.add("family-represented-route");
@@ -392,11 +530,14 @@ export function planReconstruction(
   return {
     rootUrl: input.siteSpec.rootUrl,
     breakpoint,
+    responsive,
     routes,
     pages,
     pageFiles,
     styles,
+    styleInput,
     pseudoStyles,
+    customProperties,
     layout,
     observedTargetCss,
     interactions,

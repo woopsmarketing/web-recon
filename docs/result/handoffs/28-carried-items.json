@@ -1,0 +1,302 @@
+{
+  "schema": "task28-carried-items-v1",
+  "phase": "1",
+  "gate": {
+    "role": "fresh phase-1 gate agent (implemented nothing; measured the tree as it stands)",
+    "ranAtIso": "2026-08-27T10:35:13.058Z",
+    "headSha": "6c2e723601a0d76431c96a48bbdb4726c02063e7",
+    "programStartIso": "2026-08-27T08:29:44.491100Z"
+  },
+  "changeRequests": {
+    "total": 8,
+    "implemented": 8,
+    "superseded": 0,
+    "blocked": 0,
+    "items": [
+      {
+        "id": "CR1",
+        "text": "src/release/index.ts — barrel export for revisions.ts",
+        "resolution": "IMPLEMENTED",
+        "evidence": "src/release/index.ts:19 `export * from \"./revisions.js\";` — read by me in the working tree. smoke:revision 28.CR1.1 (barrel identity vs deep import) PASS in my own run of the suite (29/29)."
+      },
+      {
+        "id": "CR2",
+        "text": "src/release/resolve.ts and prepare.ts — call appendAuthoredRevision so the revision chain stops being inert",
+        "resolution": "IMPLEMENTED",
+        "evidence": "src/release/prepare.ts:38 imports appendAuthoredRevisionIfChanged and calls it at :438; src/release/resolve.ts:35/:274 likewise with origin \"resolve\". Both are transaction boundaries, not per-edit. smoke:release 28.CR2.1-2.6 and smoke:revision 28.CR2.1-2.2 all PASS in my runs (202/202 and 29/29)."
+      },
+      {
+        "id": "CR3",
+        "text": "src/release/types.ts — displayName field for the site registry",
+        "resolution": "IMPLEMENTED",
+        "evidence": "src/release/types.ts:436 `displayName: z.string().min(1).optional()`; src/registry/types.ts:120 nameSource z.enum([\"derived-from-site-id\",\"project-display-name\"]); src/registry/scan.ts:219 derives it; src/cli-release-prepare.ts:36/42-43 parses and prints --display-name. smoke:revision 28.CR3.1-3.2 (real on-disk revision-1 + revision-2 projects still load) and smoke:registry 28.CR3.1-3.4 PASS in my runs."
+      },
+      {
+        "id": "CR4",
+        "text": "src/release/prepare.ts — call registerSite",
+        "resolution": "IMPLEMENTED",
+        "evidence": "src/release/prepare.ts:457-466 — lazy `await import(\"../registry/store.js\")` AFTER saveReleaseProject, inside try/catch, warnings surfaced on PrepareResult.registryWarnings. smoke:release 28.CR4.1-4.4 and smoke:registry 28.CR4.1 PASS in my runs. data/.registry confirmed absent afterwards (`ls -d data/.registry` → No such file or directory), so fixture rows did not leak into the repo registry."
+      },
+      {
+        "id": "CR5",
+        "text": "src/cli-compile-recon-template.ts — call registerTemplate",
+        "resolution": "IMPLEMENTED",
+        "evidence": "src/cli-compile-recon-template.ts:183-186 lazily imports isScannableTemplateDir + registerTemplate and gates the call; src/registry/scan.ts:150 defines the namespace gate. smoke:registry 28.CR5.1-5.3 PASS in my run (35/35). NOT covered end to end: no suite spawns the CLI itself (carried as a limitation)."
+      },
+      {
+        "id": "CR6",
+        "text": "src/content-injection/index.ts — export CONTENT_WRITE_DOCTRINE_WARNING",
+        "resolution": "IMPLEMENTED",
+        "evidence": "src/content-injection/index.ts:86 re-exports CONTENT_WRITE_DOCTRINE_WARNING; src/cli-content-validate.ts:2 imports it from the barrel (deep import gone; the two obsolete comment lines are the only deletions in that suite's diff). smoke:content-injection 28.CR6.1 (barrel/module identity) PASS in my run (138/138)."
+      },
+      {
+        "id": "CR7",
+        "text": "src/production/types.ts — carry a brand-surface census through the bake result",
+        "resolution": "IMPLEMENTED",
+        "evidence": "src/production/types.ts:12 imports BrandSurfaceCensus from the new ./brand-census.js and :132-139 declares BakeReport.brand measured on this bake's exported route HTML; src/production/brand-census.ts exists as the single implementation and src/production/qa.ts re-exports it (no duplicate walker). smoke:production 28.CR7.1-7.6 PASS in my run (106/106)."
+      },
+      {
+        "id": "CR8",
+        "text": "src/content-injection/types.ts — closed BrandLeakWarning kind enum blocks writing SVG surfaces into brand-leak.json",
+        "resolution": "IMPLEMENTED",
+        "evidence": "src/content-injection/types.ts BrandLeakWarningSchema — kind enum now 10 values (5 original + svg-aria-label/svg-symbol-id/svg-text/image-alt/aria-label), slotKey z.string().nullable(), optional surface/nodeId/route/occurrences, still .strict() and still a CLOSED enum; emission lives in src/content-injection/brand-leak.ts (detectTemplateBrandSurfaceLeaks) and is called on the real write path. smoke:content-injection 28.CR8.1-8.9 PASS in my run."
+      }
+    ]
+  },
+  "requirementDrift": {
+    "reproduced": true,
+    "rootCause": "Post-write requirement addition by a LATER command, re-verified by me from the artifacts. data/linear.app/release-projects/flowpilot-wr27/requirements.json holds counts.total 380 / 380 array entries / 380 unique ids, generatedAt 2026-08-26T19:27:23.835Z and collectedFrom undefined; the only run.json in that project with createdAt 2026-08-26T19:27:23.835Z is runs/2026-08-26T19-26-48-957Z, kind=build — i.e. the LAST build wrote the file, not the 19:23:06 prepare whose terminal line (docs/result/handoffs/27-real-release-exercise.json) said 378. build.ts re-collects from project.stageStatus[*].artifact.path (the artifacts its own stage reruns just produced) and overwrites requirements.json, while recording no requirement total on run.json and no statement of which artifacts it collected from. The +2 is real and correct: I diffed the two generation-result.json files myself — accepted-lineage content run data/linear.app/content-runs/2026-08-25T21-54-40-120Z has 117 unresolved, the build-created run data/linear.app/content-runs/2026-08-26T19-24-33-898Z has 119, onlyInBuild = ['security.main.text.linear-undergoes-regular-service','security.main.text.iso-27001-certified'] and onlyInAccepted = []; the persisted 380-id set contains exactly those two ids as business-fact requirements. Not duplicate collection (380 entries / 380 unique ids), not filtering (the difference is one-directional).",
+    "fixedGenerically": true,
+    "regressionAdded": "release:28.1B.1 a REAL build reports exactly the unique requirement ids it persisted",
+    "regressionAddedAll": [
+      "release:28.1B.1 … 28.1B.14 (14 checks) — the COUNT↔ARTIFACT invariant (reported == unique persisted requirementIds == counts.total == array length) over a real build, prepare, re-prepare, resolve, a dry run, distinct run-attributed provenance, and the duplicate-id guards"
+    ],
+    "hardcodedLiteralsFound": [],
+    "fixEvidence": "src/release/requirements.ts:255 duplicateRequirementIds; :281-287 buildRequirementsFile THROWS naming every colliding id; :297 counts.total derived as new Set(requirements.map(r => r.requirementId)).size. src/release/types.ts:177-186 RequirementsProvenanceSchema + :194 optional collectedFrom; :536 ReleaseRunSchema.requirementsTotal (required) supplied by prepare.ts:504, resolve.ts:260, build.ts:413. src/cli-release-resolve.ts:39 and src/cli-release-build.ts:25/38 now PRINT the total they wrote. grep -rnE '\\b(378|380)\\b' over src/ and scripts/ returns exactly one hit — a doc comment at scripts/smoke-release.ts:144 — and no code literal; grep for the two drifted requirement ids over src/ and scripts/ returns nothing."
+  },
+  "assetsRunner": {
+    "executedOnRealData": true,
+    "runId": "2026-08-27T09-38-59-489Z",
+    "materializationRunId": "2026-08-27T09-38-59-492Z",
+    "projectDir": "data/linear.app/release-projects/wr28-assets-stage",
+    "staleTriggerLegitimate": true,
+    "productionConsumed": true,
+    "reusedOnSecondRun": true,
+    "historyUntouched": true,
+    "defectsFound": [
+      "DEFECT-1 (fixed): the operator record was APPENDED beside the asset's existing manifest record, so the derived manifest carried two records for one inventoryId. Re-measured by me: the pre-fix evidence run data/linear.app/asset-materializations/2026-08-27T09-34-50-356Z has 2 records for ai000036 and 242 entries; the post-fix run 2026-08-27T09-38-59-492Z has 1 record and 241 entries (same as the base run — no growth).",
+      "DEFECT-2 (fixed): counts were copied forward from the base run. Re-measured by me: the pre-fix run reports counts.totalBytes 209,680,490 while its own media directory holds 209,680,669 bytes; the post-fix run reports uniqueFiles 156 / totalBytes 209,680,669, and I independently measured its media directory at exactly 156 files / 209,680,669 bytes."
+    ],
+    "evidence": "runs/2026-08-27T09-38-59-489Z/run.json rerunStages=[\"assets\",\"production\"], reusedStages=[reconstruction,template,content,theme,seo]. STALE TRIGGER LEGITIMATE: src/release/graph.ts:64 RESOLUTION_FIELD_IMPACTS.assets=[\"assets\",\"production\"] and src/release/freshness.ts:165-174 resolutionAssetContentHashes hashes the operator FILE'S BYTES (hashFile), consumed by resolutionSliceFor case \"assets\" (:215-219); the pack data/linear.app/wr28-operator-assets/resolution-assets-only.json populates only `assets`; src/cli-release-build.ts accepts only --dry-run (no --force exists to abuse). PRODUCTION CONSUMED: data/linear.app/production-specs/2026-08-27T09-38-59-704Z/production-spec.json lineage.assets.dir = data/linear.app/asset-materializations/2026-08-27T09-38-59-492Z (the derived run, not the base 2026-08-25T23-28-36-880Z); in the new build's package/site/index.html the source URL fragment c8aeedda-7726-4a4f-226a-f573f85d8d00 occurs 0 times (8 times in the pre-existing build 2026-08-26T19-26-48-957Z) and the replacement /media/32cf07…png occurs 8 times, with the 179-byte file present in the package. REUSED ON SECOND RUN: runs/2026-08-27T09-40-03-225Z and runs/2026-08-27T10-01-57-347Z both have rerunStages=[] with assets in reusedStages, and stageStatus.assets.artifact.id is still 2026-08-27T09-38-59-492Z."
+  },
+  "regression": {
+    "typecheck": "exit 0",
+    "typecheckEvidence": "`pnpm typecheck` → `$ tsc --noEmit`, no diagnostics, exit code captured directly: TYPECHECK_EXIT=0",
+    "suitesRun": 20,
+    "totalChecks": 2220,
+    "totalFailures": 0,
+    "countDerivation": "every `checks` value below was re-derived by me by counting raw `PASS` lines in the suite's captured stdout, and `failures` by counting raw `FAIL` lines — not read from the suite's own summary line (which I recorded separately and found to agree in all cases)",
+    "suites": [
+      {
+        "suite": "release",
+        "checks": 202,
+        "failures": 0,
+        "seconds": 56,
+        "exitCode": 0,
+        "task27Count": 162,
+        "delta": 40
+      },
+      {
+        "suite": "revision",
+        "checks": 29,
+        "failures": 0,
+        "seconds": 2,
+        "exitCode": 0,
+        "task27Count": 24,
+        "delta": 5
+      },
+      {
+        "suite": "registry",
+        "checks": 35,
+        "failures": 0,
+        "seconds": 0,
+        "exitCode": 0,
+        "task27Count": 27,
+        "delta": 8
+      },
+      {
+        "suite": "assets",
+        "checks": 140,
+        "failures": 0,
+        "seconds": 6,
+        "exitCode": 0,
+        "task27Count": 140,
+        "delta": 0
+      },
+      {
+        "suite": "production",
+        "checks": 106,
+        "failures": 0,
+        "seconds": 4,
+        "exitCode": 0,
+        "task27Count": 100,
+        "delta": 6
+      },
+      {
+        "suite": "content-injection",
+        "checks": 138,
+        "failures": 0,
+        "seconds": 59,
+        "exitCode": 0,
+        "task27Count": 128,
+        "delta": 10
+      },
+      {
+        "suite": "regions",
+        "checks": 67,
+        "failures": 0,
+        "seconds": 1,
+        "exitCode": 0,
+        "task27Count": 67,
+        "delta": 0
+      },
+      {
+        "suite": "recon-template",
+        "checks": 109,
+        "failures": 0,
+        "seconds": 80,
+        "exitCode": 0,
+        "task27Count": 109,
+        "delta": 0
+      },
+      {
+        "suite": "seo",
+        "checks": 97,
+        "failures": 0,
+        "seconds": 2,
+        "exitCode": 0,
+        "task27Count": 97,
+        "delta": 0
+      },
+      {
+        "suite": "theme",
+        "checks": 47,
+        "failures": 0,
+        "seconds": 35,
+        "exitCode": 0,
+        "task27Count": 47,
+        "delta": 0
+      },
+      {
+        "suite": "verifier",
+        "checks": 81,
+        "failures": 0,
+        "seconds": 7,
+        "exitCode": 0,
+        "task27Count": 81,
+        "delta": 0
+      },
+      {
+        "suite": "selector",
+        "checks": 81,
+        "failures": 0,
+        "seconds": 1,
+        "exitCode": 0,
+        "task27Count": 81,
+        "delta": 0
+      },
+      {
+        "suite": "multi-observer",
+        "checks": 62,
+        "failures": 0,
+        "seconds": 27,
+        "exitCode": 0,
+        "task27Count": 62,
+        "delta": 0
+      },
+      {
+        "suite": "interaction-detector",
+        "checks": 92,
+        "failures": 0,
+        "seconds": 0,
+        "exitCode": 0,
+        "task27Count": 92,
+        "delta": 0
+      },
+      {
+        "suite": "interaction-explorer",
+        "checks": 108,
+        "failures": 0,
+        "seconds": 94,
+        "exitCode": 0,
+        "task27Count": 108,
+        "delta": 0
+      },
+      {
+        "suite": "interaction-patterns",
+        "checks": 88,
+        "failures": 0,
+        "seconds": 1,
+        "exitCode": 0,
+        "task27Count": 88,
+        "delta": 0
+      },
+      {
+        "suite": "sitespec",
+        "checks": 257,
+        "failures": 0,
+        "seconds": 0,
+        "exitCode": 0,
+        "task27Count": 257,
+        "delta": 0
+      },
+      {
+        "suite": "reconstruction",
+        "checks": 217,
+        "failures": 0,
+        "seconds": 7,
+        "exitCode": 0,
+        "task27Count": 217,
+        "delta": 0
+      },
+      {
+        "suite": "reconstruction-qa",
+        "checks": 134,
+        "failures": 0,
+        "seconds": 146,
+        "exitCode": 0,
+        "task27Count": 134,
+        "delta": 0
+      },
+      {
+        "suite": "e2e",
+        "checks": 130,
+        "failures": 0,
+        "seconds": 613,
+        "exitCode": 0,
+        "task27Count": 130,
+        "delta": 0
+      }
+    ],
+    "negativeDeltas": []
+  },
+  "gitMutatingOperations": 0,
+  "historicalMutationCount": 0,
+  "verdict": "PASS",
+  "blockers": [],
+  "limitations": [
+    "GATE SCOPE: I implemented nothing and re-audited no builder prose. Everything above was measured from the tree as it stands at HEAD 6c2e723 plus the uncommitted working-tree changes. I did NOT repeat the sabotage/falsifiability experiments the three phase verifiers report having run; my evidence that the new checks are real is that they exist, name real artifacts, and pass — not that I personally broke the code and watched them fail.",
+    "CR5 is not covered end to end by any suite: `grep -rn cli-compile-recon-template scripts/` finds no suite that spawns the CLI, so the registerTemplate call line at src/cli-compile-recon-template.ts:183-186 is covered only by typecheck plus the registry-side unit checks (smoke:registry 28.CR5.1-5.3). Carried forward.",
+    "The Task-27 figures 378 and 380 cannot be re-executed literally — Phase 1A CR8 added six brand-leak-* requirements to every collection on this lineage, so the same command now collects 384/386. I confirmed the DELTA and its ids from the artifacts on disk (persisted 380-id set contains exactly the two business-fact-slot-security ids; the two content runs differ by exactly those two unresolved slot keys) rather than by re-running the Task-27 command.",
+    "Requirements provenance is write-forward only: the four requirements.json files already on disk (flowpilot-wr27 among them) still have collectedFrom undefined, so the historical 380 remains unattributable from the artifact itself — I attributed it by correlating generatedAt 2026-08-26T19:27:23.835Z against runs/2026-08-26T19-26-48-957Z/run.json (kind=build) by hand.",
+    "ReleaseRun.requirementsTotal is REQUIRED in the schema. That is safe only because nothing in src/ or scripts/ parses a historical run.json through ReleaseRunSchema (validation happens on save; smoke-release reads run.json with a raw JSON.parse). A future reader of historical runs must relax it first.",
+    "buildRequirementsFile and mergeRequirements now THROW on a duplicate requirement id. Correct (loud beats silently dropping a gap) but it converts a previously survivable condition into a hard failure of release:prepare/resolve/build. No lineage on disk trips it today.",
+    "The derived asset materialization run inherits report/network-qa.json and report/font-qa.json from its base run — disclosed by that run's own report/derivation.json measurementNote (\"re-run assets:qa against this run to re-measure\") and by a build warning. The derived run's residual census is conservative, not measured.",
+    "AuthoredState still has no assets field: the asset replacement survives only as an entry in project.resolutions[], not folded into project.authored the way slotValues and theme are. A Visual Editor \"replace this image\" must synthesize a resolution pack until that is extended. Phase-2 decision, not taken.",
+    "scripts/smoke-release.ts hardcodes its fixture host (data/release-fixture.example) and rm -rf's it at startup and in finally, so two concurrent runs destroy each other. I serialised every suite run (one at a time, no parallelism) to avoid it, and confirmed no other smoke process was alive before each run. Pre-existing hazard; worth per-run isolation before any parallel CI.",
+    "hardcodedLiteralsFound is empty for CODE. There is one textual occurrence of the drift numbers in the repo — scripts/smoke-release.ts:144, inside a doc comment (\"the 378↔380 drift\"). It is documentation, not an assertion, and no check compares against it.",
+    "HISTORY-MUTATION METHOD: birth time is NOT a reliable mutation signal on this APFS volume — files copied into the new derived materialization run carry the SOURCE file's birth time (clonefile preserves it), which initially looked like 384 mutations. I therefore grouped every post-start-mtime file by its containing run directory instead; all 1,232 such files fall inside Task-28 namespaces (run ids dated 2026-08-27 plus the wr28-* projects and wr28-operator-assets). I control-tested the mtime predicate (it returns 163 files for a known Task-28 dir, 0 for every pre-existing one).",
+    "Pre-existing leftover I did NOT touch: data/.smoke-release-52098 (6 files, birth 2026-08-27T03:07:00 local) is an orphaned smoke-release scratch dir created BEFORE the program start instant. It is not mine and I deleted nothing. data/.registry does not exist, and data/release-fixture.example is absent after my runs.",
+    "I ran every one of the 20 counted suites myself and re-derived each count from raw PASS/FAIL lines, but all were run once, serially, on this machine; flaky-under-load behaviour was not probed."
+  ]
+}

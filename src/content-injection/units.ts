@@ -73,10 +73,27 @@ function toUnitSlot(slot: SlotDefinition): ContentUnitSlot {
   };
 }
 
+/**
+ * Task 28 Phase 11 — EXPLICIT PER-KEY REVIEW OPT-IN.
+ *
+ * §11 says a review slot is never AUTO-written. It does not say an operator
+ * cannot write one: the Visual Editor's whole purpose is to let a person
+ * decide a slot the compiler flagged for review, and `home.main.hero.headline`
+ * on the accepted linear lineage is exactly such a slot. Before this, a
+ * release BUILD of a project carrying such an edit failed the content stage
+ * with `review-slot-not-writable` — measured on the Phase 11 canary: 3 errors,
+ * one per hero edit, with the editor having previewed all three happily.
+ *
+ * The opt-in is PER KEY and comes from an operator write, so the blanket
+ * `includeReview` flag (which would pull all 1,493 review slots on this
+ * template into generation scope) stays off. Every opted-in key is recorded on
+ * the run manifest, so a widening is always visible in the artifact.
+ */
 export function buildContentUnits(
   template: LoadedReconTemplate,
   scopedRoutes: string[],
   includeReview: boolean,
+  operatorReviewSlotKeys: ReadonlySet<string> = new Set(),
 ): BuiltUnits {
   const routeSet = new Set(scopedRoutes);
   const indexBySlotId = new Map<string, number>();
@@ -86,12 +103,22 @@ export function buildContentUnits(
     (slot) => slot.scope === "global" || (slot.route !== undefined && routeSet.has(slot.route)),
   );
 
+  const optedIn = (slot: SlotDefinition): boolean =>
+    slot.editability === "review" && operatorReviewSlotKeys.has(slot.key);
+
+  // A key the operator opted in leaves the "still flagged, never written"
+  // list and joins the units — the UNION is unchanged, which is what keeps
+  // `inScopeSlotKeys()` (units ∪ reviewSlotKeys) and therefore the accounting
+  // denominator exactly as it was.
   const reviewSlotKeys = inScope
-    .filter((slot) => slot.editability === "review")
+    .filter((slot) => slot.editability === "review" && !optedIn(slot))
     .map((slot) => slot.key);
 
   const eligible = inScope.filter(
-    (slot) => slot.editability === "editable" || (includeReview && slot.editability === "review"),
+    (slot) =>
+      slot.editability === "editable" ||
+      (includeReview && slot.editability === "review") ||
+      optedIn(slot),
   );
 
   // Group assembly. A map key identifies the deterministic group a slot joins.

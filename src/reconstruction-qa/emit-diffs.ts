@@ -18,6 +18,7 @@ import type {
   InteractionQaResult,
   QaDiff,
   QaPageResult,
+  ScreenshotCoverage,
   Stability,
   UnknownQaResult,
 } from "./types.js";
@@ -67,6 +68,77 @@ export interface EmitPageDiffsInput {
   stability: Stability;
 }
 
+/** Identifying fields every diff from one page/viewport carries. */
+export interface PageDiffBase {
+  pageId: string;
+  viewport: "desktop" | "mobile";
+  route: string;
+}
+
+/**
+ * Turn screenshot coverage records into findings (Task 28.6, C5).
+ *
+ * Exported so the behaviour "a short capture becomes a diff" is testable
+ * against a real {@link DiffCollector} without standing up a browser, a clone
+ * and an observation — and so the test exercises the SAME function the pipeline
+ * runs, not a re-implementation of it.
+ *
+ * A fully covered side produces nothing: this is a finding about what was NOT
+ * looked at, and there is nothing to say when everything was.
+ *
+ * THREE ways a side fails to be a whole-page capture, and all three raise:
+ *   - it was truncated on either axis (`truncated`),
+ *   - no PNG came back at all (`!captured`),
+ *   - the DOCUMENT could not be measured (`!documentMeasured`), so nothing here
+ *     is a fraction of anything known. That third case used to slip through:
+ *     the guard was `!truncated && captured`, and an unmeasurable document
+ *     produced `truncated: false` with `captured: true`, so a capture nobody
+ *     could score raised no finding at all.
+ */
+export function emitScreenshotCoverageDiffs(
+  collector: DiffCollector,
+  base: PageDiffBase,
+  coverages: readonly ScreenshotCoverage[],
+): void {
+  for (const coverage of coverages) {
+    if (!coverage.truncated && coverage.captured && coverage.documentMeasured) continue;
+    const shortfall = coverage.documentMeasured
+      ? `captured ${coverage.capturedDeviceHeight}x${coverage.capturedDeviceWidth} of ` +
+        `${coverage.expectedDeviceHeight}x${coverage.expectedDeviceWidth} device px ` +
+        `(${coverage.documentHeightCss}x${coverage.documentWidthCss} css document at DPR ` +
+        `${coverage.deviceScaleFactor}), covered ${coverage.coveredFraction} ` +
+        `(h ${coverage.coveredHeightFraction} x w ${coverage.coveredWidthFraction}), ` +
+        `${coverage.truncatedDeviceRows} rows and ${coverage.truncatedDeviceColumns} ` +
+        `columns never inspected`
+      : `document NOT measurable, so coverage is UNKNOWN: a ` +
+        `${coverage.capturedDeviceHeight}x${coverage.capturedDeviceWidth} device px capture ` +
+        `of a page of unknown size. The 0s on this record are unknowns, not zeroes`;
+    collector.add({
+      ...base,
+      dimension: "visual",
+      classification: "visual-coverage-truncated",
+      property: coverage.side,
+      evidence: [
+        {
+          kind: "screenshot-coverage",
+          field: coverage.side,
+          // Rows still, because that is the axis a tall page loses; the column
+          // shortfall is named in the note beside it rather than summed into a
+          // single number that would mean neither.
+          count: coverage.truncatedDeviceRows,
+          note:
+            `${coverage.side}: ${shortfall}; ` +
+            `driver cap ${coverage.capDeviceDimension} device px, ` +
+            `enforced=${coverage.capEnforced}` +
+            (coverage.reason ? `; ${coverage.reason}` : ""),
+        },
+      ],
+      affectedNodeCount: 0,
+      limitations: ["screenshot-coverage-truncated"],
+    });
+  }
+}
+
 export function emitPageDiffs(input: EmitPageDiffsInput): void {
   const { collector, result } = input;
   const base = {
@@ -96,12 +168,39 @@ export function emitPageDiffs(input: EmitPageDiffsInput): void {
         {
           kind: "stability-recapture",
           count: input.stability.movingNodes,
-          note: `${input.stability.movingNodes}/${input.stability.sampledNodes} sampled nodes still moving; document height Δ ${input.stability.documentHeightDelta}px`,
+          // The population the verdict speaks for, not just the numerator: the
+          // sample is a bounded prefix and some sampled nodes are not comparable
+          // at all, and both were previously invisible to a reader of this note.
+          note:
+            `${input.stability.movingNodes}/${input.stability.sampledNodes} sampled nodes still moving` +
+            (input.stability.candidateNodes !== undefined
+              ? ` (of ${input.stability.candidateNodes} elements; ` +
+                `${input.stability.unsampledNodes ?? 0} past the sample cap were never looked at, ` +
+                `${input.stability.unmatchedNodes ?? 0} sampled nodes were absent from the re-capture)`
+              : "") +
+            `; document height Δ ${input.stability.documentHeightDelta}px`,
         },
       ],
       affectedNodeCount: input.stability.movingNodes,
     });
   }
+
+  /*
+   * Task 28.6 C5 — a truncated or failed screenshot is a FINDING, not a footnote.
+   *
+   * The alternative considered was carrying a caveat on the verdict instead. It
+   * was rejected because this pipeline's per-page verdict (`status`) is a closed
+   * enum about whether the page could be compared at all, and a page whose DOM
+   * comparison succeeded genuinely IS `complete` on that axis — overloading it
+   * would make "the screenshot was short" indistinguishable from "the clone did
+   * not load". A diff carries the same weight into every report, root-cause
+   * table and diff count, is routed to an owner, and cannot be read past.
+   *
+   * The coverage numbers are ALSO carried on every screenshot metric
+   * (`coveredFraction`), so a reader of the metrics alone still cannot mistake a
+   * partial measurement for a whole-page one.
+   */
+  emitScreenshotCoverageDiffs(collector, base, input.result.screenshotCoverage ?? []);
 
   if (!input.variantOk) {
     collector.add({

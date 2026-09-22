@@ -1,0 +1,376 @@
+Already up to date
+Done in 166ms using pnpm v11.21.0
+$ tsx --tsconfig platform/tsconfig.json platform/test/slice1.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step4.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step41.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step5.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/polish.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step52.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step6.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/predemo.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/predemo2.test.ts
+
+[unit] settings
+  ok   H unknown section key → FAIL
+  ok   H unknown field inside a declared section → FAIL
+  ok   H copy is not a setting: title in settings → FAIL (it is a slot)
+  ok   H out-of-range value → FAIL
+  ok   I settings for another template → FAIL
+  ok   defaults + sparse override = effective; selection REPLACES (no deep merge)
+  ok   selection with an extra key (mode latest + category) → FAIL
+  ok   SettingsError type is used
+
+[unit] content reader
+  ok   latest: publishedAt desc, id asc tie-breaker, drafts never served
+  ok   latest orders by INSTANT, not string (offsets, fractional seconds)
+  ok   manual ids must be unique
+  ok   category + limit
+  ok   J manual: order kept, missing/unpublished ids skipped AND reported
+  ok   unknown collection type → FAIL (closed descriptors)
+
+[unit] theme
+  ok   site theme token the template does not consume → FAIL
+  ok   unknown token / unsafe value → FAIL
+  ok   per-token grammar keeps every curated library theme + template default valid
+
+[unit] assets / QA scanners
+  ok   SVG assets must be inert + self-contained
+  ok   package QA catches remote refs in inline <style>, style=, @import, look-alike origins
+
+[unit] slots
+  ok   slot fallback: site value → binding → neutral default → hide
+  ok   slot fallback: required slot with no value → needs-input (build fails, nothing invented)
+  ok   unknown slot section / unknown slot key / other template → FAIL
+  ok   slot value types are narrow: wrong type, markup, over-length, arbitrary JSON, per-item arrays → FAIL
+  ok   link/media slot schemas: safe hrefs only; media = asset ref + alt
+  ok   neutral defaults and bound content are validated against the slot contract
+  ok   prototype keys in site JSON are refused at the store boundary
+  ok   template code cannot read an undeclared slot
+
+[unit] site context / release pin
+  ok   I createSiteContext with a different release than the site pin → FAIL
+  ok   BLOCKER fix: releaseId is an id, never a path (traversal / id≠hash refused)
+  ok   I settings selecting an unknown category → FAIL (no silently empty section)
+  ok   preview mode includes drafts + scheduled; public does not
+  ok   I site:build with an explicit different release → FAIL (no silent upgrade)
+
+[static] template source rules (L, M, N)
+  ok   templates/ contains exactly one Template major (no per-site forks)
+  ok   L/M/N no fs/Supabase/DB/legacy imports, no siteId literals, no wall clock, no env reads
+  ok   scanner self-test catches each violation class
+  ok   Q templates/**: forbidden source terms only in provenance.json
+  ok   platform/ + templates/ never import the legacy src/ pipeline
+
+[integration] three fixture packages
+  ok   A all three sites pin and were built with the SAME exact release
+  ok   B all three used the SAME Template source (templateSourceHash)
+  ok   C fixture-large renders the default count (8) of the latest 173 visible projects
+  ok   D fixture-small renders 4 residential projects + custom title
+  ok   E fixture-empty: NO projects section, NO wrapper, NO anchor, NO fake card
+  ok   F theme differs where expected (small overrides; large/empty = template default)
+  ok   G identity/content differ where expected
+  ok   header/footer/card links are real <a href> and all resolve (no dead links)
+  ok   Q packages: no source host/API/brand/assets/runtime (all emitted files) + no remote refs
+  ok   package assets are content-addressed and byte-identical to the snapshot
+  ok   pinned release == current working-tree template/platform runtime (no drift since release)
+  ok   SLOT override proof: same Template code renders different slot copy per site
+
+[integration] build identity
+  ok   O same inputs → same buildInputId (and = recorded package id)
+  ok   mode is part of the identity (public ≠ preview)
+  ok   visibility time only matters through content: scheduled item appears after its date
+
+[integration] lifecycle (throwaway repo root)
+  ok   P changed content → changed snapshot/buildInputId
+  ok   P changed settings → changed buildInputId
+  ok   P changed theme → changed buildInputId
+  ok   P changed slot value → changed buildInputId
+  ok   P changed asset bytes → changed buildInputId
+  ok   K reference-fixture origin under data/sites → FAIL
+  ok   placement fields are rejected by the content model (isMainBannerDisplay)
+  ok   missing asset reference → FAIL
+  ok   build #1 in throwaway root succeeds
+  ok   O rebuild with identical inputs → up-to-date, no new package
+  ok   H unknown settings key → build FAILS and current package is untouched
+  ok   previous successful package retained when a new build replaces it
+  ok   forced rebuild with the same id keeps a valid current package (atomic swap)
+  ok   rollback-style rebuild back to the previous input (A→B→A) keeps both packages
+  ok   third build prunes the oldest; keeps current + previous only
+  ok   concurrent build of the same site is refused (per-site lock held by a live pid)
+  ok   stale lock (dead pid) + leftover staging dir from a crashed build are recovered
+  ok   damaged current package is rebuilt, never reported up-to-date, never made the rollback target
+  ok   release immutability: stored files read-only; tampering is detected
+  ok   release re-run is idempotent in a throwaway root: same code → same release, verified, not overwritten
+
+slice1: 72 passed, 0 failed
+
+[unit] content reader: paginate / getBySlug / listSlugs
+  ok   C (unit) 173 items at 30/page → 6 pages sized 30/30/30/30/30/23
+  ok   G (unit) out-of-range / non-integer pages → undefined (never an empty page)
+  ok   K stable ordering: same input (any storage order) → same first/last item on every page
+  ok   L equal publishedAt → stable id (ascending) tie-break across a page boundary
+  ok   M new newest project: first on page 1, boundaries shift by one, stored items untouched, no page field
+  ok   getBySlug / listSlugs: served items only, latest order; drafts only in preview
+  ok   J duplicate published slug → FAIL (stored-document schema AND reader)
+
+[unit] route plan (generation, pruning, reserved slugs)
+  ok   page 1 is /portfolio; pages 2…N only under /portfolio/page/[n]; /portfolio/page/1 never planned
+  ok   exactly one page (12 items) → portfolio.page pruned as a dynamic segment
+  ok   zero items → list page, pages and details all pruned; home stays
+  ok   I reserved slug `page` (static sibling segment) → validation FAIL
+  ok   I reserved slug `index` (static-export file collision) → validation FAIL
+  ok   route declarations are validated (bad pattern, dynamic static route, pageSize disagreement)
+  ok   Template page size is 30 (observed design), declared once for both list routes
+  ok   pagination window: all pages ≤ 7, else first · 5 around current · last
+  ok   builder prune re-validates entries (no escape from app/, route dir must exist)
+
+[unit] project content model + fact formatting
+  ok   optional detail facts: absent is valid; contracts enforced (period order, unique keywords, price bounds)
+  ok   Q outlier price/area inside the contract render deterministically (no bucketing, no crash)
+  ok   formatting: singular/plural duration, open vs single-month period, 2-decimal contract renders exactly
+  ok   builder accepts the 1.0.0 preflight shape (routes = manifest, no prune) — class-B compatibility
+  ok   I (early) unserved draft/scheduled project with a reserved slug → build warning before publish day
+
+[static] template source rules
+  ok   allowlist widened narrowly: only `notFound` from next/navigation; other exports/forms and next/* refused
+  ok   DETAIL_TEMPLATE_COUNT = 1: one detail route file, one detail section, no per-family variants
+
+[integration] fixture packages on the new release
+  ok   A all three sites pin + were built with the SAME new exact release (verified)
+  ok   B old release still exists, verifies, and is byte-for-byte unchanged (hash + read-only files)
+  ok   C fixture-large: 173 visible → 6 list pages sized 30/30/30/30/30/23, exact expected order
+  ok   D fixture-small: 12 projects → only /portfolio, no /portfolio/page/*
+  ok   E fixture-empty: no portfolio list/detail output at all
+  ok   F every published fixture-large slug → exactly one detail page; nothing else under /portfolio
+  ok   G/H out-of-range pages and unknown slugs are not emitted; package QA is exclusive
+  ok   V packages: no source host/API/brand/runtime/assets; every planned page present; nothing unplanned
+  ok   N before/after (A) and ordinary (B) projects: same detail Template, conditional output only
+  ok   O missing optional quote → no quote wrapper; present quote → rendered
+  ok   P missing optional facts → no blank rows; empty keyword list → no keyword row
+  ok   Q outlier price/area project builds and renders the value verbatim
+  ok   R homepage project cards link to their detail pages; 'view all' → /portfolio
+  ok   S portfolio nav link exists only when the route exists (every page of large/small; never in empty)
+  ok   T sitemap.xml lists exactly the generated routes (absolute on the declared origin)
+  ok   U public robots.txt: allow + sitemap on the real origin only
+  ok   metadata: unique list titles incl. page number; detail = item title + brand; canonical on the declared origin
+  ok   404 page is the site's own (header/footer, localized slot copy, one <title>, noindex)
+  ok   slot proof on new sections: same code, different labels per site; hidden media slot renders nothing
+
+[integration] release change, rollback, build identity
+  ok   X buildInputId changed because the Template Release changed (parts.releaseHash old → new)
+  ok   Y rollback: each site's previous package (an older, verified release) is present and intact
+
+[integration] throwaway-root builds (preview robots, new newest project)
+  ok   U preview build: robots disallow all, every page noindex (list/paged/detail), empty sitemap, drafts only here
+  ok   Y rollback by re-pin: the CURRENT builder still builds a site pinned to the old release (1.0.0-shaped data)
+  ok   M new newest project (integration): first on /portfolio, boundaries shift, last page 23 → 24
+
+step4: 47 passed, 0 failed
+
+[unit] ProjectFilter contract + pure evaluator
+  ok   E area buckets are half-open [min,max) in the scale unit; units normalized; missing never matches
+  ok   F style: OR within the dimension; no-keyword records never match; vocabulary by frequency then code point
+  ok   G price: derived buckets [min,max), per-unit conversion, missing / other currency never match
+  ok   H type (existing category taxonomy) filter: OR over category ids; SERVICE ontology deferred
+  ok   I keyword finds a project by title (case-insensitive, whitespace-normalized)
+  ok   J keyword finds a project by location
+  ok   K keyword finds a project by style keyword and by scope; Korean substring; tokens AND, never across fields
+  ok   L sort newest = the reader's latest order (publishedAt DESC by instant, id ASC); input order irrelevant; oldest = ASC, id ASC
+  ok   M area/price sorts: missing values LAST in both directions, ties by the default order
+  ok   N OR within one dimension, AND across dimensions
+  ok   O combined filters (type + area + style + price + keyword + sort)
+  ok   P zero result is an honest empty list (valid filter, no match)
+  ok   Q reset: the empty filter is the default view and returns every record in the default order
+  ok   normalize: closed vocabulary (unknown/unavailable dropped), deduped, canonical order, idempotent
+  ok   URL codec: template-owned params, repeated keys, sort/fp omitted at default, round-trip incl. Korean
+  ok   vocabulary lists only options with ≥ 1 record; groups without options are hidden
+
+[static] filter rules live outside React; gate; settings
+  ok   Z the UI uses the shared contract/evaluator; no filtering/sorting rule is re-implemented in template code
+  ok   gate: new allowlist entries are exactly the pure filter module + browser URL door; window/storage/network still refused
+  ok   settings: 1.2.0 filter keys validated strictly; 1.1.0-shaped settings documents stay valid
+
+[integration] fixture packages on the new release
+  ok   release: all three sites pin + were built with the SAME release ≥ 1.2.0 (verified); Step 4 release untouched
+  ok   rollback: each site's previous package = the package of the release before the current one (≥ 1.1.0), intact
+  ok   A unfiltered /portfolio: SSR grid + route pager byte-identical to the previous package; every other non-home page's <main> byte-identical
+  ok   B 173 projects still paginate 30/page unfiltered (static routes, exact order)
+  ok   C filter index = exactly the served projects (large 173, small 12), in the default order, with the vocabulary
+  ok   D public index leaks nothing: no draft/scheduled record, only allowed fields, no body/gallery/quote/source fields
+  ok   parity: evaluator over the SHIPPED index = evaluator over the stored canonical records (fields sufficient, no drift)
+  ok   fixtures exercise the dimensions: several areas/styles/prices/texts, missing values, results + zero result, > 30 matches
+  ok   V no filtered static route explosion: exactly the Step 4 HTML set; route plan unchanged
+  ok   W unfiltered SEO unchanged: sitemap.xml + robots.txt byte-identical to the Step 4 packages
+  ok   fixture-empty: no portfolio route at all (distinct from a filtered-zero view); no index anywhere
+  ok   Y no source dependency/leakage: package QA passed with frozen terms; no source param/API names in template or packages
+  ok   slots: filter copy is section-level (site vs neutral per site); option values are not slotted
+
+[integration] throwaway-root builds (rollback by re-pin to 1.1.0, filters off)
+  ok   re-pin to the Step 4 release builds with the current builder ONLY after the data is migrated to the 1.1.0 shape (strict old schemas; see 04 open items)
+  ok   settings filtersEnabled=false → /portfolio renders the plain Step 4 list (no island, no index), same grid
+  ok   priceScale none → no price filter, no price sort and NO price data in the shipped index
+
+step41: 35 passed, 0 failed
+
+[unit] content model (PROVISIONAL homepage collections)
+  ok   M no source placement field exists in the canonical model (projects, banners, reviews refuse them)
+  ok   P reviews: no generated origin exists; no rating/date/photo/identity fields; text is plain + bounded
+  ok   banners: PROVISIONAL; CTA is a closed target (project | contact), never a URL; ≤ 8 slides; image required
+  ok   reader: reviews/banners are closed queries in STORED order; drafts only in preview; bad limits throw
+
+[unit] Template declarations
+  ok   Z home content uses NO per-item slots: slots are fixed section copy/link/media; items are content
+  ok   settings: homepage defaults; projects-b OFF by default (never silently duplicates A); strict keys
+  ok   AA Template imports/identifiers remain within the gate (no timers, window, fetch, Date, Intl …)
+  ok   Y (static) reduced motion never hides content: no opacity/visibility/display rule inside the reduced-motion block
+  ok   builder warns (never silently drops): unserved CTA project, contact CTA without destination, /path link that is not a page
+
+[integration] fixture packages on the new release
+  ok   B all three sites pin + were built with the SAME release ≥ 1.3.0 = the current template version (verified)
+  ok   C old 1.2.0 (and 1.1.0) releases: hash + every file unchanged, read-only, no Step 5 files; the 1.3.0 release unchanged + read-only
+  ok   rollback: each site's previous package = an older release (≥ 1.2.0, < current), intact
+  ok   D homepage section order is exactly hero · intro · projects-a · projects-b · reviews · image-band between header/footer; CTA outside the flow
+  ok   E fixture-large: every intended section renders with its data (3 slides, intro+media+link, A 8, B 6, 6 reviews, band, CTA)
+  ok   F fixture-small: SAME Template, Korean slots, warm theme, different hero/intro/queries/reviews/band/CTA label
+  ok   G fixture-empty: no projects A/B, no reviews/band/CTA, no portfolio nav or route, no empty wrappers
+  ok   H hero with >1 slides ships working-control markup: prev/next, pause, one dot per slide, one active slide
+  ok   I hero with 1 slide: no prev/next, no dots, no pause, not announced as a carousel
+  ok   K/L/N projects A/B: SAME collection, different subsets per settings, cards link to real detail pages
+  ok   O reviews: non-empty → published only, stored order, limit; empty collection → whole section absent
+  ok   Q image band: media present → renders; absent → no wrapper
+  ok   R floating CTA: valid destination → crawlable <a href> in the static HTML; none → absent
+  ok   S/T/W all homepage media resolve through the AssetResolver to local, present, hashed package files
+  ok   U no source hostname/API/runtime/brand/widget leakage in any package (package QA + explicit scan)
+  ok   AB same input stays deterministic: prepareSiteInput twice = the current package's buildInputId
+  ok   AC the new release changes every site's buildInputId (and the release part of it)
+  ok   AD portfolio list/pages/details/filters/404 regression-free: every non-home page's <main> byte-identical to the previous package (React useId values canonicalised)
+  ok   AE sitemap.xml + robots.txt byte-identical to the previous package (no route-count drift); home stays un-canonicalised
+
+[integration] throwaway-root builds (absent sections, CTA targets, origins, old-release compatibility)
+  ok   J/O/Q/R absent data → absent sections: 0 published slides, no reviews doc, no band media, CTA disabled; dead /path link hidden + warned
+  ok   hero CTA targets: unserved (draft) project → slide without CTA; unknown project → build FAILS; no email → no contact CTA; live /path link kept
+  ok   P reference-fixture reviews/banners under data/sites → FAIL; preview mode serves drafts, public never
+  ok   old-release compatibility: 1.2.0-shaped data re-pinned to 1.2.0 reproduces the site's recorded 1.2.0 buildInputId
+
+step5: 32 passed, 0 failed
+
+[release] the polish release against the Step 5 release
+  ok   R1 exactly ONE 1.3.1 release exists, verifies, and is the current pin while 1.3.1 is current; 1.3.0 unchanged
+  ok   R2 same release file set as 1.3.0; only template.css, FloatingCta.tsx and template.ts differ
+  ok   R3 FloatingCta.tsx differs in comments only; template.ts in comments + version 1.3.0 → 1.3.1 only
+  ok   R4 stylesheet: the one floating seat (fixed, safe-area fallback, z-index, --i1-float-*), bar hidden when a track fits, no new url()/@import/@font-face
+
+[packages] skipped — a later release (interior-01-1.4.2-a223ccd0759c) is current; the 1.3.0/1.3.1 packages are no longer retained
+
+[integration] skipped — a later release (interior-01-1.4.2-a223ccd0759c) is current; the fixture documents may have moved on
+
+polish: 4 passed, 0 failed
+
+[release] the Step 5.2 release against the polish release
+  ok   R1 exactly ONE 1.4.0 release exists, verifies, and is every site's pin while 1.4.0 is current; 1.3.1 unchanged
+  ok   R2 same release file set as 1.3.1; exactly schema.ts, the app/ pages + layout, FloatingCta.tsx, SiteFooter.tsx, template.css, template.ts differ
+  ok   R3 FloatingCta.tsx differs in comments only; template.css in comments + ONE rule (filter actions beside the count ≥ 900px); template.ts in comments + version 1.3.1 → 1.4.0 only (no setting/slot change)
+  ok   R4 ONE seat owner: the root layout renders SiteFooter (once, after every page), SiteFooter renders FloatingCta; no page renders either; pages otherwise unchanged
+
+[packages] skipped — a later release (interior-01-1.4.2-a223ccd0759c) is current; the 1.3.1/1.4.0 packages are no longer retained
+
+[unit] area basis contract
+  ok   A1 area.basis: exactly supply | exclusive | unknown are accepted; absent stays valid; anything else is refused
+  ok   A2 every stored fixture area (none states a basis) reads as unknown; a stated basis reads as stated
+  ok   A3 authoring default: bare 평 in Korean residential context → supply; every other unstated case → unknown
+  ok   A4 no auto-equivalence: a supply 34평 stays { 34, pyeong } in the filter record (no basis, no 84㎡ / 25.4평 substitution)
+
+[integration] throwaway-root builds (seat off / no destination, basis end-to-end, document compatibility)
+  ok   I1 seat disabled (site.floating-cta.enabled = false) → no seat on ANY page; basis = supply builds and renders the detail exactly as without a basis
+  ok   I2 no contact destination → no seat on ANY page
+  ok   I3 basis is data only in 1.4.0: detail <main> identical for supply / exclusive / unstated; the value is shown as authored (34평); basis never shipped to the browser
+  ok   I4 rollback boundary: the 1.3.1 release refuses (fails closed) a document that states a basis — basis data needs ≥ 1.4.0
+
+step52: 12 passed, 0 failed
+
+[site] a NEW site instance, pinned to the existing immutable release
+  ok   A boost-interior-demo exists as its own Site Instance (siteId, Korean identity, own origin); fixtures are separate directories
+  ok   B pins EXACTLY ONE newer verified release (the same one every fixture pins) (id + full hash), and the current package was built with it
+
+[unchanged] Template source, releases and fixtures against the pre-Step-6 baseline
+  ok   C0 the baseline itself is the one captured at 2026-09-19T11:08:42Z (sha256 pinned): re-capturing it after a change fails here
+  ok   C release hash unchanged: the 1.4.0 release verifies, NO release was added or removed, every release tree is byte-identical
+  ok   D Template source unchanged: live templateSourceHash = baseline = the release record; live release sources have no drift; raw template + platform trees identical
+  ok   D2 independent of the baseline: no Template / Platform implementation file (test/ excluded) was modified after the 1.4.0 release was cut
+  ok   E old fixture sites unchanged: data/sites/fixture-* and data/site-builds/fixture-* (pointers, history, packages) byte-identical
+  ok   V same release, different site instances: 4 sites share releaseId + templateSourceHash; buildInputIds, snapshots and rendered homes all differ
+
+[leakage] the demo package carries no fixture identity and no source-site material
+  ok   F no fixture identity anywhere in the demo package or its site documents: fixed patterns + every fixture's own brand, legal name, e-mail, origin, project ids and titles (read from the fixtures)
+  ok   G no Apartmentary leakage: the release's frozen forbidden terms + the source brand (ko/en) are absent; package QA passed; no absolute URL leaves the site origin
+
+[area] Korean area-basis contract
+  ok   H the 34평 flagship is { 34, pyeong, basis: supply }; EVERY project states a basis (none unknown); the 공급면적 label is true for every project
+  ok   I no automatic 34 → 84: the area fact renders as authored (34평) — no ㎡/112/84 derived beside it; 84㎡ appears only as the separately authored 전용면적 sentence; no '34평 = 84' anywhere
+
+[assets] registry, references, reference-image isolation
+  ok   J every referenced asset exists: registry entry + file on disk + content-addressed copy in the package
+  ok   K no unreferenced public demo asset: registry = referenced set, no stray file in assets/, package /assets = referenced set
+  ok   K2 reference images are reference-only: no site/package asset is byte-identical to a reference file, none is copied by name, and no demo asset is a PNG
+  ok   K3 asset status is honest: 04-asset-status.json matches the registry (approved-generated = raster, stand-in = SVG) and its verdict follows the counts
+
+[content] one canonical projects collection, Korean, linked
+  ok   L all published project slugs (and ids) are unique; ≥ 6 projects; every project has the Step 6 data-quality fields
+  ok   M every internal link of every generated page resolves inside the package; every project has its detail page
+  ok   Z header navigation exposes only real routes (home, /portfolio, contact): no Service / FAQ / Journal / About
+  ok   Q+R the demo uses the ONE canonical projects collection: content/ holds only the platform documents, home A and B are two selections of projects.json, no second collection anywhere
+
+[filter] the unchanged filter contract against Korean demo content
+  ok   N keyword / type / area / style / price / sort / combined / zero-result, evaluated by the platform evaluator with the site's own scales (pyeong, krw-pyeong)
+
+[cta] the site-wide floating seat
+  ok   O exactly one floating CTA on EVERY generated page (home, portfolio, 8 details, 404), Korean label, the business mailto
+
+[models] banners@1 (provisional) and reviews@1 carry the demo unchanged
+  ok   S banners@1 unchanged and sufficient: 3 slides = image + headline + text + closed CTA (2 project targets, 1 contact); all render with live destinations
+  ok   T reviews@1 unchanged: 6 published reviews, none attributed to a personal name, all rendered on the home page in stored order
+
+[identity] Korean identity, SEO data and theme through declared inputs only
+  ok   X <html lang=ko-KR>, brand title, Korean description, list/detail canonicals on the demo origin, sitemap lists every page
+  ok   W theme = declared tokens only: every site token is consumed by the Template, resolves, and reaches the package stylesheet/markup
+  ok   Y every demo document is declared fictional (origin synthetic-fixture), never 'customer' or 'reference-fixture'
+
+[integration] throwaway-root builds (reproducibility, seat off)
+  ok   U reproducible: same release + snapshot + settings + theme + assets → same buildInputId (twice, and = current), and an independent rebuild gives the same packageHash
+  ok   P no CTA when the configuration disables it: site.floating-cta.enabled = false → no seat on ANY page, nothing else about the pages' count changes
+
+step6: 29 passed, 0 failed
+
+[price] Korean per-pyeong notation, display only
+  ok   F1 ko + KRW + pyeong → 평당 N만 원 (ko-KR and bare ko); exact 만 fractions stay exact
+  ok   F2 never rounds: an amount 만 cannot show exactly (or outside 1만–1억) stays in won
+  ok   F3 every other locale / currency / unit combination (and no locale) keeps the generic form
+
+[contract] additive patch
+  ok   S1 Template ≥ 1.4.1; the two arrow labels are optional portfolio.detail slots with neutral defaults (every 1.4.0 slots document stays valid)
+
+[release] 1.4.0 stays immutable, the demo moved by an explicit re-pin
+  ok   R1 the 1.4.0 release verifies and every file of it is byte-identical to the pre-cut capture; exactly one 1.4.0 and one 1.4.1 release dir
+  ok   R2 boost-interior-demo pins a verified release ≥ 1.4.1 and its current package was built with it (QA pass)
+
+[site data] nothing of the customer's moved except the pin and the two new labels
+  ok   D1 every demo site file is byte-identical to the pre-cut capture except site.json (pin only) and slots.json (+2 labels only)
+  ok   D2 51 / 51 raster assets: registry = 51 rasters, 0 SVG stand-ins, and every one is served byte-identical from the current package
+
+[package] the built demo pages
+  ok   P1 the flagship detail shows 평당 290만 원; no page shows the KRW … / 평 form
+  ok   P2 every multi-photo room has ONE previous + ONE next arrow (site labels, aria-controls its strip, previous disabled on the server HTML) and keeps its counter; single-photo rooms have neither
+
+10 passed, 0 failed
+
+[contract] additive patch
+  ok   S1 Template ≥ 1.4.2; three optional portfolio.detail labels with neutral defaults + one optional site.footer notice with NO default (every 1.4.1 slots document stays valid)
+
+[release] 1.4.0 and 1.4.1 stay immutable, the demo moved by an explicit re-pin
+  ok   R1 the 1.4.0 and 1.4.1 releases verify and every file of them is byte-identical to the pre-cut capture; exactly one 1.4.0, one 1.4.1 and one 1.4.2 release dir
+  ok   R2 boost-interior-demo pins a verified release ≥ 1.4.2 and its current package was built with it (QA pass); the 1.4.1 package is the rollback (previous)
+
+[site data] nothing of the customer's moved except the pin, three labels and the notice
+  ok   D1 every demo site file is byte-identical to the pre-cut capture except site.json (pin only) and slots.json (+3 detail labels, + the footer notice, nothing else)
+  ok   D2 51 / 51 raster assets: registry = 51 rasters, 0 SVG stand-ins, and every one is served byte-identical from the current package
+
+[package] the built pages
+  ok   G1 a gallery with more than one room opens on the "all" view: first tab, selected, site label, count = every photo; its seats are the rooms' seats in room order; rooms keep their ids 0..n-1, unselected and hidden; a one-room gallery has neither tabs nor an "all" view
+  ok   G2 every photo seat ends with ONE viewer button labelled «site label n / N: the photo's alt» for its own view; the viewer itself is client-only (no <dialog> in any page)
+  ok   N1 the footer notice: on EVERY demo page, once, the site's exact text, inside the footer after the business facts and before the floating CTA; a site without a value renders no notice element at all
+  ok   H1 stylesheet: no rule hides the home hero arrows at any width (the only arrow-less hero is the one-slide hero, which renders no controls at all)
+
+9 passed, 0 failed
+test exit=0

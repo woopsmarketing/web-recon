@@ -1,0 +1,196 @@
+Already up to date
+Done in 161ms using pnpm v11.21.0
+$ tsx scripts/smoke-content-injection.ts
+
+== fixture SiteSpec → REAL reconstruction → REAL template compile
+  PASS  template compiled
+  PASS  fixture yields review slots (16-sibling list)
+
+== Task 19.1 — paint-twin co-binding + svg-text (compile level)
+  PASS  19.1 manifest counts paint-twin + svg-text bindings
+  PASS  19.1.1 exact painted twin co-bound (2 static + 2 paint-twin, one slot)
+  PASS  19.1.2 aria-hidden decorative text stays excluded (no slot, no co-bind)
+  PASS  19.1.4a non-overlapping aria-hidden duplicate NOT co-bound (boxes apart)
+  PASS  19.1.8 DOM text + svg text of the same anchor = ONE slot, multi-binding
+  PASS  19.1.5 visible svg text (gradient-painted, mask-referenced defs ok) is a slot
+  PASS  19.1.6 hidden svg text + unreferenced defs text excluded
+  PASS  19.1 default content remains an exact no-op over ALL new binding types
+
+== §1/§2 content:prepare — intent schema + policy artifact
+  PASS  §1 raw intent preserved verbatim
+  PASS  §1 intent schema roundtrips (versioned)
+  PASS  §1 manifest records intent hash
+  PASS  §2 content policy loads as content-policy-v1
+  PASS  §2 policy matches the canonical constant
+
+== §3–§5/§7 deterministic content units
+  PASS  §3 hero unit exists
+  PASS  §3 hero unit groups headline + description slots
+  PASS  §4 CTA unit exists
+  PASS  §4 CTA unit holds label + href as one writing unit
+  PASS  §5 navigation units exist
+  PASS  §5 About nav item is one unit with label + href
+  PASS  §7 review slots listed, not turned into units
+  PASS  unit ids deterministic and 1-based
+
+== §8–§11 deterministic validator
+  PASS  §8 unknown slot key rejected (not silently ignored)
+  PASS  §9 HTML injection rejected
+  PASS  §10 javascript: URL rejected (case/obfuscation tolerant)
+  PASS  §11 needs-input accepted as a first-class state
+  PASS  review slot write rejected without opt-in
+
+== §6/§12 fake provider generation + ingest
+  PASS  §6 global footer slot appears in exactly one unit
+  PASS  §6 global slot generated once (one value for all bindings)
+  PASS  §12 image brief emitted without mutating the image value
+  PASS  generation result validates and becomes the overlay
+  PASS  overlay written with changed values
+  PASS  source-brand-leak warning on untouched default (image alt/src)
+  PASS  operator review generated
+  PASS  19.1 §13 engine-blocked slot reported as blocked-visible-source-content (blocker)
+  PASS  twin probe slot exists (visible copy slotted)
+
+== §13–§16/§20 live half: injected render + layout safety QA
+  [content:qa] building template app
+  [qa:template] next build (/Users/woops/projects/web-recon/data/.smoke-content-injection-97732/recon-templates/fixture-a/app)
+  [content:qa] layout / @390
+  [content:qa] layout / @1440
+  [content:qa] applied static / desktop (16)
+  [content:qa] applied static / mobile (16)
+  [content:qa] applied dynamic / desktop trigger n000013
+  [content:qa] interactions / @1440
+  [content:qa] interactions / @390
+  PASS  §16 layout QA passes with reference-shaped content
+  PASS  §13 static slot overlay applied (hero, desktop + mobile)
+  PASS  §14 dynamic-template overlay applied inside the mounted region
+  PASS  §15 multi-binding propagation (static ×2 + dynamic ×1 on scoped route)
+  PASS  §20 hydration errors 0 on injected render
+  PASS  runtime errors 0 on injected render
+  PASS  interaction regression equivalent (menu still opens)
+  PASS  screenshots captured (default + injected)
+
+== Task 19.1 — twin/svg mutation propagation + paint integrity (browser)
+  PASS  19.1.3 twin mutation propagates: visible AND paint-twin occurrences applied
+  PASS  19.1.3b synchronized twin passes the stale-twin detector (no desync)
+  PASS  19.1.4b far-section duplicate is a NON-FAILING remnant (mockup shape)
+  PASS  19.1.7/19.1.8 svg-text mutation applied on the co-bound anchor slot (4/4)
+  PASS  19.1.7 standalone svg text slot mutation applied (desktop + mobile)
+  PASS  19.1.9 svg paint unchanged after text mutation (gradient/fill/stroke/mask)
+  PASS  19.1.7b new svg text values actually render in the SVG layer
+  PASS  19.1.6b unreferenced defs text run untouched by injection
+
+== §17–§19 manual edit → overflow detection → bounded repair
+  PASS  badge slot exists
+  PASS  §19 manually edited slot-values revalidate (no LLM call)
+  PASS  §19 manual edits detected in manifest
+  [content:qa] building template app
+  [content:qa] layout / @390
+  [content:qa]   FAIL — unslotted duplicate text desync: home.main.text.twin-text-line; stale duplicate remnant (non-failing): global.footer.text.fixture-inc; changed slot content is clipped or overlaps a sibling
+  [content:qa] layout / @1440
+  [content:qa]   FAIL — unslotted duplicate text desync: home.main.text.twin-text-line; stale duplicate remnant (non-failing): global.footer.text.fixture-inc; changed slot content is clipped or overlaps a sibling
+  [content:qa] applied static / desktop (18)
+  [content:qa] applied static / mobile (18)
+  [content:qa] applied dynamic / desktop trigger n000013
+  [content:qa] interactions / @1440
+  [content:qa] interactions / @390
+  PASS  §17 intentional overflow makes layout QA FAIL
+  PASS  §17 clipping detected on the overflowing slot
+  PASS  §18 repair candidate identified with evidence
+  PASS  stale-twin desync detected deterministically (aria-hidden duplicate)
+  PASS  URL injection applied (cta href → /about, attribute binding)
+  PASS  §18 repair request carries evidence + constraints only
+  PASS  twin desync excluded from text-rewrite repair (revert is operator action)
+  PASS  repair stays inside its slot scope
+  PASS  repaired values revalidate
+  [content:qa] building template app
+  [content:qa] layout / @390
+  [content:qa] layout / @1440
+  [content:qa] applied static / desktop (17)
+  [content:qa] applied static / mobile (17)
+  [content:qa] applied dynamic / desktop trigger n000013
+  [content:qa] interactions / @1440
+  [content:qa] interactions / @390
+  PASS  §18 layout QA passes after ONE repair iteration (bound 2)
+  PASS  §19 unsafe manual edit rejected by revalidation
+
+== Task 27 §1 — deterministic batch execution
+  PASS  §1 request records the batch bound it was cut at
+  PASS  §1 no batch exceeds the bound
+  PASS  §1 global batch comes first (site-wide consistency before page passes)
+  PASS  §1 one generator CALL per batch — not one call for the whole site
+  PASS  §1 no call carried the whole unit set
+  PASS  §1 two executions are byte-identical (result + report)
+  PASS  §1 batched output equals the single-call output (batching changed nothing but the calls)
+  PASS  §1 16 units at bound 3 produce ceil(N/B) = 6 calls
+  PASS  §1 re-chunked execution still merges to the same slot values
+  PASS  §1 duplicate key across batches DETECTED (not silently merged)
+  PASS  §1 duplicate is not last-write-wins (first writer's value kept)
+  PASS  §1 a conflicting recombination FAILS the run
+
+== Task 27 §2/§3 — slot accounting (origin × disposition)
+  PASS  §2 slot-accounting.json is a SIBLING artifact of slot-values.json
+  PASS  §2 the in-scope population is unit slots ∪ review slots, with nothing dropped
+  PASS  §2 every entry carries exactly one origin and one disposition from the closed vocabularies
+  PASS  §2 totals reconcile: Σorigin == Σdisposition == in-scope slots, none double-counted
+  PASS  §3 review slots are their OWN ambiguous bucket, not folded into a success number
+  PASS  §3 the account states what it CANNOT see (template exclusions)
+  PASS  §2 slot-values.json stays a BARE { slotKey: value } map (format unchanged)
+
+== Task 27 §29 — content write doctrine at the point of edit
+  PASS  §29 the doctrine names the overlay DERIVED + NON-AUTHORITATIVE and gives the remedy
+  PASS  §29 the wording matches release:resolve — one operator message, not two dialects
+  PASS  §29 revalidateSlotValues' own doc says the value is DERIVED, not authoritative
+  PASS  §29 no manual edits → no warning (the doctrine is a signal, not noise)
+  PASS  §29 content:validate WARNS at the point of edit when manual edits are detected
+
+== Task 27 §4 — verified-only vs synthetic-allowed
+  PASS  §4 verified-only REFUSES an unsupported factual claim (leaves it UNRESOLVED)
+  PASS  §4 the same claim is KEPT when the user actually provided the fact
+  PASS  §4 synthetic-allowed KEEPS the invention and marks it synthetic
+  PASS  §4 generic marketing copy is NOT a factual claim in either mode
+  PASS  §4 synthetic value is recorded as origin `synthetic-fact` + disposition `applied`
+  PASS  §4 the run's truth mode is persisted on the manifest and the account
+  PASS  §4 verified-only is the DEFAULT: the claim lands as source-preserved/unresolved
+  PASS  §4 re-ingesting a HISTORICAL Task-19 result DEMOTES its fact-shaped values (a real behaviour change, not a no-op)
+  PASS  §4 the escape hatch is LOSSLESS: synthetic-allowed reproduces the Task 19 overlay byte-for-byte
+
+== Task 27 §6 (GED-D) — repair no-progress guard
+  PASS  GED-D reproduction: a micro-slot repair returns the value that already failed
+  PASS  GED-D stops at iteration 1 with a MACHINE-READABLE reason, before the bound
+  PASS  GED-D the stop record round-trips through its schema
+  PASS  GED-D a progressing repair is NOT stopped; an identical repeat IS
+  PASS  GED-D the failure signature is deterministic over the same evidence
+  PASS  GED-D `no-repair-candidates` distinguishes NEVER STARTED from stopped-after-N
+
+== Task 27 §7 — generation telemetry
+  PASS  §7 append-only JSONL: one line per call, all parse
+  PASS  §7 manual result file leaves usage ABSENT — not zero, not estimated
+  PASS  §7 a provider with no usage hook leaves `usage` off EVERY line — never zero-filled, never estimated
+  PASS  §7 a provider that reports usage has it recorded verbatim
+
+== Task 27 — RegionPlan layer
+  PASS  RegionPlan depends only on regionId / scope / slotKeys / pages
+  PASS  RegionPlan groups the hero unit under its region
+  PASS  RegionPlan reports units no region claimed, instead of inventing one
+  PASS  RegionPlan artifact records where its contract came from
+
+== template artifact immutability
+  PASS  template slots.json untouched by the whole content chain
+
+== Task 27 GED-F — source-brand SURFACE detection (detector only)
+  PASS  27.brand.1 SVG aria-label is detected (nothing detected it before)
+  PASS  27.brand.2 SVG <symbol id> is detected, camel humps included, non-brand ids ignored
+  PASS  27.brand.3 SVG <text>/<title> is detected on its own surface
+  PASS  27.brand.4 identifier matching splits camel humps; word matching does not over-match
+  PASS  27.brand.5 element props split into source-url / image-alt / aria-label
+  PASS  27.brand.6 body anchors carry the href, not just a count
+  PASS  27.brand.7 every declared surface has a policy row (no silent gap)
+  PASS  27.brand.8 GED-F neutralization DEFAULT is OFF (constant)
+  PASS  27.brand.9 a scan with NO option recorded neutralization disabled
+  PASS  27.brand.10 an EXPLICIT opt-in is recorded and still rewrites nothing
+  PASS  27.brand.11 the scan is a DETECTOR — every input byte and mtime is untouched
+  PASS  27.brand.12 the scan finds the SVG surfaces AND the shipping slot value
+  PASS  27.brand.13 an inline-SVG finding carries DOM identity from data-wr-node (no new attribute)
+
+128/128 checks passed

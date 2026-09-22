@@ -40,8 +40,21 @@ import {
  * orchestrator reads.
  */
 
-/** The in-scope population: everything `buildContentUnits` saw for the run. */
-export function inScopeSlotKeys(unitsFile: ContentUnitsFile): string[] {
+/**
+ * The in-scope population: everything `buildContentUnits` saw for the run,
+ * PLUS every slot Task-28 enablement disabled.
+ *
+ * The second half is the whole point. When a route is disabled it leaves the
+ * content scope, so the unit builder never sees its slots and they would fall
+ * out of the denominator entirely — "mysteriously absent", which is exactly
+ * the failure the accounting artifact was built to make impossible. Adding
+ * them back keeps the total honest: the slot is still counted, and its
+ * disposition says what happened to it.
+ */
+export function inScopeSlotKeys(
+  unitsFile: ContentUnitsFile,
+  disabledSlotKeys: readonly string[] = [],
+): string[] {
   const keys: string[] = [];
   const seen = new Set<string>();
   for (const unit of unitsFile.units) {
@@ -54,6 +67,11 @@ export function inScopeSlotKeys(unitsFile: ContentUnitsFile): string[] {
   // Review-flagged slots are in scope even when they were never opted in:
   // they are the honest ambiguity bucket, not an absence.
   for (const key of unitsFile.reviewSlotKeys) {
+    if (seen.has(key)) continue;
+    seen.add(key);
+    keys.push(key);
+  }
+  for (const key of disabledSlotKeys) {
     if (seen.has(key)) continue;
     seen.add(key);
     keys.push(key);
@@ -89,8 +107,27 @@ interface Classified {
   detail: string;
 }
 
-function classify(input: SlotAccountingInput, key: string, unitKeys: Set<string>): Classified {
+function classify(
+  input: SlotAccountingInput,
+  key: string,
+  unitKeys: Set<string>,
+  disabled: Map<string, { disposition: SlotDisposition; detail: string }>,
+): Classified {
   const { overlay, sources, template } = input;
+  // ENABLEMENT WINS (Task 28 Phases 5 + 6). A disabled slot does not render at
+  // all, so no value-based classification below can be true of it: it is not
+  // `applied` (nothing renders), not `preserved` (the source default does not
+  // render either) and above all not `unresolved` — leaving a deliberately
+  // deleted section demanding operator input would block a production build on
+  // work the operator already decided against.
+  const disabledEntry = disabled.get(key);
+  if (disabledEntry !== undefined) {
+    return {
+      origin: "source-preserved",
+      disposition: disabledEntry.disposition,
+      detail: disabledEntry.detail,
+    };
+  }
   const value = overlay[key];
   if (value !== undefined) {
     const declaredSource = sources[key];
@@ -137,7 +174,14 @@ export function buildSlotAccounting(input: SlotAccountingInput): SlotAccountingF
   const unitKeys = new Set<string>();
   for (const unit of unitsFile.units) for (const slot of unit.slots) unitKeys.add(slot.key);
 
-  const keys = inScopeSlotKeys(unitsFile);
+  const disabled = new Map<string, { disposition: SlotDisposition; detail: string }>();
+  for (const entry of manifest.enablement?.disabledSlots ?? []) {
+    // Only slots this TEMPLATE actually has: a stale key from an older
+    // enablement edit must not invent a row.
+    if (!template.slotByKey.has(entry.slotKey)) continue;
+    disabled.set(entry.slotKey, { disposition: entry.disposition, detail: entry.detail });
+  }
+  const keys = inScopeSlotKeys(unitsFile, [...disabled.keys()]);
   const entries: SlotAccountingEntry[] = [];
   const byOrigin: Record<string, number> = Object.fromEntries(SLOT_ORIGINS.map((o) => [o, 0]));
   const byDisposition: Record<string, number> = Object.fromEntries(SLOT_DISPOSITIONS.map((d) => [d, 0]));
@@ -152,7 +196,7 @@ export function buildSlotAccounting(input: SlotAccountingInput): SlotAccountingF
     seen.add(key);
     const slot = template.slotByKey.get(key);
     if (slot === undefined) continue;
-    const { origin, disposition, detail } = classify(input, key, unitKeys);
+    const { origin, disposition, detail } = classify(input, key, unitKeys, disabled);
     byOrigin[origin] = (byOrigin[origin] ?? 0) + 1;
     byDisposition[disposition] = (byDisposition[disposition] ?? 0) + 1;
     entries.push({
@@ -172,6 +216,24 @@ export function buildSlotAccounting(input: SlotAccountingInput): SlotAccountingF
   // produce: a key that fell out is a `missing` name, never a smaller total.
   const accounted = new Set(entries.map((entry) => entry.slotKey));
   const missing = keys.filter((key) => !accounted.has(key));
+
+  // THE DENOMINATOR IS DERIVED FROM THE TEMPLATE, NOT FROM ITSELF.
+  // `missing` above only says "a key I decided was in scope produced no row" —
+  // it cannot see a key the in-scope PREDICATE itself dropped. So the expected
+  // population is recomputed here straight from the template: every slot that
+  // is global or sits on a scoped route. `buildContentUnits` derives units from
+  // exactly that set (editable) plus `reviewSlotKeys` (review), so equality is
+  // a structural property of the engine — and any future narrowing of
+  // `inScopeSlotKeys()` shows up as NAMED unaccounted keys and a false
+  // `reconciled`, which src/release/stages.ts already treats as a blocker.
+  const scopedRouteSet = new Set(manifest.scopedRoutes);
+  const expectedKeys = template.slotsFile.slots
+    .filter((slot) => slot.scope === "global" || (slot.route !== undefined && scopedRouteSet.has(slot.route)))
+    .map((slot) => slot.key);
+  const unaccountedSlotKeys = expectedKeys.filter((key) => !accounted.has(key));
+  const expectedSet = new Set(expectedKeys);
+  const accountedOutsideScope = [...accounted].filter((key) => !expectedSet.has(key)).length;
+
   const originTotal = Object.values(byOrigin).reduce((a, b) => a + b, 0);
   const dispositionTotal = Object.values(byDisposition).reduce((a, b) => a + b, 0);
   const inScopeSlots = keys.length;
@@ -195,9 +257,17 @@ export function buildSlotAccounting(input: SlotAccountingInput): SlotAccountingF
       dispositionTotal,
       missing,
       doubleCounted,
+      templateCoverage: {
+        templateSlots: template.manifest.counts.slots,
+        scopedTemplateSlots: expectedKeys.length,
+        accountedOutsideScope,
+        unaccountedSlotKeys,
+        complete: unaccountedSlotKeys.length === 0,
+      },
       reconciled:
         missing.length === 0 &&
         doubleCounted.length === 0 &&
+        unaccountedSlotKeys.length === 0 &&
         originTotal === inScopeSlots &&
         dispositionTotal === inScopeSlots,
     },
