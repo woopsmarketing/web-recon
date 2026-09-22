@@ -1,6 +1,6 @@
 # 04 — BoostChat Requirement Disposition (producer 판정)
 
-- 날짜: 2026-09-21 (독립 리뷰 반영판 — `05` 의 F-01, F-05, F-06, F-16)
+- 날짜: 2026-09-21 (독립 리뷰 반영판 — `05` 의 F-01, F-05, F-06, F-16) · **2026-09-22 갱신**: owner 결정 기록(OD-1·OD-2) 추가 + freeze 이후 readiness matrix 갱신 (freeze 검토 `05` C-09 · C-14)
 - 대상: `boost-chat/docs/reports/integration/web-recon-consumer-requirements-v0.md` (+ `.json`) 의 **모든** MUST / SHOULD / MAY / 정보성 항목
 - 판정: `ACCEPT` · `ACCEPT_WITH_CHANGE` · `REJECT` · `DEFER` 중 하나
 - 집계: **85 항목 = ACCEPT 53 · ACCEPT_WITH_CHANGE 23 · REJECT 4 · DEFER 5** (판정표는 이 문서에만 있다. `03…json` 은 계약 규칙만 담는다)
@@ -34,7 +34,7 @@ consumer 요구를 그대로 복사하지 않았다. 바꾼 곳은 전부 **prod
 |---|---|---|---|---|---|---|
 | `schemaVersion` | MUST | 내부 관례는 정수 / `name@int` (major only) | ACCEPT | 통합 계약은 additive 진화가 필요하다. 내부 schema 버전과 **별개**로 둔다 | §14 | 상수 |
 | `site.id` | MUST | `siteId` — slug 형태, 디렉터리·R2 prefix 와 동일, 도메인과 무관 | ACCEPT | 안정적이다. 난수처럼 생기지 않았을 뿐. consumer 는 opaque 로 취급 | §7.1, §13 ID4 | 없음 |
-| `site.publicOrigin` | MUST | **schema 상 선택**, `http:` 도 허용. 데모는 placeholder. publish 가 hostname 과 대조하지 않는다 | ACCEPT_WITH_CHANGE | 통합의 **전제조건**으로 만든다: https `publicOrigin` 이 없으면 emit 하지 않는다. publish 에 host 일치 검사 추가 | §7.1, INV-11 | emitter gate + publish 검사(D-10) |
+| `site.publicOrigin` | MUST | **schema 상 선택**, `http:` 도 허용. 데모는 placeholder. publish 가 hostname 과 대조하지 않는다 | ACCEPT_WITH_CHANGE | 통합의 **전제조건**으로 만든다: https `publicOrigin` 이 없으면 emit 하지 않는다 → **정정(2026-09-22 freeze 검토)**: 통합을 켠 사이트의 public 빌드는 **실패**한다(`02` §4, INV-11 — 조용한 누락 금지). publish 에 host 일치 검사 추가(sitemap origin + 2026-09-22 부터 manifest origin) | §7.1, INV-11 | emitter gate + publish 검사(D-10) |
 | `resources.portfolio.href` | MUST | — | ACCEPT | root-relative 만 | §5 | |
 | `resources.portfolio.version` | MUST | per-collection hash 없음. canonical-JSON hash 도구 있음 | ACCEPT | projection 내용 hash | §15 | `hashJson` 재사용 |
 | `recordCount` | MAY | 세면 나온다 | **REJECT** | 능력을 더하지 않고 파일 간 불변식만 하나 늘린다 | — | — |
@@ -175,23 +175,25 @@ consumer 요구를 그대로 복사하지 않았다. 바꾼 곳은 전부 **prod
 ## FINAL READINESS MATRIX
 
 ```
-WEB_RECON_PRODUCER_CONTRACT_READY           = YES (candidate; human approval pending)
+WEB_RECON_PRODUCER_CONTRACT_READY           = YES — Contract V0 FROZEN 2026-09-22 (OD-1 approved; see the decision record below)
 
 CORE_MANIFEST_READY                         = YES
-PORTFOLIO_RESOURCE_CONTRACT_READY           = YES (12 confirmation items R-1…R-12 open with the consumer)
+PORTFOLIO_RESOURCE_CONTRACT_READY           = YES — R-1…R-12 answered by the consumer 2026-09-22:
+                                                10 ACCEPT · 2 ACCEPT_WITH_CHANGE (R-10, R-11) · 0 REJECT · 0 DEFER;
+                                                the 4 requested wording changes (CH-R10, CH-R11a/b/c) are in 02
 
 CURRENT_PROJECT_SCHEMA_CHANGE_REQUIRED_FOR_V0 = NO
-CURRENT_SITE_DATA_CHANGE_REQUIRED_FOR_V0      = DEPENDS ON OD-2
-                                                OD-2(a) opt-in  → YES, small: one additive site-level field + one line in the demo site.json
-                                                OD-2(b) default → NO
-                                                either way, before live E2E: a real https publicOrigin (the demo value is a placeholder)
+CURRENT_SITE_DATA_CHANGE_REQUIRED_FOR_V0      = YES, small — OD-2(a) opt-in decided 2026-09-22:
+                                                one additive site-level field + one line in the demo site.json
+                                                before live E2E: a real https publicOrigin (the demo value is a placeholder)
                                                 project records themselves: NO change
 
 AREA_SEARCH_READY                           = YES (8/8, pyeong/supply, authored units)
 CATEGORY_SEARCH_READY                       = YES (closed taxonomy id+label, 8/8)
 STYLE_SEARCH_READY                          = PARTIAL (no style field; served as open-world `tag` facet; tagging incomplete)
 SCOPE_SEARCH_READY                          = DEMO: YES_AFTER_CONSUMER_NORMALIZATION / REAL SCALE: AT RISK
-                                                (free-text, mixed granularity; 20 distinct values in 8 records vs consumer cap 40 → R-10, OD-5)
+                                                (free-text, mixed granularity; 20 distinct values in 8 records vs the consumer cap
+                                                 `scope` 150, provisional — R-10 answered "raisable", CH-R10 in 02 §11.1 VO6; OD-5)
 PRICE_SEARCH_READY                          = PARTIAL (6/8; per-area only; no basis, no inclusion scope; same-category comparison only)
 TOTAL_BUDGET_MATCH_READY                    = NO (no total cost field; suitability claims forbidden by BU3)
 PROPERTY_TYPE_SEARCH_READY                  = NO (no source fact; never inferred)
@@ -219,11 +221,15 @@ SITE_PLATFORM_REQUIRED_FOR_V0               = NO
 BOOSTWEB_REQUIRED_FOR_V0                    = NO
 RUNTIME_API_REQUIRED_FOR_V0                 = NO
 
-BLOCKERS_BEFORE_IMPLEMENTATION              = 0 technical. Gate = human approval of this candidate + OD-2 + consumer answers to R-1…R-12
-INDEPENDENT_REVIEW                          = 1 BLOCKER + 7 MAJOR + 8 MINOR + 2 NOTE, all resolved in the documents (05); no finding required code
-OWNER_DECISIONS_REQUIRED                    = 5 (see below)
+BLOCKERS_BEFORE_IMPLEMENTATION              = 0 technical. The gate is closed (2026-09-22): OD-1 approved + OD-2 = (a)
+                                                + consumer answers to R-1…R-12 received → Contract V0 frozen
+INDEPENDENT_REVIEW                          = 2026-09-21 candidate review: 1 BLOCKER + 7 MAJOR + 8 MINOR + 2 NOTE, all resolved in the documents; no finding required code
+                                                2026-09-22 freeze review (`docs/result/first-party-integration-producer/05-review-contract.md`):
+                                                1 BLOCKER + 8 MAJOR + minors, all dispositioned as prose clarifications in 02/03 (marked `freeze 검토 2026-09-22`)
+OWNER_DECISIONS_REQUIRED                    = 5 (OD-1·OD-2 decided 2026-09-22 — see the decision record below; OD-3·OD-4·OD-5 still open)
 
-RECOMMENDED_NEXT_STEP                       = Owner reviews 02 (normative) → decides OD-1/OD-2 → send 04 (R-1…R-12) to the consumer team → freeze Contract V0 → Phase A (web-recon emitter) per 06
+RECOMMENDED_NEXT_STEP                       = BoostChat Phase B, implemented against the frozen 02 and the golden output recorded in
+                                                `docs/result/first-party-integration-producer/` (03-golden-build.md, 04-verification.md, proof/)
 ```
 
 ## OWNER DECISIONS
@@ -237,6 +243,31 @@ RECOMMENDED_NEXT_STEP                       = Owner reviews 02 (normative) → d
 | OD-3 | live E2E 에 쓸 **실제 public origin/hostname** | 데모 전용 도메인 / 고객 도메인 | 데모 전용 도메인 먼저 | 도메인 없이는 HT1·HT5 검증과 위젯 origin 등록이 불가 | Phase D 전 |
 | OD-4 | 실제 고객을 위해 **가격 모델을 보강**할 것인가 (`totalCost`, 포함 범위, price basis) | 지금 / 첫 고객 데이터 본 뒤 / 안 함 | 첫 고객 데이터 본 뒤 | 지금 하면 synthetic 가정 위에 schema 를 짓게 된다. 미루면 예산 상담은 "평당가 참고"에 머문다 | 아니오 |
 | OD-5 | **관리되는 vocabulary**(style·propertyType·scope 계층)를 content model 에 넣을 시점 | 지금 / Template 2·첫 고객 이후 | 이후 — 단 **R-10 회신이 "상한 고정"이면 첫 실제 고객 전으로 당긴다** | 자유 입력 `scope`/`tag` 는 사례가 늘면 40종을 넘고(데모 8건에 scope 20종) 다국어에서 깨진다. 그러나 지금 설계하면 데모 8건에 맞춘 taxonomy 가 된다 | 아니오 (R-10 회신 뒤 재판단) |
+
+## OWNER DECISIONS — 결정 기록 (2026-09-22)
+
+위 표는 **질문과 권고**다. 아래가 실제 **결정**이다. `02` 머리말과 `02` §18 SE6 이 인용하는 곳이 여기다. (freeze 검토 2026-09-22, `05` C-09 · C-14 — 이 기록이 없어 freeze 의 증거 사슬이 끊겨 있었다.)
+
+| # | 결정 | 일자 | 결정자 | 출처 |
+|---|---|---|---|---|
+| **OD-1** | **승인** — 이 후보를 Contract V0 로 승인하고 consumer 팀에 R-1…R-12 를 보낸다 | 2026-09-22 | owner | master task prompt |
+| **OD-2** | **(a) 사이트별 opt-in, 기본 off.** 현재 통합을 켠 사이트 = **`boost-interior-demo` 하나뿐**. fixture 사이트는 off | 2026-09-22 | owner | master task prompt (`docs/result/first-party-integration-producer/01-contract-freeze.md` 에도 같은 결정이 기록돼 있다) |
+| OD-3 · OD-4 · OD-5 | **미결.** 위 표의 "Need now?" 대로 OD-3 은 Phase D 전, OD-4·OD-5 는 첫 실제 고객 데이터 뒤에 판단한다 | — | — | — |
+
+OD-2 와 함께 owner 가 내린 데이터 판단(계약 문구로 이미 들어가 있다):
+
+| 판단 | 계약 반영 |
+|---|---|
+| 데모의 "34평"은 **공급면적 기준**이다 | `02` §9 AR2 (`basis: "supply"`), §21.2 예시 |
+| producer 는 **저장된 basis 를 그대로 emit** 한다. 변환하지 않는다 | `02` AR3 · AR5 · INV-10 |
+| **전용면적 문제**(공급↔전용 차이를 방문자에게 어떻게 설명할 것인가)는 BoostChat **상담 layer 의 미래 과제**다. V0 producer 는 관여하지 않는다 | `02` AR5(어느 쪽도 환산하지 않는다) · `05`/`06` 밖 |
+| 없는 값 = **필드 생략** | `02` MD1 · INV-9 |
+| 확인된 없음 = **`[]`** (V0 producer 는 `records` 외에 쓸 자리가 없다) | `02` MD3 |
+| **`null` placeholder 금지** | `02` MD1 · MD2 · INV-9 |
+| **가짜 데이터 금지** (추정·보간·합성 금지) | `02` ND1 · MD6 |
+| **총 공사비 생성 금지** (`amount × area.value`) | `02` PR5 · BU3 |
+
+**pre-freeze 수치에 대한 주의.** 이 문서의 §A · R-9 · R-10 · CRITICAL FINAL QUESTION 조건 2 · onboarding checklist 는 consumer 회신 **이전**의 질문·판정이므로 "facet 당 40"·"5s·64 KiB 는 계약에 넣지 않는다" 같은 당시 값을 그대로 담고 있다. 회신(2026-09-22) 이후의 유효한 값은 **CH-R10** 이고 `02` §11.1 VO6 · §24 에 있다: manifest 64 KiB · 문서 1 MiB · record 1,000 · `category` 50 · `scope` 150 · `tag` 150(전부 잠정). 질문 기록은 역사로 남기고, **현재 값은 `02` 가 정본**이다.
 
 ## V0 vs future data model (§49)
 

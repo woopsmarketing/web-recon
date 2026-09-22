@@ -30,8 +30,10 @@ import { SiteInstanceSchema, SiteSnapshotSchema, type BuildMode, type SiteSnapsh
  *   content/reviews.json    OPTIONAL Interior collection (1.3.0+ Templates)
  *   content/banners.json    OPTIONAL, PROVISIONAL hero slides (1.3.0+ Templates)
  *   assets/registry.json    customer-owned media registry (+ files)
+ *   integration.json        OPTIONAL builder input (NOT part of the snapshot): first-party
+ *                           integration opt-in — read by platform/integration/config.ts
  *
- * This module is the ONLY place that knows those paths. It turns them into a
+ * This module is the ONLY place that knows the snapshot paths. It turns them into a
  * canonical SiteSnapshot for one (mode, at). siteId partitions everything.
  */
 

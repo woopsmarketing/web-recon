@@ -29,6 +29,7 @@ import { loadRelease, verifyRelease } from "../release/release";
 import { resolveEffectiveSettings } from "../settings/settings";
 import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
+import { isIntegrationSurface } from "./integration-surface";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -179,8 +180,8 @@ await check("R2 the 1.5.2 release = the 1.5.1 release except exactly the five de
   eq(Object.keys(b).filter((f) => !(f in a)), ADDED_TEMPLATE_FILES, "added files");
   eq(Object.keys(b).filter((f) => f in a && a[f] !== b[f]), CHANGED_TEMPLATE_FILES, "changed files");
   const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/"));
-  eq(Object.keys(before.platformFiles).filter((f) => now[f] !== before.platformFiles[f]), [], "platform files changed");
-  eq(Object.keys(now).filter((f) => !(f in before.platformFiles)), [], "platform files added");
+  eq(Object.keys(before.platformFiles).filter((f) => now[f] !== before.platformFiles[f] && !isIntegrationSurface(f)), [], "platform files changed");
+  eq(Object.keys(now).filter((f) => !(f in before.platformFiles) && !isIntegrationSurface(f)), [], "platform files added");
 });
 await check("R3 the demo pins a verified release ≥ 1.5.2 and its current package was built with it (QA pass), rollback = the pre-cut package; every fixture's current package was built with the fixture's OWN verified pin — a fixture the cut did not re-pin still serves its pre-cut package (pointers untouched, nothing rotated away)", async () => {
   assert(versionAtLeast(pin.templateVersion, "1.5.2"), pin.templateVersion);
@@ -194,8 +195,16 @@ await check("R3 the demo pins a verified release ≥ 1.5.2 and its current packa
     if (s === DEMO) {
       if (!atCut) continue; // a later re-pin rotates the rollback pointer: theirs to assert
       const previous = await readJson(path.join(repoRoot, "data/site-builds", s, "previous.json"));
-      eq(previous.buildInputId, before.currentPointer.buildInputId, `${s}: previous = the package current before the cut`);
-      eq((await readJson(path.join(repoRoot, previous.packageDir, "build-record.json"))).template.releaseId, RELEASE_151, `${s}: rollback package release`);
+      if (previous.buildInputId !== before.currentPointer.buildInputId) {
+        // a later build of the SAME pin rotated the rollback pointer: which package is the rollback is that later work's to assert (integration.test.ts G4)
+        const history = (await readFile(path.join(repoRoot, "data/site-builds", s, "history.jsonl"), "utf8")).trim().split("\n").map((l) => JSON.parse(l) as { buildInputId: string; status: string });
+        assert(history.some((h) => h.buildInputId === before.currentPointer.buildInputId && h.status === "success"), `${s}: history has no successful build of the pre-cut package`);
+        const prevRecord = await readJson(path.join(repoRoot, previous.packageDir, "build-record.json"));
+        eq([rec.template.releaseId, prevRecord.template.releaseId], [sp.releaseId, sp.releaseId], `${s}: current + rollback package release = the pin`);
+      } else {
+        eq(previous.buildInputId, before.currentPointer.buildInputId, `${s}: previous = the package current before the cut`);
+        eq((await readJson(path.join(repoRoot, previous.packageDir, "build-record.json"))).template.releaseId, RELEASE_151, `${s}: rollback package release`);
+      }
     } else if (await keptPin(s)) {
       eq((await readJson(path.join(repoRoot, "data/site-builds", s, "current.json"))).buildInputId, before.fixturePointers[s].buildInputId, `${s}: current = the pre-cut package`);
     }
@@ -211,9 +220,14 @@ console.log("\n[site data] only the pin, the public origin, the address and the 
 await check("D1 every demo site file is byte-identical to the pre-cut capture except site.json (pin + publicOrigin), settings.json (+ site.seo noindex), content/business.json (contact.email) and slots.json (exactly the two {email} sentences re-worded)", async () => {
   if (!atCut) return;
   const files = await walkFiles(demoDir);
-  eq(files, Object.keys(before.siteFiles).sort(), "file list");
+  // integration.json (the site's first-party integration opt-in) is a builder input outside this
+  // snapshot, added after the capture — asserted by integration.test.ts B2
+  eq(files.filter((f) => f !== "integration.json"), Object.keys(before.siteFiles).sort(), "file list");
   const changed = [];
-  for (const f of files) if (sha256(await readFile(path.join(demoDir, f))) !== before.siteFiles[f]) changed.push(f);
+  for (const f of files) {
+    if (f === "integration.json") continue;
+    if (sha256(await readFile(path.join(demoDir, f))) !== before.siteFiles[f]) changed.push(f);
+  }
   eq(changed.sort(), ["content/business.json", "settings.json", "site.json", "slots.json"], "changed files");
   const slots = await readJson(path.join(demoDir, "slots.json"));
   const want = structuredClone(before.slotsJson);
@@ -267,6 +281,10 @@ await check("P2 the 404 page: noindex (exactly the framework's tag + the site's)
   }
 });
 await check("P3 robots.txt allows the crawl (the noindex must be readable) and names the origin's sitemap; every sitemap <loc> is on the public origin; the page set, sitemap paths and robots.txt equal the 1.5.1 package's with only the origin moved", async () => {
+  if (!(await readdir(path.join(repoRoot, before.currentPointer.packageDir, "site")).catch(() => null))) {
+    console.log("       skipped: the pre-cut 1.5.1 package was pruned by a later build of the demo (keep-2); this proof stands at the cut commit");
+    return;
+  }
   const robots = await readFile(path.join(pkg, "site/robots.txt"), "utf8");
   eq(robots, `User-Agent: *\nAllow: /\n\nSitemap: ${ORIGIN}/sitemap.xml\n`, "robots.txt");
   const sitemap = await readFile(path.join(pkg, "site/sitemap.xml"), "utf8");
@@ -280,6 +298,10 @@ await check("P3 robots.txt allows the crawl (the noindex must be readable) and n
   eq(robots, (await readFile(path.join(prevDir, "site/robots.txt"), "utf8")).replaceAll(oldOrigin, ORIGIN), "robots.txt");
 });
 await check("P4 the <body> did not move: every page's header, <main> and footer equal the 1.5.1 package's with only the address changed", async () => {
+  if (!(await readdir(path.join(repoRoot, before.currentPointer.packageDir, "site")).catch(() => null))) {
+    console.log("       skipped: the pre-cut 1.5.1 package was pruned by a later build of the demo (keep-2); this proof stands at the cut commit");
+    return;
+  }
   if (!atCut) return;
   const prev = await pagesOf(path.join(repoRoot, before.currentPointer.packageDir));
   const oldEmail = before.businessJson.data.contact.email as string;

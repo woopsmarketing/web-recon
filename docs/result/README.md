@@ -29,6 +29,7 @@ reusing any decision found below.** Do not read this directory sequentially. Ope
 | **`recon-template-platform-architecture-acceptance/`** | Acceptance record + modifications + next sequence | **ACCEPTED WITH MODIFICATIONS** |
 | `apartmentary-comprehensive-observation/` | Step 2 observation pass: route/nav map, page families, public JSON contracts, responsive/interaction evidence, list/detail faithful clones (`00`–`12`) | COMPLETE (named non-blocking exceptions) |
 | `static-deployment-foundation/` | Track B: interior-01 1.5.1, `site:publish`, `workers/recon-runtime`, local R2 e2e, live deploy plan, independent review (`00`–`09`; `_session1/` = first-session records) | LOCAL PASS, not deployed (2026-09-21; addendum §13 2026-09-22) |
+| **`first-party-integration-producer/`** | Contract V0 freeze (consumer CH-R10/CH-R11a/b/c, `../reports/integration/02`→`03`), static `/_integration/` producer (`platform/integration/**`), golden package from the real demo portfolio, build identity / live-package proofs, two independent reviews + fixes (`00`–`07`, `proof/`) | **COMPLETE (2026-09-22), committed on `track-b/static-deployment-foundation`; not published** |
 | **`foundation-consolidation/`** | One authoritative worktree: tree comparison, source map, `.gitignore` + checkpoint prep, full local re-verification, known next items (`00`–`05`). Track A's contract candidate lives in `../reports/integration/` | **COMPLETE (2026-09-22), uncommitted** |
 
 ## B. Earlier reconstruction work (Tasks 01–29.1)

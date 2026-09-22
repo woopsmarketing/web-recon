@@ -23,6 +23,7 @@ import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
 import { IA_HTML, IA_PATHS } from "./canonical-150";
 import { sitemapIaPaths } from "./canonical-151";
+import { isIntegrationSurface } from "./integration-surface";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -143,9 +144,11 @@ await check("R2 the 1.5.1 release = the 1.5.0 release except exactly the seven d
   eq(Object.keys(b), Object.keys(a), "same file list");
   eq(Object.keys(b).filter((f) => a[f] !== b[f]), CHANGED_TEMPLATE_FILES, "changed files");
   // platform/ outside test/: nothing captured before the 1.5.1 work changed (files added since by other
-  // work — e.g. platform/publish — are outside the release's runtime dirs, as the file list above shows)
+  // work — e.g. platform/publish, or the later first-party integration producer (platform/integration/**
+  // + the builder seam, isIntegrationSurface) — are outside the release's runtime dirs, as the file list
+  // above shows)
   const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/"));
-  const changed = Object.keys(before.platformFiles).filter((f) => now[f] !== before.platformFiles[f]);
+  const changed = Object.keys(before.platformFiles).filter((f) => now[f] !== before.platformFiles[f] && !isIntegrationSurface(f));
   eq(changed, [], "platform files changed");
 });
 await check("R3 boost-interior-demo pins a verified release ≥ 1.5.1 and its current package was built with it (QA pass); at the 1.5.1 pin, the 1.5.0 package is the rollback (previous)", async () => {

@@ -1,8 +1,12 @@
 # 02 — Integration Contract V0 Candidate (web-recon producer ⇄ first-party data consumer)
 
-- 날짜: 2026-09-21 (독립 리뷰 반영판 — `05` 의 F-01…F-18)
-- 상태: **CANDIDATE.** 사람이 리뷰·승인하기 전에는 어느 쪽도 구현하지 않는다. 승인되면 이 문서가 그대로 `schemaVersion "0.1"` 의 계약이 된다(이름·번호를 바꾸지 않는다).
+- 날짜: 2026-09-21 (독립 리뷰 반영판 — `05` 의 F-01…F-18) · **freeze 2026-09-22**
+- 상태: **FROZEN — Integration Contract V0 (`schemaVersion "0.1"`).** 2026-09-21 의 CANDIDATE 가 그대로 계약이 되었다(이름·번호를 바꾸지 않는다). freeze 근거:
+  - owner 결정 OD-1 승인, OD-2 = **(a) 사이트별 opt-in, 기본 off** (`04` 결정 기록 2026-09-22).
+  - consumer(BoostChat) 확인 2026-09-22 (`/Users/woops/projects/boost-chat/docs/reports/integration/web-recon-contract-v0-consumer-confirmation.md`): **R-1…R-9, R-12 ACCEPT · R-10, R-11 ACCEPT_WITH_CHANGE · REJECT 0 · DEFER 0.** 요청된 문구 변경 4건 **CH-R10**(§11.1 VO6, §24), **CH-R11a · CH-R11b · CH-R11c**(§3.2)을 consumer 원문 그대로 반영했다. 전부 non-breaking 이며 schema·필드·major 는 바뀌지 않았다. CH-R11a("연속"의 의미 확정)는 producer 동의가 필요한 항목이었고, 이 freeze 로 producer 가 **동의**했다.
+  - 이 네 건 외의 규칙은 2026-09-21 판과 같다. 구현 상태(emitter, gate, golden output)는 계약이 아니라 `docs/result/first-party-integration-producer/` 에 기록한다.
 - **이 문서가 규범(normative)이다.** `03-integration-contract-v0-candidate.json` 은 이 문서에서 파생한 machine-readable 판이다. 둘이 다르면 **이 문서가 우선**하고, 차이 자체가 고쳐야 할 결함이다.
+- **산문 명확화**(규칙의 빈칸을 메우는 문장)는 이 문서를 고치고 `03` 을 다시 파생한 뒤 consumer 에 통보하는 것으로 반영하며, `schemaVersion` 은 바뀌지 않는다. 필드·enum·의미를 바꾸는 변경은 §14 의 버전 규칙을 따른다. (freeze 검토 2026-09-22, `05` C-10) 이 판에는 freeze 당일의 독립 검토(`docs/result/first-party-integration-producer/05-review-contract.md`)에서 나온 명확화가 들어 있고, 각 문장에 (freeze 검토 2026-09-22, `05` C-nn) 표시가 붙어 있다. 전부 non-breaking 이며 필드·enum·`schemaVersion` 을 바꾸지 않는다.
 - 근거: `01-web-recon-producer-review-v0.md` (producer 실제 코드·데이터), `04-boostchat-requirement-disposition.md` (consumer 요구 판정)
 - 표기: **MUST / SHOULD / MAY** 는 규범 수준. `P:` = producer 의무, `C:` = consumer 의무.
 
@@ -57,12 +61,31 @@
 |---|---|---|
 | `200` + 유효한 manifest + `resources.<kind>` 있음 + document 가 echo 검사(§15) 통과 | **ON** | 새 데이터 적용 |
 | `200` + 유효한 manifest, `resources` 에 그 kind **없음** | **CONFIRMED OFF** (그 resource) | 그 resource 의 보유 데이터를 **즉시 버린다** |
-| manifest URL 이 **연속 2회** 확인 주기에서 `404` (body 무관) | **CONFIRMED OFF** (통합 전체) | 보유 데이터를 **버린다.** 오류가 아니라 "이 사이트는 통합을 끔/내림" |
-| `5xx`, timeout, 연결 실패, JSON 아님, 모르는 major(§14), echo 불일치, document `404` | **TRANSIENT** | 새 데이터를 적용하지 않고 **마지막 성공 데이터를 유지**한다 |
+| manifest URL 이 **연속 2회** 확인 주기에서 `404` (body 무관) — "연속"의 정의는 아래 CH-R11a | **CONFIRMED OFF** (통합 전체) | 보유 데이터를 **버린다.** 오류가 아니라 "이 사이트는 통합을 끔/내림" |
+| manifest `3xx`(HT1 위반), `404` 가 아닌 `4xx`, `5xx`, timeout, 연결 실패, JSON 아님, 모르는 major(§14), echo 불일치, document `404`, **origin 불일치**(§5), **`site.id` 변경**(ID4) — 뒤의 둘은 (freeze 검토 2026-09-22, `05` C-12·C-20) | **TRANSIENT** | 새 데이터를 적용하지 않고 **마지막 성공 데이터를 유지**한다 |
 
 - `C: MUST` 마지막 성공 데이터의 **최대 수명을 둔다.** 값은 consumer 소유다(현재 제시값 72시간). 수명이 지나면 그 사이트의 검색을 중단한다.
 - 왜 `404` 가 1회가 아니라 2회인가: 활성화 전환 순간의 1회성 `404` 와 "껐다"를 구분하기 위해서다.
 - 왜 `404` 는 last-good 을 유지하지 않는가: 사이트가 통합을 끄거나 동의를 철회했을 때 72시간 동안 계속 추천되는 것을 막기 위해서다.
+
+**"유효한 manifest / 유효한 document" 의 정의 — 위반은 세 수준으로 갈린다** (freeze 검토 2026-09-22, `05` C-01). 위 표의 "유효한"은 다음을 뜻한다. 이 세 수준은 consumer 가 이미 선언한 validator 동작(확인 문서 §15.4 U5 "**record 단위 폐기**", §13.1 행 T "`200` 이지만 무효(모르는 major · origin 불일치 · `site.id` 변경 · 형식 오류) … last-good 유지")과 이 계약 §19 가 같은 것을 말하도록 고정한다.
+
+| 수준 | 위반 | `C:` 동작 |
+|---|---|---|
+| (a) **문서 수준 불변식** | manifest 가 §5·§7.1 의 필수 필드·형식을 어김 · `site.id` 가 등록된 값과 다름(ID4) · `site.publicOrigin` 이 등록 origin 과 불일치(§5) · 모르는 major(§14) · document 의 `resource` ≠ manifest 의 key(§3.3) · `schemaVersion` 형식 오류 · `records` 가 없거나 배열이 아님 · VO1 닫힘 위반 | `C: MUST` **그 문서를 통째로 거부한다 = TRANSIENT**(문서 전체 거부, last-good 유지). 일부만 잘라 쓰지 않는다. manifest 의 위반이면 manifest 를, resource document 의 위반이면 그 document 를 거부한다 |
+| (b) **record 수준 결함** | `id`·`title`·`detailUrl` 이 없음 · 형식 위반 · 길이 상한 초과(§7.2·§7.3) · `detailUrl` 의 UR2 위반 · HT7 금지 문자 · `area`·`pricePerArea` 의 형식 위반(§9·§10) | `C:` **그 record 만** 버린다(§19 의 기존 문장과 같다). 문서의 나머지는 그대로 쓴다 |
+| (c) **모르는 값** | 모르는 enum 값(`unit`·`basis`·`perUnit`·`currency`) · 모르는 facet key · 모르는 최상위 필드·record 필드·resource kind | 그 **값만** 모름으로 둔다. record 도 문서도 버리지 않는다(§19, AR6, PR6, VO4) |
+
+consumer 확인(2026-09-22, R-11 ACCEPT_WITH_CHANGE)에서 요청되어 반영한 문구. 셋 다 non-breaking 이다. CH-R11a 는 "연속"의 **의미를 정하는** 변경으로 producer 가 동의했다.
+
+| # | 규칙 |
+|---|---|
+| **CH-R11a** | `404` 카운터는 **manifest HTTP `200` 관찰**(유효성 무관)에서만 0 으로 돌아간다. `404` 도 `200` 도 아닌 관찰(3xx·다른 4xx·5xx·timeout·연결 실패)은 카운터를 올리지도 내리지도 않는다. 두 `404` 는 서로 다른 확인 주기여야 한다 |
+| **CH-R11b** | manifest 의 3xx(HT1 위반)와 404 를 뺀 4xx(401/403/410/429 …)는 TRANSIENT 다. OFF 판정에는 404 만 쓴다. **`P: MUST` 통합을 끈 사이트의 manifest 경로는 `404` 로 응답한다(`403` 이 아니다)** — 저장소가 없는 객체에 403 을 주는 serving 구성에서는 "껐다"가 영영 감지되지 않고 72시간 만료로만 드러나기 때문이다 |
+| **CH-R11c** | 확인 주기 최소 간격은 consumer 선언값이다(현재 10분). 최대 수명(72시간)과 함께 VO6 형식으로 선언한다 |
+
+- 첫 `404` 에서 검색을 일시 중단하는 것(consumer 내부 상태 SUSPECT)은 consumer 내부 규칙이다. 이 계약은 그것을 요구하지도 금지하지도 않는다.
+- **확인 주기의 최대 간격(= 전파 상한)도 같은 VO6 형식의 consumer 선언값이다** (freeze 검토 2026-09-22, `05` C-02). 현재 선언값은 **10분**이다 — consumer 확인 문서 §13.1 의 "갱신" 항목이 "enabled `first_party_static` 행마다 **10분 간격으로 돈다**"고 밝힌 값을 그대로 기록한 것이며, 새 의무가 아니라 **이미 선언된 동작의 기록**이다. §17 PC5·PC7 의 "다음 성공 주기"는 이 상한 안에 있다. 이 값을 바꾸는 절차는 VO6 의 선언값 변경 절차와 같다(consumer 가 바꾸고 producer 에 통보한다. 계약 버전은 바뀌지 않는다).
 
 ### 3.3 Resource document 공통 envelope
 
@@ -108,6 +131,8 @@ portfolio = 사이트가 공개한 작업 사례(record)의 목록. record 는 *
 
 - `C: MUST` 모르는 resource kind, 모르는 최상위 필드는 무시한다.
 - `C: MUST` `site.publicOrigin` 이 **자신이 등록해 둔 origin 과 다르면 manifest 를 거부**한다(TRANSIENT 로 취급). manifest 안의 값으로 등록 origin 을 덮어쓰지 않는다.
+- 이 비교는 **WHATWG URL 의 `origin` 직렬화 기준**이다(문자열을 그대로 비교하지 않는다): host 는 소문자, 기본 port `443` 은 생략, IDN 은 ASCII/punycode 형태. 따라서 `https://Example.com` · `https://example.com:443` 은 `https://example.com` 과 **같은 origin** 이고, `https://한글.kr` 은 `https://xn--bj0bj06e.kr` 과 같은 origin 이다. `P: SHOULD` producer 는 `site.publicOrigin` 을 그 **정규 직렬화 형태**로 낸다. (freeze 검토 2026-09-22, `05` C-04 — consumer 확인 §14 R12-3 의 "비필수 제안: producer 가 ASCII 직렬화 형태로 내면(SHOULD) 더 좋다" 를 채택했다. 이 producer 의 emitter validator 는 `new URL(origin).origin === origin` 동일성을 이미 강제한다.)
+- `site.publicOrigin` 의 형식은 §7.1 이 정한다: V0 에서는 **명시적 port 를 쓰지 않는다**(기본 443 만).
 - manifest 에 **넣지 않는 것**: vocabulary, 단위 defaults, 목록 URL, record 수, 생성 시각, build/package/template 식별자, operation 목록, JSON Schema.
 
 ## 6. Index schema (portfolio resource document)
@@ -141,6 +166,7 @@ portfolio = 사이트가 공개한 작업 사례(record)의 목록. record 는 *
 | 대상 | 규칙 |
 |---|---|
 | `records` 순서 | `id` 의 Unicode code point 오름차순 |
+| `facets` 맵의 key 순서 | key 문자열의 Unicode code point 오름차순 (freeze 검토 2026-09-22, `05` C-17 — INV-1 의 "byte 단위로 같은 문서"에 남아 있던 자유도를 없앤다) |
 | `facets.<key>.values` 순서 | `id` 의 Unicode code point 오름차순 |
 | record 의 `facets.<key>` 배열 | **원본에 입력된 순서 그대로.** 같은 값이 두 번 있으면 **첫 번째만** 남긴다 |
 | 문자열 | 원본 그대로(정규화·trim·대소문자 변환 없음). `C:` 는 code point 단위로 비교한다 |
@@ -156,7 +182,7 @@ portfolio = 사이트가 공개한 작업 사례(record)의 목록. record 는 *
 | `schemaVersion` | MUST | `"<major>.<minor>"` | |
 | `site` | MUST | object | |
 | `site.id` | MUST | string, `^[a-z0-9]+(?:-[a-z0-9]+)*$`, ≤ 64 | consumer 는 opaque 로 취급 |
-| `site.publicOrigin` | MUST | `https://host[:port]` | path·query·credentials 없음 |
+| `site.publicOrigin` | MUST | `https://host` | path·query·credentials 없음. **V0 에서는 명시적 port 를 쓰지 않는다(기본 443 만)** — consumer 의 등록 규칙 R12-1(명시적 port 불가)과 일치시킨 것이다. 명시적 port 가 필요한 배포는 V0 밖이다 (freeze 검토 2026-09-22, `05` C-05). 비교 기준은 §5 |
 | `site.locale` | MUST | BCP 47 | |
 | `resources` | MUST | object (kind → entry) | `{}` 허용 |
 | `resources.<kind>.href` | MUST | §12 의 URL 형식 | |
@@ -219,6 +245,8 @@ ND1 의 built-space 사례(annex): title/본문에서 유형·스타일 추론, 
 | AR5 | **공급 ↔ 전용은 어느 쪽도 환산하지 않는다.** 기준이 서로 다르면 비교하지 않고, 한쪽이 모름이면 비교 신뢰도를 낮춘다 |
 | AR6 | `C:` 모르는 `unit` 또는 `basis` 값을 만나면 그 면적(또는 그 기준)은 **모름**으로 취급한다 |
 
+**수(number)의 직렬화** (freeze 검토 2026-09-22, `05` C-21): `area.value` 와 `pricePerArea.amount`(§10)는 **JSON number 로, 지수 표기 없이, 저장된 값 그대로** 낸다(JavaScript `JSON.stringify` 의 수 직렬화). §6.1·AR3·PR1 의 "**원본 그대로**"와 INV-10 은 **수치 동일성**을 뜻한다(표기 동일성이 아니다 — 저장된 `34.50` 은 `34.5` 로 나가고 그것이 규칙 위반이 아니다).
+
 ## 10. Price semantics (built-space annex)
 
 ```jsonc
@@ -227,7 +255,7 @@ ND1 의 built-space 사례(annex): title/본문에서 유형·스타일 추론, 
 
 | # | 규칙 |
 |---|---|
-| PR1 | `pricePerArea` = **그 사례의 면적당 가격**으로 운영자가 입력한 값. `amount` = `currency` 의 **주 단위** 수(KRW 는 원), 소수 2자리 이하, 입력된 그대로. `currency` = ISO 4217 코드(producer 는 형식 `^[A-Z]{3}$` 만 기계 검증한다 — §20.1). `perUnit` = §9 의 단위 집합 |
+| PR1 | `pricePerArea` = **그 사례의 면적당 가격**으로 운영자가 입력한 값. `amount` = `currency` 의 **주 단위** 수(KRW 는 원), **양수**(`amount > 0` — freeze 검토 2026-09-22, `05` C-13: `03` 이 이미 담고 있던 제약을 규범에 맞춰 적는다. `0` 은 MD2 의 placeholder 금지에도 걸린다), 소수 2자리 이하, 입력된 그대로. 수의 직렬화는 §9 의 같은 규칙을 따른다(`05` C-21). `currency` = ISO 4217 코드(producer 는 형식 `^[A-Z]{3}$` 만 기계 검증한다 — §20.1). `perUnit` = §9 의 단위 집합 |
 | PR2 | V0 에는 가격의 **면적 기준(basis)** 이 없다 = 모름. 같은 record 의 `area.basis` 에서 추론하지 않는다 |
 | PR3 | V0 에는 **포함 범위**(VAT·철거·가구·가전·확장)가 없다 = 모든 record 에서 모름. 이 값은 **거친 비교 지표**이지 견적이 아니다 |
 | PR4 | **category 가 다르면 같은 축이 아니다.** `C: MUST` 가격으로 비교·정렬·"가깝다"를 말할 때는 **같은 `category` 값을 가진 record 끼리만** 한다. `category` facet 이 없거나 무시된 사이트에서는 가격을 record 의 사실로 **표시**할 수는 있지만 가격 기준 비교·정렬은 하지 않는다 |
@@ -273,7 +301,7 @@ ND1 의 built-space 사례(annex): title/본문에서 유형·스타일 추론, 
 | VO3 | `label` 은 사람이 읽는 표시 이름이다. **동의어 사전이 아니다** |
 | VO4 | facet key 는 `^[a-z][a-zA-Z0-9]{0,31}$`. `C: MUST` 모르는 facet key 는 무시한다 |
 | VO5 | 어떤 facet 이 문서에 없으면 그 사이트에서 그 기준은 **검색 조건이 될 수 없다** |
-| VO6 | consumer 는 자기 한도(facet 당 값 수, record 수, 문서 크기)를 **선언**할 수 있다. 현재 선언값: facet 당 40 · record 1,000 · 문서 1 MiB. `P: SHOULD` 빌드가 이 한도를 넘는 사이트에 **경고**한다. `C: MUST` 한도를 넘는 facet 은 **통째로** 무시한다 — 일부만 잘라 쓰면 나머지 record 가 조용히 검색 불가가 된다. producer 는 값을 잘라 내지 않는다 |
+| VO6 | consumer 는 자기 한도(facet 당 값 수, record 수, 문서 크기)를 **선언**할 수 있다. 현재 선언값(**잠정** — consumer 측정 후 확정·통보): manifest 64 KiB · 문서 1 MiB · record 1,000 · facet key 별 `category` 50 · `scope` 150 · `tag` 150, consumer 가 모르는 key 는 무시, 합산 주입 예산을 넘으면 consumer 가 정한 순서로 facet 을 통째 무시 (**CH-R10**, consumer 확인 2026-09-22 R-10 ACCEPT_WITH_CHANGE). 확인 주기 최소 간격(현재 10분)과 **최대 간격**(= 전파 상한, 현재 10분 — §3.2, freeze 검토 2026-09-22, `05` C-02), last-good 최대 수명(72시간, §3.2)도 같은 형식의 consumer 선언값이다(**CH-R11c**). 선언값을 바꾸는 절차: consumer 가 선언값을 바꾸고 producer 에 통보한다(빌드 경고 문턱). 계약 버전은 바뀌지 않는다. `P: MUST` 빌드가 이 한도를 넘는 사이트에 **경고**한다(빌드 실패는 아니다 — freeze 검토 2026-09-22, `05` C-03 에서 `P: SHOULD` 를 승격). `C: MUST` 한도를 넘는 facet 은 **통째로** 무시한다 — 일부만 잘라 쓰면 나머지 record 가 조용히 검색 불가가 된다. producer 는 값을 잘라 내지 않는다. `C: MUST` **문서 크기·record 수·manifest 크기 한도**를 넘으면 그 문서를(manifest 의 한도면 manifest 를) **통째로 거부한다 = TRANSIENT**(§3.2), 잘라 쓰지 않는다 — consumer 가 이미 선언한 동작의 기록이다(확인 문서 §12.3 L1 "초과 → `too_large` → TRANSIENT", "record 1,000 초과 → document 전체 거부 = TRANSIENT; 잘라 쓰지 않음", §14 R12-5 "`maxBytes` 는 manifest 64 KiB, document 1 MiB"). facet 한도 초과만 그 facet 하나를 무시하는 것이고, 나머지 한도는 문서 단위다 (freeze 검토 2026-09-22, `05` C-03) |
 
 ### 11.2 누가 무엇을 소유하는가
 
@@ -289,9 +317,11 @@ ND1 의 built-space 사례(annex): title/본문에서 유형·스타일 추론, 
 
 | key | 층 | 의미 | record 당 | 완전성 |
 |---|---|---|---|---|
-| `category` | portfolio | 사이트 taxonomy 상의 **주 분류** | 정확히 1개 | 닫힘 |
-| `tag` | portfolio | 사이트가 붙인 **서술 태그**. 종류(색·스타일·기능·소재)를 구분하지 않는다 | 0개 이상 | **열림.** 태그가 없다고 그 속성이 없는 것이 아니다 |
-| `scope` | built-space annex | 작업에 **포함된 공간/작업 영역**. 사이트가 쓴 말 그대로 | 1개 이상 | **입력된 세분도에서 닫힘**(아래) |
+| `category` | portfolio | 사이트 taxonomy 상의 **주 분류** | `P: MUST` **정확히 1개**(`facets.category` 배열의 길이 = 1 — freeze 검토 2026-09-22, `05` C-08. `C: MUST` 인 PR4·BU3 이 이 전제 위에서만 뜻이 정해진다) | 닫힘 |
+| `tag` | portfolio | 사이트가 붙인 **서술 태그**. 종류(색·스타일·기능·소재)를 구분하지 않는다 | 0개 이상 (없으면 **key 를 생략**한다) | **열림.** 태그가 없다고 그 속성이 없는 것이 아니다 |
+| `scope` | built-space annex | 작업에 **포함된 공간/작업 영역**. 사이트가 쓴 말 그대로 | 0개 이상 (없으면 **key 를 생략**한다) | **입력된 세분도에서 닫힘**(아래) |
+
+"record 당" 칸을 읽는 법 (freeze 검토 2026-09-22, `05` C-15·C-16): 이 칸은 **한 record 가 그 facet 에 몇 개의 값을 갖는가**를 말한다. `category` 는 모든 record 에 정확히 1개이고, `tag`·`scope` 는 **없어도 된다 — 없으면 그 key 자체를 생략한다.** 빈 배열 `[]` 은 내지 않는다(MD3·§7.2·INV-9). record 에 그 key 가 **있으면** 배열에는 값이 **1개 이상** 있다(§7.3 의 일반 규칙과 같다).
 
 `scope` 의 완전성: record 에 `scope` 가 있으면 그것이 그 record 의 포함 범위 목록 전체다. 그래서 "~만" 질의에 부분집합 비교(`record.scope ⊆ 선택된 값`)를 쓸 수 있다. **그러나 `C: MUST NOT` 세분도를 넘어 포함·제외를 추론하지 않는다.** `욕실` 이 있는 record 가 `안방 욕실` 을 포함하는지/제외하는지는 데이터가 말하지 않는다. `주방·팬트리` 같은 복합 값은 하나의 opaque 값이다.
 
@@ -306,8 +336,8 @@ ND1 의 built-space 사례(annex): title/본문에서 유형·스타일 추론, 
 | # | 규칙 |
 |---|---|
 | UR1 | 사이트의 URL 구조와 query encoding 은 **전적으로 producer 소유**다 |
-| UR2 | `P: MUST` 계약 문서 안의 모든 URL 은 **path 만 있는 root-relative 참조**다: `/` 로 시작, `//` 로 시작하지 않음, scheme·host 없음, **query·fragment 없음**, `\` 없음, 제어문자 없음. V0 producer 는 절대 URL 을 내지 않는다 |
-| UR3 | `C: MUST` URL 을 **등록된 origin**(= `site.publicOrigin`, §5)에 대해 해석하고, 해석 결과가 그 origin 을 벗어나지 않는지 확인하고, **변형 없이** 쓴다. path·query·fragment 를 조립하거나 덧붙이지 않는다. trailing slash 를 붙이지 않는다 |
+| UR2 | `P: MUST` 계약 문서 안의 모든 URL 은 **path 만 있는 root-relative 참조**다: `/` 로 시작, `//` 로 시작하지 않음, scheme·host 없음, **query·fragment 없음**, `\` 없음, 제어문자 없음. V0 producer 는 절대 URL 을 내지 않는다. **path 는 이미 percent-encoded 된 ASCII 형태다** (freeze 검토 2026-09-22, `05` C-07): RFC 3986 의 `pchar` 와 `/` 만 쓴다(`A-Z a-z 0-9 - . _ ~ ! $ & ' ( ) * + , ; = : @ %` 와 `/`; `%` 는 반드시 두 hex 자리와 함께 온다), 공백 없음, 비-ASCII 없음. producer 는 slug 를 **그대로** 쓰되 slug 가 이 집합을 벗어나면 percent-encode 해서 낸다(이 플랫폼의 slug 는 schema 상 ASCII 다) |
+| UR3 | `C: MUST` URL 을 **등록된 origin**(= `site.publicOrigin`, §5)에 대해 해석하고, 해석 결과가 그 origin 을 벗어나지 않는지 확인하고, **변형 없이** 쓴다. path·query·fragment 를 조립하거나 덧붙이지 않는다. trailing slash 를 붙이지 않는다. UR2 가 path 를 이미 ASCII percent-encoded 형태로 고정하므로, **"변형 없이"는 그 ASCII 문자열을 byte 단위 그대로 쓴다는 뜻**이고, 표준 URL 파서로 해석해도 문자열은 바뀌지 않는다(이중 인코딩이 생기지 않는다) (freeze 검토 2026-09-22, `05` C-07) |
 | UR4 | `P: MUST NOT` tracking parameter 를 붙이지 않는다(UR2 가 이미 막는다) |
 | UR5 | URL 은 identity 가 아니다. 주소(slug)가 바뀌면 `detailUrl` 이 바뀌고 `id` 는 그대로다. 옛 URL 의 redirect 는 제공되지 않는다 |
 | UR6 | producer 가 URL 구조를 바꾸면 **문서를 다시 emit 하는 것만으로** 충분해야 한다 |
@@ -330,7 +360,7 @@ ID2–ID4 가 어떻게 보장되는지는 §20.1.
 |---|---|
 | SV1 | `"<major>.<minor>"` 문자열. manifest 와 각 resource document 가 **각자** 갖는다(서로 독립). V0 = `"0.1"` |
 | SV2 | 필드 제거·의미 변경·타입 변경 = **major**. 필드 추가·facet key 추가·resource kind 추가·**enum 값 추가** = **minor** (그래서 consumer 는 모르는 enum 값을 견뎌야 한다 — §19) |
-| SV3 | `C:` 모르는 major 는 TRANSIENT 로 취급한다(§3.2). 모르는 minor·모르는 필드는 무시한다 |
+| SV3 | `C:` 모르는 major 는 TRANSIENT 로 취급한다(§3.2). 모르는 minor·모르는 필드는 무시한다. **major = `schemaVersion` 문자열의 `.` 앞 정수**이고, "모르는 major" = consumer 가 지원하는 major 집합(V0 = `{0}`)에 없는 값이다. 판정은 **그 값을 가진 문서 단위**다(SV1 이 말하듯 manifest 와 각 resource document 는 각자 major 를 갖는다): manifest 의 major 를 모르면 그 사이트가 TRANSIENT 이고, 어떤 resource document 의 major 만 모르면 **그 resource 만** 쓸 수 없다(다른 resource 는 그대로다). (freeze 검토 2026-09-22, `05` C-18) |
 | SV4 | 사이트는 각자 다시 빌드되고, 이전 패키지로 되돌아갈 수도 있다. 따라서 major 전환은 하루에 끝나지 않는다. `P:` major 를 올리기 전에 알린다. `C: MUST` **등록된 사이트가 아직 서빙 중인 모든 major 를 지원**한다 (절차 규칙 — 기계 검증 대상이 아니다) |
 | SV5 | 이 버전은 producer 내부 content schema 버전과 **다른 것**이다 |
 
@@ -360,6 +390,9 @@ ID2–ID4 가 어떻게 보장되는지는 §20.1.
 | HT6 | 인증·cookie·CORS 불필요(consumer 는 서버에서 읽는다) | — | 코드 확인 |
 | HT7 | UTF-8. 모든 문자열에 **금지 문자 없음**: U+0000–U+001F, U+007F–U+009F, U+2028, U+2029, 방향 제어 U+202A–U+202E · U+2066–U+2069. 위반 시 **빌드 실패**(§4) | producer emitter | **새 gate 필요**(현 content 검증은 길이만 본다) |
 | HT8 | `http→https`, `www↔apex`, trailing slash 는 **계약 밖**이다. consumer 는 `site.publicOrigin` 과 같은 **canonical origin 하나만** 등록한다. 별칭 host 에서 받은 manifest 는 §5 의 origin 검사에서 거부된다. trailing slash 가 붙은 경로는 `404` 다 | — | 코드 확인 |
+| HT9 | **통합이 없거나 꺼진 패키지에서 `/_integration/manifest.json`(및 `/_integration/*`)은 `404` 로 응답한다** — `403` 도 `3xx` 도 아니다. §3.2 CH-R11b 의 `P: MUST` 를 서빙 요구표에 옮겨 적은 것이다 (freeze 검토 2026-09-22, `05` C-06) | serving runtime + 저장소 구성 | 코드 확인 |
+
+- HT7 참고 (freeze 검토 2026-09-22, `05` C-19): producer 는 **NFC 정규화도, Default_Ignorable 문자 제거도 하지 않는다**(문자열은 §6.1 대로 입력 그대로 나간다). consumer 는 색인·매칭 시 자기 정규화 함수를 쓴다(consumer 확인 R-3). 이 계약은 producer 에게 NFC 를 요구하지 않는다 — 요구하면 "입력 그대로"와 충돌하기 때문이다. (참고: 현재 emit 산출물은 전부 NFC 다.)
 
 계약은 **관찰 가능한 동작**만 요구한다. 저장소·Worker·활성화 장치 같은 구현 수단은 계약이 아니다.
 
@@ -384,7 +417,7 @@ ID2–ID4 가 어떻게 보장되는지는 §20.1.
 | SE3 | 외부 host 를 가리키는 URL 이 없다(UR2) |
 | SE4 | `C:` 문서의 모든 문자열(`title`, `label`, `location`)은 **운영자가 입력한 신뢰하지 않는 데이터**다. 지시문으로 해석하지 않는다 |
 | SE5 | 비공개 확인용(preview) 빌드는 통합 문서를 **내지 않는다** |
-| SE6 | 통합은 사이트별로 **켜는 것**을 전제로 썼다 — **owner 결정 OD-2 대기**(`04`). 계약에는 보이지 않는다: manifest 가 있으면 켜진 것이다 |
+| SE6 | 통합은 사이트별로 **켜는 것**을 전제로 썼다 — owner 결정 OD-2 = **(a) 사이트별 opt-in, 기본 off** (2026-09-22 확정, `04` 결정 기록 2026-09-22). 계약에는 보이지 않는다: manifest 가 있으면 켜진 것이다 |
 
 ## 19. Compatibility
 
@@ -425,6 +458,8 @@ ID2–ID4 가 어떻게 보장되는지는 §20.1.
 | `currency` 가 실재하는 ISO 4217 코드 | **운영 규칙** | 형식만 기계 검증 |
 | `title`·`location`·`label` 에 개인정보 없음 | **운영 규칙** | onboarding checklist(`04`) |
 | `pricePerArea` 가 "그 사례의 면적당 가격"이라는 의미 | **운영 규칙** | plausibility 는 판단하지 않는다 |
+| 통합이 없는/꺼진 패키지의 manifest 경로 = `404` (HT9) | **코드 확인** | recon-runtime 은 없는 객체에 패키지의 `404.html` 을 status `404` 로 돌려준다(`platform/test/integration.test.ts` R1, fake R2). live origin 측정은 Phase D (freeze 검토 2026-09-22, `05` C-06) |
+| record 당 `category` 정확히 1개 (§11.3) | **기계적** | emitter + validator (freeze 검토 2026-09-22, `05` C-08) |
 | HT1·HT5 (live 서빙 동작) | **미검증** | pilot 배포에서 1회 측정 |
 
 ---
@@ -559,6 +594,8 @@ ID2–ID4 가 어떻게 보장되는지는 §20.1.
 | INV-12 | HT7 의 금지 문자가 있으면 빌드가 실패한다 |
 | INV-13 | **E2E(설명용 시나리오 — 단위 테스트가 아니라 양쪽 합동 acceptance):** 같은 구조화 intent + 같은 document → 같은 result id 목록. 결과의 모든 id 는 document 의 record 다 |
 | INV-14 | record 의 `facets.<key>` 는 입력 순서·첫 등장 기준 중복 제거(§6.1) |
+| INV-15 | **producer 서빙**: 통합을 켜지 않은/끈 패키지가 서빙될 때 manifest 경로(`/_integration/manifest.json`)는 `404` 다(§16 HT9) (freeze 검토 2026-09-22, `05` C-06) |
+| INV-16 | 모든 record 의 `facets.category` 길이 == 1 (§11.3) (freeze 검토 2026-09-22, `05` C-08) |
 
 consumer 쪽은 같은 fixture 로 다음을 검증한다: §3.2 의 상태별 동작(특히 `404`×2 → 데이터 폐기, TRANSIENT → last-good 유지·수명 만료), 모르는 필드/kind/facet/enum 무시, origin 불일치 manifest 거부, 한도 초과 facet 통째 무시, BU2(가격 없는 record 에 예산 판정 없음), PR4(category 를 넘는 가격 비교 없음). BU3 은 consumer 의 presenter template 검토 항목이다(문구 부재는 기계 검증이 아니라 리뷰로 확인한다).
 
@@ -579,7 +616,7 @@ consumer 쪽은 같은 fixture 로 다음을 검증한다: §3.2 의 상태별 �
 | `cover` | consumer V0 는 텍스트 카드. producer 에 썸네일 variant 가 없다. alt 는 자유 텍스트다 | consumer 가 이미지 카드를 시작할 때 |
 | `propertyType` | 원본에 구조화 필드가 없다. title 에서 추론하지 않는다 | producer content model 에 필드가 생길 때 |
 | `style` (tag 와 구분된) | 원본 keyword 가 색·스타일·기능·소재를 섞고 있다 | 운영자가 관리하는 vocabulary 가 생길 때 |
-| 관리되는 `scope` vocabulary(계층·별칭) | 자유 입력은 사례가 늘면 consumer 한도(40)를 넘는다 | 첫 실제 고객 데이터를 본 뒤 (`04` OD-5) |
+| 관리되는 `scope` vocabulary(계층·별칭) | 자유 입력은 사례가 늘면 consumer 한도(`scope` 150, 잠정)를 넘는다 | 첫 실제 고객 데이터를 본 뒤 (`04` OD-5) |
 | `totalCost`, 가격 포함 범위, 가격 basis | 원본에 없다 | 실제 고객 데이터에서 필요가 확인될 때 |
 | 준공연도 · 공사 기간 | 원본은 구조화되어 있으나 consumer 에 대응 기준이 없다 | consumer 가 기준을 추가할 때(minor) |
 | 요약·본문·추천 근거 문구 | 자유 텍스트 = prompt-injection 표면. 근거는 consumer matcher 가 구조화된 사실에서 만든다 | 재검토하지 않는다(구조화 승격이 올바른 방향) |

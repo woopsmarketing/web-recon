@@ -24,6 +24,7 @@ import { resolveSlots } from "../slots/slots";
 import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
 import { IA_HTML, IA_PATHS, IA_ROUTES, canonical150Sitemap } from "./canonical-150";
+import { integrationSurfaceBefore, isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
 
 const repoRoot = process.cwd();
@@ -144,7 +145,14 @@ await check("R2 boost-interior-demo pins a verified release ≥ 1.5.0 and its cu
   eq(prevRecord.template.releaseId, FROZEN[2].id, "rollback package release");
 });
 await check("R3 platform/ (test/ excluded) is byte-identical to the pre-change capture: a Template-only minor", async () => {
-  eq(await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/") || isPublishSurface(f)), before.platformFiles, "platform files");
+  // Files the first-party integration producer ADDED are excluded like publish/ and test/; files it
+  // MODIFIED (but that pre-date it, and so are part of this capture) are instead judged at their
+  // pre-integration hash: the capture is still proven for the tree as of the task's start commit
+  // (be6b10a); the current content of those files is asserted by integration.test.ts instead.
+  const overrides = await integrationSurfaceBefore(repoRoot);
+  const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/") || isPublishSurface(f) || (isIntegrationSurface(f) && !(f in before.platformFiles)));
+  for (const f of Object.keys(overrides)) if (f in before.platformFiles) now[f] = overrides[f]!;
+  eq(now, before.platformFiles, "platform files");
 });
 
 // ------------------------------------------------------------ site data --

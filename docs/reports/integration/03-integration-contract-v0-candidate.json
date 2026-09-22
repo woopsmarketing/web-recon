@@ -1,10 +1,28 @@
 {
-  "document": "web-recon × first-party data consumer — Integration Contract V0 candidate (machine-readable)",
+  "document": "web-recon × first-party data consumer — Integration Contract V0 (machine-readable, derived from the frozen 02)",
   "contractVersion": "0.1",
-  "status": "CANDIDATE — not approved, not implemented",
-  "date": "2026-09-21",
+  "status": "FROZEN — Integration Contract V0 (schemaVersion 0.1); the 2026-09-21 candidate became the contract unchanged except for the 4 consumer wording changes below",
+  "date": "2026-09-22",
+  "candidateDate": "2026-09-21",
+  "freezeBasis": {
+    "ownerDecisions": { "OD-1": "approved", "OD-2": "(a) per-site opt-in, default off (2026-09-22, 04 decision record 2026-09-22)" },
+    "consumerConfirmation": {
+      "date": "2026-09-22",
+      "source": "boost-chat: docs/reports/integration/web-recon-contract-v0-consumer-confirmation.md (+ .json, -consumer-evidence.md)",
+      "verdicts": { "ACCEPT": ["R-1", "R-2", "R-3", "R-4", "R-5", "R-6", "R-7", "R-8", "R-9", "R-12"], "ACCEPT_WITH_CHANGE": ["R-10", "R-11"], "REJECT": [], "DEFER": [] },
+      "changes": {
+        "CH-R10": { "where": "portfolio.facetRules.VO6 (02 §11.1) and 02 §24", "kind": "wording, non-breaking", "what": "consumer-declared limits re-stated per facet key (category 50, scope 150, tag 150) + manifest 64 KiB, document 1 MiB, records 1,000; provisional until the consumer confirms after measurement; unknown keys ignored; over the aggregate injection budget the consumer drops whole facets in its own order" },
+        "CH-R11a": { "where": "core.availabilityStates (02 §3.2)", "kind": "meaning of 'consecutive' fixed, non-breaking, producer agreed", "what": "the 404 counter resets to 0 only on a manifest HTTP 200 observation (validity irrelevant); an observation that is neither 404 nor 200 (3xx, other 4xx, 5xx, timeout, connection failure) neither raises nor lowers it; the two 404s must be in different check cycles" },
+        "CH-R11b": { "where": "core.availabilityStates (02 §3.2)", "kind": "wording + one producer obligation, non-breaking", "what": "manifest 3xx (HT1 violation) and non-404 4xx (401/403/410/429 …) are TRANSIENT; only 404 counts for OFF; P: MUST — the manifest path of a site that turned the integration off answers 404, not 403 (a store that answers 403 for missing objects would never reveal 'off' except by the 72 h expiry)" },
+        "CH-R11c": { "where": "core.availabilityStates + portfolio.facetRules.VO6 (02 §3.2, §11.1)", "kind": "wording, non-breaking", "what": "the minimum check interval is a consumer-declared value (currently 10 min), declared VO6-style together with the last-good lifetime (72 h)" }
+      },
+      "schemaImpact": "none: no field, enum, major or minor change"
+    },
+    "implementationStatus": "not part of the contract; recorded in docs/result/first-party-integration-producer/"
+  },
   "normativeSource": "02-integration-contract-v0-candidate.md",
   "precedence": "The .md is normative. This file is derived from it. Any disagreement is a defect of this file.",
+  "proseRevisions": "A prose clarification (a sentence that fills a blank in a rule) is applied by editing 02, re-deriving this file and notifying the consumer; schemaVersion does not change. A change to a field, an enum or a meaning follows the versioning rules of 02 §14. This revision carries the clarifications of the 2026-09-22 freeze review (docs/result/first-party-integration-producer/05-review-contract.md, findings C-01…C-21); each one is marked in 02 and cites its finding id here. All are non-breaking: no field, enum, schemaVersion or major/minor change (freeze review 2026-09-22, 05 C-10)",
   "note": "Semantic contract, not a final JSON Schema. Rule ids (MD1, UR2, ...) are the ids used in the .md. This file contains contract rules only: requirement dispositions live in 04, the demo search-support matrix lives in 01.",
   "conventions": { "P": "producer obligation", "C": "consumer obligation", "levels": ["MUST", "SHOULD", "MAY"] },
 
@@ -40,7 +58,7 @@
         "schemaVersion": { "type": "string", "pattern": "^\\d+\\.\\d+$", "v0": "0.1" },
         "site": { "type": "object" },
         "site.id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "maxLength": 64, "consumerTreatsAs": "opaque" },
-        "site.publicOrigin": { "type": "string", "form": "https://host[:port] — no path, query, credentials" },
+        "site.publicOrigin": { "type": "string", "form": "https://host — no path, query, credentials; V0 uses no explicit port (default 443 only), matching the consumer's registration rule R12-1; an explicit port is outside V0 (freeze review 2026-09-22, 05 C-05)" },
         "site.locale": { "type": "string", "form": "BCP 47; language of labels and titles" },
         "resources": { "type": "object", "form": "kind -> entry", "emptyAllowed": true },
         "resources.<kind>.href": { "type": "string", "form": "urlRules.UR2" },
@@ -49,8 +67,10 @@
       "resourceKindsV0": ["portfolio"],
       "consumer": [
         "MUST ignore unknown resource kinds and unknown top-level fields",
-        "MUST reject (treat as TRANSIENT) a manifest whose site.publicOrigin differs from the origin it registered; never overwrite the registered origin from the manifest"
+        "MUST reject (treat as TRANSIENT) a manifest whose site.publicOrigin differs from the origin it registered; never overwrite the registered origin from the manifest",
+        "compares origins by the WHATWG URL origin serialisation, never by raw string equality (see originComparison)"
       ],
+      "originComparison": { "rule": "sameness is decided on the WHATWG URL `origin` serialisation: lower-case host, default port 443 omitted, IDN in ASCII/punycode form; so https://Example.com, https://example.com:443 and https://example.com are one origin, and https://한글.kr equals https://xn--bj0bj06e.kr", "producer": "P: SHOULD emit site.publicOrigin in that canonical serialisation (adopting the consumer's SHOULD proposal in confirmation §14 R12-3); this producer's emitter validator already enforces new URL(origin).origin === origin", "source": "freeze review 2026-09-22, 05 C-04" },
       "notInManifest": ["vocabulary", "unit defaults", "listing URL", "record count", "generated-at time", "build/package/template identifiers", "operation list", "JSON Schema"]
     },
 
@@ -64,9 +84,22 @@
     "availabilityStates": {
       "ON": { "observed": "200 + valid manifest + resources.<kind> present + document passes the echo check", "consumer": "apply the new data" },
       "CONFIRMED_OFF_RESOURCE": { "observed": "200 + valid manifest without that kind", "consumer": "drop held data for that resource immediately" },
-      "CONFIRMED_OFF_SITE": { "observed": "manifest URL returns 404 on 2 consecutive check cycles (body irrelevant)", "consumer": "drop held data; not an error — the site turned the integration off" },
-      "TRANSIENT": { "observed": ["5xx", "timeout", "connection failure", "not JSON", "unknown major", "echo mismatch", "document 404", "publicOrigin mismatch"], "consumer": "do not apply; keep last good data" },
-      "lastGoodLifetime": { "rule": "C: MUST bound it; on expiry stop searching that site", "owner": "consumer", "currentlyProposed": "72h" },
+      "CONFIRMED_OFF_SITE": { "observed": "manifest URL returns 404 on 2 consecutive check cycles (body irrelevant); 'consecutive' per CH-R11a", "consumer": "drop held data; not an error — the site turned the integration off" },
+      "TRANSIENT": { "observed": ["manifest 3xx (HT1 violation)", "manifest 4xx other than 404 (401/403/410/429 …)", "5xx", "timeout", "connection failure", "not JSON", "unknown major", "echo mismatch", "document 404", "publicOrigin mismatch", "site.id changed from the registered value (ID4)", "document-level invariant violation (see validity.documentLevel)"], "consumer": "do not apply; keep last good data" },
+      "validity": {
+        "note": "what 'valid manifest / valid document' means, and at which level each violation is handled (02 §3.2; freeze review 2026-09-22, 05 C-01). Matches the consumer's declared validator (confirmation §15.4 U5 'record 단위 폐기', §13.1 row T) and 02 §19",
+        "documentLevel": { "violations": ["manifest breaks a required field or form of 02 §5 / §7.1", "site.id differs from the registered value (ID4)", "site.publicOrigin does not match the registered origin (§5)", "unknown major (§14)", "document resource != the manifest key (§3.3)", "malformed schemaVersion", "records missing or not an array", "VO1 closure violation"], "consumer": "C: MUST reject the whole document = TRANSIENT (keep last good); never use a truncated part; a manifest violation rejects the manifest, a resource-document violation rejects that document" },
+        "recordLevel": { "violations": ["id / title / detailUrl missing or malformed", "length limit exceeded (§7.2, §7.3)", "detailUrl violates UR2", "forbidden character (HT7)", "malformed area or pricePerArea (§9, §10)"], "consumer": "C: drop that record only; the rest of the document is used (02 §19)" },
+        "unknownValues": { "violations": ["unknown enum value (unit, basis, perUnit, currency)", "unknown facet key", "unknown top-level field, record field or resource kind"], "consumer": "treat that value alone as unknown; never drop the record or the document (§19, AR6, PR6, VO4)" }
+      },
+      "lastGoodLifetime": { "rule": "C: MUST bound it; on expiry stop searching that site", "owner": "consumer", "currentlyProposed": "72h", "declaredLike": "VO6 (CH-R11c)" },
+      "checkInterval": { "rule": "the minimum AND the maximum interval between check cycles are consumer-declared values, declared VO6-style together with the last-good lifetime (CH-R11c); the maximum interval is the propagation bound, and the 'next successful check' of PC5/PC7 lies within it; changing it follows the VO6 change procedure (freeze review 2026-09-22, 05 C-02)", "owner": "consumer", "currentlyDeclared": "10 min", "currentDeclaredMax": "10 min — a record of already-declared consumer behaviour, not a new obligation: consumer confirmation §13.1 '갱신' declares the refresher runs every 10 minutes per enabled first_party_static row" },
+      "consecutive404": {
+        "CH-R11a": "the 404 counter returns to 0 only on a manifest HTTP 200 observation (validity irrelevant); an observation that is neither 404 nor 200 (3xx, other 4xx, 5xx, timeout, connection failure) neither raises nor lowers the counter; the two 404s must be in different check cycles",
+        "CH-R11b": "manifest 3xx (HT1 violation) and 4xx other than 404 (401/403/410/429 …) are TRANSIENT; only 404 is used for the OFF verdict",
+        "producerObligation": "P: MUST — the manifest path of a site that turned the integration off answers 404 (not 403); with a serving setup that answers 403 for missing objects 'off' would never be detected and would only surface through the 72 h expiry",
+        "firstFourSuspect": "suspending search on the first 404 (consumer-internal state SUSPECT) is a consumer-internal rule; the contract neither requires nor forbids it"
+      },
       "why404Twice": "separates a one-off 404 at an activation switch from 'turned off'",
       "why404DropsData": "a site that turns the integration off or withdraws consent must not keep being recommended for the last-good lifetime"
     },
@@ -86,8 +119,8 @@
 
     "urlRules": {
       "UR1": "producer owns URL structure and query encoding entirely",
-      "UR2": "P: MUST — every URL in a contract document is a path-only root-relative reference: starts with '/', not '//', no scheme or host, no query, no fragment, no backslash, no control characters; V0 producer never emits absolute URLs",
-      "UR3": "C: MUST — resolve against the registered origin (= site.publicOrigin), verify the result stays on that origin, use it unmodified; never assemble or append path/query/fragment; never add a trailing slash",
+      "UR2": "P: MUST — every URL in a contract document is a path-only root-relative reference: starts with '/', not '//', no scheme or host, no query, no fragment, no backslash, no control characters; V0 producer never emits absolute URLs. The path is already percent-encoded ASCII: only RFC 3986 pchar and '/' (A-Z a-z 0-9 - . _ ~ ! $ & ' ( ) * + , ; = : @ % and /; a '%' always followed by two hex digits), no spaces, nothing non-ASCII; the producer uses the slug as-is and percent-encodes it when it falls outside that set (this platform's slugs are ASCII by schema) (freeze review 2026-09-22, 05 C-07)",
+      "UR3": "C: MUST — resolve against the registered origin (= site.publicOrigin), verify the result stays on that origin, use it unmodified; never assemble or append path/query/fragment; never add a trailing slash. Because UR2 fixes the path as already percent-encoded ASCII, 'unmodified' means byte-for-byte use of that ASCII string, and a standard URL parser does not change it (no double encoding) (freeze review 2026-09-22, 05 C-07)",
       "UR4": "P: MUST NOT add tracking parameters (already excluded by UR2)",
       "UR5": "a URL is not identity; an address change changes detailUrl, not id; no redirect for the old URL",
       "UR6": "a producer URL-structure change must need only a re-emit",
@@ -105,7 +138,7 @@
     "schemaVersionRules": {
       "SV1": "\"<major>.<minor>\"; manifest and each resource document carry their own, independently; V0 = \"0.1\"",
       "SV2": { "major": ["field removal", "semantic change", "type change"], "minor": ["field addition", "facet key addition", "resource kind addition", "enum value addition"] },
-      "SV3": "C: unknown major = TRANSIENT; unknown minor and unknown fields are ignored",
+      "SV3": "C: unknown major = TRANSIENT; unknown minor and unknown fields are ignored. The major is the integer before the '.' in schemaVersion, and 'unknown major' means a value outside the set of majors the consumer supports (V0 = {0}); the verdict applies per document that carries it (SV1): an unknown manifest major makes the site TRANSIENT, an unknown major on one resource document disables only that resource (freeze review 2026-09-22, 05 C-18)",
       "SV4": "process rule (not machine-checked): sites rebuild independently and may roll back, so P announces a major in advance and C MUST support every major still served by a registered site",
       "SV5": "not the producer's internal content schema version"
     },
@@ -126,8 +159,9 @@
       "HT4": { "rule": "resource document cache policy is free (file name is bound to content)" },
       "HT5": { "rule": "a request without Accept-Encoding receives an identity body", "guarantor": "serving runtime + CDN", "state": "UNKNOWN until live deployment" },
       "HT6": { "rule": "no auth, no cookies, no CORS needed (consumer reads server-side)" },
-      "HT7": { "rule": "UTF-8; no forbidden characters in any string; violation fails the build", "forbiddenCharacters": ["U+0000-U+001F", "U+007F-U+009F", "U+2028", "U+2029", "U+202A-U+202E", "U+2066-U+2069"], "guarantor": "producer emitter", "state": "new gate required" },
+      "HT7": { "rule": "UTF-8; no forbidden characters in any string; violation fails the build", "forbiddenCharacters": ["U+0000-U+001F", "U+007F-U+009F", "U+2028", "U+2029", "U+202A-U+202E", "U+2066-U+2069"], "guarantor": "producer emitter", "state": "new gate required", "normalisation": "the producer performs no NFC normalisation and strips no Default_Ignorable characters (strings go out as authored, §6.1); the consumer applies its own normalisation when indexing (consumer R-3) (freeze review 2026-09-22, 05 C-19)" },
       "HT8": { "rule": "http->https, www<->apex and trailing slash are outside the contract; the consumer registers exactly one canonical origin equal to site.publicOrigin; a manifest fetched from an alias host fails the origin check; a trailing-slash path is 404" },
+      "HT9": { "rule": "a package with no integration, or with the integration turned off, answers 404 on /_integration/manifest.json (and /_integration/*) — never 403, never 3xx; this is the P: MUST of CH-R11b written into the serving table", "guarantor": "serving runtime + object store layout", "state": "confirmed in code (recon-runtime returns the package's 404.html with status 404 for a missing object: platform/test/integration.test.ts R1, fake R2); live origin measurement in Phase D", "source": "freeze review 2026-09-22, 05 C-06" },
       "onlyObservableBehaviourIsContract": true
     },
 
@@ -147,7 +181,7 @@
       "SE3": "no URL pointing at another host (UR2)",
       "SE4": "C: every string (title, label, location) is untrusted operator-entered data; never interpreted as instructions",
       "SE5": "preview builds emit no integration documents",
-      "SE6": "written assuming per-site opt-in — pending owner decision OD-2 (04); invisible in the contract: a manifest exists = on"
+      "SE6": "written assuming per-site opt-in — owner decision OD-2 = (a) per-site opt-in, default off (decided 2026-09-22, 04 decision record 2026-09-22); invisible in the contract: a manifest exists = on"
     },
 
     "compatibility": {
@@ -191,10 +225,11 @@
     },
     "determinism": {
       "recordOrder": "id ascending, Unicode code point order",
+      "facetKeyOrder": "the keys of the facets map are written in ascending Unicode code point order of the key string (freeze review 2026-09-22, 05 C-17; removes the freedom INV-1 'byte-identical document' still left)",
       "facetValueOrder": "id ascending, Unicode code point order",
       "recordFacetArray": "authored order; on duplicates keep the first occurrence only",
       "strings": "as authored (no normalisation, trim or case change); consumer compares by code point",
-      "numbers": "as authored",
+      "numbers": "as authored: a JSON number, no exponent notation, the stored value itself (JavaScript JSON.stringify serialisation); 'as authored' means numeric equality, not lexical form — a stored 34.50 goes out as 34.5 (freeze review 2026-09-22, 05 C-21)",
       "serialisation": "producer writes UTF-8 (no BOM), compact JSON, key order of the .md example; consumers must not depend on byte layout"
     },
     "record": {
@@ -220,8 +255,19 @@
       "VO4": "C: MUST ignore unknown facet keys",
       "VO5": "a facet absent from the document = that criterion cannot be a search condition for that site",
       "VO6": {
-        "rule": "limits are consumer-declared, not normative; P: SHOULD warn at build when a site exceeds them; C: MUST ignore an over-limit facet as a whole, never a truncated part; the producer never truncates",
-        "consumerDeclaredLimitsCurrent": { "valuesPerFacet": 40, "records": 1000, "documentBytes": 1048576 }
+        "rule": "limits are consumer-declared, not normative; P: MUST warn at build when a site exceeds them (a warning, not a build failure — upgraded from P: SHOULD by the freeze review 2026-09-22, 05 C-03); C: MUST ignore an over-limit facet as a whole, never a truncated part; the producer never truncates",
+        "overLimitBehaviour": { "facetValueLimit": "C: MUST ignore that facet as a whole; the rest of the document is used (R-9)", "documentBytes|records|manifestBytes": "C: MUST reject the whole document — the manifest for a manifest limit — = TRANSIENT (02 §3.2); never truncate. A record of the consumer's declared behaviour: confirmation §12.3 L1 (document > 1 MiB -> too_large -> TRANSIENT; records > 1,000 -> whole document rejected, never truncated) and §14 R12-5 (maxBytes = manifest 64 KiB, document 1 MiB)", "source": "freeze review 2026-09-22, 05 C-03" },
+        "consumerDeclaredLimitsCurrent": {
+          "status": "provisional (CH-R10, consumer confirmation 2026-09-22, R-10 ACCEPT_WITH_CHANGE) — the consumer confirms and notifies after measurement",
+          "manifestBytes": 65536,
+          "documentBytes": 1048576,
+          "records": 1000,
+          "valuesPerFacetKey": { "category": 50, "scope": 150, "tag": 150 },
+          "unknownFacetKeys": "ignored by the consumer",
+          "aggregateInjectionBudget": "when exceeded the consumer ignores whole facets in an order it decides",
+          "alsoDeclaredThisWay": { "checkIntervalMin": "10 min", "lastGoodLifetime": "72h" },
+          "changeProcedure": "the consumer changes its declared values and notifies the producer (build warning thresholds); the contract version does not change"
+        }
       },
       "ownership": {
         "producer": "the list of usable values (id + label); decides which internal field feeds which facet",
@@ -230,9 +276,10 @@
         "synonyms": "never emitted by the producer; never duplicated on both sides"
       },
       "wellKnownKeys": {
-        "category": { "layer": "portfolio", "meaning": "primary classification in the site's taxonomy", "perRecord": "exactly 1", "completeness": "closed" },
-        "tag": { "layer": "portfolio", "meaning": "descriptive tags in the site's own words; kinds (colour/style/feature/material) are not distinguished", "perRecord": "0+", "completeness": "open: absence of a tag is not absence of the property" },
-        "scope": { "layer": "builtSpaceAnnex", "meaning": "spaces / work areas included, in the site's own words", "perRecord": "1+", "completeness": "closed at the authored granularity: subset tests are allowed; C: MUST NOT infer inclusion or exclusion across granularities; a composite token is one opaque value" }
+        "category": { "layer": "portfolio", "meaning": "primary classification in the site's taxonomy", "perRecord": "exactly 1 (P: MUST — facets.category has length 1; PR4 and BU3, both C: MUST, are only defined on that premise; freeze review 2026-09-22, 05 C-08)", "completeness": "closed" },
+        "tag": { "layer": "portfolio", "meaning": "descriptive tags in the site's own words; kinds (colour/style/feature/material) are not distinguished", "perRecord": "0+ (none -> the key itself is omitted, never []; freeze review 2026-09-22, 05 C-15)", "completeness": "open: absence of a tag is not absence of the property" },
+        "scope": { "layer": "builtSpaceAnnex", "meaning": "spaces / work areas included, in the site's own words", "perRecord": "0+ (none -> the key itself is omitted, never []; freeze review 2026-09-22, 05 C-16)", "completeness": "closed at the authored granularity: subset tests are allowed; C: MUST NOT infer inclusion or exclusion across granularities; a composite token is one opaque value" },
+        "perRecordCardinalityNote": "the perRecord column counts the values one record has for that facet; when the key is present the array holds at least 1 value (02 §7.3) and an empty array is never emitted (MD3, §7.2, INV-9)"
       },
       "reservedKeysNotEmittedInV0": ["propertyType", "style"]
     },
@@ -293,7 +340,11 @@
       "version echo",
       "one package + atomic activation (PC1-PC4, PC6)",
       "string length limits (source title <= 80 within contract 120; label <= 40)",
-      "record.id uniqueness"
+      "record.id uniqueness",
+      "exactly one category value per record (02 §11.3; emitter + validator; freeze review 2026-09-22, 05 C-08)"
+    ],
+    "confirmedInCodeLiveUnmeasured": [
+      "HT9: a package with no/off integration answers 404 on the manifest path — recon-runtime returns the package's 404.html with status 404 for a missing object (platform/test/integration.test.ts R1, fake R2); live origin measurement in Phase D (freeze review 2026-09-22, 05 C-06)"
     ],
     "gateToBeBuilt": [
       "no forbidden characters (HT7)",
@@ -314,7 +365,7 @@
     "cover",
     "propertyType facet",
     "style facet distinct from tag",
-    "managed scope vocabulary (hierarchy, aliases)",
+    "managed scope vocabulary (hierarchy, aliases) — free input will exceed the consumer limit (scope 150, provisional) as cases grow; after the first real customer data (04 OD-5)",
     "totalCost, price inclusion scope, price basis",
     "built year, duration",
     "summary / body / producer-authored match-evidence text (not to be revisited)",
@@ -342,8 +393,10 @@
     "INV-12": "a forbidden character (HT7) fails the build",
     "INV-13": "E2E, illustrative joint acceptance scenario (not a unit test): same structured intent + same document -> same result ids, all of them records of the document",
     "INV-14": "record facet arrays keep authored order with first-occurrence de-duplication",
+    "INV-15": "producer serving: when a package that is not opted in, or whose integration was turned off, is served, the manifest path /_integration/manifest.json answers 404 (HT9) (freeze review 2026-09-22, 05 C-06)",
+    "INV-16": "every record's facets.category has length == 1 (02 §11.3) (freeze review 2026-09-22, 05 C-08)",
     "consumerSide": [
-      "availability-state behaviour: 404 x2 -> data dropped; TRANSIENT -> last good kept; lifetime expiry",
+      "availability-state behaviour: 404 x2 in different check cycles -> data dropped (counter reset only by a manifest 200; 3xx / other 4xx / 5xx / timeout neither raise nor lower it); TRANSIENT -> last good kept; lifetime expiry",
       "unknown fields / kinds / facet keys / enum values tolerated",
       "manifest with a mismatching publicOrigin rejected",
       "over-limit facet ignored as a whole",

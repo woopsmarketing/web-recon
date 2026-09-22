@@ -38,6 +38,7 @@ import { resolveEffectiveTheme } from "../theme/theme";
 import { hashJson, sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
 import { gitDirtyPaths } from "./git-checkout";
+import { integrationSurfaceBefore, isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
 
 const repoRoot = process.cwd();
@@ -81,8 +82,13 @@ async function walkFiles(dir: string, rel = ""): Promise<string[]> {
   }
   return out.sort();
 }
-/** Same tree hash as platform/test/step6-proof.ts (path + sha256 of every file). */
-async function treeHash(rel: string, skipTop: readonly string[] = [], skip: (p: string) => boolean = () => false): Promise<string> {
+/**
+ * Same tree hash as platform/test/step6-proof.ts (path + sha256 of every file). `override` replaces
+ * a computed sha256 for a path present in the map (after hashing, before hashJson) — used to judge a
+ * pre-existing file the first-party integration producer modified against its pre-integration hash
+ * instead of its live one, so this whole-tree fingerprint keeps meaning "nothing else drifted".
+ */
+async function treeHash(rel: string, skipTop: readonly string[] = [], skip: (p: string) => boolean = () => false, override: Record<string, string> = {}): Promise<string> {
   const SKIP = new Set([".DS_Store", "node_modules", ".next", "out"]);
   const out: { path: string; sha256: string }[] = [];
   async function walk(dir: string, r: string) {
@@ -95,6 +101,7 @@ async function treeHash(rel: string, skipTop: readonly string[] = [], skip: (p: 
     }
   }
   await walk(path.join(repoRoot, rel), "");
+  for (const f of out) if (f.path in override) f.sha256 = override[f.path]!;
   return hashJson(out);
 }
 const pointer = async (s: string) => {
@@ -207,7 +214,16 @@ await check("D Template source unchanged: live templateSourceHash = baseline = t
     eq((await loadRelease(repoRoot, "interior-01", RELEASE.id)).templateSourceHash, baseline.liveTemplateSourceHash, "1.4.0 templateSourceHash");
     assert(liveHash !== baseline.liveTemplateSourceHash, "a newer release with the 1.4.0 sources");
   }
-  eq(await treeHash("platform", ["test"], (p) => p === "publish" || isPublishSurface(p)), baseline.trees["platform (test/ excluded)"].hash, "platform tree (test/ excluded)");
+  // Files the first-party integration producer ADDED are excluded like publish/ and test/; a
+  // pre-existing file it MODIFIED is instead judged at its pre-integration hash (`overrides`), so
+  // this whole-tree fingerprint still proves the tree as of the task's start commit (be6b10a); the
+  // current content of those four files is asserted by integration.test.ts instead.
+  const overrides = await integrationSurfaceBefore(repoRoot);
+  eq(
+    await treeHash("platform", ["test"], (p) => p === "publish" || isPublishSurface(p) || (isIntegrationSurface(p) && !(p in overrides)), overrides),
+    baseline.trees["platform (test/ excluded)"].hash,
+    "platform tree (test/ excluded)",
+  );
 });
 await check("D2 independent of the baseline: no Template / Platform implementation file (test/ excluded) was modified after the 1.4.0 release was cut", async () => {
   const cut140 = Date.parse((await loadRelease(repoRoot, "interior-01", RELEASE.id)).createdAt);
@@ -222,7 +238,7 @@ await check("D2 independent of the baseline: no Template / Platform implementati
   const late: string[] = [];
   for (const root of ["templates/interior-01/v1", "platform"]) {
     for (const f of await walkFiles(path.join(repoRoot, root))) {
-      if (root === "platform" && (f.startsWith("test/") || isPublishSurface(f))) continue;
+      if (root === "platform" && (f.startsWith("test/") || isPublishSurface(f) || isIntegrationSurface(f))) continue;
       if (/(^|\/)(node_modules|\.next|out)\//.test(f)) continue;
       if (dirty && !dirty.has(`${root}/${f}`)) continue;
       if ((await stat(path.join(repoRoot, root, f))).mtimeMs > cut + 1000) late.push(`${root}/${f}`);

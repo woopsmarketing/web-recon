@@ -2,13 +2,22 @@ import { spawn } from "node:child_process";
 import { appendFile, copyFile, cp, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { hashJson, sha256 } from "../util/hash";
 import { loadRelease, materializeRelease, verifyRelease, type ReleaseRecord } from "../release/release";
 import { buildSiteSnapshot, loadSiteInstance } from "../site/load";
 import type { BuildMode, SiteSnapshot } from "../site/instance";
-import { computeBuildInputId, currentToolchain, toolchainHash, type Toolchain } from "./build-input";
+import { computeBuildInputId, currentToolchain, toolchainHash, type BuildInputParts, type Toolchain } from "./build-input";
 import { qaStaticPackage, type PackageQaResult } from "./qa";
 import type { PruneEntry } from "../site/routes";
+import { integrationEmits, loadIntegrationConfig, type IntegrationConfig } from "../integration/config";
+import { CORE_SCHEMA_VERSION, INTEGRATION_DIR, PORTFOLIO_SCHEMA_VERSION, PRODUCER_VERSION } from "../integration/contract";
+import { DeclaredRoutesSchema, emitIntegration, IntegrationError, type EmittedFile } from "../integration/emit";
+import { assertIntegration } from "../integration/validate";
+import { producerSources } from "../integration/sources";
+
+/** the declared-routes reader lives next to this module (platform code), never under the repo root being built */
+const DECLARED_ROUTES_HELPER = fileURLToPath(new URL("./declared-routes.ts", import.meta.url));
 
 /**
  * site:build — exact pinned Template Release + site snapshot → static package.
@@ -22,6 +31,13 @@ import type { PruneEntry } from "../site/routes";
  *     → next build (static export) with an allowlisted env
  *  6. package QA (exactly the planned pages) → data/site-builds/<siteId>/packages/<buildInputId>/
  *  7. current → previous (the one retained rollback package); older packages pruned
+ *
+ * Integration documents (Contract V0, docs/reports/integration/02): for a PUBLIC build of a site
+ * that opted in (data/sites/<siteId>/integration.json) the builder projects /_integration/manifest.json
+ * and /_integration/portfolio.<version>.json from the SAME snapshot + the release's declared routes
+ * (platform/integration, pure), validates them fail-closed, writes them into the workspace public/
+ * before `next build` (the seam of the asset copy) and verifies them in the export afterwards. Every
+ * other build has no /_integration/ and the identity/bytes it had before the integration existed.
  */
 
 export const SITE_BUILDS_DIR = "data/site-builds";
@@ -33,12 +49,24 @@ export class SiteBuildError extends Error {
   }
 }
 
+/** What an opted-in public build emitted (build record only — never inside the package or the documents). */
+export interface IntegrationBuildSummary {
+  contract: { core: string; portfolio: string };
+  producerVersion: number;
+  /** hash of the producer's source files (platform/integration/sources.ts) — part of integrationInputHash */
+  producerSourceHash: string;
+  manifest: { path: string; bytes: number; sha256: string };
+  /** portfolio absent = the resource was not offered (the release declares no detail page per record, 02 §4) */
+  resources: { portfolio?: { path: string; version: string; bytes: number; sha256: string; records: number; facets: Record<string, number> } };
+  warnings: string[];
+}
+
 export interface BuildRecord {
   schemaVersion: 1;
   siteId: string;
   status: "success";
   buildInputId: string;
-  parts: { releaseHash: string; siteSnapshotHash: string; mode: BuildMode; toolchainHash: string };
+  parts: BuildInputParts;
   toolchain: Toolchain;
   template: { templateId: string; templateVersion: string; releaseId: string; releaseHash: string; templateSourceHash: string };
   at: string;
@@ -60,6 +88,8 @@ export interface BuildRecord {
   effectiveSettingsHash: string;
   effectiveThemeHash: string;
   hermeticity: string[];
+  /** present only when this build emitted integration documents */
+  integration?: IntegrationBuildSummary;
 }
 
 interface Pointer {
@@ -156,13 +186,57 @@ export async function prepareSiteInput(opts: { repoRoot: string; siteId: string;
   await verifyRelease(opts.repoRoot, release);
   const { snapshot, assetFiles, unserved } = await buildSiteSnapshot(opts);
   const tc = currentToolchain();
-  const parts = {
+  const integrationConfig = await loadIntegrationConfig(opts.repoRoot, opts.siteId);
+  const emit = integrationEmits(integrationConfig, opts.mode);
+  const integration: IntegrationInput = { config: integrationConfig, emit, producerSourceHash: emit ? (await producerSources()).hash : undefined };
+  const parts: BuildInputParts = {
     releaseHash: release.releaseHash,
     siteSnapshotHash: hashJson(snapshot),
     mode: opts.mode,
     toolchainHash: toolchainHash(tc),
+    ...(integration.emit
+      ? {
+          integrationInputHash: hashJson({
+            producer: PRODUCER_VERSION,
+            producerSourceHash: integration.producerSourceHash,
+            contract: { core: CORE_SCHEMA_VERSION, portfolio: PORTFOLIO_SCHEMA_VERSION },
+            config: integration.config,
+          }),
+        }
+      : {}),
   };
-  return { site, release, snapshot, assetFiles, unserved, toolchain: tc, parts, buildInputId: computeBuildInputId(parts) };
+  return { site, release, snapshot, assetFiles, unserved, toolchain: tc, integration, parts, buildInputId: computeBuildInputId(parts) };
+}
+
+export interface IntegrationInput {
+  /** the site's integration.json, if any */
+  config: IntegrationConfig | undefined;
+  /** true = this build emits /_integration/** (public mode + opted in) */
+  emit: boolean;
+  /** hash of the producer's own source files (platform/integration/sources.ts); only when emitting */
+  producerSourceHash: string | undefined;
+}
+
+/**
+ * After `next build`: the export holds exactly the emitted integration files, byte for byte — or,
+ * for a build that emits nothing, no /_integration/ at all (byte-neutral, INV-11).
+ */
+export async function verifyIntegrationOutput(outDir: string, emitted: readonly EmittedFile[]): Promise<void> {
+  const dir = path.join(outDir, INTEGRATION_DIR);
+  const exists = await stat(dir).then((s) => s.isDirectory(), () => false);
+  if (emitted.length === 0) {
+    if (exists) throw new SiteBuildError(`export contains ${INTEGRATION_DIR}/ but this build emits no integration documents`);
+    return;
+  }
+  if (!exists) throw new SiteBuildError(`export has no ${INTEGRATION_DIR}/ although integration documents were emitted`);
+  const present = (await readdir(dir)).sort();
+  const expected = emitted.map((f) => path.basename(f.path)).sort();
+  if (JSON.stringify(present) !== JSON.stringify(expected)) {
+    throw new SiteBuildError(`export ${INTEGRATION_DIR}/ holds [${present.join(", ")}], expected [${expected.join(", ")}]`);
+  }
+  for (const f of emitted) {
+    if (sha256(await readFile(path.join(outDir, f.path))) !== f.sha256) throw new SiteBuildError(`export ${f.path} differs from the emitted bytes`);
+  }
 }
 
 /**
@@ -320,12 +394,81 @@ export async function buildSite(opts: SiteBuildOptions): Promise<SiteBuildResult
     await pruneRoutes(projectDir, preflightOut.prune);
     if (preflightOut.prune.length) log(`[${opts.siteId}] pruned routes with no page: ${preflightOut.prune.map((p) => p.key).join(", ")}`);
 
+    // Integration documents (opted-in public builds only): projected from the snapshot + the
+    // RELEASE's declared routes, validated fail-closed, placed in public/ like the site assets.
+    let integrationSummary: IntegrationBuildSummary | undefined;
+    const emittedFiles: EmittedFile[] = [];
+    if (input.integration.emit) {
+      t = Date.now();
+      const declaredOut = await run(
+        tsx,
+        ["--tsconfig", path.join(projectDir, "tsconfig.json"), DECLARED_ROUTES_HELPER, path.join(projectDir, "template.ts")],
+        ws,
+        env,
+        120_000,
+      );
+      let declaredJson: unknown;
+      try {
+        const last = declaredOut.stdout.trim().split("\n").pop();
+        if (!last) throw new Error("empty output");
+        declaredJson = JSON.parse(last);
+      } catch (error) {
+        throw new SiteBuildError(`integration: could not read the release's declared routes (${(error as Error).message}); stderr: ${declaredOut.stderr.trim().slice(-500)}`);
+      }
+      const declaredParsed = DeclaredRoutesSchema.safeParse(declaredJson);
+      if (!declaredParsed.success) throw new SiteBuildError(`integration: the release's declared routes have an unexpected shape: ${declaredParsed.error.message}`);
+      let emission;
+      let integrationWarnings: string[];
+      try {
+        emission = emitIntegration({ snapshot, declaredRoutes: declaredParsed.data, plannedRoutes: preflightOut.routes });
+        integrationWarnings = assertIntegration(emission, {
+          siteId: opts.siteId,
+          publicOrigin: snapshot.site.identity.publicOrigin,
+          pagePaths: new Set(pagePaths),
+        });
+      } catch (error) {
+        if (error instanceof IntegrationError) throw new SiteBuildError(`integration (site opted in, public build): ${error.message}`);
+        throw error;
+      }
+      for (const w of integrationWarnings) log(`[${opts.siteId}] WARNING integration: ${w}`);
+      const target = path.join(projectDir, "public", INTEGRATION_DIR);
+      if (await stat(target).then(() => true, () => false)) throw new SiteBuildError(`the release's public/ already contains ${INTEGRATION_DIR}/ — refusing to overwrite`);
+      await mkdir(target, { recursive: true });
+      for (const f of emission.files) {
+        if (path.dirname(f.path) !== INTEGRATION_DIR) throw new SiteBuildError(`integration file ${f.path} is outside ${INTEGRATION_DIR}/`);
+        await writeFile(path.join(projectDir, "public", f.path), f.bytes);
+        emittedFiles.push(f);
+      }
+      integrationSummary = {
+        contract: { core: CORE_SCHEMA_VERSION, portfolio: PORTFOLIO_SCHEMA_VERSION },
+        producerVersion: PRODUCER_VERSION,
+        producerSourceHash: input.integration.producerSourceHash!,
+        manifest: { path: emission.manifestFile.path, bytes: emission.manifestFile.bytes.length, sha256: emission.manifestFile.sha256 },
+        resources: emission.portfolio
+          ? {
+              portfolio: {
+                path: emission.portfolio.file.path,
+                version: emission.portfolio.version,
+                bytes: emission.portfolio.file.bytes.length,
+                sha256: emission.portfolio.file.sha256,
+                records: emission.portfolio.recordCount,
+                facets: emission.portfolio.facetCounts,
+              },
+            }
+          : {},
+        warnings: integrationWarnings,
+      };
+      if (emission.portfolio) log(`[${opts.siteId}] integration: ${emission.portfolio.recordCount} records → ${emission.portfolio.file.path} (${Date.now() - t} ms)`);
+      else log(`[${opts.siteId}] integration: the release declares no detail page per record → portfolio resource not offered, manifest only (${Date.now() - t} ms)`);
+    }
+
     t = Date.now();
     await run(path.join(ws, "node_modules/.bin/next"), ["build"], projectDir, env, 600_000);
     const nextBuild = Date.now() - t;
 
     t = Date.now();
     const outDir = path.join(projectDir, "out");
+    await verifyIntegrationOutput(outDir, emittedFiles);
     const qa = await qaStaticPackage({
       outDir,
       routes: pagePaths.map((p) => ({ path: p })),
@@ -382,7 +525,9 @@ export async function buildSite(opts: SiteBuildOptions): Promise<SiteBuildResult
         "dependencies from the release's scoped lockfile via pnpm --offline --frozen-lockfile --ignore-scripts (shared local pnpm content store)",
         "allowlisted environment for install / preflight / next build",
         "NOT from the release: the builder itself (site snapshot loader, visibility filter, asset selection, package QA, pointers) runs from the repository working tree, and the preflight runner (tsx) comes from the repository's node_modules",
+        "integration documents (opted-in public builds only): projected by the builder (platform/integration, repository working tree) from the same site snapshot and the RELEASE's declared routes (read from the workspace copy of template.ts under the release's tsconfig); the producer version is a build input",
       ],
+      ...(integrationSummary ? { integration: integrationSummary } : {}),
     };
     await writeFile(path.join(staging, "build-record.json"), `${JSON.stringify(record, null, 2)}\n`);
     const replaced = `${packageDir}.replaced-${process.pid}`;

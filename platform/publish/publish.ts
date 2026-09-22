@@ -118,6 +118,8 @@ export interface PublishPlan {
   seal: PackageSeal;
   /** origin baked into the package's canonical / sitemap URLs (robots.txt "Sitemap:" line), if it declares one */
   bakedOrigin?: string;
+  /** site.publicOrigin baked into _integration/manifest.json, when the package carries integration documents */
+  manifestOrigin?: string;
   /** non-fatal findings the operator should read (deterministic order) */
   warnings: string[];
 }
@@ -271,6 +273,25 @@ export async function planPublish(opts: { repoRoot: string; siteId: string; host
     if (opts.requireOriginMatch) throw new PublishError(`${message}; set the site's publicOrigin, rebuild, and publish that package`);
     warnings.push(`${message}; fine for a local or test host, wrong for a public one`);
   }
+  // A package with first-party integration documents also bakes the origin into the manifest; a consumer
+  // rejects a manifest whose site.publicOrigin is not the origin it registered (contract §5), so a mismatch
+  // here is not cosmetic: the integration would never reach ON. Same policy as bakedOrigin above.
+  const manifestFile = files.find((f) => f.path === "_integration/manifest.json");
+  let manifestOrigin: string | undefined;
+  if (manifestFile) {
+    try {
+      const parsed = JSON.parse(await readFile(manifestFile.abs, "utf8")) as { site?: { publicOrigin?: unknown } };
+      if (typeof parsed.site?.publicOrigin === "string") manifestOrigin = parsed.site.publicOrigin;
+    } catch {
+      throw new PublishError("package carries _integration/manifest.json but it is not valid JSON");
+    }
+    if (manifestOrigin === undefined) throw new PublishError("package carries _integration/manifest.json without site.publicOrigin");
+    if (manifestOrigin !== `https://${hostname}`) {
+      const message = `integration manifest was built for ${manifestOrigin}, not https://${hostname}; the consumer will reject it (contract §5)`;
+      if (opts.requireOriginMatch) throw new PublishError(`${message}; set the site's publicOrigin, rebuild, and publish that package`);
+      warnings.push(`${message}; fine for a local or test host, wrong for a public one`);
+    }
+  }
   const videos = files.filter((f) => f.contentType.startsWith("video/")).length;
   if (videos > 0) warnings.push(`package contains video (${videos} file(s)); recon-runtime does not answer Range requests, so Safari/iOS will not play it`);
 
@@ -287,6 +308,7 @@ export async function planPublish(opts: { repoRoot: string; siteId: string; host
     routingKey: routingKey(hostname),
     seal,
     ...(bakedOrigin ? { bakedOrigin } : {}),
+    ...(manifestOrigin ? { manifestOrigin } : {}),
     warnings,
   };
 }
