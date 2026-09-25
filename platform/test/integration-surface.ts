@@ -25,6 +25,9 @@ import path from "node:path";
 export function isIntegrationSurface(rel: string): boolean {
   return (
     rel.startsWith("integration/") ||
+    // ADDED with the Portfolio V0.2 golden package (docs/result/interior-portfolio-v0.2/36): writes
+    // only platform/test/golden/, never a site package; checked by integration.test.ts G6.
+    rel === "cli/integration-golden.ts" ||
     rel === "build/declared-routes.ts" ||
     rel === "build/build-input.ts" ||
     rel === "build/site-build.ts" ||

@@ -18,6 +18,11 @@ import { hashJson, sha256 } from "../util/hash";
 /** relative to platform/, sorted; every file whose change can alter an emitted byte or a verdict */
 export const PRODUCER_SOURCE_FILES = [
   "build/declared-routes.ts",
+  // V0.2: the authored fields, the work-scope/project-type vocabularies and INV-28/INV-29 live in
+  // the content model, and integration/contract.ts re-exports them. Editing a vocabulary changes a
+  // validation verdict, and a site pinned to a stored release does not move its releaseHash when
+  // the working tree's content model changes — so without this entry MAJOR-1 has a hole.
+  "content/schema.ts",
   "integration/config.ts",
   "integration/contract.ts",
   "integration/emit.ts",

@@ -1,10 +1,21 @@
 /**
- * First-party integration producer (Contract V0, docs/reports/integration/02 — FROZEN 2026-09-22):
+ * First-party integration producer (Contract V0, docs/reports/integration/02 — FROZEN 2026-09-22,
+ * as extended by Contract V0.2, docs/reports/integration/07 — document schemaVersion "1.0"):
  *   - the pure emitter and the fail-closed validator (platform/integration/**) against the demo's
  *     real site data, the fixtures and crafted snapshots: allowlist projection, missing → omitted,
  *     [] only for records, no null, code point ordering, authored facet order, version stability
  *     (projection change → new version; anything outside the projection → same version), UR2 URLs,
  *     HT7 forbidden characters, duplicate ids, facet closure, area / price shape, resource pointer;
+ *   - the V0.2 built-space annex on crafted snapshots: projectType, property{type,area},
+ *     workScopeIds + document workScopes (WS2 closure), pricing{total,perArea}, facets.style, and
+ *     the D-1 / RD1 derived per-area price (INV-17 … INV-30);
+ *
+ *   - the pinned V0.2 golden integration package (platform/test/golden/portfolio-v0.2, written by
+ *     platform/cli/integration-golden.ts): the pure emission of the demo equals it byte for byte,
+ *     its golden.json records the facts of those bytes, and the 19-record corpus still covers the
+ *     shapes the contract exercises (counts, area bases, price shapes, missing fields);
+ *   - V0.1 compatibility: the V0.1 golden package (data/site-builds/…/current.json) and the live
+ *     pilot package are untouched and self-consistent, and nothing V0.2 is staged there for publish;
  *   - the builder seam: default OFF (fixtures keep their pre-integration identity), the demo ON,
  *     preview never emits, the producer version is a build input, OFF = the pre-integration
  *     buildInputId of the live package;
@@ -16,7 +27,7 @@
  *   - serving: the runtime resolves the documents, an OFF package answers 404 (never 403, CH-R11b),
  *     publish plans application/json + revalidate for the manifest (HT2/HT3);
  *   - Template Release immutability: every stored release verifies, the working tree still equals
- *     the pinned 1.5.2 release (the producer is not a Template change).
+ *     the release the demo is pinned to (the producer is not a Template change).
  *
  * Run AFTER the golden build of boost-interior-demo:
  *   tsx --tsconfig platform/tsconfig.json platform/test/integration.test.ts
@@ -44,31 +55,84 @@ import {
   MANIFEST_PATH,
   PORTFOLIO_SCHEMA_VERSION,
   PRODUCER_VERSION,
+  PROJECT_TYPES,
+  PROPERTY_TYPES,
+  WORK_SCOPE_IDS,
+  WORK_SCOPE_SPACE_IDS,
+  WORK_SCOPE_WORK_IDS,
 } from "../integration/contract";
 import { IntegrationConfigError, integrationEmits, loadIntegrationConfig } from "../integration/config";
 import { PRODUCER_SOURCE_FILES, producerSources } from "../integration/sources";
-import { compareCodePoints, DeclaredRoutesSchema, emitIntegration, IntegrationError, portfolioVersion, type IntegrationEmission, type PlannedRoute } from "../integration/emit";
+import { compareCodePoints, DeclaredRoutesSchema, derivePerArea, emitIntegration, IntegrationError, portfolioVersion, type IntegrationEmission, type PlannedRoute, type PortfolioDocument } from "../integration/emit";
 import { assertIntegration, isRootRelativePath, validateIntegration } from "../integration/validate";
+import { ProjectSchema, type Project } from "../content/schema";
 import template from "../../templates/interior-01/v1/template";
+import { GOLDEN_DIR, goldenRecord as goldenRecord02 } from "../cli/integration-golden";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
 const FIXTURES = ["fixture-large", "fixture-small", "fixture-empty"] as const;
 const AT = "2026-09-22T12:00:00Z";
-/** the live 1.5.2 package (Cloudflare pilot, docs/result/cloudflare-live-pilot) — must stay byte-identical */
+/**
+ * the live 1.5.2 package (Cloudflare pilot, docs/result/cloudflare-live-pilot) — must stay
+ * byte-identical, so these three stay LITERAL: they name a frozen artefact on disk, not a
+ * recomputable expectation. It was built from the 1.5.2 pin; since the demo was re-pinned to
+ * 1.6.0 (docs/result/interior-portfolio-v0.2/23) it is no longer the demo's own OFF identity —
+ * that one is derived from the current pin below (DEMO_OFF_BUILD_INPUT_ID).
+ */
 const LIVE_BUILD_INPUT_ID = "18c0a5eff5abce3fef1cc3f86c0498a3a49dbd03350245eb84e56b46dc60911f";
 const LIVE_PACKAGE_HASH = "cd048406311f22b63cf83bd240b0579e03b69f3b60def82527e6f863f8035202";
 const RELEASE_152 = "interior-01-1.5.2-d87807590d64";
-/** 02 §21 — the golden values shared with the consumer */
-const DEMO_VERSION = "6346c472e162ae07b76a4686fce54c51";
-const DEMO_DOC_BYTES = 5292;
+/** 1.5.2's frozen releaseHash — the immutability golden (I1): a stored release may never move. */
+const RELEASE_152_HASH = "d87807590d64ea7901b226d43526795793805527647313ee4af22f8511577a08";
+/** the pin the live package was built from (its snapshot carries it, so it is a build input) */
+const LIVE_PIN = { templateId: "interior-01", templateVersion: "1.5.2", releaseId: RELEASE_152, releaseHash: RELEASE_152_HASH } as const;
+/**
+ * The re-authored demo snapshot (26, 28) hashed with the pin rolled back to 1.5.2 — B2's anchor for
+ * "the pin is isolable". It is deliberately taken at the LIVE pin, so re-pinning the demo again
+ * never moves it; only a change to the demo's own data does. Verified against the frozen live
+ * package: with content/projects.json restored to its pre-V0.2 bytes this value becomes
+ * liveParts.siteSnapshotHash (df04f877…) exactly — see 28 §4, B2.
+ */
+const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN = "515a797765defd5c1230dc49a2fc426b70b106c39301bf3e0731ac370ad75db3";
+/**
+ * 02 §21 — the V0.1 golden values (schemaVersion "0.1"). They describe the FROZEN V0.1 package on
+ * disk in data/site-builds/ (current.json), which stays the site's current package until the
+ * consumer is ready for V0.2 (07 §16; PUBLISH_ALLOWED = NO). They are no longer what this producer
+ * emits, and are asserted only against that package (the V0.1 compatibility checks, G1–G5).
+ */
+const V01_DEMO_VERSION = "6346c472e162ae07b76a4686fce54c51";
+const V01_DEMO_DOC_BYTES = 5292;
 const DEMO_MANIFEST_BYTES = 274;
-const EMPTY_VERSION = "31aefd2bb7264c12d3ec4e072e7394c3";
-const EMPTY_DOC = `{"schemaVersion":"0.1","resource":"portfolio","version":"${EMPTY_VERSION}","records":[]}`;
-const TWO_RECORD_VERSION = "6d641b6f8c9e8966551f2aed9a277285";
+/**
+ * The V0.2 golden values (07 rev 9.2.1, document "1.0", manifest "0.1"): the demo's pure emission at
+ * AT, pinned byte for byte in platform/test/golden/portfolio-v0.2 (G6) and shared with the consumer
+ * (07 §16 step 2). A change here is a change of the canonical data or of the producer.
+ */
+const DEMO_VERSION = "d56509c8100a56fdf9644baff78ff9e1";
+const DEMO_DOC_BYTES = 11608;
+const DEMO_DOC_SHA256 = "c76624146b5a753003fa5f0e3619534e3a80bd2fd967ed975d392e9180453816";
+const DEMO_MANIFEST_SHA256 = "b2f52b736570b954fb257f03cc5897426dee7f199d95d3654221290644d8ce5d";
+/** the zero-record V0.2 document (07 §10: records [] is the one permitted empty array) */
+const EMPTY_VERSION = "e4815a16b0531b8f5428b3174b82ac9c";
+const EMPTY_DOC = `{"schemaVersion":"1.0","resource":"portfolio","version":"${EMPTY_VERSION}","records":[]}`;
+/**
+ * The 17 distinct work-scope ids the re-authored demo uses (26 §1.2), sorted in code point order —
+ * i.e. what WS2 requires `document.workScopes` to be. Nine of the contract's 26 ids are unused by
+ * this corpus (`balcony`, `hallway`, `storage`, `pantry`, `utility`, `tiling`, `plumbing`,
+ * `electrical`, `demolition`), and WS2's closure forbids declaring them.
+ */
+const DEMO_WORK_SCOPES = [
+  "bathroom", "bedroom", "built_in_furniture", "dining", "doors", "dressing_room", "entrance",
+  "expansion", "flooring", "kids_room", "kitchen", "lighting", "living_room", "painting", "study",
+  "wallpaper", "windows",
+];
+/** the demo's full `facets.style` vocabulary after 28's authoring pass, declared and sorted (VO1) */
+const DEMO_STYLE_VALUES = ["그레이지", "내추럴", "모던", "미니멀", "베이지", "우드 포인트", "월넛", "웜 화이트", "화이트"].map((id) => ({ id, label: id }));
 
 let passed = 0;
 const failed: string[] = [];
+const skipped: string[] = [];
 async function check(name: string, fn: () => unknown | Promise<unknown>) {
   try {
     await fn();
@@ -78,6 +142,16 @@ async function check(name: string, fn: () => unknown | Promise<unknown>) {
     failed.push(name);
     console.log(`  FAIL ${name}\n       ${(error as Error).message.split("\n").join("\n       ")}`);
   }
+}
+/**
+ * A check whose RULE stands but whose EXPECTED VALUE is knowingly out of date: the body is kept
+ * compiling and is NOT run, and every skip is listed at the end of the run with its reason. Never
+ * used to make a genuine assertion pass. (No check is skipped since the V0.2 golden was pinned —
+ * docs/result/interior-portfolio-v0.2/36.)
+ */
+function skip(name: string, why: string, _body: () => unknown | Promise<unknown>) {
+  skipped.push(`${name} — ${why}`);
+  console.log(`  SKIP ${name}\n       ${why}`);
 }
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error(msg);
@@ -107,7 +181,7 @@ const exists = (p: string) => stat(p).then(() => true, () => false);
 const packageOf = async (root: string, siteId: string) => path.join(root, (await readJson(path.join(root, "data/site-builds", siteId, "current.json"))).packageDir);
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
-/** planned routes of a snapshot under the working-tree Template manifest (= the demo's pinned 1.5.2, asserted in I2) */
+/** planned routes of a snapshot under the working-tree Template manifest (= the demo's pinned release, asserted in I2b) */
 function plannedRoutesOf(snapshot: SiteSnapshot): PlannedRoute[] {
   return planRoutes(template.routes, createContentReader(snapshot.content)).routes.map((r) => ({ key: r.key, pattern: r.pattern, paths: r.paths }));
 }
@@ -173,14 +247,49 @@ const demo = await prepareSiteInput({ repoRoot, siteId: DEMO, mode: "public", at
 const demoEmission = emitFor(demo.snapshot);
 const goldenDir = await packageOf(repoRoot, DEMO);
 const goldenRecord = (await readJson(path.join(goldenDir, "build-record.json"))) as BuildRecord;
+/**
+ * The demo's CURRENT pin, read straight from data/sites/<DEMO>/site.json. Every pin-derived
+ * expectation below (I1, B2, B4, I2b) is computed from it, so re-pinning the demo to a newly cut
+ * Template Release costs no edit in this file. Only values describing a FROZEN artefact — the live
+ * package, release 1.5.2 — stay literal.
+ */
+const demoPin = (await readJson(path.join(repoRoot, "data/sites", DEMO, "site.json"))).template as { templateId: string; templateVersion: string; releaseId: string; releaseHash: string };
+/** the live package's own recorded build-input parts (its build-record.json on disk) */
+const liveParts = ((await readJson(path.join(repoRoot, "data/site-builds", DEMO, "packages", LIVE_BUILD_INPUT_ID, "build-record.json"))) as BuildRecord).parts;
+/**
+ * The demo's identity with the integration part dropped, under the CURRENT pin — derived, not
+ * frozen: the LIVE package's own parts with exactly the two parts a re-pin moves taken from the
+ * current input (`releaseHash`, and `siteSnapshotHash` because the pin lives inside the snapshot as
+ * site.template). `mode` and `toolchainHash` therefore still have to be the live build's, and B2
+ * separately proves the pin is the only delta by rolling it back (→ the live snapshot hash exactly).
+ */
+const DEMO_OFF_BUILD_INPUT_ID = computeBuildInputId({ ...liveParts, releaseHash: demo.parts.releaseHash, siteSnapshotHash: demo.parts.siteSnapshotHash });
 
 console.log("\n[contract] constants");
-await check("C1 fixed manifest path, V0 schema versions, an integer producer version", () => {
+await check("C1 fixed manifest path, the DIVERGED schema versions (manifest 0.1 · document 1.0, INV-27), an integer producer version, the V0.2 limits", () => {
   eq(MANIFEST_PATH, "/_integration/manifest.json", "manifest path (§3.1)");
-  eq([CORE_SCHEMA_VERSION, PORTFOLIO_SCHEMA_VERSION], ["0.1", "0.1"], "schemaVersion (§14 SV1)");
-  assert(Number.isInteger(PRODUCER_VERSION) && PRODUCER_VERSION >= 1, "producer version");
-  eq(CONSUMER_DECLARED_LIMITS.valuesPerFacet, { category: 50, scope: 150, tag: 150 }, "CH-R10 per-key limits");
+  eq([CORE_SCHEMA_VERSION, PORTFOLIO_SCHEMA_VERSION], ["0.1", "1.0"], "schemaVersion (SV1 · 07 §3 · INV-27)");
+  assert(Number.isInteger(PRODUCER_VERSION) && PRODUCER_VERSION >= 2, "producer version bumped for V0.2");
+  // 07 §8: `scope: 150` retired with the facet; `style` added (PROVISIONAL until the consumer
+  // declares it through the VO6 procedure); category / tag unchanged.
+  eq(CONSUMER_DECLARED_LIMITS.valuesPerFacet, { category: 50, style: 150, tag: 150 }, "VO6 per-key limits");
+  assert(CONSUMER_DECLARED_LIMITS.valuesPerFacet.scope === undefined, "the retired scope limit is gone");
   eq([CONSUMER_DECLARED_LIMITS.manifestBytes, CONSUMER_DECLARED_LIMITS.documentBytes, CONSUMER_DECLARED_LIMITS.records], [65536, 1048576, 1000], "CH-R10 sizes");
+});
+await check("C4 the closed V0.2 vocabularies: 26 unique work-scope ids exactly as 07 §7.3 lists them, 2 project types, 6 property types, all frozen", () => {
+  eq([...WORK_SCOPE_IDS], [
+    "entrance", "living_room", "dining", "kitchen", "pantry", "bedroom", "kids_room", "dressing_room", "study", "bathroom", "hallway", "balcony", "storage", "utility",
+    "flooring", "wallpaper", "lighting", "windows", "doors", "tiling", "painting", "plumbing", "electrical", "built_in_furniture", "expansion", "demolition",
+  ], "the 26 ids of 07 §7.3 (14 spaces, then 12 works)");
+  eq([WORK_SCOPE_IDS.length, new Set(WORK_SCOPE_IDS).size], [26, 26], "26 unique");
+  // INV-29 needs the two tables apart; their union, in order, IS the vocabulary.
+  eq([WORK_SCOPE_SPACE_IDS.length, WORK_SCOPE_WORK_IDS.length], [14, 12], "14 spaces, 12 works");
+  eq([...WORK_SCOPE_SPACE_IDS, ...WORK_SCOPE_WORK_IDS], [...WORK_SCOPE_IDS], "spaces ++ works = the vocabulary, same order");
+  eq([...WORK_SCOPE_SPACE_IDS].filter((id) => (WORK_SCOPE_WORK_IDS as readonly string[]).includes(id)), [], "disjoint tables");
+  for (const v of [WORK_SCOPE_SPACE_IDS, WORK_SCOPE_WORK_IDS]) assert(Object.isFrozen(v), "both tables frozen");
+  eq([...PROJECT_TYPES], ["full_remodel", "partial_remodel"], "07 §5");
+  eq([...PROPERTY_TYPES], ["apartment", "officetel", "villa", "detached_house", "mixed_use", "commercial"], "07 §6");
+  for (const v of [WORK_SCOPE_IDS, PROJECT_TYPES, PROPERTY_TYPES]) assert(Object.isFrozen(v), "canonical vocabularies are frozen");
 });
 await check("C2 HT7 forbidden characters: C0, DEL, C1, U+2028/2029, bidi controls hit; Korean, ASCII, middle dot, emoji do not", () => {
   for (const c of ["\u0000", "\u0007", "\u001f", "\u007f", "\u0085", "\u009f", " ", " ", "‪", "‮", "⁦", "⁩"]) assert(FORBIDDEN_CHAR_RE.test(`a${c}b`), `U+${c.codePointAt(0)!.toString(16)} must be forbidden`);
@@ -191,75 +300,132 @@ await check("C3 code point order: U+FF5E sorts before U+1F600 (UTF-16 code unit 
   eq(["b", "a", "가", "A", "ab"].sort(compareCodePoints), ["A", "a", "ab", "b", "가"], "ascending");
 });
 
-console.log("\n[emitter] pure projection of the demo's real site data (02 §21 golden)");
-await check(`E1 demo → version ${DEMO_VERSION}, document ${DEMO_DOC_BYTES} B, manifest ${DEMO_MANIFEST_BYTES} B, 8 records, facets category 4 · scope 20 · tag 8, listingUrl /portfolio (02 §21.1)`, () => {
+console.log("\n[emitter] pure projection of the demo's real site data");
+await check("E1 demo → 19 records, manifest 274 B, facets category 4 · style 9 · tag 3 and NO scope facet (07 §8), the 17 authored work scopes, listingUrl /portfolio, V0.2 document key order", () => {
   const e = demoEmission;
-  eq(e.portfolio!.version, DEMO_VERSION, "version");
-  eq([e.portfolio!.file.bytes.length, e.manifestFile.bytes.length], [DEMO_DOC_BYTES, DEMO_MANIFEST_BYTES], "bytes");
-  eq([e.portfolio!.recordCount, e.portfolio!.facetCounts], [8, { category: 4, scope: 20, tag: 8 }], "counts");
+  const version = e.portfolio!.version;
+  assert(/^[0-9a-f]{32}$/.test(version), `version shape: ${version}`);
+  eq(e.manifestFile.bytes.length, DEMO_MANIFEST_BYTES, "manifest bytes (the manifest did not change shape)");
+  // The demo data is now V0.2-authored (26: 8 → 19 records with projectType / propertyType /
+  // workScopeIds / totalPrice; 28: `styles` on the original eight), so the document carries a
+  // `style` facet and a workScopes block. The retired `scope` facet is still gone — that is the
+  // shape change this release makes, and it is unaffected by the re-authoring.
+  eq([e.portfolio!.recordCount, e.portfolio!.facetCounts], [19, { category: 4, style: 9, tag: 3 }], "counts");
+  eq(e.portfolio!.document.workScopes, DEMO_WORK_SCOPES, "the authored work scopes, sorted and closed both ways (WS2)");
   eq(e.portfolio!.document.listingUrl, "/portfolio", "listingUrl");
   eq(e.manifest, {
     schemaVersion: "0.1",
     site: { id: DEMO, publicOrigin: "https://interior-demo.boostweb.co.kr", locale: "ko-KR" },
-    resources: { portfolio: { href: `/_integration/portfolio.${DEMO_VERSION}.json`, version: DEMO_VERSION } },
-  }, "manifest (02 §5 key order)");
-  eq(Object.keys(e.portfolio!.document), ["schemaVersion", "resource", "version", "listingUrl", "facets", "records"], "document key order (02 §6)");
-  eq(e.files.map((f) => f.path), ["_integration/manifest.json", `_integration/portfolio.${DEMO_VERSION}.json`], "files");
+    resources: { portfolio: { href: `/_integration/portfolio.${version}.json`, version } },
+  }, "manifest (02 §5 key order; manifest schemaVersion stays 0.1 — INV-27)");
+  eq(e.portfolio!.document.schemaVersion, "1.0", "document schemaVersion (07 §3, INV-27)");
+  // 07 §10 declares the document as schemaVersion · resource · version · listingUrl · workScopes ·
+  // facets · records; `workScopes` was simply absent from the demo's key list before the corpus
+  // authored any work scope, and now takes its declared place.
+  eq(Object.keys(e.portfolio!.document), ["schemaVersion", "resource", "version", "listingUrl", "workScopes", "facets", "records"], "document key order (07 §10)");
+  eq(e.files.map((f) => f.path), ["_integration/manifest.json", `_integration/portfolio.${version}.json`], "files");
 });
-await check("E2 same snapshot → byte-identical emission (INV-1); the 02 §21.2 two-record example and §21.3 empty document reproduce", () => {
+await check(`E1b demo → version ${DEMO_VERSION}, document ${DEMO_DOC_BYTES} B, manifest ${DEMO_MANIFEST_BYTES} B (the V0.2 golden values, P-V2-05)`, () => {
+  eq(demoEmission.portfolio!.version, DEMO_VERSION, "version");
+  eq([demoEmission.portfolio!.file.bytes.length, demoEmission.portfolio!.file.sha256], [DEMO_DOC_BYTES, DEMO_DOC_SHA256], "document bytes");
+  eq(demoEmission.manifestFile.sha256, DEMO_MANIFEST_SHA256, "manifest bytes");
+  // RV1/RV5: the version is the hash of the body, and it is what names the file
+  eq(portfolioVersion(JSON.parse(demoEmission.portfolio!.file.text)), DEMO_VERSION, "version = sha256(canonical body)[0:32]");
+  eq(demoEmission.portfolio!.file.path, `${INTEGRATION_DIR}/portfolio.${DEMO_VERSION}.json`, "file name carries the version");
+});
+await check("E2 same snapshot → byte-identical emission, twice (INV-1/INV-26); an empty site emits the zero-record document with no listingUrl and no facets", () => {
   const a = emitFor(demo.snapshot);
   const b = emitFor(demo.snapshot);
   eq(a.files.map((f) => f.sha256), b.files.map((f) => f.sha256), "twice");
-  const two = clone(demo.snapshot);
-  two.content.projects = two.content.projects.filter((p) => p.id === "bi-01" || p.id === "bi-04");
-  eq(emitFor(two).portfolio!.version, TWO_RECORD_VERSION, "§21.2");
   const empty = clone(demo.snapshot);
   empty.content.projects = [];
   const ee = emitFor(empty);
-  eq(ee.portfolio!.file.text, EMPTY_DOC, "§21.3 exact bytes");
-  eq([ee.portfolio!.document.listingUrl, ee.portfolio!.document.facets], [undefined, undefined], "no listingUrl / facets with zero records");
-  eq(ee.manifest.resources.portfolio!.version, EMPTY_VERSION, "manifest version of the empty resource");
+  eq([ee.portfolio!.document.listingUrl, ee.portfolio!.document.facets, ee.portfolio!.document.workScopes], [undefined, undefined, undefined], "no listingUrl / facets / workScopes with zero records");
+  eq(ee.portfolio!.document.records, [], "records [] is the one permitted empty array (MD3)");
+  eq(ee.manifest.resources.portfolio!.version, ee.portfolio!.version, "manifest echoes the empty resource's version");
 });
-await check("E3 records by id code point, facet values by id code point, a record's scope/tag in authored order (§6.1)", () => {
+// E2b was "02 §21.2's two-record example and §21.3's empty document reproduce byte for byte". Both
+// are V0.1 documents, and 07 rev 9.2.1 has no byte-level V0.2 example (its §19 is acceptance rows,
+// §19's old worked example is archived), so the two-record half is retired; the empty document is
+// restored with its V0.2 bytes, and the 19-record V0.2 document is pinned by E1b and G6.
+await check("E2b the empty V0.2 document reproduces byte for byte (schemaVersion 1.0, records [] and nothing else)", () => {
+  const empty = clone(demo.snapshot);
+  empty.content.projects = [];
+  eq(emitFor(empty).portfolio!.file.text, EMPTY_DOC, "exact bytes");
+});
+await check("E3 records by id code point, facet values by id code point, a record's tag in authored order (§6.1); the retired scope facet is absent; V0.2 record key order (07 §10)", () => {
   const d = demoEmission.portfolio!.document;
   eq(d.records.map((r) => r.id), [...d.records.map((r) => r.id)].sort(compareCodePoints), "record order");
   for (const [k, f] of Object.entries(d.facets!)) eq(f.values.map((v) => v.id), [...f.values.map((v) => v.id)].sort(compareCodePoints), `facet ${k} order`);
+  eq(Object.keys(d.facets!), ["category", "style", "tag"], "facet key order, scope retired (07 §8)");
   const bi01 = d.records.find((r) => r.id === "bi-01")!;
   const src = demo.snapshot.content.projects.find((p) => p.id === "bi-01")!;
-  eq(bi01.facets!.scope, src.scope, "scope authored order");
-  eq(bi01.facets!.tag, src.keywords, "tag authored order");
+  assert(src.scope && src.scope.length > 0, "the demo record still authors free-text scope (it is display text, and still rendered)");
+  eq(bi01.facets!.scope, undefined, "the scope FACET is retired: the free text never reaches the document (07 §8)");
+  eq(bi01.facets!.style, src.styles, "style = the authored styles, authored order");
+  eq(bi01.facets!.tag, src.keywords!.filter((k) => !(src.styles ?? []).includes(k)), "tag = keywords MINUS styles (ST4), survivors in authored order");
   eq(bi01.facets!.category, [src.category], "category exactly one");
-  eq(Object.keys(bi01), ["id", "title", "detailUrl", "publishedAt", "location", "area", "pricePerArea", "facets"], "record key order (02 §6)");
+  eq(Object.keys(bi01), ["id", "title", "detailUrl", "publishedAt", "location", "projectType", "property", "workScopeIds", "pricing", "facets"], "record key order (07 §10)");
 });
-await check("E4 missing → omitted: records without a price have no pricePerArea key; no null / \"\" / {} / [] anywhere (MD1–MD3, INV-9)", () => {
+await check("E4 missing → omitted: records without a price have no pricing key at all (MD4); no projectType / workScopeIds / style without an authored source field (INV-25); no null / \"\" / {} / [] anywhere (MD1–MD3, INV-9)", () => {
   const d = demoEmission.portfolio!.document;
-  for (const id of ["bi-04", "bi-06"]) assert(!("pricePerArea" in d.records.find((r) => r.id === id)!), `${id} must have no pricePerArea key`);
-  assert(d.records.filter((r) => r.pricePerArea).length === 6, "6 priced records as authored");
+  for (const id of ["bi-04", "bi-06"]) assert(!("pricing" in d.records.find((r) => r.id === id)!), `${id} must have no pricing key (MD4)`);
+  assert(d.records.filter((r) => r.pricing?.perArea).length === 10, "10 per-area prices: the 8 authored on bi-01 … bi-08 (minus bi-04/bi-06, which author no price at all) + the 4 D-1 derivations on bi-09 … bi-12");
+  // INV-25 / ND1 — every V0.2 field in the document has an authored source field in the record, and
+  // no record carries one it did not author. Before the demo was re-authored (26, 28) this could be
+  // stated as "none of them may appear at all"; the rule is unchanged, now written as the
+  // equivalence it always was, so a spurious field is still caught on every one of the 19.
+  for (const r of d.records) {
+    const src = demo.snapshot.content.projects.find((p) => p.id === r.id)!;
+    eq(
+      [r.projectType, r.workScopeIds, r.pricing?.total, r.property?.type, r.facets!.style],
+      [src.projectType, src.workScopeIds, src.totalPrice, src.propertyType, src.styles && src.styles.length > 0 ? src.styles : undefined],
+      `${r.id}: exactly the authored V0.2 fields, nothing invented (ND1, INV-25)`,
+    );
+    // PA1 / D-1a: an authored pricePerArea is copied as `authored` and never replaced; a per-area
+    // price appears without one only where D-1's conditions hold, and is then marked `derived`.
+    if (r.pricing?.perArea) eq(r.pricing.perArea.source, src.pricePerArea ? "authored" : "derived", `${r.id}: perArea source`);
+  }
   const hits: string[] = [];
   deepScan(demoEmission.portfolio!.document, "", hits);
   deepScan(demoEmission.manifest, "manifest", hits);
   eq(hits, [], "no empty value");
   assert(!demoEmission.portfolio!.file.text.includes("null") && !demoEmission.portfolio!.file.text.includes('"unknown"'), "no null / unknown literal in the bytes");
 });
-await check("E5 area: value/unit as authored (no conversion), basis supply as stored on every demo record; unknown/absent basis → no key; exclusive stays exclusive (AR2/AR3)", () => {
+await check("E5 property.area: value/unit as authored (no conversion), basis supply as stored on every demo record; unknown/absent basis → no key; exclusive stays exclusive (AR2/AR3, 07 §6); pricePerArea → pricing.perArea + source authored", () => {
+  // `property` is `{ type?, area? }` in that key order and is omitted entirely when both are absent
+  // (MD4). Since the re-authoring the corpus exercises all of it on real data: bi-15 authors no
+  // area, bi-04 and bi-06 author no propertyType (28 §2), and bi-14 is `exclusive` while the rest
+  // are `supply` — so the basis is read from the record instead of being hard-coded to "supply".
   for (const r of demoEmission.portfolio!.document.records) {
     const src = demo.snapshot.content.projects.find((p) => p.id === r.id)!;
-    eq(r.area, { value: src.area!.value, unit: src.area!.unit, basis: "supply" }, `${r.id} area`);
-    if (src.pricePerArea) eq(r.pricePerArea, { amount: src.pricePerArea.amount, currency: src.pricePerArea.currency, perUnit: src.pricePerArea.unit }, `${r.id} price`);
+    const expected = {
+      ...(src.propertyType ? { type: src.propertyType } : {}),
+      ...(src.area ? { area: { value: src.area.value, unit: src.area.unit, ...(src.area.basis && src.area.basis !== "unknown" ? { basis: src.area.basis } : {}) } } : {}),
+    };
+    eq(r.property, Object.keys(expected).length > 0 ? expected : undefined, `${r.id} property: value / unit / basis as authored, no conversion`);
+    if (src.pricePerArea) eq(r.pricing!.perArea, { amount: src.pricePerArea.amount, currency: src.pricePerArea.currency, perUnit: src.pricePerArea.unit, source: "authored" }, `${r.id} price`);
   }
+  assert(demoEmission.portfolio!.document.records.some((r) => r.property?.area?.basis === "exclusive"), "AR3: an exclusive basis survives as exclusive on real data (bi-14)");
+  assert(demoEmission.portfolio!.document.records.some((r) => r.property && !r.property.area), "MD4: a record with a type but no area still emits property (bi-15)");
   const s = clone(demo.snapshot);
   s.content.projects[0]!.area = { value: 84.5, unit: "m2", basis: "unknown" };
   s.content.projects[1]!.area = { value: 24, unit: "pyeong" };
   s.content.projects[2]!.area = { value: 59, unit: "m2", basis: "exclusive" };
+  s.content.projects[3]!.propertyType = "officetel";
+  delete s.content.projects[3]!.area;
   const d = emitFor(s).portfolio!.document;
-  eq(d.records[0]!.area, { value: 84.5, unit: "m2" }, "unknown → omitted");
-  eq(d.records[1]!.area, { value: 24, unit: "pyeong" }, "absent → omitted");
-  eq(d.records[2]!.area, { value: 59, unit: "m2", basis: "exclusive" }, "exclusive kept");
-  assert(!JSON.stringify(d).includes("totalCost"), "no total cost (PR5)");
+  eq(d.records[0]!.property!.area, { value: 84.5, unit: "m2" }, "unknown → omitted");
+  eq(d.records[1]!.property!.area, { value: 24, unit: "pyeong" }, "absent → omitted");
+  eq(d.records[2]!.property!.area, { value: 59, unit: "m2", basis: "exclusive" }, "exclusive kept");
+  eq(d.records[3]!.property, { type: "officetel" }, "type alone still emits property (MD4)");
+  assert(!JSON.stringify(d).includes("totalCost"), "no total cost (TP3 = PR5; the name stays reserved)");
 });
 await check("E6 allowlist: no summary / body / gallery / quote / slug / status / builtYear / period / duration key or text (INV-7, SE2)", () => {
   const text = demoEmission.portfolio!.file.text;
-  for (const key of ["summary", "body", "galleryGroups", "customerQuote", "cover", "slug", "status", "builtYear", "period", "durationWeeks", "keywords", "attribution", "style", "propertyType", "totalCost"]) {
+  // `style` is no longer on this list — it is a V0.2 facet key (07 §8) — but `propertyType` still
+  // is: V0.2 takes it up as the STRUCTURED field `property.type`, never as a facet or a flat key.
+  for (const key of ["summary", "body", "galleryGroups", "customerQuote", "cover", "slug", "status", "builtYear", "period", "durationWeeks", "keywords", "styles", "attribution", "propertyType", "totalCost", "scope"]) {
     assert(!text.includes(`"${key}"`), `key ${key} must not be emitted`);
   }
   for (const p of demo.snapshot.content.projects) {
@@ -277,7 +443,12 @@ await check("E6 allowlist: no summary / body / gallery / quote / slug / status /
     return rest;
   });
   walk(stripped);
-  const allow = new Set(["schemaVersion", "resource", "version", "listingUrl", "records", "id", "title", "detailUrl", "publishedAt", "location", "area", "value", "unit", "basis", "pricePerArea", "amount", "currency", "perUnit"]);
+  const allow = new Set([
+    "schemaVersion", "resource", "version", "listingUrl", "workScopes", "records",
+    "id", "title", "detailUrl", "publishedAt", "location",
+    "projectType", "property", "type", "area", "value", "unit", "basis", "workScopeIds",
+    "pricing", "total", "kind", "minAmount", "maxAmount", "perArea", "amount", "currency", "perUnit", "source",
+  ]);
   eq([...keys].filter((k) => !allow.has(k)), [], "keys outside the allowlist");
 });
 await check("E7 version changes with every projected fact and with a record added/removed; stays for anything outside the projection (INV-2, RV2)", () => {
@@ -293,18 +464,29 @@ await check("E7 version changes with every projected fact and with a record adde
     ["area.value", (s) => void (s.content.projects[p()]!.area!.value = 35)],
     ["area.basis", (s) => void (s.content.projects[p()]!.area!.basis = "exclusive")],
     ["pricePerArea.amount", (s) => void (s.content.projects[p()]!.pricePerArea!.amount = 1)],
-    ["scope", (s) => void s.content.projects[p()]!.scope!.push("옥상")],
     ["keywords", (s) => void s.content.projects[p()]!.keywords!.push("신규")],
+    // V0.2 projected facts (07 §10): each one moves the version, so a re-authoring is never
+    // invisible. bi-01 is now authored `full_remodel` / `apartment` (26 §1.2), so those two values
+    // would be no-op mutations — each case changes the field to a DIFFERENT admissible value.
+    ["projectType", (s) => void (s.content.projects[p()]!.projectType = "partial_remodel")],
+    ["propertyType", (s) => void (s.content.projects[p()]!.propertyType = "officetel")],
+    ["workScopeIds", (s) => void (s.content.projects[p()]!.workScopeIds = ["kitchen"])],
+    ["totalPrice", (s) => void (s.content.projects[p()]!.totalPrice = { kind: "exact", amount: 52_000_000, currency: "KRW" })],
+    ["styles", (s) => void (s.content.projects[p()]!.styles = ["미니멀"])],
     ["location", (s) => void (s.content.projects[p()]!.location = "서울")],
     ["publishedAt", (s) => void (s.content.projects[p()]!.publishedAt = "2026-08-28T10:00:00+09:00")],
     ["category label", (s) => void (s.content.categories[0]!.name += " ")],
     ["category id", (s) => void ((s.content.categories.find((c) => c.id === "full-remodel")!.id = "full-remodel-2"), s.content.projects.filter((x) => x.category === "full-remodel").forEach((x) => void (x.category = "full-remodel-2")))],
     ["slug (detailUrl)", (s) => void (s.content.projects[p()]!.slug = "other-slug")],
     ["record removed", (s) => void s.content.projects.pop()],
-    ["record added", (s) => void s.content.projects.push({ ...clone(s.content.projects[0]!), id: "bi-09", slug: "bi-09-slug" })],
+    // bi-09 … bi-19 now exist (26 §1.1), so the added record takes the next free id
+    ["record added", (s) => void s.content.projects.push({ ...clone(s.content.projects[0]!), id: "bi-20", slug: "bi-20-slug" })],
   ];
   for (const [what, f] of changes) assert(vary(f) !== base, `${what}: version must change`);
   const neutral: [string, (s: SiteSnapshot) => void][] = [
+    // 07 §8: the free-text `scope` facet is RETIRED, so the authored display text no longer
+    // reaches the document — changing it must NOT move the resource version.
+    ["scope (retired facet, still display content)", (s) => void s.content.projects[p()]!.scope!.push("옥상")],
     ["summary", (s) => void (s.content.projects[p()]!.summary = "다른 요약")],
     ["body", (s) => void (s.content.projects[p()]!.body = ["다른 본문"])],
     ["galleryGroups", (s) => void delete s.content.projects[p()]!.galleryGroups],
@@ -322,14 +504,21 @@ await check("E7 version changes with every projected fact and with a record adde
   ];
   for (const [what, f] of neutral) eq(vary(f), base, `${what}: version must not change`);
 });
-await check("E8 a record's facet array keeps authored order and drops repeats (first occurrence) — INV-14; the declared values are unique", () => {
+await check("E8 a record's style / tag / workScopeIds arrays keep the authored order and drop repeats (first occurrence) — INV-14, WS3, 07 §11; the declared values are unique", () => {
   const s = clone(demo.snapshot);
-  s.content.projects[0]!.scope = ["주방", "거실", "주방", "욕실", "거실"];
-  s.content.projects[0]!.keywords = ["화이트", "화이트"];
+  s.content.projects[0]!.styles = ["화이트", "미니멀", "화이트"];
+  s.content.projects[0]!.keywords = ["간접조명", "간접조명"];
+  s.content.projects[0]!.workScopeIds = ["kitchen", "bathroom", "kitchen"];
   const d = emitFor(s).portfolio!.document;
-  eq(d.records[0]!.facets!.scope, ["주방", "거실", "욕실"], "scope dedupe");
-  eq(d.records[0]!.facets!.tag, ["화이트"], "tag dedupe");
-  eq(new Set(d.facets!.scope!.values.map((v) => v.id)).size, d.facets!.scope!.values.length, "unique declared");
+  eq(d.records[0]!.facets!.style, ["화이트", "미니멀"], "style authored order + dedupe");
+  eq(d.records[0]!.facets!.tag, ["간접조명"], "tag dedupe");
+  eq(d.records[0]!.workScopeIds, ["kitchen", "bathroom"], "workScopeIds authored order + dedupe");
+  // The other 18 records carry their own authored scopes (26 §1), so the document declares the
+  // union. Narrowing bi-01 to kitchen + bathroom removes no id from it: every one of bi-01's
+  // authored six is also used by another record, so WS2's closure is unchanged by this craft.
+  eq(d.workScopes, DEMO_WORK_SCOPES, "document workScopes: sorted, closed both ways (WS2)");
+  eq(new Set(d.facets!.style!.values.map((v) => v.id)).size, d.facets!.style!.values.length, "unique declared");
+  eq(Object.keys(d.facets!), ["category", "style", "tag"], "facet key order (02 §6.1)");
 });
 await check("E9 no item route over projects → the resource is NOT offered: manifest only with resources {} (02 §4/§5, CONFIRMED OFF (resource)); it validates; the manifest carries no pointer", () => {
   const routes = template.routes.filter((r) => !("item" in r));
@@ -355,8 +544,423 @@ await check("E10 emitter fails closed: no publicOrigin, http origin, ≥ 2 item 
   await rejects(() => emitIntegration({ snapshot: demo.snapshot, declaredRoutes: template.routes, plannedRoutes: planned }), /not in the route plan/);
 });
 
+await check("K1 (P-V2-01, 06, 08–13) the 19-record DEMO corpus still covers what the contract exercises: breadth 7 full / 7 partial / 5 absent; totals 10 exact / 1 range / 8 absent; per-area 6 authored / 4 derived and every derived one is RD1's; the area bases a visitor states; the partial room shapes; each field missing somewhere", () => {
+  // DATA COVERAGE only — the producer ranks nothing (07 §14 is the consumer's). A number moving here
+  // means the canonical corpus changed, and the reason has to be recorded before the value is.
+  const d = demoEmission.portfolio!.document;
+  type Rec = (typeof d.records)[number];
+  const tally = (f: (r: Rec) => string) => {
+    const m: Record<string, number> = {};
+    for (const r of d.records) m[f(r)] = (m[f(r)] ?? 0) + 1;
+    return Object.fromEntries(Object.entries(m).sort(([a], [b]) => compareCodePoints(a, b)));
+  };
+  const spaces = (r: Rec) => (r.workScopeIds ?? []).filter((id) => (WORK_SCOPE_SPACE_IDS as readonly string[]).includes(id)).sort(compareCodePoints);
+  const ids = (pred: (r: Rec) => boolean) => d.records.filter(pred).map((r) => r.id);
+  eq([d.records.length, new Set(d.records.map((r) => r.id)).size], [19, 19], "19 records, 19 unique ids");
+  eq(tally((r) => r.projectType ?? "absent"), { absent: 5, full_remodel: 7, partial_remodel: 7 }, "projectType");
+  eq(tally((r) => r.pricing?.total?.kind ?? "absent"), { absent: 8, exact: 10, range: 1 }, "pricing.total");
+  eq(tally((r) => r.pricing?.perArea?.source ?? "absent"), { absent: 9, authored: 6, derived: 4 }, "pricing.perArea");
+  // P-V2-11/12: a derived perArea is exactly RD1's over the record's own facts, only on a full_remodel
+  // with an exact total; no partial and no breadth-absent record carries a derived one
+  for (const r of d.records.filter((x) => x.pricing?.perArea?.source === "derived")) {
+    eq(r.pricing!.perArea, derivePerArea({ projectType: r.projectType, total: r.pricing!.total, area: r.property?.area }, () => {}), `${r.id}: derived = RD1`);
+    eq([r.projectType, r.pricing!.total!.kind, r.pricing!.perArea!.perUnit], ["full_remodel", "exact", r.property!.area!.unit], `${r.id}: D-1's conditions`);
+  }
+  eq(ids((r) => r.projectType !== "full_remodel" && r.pricing?.perArea?.source === "derived"), [], "no derived perArea off a full_remodel (INV-19)");
+  eq(ids((r) => r.projectType === "partial_remodel" && r.pricing?.perArea !== undefined), [], "no partial carries any perArea (none authored one; none may derive one)");
+  // FULL — "34평 전체 5천", a different area, a different total, the same area at two prices
+  const full = d.records.filter((r) => r.projectType === "full_remodel");
+  eq(ids((r) => r.projectType === "full_remodel" && r.property?.area?.value === 34 && r.property.area.unit === "pyeong" && r.pricing?.total?.kind === "exact" && r.pricing.total.amount === 50_000_000), ["bi-09"], "34평 full, exact 50,000,000");
+  assert(full.some((r) => r.pricing?.total?.kind === "exact" && r.pricing.total.amount <= 30_000_000), "a full job at ≤ 30,000,000 exists (bi-11, 20평; no 34평 one — the consumer says so, the producer invents none)");
+  assert(new Set(full.map((r) => r.property?.area?.value)).size >= 5, "full jobs span several areas");
+  const at34 = full.filter((r) => r.property?.area?.value === 34 && r.property.area.unit === "pyeong" && r.pricing?.total?.kind === "exact");
+  assert(new Set(at34.map((r) => (r.pricing!.total as { amount: number }).amount)).size >= 2, `same area, different prices: ${at34.map((r) => r.id)}`);
+  // PARTIAL — the rooms a partial covered, as authored (WS7a closes Spaces for a partial)
+  const partialBySpaces = (want: string[]) => ids((r) => r.projectType === "partial_remodel" && JSON.stringify(spaces(r)) === JSON.stringify([...want].sort(compareCodePoints)));
+  eq(partialBySpaces(["kitchen"]), ["bi-14"], "주방만");
+  eq(partialBySpaces(["bathroom"]), ["bi-15"], "욕실만");
+  eq(partialBySpaces(["kitchen", "bathroom"]), ["bi-04", "bi-16"], "주방+욕실");
+  eq(partialBySpaces(["living_room"]), ["bi-17"], "거실만");
+  eq(ids((r) => r.projectType === "partial_remodel" && spaces(r).join() === "entrance" && r.workScopeIds!.includes("built_in_furniture")), ["bi-18"], "현관 수납");
+  eq(ids((r) => spaces(r).length === 0 && ["flooring", "wallpaper"].every((w) => r.workScopeIds?.includes(w as never))), ["bi-19"], "도배랑 바닥만: a trades-only job, breadth absent (PT5/PT6)");
+  // AREA BASIS — as authored, never converted (AR3, PY1)
+  const area = (r: Rec) => (r.property?.area ? `${r.property.area.value} ${r.property.area.unit} ${r.property.area.basis ?? "-"}` : "absent");
+  const areas = new Set(d.records.map(area));
+  for (const a of ["34 pyeong supply", "112 m2 supply", "84 m2 exclusive", "absent"]) assert(areas.has(a), `area ${a}`);
+  // MISSING — each is left missing on some record, never filled (INV-25, E4)
+  eq(ids((r) => r.projectType === undefined), ["bi-02", "bi-03", "bi-05", "bi-08", "bi-19"], "projectType absent");
+  eq(ids((r) => r.property?.area === undefined), ["bi-15"], "area absent");
+  eq(ids((r) => r.facets?.style === undefined), ["bi-18"], "style absent");
+  eq(ids((r) => r.pricing === undefined), ["bi-04", "bi-06"], "price absent");
+  eq(ids((r) => r.property?.type === undefined), ["bi-06"], "property.type absent");
+});
+
+console.log("\n[annex] the V0.2 built-space annex on crafted snapshots (07 §5–§11, INV-17 … INV-30)");
+/** the demo snapshot with ONE record re-authored: only the V0.2 fields under test change. */
+function craft(mutate: (p: Project) => void, id = "bi-01") {
+  const snapshot = clone(demo.snapshot);
+  const source = snapshot.content.projects.find((x) => x.id === id)!;
+  mutate(source);
+  assert(ProjectSchema.safeParse(source).success, `crafted record ${id} must itself be valid content: ${JSON.stringify(ProjectSchema.safeParse(source).error?.issues)}`);
+  const emission = emitFor(snapshot);
+  const document = emission.portfolio!.document;
+  return { snapshot, emission, document, record: document.records.find((r) => r.id === id)!, result: validateFor(emission, snapshot) };
+}
+const FULL_34PY = (p: Project) => {
+  delete p.pricePerArea;
+  p.projectType = "full_remodel";
+  // INV-29 — a full_remodel must name at least one SPACE (07 §7.3 spaces table).
+  p.workScopeIds = ["living_room", "kitchen", "bathroom"];
+  p.area = { value: 34, unit: "pyeong", basis: "supply" };
+  p.totalPrice = { kind: "exact", amount: 52_000_000, currency: "KRW" };
+};
+
+await check("A1 INV-20 / RD1 end to end: full_remodel + exact total + area + no authored perArea → a DERIVED perArea of exactly floor((2T+A)/(2A)), perUnit = the record's own area unit, currency = the total's", () => {
+  const { record, result } = craft(FULL_34PY);
+  eq(record.projectType, "full_remodel", "projectType copied");
+  eq(record.workScopeIds, ["living_room", "kitchen", "bathroom"], "authored order");
+  // bi-01 authors `propertyType: "apartment"` (26 §1.2), so `property` carries it alongside the
+  // area. What this line checks is unchanged: the AREA is copied under `property` untouched.
+  eq(record.property, { type: "apartment", area: { value: 34, unit: "pyeong", basis: "supply" } }, "area unchanged under property (07 §6)");
+  eq(record.pricing, { total: { kind: "exact", amount: 52_000_000, currency: "KRW" }, perArea: { amount: 1_529_412, currency: "KRW", perUnit: "pyeong", source: "derived" } }, "52,000,000 / 34평 → 1,529,412 (round half up)");
+  eq([result.errors, result.warnings], [[], []], "validates with no warning");
+});
+await check("A2 RD1 arithmetic: the eight independently verified values reproduce exactly, and 1e9 / 0.01 is refused by the OUTPUT guard (no perArea, one warning, no error)", () => {
+  const cases: [number, number, string, number][] = [
+    [52_000_000, 34, "pyeong", 1_529_412],
+    [85_000_000, 34, "pyeong", 2_500_000],
+    [30_000_000, 20, "pyeong", 1_500_000],
+    [50_000_000, 34, "pyeong", 1_470_588],
+    [7, 0.28, "pyeong", 25],
+    [3, 2, "m2", 2],
+    [5, 2, "m2", 3],
+    [1, 0.01, "m2", 100],
+  ];
+  for (const [amount, value, unit, expected] of cases) {
+    const guardFailures: string[] = [];
+    const got = derivePerArea({ projectType: "full_remodel", total: { kind: "exact", amount, currency: "KRW" }, area: { value, unit } }, (w) => guardFailures.push(w));
+    eq(got, { amount: expected, currency: "KRW", perUnit: unit, source: "derived" }, `${amount} / ${value} ${unit}`);
+    eq(guardFailures, [], `${amount} / ${value}: no guard failure`);
+    assert(Number.isInteger(got!.amount), "the derived amount is an integer in the major unit");
+  }
+  // output guard: 1e9 / 0.01 = 1e11, far above the 1e9 amount ceiling → omit, never emit
+  const failures: string[] = [];
+  eq(derivePerArea({ projectType: "full_remodel", total: { kind: "exact", amount: 1_000_000_000, currency: "KRW" }, area: { value: 0.01, unit: "m2" } }, (w) => failures.push(w)), undefined, "refused");
+  assert(failures.length === 1 && /output guard/.test(failures[0]!), `one output-guard warning: ${failures.join(" | ")}`);
+  // input guards: A must be a safe integer in 1..1e8 and T in 1..1e11 — the area schema caps the
+  // fraction digits but not the magnitude, so A needs its own ceiling.
+  for (const [what, total, area] of [
+    ["area above the A ceiling", { kind: "exact" as const, amount: 5_000_000, currency: "KRW" }, { value: 2_000_000, unit: "m2" }],
+    ["area below 0.01", { kind: "exact" as const, amount: 5_000_000, currency: "KRW" }, { value: 0.001, unit: "m2" }],
+  ] as const) {
+    const w: string[] = [];
+    eq(derivePerArea({ projectType: "full_remodel", total, area }, (x) => w.push(x)), undefined, `refused: ${what}`);
+    assert(w.length === 1 && /input guard/.test(w[0]!), `${what}: one input-guard warning, got ${w.join(" | ")}`);
+  }
+});
+await check("A3 07 §9.3 guard failure WARNS and omits — it never fails the build and never emits a number nobody can trust", () => {
+  const { record, result, emission } = craft((p) => {
+    FULL_34PY(p);
+    p.area = { value: 0.01, unit: "m2" };
+    p.totalPrice = { kind: "exact", amount: 1_000_000_000, currency: "KRW" };
+  });
+  eq(record.pricing!.perArea, undefined, "no perArea");
+  eq(record.pricing!.total, { kind: "exact", amount: 1_000_000_000, currency: "KRW" }, "the authored total survives");
+  eq(result.errors, [], "not an error (VA1's one warn-and-omit case)");
+  assert(result.warnings.some((w) => /bi-01.*no derived per-area price.*RD1 output guard/.test(w)), `warning expected: ${result.warnings.join(" | ")}`);
+  eq(emission.portfolio!.warnings.length, 1, "the emission carries the warning (it reaches the build record)");
+});
+await check("A4 INV-19 / D-1a: partial_remodel + exact total + area → NO perArea. *6,000,000 KRW for one bathroom of a 34평 flat has no per-area price.*", () => {
+  const { record, result } = craft((p) => {
+    delete p.pricePerArea;
+    p.projectType = "partial_remodel";
+    p.workScopeIds = ["bathroom"];
+    p.area = { value: 34, unit: "pyeong", basis: "supply" };
+    p.totalPrice = { kind: "exact", amount: 6_000_000, currency: "KRW" };
+  });
+  eq(record.pricing!.perArea, undefined, "no derived perArea for partial_remodel");
+  eq(result.errors, [], "valid");
+  assert(!JSON.stringify(record).includes("176470") && !JSON.stringify(record).includes("176471"), "6,000,000 / 34 appears nowhere");
+  // and the same with projectType ABSENT (PT4) — absence is never treated as full_remodel
+  const absent = craft((p) => {
+    delete p.pricePerArea;
+    delete p.projectType;
+    p.area = { value: 34, unit: "pyeong", basis: "supply" };
+    p.totalPrice = { kind: "exact", amount: 52_000_000, currency: "KRW" };
+  });
+  eq(absent.record.pricing!.perArea, undefined, "no derived perArea when projectType is absent (D-1a)");
+  eq(absent.result.errors, [], "valid");
+});
+await check("A5 D-1 condition 2: full_remodel + a RANGE total + area → NO perArea (a range has no single right answer)", () => {
+  const { record, result } = craft((p) => {
+    FULL_34PY(p);
+    p.totalPrice = { kind: "range", minAmount: 45_000_000, maxAmount: 55_000_000, currency: "KRW" };
+  });
+  eq(record.pricing!.total, { kind: "range", minAmount: 45_000_000, maxAmount: 55_000_000, currency: "KRW" }, "the range is copied as authored");
+  eq(record.pricing!.perArea, undefined, "no derivation from a range");
+  eq(result.errors, [], "valid");
+});
+await check("A6 INV-21 / PA1: full_remodel + an AUTHORED perArea + an exact total → the AUTHORED value survives unchanged (and is never marked derived)", () => {
+  const { record, result } = craft((p) => {
+    p.projectType = "full_remodel";
+    p.workScopeIds = ["living_room", "kitchen", "bathroom"];
+    p.area = { value: 34, unit: "pyeong", basis: "supply" };
+    p.totalPrice = { kind: "exact", amount: 52_000_000, currency: "KRW" };
+    p.pricePerArea = { amount: 2_900_000, currency: "KRW", unit: "pyeong" };
+  });
+  eq(record.pricing!.perArea, { amount: 2_900_000, currency: "KRW", perUnit: "pyeong", source: "authored" }, "authored wins over derivable (PA1)");
+  assert(record.pricing!.perArea!.amount !== 1_529_412, "the derivable value never replaces it");
+  eq(result.errors, [], "valid");
+});
+await check("A7 D-1 condition 3: full_remodel + exact total but NO area → no perArea, and the total is still emitted", () => {
+  const { record, result } = craft((p) => {
+    delete p.pricePerArea;
+    delete p.area;
+    // MD4's "omitted entirely" can only be observed on a record with NEITHER sub-field, and bi-01
+    // now authors `propertyType` (26 §1.2) — so the crafted record drops it too. The assertion
+    // below is unchanged; only the record it is staged on had to be built for the case.
+    delete p.propertyType;
+    p.projectType = "full_remodel";
+    p.workScopeIds = ["living_room", "kitchen"];
+    p.totalPrice = { kind: "exact", amount: 52_000_000, currency: "KRW" };
+  });
+  eq(record.property, undefined, "property omitted entirely (MD4)");
+  eq(record.pricing, { total: { kind: "exact", amount: 52_000_000, currency: "KRW" } }, "total alone");
+  eq(result.errors, [], "valid");
+});
+await check("A8 INV-17 / WS2: document.workScopes is a sorted plain id array, closed both ways, and absent when no record has one; INV-18: never []", () => {
+  /**
+   * WS2's two absence rules — the document block is the union of exactly what the records carry,
+   * and is ABSENT when none carries any (INV-18: never `[]`) — can only be observed where a single
+   * record decides the block. Since the re-authoring all 19 demo records carry work scopes
+   * (26 §1.2), so this check stages its own corpus instead of relaxing what it asserts: every
+   * record but bi-01 drops `projectType` + `workScopeIds`, which is the breadth-absent shape PT5
+   * prescribes and is itself valid content (A10's last case proves INV-30 stays silent for it).
+   */
+  const soloCraft = (mutate: (p: Project) => void) => {
+    const snapshot = clone(demo.snapshot);
+    for (const p of snapshot.content.projects) {
+      if (p.id === "bi-01") continue;
+      delete p.projectType;
+      delete p.workScopeIds;
+    }
+    const source = snapshot.content.projects.find((x) => x.id === "bi-01")!;
+    mutate(source);
+    for (const p of snapshot.content.projects) assert(ProjectSchema.safeParse(p).success, `${p.id} must itself be valid content: ${JSON.stringify(ProjectSchema.safeParse(p).error?.issues)}`);
+    const emission = emitFor(snapshot);
+    const document = emission.portfolio!.document;
+    return { document, record: document.records.find((r) => r.id === "bi-01")!, result: validateFor(emission, snapshot) };
+  };
+  const { document, result } = soloCraft((p) => {
+    p.workScopeIds = ["kitchen", "bathroom", "entrance"];
+  });
+  const other = document.records.find((r) => r.id !== "bi-01" && r.workScopeIds)!;
+  eq(other, undefined, "no other record has work scopes");
+  eq(document.workScopes, ["bathroom", "entrance", "kitchen"], "sorted ascending by code point; ids only, no labels (07 §7.2)");
+  eq(document.records.find((r) => r.id === "bi-01")!.workScopeIds, ["kitchen", "bathroom", "entrance"], "the record keeps the authored order");
+  eq(result.errors, [], "valid");
+  // INV-18 / WS5 / MD3: an authored empty array never becomes `[]` in the document
+  const empty = soloCraft((p) => {
+    // a record that carries no work scopes may not declare a breadth either (INV-28 / INV-29);
+    // bi-01 now authors `full_remodel` (26 §1.2), so the crafted record drops it with them.
+    delete p.projectType;
+    p.workScopeIds = undefined;
+    p.styles = [];
+    p.keywords = [];
+  });
+  eq([empty.record.workScopeIds, empty.record.facets!.style, empty.record.facets!.tag, empty.document.workScopes], [undefined, undefined, undefined, undefined], "omitted, never []");
+  eq(empty.result.errors, [], "valid");
+});
+await check("A9 INV-24 / ST4: `style` is the authored `styles`, `tag` is the authored `keywords` MINUS them — `styles` is normally a SUBSET of `keywords`, and the subtraction makes the two facets disjoint by construction", () => {
+  const { record, document, result } = craft((p) => {
+    // the normal authoring shape: the operator tags 화이트 and 미니멀 once, then marks them as styles
+    p.keywords = ["화이트", "간접조명", "미니멀", "수납 특화"];
+    p.styles = ["화이트", "미니멀"];
+  });
+  eq(record.facets!.style, ["화이트", "미니멀"], "style = the authored styles, authored order");
+  eq(record.facets!.tag, ["간접조명", "수납 특화"], "tag = keywords MINUS styles, survivors in authored order (ST2 keeps these two as tags)");
+  // the document's style vocabulary is the union over all 19 records (28 §1), not bi-01's alone
+  eq(document.facets!.style!.values, DEMO_STYLE_VALUES, "declared, sorted, {id,label}");
+  eq(record.facets!.style!.filter((v) => record.facets!.tag!.includes(v)), [], "ST4/INV-24 holds on the record: no value in both of ITS facets");
+  eq(result.errors, [], "valid — overlap in the AUTHORED fields is the normal case, not an error");
+  // NOTE: the rule is per RECORD. A record that leaves 화이트 as a plain keyword still declares it
+  // in the document's `tag` vocabulary — the subtraction cannot make the two DOCUMENT vocabularies
+  // disjoint, only each record's two arrays. 28's authoring pass made the demo corpus CONSISTENT
+  // (ST6), so that second record no longer exists in the data and is crafted here: bi-06 keeps
+  // 화이트 / 미니멀 as plain keywords, exactly the shape A12 measures the ST6 warning on.
+  const mixed = clone(demo.snapshot);
+  const mixed01 = mixed.content.projects.find((p) => p.id === "bi-01")!;
+  mixed01.keywords = ["화이트", "간접조명", "미니멀", "수납 특화"];
+  mixed01.styles = ["화이트", "미니멀"];
+  const mixed06 = mixed.content.projects.find((p) => p.id === "bi-06")!;
+  delete mixed06.styles;
+  assert((mixed06.keywords ?? []).includes("화이트"), "fixture: bi-06 keeps 화이트 as a plain keyword");
+  const mixedDoc = emitFor(mixed).portfolio!.document;
+  assert(mixedDoc.facets!.tag!.values.some((v) => v.id === "화이트"), "the record that left 화이트 a plain keyword declares it in the document's tag vocabulary");
+  assert(mixedDoc.facets!.style!.values.some((v) => v.id === "화이트"), "…while bi-01 declares it a style: the per-record subtraction cannot make the two DOCUMENT vocabularies disjoint");
+  assert(ProjectSchema.safeParse({ ...demo.snapshot.content.projects[0]!, styles: ["화이트"], keywords: ["화이트", "간접조명"] }).success, "the content model accepts styles ⊆ keywords");
+  // every keyword marked as a style → `tag` is omitted entirely, never [] (MD3, INV-18)
+  const all = craft((p) => {
+    p.keywords = ["화이트"];
+    p.styles = ["화이트"];
+  });
+  eq(all.record.facets!.tag, undefined, "empty after subtraction → the record's tag key is omitted, never []");
+  eq(all.result.errors, [], "valid");
+});
+await check("A10 INV-28 / WS7a: a partial_remodel without workScopeIds is refused; INV-29: a full_remodel whose scopes are TRADES ONLY (flooring, wallpaper, lighting) is refused — that is PT4(c), and it must never feed D-1; INV-30: the same refusal for a trades-only PARTIAL, which INV-28 let through because the set was non-empty", () => {
+  /**
+   * INV-28's refusal is "a breadth is declared and NO work scopes are", so it can only be observed
+   * on a record that carries none. Since the re-authoring every demo record carries them (26 §1.2),
+   * so the base is bi-01 with its two breadth fields stripped — the record as it stood before that
+   * pass. This is a purpose-built record, not a weakened assertion: every safeParse below is
+   * unchanged, and INV-28 must still fire on it.
+   */
+  const { projectType: _pt, workScopeIds: _ws, ...base } = demo.snapshot.content.projects[0]!;
+  assert(ProjectSchema.safeParse(base).success, "the stripped base is itself valid content (breadth-absent, PT5/PT6)");
+  const bad = ProjectSchema.safeParse({ ...base, projectType: "partial_remodel" });
+  assert(!bad.success && /INV-28/.test(JSON.stringify(bad.error!.issues)), "content model refuses a partial_remodel with no scopes");
+  eq(craft((p) => {
+    p.projectType = "partial_remodel";
+    p.workScopeIds = ["kitchen", "bathroom"];
+  }).result.errors, [], "with the closed set it is valid");
+  const trades = ProjectSchema.safeParse({ ...base, projectType: "full_remodel", workScopeIds: ["flooring", "wallpaper", "lighting"] });
+  assert(!trades.success && /INV-29/.test(JSON.stringify(trades.error!.issues)), "content model refuses a trades-only full_remodel");
+  assert(!ProjectSchema.safeParse({ ...base, projectType: "full_remodel" }).success, "…and one with no scopes at all");
+  assert(ProjectSchema.safeParse({ ...base, projectType: "full_remodel", workScopeIds: ["flooring", "wallpaper", "lighting", "living_room"] }).success, "one SPACE is enough");
+  // INV-30 — the mirror of INV-29 for partials. PT5 authors a partial as a BOUNDED SET OF SPACES,
+  // so a trades-only partial names no boundary; such a job is breadth-absent (bi-19's case), never
+  // a partial. INV-28 let this through because the set was non-empty.
+  const tradesPartial = ProjectSchema.safeParse({ ...base, projectType: "partial_remodel", workScopeIds: ["flooring", "wallpaper"] });
+  assert(!tradesPartial.success && /INV-30/.test(JSON.stringify(tradesPartial.error!.issues)), "content model refuses a trades-only partial_remodel");
+  assert(ProjectSchema.safeParse({ ...base, projectType: "partial_remodel", workScopeIds: ["kitchen", "flooring"] }).success, "one SPACE is enough for a partial too");
+  assert(ProjectSchema.safeParse({ ...base, workScopeIds: ["flooring", "wallpaper"] }).success, "INV-30 is silent when projectType is absent: that IS the breadth-absent authoring PT5 prescribes");
+  eq(craft((p) => {
+    FULL_34PY(p);
+    p.workScopeIds = ["living_room", "flooring", "wallpaper"];
+  }).result.errors, [], "a full_remodel with a space + trades is valid");
+});
+await check("A11 INV-23 / TP1: the content model refuses an equal-bounds or inverted range, a non-positive amount, a bad currency and an amount above 1e9; `exact` and `range` cannot coexist (structurally)", () => {
+  const base = demo.snapshot.content.projects[0]!;
+  const bad: [string, unknown][] = [
+    ["equal bounds", { kind: "range", minAmount: 5_000_000, maxAmount: 5_000_000, currency: "KRW" }],
+    ["inverted", { kind: "range", minAmount: 9_000_000, maxAmount: 5_000_000, currency: "KRW" }],
+    ["zero", { kind: "exact", amount: 0, currency: "KRW" }],
+    ["negative", { kind: "exact", amount: -1, currency: "KRW" }],
+    ["3 decimals", { kind: "exact", amount: 5_000_000.125, currency: "KRW" }],
+    ["above 1e9", { kind: "exact", amount: 1_000_000_001, currency: "KRW" }],
+    ["lowercase currency", { kind: "exact", amount: 5_000_000, currency: "krw" }],
+    ["no kind", { amount: 5_000_000, currency: "KRW" }],
+    ["both shapes", { kind: "exact", amount: 5_000_000, minAmount: 1, maxAmount: 2, currency: "KRW" }],
+  ];
+  for (const [what, totalPrice] of bad) assert(!ProjectSchema.safeParse({ ...base, totalPrice }).success, `accepted: ${what}`);
+  assert(ProjectSchema.safeParse({ ...base, totalPrice: { kind: "range", minAmount: 45_000_000, maxAmount: 55_000_000, currency: "KRW" } }).success, "a real range is valid");
+});
+await check("A12 ST6 (07 §8, P: SHOULD warn at build): a value one record classifies as a style while another leaves it a plain keyword makes the DOCUMENT-level facets.style.values and facets.tag.values overlap — INV-24 is per record only (ST4), so this is authoring inconsistency, not a contract violation; it must never fail the build and must never change an emitted byte", () => {
+  // bi-01 marks 화이트/미니멀 as styles (both already its own keywords, so ST4 subtracts them from
+  // its OWN tag); bi-06 (untouched) still carries both as plain keywords — no record carries either
+  // value in both of ITS OWN facets, but the document-level vocabularies now intersect.
+  const inconsistent = clone(demo.snapshot);
+  const bi01 = inconsistent.content.projects.find((p) => p.id === "bi-01")!;
+  const bi06 = inconsistent.content.projects.find((p) => p.id === "bi-06")!;
+  bi01.styles = ["화이트", "미니멀"];
+  // 28's authoring pass gave bi-06 the SAME two styles, so the corpus is now consistent and emits
+  // no ST6 warning (V1). The inconsistency this check is about therefore has to be staged: bi-06
+  // goes back to leaving both words plain keywords. That is the only edit; the warning text, the
+  // per-record INV-24 assertions and the byte-identity assertions below are all unchanged.
+  delete bi06.styles;
+  assert(["화이트", "미니멀"].every((v) => (bi01.keywords ?? []).includes(v)), "fixture assumption: bi-01 already carries both as keywords");
+  assert(["화이트", "미니멀"].every((v) => (bi06.keywords ?? []).includes(v)) && (bi06.styles ?? []).length === 0, "fixture assumption: bi-06 leaves both as plain keywords");
+
+  const emission = emitFor(inconsistent);
+  const document = emission.portfolio!.document;
+  const bi01Record = document.records.find((r) => r.id === "bi-01")!;
+  eq(bi01Record.facets!.style, ["화이트", "미니멀"], "bi-01's own style facet");
+  eq((bi01Record.facets!.tag ?? []).some((v) => ["화이트", "미니멀"].includes(v)), false, "INV-24 still holds PER RECORD — bi-01's own tag excludes both (ST4)");
+  eq(document.facets!.style!.values.map((v) => v.id).filter((id) => ["화이트", "미니멀"].includes(id)).sort(), ["미니멀", "화이트"], "both declared in the document's style vocabulary");
+  assert(document.facets!.tag!.values.some((v) => v.id === "화이트") && document.facets!.tag!.values.some((v) => v.id === "미니멀"), "both still declared in the document's tag vocabulary (from bi-06 and others)");
+  eq(emission.portfolio!.warnings, [`facets: "미니멀", "화이트" appear in both facets.style.values and facets.tag.values (ST6, 07 §8)`], "ST6 warning fires with the offending values sorted (code point order), exact text");
+
+  const result = validateFor(emission, inconsistent);
+  eq(result.errors, [], "not a VA1 condition — ST6 never fails the build");
+  eq(result.warnings, emission.portfolio!.warnings, "the validator merges the emitter's warning unchanged, same channel as a VO6 warning");
+
+  // byte identity: the warning is read-only over the already-built facet maps and never reaches
+  // the emitted bytes, and re-emitting the same (warning-triggering) snapshot is still deterministic.
+  assert(!emission.portfolio!.file.text.includes("ST6"), "the warning text never reaches the emitted document bytes");
+  const again = emitFor(inconsistent);
+  eq(again.portfolio!.file.text, emission.portfolio!.file.text, "re-emitting the same snapshot is byte-identical regardless of the warning");
+  eq(again.portfolio!.version, emission.portfolio!.version, "version unaffected by the warning");
+
+  // negative: a style word no other record's tag carries → the vocabularies do not intersect → no warning
+  const consistent = clone(demo.snapshot);
+  const bi01c = consistent.content.projects.find((p) => p.id === "bi-01")!;
+  // 빈티지 is ADDED to bi-01's authored styles rather than replacing them: dropping 화이트 /
+  // 미니멀 back into its `tag` would re-create the very overlap this branch is proving absent,
+  // because every other record now classifies them as styles (28 §1).
+  bi01c.styles = [...(bi01c.styles ?? []), "빈티지"];
+  bi01c.keywords = [...(bi01c.keywords ?? []), "빈티지"];
+  assert(consistent.content.projects.every((p) => p.id === "bi-01" || !(p.keywords ?? []).includes("빈티지")), "fixture assumption: no other record carries 빈티지");
+  eq(emitFor(consistent).portfolio!.warnings, [], "no ST6 warning when the style and tag vocabularies do not intersect");
+  eq(emitFor(demo.snapshot).portfolio!.warnings, [], "the untouched demo emission (V1) carries no ST6 warning either");
+});
+
+await check("A13 INV-22 provenance, metamorphic, over every demo record: moving only area.value changes only property.area.value and a derived perArea; moving only the authored pricePerArea changes only pricing.perArea; moving only the authored total changes only pricing.total and a derived perArea — RD1 is the one dependency of any emitted value on the area", () => {
+  const flat = (v: unknown, at: string, out: Record<string, string>) => {
+    if (v && typeof v === "object") for (const [k, x] of Object.entries(v)) flat(x, at ? `${at}.${k}` : k, out);
+    else out[at] = JSON.stringify(v);
+    return out;
+  };
+  /** every document path whose value differs, the resource `version` excluded (it hashes the body) */
+  const moved = (a: PortfolioDocument, b: PortfolioDocument) => {
+    const fa = flat({ ...a, version: 0 }, "", {});
+    const fb = flat({ ...b, version: 0 }, "", {});
+    return [...new Set([...Object.keys(fa), ...Object.keys(fb)])].filter((k) => fa[k] !== fb[k]).sort();
+  };
+  const base = demoEmission.portfolio!.document;
+  const after = (snap: SiteSnapshot, id: string, mutate: (p: Project) => void) => {
+    const s = clone(snap);
+    mutate(s.content.projects.find((p) => p.id === id)!);
+    return emitFor(s).portfolio!.document;
+  };
+  const expectOnly = (label: string, got: string[], must: string[], may: string[]) => {
+    assert(must.every((k) => got.includes(k)) && got.every((k) => must.includes(k) || may.includes(k)), `${label}: moved ${JSON.stringify(got)}, allowed ${JSON.stringify([...must, ...may])}`);
+  };
+  let runs = 0;
+  base.records.forEach((rec, i) => {
+    const src = demo.snapshot.content.projects.find((p) => p.id === rec.id)!;
+    const at = `records.${i}.`;
+    const derived = rec.pricing?.perArea?.source === "derived" ? [`${at}pricing.perArea.amount`] : [];
+    if (src.area) {
+      expectOnly(`${rec.id} area`, moved(base, after(demo.snapshot, rec.id, (p) => void (p.area!.value += 1))), [`${at}property.area.value`], derived);
+      runs++;
+    }
+    if (src.pricePerArea) {
+      expectOnly(`${rec.id} pricePerArea`, moved(base, after(demo.snapshot, rec.id, (p) => void (p.pricePerArea!.amount += 10_000))), [`${at}pricing.perArea.amount`], []);
+      runs++;
+    }
+    if (src.totalPrice) {
+      const t = src.totalPrice;
+      const got = moved(base, after(demo.snapshot, rec.id, (p) => {
+        p.totalPrice = t.kind === "exact" ? { ...t, amount: t.amount + 1_000_000 } : { ...t, minAmount: t.minAmount + 1_000_000, maxAmount: t.maxAmount + 1_000_000 };
+      }));
+      expectOnly(`${rec.id} total`, got, t.kind === "exact" ? [`${at}pricing.total.amount`] : [`${at}pricing.total.minAmount`, `${at}pricing.total.maxAmount`], derived);
+      runs++;
+    }
+  });
+  eq(runs, 18 + 6 + 11, "18 areas, 6 authored per-area prices, 11 totals moved");
+  // 07 §15's named valid case: an authored perArea of 1,000,000 and an area of 34 coincide with a real
+  // total of 34,000,000 — it validates, and moving the area still moves nothing but the area
+  const s = clone(demo.snapshot);
+  const bi01 = s.content.projects.find((p) => p.id === "bi-01")!;
+  bi01.pricePerArea = { ...bi01.pricePerArea!, amount: 1_000_000 };
+  bi01.totalPrice = { kind: "exact", amount: 34_000_000, currency: "KRW" };
+  const coincide = emitFor(s);
+  eq(validateFor(coincide, s).errors, [], "the coincidence validates");
+  expectOnly("bi-01 coincidence area", moved(coincide.portfolio!.document, after(s, "bi-01", (p) => void (p.area!.value += 1))), ["records.0.property.area.value"], []);
+});
+
 console.log("\n[validator] fail closed");
-await check("V1 the demo emission validates: 0 errors, 0 warnings; the fixtures' emissions too (fixture-large: 173 records, scope within CH-R10 limits)", async () => {
+await check("V1 the demo emission validates: 0 errors, 0 warnings; the fixtures' emissions too", async () => {
   eq(validateFor(demoEmission, demo.snapshot), { errors: [], warnings: [] }, "demo");
   for (const s of FIXTURES) {
     const inp = await prepareSiteInput({ repoRoot, siteId: s, mode: "public", at: AT });
@@ -365,10 +969,29 @@ await check("V1 the demo emission validates: 0 errors, 0 warnings; the fixtures'
     eq(e.portfolio!.recordCount, inp.snapshot.content.projects.length, `${s} records`);
   }
 });
-const err = (f: (x: IntegrationEmission) => void, re: RegExp, opts?: { keepVersion?: boolean }) => {
-  const r = validateFor(remake(demoEmission, f, opts), demo.snapshot);
+const errFrom = (from: IntegrationEmission, f: (x: IntegrationEmission) => void, re: RegExp, opts?: { keepVersion?: boolean }) => {
+  const r = validateFor(remake(from, f, opts), demo.snapshot);
   assert(r.errors.some((m) => re.test(m)), `expected an error matching ${re}, got:\n${r.errors.join("\n") || "(none)"}`);
 };
+const err = (f: (x: IntegrationEmission) => void, re: RegExp, opts?: { keepVersion?: boolean }) => errFrom(demoEmission, f, re, opts);
+/**
+ * The demo emission with every record's V0.2 breadth fields stripped AT THE SOURCE — the corpus
+ * shape WS2's two absence rules and INV-28/INV-29's "declared a breadth, named no scopes" refusals
+ * describe. Since the re-authoring all 19 demo records carry `workScopeIds` (26 §1.2), so those
+ * four cases can no longer be staged on `demoEmission` by mutating one record; they are staged on
+ * this one instead, which keeps each case isolated to the single violation it is about.
+ */
+const plainEmission = (() => {
+  const s = clone(demo.snapshot);
+  for (const p of s.content.projects) {
+    delete p.projectType;
+    delete p.workScopeIds;
+  }
+  const e = emitFor(s);
+  assert(e.portfolio!.document.workScopes === undefined, "the stripped corpus declares no work scopes");
+  assert(validateFor(e, s).errors.length === 0, "…and is itself valid, so every error below is the crafted one");
+  return e;
+})();
 await check("V1b INV-4 by name: fixture-large's document holds exactly the ids published at `at`; its draft and scheduled records are absent", async () => {
   const raw = (await readJson(path.join(repoRoot, "data/sites/fixture-large/content/projects.json"))).items as { id: string; status: string; publishedAt: string }[];
   const publicIds = raw.filter((p) => p.status === "published" && Date.parse(p.publishedAt) <= Date.parse(AT)).map((p) => p.id).sort(compareCodePoints);
@@ -398,13 +1021,16 @@ await check("V4 HT7 forbidden characters in a title / label / location / key →
   err((x) => void (x.portfolio!.document.facets!.tag!.values[0]!.label = "‮화이트"), /forbidden character/);
   err((x) => void (x.manifest.site.locale = "ko-KR "), /forbidden character|BCP 47/);
 });
-await check("V5 null · empty string · empty object · empty facet array · placeholder \"unknown\" basis → rejected (MD1–MD3, AR2)", () => {
+await check("V5 null · empty string · empty object · empty facet array · empty workScopeIds · placeholder \"unknown\" basis → rejected (MD1–MD3, WS5, AR2, INV-18)", () => {
   err((x) => void ((x.portfolio!.document.records[0] as any).location = null), /null is never emitted/);
   err((x) => void (x.portfolio!.document.records[0]!.location = ""), /empty string/);
-  err((x) => void ((x.portfolio!.document.records[0] as any).area = {}), /empty object/);
-  err((x) => void (x.portfolio!.document.records[0]!.facets!.scope = []), /empty array/);
-  err((x) => void (x.portfolio!.document.records[0]!.area!.basis = "unknown"), /basis/);
-  err((x) => void ((x.portfolio!.document.records[0] as any).pricePerArea = { amount: 0, currency: "KRW", perUnit: "pyeong" }), /amount/);
+  err((x) => void ((x.portfolio!.document.records[0] as any).property = {}), /empty object/);
+  err((x) => void (x.portfolio!.document.records[0]!.facets!.tag = []), /empty array/);
+  err((x) => void ((x.portfolio!.document.records[0] as any).workScopeIds = []), /empty array/);
+  err((x) => void ((x.portfolio!.document as any).workScopes = []), /empty array/);
+  err((x) => void (x.portfolio!.document.records[0]!.property!.area!.basis = "unknown"), /basis/);
+  err((x) => void ((x.portfolio!.document.records[0] as any).pricing = { perArea: { amount: 0, currency: "KRW", perUnit: "pyeong", source: "authored" } }), /amount/);
+  err((x) => void ((x.portfolio!.document.records[0] as any).pricing = {}), /empty object/);
 });
 await check("V6 site identity and origin: id ≠ siteId, origin ≠ site origin, http, origin with path, bad locale → rejected (§5, §13)", () => {
   err((x) => void (x.manifest.site.id = "other-site"), /≠ siteId/);
@@ -422,36 +1048,142 @@ await check("V7 version echo, href pointer, file name, content hash → rejected
   err((x) => void (x.portfolio!.document.records[0]!.title += "!"), /RV1/, { keepVersion: true });
 });
 await check("V8 facet closure both ways and ordering (VO1, INV-8): undeclared value, unused declared value, unsorted values, repeated value in a record → rejected", () => {
-  err((x) => void x.portfolio!.document.records[0]!.facets!.scope!.push("옥상"), /is not declared \(VO1\)/);
-  err((x) => void x.portfolio!.document.facets!.scope!.values.push({ id: "힣", label: "힣" }), /declared but no record uses it/);
-  err((x) => void x.portfolio!.document.facets!.scope!.values.reverse(), /not in id code point order/);
-  err((x) => void x.portfolio!.document.records[0]!.facets!.scope!.push("거실"), /repeats a value \(INV-14\)/);
+  err((x) => void x.portfolio!.document.records[0]!.facets!.tag!.push("옥상"), /is not declared \(VO1\)/);
+  err((x) => void x.portfolio!.document.facets!.tag!.values.push({ id: "힣", label: "힣" }), /declared but no record uses it/);
+  err((x) => void x.portfolio!.document.facets!.tag!.values.reverse(), /not in id code point order/);
+  err((x) => void x.portfolio!.document.records[0]!.facets!.tag!.push(x.portfolio!.document.records[0]!.facets!.tag![0]!), /repeats a value \(INV-14\)/);
 });
-await check("V9 shapes: 3 decimals, negative, bad unit, lowercase currency, an extra key (totalCost), an unknown top-level key, a bad facet key → rejected (§7, §9, §10)", () => {
-  err((x) => void (x.portfolio!.document.records[0]!.area!.value = 34.123), /fraction digits/);
-  err((x) => void (x.portfolio!.document.records[0]!.area!.value = -1), /area/);
-  err((x) => void (x.portfolio!.document.records[0]!.area!.unit = "py"), /unit/);
-  err((x) => void (x.portfolio!.document.records[0]!.pricePerArea!.currency = "krw"), /currency/);
+await check("V9 shapes: 3 decimals, negative, bad unit, lowercase currency, an extra key (totalCost), an unknown top-level key, a bad facet key, the WRONG schemaVersion → rejected (§7, §9, 07 §10)", () => {
+  err((x) => void (x.portfolio!.document.records[0]!.property!.area!.value = 34.123), /fraction digits/);
+  err((x) => void (x.portfolio!.document.records[0]!.property!.area!.value = -1), /area/);
+  err((x) => void (x.portfolio!.document.records[0]!.property!.area!.unit = "py"), /unit/);
+  err((x) => void (x.portfolio!.document.records[0]!.pricing!.perArea!.currency = "krw"), /currency/);
   err((x) => void ((x.portfolio!.document.records[0] as any).totalCost = 98600000), /totalCost|Unrecognized/);
+  err((x) => void ((x.portfolio!.document.records[0] as any).area = { value: 34, unit: "pyeong" }), /area|Unrecognized/);
+  err((x) => void ((x.portfolio!.document.records[0] as any).pricePerArea = { amount: 1, currency: "KRW", perUnit: "pyeong" }), /pricePerArea|Unrecognized/);
   err((x) => void ((x.portfolio!.document as any).generatedAt = "2026-09-22"), /generatedAt|Unrecognized/);
   err((x) => void ((x.manifest as any).recordCount = 8), /recordCount|Unrecognized/);
   err((x) => void (x.portfolio!.document.facets!["Bad Key"] = x.portfolio!.document.facets!.tag!), /Bad Key|facets/);
   err((x) => void (x.portfolio!.document.records[0]!.title = "x".repeat(121)), /title/);
-  err((x) => void ((x.portfolio!.document as any).schemaVersion = "1.0"), /schemaVersion/);
+  // 07 §3 / INV-27: the DOCUMENT is "1.0" and the MANIFEST is "0.1"; neither may carry the other's.
+  err((x) => void ((x.portfolio!.document as any).schemaVersion = "0.1"), /schemaVersion/);
+  err((x) => void ((x.portfolio!.document as any).schemaVersion = "0.2"), /schemaVersion/);
+  err((x) => void ((x.manifest as any).schemaVersion = "1.0"), /schemaVersion/);
+});
+await check("V14 the V0.2 annex, fail closed: an unknown work-scope id, a broken WS2 closure either way, a partial_remodel with no scopes, a trades-only partial (INV-30) or full (INV-29), a style/tag overlap, a range with minAmount ≥ maxAmount, a perArea with no source → rejected (INV-17, INV-23, INV-24, INV-28, INV-29, INV-30)", () => {
+  // staged on `plainEmission` (above): with all 19 demo records carrying their authored scopes,
+  // overwriting `document.workScopes` with a two-id set would trip WS2 closure on the other 18 as
+  // well, and each case below is about exactly one violation.
+  const withScopes = (x: IntegrationEmission) => {
+    x.portfolio!.document.workScopes = ["bathroom", "kitchen"];
+    x.portfolio!.document.records[0]!.workScopeIds = ["kitchen", "bathroom"];
+  };
+  errFrom(plainEmission, (x) => {
+    withScopes(x);
+    (x.portfolio!.document.records[0]!.workScopeIds as string[])[0] = "sauna";
+  }, /not in the contract vocabulary|Invalid option/);
+  errFrom(plainEmission, (x) => {
+    withScopes(x);
+    x.portfolio!.document.workScopes = ["bathroom"];
+  }, /is not declared in document.workScopes \(WS2, INV-17\)/);
+  errFrom(plainEmission, (x) => {
+    withScopes(x);
+    x.portfolio!.document.workScopes = ["balcony", "bathroom", "kitchen"];
+  }, /declared but no record uses it \(WS2, INV-17\)/);
+  errFrom(plainEmission, (x) => {
+    withScopes(x);
+    x.portfolio!.document.workScopes = ["kitchen", "bathroom"];
+  }, /not in code point order/);
+  errFrom(plainEmission, (x) => void (x.portfolio!.document.records[0]!.workScopeIds = ["kitchen", "bathroom"]), /workScopes is absent although records carry work scopes/);
+  errFrom(plainEmission, (x) => void (x.portfolio!.document.workScopes = ["kitchen"]), /present although no record carries a work scope/);
+  errFrom(plainEmission, (x) => {
+    withScopes(x);
+    x.portfolio!.document.records[0]!.workScopeIds = ["kitchen", "kitchen", "bathroom"];
+  }, /repeats a value/);
+  errFrom(plainEmission, (x) => void (x.portfolio!.document.records[0]!.projectType = "partial_remodel"), /INV-28/);
+  errFrom(plainEmission, (x) => void (x.portfolio!.document.records[0]!.projectType = "full_remodel"), /INV-29/);
+  errFrom(plainEmission, (x) => {
+    x.portfolio!.document.workScopes = ["flooring", "lighting", "wallpaper"];
+    x.portfolio!.document.records[0]!.projectType = "full_remodel";
+    x.portfolio!.document.records[0]!.workScopeIds = ["flooring", "wallpaper", "lighting"];
+  }, /requires at least one SPACE work scope .* \(INV-29\)/);
+  // INV-30 — the mirror of INV-29 on the EMITTED document. INV-28 only asks for non-emptiness, so
+  // before INV-30 this exact shape passed: a partial whose scopes are trades only, leaving
+  // `workScopeIds ∩ Spaces` empty and `pricing.total` covering no bounded set of spaces.
+  errFrom(plainEmission, (x) => {
+    x.portfolio!.document.workScopes = ["flooring", "wallpaper"];
+    x.portfolio!.document.records[0]!.projectType = "partial_remodel";
+    x.portfolio!.document.records[0]!.workScopeIds = ["flooring", "wallpaper"];
+  }, /requires at least one SPACE work scope .* \(PT5, INV-30\)/);
+  err((x) => {
+    x.portfolio!.document.records[0]!.facets!.style = [x.portfolio!.document.records[0]!.facets!.tag![0]!];
+    x.portfolio!.document.facets!.style = { values: [{ id: x.portfolio!.document.records[0]!.facets!.tag![0]!, label: "x" }] };
+  }, /appear in both facets.style and facets.tag \(ST4, INV-24\)/);
+  err((x) => void (x.portfolio!.document.records[0]!.pricing!.total = { kind: "range", minAmount: 5, maxAmount: 5, currency: "KRW" }), /minAmount < maxAmount|TP1/);
+  err((x) => void (x.portfolio!.document.records[0]!.pricing!.total = { kind: "range", minAmount: 9, maxAmount: 5, currency: "KRW" }), /minAmount < maxAmount|TP1/);
+  err((x) => void ((x.portfolio!.document.records[0]!.pricing!.total as any) = { amount: 5, currency: "KRW" }), /kind|Invalid/);
+  err((x) => void delete (x.portfolio!.document.records[0]!.pricing!.perArea as any).source, /source/);
+  err((x) => void ((x.portfolio!.document.records[0]!.pricing!.perArea as any).source = "guessed"), /source/);
+});
+await check("V15 the D-1 rules are enforced on the document, not only on the code path: a derived perArea without full_remodel, without an exact total, or with the wrong arithmetic → rejected; so is a due derivation that is missing (INV-19, INV-20 both ways)", () => {
+  // bi-01 is now authored `full_remodel` (26 §1.2), so the "derived WITHOUT full_remodel" case has
+  // to drop the breadth first — otherwise the record falls into the next case's branch and a
+  // different (also correct) D-1 error fires. The rule and the regex are unchanged.
+  err((x) => {
+    const r = x.portfolio!.document.records[0]!;
+    delete r.projectType;
+    r.pricing!.perArea!.source = "derived";
+  }, /INV-19|D-1a/);
+  err((x) => {
+    const r = x.portfolio!.document.records[0]!;
+    r.projectType = "full_remodel";
+    r.pricing!.perArea!.source = "derived";
+  }, /D-1's conditions do not hold/);
+  err((x) => {
+    const r = x.portfolio!.document.records[0]!;
+    r.projectType = "full_remodel";
+    r.property!.area = { value: 34, unit: "pyeong", basis: "supply" };
+    r.pricing = { total: { kind: "exact", amount: 52_000_000, currency: "KRW" }, perArea: { amount: 1_529_411, currency: "KRW", perUnit: "pyeong", source: "derived" } };
+  }, /≠ RD1's result .* \(INV-20, RD1\)/);
+  err((x) => {
+    const r = x.portfolio!.document.records[0]!;
+    r.projectType = "full_remodel";
+    r.property!.area = { value: 34, unit: "pyeong", basis: "supply" };
+    r.pricing = { total: { kind: "exact", amount: 52_000_000, currency: "KRW" }, perArea: { amount: 1_529_412, currency: "KRW", perUnit: "m2", source: "derived" } };
+  }, /≠ RD1's result/);
+  // INV-20 the other way: bi-09 is full_remodel · exact 50,000,000 · 34평 · no authored perArea, so
+  // D-1 is DUE; a document that drops it is refused (a guard failure is still legal — A3)
+  err((x) => void delete x.portfolio!.document.records.find((r) => r.id === "bi-09")!.pricing!.perArea, /D-1's conditions hold but no derived pricing\.perArea was emitted .* \(INV-20\)/);
+  // the correct derivation validates (it must, or the emitter could never emit one)
+  const good = remake(demoEmission, (x) => {
+    const r = x.portfolio!.document.records[0]!;
+    r.projectType = "full_remodel";
+    // INV-29. `document.workScopes` is NOT narrowed to these two: the other 18 records carry their
+    // own authored scopes (26 §1.2) and WS2 closes over all of them, and every id bi-01 gives up
+    // here is still used by another record — so the declaration stays correct untouched.
+    r.workScopeIds = ["living_room", "kitchen"];
+    r.property!.area = { value: 34, unit: "pyeong", basis: "supply" };
+    r.pricing = { total: { kind: "exact", amount: 52_000_000, currency: "KRW" }, perArea: { amount: 1_529_412, currency: "KRW", perUnit: "pyeong", source: "derived" } };
+  });
+  eq(validateFor(good, demo.snapshot).errors, [], "the RD1 value validates");
 });
 await check("V10 zero records with a listingUrl or facets → rejected (§7.2, VO1)", () => {
   err((x) => void (x.portfolio!.document.records = []), /listingUrl present with zero records|facets present with zero records/);
 });
-await check("V11 consumer-declared limits are warnings, never errors and never truncation (VO6, CH-R10)", () => {
+await check("V11 consumer-declared limits are warnings, never errors and never truncation (VO6, CH-R10) — now measured on `tag`, since the `scope` facet and its limit are retired", () => {
   const s = clone(demo.snapshot);
-  const many = Array.from({ length: 151 }, (_, i) => `공간${i}`);
-  s.content.projects[0]!.scope = many.slice(0, 20);
-  for (let i = 1; i < 8; i++) s.content.projects[i]!.scope = many.slice(i * 19, i * 19 + 20);
+  const base = s.content.projects[0]!;
+  // 16 records × 12 keywords = 192 distinct tag values, above the consumer-declared 150.
+  while (s.content.projects.length < 16) {
+    const n = s.content.projects.length;
+    s.content.projects.push({ ...clone(base), id: `bi-x${n}`, slug: `bi-x${n}` });
+  }
+  s.content.projects.forEach((p, i) => void (p.keywords = Array.from({ length: 12 }, (_, k) => `키워드${i}-${k}`)));
   const e = emitFor(s);
   const r = validateFor(e, s);
   eq(r.errors, [], "no error");
-  assert(r.warnings.some((w) => /facet "scope" has \d+ values, above the consumer-declared limit 150/.test(w)), `warning expected: ${r.warnings.join(" | ")}`);
-  assert(e.portfolio!.facetCounts.scope! > 150, "not truncated");
+  assert(r.warnings.some((w) => /facet "tag" has \d+ values, above the consumer-declared limit 150/.test(w)), `warning expected: ${r.warnings.join(" | ")}`);
+  assert(e.portfolio!.facetCounts.tag! > 150, "not truncated");
 });
 await check("V13 freeze-review rules: resources {} with a document, a pointer without a document, an explicit port, a non-ASCII or badly percent-encoded path, category ≠ 1 → rejected (C-05, C-07, C-08, MAJOR-2)", () => {
   err((x) => void (x.manifest.resources = {}), /has no "portfolio" entry/, { keepVersion: true });
@@ -471,6 +1203,19 @@ await check("V12 assertIntegration throws with every error listed; validateInteg
   await rejects(() => assertIntegration(bad, { siteId: DEMO, publicOrigin: demo.snapshot.site.identity.publicOrigin, pagePaths: new Set() }), /integration documents invalid:[\s\S]*≠ siteId[\s\S]*empty string/);
   eq(validateFor(demoEmission, demo.snapshot), validateFor(demoEmission, demo.snapshot), "pure");
 });
+await check("N1 known-bad mutations of the real V0.2 document, one violation each, each refused with ITS error: duplicate id, invalid projectType, invalid area basis, unknown work scope, malformed range, range min > max, a derived perArea with no area to derive from, a malformed detailUrl, a bad manifest pointer, a V0.1 document inside the V0.2 package", () => {
+  const bi09 = (x: IntegrationEmission) => x.portfolio!.document.records.find((r) => r.id === "bi-09")!; // full · exact 50,000,000 · 34평 · derived perArea
+  err((x) => x.portfolio!.document.records.splice(1, 0, clone(x.portfolio!.document.records[0]!)), /duplicate record id \(ID3\)/);
+  err((x) => void ((x.portfolio!.document.records[0] as any).projectType = "whole_remodel"), /projectType: Invalid option/);
+  err((x) => void ((x.portfolio!.document.records[0]!.property!.area as any).basis = "gross"), /property\.area\.basis: Invalid option/);
+  err((x) => void ((x.portfolio!.document.records[0]!.workScopeIds as string[])[0] = "sauna"), /workScopeIds.*(Invalid option|not in the contract vocabulary)/);
+  err((x) => void ((bi09(x).pricing as any).total = { kind: "range", minAmount: 45_000_000, currency: "KRW" }), /pricing\.total\.maxAmount/);
+  err((x) => void (bi09(x).pricing!.total = { kind: "range", minAmount: 60_000_000, maxAmount: 45_000_000, currency: "KRW" }), /minAmount < maxAmount \(TP1, INV-23\)/);
+  err((x) => void delete bi09(x).property!.area, /derived but D-1's conditions do not hold/);
+  err((x) => void (x.portfolio!.document.records[0]!.detailUrl = "portfolio/suseong-white-34py-apartment-remodeling"), /detailUrl.*(UR2|root-relative)|UR2/);
+  err((x) => void (x.manifest.resources.portfolio!.href = "/_integration/portfolio.00000000000000000000000000000000.json"), /href .* ≠/, { keepVersion: true });
+  err((x) => void ((x.portfolio!.document as any).schemaVersion = "0.1"), /schemaVersion/);
+});
 
 console.log("\n[builder] opt-in and build identity");
 await check("B1 default OFF: the fixtures have no integration.json → emit false, no integrationInputHash, buildInputId unchanged (= their current package)", async () => {
@@ -482,7 +1227,7 @@ await check("B1 default OFF: the fixtures have no integration.json → emit fals
     assert(!(await exists(path.join(await packageOf(repoRoot, s), "site", INTEGRATION_DIR))), `${s} package must have no ${INTEGRATION_DIR}/`);
   }
 });
-await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer, contract, config), buildInputId = the golden package ≠ the live package", async () => {
+await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer, contract, config) with the V0.2 contract pair, and the V0.2 producer's identity ≠ the V0 one ≠ the live package", async () => {
   const cfg = await loadIntegrationConfig(repoRoot, DEMO);
   eq(cfg, { schemaVersion: 1, firstPartyData: { enabled: true } }, "config");
   eq(demo.integration.emit, true, "emit");
@@ -490,11 +1235,43 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
   eq(src.files.map((f) => f.path), [...PRODUCER_SOURCE_FILES], "producer source files");
   for (const f of src.files) eq(f.sha256, sha256(await readFile(path.join(repoRoot, "platform", f.path))), `${f.path} hashed from the platform tree`);
   eq(demo.integration.producerSourceHash, src.hash, "producer source hash");
-  eq(demo.parts.integrationInputHash, hashJson({ producer: PRODUCER_VERSION, producerSourceHash: src.hash, contract: { core: "0.1", portfolio: "0.1" }, config: cfg }), "input hash");
-  assert(hashJson({ producer: PRODUCER_VERSION, producerSourceHash: "0".repeat(64), contract: { core: "0.1", portfolio: "0.1" }, config: cfg }) !== demo.parts.integrationInputHash, "a changed producer source → a different build identity (MAJOR-1)");
-  eq(demo.buildInputId, goldenRecord.buildInputId, "golden identity");
+  const contract = { core: CORE_SCHEMA_VERSION, portfolio: PORTFOLIO_SCHEMA_VERSION };
+  eq(demo.parts.integrationInputHash, hashJson({ producer: PRODUCER_VERSION, producerSourceHash: src.hash, contract, config: cfg }), "input hash");
+  assert(hashJson({ producer: PRODUCER_VERSION, producerSourceHash: "0".repeat(64), contract, config: cfg }) !== demo.parts.integrationInputHash, "a changed producer source → a different build identity (MAJOR-1)");
+  // 07 §3: the document's schemaVersion is part of the build identity, so a V0.2 package can never
+  // be reported "up-to-date" for the V0 one.
+  assert(hashJson({ producer: PRODUCER_VERSION, producerSourceHash: src.hash, contract: { core: "0.1", portfolio: "0.1" }, config: cfg }) !== demo.parts.integrationInputHash, "the contract pair moved");
+  assert(demo.buildInputId !== goldenRecord.buildInputId, "the V0.2 producer has its own build identity, not the V0 golden package's");
   assert(demo.buildInputId !== LIVE_BUILD_INPUT_ID, "≠ live");
-  eq(computeBuildInputId({ ...demo.parts, integrationInputHash: undefined }), LIVE_BUILD_INPUT_ID, "without the integration part = the live package's identity");
+  // The live package was built from the 1.5.2 pin and the demo is now pinned to 1.6.0, so its
+  // pre-integration identity is no longer the live one. This check has always been about isolating
+  // the PIN as a build input carried INSIDE the snapshot. Until the demo was re-authored there was
+  // exactly one delta from the live package, so rolling site.template back reproduced the live
+  // package's recorded snapshot hash exactly. There are now TWO deliberate deltas — the pin and
+  // data/sites/boost-interior-demo/content/projects.json (26: 8 → 19 records with the V0.2 fields;
+  // 28: `styles` on the original eight, and bi-06's unevidenced propertyType removed) — and
+  // site.json's only diff is the pin itself. 28 §4 proves the residue is nil: restore projects.json
+  // to its pre-V0.2 bytes, roll the pin back, and the snapshot hashes to liveParts.siteSnapshotHash
+  // again, so the content is the whole of the remaining delta. What is asserted here is therefore
+  // the pin's isolation on TODAY's data, against a frozen literal, plus the fact that the content
+  // delta exists — a silent revert of the re-authoring would fail this check, not pass it.
+  eq(computeBuildInputId(liveParts), LIVE_BUILD_INPUT_ID, "the live package's recorded parts reproduce its identity");
+  const atLivePin = hashJson({ ...demo.snapshot, site: { ...demo.snapshot.site, template: LIVE_PIN } });
+  eq(atLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN, "pin rolled back to 1.5.2 → the re-authored demo's snapshot hash");
+  assert(atLivePin !== demo.parts.siteSnapshotHash, "the pin lives inside the snapshot, so rolling it back moves the hash");
+  eq(hashJson({ ...demo.snapshot, site: { ...demo.snapshot.site, template: demoPin } }), demo.parts.siteSnapshotHash, "…and putting it back reproduces the current hash exactly: the pin is ALL the substitution touches");
+  assert(atLivePin !== liveParts.siteSnapshotHash, "it no longer lands on the live package's own hash — the demo CONTENT is the second, deliberate delta (26, 28)");
+  eq(computeBuildInputId({ ...demo.parts, integrationInputHash: undefined }), DEMO_OFF_BUILD_INPUT_ID, "without the integration part = the pre-integration identity of the current pin");
+});
+// B2b was "the demo's current buildInputId is the golden package's". It is now deliberately the
+// opposite: the V0.2 producer has a new identity (PRODUCER_VERSION, producer sources and the
+// contract pair are build inputs), and data/site-builds/ keeps the V0.1 package as the site's
+// current one — no V0.2 package is staged where site:publish would pick it up (07 §16 steps 4–6;
+// V0.2 is not published until the consumer's search reads its fields).
+await check("B2b V0.1 stays current: the demo's V0.2 identity is NOT the package data/site-builds points at, and that package is the V0.1 one (nothing V0.2 staged for publish)", () => {
+  assert(demo.buildInputId !== goldenRecord.buildInputId, "the V0.2 build identity must differ from the current (V0.1) package's");
+  eq(goldenRecord.integration?.contract, { core: "0.1", portfolio: "0.1" }, "current package = V0.1 contract pair");
+  eq(demo.parts.integrationInputHash !== undefined, true, "the demo is still opted in (its next build would emit V0.2)");
 });
 await check("B3 preview never emits (SE5): the demo in preview mode has no integration part", async () => {
   const p = await prepareSiteInput({ repoRoot, siteId: DEMO, mode: "preview", at: AT });
@@ -503,7 +1280,7 @@ await check("B3 preview never emits (SE5): the demo in preview mode has no integ
   eq(integrationEmits({ schemaVersion: 1, firstPartyData: { enabled: false } }, "public"), false, "disabled");
   eq(integrationEmits(undefined, "public"), false, "absent");
 });
-await check("B4 OFF = the pre-integration identity: the demo without integration.json (or enabled:false) has exactly the LIVE package's buildInputId", async () => {
+await check("B4 OFF = the pre-integration identity: the demo without integration.json (or enabled:false) has exactly the pre-integration buildInputId of its current pin (the live package's, modulo the re-pin — B2)", async () => {
   for (const variant of ["absent", "disabled"] as const) {
     const root = await throwawayRoot(DEMO, async (dir) => {
       if (variant === "absent") await rm(path.join(dir, "integration.json"));
@@ -511,7 +1288,7 @@ await check("B4 OFF = the pre-integration identity: the demo without integration
     });
     try {
       const inp = await prepareSiteInput({ repoRoot: root, siteId: DEMO, mode: "public", at: AT });
-      eq(inp.buildInputId, LIVE_BUILD_INPUT_ID, `${variant}: identity`);
+      eq(inp.buildInputId, DEMO_OFF_BUILD_INPUT_ID, `${variant}: identity`);
       eq(inp.integration.emit, false, `${variant}: emit`);
     } finally {
       await rm(root, { recursive: true, force: true });
@@ -540,7 +1317,7 @@ await check("B6 the producer version and the config are build inputs; a change o
   try {
     const inp = await prepareSiteInput({ repoRoot: root, siteId: DEMO, mode: "public", at: AT });
     assert(inp.buildInputId !== demo.buildInputId, "settings change → new build identity");
-    eq(emitFor(inp.snapshot).portfolio!.version, DEMO_VERSION, "resource version unchanged (RV2)");
+    eq(emitFor(inp.snapshot).portfolio!.version, demoEmission.portfolio!.version, "resource version unchanged (RV2)");
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -552,37 +1329,48 @@ await check("B7 no site is named in the producer or the builder seam (generic op
   }
 });
 
-console.log("\n[golden] the demo's current package (data/site-builds)");
-await check("G1 the package holds exactly the two emitted files, byte-identical to the pure emission; the build record's integration summary matches", async () => {
+console.log("\n[golden V0.1] the demo's current package (data/site-builds) — frozen V0.1, the consumer's current data and the rollback path");
+// G1–G5 were written against the V0.1 package and then skipped while the constants were expected
+// to become V0.2 values. The V0.1 package is NOT being replaced in this release (see B2b), so they
+// are restored as what they now are: the V0.1 compatibility proof — the V0.1 artefact the consumer
+// reads today (and would roll back to) is byte-intact and still self-consistent. The V0.2 golden is
+// G6, a separate pinned package.
+await check("G1 V0.1 package: exactly its two V0.1 files, 8 records, the V0.1 contract pair and producer 1 in its build record; bytes intact", async () => {
   const files = (await readdir(path.join(goldenDir, "site", INTEGRATION_DIR))).sort();
-  eq(files, ["manifest.json", `portfolio.${DEMO_VERSION}.json`], "files");
-  for (const f of demoEmission.files) eq(sha256(await readFile(path.join(goldenDir, "site", f.path))), f.sha256, f.path);
+  eq(files, ["manifest.json", `portfolio.${V01_DEMO_VERSION}.json`], "files");
   const i = goldenRecord.integration!;
-  eq([i.contract, i.producerVersion, i.warnings], [{ core: "0.1", portfolio: "0.1" }, PRODUCER_VERSION, []], "record contract");
-  eq(i.producerSourceHash, (await producerSources()).hash, "record producer source hash = the working tree's producer files");
+  eq([i.contract, i.producerVersion, i.warnings], [{ core: "0.1", portfolio: "0.1" }, 1, []], "record contract");
   assert(i.resources.portfolio, "portfolio offered");
-  eq([i.manifest.path, i.manifest.bytes, i.manifest.sha256], [demoEmission.manifestFile.path, DEMO_MANIFEST_BYTES, demoEmission.manifestFile.sha256], "record manifest");
-  eq([i.resources.portfolio.path, i.resources.portfolio!.version, i.resources.portfolio.bytes, i.resources.portfolio.records, i.resources.portfolio.facets], [demoEmission.portfolio!.file.path, DEMO_VERSION, DEMO_DOC_BYTES, 8, { category: 4, scope: 20, tag: 8 }], "record portfolio");
-  eq(goldenRecord.parts.integrationInputHash, demo.parts.integrationInputHash, "record parts");
+  eq([i.manifest.path, i.manifest.bytes], ["_integration/manifest.json", DEMO_MANIFEST_BYTES], "record manifest");
+  eq([i.resources.portfolio.path, i.resources.portfolio!.version, i.resources.portfolio.bytes, i.resources.portfolio.records, i.resources.portfolio.facets], [`${INTEGRATION_DIR}/portfolio.${V01_DEMO_VERSION}.json`, V01_DEMO_VERSION, V01_DEMO_DOC_BYTES, 8, { category: 4, scope: 20, tag: 8 }], "record portfolio");
+  for (const f of [i.manifest, i.resources.portfolio]) eq(sha256(await readFile(path.join(goldenDir, "site", f.path))), f.sha256, `${f.path} bytes = its build record`);
+  const doc = await readJson(path.join(goldenDir, "site", INTEGRATION_DIR, `portfolio.${V01_DEMO_VERSION}.json`));
+  eq([doc.schemaVersion, doc.records.length, portfolioVersion(doc)], ["0.1", 8, V01_DEMO_VERSION], "a V0.1 document whose version is still its own body hash");
   assert(goldenRecord.qa.pass && goldenRecord.qa.files === 158, `qa ${goldenRecord.qa.files}`);
   assert(await packageIntact(goldenDir), "golden package intact");
 });
-await check("G2 manifest pointer = file name = document version (INV-3); the manifest origin = site.json; the runtime resolves both URLs", async () => {
+await check("G2 V0.1 package: manifest pointer = file name = document version (INV-3); the manifest origin = site.json; the runtime resolves both URLs", async () => {
   const manifest = await readJson(path.join(goldenDir, "site", INTEGRATION_DIR, "manifest.json"));
-  const doc = await readJson(path.join(goldenDir, "site", INTEGRATION_DIR, `portfolio.${DEMO_VERSION}.json`));
-  eq(manifest.resources.portfolio, { href: `/_integration/portfolio.${DEMO_VERSION}.json`, version: DEMO_VERSION }, "pointer");
-  eq(doc.version, DEMO_VERSION, "echo");
+  const doc = await readJson(path.join(goldenDir, "site", INTEGRATION_DIR, `portfolio.${V01_DEMO_VERSION}.json`));
+  eq(manifest.schemaVersion, "0.1", "manifest schemaVersion (unchanged by V0.2 as well, INV-27)");
+  eq(manifest.resources.portfolio, { href: `/_integration/portfolio.${V01_DEMO_VERSION}.json`, version: V01_DEMO_VERSION }, "pointer");
+  eq(doc.version, V01_DEMO_VERSION, "echo");
   eq(manifest.site.publicOrigin, (await readJson(path.join(repoRoot, "data/sites", DEMO, "site.json"))).identity.publicOrigin, "origin");
   eq(resolvePath(MANIFEST_PATH), { kind: "key", key: "_integration/manifest.json" }, "manifest key");
-  eq(resolvePath(manifest.resources.portfolio.href), { kind: "key", key: `_integration/portfolio.${DEMO_VERSION}.json` }, "document key");
+  eq(resolvePath(manifest.resources.portfolio.href), { kind: "key", key: `_integration/portfolio.${V01_DEMO_VERSION}.json` }, "document key");
   eq(resolvePath(`${MANIFEST_PATH}/`).kind, "not-found", "trailing slash = 404 (HT8)");
 });
-await check("G3 every detailUrl and the listingUrl have an HTML page in the package (INV-5); no absolute URL or external host in the document (INV-6)", async () => {
-  const doc = await readJson(path.join(goldenDir, "site", INTEGRATION_DIR, `portfolio.${DEMO_VERSION}.json`));
+await check("G2b the runtime resolves the manifest and a document path to their package keys; a trailing slash is 404 (HT8) — the pure half of G2, independent of any package on disk", () => {
+  eq(resolvePath(MANIFEST_PATH), { kind: "key", key: "_integration/manifest.json" }, "manifest key");
+  eq(resolvePath(demoEmission.manifest.resources.portfolio!.href), { kind: "key", key: demoEmission.portfolio!.file.path }, "document key");
+  eq(resolvePath(`${MANIFEST_PATH}/`).kind, "not-found", "trailing slash = 404 (HT8)");
+});
+await check("G3 V0.1 package: every detailUrl and the listingUrl have an HTML page in the package (INV-5); no absolute URL or external host in the document (INV-6)", async () => {
+  const doc = await readJson(path.join(goldenDir, "site", INTEGRATION_DIR, `portfolio.${V01_DEMO_VERSION}.json`));
   const html = (p: string) => path.join(goldenDir, "site", `${p.replace(/^\//, "")}.html`);
   assert(await exists(html(doc.listingUrl)), "listing page");
   for (const r of doc.records) assert(await exists(html(r.detailUrl)), `${r.id} detail page`);
-  const text = await readFile(path.join(goldenDir, "site", INTEGRATION_DIR, `portfolio.${DEMO_VERSION}.json`), "utf8");
+  const text = await readFile(path.join(goldenDir, "site", INTEGRATION_DIR, `portfolio.${V01_DEMO_VERSION}.json`), "utf8");
   assert(!/https?:\/\//.test(text) && !text.includes("//"), "no absolute / protocol-relative URL");
 });
 await check(`G4 the live package ${LIVE_BUILD_INPUT_ID.slice(0, 12)}… is untouched (intact, packageHash ${LIVE_PACKAGE_HASH.slice(0, 12)}…) and is the rollback (previous.json)`, async () => {
@@ -593,7 +1381,7 @@ await check(`G4 the live package ${LIVE_BUILD_INPUT_ID.slice(0, 12)}… is untou
   eq((await readJson(path.join(repoRoot, "data/site-builds", DEMO, "previous.json"))).buildInputId, LIVE_BUILD_INPUT_ID, "previous pointer");
   assert(!(await exists(path.join(liveDir, "site", INTEGRATION_DIR))), "live package has no _integration/");
 });
-await check("G5 golden = live + exactly the two integration files: every other file byte-identical once the build id (Next's generateBuildId = buildInputId[0:32], embedded in HTML/RSC and the _next/static/<id>/ path) is canonicalised", async () => {
+await check("G5 V0.1 package = live + exactly the two integration files: every other file byte-identical once the build id (Next's generateBuildId = buildInputId[0:32], embedded in HTML/RSC and the _next/static/<id>/ path) is canonicalised", async () => {
   const liveDir = path.join(repoRoot, "data/site-builds", DEMO, "packages", LIVE_BUILD_INPUT_ID, "site");
   const newDir = path.join(goldenDir, "site");
   const oldId = LIVE_BUILD_INPUT_ID.slice(0, 32);
@@ -605,20 +1393,74 @@ await check("G5 golden = live + exactly the two integration files: every other f
   const added = [...fresh.keys()].filter((k) => !live.has(k)).sort();
   const removed = [...live.keys()].filter((k) => !fresh.has(k));
   const changed = [...fresh.keys()].filter((k) => live.has(k) && !fresh.get(k)!.equals(live.get(k)!));
-  eq(added, [`${INTEGRATION_DIR}/manifest.json`, `${INTEGRATION_DIR}/portfolio.${DEMO_VERSION}.json`], "added");
+  eq(added, [`${INTEGRATION_DIR}/manifest.json`, `${INTEGRATION_DIR}/portfolio.${V01_DEMO_VERSION}.json`], "added");
   eq([removed, changed], [[], []], "removed / changed");
   eq([live.size, fresh.size], [156, 158], "counts");
 });
 
+console.log("\n[golden V0.2] the pinned integration package shared with the consumer (platform/test/golden/portfolio-v0.2)");
+await check(`G6 (P-V2-16) the V0.2 golden package equals the pure emission byte for byte; golden.json records exactly the facts of those bytes; the file name carries the version (RV5)`, async () => {
+  const dir = path.join(repoRoot, GOLDEN_DIR);
+  eq((await readdir(dir)).filter((f) => f !== ".DS_Store").sort(), ["README.md", "golden.json", "manifest.json", `portfolio.${DEMO_VERSION}.json`], "golden files");
+  for (const f of demoEmission.files) {
+    const bytes = await readFile(path.join(dir, path.basename(f.path)));
+    eq([bytes.length, sha256(bytes)], [f.bytes.length, f.sha256], `${path.basename(f.path)} = the emission`);
+  }
+  const golden = await readJson(path.join(dir, "golden.json"));
+  const v = validateFor(demoEmission, demo.snapshot);
+  eq(golden, goldenRecord02(demoEmission.portfolio!.document, demoEmission.files.map((f) => ({ name: path.basename(f.path), bytes: f.bytes.length, sha256: f.sha256 })), { errors: v.errors.length, warnings: v.warnings.length }), "golden.json");
+  eq([golden.input, golden.contractRevision, golden.manifestSchemaVersion, golden.documentSchemaVersion], [{ siteId: DEMO, mode: "public", at: AT, template: "interior-01/v1" }, "9.2.1", "0.1", "1.0"], "the pinned input and contract pair");
+  // the golden document parsed back is still its own version (the bytes, not only the in-memory emission)
+  const doc = await readJson(path.join(dir, `portfolio.${DEMO_VERSION}.json`));
+  eq([doc.version, portfolioVersion(doc)], [DEMO_VERSION, DEMO_VERSION], "golden document version = its body hash");
+  eq((await readJson(path.join(dir, "manifest.json"))).resources.portfolio, { href: `/${INTEGRATION_DIR}/portfolio.${DEMO_VERSION}.json`, version: DEMO_VERSION }, "golden manifest points at the golden document (P-V2-04)");
+});
+await check("G7 (P-V2-05, 07 §11 RV) immutability: re-emitting the same canonical input gives the golden bytes again; changing one canonical fact gives new bytes AND a new resourceVersion, so one version never names two byte sequences", () => {
+  const again = emitFor(clone(demo.snapshot));
+  eq(again.files.map((f) => f.sha256), [DEMO_MANIFEST_SHA256, DEMO_DOC_SHA256], "same input → the golden bytes");
+  const s = clone(demo.snapshot);
+  const bi09 = s.content.projects.find((p) => p.id === "bi-09")!;
+  assert(bi09.totalPrice?.kind === "exact", "bi-09 carries an exact total");
+  bi09.totalPrice = { ...bi09.totalPrice, amount: bi09.totalPrice.amount + 1_000_000 };
+  const moved = emitFor(s);
+  assert(moved.portfolio!.file.sha256 !== DEMO_DOC_SHA256, "changed data → changed bytes");
+  assert(moved.portfolio!.version !== DEMO_VERSION, "changed data → a new resourceVersion");
+  eq(moved.portfolio!.file.path, `${INTEGRATION_DIR}/portfolio.${moved.portfolio!.version}.json`, "…and a new file name (RV5)");
+  eq(moved.manifest.resources.portfolio!.version, moved.portfolio!.version, "the manifest pointer follows");
+});
+
 console.log("\n[builds] real site:build on throwaway roots (data/sites + data/site-builds untouched)");
-await check("T1 same input → the same package: a rebuild of the demo (copy, same at) reproduces buildInputId, packageHash and the integration bytes (INV-1)", async () => {
+// T1 was "a rebuild of the demo reproduces the RECORDED V0.1 package". The V0.1 package is no longer
+// what the demo builds (B2b), and writing a V0.2 package into data/site-builds is what this release
+// deliberately does not do; so T1 builds the V0.2 demo on a throwaway root and checks what the
+// V0.2 document promises about the site it points into.
+await check("T1 (P-V2-07) the V0.2 demo really builds: the detail pages are exactly the 19 records' detailUrls, each resolves (never 404) and names its own record (<h1>, <title>, canonical); the listing page exists; the package's _integration bytes = the V0.2 golden", async () => {
   const root = await throwawayRoot(DEMO);
   try {
-    const r = await buildSite({ repoRoot: root, siteId: DEMO, at: goldenRecord.at });
-    assert(r.status === "built", r.status);
-    eq([r.record.buildInputId, r.record.packageHash], [goldenRecord.buildInputId, goldenRecord.packageHash], "identity + bytes");
-    for (const f of demoEmission.files) eq(sha256(await readFile(path.join(r.packageDir, "site", f.path))), f.sha256, f.path);
-    eq(r.record.integration?.resources.portfolio!.version, DEMO_VERSION, "version");
+    const r = await buildSite({ repoRoot: root, siteId: DEMO, at: AT });
+    assert(r.status === "built" && r.record.qa.pass, `built: ${r.status}`);
+    const site = path.join(r.packageDir, "site");
+    eq((await readdir(path.join(site, INTEGRATION_DIR))).sort(), ["manifest.json", `portfolio.${DEMO_VERSION}.json`], "integration files");
+    for (const f of demoEmission.files) eq(sha256(await readFile(path.join(site, f.path))), f.sha256, `${f.path} = the pure emission = the golden`);
+    const i = r.record.integration!;
+    eq([i.contract, i.producerVersion, i.warnings, i.resources.portfolio?.version, i.resources.portfolio?.records], [{ core: "0.1", portfolio: "1.0" }, PRODUCER_VERSION, [], DEMO_VERSION, 19], "build record integration summary");
+    const doc = demoEmission.portfolio!.document;
+    const detailPages = (await readdir(path.join(site, "portfolio"))).filter((f) => f.endsWith(".html")).map((f) => `/portfolio/${f.slice(0, -".html".length)}`).sort();
+    eq(detailPages, doc.records.map((x) => x.detailUrl).sort(), "generated detail pages = the records' detailUrls: none missing, none extra");
+    eq(detailPages.length, 19, "19 detail pages");
+    assert(await exists(path.join(site, `${doc.listingUrl!.slice(1)}.html`)), "listing page");
+    for (const rec of doc.records) {
+      const res = resolvePath(rec.detailUrl);
+      eq(res, { kind: "key", key: `${rec.detailUrl.slice(1)}.html` }, `${rec.id}: the runtime serves ${rec.detailUrl} from its page`);
+      const html = await readFile(path.join(site, res.kind === "key" ? res.key : ""), "utf8");
+      eq(html.match(/<h1[^>]*>([^<]*)<\/h1>/)?.[1], rec.title, `${rec.id} <h1>`);
+      const title = html.match(/<title>([^<]*)<\/title>/)?.[1];
+      assert(title?.startsWith(`${rec.title} | `), `${rec.id} <title>: ${title}`);
+      const canonical = html.match(/<link[^>]*rel="canonical"[^>]*href="([^"]*)"/)?.[1];
+      assert(canonical !== undefined && new URL(canonical, "https://canonical.invalid").pathname === rec.detailUrl, `${rec.id} canonical: ${canonical}`);
+    }
+    eq(resolvePath("/portfolio/no-such-case"), { kind: "key", key: "portfolio/no-such-case.html" }, "an unknown slug maps to a key…");
+    assert(!(await exists(path.join(site, "portfolio/no-such-case.html"))), "…that the package does not hold (the runtime answers 404)");
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -642,7 +1484,7 @@ await check("T2 generic opt-in: fixture-small with an integration.json builds /_
     await rm(root, { recursive: true, force: true });
   }
 });
-await check("T3 an empty site opted in emits the §21.3 document (records []) and a manifest that still lists the resource", async () => {
+await check("T3 an empty site opted in emits the empty V0.2 document (records []) and a manifest that still lists the resource", async () => {
   const root = await throwawayRoot("fixture-empty", async (dir) => writeFile(path.join(dir, "integration.json"), ON));
   try {
     const r = await buildSite({ repoRoot: root, siteId: "fixture-empty", at: AT });
@@ -753,13 +1595,17 @@ await check("R1 an OFF package answers 404 on the manifest path with the package
   eq([doc.status, doc.headers.get("content-type"), await doc.text()], [200, "application/json", demoEmission.portfolio!.file.text], "ON document");
   eq((await handle(new Request(`https://${HOST}${MANIFEST_PATH}/`), env)).status, 404, "trailing slash 404 (HT8)");
 });
-await check("R2 publish plans the two files as application/json; the manifest revalidates (HT2/HT3); the baked origin equals the manifest origin", async () => {
+await check("R2 publish plans the two files as application/json; the manifest revalidates (HT2/HT3); the baked origin equals the manifest origin — and what it would publish today is the V0.1 package, not V0.2", async () => {
   const plan = await planPublish({ repoRoot, siteId: DEMO, hostname: "interior-demo.boostweb.co.kr" });
   const m = plan.files.find((f) => f.path === "_integration/manifest.json")!;
-  const d = plan.files.find((f) => f.path === `_integration/portfolio.${DEMO_VERSION}.json`)!;
+  const d = plan.files.find((f) => f.path === `_integration/portfolio.${V01_DEMO_VERSION}.json`)!;
   assert(m && d, "planned");
-  eq([m.contentType, m.cacheControl, m.size, m.sha256], ["application/json", CACHE_REVALIDATE, DEMO_MANIFEST_BYTES, demoEmission.manifestFile.sha256], "manifest");
-  eq([d.contentType, d.size, d.sha256], ["application/json", DEMO_DOC_BYTES, demoEmission.portfolio!.file.sha256], "document");
+  assert(!plan.files.some((f) => f.path === `_integration/portfolio.${DEMO_VERSION}.json`), "no V0.2 document is planned (PUBLISH_ALLOWED = NO)");
+  // The plan describes the PACKAGE ON DISK — the V0.1 one (B2b) — so it is compared with that
+  // package's own bytes (G1 ties those to its build record).
+  const packaged = async (rel: string) => sha256(await readFile(path.join(goldenDir, "site", rel)));
+  eq([m.contentType, m.cacheControl, m.size, m.sha256], ["application/json", CACHE_REVALIDATE, DEMO_MANIFEST_BYTES, await packaged("_integration/manifest.json")], "manifest");
+  eq([d.contentType, d.size, d.sha256], ["application/json", V01_DEMO_DOC_BYTES, await packaged(`_integration/portfolio.${V01_DEMO_VERSION}.json`)], "document");
   eq([plan.packageHash, plan.files.length, plan.bakedOrigin, plan.manifestOrigin], [goldenRecord.packageHash, 158, demoEmission.manifest.site.publicOrigin, demoEmission.manifest.site.publicOrigin], "plan identity / origins");
   await rejects(() => planPublish({ repoRoot, siteId: DEMO, hostname: "other.example", requireOriginMatch: true }), /integration manifest was built for https:\/\/interior-demo\.boostweb\.co\.kr, not https:\/\/other\.example|package was built for/);
   const local = await planPublish({ repoRoot, siteId: DEMO, hostname: "localhost" });
@@ -767,26 +1613,49 @@ await check("R2 publish plans the two files as application/json; the manifest re
 });
 
 console.log("\n[release] Template Release immutability");
-await check("I1 every stored release verifies; the demo is pinned to 1.5.2 and that release's hash is unchanged", async () => {
+await check("I1 every stored release verifies; 1.5.2's hash is unchanged and the demo's pin resolves to a stored release", async () => {
   const dir = path.join(repoRoot, "data/template-releases/interior-01");
   const ids = (await readdir(dir)).filter((d) => !d.startsWith(".")).sort();
   assert(ids.length >= 12 && ids.includes(RELEASE_152), `releases: ${ids.join(", ")}`);
   for (const id of ids) await verifyRelease(repoRoot, await loadRelease(repoRoot, "interior-01", id));
-  const site = await readJson(path.join(repoRoot, "data/sites", DEMO, "site.json"));
-  eq([site.template.releaseId, site.template.releaseHash], [RELEASE_152, "d87807590d64ea7901b226d43526795793805527647313ee4af22f8511577a08"], "pin");
+  // Immutability, kept as its own literal assertion now that the demo has moved off 1.5.2: the
+  // release the live package was built from must still hash to exactly what it always did.
+  eq((await loadRelease(repoRoot, "interior-01", RELEASE_152)).releaseHash, RELEASE_152_HASH, "1.5.2 hash unchanged");
+  // The pin itself is read from site.json (so a re-pin needs no edit here), but it must name a
+  // STORED release whose own record agrees with it field for field, and be internally consistent:
+  // releaseId = <templateId>-<templateVersion>-<releaseHash[0:12]>.
+  assert(ids.includes(demoPin.releaseId), `the demo's pin ${demoPin.releaseId} is not a stored release: ${ids.join(", ")}`);
+  const pinned = await loadRelease(repoRoot, "interior-01", demoPin.releaseId);
+  eq([pinned.templateId, pinned.templateVersion, pinned.releaseId, pinned.releaseHash], [demoPin.templateId, demoPin.templateVersion, demoPin.releaseId, demoPin.releaseHash], "pin = the stored release's own record");
+  eq(demoPin.releaseId, `${demoPin.templateId}-${demoPin.templateVersion}-${demoPin.releaseHash.slice(0, 12)}`, "releaseId consistency");
 });
-await check("I2 the working tree still equals the pinned 1.5.2 release (the producer changed no release source); platform/integration and platform/build are not release sources", async () => {
+await check("I2 the producer itself is not a release source (platform/integration, platform/build), and the golden package was built from the stored 1.5.2 release", async () => {
   const rel = await loadRelease(repoRoot, "interior-01", RELEASE_152);
   const { sources } = await collectReleaseSources(repoRoot, "interior-01", 1);
-  const files: { path: string; sha256: string }[] = [];
-  for (const [p, abs] of sources) files.push({ path: p, sha256: sha256(await readFile(abs)) });
-  eq(computeReleaseHash({ ...rel, files }), rel.releaseHash, "working tree = 1.5.2");
   assert(![...sources.keys()].some((k) => k.startsWith("platform/integration/") || k.startsWith("platform/build/")), "not release sources");
+  // …but platform/content IS one, and V0.2 extends platform/content/schema.ts — see I2b.
+  assert([...sources.keys()].includes("platform/content/schema.ts"), "platform/content/schema.ts is a release source (PLATFORM_RUNTIME_DIRS)");
   eq(goldenRecord.template.releaseHash, rel.releaseHash, "golden built from 1.5.2");
   eq(stableStringify(goldenRecord.template), stableStringify({ templateId: "interior-01", templateVersion: "1.5.2", releaseId: RELEASE_152, releaseHash: rel.releaseHash, templateSourceHash: rel.templateSourceHash }), "record template");
 });
+// Restored (was skip(): the V0.2 fields in platform/content/schema.ts — a Template Release runtime
+// source — had moved the working tree off 1.5.2, and the skip's own condition was that a new
+// release be cut first). Release 1.6.0 was cut from this tree and the demo re-pinned to it
+// (docs/result/interior-portfolio-v0.2/23), so the check is live again, now against the PIN rather
+// than a hard-coded release: the working tree must still hash to whatever the demo is pinned to.
+await check("I2b the working tree still equals the release the demo is pinned to", async () => {
+  const rel = await loadRelease(repoRoot, "interior-01", demoPin.releaseId);
+  const { sources } = await collectReleaseSources(repoRoot, "interior-01", 1);
+  const files: { path: string; sha256: string }[] = [];
+  for (const [p, abs] of sources) files.push({ path: p, sha256: sha256(await readFile(abs)) });
+  eq(computeReleaseHash({ ...rel, files }), rel.releaseHash, `working tree = ${demoPin.releaseId}`);
+});
 
-console.log(`\n${passed} passed, ${failed.length} failed`);
+console.log(`\n${passed} passed, ${failed.length} failed, ${skipped.length} skipped`);
+if (skipped.length > 0) {
+  console.log("\nSKIPPED (expected values knowingly out of date; rules unchanged):");
+  for (const sk of skipped) console.log(`  - ${sk}`);
+}
 if (failed.length > 0) {
   for (const f of failed) console.log(`  FAILED: ${f}`);
   process.exit(1);

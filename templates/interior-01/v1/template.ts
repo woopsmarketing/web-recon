@@ -83,10 +83,25 @@ export const PORTFOLIO_PAGE_SIZE = 30;
  * function moved to sections/homeHeroData.ts (no output change) so that page metadata does not
  * pull the client carousel into every page. Additive: one new settings section with a default
  * that keeps the 1.5.1 behaviour; every 1.5.1 site document stays valid.
+ *
+ * 1.6.0 (V0.2 built-space annex — authorable content model): the release runtime's content model
+ * (platform/content/schema.ts, a Template Release source) gains the five AUTHORED, OPTIONAL
+ * ProjectSchema fields of the Integration Contract V0.2 built-space annex — `projectType`
+ * (full_remodel | partial_remodel), `propertyType`, `workScopeIds` (the 26 canonical space/work
+ * ids, a non-empty unique set), `totalPrice` (exact XOR range, never derived from
+ * pricePerArea × area) and `styles` — together with their closed vocabularies and the three
+ * cross-field invariants INV-28 (a partial_remodel needs a non-empty workScopeIds), INV-29 (a
+ * full_remodel needs at least one SPACE scope) and INV-30 (a partial_remodel needs at least one
+ * SPACE scope). Absent always means unknown; nothing is inferred from the title, body, `category`,
+ * `scope` or a price. No renderer, route, section, slot or settings change: the template's output
+ * for a site document that authors none of the new fields is byte-identical to 1.5.2. Minor, not
+ * patch, because the release's authorable surface grew. Additive: every field is optional and
+ * every 1.5.2 site document stays valid — this cut exists so that the V0.2 fields CAN be authored
+ * in data/sites/**, which 1.5.2's frozen, strict ProjectSchema would reject.
  */
 export const template = defineTemplate({
   id: "interior-01",
-  version: "1.5.2",
+  version: "1.6.0",
   vertical: "interior",
   routes: [
     { key: "home", path: "/" },

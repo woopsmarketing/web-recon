@@ -15,23 +15,37 @@ import {
   INTEGRATION_DIR,
   LOCATION_MAX,
   MANIFEST_FILE,
+  PER_AREA_SOURCES,
   PORTFOLIO_KIND,
   PORTFOLIO_SCHEMA_VERSION,
+  PRICE_AMOUNT_MAX,
+  PROJECT_TYPES,
+  PROPERTY_TYPES,
   TITLE_MAX,
   VERSION_RE,
+  WORK_SCOPE_IDS,
+  WORK_SCOPE_SPACE_IDS,
 } from "./contract";
-import { compareCodePoints, IntegrationError, portfolioVersion, type IntegrationEmission, type PortfolioDocument } from "./emit";
+import { compareCodePoints, derivePerArea, IntegrationError, portfolioVersion, type IntegrationEmission, type PortfolioDocument } from "./emit";
 
 /**
- * Producer-side, fail-closed validation of an emission against Contract V0 (02):
- *   manifest schema (§5, §7.1) · resource schema (§6, §7.2, §7.3) · schemaVersion (§14) ·
- *   resource version + echo + file-name pointer (§15, INV-3) · site identity (§13) ·
- *   publicOrigin https (§5) · record id uniqueness (ID3) · required fields · root-relative URLs
- *   (UR2) and their pages in the route plan (INV-5) · facet closure both ways (VO1, INV-8) ·
- *   area / price shape (§9, §10) · no null / placeholder / empty value (MD1–MD3, INV-9) ·
- *   forbidden characters (HT7, INV-12) · compact UTF-8 serialisation that round-trips ·
+ * Producer-side, fail-closed validation of an emission against Contract V0 (02) as extended by
+ * V0.2 (07):
+ *   manifest schema (§5, §7.1) · resource schema (§6, 07 §10) · schemaVersion (§14 SV1, 07 §3 —
+ *   manifest "0.1", document "1.0", INV-27) · resource version + echo + file-name pointer (§15,
+ *   INV-3) · site identity (§13) · publicOrigin https (§5) · record id uniqueness (ID3) · required
+ *   fields · root-relative URLs (UR2) and their pages in the route plan (INV-5) · facet closure
+ *   both ways (VO1, INV-8) · work-scope vocabulary and closure both ways (WS1/WS2, INV-17) ·
+ *   projectType / property / pricing shape (07 §5, §6, §9; INV-23) · the D-1 derivation rules
+ *   (INV-19, INV-20 both ways, RD1) · style/tag disjointness (ST4, INV-24) · partial_remodel ⇒
+ *   work scopes (INV-28) · full_remodel ⇒ at least one SPACE scope (INV-29) · partial_remodel ⇒ at
+ *   least one SPACE scope (INV-30) · no null / placeholder / empty value (MD1–MD3, WS5, INV-9,
+ *   INV-18) · forbidden characters (HT7, INV-12) · compact UTF-8 serialisation that round-trips ·
  *   consumer-declared limits (VO6 → warnings only, never truncation).
- * Any error fails the build (assertIntegration throws with every error listed).
+ * Any error fails the build (assertIntegration throws with every error listed). The ONE
+ * warn-and-omit case is an RD1 guard failure: the EMITTER raises the warning and it is merged in
+ * here (07 §9.3); validating a document on its own, a guard-failing record without a perArea is
+ * simply legal and carries no warning.
  */
 
 export interface ValidationContext {
@@ -82,13 +96,34 @@ const AreaSchema = z
     basis: z.enum(AREA_BASES).optional(),
   })
   .strict();
-const PriceSchema = z
+/** 07 §6 — `area` moved here unchanged; MD4: omitted entirely when both sub-fields are absent. */
+const PropertySchema = z
+  .object({ type: z.enum(PROPERTY_TYPES).optional(), area: AreaSchema.optional() })
+  .strict()
+  .refine((p) => p.type !== undefined || p.area !== undefined, { message: "property is omitted when both type and area are absent (MD4)" });
+/** 07 §9 — positive, ≤ 2 fraction digits, ≤ 1e9, in the currency's major unit. */
+const AmountSchema = z.number().positive().max(PRICE_AMOUNT_MAX).refine(twoDecimals, { message: "at most 2 fraction digits" });
+/** 07 §9.1 — exactly one `kind`; TP1: a range needs minAmount < maxAmount (INV-23). */
+const TotalPriceSchema = z
+  .discriminatedUnion("kind", [
+    z.object({ kind: z.literal("exact"), amount: AmountSchema, currency: z.string().regex(CURRENCY_RE) }).strict(),
+    z.object({ kind: z.literal("range"), minAmount: AmountSchema, maxAmount: AmountSchema, currency: z.string().regex(CURRENCY_RE) }).strict(),
+  ])
+  .refine((t) => t.kind !== "range" || t.minAmount < t.maxAmount, { message: "total: a range requires minAmount < maxAmount (TP1, INV-23)" });
+/** 07 §9.2 — V0's price shape plus its REQUIRED provenance (PA1/PA2). */
+const PerAreaSchema = z
   .object({
-    amount: z.number().positive().refine(twoDecimals, { message: "at most 2 fraction digits" }),
+    amount: AmountSchema,
     currency: z.string().regex(CURRENCY_RE),
     perUnit: z.enum(AREA_UNITS),
+    source: z.enum(PER_AREA_SOURCES),
   })
   .strict();
+const PricingSchema = z
+  .object({ total: TotalPriceSchema.optional(), perArea: PerAreaSchema.optional() })
+  .strict()
+  .refine((p) => p.total !== undefined || p.perArea !== undefined, { message: "pricing is omitted when both total and perArea are absent (MD4)" });
+const WorkScopeIdSchema = z.enum(WORK_SCOPE_IDS);
 export const PortfolioRecordSchema = z
   .object({
     id: z.string().regex(CONTRACT_ID_RE).max(CONTRACT_ID_MAX),
@@ -96,8 +131,11 @@ export const PortfolioRecordSchema = z
     detailUrl: UrlRef,
     publishedAt: z.iso.datetime({ offset: true }).optional(),
     location: z.string().min(1).max(LOCATION_MAX).optional(),
-    area: AreaSchema.optional(),
-    pricePerArea: PriceSchema.optional(),
+    projectType: z.enum(PROJECT_TYPES).optional(),
+    property: PropertySchema.optional(),
+    // WS5 / INV-18: non-empty when present — `[]` is never emitted, the key is omitted instead.
+    workScopeIds: z.array(WorkScopeIdSchema).min(1).max(WORK_SCOPE_IDS.length).optional(),
+    pricing: PricingSchema.optional(),
     facets: z.record(KindOrFacetKey, z.array(z.string().min(1).max(FACET_ID_MAX)).min(1)).optional(),
   })
   .strict();
@@ -107,6 +145,7 @@ export const PortfolioDocumentSchema = z
     resource: z.literal(PORTFOLIO_KIND),
     version: z.string().regex(VERSION_RE),
     listingUrl: UrlRef.optional(),
+    workScopes: z.array(WorkScopeIdSchema).min(1).optional(),
     facets: z
       .record(
         KindOrFacetKey,
@@ -213,6 +252,9 @@ export function validateIntegration(e: IntegrationEmission, ctx: ValidationConte
     return { errors, warnings };
   }
   const doc = e.portfolio.document;
+  // 07 §9.3 — the emitter's warn-and-omit case (an RD1 guard failure) travels to the build here,
+  // through the same channel as a VO6 over-limit warning. It is never an error.
+  warnings.push(...e.portfolio.warnings);
   if (!entry) errors.push(`manifest.resources has no "${PORTFOLIO_KIND}" entry`);
   else {
     const expectedHref = `/${INTEGRATION_DIR}/${PORTFOLIO_KIND}.${doc.version}.json`;
@@ -238,6 +280,8 @@ export function validateIntegration(e: IntegrationEmission, ctx: ValidationConte
 
   const ids = new Set<string>();
   const usedFacetIds = new Map<string, Set<string>>();
+  const usedWorkScopes = new Set<string>();
+  const declaredWorkScopes = doc.workScopes ?? [];
   doc.records.forEach((r, i) => {
     const at = `portfolio.records[${i}] (${r.id})`;
     if (ids.has(r.id)) errors.push(`${at}: duplicate record id (ID3)`);
@@ -245,6 +289,65 @@ export function validateIntegration(e: IntegrationEmission, ctx: ValidationConte
     if (i > 0 && compareCodePoints(doc.records[i - 1]!.id, r.id) >= 0) errors.push(`${at}: records are not in id code point order (§6.1)`);
     if (!ctx.pagePaths.has(r.detailUrl)) errors.push(`${at}: detailUrl ${r.detailUrl} has no page in this build (INV-5)`);
     if (!r.facets?.category || r.facets.category.length !== 1) errors.push(`${at}: facets.category must have exactly one value (§11.3, INV-16)`);
+
+    // ---- built-space annex (07 §5–§9, INV-17 … INV-28) ----
+    // WS1/WS2/WS3 (INV-17): vocabulary, uniqueness, and forward closure against the document's own
+    // declaration. An unknown id is a producer bug, not a consumer-side unknown value.
+    for (const id of r.workScopeIds ?? []) {
+      if (!(WORK_SCOPE_IDS as readonly string[]).includes(id)) errors.push(`${at}: workScopeIds value "${id}" is not in the contract vocabulary (WS1, 07 §7.3)`);
+      else if (!declaredWorkScopes.includes(id)) errors.push(`${at}: workScopeIds value "${id}" is not declared in document.workScopes (WS2, INV-17)`);
+      usedWorkScopes.add(id);
+    }
+    if (r.workScopeIds && new Set(r.workScopeIds).size !== r.workScopeIds.length) errors.push(`${at}: workScopeIds repeats a value (WS3: it is a set)`);
+    // INV-28 — WS7a's closed set is `workScopeIds ∩ Spaces` (the spaces that were remodelled), not
+    // `workScopeIds` as a whole; the works in it stay open even for a partial (WS7b). A non-empty
+    // `workScopeIds` is what INV-28 requires, and the interpretability of `pricing.total` depends on it.
+    if (r.projectType === "partial_remodel" && (r.workScopeIds ?? []).length === 0) {
+      errors.push(`${at}: projectType "partial_remodel" requires a non-empty workScopeIds (WS7a, INV-28)`);
+    }
+    // INV-29 — a `full_remodel` remodelled the dwelling's SPACES. A record whose scopes are trades
+    // only (바닥·도배·조명) is 07 PT4(c): every space touched, but not a remodel's total — and it
+    // must never reach D-1, which is exactly the number this rule keeps out of the document.
+    if (r.projectType === "full_remodel" && !(r.workScopeIds ?? []).some((id) => (WORK_SCOPE_SPACE_IDS as readonly string[]).includes(id))) {
+      errors.push(`${at}: projectType "full_remodel" requires at least one SPACE work scope (07 §7.3 spaces table); trades alone are PT4(c) (INV-29)`);
+    }
+    // INV-30 — the mirror of INV-29. INV-28 only requires non-emptiness, so a trades-only
+    // `partial_remodel` passed it while leaving `workScopeIds ∩ Spaces` empty: no bounded set of
+    // spaces, hence nothing for `pricing.total` to cover and nothing for WS7a to close over. PT5
+    // sends such a job to breadth-absent instead.
+    if (r.projectType === "partial_remodel" && !(r.workScopeIds ?? []).some((id) => (WORK_SCOPE_SPACE_IDS as readonly string[]).includes(id))) {
+      errors.push(`${at}: projectType "partial_remodel" requires at least one SPACE work scope (07 §7.3 spaces table); a trades-only job is breadth-absent, not a partial (PT5, INV-30)`);
+    }
+    // ST4 / INV-24 — one fact, one carrier: no value in both `style` and `tag`.
+    const style = r.facets?.style ?? [];
+    const tag = r.facets?.tag ?? [];
+    const both = style.filter((v) => tag.includes(v));
+    if (both.length > 0) errors.push(`${at}: ${both.map((v) => `"${v}"`).join(", ")} appear in both facets.style and facets.tag (ST4, INV-24)`);
+    // D-1 (07 §9.3): a DERIVED per-area price is admissible only under the five conditions, and its
+    // value must be exactly RD1's integer result for this record's own total and area.
+    // INV-21 (an authored perArea is never replaced) is enforced at the emitter — the derivation is
+    // not even attempted when `pricePerArea` is authored — and is covered by a crafted-snapshot
+    // test; the document alone cannot distinguish a correct authored value from a replaced one.
+    const perArea = r.pricing?.perArea;
+    if (perArea && perArea.source === "derived") {
+      if (r.projectType !== "full_remodel") errors.push(`${at}: pricing.perArea is derived but projectType is ${r.projectType === undefined ? "absent" : `"${r.projectType}"`} (D-1a, INV-19)`);
+      else {
+        const guardFailures: string[] = [];
+        const expected = derivePerArea({ projectType: r.projectType, total: r.pricing?.total, area: r.property?.area }, (why) => guardFailures.push(why));
+        if (!expected) errors.push(`${at}: pricing.perArea is derived but D-1's conditions do not hold${guardFailures.length ? ` (${guardFailures.join("; ")})` : ""} (07 §9.3)`);
+        else if (expected.amount !== perArea.amount || expected.currency !== perArea.currency || expected.perUnit !== perArea.perUnit) {
+          errors.push(`${at}: derived pricing.perArea ${JSON.stringify(perArea)} ≠ RD1's result ${JSON.stringify(expected)} (INV-20, RD1)`);
+        }
+      }
+    }
+    // INV-20, the other direction: where D-1's conditions hold and RD1's guards pass, the derived
+    // perArea MUST be there. A guard failure makes derivePerArea return nothing, so the warn-and-omit
+    // case of 07 §9.3 stays legal; any perArea at all (an authored one wins, PA1) satisfies this.
+    if (!perArea && r.projectType === "full_remodel") {
+      const due = derivePerArea({ projectType: r.projectType, total: r.pricing?.total, area: r.property?.area }, () => {});
+      if (due) errors.push(`${at}: D-1's conditions hold but no derived pricing.perArea was emitted (expected ${JSON.stringify(due)}) (INV-20)`);
+    }
+
     for (const [key, values] of Object.entries(r.facets ?? {})) {
       if (new Set(values).size !== values.length) errors.push(`${at}: facets.${key} repeats a value (INV-14)`);
       let set = usedFacetIds.get(key);
@@ -255,6 +358,16 @@ export function validateIntegration(e: IntegrationEmission, ctx: ValidationConte
       }
     }
   });
+  // WS2 reverse closure + ordering (07 §7.2, §11): declared ⊆ used, sorted, unique, and the block
+  // is absent exactly when no record has a work scope.
+  for (let i = 1; i < declaredWorkScopes.length; i++) {
+    if (compareCodePoints(declaredWorkScopes[i - 1]!, declaredWorkScopes[i]!) >= 0) errors.push(`portfolio.workScopes: ids are not in code point order (07 §11)`);
+  }
+  if (new Set(declaredWorkScopes).size !== declaredWorkScopes.length) errors.push("portfolio.workScopes: duplicate id");
+  for (const id of declaredWorkScopes) if (!usedWorkScopes.has(id)) errors.push(`portfolio.workScopes: "${id}" is declared but no record uses it (WS2, INV-17)`);
+  if (doc.workScopes === undefined && usedWorkScopes.size > 0) errors.push("portfolio.workScopes is absent although records carry work scopes (WS2, INV-17)");
+  if (doc.workScopes !== undefined && usedWorkScopes.size === 0) errors.push("portfolio.workScopes is present although no record carries a work scope (WS2)");
+
   for (const [key, facet] of Object.entries(doc.facets ?? {})) {
     const declared = facet.values.map((v) => v.id);
     if (new Set(declared).size !== declared.length) errors.push(`portfolio.facets.${key}: duplicate value id`);

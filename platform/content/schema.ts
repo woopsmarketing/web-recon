@@ -114,6 +114,83 @@ const ShortText = (max: number) => z.string().trim().min(1).max(max);
 /** Calendar month "YYYY-MM" (no day, no time zone: a project period is not an instant). */
 const YearMonthSchema = z.string().regex(/^(1[89]\d\d|2[01]\d\d)-(0[1-9]|1[0-2])$/, "expected YYYY-MM");
 
+// ------------------------------------------- built-space structured facts ---
+
+/**
+ * The CLOSED vocabularies of the Integration Contract V0.2 built-space annex
+ * (docs/reports/integration/07-integration-contract-v0.2-candidate.md §5, §6, §7.3).
+ *
+ * They are DEFINED here rather than in platform/integration/contract.ts because platform/content
+ * is a Template Release runtime source (platform/release/release.ts PLATFORM_RUNTIME_DIRS) and a
+ * release workspace does not contain platform/integration — the content model may not import it.
+ * platform/integration/contract.ts re-exports these as the contract-side constants, so producer
+ * and content model can never disagree about the vocabulary.
+ *
+ * Every field below is AUTHORED. Nothing here is inferred from the title, the body, `category`,
+ * `scope` or a price (07 PT3, WS4, ST4 — V0 ND1).
+ */
+
+/**
+ * How much of the dwelling the project remodelled (07 §5, PT2):
+ *   full_remodel    — the source presents the project as a remodel of the dwelling AS A WHOLE;
+ *   partial_remodel — a bounded subset of spaces; `totalPrice` covers only that subset.
+ * ABSENT = breadth not established (PT1/PT4). There is no "unknown" value: MD1/MD2 already fix
+ * how unknown is written, and a second spelling of it would be a second source of truth.
+ */
+export const PROJECT_TYPES = Object.freeze(["full_remodel", "partial_remodel"] as const);
+export type ProjectType = (typeof PROJECT_TYPES)[number];
+
+/** What kind of built space the project was in (07 §6). Absent = unknown. */
+export const PROPERTY_TYPES = Object.freeze(["apartment", "officetel", "villa", "detached_house", "mixed_use", "commercial"] as const);
+export type PropertyType = (typeof PROPERTY_TYPES)[number];
+
+/**
+ * The 26 canonical work-scope ids (07 §7.3), as two tables that the contract keeps apart:
+ *   SPACES — a room or a defined area of the dwelling;
+ *   WORKS  — a trade applied across spaces.
+ * The split is machine-readable because INV-29 needs it: a `full_remodel` must have remodelled at
+ * least one SPACE. A job that ran only trades across the dwelling (바닥·도배·조명) touches every
+ * room without being a remodel of it — 07 PT4(c) — and must never feed D-1.
+ *
+ * Closed: a source item that cannot be mapped to an id without judgement is OMITTED, never passed
+ * through as free text (WS1/WS9). The gloss that fixes what each id covers lives in the contract;
+ * visitor-language aliases (부엌→kitchen) belong to the consumer and are never emitted (WS6).
+ */
+export const WORK_SCOPE_SPACE_IDS = Object.freeze([
+  "entrance",
+  "living_room",
+  "dining",
+  "kitchen",
+  "pantry",
+  "bedroom",
+  "kids_room",
+  "dressing_room",
+  "study",
+  "bathroom",
+  "hallway",
+  "balcony",
+  "storage",
+  "utility",
+] as const);
+export const WORK_SCOPE_WORK_IDS = Object.freeze([
+  "flooring",
+  "wallpaper",
+  "lighting",
+  "windows",
+  "doors",
+  "tiling",
+  "painting",
+  "plumbing",
+  "electrical",
+  "built_in_furniture",
+  "expansion",
+  "demolition",
+] as const);
+/** The union, in 07 §7.3's order (spaces first, then works) — the vocabulary every id comes from. */
+export const WORK_SCOPE_IDS = Object.freeze([...WORK_SCOPE_SPACE_IDS, ...WORK_SCOPE_WORK_IDS] as const);
+export type WorkScopeId = (typeof WORK_SCOPE_IDS)[number];
+
+
 /**
  * One photo of a gallery group. `image` is the primary (after) photo; `before`
  * is an OPTIONAL earlier photo of the same view. Before/after is data: a
@@ -137,6 +214,25 @@ export const GalleryGroupSchema = z
 /** Displayed numbers are stored with ≤ 2 fraction digits so Templates render them exactly (no rounding). */
 const twoDecimals = (v: number) => Math.round(v * 100) / 100 === v;
 const TWO_DECIMALS = { message: "at most 2 decimal places" };
+
+/** 07 §9 — a positive amount in the currency's major unit, ≤ 2 fraction digits, ≤ 1e9 (V0 PR1 shape). */
+const PriceAmountSchema = z.number().positive().max(1_000_000_000).refine(twoDecimals, TWO_DECIMALS);
+const CurrencySchema = z.string().regex(/^[A-Z]{3}$/, "ISO 4217 code");
+
+/**
+ * The price of the work this case describes, as authored (07 §9.1 TP2). EXACT xor RANGE is a
+ * STRUCTURAL guarantee (the `kind` discriminant), not a validator rule. A total is NEVER derived
+ * from `pricePerArea` × `area` (TP3 = V0 PR5, retained in full), and the inclusion scope (VAT,
+ * demolition, furniture) stays unknown for every record (PR3).
+ */
+export const TotalPriceSchema = z
+  .discriminatedUnion("kind", [
+    z.object({ kind: z.literal("exact"), amount: PriceAmountSchema, currency: CurrencySchema }).strict(),
+    z.object({ kind: z.literal("range"), minAmount: PriceAmountSchema, maxAmount: PriceAmountSchema, currency: CurrencySchema }).strict(),
+  ])
+  // TP1: equal bounds are not a range — author them as `exact`.
+  .refine((t) => t.kind !== "range" || t.minAmount < t.maxAmount, { message: "totalPrice range requires minAmount < maxAmount; equal bounds are an exact total (TP1)" });
+export type TotalPrice = z.infer<typeof TotalPriceSchema>;
 
 export const ProjectSchema = z
   .object({
@@ -168,8 +264,51 @@ export const ProjectSchema = z
       .optional(),
     /** Year the building was completed (not the project). */
     builtYear: z.number().int().min(1800).max(2100).optional(),
-    /** Spaces / work areas included in the project. */
+    /**
+     * Spaces / work areas included in the project, in the site's own words. DISPLAY text: it is
+     * rendered on the site and is NOT the structured work scope (see `workScopeIds`). V0.2 retires
+     * the `scope` FACET, not this field.
+     */
     scope: z.array(ShortText(40)).min(1).max(20).optional(),
+
+    // ---- built-space structured facts (Integration Contract V0.2, 07). All AUTHORED, all ----
+    // ---- OPTIONAL: absent = unknown, never a placeholder (MD1/MD2, ND1, PT3, WS4, ST4).  ----
+    /** 07 §5 — how much of the dwelling was remodelled. Never inferred; absent = not established. */
+    projectType: z.enum(PROJECT_TYPES).optional(),
+    /** 07 §6 — what kind of built space this is. Emitted as `property.type`. */
+    propertyType: z.enum(PROPERTY_TYPES).optional(),
+    /**
+     * 07 §7 — the canonical spaces and works the project covered, as a SET (WS3: quantity is not
+     * represented). Non-empty when present; `[]` is never authored (WS5). When `projectType` is
+     * `partial_remodel`, only the SPACES within it are CLOSED — `workScopeIds ∩ Spaces` is the
+     * complete set of spaces that were remodelled (WS7a). An absent space id means that space was
+     * not remodelled; it does NOT mean no work reached it. The WORKS in the set stay open even for
+     * a partial (WS7b). A `partial_remodel` authored with no `workScopeIds` at all is still an
+     * authoring error (INV-28).
+     */
+    workScopeIds: z
+      .array(z.enum(WORK_SCOPE_IDS))
+      .min(1)
+      .max(WORK_SCOPE_IDS.length)
+      .refine((v) => new Set(v).size === v.length, { message: "workScopeIds must be unique (WS3: it is a set)" })
+      .optional(),
+    /** 07 §9.1 — the total price of the work this case describes, exact XOR range. */
+    totalPrice: TotalPriceSchema.optional(),
+    /**
+     * 07 §8 ST1 — style / mood words only (colour, material feel, atmosphere), feeding `facets.style`.
+     * The classification is AUTHORED, never computed (ST2: 간접조명 is a lighting technique and
+     * 수납 특화 a functional feature — both stay tags).
+     *
+     * `styles` is normally a SUBSET of `keywords`: the operator tags 화이트 once and then marks it
+     * as a style. The emitter therefore emits `facets.tag` as `keywords` MINUS `styles`, so ST4 /
+     * INV-24 (no value in both facets) holds by construction. Overlap here is the NORMAL case and
+     * is not an error.
+     */
+    styles: z
+      .array(ShortText(32))
+      .max(12)
+      .refine((s) => new Set(s).size === s.length, { message: "styles must be unique" })
+      .optional(),
     /** Project period by calendar month; `end` omitted = a single-month project (end = start). */
     period: z
       .object({ start: YearMonthSchema, end: YearMonthSchema.optional() })
@@ -178,7 +317,11 @@ export const ProjectSchema = z
       .optional(),
     /** Construction duration in whole weeks. */
     durationWeeks: z.number().int().min(1).max(520).optional(),
-    /** Style keywords in the site's own words. Absent or empty = no keyword row. */
+    /**
+     * Descriptive keywords in the site's own words, feeding `facets.tag`. Absent or empty = no
+     * keyword row. V0.2 (07 §8): a value that is a STYLE belongs in `styles` instead — 간접조명
+     * (a lighting technique) and 수납 특화 (a functional feature) stay here (ST2).
+     */
     keywords: z
       .array(ShortText(32))
       .max(12)
@@ -213,7 +356,33 @@ export const ProjectSchema = z
       .strict()
       .optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((p, ctx) => {
+    // ST4 / INV-24 is NOT a rule about the authored fields: `styles` is normally a subset of
+    // `keywords`, and the emitter makes the two facets disjoint by subtraction. Only the emitted
+    // document is checked (platform/integration/validate.ts).
+
+    // WS7a/INV-28 — an empty workScopeIds leaves `workScopeIds ∩ Spaces` (WS7a's closed set of
+    // spaces that were remodelled) empty too, which cannot carry the closed-set meaning the
+    // contract gives it, and its `totalPrice` would be uninterpretable.
+    if (p.projectType === "partial_remodel" && (p.workScopeIds ?? []).length === 0) {
+      ctx.addIssue({ code: "custom", path: ["workScopeIds"], message: "projectType \"partial_remodel\" requires a non-empty workScopeIds: its spaces are the closed set the total covers (WS7a, INV-28)" });
+    }
+    // INV-29 — a `full_remodel` remodelled the dwelling's SPACES. A set of trades alone (바닥·도배·
+    // 조명) is 07 PT4(c): all the spaces are touched, but the total is not a remodel's total, and
+    // such a record must never feed D-1.
+    if (p.projectType === "full_remodel" && !(p.workScopeIds ?? []).some((id) => (WORK_SCOPE_SPACE_IDS as readonly string[]).includes(id))) {
+      ctx.addIssue({ code: "custom", path: ["workScopeIds"], message: "projectType \"full_remodel\" requires at least one SPACE work scope (07 §7.3 spaces table): a set of trades alone is PT4(c), not a full remodel (INV-29)" });
+    }
+    // INV-30 — the mirror of INV-29, and the reason INV-28 is not enough. PT5 authors a partial as a
+    // BOUNDED SET OF SPACES; a record whose scopes are trades only (도배·바닥) names no boundary, so
+    // `workScopeIds ∩ Spaces` — the closed set WS7a reads and the set `pricing.total` covers — is
+    // empty, and the total means nothing. Such a job is breadth-ABSENT (PT5's authoring sentence,
+    // bi-19's case), never a partial.
+    if (p.projectType === "partial_remodel" && !(p.workScopeIds ?? []).some((id) => (WORK_SCOPE_SPACE_IDS as readonly string[]).includes(id))) {
+      ctx.addIssue({ code: "custom", path: ["workScopeIds"], message: "projectType \"partial_remodel\" requires at least one SPACE work scope (07 §7.3 spaces table): a trades-only job names no bounded set of spaces, so leave projectType unset (PT5, INV-30)" });
+    }
+  });
 export type Project = z.infer<typeof ProjectSchema>;
 
 // ----------------------------------------------------- Interior (1.3.0) -----
