@@ -1,0 +1,15 @@
+EF6 proof — contract rev 8, section 14.3.6 (V0.2 narrowed: three criteria)
+  PASS A, derived from EF2..EF4:
+    conversation x record inputs        : 1512
+    distinct criterion-state vectors    : 100  (of 192 possible)
+    distinct classes reached            : 10/10
+  PASS B, raw cross-product superset:
+    evaluations incl. row 1's relations : 336
+    distinct classes reached            : 10/10
+  worked cases from rounds 4-7          : 11
+
+PASS — on both passes EF6 is total, returns a class in GR2's closed list, agrees with
+       'first match wins' row by row, returns 'exact' exactly when no stated criterion
+       missed, and fires row 1 only for a partial_remodel (EF3's lemma, DERIVED from
+       EF3's branches). GR2a is a permutation of GR2's list, so every class has exactly
+       one position. No class is orphaned, and all 11 worked cases hold.

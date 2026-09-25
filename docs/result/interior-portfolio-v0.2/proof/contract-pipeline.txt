@@ -1,0 +1,1446 @@
+contract-pipeline — executable reference implementation of the integration contract
+  DEFAULT CONFIGURATION: REV 9 (D9-1 + D9-2c + D9-4 + D9-5a = D9-6, one indivisible change).
+  Rev 8 stays runnable behind useRev(8); the comparison follows the six properties.
+  Repaired against the independent audit in 21-pipeline-audit.md.
+  corpus: 19 records (bi-01..bi-08 from 18:100-107 + projects.json; bi-09..bi-19 from 04 section 2)
+  utterances: 26 (10 from 04 section 4.1, 16 extra)
+  rules rev 9 changed, and where this file encodes them:
+    D9-1  07:1365-1368  GR3a deleted as an ordering device         CFG.noRungs = true
+    D9-2c 07:1003-1007    EF3 satisfied set = scope_exact + scope_superset
+          07:1268       EF6 row 7 gives scope_superset its class   CFG.ef6Row8 = true
+          07:1316-1317  GR2a reordered   exact > scope_superset > unknown_type_fallback > not_evaluable > ...
+    D9-4  07:883-900    VB3 first-match + reordered rows + forms + the quantity particle
+    D9-5a 07:350-365    WS6's tie-break deleted; Q carries every reading; EF3 resolves
+
+  readings and gaps still in force (every count below is conditional on these):
+    - query area basis when the visitor states none (07:1065-1068)
+        LEFT UNKNOWN; AR5 compares with a disclosure   [audit 21 A-2, confirmed by rev 9's Q-31: the bare-pyeong basis gap is FALSE and no rule is added]
+    - key (2)'s PB4 carve-out (07:1398-1405)
+        positional permutation inside each GR2a class block   [07:1405 carries it as section 18's Q-29, unpatched]
+    - key (3) under two WS6 readings (07:1399 vs 07:862)
+        union of the readings' ids   [NEW at rev 9: D9-5a changed V.scope's shape and the key list was not updated]
+    - VB3's left column (07:898-902)
+        FORMS — decided by rev 9, no longer a choice   [D9-4(iii); rev 8 left it open and the checker had to branch]
+    - a man-particle on a quantity (07:904-908)
+        not a space restriction — decided by rev 9   [D9-4(iv); rev 8 left it open and the checker had to branch]
+    - GR3a's rungs and the sub-rung key
+        DELETED (07:1365-1368); parked in section 17.3   [D9-1; the rev-8 implementation is retained behind useRev(8)]
+
+== PROPERTY 1 — totality and single-valuedness of the table-driven rules ==
+  14.3.3    1024 synthetic inputs: 0 with no row, 240 with more than one (all resolved by PB7 07:1074, which the table states)
+  14.3.3.1  96 reached: 0 with no row, 0 with more than one
+  EF6       336 raw cross-product inputs: 0 with no row, 0 where the returned row was not the lowest holding
+  GR2a      permutation of GR2's closed list: yes
+  GR3a      deleted at rev 9 (07:1365-1368); its table is parked in section 17.3 and is
+            not enumerated here. Run under useRev(8) it is total with 11 of 12 overlaps
+            resolved by its own first-match clause.
+  CINV-21   81 permuted re-runs, 0 differed from the reference order
+
+== PROPERTY 3 — GR3's direct-answer sentence vs the remaining ordering device ==
+  rev 9 (07:1355-1368): the rungs are deleted and "direct answers are offered first" is a
+  DEFINITION over a named prefix of GR2a, so the two cannot disagree. Rev 8 (07:1171 vs
+  07:1184-1206): two C: MUST orderings with no tie-breaker. The same differential is run.
+  0 of 27 branches order differently under the two C: MUST rules (0 of them inside the top 3)
+
+== PROPERTY 4 — PB4 (07:1224-1237) ==
+  4a. METAMORPHIC — delete a price/area field, re-run, assert the record does not move down.
+    VIOLATION  34평 전체 5천이면 되나요 | breadth=whole
+                 deleting bi-01.area moves it 1 -> 8, behind bi-09, bi-10, bi-19, bi-05, bi-03, bi-02, bi-08
+    VIOLATION  34평 전체 5천이면 되나요 | breadth=whole
+                 deleting bi-05.area moves it 5 -> 6, behind bi-03
+    VIOLATION  34평 전체 5천이면 되나요 | breadth=whole
+                 deleting bi-06.area moves it 9 -> 10, behind bi-17
+    VIOLATION  34평 전체 5천이면 되나요 | breadth=whole
+                 deleting bi-09.area moves it 2 -> 8, behind bi-10, bi-19, bi-05, bi-03, bi-02, bi-08
+    VIOLATION  34평 전체 5천이면 되나요 | breadth=whole
+                 deleting bi-10.area moves it 3 -> 8, behind bi-19, bi-05, bi-03, bi-02, bi-08
+    VIOLATION  34평 전체 5천이면 되나요 | breadth=whole
+                 deleting bi-17.area moves it 10 -> 14, behind bi-04, bi-15, bi-16, bi-18
+    ... (all listed in the summary)
+    1053 deletions checked, 44 moved the record down
+      area             486 checked, 44 moved down
+      pricing.total    297 checked, 0 moved down
+      pricing.perArea  270 checked, 0 moved down
+    (audit 21 A-15 is right that the price arm carries no information: 07:1405 says "No key
+     is a price", so the price deletions were never capable of moving anything. They are kept
+     as a control on the deletion mechanism, not as evidence.)
+
+  4b. STRICT — a record with a criterion `not_evaluable` must not sort BELOW an otherwise-
+      identical record with that criterion `unsatisfied` (07:1218-1220). Real corpus, no tolerance.
+      REV 9 as written : 798 mutant pairs, 0 violations   by cause: {}
+      PB4's strong form HOLDS at rev 9 on the real corpus, under the STRICT assertion —
+      no tolerance, no same-class relaxation. Every configuration between rev 8 and rev 9
+      is measured in the comparison section below.
+
+== PROPERTY 5 — EF1 closure (07:949), rebuilt over THE CONTRACT'S TEXT ==
+  Audit 21 A-1: the previous version quantified over this file's own assignState call sites
+  and a count evaluate() forces arithmetically, so no contract property could make it fail.
+  EF1 is a constraint on the SPECIFICATION, so this version reads 07 and asks, of every rule
+  in force that mentions a criterion state: does that rule ASSIGN one, and is it EF2/3/4?
+  contract lines naming a criterion state, IN FORCE: 91   (a further 26 are inside section 17.1's deferred annex and are excluded; located at 07:1604-2078)
+  of those, occurrences of a token that is BOTH a state and a match class, inside a table
+    whose output column is headed `class`: 2  [collision: not_evaluable]
+  lines using the AMBIGUOUS form "<x> is `<state>`", which EF6's condition column and EF2's
+    assignment clause share verbatim, so they are NOT counted as assignments: WS6 x1, EF3 x6, 14.3.3.1 x1, EF6 x6, 15. x4, 20. x1, 20.3 x1, 20.4 x2, 20.7.2 x1, 20.7.3 x1, 20.7.5 x2
+  rules whose own text ASSIGNS a criterion state: EF2, EF3, EF4
+  rules that name a state and EXPLICITLY defer the assignment: EF4, WS7a, WS8
+  state assignments in text that is NOT inside a labelled rule (so not an EF1 subject): 9  15. x2, 20.3 x1, 20.4 x1, 20.5 x2, 20.7.3 x1, 20.8 x2
+    each one, with the text, because a count cannot distinguish prose from a rule:
+      07:1539  [15.]  table row (invariant/change-log cell) — narrative
+        `CINV-9` | `WS8`: an unknown work-scope id is ignored, the record survives, the document is not 
+      07:1547  [15.]  table row (invariant/change-log cell) — narrative
+        `CINV-17` | disclosure wording, both axes: a trade in `Q_t \ R_t` is **not established for this 
+      07:2529  [20.3]  table row (invariant/change-log cell) — narrative
+        **P-2** | BLOCKER | `PB1` gave **breadth** no "not stated ⇒ not applicable" branch although area
+      07:2570  [20.4]  table row (invariant/change-log cell) — narrative
+        **Q-3** | BLOCKER | `EF3` extended `PT4`(b) — a statement about **spaces** — to the visitor's **
+      07:2624  [20.5]  table row (invariant/change-log cell) — narrative
+        **B-1** | BLOCKER | The `Q-7` fix assigned a criterion state from **outside** `EF2`–`EF5`: `WS8`
+      07:2627  [20.5]  table row (invariant/change-log cell) — narrative
+        **M-3** | MAJOR | Worked case 7 asserted a state vector its own utterance cannot produce (*"바닥이랑
+      07:2816  [20.7.3]  table row (invariant/change-log cell) — narrative
+        **`D9-3`** — restate `PB4`'s pass/fail assertion | *"No record in class `not_evaluable` sorts be
+      07:2941  [20.8]  table row (invariant/change-log cell) — narrative
+        **A** | `EF3`'s ambiguity clause is restated as `D9-7a` | two bullets comparing **states**: *"al
+      07:2943  [20.8]  table row (invariant/change-log cell) — narrative
+        **C** | a disclosure names only what **every reading** admits, worded over the **disclosure sets
+    of the 9, carrying a conformance marker (so actually normative): 0
+      None. Every one is a table cell or unmarked prose DESCRIBING an assignment EF2/EF3/EF4
+      makes, not making one. EF1's closure is unaffected and the count moving is cosmetic.
+  offenders outside EF2/EF3/EF4: none
+  negative control (a WS8 that assigns the state itself — rev 7's B-1 defect): CAUGHT (WS8) — the property can fail
+  (construction, secondary: 1539 states assigned over 27 branches x 19 records by {EF2, EF3, EF4} and nothing else)
+
+== PROPERTY 2 — dead-branch detection over every registered discriminator ==
+  CINV-9 (07:1539) — bi-16 read by a consumer that does not know `bathroom`, against "주방만, 2천":
+    full-vocabulary consumer: scope satisfied, class scope_superset
+    reduced-vocabulary consumer: scope not_evaluable, class not_evaluable   (WS8 dropped: true)
+    CINV-9 holds: scope not_evaluable, not classed exact, no absence statable
+  NEVER FALSE  14.3.4 07:1196          tier fallback   [unconditional row — by construction]
+                   (7783 evaluations; e.g. 34평 전체 5천이면 되나요/bi-02)
+  NEVER FALSE  EF3 07:965              full_remodel spaces half satisfied for any Q_s   [unconditional row — by construction]
+                   (15670 evaluations; e.g. 주방만 하면 얼마예요/bi-01)
+  NEVER FALSE  EF6 07:1269             row 8   [unconditional row — by construction]
+                   (52757 evaluations; e.g. 34평 전체 5천이면 되나요/bi-01)
+  3 of 60 registered predicates are constant: 0 belong to rules rev 9 deleted, 3 unconditional rows, 0 residual, 0 DEAD BRANCHES at rev 9
+
+  dead on the 19-record corpus but reachable in the synthetic enumeration:
+    NEVER TRUE   14.3.3 07:1080          row 1  (16028 corpus evaluations, 17052 total)
+    NEVER TRUE   14.3.3.1 07:1165        row 1  (4487 corpus evaluations, 4583 total)
+    2 such predicates
+
+== PROPERTY 6 — the nine 04 section 4.1 rows, derived vs STATED ==
+  row A (04:693)  34평 전체 5천이면 되나요
+    V.breadth=whole [VB3 rows 2]  Q_s=[]  Q_t=[]  V.area=34pyeong/null  V.budget=exact 50000000
+      GR3a -> none (row -)
+      derived order: 1.bi-01=exact  2.bi-09=exact  3.bi-10=exact  4.bi-19=unknown_type_fallback
+                     5.bi-05=unknown_type_fallback  6.bi-03=unknown_type_fallback  7.bi-02=unknown_type_fallback  8.bi-08=unknown_type_fallback
+                     9.bi-06=breadth_fallback  10.bi-17=breadth_fallback  11.bi-04=breadth_fallback  12.bi-15=breadth_fallback
+                     13.bi-16=breadth_fallback  14.bi-18=breadth_fallback  15.bi-14=breadth_fallback  16.bi-12=area_fallback
+                     17.bi-11=area_fallback  18.bi-13=area_fallback  19.bi-07=area_fallback
+  row B (04:694 + 18:554)  예산 3천으로 전체 가능해요?
+    V.breadth=whole [VB3 rows 2]  Q_s=[]  Q_t=[]  V.area=-  V.budget=exact 30000000
+      GR3a -> none (row -)
+      derived order: 1.bi-01=exact  2.bi-07=exact  3.bi-09=exact  4.bi-10=exact
+                     5.bi-11=exact  6.bi-12=exact  7.bi-13=exact  8.bi-02=unknown_type_fallback
+                     9.bi-03=unknown_type_fallback  10.bi-05=unknown_type_fallback  11.bi-08=unknown_type_fallback  12.bi-19=unknown_type_fallback
+                     13.bi-04=breadth_fallback  14.bi-06=breadth_fallback  15.bi-14=breadth_fallback  16.bi-15=breadth_fallback
+                     17.bi-16=breadth_fallback  18.bi-17=breadth_fallback  19.bi-18=breadth_fallback
+  row C (04:695 + 18:556)  주방만 하면 얼마예요
+    V.breadth=partial [VB3 rows 3]  Q_s=[kitchen]  Q_t=[]  V.area=-  V.budget=-
+      GR3a -> none (row -)
+      derived order: 1.bi-14=exact  2.bi-04=scope_superset  3.bi-16=scope_superset  4.bi-02=unknown_type_fallback
+                     5.bi-03=unknown_type_fallback  6.bi-05=unknown_type_fallback  7.bi-08=unknown_type_fallback  8.bi-19=unknown_type_fallback
+                     9.bi-01=fallback_from_full  10.bi-07=fallback_from_full  11.bi-09=fallback_from_full  12.bi-10=fallback_from_full
+                     13.bi-11=fallback_from_full  14.bi-12=fallback_from_full  15.bi-13=fallback_from_full  16.bi-06=scope_disjoint
+                     17.bi-15=scope_disjoint  18.bi-17=scope_disjoint  19.bi-18=scope_disjoint
+  row D1 (04:696 + 18:558)  욕실 하나만
+    V.breadth=null [VB3 rows 6]  Q_s=[bathroom]  Q_t=[]  V.area=-  V.budget=-
+      GR3a -> none (row -)
+      derived order: 1.bi-01=exact  2.bi-09=exact  3.bi-10=exact  4.bi-11=exact
+                     5.bi-12=exact  6.bi-13=exact  7.bi-15=exact  8.bi-07=exact
+                     9.bi-04=scope_superset  10.bi-16=scope_superset  11.bi-02=not_evaluable  12.bi-03=not_evaluable
+                     13.bi-05=not_evaluable  14.bi-08=not_evaluable  15.bi-19=not_evaluable  16.bi-06=scope_disjoint
+                     17.bi-14=scope_disjoint  18.bi-17=scope_disjoint  19.bi-18=scope_disjoint
+      DISAGREE with 18  bi-01: fallback_from_full -> derived exact
+          RECORDED at 07:2856-2884, item 1 — row D is stated on the reading D9-4 rejects; V.breadth is absent at rev 9
+  row D2 (04:696 + 18:558)  욕실 두 개
+    V.breadth=null [VB3 rows 6]  Q_s=[bathroom]  Q_t=[]  V.area=-  V.budget=-
+      GR3a -> none (row -)
+      derived order: 1.bi-01=exact  2.bi-09=exact  3.bi-10=exact  4.bi-11=exact
+                     5.bi-12=exact  6.bi-13=exact  7.bi-15=exact  8.bi-07=exact
+                     9.bi-04=scope_superset  10.bi-16=scope_superset  11.bi-02=not_evaluable  12.bi-03=not_evaluable
+                     13.bi-05=not_evaluable  14.bi-08=not_evaluable  15.bi-19=not_evaluable  16.bi-06=scope_disjoint
+                     17.bi-14=scope_disjoint  18.bi-17=scope_disjoint  19.bi-18=scope_disjoint
+      DISAGREE with 18  bi-01: fallback_from_full -> derived exact
+          RECORDED at 07:2856-2884, item 1 — same, on WS3's identical twin utterance
+  row E (04:697)  전용 84 아파트 주방   [2 branches]
+    branch breadth=null area=84m2  V.breadth=null [VB3 rows 6]  Q_s=[kitchen]  Q_t=[]  V.area=84m2/exclusive  V.budget=-
+      GR3a -> none (row -)
+      derived order: 1.bi-14=exact  2.bi-01=not_evaluable  3.bi-02=not_evaluable  4.bi-04=not_evaluable
+                     5.bi-07=not_evaluable  6.bi-09=not_evaluable  7.bi-10=not_evaluable  8.bi-11=not_evaluable
+                     9.bi-12=not_evaluable  10.bi-13=not_evaluable  11.bi-16=not_evaluable  12.bi-03=not_evaluable
+                     13.bi-05=not_evaluable  14.bi-08=not_evaluable  15.bi-19=not_evaluable  16.bi-06=scope_disjoint
+                     17.bi-15=scope_disjoint  18.bi-17=scope_disjoint  19.bi-18=scope_disjoint
+      negative half (04:697) holds: "34평 주방" gives bi-14 area=unsatisfied, class=area_fallback — not told it is a 34평 flat
+    branch breadth=null area=84pyeong  V.breadth=null [VB3 rows 6]  Q_s=[kitchen]  Q_t=[]  V.area=84pyeong/exclusive  V.budget=-
+      GR3a -> none (row -)
+      derived order: 1.bi-01=not_evaluable  2.bi-02=not_evaluable  3.bi-04=not_evaluable  4.bi-07=not_evaluable
+                     5.bi-09=not_evaluable  6.bi-10=not_evaluable  7.bi-11=not_evaluable  8.bi-12=not_evaluable
+                     9.bi-13=not_evaluable  10.bi-16=not_evaluable  11.bi-03=not_evaluable  12.bi-05=not_evaluable
+                     13.bi-08=not_evaluable  14.bi-19=not_evaluable  15.bi-14=area_fallback  16.bi-06=scope_disjoint
+                     17.bi-15=scope_disjoint  18.bi-17=scope_disjoint  19.bi-18=scope_disjoint
+      BRANCHES DIFFER: true  (VB3/14.3.1 leave this row undecided; no reading is preferred)
+  row F (04:698)  50평 전체 1억 넘나요
+    V.breadth=whole [VB3 rows 2]  Q_s=[]  Q_t=[]  V.area=50pyeong/null  V.budget=exact 100000000
+      GR3a -> none (row -)
+      derived order: 1.bi-13=exact  2.bi-08=unknown_type_fallback  3.bi-03=unknown_type_fallback  4.bi-19=unknown_type_fallback
+                     5.bi-05=unknown_type_fallback  6.bi-02=unknown_type_fallback  7.bi-16=breadth_fallback  8.bi-06=breadth_fallback
+                     9.bi-17=breadth_fallback  10.bi-15=breadth_fallback  11.bi-04=breadth_fallback  12.bi-18=breadth_fallback
+                     13.bi-14=breadth_fallback  14.bi-01=area_fallback  15.bi-09=area_fallback  16.bi-10=area_fallback
+                     17.bi-12=area_fallback  18.bi-11=area_fallback  19.bi-07=area_fallback
+  row G (04:699 + 18:561)  32평인데 도배랑 바닥만 얼마예요
+    V.breadth=null [VB3 rows 5]  Q_s=[]  Q_t=[wallpaper,flooring]  V.area=32pyeong/null  V.budget=-
+      GR3a -> none (row -)
+      derived order: 1.bi-09=exact  2.bi-19=not_evaluable  3.bi-01=not_evaluable  4.bi-10=not_evaluable
+                     5.bi-05=not_evaluable  6.bi-12=not_evaluable  7.bi-02=area_fallback  8.bi-03=area_fallback
+                     9.bi-11=area_fallback  10.bi-07=area_fallback  11.bi-13=area_fallback  12.bi-08=area_fallback
+                     13.bi-17=scope_overlap  14.bi-04=scope_disjoint  15.bi-06=scope_disjoint  16.bi-18=scope_disjoint
+                     17.bi-15=scope_disjoint  18.bi-16=scope_disjoint  19.bi-14=scope_disjoint
+      DISAGREE  head of result: stated bi-19, derived bi-09
+          RECORDED at 07:2856-2884, item 2 — "reached on GR3's trade rung" names machinery D9-1 deleted; bi-19 is not_evaluable, 4th of ten classes, and is returned like every record
+  row H (04:700 + 18:564)  바닥이랑 거실만
+    V.breadth=partial [VB3 rows 3]  Q_s=[living_room]  Q_t=[flooring]  V.area=-  V.budget=-
+      GR3a -> none (row -)
+      derived order: 1.bi-17=exact  2.bi-06=scope_superset  3.bi-02=unknown_type_fallback  4.bi-05=unknown_type_fallback
+                     5.bi-08=unknown_type_fallback  6.bi-19=unknown_type_fallback  7.bi-03=unknown_type_fallback  8.bi-01=fallback_from_full
+                     9.bi-07=fallback_from_full  10.bi-09=fallback_from_full  11.bi-10=fallback_from_full  12.bi-11=fallback_from_full
+                     13.bi-12=fallback_from_full  14.bi-13=fallback_from_full  15.bi-04=scope_disjoint  16.bi-14=scope_disjoint
+                     17.bi-15=scope_disjoint  18.bi-16=scope_disjoint  19.bi-18=scope_disjoint
+  row I (04:701 + 18:566)  현관 수납
+    V.breadth=null [VB3 rows 6]  Q_s=[entrance,storage]  Q_t=[built_in_furniture]  V.area=-  V.budget=-
+      WS6 (07:350-356, D9-5a): Q carries BOTH readings, nothing chosen: [entrance,storage]; [entrance,built_in_furniture]  — 2 readings
+        EF3's ambiguity clause (07:1008-1036) fired on 3 of 19 records: bi-06, bi-11, bi-18
+        each is scope not_evaluable with the ambiguity disclosed, never a chosen reading.
+      GR3a -> none (row -)
+      derived order: 1.bi-01=exact  2.bi-09=exact  3.bi-10=exact  4.bi-12=exact
+                     5.bi-13=exact  6.bi-07=exact  7.bi-03=not_evaluable  8.bi-06=not_evaluable
+                     9.bi-18=not_evaluable  10.bi-02=not_evaluable  11.bi-05=not_evaluable  12.bi-08=not_evaluable
+                     13.bi-11=not_evaluable  14.bi-19=not_evaluable  15.bi-04=scope_disjoint  16.bi-14=scope_disjoint
+                     17.bi-15=scope_disjoint  18.bi-16=scope_disjoint  19.bi-17=scope_disjoint
+      DISAGREE with 04  bi-18: exact -> derived not_evaluable
+          RECORDED at 07:2856-2884, item 3 — 04:701 derives 수납 as a Q_t; storage is a Space, and under D9-5a the two readings disagree, so the criterion is not_evaluable. This is the contract's own worked example at 07:366-373, reproduced exactly.
+      DISAGREE with 18  bi-03: unknown_type_fallback -> derived not_evaluable
+          RECORDED at 07:2856-2884, item 8 — 18 section 7 conflates EF3's record-side absence with EF6 row 4's visitor-side breadth criterion; bi-03 derives to not_evaluable (AU-4)
+      DISAGREE with 18  bi-06: scope_superset -> derived not_evaluable
+          RECORDED at 07:2856-2884, item 3 — same cause: the readings disagree, so no relation is reported
+  STATED claims (04 / 18): 38 of 44 reproduced
+  of the 6 not reproduced, 6 are RECORDED at 07:2856-2884 (section 20.7.5) as 04/18 edits rev 9 deliberately does not make.
+  unrecorded disagreements: 0
+  my own derivations (marked drv, not claims of 04/18): 2 of 2 reproduced
+
+== PROPERTY 7 — SUFFICIENCY: does the returned order separate records that differ on what
+   was ASKED? (properties 1-6 measure consistency; an order can be consistent and useless) ==
+  measured under: rev 9.1 | D9-7a | key3=intersection | intersectionOfSets
+
+  7a. WHERE §4.1's OWN ANSWER LANDS. Property 6 compares the CLASS of each row's named
+      record against its stated expectation. It never looked at the record's POSITION,
+      which is what the visitor actually sees. Rank out of 19, first branch where a row
+      branches (the same convention property 6 uses).
+      row  utterance                            names    rank/19  top 3?  what decided the pair above it
+      A    34평 전체 5천이면 되나요                    bi-09   2       yes    key (4) — NOT the match: recency
+      B    예산 3천으로 전체 가능해요?                   —        —       —      04 names no single record for this row (18 names seven)
+      C    주방만 하면 얼마예요                        bi-14   1       yes    (head of result)
+      D1   욕실 하나만                             bi-15   7       NO     key (4) — NOT the match: recency
+      D2   욕실 두 개                             bi-15   7       NO     key (4) — NOT the match: recency
+      E    전용 84 아파트 주방                       bi-14   1       yes    (head of result)
+      F    50평 전체 1억 넘나요                      bi-13   1       yes    (head of result)
+      G    32평인데 도배랑 바닥만 얼마예요                 bi-19   2       yes    key (1) — the match
+      H    바닥이랑 거실만                           bi-17   1       yes    (head of result)
+      I    현관 수납                              bi-18   9       NO     key (4) — NOT the match: recency
+      rows whose §4.1-named record is NOT in the top 3: 3 of 9
+        D1  bi-15 at 7 of 19 — 04's first named record for this row
+        D2  bi-15 at 7 of 19 — 04's first named record for this row
+        I  bi-18 at 9 of 19 — 04's first named record for this row
+
+  7b. WHICH KEY DECIDES EACH ADJACENT PAIR, over every utterance — the generalisation
+      past the nine. 18 adjacent pairs per branch. A pair decided by (4) or (5) is a pair
+      the MATCH did not separate: the contract ranked them by recency or by id.
+      branch                                          k1  k2  k2*  k3  k4  k5   longest run
+                                                                                 keys (4)/(5) only
+      34평 전체 5천이면 되나요 | breadth=whole                 3   9    2   0   4   0        4
+      예산 3천으로 전체 가능해요? | breadth=whole                2   0    0   0  16   0        7
+      주방만 하면 얼마예요 | breadth=partial                   4   0    0   1  13   0        7
+      욕실 하나만 | breadth=null                           3   0    0   1  14   0        7
+      욕실 두 개 | breadth=null                           3   0    0   1  14   0        7
+      전용 84 아파트 주방 | breadth=null area=84m2           2   0    0   1  15   0       10
+      전용 84 아파트 주방 | breadth=null area=84pyeong       2   0    0   1  15   0       10
+      50평 전체 1억 넘나요 | breadth=whole                   3  11    2   0   2   0        3
+      32평인데 도배랑 바닥만 얼마예요 | breadth=null               4  10    2   1   1   0        4
+      바닥이랑 거실만 | breadth=partial                      4   0    0   1  13   0        7
+      현관 수납 | breadth=null                            2   0    0   2  14   0        5
+      주방이랑 욕실 사례 있나요 | breadth=null                   3   0    0   2  13   0        8
+      34평 전체 리모델링 | breadth=whole                     3   9    2   0   4   0        4
+      전체 리모델링 사례 보여주세요 | breadth=whole                2   0    0   0  16   0        7
+      큰 공사는 아니고 몇 군데만 | breadth=partial               2   0    0   0  16   0        7
+      집 전체는 아니고 바닥이랑 도배만 하려고요 | breadth=partial       3   0    0   4  11   0        6
+      현관이랑 복도 수납 | breadth=null                       2   0    0   2  14   0        5
+      창호 교체하려는데 34평 전체 리모델링 | breadth=whole           4   9    2   1   2   0        4
+      바닥이랑 도배만 | breadth=null                         3   0    0   2  13   0        6
+      바닥만 | breadth=null                              3   0    0   1  14   0        6
+      2천만원으로 바닥이랑 도배만 | breadth=null                  3   0    0   2  13   0        6
+      주방만 하고 싶어요 | breadth=partial                    4   0    0   1  13   0        7
+      600~800만원 예산인데 주방 | breadth=null                3   0    0   1  14   0        8
+      1억 이내로 전체 리모델링 | breadth=whole                  2   0    0   0  16   0        7
+      평당 가격 알려주세요 34평 전체 리모델링 | breadth=whole         3   9    2   0   4   0        4
+      저렴하게 주방만 하고 싶어요 | breadth=partial               4   0    0   1  13   0        7
+      34평 주방 | breadth=null                           4   8    2   1   3   0        3
+      TOTAL adjacent pairs over 27 branches: 486   decided by keys (4)/(5), i.e. NOT by the match: 314  (65%)
+      longest run the match does not separate: 10 records, on
+        "전용 84 아파트 주방 | breadth=null area=84m2"
+
+  7c. WHAT IS INSIDE THE RUNS. A run the match does not separate is only harmless if its
+      members are alike on what the visitor asked. Three set-valued questions, all
+      threshold-free, asked of every pair inside every such run:
+        (i)   do they carry the SAME subset of the ids the visitor named?  (key 3 reads the
+              COUNT of that subset, never the subset itself — so two records can tie on the
+              key while covering different things)
+        (ii)  do they have the same projectType?  (NO key reads projectType. EF6's class
+              does, but only through the relation, and PT4(b) makes a full_remodel
+              `satisfied` for ANY Q_s — 07:965, the clause the hand executor named)
+        (iii) do they do the same AMOUNT of work — |R.workScopeIds|?  (no key reads it)
+      runs of length > 1 examined: 92
+      pairs inside them differing on (i)   the SUBSET of the visitor's ids they carry: 30
+      pairs inside them differing on (ii)  projectType:                                113
+      pairs inside them differing on (iii) how much work the record did (|R|):          675
+        WITNESS  34평 전체 5천이면 되나요 | breadth=whole
+          bi-01  full_remodel  |R|=6  Q∩R={}  total (no total; perArea 2900000)
+          bi-09  full_remodel  |R|=7  Q∩R={}  total 50000000
+        WITNESS  34평 전체 5천이면 되나요 | breadth=whole
+          bi-01  full_remodel  |R|=6  Q∩R={}  total (no total; perArea 2900000)
+          bi-10  full_remodel  |R|=9  Q∩R={}  total 85000000
+        WITNESS  34평 전체 5천이면 되나요 | breadth=whole
+          bi-09  full_remodel  |R|=7  Q∩R={}  total 50000000
+          bi-10  full_remodel  |R|=9  Q∩R={}  total 85000000
+        WITNESS  34평 전체 5천이면 되나요 | breadth=whole
+          bi-04  partial_remodel  |R|=2  Q∩R={}  total (no total; perArea none)
+          bi-15  partial_remodel  |R|=1  Q∩R={}  total 7000000
+        WITNESS  34평 전체 5천이면 되나요 | breadth=whole
+          bi-15  partial_remodel  |R|=1  Q∩R={}  total 7000000
+          bi-16  partial_remodel  |R|=2  Q∩R={}  total 19800000
+        WITNESS  34평 전체 5천이면 되나요 | breadth=whole
+          bi-15  partial_remodel  |R|=1  Q∩R={}  total 7000000
+          bi-18  partial_remodel  |R|=2  Q∩R={}  total 6200000
+
+  7d. THE PROPERTY, stated so it can FAIL, and with no threshold in it:
+      *Within a maximal run of the returned order that keys (1)-(3) do not separate, every
+      pair of records must be indistinguishable on what the visitor asked.*
+      It is threshold-free because every term is set-valued: the subset of V.Q the record
+      carries, its projectType, the size of its own scope. Nothing here compares a price
+      or an area against a number I chose.
+      FAILS: 818 pair-facts inside 92 runs.
+
+  7e. THE PART I WILL NOT TURN INTO A VERDICT. "Materially different" in the sense of
+      7,000,000 against 50,000,000 needs a threshold, and any threshold here would be
+      mine rather than the contract's — 07:1405 says "No key is a price", so the contract
+      has deliberately declined to rank by amount and I will not smuggle a ranking in
+      under the name of a check. The numbers, with no verdict attached:
+      the widest runs by the spread of the totals they contain (totals only — records
+      with no total are excluded from the ratio and counted in n):
+        x17.9  run of 7  totals 7,000,000 … 125,000,000  |R| 1…11   욕실 하나만 | breadth=null
+        x17.9  run of 7  totals 7,000,000 … 125,000,000  |R| 1…11   욕실 두 개 | breadth=null
+        x8.3  run of 8  totals 15,000,000 … 125,000,000  |R| 1…11   600~800만원 예산인데 주방 | breadth=null
+        x6.3  run of 10  totals 19,800,000 … 125,000,000  |R| 2…11   전용 84 아파트 주방 | breadth=null area=84m2
+        x6.3  run of 10  totals 19,800,000 … 125,000,000  |R| 2…11   전용 84 아파트 주방 | breadth=null area=84pyeon
+        x6.3  run of 8  totals 19,800,000 … 125,000,000  |R| 2…11   주방이랑 욕실 사례 있나요 | breadth=null
+      runs containing more than one total: 63; the largest spread is x17.9.
+      READ THIS AS A NUMBER, NOT A VERDICT. A x17.9 spread inside a run the ordering treats as
+      indifferent is the coordinator's 7M-against-50M in the form the contract can be
+      held to. Whether that is acceptable is an OWNER decision, not a checker's.
+
+  7f. WHAT PROPERTY 7 CANNOT SEE, which is the more important half of the answer.
+      It sees that the order is ARBITRARY where the match runs out. It does NOT see that
+      the arbitrary choice is WRONG, and it cannot, because nothing in the contract says
+      a one-bathroom job should outrank a whole-home remodel for a one-bathroom query.
+      That rule does not exist, so there is nothing to check it against. A consistency
+      instrument can only ever report that a rule is MISSING by finding a place where the
+      rules run out — which is what 7b's 314 pairs are — and cannot report which
+      rule should be there.
+      Concretely, three things stay invisible to every property in this file:
+        1. WHETHER §4.1's expected answer is the RIGHT answer. Property 7a reports that
+           bi-15 lands 7th; it takes 04's word that bi-15 is what a visitor wants. If 04
+           were wrong, nothing here would notice.
+        2. WHETHER PT4(b) (07:965) SHOULD make a full_remodel satisfied for any Q_s. That
+           is the root of the defect and it is a DELIBERATE rule, stated and justified.
+           A checker can only ask whether it is applied consistently, and it is.
+        3. ANY ranking the contract declines to state. 07:1405 forbids a price key; there
+           is no size key, no type key, no "closeness of fit" key. Their absence is not a
+           violation of anything, so it is not a finding — it is a gap only a reader can
+           see, and this round a human reader saw it and six properties did not.
+      THE HONEST SUMMARY: property 7 makes the defect VISIBLE and does not make it
+      DIAGNOSABLE. Hand execution remains the only instrument for the class "the rules are
+      consistent and the answer is bad", and it must stay in every round.
+
+== price-rule checks (GR1, GR4, GR5, GR5a, PB2, PB5, VB2) — DERIVED, with negative controls ==
+  COMPARISONS ledger: 1795 numeric comparisons performed by the
+    criteria and the ordering keys over the 27-branch reference pass, in 5 provenance shapes:
+      V.area.value(pyeong) vs R.property.area.value(pyeong)
+      |delta_area| vs |delta_area|
+      count(V.Q in R.workScopeIds) vs count(V.Q in R.workScopeIds)
+      R.publishedAt vs R.publishedAt
+      R.id vs R.id
+    of these, comparisons with a PRICE or BUDGET operand: 0   (07:1405: "No key is a price"; 07:1243-1246: V.budget "is not a criterion, it enters no
+    ranking key, and no record is filtered by it" — so PB2 and VB2 hold because V.budget has
+    no consumer in the pipeline at all, which is what the empty price row above measures)
+  STATEMENTS ledger: 826 claims (43 distinct record-value pairs), of which 6 are relational (a budget verdict would be one; V0.2 emits none, 07:1206-1208)
+  PB2 (07:1216) total budget vs perArea comparison : none
+  PB5 (07:1237) breadth-absent record called a budget match : none
+  VB2 (07:872) utterances carrying budgetHint free text: 1  "저렴하게 주방만 하고 싶어요" -> 저렴하게
+  VB2 (07:872) budgetHint free text in a comparison : none
+  GR1 (07:1441) a stated number the record does not carry : none
+  negative controls — inject the forbidden behaviour, does the check catch it?
+    PB2 CAUGHT · PB5 CAUGHT · VB2 CAUGHT · GR1 CAUGHT
+  bi-19 11000000 / 32평 = 343750 : exempt under GR5a? no — forbidden, as 07:1471-1472 requires
+  bi-10 perArea 2,500,000 = 85,000,000 / 34평 : exempt under GR5a? yes — statable, as 07:1466-1470 requires
+  cross-record probe (07:1462-1465): bi-09 50000000 / bi-11 20평 = 2500000; exempt for bi-09? no — the per-record exemption holds, as 07:1460-1461 requires
+  GR1-statable numbers GR5 forbids and GR5a exempts: 140; forbidden and NOT exempt: 0
+
+== REV 8 vs REV 9, and the D9-6 decomposition ==
+  The default configuration above is REV 9. Everything in this section re-runs the same
+  derivations under other configurations, switching with useRev()/CFG and switching back.
+
+  (a) the same six properties under REV 8 (useRev(8)), for comparison:
+      branches: 31 (rev 9: 27)
+      property 1, VB3 utterances matching rows with opposite values: 2
+      property 3, branches whose two orderings differ: 29 of 31
+
+  (b) STRICT PB4 (07:1224-1237) under every partial adoption of D9-6. 07:2721 (section
+      20.7.1) instructs: read the fifth row before the last one.
+      Every row uses THE SAME 798 mutant pairs — rev 9's 27 branches over the 19 records — and varies only the RULES. That is what makes the rows
+      comparable to each other, and it is why the pair count is not the 893 the contract
+      quotes at 07:1230-1232. 893 was measured over rev 8's own 31 branches (D9-4 decides
+      readings the checker previously had to run twice, collapsing four of them) and with
+      mutant twins that were NOT equal in |R_s| — a construction defect I found and corrected
+      after that figure was taken, so GR3a's "larger R_s first" sub-rung was deciding
+      comparisons the criterion should decide. Under the corrected construction rev 8 is
+      484 of 798, not 546 of 893. The rev-9 figure is 0 either way, so the contract's
+      CONCLUSION stands and its rev-8 BASELINE does not.
+      Row labels are 07:2756-2774's own, so this table can be swapped in directly.
+      configuration                            pairs  violations   rung / class / within
+      A  rev 8 as shipped                       798         484     262 /  222 /    0
+      B  D9-2c EF3 state change alone           798         488     262 /  226 /    0
+      C  EF6's new row alone (needs B)          798         488     262 /  226 /    0
+      D  D9-2c's GR2a order alone               798         262     262 /    0 /    0
+      E  EF6 row + D9-2c order                  798         262     262 /    0 /    0
+      F  D9-1 alone (rungs deleted)             798         624       0 /  624 /    0
+      G  D9-1 + EF6 row                         798         630       0 /  630 /    0
+      H  D9-1 + D9-2c order (no EF6 row)        798           0       0 /    0 /    0
+      I  D9-1 + EF6 row + D9-2c order — REV 9   798           0       0 /    0 /    0
+      VERDICT: rev 8 484 of 798; rev 9 0 of 798  — PB4's strong form HOLDS at rev 9 on the real corpus
+      D9-1 ALONE is 624, a regression on rev 8's 484. 07:2721's warning reproduces.
+      no residual violations to name at rev 9.
+
+      REV 9.1 VERIFICATION — every figure this checker asked to have corrected, checked in the
+      contract's own text: the superseded text GONE and the replacement PRESENT.
+        OK    rev 8 strict PB4 + pair count   now at 07:1230
+        OK    the rungs' share of rev 8   now at 07:2944
+        OK    the nine-row decomposition table   now at 07:2759
+        OK    D9-1 alone is a regression   now at 07:2772
+        OK    D9-2c alone leaves the rung violations   now at 07:2775
+        OK    the phantom bi-13 residual   now at 07:2780
+        OK    property 3's branch count   now at 07:2789
+        OK    CINV-20 pass A / pass B   now at 07:1550
+        OK    EF6 row 7 off PB4   now at 07:1335
+        OK    EF6 row 7's disclosure ground   now at 07:1287/2946
+        OK    row 7's "its own class" qualifier   now at 07:1296/2946
+        OK    no 42%
+        OK    the † footnote block
+        OK    D9-7a, the ambiguity clause   now at 07:359/1011
+        OK    D9-8, key (3)   now at 07:1409
+        OK    D9-9, the four disclosure sentences   now at 07:1103
+        OK    D9-9 on 07:970's permission   now at 07:983
+        OK    Q-29 open with three dead candidates   now at 07:5/1424/2947
+        OK    rev 9's own measured figures   now at 07:2900
+      sites verified: 19 of 19   still wrong: 0
+      Every correction this checker asked for is in the contract, and no superseded figure
+      survives anywhere in it. The corrections block retires: there is nothing left to ask.
+      RECORD (not a finding): rev 8 484 of 798; rev 9 0; D9-1 alone 624, worse than rev 8 — D9-6 is indivisible and the measurement says so.
+
+  (c) EF6 (07:1257-1287) under rev 9's EIGHT rows — CINV-20's re-derivation (07:1550).
+      Pass B, the raw superset: 336 evaluations (rev 8: 384), 0 with no row, 0 where the returned row was not the lowest holding
+      classes reached in the raw sweep: 10/10   on the real 19-record corpus: 10/10
+      GR2a is a permutation of GR2's closed list: yes
+      Pass A, the derived set — CINV-20's own enumeration, re-derived:
+        conversation x record inputs: 1512   (07:1550 states 1,512: reproduced)
+        REPLICATION CONTROL — the same code at rev 8 must reproduce the parked figure:
+          rev 8: 100 of 192 vectors, 10/10 classes   (07:1550 states 100 of 192, no class orphaned: REPRODUCED — the rev-9 figure below is comparable)
+        REV 9, the figure the contract may now state as verified:
+          criterion-state vectors that OCCUR: 100 of 192   (rev 8: 100, change 0)
+          classes reached among them: 10/10   (rev 8 10/10)
+          inputs with no row: 0   returned row not the lowest holding: 0
+          EF3's lemma (07:1000-1006), scope `unsatisfied` only for a partial_remodel: holds, 0 counterexamples
+          classes ORPHANED in pass A at rev 9: none
+          is it the SAME 100? vectors only at rev 9: 0   only at rev 8: 0  -> identical SETS, not merely equal counts
+      WHY the count did not move, and it is derived rather than asserted: D9-2c does not
+      create or remove criterion-state vectors, it REDISTRIBUTES inputs among vectors that
+      already occur. A partial_remodel with relation scope_superset moves from
+      scope=`unsatisfied` to scope=`satisfied` (07:1003-1004); both of those vectors were
+      already reached by other inputs, so the OCCUPANCY changes and the SET does not.
+      What moves is the CLASS each input reaches, which is the other half of CINV-20:
+        scope_superset         rev 8   48  ->  rev 9   20
+        breadth_fallback       rev 8  104  ->  rev 9  120
+        area_fallback          rev 8   89  ->  rev 9   93
+        not_evaluable          rev 8  478  ->  rev 9  486
+      DERIVED CONSEQUENCE, not stated at 07:1280-1289 in these terms: row 7 gives
+      scope_superset "back its own class" for 20 of the 48 inputs that had it at
+      rev 8. The other 28 reach rows 2-6 first and are labelled breadth_fallback,
+      area_fallback or not_evaluable instead. That follows from row 7 sitting AFTER row 6,
+      which 07:1301-1304 argues for deliberately ("what we cannot evaluate outranks what we
+      can caveat") — so this is a consequence of a stated decision and not a defect. It is
+      worth stating because the caveat OD-P and GR2 exist to disclose now reaches the
+      visitor under a different label in 28 of 48 cases, and the contract quantifies it nowhere.
+      So 07:1550 may state, VERIFIED for rev 9: 1,512 inputs, 100 of 192 vectors occur,
+      all 10 classes reachable, 0 inputs with no row, 0 first-match violations, and EF3's
+      lemma holds. The counts are unchanged from rev 8 and are now re-derived against the
+      eight-row EF6 rather than quoted from the seven-row one.
+
+  (d) D9-5a's UNMET OBLIGATION (07:2900-2905, section 20.7.6): a mechanical assertion that
+      "EF3 under multiple readings is total and single-valued" — that the readings-agree
+      test is decidable for every record. The contract says this assertion does not exist.
+      It is implemented here, over the ambiguity clause's own two bullets (07:1011-1018).
+      on the corpus: 38 (record, multi-reading branch) pairs
+        neither bullet holds (NOT TOTAL): 0
+        BOTH bullets hold (NOT SINGLE-VALUED across bullets): 2
+        bullet A via "same state" while the RELATIONS differ, so "that relation" names
+          none (NOT SINGLE-VALUED inside bullet A): 0
+        bullet A via "same relation" while the STATES differ, so "that state" names none: 2   of which the shared relation is (none), i.e. the arm is VACUOUSLY true: 2
+          shape: rels (none)/(none)  states satisfied/not_evaluable   x1   e.g. bi-11 on "현관 수납 | breadth=null"
+          shape: rels (none)/(none)/(none)/(none)  states satisfied/not_evaluable/satisfied/not_evaluable   x1   e.g. bi-11 on "현관이랑 복도 수납 | breadth=null"
+      synthetically, over all 64 ordered pairs of EF3 branch outcomes:
+        neither bullet holds (NOT TOTAL): 0
+        BOTH bullets hold (NOT SINGLE-VALUED across bullets): 18
+        bullet A via "same state" with DIFFERENT relations: 12
+        bullet A via "same relation" with DIFFERENT states: 6
+          not_applicable/-  vs  satisfied/-   x1
+          not_applicable/-  vs  not_evaluable/-   x1
+          satisfied/-  vs  not_applicable/-   x1
+          satisfied/-  vs  not_evaluable/-   x1
+          satisfied/-  vs  satisfied/scope_exact   x1
+          satisfied/-  vs  satisfied/scope_superset   x1
+      RESULT — D9-5a's obligation:  TOTAL: HOLDS    SINGLE-VALUED: FAILS
+      MECHANISM, and it is reachable on the corpus, not only synthetically. Bullet A's
+      first arm — "all readings give the same relation" — is VACUOUSLY TRUE whenever no
+      reading produces a relation at all, which is every full_remodel record and every
+      breadth-absent one (07:962-966, 07:1005-1006): those branches return a state and no
+      relation. So for a full_remodel whose trades half differs between the readings,
+      bullet A fires on "same relation" (both (none)) and its consequent "that relation
+      and that state" has no single STATE to name, while bullet B fires too and says
+      not_evaluable. Witness on the corpus: bi-11 (full_remodel, R_t has no
+      built_in_furniture) against "현관 수납" — reading {entrance, storage} gives
+      satisfied, reading {entrance}+{built_in_furniture} gives not_evaluable.
+
+  (e) the corpus vs the APPLIED demo data (data/sites/boost-interior-demo/content/projects.json)
+      records in projects.json: 19   ids matching the spec corpus: all 19
+      fields compared per record: projectType, workScopeIds, area{value,unit,basis},
+        publishedAt, title, pricing.total, pricing.perArea
+      FIELD DISAGREEMENTS: 4
+        bi-09.pricing.perArea: spec {"amount":1470588,"unit":"pyeong"} / data null
+        bi-10.pricing.perArea: spec {"amount":2500000,"unit":"pyeong"} / data null
+        bi-11.pricing.perArea: spec {"amount":1500000,"unit":"pyeong"} / data null
+        bi-12.pricing.perArea: spec {"amount":2000000,"unit":"pyeong"} / data null
+      re-running all 27 branches on the data-backed corpus:
+        branches whose derived order differs: 0
+        record-class changes across all branches: 0
+      So the four field disagreements change NOTHING this run measures. The reason is
+      in force and checkable: the only in-force readers of pricing.perArea are GR1
+      (statable as a fact, 07:1213-1215) and GR5a's exemption (07:1458-1461), and
+      "No key is a price" (07:1405) keeps it out of every ordering key.
+      Reportable all the same: 04 derives those four per-area values by RD1 and the
+      applied file carries none, so a consumer asked "평당 얼마였나요?" about bi-09..bi-12
+      can answer from the spec and not from the data.
+
+  (f) D9-7 — round 9's DECISION on the ambiguity clause, implemented behind CFG.ef3Ambiguity.
+      1. readings produce different criterion STATES  => not_evaluable, ambiguity disclosed
+      2. otherwise (all agree on the state)           => that state; and where they also
+                                                         agree on a relation, that relation
+      THE CLAUSE ITSELF:
+        synthetic, all 64 ordered pairs: neither rule fires 0, BOTH rules fire 0
+        corpus, 38 (record, multi-reading branch) pairs: neither 0, both 0
+        D9-7 as a clause:  TOTAL: HOLDS    SINGLE-VALUED: HOLDS
+        This is arithmetic, not luck: rule 2's condition is rule 1's exact negation, so no
+        input can match both or neither. The measurement confirms the construction. D9-5a's
+        property-1 finding CLEARS on this enumeration.
+      WHAT RULE 2 HANDS DOWNSTREAM — the part the clause-level argument does not reach:
+        outcome pairs reachable for ONE record (projectType fixed): 62
+        of those, reaching rule 2: 20   with DIFFERING relations, so rule 2
+        returns a state and NO relation: 8
+        EF6 inputs built from those whose class is NOT one of GR2's ten (07:1250-1264): 96
+          HOLE  readings unsatisfied/scope_overlap and unsatisfied/scope_subset on a partial_remodel:
+                D9-7 rule 2 gives scope `unsatisfied` with no relation; EF6 row 1 (07:1262) fires and its class IS the relation -> `null`
+          HOLE  readings unsatisfied/scope_overlap and unsatisfied/scope_disjoint on a partial_remodel:
+                D9-7 rule 2 gives scope `unsatisfied` with no relation; EF6 row 1 (07:1262) fires and its class IS the relation -> `null`
+          HOLE  readings unsatisfied/scope_subset and unsatisfied/scope_overlap on a partial_remodel:
+                D9-7 rule 2 gives scope `unsatisfied` with no relation; EF6 row 1 (07:1262) fires and its class IS the relation -> `null`
+          HOLE  readings unsatisfied/scope_subset and unsatisfied/scope_disjoint on a partial_remodel:
+                D9-7 rule 2 gives scope `unsatisfied` with no relation; EF6 row 1 (07:1262) fires and its class IS the relation -> `null`
+        EF6 inputs where a `scope_superset` reading existed and the class is NOT
+          scope_superset, so the caveat row 7 exists to disclose is silent: 32
+          CAVEAT LOST  readings scope_exact and scope_superset -> class `exact`  [breadth not_applicable, area not_applicable]
+          CAVEAT LOST  readings scope_exact and scope_superset -> class `area_fallback`  [breadth not_applicable, area unsatisfied]
+          CAVEAT LOST  readings scope_exact and scope_superset -> class `not_evaluable`  [breadth not_applicable, area not_evaluable]
+          CAVEAT LOST  readings scope_exact and scope_superset -> class `breadth_fallback`  [breadth unsatisfied, area not_applicable]
+      A CONSTRUCTED WITNESS, end to end — the corpus does not contain one, so one is built:
+        record zz-witness: partial_remodel, workScopeIds [entrance, storage, built_in_furniture]
+        utterance "현관 수납", where 수납 admits `storage` (Space) and `built_in_furniture` (Work)
+        readings: {entrance,storage}  and  {entrance,built_in_furniture}
+        per-reading EF3: satisfied/scope_exact   satisfied/scope_superset
+        states agree (satisfied/satisfied), relations differ (scope_exact/scope_superset)
+        D9-5a: scope not_evaluable  -> EF6 class `not_evaluable` (row 6)
+        D9-7 : scope satisfied  -> EF6 class `exact` (row 8)
+        So D9-7 reports this record as `exact` — 07:1269/07:1303: "nothing was caveated" —
+        although under one reading of the visitor's own word it did MORE than they asked.
+        D9-5a reported not_evaluable and disclosed the ambiguity. D9-7 discloses nothing.
+        record zz-hole: partial_remodel, workScopeIds [storage, kitchen], same utterance
+        per-reading EF3: unsatisfied/scope_overlap   unsatisfied/scope_disjoint
+        states agree (unsatisfied/unsatisfied), relations differ (scope_overlap/scope_disjoint)
+        D9-7 : scope unsatisfied  -> EF6 row 1 class `null`
+        `null` is not one of GR2's ten classes (07:1250-1264). The record
+        has NO class, so GR2a cannot order it and EF1's closure has nothing to close over.
+      THE SIX PROPERTIES UNDER D9-7, on the real corpus:
+        branches: 27 (D9-5a: 27)
+        property 1, EF6 inputs with no class on the corpus: 0
+        property 3, branches whose two orderings differ: 0 of 27
+        property 4, strict PB4: 0 of 798 pairs
+        property 5, criterion states still assigned only by EF2/EF3/EF4: yes (D9-7 changes
+          which value EF3 assigns, not who assigns it — the single assignState call is
+          still in EF3 and ef3Branch remains pure)
+        branches whose derived order differs from D9-5a: 0   record-class changes: 0
+      VERDICT ON D9-7: the clause is total and single-valued and nothing on the corpus
+      regressed — PB4 stays at 0, property 3 stays at 0.
+      BUT the corpus does not reach the hole. 0 corpus records hit it because no
+      utterance here has two readings that agree on the state and differ on the relation;
+      the synthetic enumeration does, 8 times, and EF6 has no class for 96 of the
+      inputs they produce. D9-7 is RIGHT ABOUT THE CLAUSE and INCOMPLETE ONE LEVEL DOWN —
+      which is the same propagation defect as gap 3 and as D9-5a itself.
+
+  (g) GAP 3 — ordering key (3) still reads V.scope as ONE set (07:1401-1402 vs 07:862).
+      branches with more than one WS6 reading: 2 of 27   ("현관 수납", "현관이랑 복도 수납")
+      reading        branches whose order changes vs `union`   notes
+      union           0 of 27
+      intersection    2 of 27    e.g. 현관 수납 ; 현관이랑 복도 수납
+      max             0 of 27
+      min             2 of 27    e.g. 현관 수납 ; 현관이랑 복도 수납
+      pb4skip        10 of 27    e.g. 전용 84 아파트 주방 ; 전용 84 아파트 주방 ; 바닥이랑 거실만
+      GAP 3 IS OBSERVABLE ON THIS CORPUS. Three of the five readings change the derived
+      order on BOTH multi-reading branches. Concretely, on "현관 수납":
+        intersection 현관 수납: bi-06 11->8, bi-18 8->9, bi-02 9->10, bi-05 10->11
+        intersection 현관이랑 복도 수납: bi-06 11->8, bi-18 8->9, bi-02 9->10, bi-05 10->11
+        min          현관 수납: bi-06 11->8, bi-18 8->9, bi-02 9->10, bi-05 10->11
+        min          현관이랑 복도 수납: bi-06 11->8, bi-18 8->9, bi-02 9->10, bi-05 10->11
+        pb4skip      현관 수납: bi-02 9->7, bi-03 7->8, bi-05 10->9, bi-06 11->10, bi-08 12->11 (+2 more)
+        pb4skip      현관이랑 복도 수납: bi-02 9->7, bi-03 7->8, bi-05 10->9, bi-06 11->10, bi-08 12->11 (+2 more)
+      So the five readings are not interchangeable and the contract picks none of them.
+      `union` and `max` coincide here only because the union's extra ids are carried by
+      the same records that already win the count; that is a property of these 19 records,
+      not of the rule. The gap is REAL AND LIVE, not merely latent.
+      RECOMMENDED READING: `intersection` — the ids EVERY reading admits.
+        It is the only candidate that is a function of Q alone and independent of which
+        reading is taken, which is 07:350-356's whole point. `max` and `min` choose a
+        reading PER RECORD, which is what WS6 forbids and what M7-3 was about. `union`
+        credits a record for an id the visitor may not have said: for "현관 수납" it counts
+        a record carrying built_in_furniture as though the visitor asked for it, when they
+        said one word that means storage OR built_in_furniture, not both.
+        "The visitor's STATED workScopeIds" (07:1401-1402) are exactly the ids common to
+        every reading; an id in only one reading is not stated, it is one reading of an
+        ambiguous word. For "현관 수납": union {entrance,storage,built_in_furniture} = 3,
+        intersection {entrance} = 1.
+      SECOND-BEST: `pb4skip`, and it is not an alternative so much as an ADDITION. PB4
+        (07:1218-1220) says a criterion in state `not_evaluable` contributes to NO tie-break
+        key. A record the ambiguity made not_evaluable is exactly that, so key (3) must not
+        order it at all — and then key (2)'s carve-out decides where it lands, which is
+        gap 1 / Q-29, still unresolved. So gap 3 does not close independently of gap 1.
+      IS IT A FAMILY? every in-force site that reads V.scope, checked:
+        SAFE   EF3 (07:960-1009)
+                computes per reading by construction (07:960-961)
+        SAFE   14.3.3 / 14.3.3.1 tables (07:1080-1087, 07:1165-1168)
+                read Q_s/Q_t as one set, but EF3 calls them ONCE PER READING, so they inherit the discipline
+        BROKEN ordering key (3) (07:1401-1402)
+                gap 3 — no count is defined under two readings; round 10 adopts the intersection, measured in section (i)
+        BROKEN EF3's ground-not-conclusion clause (07:978)
+                "unless Q_s subset-of R_s ALSO holds, in which case either may be stated" — a C: MUST on what the REPLY may say, keyed on Q_s, with no reading named
+        BROKEN 14.3.3 rows 4/6/7/8 + CINV-17 (07:1083-1087, 07:1547)
+                mandate naming Q_s \ R_s and Q_t \ R_t as "not remodelled" / "not established" — both differ between readings
+        MEASURED on the corpus, over the 2 multi-reading branches x 19 records:
+          full_remodel records where "Q_s subset-of R_s" DIFFERS between readings, so
+            07:978's permission to state the stronger sentence is reading-dependent: 10
+              e.g. bi-01 on "현관 수납"
+              e.g. bi-09 on "현관 수납"
+          partial_remodel records where Q_s \ R_s DIFFERS between readings, so the spaces
+            07:1083-1087 and CINV-17 require be NAMED are reading-dependent: 14
+              e.g. bi-04 on "현관 수납" -> {entrance+storage} vs {entrance}
+              e.g. bi-06 on "현관 수납" -> {storage} vs {}
+          NOTE, and section (i) supersedes this figure: 14 counts (record, branch)
+            pairs where Q_s \ R_s differs, WITHOUT asking whether a row that names that set
+            actually fires. Rows 3 and 5 and the trade-only table 14.3.3.1 do not name it.
+            Emitting the disclosures and counting the ones really made gives 10. Use 10.
+
+  (h) EF6 ROW 7 (07:1268) — what it is actually for, since it is NOT what 07:1280 says.
+      NOT LOAD-BEARING FOR PB4: configuration H (D9-1 + D9-2c's EF3 change + GR2a's order,
+      WITHOUT row 7) reaches 0 of 798. Rev 9 with row 7 reaches 0.
+      Row 7 buys nothing PB4 can see, so 07:1335 and 07:1231 must stop listing it among
+      the parts that "together reach 0".
+      LOAD-BEARING FOR DISCLOSURE, and this is the measurement that says so: delete row 7
+      at rev 9 and re-derive the corpus. 16 (record, branch) classifications change, and
+      16 of them go from `scope_superset` to `exact` — a record that did MORE than the
+      visitor asked, relabelled "nothing was caveated" (07:1269, 07:1303).
+        e.g. bi-04 on "주방만 하면 얼마예요"
+        e.g. bi-16 on "주방만 하면 얼마예요"
+        e.g. bi-04 on "욕실 하나만"
+      THAT is row 7's justification: without it OD-P's "a fallback is never passed off as
+      exact" is violated on 16 classifications, and GR2's label set loses the only class
+      that names the caveat. It is a GR2/OD-P argument end to end and needs no PB4 in it.
+      THE WORDING PROBLEM, precisely, so it can be fixed in one edit:
+        1. 07:1280 "its POSITION is load-bearing" runs two claims together. The row's
+           EXISTENCE is load-bearing for DISCLOSURE (16 classifications above). Its
+           POSITION — after row 6, before row 8 — is load-bearing for WHICH disclosure wins
+           when two compete, which is what 07:1301-1304 actually argues. Neither is
+           load-bearing for PB4. Say "the row is required for disclosure; its position
+           decides which disclosure outranks which".
+        2. 07:1295-1296 "Row 7 gives it back its own class and its own label" is unqualified
+           and is true of a MINORITY. Over CINV-20's 1,512-input pass A, 48 inputs reached
+           class scope_superset at rev 8 and 20 do at rev 9 — 42%. The other 28 hit rows 2-6
+           first and are labelled breadth_fallback, area_fallback or not_evaluable. That is
+           INTENDED by 07:1301-1304's own reasoning, so the fix is a qualifier, not a
+           redesign: "gives it back its own class WHENEVER NO STRONGER CAVEAT APPLIES —
+           over the enumerated input space, 20 of the 48 inputs that reached it at rev 8;
+           the remaining 28 carry a caveat rows 2-6 rank above it."
+        3. Do not write "42%" as a property of the rule. It is a property of CINV-20's
+           enumeration, which weights inputs uniformly and is not a traffic model. State the
+           two counts and the enumeration they come from, or state nothing quantitative.
+        4. 07:2765-2774's two rows were the evidence that row 7 is needed to reach 0. That
+           evidence is withdrawn (see the corrections above), so the row-7 paragraph must
+           not cite the PB4 table at all.
+
+  (i) THE ADOPTED COMBINATION — D9-7a + key(3) intersection + disclosure intersection +
+      PB4's carve-out, applied TOGETHER (useCombination()), because three individually-sound
+      fixes can still interact. Every number below is measured under all four at once.
+      1. D9-7a AS A CLAUSE — rule 1 widened to "different states OR different relations".
+         synthetic, all 64 ordered pairs: neither rule fires 0, BOTH fire 0
+         corpus, 38 (record, multi-reading branch) pairs: neither 0, both 0
+         D9-7a AS A CLAUSE:  TOTAL: HOLDS   SINGLE-VALUED: HOLDS
+      2. THE TWO HOLES D9-7 LEFT, re-run under D9-7a rather than argued shut:
+         outcome pairs reachable for one record: 62   reaching rule 2: 12
+         of those, rule 2 returning a state with NO relation: 0   (D9-7 had 8 — that is the hole)
+         EF6 inputs built from rule 2 whose class is not one of GR2's ten: 0
+         EF6 inputs where a scope_superset caveat goes silent: 0
+         zz-hole and zz-witness re-run end to end under D9-7a:
+           zz-hole     per-reading unsatisfied/scope_overlap and unsatisfied/scope_disjoint  -> D9-7a scope `not_evaluable`, class `not_evaluable`, ambiguity DISCLOSED
+                       under D9-7 this was class `null`, not one of GR2's ten
+           zz-witness  per-reading satisfied/scope_exact and satisfied/scope_superset  -> D9-7a scope `not_evaluable`, class `not_evaluable`, ambiguity DISCLOSED
+                       under D9-7 this was class `exact`, the scope_superset caveat lost
+         BOTH HOLES CLOSE, and by construction rather than by a patched condition: rule 2
+         now requires the relations to agree, so it never hands EF6 an absent relation.
+      3. THE DISCLOSURE FAMILY — does D9-7a already close 07:978 and 07:1083-1087?
+         under rev 9 as written (D9-5a): reading-dependent ground permissions 10, reading-dependent row disclosures 10
+         under D9-7a alone:              reading-dependent ground permissions 10, reading-dependent row disclosures 10
+         ANSWER: D9-7a closes NEITHER. I expected it to close the rows and it does not, so
+         the measurement is the finding and the prediction was wrong. The reason:
+           D9-7a rule 1 fires on differing STATES or differing RELATIONS. The surviving
+           case is precisely the one the decision anticipated for the criterion and not for
+           the reply: both readings give the SAME relation and Q_s still differs. Rule 2
+           then passes the relation through, 14.3.3's row fires on it, and the row names a
+           set built from Q_s. Every one of the 10 survivors is that shape.
+           07:978 is not keyed on a relation at all — a full_remodel never has one — so
+           rule 1's two guarantees, "no relation is reported" and "no absence is stated",
+           miss it twice over: the sentence it licenses is a PRESENCE, off Q_s alone.
+           SURVIVOR: 현관 수납/bi-04 row 8 (scope_disjoint), per-reading {entrance,storage} vs {entrance}
+           SURVIVOR: 현관 수납/bi-14 row 8 (scope_disjoint), per-reading {entrance,storage} vs {entrance}
+           SURVIVOR: 현관 수납/bi-15 row 8 (scope_disjoint), per-reading {entrance,storage} vs {entrance}
+         CORRECTION TO MY OWN FIGURE. Last round I reported 14 reading-dependent row
+         disclosures. That counted (record, branch) pairs where Q_s \ R_s differs, without
+         asking whether a row that NAMES that set actually fired. Rows 3 and 5 and the
+         trade-only table 14.3.3.1 do not name Q_s \ R_s. Emitting the disclosures and
+         counting the ones that are really made gives 10, not 14.
+      4. WHAT THE INTERSECTION RULE CHANGES ON THE CORPUS, with a witness per kind.
+         14.3.3 row disclosures whose NAMED SET changes: 10
+           현관 수납/bi-04  row 8 (scope_disjoint, Q_s \ R_s)  as-written {entrance,storage} -> intersection {entrance}
+           현관 수납/bi-14  row 8 (scope_disjoint, Q_s \ R_s)  as-written {entrance,storage} -> intersection {entrance}
+           현관 수납/bi-15  row 8 (scope_disjoint, Q_s \ R_s)  as-written {entrance,storage} -> intersection {entrance}
+         07:978 permissions whose ANSWER changes: 0 of 10 reading-dependent ones
+         ZERO, AND NOT BECAUSE THE RULE IS HARMLESS. 07:978 names no reading, so an
+         implementation must pick one; this file picks the FIRST, and WS6 (07:346-384)
+         happens to enumerate the larger Q_s first. Q_s ⊆ R_s is hardest for the largest
+         Q_s, so reading 1 already answers `false` wherever the readings disagree — which
+         is the same answer the intersection rule gives. Take the LAST reading instead and
+         10 of the 10 flip. The as-written clause agrees with the
+         intersection rule on this corpus ONLY because of the order WS6 lists readings in,
+         and nothing in 07:978 or 07:346-384 makes that order normative.
+      4b. THE TWO WAYS TO READ "only what every reading admits" ARE NOT THE SAME FUNCTION.
+         disclosures where intersect-Q and intersect-SETS disagree, on the corpus: 0
+         CONSTRUCTED, because row 5 never fires reading-dependently on these 19 records:
+           partial_remodel R_s {entrance,storage,kitchen} against "현관 수납";
+           reading 1 Q_s {entrance,storage} -> R_s ⊋ Q_s, row 5, names {kitchen}
+           reading 2 Q_s {entrance}          -> R_s ⊋ Q_s, row 5, names {storage,kitchen}
+           same state, same relation, so D9-7a rule 2 passes it through and row 5 fires.
+           intersect the DISCLOSURE SETS: {kitchen}   <- what the principle means
+           intersect Q_s first:           {storage,kitchen}   <- strictly MORE
+           Intersecting Q_s names 2 spaces where the principle names 1: it reports `storage` as an extra
+           space the record covered beyond the request, which is true under ONE reading only.
+         ROW 5 IS THE WITNESS. Rows 4/6/7/8 name a set built from Q (Q_s \ R_s, Q_t \ R_t),
+         so shrinking Q shrinks the disclosure and the two agree. Row 5 (07:1084) names
+         R_s \ Q_s — the RECORD's extra spaces — so shrinking Q_s GROWS it:
+           R_s \ (∩Q_s) is the UNION of the per-reading disclosures, the MAXIMAL claim,
+           ∩(R_s \ Q_s) = R_s \ (∪Q_s) is the minimal one.
+         "Intersect Q_s" therefore asserts MORE on row 5, which is the opposite of the
+         principle. The rule must be stated over the DISCLOSURE SETS, not over Q_s.
+      5. CAN ASSERTING LESS BE WRONG RATHER THAN MERELY WEAKER?
+         By construction the intersection can never name the WRONG id: every id it names is
+         named under every reading. Its only failure mode is naming TOO FEW — and the
+         limiting case, naming NONE where some reading names one, is a different failure.
+         disclosures where some reading names an id and the intersection names none: 0
+         WHY THIS IS WRONGNESS AND NOT WEAKNESS: 14.3.3's rows 6, 7 and 8 fire BECAUSE
+         Q_s \ R_s is non-empty — that is their condition. The reply then announces the
+         class (`scope_overlap`, `scope_disjoint`) which asserts to the visitor that spaces
+         they named were not covered, and names none of them. CINV-17 (07:1547) governs the
+         WORDING of that sentence and says nothing about its membership, so nothing in the
+         contract forbids the empty one. The visitor is told a space was missed and not
+         which: OD-P's other half — a reply that names no space where one is expected.
+         REACHABLE ON THIS CORPUS: no
+         and the reason is a THEOREM here, not an accident of the 19 records. WS6's two
+         readings are nested — reading 2 reclassifies one token from Space to Work, so
+         Q_s(2) ⊆ Q_s(1) — and a row 6/7/8 relation requires Q_s ⊄ R_s under the reading
+         that fired. D9-7a additionally requires both readings to give the SAME relation
+         before any row is reached. The empty-intersection case therefore needs a reading
+         whose Q_s ∩ (the other's Q_s) \ R_s is empty while both give one relation, and
+         WS6's nesting makes the intersection equal to the SMALLER Q_s, which is the one
+         that produced the relation. So on WS6-shaped ambiguity it cannot arise.
+         IT IS NOT SAFE IN GENERAL. WS6 is not the only ambiguity the contract admits —
+         07:346-384 is a rule about ONE token pair — and a future term whose readings are
+         NOT nested breaks the argument immediately. Constructed below.
+         CONSTRUCTED, non-nested readings — a term reading as `kitchen` OR as `bathroom`,
+           against a partial_remodel [living_room]:
+           reading 1: Q_s {kitchen}  -> row 8 scope_disjoint, names {kitchen}
+           reading 2: Q_s {bathroom} -> row 8 scope_disjoint, names {bathroom}
+           same state, same relation, so D9-7a rule 2 passes it through with scope_disjoint;
+           the intersection of the two disclosures is {} — EMPTY.
+           Left there, the reply names no space at all.
+         DOES THE RULE IN FORCE CATCH IT? D9-9 sentence 4 (07:1126-1132) says an empty
+           intersection with a non-empty reading is `not_evaluable` + disclose. Pushed
+           through discloseScope at rev 9.1 (CFG.disclosure=intersectionOfSets): row 8, intersection {}, some reading non-empty true, sentence 4 fires: true
+         CLOSED AT REV 9.1. The criterion becomes not_evaluable, the relation is dropped
+           before EF6 sees it, and the ambiguity is disclosed instead of a class being
+           asserted with no ground. This was my round-10 finding; rev 9.1 answers it.
+      6. PB4's CARVE-OUT (07:1218-1220) CONFIRMED — and it is bigger than I reported.
+         CORRECTION TO MY OWN LAST REPORT. I said pb4skip moves 2 of 27 branches. That was
+         under-applied: the skip was inside the multi-reading arm, so a record whose scope
+         is not_evaluable for any OTHER reason — WS8 dropped an id (07:1000), breadth absent
+         (07:1005), no 14.3.3 row — was still ordered by key (3). PB4 says a criterion in
+         state not_evaluable contributes to NO tie-break key, full stop; ambiguity is not
+         mentioned. Applied as written it moves 10 of 27 branches, not 2.
+           moves: 전용 84 아파트 주방 | breadth=null area=84m2
+           moves: 전용 84 아파트 주방 | breadth=null area=84pyeong
+           moves: 바닥이랑 거실만 | breadth=partial
+           moves: 현관 수납 | breadth=null
+         WHERE THE SKIPPED RECORDS LAND — the coupling to gap 1 / Q-29, made concrete:
+         GR2a class blocks mixing key-(3)-skipped and key-(3)-ordered records: 7 (28 skipped records)
+           전용 84 아파트 주방 | breadth=null area=84m2  class `not_evaluable` block of 14, 5 skipped by key (3): bi-02,bi-03,bi-05,bi-08,bi-19
+           전용 84 아파트 주방 | breadth=null area=84pyeong  class `not_evaluable` block of 14, 5 skipped by key (3): bi-02,bi-03,bi-05,bi-08,bi-19
+           32평인데 도배랑 바닥만 얼마예요 | breadth=null  class `area_fallback` block of 6, 5 skipped by key (3): bi-02,bi-03,bi-07,bi-13,bi-08
+         Each of those is exactly Q-29's undecided case: key (2) says a skipped record
+         "keeps the position the PREVIOUS key gave it", the previous key is (1) which only
+         produces ties, and the position inside a tie is fixed by keys (3)-(5) which come
+         AFTER. So gap 3 cannot be closed without deciding gap 1 — CONFIRMED, and on
+         7 blocks rather than the 2 branches I reported.
+      7. ALL SIX PROPERTIES UNDER THE FULL COMBINATION, and the INTERACTION test.
+         configuration                        branches  no-class  prop3  PB4/pairs  by-reading  silent
+         (`by-reading` = disclosures whose sentence was decided by PICKING a reading)
+         rev 9 as written                        27         0      0   0 of 798          20       0
+         + D9-7a alone (07:1008-1036)            27         0      0   0 of 798          20       0
+         + D9-8 alone (07:1407-1420)             27         0      0   0 of 798          20       0
+         + D9-9 alone (07:1103-1132)             27         0      0   0 of 798           0       0
+         REV 9.1 = all three                     27         0      0   0 of 798           0       0
+           [not adopted] + Q-29 position         27         0      1   0 of 798           0       0
+           [not adopted] + Q-29 zero             27         0      0   0 of 798           0       0
+         INTERACTION TEST — branches whose order moves:
+           moved by at least one change ON ITS OWN: 2
+           moved by the four applied TOGETHER:      2
+           branches where those two disagree:       0
+         PER-METRIC, baseline -> each change alone -> combined vs composed:
+           metric   base   alone (D9-7a / D9-8 / D9-9)      rev 9.1   composed   verdict
+           noCls       0   0/0/0                              0          0   as composed
+           p3          0   0/0/0                              0          0   as composed
+           pb4         0   0/0/0                              0          0   as composed
+           rd         20   20/20/0                            0          0   as composed
+           sil         0   0/0/0                              0          0   as composed
+         NO INTERACTION ON ANY METRIC. Each column of the combination equals the one
+         change that moves it, and no two changes move the same column.
+         THE ONE PAIR THAT IS NOT DISJOINT — the count rule and the carve-out both edit
+         key (3), so the scalar table cannot see whether one MASKS the other. As a 2x2:
+           union -> intersection, carve-out OFF: 2 of 27 branches move
+           union -> intersection, carve-out ON : 0 of 27 branches move
+         THE CARVE-OUT SUBSUMES THE COUNT RULE ON THIS CORPUS. Every branch where the
+         union/intersection choice mattered is a multi-reading branch, and on those the
+         records whose counts differ between readings are exactly the records the
+         ambiguity leaves `not_evaluable` — which the carve-out then removes from key (3)
+         altogether. So adopting BOTH is not additive: with the carve-out in force, the
+         choice of union vs intersection is unobservable HERE.
+         DO NOT CONCLUDE THE COUNT RULE IS UNNECESSARY. It is unobservable on these 19
+         records under D9-7a, not inert: a record whose readings AGREE on the relation
+         keeps a `satisfied`/`unsatisfied` scope, is NOT skipped, and still carries a
+         different count under each reading. bi-04/bi-14/bi-15 on "현관 수납" are exactly
+         that shape for the DISCLOSURE (see 3 above); they are tied on key (3) here only
+         because, being scope_disjoint, none of them carries entrance OR storage, so both
+         readings count 0. A record that DOES carry one, constructed and run:
+           zz-count: partial_remodel [entrance, storage, kitchen] on "현관 수납"
+             per-reading EF3: satisfied/scope_superset and satisfied/scope_superset  -> D9-7a scope `satisfied`
+             key (3) counts per reading: 2 and 1   union 2, intersection 1
+             BOTH READINGS AGREE ON THE RELATION, so the carve-out does NOT skip it,
+             and the count still differs. The count rule is load-bearing on inputs
+             this corpus does not contain — which is why its ground must be the
+             derivation and not the 2 branches.
+         The four changes otherwise touch different machinery — D9-7a the criterion, key
+         (3) and the carve-out the within-class order, the disclosure rule the reply text.
+         COMBINED VERDICT (position): PB4 strict 0 of 798; property 3 0 of 27; EF6 no-class 0; disclosures decided by PICKING a reading 0 (was 20).
+         COMBINED VERDICT (zero):     PB4 strict 0 of 798; property 3 0 of 27; EF6 no-class 0; decided by picking a reading 0.
+         EF1 CLOSURE under the combination: criterion-state assignments 1539, made by anything other than EF2/EF3/EF4: 0
+         CINV-20 pass B under the combination: 336 evaluations, 0 with no row, 0 where the returned row was not the lowest holding, 10 of 10 classes reachable.
+           on the real 19-record corpus under the combination: 10 of 10 classes reached, 0 outside GR2's closed list.
+
+  (j) Q-29 — the carve-out's THIRD candidate reading, tested for TRANSITIVITY before anything
+      else. Candidates 1 and 2 are already dead: `position` breaks property 3 (not stable
+      under partitioning), `zero` is "a null that sorts last", which 07:1220 forbids by name.
+      CANDIDATE 3: a key on which EITHER record is not_evaluable is skipped and the comparison
+      falls through to the next key. Nothing stands in for the criterion.
+      NOT wired into any default. Nothing else in this file uses it.
+      ASYMMETRY over 9234 ordered corpus pairs: 0 where cmp(a,b) != -cmp(b,a)  (holds)
+      TRANSITIVITY on the corpus: 156978 ordered triples over 27 branches x 19 records
+        cycles found: 72   on 6 of 27 branches
+        THE CORPUS EXHIBITS IT. This is not a synthetic-only defect.
+          CYCLE on "34평 전체 5천이면 되나요 | breadth=whole":  bi-04 < bi-15 < bi-17 < bi-04   (all three in class `breadth_fallback`, so key 1 decides none of the three pairs)
+            bi-04 [class breadth_fallback; area |delta| 0.0588; scope 0 of V.Q; pub 2026-05-21T09:00:00+09:00]
+            bi-15 [class breadth_fallback; area NOT EVALUABLE; scope 0 of V.Q; pub 2025-07-03T09:00:00+09:00]
+            bi-17 [class breadth_fallback; area |delta| 0.0035; scope 0 of V.Q; pub 2025-05-08T09:00:00+09:00]
+            bi-04 < bi-15 by key4 publishedAt ;  bi-15 < bi-17 by key4 publishedAt ;  bi-17 < bi-04 by key2 |delta|
+          CYCLE on "34평 전체 5천이면 되나요 | breadth=whole":  bi-14 < bi-15 < bi-16 < bi-14   (all three in class `breadth_fallback`, so key 1 decides none of the three pairs)
+            bi-14 [class breadth_fallback; area |delta| 0.2526; scope 0 of V.Q; pub 2025-07-31T09:00:00+09:00]
+            bi-15 [class breadth_fallback; area NOT EVALUABLE; scope 0 of V.Q; pub 2025-07-03T09:00:00+09:00]
+            bi-16 [class breadth_fallback; area |delta| 0.1176; scope 0 of V.Q; pub 2025-06-05T09:00:00+09:00]
+            bi-14 < bi-15 by key4 publishedAt ;  bi-15 < bi-16 by key4 publishedAt ;  bi-16 < bi-14 by key2 |delta|
+          CYCLE on "34평 전체 5천이면 되나요 | breadth=whole":  bi-14 < bi-15 < bi-17 < bi-14   (all three in class `breadth_fallback`, so key 1 decides none of the three pairs)
+            bi-14 [class breadth_fallback; area |delta| 0.2526; scope 0 of V.Q; pub 2025-07-31T09:00:00+09:00]
+            bi-15 [class breadth_fallback; area NOT EVALUABLE; scope 0 of V.Q; pub 2025-07-03T09:00:00+09:00]
+            bi-17 [class breadth_fallback; area |delta| 0.0035; scope 0 of V.Q; pub 2025-05-08T09:00:00+09:00]
+            bi-14 < bi-15 by key4 publishedAt ;  bi-15 < bi-17 by key4 publishedAt ;  bi-17 < bi-14 by key2 |delta|
+        cycles whose three records share one GR2a class (so key 1 decides nothing): 72 of 72
+      TRANSITIVITY on a synthetic enumeration of the shapes the keys can see:
+        shapes: 27 (3 area x 3 scope x 3 publishedAt), all in ONE class,
+        x 6 id permutations = 118098 ordered triples
+        DISTINCT cycle SHAPES found: 36
+          CYCLE  r1 < r2 < r3 < r1
+            r1{area not_evaluable, scope not_evaluable, pub 2026-01-01}
+            r2{area not_evaluable, scope 3 ids, pub 2026-01-01}
+            r3{area not_evaluable, scope 1 ids, pub 2026-01-02}
+            r1 < r2 by key5 id ;  r2 < r3 by key3 count ;  r3 < r1 by key4 publishedAt
+          CYCLE  r1 < r2 < r3 < r1
+            r1{area not_evaluable, scope not_evaluable, pub 2026-01-01}
+            r2{area delta 0.05, scope not_evaluable, pub 2026-01-01}
+            r3{area delta 0.15, scope not_evaluable, pub 2026-01-02}
+            r1 < r2 by key5 id ;  r2 < r3 by key2 |delta| ;  r3 < r1 by key4 publishedAt
+          CYCLE  r1 < r2 < r3 < r1
+            r1{area not_evaluable, scope not_evaluable, pub 2026-01-02}
+            r2{area not_evaluable, scope 3 ids, pub 2026-01-01}
+            r3{area not_evaluable, scope 1 ids, pub 2026-01-03}
+            r1 < r2 by key4 publishedAt ;  r2 < r3 by key3 count ;  r3 < r1 by key4 publishedAt
+      VERDICT: CANDIDATE 3 IS INTRANSITIVE. STOPPING HERE, as instructed — it is not
+      repaired into something that passes, because a third dead reading is the result.
+      THE MECHANISM, so the next candidate can be judged without re-running this:
+        the cycle needs three records and three DIFFERENT deciding keys. A beats B on a
+        key both can see; B beats C on a LATER key, because C cannot see the earlier one;
+        C beats A on a later key still, because A cannot see the middle one. Each pair is
+        decided by the first key BOTH sides can see, and "both sides" is a property of the
+        PAIR. A lexicographic order needs the key sequence to be the same for every
+        comparison; here each pair gets its own sequence, so there is no order to be
+        transitive. The defect is not in which keys, or in their order — it is in letting
+        the PAIR decide which keys apply.
+      REACHABILITY: 72 cycles on the REAL corpus, across 6 of 27 branches. No construction needed — the 19
+        records in 04 section 2 already contain them. The consequence is not a bad order
+        but NO order: the result depends on the sort algorithm and on the input
+        permutation, so CINV-21 (07:1551, "two runs of one query over one snapshot
+        produce the same order") cannot be satisfied by any implementation of it.
+      IS THERE A FOURTH READING? Yes, and it is a different SHAPE, not a different tuning.
+        Every candidate so far decides key applicability PER COMPARISON (candidate 3) or
+        substitutes a value or a slot for the missing one (candidates 1 and 2). The shape
+        neither of us has named decides applicability ONCE PER CLASS BLOCK, from the records
+        in it, before any comparison happens: a key is either in force for the whole block
+        or dropped from it. The comparator is then a fixed lexicographic order over a fixed
+        key list, which is transitive and partition-stable BY CONSTRUCTION — the two
+        properties candidates 3 and 1 respectively fail — and nothing stands in for the
+        absent criterion, so 07:1220 is satisfied literally.
+        ITS COST, stated so it is not oversold: one record with an unevaluable criterion
+        disables that key for every record in its block, including records that could have
+        been separated by it. Whether that is acceptable is a judgement about what PB4 is
+        FOR — protecting the unevaluable record, or preserving the key — and it is not mine
+        to make. It also has its own attack surface I have not explored: block membership is
+        decided by key 1, so it makes the key list depend on GR2a, which no rule now says.
+        I HAVE NOT IMPLEMENTED OR MEASURED IT. Reporting "and this one passes" in the same
+        breath as killing the previous three is exactly the move that shipped D9-5a and
+        D9-7. It needs its own round and its own attack.
+
+  (l) REV 9.1 AGAINST ITSELF — does anything it now says contradict something else it says?
+      A fresh pass over the whole IN-FORCE rule set (sections 1-16; 17 is parked, 18 is open
+      questions, 20 is history), not a re-check of the seven the corrections pass found.
+      in-force region: 07:1-1601 (1601 lines)
+      superseded formulations still present in the in-force region: 0 of 11 checked
+      figures the contract STATES, re-measured by this run:
+        AGREES  07:1230  "484 violations of 798 pairs"
+        AGREES  07:2758  "| A | rev 8 as shipped | 798 | **484** | 262 / 222 |"
+        AGREES  07:2765  "| H | `D9-1` + `D9-2c` order (**no** `EF6` row) | 798 | "
+        AGREES  07:2766  "| I | **rev 9** (`D9-1` + row 7 + `D9-2c` order) | 798 |"
+        AGREES  07:1232  "strict form holds at **0 of 798**"
+        AGREES  07:2772  "`D9-1` alone is a measurable regression — 624 against re"
+        AGREES  07:1287/2946  "16 corpus classifications change, all"
+        AGREES  07:991  "**0 of 10** reading-dependent"
+        AGREES  07:993  "is hardest for the largest `Q_s`. Resolve by the **last*"
+      figures re-measured: 9   disagreeing with this run: 0
+      "those three" at 07:1335: names 3 parts in its own sentence, says 3  (agrees)
+      rule ids the in-force region names: 92; occurring exactly once in the
+        whole contract: 6 — of which 5 are stated at that one site (AR3, CINV-3, CINV-7, CINV-10, CINV-14)
+        DANGLING  `D9-10` at 07:7 — named once, in a line that cites
+          another document, and stated nowhere in this contract:
+            | revision | rev 9.1 — a corrections pass over rev 9 under `20-pipeline-checker.md` §§5c–5g
+            and `22-rev9-design.md` §5c's decision ledger (`D9-7a`, `D9-8`, `D9-9`, `D9-10`/`Q-29`),
+            plus the corrected `PB4` baseline; **no rule id changes and no scope changes**; see §20.8.
+            rev 9 — corrections for `17-
+        WHY THIS COUNTS. 07:7 lists rev 9.1's decision ledger as `D9-7a`, `D9-8`, `D9-9`,
+        `D9-10`/`Q-29`. The first three each have a normative site in this contract and
+        are named in §20.8's change log; `D9-10` has neither. Its SUBSTANCE is present —
+        07:5 says rev 9.1 "records `Q-29` as open with three dead candidates" — but under
+        the other id. So either the ledger id does not belong in this document or §20.8
+        owes it a row; as it stands one line of rev 9.1 names a decision the rest of
+        rev 9.1 does not carry. Low severity, and not a rule conflict: recorded as what
+        it is, a cross-reference rev 9.1 does not honour.
+      NO RULE CONTRADICTION FOUND in the in-force region on any check this run can derive:
+        no superseded formulation survives, every re-measurable figure agrees, and the
+        one self-counting sentence counts its own parts correctly.
+      WHAT THIS DOES NOT COVER, stated so the result is not read as more than it is: a
+        contradiction between two rules that share no phrase and no figure is not
+        reachable by any check in this file. The six properties are the coverage that
+        exists for that, and they are run against rev 9.1 above.
+      AND ONE MORE THING IT CANNOT DO, which is worth stating because I tried it and
+        stopped: "is every rule this text names actually stated here?" is not decidable
+        from the text, because the contract marks a DEFINITION no differently from a
+        REFERENCE — `CINV-3` is defined by a table row, `AR3` by a clause inside a
+        sentence listing five other ids, `EF2` by a bolded heading. A definition model
+        built from any one of those conventions reports the other two as dangling. That
+        is the SAME defect property 5 records at 07:949: whether a line states a thing or
+        merely names it is carried by layout, not by the sentence. So check (iv) is
+        restricted to the case that needs no model at all — named once, nowhere stated.
+
+  (k) THE REVISION THAT ACTUALLY EXISTS — rev 9.1 exactly as written, no proposal applied.
+      Measured last, from a clean useRev(9.1), so no flag set by sections (f)-(j) reaches it.
+      configuration asserted clean (every flag at its rev-9.1 value): yes
+        rev 9.1; ambiguity D9-7a (07:1008-1036); key (3) intersection (07:1407-1420); disclosure intersectionOfSets (07:1103-1132);
+        Q-29 carve-out OFF, as 07:2185 requires.
+      property 3 (differential ordering):      0 of 27 branches
+      property 4b (PB4 strict):                0 of 798 pairs
+      EF6 inputs with no class, on the corpus: 0
+      These are the three figures the contract now STATES (07:2885-2900). All three carry
+      from rev 9 to rev 9.1 UNCHANGED — which was not safe to assume, because rev 9.1 changed
+      RULES and not only prose: D9-7a alters which state EF3 assigns, D9-8 alters an ordering
+      key, D9-9 alters what the reply asserts. That none of them moves these three is a
+      measurement, made in section (i) and repeated here from a clean configuration.
+      Q-29's findings in (i) and (j) are about a proposal in NO revision, and candidate 3 is
+      not implemented anywhere the ordering runs.
+
+  (m) Q-29 CANDIDATE 4 — per-CLASS-BLOCK applicability, measured (round 12).
+      Candidates 1-3 are dead: `position` breaks property 3 (not stable under partitioning),
+      `zero` is "a null that sorts last" which 07:1220 forbids by name, `skip to the next
+      key` is INTRANSITIVE with 72 cycles on this corpus. Candidate 4 is the shape left.
+
+      THE CANDIDATE, stated before it is tested: *PB4's carve-out applies at the granularity
+      of the key-(1) class block. Key (3) runs for a block only if EVERY record in that block
+      can see it; a block containing any not_evaluable scope is not ordered by key (3) at all
+      and falls through to keys (4)-(5). Applicability is a property of the PARTITION, never
+      of a record and never of a pair.*
+      BEHIND A FLAG (CFG.key3SkipMode = "block"). It is in no revision and in no default;
+      the clean baseline in (k) above asserts key3Skip === false and throws otherwise.
+      Tested in the order the coordinator set: GR2a permutation stability FIRST, because it
+      is what killed candidate 1; then transitivity; then property 3; then PB4 strict.
+      TEST 1 — STABILITY UNDER A GR2a PERMUTATION. 247 class orders
+        (identity, reverse, all 45 pairwise swaps, 200 seeded shuffles) x every branch.
+        The question: does permuting GR2a change the order of records WITHIN a class?
+        CONTROL, candidate 1 (`position`) — the one this test killed:
+          within-class orders that change: 0 of 6642   *** THE CONTROL DID NOT FAIL — the test is vacuous ***
+        CANDIDATE 4 (`block`):
+          within-class orders that change: 0 of 6642
+        VERDICT ON THE TEST ITSELF, BEFORE ITS RESULT: NEITHER candidate moves under any
+        of the 246 permutations, INCLUDING the one this test was meant to kill.
+        THE TEST DOES NOT DISCRIMINATE, AND THAT CORRECTS ME. 20-pipeline-checker.md §5h.8
+        says candidate 1 was killed by GR2a permutation and that this is what candidate 4
+        should be tested against first. That is WRONG and this run shows it: candidate 1
+        is killed by PARTITIONING the row set (test 3 below, property 3, 1 of 27), which
+        is a different operation. Permuting GR2a reorders the blocks; partitioning splits
+        the row set and re-derives each part, so the SLOTS differ — and candidate 1 reads
+        the slots. A permutation never changes a block's membership, so a rule that reads
+        only a block's contents cannot notice it. Candidate 4's 0 is therefore not
+        evidence of anything; the evidence is in test 3.
+
+      TEST 2 — TRANSITIVITY. Candidate 4 is a sequence of sorts, not a comparator, so a
+        comparator is derived from it and tested the way candidate 3 was. `applies` is a
+        function of the BLOCK: it is computed from the record set, never from the pair.
+        Two variants, because PB4's carve-out covers key (2) as well as key (3):
+          4a  key (3) per-block, key (2) pairwise — what adopting candidate 4 for key (3)
+              alone would give, with key (2)'s in-force positional carve-out left as it is
+          4b  BOTH keys per-block — the candidate read as a statement about PB4 itself
+        4a: corpus 156978 ordered triples, cycles 4 ; synthetic 118098 ordered triples, cycles 4
+            CYCLE  34평 전체 5천이면 되나요 | breadth=whole: bi-04 < bi-15 (key 4), bi-15 < bi-17 (key 4), bi-17 < bi-04 (key 2)
+            CYCLE  34평 전체 5천이면 되나요 | breadth=whole: bi-14 < bi-15 (key 4), bi-15 < bi-16 (key 4), bi-16 < bi-14 (key 2)
+            SYNTHETIC CYCLE  r1/r2/r3 keys 5/2/4
+            SYNTHETIC CYCLE  r1/r2/r3 keys 5/2/4
+        4b: corpus 156978 ordered triples, cycles 0 ; synthetic 118098 ordered triples, cycles 0
+        VERDICT, 4b — THE CANDIDATE AS STATED: TRANSITIVE on everything tested.
+          AND THE REASON, which is why it was predictable: `applies` is computed once per
+          BLOCK from the record set, so every pair inside a block uses the SAME key
+          sequence, and a fixed key sequence is lexicographic, hence transitive.
+          Candidate 3 failed because each PAIR chose its own sequence. This is not
+          evidence that 4b is RIGHT; it is evidence it is not wrong in candidate 3's way.
+        VERDICT, 4a — THE HYBRID: INTRANSITIVE, and it dies.
+          AND THIS IS NOT A FACT ABOUT Q-29. 4a is candidate 4 applied to key (3) while
+          key (2) keeps a PAIRWISE carve-out — and the cycles are decided by KEY (2):
+            34평 전체 5천이면 되나요 | breadth=whole: bi-04 < bi-15 (key 4), bi-15 < bi-17 (key 4), bi-17 < bi-04 (key 2)
+            34평 전체 5천이면 되나요 | breadth=whole: bi-14 < bi-15 (key 4), bi-15 < bi-16 (key 4), bi-16 < bi-14 (key 2)
+          Key (2)'s own carve-out (07:1399-1401) is IN FORCE and carries the same
+          three-way ambiguity as key (3)'s. The gap this file already records names its
+          two readings — "keeps the position the previous key gave it" or "falls
+          through" — and does not say that the FALL-THROUGH reading is intransitive.
+          It is, on this corpus, by exactly candidate 3's mechanism: a pair both sides
+          can see is decided by key (2), a pair only one side can see falls to key (4),
+          and the two orders disagree. The in-force implementation here reads key (2)
+          POSITIONALLY, a sequence of sorts, which cannot cycle — so no figure above
+          moves. This is a defect of the TEXT at 07:1399-1401.
+
+      TEST 3 — PROPERTY 3, the differential ordering. GR3's "direct answers first"
+        presentation partitions the rows into `exact` and the rest and orders each part.
+        Candidate 1 died here (0 of 27 -> 1 of 27). Candidate 4 must survive it.
+        rev 9.1 as written (no carve-out):     0 of 27
+        + candidate 1 (`position`):            1 of 27   e.g. 바닥이랑 거실만 | breadth=partial
+        + candidate 4 (`block`):               0 of 27
+        VERDICT: property 3 HOLDS under candidate 4.
+
+      TEST 4 — PB4 STRICT (07:1226), the not_evaluable/unsatisfied form, over all 798 pairs.
+        rev 9.1 as written:        0 of 798
+        + candidate 4 (`block`):   0 of 798
+        VERDICT: PB4 strict HOLDS under candidate 4.
+
+      TEST 5 — NOT ASKED FOR, RUN ANYWAY, and it is the one that matters. Making
+        applicability a property of the BLOCK makes every record's position depend on
+        WHICH OTHER RECORDS ARE IN ITS BLOCK. That is exactly what buys transitivity in
+        test 2, and it has a price: adding one record can reorder records it does not
+        beat. CINV-21 (07:1551) does not catch it — CINV-21 says the order is determined
+        by the record SET, and it still is. This asks the next question: is it MONOTONE?
+        Method: for each branch, add ONE synthetic record whose scope is not_evaluable to
+        an existing class block, re-derive, and ask whether the 19 originals keep their
+        relative order.
+        rev 9.1 as written:      0 of 107 insertions reorder the originals
+        + candidate 4 (`block`): 5 of 107 insertions reorder the originals
+          욕실 하나만 | breadth=null  adding a not_evaluable record to the `exact` block moves the originals from position 2:
+            before bi-09 > bi-10 > bi-11 > bi-12
+            after  bi-07 > bi-09 > bi-10 > bi-11
+          욕실 두 개 | breadth=null  adding a not_evaluable record to the `exact` block moves the originals from position 2:
+            before bi-09 > bi-10 > bi-11 > bi-12
+            after  bi-07 > bi-09 > bi-10 > bi-11
+          현관 수납 | breadth=null  adding a not_evaluable record to the `exact` block moves the originals from position 2:
+            before bi-09 > bi-10 > bi-12 > bi-13
+            after  bi-07 > bi-09 > bi-10 > bi-12
+        VERDICT: candidate 4 is NOT MONOTONE where rev 9.1 is — 5 extra reorderings. This is a REAL COST and it is the price of the transitivity in test 2.
+
+      CANDIDATE 4 — VERDICT: it is the FIRST candidate that does not die. It is not thereby right.
+        test 1  GR2a permutation stability  0 of 6642  — but the CONTROL also scores 0, so this test
+                                            decides nothing. My §5h.8 named the wrong gate.
+        test 2  transitivity, 4b as stated  PASS  (156978 corpus + 118098 synthetic ordered triples, 0 cycles)
+        test 2  transitivity, 4a hybrid     FAIL  (4 corpus cycles) — and the cause is KEY (2),
+                                            which is in force. Reported as its own finding.
+        test 3  property 3                  PASS  (0 of 27; candidate 1 is 1 of 27)
+        test 4  PB4 strict                  PASS  (0 of 798)
+        test 5  monotonicity, NOT asked for FAIL  (5 of 107 insertions reorder; rev 9.1 as
+                                            written: 0)
+      SO THE RESULT IS NOT "PASSES" AND NOT "DIES". 4b survives every test the
+      coordinator set, in the order set, and then fails one I added. The failure is not
+      incidental: it is the SAME property that makes 4b transitive. Applicability is a
+      function of the block's membership, so two records' relative order depends on a
+      third record that beats neither. That is what buys one key sequence per block, and
+      one key sequence per block is what makes it an order at all. The two cannot be
+      separated by a better implementation — they are the same sentence read twice.
+      THE TRADE, stated so the owner can make it rather than discover it: candidates 1-3
+      break the ORDER (unstable / forbidden / intransitive). Candidate 4 keeps the order
+      and breaks INDEPENDENCE — adding a record reorders records it does not beat, on
+      5 of 107 insertions here. Nothing in the contract forbids that; CINV-21
+      (07:1551) asks only that the order be a function of the record SET, and it is.
+      No fifth shape is proposed here. I have not looked for one.
+
+      WHAT I DID NOT TEST — stated in full, because adopting a candidate with a known
+      untested surface is a decision and adopting one with an unknown surface is not.
+        1. THE 7 MIXED BLOCKS AS SUCH. Candidate 4 dissolves them: a block containing any
+           not_evaluable scope simply does not run key (3), so there is no longer a block
+           that MIXES skipped and ordered records. What I measured is that the resulting
+           order is stable, transitive and passes properties 3 and 4b. I did NOT measure
+           whether the order it produces is the one the contract's author intends — there
+           is no statement of that to check against, which is Q-29 itself.
+        2. THE COST IT PAYS. Candidate 4 makes key (3) run for FEWER records than
+           candidate 3 would: one not_evaluable record disables the key for its whole
+           block, including records that could see it. Whether that is acceptable is an
+           owner decision. The size of it is measured in test 5 and nowhere else.
+        3. THE ORDERS 4a AND 4b PRODUCE, AGAINST EACH OTHER. 4a is dead (test 2), so
+           candidate 4 can only be adopted for the WHOLE carve-out, key (2) included.
+           I did not measure how far 4b's order differs from the in-force POSITIONAL
+           reading of key (2), only that both are orders. Adopting 4b therefore
+           changes key (2)'s behaviour by an amount nothing here reports.
+        4. THE RESULT LIMIT OF 3 (07:1222). Truncation is a subsetting operation and
+           candidate 4's applicability is set-dependent, so truncating BEFORE ordering and
+           truncating AFTER can differ. This file never truncates, so the question is
+           untouched by every number above.
+        5. ANY CORPUS BUT THIS ONE. 19 records, 27 branches. The synthetic enumeration
+           covers the SHAPES the keys can see, which is stronger, but it fixes one class
+           per triple; a cycle that needs three classes is outside it. For candidate 3
+           that did not matter because key (1) is total and a cycle must live inside a
+           block — the same argument covers candidate 4, but it is an argument, not a
+           measurement.
+
+      NOT ADOPTED, AND NOT IN ANY DEFAULT. CFG.key3SkipMode = "block" is reachable only
+      from this section. useRev() resets key3Skip to false unconditionally at every
+      revision, and section (k)'s clean baseline asserts it and throws otherwise.
+
+== CITATION DRIFT — do this run's 07: line numbers still point at their rules? ==
+  contract as read this run: 2972 lines, 270632 characters.
+  This file is edited by other workers. Every count in this report is against THAT version.
+  load-bearing citations checked: 70   drifted: 0
+  EVERY 07: citation in this file, attributed to the section it lands in:
+    distinct citations: 197   past the end of the file: 0
+      1-7 (3)           (front matter)
+      230-246 (3)       6. `property`
+      284-308 (3)       7.3 The vocabulary (normative, closed)
+      338-429 (10)      7.4 Rules
+      835-854 (11)      14.3 The evaluation function
+      857-936 (26)      14.3.1 What the function takes
+      945-1065 (25)     14.3.2 Three criteria, three states each
+      1070-1126 (16)    14.3.3 Scope relations, for a `partial_remod
+      1158-1184 (15)    14.3.3.1 Trade-only requests
+      1186-1199 (10)    14.3.4 Tiers
+      1204-1244 (16)    14.3.5 Prices in V0.2 — stated, never compar
+      1250-1409 (29)    14.3.6 The match class
+      1439-1471 (10)    14.3.7 Grounding and the output invariants
+      1538-1554 (7)     15. Test invariants — additions to V0 §22
+      1604              17.1 Budget comparison — deferred to V0.3
+      2185              18. Open questions for the delta review
+      2686-2698 (2)     20.6 Change log rev 7 → rev 8 — the narrowin
+      2721              20.7 Change log rev 8 → rev 9
+      2756-2765 (3)     20.7.1 The four BLOCKERs
+      2818              20.7.3 Rejected alternatives — proposed, tes
+      2856              20.7.5 What `04-demo-data-spec.md` needs, wh
+      2885-2900 (2)     20.7.6 Verification rev 9 owes, and does not
+      2925              20.8 Change log rev 9 → rev 9.1
+  All 70 resolve. The line numbers in this report are good for this version
+  of the contract and are checked, not assumed.
+
+== UNDETERMINED AT REV 9.1 (2) — rules this implementation could not execute ==
+  [1] PB4 / "Every result has an order"  07:1398-1405 (section 18's Q-29)
+      key (2) says a record the key skips "keeps the position the PREVIOUS key gave it". The previous
+      key is (1), GR2a's class order, which only ever produces blocks of ties — so the position inside
+      a block is fixed by keys (3)-(5), which come AFTER (2). The key list does not say whether a
+      skipped record holds a slot inside its class block while the keyed records are permuted around
+      it, or falls through to key (3). The two readings give different orders whenever a block mixes
+      keyed and skipped records.
+      exposed by: 34평 전체 5천이면 되나요 ; 전용 84 아파트 주방 ; 50평 전체 1억 넘나요  (+5 more)
+  [2] 14.3.1  07:863 vs 07:871
+      V.area is specified as "value + unit + basis" and the visitor states no unit. AR1 is a producer
+      rule and does not reach a query. VB1 (07:871) gives V.budget an explicit "cannot be resolved to
+      one of the three is ABSENT, never guessed" clause; V.area has no such clause, so the contract
+      licenses neither supplying a unit nor dropping the figure.
+      exposed by: 전용 84 아파트 주방
+
+== CLOSED BY REV 9 / 9.1 (8) — gaps an earlier configuration raises and rev 9.1 does not ==
+  NOTE ON CITATIONS IN THIS SECTION ONLY: these gaps are against REV 8, and their 07: line
+  numbers are rev 8's. The rules they name were rewritten, moved or deleted, so those lines
+  point at different text in the rev-9 file on disk. Rev-9 line numbers for the rules that
+  survived: VB3 07:874-926, WS6 07:346-384, GR3a parked in section 17.3.
+  [1] VB3  07:846 / 07:854-857
+      the table uses TWO left-cell conventions and says so nowhere: rows 2, 5, 6 and 7 introduce their
+      exemplars with an explicit form phrase ("a restriction by space", "a bare enumeration",
+      "qualitative prose about size"), while rows 1, 3 and 4 are bare literal lists. "34평 전체", "전체
+      가능해요" and "50평 전체" are on none of row 1's three strings. Read as forms (row 1's own `why` cell
+      is a form description) they are `whole`; read literally they leave V.breadth absent and
+      07:2698's claim that the closed list ended rev 7's undecidedness is false. One clarifying
+      sentence fixes it.
+  [2] GR3a / "Every result has an order"  07:1186 vs 07:1199-1206
+      the whole-home rung cell carries a sixth ordering key — "partial_remodel records, larger R_s
+      first" — that the five-key list at 07:1199-1206 does not contain, and no rule composes the two.
+      Sub-rung (partition the rung by |R_s| before the keys run) or an extra key ahead of GR2a? The
+      readings differ whenever a whole-home result contains partials of different |R_s| and different
+      classes. Sub-rung is in force here; 17b's X8-5 raised this and audit 21 treated it as a plain
+      omission.
+  [3] VB3  07:847
+      row 2's exemplars all put the 만 adjacent to the space (주방만, 욕실만, 주방이랑 욕실만). Nothing decides
+      whether a quantity between the space and the particle ("욕실 하나만") is still "a restriction by
+      space". WS3 (07:338-341) makes the quantity itself unrepresentable, so it cannot be recorded as
+      a criterion either way. Both values are run.
+  [4] WS6  07:344-352 vs 07:2686
+      section 7.4's tie-break (C: MUST) keys on "the reading that does not permit a price comparison";
+      section 14.3.5 (07:1204-1208) leaves no reading that permits one, so the predicate is constant
+      false and the rule as written selects nothing. The contract ALREADY CONTAINS the replacement —
+      07:2686 (section 20.6, row M7-3): "its discriminator ... no longer exists; the tie-break is now
+      about which reading yields the WEAKER CLASS, decided once per query" — but that sentence was
+      never written into section 7.4, and a change-log row is not a rule. What 07:2686 also does not
+      say is how "the class" is read off a result of 19 records. This implementation follows 07:2686
+      and states its aggregation below.
+  [5] VB3  07:840-848
+      the "closed list" (C: MUST) has rows that match one utterance with OPPOSITE values and states no
+      evaluation order. PB7 (07:1074), GR3a (07:1173) and EF6 (07:1257-1270) all state
+      first-match-wins for their tables; VB3 — the list introduced to stop utterances being undecided
+      — does not. VB3 is therefore not a function and EF2 has no determinate input.
+  [6] GR3 / "Every result has an order"  07:1402 vs 07:862 (D9-5a)
+      rev 9 made V.scope hold one candidate set per WS6 reading, and tie-break key (3) still reads
+      "the count of the visitor's stated workScopeIds the record carries" as though there were one
+      set. Under two readings there is no such count: 현관 수납 gives {entrance, storage} under one
+      reading and {entrance} + trade {built_in_furniture} under the other, and a record can carry a
+      different number under each. EF3's ambiguity clause resolves the CRITERION and says nothing
+      about the ordering key. Union used here.
+  [7] 14.3.3 rows 4-8 / CINV-17  07:1083-1087, 07:1547
+      the row names a set of ids in the reply and reads Q_s / Q_t as ONE set. Under two readings the
+      set differs, so WHICH spaces are reported as "not remodelled in this case" depends on a reading
+      the visitor never chose. CINV-17 governs the wording of this sentence and not its membership.
+  [8] EF3 / ground-not-conclusion  07:978
+      "unless Q_s subset-of R_s ALSO holds, in which case either may be stated" reads Q_s as ONE set.
+      Under two readings the permission to state the stronger sentence holds under one reading and not
+      the other, and the clause names no reading.
+
+  Also carried by the contract but NOT exposed by this run: section 18's Q-26 (07:929-936),
+  a chain mixing kinds under one 만. This implementation chains only terms of the same kind
+  (audit 21 A-4), so "바닥이랑 거실만" restricts by space and row 3 wins. The prose question is
+  real and unanswered; it simply does not change any output here, which is why no gap is
+  recorded for it. Fabricating one would misreport the checker's reach.
+
+== SUMMARY ==
+  in-force configuration: rev 9.1 | D9-7a | key3=intersection | intersectionOfSets
+
+  property 1  GAPS (0 findings in force at rev 9.1, 5 under another configuration, gaps attributed)  Totality + single-valuedness of the table-driven rules (VB3, 14.3.3, EF6, EF3's ambiguity clause)
+  property 2  FAIL (2 findings in force at rev 9.1)  Dead-branch detection over every registered C: MUST discriminator
+        - 14.3.3 (07:1080) "row 1" is never true on the 19-record corpus, though the synthetic enumeration
+        reaches both values
+        - 14.3.3.1 (07:1165) "row 1" is never true on the 19-record corpus, though the synthetic enumeration
+        reaches both values
+  property 3  FAIL (1 findings in force at rev 9.1, 4 under another configuration)  Differential ordering: GR3's direct-answer sentence vs the ordering device
+        - key (2)'s carve-out at 07:1399-1401 — IN FORCE, not a proposal — admits the same fall-through
+        reading that kills Q-29 candidate 3, and under that reading it is INTRANSITIVE on the real corpus: 4
+        cycles over 156978 ordered triples, e.g. 34평 전체 5천이면 되나요 | breadth=whole: bi-04 < bi-15 (key 4),
+        bi-15 < bi-17 (key 4), bi-17 < bi-04 (key 2). The gap this file already records for 07:1398-1405
+        names key (2)'s two readings and treats them as merely different; one of them does not define an
+        order at all. The in-force implementation reads key (2) positionally, a sequence of sorts, so no
+        measured figure moves — which is precisely why nothing caught it until a comparator was written for
+        a DIFFERENT question. Q-29 is not only about key (3).
+        [in force because: 07:1399-1401, in force at rev 9.1]
+  property 4  FAIL (44 findings in force at rev 9.1, gaps attributed)  PB4: the deletion form (4a) and the strict not_evaluable/unsatisfied form (4b)
+        - deleting bi-01.area on "34평 전체 5천이면 되나요 | breadth=whole" moves it from position 1 to 8, behind
+        bi-09, bi-10, bi-19, bi-05, bi-03, bi-02, bi-08 — PB4 (07:1224-1226): "not a penalty, not a small
+        penalty, not a null that sorts last"
+        - deleting bi-05.area on "34평 전체 5천이면 되나요 | breadth=whole" moves it from position 5 to 6, behind
+        bi-03 — PB4 (07:1224-1226): "not a penalty, not a small penalty, not a null that sorts last"
+        - deleting bi-06.area on "34평 전체 5천이면 되나요 | breadth=whole" moves it from position 9 to 10, behind
+        bi-17 — PB4 (07:1224-1226): "not a penalty, not a small penalty, not a null that sorts last"
+        - deleting bi-09.area on "34평 전체 5천이면 되나요 | breadth=whole" moves it from position 2 to 8, behind
+        bi-10, bi-19, bi-05, bi-03, bi-02, bi-08 — PB4 (07:1224-1226): "not a penalty, not a small penalty,
+        not a null that sorts last"
+        - deleting bi-10.area on "34평 전체 5천이면 되나요 | breadth=whole" moves it from position 3 to 8, behind
+        bi-19, bi-05, bi-03, bi-02, bi-08 — PB4 (07:1224-1226): "not a penalty, not a small penalty, not a
+        null that sorts last"
+        - deleting bi-17.area on "34평 전체 5천이면 되나요 | breadth=whole" moves it from position 10 to 14, behind
+        bi-04, bi-15, bi-16, bi-18 — PB4 (07:1224-1226): "not a penalty, not a small penalty, not a null
+        that sorts last"
+        ... and 38 more
+  property 5  FAIL (2 findings in force at rev 9.1)  EF1 closure: no criterion state is assigned outside EF2-EF4
+        - `not_evaluable` names both a criterion state (07:945) and a match class (07:1250-1264). EF1's
+        closure sentence (07:949) is about the state; EF6 (07:1262-1269) assigns the class. Nothing in the
+        contract distinguishes the two by name, so whether EF6 violates EF1 cannot be decided by reading —
+        only by knowing which column the token is in.
+        - the contract writes an EF6 CONDITION (07:1262, "scope is `unsatisfied`") and an EF2 ASSIGNMENT
+        (07:955, "`satisfied` iff ...") in overlapping surface forms, so whether a line assigns a state or
+        tests one is carried by the table layout, not by the sentence. EF1's closure (07:949) cannot be
+        checked from the rule text alone; 11 rule/section blocks are affected.
+  property 6  FAIL (4 findings in force at rev 9.1, 3 under another configuration, gaps attributed)  The nine 04 4.1 utterances, derived vs stated
+        - row E (04:697) has 2 branches the contract does not decide between, and they give different
+        results
+        - the applied demo data omits the four RD1-derived pricing.perArea values that 04 section 2
+        specifies (bi-09, bi-10, bi-11, bi-12). No in-force ordering or criterion rule reads them — 0 of 27
+        branches change order or class — but GR1 (07:1213-1215) makes a per-area amount statable as a fact,
+        and GR4 (07:1442-1444) exposes it when the visitor asks for one, so the answer to a per-area
+        question differs between the two sources.
+        [in force because: 04 §2's demo data — a property of the DATA, unchanged by any contract revision]
+        - PB4's carve-out applies to EVERY not_evaluable scope, not only an ambiguous one, and my previous
+        "2 of 27" under-applied it by testing the skip only on multi-reading branches. Applied as
+        07:1218-1220 is written it moves 10 of 27 branches and produces 7 GR2a class blocks that mix skipped
+        and ordered records — each one an instance of Q-29's undecided "keeps the position the previous key
+        gave it". Gap 3 is coupled to gap 1 far more tightly than the earlier figure suggested.
+        [in force because: 07:1218-1220 as rev 9.1 writes it; Q-29 is still OPEN at rev 9.1, so this is in
+        force]
+        - rev 9.1's revision row (07:7) names `D9-10` as one of four decision-ledger entries — `D9-7a`,
+        `D9-8`, `D9-9`, `D9-10`/`Q-29` — and `D9-10` occurs exactly once in the whole contract, at that
+        line. The other three each have a normative site AND a §20.8 change-log row; `D9-10` has neither,
+        while its substance appears under `Q-29` (07:5, 07:2185). This is a dangling cross-reference, not a
+        rule conflict: either the id is a leftover from `22-rev9-design.md`'s ledger and does not belong in
+        07, or §20.8 owes it a row. It is the only self-inconsistency the whole in-force pass found — 11
+        superseded formulations absent, 9 stated figures re-measured and agreeing, the one self-counting
+        sentence correct.
+        [in force because: 07:7, a line of rev 9.1 itself — revision-independent by construction]
+  property 7  FAIL (1 findings in force at rev 9.1, gaps attributed)  Sufficiency: does the returned order separate records that differ on what was ASKED?
+        - the returned order does not separate records that differ on what the visitor asked. Over 27
+        branches, 314 of 486 adjacent pairs (65%) are decided by key (4) publishedAt or key (5) id — keys
+        that are functions of the RECORD ALONE and say nothing about this query. Inside the maximal runs
+        those keys produce, 113 pairs differ on projectType and 675 differ on how much work the record did,
+        neither of which ANY of the five keys reads. Worst run: 10 records on "전용 84 아파트 주방 | breadth=null
+        area=84m2". This is a SUFFICIENCY defect and properties 1-6 cannot see it: the order is total,
+        single-valued, agrees with itself, penalises nothing and classes everything — and ranks a 7,000,000
+        one-bathroom job behind six whole-home remodels by publication date.
+
+  FINDINGS THAT ARE NOT DEFECTS OF REV 9.1 — retained, because each is the evidence for a
+  change rev 9.1 made, for a proposal it did not adopt, or a correction to this checker's
+  own earlier report. Grouped by the configuration that measured them, or by what they are
+  about when that is not a configuration:
+    under [rev 9 | D9-5a | key3=union | asWritten]
+        - property 1: D9-5a (07:1008-1036) is NOT SINGLE-VALUED
+        - property 3: Q-29 candidate 3 ("a key either record cannot see is skipped and the comparison
+        falls through") is INTRANSITIVE, so it does not define an order at all
+        - property 6: gap 3 is a FAMILY, not an instance
+        - property 6: EF6 row 7's justification at 07:1280-1289 rests on a PB4 claim the corrected
+        measurement withdraws (configuration H reaches 0 of 798 without the row), and its "gives it back
+        its own class" is unqualified while holding for 20 of 48 enumerate…
+    under [rev 9 | D9-7 | key3=union | asWritten]
+        - property 1: D9-7, on a constructed partial_remodel [entrance, storage, built_in_furniture]
+        against "현관 수납": the two readings give scope_exact and scope_superset, both `satisfied`, so rule
+        2 reports `satisfied` with no relation and EF6 returns `exact`
+        - property 1: D9-7, on a constructed partial_remodel [storage, kitchen] against "현관 수납": the
+        readings give scope_overlap and scope_disjoint, both `unsatisfied`, so rule 2 reports
+        `unsatisfied` with NO relation; EF6 row 1 (07:1262) fires and its class IS …
+    under [rev 9 | D9-7a | key3=union | asWritten]
+        - property 1: D9-7a closes NEITHER half of gap 3's disclosure family, and I predicted it would
+        close the rows
+        - property 3: PB4's carve-out MASKS ordering key (3)'s count rule on this corpus: switching
+        union -> intersection moves 2 of 27 branches with the carve-out off and 0 with it on
+    under [rev 9 | D9-5a | key3=union | intersectionOfQ]
+        - property 1: 07:978's permission is reading-dependent on 10 (record, branch) pairs, and the
+        intersection rule changes 0 of them — but only because WS6 (07:346-384) happens to enumerate the
+        larger Q_s first and the clause silently inherits that order
+        - property 6: the sentence "a disclosure may name only the ids every reading admits" has two
+        non-equivalent implementations and 14.3.3 row 5 separates them
+    under [about: this checker's own prior report (20-pipeline-checker.md §5h.8), not the contract]
+        - property 3: my own 20-pipeline-checker.md §5h.8 misnames the test that kills Q-29 candidate 1:
+        it says `position` fails GR2a permutation, and it does not
+    under [about: Q-29 candidate 4 — a proposal in NO revision (Q-29 itself is open, 07:2185)]
+        - property 3: Q-29 candidate 4 (per-class-block applicability) SURVIVES every test candidates
+        1-3 failed, and it is the first that does not die: transitive over 156978 corpus and 118098
+        synthetic ordered triples with 0 cycles, property 3 0 of 27, PB4 str…
+    total: 12 of 66 findings raised this run
+
+  underdetermined gaps at rev 9.1: 2   (closed by rev 9 / 9.1: 8)
+  branches run: 27 over 26 utterances (1 utterances the contract does not decide)
+
+  A FAIL above is a finding about the SPECIFICATION, not a crash. Exit code is non-zero only
+  if this script itself threw.

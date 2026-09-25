@@ -1,0 +1,2881 @@
+/* interior-01 v1 — authored styles. Every brandable value reads a theme token var. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  font-family: var(--typography-body);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: inherit;
+}
+
+/* `hidden` must win over element display rules (e.g. img { display: block }). */
+[hidden] {
+  display: none !important;
+}
+
+.i1-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-action-primary);
+  outline-offset: 2px;
+}
+
+/* the page column: one max width + gutter for every row that aligns with the container */
+:root {
+  --i1-page-max: 1440px;
+  --i1-gutter: 20px;
+}
+
+.i1-container {
+  width: 100%;
+  max-width: var(--i1-page-max);
+  margin: 0 auto;
+  padding: 0 var(--i1-gutter);
+}
+
+/* ---------------------------------------------------------------- header */
+
+.i1-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-canvas);
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.i1-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  gap: 16px;
+}
+
+.i1-header__brand {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  min-width: 0;
+}
+
+.i1-header__logo {
+  height: 24px;
+  width: auto;
+}
+
+.i1-header__wordmark {
+  font-family: var(--typography-heading);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.i1-header__nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.i1-header__link {
+  font-size: 15px;
+  text-decoration: none;
+  color: var(--color-text-secondary);
+}
+
+.i1-header__link:hover,
+.i1-header__link[aria-current] {
+  color: var(--color-text-primary);
+}
+
+.i1-header__link[aria-current] {
+  font-weight: 600;
+}
+
+.i1-header__cta {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--decoration-radius-pill);
+  background: var(--color-action-primary);
+  color: var(--color-action-primary-text);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* < 900 px (1.5.0): the header is logo + menu button; the inline nav is the ≥ 900 px band's */
+.i1-header__nav {
+  display: none;
+}
+
+.i1-header__menu {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin: 0 -10px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--decoration-radius-pill);
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.i1-header__menu .i1-icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* ------------------------------------------------------ menu (< 900px) */
+
+/* the page behind the open menu does not scroll; the floating seat steps aside */
+html:has(.i1-menu[open]) {
+  overflow: hidden;
+}
+
+html:has(.i1-menu[open]) .i1-fcta {
+  display: none;
+}
+
+/* a sheet from the right edge; the dialog box IS the sheet, its panel fills it (so a press whose
+   target is the dialog itself is on the backdrop) */
+.i1-menu {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(100%, 360px);
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  box-shadow: -8px 0 32px rgb(0 0 0 / 0.16);
+}
+
+.i1-menu::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+.i1-menu__panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+  overflow-y: auto;
+}
+
+.i1-menu__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+  height: 56px;
+  padding: 0 var(--i1-gutter);
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.i1-menu__brand {
+  min-width: 0;
+  font-family: var(--typography-heading);
+  font-weight: 700;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.i1-menu__close {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin-right: -10px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--decoration-radius-pill);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.i1-menu__list {
+  list-style: none;
+  margin: 0;
+  padding: 8px var(--i1-gutter) 32px;
+}
+
+.i1-menu__link {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  border-bottom: 1px solid var(--color-border-default);
+  font-size: 18px;
+  font-weight: 600;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.i1-menu__link[aria-current] {
+  color: var(--color-action-primary);
+}
+
+.i1-menu__link[aria-current]::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-left: 10px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* the contact item: the header pill's look, full width, after the page links */
+.i1-menu__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  margin-top: 24px;
+  padding: 0 20px;
+  border-radius: var(--decoration-radius-pill);
+  background: var(--color-action-primary);
+  color: var(--color-action-primary-text);
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* -------------------------------------------------------------- projects */
+
+.i1-main {
+  flex: 1 0 auto;
+}
+
+/* homepage project showcases (projects A / B): head · track · "view all" (below on mobile) */
+.i1-projects {
+  padding: 56px 0 64px;
+}
+
+/* two showcases in a row (A → B) read as one rhythm, not a double section gap */
+.i1-projects + .i1-projects {
+  padding-top: 24px;
+}
+
+.i1-projects__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "head"
+    "track"
+    "more";
+}
+
+.i1-projects__head {
+  grid-area: head;
+  min-width: 0;
+  margin: 0 0 24px;
+}
+
+.i1-projects__more {
+  grid-area: more;
+  justify-self: start;
+  margin-top: 28px;
+}
+
+.i1-projects__inner > .i1-track {
+  grid-area: track;
+  min-width: 0;
+}
+
+.i1-projects__title {
+  margin: 0;
+  font-family: var(--typography-heading);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.i1-projects__intro {
+  margin: 10px 0 0;
+  max-width: 640px;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+}
+
+.i1-projects__intro p {
+  margin: 0 0 6px;
+}
+
+.i1-card__link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.i1-card__link:hover .i1-card__title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.i1-card__media {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--decoration-radius-medium);
+  background: var(--color-surface-secondary);
+}
+
+.i1-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* one card title scale on every page (home showcases, portfolio list): 17px → 18px ≥ 900 */
+.i1-card__title {
+  margin: 14px 0 4px;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.i1-card__summary {
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.i1-card__meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* ------------------------------------------------------- portfolio list */
+
+.i1-plist {
+  padding: 0 0 64px;
+}
+
+.i1-plist__hero {
+  background: var(--color-surface-secondary);
+}
+
+.i1-plist__hero img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.i1-plist__head {
+  padding: 36px 0 28px;
+}
+
+.i1-plist__title {
+  margin: 0;
+  font-family: var(--typography-heading);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.i1-plist__intro {
+  margin-top: 10px;
+  max-width: 640px;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+}
+
+.i1-plist__intro p {
+  margin: 0 0 6px;
+}
+
+.i1-plist__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+}
+
+/* Page hero (1.3.1): with a banner, the page title sits ON it, bottom-left over a scrim — the
+   homepage hero's language — instead of an image strip with a detached caption. CSS only (the
+   HTML is unchanged): the container around the head and the list steps aside (display:
+   contents) so the head shares the banner's grid cell; the banner grows with long copy rather
+   than clipping it. Without :has() support the plain banner + head layout remains. */
+.i1-plist:has(> .i1-plist__hero) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.i1-plist:has(> .i1-plist__hero) > .i1-plist__hero {
+  grid-area: 1 / 1;
+  position: relative;
+  /* taller than the head's short-copy box (~244px on phones), so a band of photo shows above the scrim */
+  min-height: 280px;
+}
+
+.i1-plist:has(> .i1-plist__hero) > .i1-plist__hero img {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+
+.i1-plist:has(> .i1-plist__hero) > .i1-container {
+  display: contents;
+}
+
+/* the filters, list and pager keep the page column the container gave them */
+.i1-plist:has(> .i1-plist__hero) > .i1-container > * {
+  width: 100%;
+  max-width: var(--i1-page-max);
+  margin-inline: auto;
+  padding-inline: var(--i1-gutter);
+  min-width: 0;
+}
+
+.i1-plist:has(> .i1-plist__hero) > .i1-container > .i1-plist__head {
+  grid-area: 1 / 1;
+  align-self: end;
+  position: relative;
+  z-index: 1;
+  max-width: none;
+  margin-inline: 0;
+  /* the box spans the banner (so does its scrim); the text starts on the page's content edge */
+  padding: 120px max(var(--i1-gutter), calc((100% - var(--i1-page-max)) / 2 + var(--i1-gutter))) 28px;
+  color: var(--color-text-inverse);
+  /* scrim anchored to the copy: ≥ .55 black behind every line (the copy starts 120px below the
+     box top at any length), fading out over the 120px above it */
+  background: linear-gradient(to top, rgb(0 0 0 / 0.6), rgb(0 0 0 / 0.55) calc(100% - 120px), rgb(0 0 0 / 0));
+}
+
+.i1-plist:has(> .i1-plist__hero) .i1-plist__title {
+  text-shadow: 0 1px 12px rgb(0 0 0 / 0.25);
+}
+
+.i1-plist:has(> .i1-plist__hero) .i1-plist__intro {
+  color: inherit;
+}
+
+/* filters directly under the page hero */
+.i1-plist:has(> .i1-plist__hero) > .i1-container > .i1-plist__head + * {
+  margin-top: 28px;
+}
+
+/* ------------------------------------------------ portfolio filters (1.2.0) */
+
+.i1-pfilter {
+  margin: 0 0 32px;
+  display: grid;
+  gap: 16px;
+}
+
+.i1-pfilter__bar {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.i1-pfilter__search {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.i1-pfilter__input {
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--decoration-radius-pill);
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 15px;
+}
+
+.i1-pfilter__input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.i1-pfilter__toggle,
+.i1-pfilter__reset,
+.i1-pfilter__select {
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--decoration-radius-pill);
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.i1-pfilter__toggle {
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.i1-pfilter__toggle[aria-expanded="true"] {
+  border-color: var(--color-text-primary);
+}
+
+/* hairline rules above and below, no box: the chip columns start on the page's content edge,
+   like the title and the search field */
+.i1-pfilter__panel {
+  display: none;
+  gap: 20px;
+  padding: 20px 0;
+  border-block: 1px solid var(--color-border-default);
+}
+
+.i1-pfilter__panel[data-open] {
+  display: grid;
+}
+
+.i1-pfilter__group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.i1-pfilter__legend {
+  padding: 0;
+  margin-bottom: 10px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.i1-pfilter__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.i1-chip {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  cursor: pointer;
+}
+
+.i1-chip__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.i1-chip__label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--decoration-radius-pill);
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.i1-chip:hover .i1-chip__label {
+  border-color: var(--color-text-muted);
+}
+
+.i1-chip__input:checked + .i1-chip__label {
+  border-color: var(--color-action-primary);
+  background: var(--color-action-primary);
+  color: var(--color-action-primary-text);
+  font-weight: 700;
+}
+
+.i1-chip__input:focus-visible + .i1-chip__label {
+  outline: 2px solid var(--color-action-primary);
+  outline-offset: 2px;
+}
+
+.i1-pfilter__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.i1-pfilter__count {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.i1-pfilter__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.i1-pfilter__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.i1-pfilter__sort-label {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.i1-pfilter__select {
+  max-width: 100%;
+  padding-right: 12px;
+}
+
+.i1-pfilter__reset.is-primary {
+  border-color: var(--color-action-primary);
+  background: var(--color-action-primary);
+  color: var(--color-action-primary-text);
+  font-weight: 700;
+}
+
+.i1-pfilter__empty {
+  padding: 56px 20px;
+  border: 1px dashed var(--color-border-default);
+  border-radius: var(--decoration-radius-medium);
+  text-align: center;
+}
+
+.i1-pfilter__empty-title {
+  margin: 0 0 8px;
+  font-family: var(--typography-heading);
+  font-size: 20px;
+}
+
+.i1-pfilter__empty-body {
+  margin: 0 0 20px;
+  color: var(--color-text-secondary);
+}
+
+.i1-pbrowse__results {
+  scroll-margin-top: 72px;
+}
+
+/* ----------------------------------------------------------- pagination */
+
+.i1-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 56px 0 0;
+  font-size: 15px;
+}
+
+.i1-pager__list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.i1-pager__num,
+.i1-pager__step,
+.i1-pager__gap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 8px;
+  border-radius: var(--decoration-radius-pill);
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.i1-pager__num:hover,
+.i1-pager__step:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-secondary);
+}
+
+.i1-pager__num.is-current {
+  background: var(--color-action-primary);
+  color: var(--color-action-primary-text);
+  font-weight: 700;
+}
+
+.i1-pager__step {
+  font-size: 20px;
+  color: var(--color-text-primary);
+}
+
+.i1-pager__step.is-disabled {
+  color: var(--color-text-muted);
+  opacity: 0.35;
+}
+
+/* -------------------------------------------------------- project detail */
+
+.i1-detail {
+  padding: 0 0 72px;
+}
+
+.i1-detail__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "bar"
+    "gallery"
+    "head"
+    "info";
+}
+
+.i1-detail__bar {
+  grid-area: bar;
+  display: flex;
+  align-items: center;
+  height: 48px;
+}
+
+.i1-detail__back {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.i1-detail__back:hover {
+  color: var(--color-text-primary);
+}
+
+.i1-detail__head {
+  grid-area: head;
+  padding: 28px 0 8px;
+}
+
+.i1-detail__title {
+  margin: 0;
+  font-family: var(--typography-heading);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.i1-detail__summary {
+  margin: 12px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+}
+
+.i1-detail__gallery {
+  grid-area: gallery;
+  min-width: 0;
+  margin: 0 -20px;
+}
+
+.i1-detail__info {
+  grid-area: info;
+  display: grid;
+  gap: 40px;
+  padding-top: 32px;
+}
+
+.i1-detail__label {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.i1-detail__body p {
+  margin: 0 0 12px;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+  line-height: 1.8;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* < 1281: one column in DOM order = observed order: facts → story (body, quote) → CTA */
+.i1-detail__quote {
+  margin: 0;
+}
+
+.i1-detail__body + .i1-detail__quote {
+  margin-top: 40px;
+}
+
+.i1-detail__quote blockquote {
+  margin: 0;
+}
+
+.i1-detail__quote blockquote p {
+  margin: 0;
+  font-family: var(--typography-heading);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.i1-detail__attribution {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+
+.i1-facts {
+  margin: 0;
+  padding-top: 28px;
+  border-top: 1px solid var(--color-text-primary);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px 20px;
+}
+
+.i1-facts__row dt {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.i1-facts__row dd {
+  margin: 6px 0 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.i1-detail__cta {
+  padding-top: 28px;
+  border-top: 1px solid var(--color-text-primary);
+}
+
+.i1-detail__cta p {
+  margin: 0 0 14px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.i1-button {
+  display: inline-flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 28px;
+  border-radius: var(--decoration-radius-pill);
+  background: var(--color-action-primary);
+  color: var(--color-action-primary-text);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* ------------------------------------------------------------- not found */
+
+.i1-notfound {
+  padding-top: 96px;
+  padding-bottom: 120px;
+}
+
+.i1-notfound__title {
+  margin: 0 0 12px;
+  font-family: var(--typography-heading);
+  font-size: 28px;
+  line-height: 1.3;
+}
+
+.i1-notfound__message {
+  margin: 0 0 28px;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* ---------------------------------------- pages: about · 3D · contact (1.5.0) */
+
+.i1-page {
+  padding-bottom: 72px;
+}
+
+.i1-page__head {
+  padding: 36px 0 28px;
+}
+
+.i1-page__title {
+  margin: 0;
+  font-family: var(--typography-heading);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.i1-page__lead {
+  margin-top: 14px;
+  max-width: 40em;
+  color: var(--color-text-secondary);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.i1-page__lead p {
+  margin: 0 0 8px;
+}
+
+.i1-page__cta {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--color-text-primary);
+}
+
+.i1-page__cta p {
+  margin: 0 0 16px;
+  font-size: 15px;
+  color: var(--color-text-secondary);
+}
+
+.i1-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+}
+
+.i1-page__more {
+  font-size: 15px;
+  font-weight: 600;
+  text-underline-offset: 4px;
+}
+
+.i1-about__media img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--decoration-radius-medium);
+  background: var(--color-surface-secondary);
+}
+
+.i1-about__body {
+  margin-top: 40px;
+  max-width: 40em;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.i1-about__body p {
+  margin: 0 0 14px;
+}
+
+.i1-about__principles {
+  margin-top: 56px;
+}
+
+.i1-about__points-title {
+  margin: 0 0 24px;
+  font-family: var(--typography-heading);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.i1-about__points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--color-border-default);
+}
+
+.i1-about__point {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.i1-about__num {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.i1-about__point-title {
+  margin: 0;
+  font-family: var(--typography-heading);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.i1-about__point p {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.i1-soon__panel {
+  margin-top: 36px;
+  padding: 56px 24px;
+  border-radius: var(--decoration-radius-medium);
+  background: var(--color-surface-secondary);
+  text-align: center;
+}
+
+.i1-soon__body {
+  margin: 14px auto 28px;
+  max-width: 32em;
+  color: var(--color-text-secondary);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.i1-contact__direct {
+  margin: 0 0 32px;
+}
+
+.i1-contact__direct dt {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.i1-contact__direct dd {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.i1-contact__unavailable {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.i1-form__required-note {
+  margin: 0 0 16px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.i1-form__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+
+.i1-form__field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.i1-form__label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.i1-form__req {
+  color: var(--color-action-primary);
+}
+
+.i1-form__input {
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--decoration-radius-medium);
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 16px;
+}
+
+.i1-form__textarea {
+  height: auto;
+  min-height: 160px;
+  padding: 12px 16px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.i1-form__input:focus-visible {
+  outline: 2px solid var(--color-action-primary);
+  outline-offset: 0;
+  border-color: var(--color-action-primary);
+}
+
+.i1-form__notice {
+  margin: 24px 0 16px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.i1-form__submit {
+  border: 0;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.i1-form__status {
+  margin: 16px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.7;
+}
+
+.i1-form__status:empty {
+  display: none;
+}
+
+/* 1.5.1: a too-long inquiry — the address + the composed text to copy (no mail link opened) */
+.i1-form__fallback {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  min-width: 0;
+}
+
+.i1-form__fallback-to {
+  margin: 0 0 8px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.i1-form__fallback-to a {
+  color: inherit;
+}
+
+.i1-form__select-text {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--decoration-radius-pill);
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (min-width: 600px) {
+  .i1-about__points {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+  }
+
+  .i1-form__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 24px;
+  }
+
+  .i1-form__field--wide {
+    grid-column: 1 / -1;
+  }
+
+  .i1-form__submit {
+    min-width: 220px;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 900px) {
+  .i1-page {
+    padding-bottom: 112px;
+  }
+
+  .i1-page__head {
+    padding: 56px 0 40px;
+  }
+
+  .i1-page__title {
+    font-size: 34px;
+  }
+
+  .i1-page__lead {
+    font-size: 17px;
+  }
+
+  /* a wide band on desktop: the photo supports the copy, it does not fill the screen */
+  .i1-about__media img {
+    aspect-ratio: 21 / 9;
+  }
+
+  .i1-about__body {
+    margin-top: 56px;
+    font-size: 17px;
+  }
+
+  .i1-about__principles {
+    margin-top: 80px;
+  }
+
+  .i1-about__points-title {
+    font-size: 28px;
+    margin-bottom: 32px;
+  }
+
+  .i1-page__cta {
+    margin-top: 80px;
+  }
+
+  .i1-soon__panel {
+    margin-top: 56px;
+    padding: 96px 40px;
+  }
+
+  /* contact: title + direct address | form */
+  .i1-contact__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 64px;
+    align-items: start;
+  }
+
+  .i1-contact .i1-form,
+  .i1-contact__unavailable {
+    margin-top: 56px;
+  }
+}
+
+@media (min-width: 1281px) {
+  .i1-page__head {
+    padding: 72px 0 48px;
+  }
+
+  .i1-page__title {
+    font-size: 40px;
+  }
+
+  .i1-about__points {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .i1-contact__inner {
+    gap: 96px;
+  }
+
+  .i1-contact .i1-form,
+  .i1-contact__unavailable {
+    margin-top: 72px;
+  }
+}
+
+/* on /contact the floating contact seat would only point at the page it covers (and sit on the form) */
+body:has(.i1-main[data-page="contact"]) .i1-fcta {
+  display: none;
+}
+
+/* --------------------------------------------------------------- gallery */
+
+.i1-gallery__tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 20px;
+  scrollbar-width: none;
+}
+
+.i1-gallery__tab {
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--decoration-radius-pill);
+  background: var(--color-canvas);
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.i1-gallery__tab[aria-selected="true"] {
+  border-color: var(--color-text-primary);
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
+
+.i1-gallery__count {
+  font-weight: 400;
+}
+
+.i1-gallery__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.i1-gallery__grid::-webkit-scrollbar {
+  display: none;
+}
+
+.i1-gallery__item {
+  position: relative;
+  flex: 0 0 100%;
+  aspect-ratio: 1 / 1;
+  scroll-snap-align: start;
+  background: var(--color-surface-secondary);
+  overflow: hidden;
+}
+
+.i1-gallery__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.i1-gallery__panel {
+  position: relative;
+}
+
+.i1-gallery__counter {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  margin: 0;
+  padding: 3px 10px;
+  border-radius: var(--decoration-radius-pill);
+  background: color-mix(in srgb, var(--color-text-primary) 72%, transparent);
+  color: var(--color-text-inverse);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* photo-strip arrows: the home hero arrow look, one photo seat per press */
+.i1-gallery__arrow {
+  appearance: none;
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--decoration-radius-pill);
+  background: color-mix(in srgb, var(--color-canvas) 72%, transparent);
+  /* interiors are often white-on-white: keep the disc readable on a bright photo */
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.22);
+  color: var(--color-text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.i1-gallery__arrow--prev {
+  left: 12px;
+}
+
+.i1-gallery__arrow--next {
+  right: 12px;
+}
+
+/* first / last photo: nothing further that way (kept in the tab order so a keyboard press at the
+   end does not drop focus). The invisible disc still takes the press — and does nothing with
+   it — so a quick extra tap at the end never falls through to the photo's viewer button */
+.i1-gallery__arrow[aria-disabled="true"] {
+  opacity: 0;
+  cursor: default;
+}
+
+.i1-gallery__arrow[aria-disabled="true"]:focus-visible {
+  opacity: 0.35;
+}
+
+.i1-gallery__arrow:focus-visible {
+  outline: 2px solid var(--color-text-inverse);
+  outline-offset: 0;
+  box-shadow: 0 0 0 4px rgb(0 0 0 / 0.6);
+}
+
+.i1-gallery__more {
+  display: none;
+}
+
+/* the photo is the viewer's button: a transparent sheet over the seat. It is the seat's last
+   child, so the before/after toggle is raised above it (.i1-ba z-index) */
+.i1-gallery__zoom {
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.i1-gallery__zoom:focus-visible {
+  outline: 2px solid var(--color-text-inverse);
+  outline-offset: -4px;
+  box-shadow: inset 0 0 0 6px rgb(0 0 0 / 0.6);
+}
+
+/* ---------------------------------------------------------- photo viewer */
+
+/* the page behind the open viewer does not scroll */
+html:has(.i1-viewer[open]) {
+  overflow: hidden;
+}
+
+.i1-viewer {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgb(0 0 0 / 0.95);
+  color: var(--color-text-inverse);
+}
+
+/* it takes the opening focus itself (keys work at once, no ring on a control nobody tabbed to) */
+.i1-viewer:focus {
+  outline: none;
+}
+
+.i1-viewer::backdrop {
+  background: transparent;
+}
+
+.i1-viewer__bar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 56px;
+  padding: 0 6px 0 16px;
+  padding-top: env(safe-area-inset-top, 0px);
+  box-sizing: content-box;
+}
+
+.i1-viewer__room {
+  min-width: 0;
+  padding: 3px 12px;
+  border-radius: var(--decoration-radius-pill);
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.i1-viewer__counter {
+  flex-shrink: 0;
+  margin: 0;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.i1-viewer__close,
+.i1-viewer__arrow {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--decoration-radius-pill);
+  font: inherit;
+  cursor: pointer;
+}
+
+.i1-viewer__close {
+  flex-shrink: 0;
+  margin-left: auto;
+  background: transparent;
+  color: inherit;
+}
+
+/* the photo is as large as the screen allows, never upscaled past its pixels, never cropped */
+.i1-viewer__stage {
+  position: absolute;
+  inset: calc(56px + env(safe-area-inset-top, 0px)) 0 calc(24px + env(safe-area-inset-bottom, 0px));
+  display: grid;
+  place-items: center;
+  touch-action: pan-y pinch-zoom;
+}
+
+.i1-viewer__img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  object-fit: contain;
+  user-select: none;
+}
+
+/* the home hero arrow look */
+.i1-viewer__arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  margin-top: -22px;
+  background: color-mix(in srgb, var(--color-canvas) 72%, transparent);
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.22);
+  color: var(--color-text-primary);
+}
+
+.i1-viewer__arrow--prev {
+  left: 8px;
+}
+
+.i1-viewer__arrow--next {
+  right: 8px;
+}
+
+.i1-viewer__close:focus-visible,
+.i1-viewer__arrow:focus-visible {
+  outline: 2px solid var(--color-text-inverse);
+  outline-offset: 0;
+  box-shadow: 0 0 0 4px rgb(0 0 0 / 0.6);
+}
+
+.i1-ba {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  display: inline-flex;
+  padding: 3px;
+  border-radius: var(--decoration-radius-pill);
+  background: color-mix(in srgb, var(--color-text-primary) 72%, transparent);
+}
+
+.i1-ba__btn {
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--decoration-radius-pill);
+  background: transparent;
+  color: var(--color-text-inverse);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.i1-ba__btn[aria-pressed="true"] {
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------- footer */
+
+/* The floating contact button is fixed INSIDE the footer: keep the footer a plain box — no
+   position+z-index, transform, filter, contain, will-change or content-visibility, which would
+   trap or re-anchor the button (the smoke hit-tests it over the hero). */
+.i1-footer {
+  background: var(--color-text-primary);
+  color: var(--color-text-inverse);
+  padding: 48px 0;
+}
+
+.i1-footer__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.i1-footer__name {
+  font-family: var(--typography-heading);
+  font-size: 20px;
+  font-weight: 700;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.i1-footer__summary {
+  margin: 12px 0 0;
+  max-width: 480px;
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0.8;
+}
+
+/* below 900px: one column — each fact is its label above its value; long company names and
+   addresses wrap inside the column (never truncated, never wider than the viewport) */
+.i1-footer__facts {
+  margin: 0;
+  display: grid;
+  gap: 16px;
+  font-size: 14px;
+}
+
+.i1-footer__facts div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.i1-footer__facts dt {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  opacity: 0.6;
+}
+
+.i1-footer__facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* a comfortable tap target for the address on touch widths */
+.i1-footer__facts a {
+  display: inline-block;
+  /* a taller hit area that does not move the value off its label */
+  padding: 2px 0;
+  margin-block: -2px;
+}
+
+/* a small note under the business facts (site.footer notice): secondary tone, never a banner */
+.i1-footer__notice {
+  margin: 28px 0 0;
+  max-width: 720px;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  opacity: 0.55;
+}
+
+/* ---------------------------------------------- desktop band (≥ 900px) */
+
+@media (min-width: 900px) {
+  :root {
+    --i1-gutter: 40px;
+  }
+
+  .i1-header__inner {
+    height: 72px;
+  }
+
+  .i1-header__nav {
+    display: flex;
+    gap: 28px;
+  }
+
+  .i1-header__menu,
+  .i1-menu {
+    display: none;
+  }
+
+  .i1-header__logo {
+    height: 28px;
+  }
+
+  .i1-header__wordmark {
+    font-size: 22px;
+  }
+
+  .i1-projects {
+    padding: 104px 0 112px;
+  }
+
+  .i1-projects + .i1-projects {
+    padding-top: 48px;
+  }
+
+  .i1-projects__inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "head more"
+      "track track";
+    column-gap: 32px;
+  }
+
+  .i1-projects__head {
+    margin-bottom: 40px;
+  }
+
+  .i1-projects__more {
+    align-self: start;
+    margin-top: 0;
+  }
+
+  .i1-projects__title {
+    font-size: 32px;
+  }
+
+  .i1-card__title {
+    font-size: 18px;
+    margin-top: 16px;
+  }
+
+  .i1-footer {
+    padding: 64px 0 72px;
+  }
+
+  /* inner pages: the same space before the footer */
+  .i1-plist,
+  .i1-detail {
+    padding-bottom: 96px;
+  }
+
+  .i1-pbrowse__results {
+    scroll-margin-top: 88px;
+  }
+
+  /* portfolio list: tablet band = 2 columns */
+  .i1-plist__hero img {
+    height: 320px;
+  }
+
+  .i1-plist__head {
+    padding: 56px 0 40px;
+  }
+
+  .i1-plist__title {
+    font-size: 34px;
+  }
+
+  .i1-plist__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 56px 24px;
+  }
+
+  /* filters: inline panel, no toggle */
+  .i1-pfilter__toggle {
+    display: none;
+  }
+
+  /* result actions (reset · sort) follow the count, never the row's right end: that corner is the
+     floating seat's (bottom-right), and at common desktop heights (1440×900) the row lands there
+     on first load (1.4.0, when the seat became site-wide) */
+  .i1-pfilter__status {
+    justify-content: flex-start;
+    gap: 8px 32px;
+  }
+
+  .i1-pfilter__search {
+    flex: 0 1 420px;
+  }
+
+  .i1-pfilter__panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 24px 32px;
+    padding: 24px 0;
+  }
+
+  .i1-plist:has(> .i1-plist__hero) > .i1-container > .i1-plist__head {
+    padding-bottom: 40px;
+  }
+
+  .i1-plist:has(> .i1-plist__hero) > .i1-container > .i1-plist__head + * {
+    margin-top: 40px;
+  }
+
+  /* detail: tablet band keeps the gallery-first structure */
+  .i1-detail__gallery {
+    margin: 0 -40px;
+  }
+
+  .i1-gallery__tabs {
+    padding: 12px 40px;
+  }
+
+  .i1-gallery__item {
+    flex-basis: 72%;
+    aspect-ratio: 4 / 3;
+  }
+
+  .i1-detail__title {
+    font-size: 32px;
+  }
+
+  .i1-facts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .i1-footer__inner {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+  }
+
+  /* desktop footer as before: label | value on one line */
+  .i1-footer__summary {
+    margin-top: 8px;
+    line-height: inherit;
+  }
+
+  .i1-footer__facts {
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .i1-footer__facts div {
+    flex-direction: row;
+    gap: 12px;
+  }
+
+  .i1-footer__facts dt {
+    min-width: 64px;
+    font-size: inherit;
+    letter-spacing: normal;
+  }
+
+  .i1-footer__facts a {
+    display: inline;
+    padding: 0;
+    margin-block: 0;
+  }
+}
+
+/* ------------------------------------------ wide desktop band (≥ 1281px) */
+
+@media (min-width: 1281px) {
+  .i1-plist__hero img {
+    height: 400px;
+  }
+
+  .i1-plist__head {
+    padding: 72px 0 48px;
+  }
+
+  .i1-plist__title {
+    font-size: 40px;
+  }
+
+  .i1-plist:has(> .i1-plist__hero) > .i1-plist__hero {
+    min-height: 320px;
+  }
+
+  .i1-plist:has(> .i1-plist__hero) > .i1-container > .i1-plist__head {
+    padding-bottom: 48px;
+  }
+
+  .i1-plist__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 72px 32px;
+  }
+
+  /* detail: title first, room tabs, photo grid, then story | facts */
+  .i1-detail__layout {
+    grid-template-areas:
+      "bar"
+      "head"
+      "gallery"
+      "info";
+  }
+
+  .i1-detail__bar {
+    height: 56px;
+  }
+
+  .i1-detail__head {
+    padding: 24px 0 36px;
+  }
+
+  .i1-detail__title {
+    font-size: 40px;
+  }
+
+  .i1-detail__summary {
+    font-size: 16px;
+  }
+
+  .i1-detail__gallery {
+    margin: 0;
+  }
+
+  .i1-gallery__tabs {
+    flex-wrap: wrap;
+    padding: 0 0 28px;
+    overflow: visible;
+  }
+
+  .i1-gallery__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+
+  .i1-gallery__item {
+    aspect-ratio: 1 / 1;
+  }
+
+  .i1-gallery__item:first-child {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+
+  /* GALLERY_COLLAPSED = 5 tiles (lead 2×2 + a 2×2 block) until "show all" */
+  .i1-gallery__panel {
+    position: relative;
+  }
+
+  .i1-gallery__panel.is-collapsed .i1-gallery__item:nth-child(n + 6) {
+    display: none;
+  }
+
+  .i1-gallery__more {
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+    margin-top: 16px;
+    padding: 0 20px;
+    border: 1px solid var(--color-text-primary);
+    border-radius: var(--decoration-radius-pill);
+    background: var(--color-canvas);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .i1-gallery__panel.is-collapsed .i1-gallery__more {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    margin: 0;
+    border-color: transparent;
+    background: color-mix(in srgb, var(--color-text-primary) 72%, transparent);
+    color: var(--color-text-inverse);
+  }
+
+  .i1-detail__info {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 64px;
+    padding-top: 88px;
+  }
+
+  /* story in the left column (spanning both rows), facts then CTA in the right column */
+  .i1-detail__info {
+    grid-template-rows: auto 1fr;
+    align-items: start;
+  }
+
+  .i1-detail__story {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .i1-facts,
+  .i1-detail__cta {
+    grid-column: 2;
+  }
+
+  .i1-detail__cta {
+    margin-top: 36px;
+  }
+
+  /* no story → facts and CTA take the reading column instead of leaving it empty */
+  .i1-detail__info--no-story .i1-facts,
+  .i1-detail__info--no-story .i1-detail__cta {
+    grid-column: 1;
+  }
+
+  .i1-gallery__counter,
+  .i1-gallery__arrow {
+    display: none;
+  }
+
+  .i1-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 36px 32px;
+  }
+
+  .i1-facts__row dd {
+    font-size: 20px;
+  }
+}
+
+/* ============================================================ homepage (1.3.0) */
+/* Base = mobile; ≥ 900px = desktop band (observed home breakpoint). One DOM for every
+   width: nothing here depends on JavaScript viewport branching. */
+
+.i1-icon {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Korean copy (site-wide) wraps at word (eojeol) boundaries, never mid-word; very long
+   tokens still wrap. */
+:lang(ko) body {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* in-page anchors (#projects, #reviews …) land below the sticky header */
+.i1-main > section[id] {
+  scroll-margin-top: 72px;
+}
+
+/* shared pill link: intro CTA, showcase "view all", hero CTA */
+.i1-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px 0 22px;
+  border-radius: var(--decoration-radius-pill);
+  background: var(--color-action-primary);
+  color: var(--color-action-primary-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+.i1-pill .i1-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.i1-pill--light {
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+}
+
+/* ------------------------------------------------------------------ hero */
+
+.i1-hero {
+  position: relative;
+  background: var(--color-surface-secondary);
+}
+
+.i1-hero__slides {
+  display: grid;
+  /* one flexible track: the hero is its design height (the images are out of flow, so their
+     natural height never sizes it — 1440×700, 1920×1080), and grows only when the tallest
+     slide's copy needs more room — long copy is never clipped at the top */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  min-height: max(380px, 150vw);
+  min-height: max(380px, min(150vw, 80svh));
+  overflow: hidden;
+  /* clip, not a scroll container: the full-width scrim may overhang by half a classic
+     scrollbar, which must not become scrollable from script / find-in-page */
+  overflow: clip;
+  touch-action: pan-y pinch-zoom;
+}
+
+.i1-hero__slide {
+  grid-area: 1 / 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 0;
+  min-height: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.7s ease,
+    visibility 0s linear 0.7s;
+}
+
+.i1-hero__slide[data-active="true"] {
+  z-index: 1;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.7s ease;
+}
+
+.i1-hero__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
+
+/* bottom-anchored copy in flow: its height (any length the schema allows) sizes the hero */
+.i1-hero__copy {
+  position: relative;
+  z-index: 1;
+  padding-top: 32px;
+  padding-bottom: 72px;
+  color: var(--color-text-inverse);
+}
+
+/* readable copy over any photo: the scrim belongs to the copy block, so it is dark behind
+   every line of it however tall it grows, and fades out 200px above it (full slide width;
+   the slides box clips the overhang) */
+.i1-hero__copy::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -200px;
+  bottom: 0;
+  left: calc(50% - 50vw);
+  width: 100vw;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0) 0, rgb(0 0 0 / 0.55) 200px, rgb(0 0 0 / 0.6) 100%);
+  pointer-events: none;
+}
+
+.i1-hero__headline {
+  margin: 0;
+  max-width: 640px;
+  font-family: var(--typography-heading);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 14px rgb(0 0 0 / 0.35);
+}
+
+.i1-hero__text {
+  margin: 10px 0 0;
+  max-width: 560px;
+  font-size: 15px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.i1-hero__copy .i1-pill {
+  max-width: 100%;
+  margin-top: 20px;
+  overflow-wrap: anywhere;
+}
+
+/* one slide: no pager to keep clear of */
+.i1-hero[data-slides="1"] .i1-hero__copy {
+  padding-bottom: 40px;
+}
+
+/* below 900px the arrows sit in the pager row — the copy's bottom padding keeps that row
+   clear of any copy length — and the pager gives way to them (its dots narrow, down to the
+   visible dot, only when 7–8 slides meet a ≤ 360px screen) */
+.i1-hero__arrow {
+  position: absolute;
+  bottom: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--decoration-radius-pill);
+}
+
+.i1-hero__arrow--prev {
+  left: 12px;
+}
+
+.i1-hero__arrow--next {
+  right: 12px;
+}
+
+.i1-hero__pager {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  max-width: calc(100% - 112px);
+  padding: 0 6px;
+  transform: translateX(-50%);
+  border-radius: var(--decoration-radius-pill);
+  background: rgb(0 0 0 / 0.38);
+}
+
+.i1-hero__toggle,
+.i1-hero__dot,
+.i1-hero__arrow {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.i1-hero__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--color-text-inverse);
+}
+
+/* the arrow disc (after the shared control reset above) */
+.i1-hero__arrow {
+  background: color-mix(in srgb, var(--color-canvas) 72%, transparent);
+  color: var(--color-text-primary);
+}
+
+/* 24 × 28 hit area (active: 36 × 28); the visible dot is drawn inside */
+.i1-hero__dot {
+  position: relative;
+  flex: 0 1 auto;
+  width: 24px;
+  min-width: 12px;
+  height: 28px;
+}
+
+.i1-hero__toggle {
+  flex-shrink: 0;
+}
+
+.i1-hero__dot::before,
+.i1-hero__fill {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: var(--decoration-radius-pill);
+}
+
+.i1-hero__dot::before {
+  background: rgb(255 255 255 / 0.45);
+}
+
+.i1-hero__fill {
+  background: var(--color-text-inverse);
+  opacity: 0;
+  transform-origin: left center;
+}
+
+.i1-hero__dot[aria-current] {
+  flex-shrink: 0;
+  width: 36px;
+}
+
+.i1-hero__dot[aria-current]::before,
+.i1-hero__dot[aria-current] .i1-hero__fill {
+  width: 24px;
+  margin-left: -12px;
+}
+
+.i1-hero__dot[aria-current] .i1-hero__fill {
+  opacity: 1;
+}
+
+/* autoplay: the active dot fills over 5 s; its animationend advances the slide */
+.i1-hero__fill.is-timing {
+  animation: i1-hero-timer 5s linear forwards;
+}
+
+.i1-hero[data-paused="true"] .i1-hero__fill.is-timing {
+  animation-play-state: paused;
+}
+
+@keyframes i1-hero-timer {
+  from {
+    transform: scaleX(0.34);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.i1-hero__toggle:focus-visible,
+.i1-hero__dot:focus-visible,
+.i1-hero__arrow:focus-visible {
+  outline: 2px solid var(--color-text-inverse);
+  outline-offset: 0;
+  box-shadow: 0 0 0 4px rgb(0 0 0 / 0.6);
+}
+
+/* ----------------------------------------------------------------- intro */
+
+.i1-intro {
+  padding: 64px 0 24px;
+}
+
+/* the intro normally hands its bottom space to the next section; as the last one it
+   keeps its own before the footer */
+.i1-intro:last-child {
+  padding-bottom: 72px;
+}
+
+.i1-intro__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.i1-intro__media {
+  width: 100%;
+  max-width: 440px;
+}
+
+.i1-intro__media img {
+  width: 100%;
+  border-radius: var(--decoration-radius-medium);
+  background: var(--color-surface-secondary);
+}
+
+.i1-intro__copy {
+  min-width: 0;
+}
+
+.i1-intro__title {
+  margin: 0;
+  max-width: 18em;
+  font-family: var(--typography-heading);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.i1-intro__body {
+  margin-top: 16px;
+  max-width: 34em;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.i1-intro__body p {
+  margin: 0 0 10px;
+}
+
+.i1-intro__cta {
+  margin-top: 20px;
+}
+
+/* ------------------------------------------------------------ showcases */
+
+.i1-track {
+  min-width: 0;
+}
+
+.i1-track__list {
+  list-style: none;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 84%;
+  gap: 16px;
+  /* room for focus rings inside the scroll clip */
+  margin: -4px;
+  padding: 4px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 4px;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.i1-track__list::-webkit-scrollbar {
+  display: none;
+}
+
+.i1-track__list > li {
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+.i1-track__bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+/* nothing to scroll (all items fit, as measured after hydration): no rail, no controls and no
+   reserved space. The server HTML shows the bar (measurement needs layout), so a track that
+   fits drops its bar once, after hydration, below it on the page. */
+.i1-track[data-scrollable="false"] .i1-track__bar {
+  display: none;
+}
+
+.i1-track__rail {
+  position: relative;
+  flex: 1;
+  height: 2px;
+  overflow: hidden;
+  background: var(--color-border-default);
+}
+
+.i1-track__thumb {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  background: var(--color-text-primary);
+  transition:
+    left 0.2s ease,
+    width 0.2s ease;
+}
+
+.i1-track__nav {
+  display: none;
+  gap: 8px;
+}
+
+/* touch widths swipe the list itself; a mouse/trackpad user at a narrow (or zoomed) width
+   gets the paging buttons too */
+@media (hover: hover) and (pointer: fine) {
+  .i1-track__nav {
+    display: flex;
+  }
+}
+
+/* 600–899px: two items per view instead of one stretched card */
+@media (min-width: 600px) and (max-width: 899.98px) {
+  .i1-track__list {
+    grid-auto-columns: calc((100% - 16px) / 2);
+  }
+}
+
+.i1-track__btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--decoration-radius-pill);
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.i1-track__btn[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.35;
+}
+
+/* showcase cards: wider photo, two-line summary */
+.i1-track .i1-card__media {
+  aspect-ratio: 29 / 19;
+}
+
+.i1-track .i1-card__summary {
+  display: -webkit-box;
+  margin-top: 4px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* --------------------------------------------------------------- reviews */
+
+.i1-reviews {
+  padding: 48px 0 72px;
+}
+
+.i1-reviews__media {
+  margin: 0 0 32px;
+}
+
+.i1-reviews__media img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: var(--decoration-radius-medium);
+  background: var(--color-surface-secondary);
+}
+
+.i1-reviews__title {
+  margin: 0 0 28px;
+  font-family: var(--typography-heading);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+/* below 600px: two reviews stacked per swipe column; 600–899px: one row, two per view, so
+   the numbered quotes read 01 02 03 … left to right */
+.i1-track--reviews .i1-track__list {
+  grid-template-rows: auto auto;
+  row-gap: 36px;
+}
+
+@media (min-width: 600px) and (max-width: 899.98px) {
+  .i1-track--reviews .i1-track__list {
+    grid-template-rows: auto;
+  }
+}
+
+.i1-review__figure {
+  margin: 0;
+}
+
+.i1-review__index {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.i1-review__quote {
+  margin: 0;
+}
+
+.i1-review__quote p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.i1-review__by {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* ------------------------------------------------------------ image band */
+
+.i1-band__img {
+  width: 100%;
+  min-height: 280px;
+  max-height: 760px;
+  object-fit: cover;
+  background: var(--color-surface-secondary);
+}
+
+/* ------------------------------------------------------ floating contact */
+
+/* THE bottom-right floating seat: a viewport-fixed position contract, never document flow.
+   Site-wide (1.4.0): the footer renders it on every page. The contact pill sits here at every
+   width and scroll position; a future chat launcher takes the same seat
+   (sections/FloatingCta.tsx). iPhone-style safe-area insets add to the seat;
+   where the browser reports none (every non-iOS browser, and iOS without viewport-fit=cover)
+   env() falls back to 0 and the seat is exactly these values. */
+:root {
+  --i1-float-right: 16px;
+  --i1-float-bottom: 16px;
+  --i1-float-height: 48px;
+}
+
+.i1-fcta {
+  position: fixed;
+  right: calc(var(--i1-float-right) + env(safe-area-inset-right, 0px));
+  bottom: calc(var(--i1-float-bottom) + env(safe-area-inset-bottom, 0px));
+  z-index: 20;
+  /* the wrapper's box is exactly the pill: no line box around an inline-level link */
+  display: flex;
+}
+
+.i1-fcta__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--i1-float-height);
+  padding: 0 18px 0 14px;
+  /* canvas-coloured edge keeps the button visible over the dark footer too */
+  border: 2px solid var(--color-canvas);
+  border-radius: var(--decoration-radius-pill);
+  background: var(--color-action-primary);
+  color: var(--color-action-primary-text);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+}
+
+.i1-fcta__link:focus-visible {
+  outline: 2px solid var(--color-action-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px var(--color-canvas);
+}
+
+/* end of page: the footer's last lines stay clear of the fixed button (seat + button + 32px);
+   not on /contact, where the seat is hidden (1.5.0) */
+body:has(.i1-fcta):not(:has(.i1-main[data-page="contact"])) .i1-footer {
+  padding-bottom: calc(var(--i1-float-bottom) + var(--i1-float-height) + 32px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 900px) {
+  :root {
+    --i1-float-right: 24px;
+    --i1-float-bottom: 50px;
+    --i1-float-height: 56px;
+  }
+
+  .i1-pill {
+    min-height: 48px;
+    padding: 0 20px 0 26px;
+    font-size: 15px;
+  }
+
+  .i1-hero__slides {
+    min-height: max(480px, 56.8vw);
+    min-height: max(480px, min(56.8vw, calc(100svh - 72px)));
+  }
+
+  .i1-hero__copy {
+    padding-top: 48px;
+    padding-bottom: 104px;
+  }
+
+  .i1-hero[data-slides="1"] .i1-hero__copy {
+    padding-bottom: 64px;
+  }
+
+  /* with prev/next arrows (left/right 40px of the hero, 44px wide) the copy keeps clear of
+     both arrow columns at any hero height: 108px inset up to 1440px, relaxing to the
+     page's 40px edge as the centred 1440px column moves away from the arrows */
+  .i1-hero:not([data-slides="1"]) .i1-hero__copy {
+    padding-inline: clamp(var(--i1-gutter), calc(108px - (100% - var(--i1-page-max)) / 2), 108px);
+  }
+
+  .i1-main > section[id] {
+    scroll-margin-top: 88px;
+  }
+
+  .i1-hero__headline {
+    font-size: 44px;
+  }
+
+  .i1-hero__text {
+    margin-top: 14px;
+    font-size: 17px;
+  }
+
+  .i1-hero__pager {
+    bottom: 32px;
+    max-width: none;
+  }
+
+  /* ≥ 900px: beside the photo, mid-height (the copy keeps clear of both columns, above) */
+  .i1-hero__arrow {
+    top: 50%;
+    bottom: auto;
+    width: 44px;
+    height: 44px;
+    margin-top: -22px;
+  }
+
+  .i1-hero__arrow--prev {
+    left: 40px;
+  }
+
+  .i1-hero__arrow--next {
+    right: 40px;
+  }
+
+  .i1-intro {
+    padding: 144px 0 48px;
+  }
+
+  .i1-intro:last-child {
+    padding-bottom: 144px;
+  }
+
+  .i1-intro__inner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 80px;
+  }
+
+  .i1-intro__media {
+    flex: 0 1 510px;
+    max-width: 510px;
+  }
+
+  .i1-intro__copy {
+    flex: 0 1 440px;
+  }
+
+  .i1-intro:not(.i1-intro--media) .i1-intro__copy {
+    flex-basis: 640px;
+  }
+
+  .i1-intro__title {
+    font-size: 34px;
+  }
+
+  .i1-track__list {
+    grid-auto-columns: calc((100% - 100px) / 3);
+    gap: 50px;
+  }
+
+  .i1-track__bar {
+    margin-top: 36px;
+  }
+
+  .i1-track__nav {
+    display: flex;
+  }
+
+  .i1-reviews {
+    padding: 64px 0 112px;
+  }
+
+  /* observed composition: a right-anchored review column under the banner image; without
+     the image the column keeps the page's left edge like every other section */
+  .i1-reviews__inner--media {
+    width: 85%;
+    margin-left: auto;
+  }
+
+  .i1-reviews__media {
+    margin-bottom: 56px;
+  }
+
+  .i1-reviews__media img {
+    height: clamp(220px, 20vw, 290px);
+  }
+
+  .i1-reviews__title {
+    margin-bottom: 44px;
+    font-size: 32px;
+  }
+
+  .i1-track--reviews .i1-track__list {
+    grid-template-rows: auto;
+  }
+
+  .i1-review__quote p {
+    font-size: 18px;
+  }
+
+  .i1-fcta__link {
+    padding: 0 24px 0 20px;
+    font-size: 15px;
+  }
+}
+
+/* Reduced motion: no rotation (no animation → no animationend), no cross-fade, no smooth
+   scrolling; nothing rotates, so no pause control either. Content stays fully visible. */
+@media (prefers-reduced-motion: reduce) {
+  .i1-hero__slide,
+  .i1-hero__slide[data-active="true"] {
+    transition: none;
+  }
+
+  .i1-hero__fill.is-timing {
+    animation: none;
+  }
+
+  .i1-hero__toggle {
+    display: none;
+  }
+
+  .i1-track__list,
+  .i1-gallery__grid {
+    scroll-behavior: auto;
+  }
+
+  .i1-track__thumb {
+    transition: none;
+  }
+}

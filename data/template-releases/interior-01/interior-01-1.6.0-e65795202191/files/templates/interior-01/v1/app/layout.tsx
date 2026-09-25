@@ -1,0 +1,45 @@
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import { getSiteContext } from "@platform/site/bound";
+import template from "../template";
+import { headScriptTags } from "./head-scripts";
+import { SiteFooter } from "../sections/SiteFooter";
+import "../styles/template.css";
+
+export function generateMetadata(): Metadata {
+  const ctx = getSiteContext(template);
+  const business = ctx.content.getSingleton("business");
+  return {
+    title: ctx.identity.brandName,
+    description: business.summary,
+    ...(ctx.identity.publicOrigin ? { metadataBase: new URL(ctx.identity.publicOrigin) } : {}),
+    // 1.5.2: a site that must not be indexed (site.seo indexing "noindex") says so on every page;
+    // robots.txt keeps allowing the crawl so that crawlers can read it. Preview stays noindex,nofollow.
+    robots: ctx.mode === "preview" ? { index: false, follow: false } : ctx.settings["site.seo"].indexing === "noindex" ? { index: false } : undefined,
+  };
+}
+
+/**
+ * The site shell. The footer (and with it the site-wide floating seat) is rendered HERE, after
+ * every page's own header + <main>: one instance for the whole site that survives client-side
+ * navigation — a future chat launcher in the seat keeps its state across pages.
+ *
+ * The head carries the site's own theme plus whatever third-party scripts the SITE declares
+ * (head-scripts.ts). Those load async unless the site's document says defer, so nothing a site
+ * adds to its head can block the page from rendering.
+ */
+export default function RootLayout({ children }: { children: ReactNode }) {
+  const ctx = getSiteContext(template);
+  return (
+    <html lang={ctx.identity.locale}>
+      <head>
+        <style id="site-theme" dangerouslySetInnerHTML={{ __html: ctx.themeCss }} />
+        {headScriptTags(ctx)}
+      </head>
+      <body>
+        {children}
+        <SiteFooter ctx={ctx} />
+      </body>
+    </html>
+  );
+}
