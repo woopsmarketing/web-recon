@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| status | **CANDIDATE rev 9.1 — not frozen. SCOPE NARROWED.** Budget comparison is deferred to a V0.3 consumer annex (§17.1) under the pre-commitment in `00-work-plan.md` §2.4; see `16-narrowing-decision.md`. V0.2 matches on **breadth, scope and area**, states prices as facts, and **amends no frozen V0 rule**. Rev 9 applies `22-rev9-design.md`'s `D9-6` — `D9-1`, `D9-2c` and `EF6`'s new row as **one change** — plus `D9-4` (`VB3`), `D9-5a` (`WS6`) and round 8's eight MAJORs. **Rev 9.1 is a corrections pass over rev 9's own text and adds no new scope**: it applies `D9-7a` (`EF3`'s ambiguity clause), `D9-8` (ordering key (3)), `D9-9` (disclosure membership), replaces every superseded `PB4` figure with the corrected measurement over 798 pairs, moves `EF6` row 7's justification from `PB4` to disclosure, deletes a retracted witness, and records `Q-29` as open with three dead candidates; see §20.8. Delta review of rev 9.1 pending. |
-| date | 2026-09-24 |
-| revision | rev 9.1 — a corrections pass over rev 9 under `20-pipeline-checker.md` §§5c–5g and `22-rev9-design.md` §5c's decision ledger (`D9-7a`, `D9-8`, `D9-9`, `D9-10`/`Q-29`), plus the corrected `PB4` baseline; **no rule id changes and no scope changes**; see §20.8. rev 9 — corrections for `17-delta-review-rev8.md` (BLOCKER 4, MAJOR 8, MINOR 16, NOTE 6), `17b-fixture-execution-rev8.md` (`X8-1`…`X8-24`), `20-pipeline-checker.md` and its audit `21-pipeline-audit.md`, under the decisions of `22-rev9-design.md`; see §20.7. rev 8 — scope narrowed after `15-delta-review-rev7.md` (BLOCKER 3, MAJOR 4, MINOR 9, NOTE 5) and `15b-fixture-execution-rev7.md`; see §20.6 and `16-narrowing-decision.md`. rev 7 — corrections for `13-delta-review-rev6.md` (BLOCKER 1, MAJOR 8, MINOR 9, NOTE 6); see §20.5. rev 6 — corrections for `11-delta-review-rev5.md` (BLOCKER 4, MAJOR 8, MINOR 10, NOTE 6) and for round 4's seven unapplied MINOR/NOTEs; see §20.4 and `12-rev6-disposition.md`. rev 5 — §14.3–§14.5 replaced by one end-to-end **evaluation function** (§14.3), on the round-4 reviewer's own recommendation, plus that round's 2 BLOCKER / 4 MAJOR / 12 MINOR-NOTE; see §20.3. rev 4 — corrections for the rev-3 delta review (`08-delta-review-rev3.md`: BLOCKER 4, MAJOR 7, MINOR/NOTE 12); see §20.2. rev 3 — corrections for the rev-2 delta review (`06-delta-review.md`: BLOCKER 3, MAJOR 11); §20.1. rev 2 — rewritten after two independent fresh-context reviews (BLOCKER 6, MAJOR 15). Dispositions: `docs/result/interior-portfolio-v0.2/05-review-disposition.md` |
+| status | **READY CANDIDATE rev 9.2.1 — owner questions closed; not frozen until the consumer confirmations of §16.** V0.2 ranks on **project type, work scope, area and total price** (style a weak bonus, location never), with one match class, four tiers and one fixed order (§14.3). Budget comparison is back in one form — a total budget against the total price of an `exact` record only — and V0.2 therefore amends V0 `PR4` for `pricing.total` (§16). |
+| date | 2026-09-25 |
+| revision | rev 9.2.1 — closeout: owner decisions `OQ-1`…`OQ-6` recorded (§18), `34d`'s minors fixed (§20.9). Rev 9.2 — product simplification under the owner brief of 2026-09-25 and `32-round-9-handoff.md`: the evaluation function (§14.3) is replaced, the retired machinery and every change log before §20.9 move to `archive/07-rev9.1-corrected.md`. See §20.9. Earlier revisions: rev 9.1 (corrections pass), rev 9, rev 8 (the narrowing), rev 1–7 — all in the archive. |
 | supersedes | `02-integration-contract-v0-candidate.md` (FROZEN V0, schemaVersion `0.1`) |
 | normative | this file. `08-integration-contract-v0.2.json` is derived from it; any disagreement is a defect of that file. |
 | canonical owner | **web-recon**. The consumer (BoostChat) holds a *consumer confirmation*, never a second copy of the contract. |
@@ -199,13 +199,11 @@ other — a `partial_remodel` is *defined* by the spaces it leaves out, so a sin
 > living room's layout, fixtures and built-in elements did not change — so the record would carry
 > `[flooring]` and no `Spaces` id, and `INV-30` would reject it. This is `bi-19`'s case at one-room
 > scale and it takes `bi-19`'s answer: the document does not establish how much of the dwelling the
-> price bought, so breadth stays unknown. **Cost, accepted:** such a job's total is reachable and
-> statable (`GR1`; `GR3` is not a filter, so the record is returned and ordered by its class) but
-> never a budget match — in V0.2 because no record is (§14.3.5),
-> and in V0.3 because `PB5` will still refuse it. Closing it properly
-> needs the producer-declared closed **trade** set deferred in §17. *(Without this sentence `PT5`,
-> `WS9` and `INV-30` have no authoring that satisfies all three — the round-6 reviewer's `M-6`, and
-> the answer to §18's `Q-19`.)*
+> price bought, so breadth stays unknown. **Cost, accepted:** such a job is never a direct answer to
+> any request; on a trade-only request it is `fallback`, ordered by the trades it lists (`EV2`,
+> `OQ-1`), and its total is stated as a fact (`GR1`). Closing it properly needs the
+> producer-declared closed **trade** set deferred in §17.2. *(Without this sentence `PT5`, `WS9` and
+> `INV-30` have no authoring that satisfies all three — the round-6 reviewer's `M-6`.)*
 >
 > **PT6 (authoring rule — not machine-checked)** — in every other case `projectType` is **omitted**: the source frames the project as
 > something other than a remodel (홈스타일링, staging, furnishing), or makes no statement of breadth
@@ -347,54 +345,23 @@ purpose: that is how visitors speak ("주방이랑 욕실", "바닥이랑 도배
 >   (부엌→`kitchen`, 화장실→`bathroom`, 싱크대→`kitchen`) belongs to the consumer and is **never**
 >   emitted by the producer. V0 `02` §11.2 ownership, unchanged.
 >
->   **An ambiguous term is carried, never silently resolved (`C: MUST`).** Where a visitor's word
->   maps to more than one id under the consumer's own table — 수납 to `storage` or to
->   `built_in_furniture`, 복도 to `hallway` or to nothing at all — the consumer does **not** pick a
->   reading. `V.scope` carries **every** reading the term admits (§14.3.1); `EF3` resolves them per
->   record (§14.3.2); and when the readings do not agree the consumer **says the term was
->   ambiguous**. The consumer's table is still the consumer's — the contract constrains only that an
->   unresolved tie is never decided out of sight.
+>   **One reading per term (`C: MUST`; rev 9.2).** The consumer's table maps each visitor term to
+>   **one** id or to none, so a query has exactly one `Q` (§14.3.1). Where a word has more than one
+>   plausible reading — 수납 as `storage` or as `built_in_furniture`, 복도 as `hallway` or as nothing —
+>   the table fixes one, and the reply says which reading it used (§14.3.6). The choice is the
+>   consumer's and is part of `V`; the evaluation is a function of `V` (§14.3.1).
 >
->   ***"Do not agree"* is defined in `EF3` and nowhere else (rev 9.1, `D9-7a`)**: the readings
->   disagree when they produce **different criterion states OR different relations**. The
->   states-only reading rev 9 carried was not enough — §14.3.2 records the two holes it left and the
->   two constructed witnesses that found them. Two further sites read a multi-reading `V.scope` and
->   each states which reading it takes: ordering key (3) takes the **intersection** (§14.3.6,
->   `D9-8`), and a row disclosure names the intersection **of the disclosure sets** (§14.3.3,
->   `CINV-17`, `D9-9`).
->
->   *Worked, on the corpus.* *"현관 수납"*, where 수납 admits `storage` (a **Space**, §7.3) and
->   `built_in_furniture` (a **Work**), against `bi-18` (`partial_remodel`,
->   `workScopeIds = [entrance, built_in_furniture]`): reading A has `Q_s = {entrance, storage}`,
->   `Q_t = ∅`, so `R_s ⊊ Q_s` — §14.3.3 **row 6**, `scope_subset`; reading B has `Q_s = {entrance}`,
->   `Q_t = {built_in_furniture}`, so `R_s == Q_s` and `Q_t ⊆ R_t` — **row 3**, `scope_exact`. The two
->   relations differ, so the scope criterion is `not_evaluable` and the reply says the term was
->   ambiguous. No reading is chosen, and neither `scope_subset` nor `scope_exact` is asserted.
->
->   **Rev 9 rewrote this clause; the id is unchanged (`D9-5a`).** Through rev 8 it read *"the
->   consumer takes the reading that does **not** permit a price comparison"*. §14.3.5 leaves **no**
->   reading that permits one, on either branch, so the discriminator was constantly false, the rule
->   selected neither reading, and no conforming consumer could be written — round 8's `B8-1`, `17b`'s
->   `X8-23`, the pipeline checker's gap 5. The replacement does not choose better; it stops choosing.
->   It also closes `M7-3` — *a per-record discriminator for a per-query object* — properly: there is
->   no discriminator, `Q` stays a single per-query object holding both readings, and the only
->   per-record step is `EF3`, which is per-record by definition. `WS9` closed the authoring side of
->   the same ambiguity; this closes the query side. Rule `P` requires the visitor be told when a
->   match is not exact; this extends that to being told when the **question** was not exact.
->
->   **What was deliberately *not* transcribed.** §20.6's `M7-3` row says the tie-break *"is now about
->   which reading yields the weaker class, decided **once per query**"*. That sentence has never been
->   in `WS6` and is **not** promoted into it. A class is a function of a **record**; there is no
->   class until a record is named, so a rule cannot take the weaker class *once per query* without
->   either aggregating over the whole result — no aggregation is defined anywhere — or deciding per
->   record, which is not once per query. Transcribing it would ship `M7-3` inside the sentence that
->   claims to close it, and it also overturns `04` §4.1 row I's stated answer (수납 → `storage`,
->   making `bi-18` `scope_subset` rather than `exact`). Recorded as a rejected alternative in §20.7.
+>   *Rev 9.2.* Through rev 9.1 an ambiguous term put **every** reading into `V.scope`, and three rules
+>   (`D9-7a`, `D9-8`, `D9-9`) reconciled the per-reading results — one of them by assigning a state
+>   outside the rule that owns states (`31-` `B9-3`). Row I of `04` §4.1 showed the cost: on
+>   *"현관 수납"* the one matching record, `bi-18`, came back `not_evaluable`, below six whole-home
+>   remodels. One reading per term deletes all three rules and the conflict with them. The rev-9.1
+>   text is in the archive.
 > - **WS7a (P: MUST, C: MAY rely on)** — when `projectType == "partial_remodel"`,
 >   `workScopeIds ∩ Spaces` is **closed** in exactly the sense `WS9` authors in: it is the complete
 >   set of spaces **that were remodelled** — spaces whose layout, fixtures or built-in elements
 >   changed. This is what makes `PT2`'s *"covers only that subset"* mean something, and it is what
->   §14.3.3's relations are computed over.
+>   `EV2` row 6's `R_s = Q_s` reads (§14.3.2).
 >
 >   **An absent space id means that space was not remodelled. It does not mean no work reached it.**
 >   `bi-17` authored `[living_room, flooring]` and its 12,500,000 re-floored the bedrooms, because
@@ -429,9 +396,9 @@ purpose: that is how visitors speak ("주방이랑 욕실", "바닥이랑 도배
 > - **WS8 (C: MUST)** — an id the consumer does not know is an **unknown value**: ignore that id,
 >   keep the record, never reject the document (§12). **Dropping an id does not make the remaining
 >   set a fact:** `WS7a`'s closure holds only for a record every one of whose ids was recognised.
->   For a record the consumer dropped an id from, **no absence may be stated**, and `EF3`'s
->   `partial_remodel` branch — which is where the criterion state is assigned, never here — returns
->   `not_evaluable` (`CINV-9`). Adding an id is a **minor** bump
+>   For a record the consumer dropped an id from, **no absence may be stated**, and `EV2` row 6 —
+>   which is where the class is assigned, never here — does not make it `exact` (`CINV-9`). Adding an
+>   id is a **minor** bump
 >   (§3), so a `1.0` consumer reading a `1.1` document is the designed-for case, not an error case.
 > - **WS9 (AUTHORING rule — not machine-checked, not a `VA1` condition)** — guidance for whoever
 >   fills the authored field.
@@ -451,12 +418,9 @@ purpose: that is how visitors speak ("주방이랑 욕실", "바닥이랑 도배
 >   above ("its built-in elements changed") and §7.3's ("joinery built *inside* another space is
 >   `built_in_furniture`") both hold, one record supports two authorings, and **one utterance gets
 >   two opposite scope relations and two opposite disclosures**: `bi-18` authored
->   `[entrance, built_in_furniture]` puts *"현관이랑 복도 수납"* on §14.3.3 **row 6** —
->   `scope_subset`, 복도 reported as *not remodelled in this case*; authored
->   `[entrance, hallway, built_in_furniture]` it lands on **row 3**, `scope_exact`, with no absence
->   stated at all. *(Rev 9: this rationale previously read "two opposite **budget verdicts**", which
->   cited machinery deferred to §17.1 — round 8's `m8-3`. The rule itself never rested on the budget
->   column; it rests on the relation, which is in force.)*
+>   `[entrance, built_in_furniture]` makes *"현관이랑 복도 수납"* an `overlap`, with 복도 reported as
+>   *not remodelled in this case*; authored `[entrance, hallway, built_in_furniture]` it is `exact`,
+>   with no absence stated at all (`EV2`).
 >
 >   *Rev 3 said only "when the project **touched** a space", which decides nothing: re-papering a
 >   bedroom either "touches" `bedroom` or does not, and `PT4`(c)/`INV-29` returns the opposite
@@ -574,12 +538,11 @@ one.)*
 >   divisor *is* `property.area`, so its price basis **is** that area's `basis`, or is unknown when
 >   the area has none. `source` is therefore what tells the consumer whether the price basis is
 >   known: `derived` ⇒ it equals `property.area.basis`; `authored` ⇒ unknown (`PA4`).
->   This is what `PB3a` reads: a **comparative** claim needs a known price basis on both sides, and
->   `source` is the only thing that supplies one. (`AR5` is a separate conjunct about the **area**
->   bases; rev 3 conflated the two.) ***`PB3a` is deferred to §17.1 and `source` currently guards
->   nothing in V0.2, which makes no comparative price claim at all. The field is still emitted and
->   still required (`PA1`–`PA5`): it is the input V0.3 restores the rule on, and removing it would
->   make the restoration a schema change instead of a consumer change.***
+>   A **comparative** per-area claim would need a known price basis on both sides, and `source` is
+>   the only thing that supplies one. (`AR5` is a separate conjunct about the **area** bases.)
+>   ***V0.2 compares no `perArea` (§14.3.3), so `source` guards nothing yet. The field is still
+>   emitted and still required (`PA1`–`PA5`): a later per-area comparison reads it, and removing it
+>   would make that a schema change instead of a consumer change.***
 
 There is no range form for `perArea`: V0.2 has no evidence one is needed, and an unnecessary variant
 is an unnecessary way to be wrong.
@@ -743,7 +706,8 @@ A `perArea` whose `source` is missing or unrecognised is treated as **`perArea` 
 less than dropping the record. A `total` whose `kind` is missing or unrecognised is likewise treated
 as **`pricing.total` absent**: the amounts cannot be read without knowing which shape they are, and
 a price the consumer cannot name is not a price. The rest of the record — area, scopes, breadth,
-facets — survives, and `PB4` makes the missing price cost the record nothing.
+facets — survives, and `EV3` gives it the price tier `none` — noted `missing` where the price tier
+applies, `not_applied` where it does not: no evidence, no penalty below it, no exclusion (`PB4`).
 
 > **VA1 (P: MUST)** — the producer's emitter validator is **fail-closed**: an opted-in public build
 > that cannot satisfy every `P: MUST` here **fails the build**; it never silently emits a degraded
@@ -831,611 +795,296 @@ and is recorded in its implementation report, not here.
 
 ### 14.3 The evaluation function
 
-> **Scope note (rev 9).** V0.2's evaluation function has **three** criteria — breadth, scope, area.
-> Budget comparison is deferred to §17.1's V0.3 annex (`16-narrowing-decision.md`). The historical
-> notes in this section that name `PB1`, `PB1a`, `PB6a`, `EF5` or `GR3a`'s rungs describe how the
-> function was built and why; none of them is an in-force rule. Prices are still **stated** as facts
-> under `GR1`. Round 8's `N8-4` is correct that this note reaches §14.3 only — the four in-force
-> citations outside it (`WS6`, `CINV-15`, §19, `WS9`'s rationale) are **rewritten** in rev 9 rather
-> than covered by a wider disclaimer.
+> **Rev 9.2 replaces this section.** Rev 9.1's `EF1`–`EF6`, its scope-relation tables, `GR2`'s ten
+> classes, `GR2a`, `GR3a` and its five-key order are retired. Their text and review history are in
+> `archive/07-rev9.1-corrected.md`. The replacement follows the owner's brief of 2026-09-25 and was
+> worked by hand in `docs/result/interior-portfolio-v0.2/34a-product-rules-and-hand-examples.md`
+> before it was written here.
 
-Rev 5 replaces rev 4's §14.3–§14.5 with **one function, specified end to end**. The rules are the
-same rules and keep their ids; what changes is that they are no longer three neighbouring lists with
-gaps between them.
+The function takes the visitor query `V` and a record `R` and returns one **match class** and four
+**tiers**. The result is ordered by one fixed tuple of those values. That is the whole function.
 
-*Why. Three consecutive review rounds each found BLOCKERs, and the round-4 reviewer noticed what
-they had in common: every one of them sat **between** the budget rules (`PB1`/`PB1a`), the scope
-table (§14.3.2/`PB7`) and the class rules (`GR2`/`GR3`) — three lists that jointly compute one
-function nobody owned end to end. `exact` was unreachable for a whole-home remodel because a table
-assigned a class the precedence list then pre-empted; the table returned two answers for one input
-because no rule said the rows were ordered; breadth had no "not stated" branch although area and
-scope both did. Those are not rule defects. They are the absence of a function. Patching a fourth
-time would have produced a fourth set of seams.*
+#### 14.3.1 Inputs
 
-#### 14.3.1 What the function takes
-
-**The visitor query** `V`, extracted by the consumer from the conversation:
+**The visitor query `V`**, extracted by the consumer:
 
 | field | shape | absent means |
 |---|---|---|
-| `V.breadth` | `whole` · `partial` | the visitor did not say how much of the home |
-| `V.scope` | a set `Q` of §7.3 ids; `Q_s = Q ∩ Spaces`, `Q_t = Q ∩ Works`. Where a visitor term is ambiguous under `WS6`, `Q` holds **one candidate set per reading** and `Q_s`/`Q_t` are taken per reading; `EF3` resolves them (§14.3.2). A query with nothing ambiguous holds exactly one reading, which is the ordinary case and reads exactly as before. **Exactly three in-force sites read `V.scope` and each says which reading it takes (rev 9.1)**: `EF3`'s ambiguity clause (§14.3.2, `D9-7a`), ordering key (3) (§14.3.6, `D9-8`, the **intersection**) and the §14.3.3 row disclosures with `CINV-17` (`D9-9`, the intersection **of the disclosure sets**). A fourth — `EF3`'s ground-not-conclusion clause (§14.3.2) — is a permission rather than a set and takes the permission every reading gives | named no space and no trade |
-| `V.area` | value + unit + basis | stated no size |
-| `V.budget` | see `VB1`; **not a match criterion in V0.2** (§14.3.5) | stated no budget |
-| `V.styles` | a list of style values | expressed no style preference |
+| `V.breadth` | `whole` · `partial` (`VB3`) | the visitor did not say how much of the home |
+| `V.scope` | **one** set `Q` of §7.3 ids; `Q_s = Q ∩ Spaces`, `Q_t = Q ∩ Works` (`WS6`). A room or trade the visitor **excludes** (욕실만 빼고, 주방 제외) is not in `Q` | named no room and no trade |
+| `V.area` | value + unit + basis. An area whose unit cannot be resolved, or that is a range or a class (30평대), is **absent**, never guessed | stated no size |
+| `V.budget` | `VB1` | stated no budget |
+| `V.styles` | style values the visitor stated **positively** (`ST5`) | no style preference |
+
+The contract is a function of `V` and the document. How an utterance becomes `V` beyond `VB1` and
+`VB3` — the alias table above all — belongs to the consumer (`WS6`). §19 fixes `V` for every
+acceptance row, so the evaluation can be checked without any parser.
 
 > - **VB1 (C: MUST)** — a numeric budget is held in **one** of three shapes, never two:
 >   `exact {amount}` · `range {min, max}` · `max {amount}`. *"5천"* is `exact`, *"600~800만원"* is
 >   `range` (`CINV-8`: never one bound), *"1억 이내"* / *"최대 1억"* is `max`. Every amount is a
->   positive integer in the record currency's minor-unit-free form, exactly as `pricing` amounts are.
->   A budget that cannot be resolved to one of the three is **absent**, never guessed.
+>   positive amount in the site's currency, in the same form as `pricing` amounts (§9). A per-area
+>   budget (평당 200만원) is not `V.budget` in V0.2 (`OQ-4`). A budget that cannot be resolved to one
+>   of the three is **absent**, never guessed.
 > - **VB2 (C: MUST)** — `budgetHint` free text and a resolved `V.budget` are different things. Free
 >   text is never compared against a price; only a resolved shape is.
-> - **VB3 (C: MUST)** — `V.breadth` is what the **visitor** said, and it is never inferred from
->   `V.scope`. Naming two rooms is not a statement that the project is partial; a visitor who says
->   *"주방이랑 욕실"* may still be planning a whole-home remodel and mentioning what matters to them.
->   (`PT3`'s consumer mirror: breadth is stated or unknown, never deduced.)
+> - **VB3 (C: MUST)** — `V.breadth` is what the visitor said about **the extent of the work**. It is
+>   never inferred from `V.scope` alone. The rows are tried in order and the first that matches wins.
+>   The left column lists **forms**, not literal strings.
 >
->   **What sets it — a closed list (`C: MUST`).** `V.breadth` is `partial`, `whole`, or **absent**,
->   and only these forms set it. Anything not on this list leaves it **absent**, which is a real
->   answer and not a failure.
->
->   **The rows are tried in written order and the first matching row wins (`C: MUST`).** This is the
->   sentence `PB7` (§14.3.3) and `EF6` already carry for their own tables — and that rev 8's `GR3a`
->   carried before rev 9 deleted it (§14.3.6, §17.3). Without it the
->   rows overlap and one utterance yields two opposite values of `V.breadth`.
->
->   | # | the visitor says | `V.breadth` | why |
->   |---|---|---|---|
->   | 1 | an explicit negation of whole-home framing — 집 전체는 아니고 …, 전체까지는 아니고 … | `partial` | the visitor has said what the work is **not**, and said it about the dwelling |
->   | 2 | 전체 리모델링, 집 전체, 올수리 | `whole` | a statement about the extent of the dwelling |
->   | 3 | a restriction by **space**, one or more — 주방**만**, 욕실**만** 하고 싶어요, 주방이랑 욕실**만** | `partial` | the visitor has bounded the work by rooms |
->   | 4 | 부분만, 일부만, 몇 군데만 | `partial` | bounded, without naming the rooms |
->   | 5 | a restriction by **trade** — 바닥이랑 도배**만**, 조명**만** | **absent** | this restricts the *work*, not the *extent*: `bi-19` ran exactly those trades across every room |
->   | 6 | a bare **enumeration** — 주방이랑 욕실 | **absent** | `VB3`'s own point: naming rooms is not a statement of breadth |
->   | 7 | qualitative prose about size — 큰 공사는 아니고, 간단하게 | **absent** | not a statement about extent the contract can act on. It may inform the operator; it is not a criterion |
->
->   **The left column lists *forms*, not literal strings (`C: MUST`).** A cell's contents are
->   exemplars of the form its *why* cell names, and the form decides. *"34평 전체"* and
->   *"전체 가능해요"* are row 2 although neither is one of the three strings printed there. Read as a
->   closed list of literal strings, row 2 would never fire on `04` §4.1's own rows A, B and F, and
->   row B would then state **no criterion at all** and return all 19 records as `exact`.
->
->   **A 만 attached to a quantity is not a restriction by space (`C: MUST`).** In *"욕실 하나만"* the
->   만 binds the **count**, not the room, and `WS3` makes quantity unrepresentable — the contract
->   cannot record *one* bathroom rather than two, so it must not read the particle as a bounding of
->   the work by rooms either. Row 3 does not fire; the utterance is row 6, a bare enumeration, and
->   `V.breadth` is **absent**.
->
->   *This is §5.2's spaces-vs-trades line applied to the query side. It is a **closed** list on
->   purpose: rev 7 enumerated three shapes and left every other utterance undecided.*
->
->   **Rev 9 changes (`D9-4`); the id is unchanged.** Rev 8 declared the list closed and `C: MUST`
->   without making it a **function**: it stated no evaluation order, and rows fired together with
->   opposite values — round 8's `B8-4`, `17b`'s `X8-3`/`X8-22`, the checker's gaps 1, 3 and 6. Three
->   things changed. (i) The first-match sentence above. (ii) The **order** of the rows, which is how
->   the two prose overlaps are resolved — not by narrowing any row's condition, because a row whose
->   condition has to be narrowed to avoid its neighbour is the pair-maintenance failure this contract
->   keeps repeating. The negation row moved **above** the 전체 row, so
->   *"집 전체는 아니고 바닥이랑 도배만 하려고요"* is `partial` and not `whole` — the visitor said *not
->   the whole house* and the contract now answers what they said; and 부분만/몇 군데만 already sat
->   above qualitative prose, so *"큰 공사는 아니고 몇 군데만"* is `partial`, the row that carries
->   information beating the row that declares it carries none. (iii) The two readings the table left
->   to the consumer — forms-vs-strings and 만-on-a-quantity — are **decided** above rather than
->   deferred. `04` §4.1 row D is stated on the other reading of *"욕실 하나만"* and needs correcting
->   against this rule; that is a `04` edit and is listed in §20.7, not made here.
->
->   **Still open, and not patched here.** A chain that mixes kinds — *"바닥이랑 거실만"*, a trade and
->   a space under one 만 — matches rows 3 and 5 on any reading that lets the particle bind across
->   kinds, and nothing in this table says whether it binds the adjacent term only. The checker's
->   instance of this was an implementation artefact (`21-pipeline-audit.md` `A-4`), but the prose
->   question is real and no decision in `22-rev9-design.md` covers it. It is §18's `Q-26` and is
->   **not** answered by inventing a chain rule here.
-
-**The record** `R`, as parsed from the document: `R.projectType`, `R.property.area`,
-`R.workScopeIds` (`R_s = R.workScopeIds ∩ Spaces`, `R_t = ∩ Works`), `R.pricing`, `R.facets`.
-
-#### 14.3.2 Three criteria, three states each
-
-> **EF1 (C: MUST)** — for every returned record the consumer computes exactly three criteria —
-> **breadth**, **scope**, **area** — and each is in exactly one of three states:
->
-> | state | meaning |
-> |---|---|
-> | `not_applicable` | the **visitor did not state** this criterion. It is not a miss, is never reported as one, and contributes nothing in either direction. |
-> | `not_evaluable` | the visitor stated it and **it cannot be evaluated for this record** — no area, no breadth, an id the consumer had to drop (`WS8`), or a visitor term whose readings do not agree (`WS6`, rev 9). `PB4`: contributes nothing to the score and to no tie-break key. Reported per record (`GR2`). |
-> | `satisfied` / `unsatisfied` | stated and evaluated. |
->
-> Nothing outside `EF2`–`EF4` assigns a criterion state, and no rule may leave one unassigned.
->
-> *V0.2 has **three** criteria, not four. `EF5` — the budget criterion — and everything that fed it
-> are deferred to §17.1's V0.3 annex; see `16-narrowing-decision.md`. `V.budget` is still extracted
-> (`VB1`, `VB2`) because it belongs in the lead record; it is simply not a match criterion.*
-
-> - **EF2 breadth.** `V.breadth` absent ⇒ `not_applicable`. Else `R.projectType` absent ⇒
->   `not_evaluable`. Else `satisfied` iff `R.projectType` is `V.breadth`'s counterpart under the
->   mapping `whole` ↔ `"full_remodel"`, `partial` ↔ `"partial_remodel"`. `V.breadth`'s two values are
->   conversation-side labels (§14.3.1); `projectType`'s are wire values (§5.1); neither is the
->   other's wire form and the mapping is stated so that no consumer has to guess it.
-> - **EF3 scope.** `Q = ∅` ⇒ `not_applicable`. Else by `R.projectType`, computed **per reading** of
->   `Q` (§14.3.1, `WS6`) and then resolved by the ambiguity clause below:
->   - **`full_remodel`** — the two halves of `Q` are evaluated **differently**, because `PT4`(b) is a
->     statement about **spaces** and is silent about trades by design (§5.2; `PT4`'s own clause: *a
->     stated exclusion of an individual trade is not a disqualifier under (b)*).
->     - The **spaces** half is `satisfied` for any `Q_s`. `PT4`(b) is the statement that no space was
->       left out and none received only maintenance-level work, so every space the visitor named
->       *was* remodelled. The open-set rule `WS7b` is about the **id list**, which for a full remodel
->       is an enumeration convenience, not a boundary.
->     - The **trades** half is evaluated on the id list exactly as any other record's: `satisfied`
->       when `Q_t ⊆ R_t`, **`not_evaluable`** otherwise. By `WS7b` an absent trade id is *unknown* —
->       neither inclusion nor exclusion may be inferred from it.
->
->     The criterion is `satisfied` when both halves are, `not_evaluable` when the trade half is, and
->     **never `unsatisfied`**.
->
->     **When the spaces half is `satisfied` by `PT4`(b), the reply states the ground and not the
->     conclusion (`C: MUST`).** *"이 사례는 집 전체를 리모델링한 사례입니다"* — never *"주방이 포함되어
->     있습니다"* — unless `Q_s ⊆ R_s` **also** holds, in which case either may be stated. `PT4`(a)/(b)
->     are AUTHORING rules that `VA1` cannot evaluate, so the premise is not machine-checkable; this
->     clause makes an authoring error degrade to a sentence that is true but general instead of one
->     that is false and specific. (`CINV-23`.)
->
->       **Under more than one reading of `Q`, the permission is the one every reading gives
->       (rev 9.1, `D9-9`; `C: MUST`).** The conclusion may be stated only where `Q_s ⊆ R_s` holds
->       under **all** readings; where the readings disagree, only the ground may be stated. This is
->       `D9-9` applied to a **permission** rather than to a named set — the same principle, since a
->       permission is the degenerate disclosure set.
->
->       *This clause is a correction and not a clarification, and the measurement says why.* As
->       written through rev 9 it names **no** reading, so an implementation had to pick one, and on
->       this corpus picking the **first** changes nothing — **0 of 10** reading-dependent
->       permissions move — because `WS6` happens to enumerate the larger `Q_s` first and `Q_s ⊆ R_s`
->       is hardest for the largest `Q_s`. Resolve by the **last** reading instead and **10 of 10
->       flip**. Nothing in this clause or in `WS6` (§7.4) makes `WS6`'s enumeration order normative,
->       so the zero was an artefact of one implementation choice, not a property of the rule.
->       Separately, rule 1 of the ambiguity clause does **not** reach this site: it is keyed on
->       having **no relation at all** — a `full_remodel` never has one — so *"no relation is
->       reported"* misses it, and *"no absence is stated"* misses it too, because the sentence
->       licensed here is a **presence**.
->   - **`partial_remodel`** — `not_evaluable` when the consumer **dropped any unrecognised
->     `workScopeId`** from this record (`WS8`): `R_s` is then smaller than the document's and the
->     closure §14.3.3 rests on does not hold. Otherwise **§14.3.3's relation**, and the criterion is
->     **`satisfied` iff that relation is `scope_exact` or `scope_superset`**; `scope_overlap`,
->     `scope_subset` and `scope_disjoint` are **`unsatisfied`**.
->   - **absent ⇒ `not_evaluable`.** Breadth unknown means coverage unknown. The record remains
->     reachable and is ordered by its class like every other record (`GR3`, §14.3.6).
->
->   **Ambiguity, resolved here and nowhere else (`C: MUST`; `WS6`; rev 9.1, `D9-7a`).** When `Q`
->   carries more than one reading, compute the branch above under **each** reading. The two rules
->   below are tried **in the order written and the first matching rule wins**:
->   1. The readings produce **different criterion states OR different relations** ⇒ the criterion is
->      **`not_evaluable`** and the reply **discloses that the term was ambiguous**. No reading is
->      chosen; no relation is reported; no absence is stated.
->   2. Otherwise — all readings agree on **both** the state and the relation ⇒ **that state and that
->      relation**. The ambiguity never mattered and nothing is said about it.
->
->   **Rule 2's condition is rule 1's exact negation**, which is what makes the pair **total** (no
->   input escapes both) and **single-valued** (no input satisfies both). That is not asserted, it is
->   measured: over the synthetic enumeration's 64 ordered pairs and the corpus's 38, **0 match
->   neither rule and 0 match both**, on both enumerations; downstream, **0** `EF6` inputs get no
->   class and **0** caveats go silent.
->
->   **Why rule 1 names relations and not only states (rev 9.1; the audit trail, not a refinement).**
->   Through rev 9 this clause compared **states only**, so rule 2 could return a state with **no
->   relation** — the readings agreeing that scope is `unsatisfied` while disagreeing about *which*
->   §14.3.3 row produced it. Two things then broke, both derived rather than argued. `EF6` **row 1**
->   classes an `unsatisfied` scope **as** *"the §14.3.3 relation"*, so it had nothing to class and
->   returned **no class at all** — **96 enumerated inputs**, witness `zz-hole` (`partial_remodel`,
->   `[storage, kitchen]`, on *"현관 수납"*). And `scope_superset`'s caveat went **silent** — **32
->   enumerated inputs** where a `scope_superset` reading existed and row 7 could not fire, witness
->   `zz-witness` (`partial_remodel`, `[entrance, storage, built_in_furniture]`, same utterance),
->   which was returned as `exact` — *"nothing was caveated"* — when the ambiguity should have been
->   disclosed. Both witnesses are authorable under `PT5` and absent from the 19 only by accident,
->   which is why the corpus showed 0 while the enumeration showed 96 and 32. Widening rule 1 closes
->   both holes **by construction**, for the same reason the pair is total: the two conditions stay
->   exact negations.
->
->   The state is assigned by `EF3` and by nothing else, so `EF1`'s closure is preserved. `GR2`'s
->   per-record not-evaluable list names the criterion as it does for any other `not_evaluable`, and
->   the ambiguity disclosure is in addition to it, not instead of it.
->
->   **A caveated match is not a miss (rev 9, `D9-2c`).** Through rev 8 this branch was *"`satisfied`
->   iff that relation is `scope_exact`"*, so `scope_superset` — a record that did **everything the
->   visitor asked and more** — was reported in the same state, `unsatisfied`, as `scope_disjoint`, a
->   record that did none of it. One state carried two meanings. That is why `PB4`'s strong form was
->   unsatisfiable under every class order: *"unknown must not rank below unsatisfied"* cannot hold
->   while half the `unsatisfied` outcomes are good matches. Measured, on the 19-record corpus with
->   the strict `PB4` assertion: 798 mutant pairs, **484** violations at rev 8 and **0** with this
->   change, `GR2a`'s new order and `GR3a`'s rungs deleted, all three together (§20.7; `D9-6`).
->   **`EF6` gains a row** so `scope_superset` still has its own class and its own disclosure
->   (§14.3.6); §14.3.3's relation names and disclosures are untouched. *That row is **not** one of
->   the three parts that reach 0: it is required for **disclosure**, and its justification is stated
->   at `EF6` row 7 (§14.3.6), not here.*
->
->   **Lemma, used by `EF6` row 1.** The scope criterion is `unsatisfied` **only** for a
->   `partial_remodel`: the `full_remodel` branch never returns it and the absent branch never returns
->   it. So `EF6` row 1's *"the §14.3.3 relation"* is defined whenever that row fires. Since rev 9,
->   the relation is additionally never `scope_exact` and never `scope_superset` when row 1 fires —
->   both are `satisfied` — which is why row 1's class list lost `scope_superset` and `EF6`'s new row
->   gained it.
-> - **EF4 area.** `V.area` absent ⇒ `not_applicable`. Else `R.property.area` absent, or `AR5`
->   refuses the two bases, ⇒ `not_evaluable`. Else `satisfied` iff the tier is `strong` **or**
->   `acceptable` (§14.3.4).
->
->   `PY1`'s *"one unknown basis lowers confidence"* is carried as a **disclosure, not a state**: when
->   either basis is absent, the record's area is stated with its basis named and the match is
->   described as approximate. It never changes the criterion state and never enters a ranking key.
->   The three states are a match calculus, not a confidence scale.
-
-#### 14.3.3 Scope relations, for a `partial_remodel`
-
-**Sets.** `Spaces` and `Works` are §7.3's two tables. `R_s`, `R_t`, `Q_s`, `Q_t` as defined above.
-
-> **PB7 (C: MUST)** — the rows are evaluated **in the order written** and the **first** row whose
-> condition holds decides the relation. Without this the rows overlap and one input yields two
-> opposite answers.
-
-| # | condition | relation |
-|---|---|---|
-| 1 | `Q = ∅` — the visitor named **no** scope of any kind | none; scope was not a stated criterion (`EF3`) |
-| 2 | `Q_s = ∅`, `Q_t ≠ ∅` — a **trade-only** request | §14.3.3.1 |
-| 3 | `R_s == Q_s` and `Q_t ⊆ R_t` | `scope_exact` |
-| 4 | `R_s == Q_s` and `Q_t ⊄ R_t` | `scope_subset`; `Q_t \ R_t` is reported as **not established for this case** |
-| 5 | `R_s ⊋ Q_s` | `scope_superset`; the extra spaces **are named** |
-| 6 | `R_s ⊊ Q_s` | `scope_subset`; the spaces in `Q_s \ R_s` are reported as **not remodelled in this case** |
-| 7 | `R_s`, `Q_s` overlap, neither contains the other | `scope_overlap`; the spaces in `Q_s \ R_s` are reported as **not remodelled in this case** |
-| 8 | `R_s ∩ Q_s = ∅` | `scope_disjoint`; the spaces in `Q_s \ R_s` — here all of them — are reported as **not remodelled in this case** |
-
-> **Rows 5–8 read `Q_s` only, deliberately.** A visitor who named both rooms and trades gets a
-> relation computed from the rooms alone. Rows 3 and 4 — where the spaces match exactly — are the
-> rows where `Q_t` changes the answer, and they read it.
->
-> **The relation name is `scope_exact`, never `exact`.** They are different predicates: `exact` is an
-> `EF6` **class** and depends on all three criteria.
->
-> **Which relations `EF3` calls `satisfied` (rev 9).** `scope_exact` and `scope_superset` — here and
-> in §14.3.3.1 alike — are **satisfied**: the record covers everything the visitor named, and in the
-> superset case covers more, which is a caveat to disclose and not a miss to penalise.
-> `scope_overlap`, `scope_subset` and `scope_disjoint` are **unsatisfied**. The **relations** and
-> their mandated disclosures are unchanged; only the state `EF3` reports for two of them changed, and
-> `EF6` gained a row so that `scope_superset` keeps its own class (§14.3.2, §14.3.6, `D9-2c`).
->
-> **A disclosure names only what every reading admits (`C: MUST`; rev 9.1, `D9-9`).** Where `Q`
-> carries more than one reading (`WS6`, §7.4) and `EF3`'s ambiguity clause passed the relation
-> through — so all readings agree on the state **and** the relation — the set a row above names is
-> computed **over the disclosure sets and not over `Q`**: compute the set this row would name under
-> each reading `r`, then name **`∩_r`** of those sets. Four sentences, all normative:
->
-> 1. A disclosure names only the ids **every** reading admits.
-> 2. The intersection is taken over the **sets the rows would name**, never over `Q` before the row
->    runs. The two are not equivalent, and §14.3.3 itself separates them — see 3.
-> 3. Rows 4, 6, 7 and 8 name a set of the form `Q \ R`, where the record's side is fixed, so
->    intersecting `Q` and intersecting the disclosure sets **coincide**. **Row 5 names `R_s \ Q_s`**
->    — the record's *extra* spaces — so shrinking `Q_s` **grows** it: `R_s \ (∩Q_s)` is the
->    **union** of the per-reading disclosures, the **maximal** claim and the exact inverse of the
->    intent, while `∩_r (R_s \ Q_s^r) = R_s \ (∪Q_s)` is the minimal one. Intersecting `Q` is
->    therefore wrong on row 5 in the dangerous direction. *Constructed witness, because row 5 never
->    fires reading-dependently on these 19 records: `partial_remodel [entrance, storage, kitchen]`
->    against *"현관 수납"* is `scope_superset` under **both** readings, so the relation is passed
->    through; intersecting the disclosure sets names `{kitchen}`, intersecting `Q_s` names
->    `{storage, kitchen}` — and `storage` is an "extra space we covered beyond your request" that is
->    true under one reading only.*
-> 4. **If the intersection is empty and any reading's set is not**, the criterion is
->    **`not_evaluable`** and the **ambiguity is disclosed** — the ambiguity clause's rule 1 applied
->    at the disclosure level, where that rule cannot see. Rows 6, 7 and 8 fire *because* `Q_s \ R_s`
->    is non-empty and then announce that spaces the visitor named were not covered; naming **none**
->    of them is a sentence `CINV-17` governs the wording of and says nothing about the membership of,
->    so without this sentence nothing forbids it.
->
-> *Sentence 4 has **0 occurrences on this corpus**, and that is a theorem rather than luck: `WS6`'s
-> two readings are **nested** — reading 2 reclassifies one token from Space to Work, so
-> `Q_s(2) ⊆ Q_s(1)` — which makes the intersection equal to the smaller `Q_s`, and a row 6/7/8
-> relation firing under that reading already guarantees its own `Q_s \ R_s` is non-empty. It is
-> **not safe in general**: `WS6` constrains one token pair, and a future ambiguous term whose
-> readings are **not nested** breaks the argument at once. Constructed: a term reading as `kitchen`
-> **or** as `bathroom`, against `partial_remodel [living_room]` — both readings give
-> `scope_disjoint`, the relation passes through, and `{kitchen} ∩ {bathroom} = ∅`.*
->
-> *In V0.2 this table has no budget column. It had one through rev 7; its text is parked in §17.1,
-> which rev 9 made self-contained (`M8-1`).*
-
-> **WS7a restated, precisely (`C: MAY rely on`).** For a `partial_remodel`, `R_s` is the complete set
-> of spaces **that were remodelled** — the sense `WS9` authors in: layout, fixtures or built-in
-> elements changed. An absent space id therefore means **that space was not remodelled**. It does
-> **not** mean no work reached it: `bi-17`'s 12,500,000 re-floored the bedrooms while authoring only
-> `[living_room, flooring]`, because flooring is a trade run *through* those rooms. A disclosure may
-> say *"침실은 리모델링 범위에 없었습니다"* and must never say *"침실에는 아무 공사도 하지
-> 않았습니다"*. The **works** in the set are open even for a partial (`WS7b`), so a trade the ids do
-> not name is *unknown*, never *excluded*.
->
-> **The closure does not survive an unrecognised id (`C: MUST`).** `WS8` tells a consumer to drop an
-> id it does not know, which makes `R_s` **smaller** and would license asserting that a space which
-> *was* remodelled was not. So a record from which the consumer dropped any unrecognised
-> `workScopeId` is **not closed**: no absence may be stated for it, and `EF3`'s `partial_remodel`
-> branch returns `not_evaluable` — `EF3` assigns the state, this rule supplies the reason (`EF1`).
-> The consumer knows exactly which id it discarded, so the check costs nothing.
-
-##### 14.3.3.1 Trade-only requests
-
-*"바닥이랑 도배만", "조명만 바꾸고 싶어요"* — §7.2 records that visitors speak this way as often as
-they name rooms.
-
-| # | condition | relation |
-|---|---|---|
-| 1 | `Q_t ⊆ R_t` and `R_s = ∅` | `scope_exact` |
-| 2 | `Q_t ⊆ R_t` and `R_s ≠ ∅` | `scope_superset` — `R_s`'s spaces were remodelled too, and they are named |
-| 3 | `Q_t ⊄ R_t`, `R_t ∩ Q_t ≠ ∅` | `scope_overlap` |
-| 4 | `R_t ∩ Q_t = ∅` | `scope_disjoint` |
-
-> **Row 1 is unreachable, and that is machine-checked rather than observed.** `PT5` requires a
-> bounded set of **spaces** before `partial_remodel` may be authored, so a partial with `R_s = ∅` is
-> unauthorable — and `INV-28` did not say so, requiring only a non-empty set. **`INV-30`** mirrors
-> `INV-29` on the other branch and makes the impossibility a producer-side check. The row is **kept**
-> rather than deleted, because deleting it leaves this table non-total for an input `VA1` rejects but
-> the table must still classify, and because if `PT5` is widened the row is already correct.
->
-> **A whole-dwelling trades-only job is breadth-absent by construction** — `bi-19`: 바닥·도배·조명,
-> every room, 11,000,000. `PT5` needs a bounded set of *spaces* and `PT4`(c) needs a *space* id, and
-> it has neither. It is **returned like every other record** — `GR3` is a labelling, never a filter
-> (`CINV-22`) — and its total is **stated as a fact** (`GR1`). *Rev 9: through rev 8 this sentence
-> read "reached through `GR3`'s trade rung"; the rungs are deleted (`D9-1`) and their text is parked
-> in §17.3. `bi-19` is now placed by its class, which for a trade-only query is `not_evaluable` —
-> fourth of ten in `GR2a`'s order rather than last, which is `PB4`'s own point.* Closing this
-> properly needs a producer-declared closed **trade** set, deferred in §17.
-
-#### 14.3.4 Tiers
-
-With `v` the area the visitor stated and `r` the record's `property.area.value`, both converted to
-one unit under `AR4` and on the same `AR5` basis, `delta_area = (r − v) / v` — the **visitor's**
-figure is the divisor. The tier reads `|delta_area|`.
-
-| `|delta_area|` | tier |
-|---|---|
-| ≤ 0.10 | `strong` |
-| ≤ 0.20 | `acceptable` |
-| > 0.20 | `fallback` — no bonus |
-
-> **TI1 (C: MUST)** — a tier is a ranking signal, not a hard filter. Tiers must not be applied so
-> that an ordinary request returns zero records (OD-M).
-
-*V0.2 has one tier scale, for area. The price tier is deferred with `PB6` to §17.1, which records
-what of its text survives and what does not (`M8-1`).*
-
-#### 14.3.5 Prices in V0.2 — stated, never compared
-
-V0.2 does **no** price comparison. The rules that performed one — `PB0`, `PB0a`, `PB1`, `PB3`,
-`PB3a`, `PB6`, `PB6a` and `EF5` — are deferred in full to §17.1 and are restored by V0.3 after their
-own review cycle (`16-narrowing-decision.md`).
-
-What remains:
-
-> - **GR1 applies unchanged**: every price the document carries — `total.amount`, `minAmount`,
->   `maxAmount`, `perArea.amount` — may be **stated as a fact** about the record it belongs to. The
->   consultation says *"이 사례는 5,000만원이었습니다"*. It does **not** say *"예산에 맞습니다"*,
->   *"더 저렴합니다"*, or anything that ranks two records by price.
-> - **PB2 (C: MUST NOT)** — a visitor's **total** budget is never compared against a `perArea`
->   amount, in either direction, whatever the units appear to allow (OD-O).
-> - **PB4 (C: MUST)** — V0 `BU2` unchanged, restated as **ordering neutrality, strong form**: a
->   criterion in state `not_evaluable` contributes **nothing** to the record's score and to **no**
->   tie-break key. Not a penalty, not a small penalty, not a null that sorts last. The result reports
->   per criterion how many records were not evaluable. *Missing must not silently become never-shown
->   — with a result limit of 3 over 19 records, fourth place is invisible.* (OD-N.)
->
->   **`PB4`'s text is unchanged in rev 9 and is now satisfiable.** Rev 8 contradicted it twice over —
->   `GR2a` sorted class `not_evaluable` last (round 8's `B8-3`) and `GR3a`'s whole-home rungs
->   partitioned on whether `R.projectType` is **present**, before any class key ran, so a record
->   missing the breadth input sorted to the last rung by construction (`17b`'s `X8-17`), which is
->   *"a null that sorts last"* verbatim in the rule that looked innocent. The strict metamorphic form
->   — delete a stated criterion's input, re-rank, the record must not move **down** — was measured on
->   the corpus at **484 violations of 798 pairs** for rev 8. Rev 9 changes the **rules** and not the
->   assertion: with `D9-2c`'s `EF3` state change, `GR2a`'s new order and `GR3a`'s rungs deleted, the
->   strict form holds at **0 of 798**. Those **three** parts are one change and none of them works
->   alone — see §20.7's measurement table, which records that deleting the rungs by themselves makes
->   `PB4` **worse** (624 against 484). **`EF6`'s row 7 is not one of them**: the no-row-7
->   configuration already reaches 0, and the row is in rev 9 for **disclosure** (§14.3.6, `EF6`
->   row 7). Rev 8's text listed it here and rev 9.1 removes it.
-> - **PB5 (C: MUST NOT)** — a record whose breadth is absent is never described as matching a
->   breadth-specific budget. It may be shown as a labelled reference (`GR3`).
-> - **V0 `PR4` is satisfied as written and is not amended.** It forbids comparing, sorting or calling
->   prices "close" outside one `category`; V0.2 does none of those. *Through rev 7 `PB0` amended it,
->   which put an item on §16's consumer-confirmation list. That item is gone: **V0.2 amends no frozen
->   V0 rule**.*
-> - `VB1`/`VB2` still extract `V.budget` — it belongs in the lead record and is what the operator
->   follows up on. It is not a criterion, it enters no ranking key, and no record is filtered by it.
->   A visitor who states a budget is told the prices of the cases shown and told, explicitly, that
->   the cases are **not** selected or ordered by their budget.
-
-#### 14.3.6 The match class
-
-> - **GR2 (C: MUST)** — every returned record carries **one** match class from the closed list
->   `exact` · `scope_superset` · `scope_subset` · `scope_overlap` · `scope_disjoint` ·
->   `fallback_from_full` · `breadth_fallback` · `unknown_type_fallback` · `area_fallback` ·
->   `not_evaluable`, **and** the list of criteria the visitor **stated** that came out
->   `not_evaluable` for that record. A `not_applicable` criterion is never listed: the visitor did
->   not ask. *`price_fallback` was the eleventh class and is deferred with `EF5` to §17.1.*
->
->   **EF6 — the class, a total function of the three criterion states and `R.projectType`, first
->   match wins:**
->
->   | # | condition | class |
+>   | # | the visitor says | `V.breadth` |
 >   |---|---|---|
->   | 1 | scope is `unsatisfied` | the §14.3.3 relation — `scope_subset` · `scope_overlap` · `scope_disjoint` |
->   | 2 | breadth is `unsatisfied` and `R.projectType == "full_remodel"` | `fallback_from_full` |
->   | 3 | breadth is `unsatisfied` (so `R.projectType == "partial_remodel"`, by `EF2`) | `breadth_fallback` |
->   | 4 | breadth is `not_evaluable` (so `R.projectType` is absent, by `EF2`) | `unknown_type_fallback` |
->   | 5 | area is `unsatisfied` | `area_fallback` |
->   | 6 | any criterion is `not_evaluable` | `not_evaluable` |
->   | 7 | scope is `satisfied` **and** §14.3.3's relation for this record is `scope_superset` | `scope_superset` |
->   | 8 | otherwise | **`exact`** |
+>   | 1 | a negation of whole-home framing — 집 전체는 아니고 …, 전체까지는 아니고 … | `partial` |
+>   | 2 | a restriction with 만 — of rooms (주방만, 주방이랑 욕실만), of a count (욕실 하나만), of trades (도배랑 바닥만) — or 부분만, 일부만, 몇 군데만 | `partial` |
+>   | 3 | the whole dwelling or a whole remodel — 전체 리모델링, 집 전체, 올수리, 34평 전체, 전체 가능해요 | `whole` |
+>   | 4 | anything else — a bare enumeration (주방이랑 욕실), qualitative prose (간단하게) | absent |
 >
->   **`EF6` is total and single-valued by construction**: row 8 is unconditional, so some row always
->   fires; *first match wins*, so exactly one does. Every criterion has a row for `unsatisfied`
->   (1, 2/3, 5), rows 4 and 6 cover `not_evaluable`, and `not_applicable` reaches row 8 — which is the
->   point: **`exact` means every criterion the visitor stated was evaluated and satisfied**, and a
->   criterion the visitor did **not** state can never keep a record out of it. Rows 1–4 precede 5
->   because a coverage mismatch is a stronger statement about a record than a size one. Row 4
->   precedes row 6 because `unknown_type_fallback` says *which* input was missing, and `PB5` needs
->   that record identifiable. `CINV-20` enumerates the whole input space and asserts both properties.
+>   전체 qualifying a **trade** (전체 도배, 집 전체 도배, 34평 전체 도배) is a statement about that
+>   trade, not row 3: without 만 such an utterance reaches row 4. A restriction always wins over a
+>   whole-form, because row 2 is tried first: "34평 전체 중에 주방만" and "전체는 비싸서 욕실만" are
+>   `partial`. "X만 빼고" excludes X (`V.scope`); it is not a restriction.
 >
->   **Row 7 is new in rev 9 (`D9-2c`). The row is required for disclosure; its position decides
->   which disclosure outranks which.** Those are two claims and rev 9 ran them together — corrected
->   in rev 9.1, along with the ground beneath them.
+>   *Rev 9.2.* "욕실 하나만" is `partial` by owner decision (2026-09-25), so rev 9's rule that 만 on a
+>   quantity is not a restriction (`D9-4`) is deleted. Rev 9.1's rows 3–5 become row 2 (a trade
+>   restriction, rev 9.1's row 5, moves from absent to `partial`) and its rows 6–7 become row 4. Once
+>   a room or trade is named, `partial` and absent select the same mode (§14.3.2), so the move changes
+>   no result, and `Q-26` (which of rows 3 and 5 a mixed 만-chain hits) no longer matters. The
+>   restriction row sits above the whole-forms since the fresh review of rev 9.2 (`34c` m-2).
+
+**The record `R`**: `R.projectType`; `R.workScopeIds` (`R_s = ∩ Spaces`, `R_t = ∩ Works`); whether
+the consumer **dropped** an unrecognised id from it (`WS8`); `R.property.area`; `R.pricing.total`;
+`R.facets.style`; `R.id`.
+
+#### 14.3.2 Mode and match class
+
+> **EV1 (C: MUST) — one writer.** The match class is assigned by `EV2` and the tiers by `EV3`.
+> Nothing else assigns, overrides or re-derives either. Every other rule — `WS6`, `WS7a`/`WS7b`,
+> `WS8`, `GR2`, `GR3` and the disclosures in §14.3.6 — reads them to phrase the reply.
+
+> **EV2 (C: MUST) — mode, then class.**
 >
->   ***Why the row exists: disclosure, measured.*** `EF3` now calls a `scope_superset` relation
->   `satisfied` (§14.3.2), so such a record no longer reaches row 1 and would otherwise fall through
->   to `exact` — which would hide the caveat `OD-P` and `GR2` exist to disclose. That is not an
->   argument, it is a measurement: **delete row 7 at rev 9 and 16 corpus classifications change, all
->   16 from `scope_superset` to `exact`** — a record that did **more** than the visitor asked,
->   relabelled *"nothing was caveated"* (`bi-04` and `bi-16` on *"주방만 하면 얼마예요"*, `bi-04` on
->   *"욕실 하나만"*, among them). `OD-P`'s *"a fallback is never passed off as exact"*, violated
->   sixteen times, and `GR2` losing the only class that names the caveat. **This is a `GR2`/`OD-P`
->   argument end to end and it cites no `PB4` figure**, because there is none to cite: the
->   no-row-7 configuration reaches **0 of 798** without it (§20.7).
+> **Mode**, per query: `whole` if `V.breadth = whole`; else `part` if `V.breadth = partial` or
+> `Q ≠ ∅`; else `open`.
 >
->   ***Why it sits where it does.*** Row 7 gives `scope_superset` back its own class and its own
->   label **whenever no stronger caveat applies** — over `CINV-20`'s enumerated input space, **20 of
->   the 48** inputs that reached `scope_superset` at rev 8; the remaining **28** hit rows 2–6 first
->   and are labelled `breadth_fallback`, `area_fallback` or `not_evaluable`, which rows 2–6 rank
->   above it **deliberately**. *(Those two counts are stated as counts over that enumeration and are
->   not converted to a rate: `CINV-20` weights every input equally and is not a traffic model.)* It
->   sits **after** row 6, so a record whose scope is a superset and whose area the document does not
->   carry is still `not_evaluable`: what we cannot evaluate outranks what we can caveat, which is
->   row 6's own reasoning. It sits **before** row 8, so `exact` still means *nothing was caveated*.
->   It can only fire for a record that has a §14.3.3 relation, i.e. a `partial_remodel` — the
->   `full_remodel` and breadth-absent branches of `EF3` compute no relation — so the row cannot fire
->   where no relation is defined, exactly as row 1 cannot.
+> **Covers.** `R` covers an id if the id is in `R.workScopeIds`, or if `R.projectType` is
+> `"full_remodel"` and the id is in `Spaces` — `PT4`(b) says a whole-home remodel left no room out.
 >
->   **Row 6 is intended, not a consolation.** A record whose scope matched perfectly but whose area
->   the document does not carry is `not_evaluable`, and that is the honest class: the visitor asked
->   about size, the document is silent, and silence is not evidence. `GR2`'s per-record
->   not-evaluable list is what makes *"this case does not fit"* and *"this case does not say"*
->   distinguishable.
-> - **GR2a (C: MUST) — the class order.** It is stated **once**, here; no other rule states a second
->   one, and since rev 9 no other rule orders a result at all:
+> **Class**, per record. The first row that holds wins:
 >
->   `exact` → `scope_superset` → `unknown_type_fallback` → `not_evaluable` → `fallback_from_full` →
->   `breadth_fallback` → `area_fallback` → `scope_overlap` → `scope_subset` → `scope_disjoint`
+> | # | mode | condition | class |
+> |---|---|---|---|
+> | 1 | `open` | — | `exact` |
+> | 2 | `whole` | `R.projectType = "full_remodel"` | `exact` |
+> | 3 | `whole` | otherwise | `fallback` |
+> | 4 | `part`, `Q = ∅` | `R.projectType = "partial_remodel"` | `exact` |
+> | 5 | `part`, `Q = ∅` | otherwise | `fallback` |
+> | 6 | `part`, `Q ≠ ∅` | `R` is a `partial_remodel`, no id was dropped from it, and `R_s = Q_s ≠ ∅` | `exact` |
+> | 7 | `part`, `Q ≠ ∅` | `R` is a `partial_remodel` and shares an id with `Q` | `overlap` |
+> | 8 | `part`, `Q ≠ ∅` | `R` covers an id of `Q` | `fallback` |
+> | 9 | `part`, `Q ≠ ∅` | otherwise | `other` |
 >
->   `exact` leads: every criterion the visitor stated was evaluated and satisfied. `scope_superset`
->   is second because `EF3` now calls it **satisfied** — the record did everything asked and more,
->   and the *more* is a caveat to disclose, not a miss. The two **unknown** classes come next:
->   `unknown_type_fallback` says which input was missing and `not_evaluable` says one was, and by
->   `PB4` not knowing is not a penalty, so neither may sit below a class that was evaluated and
->   **failed**. The four evaluated misses follow, weakest last: a breadth miss (`fallback_from_full`,
->   `breadth_fallback`), then a size miss (`area_fallback`), then the three coverage misses in
->   decreasing overlap with what was asked — `scope_overlap`, `scope_subset`, `scope_disjoint`.
+> The three modes partition the queries and each ends in an unconditional row, so every record gets
+> exactly one class.
+
+What the table says, in the owner's terms (brief of 2026-09-25, decision A; `OD-P`):
+
+- **A partial request ranks partial exact, then partial overlap, then full or unknown as
+  fallback.** On "욕실 하나만" a `partial_remodel [bathroom]` is `exact`; with more rooms it is
+  `overlap`; a `full_remodel` is `fallback` — it contains the bathroom, but it is not the job asked
+  for. **A `full_remodel` is `exact` only when the visitor asked for a whole-home remodel** (row 2).
+  Row 6 needs a `partial_remodel`, because only its room list is closed (`WS7a`).
+- **A breadth-absent record is never `exact` on a request that names something.** Its room list is
+  open (`WS7b`), so an equal room set establishes nothing. It is `fallback` when it lists a
+  requested id.
+- **Rooms decide `exact`; trades never do.** A trade a record does not list is *unknown*, not absent
+  — for a `partial_remodel` too (`WS7a`) — so an unrecorded trade cannot move a record out of
+  `exact` (`PB4`). Requested trades order records through `coverage`. On "욕실 타일만" `bi-15`
+  `[bathroom]`, whose own body describes the new tiling, is `exact`.
+- **A trade-only request (`Q_s = ∅`) has no `exact`.** The owner's ladder is applied as stated: a
+  `partial_remodel` that lists a requested trade is `overlap`; a whole-home or breadth-absent record
+  that lists one is `fallback`, ordered by `coverage`. `bi-19` (바닥·도배·조명 through the whole
+  dwelling) is `fallback` on "도배랑 바닥만". Nothing in the document tells it apart from `bi-05`, a
+  whole-home remodel recorded with trade ids only; the closed-trade field of §17.2 would (`OQ-1`).
+- **A dropped id blocks `exact` and nothing else** (`WS8`). The room list is no longer known to be
+  closed, so a `partial_remodel` is `overlap` at best.
+- **`whole`, and `part` with nothing named, have two classes**: the job asked for, and everything
+  else. A known `partial_remodel` and a breadth-absent record are both `fallback` on a whole request.
+  The tie is the neutral choice (`PB4`).
+- **`open`**: the visitor said nothing about the job, so nothing about the job can miss. The tiers
+  do the ordering.
+
+#### 14.3.3 Tiers
+
+> **EV3 (C: MUST) — four tiers per record.** Each tier takes one value for every record in every
+> query. A tier that does not apply takes its **last** value and, when the visitor stated that
+> criterion, the note `not_applied` (`GR2`): the value means *not compared*, not *compared and far*.
 >
->   **Rev 9 reordered this list (`D9-2c`); the id and the membership are unchanged.** It is still a
->   permutation of `GR2`'s closed list. Rev 8's order put `not_evaluable` **last**, which `PB4`
->   forbids in terms (*"not a null that sorts last"*) and `CINV-5` exists to catch — round 8's
->   `B8-3`. Reordering alone cannot fix `PB4`, and that was measured before this order was written:
->   over the abstract state space, every reordering improves monotonically and none reaches zero
->   (`proof/pb4-metamorphic.mjs`: 378 → 288 → 144 of 576), because the residue is always `scope`,
->   where one state meant two things. The order above is paired with `EF3`'s state change and with
->   `GR3a`'s rungs deleted, and **those three** reach **0 of 798** on the corpus (§20.7).
->   *Rev 9 listed `EF6`'s row 7 here as a fourth part of that result; rev 9.1 removes it. The
->   no-row-7 configuration reaches 0 as well, so the row is not load-bearing for `PB4` — it is
->   load-bearing for disclosure, on the ground stated at `EF6` row 7 above.*
+> | tier | values, best first | applies when | otherwise |
+> |---|---|---|---|
+> | `area` | `strong` · `acceptable` · `none` | `V.area` stated, and mode `whole` or `open` | `none` (`not_applied` if `V.area` stated) |
+> | `price` | `strong` · `acceptable` · `none` | `V.budget` stated, mode `whole` or `part`, and class `exact` | `none` (`not_applied` if `V.budget` stated) |
+> | `coverage` | an integer `0 … |Q|`, higher first | always (it is `0` for every record when `Q = ∅`) | — |
+> | `style` | `match` · `none` | `V.styles` stated | `none` |
 >
->   *Through rev 7 two devices ordered results — `GR3`'s rungs and `PB6a`'s sequence — and they
->   disagreed: `PB6a` step 1 sorted by `EF6`'s **row** order, in which `exact` is last. Rev 8
->   deferred `PB6a` and kept the rungs, which put the pair back inside `GR3`. Rev 9 deletes the
->   rungs as an ordering device, and this is the only order left.*
+> - **area** (`OD-M`). `v` is the visitor's figure and `r` the record's `property.area.value`, both
+>   in one unit under `AR4`, compared in exact rational arithmetic (never floating point).
+>   `|r − v| ≤ 0.10·v` ⇒ `strong`; `≤ 0.20·v` ⇒
+>   `acceptable`; otherwise `none`. The tier is also `none` when the record has no area, or when
+>   both bases are known and differ (`AR5`: supply and exclusive are never compared). When either
+>   basis is absent the tier is still computed and the reply says the match is approximate (`PY1`);
+>   that disclosure never changes the tier. There is no area tier in mode `part`: a partial job's
+>   area is the dwelling's, not the area the price bought (`PT2`), and the owner ranks partial
+>   requests without it.
+> - **price** (`OD-N`, `OD-O`). The budget becomes an interval `B` — `exact a` ⇒ `[a, a]`, `range` ⇒
+>   `[min, max]`, `max a` ⇒ `[0, a]` — and `R.pricing.total` an interval `P` — `exact` ⇒ `[x, x]`,
+>   `range` ⇒ `[min, max]` — in one currency (V0 `PR6`). If `B` and `P` intersect ⇒ `strong`.
+>   Otherwise let `g` be the gap between them and `b` the bound of `B` nearest to `P`: `10·g ≤ b` ⇒
+>   `strong`; `5·g ≤ b` ⇒ `acceptable`; otherwise `none`. Amounts are scaled by 100 first (§9 allows
+>   two fraction digits), so all of this is integer arithmetic. The tier is also `none` when the
+>   record has no total (`missing`), or when its currency is not the budget's (`not_comparable`).
+>   **Only an `exact` record is compared.** That is the class in which the record is the whole-home
+>   remodel asked for, or remodelled exactly the rooms asked for — `OD-O`'s condition for comparing a
+>   total budget with a total price. It is why a bathroom budget is never measured against a
+>   whole-home total. An `exact` partial job's total can still include trades the visitor did not
+>   ask for; the tier is computed all the same, and the reply must say so (§14.3.6, `OQ-6`). A `perArea` amount is never compared with anything (`PB2`).
+> - **coverage** — the number of ids of `Q` **listed** in `R.workScopeIds`. `PT4`(b) decides a
+>   record's class (`EV2` row 8), not its coverage. (A count that also credited the rooms `PT4`(b)
+>   implies would rank a record whose `projectType` is missing below every value it could hold — the
+>   penalty `PB4` forbids. `proof/contract-simplified.mjs` found it; `34a` §6.)
+> - **style** — `match` iff a value of `V.styles` is in the record's **own** `style` facet (`ST3`,
+>   `ST7`).
 >
->   *Rev 8's justification for this list cited `OD-P` as naming `scope_superset` **first** in prose.
->   It does not: "full/unknown projects containing the requested space" is `OD-P`'s **last** rung
->   (round 8's `N8-1`). The citation is withdrawn; the reasons above stand on `EF3` and `PB4`.*
-> - **GR3 (C: MUST)** — the **labelling and the presentation partition**. It is not a separate
->   search, it is **not a filter** (`CINV-22`), and it is **not an input to `EF6`**.
+> *Rev 9.2 restores budget comparison in this one form (`OD-N`, `OD-O`, owner brief §3). Rev 7–9.1's
+> `PB0`–`PB6a`, `EF5` and `price_fallback` are retired, not restored (§17.1).*
+
+#### 14.3.4 Order
+
+> **EV4 (C: MUST) — one order.** Records are sorted ascending by the tuple
 >
->   A record whose `EF6` class is `exact` is a **direct answer**. Every other returned record is a
->   **labelled reference**, its label is its `EF6` class, and the label is **stated, never hidden**
->   (OD-P).
+> ```
+> ( classRank, areaRank, priceRank, −coverage, styleRank, id )
+> ```
 >
->   **"Direct answers are offered first" is a definition, not an ordering rule (rev 9, `D9-1`).**
->   *Direct answer* means membership in the **named prefix** of `GR2a`'s list, and in V0.2 that
->   prefix is its first entry, `exact`. Since `GR2a` is the whole order, direct answers precede
->   labelled references **by construction**: the sentence is true because of how the two terms are
->   defined, and it cannot disagree with anything. The 직접 답변 / 참고 사례 grouping a reply is built
->   from is this partition — derived from the class, never a second order.
+> where `classRank` is `exact` 0 · `overlap` 1 · `fallback` 2 · `other` 3; `areaRank` and
+> `priceRank` are `strong` 0 · `acceptable` 1 · `none` 2; `styleRank` is `match` 0 · `none` 1; and
+> `id` is compared by code unit (`ID1`: present on every record; V0 `ID3`: unique within the resource). The
+> order is over one document's records.
 >
->   *Whether the prefix should widen now that `EF3` calls `scope_superset` satisfied is a real
->   question and is **not** decided here: §18's `Q-27`.*
+> Every position of the tuple is defined for every record. No key is skipped for some records, and
+> no key refers to a position another key produced. The order is lexicographic over totally ordered
+> components and ends in a unique key, so it is **total**, **transitive** and **deterministic**:
+> two runs of one query over one snapshot give the same order.
 >
->   **`GR3a` and the rung sets are deleted as an ordering device (rev 9, `D9-1`).** Their text is
->   parked verbatim in **§17.3** with the defects found against it, so rev 10 starts from the
->   reviewed version rather than from memory. Nothing replaces them: `GR2a`'s class order plus the
->   tie-break keys below is the whole order.
+> The order covers **every** record. No class or tier removes one (`OD-M`: a tier ranks, it never
+> filters). The reply shows a prefix of this order — three records in the demo — and takes it from
+> this order and nothing else.
+
+*Why this tuple* (owner brief §3). For a whole-home request the strong signals are project type,
+area and total price, then scope and style. For a partial request they are project type and scope —
+both inside the class — then total price, then style. `location` is never read (`LO1`). One fixed
+tuple serves both because the area tier is `none` for every record in mode `part`, and the price
+tier is only computed inside `exact`. Rev 9.1's key (2) carve-out and its `publishedAt` key are
+deleted; nothing replaced them.
+
+#### 14.3.5 Missing data
+
+> **PB4 (C: MUST) — a missing input is no evidence: never a reward, never a penalty below "no
+> evidence".** This is a property `EV2` and `EV3` are written to have, and `CINV-5` checks it. It
+> assigns nothing (`EV1`). For every query, every record `R` and each input listed below, let `R⁻` be
+> `R` with that input missing, evaluated by `EV2` and `EV3` as written:
 >
->   *Why.* Rev 8 ran two `C: MUST` orderings over one result — `GR3`'s *"direct answers are offered
->   first"* and `GR3a`'s rungs, which were declared **total over the result** — with no tie-breaker,
->   and they gave different top-3s on the corpus (round 8's `B8-2`, `17b`'s `X8-20`, the checker's
->   property 3: 29 of 31 branches differed). That is round 7's `B7-2` relocated from *between two
->   rules* to *inside one rule*. Rev 8 removed `PB6a` and left `GR3` internally paired; rev 9 removes
->   the pair rather than the partner. The rungs also carried `PB4`'s larger half: the whole-home
->   rungs partitioned on whether `R.projectType` is **present**, before any class key ran, so a
->   record missing the breadth input sorted last by construction — 262 of rev 8's 484 `PB4`
->   violations, and none of them visible to a check that only looked at classes.
+> 1. **no reserved value** — no class or tier has a value for "missing". The last value of every
+>    tier, and `fallback` / `other` for the class, mean *no positive evidence*, and that is where a
+>    missing input lands;
+> 2. **the least favourable real value** — `R⁻`'s evaluation, class and all four tiers **together**,
+>    equals the one `R` gets in that query when the input holds its least favourable **valid** value
+>    (`INV-28`–`INV-30` and §9 respected): the value whose evaluation sorts last under `EV4`. Taking
+>    each key's worst separately is not the rule — it can combine the worse halves of two real values.
+>    Two cases have no such comparison. Where **no valid value exists** (`projectType` on a record
+>    that names no room), item 2 asks nothing beyond `EV2` and `EV3` as written; items 1, 3 and 4
+>    still hold. Where **every valid value would give positive evidence** on the tier the input
+>    feeds (a budget "10억 이내" contains every valid total, §9), `R⁻` equals the least favourable
+>    valid value's evaluation except that this tier has its last value: it loses evidence any real
+>    value would have given, and nothing else changes;
+> 3. **no exclusion, no failure** — `R⁻` is returned, and no reply states a failure or an absence
+>    because the input is missing (`GR3`, §14.3.6);
+> 4. its rank **may fall**. A record that loses a matching input loses that positive evidence. That
+>    is intended. It never rises: the actual value is itself a valid value.
 >
->   *What this gives up, stated and not netted out.* The rungs encoded `OD-P`'s **graded** fallback:
->   for *"50평 전체"* they put the whole-home near-misses (breadth matched, area missed) above the
->   partials. Under class order alone those records fall to positions 14–19 (`bi-01` 2→14, `bi-09`
->   3→15) because `breadth_fallback` sorts above `area_fallback` in a **fixed** order, while which
->   criterion matters most depends on what the visitor led with — and `GR2a` has no term for
->   *"matched the criterion the visitor led with"*. Read strictly, `OD-P` requires that a fallback
->   never be passed off as exact; that is the **disclosure**, and `GR2`'s per-class labels preserve
->   it in full. The gradation was `OD-P`'s *mechanism*, and it is the mechanism that is given up.
->   **That is a reading of an owner decision, not a fact about it**, and it is flagged as one: if the
->   owner holds that the gradation *is* the requirement, a lead-criterion term is needed before this
->   ships. That term is **not invented here** — §18's `Q-28`, and the first item of rev 10.
+> The inputs are `projectType`, `workScopeIds` (and an id dropped under `WS8`), `property.area`,
+> `pricing.total` and `facets.style`.
+
+*Rev 9.2, by owner decision (2026-09-25).* Rev 9.1's `PB4` required that a record never move
+**down** when a stated criterion's input was deleted. That rule is retired. It asked a record with
+less evidence to rank like a record with more, and no class order could satisfy it (`31-` `B9-1`).
+The rev-9.1 figure "0 of 798" measured a different property — a twin comparison, `D9-3`, withdrawn —
+and is not evidence for this rule either. `CINV-5` measures this one.
+
+*Worked.* On "예산 3천으로 전체 가능해요?", `bi-09` is `exact` and 4th. Without `projectType` it is
+`fallback` and 13th — exactly where it would be as a `partial_remodel`, the least favourable value it
+could validly carry. Under rev 9.1 that was a violation; under rev 9.2 it is the rule.
+
+#### 14.3.6 What the result carries, and what the reply says
+
+> **GR2 (C: MUST) — result metadata.** Every returned record carries its `matchClass`, its four tier
+> values, and, for an **area** or **budget** the visitor stated that was not compared for this record,
+> one note: `not_applied` (the tier does not apply in this mode or class, `EV3`), `missing` (the
+> record lacks the input, or holds it in a unit or shape the consumer cannot read, §12) or
+> `not_comparable` (bases or currencies differ). `style` and `coverage` carry no note: a record
+> without a style facet or without `workScopeIds` simply has no positive evidence there. These are `EV2`'s and `EV3`'s
+> outputs, copied. Nothing here computes them again.
+
+> **GR3 (C: MUST) — direct answers and labelled references.** A record in class `exact` in mode
+> `whole` or `part` is a **direct answer**. Every record in another class is a **labelled reference**; the reply states its label and
+> the reason, and never hides it (`OD-P`):
 >
->   *What it does not give up.* Measured over `04` §4.1's nine rows with the rungs deleted: **0
->   records lost on any row** — `GR3` was never a filter and deleting it does not make one — and
->   direct answers form a prefix on **10 of 10** rows by construction. Three of the repositionings
->   are repairs: rows D1/D2/I promote `exact` records from 8→1, 9→2, 10→3, where the rungs had put
->   them **below** `scope_disjoint` ones, and row G drops `bi-19` (`not_evaluable`) from 1→15.
+> | class | mode | what the reply says about it |
+> |---|---|---|
+> | `overlap` | `part` | a partial job that shares some of what was asked, stated from its recorded ids only: the requested rooms it did not remodel and the rooms it remodelled beyond them; on a trade-only request, the requested trades it lists and the rooms it remodelled — never where a trade was done. If the consumer dropped an id from it (`WS8`), the reason is that its recorded scope could not be read in full |
+> | `fallback` | `whole` | a job not recorded as a whole-home remodel: a partial job, or one whose extent is not recorded |
+> | `fallback` | `part` | a whole-home remodel, or a job whose extent is not recorded: a reference, not the job asked for. When rooms or trades were named, the reason is the ones it lists — or, being whole-home, contains |
+> | `other` | `part` | a job that does not **list** what was asked. It is never said to lack it (below) |
 >
->   > **Every result has an order (`C: MUST`).** Records are ordered by: (1) `GR2a`'s class order;
->   > (2) `|delta_area|` ascending where the visitor stated an area and `AR5` permits the bases to be
->   > compared — by `PB4` a record where it does not is **not** ordered by this key and is **not**
->   > pushed to the end by it, keeping the position the previous key gave it; (3) the count of the
->   > visitor's stated `workScopeIds` the record carries, descending; (4) `publishedAt` descending;
->   > (5) `id` ascending. **Steps 4–5 are the deterministic floor**: both are present on every record
->   > (`ID1`, `PC3`), `id` never ties, and they are what makes *two consumers cannot disagree on one
->   > document* true rather than aspirational. No key is a price (§14.3.5).
->   >
->   > **Key (3) under more than one reading of `Q` (`C: MUST`; rev 9.1, `D9-8`).** Since `D9-5a`,
->   > `V.scope` is one candidate set **per reading** (§14.3.1), and key (3) counted *"the visitor's
->   > stated `workScopeIds`"* as though it were one set. It reads the **intersection** of the
->   > readings — the ids **every** reading admits.
->   >
->   > *The ground is the derivation, not a measurement, and that is deliberate.* The intersection is
->   > the only candidate that is a **function of `Q` alone**: it does not consult the record, so two
->   > records are compared on the same key. `max` and `min` choose a **reading per record**, which is
->   > `M7-3` — a per-record discriminator for a per-query object — for the third time in this
->   > document. `union` credits a record for an id the visitor **never named** under some reading,
->   > which is the same falsehood `WS7a` and `CINV-17` forbid on the disclosure axis. **No corpus
->   > figure is cited for this key**: the `PB4` carve-out proposed at `Q-29` would remove exactly the
->   > records on which union and intersection differ, so any corpus count here is masked by a
->   > proposal that is not in this revision. The rule stands on the derivation or not at all.
->   >
->   > *Rev 9: this key list previously ordered records "within a rung". There are no rungs; it orders
->   > the result. Key (2)'s carve-out still does not say where a skipped record lands once keys
->   > (3)–(5) run — §18's `Q-29`, which rev 9.1 carries as **open with three dead candidates**, not
->   > patched.*
->
->   A visitor who stated a budget is additionally told each shown record's price as a fact, with its
->   coverage statement — what that total bought, from `R.projectType` and `R.workScopeIds` — and told
->   that the cases are not selected or ordered by their budget. (`CINV-19`.)
->
->   *This two-input coverage statement is weaker than the four-input template `PB0a` supplied through
->   rev 7, which is parked in §17.1 — two consumers can build different statements from one document.
->   That is round 8's `M8-7`, and it is §18's `Q-30`. It is **not** repaired by writing a new template
->   here: `Q-18` asked exactly whether that template was implementable twice, and an unchecked
->   replacement is what eight rounds have failed on. The **prohibitions** bind independently
->   (`WS7a`, `WS7b`, `WS8`, `CINV-17`), so this is under-specification, not a falsehood.*
+> Direct answers come first because `exact` is `classRank` 0. That follows from `EV4`; it is not a
+> second ordering. In mode `open` no job was named: every record is `exact` because nothing can
+> miss, and the reply presents the records as examples, not as answers to a job.
+
+The disclosures below phrase `EV2`'s and `EV3`'s outputs. They assign nothing (`EV1`).
+
+> - **Rooms and trades** (`WS7a`, `WS7b`). For a `partial_remodel` from which no id was dropped
+>   (`WS8`), a requested room the record does not list **was not remodelled in this case** — never "no work reached it". A requested trade a
+>   record does not list is **not established for this case** — never "not included". For any other
+>   record, nothing is stated as absent.
+> - **Whole-home cover** (`PT4`(b)). When a `full_remodel` covers a requested room only through
+>   `PT4`(b), the reply states the ground — *"이 사례는 집 전체를 리모델링한 사례입니다"* — and never
+>   *"주방이 포함되어 있습니다"* unless `kitchen` is listed.
+> - **Tiers.** For each criterion the visitor stated, the reply gives the record's own value and
+>   the tier in words — for area, within 10 %, within 20 %, or neither; for a budget, inside it
+>   (the intervals meet), within 10 % or 20 % of its nearest bound, or neither — only when the tier
+>   was computed. A `not_applied` note is said as *"비교하지 않았습니다"*, with the record's own value
+>   as a fact if it has one; a `missing` note as *"이 사례에는 … 정보가 없습니다"*; a
+>   `not_comparable` note gives the reason (`AR5`).
+> - **Budget.** A visitor who stated a budget is told each shown record's total as a fact (`GR1`).
+>   For an `exact` record in mode `whole` or `part` the reply may set the total beside the budget and
+>   give the tier. For every other record the price is `not_applied`: the reply says it was **not
+>   compared**, because the job differs or none was named. It never says *"예산에 맞습니다"* as a
+>   promise.
+> - **Extra trades beside a budget** (`OQ-6`, owner decision). When the reply sets the total of an
+>   `exact` record in mode `part` beside the budget, and the record lists a `Works` id that is not in
+>   `Q`, the reply (1) names those trades, from `workScopeIds` only; (2) says the total includes that
+>   work; and (3) never presents the total as a quote for the requested scope alone, nor the tier as
+>   the budget being met. It never says where in the home such a trade ran unless the record states
+>   it (`WS7a`). Match suitability and price comparability are different statements. *"거실만
+>   1200만원"* × `bi-17`: *"거실 사례이며 총 공사비는 약 1,250만원입니다. 다만 이 사례에는 바닥 공사도
+>   포함되어 있어, 거실만 진행하는 경우의 견적과 1:1로 비교되는 금액은 아닙니다."* — never
+>   *"예산 1,200만원과 거의 정확히 맞는 사례입니다."*
+> - **Reading** (`WS6`). When the consumer's table resolved a term that has more than one reading,
+>   the reply says which reading it used.
+
 #### 14.3.7 Grounding and the output invariants
 
+> - **PB2 (C: MUST NOT)** — a visitor's **total** budget is never compared against a `perArea`
+>   amount, in either direction, whatever the units appear to allow (OD-O).
 > - **GR1 (C: MUST)** — only values present in the search result may be stated as fact:
 >   `projectType`, `workScopeIds`, `property`, `pricing`, `facets`, `title`, `location`. No price is
 >   invented, no total is computed, no per-area price is computed (`D-1c`).
@@ -1478,8 +1127,8 @@ What remains:
 > - **ST3 (C: MUST)** — the path is: visitor utterance → semantic candidate → **a `style` id actually
 >   present in the document** → a small ranking bonus. An embedding never selects the final record
 >   set, a style miss carries **no penalty**, and no search fails for want of a style match. Style is
->   deliberately **not** one of `EF1`'s four criteria: it can never make a record `exact` and can
->   never keep it out. (OD-H.)
+>   deliberately **not** a class input (`EV2`): it is `EV3`'s last tier before `id`, it can never make
+>   a record `exact` and can never keep it out. (OD-H.)
 > - **ST5 (C: MUST)** — only a style the visitor stated **positively** becomes a recorded preference.
 >   A negated preference (*"너무 화려한 건 싫어요"*) must not produce a positive bonus and must not be
 >   echoed back as something the visitor asked for. A semantic candidate that was merely inferred is
@@ -1496,6 +1145,7 @@ What remains:
 >   **still matchable on the `tag` key** (§8), so the worst case is a ranking wobble — never a
 >   dropped record, never a wrong statement. `ST7` must not be implemented as *"ignore that value on
 >   the other records"*.
+
 
 ---
 
@@ -1522,7 +1172,8 @@ What remains:
 | `INV-27` | manifest `schemaVersion == "0.1"` and document `schemaVersion == "1.0"` in the same package (§3) |
 | `INV-28` | `projectType == "partial_remodel"` ⇒ `workScopeIds` present and non-empty (`WS7a` has no meaning otherwise) |
 | `INV-29` | `projectType == "full_remodel"` ⇒ `workScopeIds` contains at least one id from §7.3's **Spaces** table (`PT4`c). Makes "a narrow set of trades is not a whole-home remodel" machine-checkable instead of a matter of judgement |
-| `INV-30` | `projectType == "partial_remodel"` ⇒ `workScopeIds` contains at least one id from §7.3's **Spaces** table (`PT5`'s *bounded set of spaces*). The mirror of `INV-29`; `INV-28` required only a non-empty set. Makes §14.3.3.1's first row a **tested** impossibility rather than untested dead code, and forces the `bi-01`…`bi-08` authoring pass to send a trades-only job to breadth-absent rather than to `partial_remodel` |
+| `INV-30` | `projectType == "partial_remodel"` ⇒ `workScopeIds` contains at least one id from §7.3's **Spaces** table (`PT5`'s *bounded set of spaces*). The mirror of `INV-29`; `INV-28` required only a non-empty set. Makes "a partial job with no room" a **tested** impossibility, and forces the `bi-01`…`bi-08` authoring pass to send a trades-only job to breadth-absent rather than to `partial_remodel` |
+
 
 Consumer-side:
 
@@ -1531,27 +1182,28 @@ Consumer-side:
 | `CINV-1` | `LO1`: permuting every record's `location` leaves the ranking and the applied-criteria list unchanged |
 | `CINV-2` | `GR5`, both halves: no reply number equals the **product** of any `perArea` and any area, nor the **quotient** of any price amount (`total.amount`, `total.minAmount`, `total.maxAmount`, a `perArea.amount`, the visitor's budget) and any area — where an area includes one **parsed out of a `title`** and the visitor's own stated area, and the two operands may come from two different records. Fixture: `bi-19` (11,000,000 ÷ 32평 = 343,750) must never appear |
 | `CINV-3` | `D-1c`: the consumer computes no per-area value anywhere |
-| `CINV-4` | `GR2`: a record missing a stated criterion's input is never classed `exact`; and **`EF6`'s row order** is the one applied, over all **eight** rows since rev 9 |
-| `CINV-5` | **`PB4` strong form, as a metamorphic property over every stated criterion.** Delete the input a stated criterion reads — `property.area` for area, `projectType` for breadth, a `workScopeId` for scope — re-rank, and the record must not move **down**. Rev 9 states this over all three criteria: rev 8 stated it for `property.area` only, and the breadth arm is where the violations actually lived (`17b`'s `X8-17`, and 262 of rev 8's 484). The rule it tests is unchanged; the fixture's quantifier is widened to match it |
-| `CINV-6` | **deferred with `PB6` to §17.1.** V0.2 compares no prices, so the predicate table has no in-force rule to test |
+| `CINV-4` | `EV2`, the partial ladder: in mode `part` with `Q ≠ ∅`, only a `partial_remodel` is `exact`, every `exact` record meets row 6, and a request with `Q_s = ∅` has no `exact`. Fixtures: *"욕실 하나만"* — `bi-15` `exact` and first; `bi-04`, `bi-16` `overlap`; the seven `full_remodel` records `fallback`. *"욕실 타일만"* — `bi-15` `exact` and first although it lists no `tiling`; *"주방 타일만"* — `bi-14` `exact` and first |
+| `CINV-5` | **`PB4`, as a metamorphic property.** For every fixture query, every record and every input `PB4` lists — deleted from a record that has it, and as it stands on a record that lacks it: the evaluation (the tuple without `id`) equals the least favourable valid value's; where every valid value gives positive evidence on the tier the input feeds, it equals that evaluation with this tier at its last value. Where no valid value exists, nothing is compared (`PB4` 2). Deleting an input never gives an earlier tuple than the actual value. No record is removed. Rank changes are reported, not asserted. Fixtures: `bi-09` on *"예산 3천으로 전체 가능해요?"*, `projectType` deleted ⇒ `fallback`, the same as a `partial_remodel`; *"10억 이내로 전체"*, `pricing.total` deleted ⇒ price `none`, although every valid total is `strong` |
+| `CINV-6` | `EV3` price: only an `exact` record in mode `whole` or `part` has a price tier other than `none`; the interval arithmetic is as stated; a `perArea` is never compared (`PB2`). Fixtures: *"예산 3천으로 전체 가능해요?"* ⇒ `bi-11` `strong`; *"34평 전체 5천이면 되나요"* ⇒ `bi-09`, `bi-12` `strong`; *"욕실 하나만 700만원"* ⇒ `bi-15` `strong`, `bi-16` (`overlap`) `none`; *"바닥만 1000만원"* ⇒ no record `exact`, every price `none` noted `not_applied` |
 | `CINV-7` | `ST5`: a negated style preference produces no bonus and no echoed preference |
 | `CINV-8` | `VB1`: `"600~800만원"` parses to a range, not to one bound |
-| `CINV-9` | `WS8`: an unknown work-scope id is ignored, the record survives, the document is not rejected — **and** the record's scope criterion comes out `not_evaluable`, no absence is stated about it, and it is not classed `scope_exact`. Fixture: `bi-16` `[kitchen, bathroom]` read by a consumer that does not know `bathroom`, against *"주방만, 2천"* |
+| `CINV-9` | `WS8`: an unknown work-scope id is ignored, the record survives, the document is not rejected — **and** the record is not `exact` in mode `part` with `Q ≠ ∅`, and no absence is stated about it. Fixture: `bi-16` `[kitchen, bathroom]` read by a consumer that does not know `bathroom`, against *"주방만"* ⇒ `overlap` |
 | `CINV-10` | `GR4`: a model-facing record carries `pricing.perArea` only when the visitor asked about a per-area price |
-| `CINV-11` | **deferred with `PB6` to §17.1** |
+| `CINV-11` | retired with rev 7–9.1's budget machinery (§17.1) |
 | `CINV-12` | `ST7`: a value declared in **both** document vocabularies gives a style bonus only to the records that carry it in their own `style`, and is a plain tag on the others |
-| `CINV-13` | `EF6` on a `full_remodel`, three fixtures. (a) §1's *"34평 아파트 전체 리모델링"* → `bi-09` **`exact`**. (b) the same query with a **space** named (*"주방 포함 34평 전체"*) → still `exact`: `EF3`'s spaces half is `satisfied` via `PT4`(b). (c) the same query with a **trade** the record does not carry (*"창호 교체하려는데 34평 전체 리모델링"*) → `bi-09` is **not** `exact` but `not_evaluable`, while `bi-10`, which carries `windows`, is `exact`. `fallback_from_full` is a `breadth` verdict (`EF6` row 2), never an ordering verdict |
-| `CINV-14` | `PB7`: §14.3.3's rows are evaluated in order and the first decides the relation. Plus `EF1`: for every fixture each of the three criteria has exactly one state, and no rule outside `EF2`–`EF4` assigns one |
-| `CINV-15` | §14.3.3.1: a trade-only request (`Q_s = ∅`, `Q_t ≠ ∅`) is classified on `R_t` vs `Q_t`. Three fixtures, one per outcome. (a) **`scope_superset`, not `scope_exact`** — the row that needs `Q_t ⊆ R_t` **and** `R_s ≠ ∅`: *"바닥만"* against `bi-17` (`R_t = {flooring}`, `R_s = {living_room}`), and the extra space **is named** in the disclosure, because the case also remodelled the living room. Since rev 9 this relation is `satisfied` (`EF3`) and the class is `scope_superset` by `EF6` row 7. (b) **`scope_disjoint`** — *"바닥이랑 도배만"* against `bi-16`, whose ids are `[kitchen, bathroom]`, so `R_t = ∅`. *(Rev 6 cited `bi-16` for outcome (a); `R_t ∩ Q_t = ∅`, so it is the last row, not the second.)* (c) the request reaches `bi-19`, whose 11,000,000 is stated as a fact and never as a budget match. *(Rev 9: this invariant asserted budget verdicts — "budget refused", "not budget-matched" — for machinery deferred to §17.1, and cited a budget in its own utterance. Round 8's `m8-1`. The outcomes it tests are unchanged.)* |
-| `CINV-16` | **deferred with `PB3a` to §17.1.** V0.2 neither compares nor orders per-area amounts; `GR1` still permits stating one as a fact |
-| `CINV-17` | disclosure wording, both axes: a trade in `Q_t \ R_t` is **not established for this case**, never "not included"; and an absent **space** id means that space **was not remodelled**, never that no work reached it — `bi-17` re-floored the bedrooms while authoring only `[living_room, flooring]`. **Rev 9.1 adds the membership half (`D9-9`), which this invariant previously left unconstrained**: where `Q` carries more than one reading, a disclosure names only the ids **every** reading admits, and the intersection is taken **over the disclosure sets** — the set each row would name under each reading — and never over `Q` before the row runs. The two are not equivalent: §14.3.3 rows 4/6/7/8 name `Q \ R` and coincide, **row 5 names `R_s \ Q_s` and inverts**, so intersecting `Q` there yields the union of the per-reading claims. Asserted on the constructed witness §14.3.3 gives, since row 5 never fires reading-dependently on the 19. Plus the empty case: **intersection empty and some reading's set non-empty ⇒ the criterion is `not_evaluable` and the ambiguity is disclosed**, never a row 6/7/8 sentence that announces uncovered spaces and names none. Measured at rev 9 as written: **10** row disclosures were decided by picking a reading; under `D9-9` that is **0** |
+| `CINV-13` | mode `whole`. (a) *"34평 아파트 전체 리모델링"* ⇒ `bi-09` `exact`. (b) *"주방 포함 34평 전체"* ⇒ still `exact`. (c) *"창호 교체하려는데 34평 전체 리모델링"* ⇒ `bi-09` and `bi-10` both `exact`, `bi-10` first on coverage, and `bi-09`'s windows reported as not established |
+| `CINV-14` | `EV1`: no rule outside §14.3.2–§14.3.3 assigns a class or a tier; and an implementation's disclosure step leaves every class and tier exactly as `EV2`/`EV3` produced them |
+| `CINV-15` | trade-only requests (`OQ-1`, closed). *"32평인데 도배랑 바닥만"* ⇒ no `exact`; `bi-17` `overlap` first; `bi-09`, `bi-11`, `bi-19` `fallback` with coverage 2, in that order; area `not_applied`. *"바닥만"* ⇒ no `exact`; `bi-05` is `fallback`, never a direct answer. With no `exact`, **no budget is compared** on a trade-only request: every price is `not_applied`. `bi-19`'s 11,000,000 is stated as a fact, and nothing is said about rooms it did not list |
+| `CINV-16` | retired with rev 7–9.1's budget machinery (§17.1) |
+| `CINV-17` | disclosure wording, both axes (§14.3.6): a trade not listed is **not established for this case**, never "not included"; a room a `partial_remodel` does not list **was not remodelled**, never "no work reached it" — `bi-17` re-floored the bedrooms while authoring only `[living_room, flooring]` |
 | `CINV-18` | `GR5a`: a number that is itself the value of a `pricing` field **on the record the statement is about** may be stated even when it equals a forbidden product or quotient. Fixtures: `bi-10` 2,500,000 (= 85,000,000 ÷ 34, exactly) **must** be statable when asked; `bi-19`'s 343,750 must not |
-| `CINV-19` | the **coverage statement**: a visitor who stated a budget is told each shown record's price as a fact together with what that total bought (from `R.projectType` and `R.workScopeIds`), **in the reply** and not only in the envelope, and is told explicitly that the cases are not selected or ordered by their budget (§14.3.5, §14.3.6). **The statement's inputs are the two named here and nothing else is specified**, which is weaker than `PB0a`'s parked four-input template and is round 8's `M8-7`, carried as §18's `Q-30` rather than repaired by an unchecked replacement |
-| `CINV-20` | **`EF6` totality and single-valuedness, on two independent enumerations.** **Pass A, the derived set:** `EF2`–`EF4` are implemented from their own text and the three criterion states are *computed* over a conversation × record input space of **1,512** inputs (3 `projectType` × 3 `V.breadth` × 21 scope shapes including `WS8`'s dropped-id case × 8 area shapes). Reachability is a **result**, not an assumption: **100** of the 192 possible criterion-state vectors occur and all 10 classes appear among them, so no class is orphaned. **Pass B, the raw superset:** the full cross-product of the three states × 3 `projectType` = 192 vectors, **336 evaluations** at rev 9 once row 1's relations are enumerated — **384 at rev 8**; the figure moves because row 1's relation list lost `scope_superset` (`D9-2c`) — a robustness check, so `EF6` stays total if a criterion later gains a branch. **On both passes**: exactly one class, in `GR2`'s closed list; the class is the one belonging to the **lowest-numbered row whose condition holds**, which is how *first match wins* is checked rather than assumed; `exact` **exactly** when no stated criterion is `unsatisfied` or `not_evaluable`; row 1 only for a `partial_remodel` (`EF3`'s lemma, **derived** from `EF3`'s branches). Plus **`GR2a` is a permutation of `GR2`'s closed list** — no class missing, none invented, none twice — so every class has exactly one position in the presentation order. Eleven worked cases from rounds 4–7 are asserted as conversations with their states derived. Executable: `proof/ef6-totality.mjs`, run by `npm run proof:ef6`; output in `proof/ef6-totality.txt`. It proves the **specification**; the consumer owns `CINV-20` against its own implementation. **Rev 9.1 status of the counts above: pass A is re-derived and VERIFIED; pass B's arithmetic moves.** Rev 9 marked *100 of 192* as pending re-derivation against the eight-row `EF6`; that re-derivation has been done and the marker is dropped. Pass A is **unchanged at 100 of 192 vectors**, 1,512 inputs, 10 of 10 classes reachable, 0 inputs with no row, 0 first-match violations, `EF3`'s lemma holding with 0 counterexamples. It is **verified rather than assumed**: the same re-derivation run at rev 8 reproduces `07`'s parked rev-8 figures exactly — 100 of 192 and 10/10 — which is what makes the rev-9 column comparable, and the two vector sets are **identical, not merely equal in size**. `D9-2c` creates and removes no vector; it **redistributes inputs among vectors that already occur** (a `partial_remodel` with relation `scope_superset` moves from scope `unsatisfied` to scope `satisfied`). What moves is the **class** each input reaches — `scope_superset` 48 → 20, `breadth_fallback` 104 → 120, `area_fallback` 89 → 93, `not_evaluable` 478 → 486 — and **pass B's evaluation count, 384 → 336**, because row 1's relation list lost `scope_superset`. The input-space arithmetic that is genuinely unchanged is **1,512 and 192**. Standing caveat, unchanged: `proof/ef6-totality.mjs` still implements rev 8, so the figures above come from `proof/contract-pipeline.mjs`'s re-derivation and not from that script; bringing `ef6-totality.mjs` to rev 9 remains a verification obligation in §20.7.6 |
-| `CINV-21` | **ordering determinism**: two runs of one query over one snapshot produce the **same** order, and the order is fully determined even when every discriminating key is flat. Fixture: *"전체 리모델링 사례 보여주세요"* — seven `exact` records, no area, no scope, result limit 3: which three are shown and in what order is decided by `publishedAt` then `id`, `GR2a` having tied them |
-| `CINV-22` | `GR3` is a **labelling and a presentation partition**, not a filter and not a class input: for every fixture, **no record is removed from the result** and no record's class changes. Rev 9 deleted the rungs (`D9-1`) and this invariant is what says the deletion could not lose a record; measured over `04` §4.1's nine rows, 0 records were lost on any row. The other half of rev 8's wording — *removing the ladder changes which records are shown first* — is retired with the ladder: since rev 9 `GR2a` is the only order, so there is nothing left to remove |
-| `CINV-23` | `EF3`'s ground-not-conclusion clause: for a `full_remodel` whose spaces half is `satisfied` by `PT4`(b) with `Q_s ⊄ R_s`, the reply says *"집 전체를 리모델링한 사례"* and **never** names the visitor's space as included. Fixture: a query naming a space no id carries, against `bi-09` |
-| `CINV-24` | **`breadth_fallback`**, the class that closes round 5's headline defect, fixtured by name. (a) *"전체 리모델링 사례 보여주세요"* — `V.breadth = whole`, nothing else stated — classes `bi-15` (one bathroom, 7,000,000) **`breadth_fallback`**, never `exact`, and `GR2a` places it after the `exact` `full_remodel` records. *(Rev 9: the rung wording and its "larger `R_s` first" key are gone with `GR3a` — §17.3. That key was round 8's `M8-6` / `17b`'s `X8-5`: a sort key stated inside a rung label and absent from the key list, so two conforming consumers ordered the same result differently. Deleting the rungs closes it.)* (b) the same result's `full_remodel` records are `exact`. (c) *"주방만 하고 싶어요"* classes `bi-14` **`exact`** and `bi-09` `fallback_from_full`, **in that order** — `GR2a` puts `exact` first. *(Rev 9: rev 8 stated the two the other way round and was wrong under both of rev 8's own orderings — round 7's `m7-5`, round 8's `m8-5`, `17b`'s `X8-12`.)* |
+| `CINV-19` | the budget statement (§14.3.6): a visitor who stated a budget is told each shown record's total as a fact, **in the reply** and not only in the envelope; a non-`exact` record's price is said to be not compared |
+| `CINV-25` | extra trades beside a budget (§14.3.6, `OQ-6`). *"거실만 1200만원"* ⇒ `bi-17` `exact`, price tier `strong`; the reply names 바닥 (`flooring`) from `workScopeIds`, says the 12,500,000 includes it, and never says the total fits the budget or is a quote for the living room alone. *"욕실 하나만 700만원"* × `bi-15` (lists no trade) ⇒ no extra-trade statement |
+| `CINV-20` | **`EV2` totality and single-valuedness**, by enumeration: every mode × every `Q` shape × `projectType` ∈ {full, partial, absent} × every valid id set over a small vocabulary × dropped ∈ {no, yes} gets exactly one class, from the lowest-numbered row that holds; and every row of the table fires for at least one input |
+| `CINV-21` | **`EV4` order**: for every fixture query the comparison is total, antisymmetric and transitive over the 19 records, and 50 shuffles of the input give one order. Fixture: *"전체 리모델링 사례 보여주세요"* — seven `exact` records, no other key discriminates, result limit 3 ⇒ `bi-01`, `bi-07`, `bi-09` by `id` |
+| `CINV-22` | no class or tier is a filter: for every fixture, all 19 records are returned |
+| `CINV-23` | whole-home cover (§14.3.6): for a `full_remodel` covering a requested room only through `PT4`(b), the reply says *"집 전체를 리모델링한 사례"* and **never** names that room as included. Fixture: *"욕실 하나만"* against `bi-07`, which lists no `bathroom` |
+| `CINV-24` | mode `whole` and the ladder together. (a) *"전체 리모델링 사례 보여주세요"* ⇒ `bi-15` (one bathroom, 7,000,000) `fallback`, never `exact`, after every `full_remodel`. (b) *"주방만 하고 싶어요"* ⇒ `bi-14` `exact` and `bi-09` `fallback`, in that order |
 
 ---
 
@@ -1566,21 +1218,19 @@ Consumer-side:
 6. **V0.2 search tests** run against the real snapshot.
 7. Only then is exposure considered.
 
-**Consumer confirmations required before freeze — now one, not two.**
+**Consumer confirmations required before freeze — two.**
 
-**V0.2 amends no frozen V0 rule.** Through rev 7 it amended exactly one — `PB0`, replacing V0
-`PR4`'s same-`category` condition for `pricing.total` — and that amendment was not in force until
-the consumer confirmed it. With budget comparison deferred (§17.1), V0.2 compares, sorts and calls
-no price "close", so `PR4` is satisfied **as written**. `PB0` leaves this list with the rest of the
-comparison machinery, and V0.2 becomes a pure **extension** of V0. That is a material reduction in
-what the consumer has to agree to before anything ships, and it is the clearest practical benefit of
-the narrowing (`16-narrowing-decision.md` §4).
-
-The one remaining item:
+**V0.2 amends one frozen V0 rule, for `pricing.total` only.** V0 `PR4` compares prices only between
+records of one `category`. V0.2 compares a visitor's total budget with a record's total only when
+the record is `exact` for the job the visitor described (`EV3`, `OD-O`). That is the same-axis
+condition `PR4` approximates with `category`, stated on the job itself. `PR4` stays verbatim for
+`perArea`, which V0.2 does not compare.
 
 | item | what the consumer is being asked to confirm |
 |---|---|
 | `VO6` `style` limit | the values-per-facet limit for the new `style` key. The producer ships a **provisional** 150 and no consumer behaviour may be inferred from it (§8). |
+| `PR4` for `pricing.total` | the amendment above. The first-party consumer implements `EV3`; it confirms that `category` no longer gates a total-price comparison |
+
 
 > **RO1 (P: MUST NOT)** — the producer never emits V0.1 and V0.2 fields simultaneously. There is no
 > dual-emit. Transition safety comes from the **order** above plus the consumer's temporary
@@ -1601,480 +1251,15 @@ The one remaining item:
 
 ## 17. Deferred
 
-### 17.1 Budget comparison — deferred to V0.3
+### 17.1 Budget comparison — rev 7–9.1 machinery retired
 
-`16-narrowing-decision.md` records why. In short: `OD-O` was violated in three consecutive review
-rounds by three different routes, and every remaining BLOCKER and three of four MAJORs at rev 7 lived
-in this machinery — specifically in **pairs of devices doing one job**: `PB1`'s two permission paths,
-`GR3`/`PB6a`'s two ordering devices, `VB3`'s two axes. Removing budget comparison collapses each pair
-to a single device and removes those findings **by construction** rather than by argument.
-*(`19-round8-disposition-and-method-change.md` `DM-2` withdraws that argument's **prediction** — the
-BLOCKERs did not collapse — and keeps the outcome on the narrower ground that a contract making no
-price claim cannot make a **wrong** one.)*
-
-**Nothing here is retracted or weakened. It is parked.** V0.3 restores it after its own review cycle,
-under one design constraint taken from the round-7 reviewer's diagnosis: **one permission function
-keyed on one thing, and one ordering function** — the same *compute one from the other* move that
-produced `EF6`.
-
-**Deferred rule ids**, none of which V0.2 may cite as in force: `PB0`, `PB0a`, `PB1`, `PB3`, `PB3a`,
-`PB6`, `PB6a`, `EF5`, the `price_fallback` class, §14.3.3's budget column, §14.3.4's price tier,
-`GR3`'s comparing budget rung, and `CINV-6`/`CINV-11`/`CINV-16`. **Retained and in force in V0.2**:
-`PB2`, `PB4`, `PB5`, `VB1`, `VB2` (§14.3.5).
-
-#### What rev 9 fixed in this section, what it could not, and what was recovered afterwards
-
-Rev 8 claimed this section was *"verbatim and unweakened"* and *"kept in full in §17 so no work is
-lost"*. Round 8's `M8-1` established that **five of the twelve deferred items were deleted, not
-parked**: `EF5`, the `price_fallback` class row, §14.3.3's budget column, §14.3.4's price tier and
-`GR3`'s comparing budget rung — plus `CINV-6`/`CINV-11`, whose entries in §15 became empty pointers.
-The consequence was not cosmetic: the parked `PB1` below reads *"permitted when §14.3.3 permits
-it"*, and §14.3.3 as V0.2 carries it has no column that carries a permission, so V0.3 could not
-restore `PB1` from this section at all.
-
-**Rev 7's file is unrecoverable from the repository. It was not unrecoverable from the session
-record.** This document is untracked and has no committed ancestor (round 8's §G established the
-same thing), and no copy of rev 7 exists in the repository — all of that is still true. What rev 9
-inferred from it was not. `27-rev7-text-recovery.md` recovers **all seven** deleted items verbatim
-from the authoring session's own record: two literal `sed` slices of the rev-7 file still present in
-that session's scratchpad, one `sed` dump of rev-7 lines 1188-1225 printed into the transcript, and
-the recorded before/after strings of the edits that wrote the rest. **Both `LOST` markers are
-withdrawn and all five reconstructions are replaced.** Rev 9's summary above — *"five of the twelve
-deferred items were deleted, not parked"* — stands as a statement about **rev 8**; what changes here
-is only what this section can now print.
-
-**Provenance form.** Every parked passage below carries *(RECOVERED VERBATIM — …)* with its locator.
-A passage **not** carrying that marker is commentary **about** the parked rule and never the rule
-itself. Locators cite the authoring session
-`~/.claude/projects/-Users-woops-projects-web-recon-track-b/0b11d7b9-33b5-4113-a2c3-947908bc754f.jsonl`
-by physical line, or a file path. `27-rev7-text-recovery.md` carries the full extraction and the
-three anchors that pin the generation: the rev-7 file's own section index, `15-delta-review-rev7.md`'s
-line citations, and the rev-7/rev-8 edit boundary. **One transcription liberty, and only one:** rev 7
-carried these lines inside its own sections' blockquotes, so the leading `> ` depth differs here.
-Nothing else differs. That is the convention §17.3 already uses.
-
-**Do not harmonise this text with V0.2's rules, and do not read it as a proposal.** It is what rev 7
-said. It contradicts V0.2 in four places, listed at the end of this section rather than resolved:
-deciding them is V0.3's work, and the contradictions are the information V0.3 needs.
-
-> **§17.1-a · `EF5` — the budget criterion.** Rev 7's §14.3.2, file lines **914-918**.
-> *(RECOVERED VERBATIM — the rule through "(`PB4`, OD-N)." from the pre-edit file text carried in
-> the authoring transcript at lines 1229, 1538 and 1250; the tail from the recorded substitution at
-> transcript line 1566, `sub(...)` tag `"EF5"`, which is the last edit to touch this rule. Five
-> lines, matching `15-delta-review-rev7.md`:87's citation `07:914-918`.)*
->
-> - **EF5 budget.** `V.budget` absent ⇒ `not_applicable`. Else if §14.3.5 does not **permit** the
->   comparison for this record, or the record carries no usable price, ⇒ `not_evaluable` — *not*
->   `unsatisfied`; a refusal to compare is never a failure to match (`PB4`, OD-N). Else if `PB6`
->   returns **not comparable** — different currencies, V0 `PR6` — ⇒ `not_evaluable`, for the same
->   reason. Else `satisfied` iff `PB6`'s signed `delta ≤ 0`.
->
-> *What the replaced reconstruction said, recorded so the difference is not re-lost:* it read
-> *"`not_evaluable` when **`PB1`** does not permit the comparison, **or** the record carries no
-> **comparable** price"*. Rev 7 keys the permission on **§14.3.5** — the section, not the rule — says
-> **"no usable price"**, and carries a clause the reconstruction dropped whole: *"— not
-> `unsatisfied`; a refusal to compare is never a failure to match (`PB4`, OD-N)"*. That clause is
-> what binds `EF5` to `PB4`, which is in force. It also means rev 7's **rule text** named exactly one
-> permission input; `B7-1`'s second path was the rev-7 **proof**'s, not another rule's.
->
-> *`EF1`'s closure sentence read "nothing outside `EF2`–`EF5` assigns a criterion state" while
-> `EF5` existed; V0.2's reads `EF2`–`EF4`. Restoring `EF5` restores the wider closure.*
-
-> **§17.1-b · the `price_fallback` class.** Rev 7's §14.3.6: `GR2`'s closed list at file lines
-> **1148-1153**, `EF6` at **1158-1167**.
-> *(RECOVERED VERBATIM — the `new` argument of the single `sub(...)` tagged `"GR2/EF6/GR3"` at
-> authoring-transcript line 1582. No contract edit touches `GR2` or `EF6` between that line and rev
-> 8's wholesale rewrite. Header + separator + 8 rows lands exactly on `15-delta-review-rev7.md`:88's
-> citation `07:1158-1167`, and `15`:166 restates rows 1-3 in the same order.)*
->
-> - **GR2 (C: MUST)** — every returned record carries **one** match class from the closed list
->   `exact` · `scope_superset` · `scope_subset` · `scope_overlap` · `scope_disjoint` ·
->   `breadth_fallback` · `fallback_from_full` · `unknown_type_fallback` · `price_fallback` ·
->   `area_fallback` · `not_evaluable`, **and** the list of criteria the visitor **stated** that came
->   out `not_evaluable` for that record. A `not_applicable` criterion is never listed: the visitor
->   did not ask.
->
->   **EF6 — the class, a total function of the four criterion states and `R.projectType`, first
->   match wins:**
->
->   | # | condition | class |
->   |---|---|---|
->   | 1 | scope is `unsatisfied` | the §14.3.3 relation — `scope_superset` · `scope_subset` · `scope_overlap` · `scope_disjoint` |
->   | 2 | breadth is `unsatisfied` and `R.projectType == "full_remodel"` | `fallback_from_full` |
->   | 3 | breadth is `unsatisfied` (so `R.projectType == "partial_remodel"`, by `EF2`) | `breadth_fallback` |
->   | 4 | breadth is `not_evaluable` (so `R.projectType` is absent, by `EF2`) | `unknown_type_fallback` |
->   | 5 | budget is `unsatisfied` | `price_fallback` |
->   | 6 | area is `unsatisfied` | `area_fallback` |
->   | 7 | any criterion is `not_evaluable` | `not_evaluable` |
->   | 8 | otherwise | **`exact`** |
->
->   **`EF6` is total and single-valued by construction**: row 8 is unconditional, so some row always
->   fires; *first match wins*, so exactly one does. Every criterion has a row for `unsatisfied`
->   (1, 2/3, 5, 6), row 4 and row 7 cover `not_evaluable`, and `not_applicable` reaches row 8 — which
->   is the point: **`exact` means every criterion the visitor stated was evaluated and satisfied**,
->   and a criterion the visitor did **not** state can never keep a record out of it. Rows 1–4 precede
->   5–6 because a coverage mismatch is a stronger statement about a record than a price one. Row 4
->   precedes row 7 because `unknown_type_fallback` says *which* input was missing, and `PB5` needs
->   that record identifiable. `CINV-20` enumerates the whole input space and asserts both properties.
->
-> *What the replaced reconstruction said:* *"`price_fallback` is the **eleventh** class in `GR2`'s
-> closed list"*. It is the **ninth name written**, in a list of eleven classes. The rest of that
-> reconstruction was right — row 5, between the breadth rows and the area row; eight rows and eleven
-> classes on restoration; `GR2a` must gain a position for it or the permutation check fails — but the
-> reason it gave (*"labelled over your budget rather than the wrong kind of job"*) is not rev 7's.
-> Rev 7's stated reason is the ordering sentence above: *"Rows 1–4 precede 5–6 because a coverage
-> mismatch is a stronger statement about a record than a price one."*
-
-> **§17.1-c · §14.3.3's budget column, and §14.3.3.1's.** Rev 7's §14.3.3, table at file lines
-> **928-937** (header 928, separator 929, rows 930-937); `PB7` at **924-926**; §14.3.3.1's own table
-> at **983-988** (`15-delta-review-rev7.md`:260 cites its row 2 at `07:986`).
-> *(RECOVERED VERBATIM — the `+` lines of hunk `@@ -856,13 +856,30 @@` in the `bashEditDiff` recorded
-> at authoring-transcript line 1575, i.e. the file's own lines as written; §14.3.3.1's rows from hunk
-> `@@ -925,11 +935,22 @@` at transcript line 1719, where row 1 is a `+` line and rows 2-4 are
-> unchanged context. The string "not permitted" appears in no contract edit between transcript 1575
-> and rev 8's rewrite, so the column is untouched from there into rev 7. `15-delta-review-rev7.md`:90
-> cites the column as `07:928-937` — ten lines — and `15`:99 cites `PB7` at `07:924-926`.)*
->
-> > **PB7 (C: MUST)** — the rows are evaluated **in the order written** and the **first** row whose
-> > condition holds decides both the relation and the budget permission. Without this the rows
-> > overlap and one input yields two opposite answers.
->
-> | # | condition | relation | budget |
-> |---|---|---|---|
-> | 1 | `Q = ∅` — the visitor named **no** scope of any kind | none; scope was not a stated criterion (`EF3`) | **permitted**; `PB0a`'s coverage statement is required |
-> | 2 | `Q_s = ∅`, `Q_t ≠ ∅` — a **trade-only** request | §14.3.3.1 | §14.3.3.1 |
-> | 3 | `R_s == Q_s` and `Q_t ⊆ R_t` | `scope_exact` | **permitted**; the trades in `R_t \ Q_t` are disclosed |
-> | 4 | `R_s == Q_s` and `Q_t ⊄ R_t` | `scope_subset` | **not permitted**; `Q_t \ R_t` is reported as **not established for this case** |
-> | 5 | `R_s ⊋ Q_s` | `scope_superset` | not permitted — the total bought extra spaces, **which are named** |
-> | 6 | `R_s ⊊ Q_s` | `scope_subset` | not permitted; the spaces in `Q_s \ R_s` are reported as **not remodelled in this case** |
-> | 7 | `R_s`, `Q_s` overlap, neither contains the other | `scope_overlap` | not permitted; the spaces in `Q_s \ R_s` are reported as **not remodelled in this case** |
-> | 8 | `R_s ∩ Q_s = ∅` | `scope_disjoint` | not permitted; the spaces in `Q_s \ R_s` — here all of them — are reported as **not remodelled in this case** |
->
-> > **Row 1 has two entry points and they must not diverge.** `EF3` never reaches this table with
-> > `Q = ∅`: it short-circuits to `not_applicable` first. `PB1`'s `partial_remodel` branch reaches it
-> > **directly**, for every `Q`, and row 1 is the row it lands on. *(Rev 5 deleted this row, so `PB0`'s
-> > own worked utterance — "2천만원으로 뭘 할 수 있나요" — fell through to row 4 and budget-matched
-> > nothing over a corpus containing five partial jobs inside the budget.)*
-> >
-> > **Rows 5–8 read `Q_s` only, deliberately.** A visitor who named both rooms and trades gets a class
-> > computed from the rooms alone. Every one of those rows **refuses** the budget comparison, so no
-> > price claim can be built on the omission, and the cost is a less informative class. Rows 3 and 4 —
-> > where the spaces match exactly and the budget may be permitted — are the rows where `Q_t` changes
-> > the answer, and they read it.
-> >
-> > **The relation name is `scope_exact`, never `exact`.** They are different predicates: a row-3
-> > record that is over budget is classed `price_fallback` by `EF6`, not `exact`. Rev 4 and rev 5 used
-> > one word for both.
->
-> Row 2 defers to §14.3.3.1's own column, which rev 9 also marked **LOST**. It is recovered too:
->
-> | condition | relation | budget |
-> |---|---|---|
-> | `Q_t ⊆ R_t` and `R_s = ∅` | `scope_exact` | **permitted** — but see below: no `partial_remodel` can satisfy `R_s = ∅` |
-> | `Q_t ⊆ R_t` and `R_s ≠ ∅` | `scope_superset` | not permitted — `R_s` spaces were remodelled too, and the total paid for that |
-> | `Q_t ⊄ R_t`, `R_t ∩ Q_t ≠ ∅` | `scope_overlap` | not permitted |
-> | `R_t ∩ Q_t = ∅` | `scope_disjoint` | not permitted |
->
-> *What the replaced reconstruction said.* It marked rows 2, 4, 6, 7 and 8 **LOST** and labelled rows
-> 1, 3 and 5 **attested**. None of those three was rev-7 text; all three were paraphrase:
->
-> | row | labelled "attested" as | rev 7 |
-> |---|---|---|
-> | 1 | **permitted**, with `PB0a`'s coverage statement required | **permitted**; `PB0a`'s coverage statement is required |
-> | 3 | **permitted** | **permitted**; the trades in `R_t \ Q_t` are disclosed |
-> | 5 | **refused** — the total also bought spaces the visitor did not ask about | not permitted — the total bought extra spaces, **which are named** |
->
-> The reconstruction also compressed the relation column and dropped row 1's *"; scope was not a
-> stated criterion (`EF3`)"*. And the *"Rows 5–8 read `Q_s` only"* paragraph is one rev 8 **kept but
-> altered**: rev 8's surviving version drops rev 7's sentence *"Every one of those rows refuses the
-> budget comparison, so no price claim can be built on the omission, and the cost is a less
-> informative class"* and the clause *"and the budget may be permitted"*. That alteration was recorded
-> nowhere until now. Rev 9's instruction that *"V0.3 must re-derive the whole column rather than trust
-> a majority"* is withdrawn: there is nothing to re-derive. `B7-1` remains a precondition on
-> restoring `PB1` for the reason the table below gives, which is unaffected.
-
-> **§17.1-d · §14.3.4's price tier. There was no second table.** Rev 7's §14.3.4 in full, file lines
-> **1014-1031**.
-> *(RECOVERED VERBATIM — a literal slice of the rev-7 file, still on disk at
-> `/private/tmp/claude-501/-Users-woops-projects-web-recon-track-b/0b11d7b9-33b5-4113-a2c3-947908bc754f/scratchpad/cut-1434.md`,
-> produced by `sed -n '1014,1031p'` at authoring-transcript line 2278 and
-> echoed into the transcript at 2279. The section index printed 84 seconds earlier at transcript 2267
-> bounds §14.3.4 at exactly 1014-1031; the first rev-8 edit is 79 seconds later. Its sibling
-> `cut-1435.md` = `sed -n '1032,1145p'` is the rev-7 §14.3.5 already parked in the `<details>` block
-> below, which is what identifies the pair.)*
->
-> > #### 14.3.4 Tiers
-> >
-> > Price uses `PB6`'s signed `delta`; the tier reads `|delta|`.
-> >
-> > **The area delta** has its own definition, because `PB6`'s is about budgets: with `v` the area the
-> > visitor stated and `r` the record's `property.area.value`, both converted to one unit under `AR4`
-> > and on the same `AR5` basis, `delta_area = (r − v) / v` — the **visitor's** figure is the divisor,
-> > as it is for a budget.
-> >
-> > | `|delta|` | tier |
-> > |---|---|
-> > | ≤ 0.10 | `strong` |
-> > | ≤ 0.20 | `acceptable` |
-> > | > 0.20 | `fallback` — no bonus |
-> >
-> > > **TI1 (C: MUST)** — a tier is a ranking signal, not a hard filter. Tiers must not be applied so
-> > > that an ordinary request returns zero records (OD-M).
->
-> **Rev 7 had one tier scale, read by two criteria.** The price tier *is* the band table above
-> applied to `PB6`'s signed `delta`; the area tier is the same table applied to `delta_area`. So what
-> rev 8 deleted was not a table. It deleted (i) the sentence *"Price uses `PB6`'s signed `delta`; the
-> tier reads `|delta|`."*, (ii) the four words *"as it is for a budget"*, and (iii) the band table's
-> column header, which rev 7 writes `` `|delta|` `` and V0.2 writes `` `|delta_area|` ``. Rev 8 then
-> added *"V0.2 has one tier scale, for area. The price tier is deferred with `PB6` to §17.1."*
->
-> *What the replaced marker said:* **LOST**, that *"rev 7 carried a second tier scale beside the area
-> one"*, and that V0.3 *"should re-derive the table from `OD-N`"*. All three are withdrawn. There is
-> no second scale, nothing is lost, and **the `OD-N` re-derivation instruction is removed**: it told
-> V0.3 to reconstruct something that does not need reconstructing. `OD-N`'s bands happen to be the
-> ones rev 7 implemented, which is why the misreading was plausible; it is not a source V0.3 needs.
-> Restoring the price tier is an edit to the **header** of a table that is **in force** (§14.3.4) plus
-> one restored sentence — not an addition. `21-pipeline-audit.md`:59 independently records the
-> checker's `TIER_ROWS`/`tierOf` as faithful to the same three bands, the same divisor and the same
-> first-match reading.
-
-> **§17.1-e · `GR3`'s comparing budget rung.** Rev 7's §14.3.6: `GR3`'s preamble at file lines
-> **1190-1197**, `GR3a` at **1199-1210**, the rungs table at **1214-1219**.
-> *(RECOVERED VERBATIM — the tool result at authoring-transcript line 2100, which is the output of
-> `sed -n '1188,1225p' 07-integration-contract-v0.2-candidate.md` run at transcript line 2099: a
-> direct dump of the rev-7 file. Seven separate line citations in `15-delta-review-rev7.md` land on
-> it exactly — `07:1195`, `07:1199-1210`, `07:1207`, `07:1210`, `07:1214-1219`, `07:1221`,
-> `07:1225-1231` — and `15`:431 records `GR3a` as *"a five-row first-match table"*, which is what this
-> is. The budget rung's own text is corroborated as both sides of the recorded rev-7 edit at
-> transcript line 1882, `sub(...)` tag `"M-5/M-8"`.)*
->
-> - **GR3 (C: MUST)** — the **ladder** is the order in which records are **offered**. It is not a
->   separate search and it is **not an input to `EF6`**.
->
->   A record whose `EF6` class is `exact` is a **direct answer**. Every other returned record is a
->   **labelled reference**, its label is its `EF6` class, and the label is **stated, never hidden**
->   (OD-P). **Direct answers are offered first**, among themselves in the default order below; the
->   ladder orders the labelled references that follow. When there are no direct answers the ladder
->   is the whole result.
->
->   **GR3a (C: MUST) — the rows are evaluated in this order and the first whose condition holds
->   decides the rung set.** Without it the rows overlap and one query selects two:
->   *"창호 교체하려는데 34평 전체 리모델링"* has `V.breadth = whole` **and** `Q_s = ∅`, `Q_t ≠ ∅`,
->   so it matches both the whole-home row and the trade-only row.
->
->   | # | condition | row |
->   |---|---|---|
->   | 1 | `V.breadth == whole` | whole-home work |
->   | 2 | `V.breadth == partial` **or** `Q_s ≠ ∅` | partial work, spaces named |
->   | 3 | `Q_s = ∅` and `Q_t ≠ ∅` | trade-only |
->   | 4 | `V.budget` present, `Q = ∅`, `V.breadth` absent | nothing but a budget |
->   | 5 | otherwise | no ladder; the default order below is the whole order |
->
->   The rungs themselves:
->
->   | the visitor asked | rung, in order |
->   |---|---|
->   | […] three rows — partial/spaces-named, trade-only, whole-home — recovered verbatim in `27-rev7-text-recovery.md` §F and **not reprinted here**: their subject is the ladder as an ordering device, which is §17.3's deferral, not this one. Rev 7's wording of them differs from the rev-8 wording §17.3 parks. |
->   | **nothing but a budget** (`V.breadth` absent, `Q = ∅`, `V.budget` present) | records with a **comparable** `pricing.total`, `|delta|` ascending, each carrying `PB0a`'s coverage statement → records with any price → the rest |
->
-> **The trigger, corrected.** The replaced reconstruction said the rung was *"reached only when no
-> record is a direct answer"* and cited `13`:77. That is **rev 6's** `GR3` preamble. Rev 7 replaced
-> it: the rung set is selected by `GR3a` **row 4** above, and the preamble confines the ladder to the
-> labelled references instead of gating it on there being none — *"Direct answers are offered first,
-> among themselves in the default order below; the ladder orders the labelled references that
-> follow."*
->
-> **One of the two parked defects is struck, and here is why rather than silently.** The
-> reconstruction recorded, as a live precondition, that the rung was *"**dead on its own worked
-> utterance**, because the 'no direct answer' trigger fails as soon as any record is `exact` (round
-> 6's `M-5`, `13`:77)"*. That defect is **rev 6's** and rev 7 **fixed it** — by the very preamble
-> change quoted above, which `15`:427 records as *"`M-5` … **CLOSED as text**"*. Carrying it forward
-> would have V0.3 repair something already repaired, and would hide that the repair exists; a parked
-> defect that was already fixed misleads exactly as much as one never recorded. It is struck as a
-> precondition and kept here as history.
->
-> **The second defect stands**: `|delta|` ascending is a **price** ordering key, which *Every result
-> has an order*'s own *"no key is a price"* sentence forbids. And the rung still cannot simply be
-> re-attached to `GR3`: rev 9 deleted the rung machinery entirely (`D9-1`, §17.3), and §17.3 parks
-> **rev 8's four-row `GR3a`**, from which the budget row is already absent. The five-row rev-7
-> version above is the only copy of that row's selector.
-
-> **§17.1-f · `CINV-6` and `CINV-11`.** Rev 7's §15.
-> *(RECOVERED VERBATIM — both rows appear as unchanged **context** lines in the `bashEditDiff` at
-> authoring-transcript line 1598, inside a hunk that rewrites their neighbours `CINV-9` and `CINV-13`;
-> `CINV-11` appears byte-identically as context at transcript 1250 as well, so the row is stable rev 5
-> → rev 7. Neither string occurs in any contract edit after 1598.)*
->
-> | id | invariant |
-> |---|---|
-> | `CINV-6` | `PB6`: every cell of the 3 × 2 predicate table, including `max` × `range` straddling, shared-endpoint overlap, and different-currency ⇒ not comparable |
-> | `CINV-11` | `PB6` sign: a case **under** budget and a case equally far **over** it are not treated alike (`delta` is signed; only `delta ≤ 0` is *satisfied*) |
->
-> *(The `| id | invariant |` header and separator are §15's own, supplied so the two rows render.
-> The rows themselves are the recovered text; nothing between the pipes is added.)*
->
-> *What the replaced reconstruction said:* that `CINV-6` tests *"its **cells** — including `max` ×
-> `range` and shared-endpoint overlap"*. It dropped the third conjunct, **`and different-currency ⇒
-> not comparable`**, which is the conjunct that binds `CINV-6` to `EF5`'s not-comparable branch
-> (§17.1-a). `CINV-11`'s gloss dropped the operative half, *"only `delta ≤ 0` is satisfied"*.
-> §15's rows for both remain pointers to this section and carry no text of their own. `CINV-16` is
-> deferred with `PB3a` and is named in §15 with its subject intact; it was never deleted and is not a
-> recovery item.
-
-#### Where the recovered rev-7 text contradicts a V0.2 rule
-
-Stated, not resolved. Each is a decision V0.3 owns; none is a transcription error.
-
-| # | rev 7, above | V0.2, in force | what V0.3 has to decide |
-|---|---|---|---|
-| 1 | §17.1-c row 5: `R_s ⊋ Q_s` ⇒ `scope_superset`, budget **not permitted** — *"the total bought extra spaces"* | `D9-2c`: `EF3` calls `scope_superset` **`satisfied`** (§14.3.2), and `EF6` row 7 gives it its own class (§14.3.6) | whether the restored permission follows rev 7's **refusal** or rev 9's **satisfied** state. They now disagree about the same relation, and rev 7's refusal was the `OD-O` guard on it |
-| 2 | §17.1-d: one band scale, column `` `|delta|` ``, read by both criteria | §14.3.4 carries the same three bands under `` `|delta_area|` `` | that restoring the price tier **edits an in-force table's header**; it does not add a table. Nothing else in §14.3.4 changes |
-| 3 | §17.1-e: `GR3a` is a **five-row** selector and `GR3`'s preamble confines the ladder to labelled references | `D9-1` deleted `GR3a` and the rungs (§17.3, which parks **rev 8's four-row** version); *"direct answers are offered first"* became a **definition** over a `GR2a` prefix (§14.3.6) | whether the budget rung returns as a rung at all, or as something else. There is no ladder left to attach it to, and §17.3's parked copy has no budget row |
-| 4 | §17.1-a: `EF5` reads *"§14.3.5 does not **permit**"* | §14.3.5 is *"Prices in V0.2 — stated, never compared"* and permits nothing | that the citation dangles exactly as the parked `PB1`'s *"permitted when §14.3.3 permits it"* did — the defect `M8-1` found. It is recorded, not repaired: repairing it would edit rev 7's text |
-
-Also recorded, because it is the same class of loss and nothing else records it: rev 8 **altered**
-rev 7's *"Rows 5–8 read `Q_s` only"* paragraph while keeping it (§17.1-c), and rev 7's §14.3.4
-divisor sentence lost four words. Neither appears in any change log. Both are restored above and
-both remain **out of force**.
-
-#### Defects parked with the rules, and what V0.3 must fix before restoring them
-
-Round 8's `M8-2`: the `PB1` below is reproduced with three known defects and **no record that they
-were ever found**, while §17.1's preamble named only the *diagnosis*. Each is now recorded here, in
-the section V0.3 will read. **None of these is fixed in the text below** — the text is the reviewed
-rev-7 version and is left as it was reviewed — so each is a precondition on restoring it, not a
-description of it.
-
-| id | the defect in the parked text | what V0.3 must do before `PB1` returns |
-|---|---|---|
-| `B7-1` | `PB1`'s `partial_remodel` branch reads **§14.3.3's row**; `EF5`'s permission was computed from **`EF3`'s state**. Two permission paths, and nothing says which wins. The contract's own rev-7 proof implemented the second and the contract said the first; `CINV-20`'s published *256 reachable* was the output of the divergence. **Recovery note** (`27-rev7-text-recovery.md` §A): rev 7's `EF5`, now printed verbatim at §17.1-a, reads *"§14.3.5 does not **permit**"*, so the **rule** text named one input and the second reading lived in the rev-7 **proof** (`pb1Permits`, `15`:90). The divergence and its consequence are unchanged; what is narrowed is where the second path lived | pick **one** permission input and delete the other. This is §17.1's own design constraint — *one permission function keyed on one thing* — applied to the rule that motivated it |
-| `B7-3` | the `full_remodel` branch permits whenever `V.breadth` is **absent**, and `VB3` makes *absent* determinate for **every** trade restriction — so *"바닥이랑 도배만 3천만원"* budget-matches `bi-11`'s whole-home 30,000,000 at δ = 0. An `OD-O` violation, armed by a rule that is **in force in V0.2** | decide whether a trade restriction may permit a whole-home total comparison. Restoring `PB1` unchanged re-arms `OD-O` on day one. `VB3`'s rev-9 row order does not change this: a trade restriction still leaves `V.breadth` absent (row 5), by design |
-| `M7-1` | the same branch permits on a record from which the consumer **dropped an unrecognised id**: `CINV-9`'s own fixture, `bi-16` against *"주방만, 2천"*, is budget-**permitted** at δ = −0.01 on the reduced `R_s` while `EF3` calls the scope `not_evaluable` | apply round 7's one-clause repair — *"…and the consumer dropped no unrecognised id from this record"* — or key the permission on `EF3`'s state, which gives it for free. `WS8`'s scope half is already fixed inside `EF3` and is **not** the same fix |
-
-*`M7-2` is closed and is not parked. `B7-2` was **not** removed by construction: it recurred as
-round 8's `B8-2` inside `GR3`, and rev 9 closes it by deleting one of the two devices (`D9-1`). It
-is recorded here only so V0.3 does not reintroduce `PB6a` as a second ordering device beside
-`GR2a`.*
-
-<details>
-<summary>rev 7 §14.3.5 — "When a price comparison is permitted". This block <em>is</em> rev 7's
-text, carried unedited since rev 8; the five reconstructions above are what rev 8 deleted instead of
-parking.</summary>
-
-V0 `BU3` refused every total-budget claim because V0 had no breadth and no total. V0.2 has both.
-
-> - **PB0 (declared amendment to V0 `PR4`)** — V0 `PR4` reads *"compare, sort or call **prices**
->   'close' only among records with the same `category` value"*. V0 had exactly one price, a per-area
->   one, and a site-local `category` was the only semantic key available. The amendment, **declared
->   rather than implied**:
->   - for `pricing.perArea`, `PR4` is **kept verbatim**, and `PB3`/`PB3a` add conditions on top;
->   - for `pricing.total`, `PR4`'s same-`category` condition is **replaced** by `EF2`'s breadth
->     criterion and §14.3.3's scope relation, which say what `category` was standing in for and say
->     it from structured facts rather than from a site's own taxonomy;
->   - **where neither replacement binds** — `V.breadth` and `Q` both absent, an open *"2천만원으로 뭘
->     할 수 있나요"* — totals may still be compared and ordered, and `PB0a` is the compensating
->     control.
-> - **PB0a (C: MUST)** — when a total-budget result spans more than one `category` value, or was
->   produced with breadth and scope both `not_applicable`, every record in it carries its **coverage
->   statement** in the reply itself and not only in the envelope. Ordering prices whose coverage
->   differs is honest only if the coverage is on screen. *(Rev 4 cited a disclosure that no rule
->   required in this case.)*
->
->   **The statement is a template, so that two consumers build the same one.** It is composed
->   **only** from:
->   - `R.projectType` — 전체 리모델링 / 부분 리모델링 / *범위가 확인되지 않은 사례*;
->   - for a `partial_remodel`, `R_s` as the closed list of spaces **remodelled in that case**
->     (`WS7a`, `CINV-17`'s wording), subject to `WS8`'s not-closed clause;
->   - `R_t` named as work **included**, never as a complete list (`WS7b`);
->   - for a `full_remodel` whose scope was satisfied by `PT4`(b), `EF3`'s ground-not-conclusion form.
->
->   No absence is stated for any trade, and none for a space except in `CINV-17`'s form.
->
->   **A result whose records' coverage differs is additionally ordered by `PB6a`'s sequence.**
->   Putting the coverage on screen makes an ordering *honest*; it does not make it *reproducible*,
->   and `PB0` is being sent for consumer confirmation as an amendment to a rule — V0 `PR4` — whose
->   entire purpose was to stop incomparable prices being ordered. Disclosure without determinism
->   would trade one of `PR4`'s two guarantees for nothing.
->
->   *`PB0` amends a frozen, consumer-confirmed `C: MUST`, so it is on §16's consumer-confirmation
->   list and is **not in force until the consumer confirms it**.*
-> - **PB1 (C: MAY)** — compare `V.budget` against `R.pricing.total` when the record's breadth
->   criterion is not `unsatisfied` and:
->   - `R.projectType == "full_remodel"` — permitted when **all** of: `V.breadth` is `whole` or
->     absent; `EF4` is `satisfied` or `not_applicable`; and the visitor did not **frame** the work as
->     partial (`V.breadth == partial` refuses). Naming spaces is **not** by itself a refusal — `VB3`
->     says naming two rooms is not a statement that the project is partial — but when `V.breadth` is
->     absent **and** `Q_s ≠ ∅`, the comparison is permitted **only** with `PB0a`'s coverage
->     statement, so the visitor is told the total bought the whole dwelling and not the rooms they
->     named. *(Rev 5 wrote a permission keyed on `V.breadth` and, in the next sentence, a refusal
->     keyed on named spaces. They are not the same predicate, and `CINV-13`'s own second
->     fixture — "주방 포함 34평 전체" — failed the second one.)*
->   - `R.projectType == "partial_remodel"` — permitted when §14.3.3 permits it. This branch is
->     entered for **every** `Q`, including `Q = ∅`, which is §14.3.3 **row 1**.
->   - `R.projectType` absent — **never** permitted. Coverage unknown, so "fits your budget" has no
->     referent. **Replaces `BU3`.** (OD-O.)
-> - **PB2 (C: MUST NOT)** — a visitor's **total** budget is never compared against a `perArea`
->   amount, in either direction, whatever the units appear to allow (OD-O).
-> - **PB3 (C: MAY)** — compare `perArea` with `perArea` only when **all** hold: both records carry
->   the **same, present** `projectType`; `currency` and `perUnit` match; `AR5` permits the **area**
->   bases to be compared; `PR4`'s same-`category` condition holds; and `PB3a` holds.
-> - **PB3a (C: MUST NOT)** — a **comparative claim** about two per-area prices — cheaper, dearer,
->   close, roughly N times, or any ordering by the two amounts — requires that **both** have a
->   **known price basis** and that the bases are the same. By `PA4`/`PA5` that means both carry
->   `source: "derived"` and both records' `property.area.basis` is **present and equal**. *(Rev 3 added
->   a third conjunct, "not `"unknown"`". `AR2` forbids emitting that string and
->   `platform/integration/contract.ts`'s `AREA_BASES = ["supply", "exclusive"]` drops anything else,
->   so the wire cannot carry it and the conjunct tested nothing.)* Otherwise the amounts **may be displayed as facts and may not be compared or
->   ordered** — the treatment `PR4` already gives a record with no usable category.
->
->   *`AR5` is about **area** bases; `PA4`/`PA5` are about **price** bases. Rev 3 conflated them and
->   no rule read `perArea.source` at all, which let `bi-01`'s authored 2,900,000/평 be called "about
->   twice" `bi-09`'s derived 1,470,588/평 — wrong by roughly a third if `bi-01` was priced against
->   the exclusive area. **Cost, accepted knowingly:** an authored `perArea` can no longer be compared
->   with anything, which is most of the existing 8. The coverage removed was never sound.*
-> - **PB4 (C: MUST)** — V0 `BU2` unchanged, restated as **ordering neutrality, strong form**: a
->   criterion in state `not_evaluable` contributes **nothing** to the record's score and to **no**
->   tie-break key. Not a penalty, not a small penalty, not a null that sorts last. The result reports
->   per criterion how many records were not evaluable. *Missing must not silently become never-shown
->   — with a result limit of 3 over 19 records, fourth place is invisible.* (OD-N.)
-> - **PB5 (C: MUST NOT)** — a record whose breadth is absent is never described as matching a
->   breadth-specific budget. It may be shown as a labelled reference (`GR3`).
-> - **PB6 (C: MUST)** — the comparison predicate, so that two consumers cannot disagree on one
->   document. `delta` is **signed**: negative = the case costs less than the visitor said.
->
->   | `V.budget` ↓ / record → | `exact t` | `range [lo,hi]` |
->   |---|---|---|
->   | `exact b` | `(t − b) / b` | inside ⇒ 0; else nearer bound, `(bound − b) / b` |
->   | `range [a,b]` | `a ≤ t ≤ b` ⇒ 0; `t > b` ⇒ `(t − b) / b`; `t < a` ⇒ `(t − a) / a` | overlap (`a ≤ hi ∧ lo ≤ b`) ⇒ 0; record above ⇒ `(lo − b) / b`; record below ⇒ `(hi − a) / a` |
->   | `max m` | `t ≤ m` ⇒ 0; else `(t − m) / m` | `lo ≤ m` ⇒ 0; else `(lo − m) / m` |
->
->   Different currencies are **not comparable** — `not_evaluable`, never a mismatch (V0 `PR6`).
-> - **PB6a (C: MUST)** — whenever `PB6` yields `delta = 0` for **more than one** record — every
->   record at or under a `max` ceiling, and every record inside a `range` — price carries no
->   discriminating power and is **not** a tie-break: a 6,200,000 job and a 99,000,000 job tie for
->   *"1억 이내"*, which follows from OD-N and is correct. Such a result is ordered by, in sequence:
->
->   1. `EF6`'s class, in the row order `EF6` is written in;
->   2. `|delta_area|` ascending, over the records where the visitor stated an area and `AR5` permits
->      the bases to be compared. By `PB4` a record where it does not is **not** ordered by this key
->      and is **not** pushed to the end by it: it keeps the position the previous key gave it;
->   3. the count of the visitor's stated `workScopeIds` the record carries, descending;
->   4. `publishedAt` descending;
->   5. `id` ascending.
->
->   Steps 4–5 are the **deterministic floor**. Both fields are present on every record (`ID1`,
->   `PC3`), `id` never ties, and they are what makes `PB6`'s promise — *two consumers cannot disagree
->   on one document* — true rather than aspirational. The reply states that the cases shown are all
->   within budget and are **not** ranked by price. (`CINV-21`.)
->
->   *Rev 5 named breadth, then scope, then area. None of the three orders anything in the case the
->   rule is written for: breadth is an equality test and partitions rather than orders, scope yields
->   a relation and not a magnitude, and area orders only when the visitor stated one. For* "1억
->   이내로 전체 리모델링 하고 싶어요" *all three are flat across `bi-09`, `bi-10`, `bi-11` and
->   `bi-12` — four `exact` records for a result limit of three, and nothing to choose among them.*
-
-
-</details>
+Rev 9.1 deferred budget comparison to a V0.3 annex. Rev 9.2 restores it in one form — `EV3`'s price
+tier, computed only inside class `exact` — by owner decision (brief of 2026-09-25, §3: total price is
+a strong signal for both whole-home and partial requests). The machinery rev 7–9.1 built and then
+deferred — `PB0`, `PB0a`, `PB1`, `PB3`, `PB3a`, `PB5`, `PB6`, `PB6a`, `EF5`, the `price_fallback`
+class, the budget column of the old scope table, `CINV-11` and `CINV-16` — is **retired, not
+restored**. Its text and the defects found against it are in `archive/07-rev9.1-corrected.md` §17.1.
+A per-area comparison stays out of V0.2.
 
 ### 17.2 Other deferrals
 
@@ -2082,9 +1267,11 @@ V0 `BU3` refused every total-budget claim because V0 had no breadth and no total
 **A producer-declared closed *trade* set.** A job that ran a few trades across the whole dwelling —
 `bi-19`: 바닥·도배·조명, every room, 11,000,000 — is breadth-absent by construction (`PT5` needs a
 bounded set of *spaces*, `PT4`(c) needs a *space* id), so no rule can say its total bought exactly
-those trades and nothing else. Today the visitor is shown it like any other record — `GR3`
-filters nothing — and is told its total as a fact, but never as a budget match (§14.3.3.1). Closing it properly needs a new
-authored field — the trade equivalent of `WS7a` — and that is a schema change, a release cut and a
+those trades and nothing else. Rev 9.2 therefore makes it `fallback` on a trade-only request,
+ordered by the trades it lists (`EV2`); the reply names the recorded trades and never says that
+nothing else was done (`WS7b`). The same shape is carried by `bi-05`, a whole-home remodel recorded
+with trade ids only, so no rule on today's fields can lift one without the other (`OQ-1`). Closing it
+properly needs a new authored field — the trade equivalent of `WS7a` — and that is a schema change, a release cut and a
 consumer change. Deferred, with the gap written down rather than papered over.
 
 `workScopeIdsExcluded` — letting a record that skipped a space still claim `full_remodel`, with the
@@ -2099,873 +1286,127 @@ per-site work-scope labels; a `perArea` range; a currency-aware minor-unit round
 year; duration; cover, gallery and any media (OD-R); summary and body; producer-authored
 match-evidence text; filtered listing URLs; per-locale documents; a global opaque id.
 
-### 17.3 `GR3a` and the rung ladder — deleted as an ordering device in rev 9, parked here
-
-Rev 9 deleted `GR3a` and the three rung sets (`D9-1`, §14.3.6). They were the second of two `C: MUST`
-orderings over one result, and they carried 262 of rev 8's 484 `PB4` violations by partitioning on
-whether `R.projectType` is **present** before any class key ran. The text is kept here, as rev 8 had
-it, because deleting the graded ladder gives up `OD-P`'s **mechanism** (§14.3.6), and rev 10 either
-restores it with a lead-criterion term or states the loss to the visitor. **This section is not in
-force. No V0.2 rule may cite it.** Learning from `M8-1`: what is parked is printed.
-
-> **GR3a (C: MUST) — which rung set applies. The rows are evaluated in order and the first whose
-> condition holds decides.** Without it the rows overlap: *"창호 교체하려는데 34평 전체 리모델링"*
-> has `V.breadth = whole` **and** `Q_s = ∅`, `Q_t ≠ ∅`.
->
-> | # | condition | rung set |
-> |---|---|---|
-> | 1 | `V.breadth == whole` | whole-home |
-> | 2 | `V.breadth == partial` **or** `Q_s ≠ ∅` | spaces named |
-> | 3 | `Q_s = ∅` and `Q_t ≠ ∅` | trade-only |
-> | 4 | otherwise | none; `GR2a` alone orders the result |
->
-> | rung set | rungs, in order |
-> |---|---|
-> | whole-home | `full_remodel` records → `partial_remodel` records, larger `R_s` first → breadth-absent records |
-> | spaces named | `partial_remodel` records whose `R_s ⊇ Q_s` → other `partial_remodel` records → `full_remodel` records → breadth-absent records whose `R_s ⊇ Q_s` → other breadth-absent records |
-> | trade-only | `partial_remodel` records whose `R_t ⊇ Q_t` → **breadth-absent records whose `R_t ⊇ Q_t`** → `full_remodel` records → every other record |
->
-> **Each rung is a predicate on the record, never a class name**, and every rung set ends with an
-> implicit final rung — *every record not on an earlier rung* — so the rungs are **total** over the
-> result.
-
-**Defects found against this text. None is fixed above; each is a precondition on restoring it.**
-
-| id | the defect | what rev 10 must do first |
-|---|---|---|
-| `B8-2` / `X8-20` | *"Direct answers are offered first"* (`GR3`) and these rungs are two `C: MUST` orderings with no tie-breaker, and they give different top-3s. 29 of 31 corpus branches differ | restore **at most one** ordering device. Rev 7's confining clause — *"the ladder orders the labelled references that follow"* — is the other way to do it and was dropped in rev 8 |
-| `M8-6` / `X8-5` / checker gap 2 | the whole-home rung carries a sort key, *"larger `R_s` first"*, that the *Every result has an order* key list does not contain, and nothing composes the two. Two conforming consumers order rung 2 differently. §18's `Q-24`, answered *no* | state the key's position in the key list, or delete it from the rung label |
-| `X8-17` / `PB4` | the whole-home rungs partition on `R.projectType` being **present**, so a breadth-absent record sorts last **by construction** — `PB4`'s *"a null that sorts last"*, in a rule that is neither a score nor a tie-break key and so evaded `CINV-5`'s letter. `bi-08`, the corpus's closest area match for *"50평 전체"*, was fifteenth | a restored ladder must be measured against `CINV-5`'s widened metamorphic form before it ships, not after |
-| `m8-6` / `m7-4` | row 2's condition (`V.breadth == partial` **or** `Q_s ≠ ∅`) selects the rung set named *"spaces named"* for *"부분만 하고 싶어요"*, which names none | rename the rung set or split the row |
 
 ---
 
-## 18. Open questions for the delta review
+## 18. Owner decisions — closed
 
-Every earlier round's questions are answered and dispositioned in `05-review-disposition.md` and,
-for round 5, in `12-rev6-disposition.md`. Round 5 answered rev 5's `Q-14`…`Q-18` in full; each
-answer produced a change in rev 6 and none is still open:
+Rev 9.1's `Q-1` … `Q-34` asked about machinery that rev 9.2 retires; they are closed with it and
+kept in the archive. Rev 9.2 put six questions to the owner; the owner closed all six on
+2026-09-25 (closeout brief). None is open.
 
-| asked | answered | what rev 6 did |
+| id | question | owner decision (closed) |
 |---|---|---|
-| `Q-14` every rule expressible in the three states; no input with **no** state or **two**? | *"the device holds; the table built on it does not"* — `EF6` had no row for `breadth = unsatisfied` | `EF6` rows 2/3/4; totality stated **and executed** (`CINV-20`, `proof/ef6-totality.mjs`) |
-| `Q-15` every class reachable, none orphaned? | `breadth_fallback` was missing from the list entirely; `fallback_from_full` was produced only by the rung row | classes assigned from the breadth criterion; orphan check is part of `CINV-20` and runs on the **reachable** subset |
-| `Q-16` is `EF3`'s inference from `PT4`(b) sound when `VA1` cannot check `PT4`(b)? | sound for **spaces**, unsound for **trades**; and the reply should state the ground, not the conclusion | `EF3` split on `Q_s`/`Q_t` (`Q-3`); ground-not-conclusion clause + `CINV-23` |
-| `Q-17` is the `GR3` trade rung plus a stated total enough, or is the closed trade set needed in V0.2? | enough for now; the closed trade set stays deferred — but §14.3.3.1's first row and the missing open-budget rung are not | `INV-30` makes the unreachable row a tested impossibility; `GR3` gains the budget-only rung (`Q-6`) |
-| `Q-18` is `PB0a` specific enough to implement twice, and enough to make cross-category ordering honest? | no and no: it was prose, and disclosure without a reproducible order gives up `PR4`'s guarantee for nothing | `PB0a` is now a **template**, and such a result is ordered by `PB6a`'s sequence, whose last two keys are a deterministic floor |
-
-**`Q-19` and `Q-20` (rev 6) and `Q-21`/`Q-22` (rev 7) are all answered, three of them by the
-narrowing.** `Q-19` — `INV-30` was right in direction and wrong in extent; rev 7 added `PT5`'s
-missing authoring sentence and `INV-30` stands. `Q-20` — yes, the contract had begun specifying the
-assistant's voice; with `PB0a`'s template deferred, the prescribed sentences left are `CINV-17`'s
-disclosure wording and `CINV-23`'s ground-not-conclusion form, both of which exist to stop a false
-statement rather than to style a true one. **This is still an owner judgement, recorded not
-decided.** `Q-21` — the class order within a rung is now determined, by `GR2a`, which is stated once
-and is machine-checked to be a permutation of `GR2`'s closed list. *(Rev 9: there are no rungs;
-`GR2a` is the order, and the answer is unchanged and stronger.)* `Q-22` — `VB3`'s line is no longer
-*space vs trade* alone: it is a **closed list**, and every utterance outside it leaves `V.breadth`
-absent, which is the conservative answer and a defined one. *(Rev 9: a closed list that is not a
-function decides nothing — round 8's `B8-4`. `Q-22` is properly answered only now that `VB3` has a
-first-match rule, `D9-4`.)*
-
-**Round 8's three questions, answered:**
-
-- **Q-23 — is the narrowing correctly drawn?** **No, as rev 8 drew it, and rev 9 repairs both
-  halves.** The mechanical half: four in-force rules cited deferred machinery as live — `WS6`
-  (`B8-1`), `CINV-15` (`m8-1`), §19 (`m8-2`) and `WS9`'s rationale (`m8-3`); all four are rewritten
-  in rev 9. The substantive half: three in-force rules had their meaning supplied by something
-  deferred — `WS6`'s discriminator, `CINV-19`'s coverage template (`M8-7`, now `Q-30`) and §17.1's
-  five deleted items (`M8-1`, now reconstructed or marked LOST). `Q-23`'s standing instruction
-  stays: a rule that cites `PB1`, `PB6`, `EF5` or `price_fallback` as in force is a defect of the
-  revision that carries it.
-- **Q-24 — is the composition a total order?** **Moot as asked, and answered in the direction it
-  pointed.** There is no `GR3a` and there are no rungs; the composition is `GR2a` → keys (2)–(5),
-  and `id` is a floor that never ties. What `Q-24` was circling — a sort key stated in one rule and
-  absent from the key list — was real and is round 8's `M8-6`; it is recorded against the parked
-  text in §17.3. Key (2)'s own composition is **still** unresolved: `Q-29` below.
-- **Q-25 — is stating prices while disclaiming comparison honest and useful?** **Still open; it is
-  an owner judgement and rev 9 does not take it.** Round 8's `N8-5` added the sharpest form of it:
-  the disclaimer presumes the visitor can trust the order they are shown. Rev 9 removes that
-  objection's premise — one ordering device, `PB4` satisfied at 0 of 798 — so the question can now
-  be answered on its merits rather than deferred behind an undetermined order.
-
-**Open for the rev-9 delta review.** Every one of these is a gap rev 9 **declined to patch**,
-because a rule invented to close a gap is what eight rounds have failed on. They are written down
-rather than filled.
-
-- **Q-26** — **`VB3` and a chain that mixes kinds.** *"바닥이랑 거실만"* is a trade and a space under
-  one 만. Rows 3 and 5 both match unless the particle binds only the term adjacent to it, and `VB3`
-  says nothing about binding. The checker's instance of this was an implementation artefact
-  (`21-pipeline-audit.md` `A-4`), so there is no measurement behind it — only the prose. Does the
-  particle bind the adjacent term, the whole chain, or each term of its own kind?
-- **Q-27** — **how wide is the direct-answer prefix?** `GR3` defines *direct answer* as membership
-  in a named prefix of `GR2a`'s list, and rev 9 sets that prefix to its first entry, `exact`. But
-  `EF3` now calls `scope_superset` **satisfied** (`D9-2c`), so a `scope_superset` record is one the
-  visitor's whole question was answered by, with a caveat. Should the prefix be `exact` alone, or
-  `exact` + `scope_superset`? Widening it changes what is called 직접 답변 in every reply and is not
-  a presentational choice; narrowing `GR2a` is not an option, since the prefix must stay a prefix.
-- **Q-28** — **`OD-P`'s graded ladder, and the lead criterion.** `D9-1` preserves `OD-P`'s
-  **disclosure** and gives up its **gradation** (§14.3.6). For *"50평 전체"* the whole-home
-  near-misses drop from 2–3 to 14–15. The structural cause is that `GR2a` is a fixed class order
-  while *which criterion matters most depends on what the visitor led with*. Is the gradation part
-  of `OD-P`'s requirement or was it its mechanism? If the former, a lead-criterion term is needed
-  before this ships — and it must be specified and checked against all six properties first, not
-  written into rev 10 on the strength of this question.
-- **Q-29** — **`PB4`'s carve-out on the ordering keys does not compose. OPEN, with three candidates
-  now dead. It is not part of rev 9 or rev 9.1.** *Every result has an order* says a record the
-  `|delta_area|` key skips *"keeps the position the previous key gave it"*. The previous key is
-  `GR2a`'s class order, which produces only blocks of ties, so the position **inside** a block is
-  fixed by keys (3)–(5), which run **after** (2). Does a skipped record hold a slot inside its class
-  block while the keyed records are permuted around it, or fall through to key (3)? The two readings
-  differ whenever a class block mixes keyed and skipped records. The checker's gap 7; carried
-  unresolved from rev 8, where it was hidden inside the rungs. Rev 9.1 adds that the carve-out is
-  **wider than it looked** — `PB4` says a `not_evaluable` criterion enters **no** tie-break key, so
-  the skip applies to *every* `not_evaluable` scope and not only to an ambiguous one; applied as
-  written it moves **10 of 27** branches and produces **7** `GR2a` class blocks mixing skipped and
-  ordered records (28 skipped records), each one an instance of this question.
-
-  **The three candidates and what killed each. Every verdict is a measurement, not an argument.**
-
-  | candidate | verdict | evidence |
-  |---|---|---|
-  | 1. the skipped record takes **count 0** | **dead** | contradicts `PB4`'s own sentence **by name** — *"not a penalty, not a small penalty, **not a null that sorts last**"* (§14.3.5). A count of 0 orders it after every record that carries an id |
-  | 2. the skipped record keeps its **position** | **dead** | a positional permutation is **not stable under partitioning** the row set, and `GR3`'s direct-answers-first partitions it. Property 3 regresses **0 → 1 of 27** |
-  | 3. **skip the key, fall through to the next** | **dead** | **intransitive: 72 cycles on the real corpus, on 6 of 27 branches** (156,978 triples), plus 36 distinct cycle shapes synthetically. Asymmetry holds — 0 of 9,234 ordered pairs — and nothing else does |
-
-  Candidate 3's first cycle is hand-checkable and needed no construction: the 19 authored records
-  already contain it. *"34평 전체 5천이면 되나요"*, class `breadth_fallback`, all three records in
-  **one** `GR2a` block so key 1 decides nothing:
-
-  > `bi-04` (`|delta| 0.0588`, `publishedAt 2026-05-21`) **<** `bi-15` (no area,
-  > `publishedAt 2025-07-03`) by **key 4** — key 2 is skipped because `bi-15` has no area, key 3
-  > ties at 0.
-  > `bi-15` **<** `bi-17` (`|delta| 0.0035`, `publishedAt 2025-05-08`) by **key 4** — same.
-  > `bi-17` **<** `bi-04` by **key 2** — both have an area, and `0.0035 < 0.0588`.
-  >
-  > `bi-04 < bi-15 < bi-17 < bi-04`.
-
-  The consequence is not a bad order but **no order**: the result depends on the sort algorithm and
-  on the input permutation, so **`CINV-21` is unsatisfiable under this reading by any
-  implementation**.
-
-  **The mechanism, which is the transferable part.** A cycle needs three records and three
-  *different* deciding keys, because each pair is decided by the first key **both sides** can see —
-  and *"both sides"* is a property of the **pair**. A lexicographic order requires the same key
-  sequence for every comparison; here every pair gets its own. **The defect is not which keys, or
-  their order — it is letting the pair decide which keys apply.** That also kills the nearby variant
-  of falling straight through to the deterministic floor.
-
-  **A fourth shape exists, is named here, and is NOT recommended.** Decide applicability **once per
-  class block**, from the records in it, before any comparison: a key is either in force for the
-  whole block or dropped from it. The comparator is then a fixed lexicographic order over a fixed
-  key list — transitive and partition-stable **by construction**, which is exactly what candidates 3
-  and 2 respectively fail — and nothing stands in for the absent criterion, so `PB4`'s sentence is
-  satisfied literally. **Its cost:** one record with an unevaluable criterion disables that key for
-  its whole block, including records the key could have separated; whether that is acceptable is a
-  judgement about what `PB4` is *for* — protecting the unevaluable record, or preserving the key.
-  **Its unexplored attack surface:** block membership comes from key 1, so the key list would depend
-  on `GR2a`, which no rule currently says. **It is unimplemented and unmeasured.** Reporting *"and
-  this one passes"* in the same breath as killing three is the move that shipped `D9-5a` and `D9-7`;
-  it gets its own round and its own attack.
-
-  **Why the revision ships regardless.** The carve-out is a proposal **on top of** this contract,
-  not a part of it. All three findings above are about proposals and move none of §20.7.6's
-  rev-9 figures.
-- **Q-30** — **`CINV-19`'s coverage statement is prose again.** `PB0a`'s four-input template is
-  parked in §17.1 and the in-force obligation names two inputs, so two consumers build different
-  coverage statements from one document. `Q-18` asked exactly whether that template was implementable
-  twice and was answered *"no — it was prose"*. Is a template needed in V0.2, given that the
-  **prohibitions** (`WS7a`, `WS7b`, `WS8`, `CINV-17`) bind independently and the statement cannot be
-  false, only variable? Round 8's `M8-7`.
-- **Q-31** — **`V.area` with no unit.** *"전용 84 아파트 주방"* states a basis and a number and no
-  unit; §14.3.1 requires value + unit + basis and gives `V.area` no *"cannot be resolved ⇒ absent"*
-  clause, although `VB1` gives `V.budget` exactly that. Borrowing `VB1`'s sentence is the obvious
-  repair and it is a **rule addition**, so rev 9 does not make it. *(The neighbouring claim that a
-  bare 평 figure has no **basis** rule is **false** and no rule is added for it:
-  `21-pipeline-audit.md` `AU-2` — `AR5`, `PY1` (§6) and `EF4` jointly specify that an absent basis
-  is compared, disclosed and never changes the criterion state. `17b`'s `X8-4` and `X8-15` are
-  withdrawn on the basis half for the same reason.)*
-- **Q-32** — **`not_evaluable` names two different things.** It is a criterion **state** (`EF1`) and
-  a match **class** (`GR2`, `EF6` row 6), and nothing in the contract distinguishes them by name, so
-  whether `EF6` violates `EF1`'s closure cannot be decided by reading the rule text — only by knowing
-  which column the token sits in. The pipeline checker's property 5 reports this as its first
-  finding. Rename one, or say in `EF1` that the closure is about the state and not the class.
-- **Q-33** — **is three criteria enough?** `X8-21` stands and rev 9 does not touch it: for
-  *"32평인데 도배랑 바닥만 얼마예요"*, the only `exact` record is a 50,000,000 whole-home remodel, and
-  it earns the class legitimately. Breadth, scope and area cannot express *"a small job"*. This is
-  the strongest live argument that the narrowing gave up something the product needs, and it belongs
-  in the V0.3 ledger rather than in a rev-9 rule.
-- **Q-34** — **`n7-5` / `N8-3`, unchanged and unanswered.** `WS7b` keeps a `full_remodel`'s trade set
-  open, so whole-home records are `exact` for a narrow storage question. Specified behaviour, and a
-  product question for the owner.
-
-## 19. Worked example — illustrative, not live data
-
-**This example is constructed to show the rules. It is not the current demo document**: no live
-record has a `pricing.total` today (§13), which is exactly why the demo set is being expanded.
-
-**Reading its `workScopeIds` against `WS9`.** The first record authors `bedroom` **and**
-`built_in_furniture`. Under `WS9`(c) that is only correct when the bedroom changed beyond the
-joinery standing in it — here, its layout — and the example is constructed that way. `entrance`
-is authored alongside `built_in_furniture` for the different reason `WS9`(c)'s exception gives:
-§7.3's `entrance` gloss names shoe storage directly, so the joinery *is* the space. `living_room`
-is authored because its own fixtures changed, not because flooring ran through it. *If a record's
-only bedroom work is a wardrobe, `bedroom` is **not** authored — that is the case the demo corpus
-now carries on `bi-09`, `bi-11`, `bi-12` and `bi-13` (`04` rev 6).*
-
-One `full_remodel` with an **authored** per-area price and no total (the shape of every existing
-priced record), and one `partial_remodel` with an **exact total** and **no** per-area price.
-
-```json
-{
-  "schemaVersion": "1.0",
-  "resource": "portfolio",
-  "version": "<sha256(canonical body without version), first 32 hex>",
-  "listingUrl": "/portfolio",
-  "workScopes": ["bathroom", "bedroom", "built_in_furniture", "entrance", "kitchen", "living_room"],
-  "facets": {
-    "category": {
-      "values": [
-        { "id": "full-remodel", "label": "전체 리모델링" },
-        { "id": "kitchen-bath", "label": "주방·욕실 리뉴얼" }
-      ]
-    },
-    "style": {
-      "values": [
-        { "id": "모던", "label": "모던" },
-        { "id": "미니멀", "label": "미니멀" },
-        { "id": "화이트", "label": "화이트" }
-      ]
-    },
-    "tag": {
-      "values": [
-        { "id": "간접조명", "label": "간접조명" },
-        { "id": "수납 특화", "label": "수납 특화" }
-      ]
-    }
-  },
-  "records": [
-    {
-      "id": "bi-01",
-      "title": "수성 화이트 34평 아파트 리모델링",
-      "detailUrl": "/portfolio/suseong-white-34py-apartment-remodeling",
-      "publishedAt": "2026-08-28T09:00:00+09:00",
-      "location": "대구 수성구",
-      "projectType": "full_remodel",
-      "property": {
-        "type": "apartment",
-        "area": { "value": 34, "unit": "pyeong", "basis": "supply" }
-      },
-      "workScopeIds": ["entrance", "living_room", "kitchen", "bedroom", "bathroom", "built_in_furniture"],
-      "pricing": {
-        "perArea": {
-          "amount": 2900000,
-          "currency": "KRW",
-          "perUnit": "pyeong",
-          "source": "authored"
-        }
-      },
-      "facets": {
-        "category": ["full-remodel"],
-        "tag": ["간접조명", "수납 특화"],
-        "style": ["화이트", "미니멀"]
-      }
-    },
-    {
-      "id": "bi-04",
-      "title": "32평 주방·욕실 중심 리뉴얼",
-      "detailUrl": "/portfolio/buk-32py-kitchen-bathroom-renewal",
-      "publishedAt": "2026-05-21T09:00:00+09:00",
-      "location": "대구 북구",
-      "projectType": "partial_remodel",
-      "property": {
-        "type": "apartment",
-        "area": { "value": 32, "unit": "pyeong", "basis": "supply" }
-      },
-      "workScopeIds": ["kitchen", "bathroom"],
-      "pricing": {
-        "total": { "kind": "exact", "amount": 19000000, "currency": "KRW" }
-      },
-      "facets": {
-        "category": ["kitchen-bath"],
-        "style": ["화이트", "모던"]
-      }
-    }
-  ]
-}
-```
-
-Read the second record carefully — it is the point of V0.2:
-
-- `projectType` is `partial_remodel`, so there is **no** `pricing.perArea`, derived or otherwise.
-  `19,000,000 / 32 = 593,750` is a number this contract forbids anyone from producing (`D-1a`).
-- `property.area` is still 32평, because that is the flat the work sits in — it is **not** the area
-  the 19,000,000 bought (`PT2`).
-- Because `projectType == "partial_remodel"`, the **spaces** in `workScopeIds` are **closed**
-  (`WS7a`): this case did the kitchen and the bathrooms and no other space. That is what puts a
-  "욕실만" query on §14.3.3 **row 5** — `R_s ⊋ Q_s` ⇒ `scope_superset` — so the reply **names the
-  extra spaces**: the total also bought the kitchen. *(Rev 9: this sentence read "that is what lets
-  the consumer refuse to compare its total against a 욕실만 budget", an un-hedged live consequence of
-  the budget column deferred to §17.1 — round 8's `m8-2`. V0.2 compares no totals at all, so there
-  is no refusal to describe; the row and its disclosure are what survive, and they are in force. In
-  V0.3 the same row is where the refusal will be re-derived.)* The **works** it ran are open — the body describes 상판, 타일
-  and 수전 that the total plainly covered and that no id names — so nothing here may be stated as
-  *not* included.
-- `workScopeIds` names `bathroom` once although the case covered 공용 욕실 and 안방 욕실 (`WS3`).
-- `bi-01` has an authored `perArea` and **no** total. Nothing derives a total from it (`TP3`), and
-  the two records' `perArea` values are not compared with each other — in V0.2 because no per-area
-  values are compared at all (§14.3.5), and in V0.3 because `PB3` will refuse these two: their
-  `projectType` values differ.
-- `간접조명` and `수납 특화` stay in `tag`; they are not styles (`ST2`).
-- `bi-01` and `bi-04` would not both be sent to the model with `perArea` **and** `area` visible
-  unless a per-area comparison was asked for (`GR4`).
+| `OQ-1` | Trade-only requests: may a record with no `Spaces` id that lists every requested trade be `exact`? | **No.** A trade-only request has no `exact` (`EV2` row 6). Row G leads with `bi-17` (`overlap`); `bi-19` is 4th (`fallback`). Consequence, recorded: no budget is compared on a trade-only request (`CINV-15`) |
+| `OQ-2` | Whole-home requests: should a breadth-absent record rank above a known `partial_remodel`? | **No** — both `fallback`, a tie |
+| `OQ-3` | A budget and nothing else (*"5천으로 뭐 할 수 있어요?"*, mode `open`): rank by price? | **No.** Prices are stated as facts, noted `not_applied` |
+| `OQ-4` | `pricing.perArea` as an auxiliary whole-home signal? | **Not in V0.2.** No per-area budget shape (`VB1`), no per-area comparison (`PB2`); `perArea` is stated only when asked (`GR4`) |
+| `OQ-5` | Room + trade requests (*"욕실 타일만"*): does a requested trade the record does not list demote it? | **No.** Rooms decide `exact`; trades order by `coverage` and are explained (`WS7a`, `PB4`) |
+| `OQ-6` | Extra trades on an `exact` partial job (*"거실만 1200만원"* × `bi-17`). | **Class unchanged: an `exact` room match stays `exact`; extra trades are supporting information. Price disclosure is mandatory** when the total is set beside the budget: name the extra trades from the record, say the total includes them, never present it as a 1:1 quote for the requested scope (§14.3.6, `CINV-25`). No trade-extent schema is added; where a trade ran is not guessed |
 
 ---
 
-## 20. Change log against `02` (V0)
+## 19. Acceptance rows — executed
 
-| V0 rule | V0.2 |
+`04` §4.1's rows, with `V` fixed so that they test the evaluation and not a parser. Records are the
+19 in `data/sites/boost-interior-demo/content/projects.json`. Hand-computed in
+`docs/result/interior-portfolio-v0.2/34a-product-rules-and-hand-examples.md` §3.5 and re-executed by
+`proof/contract-simplified.mjs`. These rows supersede `04` §4.1.
+
+| row | utterance | `V` | top three (class) |
+|---|---|---|---|
+| A | 34평 전체 5천이면 되나요 | whole · area 34 py · budget 50,000,000 | `bi-09` exact · `bi-01` exact · `bi-10` exact |
+| B | 예산 3천으로 전체 가능해요? | whole · budget 30,000,000 | `bi-11` exact · `bi-01` exact · `bi-07` exact |
+| C | 주방만 하면 얼마예요 | partial · {kitchen} | `bi-14` exact · `bi-04` overlap · `bi-16` overlap |
+| D | 욕실 하나만 | partial · {bathroom} | `bi-15` exact · `bi-04` overlap · `bi-16` overlap |
+| D2 | 욕실 두 개 | absent · {bathroom} | as D |
+| E | 전용 84 아파트 주방 | absent · {kitchen} · area unit unresolved ⇒ absent | as C |
+| F | 50평 전체 1억 넘나요 | whole · area 50 py · no budget | `bi-13` exact · `bi-01` exact · `bi-07` exact (`bi-08` 8th, first fallback) |
+| G | 32평인데 도배랑 바닥만 얼마예요 | partial · {wallpaper, flooring} · area 32 py (`not_applied`) | `bi-17` overlap · `bi-09` fallback · `bi-11` fallback (`bi-19` 4th, fallback; `OQ-1`) |
+| H | 바닥이랑 거실만 | partial · {living_room, flooring} | `bi-17` exact · `bi-06` overlap · `bi-01` fallback |
+| I | 현관 수납 | absent · {entrance, built_in_furniture} (consumer table: 수납 ⇒ `built_in_furniture`) | `bi-18` exact · `bi-06` overlap · `bi-01` fallback |
+
+Row I under a consumer table that maps 수납 to `storage` instead: `Q = {entrance, storage}`, no
+`exact`, and `bi-06`, `bi-18` `overlap`. The difference belongs to the alias table (`WS6`); the
+evaluation is a function of `V`.
+
+---
+
+## 20. Change log
+
+Rev 9.1 and every earlier change log are in `archive/07-rev9.1-corrected.md` §20–§20.8.
+
+### 20.9 Rev 9.1 → rev 9.2 — product simplification
+
+Driven by the owner's brief of 2026-09-25 and `32-round-9-handoff.md`. Worked in
+`docs/result/interior-portfolio-v0.2/34a-…` before it was written here; checked by
+`proof/contract-simplified.mjs`; reported in `34-product-invariant-simplification.md`.
+
+| round-9 blocker | resolution |
 |---|---|
-| `ND1` | **split** → `ND1` (no inference, unchanged force) + `ND2` (one declared derivation) |
-| `PR1` | kept as `PA1` |
-| `PR2` | kept as `PA4` (price basis unknown, never inferred from `area.basis`) |
-| `PR3` | kept verbatim inside `TP2` |
-| `PR4` | **unchanged and unamended.** V0.2 compares, sorts and calls no price “close”, so it is satisfied as written. *Through rev 7 it was split by price shape, with `PB0` as a declared amendment for `pricing.total`; that split is deferred to §17.1 with the rest of budget comparison, and §16's consumer-confirmation item went with it.* Rev-7 text:  For `pricing.perArea` it is **kept verbatim** and `PB3`/`PB3a` add conditions on top of it. For `pricing.total` its same-`category` condition is **replaced** by `EF2`'s breadth criterion and §14.3.3's scope relation (`PB0`, a **declared amendment** to a frozen consumer-confirmed `C: MUST`, **not in force until the consumer confirms it** — §16). Where neither binds, `PB0a` is the compensating control |
-| `PR5` | **kept in full** (`TP3`); `totalCost` stays a reserved name |
-| `PR6` | unchanged (`PB6`: different currency = not comparable, never a mismatch) |
-| `BU1` | unchanged (`PB2`) |
-| `BU2` | unchanged (`PB4`), extended with ordering neutrality |
-| `BU3` | **unchanged and in force.** `PB1`, which superseded it through rev 7, is deferred to §17.1; with no total-budget comparison, `BU3`'s refusal stands as V0 wrote it |
-| `BU4` | **unchanged in force.** Rev 3–rev 5 claimed it was "extended" so that per-record budget evidence became *unit price* / *total* / *both* / *none*; **no rule in this document states that obligation.** What V0.2 actually adds is `GR2`'s requirement that each record carry its class **plus the list of the visitor's stated criteria that came out `not_evaluable`** — a different and narrower thing. The row is corrected rather than the rule invented |
-| `AR1`–`AR6` | unchanged, applied at `property.area` |
-| `SV1`–`SV5` | **unchanged and unamended.** The document takes major 1 rather than bending `SV2` |
-| `MD1`–`MD6`, `UR1`–`UR6`, `ID1`–`ID5`, `RV1`–`RV5`, `HT1`–`HT9`, `PC1`–`PC7`, `SE1`–`SE6` | unchanged |
-| `VO1`–`VO6` | unchanged; `VO6` limits: `scope:150` retired, a `style` limit to be consumer-declared |
-| `facets.scope` | **retired** → `workScopeIds` + `workScopes` |
-| `facets.tag`, `facets.category` | **unchanged, still emitted, still match keys** |
-| reserved `propertyType` | taken up as structured `property.type`, not a facet |
-| reserved `style` | taken up as facet key `style` |
-| `INV-1`–`INV-16` | unchanged except `INV-9`/`INV-10` carve-outs for `source: "derived"`; `INV-17`–`INV-30` added. `CINV-1`–`CINV-24` added, of which `CINV-6`, `CINV-11` and `CINV-16` are deferred with the rules they test (§17.1) |
+| `B9-4` whole-home remodels `exact` on a partial request | `EV2`: a `full_remodel` is `exact` only in mode `whole`. `VB3` makes "욕실 하나만" `partial`; `D9-4` deleted. Rows D and I now lead with `bi-15` and `bi-18`; row G with `bi-17` (`OQ-1`) |
+| `B9-1` `PB4`/`CINV-5` unsatisfiable, 4a/4b conflated | `PB4` restated as a property of `EV2`/`EV3`: *missing = no evidence — the least favourable valid value, judged on the whole evaluation* (owner decision). Global rank preservation is retired, not measured. 4b's figure is not cited |
+| `B9-3` `D9-9` sentence 4 assigns a state | `EV1`: one writer. Reached by **deletion** — `WS6` now gives one `Q`, so `D9-7a`, `D9-8`, `D9-9` and the per-reading machinery have nothing left to do |
+| `B9-2` ordering keys determine no order | `EV4`: one fixed tuple with a unique last key. Key (2)'s carve-out and `publishedAt` deleted |
 
-### 20.1 Change log rev 2 → rev 3
+**Retired rule ids**: `EF1`–`EF6`, `GR2a`, `GR3a`, `PB5`, `PB7`, `TI1` (its content is `EV4`'s "a tier
+ranks, it never filters"), `CINV-11`, `CINV-16`, and the deferred budget ids listed in §17.1. `PB4`,
+`GR2`, `GR3`, `VB3`, `WS6`, `WS8` and `CINV-4`/`5`/`6`/`9`/`13`/`14`/`15`/`17`/`19`–`24` keep their ids
+with new text. **New**: `EV1`–`EV4`.
 
-Every row is a finding from `06-delta-review.md`. Nothing here relaxes a rule; three rows fix rules
-that were **unsatisfiable as written**.
+**Deleted sections**: the scope-relation tables (old §14.3.3, §14.3.3.1), §14.3.5's "stated, never
+compared", §17.1's parked rev-7 text, §17.3, §18's `Q-1`…`Q-34`, §19's stale worked example, and the
+change logs §20–§20.8 — all in the archive.
 
-| id | severity | what was wrong in rev 2 | rev 3 |
-|---|---|---|---|
-| **N-1** | BLOCKER | `PT4`(a) — "the source names no space left out" — was unscoped, so it also applied to `partial_remodel`. A partial is *defined* by leaving spaces out, so rev 2 literally yielded **zero** partials; `bi-06`'s "방과 주방은 그대로 두고" is the same construction rev 2 cited to disqualify `bi-03`. | `PT4` (qualifies `full_remodel`) / `PT5` (qualifies `partial_remodel`, `PT4`(b) explicitly does not apply) / `PT6` (otherwise absent). §5.2, §13. |
-| **N-2** | BLOCKER | `ST4` forbade a value appearing in both `styles` and `keywords`, but the demo authors `styles` **as a subset of** `keywords` — 18 of 19 records would have failed the build. | `ST4`: `facets.tag` = authored keywords **minus** the style values, authored order preserved, key omitted when empty. Classification is authored; the subtraction is mechanical. `INV-24` now checks the **emitted** document. |
-| **N-3** | BLOCKER | `GR4` suppressed `property.area` to protect `D-1c`, but all 8 live titles carry the area (*"수성 화이트 **34평** 아파트 리모델링"*) and `GR1` makes `title` statable — the multiplicand was one field away. `GR5` said "for any record", missing the cross-record case. | `GR4` **inverted**: the **price** is withheld unless the visitor asked for a per-area price; area is always available. `GR5` extended to any `perArea` and any area appearing in *or derivable from* the result, including a title, factors need not come from the same record. |
-| **N-4** | MAJOR | §14.3.2 classified set relations over all of `workScopeIds`, mixing Spaces and Works, so 창호 교체 made a kitchen request a `scope_superset`. | relations are computed over **Spaces only** (`R_s`, `Q_s`). |
-| **N-5** | MAJOR | no class for `R_s ∩ Q_s = ∅`. | `scope_disjoint` added, plus a `Q_s = ∅` "not applicable" row. |
-| **N-6** | MAJOR | `PB1` had no branch for a visitor who stated **no area**. | `PB1a`, the area condition, with an explicit not-applicable case. |
-| **N-7** | MAJOR | `GR2`'s **match classes** had no precedence, so two classes could both apply. | §14.5 defines "satisfied", gives a closed class list including `not_evaluable`, and fixes a precedence order over the classes. |
-| **N-8** | MAJOR | `INV-22` ("no field equals `perArea × area`") fails on honest data — 1,000,000 × 34 = 34,000,000. | restated as a **metamorphic** test on provenance. |
-| **N-9** | MAJOR | `RO2`'s rollback gate was satisfiable by one publish. | both the `current` and the `previous` pointer slot must be `schemaVersion >= 1.0` — two successful V0.2 publishes per site. |
-| **N-10** | MAJOR | `WS9` (gloss-driven mapping) read as machine-checkable and as a `VA1` condition. | relabelled **authoring rule — not machine-checked, not a `VA1` condition**. |
-| **N-11** | MAJOR | `PB4` ("missing price carries no penalty", OD-N) was unenforceable against ordering. | `PB4` states ordering neutrality in its **strong** form: a criterion that could not be evaluated contributes nothing to the score **and to no tie-break key** — not a penalty, not a small penalty, not a null that sorts last. *(Rev 3's change log described the weak "keep their pre-price order" form, which `N-11` had explicitly rejected as no protection at a result limit of 3; the normative `PB4` and `CINV-5` always carried the strong form.)* |
-| **N-12** | MAJOR | `PB6` had no `max`-budget shape and an unsigned delta. | 3×2 table (visitor `exact`/`range`/`max` × record `exact`/`range`), **signed** delta, overlap = `a ≤ hi ∧ lo ≤ b`. |
-| **N-13** | MAJOR | `PT4`(c) had no invariant. | `INV-29`. |
-| **N-14** | MAJOR | `bi-05` was classified `full_remodel` on a verb, leaving the Spaces test unapplied. | `bi-05` → **absent** (`PT4`(b)); §13 counts are now full 2 · partial 2 · absent 4. |
-| — | (rev 3, self-found) | `RD1`'s guards capped `T` but not `A`; V0's area schema caps fraction digits, not magnitude. | `A <= 100_000_000`. |
-| — | (rev 3, self-found) | `PA4` (price basis never inferred from `area.basis`) contradicted a **derived** `perArea`, whose divisor *is* `property.area`. | `PA4` scoped to authored; `PA5` states the derived case, which makes `PB3`'s `AR5` condition evaluable. |
-| — | (rev 3, self-found) | §9.1 cited the exact-XOR-range requirement as a V0 rule. | attributed to the owner's task brief §10, recorded at `OD-I`. |
-| — | (rev 3, self-found) | §12 dropped a record for a non-string `projectType` but said nothing about a non-string `property.type`. | same record-level drop. |
+**Closed as a consequence, not separately**: `M9-1` (unresolvable area unit ⇒ absent, §14.3.1),
+`M9-2` scoped (the alias table is the consumer's; the evaluation is a function of `V`), `M9-6` (the
+prefix rule in `EV4`), `M9-7` (§19 supersedes `04` §4.1), `M9-8` and `Q-33`/`Q-34` (retired with the
+machinery they misnamed), `m9-1` and `Q-26` (`VB3` no longer distinguishes the readings). `M9-3`,
+`M9-4`, `M9-5`, `m9-5` were defects in text that is now archived.
 
-**Amendments made after the producer implementation landed** (both raised by the implementing agent;
-both are contract decisions, not code decisions, so they are recorded here):
+**Found by the checker, fixed in the contract** (not the other way round): the first draft of `EV3`
+credited a `full_remodel` with the rooms `PT4`(b) implies when counting `coverage`, and stated `PB4`
+key by key. Deleting a `full_remodel`'s `projectType` then gave a class no better than a valid value's
+but a `coverage` worse than every valid value's — a missing input penalised below the worst real
+answer, which the owner's decision forbids. `coverage` now counts listed ids only, and `PB4` compares
+the whole evaluation. Recorded in `34a` §6.
 
-| what the implementation hit | decision |
+**Fresh-context review (`34c`), fixed in this revision.** One `BLOCKER`, five `MAJOR`s:
+
+| finding | fix |
 |---|---|
-| `INV-29` read literally makes `workScopeIds` **mandatory for every `full_remodel`** — an absent set contains no Spaces id, so it fails. With `INV-28` that means any record stating `projectType` must carry work scopes, which is stricter than `WS7b`'s "open set" language suggested. | **Kept literal.** Stated explicitly as `WS7c`. A breadth claim that no structural fact backs is exactly what §4 exists to prevent, and no demo record loses data: every record that states a breadth also authors scopes. `workScopeIds` stays optional for breadth-absent records. |
-| `INV-24` cannot hold over the **document-level** facet vocabularies. `ST4` subtracts per record, so if one record classifies 화이트 as a style and another leaves it an ordinary keyword, both vocabularies declare it while no record carries it twice. | **`INV-24` is per record.** Enforcing it document-wide would either reject honest-but-inconsistent authoring or let one record's classification rewrite another's — the cross-record inference `ND1` forbids. New `ST6` (authoring guidance), `ST7` (consumer must tolerate it) and `CINV-12`. |
+| `B-1` a trade-only request made a breadth-absent record `exact` — `bi-05`, a self-described whole-home remodel, led *"바닥만"* | `EV2` row 6 requires a `partial_remodel` and `Q_s ≠ ∅` (a deletion). A trade-only request has no `exact`; `OQ-1`'s default is now the ladder as stated |
+| `M-4` a trade a partial job did not list demoted it to `overlap` (`bi-15` on *"욕실 타일만"*) | `Q_t ⊆ R_t` deleted from row 6: rooms decide `exact`, trades order by `coverage` (`WS7a`, `PB4`); `OQ-5` |
+| `M-3` `PB4` read as a second writer, with no referent for some inputs and a contradiction with `EV3` under *"10억 이내"* | `PB4` is a property of `EV2`/`EV3`, per query, with the no-valid-value and all-positive cases stated |
+| `M-1` `GR3` labels stated absences (`other`) and false reasons (`fallback` in mode `whole`) | labels per mode; `other` = does not **list**; mode `open` has no direct answers |
+| `M-2` `none` also meant "not computed" | note `not_applied` (`EV3`, `GR2`); the reply grades only computed tiers |
+| `M-5` checker `P3`/`P8` passes claimed more than they measured | `P3` checks records whose inputs are natively missing, validates fills, asserts "never rises" and drops the vacuous class-reachability check; `P8` checks the labels |
 
-### 20.2 Change log rev 3 → rev 4
+`MINOR`s taken: `m-1` (moot after `B-1`), `m-2` and `m-9` (`VB3`), `m-3` (`V.area`), `m-4` (`VB1`,
+`EV3`), `m-5` (`OQ-4`), `m-6` (`INV-30`, §12), `m-7` (checker texts), `m-8` (`GR3`), `m-10` (`EV4`).
 
-Every row is a finding from `08-delta-review-rev3.md`. Four BLOCKERs, seven MAJORs, twelve
-MINOR/NOTE. **All accepted; none rejected, none deferred.** The delta review also verified `RD1`
-against 16 executed cases and re-verified all four derived demo values — no finding there.
+**Delta review (`34d`).** All six `34c` findings above resolved except `M-5`, partial (two checker
+wording overstatements, `D-3`/`D-4`). New: 0 `BLOCKER`, 1 `MAJOR` (`D-1` → `OQ-6`, recorded, not
+fixed), 10 `MINOR` (`D-2`…`D-11`, open, listed in `34d`). No further round, by the owner's brief.
 
-| id | severity | what was wrong in rev 3 | rev 4 |
-|---|---|---|---|
-| **M-1** | BLOCKER | `D-1c` still had **no enforcement point**. `GR4` withholds `D-1`'s *output*; `GR5` forbade only `perArea × area` and `budget / area`. `total ÷ area` was forbidden nowhere — so `bi-19`'s 11,000,000 ÷ 32평 = **343,750/평**, the figure OD-K exists to forbid, was one division from two fields `GR1` explicitly authorises. | `GR5` and `CINV-2` now forbid the **quotient** of any price amount (`total.amount`, `minAmount`, `maxAmount`, a `perArea.amount`, the visitor's budget) and any area, operands from any records. This is the answer to `Q-7`: rev 3 had moved the hazard, not closed it. |
-| **M-2** | BLOCKER | §14.3.2's last row gave **every** non-partial record `fallback_from_full`/`unknown_type_fallback`, and `GR2`'s precedence puts those ahead of `exact` — so **no `full_remodel` could ever be `exact`**, including against §1's own motivating query. It also contradicted `PB1`, which permits that comparison. | §14.3.2 classifies **only** `partial_remodel` records; the two fallback classes are assigned only by `GR3`'s ladder. `GR2` gains "a precedence list orders classes that apply; it does not create them". |
-| **M-3** | BLOCKER | §14.3.2's rows were **not a function**: for `Q_s = ∅`, rows 1, 3 and 6 all matched with opposite budget verdicts, and `GR2`'s precedence orders classes, not permissions. | Row 1's condition is now `Q = ∅` (no scope of any kind), and new **`PB7`** states the rows are evaluated in order with the first match deciding both permission and class. |
-| **M-4** | BLOCKER | `PT4`(c)/`INV-29` rested on the undefined term *"touched a space"*, and rev 3's late `bi-19` rewrite removed that record's only authoring-independent disqualifier. Authoring `bedroom` would make `full_remodel` authorable and emit 343,750/평 with a `derived` badge that `INV-19` and `VA1` both miss. | `WS9` now decides it: **a Spaces id only when that space itself was remodelled; a trade run *through* a space is the trade id alone.** `storage` vs `built_in_furniture` disambiguated in §7.3 (and 조작 → 제작). |
-| **M-5** | MAJOR | §13's closing "Recorded caveat" paragraph still said `bi-05`'s 전체 리모델링 governs — contradicting §13's own row thirty lines above. `N-14` survived verbatim in the section that claimed to close it. | Paragraph rewritten to `PT4`(b), with the rev-2 reasoning recorded as history. |
-| **M-6** | MAJOR | §14.3.2 dropped the trades the **visitor** named. `bi-14` `[kitchen]` was `exact` and budget-comparable for *"주방이랑 바닥"*, though `WS7a` says its total bought no flooring; and *"바닥이랑 도배만"* fell into the not-applicable row and was budget-matched against a kitchen-and-bathrooms total. | Row 3 gains the `Q_t ⊆ R_t` conjunct; row 4 is the failure case; new **§14.3.2.1** handles trade-only requests on `R_t` vs `Q_t`, with `R_s ≠ ∅` ⇒ `scope_superset`. |
-| **M-7** | MAJOR | `PB1a` required the `acceptable` tier, and §14.3.1's bands are disjoint — so a **perfect** area match (`strong`) failed the area condition, while `GR2` called the same fact satisfied. | `PB1a` → "`strong` **or** `acceptable`", `GR2`'s wording verbatim. |
-| **M-8** | MAJOR | `PT4`(a)/(b), `PT5`, `PT6` and `ST2` were `P: MUST` clauses the fail-closed `VA1` cannot evaluate — `N-10`'s defect, left standing in rules rev 3 itself rewrote. | All four labelled **authoring rules — not machine-checked, not `VA1` conditions**. `PT4`(c)/`INV-29` remains the machine-checked part. |
-| **M-9** | MAJOR | `PA5` claimed to make `PB3`'s `AR5` conjunct evaluable; `AR5` is about **area** bases and `PA4`/`PA5` about **price** bases, and **no §14 rule read `perArea.source`**. `bi-01`'s authored 2.9M/평 was comparable with `bi-09`'s derived 1,470,588/평 — wrong by about a third if `bi-01` was priced on exclusive area. | New **`PB3a`**: a *comparative claim* needs a known price basis on both sides — both `derived`, same present non-`unknown` area basis. Otherwise displayable, not comparable (`PR4`'s own construction). This answers `Q-8`. |
-| **M-10** | MAJOR | `PR4` was declared "kept in full" while `PB1`/`PB6` compared and **ordered** `pricing.total` across categories with no category condition — a silent amendment of a frozen consumer-confirmed rule. | New **`PB0`** declares the amendment: `PR4` verbatim for `perArea`; for `total`, the category condition is replaced by breadth + area + scope. Added to §16's consumer-confirmation list and **not in force until confirmed**. This answers `Q-4`. |
-| **M-11** | MAJOR | `WS7a` declared a partial's set closed over **spaces and works**, which `WS1`/`WS9` cannot achieve and `WS7c` made unavoidable — a consumer could state "타일 공사는 포함되어 있지 않습니다" about `bi-14`, falsely. | `WS7a`'s closure scoped to **`workScopeIds ∩ Spaces`**. Works are open even for a partial. Every §14.3.2 rule is written to that asymmetry; the §19 worked example updated. |
-| MINOR-1…11, NOTE-1…3 | — | `Q` undefined; row 1's not-evaluable listing; the **area** delta's divisor undefined; `PB6`'s range×range cell unsigned; `total.kind` unknown-value treatment missing; `built_in_furniture` gloss typo; `WS7c`'s unsupported `bi-02`/`bi-08` illustration; `ST6`'s `ND1` mis-citation; and three §20.1 rows describing rules the reviews had **rejected**. | All applied. The area delta is now `(r − v) / v` on the visitor's figure; `total.kind` unknown ⇒ `pricing.total` absent; `ST6` cites `VO2`/`VO3` and gains **P: SHOULD warn at build**; `ST7` records its accepted limitation; `WS7c` states its real cost; new `PB6a` notes that the `max` budget shape carries no discriminating power. |
+### 20.10 Rev 9.2 → rev 9.2.1 — closeout
 
-**Nothing in rev 4 relaxes a rule.** Three of the four BLOCKERs (`M-2`, `M-3`, `M-6`) fix rules that
-were internally inconsistent or unsatisfiable; `M-1`, `M-4` and `M-9` **tighten**; `M-10` converts a
-silent amendment into a declared one that requires the consumer's confirmation.
+Driven by the owner's closeout brief of 2026-09-25. No new rule family, no change to `EV2`–`EV4`'s
+results: every §19 row and every class, tier and order is unchanged. Checked by
+`proof/contract-simplified.mjs` (one run) and one fresh delta review; reported in
+`docs/result/interior-portfolio-v0.2/35-contract-final-closeout.md`.
 
-### 20.3 Change log rev 4 → rev 5
-
-Round 4 (`10-delta-review-rev4.md`) returned **2 BLOCKER · 4 MAJOR · 8 MINOR · 4 NOTE** and closed 9
-of round 3's 11 findings. All accepted. It also made a **structural** recommendation, which rev 5
-takes: *"restructure §14.3–§14.5 rather than patch a fourth time — every defect found in three
-consecutive rounds sits between `PB1`/`PB1a`, §14.3.2+`PB7` and `GR2`/`GR3`, which jointly compute
-one function nobody owns end to end."*
-
-**The restructure.** §14.3 is now that function, stated end to end: inputs (§14.3.1), four criteria
-each in exactly one of three states (§14.3.2, `EF1`–`EF5`), the scope relations (§14.3.3), tiers
-(§14.3.4), price permission (§14.3.5), the class **derived from** the criteria (§14.3.6, `EF6`), the
-ladder (`GR3`) and the output invariants (§14.3.7). Every rule id survives. What is gone is the
-space *between* the lists, which is where all three rounds' BLOCKERs lived. Rev 4's standalone
-`GR2` precedence list — which ordered classes no rule assigned — is replaced by `EF6`, which cannot
-disagree with the criteria because it is computed from them; `PB1a` is folded into `EF4` for the
-same reason, since as two rules they contradicted each other about the `strong` tier.
-
-| id | severity | what was wrong in rev 4 | rev 5 |
-|---|---|---|---|
-| **P-1** | BLOCKER | `GR5`'s new quotient clause **forbade the truth**. `bi-10` 85,000,000 ÷ 34 = 2,500,000, `bi-11` 30,000,000 ÷ 20 = 1,500,000 and `bi-12` 52,000,000 ÷ 26 = 2,000,000 divide exactly, so the producer's own `D-1` per-area price *equals* a forbidden quotient and each total *equals* a forbidden product — a correct consumer stating either would fail `CINV-2`. | **`GR5a`**: a number that is itself the value of a `pricing` field on a record in the result is exempt. The rule is about provenance, not arithmetic. `bi-19`'s 343,750 is no field's value and stays forbidden, which is the case it exists for. |
-| **P-2** | BLOCKER | `PB1` gave **breadth** no "not stated ⇒ not applicable" branch although area and scope both had one. *"5천만원 예산인데 어떤 사례가 있나요?"* made five small partials `exact` and excluded `bi-09` (`delta = 0`) from comparison entirely. `PB0`'s cross-category safeguard also cited a disclosure no rule required. | `EF1`'s three states make `not_applicable` structural for **all four** criteria. New **`PB0a`** requires a per-record coverage statement **in the reply** whenever a total-budget result spans categories or was produced with breadth and scope both not applicable. |
-| **P-3** | MAJOR | `exact` was still unreachable for a `full_remodel` whenever the visitor **named a space**, because scope-satisfaction was defined only through a table that no longer classified fulls. | `EF3`: for a `full_remodel` the scope criterion is **`satisfied` for any `Q`** — `PT4`(b) *is* the statement that no space was left out, so every space the visitor named was remodelled. For a full, the id list is an enumeration convenience, not a boundary. Budget permission is unaffected: the total still bought the whole dwelling. |
-| **P-4** | MAJOR | §14.3.2.1 fired no positive row on any of the 19 fixtures, and `GR3`'s ladder keyed on spaces — so *"바닥이랑 도배만"* could never reach `bi-19`, the one record that did exactly that job. | `GR3` gains a **trade rung**: breadth-absent records whose `R_t ⊇ Q_t`. The remaining limitation is stated rather than hidden — a whole-dwelling trades-only job is breadth-absent by construction, so it is reachable and its total is statable as a fact, but never as a budget match. A producer-declared closed **trade** set would close it properly; deferred (§17). |
-| **P-5** | MAJOR | `WS9`'s "a trade through a space is the trade alone" plus `WS7a`'s closure made an absent space id a **false exclusion**: `bi-17` re-floored the bedrooms, yet a consumer could state 침실은 포함되지 않았습니다. `M-11`'s falsehood, moved to the other axis. | `WS7a` restated in `WS9`'s own sense — the closed set is the spaces **that were remodelled**, and an absent id means that space was not remodelled, never that no work reached it. Disclosure wording fixed on both axes (`CINV-17`). |
-| **P-6** | MAJOR | rev 4's new `storage`/`built_in_furniture` gloss was not propagated; it reclassifies `bi-10`, `bi-18` and the contract's **own** §19 worked example. | §19's example moved to `built_in_furniture`; `04-demo-data-spec.md` re-authored for `bi-10` and `bi-18`. |
-| 8 MINOR · 4 NOTE (`P-7`…`P-18`) | — | assorted wording, citations and cross-references | **5 of 12 applied** in rev 5 (`P-8`, `P-9`, `P-11` by construction; `P-15`, `P-16` in part). `P-7`, `P-10`, `P-12`, `P-13`, `P-14`, `P-17`, `P-18` were **not** applied, although this row said they were; all seven are applied in rev 6 (§20.4). |
-
-**What rev 5 relaxed.** Three relaxations, two of them defects — the honest list, because the
-previous three revisions each closed with a blanket *"nothing relaxes a rule"* that was not true,
-and a wrong summary line is how `M-5` and `P-17` happened.
-
-| relaxation | deliberate? |
+| item | change |
 |---|---|
-| `EF3` made the scope criterion `satisfied` for every `full_remodel` against every `Q` | **half.** The spaces half is deliberate and is `P-3`'s fix. Extending it to **trades** was a defect (`Q-3`), corrected in rev 6. |
-| §14.3.3 lost its `Q = ∅` row, so `PB1`'s partial branch had no permission for an open budget question | **no** — a defect (`Q-2`), restored in rev 6 as row 1. |
-| §14.3.3's rows 5–7 lost the disclosure cells rev 4 carried | **no** — a defect (`C-1`), restored in rev 6 on rows 6–8. |
+| `OQ-6` (`34d` `D-1`, the open `MAJOR`) | owner decision: an extra trade never demotes an `exact` room match; setting its total beside a budget requires the extra-trade disclosure (§14.3.6, new `CINV-25`). `EV3`'s price justification says "remodelled exactly the rooms asked for", not "the kind of job asked" |
+| `OQ-1`…`OQ-5` | closed as owner decisions with the defaults unchanged; §18 is now *Owner decisions — closed* |
+| `D-2` | `PB4` item 2: the no-valid-value case asks nothing beyond `EV2`/`EV3`; the all-positive case sets only the fed tier to its last value. `CINV-5` split the same way |
+| `D-3`, `D-4` | checker propositions: no-valid-value cases are counted, not asserted; `P8`'s label checks test the checker's transcription of `GR3`, not `GR3`'s text |
+| `D-5` | the room disclosure applies only to a `partial_remodel` from which no id was dropped (`WS8`) |
+| `D-6` | `GR3`'s `overlap` reason is stated from recorded ids only, never where a trade ran; a dropped-id record's reason is that its scope could not be read in full |
+| `D-7` | `VB3`: a restriction always wins (row 2 first); 전체 qualifying a trade — 집 전체 도배, 34평 전체 도배 — is not row 3 |
+| `D-8` | `CINV-15` and `OQ-1` record that a trade-only request compares no budget |
+| `D-9` | `GR2` notes are for area and budget only; §12's kind-less total is `missing` only where the tier applies; the reply says "inside the budget" for meeting intervals; a `not_applied` value is stated only if the record has one |
+| `D-10` | already fixed in `34a` §1.2 (‡); confirmed, not re-edited |
+| `D-11` | `EV4` cites V0 `ID3` for uniqueness; checker fixture counts printed, `CINV-24(b)` label, and the two checker-only defaults (unknown unit, missing currency) removed |
 
-`P-1` corrects a rule that forbade a true statement. `P-4` restores reachability by grounding it in
-`WS7b`, a fact the contract already asserts, rather than by weakening a guard. `P-2`, `P-5` and
-`P-6` tighten.
-
-
-### 20.4 Change log rev 5 → rev 6
-
-Every row is a finding from `11-delta-review-rev5.md`, which returned **NOT READY** with 4 BLOCKER ·
-8 MAJOR · 10 MINOR · 6 NOTE and judged the rev-5 restructure *"half worked, and it should not be
-reverted … every remaining defect is now a missing row in one table rather than a prose
-contradiction spread over four sections."* Rev 6 finishes that restructure rather than attempting a
-sixth; the reasoning, including why the pre-committed narrowing clause in `00-work-plan.md` §2.4 was
-**not** invoked, is recorded in `12-rev6-disposition.md`.
-
-The structural change is that **`EF6` no longer reads a ladder predicate**. Rev 5's row 2 keyed on
-*"the record is on a `GR3` rung rather than a direct answer"* — undefined in the contract and
-circular in `GR3`'s own preamble. In rev 6 the class is a function of the four criterion states and
-`R.projectType` alone; `GR3` labels and orders the result and cannot disagree with the class, for
-the same reason `EF6` replaced rev 4's standalone precedence list.
-
-| id | severity | what was wrong in rev 5 | rev 6 |
-|---|---|---|---|
-| **Q-1** | BLOCKER | `EF6` had **no row** for `breadth = unsatisfied`, so the fall-through row classed a one-bathroom 7,000,000 job `exact` for *"전체 리모델링 사례 보여주세요"* and a 50,000,000 whole-home remodel `exact` for *"주방만 하고 싶어요"*. OD-P inverted by the class table. | `breadth_fallback` added to `GR2`'s closed list. `EF6` rows 2/3/4 assign `fallback_from_full` (record is a full), `breadth_fallback` (record is a partial) and `unknown_type_fallback` (`projectType` absent) from the **breadth criterion**, not from a rung. Totality stated and machine-checked (`CINV-20`, 768 inputs). |
-| **Q-2** | BLOCKER | §14.3.3 lost its `Q = ∅` row, so `PB1`'s partial branch had no permission for an open budget question and `PB0`'s **own** worked utterance — *"2천만원으로 뭘 할 수 있나요"* — budget-matched nothing over a corpus containing five affordable partials. | Row 1 restored, permitted with `PB0a`'s coverage statement. `PB1` states that its partial branch is entered for **every** `Q` and that `Q = ∅` is row 1, so the table's two entry points cannot diverge again. |
-| **Q-3** | BLOCKER | `EF3` extended `PT4`(b) — a statement about **spaces** — to the visitor's **trades**, inferring *inclusion* from an absent trade id, the mirror of what `WS7b` forbids. `bi-09`, whose body says 창호는 … 교체하지 않았고, was the single `exact` match for a 창호 request, above `bi-10`, which did replace them. | `EF3`'s `full_remodel` branch split: spaces `satisfied` via `PT4`(b), trades evaluated on the id list (`satisfied` iff `Q_t ⊆ R_t`, else `not_evaluable`), criterion **never** `unsatisfied`. `CINV-13` gains fixture (c). |
-| **Q-4** | BLOCKER | `PB1`'s `full_remodel` branch stated a permission keyed on `V.breadth` and, in the next sentence, a refusal keyed on named spaces. Not the same predicate; `CINV-13`'s own second fixture failed the second one. | One predicate, per `VB3`: the visitor's **framing** refuses, naming rooms does not — and when `V.breadth` is absent with `Q_s ≠ ∅` the comparison is permitted **only** with `PB0a`'s coverage statement. |
-| **Q-5** | MAJOR | `EF6` row 2 assigned **no class** to a `partial_remodel` on a rung, and *"a direct answer"* was defined nowhere while being the sole thing separating `exact` from `fallback_from_full`. | The rung predicate is gone from `EF6`. *"Direct answer"* is defined once, in `GR3`, as **class is `exact`**; everything else is a labelled reference carrying its class. `CINV-22`. |
-| **Q-6** | MAJOR | `GR3`'s three rows were keyed on *"the visitor asked"* and none matched a visitor who stated neither breadth nor scope — §1's own framing utterance. | Fourth rung: **nothing but a budget** → comparable totals by `|delta|` ascending with `PB0a`'s statement → any price → the rest. |
-| **Q-7** | MAJOR | `WS8`'s unknown-id drop turned an *unknown* into a *fact*: a `1.0` consumer reading a `1.1` document shrinks `R_s`, and `WS7a`'s closure then licenses *"이 사례는 주방만 리모델링했습니다"* about a kitchen-**and-two-bathrooms** job. Reachable with no authoring error. | `WS8` and the restated `WS7a` both state that a record with a dropped id is **not closed**: scope is `not_evaluable`, no absence may be stated. `CINV-9` extended. |
-| **Q-8** | MAJOR | `PB6a` named breadth, scope and area as tie-breaks; none of the three orders anything in the case the rule exists for, and four `exact` records competed for three slots with no defined order. Also `max`-only, though `range` ties identically (`P-10`). | `PB6a` rewritten: class order → `|delta_area|` → stated-scope count → `publishedAt` → `id`, the last two a **deterministic floor**, and widened to every `delta = 0` tie. `CINV-21`. |
-| **C-1** (`P-13`) | MAJOR | §14.3.3 rows 5–7 lost the disclosure cells rev 4 carried, so a refused budget comparison told the visitor only a class token. | Disclosures restored on rows 6, 7 and 8, worded per `CINV-17`. |
-| **C-2** (`P-6`b) | MAJOR | `WS9` was byte-identical to rev 4: `bi-18`'s 복도 붙박이장 still had two supported authorings with **opposite budget verdicts** for one utterance. | `WS9`: installing joinery is not by itself a remodel of the space it stands in. |
-| **C-3** (`P-7`) | MAJOR (doc) | §20 still instructed an implementer to build the **unamended** `PR4`, still said `CINV-1`–`CINV-11`, and its summary row claimed twelve findings applied when five were. | `PR4` row rewritten around `PB0`'s declared amendment and its consumer-confirmation gate; count corrected; the summary row and the relaxation paragraph corrected above. |
-| `Q-M1` | MINOR | `GR5a`'s exemption said *"some record in the result"*, restoring the cross-record arithmetic `GR5` was widened to catch: `bi-09`'s total ÷ `bi-11`'s area **is** `bi-10`'s `perArea`. | Scoped to *"the record the statement is about"*, with both executed collisions recorded. |
-| `Q-M2` | MINOR | `EF5` did not route `PB6`'s different-currency case to a state. | *"or `PB6` returns not comparable"* added. |
-| `Q-M3` | MINOR | `PY1`'s *one unknown basis lowers confidence* had no home in the three states. | Carried as a **disclosure**, explicitly not a state and not a ranking key, stated in `EF4`. |
-| `Q-M4` | MINOR | `EF2` compared `R.projectType` to *"`V.breadth`'s wire value"*; `whole` is not a wire value of anything. | The mapping is stated. |
-| `Q-M5` (`P-14`) | MINOR | the §14.3.3 **relation** `exact` and the `EF6` **class** `exact` were one word for two predicates. | Relation renamed `scope_exact` throughout: §14.3.3, §14.3.3.1, `EF3`, `GR3`, `WS9`'s worked example. (§19 names neither the relation nor the class, so it needed no change — rev 6 first claimed §19 as changed, which is the kind of unchecked completeness claim §20.4 exists to stop.) |
-| `Q-M6` (`P-12`) | MINOR | `PB3a`'s third conjunct tested a value the wire cannot carry. | Dropped, with the reason. |
-| `Q-M7` | MINOR | `CINV-4` still asserted *"the `GR2` precedence order"*, deleted in rev 5. | Reads `EF6`'s row order. |
-| `P-15` | MINOR | `fallback_from_full` was produced only by the rung row, so it vanished whenever a direct match existed. | Resolved by construction: it is now a **breadth** verdict (`EF6` row 2). |
-| `P-16` | MINOR | nothing said that a perfect scope match with no price is `not_evaluable` **by intent**. | Said, at `EF6` row 7. |
-| `P-18` / `Q-N3` | NOTE | `WS1`'s *"without judgement"* was a bare `P: MUST` under a fail-closed `VA1`. | Labelled, like `WS9`, as carrying an AUTHORING half that `VA1` does not check. |
-| `Q-N1` | NOTE | `VB3` entered rev 5 unannounced. | In the table above and in this one. |
-| `Q-N2` | NOTE | §20's `BU4` row asserted an obligation no rule states. | Row corrected; the obligation is **not** invented. |
-| `Q-N4` (`P-17`) | NOTE | fourth consecutive revision whose change log closed with a false *"nothing relaxes a rule"*. | Replaced by an itemised relaxation table above, marking which were deliberate. |
-| `Q-N6` | NOTE | §14.3.3's rows that ignore `Q_t` (rev 5's rows 4–7; rev 6's **5–8**, after the `Q = ∅` row was restored at position 1) did so without saying so. | Stated as intended, with the reason (those rows all refuse the budget). |
-| `Q-16` (§D) | — | `EF3`'s `PT4`(b) inference is sound for spaces but rests on an authoring rule `VA1` cannot check, so an authoring error became a confident, specific statement to a visitor. | **Ground, not conclusion**: where the spaces half is satisfied by `PT4`(b) and `Q_s ⊄ R_s`, the reply says *"집 전체를 리모델링한 사례"* and never *"주방이 포함되어 있습니다"*. `CINV-23`. An authoring error now degrades to a true-but-general sentence. |
-| `Q-17` (§D) | — | §14.3.3.1's first row fires for no record and for no record constructible under `PT5`; round 4 asked for it to be deleted or its shape stated and rev 5 did neither. | **`INV-30`** — `partial_remodel` ⇒ at least one `Spaces` id, the mirror of `INV-29` (`INV-28` required only non-emptiness). The row is kept, because deleting it makes §14.3.3.1 non-total, and its unreachability is now *tested*. The one producer-side change in rev 6; see `Q-19`. |
-| `Q-18` (§D) | — | `PB0a` was prose, so two consumers would build different coverage statements, and disclosure without a reproducible order surrenders `PR4`'s guarantee for nothing. | `PB0a` is a **template** with a closed list of inputs, and such a result is ordered by `PB6a`'s sequence. |
-| `Q-M8`–`Q-M10`, `Q-N5`, `D-1`–`D-7` | MINOR/NOTE | cross-document: `04`'s header, stale citations, two `PB3a`-forbidden comparisons, and round 4's `D-1`…`D-7` never dispositioned in `05`. | Not contract text; dispositioned in `12-rev6-disposition.md` and fixed in `04` and `05`. |
-
-**What rev 6 relaxed — corrected in rev 7, because rev 6's own account of this was incomplete.**
-Rev 6 closed with *"relaxes nothing"*. That was wrong, and the round-6 reviewer counted it as the
-**fifth** consecutive revision whose closing account of its own relaxations was wrong. The complete
-list:
-
-| change | direction |
-|---|---|
-| **`PB1` lost its refusal on named spaces** (the `Q-4` fix) | **a relaxation — and the one rev-6 change that alters what a customer is told.** Rev 5 refused a total-budget comparison whenever the visitor named a space; rev 6 keyed the refusal on `V.breadth` alone. Correct per `VB3` (naming rooms is not a statement of breadth), but it moved the whole weight of `OD-O` onto a field the contract never said how to extract. Rev 7 closes that with `VB3`'s extraction sentence. **Omitted from rev 6's list.** |
-| `PB3a` loses its third conjunct | no outcome changes **on the wire** — but `CINV-16` still tested the conjunct, so one outcome did change: a consumer implementing rev 6's `CINV-16` would refuse a comparison `PB3a` permits. Corrected in rev 7. **Mis-stated in rev 6's list.** |
-| `EF3`'s trade half: `satisfied` → `not_evaluable` | tightens |
-| §14.3.3 row 1 + `PB1`'s `Q = ∅` clause | **restores** a rev-4 permission rev 5 dropped by accident. A restoration, not a new permission — the item a reviewer should check hardest |
-| `INV-30` | tightens, and is backward-incompatible: it can fail a document rev 5 accepted |
-| everything else | adds a rule, a disclosure, a state transition or a test |
-
-`PB0` remains **not in force** until the consumer confirms it (§16).
-
-### 20.5 Change log rev 6 → rev 7
-
-Every row is a finding from `13-delta-review-rev6.md` (**NOT READY**: 1 BLOCKER · 8 MAJOR · 9 MINOR
-· 6 NOTE). That review verified rev 6's central claim and could not break it — *"`EF6` is total and
-single-valued, and I could not break it … `CINV-20`'s primary claim holds"* — and found the defects
-in the **edges** of the function rather than in its shape: *"Nothing in this review argues for a
-seventh restructure."*
-
-| id | severity | what was wrong in rev 6 | rev 7 |
-|---|---|---|---|
-| **B-1** | BLOCKER | The `Q-7` fix assigned a criterion state from **outside** `EF2`–`EF5`: `WS8` and §14.3.3's restated `WS7a` both set scope to `not_evaluable`, which `EF1`'s closing sentence forbids. One input had two states and no precedence rule, and the reading `EF1` endorses restores `Q-7`'s own falsehood — `bi-16` with a dropped id comes out `exact` at `delta = −0.01` and may be described as *"주방만 리모델링했습니다"*. A regression introduced by rev 6, not a survival. | The clause **moves into `EF3`**'s `partial_remodel` branch, which is the only place a scope state is assigned; `WS8` and `WS7a` state the reason and cite `EF3`. The `full_remodel` branch needs no clause: its spaces half rests on `PT4`(b), and a dropped **trade** id can only turn `Q_t ⊆ R_t` false, which is the safe direction. |
-| **M-1** | MAJOR | `reachable()` in the proof was **not** a faithful transcription: it excluded `partial_remodel` + scope `not_evaluable` — which `WS8`/`CINV-9` make reachable and which the proof's own worked case asserted — and omitted three `PB1` constraints. `CINV-20`'s stated *"464 reachable"* was the output of a wrong predicate. | The proof no longer contains a hand-written reachability predicate. `EF2`–`EF5` and `PB1` are implemented from their text and the states are **derived** over 24,192 conversation × record inputs; reachability is a result (**256** of 768 vectors), not an assertion. |
-| **M-2** | MAJOR | Two of the proof's five assertions were vacuous: the "`EF3` lemma" test restated its own premise, and the single-valuedness test called one pure function twice. | The lemma is **derived** in pass A. *First match wins* is now checked against an independent statement of each row's condition: the returned class must belong to the lowest-numbered row whose condition holds. |
-| **M-3** | MAJOR | Worked case 7 asserted a state vector its own utterance cannot produce (*"바닥이랑 도배만"* with breadth `not_evaluable`). | Corrected to breadth `not_applicable` ⇒ `not_evaluable`, and `VB3` now states *why*: 만 on a **trade** does not set `V.breadth`. |
-| **M-4** | MAJOR | §20.4's relaxation list omitted the `PB1` refusal `Q-4` removed. | Table above. |
-| **M-5** | MAJOR | Nothing ordered a result with a direct answer and no budget tie: seven `exact` records for *"전체 리모델링 사례 보여주세요"*, every key flat, result limit 3, order undefined. | `GR3` gains **every result has an order**: the last two keys are always `publishedAt` then `id`, present on every record and never tying. |
-| **M-6** | MAJOR | `INV-30` collided with `PT5` and rev 6's own new `WS9` sentence — a bounded job whose only work is a trade had no authoring satisfying all three. | `PT5` gains the missing sentence, where an author reads it: such a job is breadth-absent (`bi-19`'s answer at one-room scale), with the cost stated and the §17 deferral named. `INV-30` stands. |
-| **M-7** | MAJOR | `V.breadth` became the sole gate on the total-budget comparison and nothing said how to extract it; the two readings of *"욕실만 700만원"* differ, and one compares a 50,000,000 whole-home total against a bathroom budget (`OD-O`). Round 5's own review extracted the same particle both ways, three pages apart. | `VB3` gains the extraction sentence: restriction **by space** sets `V.breadth`; restriction **by trade** does not; enumeration does not. Asserted directly in the proof. |
-| **M-8** | MAJOR | `GR3`'s rungs did not cover the classes `EF6` produces: `breadth_fallback` was on no rung, and a spaces-named query laddered neither `scope_superset` nor `scope_subset` — including `OD-P`'s own *"projects containing the requested space"*. | All three rows extended; every class is on a rung; `CINV-24` fixtures `breadth_fallback` by name. |
-| `m-1`, `m-2`, `m-6`, `m-7`, `m-8`, `m-9` | MINOR | `CINV-18` and `CINV-16` carried wording their own rules had dropped; §15's tables were out of numeric order; §20.4 had two wrong row numberings and one vacuous completeness claim. | Applied **in this document**: `CINV-18` scoped to the record the statement is about; `CINV-16`'s conjunct dropped; `INV-29`/`INV-30` and `CINV-22`/`23`/`24` in order; §20.4 corrected. |
-| `m-3`, `m-4`, `m-5` | MINOR | stale row numbers and stale revision citations in `04-demo-data-spec.md`, two of which `04` rev 5's own header claimed to have fixed. | Applied in **`04` rev 6**, with `n-2`'s re-audit. Counted separately from the contract's own MINORs because `04` rev 5 is what claimed a completeness it did not have. |
-| `n-1`…`n-6` | NOTE | `breadth_fallback` had no test naming it; `WS9`'s new sentence was not carried back through `04`; §7.3's `entrance` gloss and `WS9` disagreed; the proof was wired into no runner. Applied here: `CINV-24` fixtures `breadth_fallback` by name; §7.3's `entrance` gloss is declared the more specific rule where it names the joinery itself; `npm run proof:ef6` wires the proof into the repo. `n-4` — *has the contract begun specifying the assistant's voice?* — is **recorded for the owner** in §18, not decided here. **`n-2` done**: rev 7's `WS9` sentence was carried back through `04` by a read-only corpus-wide re-audit (`13c-ws9-reaudit.md`). Four of the eleven authored records change — `bi-09`, `bi-11`, `bi-12`, `bi-13` — §4's inventory drops to **16 used / 10 unused** (`pantry` was `bi-13`'s alone), and `INV-28`/`INV-29`/`INV-30` were re-verified on the **15** records that carry `workScopeIds`: no record lost its last `Spaces` id. *(Rev 9: this read "re-verified on all 19". `bi-01`, `bi-04`, `bi-06` and `bi-07` carry a `projectType` and no `workScopeIds`, as §14.3.6's own note and `04` record, so the three invariants have no input on them — round 7's `m7-7`, round 8's `m8-8`. `04:7` states the same claim and needs the same correction; `18-existing-eight-workscopes.md` is the pass that will make the original sentence true.)* §19's example gains the sentence that tells a reader why *its* `bedroom` **is** authored. |
-
-Three further defects came from an **independent hand-execution** of eight Korean utterances
-against all 19 records, worked from the prose alone with the proof script deliberately withheld
-(`13b-fixture-execution-rev6.md`). They are not in `13`'s list:
-
-| id | severity | what was wrong in rev 6 | rev 7 |
-|---|---|---|---|
-| **X-1** | MAJOR | `GR3`'s rows overlapped with no precedence: *"창호 교체하려는데 34평 전체 리모델링"* has `V.breadth = whole` **and** `Q_s = ∅`, `Q_t ≠ ∅`, so it selects both the whole-home row and the trade-only row. `PB7` solved exactly this for §14.3.3; `GR3` never got the same treatment. | **`GR3a`** — in **rev 7** a five-row precedence table, first match wins, total over the query space; its last row was *no ladder*, so a query matching no rung still had the default order. *(Rev 8 reduced it to four rows when the comparing budget rung was deferred, which is what round 8's `m8-14` caught in this line; rev 9 deletes `GR3a` altogether — `D9-1`, §17.3. The row above describes rev 7 and is left describing rev 7.)* |
-| **X-2** | MAJOR | `WS6` left an ambiguous visitor term entirely to the consumer's alias table, and that table silently decided a **budget verdict**: *"현관이랑 복도 수납"* against `bi-18` — fully authored, no data gap — is `scope_exact` with the budget **permitted** if 복도 is not read as a named space, and `scope_subset` with it **refused** if it is. `WS9` had closed only the authoring side of the same ambiguity. | `WS6` gains **resolve conservatively**: an unresolved tie takes the reading that does *not* permit a price comparison, and the consumer states which reading it took. The table stays the consumer's. |
-| **X-3** | MINOR | `CINV-15` cited `bi-16` for §14.3.3.1's `scope_superset` row, but `bi-16`'s ids are `[kitchen, bathroom]`, so `R_t = ∅` and it lands on the **`scope_disjoint`** row. The budget verdict was unaffected — both rows refuse — but the relation label and its disclosure text were wrong. | `CINV-15` rebuilt with one fixture per outcome: `bi-17` `scope_superset`, `bi-16` `scope_disjoint`, `bi-19` the trade rung. |
-
-> **This paragraph previously read *"What rev 7 relaxes: nothing"*, and it was false — as the
-> equivalent sentence was false in the five revisions before it and, per round 8's `M8-4`, in rev 8
-> after it. Seven consecutive revisions. Round 7's `M7-4` established that rev 7 *did* relax: `B-1`'s
-> fix narrowed the `WS8` not-closed clause from every record to `partial_remodel` only, so a
-> `full_remodel` record's scope criterion went `not_evaluable` → `satisfied`.**
->
-> **The claim is withdrawn and is not replaced by a corrected hand-written one.** A relaxation
-> summary is a statement about the rule set before and after a revision; it is derivable by diffing
-> the two rule tables, and seven rounds of evidence say it is not reliably writable by hand. Under
-> `19-round8-disposition-and-method-change.md` `DM-1` it is **derived or it is not stated**, and
-> until the derivation exists this log records the per-rule rows above and makes no summary claim.
->
-> *For the record, checked by hand against the two tables above and offered as evidence rather than
-> as a guarantee:* `B-1` **relaxes** (`M7-4`, above). `M-6`, `M-7` and `X-2` tighten. `M-1`, `M-2`,
-> `M-3` and `n-5` change only the proof. `M-5` and `X-1` add ordering guarantees — and `M-5`'s
-> sentence went on to create round 7's `B7-2`, which recurred in rev 8 as `B8-2`. `M-8` was **not**
-> closed (`M7-2`). `X-3` corrects a fixture, not a rule. `m-2` restores a conjunct-free `CINV-16` to
-> agreement with `PB3a`.
-
-### 20.6 Change log rev 7 → rev 8 — the narrowing
-
-`15-delta-review-rev7.md` returned **NOT READY**: 3 BLOCKER · 4 MAJOR · 9 MINOR · 5 NOTE, all three
-BLOCKERs inside §14.3. Under `00-work-plan.md` §2.4 as tightened in `14-rev7-disposition.md` §1, the
-pre-commitment fires and **V0.2's scope is narrowed**. The decision, the owner-goal conflict it
-creates, and the V0.3 restoration plan are in `16-narrowing-decision.md`. This section records only
-what changed in the document.
-
-**Budget comparison moves to §17.1.** *(Rev 9: this sentence read "verbatim and unweakened", and round 8's `M8-1` showed it false for **five of twelve** items — `EF5`, the `price_fallback` row, §14.3.3's budget column, §14.3.4's price tier and `GR3`'s comparing budget rung were **deleted**, not parked, and `CINV-6`/`CINV-11` became empty pointers. The claim is withdrawn. §17.1 now reconstructs each item from the review that attests it and marks the two nothing attests as **LOST**.)* Deferred: `PB0`, `PB0a`, `PB1`,
-`PB3`, `PB3a`, `PB6`, `PB6a`, `EF5`, the `price_fallback` class, §14.3.3's budget column, §14.3.4's
-price tier, `GR3`'s comparing budget rung, and `CINV-6`/`CINV-11`/`CINV-16`. Retained and in force:
-`PB2`, `PB4`, `PB5`, `VB1`, `VB2`, and `GR1`'s permission to **state** any emitted price as a fact.
-
-| round-7 finding | severity | status in rev 8 |
-|---|---|---|
-| `B7-1` `pb1Permits` keyed on `EF3`'s state, `PB1` on §14.3.3's row; `CINV-20`'s published 256 was the output of the divergence | BLOCKER | **removed by construction** — `PB1` is deferred and the proof no longer models a permission function. `CINV-20`'s counts are re-derived for three criteria: 1,512 inputs, **100** of 192 vectors, 336 raw evaluations |
-| `B7-2` `PB6a` step 1 sorted `exact` **last** while `GR3` said direct answers come first — two `C: MUST`s, no tie-breaker | BLOCKER | **claimed as removed by construction; it was not.** *(Corrected in rev 9.)* Two things in this row are wrong. *"`PB6a` existed only to break price ties"* is misleading — only its **step 1** was price-specific, and rev 8 copied its steps 2–5 verbatim into *Every result has an order* (round 8's `m8-15`). And `B7-2` was **relocated, not removed**: with `PB6a` gone, `GR3`'s *"direct answers are offered first"* collided with `GR3a`'s rungs instead — round 8's `B8-2`, `17b`'s `X8-20`. `19-…-method-change.md` `DM-3` withdraws the claim. Closed in rev 9 by `D9-1`, which deletes one of the two devices rather than the partner |
-| `B7-3` a trade restriction left `V.breadth` absent, so `PB1`'s full branch budget-matched a whole-home total against a two-trade budget; `OD-O` violated | BLOCKER | **removed by construction** — no budget comparison exists. `VB3` is additionally rewritten as a closed list |
-| `M7-1` the dropped-id record was still budget-**permitted** on a reduced `R_s` | MAJOR | removed with `PB1`; the scope half stays fixed inside `EF3` |
-| `M7-2` *"every class is on a rung"* false per query — four of five authored partials had a class and no position | MAJOR | **fixed** — each rung is now a **predicate on the record, never a class name**, and every rung set ends with an implicit *every remaining record* rung, so the rungs are total |
-| `M7-3` `WS6`'s *"resolve conservatively"* under-determined: a per-record discriminator for a per-query object | MAJOR | **the claimed repair was never written into the file, and the repair it described would not have worked.** *(Corrected in rev 9.)* `WS6` carried rev 7's sentence verbatim through all of rev 8, so the `C: MUST` discriminated nothing — round 8's `B8-1`, `17b`'s `X8-23`. And *"the weaker class, decided once per query"* cannot hold as written: a class is a function of a **record**, so there is no class until a record is named, and the two halves of the sentence contradict each other — which is `M7-3` itself, reopened by the row claiming to close it. Rev 9 closes `M7-3` by `D9-5a`: `Q` carries both readings, `EF3` resolves per record, the ambiguity is disclosed. §7.4 and §20.7 record why the transcription was refused |
-| `M7-4` §20.5's *"relaxes nothing"* wrong for the sixth consecutive revision (`B-1`'s fix had narrowed the `WS8` clause to partials) | MAJOR | **accepted as correct, and then not recorded.** *(Corrected in rev 9.)* This row said the relaxation was *"recorded in the relaxation table below"*; the rev-8 table below has no row for the `WS8` clause narrowing, and §20.5's *"What rev 7 relaxes: nothing"* stood uncorrected until round 8 — `M8-4`, the **seventh** consecutive false relaxation summary. §20.5's summary is now withdrawn rather than rewritten, and §20.7 makes no summary claim at all (`DM-1`) |
-| `15b`: `VB3` had no rule for qualitative prose, negated-whole framing, or multi-space enumeration with 만; two readings of *"큰 공사는 아니고 몇 군데만"* diverged between one `exact` record and all nineteen | — | **fixed** — `VB3` is a **closed list** of seven forms; anything outside it leaves `V.breadth` **absent**, a defined answer |
-| `15b`: the rung label *"`full_remodel` records, i.e. `fallback_from_full`"* was wrong when breadth was unstated and only a space named — those records are `exact` | — | **fixed** with `M7-2`: rung membership and class are different questions, asked separately |
-| the nine MINORs and five NOTEs | MINOR/NOTE | carried into the rev-8 review rather than claimed as done; several name text that no longer exists |
-
-**What rev 8 relaxes.** Stated as a list, because six consecutive revisions got this wrong:
-
-| change | direction |
-|---|---|
-| **budget comparison removed entirely** | **a removal of capability, not a relaxation of a guard.** Every deferred rule was a *permission* (`PB1`, `PB3`) or machinery serving one; every *prohibition* — `PB2`, `PB4`, `PB5`, `BU3` — is retained, and `PR4` returns to its full V0 force |
-| V0.2 no longer amends `PR4` | **tightens**: the frozen rule applies as written and §16's confirmation item is gone |
-| `VB3` becomes a closed list | **tightens**: every utterance outside it leaves `V.breadth` absent, where rev 7 left it undecided |
-| `GR3`'s rungs become record predicates with a total terminal rung | tightens |
-| `GR2a` | new; the single class order, machine-checked against `GR2` for **permutation** — and **`GR2a` also RELAXES**, which this table omitted until round 8's `M8-5` caught it. Rev 7's within-rung key (1) was `PB6a` step 1; `GR2a` replaces it and moves class `not_evaluable` from **ahead of** `exact` to **dead last**. That is a reordering no rule authorised, and it collides with `PB4`'s strong form (`not a null that sorts last`) — round 8's `B8-3`. The permutation check cannot see it: a permutation of a closed list is still a permutation however it is ordered. |
-| everything else | unchanged — **asserted, not derived.** See below. |
-
-**The honest caveat.** A narrowing cannot be checked for relaxation the way a patch can, because the
-rule set changed shape. The claim above is *"no in-force V0.2 rule permits something rev 7 forbade"*.
-The check a reviewer should run is the inverse of the usual one: take each **deferred** rule and
-confirm it was a permission or served one, and take each **retained** prohibition and confirm it
-still binds. That is §18's `Q-23`.
-
-> **Round-8 outcome of this caveat (added after the review).** The caveat was right that the usual
-> check does not apply, and it did not save the table: `M8-5` found a relaxation the table omitted
-> (`GR2a`, above), and `Q-23`'s mechanical half found four dangling references in rev 8's own text
-> (`16b` §4). **Seven consecutive revisions have now stated a relaxation summary that a reviewer
-> falsified.** The row *"everything else — unchanged"* is the remaining unchecked assertion in this
-> table and should be read as such.
->
-> Per `19-round8-disposition-and-method-change.md` `DM-1`, rev 9 does not write this table by hand.
-> A relaxation claim is a statement about the rule set before and after, and it is derivable by
-> diffing the two rule tables. Until that derivation exists, the per-row entries above stand as
-> evidence and the summary row does not stand as a guarantee.
-
-### 20.7 Change log rev 8 → rev 9
-
-`17-delta-review-rev8.md` returned **NOT READY**: 4 BLOCKER · 8 MAJOR · 16 MINOR · 6 NOTE.
-`17b-fixture-execution-rev8.md` could execute **0 of 9** fixture utterances end to end without a
-guess and raised `X8-1`…`X8-24`. `20-pipeline-checker.md` — a reference implementation written from
-the prose by someone who had seen neither review — reproduced all four BLOCKERs independently, and
-`21-pipeline-audit.md` audited the checker and found 7 of its 8 gaps genuine, 1 false, and none of
-its counts reliable. The decisions rev 9 applies are in `22-rev9-design.md`. This section records
-what changed in the document.
-
-**No summary claim is made about relaxation, and that is deliberate.** Six consecutive revisions
-asserted *"this revision relaxes nothing"* or a corrected variant of it, and a reviewer falsified
-each one; rev 8's own table then omitted `GR2a`'s reordering and was falsified a **seventh** time
-(`M8-4`, `M8-5`). Under `19-round8-disposition-and-method-change.md` `DM-1` a relaxation summary is
-**derived or it is not stated**, and the derivation — a mechanical diff of the rule tables between
-two revisions — does not exist yet. So this log is a **per-rule table only**. It is evidence about
-each row, not a guarantee about the set, and no row about "everything else" appears in it. A reader
-who wants the aggregate claim has to compute it.
-
-#### 20.7.1 The four BLOCKERs
-
-| id | what was wrong in rev 8 | rev 9 | where |
-|---|---|---|---|
-| `B8-1` | `WS6`'s `C: MUST` tie-break keyed on *"the reading that does not permit a price comparison"*; V0.2 permits none on either branch, so the rule returned nothing and no conforming consumer could be written. §20.6 claimed a rewrite that was not in the file. `M7-3` open | **`D9-5a`.** The tie-break is **deleted**. `Q` carries every reading (§14.3.1); `EF3` resolves them per record; readings that agree give their relation, readings that differ give scope `not_evaluable` **and a disclosure that the term was ambiguous**. `M7-3` closes properly: no discriminator exists, so none can be per-record while the object is per-query. *(Rev 9.1: **`D9-7a`** supersedes `D9-5a`'s resolution clause — *"differ"* means **different states OR different relations**, first match wins — and `D9-8`/`D9-9` state which reading the two remaining multi-reading sites take. §20.8 rows A–C.)* | §7.4 `WS6`; §14.3.1 `V.scope`; §14.3.2 `EF3` |
-| `B8-2` | *"Direct answers are offered first"* (`GR3`) and `GR3a`'s rungs were two `C: MUST` orderings over one result with no tie-breaker; different top-3 on the corpus, 29 of 31 branches differing. `B7-2` relocated from between two rules to inside one | **`D9-1`.** The rungs are deleted **as an ordering device** and parked in §17.3. `GR2a`'s class order plus the tie-break keys is the whole order, and *"direct answers first"* becomes a **definition** — *direct answer* = membership in a named prefix of `GR2a`'s list — true by construction and unable to disagree with anything. The 직접 답변 / 참고 사례 grouping survives as a **partition derived from the class**, never an order | §14.3.6 `GR3`; §17.3 |
-| `B8-3` | `GR2a` sorted class `not_evaluable` **last**, which `PB4` forbids verbatim and `CINV-5` exists to catch. Removing `bi-09`'s area pushed it behind `bi-12`, whose area is a measured miss | **`D9-2c`**, in two parts. `EF3` stops reporting a caveated match as `unsatisfied` — `scope_exact` and `scope_superset` are **satisfied** — and `EF6` gains **row 7** so `scope_superset` keeps its own class and its own disclosure. `GR2a` is reordered so the two unknown classes sit above the evaluated misses. `PB4`'s text is unchanged and is now satisfied at **0 of 798** | §14.3.2 `EF3`; §14.3.3; §14.3.6 `EF6`, `GR2a`; §14.3.5 `PB4` |
-| `B8-4` | `VB3`'s "closed list" had rows matching one utterance with opposite values and no precedence rule. *"큰 공사는 아니고 몇 군데만"* yielded 5 or 19 direct answers; *"집 전체는 아니고 바닥이랑 도배만"* yielded `whole`, `partial` or `absent` | **`D9-4`.** `VB3` gains **rows are tried in written order and the first matching row wins**, the sentence `PB7` and `EF6` already carry. The overlaps are resolved by **ordering** — the negation row moves above the 전체 row — and not by narrowing any condition. The two undecided readings are decided: the left column lists **forms**, and a 만 on a **quantity** is not a restriction by space | §14.3.1 `VB3` |
-
-**`D9-6` — `D9-1`, `D9-2c` and `EF6`'s row 7 are ONE change.** They are adopted together or not at
-all. Three of the four parts are held together by a `PB4` measurement; **row 7 is held by a
-disclosure measurement instead**, and rev 9.1 separates the two grounds rather than letting the
-`PB4` table carry both. On the 19-record corpus with the strict `PB4` metamorphic assertion, **798
-mutant pairs** — rev 9's 27 branches over the 19 records, with mutant twins held equal in `|R_s|` —
-by the repaired and independently audited checker:
-
-| | configuration | pairs | `PB4` violations | cause: rung / class |
-|---|---|---|---|---|
-| A | rev 8 as shipped | 798 | **484** | 262 / 222 |
-| B | `D9-2c`'s `EF3` state change alone | 798 | 488 | 262 / 226 |
-| C | `EF6`'s new row alone (needs B) | 798 | **488** | 262 / 226 |
-| D | `D9-2c`'s `GR2a` order alone | 798 | **262** | 262 / 0 |
-| E | `EF6` row + `D9-2c` order | 798 | **262** | 262 / 0 |
-| F | **`D9-1` alone** (rungs deleted, rev 8's `EF6` and `GR2a`) | 798 | **624** | 0 / 624 |
-| G | `D9-1` + `EF6` row | 798 | **630** | 0 / 630 |
-| H | `D9-1` + `D9-2c` order (**no** `EF6` row) | 798 | **0** | 0 / 0 |
-| I | **rev 9** (`D9-1` + row 7 + `D9-2c` order) | 798 | **0** | 0 / 0 |
-
-*Row B is stated because* "`EF6`'s new row alone" *cannot mean the row without `EF3`'s state change:
-row 7 needs scope `satisfied` **and** relation `scope_superset`, and only `EF3`'s change produces
-that pair.*
-
-Read row F before row I. **`D9-1` alone is a measurable regression — 624 against rev 8's 484** —
-because deleting the rungs exposes the whole result to an order in which `not_evaluable` sorts last.
-The rungs were **masking** part of the class defect, not causing it. Shipping `D9-1` first is the
-obvious increment and it makes the product worse. Equally, `D9-2c`'s order alone leaves all **262**
-rung-caused violations.
-
-**Row H is 0, and that withdraws the `PB4` argument for `EF6` row 7.** Rev 9 built a paragraph here
-on a single surviving violation in that configuration — `bi-13` on *"창호 교체하려는데 34평 전체
-리모델링"*, called *"the thesis reproduced on the corpus"*. **There is no such violation.** It was an
-artefact of mutant twins not held equal in `|R_s|`, which let rev 8's *larger `R_s` first* sub-rung
-decide a comparison the criterion should decide — the same measurement error that inflated the
-baseline from 484 to 546. The paragraph is **deleted and not replaced**: there is no corrected
-witness, because row H has none. Row 7's justification is **disclosure**, stated at `EF6` row 7
-(§14.3.6): deleting it at rev 9 changes **16** corpus classifications, all 16 from `scope_superset`
-to `exact` — `OD-P` violated sixteen times.
-
-Corroborating results from the same run: property 3 (differential ordering) goes from **29 of 31
-branches differing at rev 8 to 0 of 27 at rev 9** — the branch count itself moves, because rev 9's
-rule set produces 27 branches where rev 8's produced 31; direct answers form a prefix on **10 of
-10** rows by construction; **0 records are lost** on any row, since `GR3` was never a filter
-(`CINV-22`).
-
-#### 20.7.2 The eight MAJORs
-
-| id | rev 9 | where |
-|---|---|---|
-| `M8-1` §17.1 parked only rev 7's §14.3.5; five of twelve deferred items were **deleted**, and the parked `PB1` pointed at a table column that exists nowhere | **fixed as far as the evidence allows, and the shortfall is stated.** §17.1 gains §17.1-a…§17.1-f: `EF5`, the `price_fallback` row, §14.3.3's budget column, §14.3.4's price tier, `GR3`'s comparing budget rung and `CINV-6`/`CINV-11`. Rev 7's file is **unrecoverable** — this document is untracked and has no committed ancestor — so each item is a **reconstruction** labelled with the review that attests it, and the two nothing attests (§14.3.4's price tier; four cells of the budget column) are marked **LOST** rather than guessed. The word *verbatim* is withdrawn from §17.1's title and from §20.6 | §17.1 |
-| `M8-2` `B7-1`, `B7-3` and `M7-1` were parked inside the verbatim `PB1` **with no record that they were ever found** | **fixed.** §17.1 gains a defect table naming each one, what it does in the parked text, and what V0.3 must do **before** restoring the rule. The parked text itself is left exactly as reviewed — a precondition is not a patch | §17.1 |
-| `M8-3` `B7-3`'s class half survives: *"바닥이랑 도배만"* makes two whole-home remodels the direct answers and `bi-19` `not_evaluable`; `proof` case 10 asserts the opposite on an input that misstates `bi-11`'s own ids | **partly fixed; the behaviour is unchanged and now stated.** `GR2a`'s new order lifts `not_evaluable` from tenth to **fourth**, so `bi-19` is no longer buried, and §14.3.3.1's note is rewritten to say so. The **class** outcome is unchanged: three criteria cannot distinguish an 11,000,000 trades job from a 50,000,000 whole-home remodel for a trades-only query. That is §18's `Q-33`, not a rev-9 rule. The proof-script half (`proof` case 10's `qtSubsetRt`) is **carried**: it is a defect of `proof/ef6-totality.mjs`, and rev 9 edits no file but this one | §14.3.3.1; §14.3.6 `GR2a`; `Q-33` |
-| `M8-4` `07:1836` still read *"What rev 7 relaxes: nothing"*; §20.6 said it was corrected in a table row that does not exist. Seventh consecutive revision | **fixed, by not making the claim.** §20.5's summary was already withdrawn rather than rewritten; §20.6's `M7-4` row is corrected to say the recording never happened; **§20.7 states no summary claim at all** and says why (`DM-1`) | §20.5; §20.6; §20.7 head |
-| `M8-5` rev 8's relaxation table omitted `GR2a`'s reordering — customer-facing, in the permissive-then-punitive direction | **fixed in place.** §20.6's `GR2a` row now records the reordering, names it a relaxation, and names why the permutation check could not see it: a permutation of a closed list is still a permutation however it is ordered. Rev 9 reorders `GR2a` again and records it per rule, above | §20.6; §20.7.1 |
-| `M8-6` the whole-home rung carried a within-rung order (*"larger `R_s` first"*) absent from the five-key list, so two conforming consumers order the same rung differently. §18's `Q-24`, answered *no* | **fixed by deletion.** The rungs are gone (`D9-1`); the key list is the only order and it is stated once. The defect is recorded against the parked text in §17.3 so rev 10 cannot restore the rung without also fixing it | §14.3.6; §17.3 |
-| `M8-7` `CINV-19`'s coverage statement lost `PB0a`'s template and is prose again — `Q-18`'s own defect, reopened silently | **recorded, not repaired.** `PB0a`'s four-input template is parked in §17.1-a…f's neighbourhood and named there; `CINV-19` and §14.3.6 now say plainly that the in-force obligation names two inputs and that two consumers can therefore build different statements. Writing a replacement template is a **rule addition no decision covers**, and `Q-18` is the precedent for how badly an unchecked one goes. §18's `Q-30` | §14.3.6; `CINV-19`; `Q-30` |
-| `M8-8` `04` §4.1 row G is unreachable as written: `bi-09` (50M whole-home) is the sole `exact`, `bi-19` is `not_evaluable`, and the row is not among those labelled worse | **dispositioned; `04` is not edited by rev 9.** The audit's `AU-3` narrows the finding: `04:699` assigns **no class**, so the checker's *"`04` says `exact`"* was fabricated, and row G's two actual claims — `bi-19` is reached and its total is stated as a fact — both derive. What does **not** survive is row G's mechanism: it says *"reached on `GR3`'s trade rung"*, and there is no trade rung. See §20.7.5 for the `04` edits rev 9 requires | `Q-33`; §20.7.5 |
-
-#### 20.7.3 Rejected alternatives — proposed, tested, and killed
-
-Recorded because they are the audit trail for why rev 9 looks the way it does. Each was written as a
-rule, or nearly, and each was stopped by a check rather than by a reviewer a round later.
-
-| proposal | what it said | why it is not in rev 9 |
-|---|---|---|
-| **`D9-2`** — move `not_evaluable` out of last place | `GR2a` becomes `exact` → `scope_superset` → `scope_overlap` → `scope_subset` → `not_evaluable` → … Its ground: *"the classes after `not_evaluable` all represent a stated criterion evaluated and found unsatisfied"* | **The ground is false, twice over.** `unknown_type_fallback` (`EF6` row 4) is a *not-evaluable* outcome, not an unsatisfied one; and `scope_superset`/`scope_overlap`/`scope_subset` are produced by scope being **`unsatisfied`** yet were to rank 2nd–4th, above the proposed `not_evaluable` slot. Measured (`proof/pb4-metamorphic.mjs`, 576 abstract pairs): rev 8 **378** violations, `D9-2` **288**. Better, not zero |
-| **`D9-2b`** — group both unknown classes | the same reorder with `unknown_type_fallback` and `not_evaluable` adjacent | **144 of 576.** Reordering improves monotonically and never reaches zero, and every residual violation is `scope`. That is what identified the real defect: `EF3` reported one state, `unsatisfied`, for *matched with a caveat* and *did not match*. `D9-2c` follows from it |
-| **`D9-3`** — restate `PB4`'s pass/fail assertion | *"No record in class `not_evaluable` sorts below any record whose corresponding criterion was evaluated and **unsatisfied**"*, with the strict monotonic check demoted to a printed diagnostic | **Withdrawn. It is the same unsatisfiable property**, so it rescues nothing — and it is a change to an assertion in the direction of making it pass, which this project forbids. `D9-2c` then satisfied the **strict** assertion by changing the rules, proving the strict form was `PB4` all along. `D9-3`'s own pre-commitment — *"if the reviewer disagrees, the strict form returns and `GR2a` is redesigned instead"* — fired, and it fired from a 40-line script instead of from a reviewer a round later |
-| **`D9-5`** — `WS6` resolves once per query, taking the reading that yields the **larger** `Q` | ground: §14.3.3's relation rows are antitone in `Q`, so a larger `Q` can only weaken the relation, making the union the conservative reading | **The antitonicity claim is false.** `proof/ws6-monotonicity.mjs` enumerates every `Q ⊊ Q2` over a 3-element universe: 29,248 comparable pairs, **5,952 violations**. Counterexample: `R_s = {a}`, `Q_s = {b}` is `scope_disjoint` — the weakest relation — and enlarging `Q_s` to `{a,b}` gives `R_s ⊊ Q_s`, row 6, `scope_subset` — stronger. Enlarging `Q` can turn *no overlap at all* into *partial overlap*. Replaced by `D9-5a` |
-| **transcribing `07:1875` into `WS6`** — *"the tie-break is now about which reading yields the **weaker class**, decided **once per query**"* | the audit's `A-7`/gap 6 reading: the repair is already written in §20.6 and only needs pasting into §7.4 | **Refused, on two independent grounds.** (i) The two halves cannot both hold: a class is a function of a **record**, so there is no class until a record is named, and a rule cannot take the weaker class *once per query* without an aggregation nobody has defined. That is `M7-3` verbatim, shipped inside the sentence that claims to close it. (ii) `20-pipeline-checker.md` §7 item 4 shows it also **overturns `04:701`**: under *"the weaker class"*, 수납 reads as `storage` and `bi-18` — the one on-point record in the corpus — becomes `scope_subset` rather than `exact`, demoted from a labelled reference to a worse one while two whole-home remodels stay `exact`. `15`'s `M7-3`(ii) had already executed that outcome. The transcription failure is real and is recorded; the prescription is not adopted |
-
-#### 20.7.4 MINORs, NOTEs and round-7 carries
-
-| id | rev 9 |
-|---|---|
-| `m7-2` *"the default order"* undefined | **closed.** One stale use survived in §20.5 (`m8-14`) and is corrected there |
-| `m7-5` / `m8-5`(`CINV-24`) *"in that order"* | **fixed.** `CINV-24`(c) now reads `bi-14` `exact` then `bi-09` `fallback_from_full`, which is what `GR2a` produces |
-| `m7-6` / `m8-7` `PT6`'s gloss not exhaustive | **fixed.** `PT6` gains the fourth ground — a bounded job whose only work is a trade — which `PT5` already states normatively |
-| `m7-7` / `m8-8` *"re-verified on all 19"* | **fixed** in §20.5: 15 of 19. `04:7` carries the same sentence and needs the same edit (§20.7.5) |
-| `m7-9` / `m8-10` `04`'s stale *"contract rev 4/5/6"* citations | **carried to `04`** (§20.7.5). Not a contract defect |
-| `m8-1` `CINV-15` asserts budget verdicts | **fixed.** `CINV-15` restated on the relation and its disclosure; the budget in its own utterance removed |
-| `m8-2` §19 states a live consequence of the deferred budget column | **fixed.** §19 now states row 5's relation and disclosure and hedges the refusal to V0.3 |
-| `m8-3` `WS9`'s sole stated reason is *"two opposite budget verdicts"* | **fixed.** The rationale now runs on the relation and the disclosure, which are in force |
-| `m8-4` / `m7-3` `rowsThatHold` repeats `ef6`'s predicates; `proof:69` still claims independence | **carried.** A defect of `proof/ef6-totality.mjs`; rev 9 edits no file but this one. `07`'s own text already dropped the word *independent* |
-| `m8-6` / `m7-4` `GR3a` row 2 selects *"spaces named"* for *"부분만 하고 싶어요"* | **moot in force** — `GR3a` is deleted — and **recorded** against the parked text in §17.3 so it cannot return unfixed |
-| `m8-9` / `m7-8` proof cases set `relation: "scope_exact"` on `Q_s = ∅` queries | **carried.** Proof-script defect |
-| `m8-11` `04` §4.1 row I derives `storage` as a `Q_t` | **answered in the contract, carried in `04`.** §7.4's new worked example derives the same utterance correctly — `storage` is a **Space**, so `Q_s = {entrance, storage}` and it is §14.3.3 **row 6**, not row 4. `04:701` still needs the edit (§20.7.5) |
-| `m8-12` `04` row A lost a yes/no budget answer and is not labelled worse | **carried to `04`** (§20.7.5) |
-| `m8-13` `04`'s coverage matrix calls `bi-09`/`bi-10` *"PB3/PB3a-comparable"* | **carried to `04`** (§20.7.5) |
-| `m8-14` §20.5 calls `GR3a` *"a five-row precedence table"* | **fixed.** The row is annotated: five rows in rev 7, four in rev 8, deleted in rev 9 |
-| `m8-15` §20.6's *"`PB6a` existed only to break price ties"* | **fixed.** The `B7-2` row now says only step 1 was price-specific, that steps 2–5 became *Every result has an order*, and that `B7-2` was relocated rather than removed |
-| `m8-16` `16` §7 claims round 7's nine MINORs were fixed; `07:1866` says the opposite and is right | **carried to `16`.** `07`'s statement is correct and is unchanged |
-| `N8-1` `GR2a`'s justification mis-cites `OD-P` | **fixed.** The `OD-P` citation is withdrawn from `GR2a`; the order now rests on `EF3` and `PB4` |
-| `N8-2` `n7-3` closed under one reading of `B8-2` and open under the other | **moot.** One ordering device remains, so the two readings no longer exist. With `GR2a` alone, `bi-18` is `exact` for *"현관이랑 복도 수납"* and sorts in the `exact` block |
-| `N8-3` / `n7-5` whole-home records `exact` for a narrow storage question | **open, carried.** Specified behaviour (`WS7b`); §18's `Q-34` |
-| `N8-4` §14.3's scope note covers §14.3 only, and every deferred-rule citation that matters is outside it | **fixed by removing the citations** rather than by widening the note: `WS6`, `CINV-15`, §19 and `WS9` are all rewritten. The note's reach is unchanged and no longer has to cover anything |
-| `N8-5` partial answer to `Q-25` | **carried.** `Q-25` restated in §18 with `N8-5`'s sharper form, and its premise — an undetermined order — is removed |
-| `N8-6` the closed round-7 items | **kept closed.** `M7-2`, `m7-1`, `m7-2`, `n7-1`, `n7-2`, `n7-4` are not reopened |
-| `X8-4`, `X8-15` (basis half) | **withdrawn.** `21-pipeline-audit.md` `AU-2`: `AR5`, `PY1` and `EF4` jointly decide what an absent query-area basis does — compare, lower confidence, disclose, never change the state. **No rule is added.** The **unit** half of `X8-15` survives as `Q-31` |
-| `X8-5`, `X8-17`, `X8-20` | **fixed with `M8-6`, `PB4` and `B8-2`** — all three die with the rungs, and all three are recorded against the parked text in §17.3 |
-| `X8-3`, `X8-13`, `X8-22` | **fixed by `D9-4`** — forms, first match, and the 만-on-a-quantity reading. The mixed-kind chain half of `X8-22` is `Q-26` |
-| `X8-12`, `X8-23`, `X8-24` | **fixed** — `CINV-24`(c); `WS6`; §7.4's worked example (`04:701` still needs its own edit) |
-| `X8-1` `bi-01`…`bi-08` have no `workScopeIds` | **carried, and it is the single worst obstacle to executing this contract.** Not a contract defect: the authoring pass is `18-existing-eight-workscopes.md`, whose §7 the audit found wrong on row I (`AU-4`) and which must be corrected before its ids reach `data/` |
-| `X8-6` `GR4` and `CINV-19` cannot both hold for a `perArea`-only record | **carried, unaddressed.** No decision in `22-rev9-design.md` covers it and rev 9 does not invent one |
-| `X8-11` nothing in §14.3 defines what is **returned** | **carried, unaddressed.** `EF6` is total over all 19, `GR3` filters nothing, and no rule states a result limit — yet `PB4`'s own italic and `04` §4.1 both presuppose one |
-| `X8-7`, `X8-8`, `X8-9`, `X8-10`, `X8-14`, `X8-16`, `X8-18`, `X8-19`, `X8-21` | **carried.** `X8-19` and `X8-21` are the substance of `Q-33`; the rest are `04`/corpus observations or notes, listed in §20.7.5 where they need a `04` edit |
-
-#### 20.7.5 What `04-demo-data-spec.md` needs, which rev 9 does not edit
-
-Rev 9 changes this file only. These are the consequences that land in `04`, recorded so they are not
-lost between documents:
-
-1. **§4.1 row D** — *"욕실 하나만"* is stated on the reading `D9-4` rejects. `VB3` row 3 does not fire
-   on a 만 bound to a quantity, so `V.breadth` is **absent** and the row's expected answer changes.
-   `18` §7's row D pairs go with it.
-2. **§4.1 row G** — *"reached on `GR3`'s trade rung"* names machinery rev 9 deleted. The claims
-   survive on the new order (`bi-19` is `not_evaluable`, fourth of ten classes in `GR2a`); the
-   mechanism sentence does not. `AU-3` establishes that row G states no class, so no class needs
-   adding.
-3. **§4.1 row I** — `04:701` derives 수납 → `storage` as a `Q_t`. `storage` is a **Space** (§7.3), so
-   `Q_s = {entrance, storage}`, `Q_t = ∅`, and it is §14.3.3 **row 6** — *not remodelled in this
-   case* — not row 4's *not established for this case*. `CINV-17` makes that distinction normative
-   (`m8-11`, `X8-24`). Row I also needs `WS6`'s new behaviour: the readings differ, so the scope
-   criterion is `not_evaluable` and the ambiguity is disclosed.
-4. **§4.1 row A** — lost a yes/no budget answer by row F's mechanism and is not labelled worse;
-   three rows got worse, not two (`m8-12`).
-5. **`04:663`** — the coverage matrix calls `bi-09`/`bi-10` *"PB3/PB3a-comparable"*, deferred
-   machinery cited as live (`m8-13`).
-6. **`04:7`** — *"`INV-28`/`INV-29`/`INV-30` re-verified on all 19"*; 15 of 19 carry
-   `workScopeIds` (`m7-7`, `m8-8`).
-7. **Stale revision citations** — *"contract rev 6"* at `04:36, 44, 91, 185, 658`, *"contract rev 4"*
-   at `04:146, 594, 635`, *"Contract rev 5"* at `04:639` (`m7-9`, `m8-10`).
-8. **`18-existing-eight-workscopes.md` §7 row I** — corrected before its `workScopeIds` are applied
-   to `data/`: it conflates `EF3`'s record-side absence with `EF6` row 4's visitor-side breadth
-   criterion, and `bi-03` derives to `not_evaluable`, not `unknown_type_fallback` (`AU-4`).
-
-#### 20.7.6 Verification rev 9 owes, and does not claim
-
-Stated here because rev 8 quoted numbers as verified that were not.
-
-- **`proof/ef6-totality.mjs` still implements rev 8**, and that is now the only part of this item
-  that stands. **Pass A's re-derivation is done** (rev 9.1): `proof/contract-pipeline.mjs` replicates
-  `CINV-20`'s own 1,512-input enumeration against the eight-row `EF6` and `EF3`'s new satisfied set,
-  returns *100 of 192* and 10/10, and **validates the replication** by reproducing `07`'s parked
-  rev-8 figures exactly when run at rev 8. `CINV-20`'s *100 of 192* is therefore quoted as
-  **verified** rather than pending. What did move is **pass B: 384 → 336**, because row 1's relation
-  list lost `scope_superset`; the arithmetic that is unchanged is 1,512 and 192. Porting
-  `ef6-totality.mjs` itself to rev 9 remains outstanding.
-- **`proof/contract-pipeline.mjs` implements rev 8 by default**, with rev 9's configuration behind
-  flags. Its default run therefore still reports rev 8's FAILs. What it measures for rev 9, under
-  those flags, is quoted above: `PB4` strict **0 of 798 pairs**, property 3 **0 of 27 branches**,
-  `EF6` corpus inputs with no class **0**, `EF6` total and single-valued over 336 raw vectors, 10 of
-  10 classes reachable on the corpus and in the raw sweep. **Those three figures were taken last,
-  from a clean rev-9 configuration asserted flag by flag** — the run throws rather than reports if a
-  variant leaks into the default — so they are figures for the revision that exists and not for a
-  proposal. Making rev 9 the default is the first step of round 9's verification, not a claim of this
-  document.
-- **`EF1` closure is not verified by that checker** (`AU-1`): its property 5 quantified over the
-  file's own call sites and is blind by construction to the defect `EF1` exists to catch. The
-  rebuilt property now quantifies over the contract's text and **fails**, reporting `Q-32`'s name
-  collision. Whether `ef6-totality.mjs`'s closure check has the same blindness is **untested**.
-- **`D9-5a`'s obligation is MET as of rev 9.1, and meeting it changed the rule.**
-  `22-rev9-design.md` §5 required a mechanical assertion that `EF3` under multiple readings is
-  **total and single-valued** — that *"the readings agree"* is decidable for every record — before
-  the rule was written. Rev 9 wrote the rule with the obligation unmet. The assertion now exists and
-  the clause **failed it**: as a states-only comparison it was total but not single-valued in the
-  sense that mattered, letting a rule return a state with no relation — 96 enumerated `EF6` inputs
-  with no class, 32 silent `scope_superset` caveats. `D9-7a` widens rule 1 to *different states **or**
-  different relations* and the assertion passes: **0 of 64 synthetic and 0 of 38 corpus pairs match
-  neither rule, 0 match both**, 0 no-class inputs, 0 silent caveats (§14.3.2). This is the obligation
-  discharging as designed — it found something — and not a formality closed.
-- **The `EF6` variant and `D9-2c` were modelled from `EF6`'s rows**, not re-derived from `EF3`'s own
-  text, in `proof/pb4-metamorphic.mjs` and `proof/pb4-direction.mjs`. Both scripts are the
-  coordinator's and **unaudited**. The corpus figures above come from the audited checker; the
-  abstract ones (576, 432 pairs) do not.
-
-### 20.8 Change log rev 9 → rev 9.1
-
-Rev 9.1 changes **no rule id**, **no scope** and **no owner decision**. It is a corrections pass
-over rev 9's own text, applying `22-rev9-design.md` §5c's decision ledger and the corrected
-measurements in `20-pipeline-checker.md` §§5c–5g. Every row below is a change to this file; each
-verdict was reached by measurement, and the measurement is named in the row.
-
-**No summary claim is made about relaxation, and that is deliberate** — the same reason §20.7 gives.
-Seven consecutive revisions closed with a relaxation summary a reviewer then falsified. Under
-`19-round8-disposition-and-method-change.md` `DM-1` such a summary is **derived or it is not
-stated**, and the derivation — a mechanical diff of the rule tables between two revisions — still
-does not exist. This log is a **per-change table only**. It is evidence about each row, not a
-guarantee about the set, and no row about "everything else" appears in it.
-
-| # | what changed | rev 9 said | rev 9.1 says | where | ground |
-|---|---|---|---|---|---|
-| **A** | `EF3`'s ambiguity clause is restated as `D9-7a` | two bullets comparing **states**: *"all readings give the same relation, or all give the same state ⇒ that relation and that state"*, else `not_evaluable` | two rules, **first match wins**: (1) different states **OR** different relations ⇒ `not_evaluable` + ambiguity disclosed; (2) otherwise, that state and that relation. Rule 2's condition is stated as rule 1's **exact negation** | §14.3.2 `EF3`; pointer in §7.4 `WS6` | the states-only form let rule 2 return a state with **no relation**: `EF6` row 1 had nothing to class and returned **no class** (96 enumerated inputs, witness `zz-hole`) and `scope_superset`'s caveat went **silent** (32 inputs, witness `zz-witness`, asserted `exact`). Widened: **0/64 synthetic and 0/38 corpus** match neither rule, **0** match both; **0** no-class inputs; **0** silent caveats |
-| **B** | ordering key (3) says which reading of `V.scope` it takes (`D9-8`) | *"the count of the visitor's stated `workScopeIds` the record carries"* — one set, written before `D9-5a` made `V.scope` one set **per reading** | the **intersection** of the readings: the ids **every** reading admits | §14.3.6, *Every result has an order* | the **derivation**, stated as the only ground: the intersection is the only candidate that is a function of `Q` alone. `max`/`min` choose a reading **per record**, which is `M7-3` a third time; `union` credits a record for an id the visitor never named. **No corpus figure is cited**, because the `Q-29` carve-out masks the branches where union and intersection differ |
-| **C** | a disclosure names only what **every reading** admits, worded over the **disclosure sets** (`D9-9`) | nothing; `CINV-17` governed the **wording** of a disclosure and left its **membership** unconstrained | four normative sentences at §14.3.3, carried into `CINV-17`; and `EF3`'s ground-not-conclusion clause takes the permission **every** reading gives | §14.3.3; `CINV-17`; §14.3.2 | worded over `Q` it **inverts on row 5**: rows 4/6/7/8 name `Q \ R` and coincide, row 5 names `R_s \ Q_s`, so `R_s \ (∩Q_s)` is the **union** of the per-reading claims — the maximal one. Measured: **10** row disclosures decided by picking a reading at rev 9, **0** under `D9-9`. The fourth sentence (empty intersection + a non-empty reading ⇒ `not_evaluable` + disclose) has **0 occurrences here** — a theorem, because `WS6`'s readings are **nested** — and is **not safe in general**. At `EF3`'s clause the measured **0 changes** was an artefact of `WS6` enumerating the larger `Q_s` first: resolve by the **last** reading and **10 of 10 flip**, and nothing makes that order normative |
-| **D** | every superseded `PB4` figure replaced | 546 violations of 893 pairs at rev 8, marked `†`; 550 / 299 / 299 / 687 / 691 / 1 / 0; rungs 299 of 546; property 3 *"0 of 31"*; `CINV-20` pass A pending re-derivation | **484 of 798** at rev 8 (262 / 222); **488 / 262 / 262 / 624 / 630 / 0 / 0**; rungs **262 of 484**; property 3 **0 of 27**; pass A **unchanged at 100 of 192 and verified**, pass B **384 → 336**. A row B (`EF3` state change alone, 488) is added, because *"`EF6`'s new row alone"* cannot mean the row without `EF3`'s change | §14.3.2; §14.3.5 `PB4`; §14.3.6 `GR2a`; `CINV-5`; `CINV-20`; §17.3; §18 `Q-25`; §20.7.1; §20.7.6 | the rev-8 baseline was measured with mutant twins **not held equal in `\|R_s\|`**, which let rev 8's *larger `R_s` first* sub-rung decide comparisons the criterion should decide, inflating both counts. All nine configurations are re-measured over **the same 798 pairs** — rev 9's 27 branches over the 19 records. **Every conclusion drawn from the old figures survives**; only the baseline moves. The `†` footnote and every `†` marker are removed |
-| **E** | the named residual violation is **deleted** | a surviving `PB4` violation in `D9-1` + `D9-2c`-order without row 7 — criterion `breadth`, `bi-13`, *"창호 교체하려는데 34평 전체 리모델링"* — called *"the thesis reproduced on the corpus"* | nothing. The paragraph is deleted and **not replaced** | §20.7.1 | **configuration H is 0.** The witness was an artefact of the same unequal-`\|R_s\|` twins. There is **no corrected witness**, so none is written |
-| **F** | `EF6` row 7's justification moves off `PB4` entirely | *"its position is load-bearing"*; row 7 listed among the parts that *"together reach 0"*; *"gives it back its own class"*, unqualified | the row's **existence** is required for **disclosure** and its **position** decides which disclosure outranks which — two claims, separated. Row 7 is removed from the list of parts that reach 0. *"…its own class **whenever no stronger caveat applies**"*, with the two enumerated counts | §14.3.6 `EF6` row 7 and `GR2a`; §14.3.2; §14.3.5 `PB4` | **not** load-bearing for `PB4` — configuration H reaches **0 of 798** without it. **Is** load-bearing for disclosure: delete row 7 at rev 9 and **16 corpus classifications change, all 16 from `scope_superset` to `exact`** — `OD-P`'s *"a fallback is never passed off as exact"*, violated sixteen times. The qualifier holds for **20 of the 48** enumerated inputs that reached `scope_superset` at rev 8; the other **28** hit rows 2–6 first, which those rows rank above it deliberately. **No rate is stated**: `CINV-20` weights inputs uniformly and is not a traffic model |
-| **G** | `Q-29` is recorded as **OPEN with three dead candidates** | *"the two readings differ… carried unresolved"* — two readings, neither killed | three candidates, each **dead** with its evidence; the mechanism; a **named and unmeasured** fourth shape with its cost and its unexplored attack surface; and the statement that the carve-out is **not part of this revision** | §18 `Q-29`; pointer at §14.3.6's key list | count-0 contradicts `PB4`'s *"not a null that sorts last"* **by name**; keep-position regresses property 3 **0 → 1 of 27** (a positional permutation is not stable under partitioning, and `GR3` partitions); skip-to-next-key is **intransitive — 72 cycles on the real corpus, 6 of 27 branches**, hand-checkable as `bi-04 < bi-15 < bi-17 < bi-04`, which makes `CINV-21` **unsatisfiable by any implementation**. The mechanism: **the defect is letting the pair decide which keys apply**. Also recorded: the carve-out is **wider** than rev 9 implied — 10 of 27 branches, 7 mixed class blocks |
-| **H** | rev 9's own figures are stated where its properties are claimed | `PB4` 0 of 893, property 3 0 of 31 | **property 3: 0 of 27 branches; `PB4` strict: 0 of 798 pairs; `EF6` corpus inputs with no class: 0** | §20.7.6; §20.7.1 | measured **last**, from a clean rev-9 configuration **asserted flag by flag** — the run throws rather than reports if a variant leaks into the default — so they are figures for the revision that exists rather than for a proposal |
-
-#### Prose corrected because a change above contradicted it
-
-| where | what it said | why it had to move |
-|---|---|---|
-| §14.3.5 `PB4` | *"with `D9-2c`'s `EF3` state change, `EF6`'s new row, `GR2a`'s new order and `GR3a`'s rungs deleted… **The three parts** are one change"* | four things named, called three, and one of them (row 7) is not in the set that reaches 0. Now: the **three** parts are the `EF3` state change, `GR2a`'s order and the rungs deleted; row 7 is named as **not** one of them |
-| §14.3.6 `GR2a` | *"paired with `EF3`'s state change and `EF6`'s row 7, and the three together reach 0"* | `D9-1` was the unnamed third part and row 7 was a fourth. Now: paired with the `EF3` state change and the rungs deleted |
-| §14.3.2 `EF3`, `D9-2c` paragraph | *"**`EF6` gains a row** so `scope_superset` still has its own class"*, adjacent to the `PB4` figure | correct on its own terms but read as part of the `PB4` result. A sentence is added pointing the justification at §14.3.6 |
-| §14.3.1 `V.scope` | *"`EF3` resolves them (§14.3.2)"* | true but incomplete once `D9-8` and `D9-9` exist. The row now names **all three** in-force sites that read a multi-reading `V.scope`, plus the permission site |
-| §7.4 `WS6` | *"when the readings do not agree"*, undefined in `WS6` | *"do not agree"* is now defined in `EF3` as **different states or different relations**, and `WS6` says so and points at the other three sites |
-| §20.7.6 | *"`D9-5a` carries an **unmet** obligation"* | the obligation is now met, and meeting it **changed the rule** — that is the point of recording it, so the row says what it found rather than that it closed |
-| §20.7.6 | *"Pass A's 100 of 192 must be re-derived… the arithmetic 1,512 / 192 / 336 is unchanged"* | the re-derivation is done and pass A is unchanged; **336 is not unchanged** — it is rev 9's figure and rev 8's was 384 |
-
-#### What rev 9.1 does not do
-
-- It does **not** adopt `Q-29`'s carve-out in any of its four shapes, and the fourth is named
-  without being recommended.
-- It does **not** widen `GR3`'s direct-answer prefix — `Q-27` is still open.
-- It does **not** add a lead-criterion ordering term — `Q-28` is still open, and `OD-P`'s gradation
-  is still given up on the reading §14.3.6 states.
-- It does **not** edit `04-demo-data-spec.md`, `18-existing-eight-workscopes.md` or any proof
-  script. §20.7.5's list stands unchanged, and `proof/ef6-totality.mjs` still implements rev 8.
-- It does **not** claim a delta review. Rev 9.1's text has been measured, not reviewed.

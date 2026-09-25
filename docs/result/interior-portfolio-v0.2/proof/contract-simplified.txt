@@ -1,0 +1,103 @@
+
+══ P0 — drift guard — the contract still says what this checker implements
+   CONTRACT_PROPOSITION = the rules mirrored here (EV1–EV4, PB4, GR2, GR3, the OQ-6 disclosure) are the ones in force in 07 rev 9.2.1
+   CHECKER_PROPOSITION  = each anchor sentence copied from 07 §14.3 is present verbatim; §7.3 parses to 14 Spaces + 12 Works
+   SAME_PROPOSITION     = narrower — an anchor proves the sentence is there, not that the code matches it (P1–P7 do that)
+   · vocabulary 14+12 ids from §7.3; 19 records from projects.json
+   RESULT = PASS  (19 checks, 0 failures)
+
+══ P1 — EV2 totality and single-valuedness (CINV-20)
+   CONTRACT_PROPOSITION = every record gets exactly one class, from the lowest-numbered row of the EV2 table that holds; every row can fire
+   CHECKER_PROPOSITION  = over 96 enumerated queries × every enumerated valid record (count printed): the class is defined, it equals the class of the lowest-numbered holding row, and each of rows 1–9 is the deciding row for ≥1 input
+   SAME_PROPOSITION     = same proposition, over a finite 5-id vocabulary (a record's class depends on ids only through set relations with Q, so a 5-id vocabulary with both kinds reaches every row)
+   · 17664 inputs; deciding-row counts: r1=184 r2=1920 r3=3968 r4=60 r5=124 r6=224 r7=2788 r8=6694 r9=1702
+   · records enumerated: 184 (valid under INV-28/29/30 + WS8 drop)
+   RESULT = PASS  (35337 checks, 0 failures)
+
+══ P2 — EV4 order is total, antisymmetric, transitive and deterministic (CINV-21, B9-2)
+   CONTRACT_PROPOSITION = for any query the tuple order decides every pair of records, is transitive, and two runs over one snapshot give one order; every tuple component is defined for every record
+   CHECKER_PROPOSITION  = for every fixture query (32) over the 19 records and over S1: every component is a finite number or a string; for every ordered pair cmp≠0 and cmp(a,b)=−cmp(b,a); for every triple a<b<c ⇒ a<c; 50 seeded shuffles sort to one order
+   SAME_PROPOSITION     = same proposition on the fixture set; totality for all queries follows from the tuple's shape (P0 anchors it) and is not enumerated beyond the fixtures
+   · O-2: row A bi-04 [2,0,2,0,1,"bi-04"] < bi-17 [2,0,2,0,1,"bi-17"] < bi-15 [2,2,2,0,1,"bi-15"]
+   RESULT = PASS  (49601 checks, 0 failures)
+
+══ P3 — PB4 missing-neutrality (CINV-5, B9-1) — the NEW property; 4a and 4b are not measured here
+   CONTRACT_PROPOSITION = for every query, record and listed input: the record with the input missing is evaluated (class and all four tiers together) as with the least favourable valid value of that input; where every valid value gives positive evidence on the tier the input feeds, as that value with the tier at its last value; where no valid value exists, PB4 2 asks nothing beyond EV2/EV3; deletion never raises the tuple; no record is removed; rank may fall
+   CHECKER_PROPOSITION  = (i) every fixture query (32) × every record (19 corpus + 8 S1) × each input PB4 lists: for a record that HAS the input, the input is deleted; for a record that LACKS it natively (e.g. bi-15 area, bi-01…bi-08 total), the record is compared as it stands; (ii) the same over the enumerated queries × records for projectType, workScopeIds and a dropped id. Where validFills() (INV-28/29/30 and §9 respected) is non-empty, tuple(missing) minus id must equal the worst fill's, or — only when the input feeds a tier and every fill gives that tier positive evidence — the worst fill's with that tier at its last value. Where validFills() is EMPTY (e.g. bi-05/bi-19 projectType) the case is COUNTED, NOT ASSERTED. Separately, for every deletion: tuple(deleted) ≥ tuple(actual). Every query returns every record
+   SAME_PROPOSITION     = narrower — 'least favourable valid value' is taken over the finite domain validFills() lists, which for each input includes a value giving no positive evidence whenever one exists (the other projectType, an id set disjoint from Q, a far area, a far or tiny total within §9, a style not asked). A domain that missed the true worst could hide a rewarded missing input from the equality check; the separate 'never rises' check does not depend on the domain. The no-valid-value count is a count of cases where the contract asks nothing, not evidence of a pass
+   · fixture deletions 3360 (by input: projectType=608 workScopeIds=256 droppedId=864 area=576 total=480 styles=576); enumeration deletions 25920; natively-missing comparisons 7744
+   · outcomes: equal to least favourable valid value 36535 (asserted); every valid value positive ⇒ fed tier at its last value 9 (asserted); no valid value exists 480 (counted, NOT asserted — PB4 2 asks nothing there)
+   · REPORTED, NOT ASSERTED — global rank after deletion: down 311, unchanged 3049, up 0. PB4 allows 'down'; 'never rises' is asserted on the tuple above
+   · MN-1 B bi-09 del(projectType): fallback, rank 4 → 13
+   · MN-2 D bi-15 del(projectType): fallback, rank 1 → 9
+   · MN-3 D bi-07 del(projectType): other, rank 10 → 14
+   · MN-4 A bi-09 del(area): exact, rank 1 → 3
+   · MN-5 A bi-09 del(total): exact, rank 1 → 2
+   · MN-6 G bi-19 del(workScopeIds): other, rank 4 → 19
+   · CINV-5 10억 이내 × bi-09 del(total): price none; every valid fill strong
+   RESULT = PASS  (29360 checks, 0 failures)
+
+══ P4 — EV2 partial ladder (CINV-4, B9-4)
+   CONTRACT_PROPOSITION = in mode part with something named, only a partial_remodel is exact, every exact record meets row 6, and a request naming no room (Q_s = ∅) has no exact; the class order is exact < overlap < fallback < other
+   CHECKER_PROPOSITION  = over the enumeration of P1 and every fixture query: in rowMode partQ every exact record is a partial_remodel decided by row 6, and no record is exact when Q_s = ∅; in each fixture order the class ranks are non-decreasing
+   SAME_PROPOSITION     = same proposition
+   · 17091 part-mode (query, record) inputs checked
+   RESULT = PASS  (2508 checks, 0 failures)
+
+══ P5 — EV1 single writer (CINV-14, B9-3)
+   CONTRACT_PROPOSITION = only EV2 assigns a class and only EV3 assigns a tier; every other rule reads them and changes nothing
+   CHECKER_PROPOSITION  = (a) the disclosure step receives a deep-frozen evaluation, runs over every fixture query × record without a write, and the evaluation is byte-identical afterwards; (b) in 07, every blockquoted paragraph OUTSIDE §14.3 that states a class with an assignment phrase (is/are/becomes/returns/gets/classed … `exact`|`overlap`|`fallback`|`other`) attributes it to `EV2` or `EV3` in the same paragraph; such paragraphs inside §14.3 but outside §14.3.2–§14.3.3 are listed for review, not failed
+   SAME_PROPOSITION     = narrower — (a) tests the checker's own disclose(), not the contract: it is what makes P1–P4 evidence for EV2/EV3 alone. (b) is a lexical scan and cannot see an assignment phrased some other way; the fresh review is the check for that
+   · (a) 864 disclosures over frozen evaluations
+   ·     outside §14.3, attributed to EV2/EV3: 07:203: > any request; on a trade-only request it is `fallback`, ordered by the trades it lists (`EV2`,
+   ·     outside §14.3, attributed to EV2/EV3: 07:422: >   *not remodelled in this case*; authored `[entrance, hallway, built_in_furniture]` it is `exact`,
+   ·     review (inside §14.3): 07:824: >   `exact {amount}` · `range {min, max}` · `max {amount}`. *"5천"* is `exact`, *"600~800만원"* is
+   ·     review (inside §14.3): 07:968: > where `classRank` is `exact` 0 · `overlap` 1 · `fallback` 2 · `other` 3; `areaRank` and
+   ·     review (inside §14.3): 07:1049: > second ordering. In mode `open` no job was named: every record is `exact` because nothing can
+   · (b) paragraphs with an assignment phrase: 2 outside §14.3, 3 inside §14.3 listed for review
+   RESULT = PASS  (866 checks, 0 failures)
+
+══ P6 — EV3 price only inside exact; no per-area comparison (CINV-6, OD-O, PB2)
+   CONTRACT_PROPOSITION = a total budget is compared with a record's total only when the record is exact in mode whole or part; a perArea amount is never compared; when an exact partial job's total is set beside the budget, the trades it lists outside Q are named and the total is said to include them (OQ-6, CINV-25)
+   CHECKER_PROPOSITION  = for every fixture query × record: price tier ≠ none ⇒ class exact and mode ∈ {whole, part}; a stated budget on a record not compared carries the note not_applied; replacing every record's pricePerArea with a random amount leaves every tuple unchanged; for every exact record in mode part with a budget, the disclosure step emits extra_trade:<t> for each listed Works id outside Q and total_includes_extra_work iff there is one; CINV-25's fixtures
+   SAME_PROPOSITION     = same proposition for the price half; the perArea half is structural — evaluate() never reads perArea — and only guards against a future edit; the OQ-6 half checks the checker's disclosure step, not the reply's wording, which is reviewed
+   · 864 (query, record) pairs
+   · B bi-11: price strong
+   · A bi-09: price strong
+   · A bi-12: price strong
+   · A bi-11: price none
+   · X5 bi-15: price strong
+   · X5 bi-16: price none
+   · X11 bi-10: price strong
+   · X11 bi-13: price none
+   · X9 bi-09: price none
+   · X19 bi-19: price none
+   · X19 bi-17: price none
+   · OQ-6: 7 exact part-mode records with a budget; CINV-25 거실만 1200만원 × bi-17: exact, price strong, extra_trade:flooring | total_includes_extra_work
+   RESULT = PASS  (1130 checks, 0 failures)
+
+══ P7 — Hand examples of 34a §3 re-executed
+   CONTRACT_PROPOSITION = the hand-computed outcomes of 34a §3.1, §3.4 and §3.5 (as amended by 34a §6 and §7) follow from the contract
+   CHECKER_PROPOSITION  = each expected class / order / top-3 of 34a §3, with the cells 34a §6 (†, checker-found) and §7 (‡, fresh review) amend, is reproduced by the functions above
+   SAME_PROPOSITION     = same proposition for each listed example; examples 34a states in prose only are not asserted
+   · row-by-row top-3: A=bi-09/bi-01/bi-10  B=bi-11/bi-01/bi-07  C=bi-14/bi-04/bi-16  D=bi-15/bi-04/bi-16  D2=bi-15/bi-04/bi-16  E=bi-14/bi-04/bi-16  F=bi-13/bi-01/bi-07  G=bi-17/bi-09/bi-11  H=bi-17/bi-06/bi-01  I=bi-18/bi-06/bi-01  I-alt=bi-06/bi-18/bi-01
+   RESULT = PASS  (38 checks, 0 failures)
+
+══ P8 — No filter, location weight 0, disclosure wording (CINV-1, CINV-17, CINV-22, CINV-23)
+   CONTRACT_PROPOSITION = every record is returned; permuting location changes nothing; a room a partial_remodel does not list is 'not remodelled' and nothing absent is stated for other records — in the disclosures or in the GR3 label; a full_remodel covering a room only via PT4(b) is described by the ground, never as including that room; mode whole never labels a fallback as whole-home; mode open has no direct answer
+   CHECKER_PROPOSITION  = for every fixture query: 19 in, 19 out; a rotation of all locations leaves the order identical; the disclosure step emits 'not_remodelled' only for a partial_remodel without a dropped id; no label says 'not include'/'does not include'/'lack'; in mode whole a fallback label does not say whole-home; in mode open no label is 'direct answer'; for a full_remodel lacking the room id it emits the ground and never 'includes:<room>'
+   SAME_PROPOSITION     = narrower — the label and disclosure checks test the checker's own transcription of GR3 and §14.3.6 (its constant strings), not the contract's text and not a reply; GR3's wording is reviewed, not executed. The no-filter and location halves are the same proposition
+   · CINV-23 fixture, 욕실 하나만 × bi-07: reference: whole-home or extent not recorded | ground:집 전체를 리모델링한 사례
+   RESULT = PASS  (927 checks, 0 failures)
+
+══ SUMMARY
+   P0  PASS        19 checks  drift guard — the contract still says what this checker implements
+   P1  PASS     35337 checks  EV2 totality and single-valuedness (CINV-20)
+   P2  PASS     49601 checks  EV4 order is total, antisymmetric, transitive and deterministic (CINV-21, B9-2)
+   P3  PASS     29360 checks  PB4 missing-neutrality (CINV-5, B9-1) — the NEW property; 4a and 4b are not measured here
+   P4  PASS      2508 checks  EV2 partial ladder (CINV-4, B9-4)
+   P5  PASS       866 checks  EV1 single writer (CINV-14, B9-3)
+   P6  PASS      1130 checks  EV3 price only inside exact; no per-area comparison (CINV-6, OD-O, PB2)
+   P7  PASS        38 checks  Hand examples of 34a §3 re-executed
+   P8  PASS       927 checks  No filter, location weight 0, disclosure wording (CINV-1, CINV-17, CINV-22, CINV-23)
+   PROPERTIES = 9   PASS = 9   FAIL = 0

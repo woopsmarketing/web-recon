@@ -1,14 +1,18 @@
 # Interior Portfolio Contract V0.2 — status
 
-> **FROZEN 2026-09-25 — `FROZEN_NOT_READY`.** Work stopped by owner instruction, not by a completed
-> round. Contract is **rev 9.1**, verdict **NOT READY**, **4 BLOCKER · 8 MAJOR · 9 MINOR · 6 NOTE**.
-> The handoff — blockers, what is proven, what was wrongly claimed, production and git state — is
-> [`../result/interior-portfolio-v0.2/32-round-9-handoff.md`](../result/interior-portfolio-v0.2/32-round-9-handoff.md).
-> **The next session does not start at round 10.** It starts at *product-level invariant
-> simplification and blocker resolution*. The table below records rev 8 state where it has not been
-> superseded; where it disagrees with `32-`, `32-` is current.
+> **2026-09-25 — contract rev 9.2.1, `READY` — 0 BLOCKER · 0 MAJOR · 6 MINOR** (`35a-closeout-delta-review.md`).
+> Owner decisions `OQ-1`…`OQ-6` are closed (contract §18). `OQ-6`: an exact room match keeps
+> `exact` despite extra trades, and a total set beside a budget must disclose them. The six
+> residual minors are wording or housekeeping, listed in
+> [`../result/interior-portfolio-v0.2/35-contract-final-closeout.md`](../result/interior-portfolio-v0.2/35-contract-final-closeout.md).
+> Checker: `proof/contract-simplified.mjs`, 9/9 PASS. **Next: GC1 landing.** Below this banner,
+> "Contract state", "Executable checks" and "Open" describe rev 8/9.1 and are **superseded** by
+> `34-`/`35-` where they differ; the repo-wide state is current.
+>
+> *Earlier banners the same day: rev 9.2 `BLOCKERS_RESOLVED`, 1 MAJOR (`34-`); rev 9.1
+> `FROZEN_NOT_READY`, 4 BLOCKER (`32-round-9-handoff.md`).*
 
-Last updated: 2026-09-24. Detail lives in [`../result/interior-portfolio-v0.2/`](../result/interior-portfolio-v0.2/);
+Last updated: 2026-09-25. Detail lives in [`../result/interior-portfolio-v0.2/`](../result/interior-portfolio-v0.2/);
 the contract itself is [`../reports/integration/07-integration-contract-v0.2-candidate.md`](../reports/integration/07-integration-contract-v0.2-candidate.md).
 This file records **state**, not reasoning.
 
