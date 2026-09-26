@@ -1,5 +1,15 @@
 # Interior Portfolio Contract V0.2 — status
 
+> **2026-09-26 (later) — WEB-D1 + WEB-D2 closed; web-recon work stops here.** The widget-seam
+> sources are committed (`b0e7a4f`): the committed tree reproduces the pinned `interior-01@1.6.0`
+> byte for byte (65/65), and I2b passes on a clean checkout. The historical suites understand the
+> pre-publish window (`5ac6695`, `platform/test/demo-rollout.ts`): predemo, predemo2, ia150, ia151
+> and ia152 are green. step6 is 27/3; its remaining H/L/N fail on the V0.2 corpus content, not on
+> the split. One of them is a real pre-publish defect, `DEMO-AREA-BASIS-LABEL` (ledger). Golden,
+> `current.json` and V0.1 package unchanged; nothing published. Evidence:
+> [`../result/interior-portfolio-v0.2/37-web-d1-d2-cleanup.md`](../result/interior-portfolio-v0.2/37-web-d1-d2-cleanup.md).
+> **Next: BoostChat V0.2 implementation.**
+>
 > **2026-09-26 — producer V0.2 landed; golden package pinned; NOT published.**
 > web-recon's emitter/validator implement contract rev 9.2.1 (document `"1.0"`, manifest `"0.1"`),
 > the 19-record DEMO corpus is canonical, and the golden integration package is pinned at
@@ -25,7 +35,7 @@
 > *Earlier banners the same day: rev 9.2 `BLOCKERS_RESOLVED`, 1 MAJOR (`34-`); rev 9.1
 > `FROZEN_NOT_READY`, 4 BLOCKER (`32-round-9-handoff.md`).*
 
-Last updated: 2026-09-25. Detail lives in [`../result/interior-portfolio-v0.2/`](../result/interior-portfolio-v0.2/);
+Last updated: 2026-09-26. Detail lives in [`../result/interior-portfolio-v0.2/`](../result/interior-portfolio-v0.2/);
 the contract itself is [`../reports/integration/07-integration-contract-v0.2-candidate.md`](../reports/integration/07-integration-contract-v0.2-candidate.md).
 This file records **state**, not reasoning.
 
@@ -55,6 +65,10 @@ awareness, so `1.6.0` contains, beyond the intended `schema.ts` + `template.ts` 
 Accepted rather than re-cut: the alternative is reverting or stashing uncommitted work that is not
 this session's, which is forbidden. `1.6.0`'s changelog therefore **understates** the release. Re-cut
 when the widget-seam work settles.
+
+**Resolved 2026-09-26 (WEB-D1, owner option A, `37-`):** the seam sources were committed as they
+are (`b0e7a4f`), not re-cut. All 65 release sources equal the stored `1.6.0` files byte for byte.
+The changelog wording stays a next-cut item (`TEMPLATE-160-CHANGELOG`).
 
 ### ⚠ `I2b` is now a live gate on every release source
 
@@ -120,9 +134,12 @@ owner's producer brief of 2026-09-26 (§24).
 | `WP03-DUAL-READ` | open | the consumer's `"0.1"`/`"1.0"` dual read is temporary | remove only after rollout step 6 **and** every site's `current` + `previous` pointer is `>= 1.0` (two V0.2 publishes per site) | contract §16 `RO2` |
 | `PORTFOLIO-F2` | open | keep the conservative disclosure when a partial's total is set beside a price question: the requested trade may have run wider than the room, or no budget was stated — never read as a direct quote. No contract ranking reopen | consumer reply implementation (matcher V0.2) | `35-` §3 `F-2`, `35a-` |
 | `PORTFOLIO-PUBLISH-GATE` | **in force** | the consumer parses `"1.0"` but its matcher/search does not yet use projectType / pricing / workScope semantics; a live V0.2 document would be served by a V0.1-era search | V0.2 publish only after the consumer search adapter consumes the V0.2 fields and acceptance passes (contract §16 steps 2–6) | brief; `36-` |
-| `DEMO-PIN-PACKAGE-SPLIT` | **open — red suites** | the demo is pinned to `interior-01@1.6.0` with the 19-record V0.2 corpus, but `data/site-builds/boost-interior-demo/current.json` deliberately stays on the 1.5.2-built V0.1 package (`PORTFOLIO-PUBLISH-GATE`). Six historical milestone suites assert "the current package was built from the current pin/corpus" and are red since the corpus+pin commit: `step6` 10, `predemo` 1, `predemo2` 1, `ia150` 2, `ia151` 2, `ia152` 3 (green at `44a48a0`; `36-` §6.2). Not weakened | at the controlled V0.2 publish (a V0.2 demo package becomes current = pin again), or earlier by an owner decision to restate those suites for the rollout window | `36-` §6.2 |
-| `WIDGET-SEAM-RELEASE-SOURCES` | **open — owner decision D1** | `interior-01@1.6.0` snapshotted the widget-seam files (`platform/site/{context,instance,head-scripts}.ts`, `templates/interior-01/v1/app/{layout.tsx,head-scripts.ts}`). **Their content is already in git** — as release artefacts under `data/template-releases/interior-01/interior-01-1.6.0-e65795202191/files/`, committed in `5b16a5d` — while the canonical source files stay uncommitted. So `I2b`/`slice1`'s release-hash check hold in the working tree and fail on a clean checkout of the producer commits. Options: (a) land the seam lane; (b) re-cut a seam-free `1.6.1` from a throwaway worktree (HEAD + producer only) and re-pin — the committed state becomes consistent, but `I2b` then goes red in the seam-bearing working tree until the seam lane re-cuts; (c) accept 1.6.0 as is and widen its changelog | owner decides D1 (`23-` §5/§7.1, `25-`) | `36-` §6.2, `36a-` F1 |
-| `DEMO-DETAIL-V02-FACTS` | open (product) | the public detail page renders no V0.2 field (no total price, breadth, work scopes); a consumer quoting a total links to a page that does not show it. No contract rule requires it; adding it is a template change and a release cut | with the next `interior-01` cut (together with D1 / `WIDGET-SEAM-RELEASE-SOURCES`) | `36a-` F6 |
+| `DEMO-PIN-PACKAGE-SPLIT` | **closed 2026-09-26 (WEB-D2)** | the demo is pinned to `interior-01@1.6.0` with the 19-record V0.2 corpus, while `current.json` deliberately stays on the 1.5.2-built V0.1 package (`PORTFOLIO-PUBLISH-GATE`). The suites now accept exactly two states (`platform/test/demo-rollout.ts`). `POST_PUBLISH_STEADY` keeps the strict "current package built with the pin" rule. `PRE_PUBLISH_TRANSITION` is valid only if current.json is the V0.1 package, site:publish still plans it, the V0.2 golden exists separately, nothing V0.2 is built into data/site-builds, the corpus emits the golden, and the V0.1 and live packages are byte-intact; anything else fails. predemo, predemo2, ia150, ia151 and ia152 are green. Of the 17 failures, 4 were not the split: ia152 F2 (pin moved) and ia150 R3 / ia151 R2 / ia152 R2 (1.6.0 platform surface, `release-160-surface.ts`), both fixed; step6 H/L/N are split out to `STEP6-V02-CORPUS-RULES` | done; after the V0.2 publish, `demoRollout` reports steady and no suite edit is needed (`integration.test.ts` B2b/G1–G5/R2 excepted) | `37-` §3–§4 |
+| `WIDGET-SEAM-RELEASE-SOURCES` | **closed 2026-09-26 (WEB-D1, option A)** | `interior-01@1.6.0` snapshotted the widget-seam files; the canonical sources were uncommitted, so I2b failed on a clean checkout. The seam lane is committed (`b0e7a4f`): 65/65 release sources equal the stored `1.6.0` files, and I2b and slice1 (86/0) pass on a clean `git archive b0e7a4f`. No re-cut, no release artefact touched | done | `37-` §2 |
+| `DEMO-AREA-BASIS-LABEL` | **open — V0.2 pre-publish MAJOR** | the detail page labels every area fact with the single slot `portfolio.detail.areaLabel` = "공급면적". A real V0.2 build renders `bi-14` (전용 84㎡, `basis: exclusive`) as "공급면적 = 84 m²", which is false on a public page. step6 H catches it. Fixing it needs a template change (per-basis label) and so a release cut; the corpus exercises the 전용 basis on purpose | before any V0.2 publish, at the next `interior-01` cut | `37-` §4.3 |
+| `STEP6-V02-CORPUS-RULES` | **open — owner decision (step6 27/3)** | step6 H/L/N fail on the V0.2 corpus content, not on the split, and would stay red after a publish: H = `DEMO-AREA-BASIS-LABEL` plus `bi-15` having no area; L = 11 records have no `galleryGroups` (cover-only fallback), `bi-18` no `keywords`; N = filter expectations hard-coded for the 8-record corpus. Latent: step6 O hard-codes 15 pages and fails once V0.2 is current | owner decides whether the Step 6 data bar applies to the V0.2 records; restate N/L/O accordingly before the V0.2 publish | `37-` §4.3 |
+| `TEMPLATE-160-CHANGELOG` | open — NEXT_TEMPLATE_CUT | `template.ts`'s 1.6.0 changelog says no renderer change, but 1.6.0 renders head scripts (review `36a-` F2). `template.ts` is inside the release hash, so a wording fix is a new cut | the next `interior-01` cut | `36a-` F2, `37-` §2.3 |
+| `DEMO-DETAIL-V02-FACTS` | open (product) | the public detail page renders no V0.2 field (no total price, breadth, work scopes); a consumer quoting a total links to a page that does not show it. No contract rule requires it; adding it is a template change and a release cut | with the next `interior-01` cut (together with `TEMPLATE-160-CHANGELOG` and `DEMO-AREA-BASIS-LABEL`) | `36a-` F6 |
 | `JEV-ENABLE-GATE` | open | `JEV_API_KEY` present must never by itself cause a call | require explicit mode enabled **and** tenant opt-in **and** an allowed rollout phase | brief |
 | `JEV-Q1` | open | does the real API support per-request choices? | before Jev implementation | brief |
 | `JEV-Q2` | open | latency / price / SLA unmeasured | before Jev implementation | brief |
