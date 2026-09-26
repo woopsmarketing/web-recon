@@ -23,7 +23,9 @@ import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
 import { IA_HTML, IA_PATHS } from "./canonical-150";
 import { sitemapIaPaths } from "./canonical-151";
+import { demoBuiltRelease } from "./demo-rollout";
 import { isIntegrationSurface } from "./integration-surface";
+import { release160SurfaceBefore } from "./release-160-surface";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -146,17 +148,22 @@ await check("R2 the 1.5.1 release = the 1.5.0 release except exactly the seven d
   // platform/ outside test/: nothing captured before the 1.5.1 work changed (files added since by other
   // work — e.g. platform/publish, or the later first-party integration producer (platform/integration/**
   // + the builder seam, isIntegrationSurface) — are outside the release's runtime dirs, as the file list
-  // above shows)
+  // above shows). Files the later 1.6.0 cut changed (V0.2 schema + widget seam) are judged at their
+  // pre-1.6.0 hash (release-160-surface.ts); their current content is held by integration.test.ts I2b.
   const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/"));
+  for (const [f, h] of Object.entries(await release160SurfaceBefore(repoRoot))) if (f in now) now[f] = h;
   const changed = Object.keys(before.platformFiles).filter((f) => now[f] !== before.platformFiles[f] && !isIntegrationSurface(f));
   eq(changed, [], "platform files changed");
 });
-await check("R3 boost-interior-demo pins a verified release ≥ 1.5.1 and its current package was built with it (QA pass); at the 1.5.1 pin, the 1.5.0 package is the rollback (previous)", async () => {
+await check("R3 boost-interior-demo pins a verified release ≥ 1.5.1 and its current package was built with it (QA pass) — pre-publish: with the V0.1 publish target (demo-rollout.ts); at the 1.5.1 pin, the 1.5.0 package is the rollback (previous)", async () => {
   assert(versionAtLeast(pin.templateVersion, "1.5.1"), pin.templateVersion);
   const rel = await loadRelease(repoRoot, "interior-01", pin.releaseId);
   await verifyRelease(repoRoot, rel);
   eq([rel.releaseHash, rel.templateVersion], [pin.releaseHash, pin.templateVersion], "pin");
-  eq([record.template.releaseId, record.template.releaseHash, record.status, record.qa.pass], [pin.releaseId, pin.releaseHash, "success", true], "build record");
+  // = the pin once steady; in the Portfolio V0.2 pre-publish window, the frozen V0.1 package's release
+  const built = await demoBuiltRelease(repoRoot, pin);
+  assert(versionAtLeast(built.templateVersion, "1.5.1"), built.templateVersion);
+  eq([record.template.releaseId, record.template.releaseHash, record.status, record.qa.pass], [built.releaseId, built.releaseHash, "success", true], "build record");
   if (pin.templateVersion !== "1.5.1") return; // a later re-pin rotates the rollback pointer: theirs to assert
   const previous = await readJson(path.join(repoRoot, "data/site-builds", DEMO, "previous.json"));
   eq(previous.buildInputId, before.currentPointer.buildInputId, "previous = the package that was current before the cut");

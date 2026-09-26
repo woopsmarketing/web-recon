@@ -20,6 +20,8 @@
  * live source = 1.4.0 / fixtures untouched" become "the demo pins ONE newer verified release,
  * every fixture a verified release of its own (pins are per site: since 1.5.2 the fixtures may
  * stay on an older one) / live source = the demo's release (no drift) / platform tree still = baseline".
+ * In the Portfolio V0.2 pre-publish window (V0.2 pin/corpus, frozen V0.1 package current) the
+ * package-vs-pin claims are held to demo-rollout.ts's PRE_PUBLISH_TRANSITION instead — never looser.
  *
  * Run AFTER `pnpm site:build boost-interior-demo`:
  *   tsx --tsconfig platform/tsconfig.json platform/test/step6.test.ts
@@ -37,9 +39,11 @@ import { buildSiteSnapshot, loadSiteInstance } from "../site/load";
 import { resolveEffectiveTheme } from "../theme/theme";
 import { hashJson, sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
+import { demoBuiltRelease, demoPackagedProjects, demoRollout } from "./demo-rollout";
 import { gitDirtyPaths } from "./git-checkout";
 import { integrationSurfaceBefore, isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
+import { isRelease160Added, release160SurfaceBefore } from "./release-160-surface";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -156,7 +160,7 @@ await check("A boost-interior-demo exists as its own Site Instance (siteId, Kore
   for (const f of FIXTURES) assert((await loadSiteInstance(repoRoot, f)).identity.publicOrigin !== ORIGIN, `${f} shares the demo origin`);
   eq((await readdir(path.join(repoRoot, "data/sites"))).filter((d) => !d.startsWith(".")).sort(), [DEMO, ...FIXTURES].sort(), "data/sites");
 });
-await check(`B pins EXACTLY ${later ? "ONE newer verified release (each fixture pins its own verified release)" : RELEASE.id} (id + full hash), and the current package was built with it`, async () => {
+await check(`B pins EXACTLY ${later ? "ONE newer verified release (each fixture pins its own verified release)" : RELEASE.id} (id + full hash), and the current package was built with it — pre-publish: with the V0.1 publish target (demo-rollout.ts)`, async () => {
   const site = await loadSiteInstance(repoRoot, DEMO);
   if (!later) eq(site.template, { templateId: "interior-01", templateVersion: "1.4.0", releaseId: RELEASE.id, releaseHash: RELEASE.hash }, "pin");
   else {
@@ -170,7 +174,9 @@ await check(`B pins EXACTLY ${later ? "ONE newer verified release (each fixture 
       assert(versionAtLeast(p.templateVersion, "1.4.1"), `${s} pin ${p.templateVersion}: older than the first re-pin`);
     }
   }
-  eq([demo.record.template.releaseId, demo.record.template.releaseHash, demo.record.status, demo.record.qa.pass], [PIN.releaseId, PIN.releaseHash, "success", true], "build record");
+  // = the pin once steady; in the Portfolio V0.2 pre-publish window, the frozen V0.1 package's release
+  const built = later ? await demoBuiltRelease(repoRoot, PIN) : PIN;
+  eq([demo.record.template.releaseId, demo.record.template.releaseHash, demo.record.status, demo.record.qa.pass], [built.releaseId, built.releaseHash, "success", true], "build record");
 });
 
 // ------------------------------------------------ nothing else moved --
@@ -203,7 +209,10 @@ await check("D Template source unchanged: live templateSourceHash = baseline = t
   const live = await Promise.all([...sources].map(async ([p, abs]) => ({ path: p, sha256: sha256(await readFile(abs)) })));
   const rel = await loadRelease(repoRoot, "interior-01", PIN.releaseId);
   const liveHash = computeTemplateSourceHash(live);
-  eq([liveHash, liveHash], [rel.templateSourceHash, demo.record.template.templateSourceHash], "templateSourceHash");
+  // the current package carries the source hash of the release it was built with: the pin's (= live)
+  // once steady; in the Portfolio V0.2 pre-publish window, the V0.1 publish target's (demo-rollout.ts)
+  const builtSourceHash = later ? (await demoBuiltRelease(repoRoot, PIN)).templateSourceHash : liveHash;
+  eq([liveHash, demo.record.template.templateSourceHash], [rel.templateSourceHash, builtSourceHash], "templateSourceHash");
   const recorded = new Map(rel.files.map((f) => [f.path, f.sha256]));
   eq(live.filter((f) => recorded.get(f.path) !== f.sha256).map((f) => f.path), [], "live files that differ from the release");
   if (!later) {
@@ -217,10 +226,13 @@ await check("D Template source unchanged: live templateSourceHash = baseline = t
   // Files the first-party integration producer ADDED are excluded like publish/ and test/; a
   // pre-existing file it MODIFIED is instead judged at its pre-integration hash (`overrides`), so
   // this whole-tree fingerprint still proves the tree as of the task's start commit (be6b10a); the
-  // current content of those four files is asserted by integration.test.ts instead.
+  // current content of those four files is asserted by integration.test.ts instead. The 1.6.0 surface
+  // (V0.2 schema + widget seam, release-160-surface.ts) is treated the same way; its current content
+  // is held by integration.test.ts I2b.
   const overrides = await integrationSurfaceBefore(repoRoot);
+  const overrides160 = await release160SurfaceBefore(repoRoot);
   eq(
-    await treeHash("platform", ["test"], (p) => p === "publish" || isPublishSurface(p) || (isIntegrationSurface(p) && !(p in overrides)), overrides),
+    await treeHash("platform", ["test"], (p) => p === "publish" || isPublishSurface(p) || (isIntegrationSurface(p) && !(p in overrides)) || isRelease160Added(p), { ...overrides, ...overrides160 }),
     baseline.trees["platform (test/ excluded)"].hash,
     "platform tree (test/ excluded)",
   );
@@ -263,6 +275,13 @@ await check("E old fixture sites unchanged: data/sites/fixture-* and data/site-b
 await check("V same release, different site instances: every site's package carries its own pin's releaseId + templateSourceHash, and ≥ 2 sites share one release; buildInputIds, snapshots and rendered homes all differ", async () => {
   const all = await Promise.all([...FIXTURES, DEMO].map(async (s) => ({ s, p: await pointer(s), pin: later ? await pinOf(s) : PIN })));
   for (const { s, p, pin } of all) {
+    // the demo's package carries the release it was built with: its pin once steady, the V0.1 publish
+    // target in the Portfolio V0.2 pre-publish window (demo-rollout.ts); a fixture's is always its pin
+    if (later && s === DEMO) {
+      const built = await demoBuiltRelease(repoRoot, pin);
+      eq([p.record.template.releaseId, p.record.template.templateSourceHash], [built.releaseId, built.templateSourceHash], `${s} release`);
+      continue;
+    }
     const sourceHash = later ? (await loadRelease(repoRoot, "interior-01", pin.releaseId)).templateSourceHash : baseline.liveTemplateSourceHash;
     eq([p.record.template.releaseId, p.record.template.templateSourceHash], [pin.releaseId, sourceHash], `${s} release`);
   }
@@ -408,14 +427,17 @@ await check("L all published project slugs (and ids) are unique; ≥ 6 projects;
   assert(count >= 10 && count <= 14, `flagship gallery ${count}`);
   for (const room of ["현관", "거실", "주방", "침실", "욕실"]) assert(flagship.galleryGroups!.some((g) => g.name.includes(room)), `flagship room ${room}`);
 });
-await check("M every internal link of every generated page resolves inside the package; every project has its detail page", async () => {
+await check("M every internal link of every generated page resolves inside the package; every project of the package has its detail page (pre-publish: the V0.1 package's own records, demo-rollout.ts)", async () => {
   const files = new Set(await walkFiles(demo.site));
   const resolves = (p: string) => files.has(p.slice(1)) || files.has(`${p.slice(1)}.html`) || files.has(`${p.slice(1)}/index.html`.replace(/^\//, "")) || p === "/";
   for (const [f, h] of Object.entries(html)) {
     for (const m of h.matchAll(/<a\b[^>]*\bhref="(\/[^"#?]*)/g)) assert(resolves(m[1]!), `${f}: dead link ${m[1]}`);
   }
-  for (const p of projects) assert(html[`portfolio/${p.slug}.html`], `no page for ${p.slug}`);
-  eq(htmlFiles.filter((f) => f.startsWith("portfolio/")).length, projects.length, "detail pages");
+  // every project once steady; pre-publish, the records the frozen V0.1 package was built from (the
+  // V0.2 corpus's pages are integration.test.ts T1's: a real build, 19/19 detail pages)
+  const packaged = await demoPackagedProjects(repoRoot, projects);
+  for (const p of packaged) assert(html[`portfolio/${p.slug}.html`], `no page for ${p.slug}`);
+  eq(htmlFiles.filter((f) => f.startsWith("portfolio/")).length, packaged.length, "detail pages");
 });
 await check(`Z header navigation exposes only real routes (${ia ? "home, /portfolio, /3d-portfolio, /about, /contact — each an emitted page" : "home, /portfolio, contact"}): no Service / FAQ / Journal${ia ? "" : " / About"}`, async () => {
   const header = /<header[\s\S]*?<\/header>/.exec(html["index.html"]!)?.[0] ?? "";
@@ -505,7 +527,9 @@ await check("T reviews@1 unchanged: 6 published reviews, none attributed to a pe
 
 // ---------------------------------------------------- identity / theme --
 console.log("\n[identity] Korean identity, SEO data and theme through declared inputs only");
-await check("X <html lang=ko-KR>, brand title, Korean description, list/detail canonicals on the demo origin, sitemap lists every page", async () => {
+await check("X <html lang=ko-KR>, brand title, Korean description, list/detail canonicals on the demo origin, sitemap lists every page (pre-publish: of the V0.1 package's own records, demo-rollout.ts)", async () => {
+  // every project once steady; pre-publish, the records the frozen V0.1 package was built from
+  const packaged = await demoPackagedProjects(repoRoot, projects);
   const home = html["index.html"]!;
   assert(/<html[^>]*lang="ko-KR"/.test(home), "lang");
   assert(/<title>[^<]*부스트 인테리어[^<]*<\/title>/.test(home), "title");
@@ -513,10 +537,10 @@ await check("X <html lang=ko-KR>, brand title, Korean description, list/detail c
   // The Template emits a canonical on the pages that call pageMetadata (list + detail); before 1.5.2 the home
   // page had none and no page had OG tags (06-open-items O4) — 1.5.2 adds both, asserted by ia152.test.ts.
   assert(html["portfolio.html"]!.includes(`<link rel="canonical" href="${ORIGIN}/portfolio"/>`), "list canonical");
-  for (const p of projects) assert(html[`portfolio/${p.slug}.html`]!.includes(`<link rel="canonical" href="${ORIGIN}/portfolio/${p.slug}"/>`), `${p.slug} canonical`);
+  for (const p of packaged) assert(html[`portfolio/${p.slug}.html`]!.includes(`<link rel="canonical" href="${ORIGIN}/portfolio/${p.slug}"/>`), `${p.slug} canonical`);
   assert(/<title>[^<]*수성 화이트 34평[^<]*부스트 인테리어<\/title>/.test(html[`portfolio/${projects.find((p) => p.id === FLAGSHIP)!.slug}.html`]!), "detail title");
   const sitemap = await readFile(path.join(demo.site, "sitemap.xml"), "utf8");
-  eq((sitemap.match(/<loc>/g) ?? []).length, 2 + projects.length + (ia ? 3 : 0), "sitemap entries");
+  eq((sitemap.match(/<loc>/g) ?? []).length, 2 + packaged.length + (ia ? 3 : 0), "sitemap entries");
 });
 await check("W theme = declared tokens only: every site token is consumed by the Template, resolves, and reaches the package stylesheet/markup", async () => {
   const theme = await readJson(path.join(demoDir, "theme.json"));
@@ -540,15 +564,42 @@ try {
   await symlink(path.join(repoRoot, "data/template-releases"), path.join(tmpRoot, "data/template-releases"));
   await symlink(path.join(repoRoot, "node_modules"), path.join(tmpRoot, "node_modules"));
   const at = demo.record.at;
-  await check("U reproducible: same release + snapshot + settings + theme + assets → same buildInputId (twice, and = current), and an independent rebuild gives the same packageHash", async () => {
+  /** html page count of U's rebuild — the ON build of the demo's own inputs (P's reference pre-publish) */
+  let rebuiltPages: number | undefined;
+  await check("U reproducible: same release + snapshot + settings + theme + assets → same buildInputId (twice, and = current), and an independent rebuild gives the same packageHash (pre-publish: = a second independent rebuild, demo-rollout.ts)", async () => {
+    // Pre-publish (Portfolio V0.2 window) the current package is the frozen V0.1 one, not built from
+    // these inputs, so "= current" becomes "= a second independent rebuild on its own root".
+    const pre = later && (await demoRollout(repoRoot)).state === "PRE_PUBLISH_TRANSITION";
     const [a, b] = await Promise.all([1, 2].map(() => prepareSiteInput({ repoRoot, siteId: DEMO, mode: "public", at })));
-    eq([a!.buildInputId, b!.buildInputId], [demo.record.buildInputId, demo.record.buildInputId], "buildInputId");
+    const want = pre ? a!.buildInputId : demo.record.buildInputId;
+    eq([a!.buildInputId, b!.buildInputId], [want, want], "buildInputId");
     await cp(demoDir, path.join(tmpRoot, "data/sites", DEMO), { recursive: true });
     const r = await buildSite({ repoRoot: tmpRoot, siteId: DEMO, at });
     assert(r.status === "built" && r.record.qa.pass, r.status);
-    eq([r.record.buildInputId, r.record.packageHash], [demo.record.buildInputId, demo.record.packageHash], "independent rebuild");
+    let ref: { buildInputId: string; packageHash: string } = demo.record;
+    if (pre) {
+      const root2 = await mkdtemp(path.join(os.tmpdir(), "step6-root2-"));
+      try {
+        await mkdir(path.join(root2, "data/sites"), { recursive: true });
+        await symlink(path.join(repoRoot, "data/template-releases"), path.join(root2, "data/template-releases"));
+        await symlink(path.join(repoRoot, "node_modules"), path.join(root2, "node_modules"));
+        await cp(demoDir, path.join(root2, "data/sites", DEMO), { recursive: true });
+        const r2 = await buildSite({ repoRoot: root2, siteId: DEMO, at });
+        assert(r2.status === "built" && r2.record.qa.pass, `second rebuild: ${r2.status}`);
+        ref = r2.record;
+      } finally {
+        await rm(root2, { recursive: true, force: true });
+      }
+    }
+    eq([r.record.buildInputId, r.record.packageHash], [want, ref.packageHash], "independent rebuild");
+    rebuiltPages = (await walkFiles(path.join(r.packageDir, "site"))).filter((f) => f.endsWith(".html")).length;
   });
   await check("P no CTA when the configuration disables it: site.floating-cta.enabled = false → no seat on ANY page, nothing else about the pages' count changes", async () => {
+    // the reference is the ON build of the same inputs: the current package once steady, U's rebuild
+    // in the Portfolio V0.2 pre-publish window (the current package is the frozen V0.1 one)
+    const pre = later && (await demoRollout(repoRoot)).state === "PRE_PUBLISH_TRANSITION";
+    assert(!pre || rebuiltPages !== undefined, "U's rebuild (P's reference pre-publish) did not complete");
+    const onPages = pre ? rebuiltPages! : htmlFiles.length;
     const dir = path.join(tmpRoot, "data/sites/boost-off");
     await cp(demoDir, dir, { recursive: true });
     const site = await readJson(path.join(dir, "site.json"));
@@ -561,7 +612,7 @@ try {
     assert(r.status === "built" && r.record.qa.pass, r.status);
     const off = path.join(r.packageDir, "site");
     const pages = (await walkFiles(off)).filter((f) => f.endsWith(".html"));
-    eq(pages.length, htmlFiles.length, "page count");
+    eq(pages.length, onPages, "page count");
     for (const f of pages) assert(!(await readFile(path.join(off, f), "utf8")).includes("i1-fcta"), `${f}: seat rendered while disabled`);
   });
 } finally {

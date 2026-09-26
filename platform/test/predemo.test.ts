@@ -16,6 +16,7 @@ import { AssetRegistryDocSchema } from "../assets/assets";
 import { loadRelease, verifyRelease } from "../release/release";
 import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
+import { demoBuiltRelease } from "./demo-rollout";
 import { formatPricePerArea } from "../../templates/interior-01/v1/lib/format";
 
 const repoRoot = process.cwd();
@@ -111,12 +112,15 @@ await check("R1 the 1.4.0 release verifies and every file of it is byte-identica
   const dirs = (await readdir(path.join(repoRoot, "data/template-releases/interior-01"))).filter((d) => d.startsWith("interior-01-"));
   eq([dirs.filter((d) => d.startsWith("interior-01-1.4.0-")).length, dirs.filter((d) => d.startsWith("interior-01-1.4.1-")).length], [1, 1], "release dirs");
 });
-await check("R2 boost-interior-demo pins a verified release ≥ 1.4.1 and its current package was built with it (QA pass)", async () => {
+await check("R2 boost-interior-demo pins a verified release ≥ 1.4.1 and its current package was built with it (QA pass) — pre-publish: with the V0.1 publish target (demo-rollout.ts)", async () => {
   assert(versionAtLeast(pin.templateVersion, "1.4.1"), pin.templateVersion);
   const rel = await loadRelease(repoRoot, "interior-01", pin.releaseId);
   await verifyRelease(repoRoot, rel);
   eq([rel.releaseHash, rel.templateVersion], [pin.releaseHash, pin.templateVersion], "pin");
-  eq([record.template.releaseId, record.template.releaseHash, record.status, record.qa.pass], [pin.releaseId, pin.releaseHash, "success", true], "build record");
+  // = the pin once steady; in the Portfolio V0.2 pre-publish window, the frozen V0.1 package's release
+  const built = await demoBuiltRelease(repoRoot, pin);
+  assert(versionAtLeast(built.templateVersion, "1.4.1"), built.templateVersion);
+  eq([record.template.releaseId, record.template.releaseHash, record.status, record.qa.pass], [built.releaseId, built.releaseHash, "success", true], "build record");
 });
 
 // ------------------------------------------------------------ site data --

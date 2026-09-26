@@ -24,8 +24,10 @@ import { resolveSlots } from "../slots/slots";
 import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
 import { IA_HTML, IA_PATHS, IA_ROUTES, canonical150Sitemap } from "./canonical-150";
+import { demoBuiltRelease } from "./demo-rollout";
 import { integrationSurfaceBefore, isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
+import { isRelease160Added, release160SurfaceBefore } from "./release-160-surface";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -132,12 +134,15 @@ await check("R1 the 1.4.0, 1.4.1 and 1.4.2 releases verify and are byte-identica
   const dirs = (await readdir(path.join(repoRoot, "data/template-releases/interior-01"))).filter((d) => d.startsWith("interior-01-"));
   eq(["1.4.0", "1.4.1", "1.4.2", "1.5.0"].map((v) => dirs.filter((d) => d.startsWith(`interior-01-${v}-`)).length), [1, 1, 1, 1], "release dirs");
 });
-await check("R2 boost-interior-demo pins a verified release ≥ 1.5.0 and its current package was built with it (QA pass); at the 1.5.0 pin, the 1.4.2 package is the rollback (previous)", async () => {
+await check("R2 boost-interior-demo pins a verified release ≥ 1.5.0 and its current package was built with it (QA pass) — pre-publish: with the V0.1 publish target (demo-rollout.ts); at the 1.5.0 pin, the 1.4.2 package is the rollback (previous)", async () => {
   assert(versionAtLeast(pin.templateVersion, "1.5.0"), pin.templateVersion);
   const rel = await loadRelease(repoRoot, "interior-01", pin.releaseId);
   await verifyRelease(repoRoot, rel);
   eq([rel.releaseHash, rel.templateVersion], [pin.releaseHash, pin.templateVersion], "pin");
-  eq([record.template.releaseId, record.template.releaseHash, record.status, record.qa.pass], [pin.releaseId, pin.releaseHash, "success", true], "build record");
+  // = the pin once steady; in the Portfolio V0.2 pre-publish window, the frozen V0.1 package's release
+  const built = await demoBuiltRelease(repoRoot, pin);
+  assert(versionAtLeast(built.templateVersion, "1.5.0"), built.templateVersion);
+  eq([record.template.releaseId, record.template.releaseHash, record.status, record.qa.pass], [built.releaseId, built.releaseHash, "success", true], "build record");
   if (pin.templateVersion !== "1.5.0") return; // a later re-pin rotates the rollback pointer: theirs to assert
   const previous = await readJson(path.join(repoRoot, "data/site-builds", DEMO, "previous.json"));
   eq(previous.buildInputId, before.currentPointer.buildInputId, "previous = the package that was current before the cut");
@@ -149,8 +154,9 @@ await check("R3 platform/ (test/ excluded) is byte-identical to the pre-change c
   // MODIFIED (but that pre-date it, and so are part of this capture) are instead judged at their
   // pre-integration hash: the capture is still proven for the tree as of the task's start commit
   // (be6b10a); the current content of those files is asserted by integration.test.ts instead.
-  const overrides = await integrationSurfaceBefore(repoRoot);
-  const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/") || isPublishSurface(f) || (isIntegrationSurface(f) && !(f in before.platformFiles)));
+  // The 1.6.0 surface (V0.2 schema + widget seam, release-160-surface.ts) is treated the same way.
+  const overrides = { ...(await integrationSurfaceBefore(repoRoot)), ...(await release160SurfaceBefore(repoRoot)) };
+  const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/") || isPublishSurface(f) || (isIntegrationSurface(f) && !(f in before.platformFiles)) || isRelease160Added(f));
   for (const f of Object.keys(overrides)) if (f in before.platformFiles) now[f] = overrides[f]!;
   eq(now, before.platformFiles, "platform files");
 });

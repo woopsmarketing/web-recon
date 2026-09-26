@@ -29,7 +29,9 @@ import { loadRelease, verifyRelease } from "../release/release";
 import { resolveEffectiveSettings } from "../settings/settings";
 import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
+import { demoBuiltRelease } from "./demo-rollout";
 import { isIntegrationSurface } from "./integration-surface";
+import { isRelease160Added, release160SurfaceBefore } from "./release-160-surface";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -179,9 +181,12 @@ await check("R2 the 1.5.2 release = the 1.5.1 release except exactly the five de
   eq(Object.keys(a).filter((f) => !(f in b)), [], "removed files");
   eq(Object.keys(b).filter((f) => !(f in a)), ADDED_TEMPLATE_FILES, "added files");
   eq(Object.keys(b).filter((f) => f in a && a[f] !== b[f]), CHANGED_TEMPLATE_FILES, "changed files");
+  // files the later 1.6.0 cut changed / added (V0.2 schema + widget seam) are judged at their pre-1.6.0
+  // hash / excluded (release-160-surface.ts); their current content is held by integration.test.ts I2b
   const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/"));
+  for (const [f, h] of Object.entries(await release160SurfaceBefore(repoRoot))) if (f in now) now[f] = h;
   eq(Object.keys(before.platformFiles).filter((f) => now[f] !== before.platformFiles[f] && !isIntegrationSurface(f)), [], "platform files changed");
-  eq(Object.keys(now).filter((f) => !(f in before.platformFiles) && !isIntegrationSurface(f)), [], "platform files added");
+  eq(Object.keys(now).filter((f) => !(f in before.platformFiles) && !isIntegrationSurface(f) && !isRelease160Added(f)), [], "platform files added");
 });
 await check("R3 the demo pins a verified release ≥ 1.5.2 and its current package was built with it (QA pass), rollback = the pre-cut package; every fixture's current package was built with the fixture's OWN verified pin — a fixture the cut did not re-pin still serves its pre-cut package (pointers untouched, nothing rotated away)", async () => {
   assert(versionAtLeast(pin.templateVersion, "1.5.2"), pin.templateVersion);
@@ -191,7 +196,10 @@ await check("R3 the demo pins a verified release ≥ 1.5.2 and its current packa
     await verifyRelease(repoRoot, rel);
     eq([rel.releaseHash, rel.templateVersion], [sp.releaseHash, sp.templateVersion], `${s}: pin`);
     const rec = await readJson(path.join(await packageOf(s), "build-record.json"));
-    eq([rec.template.releaseId, rec.template.releaseHash, rec.status, rec.qa.pass], [sp.releaseId, sp.releaseHash, "success", true], `${s}: build record`);
+    // the demo's package: its pin once steady; in the Portfolio V0.2 pre-publish window, the frozen
+    // V0.1 package's release (demo-rollout.ts). Fixtures are always held to their own pin.
+    const built = s === DEMO ? await demoBuiltRelease(repoRoot, sp) : sp;
+    eq([rec.template.releaseId, rec.template.releaseHash, rec.status, rec.qa.pass], [built.releaseId, built.releaseHash, "success", true], `${s}: build record`);
     if (s === DEMO) {
       if (!atCut) continue; // a later re-pin rotates the rollback pointer: theirs to assert
       const previous = await readJson(path.join(repoRoot, "data/site-builds", s, "previous.json"));
@@ -370,8 +378,11 @@ await check("F1 every fixture's current package matches ITS OWN pin: a 1.5.1 pin
 });
 await check("F2 the 1.5.2 default on a throwaway-root copy of fixture-small re-pinned to 1.5.2 (data/sites + data/site-builds untouched): no site robots meta, a homepage canonical, OpenGraph = title / description / canonical, no og:image (SVG hero = the raster guard); header, <main>, footer, robots.txt and sitemap equal its 1.5.1 package's", async () => {
   const S = "fixture-small";
-  const rel152 = await loadRelease(repoRoot, "interior-01", pin.releaseId);
-  eq(rel152.templateVersion, "1.5.2", "the demo's release is the 1.5.2 cut");
+  // the stored 1.5.2 release itself — not the demo's pin, which has since moved on (1.6.0)
+  const d152 = (await readdir(path.join(repoRoot, "data/template-releases/interior-01"))).find((d) => d.startsWith("interior-01-1.5.2-"))!;
+  const rel152 = await loadRelease(repoRoot, "interior-01", d152);
+  await verifyRelease(repoRoot, rel152);
+  eq(rel152.templateVersion, "1.5.2", "the 1.5.2 cut");
   const tmpRoot = await mkdtemp(path.join(os.tmpdir(), "ia152-root-"));
   try {
     await mkdir(path.join(tmpRoot, "data/sites"), { recursive: true });

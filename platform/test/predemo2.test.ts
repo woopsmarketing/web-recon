@@ -19,6 +19,7 @@ import { AssetRegistryDocSchema } from "../assets/assets";
 import { loadRelease, verifyRelease } from "../release/release";
 import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
+import { demoBuiltRelease } from "./demo-rollout";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -110,12 +111,15 @@ await check("R1 the 1.4.0 and 1.4.1 releases verify and every file of them is by
   const dirs = (await readdir(path.join(repoRoot, "data/template-releases/interior-01"))).filter((d) => d.startsWith("interior-01-"));
   eq(["1.4.0", "1.4.1", "1.4.2"].map((v) => dirs.filter((d) => d.startsWith(`interior-01-${v}-`)).length), [1, 1, 1], "release dirs");
 });
-await check("R2 boost-interior-demo pins a verified release ≥ 1.4.2 and its current package was built with it (QA pass); the 1.4.1 package is the rollback (previous)", async () => {
+await check("R2 boost-interior-demo pins a verified release ≥ 1.4.2 and its current package was built with it (QA pass) — pre-publish: with the V0.1 publish target (demo-rollout.ts); the 1.4.1 package is the rollback (previous)", async () => {
   assert(versionAtLeast(pin.templateVersion, "1.4.2"), pin.templateVersion);
   const rel = await loadRelease(repoRoot, "interior-01", pin.releaseId);
   await verifyRelease(repoRoot, rel);
   eq([rel.releaseHash, rel.templateVersion], [pin.releaseHash, pin.templateVersion], "pin");
-  eq([record.template.releaseId, record.template.releaseHash, record.status, record.qa.pass], [pin.releaseId, pin.releaseHash, "success", true], "build record");
+  // = the pin once steady; in the Portfolio V0.2 pre-publish window, the frozen V0.1 package's release
+  const built = await demoBuiltRelease(repoRoot, pin);
+  assert(versionAtLeast(built.templateVersion, "1.4.2"), built.templateVersion);
+  eq([record.template.releaseId, record.template.releaseHash, record.status, record.qa.pass], [built.releaseId, built.releaseHash, "success", true], "build record");
   if (pin.templateVersion !== "1.4.2") return; // a later re-pin rotates the rollback pointer: theirs to assert
   const previous = await readJson(path.join(repoRoot, "data/site-builds", DEMO, "previous.json"));
   eq(previous.buildInputId, before.currentPointer.buildInputId, "previous = the package that was current before the cut");
