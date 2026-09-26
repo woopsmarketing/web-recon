@@ -9,12 +9,14 @@ import { svgProblems } from "../assets/assets";
  *  - with exclusiveRoutes: any HTML page that is NOT planned (pruned/out-of-range/unknown
  *    routes must not be emitted), except the framework's own 404 pages
  *  - a local src/href that does not resolve inside the package
- *  - any remote src/href other than the site's own public origin (exact origin match)
+ *  - any remote src/href other than the site's own public origin (exact origin match) or one of
+ *    the exact script URLs this site declares in its own data/sites/<siteId>/scripts.json
  *  - any url()/@import/image-set() in CSS files, inline <style> blocks or style="" attributes
  *    that is not same-document/local
  *  - any SVG that is not inert/self-contained
  *  - any absolute URL in ANY emitted text file (HTML, RSC flight .txt, JS chunks, CSS, JSON)
- *    that is neither the site's own origin nor an exact framework-internal prefix
+ *    that is neither the site's own origin, nor a declared script URL, nor an exact
+ *    framework-internal prefix
  *    (XML namespaces, Next.js/React error-doc links, core-js license string) — this
  *    covers URLs a client component could inject at runtime, not just attributes
  *  - any frozen forbidden source term in ANY emitted file (HTML, RSC flight, JS, CSS, SVG)
@@ -67,8 +69,19 @@ export async function qaStaticPackage(opts: {
   exclusiveRoutes?: boolean;
   forbiddenTerms: readonly string[];
   publicOrigin?: string;
+  /**
+   * The exact third-party script URLs this site declares (data/sites/<siteId>/scripts.json, via
+   * the snapshot). These — and ONLY these, matched as whole URLs, not by host — are allowed to
+   * appear as a remote reference and as an absolute URL in the package. Every other remote script
+   * host, and every other URL on a declared script's host (an image, a link, a second script),
+   * still fails, so the "nothing remote unless the site asked for exactly this" property holds.
+   */
+  declaredScriptSrcs?: readonly string[];
 }): Promise<PackageQaResult> {
   const { outDir } = opts;
+  // Both spellings of each declared URL: as authored (RSC flight / JSON) and with "&" escaped,
+  // which is how it comes back out of an HTML attribute.
+  const declaredScripts = new Set((opts.declaredScriptSrcs ?? []).flatMap((s) => [s, s.replaceAll("&", "&amp;")]));
   const failures: GateFinding[] = [];
   const files = await listFiles(outDir);
   const fileSet = new Set(files);
@@ -95,6 +108,7 @@ export async function qaStaticPackage(opts: {
       for (const m of text.matchAll(/(?:https?:)?\/\/[A-Za-z0-9.-]+\.[A-Za-z]{2,}[^\s"'`)<>\\]*/g)) {
         const url = m[0];
         if (FRAMEWORK_URL_PREFIXES.some((p) => url.startsWith(p))) continue;
+        if (declaredScripts.has(url)) continue;
         if (opts.publicOrigin && /^https?:/.test(url) && sameOrigin(url, opts.publicOrigin)) continue;
         failures.push({ file: f, why: `absolute URL ${url.slice(0, 120)} (not own origin / framework-internal)` });
       }
@@ -107,6 +121,7 @@ export async function qaStaticPackage(opts: {
       for (const ref of refs) {
         if (ref === "" || ref.startsWith("#") || ref.startsWith("mailto:") || ref.startsWith("tel:") || ref.startsWith("data:")) continue;
         if (/^(https?:)?\/\//i.test(ref)) {
+          if (declaredScripts.has(ref)) continue;
           if (opts.publicOrigin && sameOrigin(ref, opts.publicOrigin)) continue;
           failures.push({ file: f, why: `remote reference ${ref}` });
           continue;

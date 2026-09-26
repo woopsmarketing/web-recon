@@ -7,6 +7,8 @@
 import { chmod, cp, mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { createContentReader } from "../content/reader";
 import type { Project } from "../content/schema";
 import { resolveEffectiveSettings, SettingsError } from "../settings/settings";
@@ -14,6 +16,14 @@ import { resolveEffectiveTheme } from "../theme/theme";
 import { createSlotReader, resolveSlots } from "../slots/slots";
 import { createSiteContext } from "../site/context";
 import { buildSiteSnapshot } from "../site/load";
+import {
+  ALLOWED_ATTR_NAMES,
+  headScriptElements,
+  MAX_HEAD_SCRIPTS,
+  SiteHeadScriptsDocSchema,
+  FORBIDDEN_CHAR_RE as HEAD_SCRIPT_FORBIDDEN_CHAR_RE,
+} from "../site/head-scripts";
+import { headScriptTags } from "../../templates/interior-01/v1/app/head-scripts";
 import { buildSite, prepareSiteInput } from "../build/site-build";
 import { qaStaticPackage } from "../build/qa";
 import { svgProblems } from "../assets/assets";
@@ -225,6 +235,39 @@ await check("package QA catches remote refs in inline <style>, style=, @import, 
     await rm(d, { recursive: true, force: true });
   }
 });
+await check("package QA: ONLY the site's declared script URLs may be remote (same host, other URL / other host still fail)", async () => {
+  const d = await mkdtemp(path.join(os.tmpdir(), "slice1-qa-scripts-"));
+  const declared = "https://cdn.one.example.com/widget.js";
+  const qaOf = (declaredScriptSrcs: string[]) =>
+    qaStaticPackage({ outDir: d, routes: [{ path: "/" }], forbiddenTerms: [], publicOrigin: "https://site.example", declaredScriptSrcs });
+  try {
+    await writeFile(
+      path.join(d, "index.html"),
+      `<html lang="en"><head><script src="${declared}" async=""></script><script src="https://cdn.two.example.com/other.js" async=""></script></head><body><img src="https://cdn.one.example.com/logo.png"/></body></html>`,
+    );
+    const qa = await qaOf([declared]);
+    const why = qa.failures.map((f) => f.why).join(" | ");
+    assert(!qa.pass, "passed");
+    assert(why.includes("remote reference https://cdn.two.example.com/other.js"), `other host not refused: ${why}`);
+    assert(why.includes("https://cdn.one.example.com/logo.png"), `other URL on the declared host not refused: ${why}`);
+    assert(!why.includes(declared), `declared script refused: ${why}`);
+    // the SAME package without the declaration: the declared URL is just another remote host
+    const undeclared = await qaOf([]);
+    assert(undeclared.failures.some((f) => f.why.includes(declared)), "an undeclared script host must still fail");
+    // a package whose only remote URL is the declared script passes — in both spellings of a
+    // query string (raw in the RSC payload, &amp;-escaped inside the HTML attribute)
+    const query = "https://cdn.one.example.com/w.js?a=1&b=2";
+    await writeFile(
+      path.join(d, "index.html"),
+      `<html lang="en"><head><script src="${declared}" async=""></script><script src="${query.replaceAll("&", "&amp;")}" async=""></script></head><body></body></html>`,
+    );
+    await writeFile(path.join(d, "flight.txt"), `{"src":"${query}"}`);
+    const clean = await qaOf([declared, query]);
+    assert(clean.pass, `declared script alone failed: ${clean.failures.map((f) => f.why).join(" | ")}`);
+  } finally {
+    await rm(d, { recursive: true, force: true });
+  }
+});
 
 console.log("\n[unit] slots");
 const slotDoc = (values: Record<string, Record<string, unknown>>, templateId = "interior-01") => ({ schemaVersion: 1, templateId, values });
@@ -354,6 +397,172 @@ await check("preview mode includes drafts + scheduled; public does not", async (
 await check("I site:build with an explicit different release → FAIL (no silent upgrade)", () =>
   rejects(() => prepareSiteInput({ repoRoot, siteId: "fixture-small", mode: "public", at: "2026-09-18T00:00:00Z", releaseId: "interior-01-9.9.9-abcdefabcdef" }), /release mismatch/),
 );
+
+// --------------------------------- third-party head scripts (scripts.json) --
+console.log("\n[unit] head scripts");
+const SRC = "https://cdn.example.com/widget.js";
+const scriptsDoc = (headScripts: unknown[]) => ({ schemaVersion: 1, headScripts });
+/** the joined "<path>: <message>" list of a document the schema must REFUSE */
+function scriptsError(doc: unknown): string {
+  const r = SiteHeadScriptsDocSchema.safeParse(doc);
+  if (r.success) throw new Error(`accepted: ${JSON.stringify(doc)}`);
+  return r.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`).join("; ");
+}
+await check("scripts.json: src must be an absolute, canonical https:// URL", () => {
+  const cases: [string, RegExp][] = [
+    ["http://cdn.example.com/widget.js", /must use https:/],
+    ["/widget.js", /absolute https/],
+    ["widget.js", /absolute https/],
+    ["//cdn.example.com/widget.js", /absolute https/],
+    ["javascript:alert(1)", /must use https:/],
+    ["data:text/javascript,alert(1)", /must use https:/],
+    ["https://user:pw@cdn.example.com/widget.js", /credentials/],
+    ["https://cdn.example.com/widget.js#frag", /fragment/],
+    ["https://CDN.example.com/widget.js", /canonical form/],
+  ];
+  for (const [src, re] of cases) {
+    const why = scriptsError(scriptsDoc([{ id: "widget", src }]));
+    assert(why.startsWith("headScripts.0.src:") && re.test(why), `${src} → ${why}`);
+  }
+});
+await check("scripts.json: there is no field for inline script content (strict schema)", () => {
+  for (const extra of [{ content: "alert(1)" }, { inline: "alert(1)" }, { children: "alert(1)" }, { dangerouslySetInnerHTML: "x" }]) {
+    const why = scriptsError(scriptsDoc([{ id: "widget", src: SRC, ...extra }]));
+    assert(/[Uu]nrecognized key/.test(why), `${JSON.stringify(extra)} → ${why}`);
+  }
+});
+await check("scripts.json: attrs are an ALLOWLIST — on*, src, integrity, nonce, style, async, camelCase data-* refused", () => {
+  for (const attrs of [
+    { onload: "steal()" },
+    { onerror: "steal()" },
+    { onclick: "steal()" },
+    { src: "https://other.example.com/x.js" },
+    { integrity: "sha384-aaa" },
+    { nonce: "abc" },
+    { style: "display:none" },
+    { async: "" },
+    { dataKey: "x" },
+    { "data-Key": "x" },
+    { "data-": "x" },
+    { "": "x" },
+  ]) {
+    const why = scriptsError(scriptsDoc([{ id: "widget", src: SRC, attrs }]));
+    assert(/is not allowed \(data-\*/.test(why) && why.startsWith("headScripts.0.attrs."), `${JSON.stringify(attrs)} → ${why}`);
+  }
+  assert(ALLOWED_ATTR_NAMES.join() === "defer,crossorigin,referrerpolicy,type", `allowlist changed: ${ALLOWED_ATTR_NAMES.join()}`);
+});
+await check("scripts.json: allowlisted attrs keep their own value grammar", () => {
+  const cases: [Record<string, string>, RegExp][] = [
+    [{ defer: "true" }, /boolean attribute/],
+    [{ crossorigin: "yes" }, /must be one of: anonymous, use-credentials/],
+    [{ type: "text/javascript" }, /must be one of: module/],
+    [{ type: "importmap" }, /must be one of: module/],
+    [{ referrerpolicy: "unsafe-url" }, /must be one of: no-referrer, origin/],
+    [{ referrerpolicy: "no-referrer-when-downgrade" }, /must be one of: no-referrer, origin/],
+  ];
+  for (const [attrs, re] of cases) assert(re.test(scriptsError(scriptsDoc([{ id: "widget", src: SRC, attrs }]))), `${JSON.stringify(attrs)} accepted or wrong message`);
+});
+await check("scripts.json: attribute values reject the platform's forbidden characters (HT7 set)", () => {
+  for (const c of ["\u0000", "\u001f", "\u007f", " ", "‮", "⁦"]) {
+    const why = scriptsError(scriptsDoc([{ id: "widget", src: SRC, attrs: { "data-key": `a${c}b` } }]));
+    assert(/attribute value contains a forbidden character/.test(why), `U+${c.codePointAt(0)!.toString(16)} → ${why}`);
+    assert(/src contains a forbidden character|absolute https/.test(scriptsError(scriptsDoc([{ id: "widget", src: `https://cdn.example.com/a${c}b.js` }]))), "src forbidden char");
+  }
+  // …and keep accepting the characters real copy is made of
+  assert(SiteHeadScriptsDocSchema.safeParse(scriptsDoc([{ id: "widget", src: SRC, attrs: { "data-label": "주방·팬트리 (공급) café" } }])).success, "legitimate value refused");
+});
+await check("scripts.json: the forbidden-character set is character-for-character the platform's (HT7)", async () => {
+  // platform/site/** is a Template Release source and platform/integration/** is not, so the set is
+  // re-declared there; this holds the two copies identical (dynamic import: that module is not ours).
+  const { FORBIDDEN_CHAR_RE } = await import("../integration/contract");
+  assert(HEAD_SCRIPT_FORBIDDEN_CHAR_RE.source === FORBIDDEN_CHAR_RE.source, `${HEAD_SCRIPT_FORBIDDEN_CHAR_RE.source} ≠ ${FORBIDDEN_CHAR_RE.source}`);
+  assert(HEAD_SCRIPT_FORBIDDEN_CHAR_RE.flags === FORBIDDEN_CHAR_RE.flags, "flags differ");
+});
+await check("scripts.json: ids are slugs, unique, and so are srcs (dedupe + ordering determinism)", () => {
+  for (const id of ["Widget", "my widget", "my_widget", "-widget", "widget-", "위젯", "", "a".repeat(65)]) {
+    const why = scriptsError(scriptsDoc([{ id, src: SRC }]));
+    assert(why.startsWith("headScripts.0.id:"), `${JSON.stringify(id)} → ${why}`);
+  }
+  assert(/duplicate id "widget"/.test(scriptsError(scriptsDoc([{ id: "widget", src: SRC }, { id: "widget", src: "https://cdn.example.com/other.js" }]))), "duplicate id accepted");
+  assert(/duplicate src/.test(scriptsError(scriptsDoc([{ id: "one", src: SRC }, { id: "two", src: SRC }]))), "duplicate src accepted");
+  assert(/(root)|headScripts/.test(scriptsError(scriptsDoc(Array.from({ length: MAX_HEAD_SCRIPTS + 1 }, (_, i) => ({ id: `w${i}`, src: `https://cdn.example.com/w${i}.js` }))))), "over-long list accepted");
+  assert(SiteHeadScriptsDocSchema.safeParse(scriptsDoc([])).success, "an empty list must be legal");
+  assert(!SiteHeadScriptsDocSchema.safeParse({ schemaVersion: 2, headScripts: [] }).success, "schemaVersion 2 accepted");
+  assert(!SiteHeadScriptsDocSchema.safeParse({ schemaVersion: 1, headScripts: [], extra: 1 }).success, "unknown top-level key accepted");
+});
+const validScriptsDoc = SiteHeadScriptsDocSchema.parse(
+  scriptsDoc([
+    { id: "b-first", src: "https://one.example.com/a.js", attrs: { "data-z": "1", "data-a": "2", crossorigin: "anonymous" } },
+    { id: "a-second", src: "https://two.example.com/b.js", attrs: { defer: "", type: "module", referrerpolicy: "strict-origin" } },
+    { id: "c-third", src: "https://three.example.com/c.js" },
+  ]),
+);
+await check("scripts.json → elements: authored order, async by default, defer opts out, attribute order canonical", () => {
+  const els = headScriptElements(validScriptsDoc);
+  assert(els.map((e) => e.id).join() === "b-first,a-second,c-third", `order ${els.map((e) => e.id).join()}`);
+  const json = (i: number) => JSON.stringify(els[i]!.attributes);
+  assert(json(0) === JSON.stringify({ src: "https://one.example.com/a.js", async: true, crossOrigin: "anonymous", "data-a": "2", "data-z": "1" }), `0: ${json(0)}`);
+  assert(json(1) === JSON.stringify({ src: "https://two.example.com/b.js", defer: true, referrerPolicy: "strict-origin", type: "module" }), `1: ${json(1)}`);
+  assert(json(2) === JSON.stringify({ src: "https://three.example.com/c.js", async: true }), `2: ${json(2)}`);
+  assert(headScriptElements(undefined).length === 0, "no document must mean no element");
+  // the same document written with the attribute keys in another order is the same head
+  const reordered = SiteHeadScriptsDocSchema.parse(
+    scriptsDoc([
+      { id: "b-first", src: "https://one.example.com/a.js", attrs: { crossorigin: "anonymous", "data-a": "2", "data-z": "1" } },
+      { id: "a-second", src: "https://two.example.com/b.js", attrs: { referrerpolicy: "strict-origin", defer: "", type: "module" } },
+      { id: "c-third", src: "https://three.example.com/c.js" },
+    ]),
+  );
+  assert(JSON.stringify(headScriptElements(reordered)) === JSON.stringify(els), "attribute key order leaked into the head");
+});
+await check("head scripts reach the Template through the SNAPSHOT and render deterministically", async () => {
+  const { snapshot } = await buildSiteSnapshot({ repoRoot, siteId: "fixture-small", mode: "public", at: "2026-09-18T00:00:00Z" });
+  snapshot.site.template = livePin;
+  const ctxOf = (snap: unknown) => createSiteContext({ siteId: "fixture-small", template, mode: "public", at: "x", snapshot: snap, templateRelease: livePin });
+  const head = (c: ReturnType<typeof ctxOf>) =>
+    renderToStaticMarkup(
+      createElement("head", null, createElement("style", { id: "site-theme", dangerouslySetInnerHTML: { __html: c.themeCss } }), headScriptTags(c)),
+    );
+  // absent document → no scripts, and a head byte-identical to the one before this seam existed
+  const bare = ctxOf(snapshot);
+  assert(bare.headScripts.length === 0 && headScriptTags(bare).length === 0, "a site without scripts.json must have no head script");
+  assert(head(bare) === `<head><style id="site-theme">${bare.themeCss}</style></head>`, `absent document changed the head: ${head(bare).slice(0, 200)}`);
+
+  const withScripts = structuredClone(snapshot);
+  withScripts.headScripts = validScriptsDoc;
+  // the snapshot travels to the Template as a FILE: parse what was written, not the object
+  const ctx = ctxOf(JSON.parse(JSON.stringify(withScripts)));
+  const html = head(ctx);
+  assert(html === head(ctxOf(JSON.parse(JSON.stringify(withScripts)))), "two renders of the same document differ");
+  assert(ctx.headScripts.map((s) => s.id).join() === "b-first,a-second,c-third", "authored order lost on the way to the Template");
+  // async scripts (the default) are hoisted to the top of <head> in authored order; a deferred one
+  // stays where the layout put it. Both are a pure function of the document.
+  assert(
+    html ===
+      `<head><script src="https://one.example.com/a.js" async="" crossorigin="anonymous" data-a="2" data-z="1"></script>` +
+        `<script src="https://three.example.com/c.js" async=""></script>` +
+        `<style id="site-theme">${ctx.themeCss}</style>` +
+        `<script src="https://two.example.com/b.js" defer="" referrerPolicy="strict-origin" type="module"></script></head>`,
+    `unexpected head: ${html.replace(ctx.themeCss, "…")}`,
+  );
+});
+await check("a snapshot carrying an invalid head script is refused by the Template-side schema too", async () => {
+  const { snapshot } = await buildSiteSnapshot({ repoRoot, siteId: "fixture-small", mode: "public", at: "2026-09-18T00:00:00Z" });
+  snapshot.site.template = livePin;
+  const bad = structuredClone(snapshot);
+  (bad as { headScripts?: unknown }).headScripts = { schemaVersion: 1, headScripts: [{ id: "widget", src: SRC, attrs: { onload: "steal()" } }] };
+  await rejects(
+    () => createSiteContext({ siteId: "fixture-small", template, mode: "public", at: "x", snapshot: bad, templateRelease: livePin }),
+    /site snapshot invalid: headScripts\.headScripts\.0\.attrs\.onload/,
+  );
+});
+await check("every fixture site has no scripts.json → no headScripts key in its snapshot (absent ≠ empty)", async () => {
+  for (const s of SITES) {
+    const { snapshot } = await buildSiteSnapshot({ repoRoot, siteId: s, mode: "public", at: "2026-09-18T00:00:00Z" });
+    assert(!("headScripts" in snapshot), `${s}: snapshot grew a headScripts key`);
+    assert(!JSON.stringify(snapshot).includes("headScripts"), `${s}: headScripts leaked into the snapshot`);
+  }
+});
 
 console.log("\n[static] template source rules (L, M, N)");
 const templateRoot = path.join(repoRoot, "templates");
@@ -666,6 +875,41 @@ try {
     assert((await idOf()) !== base, "asset change not detected");
     await writeFile(f, orig);
     assert((await idOf()) === base, "revert did not restore the id");
+  });
+  await check("P added scripts.json → changed buildInputId; removing it restores the previous identity", async () => {
+    const f = site("scripts.json");
+    await writeFile(f, JSON.stringify({ schemaVersion: 1, headScripts: [{ id: "widget", src: "https://cdn.example.com/widget.js", attrs: { "data-key": "abc" } }] }));
+    const input = await prepareSiteInput({ repoRoot: tmpRoot, siteId: "fixture-small", mode: "public", at });
+    assert(input.buildInputId !== base, "a declared head script did not change the build identity");
+    assert(input.snapshot.headScripts?.headScripts[0]!.src === "https://cdn.example.com/widget.js", "document did not reach the snapshot");
+    await rm(f);
+    assert((await idOf()) === base, "removing the document did not restore the identity");
+  });
+  await check("malformed scripts.json → the build FAILS naming the file and the offending path (never silently 'no scripts')", async () => {
+    const f = site("scripts.json");
+    const cases: [unknown, RegExp][] = [
+      [{ schemaVersion: 1, headScripts: [{ id: "widget", src: "http://cdn.example.com/widget.js" }] }, /fixture-small\/scripts\.json invalid: headScripts\.0\.src: .*https:/],
+      [{ schemaVersion: 1, headScripts: [{ id: "widget", src: "../widget.js" }] }, /scripts\.json invalid: headScripts\.0\.src: .*absolute https/],
+      [{ schemaVersion: 1, headScripts: [{ id: "widget", src: "javascript:alert(1)" }] }, /scripts\.json invalid: headScripts\.0\.src/],
+      [{ schemaVersion: 1, headScripts: [{ id: "widget", src: "https://cdn.example.com/widget.js", attrs: { onload: "steal()" } }] }, /scripts\.json invalid: headScripts\.0\.attrs\.onload: .*not allowed/],
+      [{ schemaVersion: 1, headScripts: [{ id: "widget", src: "https://cdn.example.com/widget.js", attrs: { integrity: "sha384-aaa" } }] }, /scripts\.json invalid: headScripts\.0\.attrs\.integrity/],
+      [{ schemaVersion: 1, headScripts: [{ id: "Widget", src: "https://cdn.example.com/widget.js" }] }, /scripts\.json invalid: headScripts\.0\.id/],
+      [
+        { schemaVersion: 1, headScripts: [{ id: "widget", src: "https://cdn.example.com/a.js" }, { id: "widget", src: "https://cdn.example.com/b.js" }] },
+        /scripts\.json invalid: headScripts\.1\.id: duplicate id/,
+      ],
+      [{ schemaVersion: 1, headScripts: [{ id: "widget", src: "https://cdn.example.com/widget.js", attrs: { "data-key": "a\u0000b" } }] }, /scripts\.json invalid: headScripts\.0\.attrs\.data-key: .*forbidden character/],
+      [{ schemaVersion: 1, headScripts: [{ id: "widget", src: "https://cdn.example.com/widget.js", content: "alert(1)" }] }, /scripts\.json invalid: headScripts\.0/],
+      [{ schemaVersion: 1 }, /scripts\.json invalid: headScripts/],
+    ];
+    for (const [doc, re] of cases) {
+      await writeFile(f, JSON.stringify(doc));
+      await rejects(idOf, re);
+    }
+    await writeFile(f, "{ not json");
+    await rejects(idOf, /cannot read .*scripts\.json/);
+    await rm(f);
+    assert((await idOf()) === base, "cleanup did not restore the identity");
   });
   await check("K reference-fixture origin under data/sites → FAIL", async () => {
     const f = site("content/projects.json");

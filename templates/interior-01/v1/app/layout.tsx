@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { getSiteContext } from "@platform/site/bound";
 import template from "../template";
+import { headScriptTags } from "./head-scripts";
 import { SiteFooter } from "../sections/SiteFooter";
 import "../styles/template.css";
 
@@ -22,6 +23,10 @@ export function generateMetadata(): Metadata {
  * The site shell. The footer (and with it the site-wide floating seat) is rendered HERE, after
  * every page's own header + <main>: one instance for the whole site that survives client-side
  * navigation — a future chat launcher in the seat keeps its state across pages.
+ *
+ * The head carries the site's own theme plus whatever third-party scripts the SITE declares
+ * (head-scripts.ts). Those load async unless the site's document says defer, so nothing a site
+ * adds to its head can block the page from rendering.
  */
 export default function RootLayout({ children }: { children: ReactNode }) {
   const ctx = getSiteContext(template);
@@ -29,6 +34,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang={ctx.identity.locale}>
       <head>
         <style id="site-theme" dangerouslySetInnerHTML={{ __html: ctx.themeCss }} />
+        {headScriptTags(ctx)}
       </head>
       <body>
         {children}

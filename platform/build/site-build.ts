@@ -475,6 +475,8 @@ export async function buildSite(opts: SiteBuildOptions): Promise<SiteBuildResult
       exclusiveRoutes: true,
       forbiddenTerms: release.forbiddenTerms,
       publicOrigin: snapshot.site.identity.publicOrigin,
+      // The site's own declared third-party scripts are the only remote URLs it may carry.
+      declaredScriptSrcs: snapshot.headScripts?.headScripts.map((s) => s.src) ?? [],
     });
     const qaMs = Date.now() - t;
     if (!qa.pass) {

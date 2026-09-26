@@ -4,6 +4,7 @@ import { AssetEntrySchema } from "../assets/assets";
 import { SiteSettingsDocSchema } from "../settings/settings";
 import { SiteThemeDocSchema } from "../theme/theme";
 import { SiteSlotsDocSchema } from "../slots/slots";
+import { SiteHeadScriptsDocSchema } from "./head-scripts";
 
 /**
  * Site Instance = who the site is + which exact Template Release it is pinned to.
@@ -103,6 +104,9 @@ export const SiteSnapshotSchema = z
     settings: SiteSettingsDocSchema,
     theme: SiteThemeDocSchema.optional(),
     slots: SiteSlotsDocSchema.optional(),
+    // Third-party head scripts the site declares (data/sites/<siteId>/scripts.json). Present only
+    // when the site stores the document, so a site without it snapshots exactly as before.
+    headScripts: SiteHeadScriptsDocSchema.optional(),
     content: z
       .object({
         business: BusinessSchema,

@@ -6,6 +6,7 @@ import { SiteSnapshotSchema, type BuildMode, type SiteIdentity, type SiteSnapsho
 import type { TemplateManifest } from "./template-manifest";
 import { createSlotReader, resolveSlots, type ResolvedSlots, type SlotReader } from "../slots/slots";
 import { createSiteRoutes, planRoutes, type SiteRoutes } from "./routes";
+import { headScriptElements, type HeadScriptElement } from "./head-scripts";
 
 /**
  * SiteContext — the ONLY door through which Template code reads site data.
@@ -29,6 +30,11 @@ export interface SiteContext<D extends SectionDeclarations = SectionDeclarations
   slotSources: ResolvedSlots;
   /** Which declared routes generate pages for this site's content (params, paths, availability). */
   routes: SiteRoutes;
+  /**
+   * Third-party <script> elements the site declares, in authored order, already carrying their
+   * load discipline (see platform/site/head-scripts). Empty for a site with no scripts.json.
+   */
+  headScripts: readonly HeadScriptElement[];
 }
 
 export class SiteContextError extends Error {
@@ -110,5 +116,6 @@ export function createSiteContext<D extends SectionDeclarations>(input: CreateSi
     slots: createSlotReader(resolvedSlots, template),
     slotSources: resolvedSlots,
     routes,
+    headScripts: headScriptElements(snap.headScripts),
   };
 }

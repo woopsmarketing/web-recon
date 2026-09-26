@@ -15,6 +15,7 @@ import { AssetRegistryDocSchema, publicAssetPath, svgProblems, type SnapshotAsse
 import { SiteSettingsDocSchema } from "../settings/settings";
 import { SiteThemeDocSchema } from "../theme/theme";
 import { SiteSlotsDocSchema } from "../slots/slots";
+import { HEAD_SCRIPTS_FILE, SiteHeadScriptsDocSchema } from "./head-scripts";
 import { sha256 } from "../util/hash";
 import { SiteInstanceSchema, SiteSnapshotSchema, type BuildMode, type SiteSnapshot } from "./instance";
 
@@ -24,6 +25,7 @@ import { SiteInstanceSchema, SiteSnapshotSchema, type BuildMode, type SiteSnapsh
  *   settings.json           sparse overrides for the pinned template
  *   theme.json              optional sparse theme overrides
  *   slots.json              optional sparse section slot values (copy/link/media)
+ *   scripts.json            OPTIONAL third-party head scripts — platform/site/head-scripts.ts
  *   content/business.json   Core singleton
  *   content/projects.json   Interior collection
  *   content/categories.json Interior taxonomy
@@ -117,6 +119,11 @@ export async function buildSiteSnapshot(opts: {
     throw new SiteDataError(`${siteId}/slots.json is for template "${slots.templateId}" but the site is pinned to "${site.template.templateId}"`);
   }
 
+  // Third-party head scripts: optional document, but a malformed one FAILS the build — it never
+  // degrades to "no scripts" (a widget that silently disappears is worse than a refused build).
+  const headScriptsRaw = await readJson(path.join(dir, HEAD_SCRIPTS_FILE), true);
+  const headScripts = headScriptsRaw === undefined ? undefined : parse(SiteHeadScriptsDocSchema, headScriptsRaw, `${siteId}/${HEAD_SCRIPTS_FILE}`);
+
   const business = parse(BusinessDocSchema, await readJson(path.join(dir, "content/business.json")), `${siteId}/content/business.json`);
   const projects = parse(ProjectsDocSchema, await readJson(path.join(dir, "content/projects.json")), `${siteId}/content/projects.json`);
   const categories = parse(CategoriesDocSchema, await readJson(path.join(dir, "content/categories.json")), `${siteId}/content/categories.json`);
@@ -206,6 +213,7 @@ export async function buildSiteSnapshot(opts: {
       settings,
       ...(theme ? { theme } : {}),
       ...(slots ? { slots } : {}),
+      ...(headScripts ? { headScripts } : {}),
       content: {
         business: business.data,
         projects: visibleProjects,
