@@ -1,5 +1,19 @@
 # Interior Portfolio Contract V0.2 — status
 
+> **2026-09-27 (later) — V0.2 PUBLISHED on `boost-interior-demo` only; rollback drilled; BoostChat next.**
+> `https://interior-demo.boostweb.co.kr` serves package `3846a29d…` (build `a4777cf9…`,
+> `interior-01@1.6.1`). The live manifest (`"0.1"`) and document (`"1.0"`, 19 records,
+> resourceVersion `d56509c8…`) are byte-equal to the canonical golden, and 19/19 hosted detail pages
+> match their records. The routing pointer's `previous` is the V0.1 package `286d44ab…`. A real
+> bounded drill went V0.2 → V0.1 (byte-identical to the captured baseline) → V0.2 via `site:publish
+> --rollback` and a forward publish. The post-publish suites are restated (commit `a2e54dd`): 15/15 green
+> in `POST_PUBLISH_STEADY`. No other site, no BoostChat, no Jev/Fuse touched. Ledger:
+> `POST-PUBLISH-SUITE-RESTATE` **done**; `PORTFOLIO-PUBLISH-GATE` → **`WEB_RECON_PUBLISH_COMPLETE` ·
+> `WAITING_FOR_BOOSTCHAT_HOSTED_VALIDATION`**; `WP03-DUAL-READ` open. Evidence:
+> [`../result/interior-portfolio-v0.2/39-controlled-v0.2-publish.md`](../result/interior-portfolio-v0.2/39-controlled-v0.2-publish.md).
+> **Next: BoostChat session C — snapshot refresh, consumer rollout, hosted conversation E2E,
+> consumer-side rollback/blast validation (contract §16 steps 5–6).**
+>
 > **2026-09-27 — V0.2 pre-publish bundle done; `interior-01@1.6.1` cut and pinned; NOT published.**
 > The detail page labels an area by its own basis (공급면적 / 전용면적 / neutral 면적; `bi-14` now
 > reads 전용면적 84 m²). It also renders the V0.2 facts only when authored: 리모델링 구분, 주요 공사
@@ -51,7 +65,7 @@
 > *Earlier banners the same day: rev 9.2 `BLOCKERS_RESOLVED`, 1 MAJOR (`34-`); rev 9.1
 > `FROZEN_NOT_READY`, 4 BLOCKER (`32-round-9-handoff.md`).*
 
-Last updated: 2026-09-27. Detail lives in [`../result/interior-portfolio-v0.2/`](../result/interior-portfolio-v0.2/);
+Last updated: 2026-09-27 (controlled V0.2 publish, `39-`). Detail lives in [`../result/interior-portfolio-v0.2/`](../result/interior-portfolio-v0.2/);
 the contract itself is [`../reports/integration/07-integration-contract-v0.2-candidate.md`](../reports/integration/07-integration-contract-v0.2-candidate.md).
 This file records **state**, not reasoning.
 
@@ -65,7 +79,7 @@ This file records **state**, not reasoning.
 | releaseHash | `8da56de8d28f372f645c5490436cd9da1b2ce70951e212a6b031ad991771855d` |
 | files | 66 (1.6.0: 65) — added `lib/vocabulary.ts`; changed `lib/format.ts`, `sections/PortfolioDetail.tsx`, `template.ts` |
 | why | basis-aware area label (`DEMO-AREA-BASIS-LABEL`), V0.2 detail facts (`DEMO-DETAIL-V02-FACTS`), truthful 1.6.0 changelog (`TEMPLATE-160-CHANGELOG`) |
-| demo | `site.json` `.template` → 1.6.1; `slots.json` `portfolio.detail`: `areaLabel` 면적 + five new labels. `current.json` **unchanged** (V0.1 package, 1.5.2) |
+| demo | `site.json` `.template` → 1.6.1; `slots.json` `portfolio.detail`: `areaLabel` 면적 + five new labels. **Published 2026-09-27 (`39-`)**: `current.json` → the 1.6.1 V0.2 package `a4777cf9…` (packageHash `3846a29d…`), `previous.json` → the V0.1 package `0f80b239…`; the pilot package dir `18c0a5ef…` retired by keep-2 (still sealed in R2) |
 | evidence | `../result/interior-portfolio-v0.2/38-pre-publish-web-recon-bundle.md` |
 
 Clean cut. The preflight hash (throwaway root) equals the real cut's, and the only release-source
@@ -141,8 +155,8 @@ therefore breadth-absent.
 | emitter / validator | `platform/integration/{contract,emit,validate,sources}.ts` — rev 9.2.1 §3–§13, INV-17…INV-30, fail closed (VA1) |
 | golden | `platform/test/golden/portfolio-v0.2/` — `manifest.json` 274 B · `portfolio.d56509c8100a56fdf9644baff78ff9e1.json` 11,608 B · `golden.json`; check/regenerate with `platform/cli/integration-golden.ts` |
 | corpus | 19 records — breadth 7 full / 7 partial / 5 absent; total 10 exact / 1 range / 8 absent; perArea 6 authored / 4 derived |
-| V0.1 | frozen V0.1 package (`current.json`) and the live pilot's rollback package byte-intact; `site:publish` would still plan the V0.1 package (tests `B2b`, `G1`–`G5`, `R2`) |
-| publish | **not allowed** — `PORTFOLIO-PUBLISH-GATE` below |
+| V0.1 | frozen V0.1 package `0f80b239…` / `286d44ab…` byte-intact: the demo's current package until `39-`, its rollback (`previous.json` and the live pointer's `previous`) since (tests `B2b`, `G1`–`G4`, `R2`) |
+| publish | **done 2026-09-27 for `boost-interior-demo` only** (`39-`): live = package `3846a29d…`, golden bytes; gate now waits on BoostChat's hosted validation — `PORTFOLIO-PUBLISH-GATE` below |
 
 ### Deferred ledger (the one canonical list — not executed in the producer work)
 
@@ -163,16 +177,16 @@ owner's producer brief of 2026-09-26 (§24).
 | `GC1-MINOR-5` | open | pure test for `renderInteriorConsultSection` | GC1 follow-up | brief |
 | `GC1-MINOR-6` | open | tidy `search-types.ts` header/content | GC1 follow-up | brief |
 | `WP03-GOLDEN` | **ready for the consumer** | BoostChat's golden was made from the then-uncommitted producer; the canonical golden is now committed and **byte-identical** to it | next BoostChat session: re-point the fixture's provenance at the producer commit `d284b93` (bytes need not change) | `36b-boostchat-handoff.md` |
-| `WP03-DUAL-READ` | open | the consumer's `"0.1"`/`"1.0"` dual read is temporary | remove only after rollout step 6 **and** every site's `current` + `previous` pointer is `>= 1.0` (two V0.2 publishes per site) | contract §16 `RO2` |
+| `WP03-DUAL-READ` | open | the consumer's `"0.1"`/`"1.0"` dual read is temporary. *2026-09-27 (`39-`): the demo's `current` is `"1.0"`; its `previous` is still the `"0.1"` package* | remove only after rollout step 6 **and** every site's `current` + `previous` pointer is `>= 1.0` (two V0.2 publishes per site) | contract §16 `RO2` |
 | `PORTFOLIO-F2` | open | keep the conservative disclosure when a partial's total is set beside a price question: the requested trade may have run wider than the room, or no budget was stated — never read as a direct quote. No contract ranking reopen | consumer reply implementation (matcher V0.2) | `35-` §3 `F-2`, `35a-` |
-| `PORTFOLIO-PUBLISH-GATE` | **in force** | the consumer parses `"1.0"` but its matcher/search does not yet use projectType / pricing / workScope semantics; a live V0.2 document would be served by a V0.1-era search | V0.2 publish only after the consumer search adapter consumes the V0.2 fields and acceptance passes (contract §16 steps 2–6) | brief; `36-` |
+| `PORTFOLIO-PUBLISH-GATE` | **`WEB_RECON_PUBLISH_COMPLETE` · `WAITING_FOR_BOOSTCHAT_HOSTED_VALIDATION`** (2026-09-27, `39-`) | was: the consumer's search did not yet use the V0.2 semantics. BoostChat's adapter, matcher V0.2 and acceptance landed (its own ledger), and web-recon published V0.2 for the demo (contract §16 step 4): live document `d56509c8…` = the golden bytes, rollback drilled. Not closed globally: BoostChat still has to refresh its snapshot, roll the consumer out, run the hosted conversation E2E and validate rollback / blast radius from its side (§16 steps 5–6) | close when BoostChat's hosted validation passes | brief; `36-`; `39-` |
 | `DEMO-PIN-PACKAGE-SPLIT` | **closed 2026-09-26 (WEB-D2)** | the demo is pinned to `interior-01@1.6.0` with the 19-record V0.2 corpus, while `current.json` deliberately stays on the 1.5.2-built V0.1 package (`PORTFOLIO-PUBLISH-GATE`). The suites now accept exactly two states (`platform/test/demo-rollout.ts`). `POST_PUBLISH_STEADY` keeps the strict "current package built with the pin" rule. `PRE_PUBLISH_TRANSITION` is valid only if current.json is the V0.1 package, site:publish still plans it, the V0.2 golden exists separately, nothing V0.2 is built into data/site-builds, the corpus emits the golden, and the V0.1 and live packages are byte-intact; anything else fails. predemo, predemo2, ia150, ia151 and ia152 are green. Of the 17 failures, 4 were not the split: ia152 F2 (pin moved) and ia150 R3 / ia151 R2 / ia152 R2 (1.6.0 platform surface, `release-160-surface.ts`), both fixed; step6 H/L/N are split out to `STEP6-V02-CORPUS-RULES` | done; after the V0.2 publish, `demoRollout` reports steady. *Corrected 2026-09-27 (`38-` §6): suite edits ARE needed beyond `integration.test.ts` B2b/G1–G5/R2 — see `POST-PUBLISH-SUITE-RESTATE`* | `37-` §3–§4 |
 | `WIDGET-SEAM-RELEASE-SOURCES` | **closed 2026-09-26 (WEB-D1, option A)** | `interior-01@1.6.0` snapshotted the widget-seam files; the canonical sources were uncommitted, so I2b failed on a clean checkout. The seam lane is committed (`b0e7a4f`): 65/65 release sources equal the stored `1.6.0` files, and I2b and slice1 (86/0) pass on a clean `git archive b0e7a4f`. No re-cut, no release artefact touched | done | `37-` §2 |
 | `DEMO-AREA-BASIS-LABEL` | **done 2026-09-27 (1.6.1)** | the detail page labelled every area with the one slot `areaLabel` = "공급면적", so `bi-14` (전용 84㎡) read "공급면적 = 84 m²". Now the label follows `area.basis`: supply → `areaSupplyLabel` 공급면적, exclusive → `areaExclusiveLabel` 전용면적, absent/unknown → `areaLabel` 면적. The figure is as authored with no conversion; an absent area gets no row. detail-facts AREA-UI-1…6, B4/B5 (real build, 19/19) and step6 H / H·build | done | `38-` §1, §4; commits `11c3c92` (renderer), `23060ad` (cut + pin) |
 | `STEP6-V02-CORPUS-RULES` | **done 2026-09-27** | step6 was 27/3 on the V0.2 corpus. Restated per the owner policy in the brief: H = an area may be absent, a present one is labelled by its basis; L = `galleryGroups`/`keywords` optional, cover fallback valid, a broken visual still fails; N = explicit literal expectations on the 19 records; O = page set = an independent route plan + Next's error pages, no magic number. 32/0 in `PRE_PUBLISH_TRANSITION` and in a simulated `POST_PUBLISH_STEADY` | done | `38-` §4.2; commit `21ddf4f` |
 | `TEMPLATE-160-CHANGELOG` | **done 2026-09-27 (1.6.1)** | the canonical `template.ts` 1.6.0 paragraph now names the head-scripts seam and the renderer change (`app/layout.tsx`). A dated note records what the stored 1.6.0 copy got wrong. The stored 1.6.0 is untouched, and the 1.6.1 paragraph makes no false "byte-identical" or "no renderer change" claim | done | `38-` §2; commit `23060ad` |
 | `DEMO-DETAIL-V02-FACTS` | **done 2026-09-27 (1.6.1)** | the detail page renders the V0.2 facts only when authored, read from the canonical record (no second facts object): 리모델링 구분 (projectType), 주요 공사 범위 (workScopeIds, BoostChat's words, authored order) and 총 공사비 (exact or range; the same label for partial projects, never a quote or a per-room price). Nothing is inferred. detail-facts F1–F7, B4 (19/19 = the build's integration record) | done | `38-` §1, §4.1; commits `11c3c92`, `23060ad` |
-| `POST-PUBLISH-SUITE-RESTATE` | open — controlled publish session | a simulated `POST_PUBLISH_STEADY` root (1.6.1 V0.2 package current) keeps step6, detail-facts and ia151 green, but five checks hard-code the 8-record page counts: predemo P2 and predemo2 G1 (`details.length === 8`), ia150 P1 (15 HTML pages → 26) and P3 (8 details → 19), ia152 P1 (13 canonicals → 24). Together with the known `integration.test.ts` B2b/G1–G5/R2 | restate in the same session that performs the controlled V0.2 publish, from the route plan (as step6 O does), never a new magic number | `38-` §6 |
+| `POST-PUBLISH-SUITE-RESTATE` | **done 2026-09-27** (`39-`) | predemo P2, predemo2 G1, ia150 P1/P3 and ia152 P1 now compare exact page sets composed from the corpus (`demoExpectedPages`: fixed IA pages + Next's error pages + one `portfolio/<slug>.html` per packaged record), no count. `integration.test.ts`: B2b/G4/R2 state the rollout invariant per state (POST: current = the demo's V0.2 identity with the golden bytes, previous = V0.1 intact), G1–G3/I2 address the V0.1 package by its frozen id, the pilot's build parts are a self-checking literal (keep-2 retires its directory), G5 is point-in-time after the publish. 15/15 green in PRE, in a simulated POST root and in the real POST state. Fresh review 0 BLOCKER, 1 MAJOR + 2 MINOR fixed | done | `38-` §6; `39-` §2; commit `a2e54dd` |
 | `DEMO-DETAIL-ROW-OVERLAP` | open (product, minor) | the demo detail page shows both 공사 유형 (category) and 리모델링 구분 (projectType), and both 공사 범위 (free-text `scope`) and 주요 공사 범위 (structured ids). They are distinct facts and do not contradict each other in the corpus (detail-facts B5); merging or hiding one is a product choice | owner decision; any change is a later template cut | `38-` §9 |
 | `TEMPLATE-161-UPGRADE-NOTE` | open (minor) | review `38-` MINOR-1: a site that states an area basis and re-pins to ≥ 1.6.1 without authoring `portfolio.detail.areaSupplyLabel` / `areaExclusiveLabel` shows the neutral English default instead of its old `areaLabel`. That is fail-safe (never a wrong basis) but a silent copy change; the 1.6.1 changelog does not name the migration step. The demo authors both labels; no other site pins ≥ 1.6.0 | any other site's re-pin to ≥ 1.6.1: author the two labels; add one changelog sentence at the next `interior-01` cut | `38-` §7 |
 | `JEV-ENABLE-GATE` | open | `JEV_API_KEY` present must never by itself cause a call | require explicit mode enabled **and** tenant opt-in **and** an allowed rollout phase | brief |
@@ -282,6 +296,7 @@ twin comparison, which is `D9-3`'s restatement — **withdrawn** as an illegitim
 
 *(2026-09-26: the producer side of L16 — emitter, validator, golden — is done; its publish and the V0.2 E2E are not, and are gated by `PORTFOLIO-PUBLISH-GATE`.)*
 
-L13 BoostChat search adapter · L14 consult state/extraction/cards · L16 publish + V0.2 E2E ·
+L13 BoostChat search adapter · L14 consult state/extraction/cards · L16 publish + V0.2 E2E
+(*2026-09-27: the producer publish of the demo is done, `39-`; the hosted V0.2 E2E is BoostChat's*) ·
 L17 full regression + fresh final review · L18 exposure re-audit then `PUBLIC_ACTION_TOOLS_ENABLED=true`
 (`OD-S`, gated on a passing review — **round 8 did not pass**) · L19 real AI QA · L20 widget browser E2E.
