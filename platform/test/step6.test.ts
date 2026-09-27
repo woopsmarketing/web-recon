@@ -22,6 +22,10 @@
  * stay on an older one) / live source = the demo's release (no drift) / platform tree still = baseline".
  * In the Portfolio V0.2 pre-publish window (V0.2 pin/corpus, frozen V0.1 package current) the
  * package-vs-pin claims are held to demo-rollout.ts's PRE_PUBLISH_TRANSITION instead — never looser.
+ * The data rules H / L / N / O are stated for the 19-record V0.2 corpus (docs/result/interior-portfolio-v0.2/38-):
+ * an area and a gallery / keywords may be absent (never invented), filter expectations are explicit
+ * literals derived from the authored corpus, and the page set comes from the route plan — each checked
+ * on the current package AND on the pinned release's build of the whole corpus (U's rebuild).
  *
  * Run AFTER `pnpm site:build boost-interior-demo`:
  *   tsx --tsconfig platform/tsconfig.json platform/test/step6.test.ts
@@ -35,7 +39,9 @@ import { buildProjectFilterVocabulary, evaluateProjectFilter, normalizeProjectFi
 import { BannersDocSchema, ProjectsDocSchema, ReviewsDocSchema, areaBasisOf, projectAssetRefs, type Project } from "../content/schema";
 import { buildSite, prepareSiteInput } from "../build/site-build";
 import { collectReleaseSources, computeTemplateSourceHash, loadRelease, verifyRelease } from "../release/release";
+import { createContentReader } from "../content/reader";
 import { buildSiteSnapshot, loadSiteInstance } from "../site/load";
+import { planRoutes } from "../site/routes";
 import { resolveEffectiveTheme } from "../theme/theme";
 import { hashJson, sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
@@ -331,12 +337,35 @@ await check("G no Apartmentary leakage: the release's frozen forbidden terms + t
 
 // --------------------------------------------------------- area basis --
 console.log("\n[area] Korean area-basis contract");
-await check("H the 34평 flagship is { 34, pyeong, basis: supply }; EVERY project states a basis (none unknown); the 공급면적 label is true for every project", async () => {
+/** The demo's detail area labels by the record's OWN basis (site copy since 1.6.1) — H's expected side. */
+const AREA_LABEL = { supply: "공급면적", exclusive: "전용면적", unknown: "면적" } as const;
+const AREA_SYMBOL = { pyeong: "평", m2: " m²", sqft: " sq ft" } as const;
+const areaRowOf = (h: string) => {
+  const m = /data-fact="area"><dt>([^<]*)<\/dt><dd>([^<]*)<\/dd>/.exec(mainOf(h));
+  return m ? [m[1]!, m[2]!] : undefined;
+};
+/** A present area → its own basis label + the authored figure (no conversion); no area → no row and no area label. */
+function assertAreaRows(where: string, pages: Record<string, string>, records: readonly Project[]) {
+  for (const p of records) {
+    const h = pages[`portfolio/${p.slug}.html`];
+    assert(h, `${where}: no detail page for ${p.id}`);
+    if (!p.area) {
+      assert(!areaRowOf(h) && !/<dt>[^<]*면적<\/dt>/.test(mainOf(h)), `${where} ${p.id}: an area row / label without an area`);
+      continue;
+    }
+    assert(Number.isInteger(p.area.value) && p.area.value < 1000, `${p.id}: the expected figure below assumes a small integer`);
+    eq(areaRowOf(h), [AREA_LABEL[areaBasisOf(p.area)], `${p.area.value}${AREA_SYMBOL[p.area.unit]}`], `${where} ${p.id} area row`);
+  }
+}
+await check("H area basis (V0.2): the 34평 flagship is { 34, pyeong, supply }; an area may be ABSENT (never invented) and a present one is labelled by ITS basis — 공급면적 / 전용면적 / unqualified 면적 — with the authored figure, on every page of the current package (the pinned release over the whole corpus: H·build)", async () => {
   const flagship = projects.find((p) => p.id === FLAGSHIP)!;
   eq(flagship.area, { value: 34, unit: "pyeong", basis: "supply" }, "flagship area");
-  for (const p of projects) assert(p.area && p.area.basis !== undefined && areaBasisOf(p.area) !== "unknown", `${p.id}: basis not stated`);
-  assert(slots.values["portfolio.detail"].areaLabel === "공급면적", "detail area label");
-  for (const p of projects) assert(areaBasisOf(p.area!) === "supply", `${p.id}: label says 공급면적 but basis is ${areaBasisOf(p.area!)}`);
+  // every branch of the rule has a real witness in the corpus: supply 평, supply m², exclusive m², no area
+  const byId = (id: string) => projects.find((p) => p.id === id)!;
+  eq([byId("bi-17").area, byId("bi-14").area, byId("bi-15").area], [{ value: 112, unit: "m2", basis: "supply" }, { value: 84, unit: "m2", basis: "exclusive" }, undefined], "witnesses bi-17 / bi-14 / bi-15");
+  const labels = slots.values["portfolio.detail"];
+  eq([labels.areaSupplyLabel, labels.areaExclusiveLabel, labels.areaLabel], [AREA_LABEL.supply, AREA_LABEL.exclusive, AREA_LABEL.unknown], "detail area labels (supply, exclusive, no stated basis)");
+  assertAreaRows("current package", html, await demoPackagedProjects(repoRoot, projects));
 });
 await check("I no automatic 34 → 84: the area fact renders as authored (34평) — no ㎡/112/84 derived beside it; 84㎡ appears only as the separately authored 전용면적 sentence; no '34평 = 84' anywhere", async () => {
   const flagship = projects.find((p) => p.id === FLAGSHIP)!;
@@ -351,8 +380,18 @@ await check("I no automatic 34 → 84: the area fact renders as authored (34평)
   const equiv = /34\s*평\s*(=|≈|≒|→|\(|은|는)?\s*(약\s*)?84/;
   for (const t of texts) assert(!equiv.test(visibleText(t.text)), `${t.file}: 34평 presented as 84`);
   for (const p of projects) for (const s of [p.title, p.summary ?? "", ...(p.body ?? [])]) assert(!equiv.test(s), `${p.id}: ${s.slice(0, 40)}`);
-  // every other card/list surface shows the authored figure too
-  assert(!/84/.test(visibleText(mainOf(html["portfolio.html"]!))), "84 on the portfolio list");
+  // every other card/list surface shows the authored figure too. V0.2: an 84 on the list may only be a
+  // record's OWN authored title / summary stating its OWN authored 84 m² (bi-14, 전용 84㎡) — never a
+  // figure derived from 34평; everything else on the list is still held to "no 84"
+  let list = visibleText(mainOf(html["portfolio.html"]!));
+  for (const p of await demoPackagedProjects(repoRoot, projects)) {
+    for (const s of [p.title, p.summary ?? ""]) {
+      if (!/84/.test(s)) continue;
+      assert(p.area?.value === 84 && p.area.unit === "m2", `${p.id}: "${s.slice(0, 40)}" states 84 but its authored area is ${JSON.stringify(p.area)}`);
+      list = list.split(s).join(" ");
+    }
+  }
+  assert(!/84/.test(list), "84 on the portfolio list");
 });
 
 // -------------------------------------------------------------- assets --
@@ -415,17 +454,45 @@ await check("K3 asset status is honest: 04-asset-status.json matches the registr
 
 // ------------------------------------------------------------- content --
 console.log("\n[content] one canonical projects collection, Korean, linked");
-await check("L all published project slugs (and ids) are unique; ≥ 6 projects; every project has the Step 6 data-quality fields", async () => {
+const assetPath = new Map(snapshot.assets.map((a) => [a.id, a.publicPath] as const));
+/**
+ * A usable visual on every detail page, by the Template's rule: an authored gallery renders every one of its
+ * photos (and only the project's own), a project without one renders exactly its cover (the designed
+ * cover-only fallback) — and every image the page references is a non-empty file in the package.
+ */
+async function assertVisuals(where: string, site: string, pages: Record<string, string>, records: readonly Project[]) {
+  for (const p of records) {
+    const h = pages[`portfolio/${p.slug}.html`];
+    assert(h, `${where}: no detail page for ${p.id}`);
+    const gallery = /<div class="i1-detail__gallery">([\s\S]*?)<\/div><div class="i1-detail__info/.exec(h)?.[1] ?? "";
+    const srcs = [...new Set([...gallery.matchAll(/<img\b[^>]*?\bsrc="([^"]+)"/g)].map((m) => m[1]!))];
+    assert(srcs.length > 0, `${where} ${p.id}: no image in the gallery`);
+    for (const src of srcs) assert(((await readFile(path.join(site, src)).catch(() => undefined))?.length ?? 0) > 0, `${where} ${p.id}: broken image ${src}`);
+    const own = (m: { asset: string }) => assetPath.get(m.asset) ?? `(unregistered ${m.asset})`;
+    if (!p.galleryGroups) {
+      eq(srcs, [own(p.cover)], `${where} ${p.id}: cover-only fallback`);
+      continue;
+    }
+    const items = p.galleryGroups.flatMap((g) => g.items);
+    const mine = new Set(items.flatMap((it) => [own(it.image), ...(it.before ? [own(it.before)] : [])]));
+    eq(srcs.filter((src) => !mine.has(src)), [], `${where} ${p.id}: gallery images that are not the project's`);
+    for (const it of items) assert(srcs.includes(own(it.image)), `${where} ${p.id}: gallery photo ${it.image.asset} not rendered`);
+  }
+}
+await check("L all published project slugs (and ids) are unique; ≥ 6 projects; every project has the Step 6 core fields (Korean title + summary, body, location, scope, period, duration); galleryGroups and keywords are OPTIONAL (V0.2 cover-only records, schema-valid when present); the flagship keeps its designed gallery; every page of the current package renders a usable visual (the whole corpus: L·build)", async () => {
   assert(projects.length >= 6, `${projects.length} projects`);
   eq([new Set(projects.map((p) => p.slug)).size, new Set(projects.map((p) => p.id)).size], [projects.length, projects.length], "unique");
   for (const p of projects) {
-    for (const k of ["summary", "body", "location", "area", "scope", "keywords", "galleryGroups", "period", "durationWeeks"] as const) assert(p[k] !== undefined, `${p.id}: ${k} missing`);
+    for (const k of ["summary", "body", "location", "scope", "period", "durationWeeks"] as const) assert(p[k] !== undefined, `${p.id}: ${k} missing`);
     assert(/[가-힣]/.test(p.title) && /[가-힣]/.test(p.summary!), `${p.id}: not Korean`);
   }
+  // the optional fields really are exercised both ways (bi-18: no keywords; bi-09…: cover only)
+  assert(projects.some((p) => p.keywords === undefined) && projects.some((p) => p.galleryGroups === undefined) && projects.some((p) => p.galleryGroups !== undefined), "optional gallery / keywords not exercised both ways");
   const flagship = projects.find((p) => p.id === FLAGSHIP)!;
   const count = flagship.galleryGroups!.reduce((n, g) => n + g.items.length, 0);
   assert(count >= 10 && count <= 14, `flagship gallery ${count}`);
   for (const room of ["현관", "거실", "주방", "침실", "욕실"]) assert(flagship.galleryGroups!.some((g) => g.name.includes(room)), `flagship room ${room}`);
+  await assertVisuals("current package", demo.site, html, await demoPackagedProjects(repoRoot, projects));
 });
 await check("M every internal link of every generated page resolves inside the package; every project of the package has its detail page (pre-publish: the V0.1 package's own records, demo-rollout.ts)", async () => {
   const files = new Set(await walkFiles(demo.site));
@@ -468,37 +535,55 @@ await check("Q+R the demo uses the ONE canonical projects collection: content/ h
 
 // -------------------------------------------------------------- filters --
 console.log("\n[filter] the unchanged filter contract against Korean demo content");
-await check("N keyword / type / area / style / price / sort / combined / zero-result, evaluated by the platform evaluator with the site's own scales (pyeong, krw-pyeong)", async () => {
+/**
+ * N's expected ids are LITERALS for the canonical 19-record corpus, derived from the authored records by the
+ * documented semantics (OR within a dimension, AND across; 평 buckets; 평당 KRW buckets on AUTHORED
+ * pricePerArea only; keyword tokens over title / summary / location / scope / keywords) — computed
+ * independently of the evaluator under test, never by calling it (38-).
+ */
+await check("N keyword / type / area / style / price / sort / combined / zero-result on the 19-record corpus, evaluated by the platform evaluator with the site's own scales (pyeong, krw-pyeong), against explicit expected ids", async () => {
   eq(settings.overrides["portfolio.index"], { areaScale: "pyeong", priceScale: "krw-pyeong" }, "portfolio.index settings");
+  eq(projects.length, 19, "the canonical corpus these literals describe");
   const records = projects.map((p) => toProjectFilterRecord({ ...p, category: p.category }));
   const categories = (await readJson(path.join(demoDir, "content/categories.json"))).items;
   const vocab = buildProjectFilterVocabulary(records, { groups: ["keyword", "type", "area", "style", "price"], categories, areaScale: "pyeong", priceScale: "krw-pyeong" });
   eq(vocab.groups, ["keyword", "type", "area", "style", "price"], "active groups");
   eq(vocab.area!.buckets.map((b) => b.id), ["lt20", "20", "30", "40", "50plus"], "area buckets in use");
   eq(vocab.price!.buckets.map((b) => b.id), ["lt180", "180", "250", "300"], "price buckets in use");
-  assert(vocab.types.length === 4 && vocab.styles.length >= 6, `types ${vocab.types.length}, styles ${vocab.styles.length}`);
+  eq(vocab.types.map((t) => t.id), ["full-remodel", "kitchen-bath", "move-in-styling", "partial-remodel"], "types in use");
+  eq(vocab.styles, ["화이트", "모던", "내추럴", "간접조명", "그레이지", "우드 포인트", "미니멀", "수납 특화", "베이지", "월넛", "웜 화이트", "이사 전 공사"], "styles by frequency");
   const run = (input: ProjectFilterInput) => evaluateProjectFilter(records, normalizeProjectFilter(input, vocab), vocab).map((r) => r.id);
   const set = (input: ProjectFilterInput) => run(input).sort();
-  eq(set({ keyword: "수납" }), ["bi-01", "bi-03", "bi-07"], "keyword 수납");
-  eq(set({ keyword: "수성구" }), ["bi-01", "bi-03", "bi-08"], "keyword 수성구 (location)");
-  eq(set({ keyword: "중문" }), ["bi-01", "bi-06"], "keyword 중문 (scope)");
-  eq(set({ type: ["kitchen-bath"] }), ["bi-04"], "type");
-  eq(set({ area: ["30"] }), ["bi-01", "bi-04", "bi-06"], "area 30평대");
+  eq(set({ keyword: "수납" }), ["bi-01", "bi-03", "bi-07", "bi-10", "bi-12", "bi-18"], "keyword 수납");
+  eq(set({ keyword: "수성구" }), ["bi-01", "bi-03", "bi-08", "bi-10", "bi-13"], "keyword 수성구 (location)");
+  eq(set({ keyword: "중문" }), ["bi-01", "bi-06", "bi-10", "bi-13", "bi-18"], "keyword 중문 (scope)");
+  eq(set({ keyword: "욕실 방수" }), ["bi-15"], "two keyword tokens = AND");
+  eq(set({ type: ["kitchen-bath"] }), ["bi-04", "bi-14", "bi-15", "bi-16"], "type");
+  eq(set({ area: ["30"] }), ["bi-01", "bi-04", "bi-06", "bi-09", "bi-10", "bi-16", "bi-17", "bi-18", "bi-19"], "area 30평대 (bi-17's 112 m² → 33.9평 by unit conversion; bi-14's 84 m² → 25.4평 is not)");
   eq(set({ area: ["lt20", "50plus"] }), ["bi-07", "bi-08"], "area OR");
-  eq(set({ style: ["그레이지"] }), ["bi-03", "bi-08"], "style");
-  eq(set({ price: ["250"] }), ["bi-01", "bi-05", "bi-07"], "price 250–300만");
-  eq(set({ type: ["full-remodel"], style: ["화이트"], area: ["30"] }), ["bi-01"], "combined");
+  eq(set({ style: ["그레이지"] }), ["bi-03", "bi-08", "bi-10", "bi-13"], "style");
+  eq(set({ price: ["250"] }), ["bi-01", "bi-05", "bi-07"], "price 250–300만 (authored 평당 prices only)");
+  eq(set({ type: ["full-remodel"], style: ["화이트"], area: ["30"] }), ["bi-01", "bi-09"], "combined");
+  eq(set({ type: ["partial-remodel"], area: ["30"] }), ["bi-06", "bi-17", "bi-18", "bi-19"], "combined partial + 30평대");
   eq(set({ keyword: "한옥" }), [], "zero result");
-  eq(run({ sort: "area-desc" })[0], "bi-08", "largest first");
-  eq(run({ sort: "price-asc" }).slice(0, 2), ["bi-08", "bi-02"], "cheapest first");
-  eq(run({ sort: "price-asc" }).slice(-2).sort(), ["bi-04", "bi-06"], "projects without a price sort last");
-  eq(run({}), [...projects].sort((x, y) => Date.parse(y.publishedAt) - Date.parse(x.publishedAt)).map((p) => p.id), "default = newest first");
+  eq(run({ sort: "area-desc" }).slice(0, 3), ["bi-08", "bi-13", "bi-03"], "largest first");
+  eq(run({ sort: "area-desc" }).at(-1), "bi-15", "a project without an area sorts last");
+  eq(run({ sort: "price-asc" }), ["bi-08", "bi-02", "bi-05", "bi-07", "bi-01", "bi-03", "bi-04", "bi-06", "bi-09", "bi-10", "bi-11", "bi-12", "bi-13", "bi-14", "bi-15", "bi-16", "bi-17", "bi-18", "bi-19"], "cheapest first; the 13 projects without an authored price last, in default order");
+  eq(run({}), ["bi-01", "bi-02", "bi-03", "bi-04", "bi-05", "bi-06", "bi-07", "bi-08", "bi-09", "bi-10", "bi-11", "bi-12", "bi-13", "bi-14", "bi-15", "bi-16", "bi-17", "bi-18", "bi-19"], "default = newest first");
 });
 
 // ------------------------------------------------------------------ CTA --
 console.log("\n[cta] the site-wide floating seat");
-await check(`O exactly one floating CTA on EVERY generated page (home, portfolio, 8 details, 404${ia ? ", 3D, about, contact" : ""}), Korean label, ${ia ? "→ /contact" : "the business mailto"}`, async () => {
-  assert(htmlFiles.length === (ia ? 15 : 12), `pages: ${htmlFiles.join(", ")}`);
+/** Next's own error documents (app/not-found.tsx): emitted by every static export, never a planned route. */
+const NEXT_ERROR_PAGES = ["404.html", "_not-found.html"];
+await check(`O exactly one floating CTA on EVERY generated page — the page set is the route plan of the package's own records${ia ? " (home, portfolio, details, 3D, about, contact)" : ""} + Next's error pages — Korean label, ${ia ? "→ /contact" : "the business mailto"}`, async () => {
+  // expected side: the declared routes planned over the records the current package was built from
+  // (the whole corpus once steady, the V0.1 package's own records pre-publish) — never the build output
+  const packaged = new Set((await demoPackagedProjects(repoRoot, projects)).map((p) => p.id));
+  const plan = planRoutes(template.routes, createContentReader({ ...snapshot.content, projects: snapshot.content.projects.filter((p) => packaged.has(p.id)) }));
+  const planned = plan.routes.flatMap((r) => r.paths).map((p) => (p === "/" ? "index.html" : `${p.slice(1)}.html`));
+  eq(planned.filter((f) => f.startsWith("portfolio/")).length, packaged.size, "one planned detail page per packaged record");
+  eq([...htmlFiles].sort(), [...planned, ...NEXT_ERROR_PAGES].sort(), "generated pages = planned pages + error pages");
   for (const [f, h] of Object.entries(html)) eq(ctasOf(h), [{ href: CONTACT_HREF, label: "상담 문의" }], f);
 });
 
@@ -566,6 +651,8 @@ try {
   const at = demo.record.at;
   /** html page count of U's rebuild — the ON build of the demo's own inputs (P's reference pre-publish) */
   let rebuiltPages: number | undefined;
+  /** U's rebuild: the pinned release over the demo's own inputs (the whole corpus) — H·build / L·build */
+  let rebuiltSite: string | undefined;
   await check("U reproducible: same release + snapshot + settings + theme + assets → same buildInputId (twice, and = current), and an independent rebuild gives the same packageHash (pre-publish: = a second independent rebuild, demo-rollout.ts)", async () => {
     // Pre-publish (Portfolio V0.2 window) the current package is the frozen V0.1 one, not built from
     // these inputs, so "= current" becomes "= a second independent rebuild on its own root".
@@ -593,6 +680,7 @@ try {
     }
     eq([r.record.buildInputId, r.record.packageHash], [want, ref.packageHash], "independent rebuild");
     rebuiltPages = (await walkFiles(path.join(r.packageDir, "site"))).filter((f) => f.endsWith(".html")).length;
+    rebuiltSite = path.join(r.packageDir, "site");
   });
   await check("P no CTA when the configuration disables it: site.floating-cta.enabled = false → no seat on ANY page, nothing else about the pages' count changes", async () => {
     // the reference is the ON build of the same inputs: the current package once steady, U's rebuild
@@ -614,6 +702,19 @@ try {
     const pages = (await walkFiles(off)).filter((f) => f.endsWith(".html"));
     eq(pages.length, onPages, "page count");
     for (const f of pages) assert(!(await readFile(path.join(off, f), "utf8")).includes("i1-fcta"), `${f}: seat rendered while disabled`);
+  });
+  const rebuiltDetails = async () => {
+    assert(rebuiltSite, "U's rebuild did not complete");
+    return Object.fromEntries(await Promise.all(projects.map(async (p) => [`portfolio/${p.slug}.html`, await readFile(path.join(rebuiltSite!, `portfolio/${p.slug}.html`), "utf8").catch(() => "")] as const)));
+  };
+  await check("H·build the pinned release over the WHOLE corpus (U's rebuild): every present area under its own basis label with the authored figure — bi-14 전용면적 84 m², bi-17 공급면적 112 m² — and no area row for bi-15", async () => {
+    const pages = await rebuiltDetails();
+    assertAreaRows("pinned release", pages, projects);
+    const page = (id: string) => pages[`portfolio/${projects.find((p) => p.id === id)!.slug}.html`]!;
+    eq([areaRowOf(page("bi-14")), areaRowOf(page("bi-17")), areaRowOf(page("bi-15"))], [["전용면적", "84 m²"], ["공급면적", "112 m²"], undefined], "witnesses");
+  });
+  await check("L·build the pinned release over the WHOLE corpus (U's rebuild): every detail page renders a usable visual — its full gallery, or exactly its cover for the V0.2 cover-only records — with no broken image", async () => {
+    await assertVisuals("pinned release", rebuiltSite!, await rebuiltDetails(), projects);
   });
 } finally {
   await rm(tmpRoot, { recursive: true, force: true });
