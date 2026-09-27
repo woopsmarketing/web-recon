@@ -11,6 +11,11 @@
  *                       and a partial's total stays the whole case's total ("총 공사비"), never a per-room
  *                       price or a quote;
  *          G            every shown fact equals the golden integration document's record, 19/19.
+ * [build] a REAL build of the demo's own inputs with its pinned release, in a throwaway root (data/sites
+ *        and data/site-builds are never touched): the 19 detail routes the golden document lists are
+ *        exactly the detail pages emitted, every page's visible fact rows agree with the integration
+ *        document the same build emitted (no contradiction; the page may show fewer facts, never other
+ *        ones), and that document is the golden, byte for byte (presentation never moves the resource).
  *
  * Every expected value is a literal written from the authored corpus and tied to the golden document
  * (check G) — never recomputed with the functions under test. The Korean fact labels are the demo's site
@@ -18,14 +23,17 @@
  *
  *   tsx --tsconfig platform/tsconfig.json platform/test/detail-facts.test.ts
  */
-import { readFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readdir, readFile, rm, symlink } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
+import { buildSite } from "../build/site-build";
 import { GOLDEN_DIR, GOLDEN_INPUT } from "../cli/integration-golden";
 import { emitIntegration } from "../integration/emit";
 import { createContentReader } from "../content/reader";
 import { createSiteContext } from "../site/context";
 import { buildSiteSnapshot } from "../site/load";
 import { planRoutes } from "../site/routes";
+import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
 import { portfolioDetail } from "../../templates/interior-01/v1/sections/PortfolioDetail";
 import { formatTotalPrice } from "../../templates/interior-01/v1/lib/format";
@@ -297,6 +305,123 @@ await check("F7 the facts never ship the raw basis / ids: labels and words only 
     for (const f of detail(ko, id).facts) assert(!/basis|supply|exclusive|unknown|_remodel|[a-z]+_[a-z]+/.test(`${f.label} ${f.value}`), `${id}: raw token in "${f.label} = ${f.value}"`);
   }
 });
+
+// ------------------------------------------------------------------------- build --
+console.log("\n[build] a real build of the demo with its pinned release (throwaway root)");
+async function walkFiles(dir: string, rel = ""): Promise<string[]> {
+  const out: string[] = [];
+  for (const e of await readdir(dir, { withFileTypes: true })) {
+    if (e.name === ".DS_Store") continue;
+    const r = rel ? `${rel}/${e.name}` : e.name;
+    if (e.isDirectory()) out.push(...(await walkFiles(path.join(dir, e.name), r)));
+    else out.push(r);
+  }
+  return out.sort();
+}
+const unescape = (t: string) => t.replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+/** The visible fact rows of a detail page: key → [label, value], in page order. */
+function pageFacts(html: string): Map<string, [string, string]> {
+  const dl = /<dl class="i1-facts" data-facts="">([\s\S]*?)<\/dl>/.exec(html)?.[1] ?? "";
+  const rows = [...dl.matchAll(/<div class="i1-facts__row" data-fact="([^"]+)"><dt>([^<]*)<\/dt><dd>([^<]*)<\/dd><\/div>/g)];
+  assert(rows.length === (dl.match(/<div class="i1-facts__row"/g) ?? []).length, "a fact row did not parse");
+  return new Map(rows.map((m) => [m[1]!, [unescape(m[2]!), unescape(m[3]!)] as [string, string]]));
+}
+const tmpRoot = await mkdtemp(path.join(os.tmpdir(), "detail-facts-root-"));
+try {
+  await mkdir(path.join(tmpRoot, "data/sites"), { recursive: true });
+  await symlink(path.join(repoRoot, "data/template-releases"), path.join(tmpRoot, "data/template-releases"));
+  await symlink(path.join(repoRoot, "node_modules"), path.join(tmpRoot, "node_modules"));
+  await cp(path.join(repoRoot, "data/sites", DEMO), path.join(tmpRoot, "data/sites", DEMO), { recursive: true });
+  let site = "";
+  const pages = new Map<string, string>();
+
+  await check(`B0 the demo builds with its pin ${PIN.releaseId}: status built, package QA pass, no builder warning`, async () => {
+    const r = await buildSite({ repoRoot: tmpRoot, siteId: DEMO, mode: GOLDEN_INPUT.mode, at: GOLDEN_INPUT.at });
+    assert(r.status === "built", `status ${r.status}`);
+    assert(r.record.qa.pass, `package QA: ${JSON.stringify(r.record.qa.failures ?? [])}`);
+    eq([r.record.template.releaseId, r.record.template.releaseHash], [PIN.releaseId, PIN.releaseHash], "built release");
+    eq(r.record.preflight.warnings, [], "builder warnings");
+    site = path.join(r.packageDir, "site");
+  });
+  await check("B1 the demo's site copy carries the basis-aware and V0.2 fact labels (the labels [unit] injects are its real copy)", async () => {
+    const values = (await readJson(`data/sites/${DEMO}/slots.json`)).values["portfolio.detail"];
+    eq(Object.fromEntries(Object.keys(KO_LABELS).map((k) => [k, values[k]])), KO_LABELS, "portfolio.detail labels");
+  });
+  await check("B2 DETAIL_ROUTES 19/19: the detail pages emitted are exactly the golden document's detailUrls (expected side = the golden, not the build)", async () => {
+    assert(site, "B0 build missing");
+    const want = (golden.records as { detailUrl: string }[]).map((r) => `${r.detailUrl.slice(1)}.html`).sort();
+    eq(want.length, 19, "golden detail routes");
+    const got = (await walkFiles(site)).filter((f) => /^portfolio\/[^/]+\.html$/.test(f));
+    eq(got, want, "emitted detail pages");
+    for (const f of got) pages.set(f, await readFile(path.join(site, f), "utf8"));
+  });
+  await check("B3 the build's own integration document IS the golden, byte for byte (manifest + portfolio document): presentation changes never move the resource", async () => {
+    assert(site, "B0 build missing");
+    for (const f of ["manifest.json", `portfolio.${GOLDEN_VERSION}.json`]) {
+      eq(sha256(await readFile(path.join(site, "_integration", f))), sha256(await readFile(path.join(repoRoot, GOLDEN_DIR, f))), `_integration/${f}`);
+    }
+    eq((await readdir(path.join(site, "_integration"))).sort(), ["manifest.json", `portfolio.${GOLDEN_VERSION}.json`], "_integration files");
+  });
+  await check("B4 DETAIL_INTEGRATION_CONSISTENCY 19/19: every visible area / projectType / main work / total / per-area row agrees with the build's integration record; a fact the record lacks has no row", async () => {
+    assert(pages.size === 19, "B2 pages missing");
+    const doc = JSON.parse(await readFile(path.join(site, "_integration", `portfolio.${GOLDEN_VERSION}.json`), "utf8"));
+    for (const r of doc.records as Record<string, any>[]) {
+      const facts = pageFacts(pages.get(`${r.detailUrl.slice(1)}.html`)!);
+      const w = WANT[r.id]!;
+      eq(r.property?.area, w.area?.raw, `${r.id} integration area`);
+      eq(facts.get("area"), w.area?.row, `${r.id} area row`);
+      eq(facts.get("projectType"), r.projectType ? [KO_LABELS.projectTypeLabel, w.projectType!.row] : undefined, `${r.id} projectType row`);
+      eq(facts.get("workScopes"), [KO_LABELS.workScopesLabel, (r.workScopeIds as string[]).map((id) => CONSUMER_WORDS[id]).join(", ")], `${r.id} main work row`);
+      eq(facts.get("totalPrice"), r.pricing?.total ? [KO_LABELS.totalPriceLabel, w.total!.row] : undefined, `${r.id} total row`);
+      // per-area price: only an AUTHORED figure is shown (the producer's derived one never reaches the page)
+      const per = r.pricing?.perArea;
+      eq(facts.get("price"), per?.source === "authored" ? ["평당 공사비", `평당 ${per.amount / 10_000}만 원`] : undefined, `${r.id} per-area row`);
+    }
+  });
+  await check("B5 no contradiction anywhere on a detail page: no 공급면적 beside an exclusive record, no 전용면적 beside a supply one, no area label without an area, no 총 공사비 without a total, no quote wording in the facts", async () => {
+    for (const r of golden.records as Record<string, any>[]) {
+      const html = pages.get(`${r.detailUrl.slice(1)}.html`)!;
+      const facts = pageFacts(html);
+      const labels = [...facts.values()].map(([l]) => l);
+      const basis = r.property?.area?.basis;
+      if (basis === "exclusive") assert(!labels.includes("공급면적"), `${r.id}: 공급면적 on an exclusive record`);
+      if (basis === "supply") assert(!labels.includes("전용면적"), `${r.id}: 전용면적 on a supply record`);
+      if (!r.property?.area) assert(!labels.some((l) => /면적$/.test(l)), `${r.id}: an area label without an area`);
+      const main = /<main[\s\S]*<\/main>/.exec(html)?.[0] ?? "";
+      if (!r.pricing?.total) assert(!main.includes("총 공사비"), `${r.id}: 총 공사비 without a total`);
+      for (const [l, v] of facts.values()) assert(!/견적|예상/.test(`${l} ${v}`), `${r.id}: "${l} = ${v}"`);
+    }
+  });
+  await check("B6 the browser gets words, not data: no raw area basis, work-scope id list, price range or projectType value in any shipped page or payload (the integration document aside; data-fact row names are presentation)", async () => {
+    for (const f of await walkFiles(site)) {
+      if (f.startsWith("_integration/") || !/\.(html|txt|json|js)$/.test(f)) continue;
+      const text = await readFile(path.join(site, f), "utf8");
+      assert(!/\\?"(basis|workScopeIds|minAmount|maxAmount|full_remodel|partial_remodel|exclusive)\\?"/.test(text), `${f}: raw V0.2 data shipped`);
+    }
+  });
+  await check("B7 representative records (full + area + total · full, no total · partial + total · exclusive area · no area · no projectType · range total) render as expected", () => {
+    const show = (id: string) => {
+      const r = (golden.records as Record<string, any>[]).find((x) => x.id === id)!;
+      const f = pageFacts(pages.get(`${r.detailUrl.slice(1)}.html`)!);
+      return V02_KEYS.map((k) => f.get(k)?.join(" = ") ?? "—").join(" | ");
+    };
+    const want: [string, string][] = [
+      ["bi-09", "공급면적 = 34평 | 리모델링 구분 = 전체 리모델링 | 주요 공사 범위 = 현관, 주방, 욕실, 바닥, 도배, 조명, 붙박이·제작 가구 | 총 공사비 = 5,000만 원"],
+      ["bi-01", "공급면적 = 34평 | 리모델링 구분 = 전체 리모델링 | 주요 공사 범위 = 현관, 주방, 욕실, 바닥, 조명, 붙박이·제작 가구 | —"],
+      ["bi-17", "공급면적 = 112 m² | 리모델링 구분 = 부분 리모델링 | 주요 공사 범위 = 거실, 바닥 | 총 공사비 = 1,250만 원"],
+      ["bi-14", "전용면적 = 84 m² | 리모델링 구분 = 부분 리모델링 | 주요 공사 범위 = 주방 | 총 공사비 = 1,500만 원"],
+      ["bi-15", "— | 리모델링 구분 = 부분 리모델링 | 주요 공사 범위 = 욕실 | 총 공사비 = 700만 원"],
+      ["bi-19", "공급면적 = 32평 | — | 주요 공사 범위 = 바닥, 도배, 조명 | 총 공사비 = 1,100만 원"],
+      ["bi-13", "공급면적 = 48평 | 리모델링 구분 = 전체 리모델링 | 주요 공사 범위 = 현관, 거실, 다이닝, 주방, 아이방, 드레스룸, 서재, 욕실, 창호, 조명, 붙박이·제작 가구 | 총 공사비 = 1억 2,500만 원 ~ 1억 4,000만 원"],
+    ];
+    for (const [id, line] of want) {
+      eq(show(id), line, id);
+      console.log(`       ${id}: ${line}`);
+    }
+  });
+} finally {
+  await rm(tmpRoot, { recursive: true, force: true });
+}
 
 console.log(`\ndetail-facts: ${passed} passed, ${failed.length} failed`);
 if (failed.length) {

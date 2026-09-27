@@ -93,8 +93,22 @@ const LIVE_PIN = { templateId: "interior-01", templateVersion: "1.5.2", releaseI
  * never moves it; only a change to the demo's own data does. Verified against the frozen live
  * package: with content/projects.json restored to its pre-V0.2 bytes this value becomes
  * liveParts.siteSnapshotHash (df04f877…) exactly — see 28 §4, B2.
+ *
+ * 1.6.1 (38-): the demo's slots.json carries the basis-aware area labels and the V0.2 fact labels
+ * — a third deliberate data delta. `_PRE_161` is the anchor before it; B2 reverts exactly the labels
+ * in DEMO_161_DETAIL_LABELS and must land on it again, so those labels are the whole of that delta.
  */
-const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN = "515a797765defd5c1230dc49a2fc426b70b106c39301bf3e0731ac370ad75db3";
+const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN = "8de4ff8710cd37f297e93d5926bf1244fad7ebfd81eab979711e050ad7d34140";
+const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_161 = "515a797765defd5c1230dc49a2fc426b70b106c39301bf3e0731ac370ad75db3";
+/** portfolio.detail copy the 1.6.1 re-pin changed: key → [before (undefined = absent), now]. */
+const DEMO_161_DETAIL_LABELS: Record<string, [string | undefined, string]> = {
+  areaLabel: ["공급면적", "면적"],
+  areaSupplyLabel: [undefined, "공급면적"],
+  areaExclusiveLabel: [undefined, "전용면적"],
+  projectTypeLabel: [undefined, "리모델링 구분"],
+  workScopesLabel: [undefined, "주요 공사 범위"],
+  totalPriceLabel: [undefined, "총 공사비"],
+};
 /**
  * 02 §21 — the V0.1 golden values (schemaVersion "0.1"). They describe the FROZEN V0.1 package on
  * disk in data/site-builds/ (current.json), which stays the site's current package until the
@@ -1258,6 +1272,15 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
   eq(computeBuildInputId(liveParts), LIVE_BUILD_INPUT_ID, "the live package's recorded parts reproduce its identity");
   const atLivePin = hashJson({ ...demo.snapshot, site: { ...demo.snapshot.site, template: LIVE_PIN } });
   eq(atLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN, "pin rolled back to 1.5.2 → the re-authored demo's snapshot hash");
+  const slots = demo.snapshot.slots as { values: Record<string, Record<string, unknown>> };
+  const detail160: Record<string, unknown> = { ...slots.values["portfolio.detail"] };
+  for (const [k, [before, now]] of Object.entries(DEMO_161_DETAIL_LABELS)) {
+    eq(detail160[k], now, `1.6.1 site copy ${k}`);
+    if (before === undefined) delete detail160[k];
+    else detail160[k] = before;
+  }
+  const slots160 = { ...slots, values: { ...slots.values, "portfolio.detail": detail160 } };
+  eq(hashJson({ ...demo.snapshot, slots: slots160, site: { ...demo.snapshot.site, template: LIVE_PIN } }), DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_161, "…with the 1.6.1 site copy reverted it is the pre-1.6.1 anchor: those labels are the whole of the slots delta (38-)");
   assert(atLivePin !== demo.parts.siteSnapshotHash, "the pin lives inside the snapshot, so rolling it back moves the hash");
   eq(hashJson({ ...demo.snapshot, site: { ...demo.snapshot.site, template: demoPin } }), demo.parts.siteSnapshotHash, "…and putting it back reproduces the current hash exactly: the pin is ALL the substitution touches");
   assert(atLivePin !== liveParts.siteSnapshotHash, "it no longer lands on the live package's own hash — the demo CONTENT is the second, deliberate delta (26, 28)");
