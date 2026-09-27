@@ -24,7 +24,7 @@ import { resolveSlots } from "../slots/slots";
 import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
 import { IA_HTML, IA_PATHS, IA_ROUTES, canonical150Sitemap } from "./canonical-150";
-import { demoBuiltRelease } from "./demo-rollout";
+import { demoBuiltRelease, demoExpectedPages } from "./demo-rollout";
 import { integrationSurfaceBefore, isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
 import { isRelease160Added, release160SurfaceBefore } from "./release-160-surface";
@@ -205,7 +205,7 @@ await check("D2 51 / 51 raster assets: registry = 51 rasters, 0 SVG stand-ins, u
 console.log("\n[package] the built demo pages");
 await check("P1 the package = the 1.4.2 page set + exactly /3d-portfolio, /about, /contact; the route plan generates each once; the sitemap lists them on the demo origin", async () => {
   const files = Object.keys(html).sort();
-  eq(files.length, 15, "15 HTML pages");
+  eq(files, (await demoExpectedPages(repoRoot)).pages, "HTML pages = the fixed IA pages + Next's error pages + one detail per packaged record");
   for (const f of IA_HTML) assert(files.includes(f), `${f}: page`);
   eq(IA_ROUTES.map((r) => record.preflight.routes[r.key]), [1, 1, 1], "route plan");
   const sitemap = await readFile(path.join(pkg, "site/sitemap.xml"), "utf8");
@@ -234,7 +234,7 @@ await check("P2 header on EVERY page: brand, then portfolio · 3D · about · th
     assert(!/<dialog\b|data-menu=""|i1-menu__/.test(stripScripts(h)), `${f}: menu markup in the server HTML`);
   }
 });
-await check("P3 every contact CTA → /contact: the floating seat on all 15 pages, the detail CTA on all 8 details, the hero's contact slide; the only mailto links are the footer address (every page) and the /contact direct address", () => {
+await check("P3 every contact CTA → /contact: the floating seat on every page, the detail CTA on every detail, the hero's contact slide; the only mailto links are the footer address (every page) and the /contact direct address", async () => {
   for (const [f, h] of Object.entries(html)) {
     const seat = [...h.matchAll(/<div class="i1-fcta" data-section="site\.floating-cta"><a class="i1-fcta__link" data-floating-cta="" href="([^"]+)">[\s\S]*?<span>([^<]*)<\/span><\/a><\/div>/g)].map((m) => [m[1], m[2]]);
     eq(seat, [["/contact", "상담 문의"]], `${f}: floating seat`);
@@ -242,7 +242,7 @@ await check("P3 every contact CTA → /contact: the floating seat on all 15 page
     eq(mailtos, f === "contact.html" ? [`mailto:${EMAIL}`, `mailto:${EMAIL}`] : [`mailto:${EMAIL}`], `${f}: mailto links`);
   }
   const details = Object.entries(html).filter(([f]) => /^portfolio\/(?!page\/)[^/]+\.html$/.test(f));
-  eq(details.length, 8, "details");
+  eq(details.map(([f]) => f).sort(), (await demoExpectedPages(repoRoot)).details, "details = one per packaged record");
   for (const [f, h] of details) assert(h.includes('<div class="i1-detail__cta" data-cta=""><p>비슷한 공사를 계획하고 계신가요?</p><a class="i1-button" href="/contact">상담 문의하기</a></div>'), `${f}: detail CTA`);
   const hero = /data-section="home\.hero"[\s\S]*?<\/section>/.exec(html["index.html"]!)?.[0] ?? "";
   assert(/<a class="i1-pill i1-pill--light" href="\/contact">/.test(hero), "hero contact slide");

@@ -14,13 +14,16 @@
  *     platform/cli/integration-golden.ts): the pure emission of the demo equals it byte for byte,
  *     its golden.json records the facts of those bytes, and the 19-record corpus still covers the
  *     shapes the contract exercises (counts, area bases, price shapes, missing fields);
- *   - V0.1 compatibility: the V0.1 golden package (data/site-builds/…/current.json) and the live
- *     pilot package are untouched and self-consistent, and nothing V0.2 is staged there for publish;
+ *   - V0.1 compatibility: the frozen V0.1 package (data/site-builds/…/packages/0f80b239…) and, while
+ *     on disk, the live pilot package are untouched and self-consistent;
+ *   - the rollout state (demo-rollout.ts): before the V0.2 publish the V0.1 package is current and
+ *     nothing V0.2 is staged; after it the current package is the demo's V0.2 identity with the
+ *     golden's integration bytes and the V0.1 package is its rollback (B2b, G4, R2; 39-);
  *   - the builder seam: default OFF (fixtures keep their pre-integration identity), the demo ON,
  *     preview never emits, the producer version is a build input, OFF = the pre-integration
  *     buildInputId of the live package;
- *   - the golden package of boost-interior-demo (data/site-builds/…/current.json): the contract's
- *     §21 example values, the live 1.5.2 package untouched and only two files added, INV-3/INV-5;
+ *   - the V0.1 package of boost-interior-demo: the contract's §21 example values, the live 1.5.2
+ *     package untouched and only two files added (point-in-time once keep-2 retires it), INV-3/INV-5;
  *   - real site:build runs on throwaway roots: same input → byte-identical package, a fixture
  *     opted in (generic, no site named in code), an empty site, no https origin / a forbidden
  *     character / preview → no emit or a failed build, a fixture OFF rebuild byte-neutral;
@@ -68,6 +71,7 @@ import { assertIntegration, isRootRelativePath, validateIntegration } from "../i
 import { ProjectSchema, type Project } from "../content/schema";
 import template from "../../templates/interior-01/v1/template";
 import { GOLDEN_DIR, goldenRecord as goldenRecord02 } from "../cli/integration-golden";
+import { demoExpectedPages, demoRollout } from "./demo-rollout";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -85,6 +89,18 @@ const LIVE_PACKAGE_HASH = "cd048406311f22b63cf83bd240b0579e03b69f3b60def82527e6f
 const RELEASE_152 = "interior-01-1.5.2-d87807590d64";
 /** 1.5.2's frozen releaseHash — the immutability golden (I1): a stored release may never move. */
 const RELEASE_152_HASH = "d87807590d64ea7901b226d43526795793805527647313ee4af22f8511577a08";
+/**
+ * The live package's recorded build-input parts (its build-record.json), literal because the first
+ * V0.2 build of the demo retires that package directory (keep-2: current + previous only; its sealed
+ * copy stays in R2). Self-checking: B2 asserts they hash to LIVE_BUILD_INPUT_ID, and G4 asserts the
+ * on-disk record equals them while the directory exists.
+ */
+const LIVE_PARTS = {
+  releaseHash: RELEASE_152_HASH,
+  siteSnapshotHash: "df04f8775a2d28c08ecff1544a28f0c268e0897517ed99501a7f4d6918264e54",
+  mode: "public",
+  toolchainHash: "22e72379efb13d9ac8fe2cc0b5e7000566df689d540da253428c26ad2d7393d1",
+} as const;
 /** the pin the live package was built from (its snapshot carries it, so it is a build input) */
 const LIVE_PIN = { templateId: "interior-01", templateVersion: "1.5.2", releaseId: RELEASE_152, releaseHash: RELEASE_152_HASH } as const;
 /**
@@ -92,7 +108,7 @@ const LIVE_PIN = { templateId: "interior-01", templateVersion: "1.5.2", releaseI
  * "the pin is isolable". It is deliberately taken at the LIVE pin, so re-pinning the demo again
  * never moves it; only a change to the demo's own data does. Verified against the frozen live
  * package: with content/projects.json restored to its pre-V0.2 bytes this value becomes
- * liveParts.siteSnapshotHash (df04f877…) exactly — see 28 §4, B2.
+ * LIVE_PARTS.siteSnapshotHash (df04f877…) exactly — see 28 §4, B2.
  *
  * 1.6.1 (38-): the demo's slots.json carries the basis-aware area labels and the V0.2 fact labels
  * — a third deliberate data delta. `_PRE_161` is the anchor before it; B2 reverts exactly the labels
@@ -111,10 +127,13 @@ const DEMO_161_DETAIL_LABELS: Record<string, [string | undefined, string]> = {
 };
 /**
  * 02 §21 — the V0.1 golden values (schemaVersion "0.1"). They describe the FROZEN V0.1 package on
- * disk in data/site-builds/ (current.json), which stays the site's current package until the
- * consumer is ready for V0.2 (07 §16; PUBLISH_ALLOWED = NO). They are no longer what this producer
- * emits, and are asserted only against that package (the V0.1 compatibility checks, G1–G5).
+ * disk in data/site-builds/: the demo's current package in PRE_PUBLISH_TRANSITION, its rollback
+ * (previous.json) once the V0.2 package is current (07 §16 step 4; docs/result/interior-portfolio-v0.2/39).
+ * They are no longer what this producer emits, and are asserted only against that package (the V0.1
+ * compatibility checks, G1–G3), addressed by its own frozen id — never by "whatever current.json names".
  */
+const V01_BUILD_INPUT_ID = "0f80b2395724a721024bd43bcfdac383ba5328e820f2210eebe595002727127a";
+const V01_PACKAGE_HASH = "286d44ab7d1f0c1202e992d8e17e384c6391d5c59d1a1eb321808f0dcc468e9e";
 const V01_DEMO_VERSION = "6346c472e162ae07b76a4686fce54c51";
 const V01_DEMO_DOC_BYTES = 5292;
 const DEMO_MANIFEST_BYTES = 274;
@@ -147,6 +166,8 @@ const DEMO_STYLE_VALUES = ["그레이지", "내추럴", "모던", "미니멀", "
 let passed = 0;
 const failed: string[] = [];
 const skipped: string[] = [];
+/** checks whose artefact keep-2 has retired: counted as passed, listed in the summary, never silent */
+const pointInTime: string[] = [];
 async function check(name: string, fn: () => unknown | Promise<unknown>) {
   try {
     await fn();
@@ -259,8 +280,23 @@ const editJson = async (file: string, f: (doc: any) => void) => {
 // ------------------------------------------------------------------ inputs --
 const demo = await prepareSiteInput({ repoRoot, siteId: DEMO, mode: "public", at: AT });
 const demoEmission = emitFor(demo.snapshot);
-const goldenDir = await packageOf(repoRoot, DEMO);
-const goldenRecord = (await readJson(path.join(goldenDir, "build-record.json"))) as BuildRecord;
+/** the demo's rollout state (demo-rollout.ts): PRE_PUBLISH_TRANSITION or POST_PUBLISH_STEADY; anything else throws */
+const rollout = (await demoRollout(repoRoot)).state;
+const demoBuilds = path.join(repoRoot, "data/site-builds", DEMO);
+const currentDir = await packageOf(repoRoot, DEMO);
+const currentRecord = (await readJson(path.join(currentDir, "build-record.json"))) as BuildRecord;
+const previousId = (await readJson(path.join(demoBuilds, "previous.json"))).buildInputId as string;
+/**
+ * The frozen V0.1 package, by its own id. It must be on disk in both rollout states: current before
+ * the V0.2 publish, the rollback (previous.json) after it (B2b). A later rotation of previous is a
+ * reviewed restatement of these checks, never a silent pass.
+ */
+const v01Dir = path.join(demoBuilds, "packages", V01_BUILD_INPUT_ID);
+const v01Record = (await exists(v01Dir)) ? ((await readJson(path.join(v01Dir, "build-record.json"))) as BuildRecord) : undefined;
+const needV01 = (): BuildRecord => {
+  assert(v01Record, `the V0.1 package ${V01_BUILD_INPUT_ID.slice(0, 12)}… is missing — it is the current package before the V0.2 publish and the rollback after it`);
+  return v01Record;
+};
 /**
  * The demo's CURRENT pin, read straight from data/sites/<DEMO>/site.json. Every pin-derived
  * expectation below (I1, B2, B4, I2b) is computed from it, so re-pinning the demo to a newly cut
@@ -268,8 +304,6 @@ const goldenRecord = (await readJson(path.join(goldenDir, "build-record.json")))
  * package, release 1.5.2 — stay literal.
  */
 const demoPin = (await readJson(path.join(repoRoot, "data/sites", DEMO, "site.json"))).template as { templateId: string; templateVersion: string; releaseId: string; releaseHash: string };
-/** the live package's own recorded build-input parts (its build-record.json on disk) */
-const liveParts = ((await readJson(path.join(repoRoot, "data/site-builds", DEMO, "packages", LIVE_BUILD_INPUT_ID, "build-record.json"))) as BuildRecord).parts;
 /**
  * The demo's identity with the integration part dropped, under the CURRENT pin — derived, not
  * frozen: the LIVE package's own parts with exactly the two parts a re-pin moves taken from the
@@ -277,7 +311,7 @@ const liveParts = ((await readJson(path.join(repoRoot, "data/site-builds", DEMO,
  * site.template). `mode` and `toolchainHash` therefore still have to be the live build's, and B2
  * separately proves the pin is the only delta by rolling it back (→ the live snapshot hash exactly).
  */
-const DEMO_OFF_BUILD_INPUT_ID = computeBuildInputId({ ...liveParts, releaseHash: demo.parts.releaseHash, siteSnapshotHash: demo.parts.siteSnapshotHash });
+const DEMO_OFF_BUILD_INPUT_ID = computeBuildInputId({ ...LIVE_PARTS, releaseHash: demo.parts.releaseHash, siteSnapshotHash: demo.parts.siteSnapshotHash });
 
 console.log("\n[contract] constants");
 await check("C1 fixed manifest path, the DIVERGED schema versions (manifest 0.1 · document 1.0, INV-27), an integer producer version, the V0.2 limits", () => {
@@ -1255,7 +1289,7 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
   // 07 §3: the document's schemaVersion is part of the build identity, so a V0.2 package can never
   // be reported "up-to-date" for the V0 one.
   assert(hashJson({ producer: PRODUCER_VERSION, producerSourceHash: src.hash, contract: { core: "0.1", portfolio: "0.1" }, config: cfg }) !== demo.parts.integrationInputHash, "the contract pair moved");
-  assert(demo.buildInputId !== goldenRecord.buildInputId, "the V0.2 producer has its own build identity, not the V0 golden package's");
+  assert(demo.buildInputId !== V01_BUILD_INPUT_ID, "the V0.2 producer has its own build identity, not the V0.1 package's");
   assert(demo.buildInputId !== LIVE_BUILD_INPUT_ID, "≠ live");
   // The live package was built from the 1.5.2 pin and the demo is now pinned to 1.6.0, so its
   // pre-integration identity is no longer the live one. This check has always been about isolating
@@ -1265,11 +1299,11 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
   // data/sites/boost-interior-demo/content/projects.json (26: 8 → 19 records with the V0.2 fields;
   // 28: `styles` on the original eight, and bi-06's unevidenced propertyType removed) — and
   // site.json's only diff is the pin itself. 28 §4 proves the residue is nil: restore projects.json
-  // to its pre-V0.2 bytes, roll the pin back, and the snapshot hashes to liveParts.siteSnapshotHash
+  // to its pre-V0.2 bytes, roll the pin back, and the snapshot hashes to LIVE_PARTS.siteSnapshotHash
   // again, so the content is the whole of the remaining delta. What is asserted here is therefore
   // the pin's isolation on TODAY's data, against a frozen literal, plus the fact that the content
   // delta exists — a silent revert of the re-authoring would fail this check, not pass it.
-  eq(computeBuildInputId(liveParts), LIVE_BUILD_INPUT_ID, "the live package's recorded parts reproduce its identity");
+  eq(computeBuildInputId(LIVE_PARTS), LIVE_BUILD_INPUT_ID, "the live package's recorded parts reproduce its identity");
   const atLivePin = hashJson({ ...demo.snapshot, site: { ...demo.snapshot.site, template: LIVE_PIN } });
   eq(atLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN, "pin rolled back to 1.5.2 → the re-authored demo's snapshot hash");
   const slots = demo.snapshot.slots as { values: Record<string, Record<string, unknown>> };
@@ -1283,18 +1317,37 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
   eq(hashJson({ ...demo.snapshot, slots: slots160, site: { ...demo.snapshot.site, template: LIVE_PIN } }), DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_161, "…with the 1.6.1 site copy reverted it is the pre-1.6.1 anchor: those labels are the whole of the slots delta (38-)");
   assert(atLivePin !== demo.parts.siteSnapshotHash, "the pin lives inside the snapshot, so rolling it back moves the hash");
   eq(hashJson({ ...demo.snapshot, site: { ...demo.snapshot.site, template: demoPin } }), demo.parts.siteSnapshotHash, "…and putting it back reproduces the current hash exactly: the pin is ALL the substitution touches");
-  assert(atLivePin !== liveParts.siteSnapshotHash, "it no longer lands on the live package's own hash — the demo CONTENT is the second, deliberate delta (26, 28)");
+  assert(atLivePin !== LIVE_PARTS.siteSnapshotHash, "it no longer lands on the live package's own hash — the demo CONTENT is the second, deliberate delta (26, 28)");
   eq(computeBuildInputId({ ...demo.parts, integrationInputHash: undefined }), DEMO_OFF_BUILD_INPUT_ID, "without the integration part = the pre-integration identity of the current pin");
 });
-// B2b was "the demo's current buildInputId is the golden package's". It is now deliberately the
-// opposite: the V0.2 producer has a new identity (PRODUCER_VERSION, producer sources and the
-// contract pair are build inputs), and data/site-builds/ keeps the V0.1 package as the site's
-// current one — no V0.2 package is staged where site:publish would pick it up (07 §16 steps 4–6;
-// V0.2 is not published until the consumer's search reads its fields).
-await check("B2b V0.1 stays current: the demo's V0.2 identity is NOT the package data/site-builds points at, and that package is the V0.1 one (nothing V0.2 staged for publish)", () => {
-  assert(demo.buildInputId !== goldenRecord.buildInputId, "the V0.2 build identity must differ from the current (V0.1) package's");
-  eq(goldenRecord.integration?.contract, { core: "0.1", portfolio: "0.1" }, "current package = V0.1 contract pair");
-  eq(demo.parts.integrationInputHash !== undefined, true, "the demo is still opted in (its next build would emit V0.2)");
+// B2b states which package data/site-builds points at, per rollout state (demo-rollout.ts):
+//  PRE_PUBLISH_TRANSITION — the V0.1 package is current, the pilot package is its rollback, and the
+//    demo's V0.2 identity is NOT what site:publish would pick up (07 §16 steps 1–3);
+//  POST_PUBLISH_STEADY — the current package IS the demo's V0.2 identity (V0.2 contract pair, its
+//    _integration/ byte-identical to the canonical golden), and the rollback behind it is the V0.1
+//    package, intact at its frozen hash (07 §16 step 4; 39-). Any other previous fails: moving the
+//    rollback off V0.1 is a reviewed restatement, not something a rebuild may do silently.
+await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's V0.2 identity current with the golden integration bytes, V0.1 as rollback", async () => {
+  eq(demo.parts.integrationInputHash !== undefined, true, "the demo is still opted in");
+  if (rollout === "PRE_PUBLISH_TRANSITION") {
+    eq(currentRecord.buildInputId, V01_BUILD_INPUT_ID, "current = the V0.1 package");
+    assert(demo.buildInputId !== currentRecord.buildInputId, "the V0.2 build identity must differ from the current (V0.1) package's");
+    eq(currentRecord.integration?.contract, { core: "0.1", portfolio: "0.1" }, "current package = V0.1 contract pair");
+    eq(previousId, LIVE_BUILD_INPUT_ID, "previous = the pilot package");
+    return;
+  }
+  eq(rollout, "POST_PUBLISH_STEADY", "rollout state");
+  eq(currentRecord.buildInputId, demo.buildInputId, "current = the demo's V0.2 identity (nothing stale, nothing else)");
+  eq([currentRecord.template.releaseId, currentRecord.template.releaseHash], [demoPin.releaseId, demoPin.releaseHash], "built with the pin");
+  eq(currentRecord.integration?.contract, { core: "0.1", portfolio: "1.0" }, "current package = V0.2 contract pair");
+  const files = (await readdir(path.join(currentDir, "site", INTEGRATION_DIR))).filter((f) => f !== ".DS_Store").sort();
+  eq(files, ["manifest.json", `portfolio.${DEMO_VERSION}.json`], "current _integration/ = the V0.2 manifest + document");
+  for (const f of files) eq(sha256(await readFile(path.join(currentDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_DIR, f))), `${f} = the canonical golden's bytes`);
+  eq([DEMO_DOC_SHA256, DEMO_MANIFEST_SHA256], [sha256(await readFile(path.join(currentDir, "site", INTEGRATION_DIR, `portfolio.${DEMO_VERSION}.json`))), sha256(await readFile(path.join(currentDir, "site", INTEGRATION_DIR, "manifest.json")))], "document / manifest sha256 = the contract literals");
+  assert(await packageIntact(currentDir), "current package intact");
+  eq(previousId, V01_BUILD_INPUT_ID, "previous = the V0.1 package (the rollback)");
+  eq(needV01().packageHash, V01_PACKAGE_HASH, "the rollback's recorded packageHash");
+  assert(await packageIntact(v01Dir), "the rollback package is intact");
 });
 await check("B3 preview never emits (SE5): the demo in preview mode has no integration part", async () => {
   const p = await prepareSiteInput({ repoRoot, siteId: DEMO, mode: "preview", at: AT });
@@ -1352,13 +1405,15 @@ await check("B7 no site is named in the producer or the builder seam (generic op
   }
 });
 
-console.log("\n[golden V0.1] the demo's current package (data/site-builds) — frozen V0.1, the consumer's current data and the rollback path");
-// G1–G5 were written against the V0.1 package and then skipped while the constants were expected
-// to become V0.2 values. The V0.1 package is NOT being replaced in this release (see B2b), so they
-// are restored as what they now are: the V0.1 compatibility proof — the V0.1 artefact the consumer
-// reads today (and would roll back to) is byte-intact and still self-consistent. The V0.2 golden is
-// G6, a separate pinned package.
-await check("G1 V0.1 package: exactly its two V0.1 files, 8 records, the V0.1 contract pair and producer 1 in its build record; bytes intact", async () => {
+console.log("\n[golden V0.1] the frozen V0.1 package (data/site-builds) — current before the V0.2 publish, the rollback after it");
+// G1–G3: the V0.1 compatibility proof — the V0.1 artefact the consumer read before the V0.2 publish
+// (and would read again after a rollback) is byte-intact and still self-consistent. They address the
+// package by its frozen id, so they hold in both rollout states (B2b says which pointer names it).
+// The V0.2 golden is G6, a separate pinned package; B2b ties the current package to it after publish.
+await check("G1 V0.1 package: exactly its two V0.1 files, 8 records, the V0.1 contract pair and producer 1 in its build record; bytes intact at its frozen packageHash", async () => {
+  const goldenRecord = needV01();
+  const goldenDir = v01Dir;
+  eq([goldenRecord.buildInputId, goldenRecord.packageHash], [V01_BUILD_INPUT_ID, V01_PACKAGE_HASH], "frozen identity");
   const files = (await readdir(path.join(goldenDir, "site", INTEGRATION_DIR))).sort();
   eq(files, ["manifest.json", `portfolio.${V01_DEMO_VERSION}.json`], "files");
   const i = goldenRecord.integration!;
@@ -1373,6 +1428,8 @@ await check("G1 V0.1 package: exactly its two V0.1 files, 8 records, the V0.1 co
   assert(await packageIntact(goldenDir), "golden package intact");
 });
 await check("G2 V0.1 package: manifest pointer = file name = document version (INV-3); the manifest origin = site.json; the runtime resolves both URLs", async () => {
+  needV01();
+  const goldenDir = v01Dir;
   const manifest = await readJson(path.join(goldenDir, "site", INTEGRATION_DIR, "manifest.json"));
   const doc = await readJson(path.join(goldenDir, "site", INTEGRATION_DIR, `portfolio.${V01_DEMO_VERSION}.json`));
   eq(manifest.schemaVersion, "0.1", "manifest schemaVersion (unchanged by V0.2 as well, INV-27)");
@@ -1389,6 +1446,8 @@ await check("G2b the runtime resolves the manifest and a document path to their 
   eq(resolvePath(`${MANIFEST_PATH}/`).kind, "not-found", "trailing slash = 404 (HT8)");
 });
 await check("G3 V0.1 package: every detailUrl and the listingUrl have an HTML page in the package (INV-5); no absolute URL or external host in the document (INV-6)", async () => {
+  needV01();
+  const goldenDir = v01Dir;
   const doc = await readJson(path.join(goldenDir, "site", INTEGRATION_DIR, `portfolio.${V01_DEMO_VERSION}.json`));
   const html = (p: string) => path.join(goldenDir, "site", `${p.replace(/^\//, "")}.html`);
   assert(await exists(html(doc.listingUrl)), "listing page");
@@ -1396,19 +1455,35 @@ await check("G3 V0.1 package: every detailUrl and the listingUrl have an HTML pa
   const text = await readFile(path.join(goldenDir, "site", INTEGRATION_DIR, `portfolio.${V01_DEMO_VERSION}.json`), "utf8");
   assert(!/https?:\/\//.test(text) && !text.includes("//"), "no absolute / protocol-relative URL");
 });
-await check(`G4 the live package ${LIVE_BUILD_INPUT_ID.slice(0, 12)}… is untouched (intact, packageHash ${LIVE_PACKAGE_HASH.slice(0, 12)}…) and is the rollback (previous.json)`, async () => {
-  const liveDir = path.join(repoRoot, "data/site-builds", DEMO, "packages", LIVE_BUILD_INPUT_ID);
-  const rec = await readJson(path.join(liveDir, "build-record.json"));
+await check(`G4 the live pilot package ${LIVE_BUILD_INPUT_ID.slice(0, 12)}… is untouched while on disk (intact, packageHash ${LIVE_PACKAGE_HASH.slice(0, 12)}…, parts = LIVE_PARTS): the rollback (previous.json) before the V0.2 publish, retired by keep-2 after it`, async () => {
+  const liveDir = path.join(demoBuilds, "packages", LIVE_BUILD_INPUT_ID);
+  if (rollout === "PRE_PUBLISH_TRANSITION") eq(previousId, LIVE_BUILD_INPUT_ID, "previous pointer");
+  else assert(previousId !== LIVE_BUILD_INPUT_ID && currentRecord.buildInputId !== LIVE_BUILD_INPUT_ID, "after the V0.2 publish the pilot package is neither current nor the rollback");
+  if (!(await exists(liveDir))) {
+    eq(rollout, "POST_PUBLISH_STEADY", "the pilot package may only be absent once no pointer names it");
+    console.log("       the pilot package directory was retired by keep-2 (its sealed copy stays in R2); LIVE_PARTS stays checked by B2");
+    return;
+  }
+  const rec = (await readJson(path.join(liveDir, "build-record.json"))) as BuildRecord;
   eq(rec.packageHash, LIVE_PACKAGE_HASH, "recorded hash");
+  eq(stableStringify(rec.parts), stableStringify(LIVE_PARTS), "recorded parts = LIVE_PARTS");
   assert(await packageIntact(liveDir), "live package bytes still hash to the recorded packageHash");
-  eq((await readJson(path.join(repoRoot, "data/site-builds", DEMO, "previous.json"))).buildInputId, LIVE_BUILD_INPUT_ID, "previous pointer");
   assert(!(await exists(path.join(liveDir, "site", INTEGRATION_DIR))), "live package has no _integration/");
 });
 await check("G5 V0.1 package = live + exactly the two integration files: every other file byte-identical once the build id (Next's generateBuildId = buildInputId[0:32], embedded in HTML/RSC and the _next/static/<id>/ path) is canonicalised", async () => {
-  const liveDir = path.join(repoRoot, "data/site-builds", DEMO, "packages", LIVE_BUILD_INPUT_ID, "site");
-  const newDir = path.join(goldenDir, "site");
+  const liveDir = path.join(demoBuilds, "packages", LIVE_BUILD_INPUT_ID, "site");
+  if (!(await exists(liveDir)) || !v01Record) {
+    // A point-in-time proof about how the V0.1 package was made. Once keep-2 retires the pilot
+    // package (the first V0.2 build, G4) it cannot be re-run, and it need not be: G1 keeps the V0.1
+    // package pinned at V01_PACKAGE_HASH, so the bytes G5 compared cannot have moved since.
+    eq(rollout, "POST_PUBLISH_STEADY", "the comparison may only be unavailable after the V0.2 publish");
+    pointInTime.push("G5 V0.1 package = live + two integration files — the pilot package was retired by keep-2 with the V0.2 build; proven at 0c34606, V0.1 bytes held by G1 (39-)");
+    console.log("       point-in-time: the pilot package was retired by keep-2 after the V0.2 publish; this proof stands at 0c34606 (39-)");
+    return;
+  }
+  const newDir = path.join(v01Dir, "site");
   const oldId = LIVE_BUILD_INPUT_ID.slice(0, 32);
-  const newId = goldenRecord.buildInputId.slice(0, 32);
+  const newId = V01_BUILD_INPUT_ID.slice(0, 32);
   const live = new Map<string, Buffer>();
   for (const f of await walkFiles(liveDir)) live.set(f.replaceAll(oldId, newId), Buffer.from((await readFile(path.join(liveDir, f))).toString("latin1").replaceAll(oldId, newId), "latin1"));
   const fresh = new Map<string, Buffer>();
@@ -1601,8 +1676,8 @@ function bucketOf(objects: Map<string, { body: Uint8Array; contentType: string; 
 }
 const HOST = "demo.test.example";
 await check("R1 an OFF package answers 404 on the manifest path with the package's 404 page — never 403 (CH-R11b); ON: 200 application/json, revalidate, exact bytes (HT1–HT3)", async () => {
-  const pkgHash = goldenRecord.packageHash;
-  const pointer: RoutingPointer = { schemaVersion: 1, hostname: HOST, siteId: DEMO, packageHash: pkgHash, buildInputId: goldenRecord.buildInputId, releaseId: RELEASE_152, publishedAt: "2026-09-22T00:00:00Z" };
+  const pkgHash = currentRecord.packageHash;
+  const pointer: RoutingPointer = { schemaVersion: 1, hostname: HOST, siteId: DEMO, packageHash: pkgHash, buildInputId: currentRecord.buildInputId, releaseId: currentRecord.template.releaseId, publishedAt: "2026-09-22T00:00:00Z" };
   const objects = new Map<string, { body: Uint8Array; contentType: string; cacheControl: string }>();
   objects.set(routingKey(HOST), { body: new TextEncoder().encode(JSON.stringify(pointer)), contentType: "application/json", cacheControl: CACHE_REVALIDATE });
   objects.set(packageKey(DEMO, pkgHash, "404.html"), { body: new TextEncoder().encode("<h1>404</h1>"), contentType: "text/html; charset=utf-8", cacheControl: CACHE_REVALIDATE });
@@ -1618,18 +1693,26 @@ await check("R1 an OFF package answers 404 on the manifest path with the package
   eq([doc.status, doc.headers.get("content-type"), await doc.text()], [200, "application/json", demoEmission.portfolio!.file.text], "ON document");
   eq((await handle(new Request(`https://${HOST}${MANIFEST_PATH}/`), env)).status, 404, "trailing slash 404 (HT8)");
 });
-await check("R2 publish plans the two files as application/json; the manifest revalidates (HT2/HT3); the baked origin equals the manifest origin — and what it would publish today is the V0.1 package, not V0.2", async () => {
+await check("R2 publish plans the two files as application/json; the manifest revalidates (HT2/HT3); the baked origin equals the manifest origin — and it plans exactly the rollout state's current package: V0.1 before the V0.2 publish, the V0.2 package (golden bytes) after it", async () => {
   const plan = await planPublish({ repoRoot, siteId: DEMO, hostname: "interior-demo.boostweb.co.kr" });
+  const pre = rollout === "PRE_PUBLISH_TRANSITION";
+  const [docVersion, otherVersion, docBytes] = pre ? [V01_DEMO_VERSION, DEMO_VERSION, V01_DEMO_DOC_BYTES] : [DEMO_VERSION, V01_DEMO_VERSION, DEMO_DOC_BYTES];
   const m = plan.files.find((f) => f.path === "_integration/manifest.json")!;
-  const d = plan.files.find((f) => f.path === `_integration/portfolio.${V01_DEMO_VERSION}.json`)!;
+  const d = plan.files.find((f) => f.path === `_integration/portfolio.${docVersion}.json`)!;
   assert(m && d, "planned");
-  assert(!plan.files.some((f) => f.path === `_integration/portfolio.${DEMO_VERSION}.json`), "no V0.2 document is planned (PUBLISH_ALLOWED = NO)");
-  // The plan describes the PACKAGE ON DISK — the V0.1 one (B2b) — so it is compared with that
-  // package's own bytes (G1 ties those to its build record).
-  const packaged = async (rel: string) => sha256(await readFile(path.join(goldenDir, "site", rel)));
+  assert(!plan.files.some((f) => f.path === `_integration/portfolio.${otherVersion}.json`), pre ? "no V0.2 document is planned before the V0.2 publish" : "no V0.1 document is planned after it");
+  // The plan describes the PACKAGE ON DISK that current.json names (B2b says which one that is), so
+  // it is compared with that package's own bytes (G1 / B2b tie those to their records and the golden).
+  const packaged = async (rel: string) => sha256(await readFile(path.join(currentDir, "site", rel)));
   eq([m.contentType, m.cacheControl, m.size, m.sha256], ["application/json", CACHE_REVALIDATE, DEMO_MANIFEST_BYTES, await packaged("_integration/manifest.json")], "manifest");
-  eq([d.contentType, d.size, d.sha256], ["application/json", V01_DEMO_DOC_BYTES, await packaged(`_integration/portfolio.${V01_DEMO_VERSION}.json`)], "document");
-  eq([plan.packageHash, plan.files.length, plan.bakedOrigin, plan.manifestOrigin], [goldenRecord.packageHash, 158, demoEmission.manifest.site.publicOrigin, demoEmission.manifest.site.publicOrigin], "plan identity / origins");
+  eq([d.contentType, d.size, d.sha256], ["application/json", docBytes, await packaged(`_integration/portfolio.${docVersion}.json`)], "document");
+  if (!pre) eq([m.sha256, d.sha256], [DEMO_MANIFEST_SHA256, DEMO_DOC_SHA256], "the V0.2 golden's bytes");
+  eq([plan.packageHash, plan.releaseId, plan.files.length, plan.bakedOrigin, plan.manifestOrigin], [currentRecord.packageHash, currentRecord.template.releaseId, pre ? 158 : currentRecord.qa.files, demoEmission.manifest.site.publicOrigin, demoEmission.manifest.site.publicOrigin], "plan identity / origins");
+  if (pre) eq(plan.packageHash, V01_PACKAGE_HASH, "the V0.1 package");
+  // inventory, independent of the build record: the planned pages are the demo's composed page set
+  // (demo-rollout.ts, from the corpus), and _integration/ holds exactly the manifest + one document
+  eq(plan.files.map((f) => f.path).filter((f) => f.endsWith(".html")).sort(), (await demoExpectedPages(repoRoot)).pages, "planned HTML pages = the expected page set");
+  eq(plan.files.map((f) => f.path).filter((f) => f.startsWith(`${INTEGRATION_DIR}/`)).sort(), ["_integration/manifest.json", `_integration/portfolio.${docVersion}.json`], "planned _integration/ entries");
   await rejects(() => planPublish({ repoRoot, siteId: DEMO, hostname: "other.example", requireOriginMatch: true }), /integration manifest was built for https:\/\/interior-demo\.boostweb\.co\.kr, not https:\/\/other\.example|package was built for/);
   const local = await planPublish({ repoRoot, siteId: DEMO, hostname: "localhost" });
   assert(local.warnings.some((w) => /integration manifest was built for/.test(w)), "local host → warning only (same policy as the sitemap origin)");
@@ -1652,13 +1735,14 @@ await check("I1 every stored release verifies; 1.5.2's hash is unchanged and the
   eq([pinned.templateId, pinned.templateVersion, pinned.releaseId, pinned.releaseHash], [demoPin.templateId, demoPin.templateVersion, demoPin.releaseId, demoPin.releaseHash], "pin = the stored release's own record");
   eq(demoPin.releaseId, `${demoPin.templateId}-${demoPin.templateVersion}-${demoPin.releaseHash.slice(0, 12)}`, "releaseId consistency");
 });
-await check("I2 the producer itself is not a release source (platform/integration, platform/build), and the golden package was built from the stored 1.5.2 release", async () => {
+await check("I2 the producer itself is not a release source (platform/integration, platform/build), and the V0.1 package was built from the stored 1.5.2 release", async () => {
   const rel = await loadRelease(repoRoot, "interior-01", RELEASE_152);
   const { sources } = await collectReleaseSources(repoRoot, "interior-01", 1);
   assert(![...sources.keys()].some((k) => k.startsWith("platform/integration/") || k.startsWith("platform/build/")), "not release sources");
   // …but platform/content IS one, and V0.2 extends platform/content/schema.ts — see I2b.
   assert([...sources.keys()].includes("platform/content/schema.ts"), "platform/content/schema.ts is a release source (PLATFORM_RUNTIME_DIRS)");
-  eq(goldenRecord.template.releaseHash, rel.releaseHash, "golden built from 1.5.2");
+  const goldenRecord = needV01();
+  eq(goldenRecord.template.releaseHash, rel.releaseHash, "V0.1 package built from 1.5.2");
   eq(stableStringify(goldenRecord.template), stableStringify({ templateId: "interior-01", templateVersion: "1.5.2", releaseId: RELEASE_152, releaseHash: rel.releaseHash, templateSourceHash: rel.templateSourceHash }), "record template");
 });
 // Restored (was skip(): the V0.2 fields in platform/content/schema.ts — a Template Release runtime
@@ -1674,7 +1758,11 @@ await check("I2b the working tree still equals the release the demo is pinned to
   eq(computeReleaseHash({ ...rel, files }), rel.releaseHash, `working tree = ${demoPin.releaseId}`);
 });
 
-console.log(`\n${passed} passed, ${failed.length} failed, ${skipped.length} skipped`);
+console.log(`\n${passed} passed, ${failed.length} failed, ${skipped.length} skipped${pointInTime.length > 0 ? `, ${pointInTime.length} point-in-time` : ""}`);
+if (pointInTime.length > 0) {
+  console.log("\nPOINT-IN-TIME (the artefact they compare was retired by keep-2; the proof stands at the named commit):");
+  for (const p of pointInTime) console.log(`  - ${p}`);
+}
 if (skipped.length > 0) {
   console.log("\nSKIPPED (expected values knowingly out of date; rules unchanged):");
   for (const sk of skipped) console.log(`  - ${sk}`);

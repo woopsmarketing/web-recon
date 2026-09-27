@@ -167,3 +167,22 @@ export async function demoPackagedProjects<P extends { id: string }>(repoRoot: s
   for (const id of ids) need(projects.some((p) => p.id === id), `the V0.1 package lists ${id}, which is not in the corpus`);
   return projects.filter((p) => ids.has(p.id));
 }
+
+/** the demo's fixed pages: the 1.5.0 IA (home, portfolio list, 3D, about, contact; ia150 P1) */
+export const DEMO_FIXED_PAGES = ["index.html", "portfolio.html", "3d-portfolio.html", "about.html", "contact.html"] as const;
+/** Next's two error pages, emitted by every build */
+export const NEXT_ERROR_PAGES = ["404.html", "_not-found.html"] as const;
+
+/**
+ * The HTML page set the demo's CURRENT package must hold, composed without the route planner or the
+ * builder: the fixed pages, Next's error pages, and one portfolio/<slug>.html per packaged record,
+ * the slug as authored in content/projects.json (every record there is `published`, asserted here).
+ * The packaged records are demoPackagedProjects': the V0.1 package's own document ids in the
+ * pre-publish window, the whole corpus once steady. No page count is written down anywhere.
+ */
+export async function demoExpectedPages(repoRoot: string): Promise<{ details: string[]; pages: string[] }> {
+  const corpus = (await readJson(path.join(repoRoot, "data/sites", DEMO, "content/projects.json"))).items as { id: string; slug: string; status: string }[];
+  for (const p of corpus) if (p.status !== "published") throw new Error(`demoExpectedPages: corpus record ${p.id} is ${p.status}; restate the expected page set`);
+  const details = (await demoPackagedProjects(repoRoot, corpus)).map((p) => `portfolio/${p.slug}.html`).sort();
+  return { details, pages: [...DEMO_FIXED_PAGES, ...NEXT_ERROR_PAGES, ...details].sort() };
+}

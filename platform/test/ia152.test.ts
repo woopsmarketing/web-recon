@@ -29,7 +29,7 @@ import { loadRelease, verifyRelease } from "../release/release";
 import { resolveEffectiveSettings } from "../settings/settings";
 import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
-import { demoBuiltRelease } from "./demo-rollout";
+import { demoBuiltRelease, demoExpectedPages } from "./demo-rollout";
 import { isIntegrationSurface } from "./integration-surface";
 import { isRelease160Added, release160SurfaceBefore } from "./release-160-surface";
 
@@ -267,7 +267,7 @@ await check("P1 every page except the 404: exactly one robots meta = noindex, ex
   const heroSrc = /<img class="i1-hero__img" src="([^"]+)"/.exec(html["index.html"]!)?.[1];
   assert(heroSrc && /^\/assets\/[0-9a-f]{20}\.jpg$/.test(heroSrc), `hero src ${heroSrc}`);
   const pages = Object.keys(html).filter((f) => !NOT_FOUND.includes(f));
-  eq(pages.length, 13, "pages with a canonical");
+  eq(pages.sort(), (await demoExpectedPages(repoRoot)).pages.filter((f) => !NOT_FOUND.includes(f)), "pages with a canonical = every expected page but Next's error pages");
   for (const f of pages) {
     const s = seoOf(html[f]!);
     const want = `${ORIGIN}${routeOf(f)}`;

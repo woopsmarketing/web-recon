@@ -16,7 +16,7 @@ import { AssetRegistryDocSchema } from "../assets/assets";
 import { loadRelease, verifyRelease } from "../release/release";
 import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
-import { demoBuiltRelease } from "./demo-rollout";
+import { demoBuiltRelease, demoExpectedPages } from "./demo-rollout";
 import { formatPricePerArea } from "../../templates/interior-01/v1/lib/format";
 
 const repoRoot = process.cwd();
@@ -163,6 +163,7 @@ const site = path.join(pkg, "site");
 const htmlFiles = (await walkFiles(site)).filter((f) => f.endsWith(".html"));
 const html = Object.fromEntries(await Promise.all(htmlFiles.map(async (f) => [f, await readFile(path.join(site, f), "utf8")] as const)));
 const details = Object.entries(html).filter(([f]) => /^portfolio\/(?!page\/)[^/]+(\.html|\/index\.html)$/.test(f) && f !== "portfolio/index.html");
+const expectedPages = await demoExpectedPages(repoRoot);
 await check("P1 the flagship detail shows 평당 290만 원; no page shows the KRW … / 평 form", () => {
   const flagship = details.find(([f]) => f.includes(FLAGSHIP_SLUG));
   assert(flagship, `flagship page not found in ${details.map(([f]) => f).join(", ")}`);
@@ -170,7 +171,7 @@ await check("P1 the flagship detail shows 평당 290만 원; no page shows the K
   for (const [f, h] of Object.entries(html)) assert(!/KRW\s*[\d,]+\s*\/\s*평/.test(visibleText(h)), `${f}: generic KRW form`);
 });
 await check("P2 every multi-photo room has ONE previous + ONE next arrow (site labels, aria-controls its strip, previous disabled on the server HTML) and keeps its counter; single-photo rooms have neither", () => {
-  assert(details.length === 8, `detail pages: ${details.length}`);
+  eq(details.map(([f]) => f).sort(), expectedPages.details, "detail pages = one per packaged record");
   let multi = 0;
   for (const [f, h] of details) {
     const panels = h.split(/(?=<div[^>]*data-gallery-panel=")/).slice(1);

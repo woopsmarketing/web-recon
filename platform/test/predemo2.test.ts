@@ -19,7 +19,7 @@ import { AssetRegistryDocSchema } from "../assets/assets";
 import { loadRelease, verifyRelease } from "../release/release";
 import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
-import { demoBuiltRelease } from "./demo-rollout";
+import { demoBuiltRelease, demoExpectedPages } from "./demo-rollout";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -167,6 +167,7 @@ await check("D2 51 / 51 raster assets: registry = 51 rasters, 0 SVG stand-ins, a
 console.log("\n[package] the built pages");
 const html = await pagesOf(pkg);
 const details = Object.entries(html).filter(([f]) => isDetail(f));
+const expectedPages = await demoExpectedPages(repoRoot);
 
 const ZOOM = /<button type="button" class="i1-gallery__zoom" aria-haspopup="dialog" aria-label="([^"<>]*)" data-gallery-zoom=""><\/button>/g;
 interface Panel { id: string; hidden: boolean; seats: string[]; zoomLabels: string[] }
@@ -201,7 +202,7 @@ function galleryOf(file: string, h: string) {
 const lazy = (seat: string) => seat.replace('loading="eager"', 'loading="lazy"');
 
 await check('G1 a gallery with more than one room opens on the "all" view: first tab, selected, site label, count = every photo; its seats are the rooms\' seats in room order; rooms keep their ids 0..n-1, unselected and hidden; a one-room gallery has neither tabs nor an "all" view', () => {
-  assert(details.length === 8, `detail pages: ${details.length}`);
+  eq(details.map(([f]) => f).sort(), expectedPages.details, "detail pages = one per packaged record");
   let withAll = 0;
   for (const [f, h] of details) {
     const { tabs, panels } = galleryOf(f, h);
