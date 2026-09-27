@@ -37,6 +37,34 @@ export function formatPricePerArea(price: { amount: number; currency: string; un
   return `${price.currency} ${groupDigits(price.amount, 2)} / ${AREA_SYMBOL[price.unit].trim()}`;
 }
 
+/** A KRW amount the way the trade writes one: 만 = 10,000, 억 = 100,000,000; not exact in 만 → won. */
+function koreanWon(amount: number): string {
+  if (!(Number.isInteger(amount) && amount > 0 && amount % 10_000 === 0)) return `${groupDigits(amount, 2)}원`;
+  const man = amount / 10_000;
+  const eok = Math.floor(man / 10_000);
+  const rest = man % 10_000;
+  return `${[eok > 0 ? `${groupDigits(eok, 0)}억` : "", rest > 0 ? `${groupDigits(rest, 0)}만` : ""].filter(Boolean).join(" ")} 원`;
+}
+
+/**
+ * The TOTAL price of the whole case (content `totalPrice`, exact XOR range), rendered verbatim: never
+ * divided by the area, never presented as the price of one room or trade. Korean site locale + KRW:
+ * "5,000만 원", "1억 2,500만 원", "1억 원" (an amount 만 cannot show exactly stays in won,
+ * "12,345,678원"); a range names both ends in full, "1억 2,500만 원 ~ 1억 4,000만 원". Every other
+ * locale / currency keeps the generic "CUR amount" form.
+ */
+export function formatTotalPrice(
+  total: { kind: "exact"; amount: number; currency: string } | { kind: "range"; minAmount: number; maxAmount: number; currency: string },
+  locale?: string,
+): string {
+  if (locale !== undefined && /^ko(-|$)/i.test(locale) && total.currency === "KRW") {
+    return total.kind === "exact" ? koreanWon(total.amount) : `${koreanWon(total.minAmount)} ~ ${koreanWon(total.maxAmount)}`;
+  }
+  return total.kind === "exact"
+    ? `${total.currency} ${groupDigits(total.amount, 2)}`
+    : `${total.currency} ${groupDigits(total.minAmount, 2)} – ${groupDigits(total.maxAmount, 2)}`;
+}
+
 /** "2024-03" → "2024.03"; no end (schema: single-month project) or end = start renders one month. */
 export function formatPeriod(period: { start: string; end?: string }): string {
   const ym = (v: string) => v.replace("-", ".");

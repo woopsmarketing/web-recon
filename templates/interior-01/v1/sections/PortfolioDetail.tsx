@@ -1,10 +1,23 @@
 import Link from "next/link";
 import { ProjectGallery, type GalleryGroupProps, type GalleryImage } from "../components/ProjectGallery";
 import { contactHref } from "./links";
-import { formatArea, formatCount, formatPeriod, formatPricePerArea } from "../lib/format";
+import { formatArea, formatCount, formatPeriod, formatPricePerArea, formatTotalPrice } from "../lib/format";
+import { projectTypeText, workScopeText } from "../lib/vocabulary";
 import type { Ctx, ProjectItem } from "./types";
 
-type FactKey = "location" | "area" | "category" | "builtYear" | "scope" | "period" | "duration" | "keywords" | "price";
+type FactKey =
+  | "location"
+  | "area"
+  | "projectType"
+  | "category"
+  | "builtYear"
+  | "scope"
+  | "workScopes"
+  | "period"
+  | "duration"
+  | "keywords"
+  | "totalPrice"
+  | "price";
 
 export interface PortfolioDetailData {
   id: string;
@@ -37,6 +50,12 @@ export interface PortfolioDetailData {
  * portfolio.detail — ONE detail layout for every project. Optional regions render
  * only from data that exists: no before/after control without a before photo, no
  * quote wrapper without a quote, no fact row without a value.
+ *
+ * 1.6.1: the area row's label names the basis the record states — supply → areaSupplyLabel,
+ * exclusive → areaExclusiveLabel, unstated / "unknown" → areaLabel — and the figure stays as
+ * authored (no unit or basis conversion). The V0.2 structured facts get a row each when the
+ * record authors them: projectType, workScopeIds ("main" work: the set is never claimed to be
+ * exhaustive) and totalPrice (the whole case's total, never a per-room price or a quote).
  */
 export function portfolioDetail(ctx: Ctx, p: ProjectItem): PortfolioDetailData {
   const t = (key: Parameters<Ctx["slots"]["text"]>[1]) => ctx.slots.text("portfolio.detail", key) ?? "";
@@ -56,26 +75,35 @@ export function portfolioDetail(ctx: Ctx, p: ProjectItem): PortfolioDetailData {
       [{ name: p.title, items: [{ image: img(p.cover, p.title) }] }];
 
   const category = ctx.content.list({ type: "categories" }).items.find((c) => c.id === p.category)?.name;
+  const locale = ctx.identity.locale;
   const candidates: [FactKey, string | undefined][] = [
     ["location", p.location],
     ["area", p.area ? formatArea(p.area) : undefined],
+    ["projectType", p.projectType ? projectTypeText(p.projectType, locale) : undefined],
     ["category", category],
     ["builtYear", p.builtYear !== undefined ? String(p.builtYear) : undefined],
     ["scope", p.scope?.join(", ")],
+    ["workScopes", p.workScopeIds && p.workScopeIds.length > 0 ? workScopeText(p.workScopeIds, locale) : undefined],
     ["period", p.period ? formatPeriod(p.period) : undefined],
     ["duration", p.durationWeeks !== undefined ? formatCount({ one: t("durationFormatOne"), other: t("durationFormat") }, p.durationWeeks) : undefined],
     ["keywords", p.keywords && p.keywords.length > 0 ? p.keywords.join(", ") : undefined],
-    ["price", p.pricePerArea ? formatPricePerArea(p.pricePerArea, ctx.identity.locale) : undefined],
+    ["totalPrice", p.totalPrice ? formatTotalPrice(p.totalPrice, locale) : undefined],
+    ["price", p.pricePerArea ? formatPricePerArea(p.pricePerArea, locale) : undefined],
   ];
+  // The basis the record states, never another one (and never guessed from the unit or the value).
+  const basis = p.area?.basis;
   const labelKey: Record<FactKey, Parameters<Ctx["slots"]["text"]>[1]> = {
     location: "locationLabel",
-    area: "areaLabel",
+    area: basis === "supply" ? "areaSupplyLabel" : basis === "exclusive" ? "areaExclusiveLabel" : "areaLabel",
+    projectType: "projectTypeLabel",
     category: "categoryLabel",
     builtYear: "builtYearLabel",
     scope: "scopeLabel",
+    workScopes: "workScopesLabel",
     period: "periodLabel",
     duration: "durationLabel",
     keywords: "keywordsLabel",
+    totalPrice: "totalPriceLabel",
     price: "priceLabel",
   };
   const facts = candidates

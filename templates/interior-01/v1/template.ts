@@ -387,7 +387,15 @@ export const template = defineTemplate({
         bodyTitle: { type: "text", maxLength: 40, neutralDefault: "About the project" },
         quoteTitle: { type: "text", maxLength: 40, neutralDefault: "From the client" },
         locationLabel: { type: "text", maxLength: 24, neutralDefault: "Location" },
+        /** The label of an area with NO stated basis (absent or "unknown"); 1.6.1: a stated basis uses its own label below. */
         areaLabel: { type: "text", maxLength: 24, neutralDefault: "Size" },
+        /** 1.6.1: basis-aware area labels (supply = 공급면적, exclusive = 전용면적). Additive, neutral defaults. */
+        areaSupplyLabel: { type: "text", maxLength: 24, neutralDefault: "Supply area" },
+        areaExclusiveLabel: { type: "text", maxLength: 24, neutralDefault: "Exclusive area" },
+        /** 1.6.1: V0.2 structured facts, each a row only when the project authors the field. Additive, neutral defaults. */
+        projectTypeLabel: { type: "text", maxLength: 24, neutralDefault: "Project type" },
+        workScopesLabel: { type: "text", maxLength: 24, neutralDefault: "Main work scope" },
+        totalPriceLabel: { type: "text", maxLength: 24, neutralDefault: "Total project cost" },
         categoryLabel: { type: "text", maxLength: 24, neutralDefault: "Type" },
         builtYearLabel: { type: "text", maxLength: 24, neutralDefault: "Building completed" },
         scopeLabel: { type: "text", maxLength: 24, neutralDefault: "Scope" },
