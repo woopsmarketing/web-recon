@@ -68,6 +68,15 @@ outside the projection.
 - `cover` comes from the Project's authored `cover`.
 - `gallery` comes from `galleryGroups[].items[].image`: **after images only**, in authored order
   (group order, then item order), the first 12. `totalCount` is the number of after images.
+- **Media ownership (2026-09-29, producer 4; schema and `schemaVersion "1.1"` unchanged).** A record
+  exports an image only when the snapshot shows it belongs to that record. An asset is
+  attributable to record R iff it is in R's own `galleryGroups` (after or before image), or R is
+  the only record that references it at all and no site banner, logo or slot image uses it. A cover that is another record's gallery photo, or
+  that several records share, is **not exported**; the consumer shows a text card. The gallery
+  holds one entry per asset (first occurrence wins), and `totalCount` counts distinct after images.
+  For boost-interior-demo this removes the covers of bi-09 … bi-19, which were bi-01 … bi-08 gallery
+  photos: 8 covers, 8 galleries, 41 images. Evidence and the per-record table are in
+  `docs/work/portfolio-experience-v1/03-media-truth-audit.md`.
 - Before/after comparison images (`item.before`) are **not exported in V1** and are **not counted**.
   They sit behind a toggle on the canonical page and are not the primary gallery.
 - `src` is the asset's content-addressed `publicPath` (`/assets/<sha256[0:20]>.<ext>`) from the
@@ -85,6 +94,7 @@ outside the projection.
 The per-record inventory of boost-interior-demo is in
 `docs/work/portfolio-experience-v1/01-media-inventory.md`: 19 covers, 8 galleries, 41 exported
 images, `totalCount` 42 in total, and bi-01 at 12 of 13 (so `hasMore` is derived as true).
+Since producer 4 (media ownership, above) it is 8 covers; see `03-media-truth-audit.md`.
 
 ## 4. Validation (producer, fail closed)
 

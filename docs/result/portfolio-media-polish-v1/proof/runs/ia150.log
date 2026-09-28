@@ -1,0 +1,30 @@
+
+[contract] additive minor
+  ok   S1 Template ≥ 1.5.0 declares the three static routes (no list/item source → one page for every site) after the portfolio routes
+  ok   S2 new slots are optional or neutral-defaulted: every 1.4.2 site's slots document still resolves (demo pre-cut copy + the three fixtures); new sections have no settings
+
+[release] 1.4.x immutable, platform untouched, the demo moved by an explicit re-pin
+  ok   R1 the 1.4.0, 1.4.1 and 1.4.2 releases verify and are byte-identical to the pre-cut capture; exactly one dir per version 1.4.0 / 1.4.1 / 1.4.2 / 1.5.0
+  ok   R2 boost-interior-demo pins a verified release ≥ 1.5.0 and its current package was built with it (QA pass) — pre-publish: with the V0.1 publish target (demo-rollout.ts); at the 1.5.0 pin, the 1.4.2 package is the rollback (previous)
+  ok   R3 platform/ (test/ excluded) is byte-identical to the pre-change capture: a Template-only minor
+
+[site data] only the pin and the declared copy moved
+  ok   D1 every demo site file is byte-identical to the pre-cut capture except site.json (pin only) and slots.json (nav labels, list title, back link, intro link label, + the three page sections — nothing else)
+  ok   D2 51 / 51 raster assets: registry = 51 rasters, 0 SVG stand-ins, unchanged, and every one is served byte-identical from the current package
+
+[package] the built demo pages
+  ok   P1 the package = the 1.4.2 page set + exactly /3d-portfolio, /about, /contact; the route plan generates each once; the sitemap lists them on the demo origin
+  ok   P2 header on EVERY page: brand, then portfolio · 3D · about · the contact pill (one contact link, → /contact), aria-current only on its own page (details: portfolio=true), then the menu button (collapsed, labelled, no aria-controls); no menu markup in the server HTML
+  ok   P3 every contact CTA → /contact: the floating seat on every page (or on none while a declared head script takes it), the detail CTA on every detail, the hero's contact slide; the only mailto links are the footer address (every page) and the /contact direct address
+  ok   P4 /about: title, lead, the photo (existing site asset), body, the five principles in order, contact CTA + portfolio link
+  ok   P5 /3d-portfolio: exactly a title, the one line and a link to the portfolio (no images, forms or other links)
+  ok   P6 /contact: 7 fields (name / phone / message required), the site's work types, the not-connected notice, an empty status, no form action/method (no backend), the direct address; no success wording anywhere
+
+[fixtures] the same Template on other sites (neutral copy, no-email site)
+  ok   F1 every fixture has the three pages; with an email the CTAs → /contact and the form is there; without one (fixture-empty) no form, the neutral line, and no /contact link anywhere
+
+[stylesheet] responsive header, menu lock, seat on /contact
+  ok   C1 inline nav hidden below 900 and flex in the ≥ 900 band (menu button + menu hidden there); open menu locks the page and hides the seat; the seat hides on /contact
+
+15 passed, 0 failed
+exit=0

@@ -59,6 +59,8 @@ is **derived** as `totalCount > gallery.length` and is never emitted.
 
 ## Notes
 
+- **Superseded for bi-09 … bi-19 by `03-media-truth-audit.md`** (producer 4): their shared covers are
+  not attributable to them, so they now carry no `media`; bi-01 … bi-08 are unchanged.
 - **bi-09 … bi-19 reuse authored covers.** These 11 records are synthetic fixture cases added by
   the V0.2 re-authoring (`docs/result/interior-portfolio-v0.2/26-`). They author no gallery. Their
   `cover` in `projects.json` is an asset of one of bi-01 … bi-08's galleries, as the table shows.
