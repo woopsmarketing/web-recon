@@ -6,7 +6,9 @@
  *     V0 rule the V0.2 candidate does not name survives unchanged; rule ids without a § prefix
  *     (UR2, HT7, VO6, MD3, RV1 …) refer to it;
  *   - docs/reports/integration/07-integration-contract-v0.2-candidate.md — the built-space annex
- *     (§5 projectType, §6 property, §7 workScopes, §8 facets, §9 pricing, §10 shape, §12 validation).
+ *     (§5 projectType, §6 property, §7 workScopes, §8 facets, §9 pricing, §10 shape, §12 validation);
+ *   - docs/reports/integration/08-portfolio-media-1.1-addendum.md — the additive record `media`
+ *     (document schemaVersion "1.1").
  * This module holds only what the emitter and the validator need; it declares no site.
  */
 import {
@@ -29,10 +31,17 @@ export const MANIFEST_PATH = `/${INTEGRATION_DIR}/${MANIFEST_FILE}`;
  * SV1 — the manifest and each resource document carry their own schemaVersion, and they are
  * INDEPENDENT. 07 §3: V0.2 removes and re-shapes portfolio fields, which SV2 classifies as a MAJOR
  * change, so the portfolio document takes major 1 ("1.0"); the manifest gains no field in this
- * release and therefore does NOT move ("0.1"). This is the first time the two diverge.
+ * release and therefore does NOT move ("0.1"). This is the first time the two diverge. 08 then
+ * moves the document to "1.1" (below); the manifest still does not move.
  */
 export const CORE_SCHEMA_VERSION = "0.1";
-export const PORTFOLIO_SCHEMA_VERSION = "1.0";
+/**
+ * Portfolio media 1.1 (docs/reports/integration/08-portfolio-media-1.1-addendum.md, D1): an
+ * optional record-level `media` is ADDED, which SV2 classifies as a MINOR change — "1.0" → "1.1".
+ * Major 1 is unchanged, so a consumer that checks only the major keeps accepting the document (and
+ * drops the field it does not know); a record without `media` is exactly a 1.0 record.
+ */
+export const PORTFOLIO_SCHEMA_VERSION = "1.1";
 export const PORTFOLIO_KIND = "portfolio";
 
 /**
@@ -40,8 +49,10 @@ export const PORTFOLIO_KIND = "portfolio";
  * whenever the projection, ordering, serialisation or validation changes, so that a package
  * built by an older emitter is never reported "up-to-date" for the new one.
  * 2 = Contract V0.2 (built-space annex, document schemaVersion "1.0").
+ * 3 = Portfolio media 1.1 (record `media`: cover + authored after-gallery; document "1.1") — the
+ *     projection and the validation both changed.
  */
-export const PRODUCER_VERSION = 2;
+export const PRODUCER_VERSION = 3;
 
 // ------------------------------------------------ built-space annex (07) ----
 
@@ -77,6 +88,20 @@ export const RD1_TOTAL_MINOR_MAX = 100_000_000_000;
  * be an exact integer; this bound also keeps `2*T + A` far inside the safe-integer range.
  */
 export const RD1_AREA_MINOR_MAX = 100_000_000;
+
+// ------------------------------------------------ portfolio media 1.1 (08) ----
+
+/**
+ * 08 §2 (D1) — `MediaImage.src` is a same-origin absolute PATH, the way `detailUrl` is: a leading
+ * "/", never "//", only unreserved characters, "%" and "/", at most 512 characters in all — so no
+ * scheme, no host, no query, no fragment, no backslash. A `..` segment is refused separately by
+ * the validator. The consumer resolves it against the document's bound public origin only.
+ */
+export const MEDIA_SRC_RE = /^\/(?!\/)[A-Za-z0-9._~%\/-]{1,511}$/;
+/** 08 §2 — authored alt only, never invented; the content model's own MediaRef cap. */
+export const MEDIA_ALT_MAX = 160;
+/** 08 §2 — the gallery exports the first N after-images in authored order; totalCount keeps the real count. */
+export const MEDIA_GALLERY_MAX = 12;
 
 /** §7.1 site.id · §7.3 record.id (≤ 64) — the platform's own RecordId / siteId shape. */
 export const CONTRACT_ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

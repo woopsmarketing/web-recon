@@ -15,6 +15,9 @@ import {
   INTEGRATION_DIR,
   LOCATION_MAX,
   MANIFEST_FILE,
+  MEDIA_ALT_MAX,
+  MEDIA_GALLERY_MAX,
+  MEDIA_SRC_RE,
   PER_AREA_SOURCES,
   PORTFOLIO_KIND,
   PORTFOLIO_SCHEMA_VERSION,
@@ -30,9 +33,11 @@ import { compareCodePoints, derivePerArea, IntegrationError, portfolioVersion, t
 
 /**
  * Producer-side, fail-closed validation of an emission against Contract V0 (02) as extended by
- * V0.2 (07):
- *   manifest schema (§5, §7.1) · resource schema (§6, 07 §10) · schemaVersion (§14 SV1, 07 §3 —
- *   manifest "0.1", document "1.0", INV-27) · resource version + echo + file-name pointer (§15,
+ * V0.2 (07) and the portfolio media 1.1 addendum (08):
+ *   manifest schema (§5, §7.1) · resource schema (§6, 07 §10) · schemaVersion (§14 SV1, 07 §3, 08 —
+ *   manifest "0.1", document "1.1", INV-27) · record `media` (08 §2: same-origin path src, both-or-
+ *   neither width/height, authored alt ≤ 160, gallery 1..12 = min(totalCount, 12), totalCount iff
+ *   gallery, never `{}`, no hasMore) · resource version + echo + file-name pointer (§15,
  *   INV-3) · site identity (§13) · publicOrigin https (§5) · record id uniqueness (ID3) · required
  *   fields · root-relative URLs (UR2) and their pages in the route plan (INV-5) · facet closure
  *   both ways (VO1, INV-8) · work-scope vocabulary and closure both ways (WS1/WS2, INV-17) ·
@@ -124,6 +129,53 @@ const PricingSchema = z
   .strict()
   .refine((p) => p.total !== undefined || p.perArea !== undefined, { message: "pricing is omitted when both total and perArea are absent (MD4)" });
 const WorkScopeIdSchema = z.enum(WORK_SCOPE_IDS);
+/**
+ * 08 §2 (D1) — one image. `src` is a same-origin absolute path (never a URL, never `//host`, no
+ * `..` segment); `alt` is authored text only; `width`/`height` are positive integers, both or
+ * neither. Strict: an unknown key (a `url`, a `hasMore`, …) is refused.
+ *
+ * 08 MD-1a (producer hardening, stricter than D1's regex, never looser): a WHATWG URL parser treats
+ * `%2e` / `%2E` as a dot, so `/assets/%2e%2e/x` IS a `..` segment once resolved. `src` must
+ * therefore also be a UR2 path (isRootRelativePath: no empty, `.` or `..` segment, well-formed
+ * percent escapes) and carry no encoded dot, slash, backslash or NUL. This producer only emits
+ * content-addressed `/assets/<hex>.<ext>` paths, so none of this ever fires on real output.
+ */
+const ENCODED_PATH_META_RE = /%(2e|2f|5c|00)/i;
+export const MediaImageSchema = z
+  .object({
+    src: z
+      .string()
+      .regex(MEDIA_SRC_RE, { message: "media src must be a same-origin absolute path (08 §2)" })
+      .refine((src) => !src.split("/").includes(".."), { message: "media src must not contain a `..` segment (08 §2)" })
+      .refine((src) => isRootRelativePath(src) && !ENCODED_PATH_META_RE.test(src), {
+        message: "media src must be a UR2 path with no empty / dot segment and no percent-encoded dot, slash, backslash or NUL (08 MD-1a)",
+      }),
+    // MD-4: authored text — never blank (the content model trims, so this never fires on real data)
+    alt: z.string().min(1).max(MEDIA_ALT_MAX).regex(/\S/, { message: "media alt must not be blank (08 MD-4)" }).optional(),
+    width: z.number().int().positive().optional(),
+    height: z.number().int().positive().optional(),
+  })
+  .strict()
+  .refine((m) => (m.width === undefined) === (m.height === undefined), { message: "media width and height are both present or both absent (08 §2)" });
+/**
+ * 08 §2 — `{ cover?, gallery?, totalCount? }`, never empty. `totalCount` is present exactly when
+ * `gallery` is, is ≥ gallery.length, and `gallery.length === min(totalCount, 12)` (the producer
+ * exports the first 12 in authored order). There is no `hasMore`: consumers derive it as
+ * `totalCount > gallery.length` — booleans are not part of the schema.
+ */
+export const PortfolioMediaSchema = z
+  .object({
+    cover: MediaImageSchema.optional(),
+    gallery: z.array(MediaImageSchema).min(1).max(MEDIA_GALLERY_MAX).optional(),
+    totalCount: z.number().int().min(1).optional(),
+  })
+  .strict()
+  .refine((m) => m.cover !== undefined || m.gallery !== undefined, { message: "media is omitted when it has neither cover nor gallery — never {} (08 §2)" })
+  .refine((m) => (m.gallery === undefined) === (m.totalCount === undefined), { message: "media totalCount is present exactly when gallery is (08 §2)" })
+  .refine((m) => m.gallery === undefined || m.totalCount === undefined || m.totalCount >= m.gallery.length, { message: "media totalCount must be ≥ gallery.length (08 §2)" })
+  .refine((m) => m.gallery === undefined || m.totalCount === undefined || m.gallery.length === Math.min(m.totalCount, MEDIA_GALLERY_MAX), {
+    message: `media gallery.length must equal min(totalCount, ${MEDIA_GALLERY_MAX}) (08 §2)`,
+  });
 export const PortfolioRecordSchema = z
   .object({
     id: z.string().regex(CONTRACT_ID_RE).max(CONTRACT_ID_MAX),
@@ -137,6 +189,8 @@ export const PortfolioRecordSchema = z
     workScopeIds: z.array(WorkScopeIdSchema).min(1).max(WORK_SCOPE_IDS.length).optional(),
     pricing: PricingSchema.optional(),
     facets: z.record(KindOrFacetKey, z.array(z.string().min(1).max(FACET_ID_MAX)).min(1)).optional(),
+    // 08 — optional: a record without `media` is exactly a 1.0 record, and stays valid.
+    media: PortfolioMediaSchema.optional(),
   })
   .strict();
 export const PortfolioDocumentSchema = z

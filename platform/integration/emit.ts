@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Project } from "../content/schema";
+import type { MediaRef, Project } from "../content/schema";
 import type { SiteSnapshot } from "../site/instance";
 import { hashJson, sha256 } from "../util/hash";
 import {
@@ -7,6 +7,7 @@ import {
   CORE_SCHEMA_VERSION,
   INTEGRATION_DIR,
   MANIFEST_FILE,
+  MEDIA_GALLERY_MAX,
   PER_AREA_SOURCES,
   PORTFOLIO_KIND,
   PORTFOLIO_SCHEMA_VERSION,
@@ -25,11 +26,18 @@ import {
  *   (SiteSnapshot, the release's declared routes, the preflight route plan)
  *     → { manifest, portfolio document, serialised files }
  *
- * Projection rules (02 §6–§11, 06 A1–A3, and the V0.2 built-space annex of 07 §5–§11):
+ * Projection rules (02 §6–§11, 06 A1–A3, the V0.2 built-space annex of 07 §5–§11, and the
+ * portfolio media 1.1 addendum 08):
  *   - explicit allowlist: id · title · detailUrl · publishedAt · location · projectType ·
- *     property{type, area} · workScopeIds · pricing{total, perArea} · facets{category, style, tag}.
- *     Nothing else of a Project leaves (no summary/body/gallery/quote/slug/status/builtYear/
- *     period/duration — and no `scope`: the free-text scope FACET is retired, 07 §8).
+ *     property{type, area} · workScopeIds · pricing{total, perArea} · facets{category, style, tag} ·
+ *     media{cover, gallery, totalCount}. Nothing else of a Project leaves (no summary/body/quote/
+ *     slug/status/builtYear/period/duration, no before-image — and no `scope`: the free-text scope
+ *     FACET is retired, 07 §8).
+ *   - media (08, presentation only): `cover` = the authored cover; `gallery` = the authored AFTER
+ *     images (galleryGroups[].items[].image) in authored order, the first 12; `totalCount` = how many
+ *     after images there are. src/width/height come from the snapshot's asset table (the same entries
+ *     the Template's AssetResolver resolves), alt only when authored. Nothing else is a media source
+ *     (no og:image, no site hero, no logo, no section image), and media feeds no facet.
  *   - missing = omitted. Never null, never a placeholder, never `[]` outside `records` (MD3, WS5).
  *     `basis` only when supply | exclusive (absent or "unknown" → no key). `property` / `pricing`
  *     are omitted entirely when empty (MD4).
@@ -73,6 +81,19 @@ export interface PerAreaPrice {
   perUnit: string;
   source: PerAreaSource;
 }
+/** 08 §2 — one image: a same-origin path, the authored alt (if any), the registry's pixel size. */
+export interface MediaImage {
+  src: string;
+  alt?: string;
+  width?: number;
+  height?: number;
+}
+/** 08 §2 — presentation only; `hasMore` is never emitted (it is `totalCount > gallery.length`). */
+export interface PortfolioMedia {
+  cover?: MediaImage;
+  gallery?: MediaImage[];
+  totalCount?: number;
+}
 export interface PortfolioRecord {
   id: string;
   title: string;
@@ -84,6 +105,7 @@ export interface PortfolioRecord {
   workScopeIds?: WorkScopeId[];
   pricing?: { total?: TotalPrice; perArea?: PerAreaPrice };
   facets?: Record<string, string[]>;
+  media?: PortfolioMedia;
 }
 export interface PortfolioDocument {
   schemaVersion: string;
@@ -271,6 +293,39 @@ function totalOf(t: NonNullable<Project["totalPrice"]>): TotalPrice {
     : { kind: "range", minAmount: t.minAmount, maxAmount: t.maxAmount, currency: t.currency };
 }
 
+/**
+ * 08 §2 — one MediaImage from an authored MediaRef. The asset is looked up in the SNAPSHOT's asset
+ * table (every referenced asset, with its content-addressed publicPath and the registry's
+ * width/height — exactly what createAssetResolver hands the Template), never on disk, never by URL.
+ * An unknown asset fails closed. Key order: src · alt · width · height.
+ */
+function mediaImage(ref: MediaRef, assets: ReadonlyMap<string, SiteSnapshot["assets"][number]>, at: string): MediaImage {
+  const a = assets.get(ref.asset);
+  if (!a) throw new IntegrationError(`${at}: asset "${ref.asset}" is not in the site snapshot`);
+  const img: MediaImage = { src: a.publicPath };
+  // authored alt only — never invented, never a placeholder: "" / absent → no key (MD2)
+  if (ref.alt !== undefined && ref.alt !== "") img.alt = ref.alt;
+  img.width = a.width;
+  img.height = a.height;
+  return img;
+}
+
+/**
+ * 08 §2–§3 — a record's media: `{ cover }`, plus `gallery` + `totalCount` when the record authors any
+ * after image. `before` images are not exported and not counted (V1: they sit behind a toggle on the
+ * canonical page and are not the primary gallery). undefined when there is nothing (never `{}`).
+ */
+function projectMedia(p: Project, assets: ReadonlyMap<string, SiteSnapshot["assets"][number]>): PortfolioMedia | undefined {
+  const media: PortfolioMedia = {};
+  if (p.cover) media.cover = mediaImage(p.cover, assets, `record "${p.id}" cover`);
+  const after = (p.galleryGroups ?? []).flatMap((g) => g.items.map((item) => item.image));
+  if (after.length > 0) {
+    media.gallery = after.slice(0, MEDIA_GALLERY_MAX).map((ref, i) => mediaImage(ref, assets, `record "${p.id}" gallery[${i}]`));
+    media.totalCount = after.length;
+  }
+  return Object.keys(media).length > 0 ? media : undefined;
+}
+
 export function projectPortfolio(snapshot: SiteSnapshot, routes: { item: ItemRoute; list: ListRoute | undefined }, planned: readonly PlannedRoute[]): PortfolioEmission {
   const { item, list } = routes;
   const itemPlan = planned.find((r) => r.key === item.key);
@@ -280,6 +335,7 @@ export function projectPortfolio(snapshot: SiteSnapshot, routes: { item: ItemRou
   const vocabulary = new Set<string>(WORK_SCOPE_IDS);
   const warnings: string[] = [];
   const usedWorkScopes = new Set<WorkScopeId>();
+  const assets = new Map(snapshot.assets.map((a) => [a.id, a]));
 
   // 07 §8 — the facet keys of V0.2: `scope` is retired, `style` is new. Key order is code point
   // ascending (02 §6.1); these three already are.
@@ -348,6 +404,9 @@ export function projectPortfolio(snapshot: SiteSnapshot, routes: { item: ItemRou
         for (const v of tags) used.tag!.set(v, v);
       }
       rec.facets = facets;
+      // 08 — presentation only, last in the record; read by nothing above (no facet, no ordering).
+      const media = projectMedia(p, assets);
+      if (media) rec.media = media;
       return rec;
     });
 
