@@ -51,8 +51,11 @@ export const PORTFOLIO_KIND = "portfolio";
  * 2 = Contract V0.2 (built-space annex, document schemaVersion "1.0").
  * 3 = Portfolio media 1.1 (record `media`: cover + authored after-gallery; document "1.1") — the
  *     projection and the validation both changed.
+ * 4 = Media ownership (docs/work/portfolio-experience-v1/03-media-truth-audit.md): a cover is
+ *     exported only when it is attributable to its record, and the gallery is one entry per asset —
+ *     the projection changed; the schema, the document schemaVersion "1.1" and the validation did not.
  */
-export const PRODUCER_VERSION = 3;
+export const PRODUCER_VERSION = 4;
 
 // ------------------------------------------------ built-space annex (07) ----
 

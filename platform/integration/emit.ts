@@ -33,11 +33,16 @@ import {
  *     media{cover, gallery, totalCount}. Nothing else of a Project leaves (no summary/body/quote/
  *     slug/status/builtYear/period/duration, no before-image — and no `scope`: the free-text scope
  *     FACET is retired, 07 §8).
- *   - media (08, presentation only): `cover` = the authored cover; `gallery` = the authored AFTER
- *     images (galleryGroups[].items[].image) in authored order, the first 12; `totalCount` = how many
- *     after images there are. src/width/height come from the snapshot's asset table (the same entries
- *     the Template's AssetResolver resolves), alt only when authored. Nothing else is a media source
- *     (no og:image, no site hero, no logo, no section image), and media feeds no facet.
+ *   - media (08, presentation only): `cover` = the authored cover WHEN it is attributable to the
+ *     record (MEDIA OWNERSHIP, below); `gallery` = the authored AFTER images (galleryGroups[].items[]
+ *     .image) in authored order, one entry per asset (first occurrence wins), the first 12;
+ *     `totalCount` = how many distinct after images there are. src/width/height come from the
+ *     snapshot's asset table (the same entries the Template's AssetResolver resolves), alt only when
+ *     authored. Nothing else is a media source (no og:image, no site hero, no logo, no section
+ *     image), and media feeds no facet.
+ *   - MEDIA OWNERSHIP (docs/work/portfolio-experience-v1/03-media-truth-audit.md): a record carries
+ *     an image only when the snapshot itself shows the image belongs to THAT record — no image is
+ *     better than another job's photo. Mechanical, per asset id, no hardcoded ids.
  *   - missing = omitted. Never null, never a placeholder, never `[]` outside `records` (MD3, WS5).
  *     `basis` only when supply | exclusive (absent or "unknown" → no key). `property` / `pricing`
  *     are omitted entirely when empty (MD4).
@@ -310,15 +315,84 @@ function mediaImage(ref: MediaRef, assets: ReadonlyMap<string, SiteSnapshot["ass
   return img;
 }
 
+/** Every asset a record authors: cover, after images, before images (the MEDIA OWNERSHIP inputs). */
+function referencedAssets(p: Project): string[] {
+  const groups = p.galleryGroups ?? [];
+  return [...(p.cover ? [p.cover.asset] : []), ...groups.flatMap((g) => g.items.flatMap((item) => (item.before ? [item.image.asset, item.before.asset] : [item.image.asset])))];
+}
+
 /**
- * 08 §2–§3 — a record's media: `{ cover }`, plus `gallery` + `totalCount` when the record authors any
- * after image. `before` images are not exported and not counted (V1: they sit behind a toggle on the
- * canonical page and are not the primary gallery). undefined when there is nothing (never `{}`).
+ * MEDIA OWNERSHIP (03-media-truth-audit) — asset id → the ids of the snapshot records that reference
+ * it at all (cover · after · before). Read by `attributable` only.
  */
-function projectMedia(p: Project, assets: ReadonlyMap<string, SiteSnapshot["assets"][number]>): PortfolioMedia | undefined {
+function assetReferrers(projects: readonly Project[]): Map<string, Set<string>> {
+  const referrers = new Map<string, Set<string>>();
+  for (const p of projects) {
+    for (const asset of referencedAssets(p)) {
+      const ids = referrers.get(asset) ?? new Set<string>();
+      ids.add(p.id);
+      referrers.set(asset, ids);
+    }
+  }
+  return referrers;
+}
+
+/**
+ * MEDIA OWNERSHIP — the assets the snapshot's NON-project content uses: banner images, the site
+ * logo, media slot values. Exactly the non-project references the snapshot builder resolves into the
+ * asset table (platform/site/load.ts); a site-level image is never a record's own photo.
+ */
+function siteAssets(snapshot: SiteSnapshot): Set<string> {
+  const used = new Set<string>();
+  for (const b of snapshot.content.banners ?? []) used.add(b.image.asset);
+  if (snapshot.site.identity.logo) used.add(snapshot.site.identity.logo);
+  for (const section of Object.values(snapshot.slots?.values ?? {})) {
+    for (const v of Object.values(section)) {
+      const asset = (v as { asset?: unknown } | null)?.asset;
+      if (typeof asset === "string") used.add(asset);
+    }
+  }
+  return used;
+}
+
+/**
+ * MEDIA OWNERSHIP — an asset is attributable to record R iff
+ *   (a) it is in R's OWN galleryGroups (an after or a before image), or
+ *   (b) R is the ONLY record of the snapshot that references it at all (cover · after · before)
+ *       AND no non-project content (banner, logo, slot image) uses it.
+ * A cover that is another record's gallery photo, one several records share, or a site-level image
+ * is none of these: it is not evidence about R, so it is not exported (the consumer falls back to
+ * a text card). (a) is explicit authoring, so it holds even when another record also names the asset.
+ */
+function attributable(p: Project, asset: string, referrers: ReadonlyMap<string, ReadonlySet<string>>, siteUsed: ReadonlySet<string>): boolean {
+  const own = (p.galleryGroups ?? []).some((g) => g.items.some((item) => item.image.asset === asset || item.before?.asset === asset));
+  if (own) return true;
+  const ids = referrers.get(asset);
+  return ids !== undefined && ids.size === 1 && ids.has(p.id) && !siteUsed.has(asset);
+}
+
+/**
+ * 08 §2–§3 — a record's media: `{ cover }` when the cover is attributable (MEDIA OWNERSHIP), plus
+ * `gallery` + `totalCount` when the record authors any after image. The gallery is the record's own
+ * galleryGroups, so every entry is attributable by (a); a repeated asset is exported once (authored
+ * order, first occurrence wins) and counted once. `before` images are not exported and not counted
+ * (V1: they sit behind a toggle on the canonical page and are not the primary gallery). undefined
+ * when there is nothing (never `{}`, MD-8).
+ */
+function projectMedia(
+  p: Project,
+  assets: ReadonlyMap<string, SiteSnapshot["assets"][number]>,
+  referrers: ReadonlyMap<string, ReadonlySet<string>>,
+  siteUsed: ReadonlySet<string>,
+): PortfolioMedia | undefined {
   const media: PortfolioMedia = {};
-  if (p.cover) media.cover = mediaImage(p.cover, assets, `record "${p.id}" cover`);
-  const after = (p.galleryGroups ?? []).flatMap((g) => g.items.map((item) => item.image));
+  if (p.cover) {
+    // resolved first: an unknown cover asset fails closed even when the cover is not exported
+    const cover = mediaImage(p.cover, assets, `record "${p.id}" cover`);
+    if (attributable(p, p.cover.asset, referrers, siteUsed)) media.cover = cover;
+  }
+  const after: MediaRef[] = [];
+  for (const g of p.galleryGroups ?? []) for (const item of g.items) if (!after.some((ref) => ref.asset === item.image.asset)) after.push(item.image);
   if (after.length > 0) {
     media.gallery = after.slice(0, MEDIA_GALLERY_MAX).map((ref, i) => mediaImage(ref, assets, `record "${p.id}" gallery[${i}]`));
     media.totalCount = after.length;
@@ -336,6 +410,10 @@ export function projectPortfolio(snapshot: SiteSnapshot, routes: { item: ItemRou
   const warnings: string[] = [];
   const usedWorkScopes = new Set<WorkScopeId>();
   const assets = new Map(snapshot.assets.map((a) => [a.id, a]));
+  // MEDIA OWNERSHIP — over the whole snapshot, before any record is projected (record order is
+  // irrelevant: the rule reads reference counts only).
+  const referrers = assetReferrers(snapshot.content.projects);
+  const siteUsed = siteAssets(snapshot);
 
   // 07 §8 — the facet keys of V0.2: `scope` is retired, `style` is new. Key order is code point
   // ascending (02 §6.1); these three already are.
@@ -405,7 +483,7 @@ export function projectPortfolio(snapshot: SiteSnapshot, routes: { item: ItemRou
       }
       rec.facets = facets;
       // 08 — presentation only, last in the record; read by nothing above (no facet, no ordering).
-      const media = projectMedia(p, assets);
+      const media = projectMedia(p, assets, referrers, siteUsed);
       if (media) rec.media = media;
       return rec;
     });

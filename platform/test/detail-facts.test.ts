@@ -46,8 +46,10 @@ const DEMO = "boost-interior-demo";
  * The golden the producer emits now: portfolio media 1.1 (platform/test/golden/portfolio-v1.1-media,
  * document "1.1"). Media added no fact — every expectation below is unchanged from the V0.2 golden
  * (d56509c8…, now frozen as the 1.0 compatibility fixture); only the resource version moved.
+ * Producer 4 (media ownership, docs/work/portfolio-experience-v1/03-media-truth-audit.md) dropped
+ * the 11 shared covers of bi-09 … bi-19 — again no fact moved, only `media` and the version.
  */
-const GOLDEN_VERSION = "d95b5cb5f8f05e50e624eb44d39393f5";
+const GOLDEN_VERSION = "856361f52e3f1b5022cce13a31afc171";
 
 let passed = 0;
 const failed: string[] = [];
@@ -406,13 +408,17 @@ try {
       assert(!/\\?"(basis|workScopeIds|minAmount|maxAmount|full_remodel|partial_remodel|exclusive)\\?"/.test(text), `${f}: raw V0.2 data shipped`);
     }
   });
-  await check("B8 MEDIA_PAGE_CONSISTENCY 19/19 (media 1.1): every image the build's integration record names (cover + gallery) is an image its own detail page renders; bi-04's page also renders its 2 before images, which the record does not carry", async () => {
+  // B8 is a SUBSET rule (a record names only images its page renders). Since producer 4 (media
+  // ownership) the page may render MORE than the record names: bi-09 … bi-19's pages still show
+  // their shared cover photo (interior-01 requires a cover), their records carry no media at all.
+  await check("B8 MEDIA_PAGE_CONSISTENCY 19/19 (media 1.1): every image the build's integration record names (cover + gallery) is an image its own detail page renders; bi-04's page also renders its 2 before images, which the record does not carry; the 11 records without media (bi-09 … bi-19) name nothing", async () => {
     assert(pages.size === 19, "B2 pages missing");
     const doc = JSON.parse(await readFile(path.join(site, "_integration", `portfolio.${GOLDEN_VERSION}.json`), "utf8"));
+    eq((doc.records as Record<string, any>[]).filter((r) => r.media === undefined).map((r) => r.id), ["bi-09", "bi-10", "bi-11", "bi-12", "bi-13", "bi-14", "bi-15", "bi-16", "bi-17", "bi-18", "bi-19"], "records without media");
     for (const r of doc.records as Record<string, any>[]) {
       const html = pages.get(`${r.detailUrl.slice(1)}.html`)!;
       const onPage = new Set([...html.matchAll(/src="(\/assets\/[0-9a-f]{20}\.[a-z]+)"/g)].map((m) => m[1]!));
-      const named = [r.media.cover, ...(r.media.gallery ?? [])].map((m: { src: string }) => m.src);
+      const named = r.media ? [r.media.cover, ...(r.media.gallery ?? [])].filter((m) => m !== undefined).map((m: { src: string }) => m.src) : [];
       for (const src of named) assert(onPage.has(src), `${r.id}: media ${src} is not rendered by its own page`);
       if (r.id === "bi-04") eq([...onPage].filter((src) => src.endsWith(".jpg") && !named.includes(src)).length, 2, "bi-04: the page's 2 before images are the only page photos not in media");
     }

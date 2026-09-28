@@ -11,10 +11,11 @@
  *     workScopeIds + document workScopes (WS2 closure), pricing{total,perArea}, facets.style, and
  *     the D-1 / RD1 derived per-area price (INV-17 … INV-30);
  *
- *   - portfolio media 1.1 (08): record `media` = the authored cover + the authored AFTER gallery
- *     (first 12, authored order, totalCount = all of them), src/width/height from the snapshot's
- *     asset table, alt only when authored; the validator's MediaImage/media rules on crafted
- *     documents; a record without media (a 1.0 record) stays valid;
+ *   - portfolio media 1.1 (08): record `media` = the authored cover WHEN attributable to the record
+ *     (media ownership, docs/work/portfolio-experience-v1/03-media-truth-audit.md) + the authored
+ *     AFTER gallery (one entry per asset, first 12, authored order, totalCount = all distinct ones),
+ *     src/width/height from the snapshot's asset table, alt only when authored; the validator's
+ *     MediaImage/media rules on crafted documents; a record without media (a 1.0 record) stays valid;
  *   - the pinned media 1.1 golden integration package (platform/test/golden/portfolio-v1.1-media,
  *     written by platform/cli/integration-golden.ts): the pure emission of the demo equals it byte
  *     for byte, its golden.json records the facts of those bytes, and the 19-record corpus still
@@ -82,7 +83,7 @@ import { IntegrationConfigError, integrationEmits, loadIntegrationConfig } from 
 import { PRODUCER_SOURCE_FILES, producerSources } from "../integration/sources";
 import { compareCodePoints, DeclaredRoutesSchema, derivePerArea, emitIntegration, IntegrationError, portfolioVersion, type IntegrationEmission, type PlannedRoute, type PortfolioDocument } from "../integration/emit";
 import { assertIntegration, isRootRelativePath, validateIntegration } from "../integration/validate";
-import { ProjectSchema, type Project } from "../content/schema";
+import { ProjectSchema, type MediaRef, type Project } from "../content/schema";
 import template from "../../templates/interior-01/v1/template";
 import { GOLDEN_DIR, GOLDEN_V02_DIR, goldenRecord } from "../cli/integration-golden";
 import { MediaImageSchema, PortfolioMediaSchema } from "../integration/validate";
@@ -176,11 +177,20 @@ const V02_FIRST_PACKAGE_HASH = "3846a29d30ef1d48e58b0c507075918424350870b096294a
 const V02_FIRST_PACKAGE_COMMIT = "cb781e84a4a67ed220c2705640397bf570e8458c";
 /**
  * The widget build (docs/result/BOOST-INTERIOR-LIVE-WIDGET-EMBED-2026-09-28.md, live 2026-09-28):
- * the V0.2 corpus + head scripts, document "1.0" = the frozen V0.2 golden's bytes. Behind the media
- * 1.1 build it is the rollback (previous.json) — B2b.
+ * the V0.2 corpus + head scripts, document "1.0" = the frozen V0.2 golden's bytes. It was the
+ * rollback behind the producer-3 media 1.1 build; the producer-4 build moved the rollback one step
+ * and keep-2 retired this directory. B2b reads it from WIDGET_PACKAGE_COMMIT and re-hashes it.
  */
 const WIDGET_BUILD_INPUT_ID = "32303241c78f10e5edc3a42686680aa5238a8aa76c3192795dc351ffbe55c650";
 const WIDGET_PACKAGE_HASH = "ada03d20d4c0688316e274a724d4298aa031128098ed23b591a5b65c004a25d6";
+const WIDGET_PACKAGE_COMMIT = "aa2d94b1885076f9b162445a7d45d3c43ac41b20";
+/**
+ * The producer-3 media 1.1 build (docs/result/portfolio-media-1.1, published 2026-09-29, commit
+ * b7d8ef5): document "1.1" d95b5cb5… with the 11 shared covers of bi-09 … bi-19 (P3_MEDIA_* below).
+ * Behind the producer-4 build (docs/result/portfolio-media-polish-v1) it is the rollback — B2b.
+ */
+const MEDIA_P3_BUILD_INPUT_ID = "3a897d2efbe04357071a8c633a7723f6ed169e7471c96c64258c2577bd026395";
+const MEDIA_P3_PACKAGE_HASH = "480e5e65b0611ab280de8ae0c242e050a5a9711bbeb7f0e90c46c9f5c107298c";
 const DEMO_MANIFEST_BYTES = 274;
 /**
  * The FROZEN V0.2 golden values (07 rev 9.2.1, document "1.0", manifest "0.1"), pinned in
@@ -200,10 +210,19 @@ const V02_README_SHA256 = "c15b285c453e6aaa657abb876e429976de796e34a7390c734528c
  * and shared with the consumer. A change here is a change of the canonical data or of the producer.
  * (The manifest keeps its 274 bytes: only the 32-hex version inside it moved.)
  */
-const DEMO_VERSION = "d95b5cb5f8f05e50e624eb44d39393f5";
-const DEMO_DOC_BYTES = 20158;
-const DEMO_DOC_SHA256 = "5da25dd21dc3158c1495c9211a1fcb8cea4d485d788ee56facdaf6d2e4abac3b";
-const DEMO_MANIFEST_SHA256 = "495376e5f17095e7b027c613f26ad5b0a4ae1b971ebaa7f9789a971a0da9a1aa";
+const DEMO_VERSION = "856361f52e3f1b5022cce13a31afc171";
+const DEMO_DOC_BYTES = 18520;
+const DEMO_DOC_SHA256 = "0ae164dc03b374665d52000f997391d4b4f77325b92c60f6a3da5ec586aaac22";
+const DEMO_MANIFEST_SHA256 = "9061827a746f986eb51127923af839930c01be7c9857ee2159a2dfae71e71e61";
+/**
+ * The media 1.1 golden of PRODUCER 3 (before media ownership, 03-media-truth-audit): the same
+ * document with the 11 shared covers of bi-09 … bi-19. Superseded, read from the commit that pinned
+ * it and re-hashed; E14 proves producer 4 changed nothing in it but `media` (and so `version`).
+ */
+const P3_MEDIA_VERSION = "d95b5cb5f8f05e50e624eb44d39393f5";
+const P3_MEDIA_DOC_SHA256 = "5da25dd21dc3158c1495c9211a1fcb8cea4d485d788ee56facdaf6d2e4abac3b";
+const P3_MEDIA_MANIFEST_SHA256 = "495376e5f17095e7b027c613f26ad5b0a4ae1b971ebaa7f9789a971a0da9a1aa";
+const P3_MEDIA_COMMIT = "df68b10a1bc93c7d69723676ac4a6b772a2d14af";
 /** the zero-record 1.1 document (07 §10: records [] is the one permitted empty array) */
 const EMPTY_VERSION = "94bea71d35178b52501438e3ed1c9a3d";
 const EMPTY_DOC = `{"schemaVersion":"1.1","resource":"portfolio","version":"${EMPTY_VERSION}","records":[]}`;
@@ -384,7 +403,7 @@ await check("C1 fixed manifest path, the DIVERGED schema versions (manifest 0.1 
   // 08: media is an ADDED optional field → a MINOR bump of the document (SV2); the manifest gains
   // nothing and does not move.
   eq([CORE_SCHEMA_VERSION, PORTFOLIO_SCHEMA_VERSION], ["0.1", "1.1"], "schemaVersion (SV1 · 07 §3 · 08 · INV-27)");
-  assert(Number.isInteger(PRODUCER_VERSION) && PRODUCER_VERSION >= 3, "producer version bumped for media 1.1 (projection + validation changed)");
+  assert(Number.isInteger(PRODUCER_VERSION) && PRODUCER_VERSION >= 4, "producer version bumped for media 1.1 (3: projection + validation changed) and for media ownership (4: projection changed)");
   eq([MEDIA_GALLERY_MAX, MEDIA_ALT_MAX, MEDIA_SRC_RE.source], [12, 160, "^\\/(?!\\/)[A-Za-z0-9._~%\\/-]{1,511}$"], "media limits (08 §2 = D1)");
   // 07 §8: `scope: 150` retired with the facet; `style` added (PROVISIONAL until the consumer
   // declares it through the VO6 procedure); category / tag unchanged.
@@ -1123,40 +1142,74 @@ await check("A13 INV-22 provenance, metamorphic, over every demo record: moving 
 console.log("\n[media] portfolio media 1.1 (08 = D1): the producer's sourcing on real data and crafted snapshots");
 /** the after images a record authors, in authored order (08 §3: `before` is never one of them) */
 const afterRefs = (p: Project) => (p.galleryGroups ?? []).flatMap((g) => g.items.map((i) => i.image));
+/** every asset a record authors: cover, after and before images — the media-ownership inputs, re-derived here */
+const refAssets = (p: Project) => [p.cover.asset, ...(p.galleryGroups ?? []).flatMap((g) => g.items.flatMap((i) => [i.image.asset, ...(i.before ? [i.before.asset] : [])]))];
+const project = (s: SiteSnapshot, id: string) => s.content.projects.find((p) => p.id === id)!;
+const demoRecord = (id: string) => demoEmission.portfolio!.document.records.find((r) => r.id === id)!;
+/** the demo snapshot re-authored by `mutate` — several records and the asset table may move; every record stays valid content */
+function craftMedia(mutate: (s: SiteSnapshot) => void) {
+  const snapshot = clone(demo.snapshot);
+  mutate(snapshot);
+  for (const p of snapshot.content.projects) assert(ProjectSchema.safeParse(p).success, `crafted record ${p.id} must itself be valid content`);
+  const emission = emitFor(snapshot);
+  const document = emission.portfolio!.document;
+  return { snapshot, emission, document, record: (id: string) => document.records.find((r) => r.id === id)!, result: validateFor(emission, snapshot) };
+}
+/** n NEW assets `<prefix>-00` … in the snapshot's asset table (a real entry's size, its own id and content path); nobody references them yet */
+function addAssets(s: SiteSnapshot, n: number, prefix = "craft"): string[] {
+  const base = s.assets.find((a) => a.id === "bi01-living-01")!;
+  return Array.from({ length: n }, (_, i) => {
+    const id = `${prefix}-${String(i).padStart(2, "0")}`;
+    const hex = sha256(id);
+    s.assets.push({ ...base, id, file: `${id}.jpg`, sha256: hex, publicPath: `/assets/${hex.slice(0, 20)}.jpg` });
+    return id;
+  });
+}
 /** the MediaImage 08 §2 expects for an authored MediaRef — written from the snapshot's asset table */
 const expectImage = (ref: { asset: string; alt?: string }) => {
   const a = demo.snapshot.assets.find((x) => x.id === ref.asset)!;
   return { src: a.publicPath, ...(ref.alt ? { alt: ref.alt } : {}), width: a.width, height: a.height };
 };
-await check("E11 demo media = the authored cover + the authored AFTER gallery, first 12 in authored order, totalCount = all after images; bi-01 12 of 13 (hasMore derived), bi-02 … bi-08 complete, bi-09 … bi-19 cover only; bi-04's before images absent; 19 covers · 8 galleries · 41 images · totalCount 42", () => {
+await check("E11 demo media = the cover when attributable (media ownership) + the authored AFTER gallery, first 12 in authored order, totalCount = all after images; bi-01 12 of 13 (hasMore derived), bi-02 … bi-08 complete with their own cover; bi-09 … bi-19 NO media (their cover is another record's gallery photo); bi-04's before images absent; 8 covers · 8 galleries · 41 images · totalCount 42", () => {
   const d = demoEmission.portfolio!.document;
+  const EARLY = ["bi-01", "bi-02", "bi-03", "bi-04", "bi-05", "bi-06", "bi-07", "bi-08"];
+  const LATE = ["bi-09", "bi-10", "bi-11", "bi-12", "bi-13", "bi-14", "bi-15", "bi-16", "bi-17", "bi-18", "bi-19"];
   for (const r of d.records) {
     const src = demo.snapshot.content.projects.find((p) => p.id === r.id)!;
     const after = afterRefs(src);
-    const want = {
-      cover: expectImage(src.cover),
-      ...(after.length > 0 ? { gallery: after.slice(0, MEDIA_GALLERY_MAX).map(expectImage), totalCount: after.length } : {}),
-    };
-    eq(r.media, want, `${r.id}: media = the authored cover + after gallery (08 §3)`);
+    if (LATE.includes(r.id)) {
+      eq(r.media, undefined, `${r.id}: no media at all — never {} (MD-8)`);
+      continue;
+    }
+    // bi-01 … bi-08: the cover is one of the record's own after images (ownership rule (a)), no
+    // after image repeats, so the media is exactly the authored cover + the authored gallery
+    assert(after.some((ref) => ref.asset === src.cover.asset), `${r.id}: its cover ${src.cover.asset} is in its own gallery`);
+    eq(new Set(after.map((ref) => ref.asset)).size, after.length, `${r.id}: no repeated after image`);
+    eq(r.media, { cover: expectImage(src.cover), gallery: after.slice(0, MEDIA_GALLERY_MAX).map(expectImage), totalCount: after.length }, `${r.id}: media = the own cover + after gallery (08 §3)`);
     assert(PortfolioMediaSchema.safeParse(r.media).success, `${r.id}: media passes the 08 schema`);
   }
+  eq(d.records.filter((r) => r.media).map((r) => r.id), EARLY, "media on bi-01 … bi-08 only");
   const m = (id: string) => d.records.find((r) => r.id === id)!.media!;
   eq([m("bi-01").gallery!.length, m("bi-01").totalCount], [12, 13], "bi-01: 12 exported of 13 → a consumer derives hasMore = true");
   eq(m("bi-01").gallery!.map((g) => g.src).includes(expectImage({ asset: "bi01-bathroom-02" }).src), false, "bi-01: the 13th after image (bi01-bathroom-02) is counted, not exported");
   eq(d.records.filter((r) => r.media?.gallery && r.media.totalCount! > r.media.gallery.length).map((r) => r.id), ["bi-01"], "derived hasMore only on bi-01");
-  eq(d.records.filter((r) => !r.media?.gallery).map((r) => r.id), ["bi-09", "bi-10", "bi-11", "bi-12", "bi-13", "bi-14", "bi-15", "bi-16", "bi-17", "bi-18", "bi-19"], "cover only: bi-09 … bi-19");
-  for (const id of ["bi-09", "bi-10", "bi-11", "bi-12", "bi-13", "bi-14", "bi-15", "bi-16", "bi-17", "bi-18", "bi-19"]) eq(Object.keys(m(id)), ["cover"], `${id}: media = { cover } — no gallery, no totalCount`);
-  // bi-09 … bi-19 reuse AUTHORED covers: each is an after image of one of bi-01 … bi-08 (a reused
-  // authored asset — the site itself renders it as that record's cover — not a guessed relation)
-  const earlyAfter = new Set(demo.snapshot.content.projects.filter((p) => afterRefs(p).length > 0).flatMap((p) => afterRefs(p).map((ref) => ref.asset)));
-  for (const p of demo.snapshot.content.projects.filter((x) => afterRefs(x).length === 0)) assert(earlyAfter.has(p.cover.asset), `${p.id}: cover ${p.cover.asset} is a reused authored gallery asset`);
+  // WHY bi-09 … bi-19 carry nothing: each authors no gallery and a cover that is an after image of
+  // one of bi-01 … bi-08 (04-demo-data-spec §5: "a shared photo … not a photograph of a distinct
+  // job"). Such a cover is not attributable to them, and there is no other image of theirs.
+  const earlyAfter = new Map(demo.snapshot.content.projects.flatMap((p) => afterRefs(p).map((ref) => [ref.asset, p.id] as const)));
+  for (const id of LATE) {
+    const p = demo.snapshot.content.projects.find((x) => x.id === id)!;
+    eq(afterRefs(p).length, 0, `${id}: authors no gallery`);
+    const owner = earlyAfter.get(p.cover.asset);
+    assert(owner !== undefined && owner !== id, `${id}: cover ${p.cover.asset} is another record's gallery photo`);
+  }
   const bi04 = demo.snapshot.content.projects.find((p) => p.id === "bi-04")!;
   const befores = (bi04.galleryGroups ?? []).flatMap((g) => g.items.flatMap((i) => (i.before ? [i.before] : [])));
   eq(befores.length, 2, "bi-04 authors two before images");
   for (const b of befores) assert(!demoEmission.portfolio!.file.text.includes(`"${expectImage(b).src}"`), `before image ${b.asset} is not exported`);
   eq(m("bi-04").totalCount, 4, "bi-04: totalCount counts the 4 after images only (not the 2 befores)");
-  const all = d.records.map((r) => r.media!);
-  eq([all.filter((x) => x.cover).length, all.filter((x) => x.gallery).length, all.reduce((n, x) => n + (x.gallery?.length ?? 0), 0), all.reduce((n, x) => n + (x.totalCount ?? 0), 0)], [19, 8, 41, 42], "covers · galleries · exported images · totalCount");
+  const all = d.records.flatMap((r) => (r.media ? [r.media] : []));
+  eq([all.length, all.filter((x) => x.cover).length, all.filter((x) => x.gallery).length, all.reduce((n, x) => n + (x.gallery?.length ?? 0), 0), all.reduce((n, x) => n + (x.totalCount ?? 0), 0)], [8, 8, 8, 41, 42], "records with media · covers · galleries · exported images · totalCount");
   // every image of this corpus authors its alt and the registry gives every size
   assert(all.flatMap((x) => [x.cover!, ...(x.gallery ?? [])]).every((i) => i.alt && i.width === 1600 && i.height === 1200 && /^\/assets\/[0-9a-f]{20}\.jpg$/.test(i.src)), "authored alt, 1600×1200, content-addressed same-origin jpg path");
 });
@@ -1169,17 +1222,21 @@ await check("E12 media on crafted snapshots: alt only when authored (absent / \"
   eq(noAlt.result.errors, [], "valid without alt");
   eq(Object.keys(noAlt.record.media!.cover!), ["src", "width", "height"], "cover alt absent → no key");
   eq(Object.keys(noAlt.record.media!.gallery![0]!), ["src", "width", "height"], "gallery alt \"\" → no key (MD2), never a placeholder");
-  // the 12 cap and totalCount
-  const withAfter = (n: number) => (p: Project) => {
-    const one = afterRefs(p)[0]!;
-    p.galleryGroups = [{ name: "거실", items: Array.from({ length: n }, () => ({ image: { ...one } })) }];
-  };
+  // the 12 cap and totalCount — n DISTINCT after images (a repeated asset is one image, E13)
   for (const [n, len] of [[1, 1], [12, 12], [13, 12], [30, 12]] as const) {
-    const c = craft(withAfter(n));
-    eq([c.record.media!.gallery!.length, c.record.media!.totalCount, c.result.errors], [len, n, []], `${n} after images → gallery ${len}, totalCount ${n}`);
+    const c = craftMedia((s) => {
+      const ids = addAssets(s, n);
+      project(s, "bi-01").galleryGroups = [{ name: "거실", items: ids.map((asset) => ({ image: { asset, alt: asset } })) }];
+    });
+    const r = c.record("bi-01");
+    eq([r.media!.gallery!.length, r.media!.totalCount, c.result.errors], [len, n, []], `${n} after images → gallery ${len}, totalCount ${n}`);
+    eq(r.media!.gallery!.map((g) => g.alt), Array.from({ length: len }, (_, i) => `craft-${String(i).padStart(2, "0")}`), `${n}: the first ${len}, authored order`);
+    eq(r.media!.cover?.src, expectImage({ asset: "bi01-living-01" }).src, `${n}: the cover, now outside every gallery, is referenced by bi-01 alone → still exported (ownership rule (b))`);
   }
+  // bi-01's cover bi01-living-01 is referenced by bi-01 alone, so without its gallery it is still
+  // attributable (ownership rule (b)) and the record keeps { cover }
   const coverOnly = craft((p) => void delete p.galleryGroups);
-  eq([Object.keys(coverOnly.record.media!), coverOnly.result.errors], [["cover"], []], "no galleryGroups → { cover } only");
+  eq([Object.keys(coverOnly.record.media!), coverOnly.result.errors], [["cover"], []], "no galleryGroups, a sole-referenced cover → { cover } only");
   // before: not exported, not counted — adding one to every bi-01 item changes nothing
   const withBefore = craft((p) => p.galleryGroups!.forEach((g) => g.items.forEach((i) => void (i.before = { asset: "bi04-kitchen-01-before", alt: "공사 전" }))));
   eq(withBefore.record.media, demoEmission.portfolio!.document.records.find((r) => r.id === "bi-01")!.media, "before images change nothing in media");
@@ -1197,6 +1254,109 @@ await check("E12 media on crafted snapshots: alt only when authored (absent / \"
     p.cover = { asset: "bi01-hallway-01" };
   }
   eq(strip(emitFor(other).portfolio!.document), strip(demoEmission.portfolio!.document), "every non-media byte is independent of the media sources (08: media feeds no facet, no order, nothing else)");
+});
+
+// MEDIA OWNERSHIP (producer 4, docs/work/portfolio-experience-v1/03-media-truth-audit.md): a record
+// carries an image only when the snapshot shows it is THAT record's — an asset of its own
+// galleryGroups (after or before), or one no other record references. Better no image (the consumer
+// shows a text card) than another job's photo.
+await check("E13 media ownership on crafted snapshots: a cover that is another record's gallery photo is not exported (the own gallery stays); a cover two gallery-less records share is exported for neither (no media, never {}); a cover only its record references is — unless a banner / slot / logo uses it; a cover that is a before image of the own gallery is; a repeated gallery asset is exported and counted once, first occurrence, authored order; the 12 cap holds after dedupe; every result validates", () => {
+  // (1) a record WITH a gallery points its cover at another record's photo
+  const foreign = craftMedia((s) => void (project(s, "bi-02").cover = { asset: "bi01-kitchen-03", alt: "주방" }));
+  eq(Object.keys(foreign.record("bi-02").media!), ["gallery", "totalCount"], "bi-02: the cover from bi-01's gallery is not exported");
+  eq(foreign.record("bi-02").media!.gallery, demoRecord("bi-02").media!.gallery, "bi-02: its own gallery is untouched");
+  eq(foreign.record("bi-01").media, demoRecord("bi-01").media, "bi-01, the photo's record, is untouched");
+  // (2) two gallery-less records share one cover nobody else references
+  const shared = craftMedia((s) => {
+    const [a] = addAssets(s, 1, "shared");
+    for (const id of ["bi-09", "bi-10"]) project(s, id).cover = { asset: a!, alt: "공유 사진" };
+  });
+  eq([shared.record("bi-09").media, shared.record("bi-10").media, "media" in shared.record("bi-09")], [undefined, undefined, false], "a shared cover is attributable to neither: media absent, not {}");
+  // (3) a gallery-less record whose cover nobody else references
+  const sole = craftMedia((s) => {
+    const [a] = addAssets(s, 1, "sole");
+    project(s, "bi-09").cover = { asset: a!, alt: "단독 사진" };
+  });
+  const soleAsset = sole.snapshot.assets.find((a) => a.id === "sole-00")!;
+  eq(sole.record("bi-09").media, { cover: { src: soleAsset.publicPath, alt: "단독 사진", width: soleAsset.width, height: soleAsset.height } }, "a sole-referenced cover without a gallery → { cover }");
+  // (4) a cover that is a before image of the record's own gallery (rule (a) counts before images)
+  const bi04Before = project(demo.snapshot, "bi-04").galleryGroups!.flatMap((g) => g.items).find((i) => i.before)!.before!;
+  const beforeCover = craftMedia((s) => void (project(s, "bi-04").cover = { ...bi04Before }));
+  eq(beforeCover.record("bi-04").media!.cover, expectImage(bi04Before), "bi-04: its own before image as cover is exported (as cover only)");
+  eq(beforeCover.record("bi-04").media!.gallery, demoRecord("bi-04").media!.gallery, "bi-04: the before image does not enter the gallery");
+  // (5) repeated assets inside one record's gallery
+  const [a, b, c] = afterRefs(project(demo.snapshot, "bi-02"));
+  const dup = craftMedia((s) => {
+    const item = (ref: MediaRef) => ({ image: { ...ref } });
+    project(s, "bi-02").galleryGroups = [{ name: "거실", items: [a!, b!, a!].map(item) }, { name: "주방", items: [c!, b!].map(item) }];
+  });
+  eq([dup.record("bi-02").media!.gallery, dup.record("bi-02").media!.totalCount], [[a!, b!, c!].map(expectImage), 3], "a repeated asset: exported once, counted once, first occurrence, authored order");
+  // (6) the cap after dedupe: 20 items over 13 distinct assets → the first 12 distinct of 13
+  const cap = craftMedia((s) => {
+    const ids = addAssets(s, 13, "cap");
+    const order = [...ids.slice(0, 5), ...ids.slice(0, 5), ...ids.slice(5), ids[0]!, ids[12]!];
+    project(s, "bi-02").galleryGroups = [{ name: "거실", items: order.map((asset) => ({ image: { asset, alt: asset } })) }];
+  });
+  eq([cap.record("bi-02").media!.gallery!.map((g) => g.alt), cap.record("bi-02").media!.totalCount], [Array.from({ length: 12 }, (_, i) => `cap-${String(i).padStart(2, "0")}`), 13], "20 items / 13 distinct → gallery 12 (first occurrences, authored order), totalCount 13");
+  // (7) a site-level image (banner / slot image / logo) as the ONLY record's cover: rule (b) also
+  // requires that no non-project content uses the asset — a site photo is never a record's own
+  for (const asset of ["site-hero-01", "site-intro", "logo"]) {
+    const siteCover = craftMedia((s) => void (project(s, "bi-09").cover = { asset, alt: "사이트 이미지" }));
+    eq(siteCover.record("bi-09").media, undefined, `bi-09: the site asset ${asset} as its sole-referenced cover is not exported`);
+    eq([siteCover.result.errors, siteCover.result.warnings], [[], []], `site cover ${asset}: validates`);
+  }
+  // …and it is the site use that decides: the same banner image, once no banner uses it, is bi-09's
+  const unbannered = craftMedia((s) => {
+    s.content.banners = s.content.banners!.filter((b) => b.image.asset !== "site-hero-01");
+    project(s, "bi-09").cover = { asset: "site-hero-01", alt: "사이트 이미지" };
+  });
+  eq(unbannered.record("bi-09").media?.cover?.src, unbannered.snapshot.assets.find((a) => a.id === "site-hero-01")!.publicPath, "no site content uses it any more → sole-referenced → exported");
+  for (const [what, c] of [["foreign", foreign], ["shared", shared], ["sole", sole], ["before cover", beforeCover], ["dup", dup], ["cap", cap], ["unbannered", unbannered]] as const) eq([c.result.errors, c.result.warnings], [[], []], `${what}: validates`);
+});
+await check("E14 MEDIA TRUTH over the real demo emission: every exported src (cover + gallery) is an asset attributable to ITS record (own galleryGroups, or referenced by that record alone); no src is in two records' media; a gallery ≤ 12 with no repeat; and every non-media byte equals producer 3's golden (same records, same order) while media only ever shrank — the 11 shared covers are all that left", async () => {
+  const d = demoEmission.portfolio!.document;
+  const assetOf = new Map(demo.snapshot.assets.map((a) => [a.publicPath, a.id]));
+  eq(assetOf.size, demo.snapshot.assets.length, "publicPath → asset id is one-to-one");
+  const referrers = new Map<string, Set<string>>();
+  for (const p of demo.snapshot.content.projects) for (const asset of refAssets(p)) referrers.set(asset, (referrers.get(asset) ?? new Set<string>()).add(p.id));
+  // the non-project uses of an asset (banner images, the logo, slot media values)
+  const siteUsed = new Set([...(demo.snapshot.content.banners ?? []).map((b) => b.image.asset), ...(demo.snapshot.site.identity.logo ? [demo.snapshot.site.identity.logo] : [])]);
+  for (const section of Object.values(demo.snapshot.slots?.values ?? {})) for (const v of Object.values(section)) if (typeof (v as { asset?: unknown } | null)?.asset === "string") siteUsed.add((v as { asset: string }).asset);
+  assert(siteUsed.has("site-hero-01") && siteUsed.has("logo") && siteUsed.has("site-intro"), "the demo's site-level images are enumerated");
+  const holder = new Map<string, string>();
+  for (const r of d.records) {
+    if (!r.media) continue;
+    const p = project(demo.snapshot, r.id);
+    const ownGallery = new Set(refAssets({ ...p, cover: { asset: "" } }).slice(1)); // after + before of its own galleryGroups
+    const attributable = (asset: string) => ownGallery.has(asset) || (referrers.get(asset)?.size === 1 && referrers.get(asset)!.has(p.id) && !siteUsed.has(asset));
+    const gallery = (r.media.gallery ?? []).map((i) => i.src);
+    assert(gallery.length <= MEDIA_GALLERY_MAX, `${r.id}: gallery ≤ ${MEDIA_GALLERY_MAX}`);
+    eq(new Set(gallery).size, gallery.length, `${r.id}: no image twice in its gallery`);
+    for (const [where, src] of [...(r.media.cover ? [["cover", r.media.cover.src] as const] : []), ...gallery.map((x, i) => [`gallery[${i}]`, x] as const)]) {
+      const asset = assetOf.get(src);
+      assert(asset !== undefined, `${r.id} ${where}: ${src} is an asset of the snapshot`);
+      assert(attributable(asset), `${r.id} ${where}: ${asset} is not attributable to ${r.id}`);
+      const other = holder.get(src);
+      assert(other === undefined || other === r.id, `${src} (${asset}) is in the media of both ${other} and ${r.id}`);
+      holder.set(src, r.id);
+    }
+  }
+  eq(holder.size, 41, "41 distinct exported images, each in exactly one record's media");
+  // producer 3's golden, from the commit that pinned it: only `media` (and so `version`) moved
+  const scratch = await mkdtemp(path.join(os.tmpdir(), "p3-media-golden-"));
+  try {
+    const file = gitMaterialize(repoRoot, P3_MEDIA_COMMIT, path.join(GOLDEN_DIR, `portfolio.${P3_MEDIA_VERSION}.json`), scratch);
+    const bytes = await readFile(file);
+    eq(sha256(bytes), P3_MEDIA_DOC_SHA256, "producer 3's golden document, read from git, at its pinned sha256");
+    const p3 = JSON.parse(bytes.toString("utf8")) as PortfolioDocument;
+    const nonMedia = (x: PortfolioDocument) => JSON.stringify({ ...x, version: "", records: x.records.map(({ media: _m, ...rest }) => rest) });
+    assert(nonMedia(d) === nonMedia(p3), "every non-media byte (records' non-media fields, their order, the document fields) = producer 3's golden");
+    eq(d.records.map((r) => r.id), p3.records.map((r) => r.id), "same records, same order");
+    d.records.forEach((r, i) => assert(r.media === undefined || JSON.stringify(r.media) === JSON.stringify(p3.records[i]!.media), `${r.id}: media kept byte for byte or removed — never changed`));
+    eq(p3.records.filter((r, i) => r.media && !d.records[i]!.media).map((r) => r.id), ["bi-09", "bi-10", "bi-11", "bi-12", "bi-13", "bi-14", "bi-15", "bi-16", "bi-17", "bi-18", "bi-19"], "removed: exactly the 11 shared-cover records");
+  } finally {
+    await rm(scratch, { recursive: true, force: true });
+  }
 });
 
 console.log("\n[validator] fail closed");
@@ -1462,7 +1622,7 @@ await check("N1 known-bad mutations of the real V0.2 document, one violation eac
 });
 
 console.log("\n[media validator] 08 §2 rules, fail closed");
-/** a demo emission with one record's media replaced (bi-01 has a gallery, bi-09 is cover only) */
+/** a demo emission with one record's media replaced (bi-01 has a gallery, bi-09 has no media of its own) */
 const withMedia = (id: string, media: unknown) => (x: IntegrationEmission) => void ((x.portfolio!.document.records.find((r) => r.id === id) as any).media = media);
 const IMG = { src: "/assets/03c625140dc4df674fb8.jpg", alt: "거실", width: 1600, height: 1200 };
 const imgs = (n: number) => Array.from({ length: n }, () => ({ ...IMG }));
@@ -1631,7 +1791,13 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
 //    are unreachable now: their integration part was producer 2, and `current = demo identity`
 //    below requires the current producer. Moving the rollback again is a reviewed restatement, not
 //    something a rebuild may do silently.
-await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's media 1.1 identity current with the golden integration bytes, the frozen rollback lineage behind it (the widget build, its own rollback — the first V0.2 package — retired by keep-2 and intact in git)", async () => {
+//    RESTATED for media ownership (producer 4, docs/result/portfolio-media-polish-v1): the fourth
+//    steady package. Behind it is exactly the producer-3 media 1.1 build (3a897d2e…, published
+//    2026-09-29), intact at its frozen hash, same pin, contract "1.1", producer 3, its _integration/
+//    = producer 3's golden bytes (P3_MEDIA_*). keep-2 retired the widget build (32303241…); it is
+//    read from WIDGET_PACKAGE_COMMIT and re-hashed, still with the frozen V0.2 golden's integration
+//    bytes, and the first V0.2 package behind it stays read from V02_FIRST_PACKAGE_COMMIT.
+await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's media 1.1 identity (producer 4) current with the golden integration bytes, the frozen rollback lineage behind it (the producer-3 media build; the widget build and the first V0.2 package retired by keep-2 and intact in git)", async () => {
   eq(demo.parts.integrationInputHash !== undefined, true, "the demo is still opted in");
   if (rollout === "PRE_PUBLISH_TRANSITION") {
     eq(currentRecord.buildInputId, V01_BUILD_INPUT_ID, "current = the V0.1 package");
@@ -1653,23 +1819,33 @@ await check("B2b the current/previous packages are exactly the rollout state's: 
   const srcs = new Set(demoEmission.portfolio!.document.records.flatMap((r) => [r.media?.cover, ...(r.media?.gallery ?? [])]).filter((m) => m !== undefined).map((m) => m.src));
   for (const src of srcs) assert(await exists(path.join(currentDir, "site", src.slice(1))), `media src ${src} is in the current package`);
 
-  eq(previousId, WIDGET_BUILD_INPUT_ID, "previous = the widget build (the rollback behind the media 1.1 build)");
-  const prevDir = path.join(demoBuilds, "packages", WIDGET_BUILD_INPUT_ID);
+  eq(previousId, MEDIA_P3_BUILD_INPUT_ID, "previous = the producer-3 media 1.1 build (the rollback behind the producer-4 build)");
+  const prevDir = path.join(demoBuilds, "packages", MEDIA_P3_BUILD_INPUT_ID);
   const prevRecord = (await readJson(path.join(prevDir, "build-record.json"))) as BuildRecord;
-  eq([prevRecord.buildInputId, prevRecord.packageHash], [WIDGET_BUILD_INPUT_ID, WIDGET_PACKAGE_HASH], "the rollback's recorded identity");
+  eq([prevRecord.buildInputId, prevRecord.packageHash], [MEDIA_P3_BUILD_INPUT_ID, MEDIA_P3_PACKAGE_HASH], "the rollback's recorded identity");
   assert(await packageIntact(prevDir), "the rollback package is intact");
   eq([prevRecord.template.releaseId, prevRecord.template.releaseHash], [demoPin.releaseId, demoPin.releaseHash], "the rollback was built with the same pin");
-  eq(prevRecord.integration?.contract, { core: "0.1", portfolio: "1.0" }, "the rollback = the V0.2 contract pair (document 1.0)");
+  eq([prevRecord.integration?.contract, prevRecord.integration?.producerVersion], [{ core: "0.1", portfolio: "1.1" }, 3], "the rollback = the media 1.1 contract pair, producer 3");
   const prevFiles = (await readdir(path.join(prevDir, "site", INTEGRATION_DIR))).filter((f) => f !== ".DS_Store").sort();
-  eq(prevFiles, ["manifest.json", `portfolio.${V02_VERSION}.json`], "the rollback's _integration/ = the V0.2 manifest + document");
-  for (const f of prevFiles) eq(sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_V02_DIR, f))), `rollback ${f} = the frozen V0.2 golden's bytes`);
-  eq([sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, `portfolio.${V02_VERSION}.json`))), sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, "manifest.json")))], [V02_DOC_SHA256, V02_MANIFEST_SHA256], "rollback document / manifest sha256 = the frozen literals");
+  eq(prevFiles, ["manifest.json", `portfolio.${P3_MEDIA_VERSION}.json`], "the rollback's _integration/ = producer 3's manifest + document");
+  eq([sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, `portfolio.${P3_MEDIA_VERSION}.json`))), sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, "manifest.json")))], [P3_MEDIA_DOC_SHA256, P3_MEDIA_MANIFEST_SHA256], "rollback document / manifest sha256 = producer 3's golden literals");
 
-  // the widget build's own rollback, the first V0.2 package: retired from the working tree by keep-2
+  // retired from the working tree by keep-2: the widget build (the producer-3 build's rollback) and
+  // the first V0.2 package (the widget build's rollback) — each read from git and re-hashed
+  const widgetOnDisk = path.join(demoBuilds, "packages", WIDGET_BUILD_INPUT_ID);
   const firstOnDisk = path.join(demoBuilds, "packages", V02_FIRST_BUILD_INPUT_ID);
-  assert(!(await exists(firstOnDisk)), "keep-2 retired the first V0.2 package (current + previous only)");
+  assert(!(await exists(widgetOnDisk)) && !(await exists(firstOnDisk)), "keep-2 retired the widget build and the first V0.2 package (current + previous only)");
   const scratch = await mkdtemp(path.join(os.tmpdir(), "v02-first-package-"));
   try {
+    const widgetDir = gitMaterialize(repoRoot, WIDGET_PACKAGE_COMMIT, path.relative(repoRoot, widgetOnDisk), scratch);
+    const widgetRecord = (await readJson(path.join(widgetDir, "build-record.json"))) as BuildRecord;
+    eq([widgetRecord.buildInputId, widgetRecord.packageHash], [WIDGET_BUILD_INPUT_ID, WIDGET_PACKAGE_HASH], "the widget build's recorded identity (from git)");
+    assert(await packageIntact(widgetDir), "the widget build, read from git, is intact at its frozen packageHash");
+    eq(widgetRecord.integration?.contract, { core: "0.1", portfolio: "1.0" }, "the widget build = the V0.2 contract pair (document 1.0)");
+    const widgetFiles = (await readdir(path.join(widgetDir, "site", INTEGRATION_DIR))).filter((f) => f !== ".DS_Store").sort();
+    eq(widgetFiles, ["manifest.json", `portfolio.${V02_VERSION}.json`], "the widget build's _integration/ = the V0.2 manifest + document");
+    for (const f of widgetFiles) eq(sha256(await readFile(path.join(widgetDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_V02_DIR, f))), `widget ${f} = the frozen V0.2 golden's bytes`);
+    eq([sha256(await readFile(path.join(widgetDir, "site", INTEGRATION_DIR, `portfolio.${V02_VERSION}.json`))), sha256(await readFile(path.join(widgetDir, "site", INTEGRATION_DIR, "manifest.json")))], [V02_DOC_SHA256, V02_MANIFEST_SHA256], "widget document / manifest sha256 = the frozen literals");
     const firstDir = gitMaterialize(repoRoot, V02_FIRST_PACKAGE_COMMIT, path.relative(repoRoot, firstOnDisk), scratch);
     const firstRecord = (await readJson(path.join(firstDir, "build-record.json"))) as BuildRecord;
     eq([firstRecord.buildInputId, firstRecord.packageHash], [V02_FIRST_BUILD_INPUT_ID, V02_FIRST_PACKAGE_HASH], "the first V0.2 package's recorded identity (from git)");
@@ -1836,8 +2012,8 @@ await check(`G6 (P-V2-16) the media 1.1 golden package equals the pure emission 
   const golden = await readJson(path.join(dir, "golden.json"));
   const v = validateFor(demoEmission, demo.snapshot);
   eq(golden, goldenRecord(demoEmission.portfolio!.document, demoEmission.files.map((f) => ({ name: path.basename(f.path), bytes: f.bytes.length, sha256: f.sha256 })), { errors: v.errors.length, warnings: v.warnings.length }), "golden.json");
-  eq([golden.input, golden.contractRevision, golden.addendum, golden.manifestSchemaVersion, golden.documentSchemaVersion, golden.producerVersion], [{ siteId: DEMO, mode: "public", at: AT, template: "interior-01/v1" }, "9.2.1", "08-portfolio-media-1.1", "0.1", "1.1", 3], "the pinned input and contract pair");
-  eq(golden.counts.media, { records: 19, cover: 19, gallery: 8, galleryImages: 41, totalCount: 42, derivedHasMore: 1 }, "media counts (08)");
+  eq([golden.input, golden.contractRevision, golden.addendum, golden.manifestSchemaVersion, golden.documentSchemaVersion, golden.producerVersion], [{ siteId: DEMO, mode: "public", at: AT, template: "interior-01/v1" }, "9.2.1", "08-portfolio-media-1.1", "0.1", "1.1", 4], "the pinned input and contract pair (producer 4: media ownership)");
+  eq(golden.counts.media, { records: 8, cover: 8, gallery: 8, galleryImages: 41, totalCount: 42, derivedHasMore: 1 }, "media counts (08, media ownership: bi-09 … bi-19 carry none)");
   // the golden document parsed back is still its own version (the bytes, not only the in-memory emission)
   const doc = await readJson(path.join(dir, `portfolio.${DEMO_VERSION}.json`));
   eq([doc.version, portfolioVersion(doc)], [DEMO_VERSION, DEMO_VERSION], "golden document version = its body hash");
@@ -1885,7 +2061,7 @@ await check("T1 (P-V2-07) the demo really builds: the detail pages are exactly t
     const doc = demoEmission.portfolio!.document;
     // 08 — every media src is a file of the same package (the images a consumer fetches exist)
     const srcs = [...new Set(doc.records.flatMap((x) => [x.media?.cover, ...(x.media?.gallery ?? [])]).filter((m) => m !== undefined).map((m) => m.src))];
-    eq(srcs.length, 41, "41 distinct media images: the 41 exported gallery images; all 19 covers are among them (bi-01 … bi-08 their own, bi-09 … bi-19 reused)");
+    eq(srcs.length, 41, "41 distinct media images: the 41 exported gallery images; the 8 covers (bi-01 … bi-08, each its own) are among them; bi-09 … bi-19 carry no media");
     for (const src of srcs) assert(await exists(path.join(site, src.slice(1))), `media src ${src} is in the package`);
     const detailPages = (await readdir(path.join(site, "portfolio"))).filter((f) => f.endsWith(".html")).map((f) => `/portfolio/${f.slice(0, -".html".length)}`).sort();
     eq(detailPages, doc.records.map((x) => x.detailUrl).sort(), "generated detail pages = the records' detailUrls: none missing, none extra");

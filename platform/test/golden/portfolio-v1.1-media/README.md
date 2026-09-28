@@ -15,14 +15,18 @@ consumer's fixtures.
 | template routes | `templates/interior-01/v1` |
 | manifest `schemaVersion` | `"0.1"` (unchanged) |
 | document `schemaVersion` | `"1.1"` (minor: `records[].media` added) |
-| producer version | `3` |
+| producer version | `4` (media ownership, `docs/work/portfolio-experience-v1/03-media-truth-audit.md`) |
 
 What 1.1 adds, per record (`media`, presentation only, last key of the record):
 
-- `cover` on all 19 records — the authored `cover` of `content/projects.json`.
+- `cover` on the 8 records whose authored `cover` is attributable to them (bi-01 … bi-08: each cover
+  is in the record's own gallery). An asset is attributable to a record iff it is in that record's
+  own `galleryGroups` (after or before) or that record is the only one referencing it at all.
+  bi-09 … bi-19 author a cover that is another record's gallery photo, so they carry **no `media`**
+  (a consumer shows a text card) — producer 4; producer 3 exported those 11 shared covers.
 - `gallery` + `totalCount` on the 8 records that author a gallery (bi-01 … bi-08): the AFTER images
-  of `galleryGroups[].items[].image`, authored order, the first 12. `before` images are not exported
-  and not counted.
+  of `galleryGroups[].items[].image`, authored order, the first 12, one entry per asset. `before` images are not
+  exported and not counted.
 - bi-01 authors 13 after images → `gallery` has 12, `totalCount` is 13, so a consumer derives
   `hasMore = totalCount > gallery.length = true`. No `hasMore` key is emitted (booleans are not part
   of the schema). 41 gallery images are exported in all, `totalCount` sums to 42.
