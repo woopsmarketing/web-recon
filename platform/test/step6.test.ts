@@ -41,6 +41,7 @@ import { buildSite, prepareSiteInput } from "../build/site-build";
 import { collectReleaseSources, computeTemplateSourceHash, loadRelease, verifyRelease } from "../release/release";
 import { createContentReader } from "../content/reader";
 import { buildSiteSnapshot, loadSiteInstance } from "../site/load";
+import { HEAD_SCRIPTS_FILE, SiteHeadScriptsDocSchema } from "../site/head-scripts";
 import { planRoutes } from "../site/routes";
 import { resolveEffectiveTheme } from "../theme/theme";
 import { hashJson, sha256 } from "../util/hash";
@@ -324,14 +325,31 @@ await check("F no fixture identity anywhere in the demo package or its site docu
   for (const t of texts) scan(t.file, t.text);
   for (const f of await walkFiles(demoDir)) if (/\.(json|svg)$/.test(f)) scan(`site doc ${f}`, await readFile(path.join(demoDir, f), "utf8"));
 });
-await check("G no Apartmentary leakage: the release's frozen forbidden terms + the source brand (ko/en) are absent; package QA passed; no absolute URL leaves the site origin", async () => {
+/**
+ * The demo's own head scripts (data/sites/<demo>/scripts.json, the platform's head-scripts seam). They
+ * are the ONLY remote URLs its pages may carry. Package QA (platform/build/qa.ts) allows exactly
+ * those whole URLs, nothing else on their host, in any attribute or text file; G is stricter for
+ * the demo's HTML: a declared URL may appear only as a <script src>, once per page.
+ */
+const declaredScripts = (await stat(path.join(demoDir, HEAD_SCRIPTS_FILE)).then(() => true, () => false))
+  ? SiteHeadScriptsDocSchema.parse(await readJson(path.join(demoDir, HEAD_SCRIPTS_FILE))).headScripts
+  : [];
+await check("G no Apartmentary leakage: the release's frozen forbidden terms + the source brand (ko/en) are absent; package QA passed; no absolute URL leaves the site origin except the site's declared head scripts, each exactly once per page, async", async () => {
   const rel = await loadRelease(repoRoot, "interior-01", PIN.releaseId);
   const terms = [...rel.forbiddenTerms, "apartmentary", "아파트멘터리"].map((t) => t.toLowerCase());
   assert(terms.length >= 2, "no forbidden terms to scan");
   for (const t of texts) for (const term of terms) assert(!t.text.toLowerCase().includes(term), `${t.file}: "${term}"`);
   assert(demo.record.qa.pass === true && (demo.record.qa.failures ?? []).length === 0, "package QA");
+  const declared = new Set(declaredScripts.map((d) => d.src));
   for (const [f, h] of Object.entries(html)) {
-    for (const m of h.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)) assert(new URL(m[1]!).origin === ORIGIN, `${f}: ${m[1]}`);
+    for (const m of h.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)) assert(new URL(m[1]!).origin === ORIGIN || declared.has(m[1]!), `${f}: ${m[1]}`);
+    for (const m of h.matchAll(/<(\w+)\b[^>]*\b(?:src|href)="(https?:\/\/[^"]+)"[^>]*>/g)) if (declared.has(m[2]!)) eq(m[1], "script", `${f}: declared ${m[2]} used outside a <script src>`);
+    for (const d of declaredScripts) {
+      const tags = [...h.matchAll(/<script\b[^>]*>/g)].map((m) => m[0]).filter((t) => t.includes(`src="${d.src}"`));
+      eq(tags.length, 1, `${f}: <script src="${d.src}"> count`);
+      assert(/ async=""/.test(tags[0]!) || d.attrs?.defer !== undefined, `${f}: ${d.id} is neither async nor defer`);
+      for (const [k, v] of Object.entries(d.attrs ?? {})) if (k.startsWith("data-")) assert(tags[0]!.includes(`${k}="${v}"`), `${f}: ${d.id} lacks ${k}`);
+    }
   }
 });
 
@@ -576,7 +594,13 @@ await check("N keyword / type / area / style / price / sort / combined / zero-re
 console.log("\n[cta] the site-wide floating seat");
 /** Next's own error documents (app/not-found.tsx): emitted by every static export, never a planned route. */
 const NEXT_ERROR_PAGES = ["404.html", "_not-found.html"];
-await check(`O exactly one floating CTA on EVERY generated page — the page set is the route plan of the package's own records${ia ? " (home, portfolio, details, 3D, about, contact)" : ""} + Next's error pages — Korean label, ${ia ? "→ /contact" : "the business mailto"}`, async () => {
+/**
+ * The seat is the demo's floating CTA unless its settings turn it off — which the demo does only
+ * because a declared head script (the chat launcher, scripts.json) takes that bottom-right seat
+ * (FloatingCta's replacement seam). Off without a declared script fails.
+ */
+const seatOn = settings.overrides?.["site.floating-cta"]?.enabled !== false;
+await check(`O exactly one floating CTA on EVERY generated page — or none on any page while a declared head script takes the seat — the page set is the route plan of the package's own records${ia ? " (home, portfolio, details, 3D, about, contact)" : ""} + Next's error pages — Korean label, ${ia ? "→ /contact" : "the business mailto"}`, async () => {
   // expected side: the declared routes planned over the records the current package was built from
   // (the whole corpus once steady, the V0.1 package's own records pre-publish) — never the build output
   const packaged = new Set((await demoPackagedProjects(repoRoot, projects)).map((p) => p.id));
@@ -584,7 +608,8 @@ await check(`O exactly one floating CTA on EVERY generated page — the page set
   const planned = plan.routes.flatMap((r) => r.paths).map((p) => (p === "/" ? "index.html" : `${p.slice(1)}.html`));
   eq(planned.filter((f) => f.startsWith("portfolio/")).length, packaged.size, "one planned detail page per packaged record");
   eq([...htmlFiles].sort(), [...planned, ...NEXT_ERROR_PAGES].sort(), "generated pages = planned pages + error pages");
-  for (const [f, h] of Object.entries(html)) eq(ctasOf(h), [{ href: CONTACT_HREF, label: "상담 문의" }], f);
+  if (!seatOn) assert(declaredScripts.length > 0, "the floating CTA is off but no declared head script takes its seat");
+  for (const [f, h] of Object.entries(html)) eq(ctasOf(h), seatOn ? [{ href: CONTACT_HREF, label: "상담 문의" }] : [], f);
 });
 
 // --------------------------------------------------- banners / reviews --

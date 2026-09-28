@@ -234,10 +234,17 @@ await check("P2 header on EVERY page: brand, then portfolio · 3D · about · th
     assert(!/<dialog\b|data-menu=""|i1-menu__/.test(stripScripts(h)), `${f}: menu markup in the server HTML`);
   }
 });
-await check("P3 every contact CTA → /contact: the floating seat on every page, the detail CTA on every detail, the hero's contact slide; the only mailto links are the footer address (every page) and the /contact direct address", async () => {
+/**
+ * The floating seat is the demo's own contact CTA unless its settings turn it off, which the demo
+ * does only because a head script it declares (the chat launcher, scripts.json) takes that seat.
+ */
+const seatOn = (await readJson(path.join(demoDir, "settings.json"))).overrides?.["site.floating-cta"]?.enabled !== false;
+const declaresHeadScript = ((await readFile(path.join(demoDir, "scripts.json"), "utf8").then(JSON.parse, () => undefined))?.headScripts?.length ?? 0) > 0;
+await check("P3 every contact CTA → /contact: the floating seat on every page (or on none while a declared head script takes it), the detail CTA on every detail, the hero's contact slide; the only mailto links are the footer address (every page) and the /contact direct address", async () => {
+  if (!seatOn) assert(declaresHeadScript, "the floating CTA is off but the demo declares no head script to take its seat");
   for (const [f, h] of Object.entries(html)) {
     const seat = [...h.matchAll(/<div class="i1-fcta" data-section="site\.floating-cta"><a class="i1-fcta__link" data-floating-cta="" href="([^"]+)">[\s\S]*?<span>([^<]*)<\/span><\/a><\/div>/g)].map((m) => [m[1], m[2]]);
-    eq(seat, [["/contact", "상담 문의"]], `${f}: floating seat`);
+    eq(seat, seatOn ? [["/contact", "상담 문의"]] : [], `${f}: floating seat`);
     const mailtos = hrefsOf(h).filter((x) => x.startsWith("mailto:"));
     eq(mailtos, f === "contact.html" ? [`mailto:${EMAIL}`, `mailto:${EMAIL}`] : [`mailto:${EMAIL}`], `${f}: mailto links`);
   }

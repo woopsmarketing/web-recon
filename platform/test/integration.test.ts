@@ -14,11 +14,13 @@
  *     platform/cli/integration-golden.ts): the pure emission of the demo equals it byte for byte,
  *     its golden.json records the facts of those bytes, and the 19-record corpus still covers the
  *     shapes the contract exercises (counts, area bases, price shapes, missing fields);
- *   - V0.1 compatibility: the frozen V0.1 package (data/site-builds/…/packages/0f80b239…) and, while
- *     on disk, the live pilot package are untouched and self-consistent;
+ *   - V0.1 compatibility: the frozen V0.1 package (data/site-builds/…/packages/0f80b239…, read from
+ *     V01_PACKAGE_COMMIT once keep-2 retires it) and, while on disk, the live pilot package are
+ *     untouched and self-consistent;
  *   - the rollout state (demo-rollout.ts): before the V0.2 publish the V0.1 package is current and
  *     nothing V0.2 is staged; after it the current package is the demo's V0.2 identity with the
- *     golden's integration bytes and the V0.1 package is its rollback (B2b, G4, R2; 39-);
+ *     golden's integration bytes, and its rollback is the frozen lineage — V0.1 behind the first
+ *     V0.2 package (39-), that package behind the widget build (B2b, G4, R2);
  *   - the builder seam: default OFF (fixtures keep their pre-integration identity), the demo ON,
  *     preview never emits, the producer version is a build input, OFF = the pre-integration
  *     buildInputId of the live package;
@@ -36,6 +38,7 @@
  *   tsx --tsconfig platform/tsconfig.json platform/test/integration.test.ts
  */
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from "node:fs/promises";
+import { rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { buildSite, packageIntact, prepareSiteInput, verifyIntegrationOutput, type BuildRecord } from "../build/site-build";
@@ -72,6 +75,7 @@ import { ProjectSchema, type Project } from "../content/schema";
 import template from "../../templates/interior-01/v1/template";
 import { GOLDEN_DIR, goldenRecord as goldenRecord02 } from "../cli/integration-golden";
 import { demoExpectedPages, demoRollout } from "./demo-rollout";
+import { gitMaterialize } from "./git-checkout";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -113,8 +117,14 @@ const LIVE_PIN = { templateId: "interior-01", templateVersion: "1.5.2", releaseI
  * 1.6.1 (38-): the demo's slots.json carries the basis-aware area labels and the V0.2 fact labels
  * — a third deliberate data delta. `_PRE_161` is the anchor before it; B2 reverts exactly the labels
  * in DEMO_161_DETAIL_LABELS and must land on it again, so those labels are the whole of that delta.
+ *
+ * Widget embed (2026-09-28): the demo's scripts.json puts `headScripts` in the snapshot, and its
+ * settings.json turns `site.floating-cta` off (the chat launcher takes that bottom-right seat, as the
+ * template's replacement seam says) — a fourth deliberate data delta. `_PRE_WIDGET` is the anchor
+ * before it; B2 drops exactly those two and must land on it again, so they are the whole of it.
  */
-const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN = "8de4ff8710cd37f297e93d5926bf1244fad7ebfd81eab979711e050ad7d34140";
+const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN = "f63e293cbff852ab0896834bc326340fbc950a9324a520a1ecbaa544955e827e";
+const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_WIDGET = "8de4ff8710cd37f297e93d5926bf1244fad7ebfd81eab979711e050ad7d34140";
 const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_161 = "515a797765defd5c1230dc49a2fc426b70b106c39301bf3e0731ac370ad75db3";
 /** portfolio.detail copy the 1.6.1 re-pin changed: key → [before (undefined = absent), now]. */
 const DEMO_161_DETAIL_LABELS: Record<string, [string | undefined, string]> = {
@@ -136,6 +146,19 @@ const V01_BUILD_INPUT_ID = "0f80b2395724a721024bd43bcfdac383ba5328e820f2210eebe5
 const V01_PACKAGE_HASH = "286d44ab7d1f0c1202e992d8e17e384c6391d5c59d1a1eb321808f0dcc468e9e";
 const V01_DEMO_VERSION = "6346c472e162ae07b76a4686fce54c51";
 const V01_DEMO_DOC_BYTES = 5292;
+/**
+ * The last commit whose tree still carries the V0.1 package directory. The widget embed's rebuild
+ * (docs/result/BOOST-INTERIOR-LIVE-WIDGET-EMBED-2026-09-28.md) moved the rollback to the first V0.2
+ * package and keep-2 retired the V0.1 directory; G1–G3/I2 then read it from this commit and re-hash
+ * it against V01_PACKAGE_HASH, so the checks keep their full strength (the sealed R2 copy is unchanged).
+ */
+const V01_PACKAGE_COMMIT = "cb781e84a4a67ed220c2705640397bf570e8458c";
+/**
+ * The first V0.2 package (39-, live 2026-09-27): the V0.2 corpus without head scripts. Since the
+ * widget embed it is the rollback (previous.json) behind the demo's current package (B2b).
+ */
+const V02_FIRST_BUILD_INPUT_ID = "a4777cf9b71a0da0f7f52651ec027a219d7f09ce2e8f75ac4552a028cbfd413f";
+const V02_FIRST_PACKAGE_HASH = "3846a29d30ef1d48e58b0c507075918424350870b096294a83678eb87ba20aaf";
 const DEMO_MANIFEST_BYTES = 274;
 /**
  * The V0.2 golden values (07 rev 9.2.1, document "1.0", manifest "0.1"): the demo's pure emission at
@@ -287,14 +310,21 @@ const currentDir = await packageOf(repoRoot, DEMO);
 const currentRecord = (await readJson(path.join(currentDir, "build-record.json"))) as BuildRecord;
 const previousId = (await readJson(path.join(demoBuilds, "previous.json"))).buildInputId as string;
 /**
- * The frozen V0.1 package, by its own id. It must be on disk in both rollout states: current before
- * the V0.2 publish, the rollback (previous.json) after it (B2b). A later rotation of previous is a
- * reviewed restatement of these checks, never a silent pass.
+ * The frozen V0.1 package, by its own id: current before the V0.2 publish, the rollback
+ * (previous.json) after it, and — since the widget embed rotated the rollback to the first V0.2
+ * package (B2b) — retired from the working tree by keep-2. It is then materialized from
+ * V01_PACKAGE_COMMIT into a scratch dir; every check below re-hashes it against its frozen
+ * packageHash either way. Only its rollback ROLE is B2b's business.
  */
-const v01Dir = path.join(demoBuilds, "packages", V01_BUILD_INPUT_ID);
+const v01OnDisk = path.join(demoBuilds, "packages", V01_BUILD_INPUT_ID);
+const v01FromGit = !(await exists(v01OnDisk));
+const v01Scratch = v01FromGit ? await mkdtemp(path.join(os.tmpdir(), "v01-package-")) : undefined;
+if (v01Scratch) process.once("exit", () => rmSync(v01Scratch, { recursive: true, force: true }));
+const v01Dir = v01Scratch ? gitMaterialize(repoRoot, V01_PACKAGE_COMMIT, path.relative(repoRoot, v01OnDisk), v01Scratch) : v01OnDisk;
+if (v01FromGit) console.log(`  (the V0.1 package is retired from data/site-builds; read from ${V01_PACKAGE_COMMIT.slice(0, 7)} and re-hashed)`);
 const v01Record = (await exists(v01Dir)) ? ((await readJson(path.join(v01Dir, "build-record.json"))) as BuildRecord) : undefined;
 const needV01 = (): BuildRecord => {
-  assert(v01Record, `the V0.1 package ${V01_BUILD_INPUT_ID.slice(0, 12)}… is missing — it is the current package before the V0.2 publish and the rollback after it`);
+  assert(v01Record, `the V0.1 package ${V01_BUILD_INPUT_ID.slice(0, 12)}… is missing on disk and at ${V01_PACKAGE_COMMIT.slice(0, 7)}`);
   return v01Record;
 };
 /**
@@ -1306,6 +1336,12 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
   eq(computeBuildInputId(LIVE_PARTS), LIVE_BUILD_INPUT_ID, "the live package's recorded parts reproduce its identity");
   const atLivePin = hashJson({ ...demo.snapshot, site: { ...demo.snapshot.site, template: LIVE_PIN } });
   eq(atLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN, "pin rolled back to 1.5.2 → the re-authored demo's snapshot hash");
+  const { headScripts, ...withoutScripts } = demo.snapshot;
+  assert(headScripts !== undefined && headScripts.headScripts.length > 0, "the demo declares its head scripts (scripts.json)");
+  const { "site.floating-cta": seat, ...preWidgetOverrides } = withoutScripts.settings.overrides as Record<string, unknown>;
+  eq(seat, { enabled: false }, "the chat launcher's seat: the demo's own floating CTA is off");
+  const preWidget = { ...withoutScripts, settings: { ...withoutScripts.settings, overrides: preWidgetOverrides } };
+  eq(hashJson({ ...preWidget, site: { ...preWidget.site, template: LIVE_PIN } }), DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_WIDGET, "…without headScripts and the seat override it is the pre-widget anchor: those two are the whole of the widget delta");
   const slots = demo.snapshot.slots as { values: Record<string, Record<string, unknown>> };
   const detail160: Record<string, unknown> = { ...slots.values["portfolio.detail"] };
   for (const [k, [before, now]] of Object.entries(DEMO_161_DETAIL_LABELS)) {
@@ -1314,7 +1350,7 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
     else detail160[k] = before;
   }
   const slots160 = { ...slots, values: { ...slots.values, "portfolio.detail": detail160 } };
-  eq(hashJson({ ...demo.snapshot, slots: slots160, site: { ...demo.snapshot.site, template: LIVE_PIN } }), DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_161, "…with the 1.6.1 site copy reverted it is the pre-1.6.1 anchor: those labels are the whole of the slots delta (38-)");
+  eq(hashJson({ ...preWidget, slots: slots160, site: { ...preWidget.site, template: LIVE_PIN } }), DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_161, "…with the 1.6.1 site copy reverted it is the pre-1.6.1 anchor: those labels are the whole of the slots delta (38-)");
   assert(atLivePin !== demo.parts.siteSnapshotHash, "the pin lives inside the snapshot, so rolling it back moves the hash");
   eq(hashJson({ ...demo.snapshot, site: { ...demo.snapshot.site, template: demoPin } }), demo.parts.siteSnapshotHash, "…and putting it back reproduces the current hash exactly: the pin is ALL the substitution touches");
   assert(atLivePin !== LIVE_PARTS.siteSnapshotHash, "it no longer lands on the live package's own hash — the demo CONTENT is the second, deliberate delta (26, 28)");
@@ -1325,9 +1361,12 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
 //    demo's V0.2 identity is NOT what site:publish would pick up (07 §16 steps 1–3);
 //  POST_PUBLISH_STEADY — the current package IS the demo's V0.2 identity (V0.2 contract pair, its
 //    _integration/ byte-identical to the canonical golden), and the rollback behind it is the V0.1
-//    package, intact at its frozen hash (07 §16 step 4; 39-). Any other previous fails: moving the
-//    rollback off V0.1 is a reviewed restatement, not something a rebuild may do silently.
-await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's V0.2 identity current with the golden integration bytes, V0.1 as rollback", async () => {
+//    package, intact at its frozen hash (07 §16 step 4; 39-) — while the current package is the first
+//    V0.2 one. The widget embed (2026-09-28) rebuilt the demo with its head scripts, so the rollback
+//    moved one step: behind any other current package it is exactly the first V0.2 package, intact
+//    at its frozen hash, with the same golden integration bytes. Any other previous fails: moving
+//    the rollback again is a reviewed restatement, not something a rebuild may do silently.
+await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's V0.2 identity current with the golden integration bytes, the frozen rollback lineage behind it (V0.1 behind the first V0.2 package, the first V0.2 package behind the widget build)", async () => {
   eq(demo.parts.integrationInputHash !== undefined, true, "the demo is still opted in");
   if (rollout === "PRE_PUBLISH_TRANSITION") {
     eq(currentRecord.buildInputId, V01_BUILD_INPUT_ID, "current = the V0.1 package");
@@ -1345,9 +1384,22 @@ await check("B2b the current/previous packages are exactly the rollout state's: 
   for (const f of files) eq(sha256(await readFile(path.join(currentDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_DIR, f))), `${f} = the canonical golden's bytes`);
   eq([DEMO_DOC_SHA256, DEMO_MANIFEST_SHA256], [sha256(await readFile(path.join(currentDir, "site", INTEGRATION_DIR, `portfolio.${DEMO_VERSION}.json`))), sha256(await readFile(path.join(currentDir, "site", INTEGRATION_DIR, "manifest.json")))], "document / manifest sha256 = the contract literals");
   assert(await packageIntact(currentDir), "current package intact");
-  eq(previousId, V01_BUILD_INPUT_ID, "previous = the V0.1 package (the rollback)");
-  eq(needV01().packageHash, V01_PACKAGE_HASH, "the rollback's recorded packageHash");
-  assert(await packageIntact(v01Dir), "the rollback package is intact");
+  if (currentRecord.buildInputId === V02_FIRST_BUILD_INPUT_ID) {
+    eq(previousId, V01_BUILD_INPUT_ID, "previous = the V0.1 package (the rollback)");
+    assert(!v01FromGit, "the rollback package is on disk");
+    eq(needV01().packageHash, V01_PACKAGE_HASH, "the rollback's recorded packageHash");
+    assert(await packageIntact(v01Dir), "the rollback package is intact");
+    return;
+  }
+  eq(previousId, V02_FIRST_BUILD_INPUT_ID, "previous = the first V0.2 package (the rollback behind the widget build)");
+  const prevDir = path.join(demoBuilds, "packages", V02_FIRST_BUILD_INPUT_ID);
+  const prevRecord = (await readJson(path.join(prevDir, "build-record.json"))) as BuildRecord;
+  eq(prevRecord.buildInputId, V02_FIRST_BUILD_INPUT_ID, "the rollback's recorded buildInputId");
+  eq(prevRecord.packageHash, V02_FIRST_PACKAGE_HASH, "the rollback's recorded packageHash");
+  assert(await packageIntact(prevDir), "the rollback package is intact");
+  eq([prevRecord.template.releaseId, prevRecord.template.releaseHash], [demoPin.releaseId, demoPin.releaseHash], "the rollback was built with the same pin");
+  eq(prevRecord.integration?.contract, { core: "0.1", portfolio: "1.0" }, "the rollback = V0.2 contract pair");
+  for (const f of files) eq(sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_DIR, f))), `rollback ${f} = the canonical golden's bytes`);
 });
 await check("B3 preview never emits (SE5): the demo in preview mode has no integration part", async () => {
   const p = await prepareSiteInput({ repoRoot, siteId: DEMO, mode: "preview", at: AT });

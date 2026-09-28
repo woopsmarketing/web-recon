@@ -47,3 +47,19 @@ export async function releaseFileSealed(repoRoot: string, rel: string): Promise<
   if (((await stat(path.join(repoRoot, rel))).mode & 0o222) === 0) return true;
   return gitCleanTracked(repoRoot, rel);
 }
+
+/**
+ * Write the tree at `<commit>:<rel>` under `dest` (as `dest/<rel>`), bytes exactly as Git stores
+ * them. For an artefact a later build retired from the working tree but that a commit still
+ * carries; callers re-hash what they read (packageIntact), so Git is the transport, not the proof.
+ */
+export function gitMaterialize(repoRoot: string, commit: string, rel: string, dest: string): string {
+  try {
+    const tar = execFileSync("git", ["archive", "--format=tar", commit, "--", rel], { cwd: repoRoot, maxBuffer: 1 << 30, stdio: ["ignore", "pipe", "pipe"] });
+    execFileSync("tar", ["-x", "-f", "-", "-C", dest], { input: tar, stdio: ["pipe", "ignore", "pipe"] });
+  } catch (e) {
+    const stderr = String((e as { stderr?: Buffer }).stderr ?? "").trim();
+    throw new Error(`cannot materialize ${rel} from commit ${commit} (a shallow or rewritten history lacks it): ${stderr || (e as Error).message}`);
+  }
+  return path.join(dest, rel);
+}
