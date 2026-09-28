@@ -15,7 +15,9 @@
  *        and data/site-builds are never touched): the 19 detail routes the golden document lists are
  *        exactly the detail pages emitted, every page's visible fact rows agree with the integration
  *        document the same build emitted (no contradiction; the page may show fewer facts, never other
- *        ones), and that document is the golden, byte for byte (presentation never moves the resource).
+ *        ones), and that document is the golden, byte for byte (presentation never moves the resource);
+ *        every media image the document names for a record (portfolio media 1.1: cover + after gallery)
+ *        is an image that record's own detail page renders — the viewer never shows a foreign photo.
  *
  * Every expected value is a literal written from the authored corpus and tied to the golden document
  * (check G) — never recomputed with the functions under test. The Korean fact labels are the demo's site
@@ -40,7 +42,12 @@ import { formatTotalPrice } from "../../templates/interior-01/v1/lib/format";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
-const GOLDEN_VERSION = "d56509c8100a56fdf9644baff78ff9e1";
+/**
+ * The golden the producer emits now: portfolio media 1.1 (platform/test/golden/portfolio-v1.1-media,
+ * document "1.1"). Media added no fact — every expectation below is unchanged from the V0.2 golden
+ * (d56509c8…, now frozen as the 1.0 compatibility fixture); only the resource version moved.
+ */
+const GOLDEN_VERSION = "d95b5cb5f8f05e50e624eb44d39393f5";
 
 let passed = 0;
 const failed: string[] = [];
@@ -397,6 +404,17 @@ try {
       if (f.startsWith("_integration/") || !/\.(html|txt|json|js)$/.test(f)) continue;
       const text = await readFile(path.join(site, f), "utf8");
       assert(!/\\?"(basis|workScopeIds|minAmount|maxAmount|full_remodel|partial_remodel|exclusive)\\?"/.test(text), `${f}: raw V0.2 data shipped`);
+    }
+  });
+  await check("B8 MEDIA_PAGE_CONSISTENCY 19/19 (media 1.1): every image the build's integration record names (cover + gallery) is an image its own detail page renders; bi-04's page also renders its 2 before images, which the record does not carry", async () => {
+    assert(pages.size === 19, "B2 pages missing");
+    const doc = JSON.parse(await readFile(path.join(site, "_integration", `portfolio.${GOLDEN_VERSION}.json`), "utf8"));
+    for (const r of doc.records as Record<string, any>[]) {
+      const html = pages.get(`${r.detailUrl.slice(1)}.html`)!;
+      const onPage = new Set([...html.matchAll(/src="(\/assets\/[0-9a-f]{20}\.[a-z]+)"/g)].map((m) => m[1]!));
+      const named = [r.media.cover, ...(r.media.gallery ?? [])].map((m: { src: string }) => m.src);
+      for (const src of named) assert(onPage.has(src), `${r.id}: media ${src} is not rendered by its own page`);
+      if (r.id === "bi-04") eq([...onPage].filter((src) => src.endsWith(".jpg") && !named.includes(src)).length, 2, "bi-04: the page's 2 before images are the only page photos not in media");
     }
   });
   await check("B7 representative records (full + area + total · full, no total · partial + total · exclusive area · no area · no projectType · range total) render as expected", () => {

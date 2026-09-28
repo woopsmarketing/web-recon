@@ -1,6 +1,7 @@
 /**
  * First-party integration producer (Contract V0, docs/reports/integration/02 — FROZEN 2026-09-22,
- * as extended by Contract V0.2, docs/reports/integration/07 — document schemaVersion "1.0"):
+ * as extended by Contract V0.2, docs/reports/integration/07, and by the portfolio media 1.1
+ * addendum, docs/reports/integration/08 — document schemaVersion "1.1"):
  *   - the pure emitter and the fail-closed validator (platform/integration/**) against the demo's
  *     real site data, the fixtures and crafted snapshots: allowlist projection, missing → omitted,
  *     [] only for records, no null, code point ordering, authored facet order, version stability
@@ -10,17 +11,24 @@
  *     workScopeIds + document workScopes (WS2 closure), pricing{total,perArea}, facets.style, and
  *     the D-1 / RD1 derived per-area price (INV-17 … INV-30);
  *
- *   - the pinned V0.2 golden integration package (platform/test/golden/portfolio-v0.2, written by
- *     platform/cli/integration-golden.ts): the pure emission of the demo equals it byte for byte,
- *     its golden.json records the facts of those bytes, and the 19-record corpus still covers the
- *     shapes the contract exercises (counts, area bases, price shapes, missing fields);
+ *   - portfolio media 1.1 (08): record `media` = the authored cover + the authored AFTER gallery
+ *     (first 12, authored order, totalCount = all of them), src/width/height from the snapshot's
+ *     asset table, alt only when authored; the validator's MediaImage/media rules on crafted
+ *     documents; a record without media (a 1.0 record) stays valid;
+ *   - the pinned media 1.1 golden integration package (platform/test/golden/portfolio-v1.1-media,
+ *     written by platform/cli/integration-golden.ts): the pure emission of the demo equals it byte
+ *     for byte, its golden.json records the facts of those bytes, and the 19-record corpus still
+ *     covers the shapes the contract exercises (counts, area bases, price shapes, missing fields);
+ *     the V0.2 golden (platform/test/golden/portfolio-v0.2, document "1.0") is FROZEN as the 1.0
+ *     compatibility fixture and pinned by its own literals;
  *   - V0.1 compatibility: the frozen V0.1 package (data/site-builds/…/packages/0f80b239…, read from
  *     V01_PACKAGE_COMMIT once keep-2 retires it) and, while on disk, the live pilot package are
  *     untouched and self-consistent;
  *   - the rollout state (demo-rollout.ts): before the V0.2 publish the V0.1 package is current and
- *     nothing V0.2 is staged; after it the current package is the demo's V0.2 identity with the
+ *     nothing V0.2 is staged; after it the current package is the demo's own identity with the
  *     golden's integration bytes, and its rollback is the frozen lineage — V0.1 behind the first
- *     V0.2 package (39-), that package behind the widget build (B2b, G4, R2);
+ *     V0.2 package (39-), that package behind the widget build, the widget build behind the media
+ *     1.1 build (B2b, G4, R2);
  *   - the builder seam: default OFF (fixtures keep their pre-integration identity), the demo ON,
  *     preview never emits, the producer version is a build input, OFF = the pre-integration
  *     buildInputId of the live package;
@@ -59,6 +67,9 @@ import {
   FORBIDDEN_CHAR_RE,
   INTEGRATION_DIR,
   MANIFEST_PATH,
+  MEDIA_ALT_MAX,
+  MEDIA_GALLERY_MAX,
+  MEDIA_SRC_RE,
   PORTFOLIO_SCHEMA_VERSION,
   PRODUCER_VERSION,
   PROJECT_TYPES,
@@ -73,7 +84,8 @@ import { compareCodePoints, DeclaredRoutesSchema, derivePerArea, emitIntegration
 import { assertIntegration, isRootRelativePath, validateIntegration } from "../integration/validate";
 import { ProjectSchema, type Project } from "../content/schema";
 import template from "../../templates/interior-01/v1/template";
-import { GOLDEN_DIR, goldenRecord as goldenRecord02 } from "../cli/integration-golden";
+import { GOLDEN_DIR, GOLDEN_V02_DIR, goldenRecord } from "../cli/integration-golden";
+import { MediaImageSchema, PortfolioMediaSchema } from "../integration/validate";
 import { demoExpectedPages, demoRollout } from "./demo-rollout";
 import { gitMaterialize } from "./git-checkout";
 
@@ -154,24 +166,47 @@ const V01_DEMO_DOC_BYTES = 5292;
  */
 const V01_PACKAGE_COMMIT = "cb781e84a4a67ed220c2705640397bf570e8458c";
 /**
- * The first V0.2 package (39-, live 2026-09-27): the V0.2 corpus without head scripts. Since the
- * widget embed it is the rollback (previous.json) behind the demo's current package (B2b).
+ * The first V0.2 package (39-, live 2026-09-27): the V0.2 corpus without head scripts. It was the
+ * rollback behind the widget build; the media 1.1 build moved the rollback one step (to the widget
+ * build) and keep-2 retired this directory. B2b then reads it from V02_FIRST_PACKAGE_COMMIT and
+ * re-hashes it against its frozen packageHash (its sealed R2 copy is unchanged).
  */
 const V02_FIRST_BUILD_INPUT_ID = "a4777cf9b71a0da0f7f52651ec027a219d7f09ce2e8f75ac4552a028cbfd413f";
 const V02_FIRST_PACKAGE_HASH = "3846a29d30ef1d48e58b0c507075918424350870b096294a83678eb87ba20aaf";
+const V02_FIRST_PACKAGE_COMMIT = "cb781e84a4a67ed220c2705640397bf570e8458c";
+/**
+ * The widget build (docs/result/BOOST-INTERIOR-LIVE-WIDGET-EMBED-2026-09-28.md, live 2026-09-28):
+ * the V0.2 corpus + head scripts, document "1.0" = the frozen V0.2 golden's bytes. Behind the media
+ * 1.1 build it is the rollback (previous.json) — B2b.
+ */
+const WIDGET_BUILD_INPUT_ID = "32303241c78f10e5edc3a42686680aa5238a8aa76c3192795dc351ffbe55c650";
+const WIDGET_PACKAGE_HASH = "ada03d20d4c0688316e274a724d4298aa031128098ed23b591a5b65c004a25d6";
 const DEMO_MANIFEST_BYTES = 274;
 /**
- * The V0.2 golden values (07 rev 9.2.1, document "1.0", manifest "0.1"): the demo's pure emission at
- * AT, pinned byte for byte in platform/test/golden/portfolio-v0.2 (G6) and shared with the consumer
- * (07 §16 step 2). A change here is a change of the canonical data or of the producer.
+ * The FROZEN V0.2 golden values (07 rev 9.2.1, document "1.0", manifest "0.1"), pinned in
+ * platform/test/golden/portfolio-v0.2 — the 1.0 compatibility fixture the consumer keeps (G6b), and
+ * the integration bytes of the rollback package (B2b). The producer no longer emits them.
  */
-const DEMO_VERSION = "d56509c8100a56fdf9644baff78ff9e1";
-const DEMO_DOC_BYTES = 11608;
-const DEMO_DOC_SHA256 = "c76624146b5a753003fa5f0e3619534e3a80bd2fd967ed975d392e9180453816";
-const DEMO_MANIFEST_SHA256 = "b2f52b736570b954fb257f03cc5897426dee7f199d95d3654221290644d8ce5d";
-/** the zero-record V0.2 document (07 §10: records [] is the one permitted empty array) */
-const EMPTY_VERSION = "e4815a16b0531b8f5428b3174b82ac9c";
-const EMPTY_DOC = `{"schemaVersion":"1.0","resource":"portfolio","version":"${EMPTY_VERSION}","records":[]}`;
+const V02_VERSION = "d56509c8100a56fdf9644baff78ff9e1";
+const V02_DOC_BYTES = 11608;
+const V02_DOC_SHA256 = "c76624146b5a753003fa5f0e3619534e3a80bd2fd967ed975d392e9180453816";
+const V02_MANIFEST_SHA256 = "b2f52b736570b954fb257f03cc5897426dee7f199d95d3654221290644d8ce5d";
+/** sha256 of the frozen V0.2 golden's golden.json and README.md — nothing may rewrite them either */
+const V02_GOLDEN_JSON_SHA256 = "27f65ade9e72256f0b3dc865df259a50b0f5010a139bb875276fb3769dfaaa81";
+const V02_README_SHA256 = "c15b285c453e6aaa657abb876e429976de796e34a7390c734528cfeeae375b98";
+/**
+ * The media 1.1 golden values (08 on top of 07 rev 9.2.1, document "1.1", manifest "0.1"): the
+ * demo's pure emission at AT, pinned byte for byte in platform/test/golden/portfolio-v1.1-media (G6)
+ * and shared with the consumer. A change here is a change of the canonical data or of the producer.
+ * (The manifest keeps its 274 bytes: only the 32-hex version inside it moved.)
+ */
+const DEMO_VERSION = "d95b5cb5f8f05e50e624eb44d39393f5";
+const DEMO_DOC_BYTES = 20158;
+const DEMO_DOC_SHA256 = "5da25dd21dc3158c1495c9211a1fcb8cea4d485d788ee56facdaf6d2e4abac3b";
+const DEMO_MANIFEST_SHA256 = "495376e5f17095e7b027c613f26ad5b0a4ae1b971ebaa7f9789a971a0da9a1aa";
+/** the zero-record 1.1 document (07 §10: records [] is the one permitted empty array) */
+const EMPTY_VERSION = "94bea71d35178b52501438e3ed1c9a3d";
+const EMPTY_DOC = `{"schemaVersion":"1.1","resource":"portfolio","version":"${EMPTY_VERSION}","records":[]}`;
 /**
  * The 17 distinct work-scope ids the re-authored demo uses (26 §1.2), sorted in code point order —
  * i.e. what WS2 requires `document.workScopes` to be. Nine of the contract's 26 ids are unused by
@@ -344,10 +379,13 @@ const demoPin = (await readJson(path.join(repoRoot, "data/sites", DEMO, "site.js
 const DEMO_OFF_BUILD_INPUT_ID = computeBuildInputId({ ...LIVE_PARTS, releaseHash: demo.parts.releaseHash, siteSnapshotHash: demo.parts.siteSnapshotHash });
 
 console.log("\n[contract] constants");
-await check("C1 fixed manifest path, the DIVERGED schema versions (manifest 0.1 · document 1.0, INV-27), an integer producer version, the V0.2 limits", () => {
+await check("C1 fixed manifest path, the DIVERGED schema versions (manifest 0.1 · document 1.1, INV-27), an integer producer version, the V0.2 limits, the media 1.1 limits", () => {
   eq(MANIFEST_PATH, "/_integration/manifest.json", "manifest path (§3.1)");
-  eq([CORE_SCHEMA_VERSION, PORTFOLIO_SCHEMA_VERSION], ["0.1", "1.0"], "schemaVersion (SV1 · 07 §3 · INV-27)");
-  assert(Number.isInteger(PRODUCER_VERSION) && PRODUCER_VERSION >= 2, "producer version bumped for V0.2");
+  // 08: media is an ADDED optional field → a MINOR bump of the document (SV2); the manifest gains
+  // nothing and does not move.
+  eq([CORE_SCHEMA_VERSION, PORTFOLIO_SCHEMA_VERSION], ["0.1", "1.1"], "schemaVersion (SV1 · 07 §3 · 08 · INV-27)");
+  assert(Number.isInteger(PRODUCER_VERSION) && PRODUCER_VERSION >= 3, "producer version bumped for media 1.1 (projection + validation changed)");
+  eq([MEDIA_GALLERY_MAX, MEDIA_ALT_MAX, MEDIA_SRC_RE.source], [12, 160, "^\\/(?!\\/)[A-Za-z0-9._~%\\/-]{1,511}$"], "media limits (08 §2 = D1)");
   // 07 §8: `scope: 150` retired with the facet; `style` added (PROVISIONAL until the consumer
   // declares it through the VO6 procedure); category / tag unchanged.
   eq(CONSUMER_DECLARED_LIMITS.valuesPerFacet, { category: 50, style: 150, tag: 150 }, "VO6 per-key limits");
@@ -396,14 +434,14 @@ await check("E1 demo → 19 records, manifest 274 B, facets category 4 · style 
     site: { id: DEMO, publicOrigin: "https://interior-demo.boostweb.co.kr", locale: "ko-KR" },
     resources: { portfolio: { href: `/_integration/portfolio.${version}.json`, version } },
   }, "manifest (02 §5 key order; manifest schemaVersion stays 0.1 — INV-27)");
-  eq(e.portfolio!.document.schemaVersion, "1.0", "document schemaVersion (07 §3, INV-27)");
+  eq(e.portfolio!.document.schemaVersion, "1.1", "document schemaVersion (07 §3, 08, INV-27)");
   // 07 §10 declares the document as schemaVersion · resource · version · listingUrl · workScopes ·
   // facets · records; `workScopes` was simply absent from the demo's key list before the corpus
   // authored any work scope, and now takes its declared place.
   eq(Object.keys(e.portfolio!.document), ["schemaVersion", "resource", "version", "listingUrl", "workScopes", "facets", "records"], "document key order (07 §10)");
   eq(e.files.map((f) => f.path), ["_integration/manifest.json", `_integration/portfolio.${version}.json`], "files");
 });
-await check(`E1b demo → version ${DEMO_VERSION}, document ${DEMO_DOC_BYTES} B, manifest ${DEMO_MANIFEST_BYTES} B (the V0.2 golden values, P-V2-05)`, () => {
+await check(`E1b demo → version ${DEMO_VERSION}, document ${DEMO_DOC_BYTES} B, manifest ${DEMO_MANIFEST_BYTES} B (the media 1.1 golden values, P-V2-05)`, () => {
   eq(demoEmission.portfolio!.version, DEMO_VERSION, "version");
   eq([demoEmission.portfolio!.file.bytes.length, demoEmission.portfolio!.file.sha256], [DEMO_DOC_BYTES, DEMO_DOC_SHA256], "document bytes");
   eq(demoEmission.manifestFile.sha256, DEMO_MANIFEST_SHA256, "manifest bytes");
@@ -426,7 +464,7 @@ await check("E2 same snapshot → byte-identical emission, twice (INV-1/INV-26);
 // are V0.1 documents, and 07 rev 9.2.1 has no byte-level V0.2 example (its §19 is acceptance rows,
 // §19's old worked example is archived), so the two-record half is retired; the empty document is
 // restored with its V0.2 bytes, and the 19-record V0.2 document is pinned by E1b and G6.
-await check("E2b the empty V0.2 document reproduces byte for byte (schemaVersion 1.0, records [] and nothing else)", () => {
+await check("E2b the empty 1.1 document reproduces byte for byte (schemaVersion 1.1, records [] and nothing else)", () => {
   const empty = clone(demo.snapshot);
   empty.content.projects = [];
   eq(emitFor(empty).portfolio!.file.text, EMPTY_DOC, "exact bytes");
@@ -443,7 +481,10 @@ await check("E3 records by id code point, facet values by id code point, a recor
   eq(bi01.facets!.style, src.styles, "style = the authored styles, authored order");
   eq(bi01.facets!.tag, src.keywords!.filter((k) => !(src.styles ?? []).includes(k)), "tag = keywords MINUS styles (ST4), survivors in authored order");
   eq(bi01.facets!.category, [src.category], "category exactly one");
-  eq(Object.keys(bi01), ["id", "title", "detailUrl", "publishedAt", "location", "projectType", "property", "workScopeIds", "pricing", "facets"], "record key order (07 §10)");
+  // 08: `media` is added LAST, after facets — every 1.0 key keeps its place
+  eq(Object.keys(bi01), ["id", "title", "detailUrl", "publishedAt", "location", "projectType", "property", "workScopeIds", "pricing", "facets", "media"], "record key order (07 §10, 08)");
+  eq(Object.keys(bi01.media!), ["cover", "gallery", "totalCount"], "media key order (08 §2)");
+  eq(Object.keys(bi01.media!.cover!), ["src", "alt", "width", "height"], "MediaImage key order (08 §2)");
 });
 await check("E4 missing → omitted: records without a price have no pricing key at all (MD4); no projectType / workScopeIds / style without an authored source field (INV-25); no null / \"\" / {} / [] anywhere (MD1–MD3, INV-9)", () => {
   const d = demoEmission.portfolio!.document;
@@ -499,11 +540,17 @@ await check("E5 property.area: value/unit as authored (no conversion), basis sup
   eq(d.records[3]!.property, { type: "officetel" }, "type alone still emits property (MD4)");
   assert(!JSON.stringify(d).includes("totalCost"), "no total cost (TP3 = PR5; the name stays reserved)");
 });
-await check("E6 allowlist: no summary / body / gallery / quote / slug / status / builtYear / period / duration key or text (INV-7, SE2)", () => {
+// E6 RESTATED for media 1.1 (08): before 1.1 no image left the producer, so "cover" and any gallery
+// were on the forbidden list. 08 deliberately ADDS `media` — `cover`, `gallery`, `totalCount` and
+// MediaImage's `src`/`alt`/`width`/`height` — so those keys are now allowlisted, but ONLY inside
+// `records[].media` (checked separately below), and everything else stays forbidden: the authored
+// `galleryGroups` / `items` / `image` / `before` shape never leaks, and neither does a `hasMore`
+// (08: derived, never emitted) or a URL key.
+await check("E6 allowlist: no summary / body / galleryGroups / before / quote / slug / status / builtYear / period / duration key or text (INV-7, SE2); media keys only under records[].media (08)", () => {
   const text = demoEmission.portfolio!.file.text;
   // `style` is no longer on this list — it is a V0.2 facet key (07 §8) — but `propertyType` still
   // is: V0.2 takes it up as the STRUCTURED field `property.type`, never as a facet or a flat key.
-  for (const key of ["summary", "body", "galleryGroups", "customerQuote", "cover", "slug", "status", "builtYear", "period", "durationWeeks", "keywords", "styles", "attribution", "propertyType", "totalCost", "scope"]) {
+  for (const key of ["summary", "body", "galleryGroups", "items", "image", "before", "asset", "hasMore", "url", "href", "customerQuote", "slug", "status", "builtYear", "period", "durationWeeks", "keywords", "styles", "attribution", "propertyType", "totalCost", "scope"]) {
     assert(!text.includes(`"${key}"`), `key ${key} must not be emitted`);
   }
   for (const p of demo.snapshot.content.projects) {
@@ -516,8 +563,16 @@ await check("E6 allowlist: no summary / body / gallery / quote / slug / status /
   };
   const stripped = clone(demoEmission.portfolio!.document) as unknown as Record<string, unknown>;
   delete stripped.facets;
+  const mediaKeys = new Set<string>();
   stripped.records = (stripped.records as Record<string, unknown>[]).map((r) => {
-    const { facets: _f, ...rest } = r;
+    const { facets: _f, media, ...rest } = r;
+    if (media) {
+      const before = new Set(keys);
+      walk(media);
+      for (const k of keys) if (!before.has(k)) mediaKeys.add(k);
+      for (const k of [...keys]) if (!before.has(k)) keys.delete(k);
+      for (const k of Object.keys(media as object)) mediaKeys.add(k);
+    }
     return rest;
   });
   walk(stripped);
@@ -528,8 +583,21 @@ await check("E6 allowlist: no summary / body / gallery / quote / slug / status /
     "pricing", "total", "kind", "minAmount", "maxAmount", "perArea", "amount", "currency", "perUnit", "source",
   ]);
   eq([...keys].filter((k) => !allow.has(k)), [], "keys outside the allowlist");
+  // 08 — the media allowlist, and it is used ONLY under records[].media (none of these is a 1.0 key)
+  const mediaAllow = new Set(["cover", "gallery", "totalCount", "src", "alt", "width", "height"]);
+  eq([...mediaKeys].filter((k) => !mediaAllow.has(k)), [], "media keys outside the media allowlist");
+  eq([...keys].filter((k) => mediaAllow.has(k)), [], "no media key outside records[].media");
+  // 08 — the only images are the records' own: no og:image / site hero / band / logo / section
+  // image of the site ever becomes a media src (every non-project asset of the demo is checked).
+  for (const a of demo.snapshot.assets.filter((x) => !/^bi\d\d-/.test(x.id))) assert(!text.includes(`"${a.publicPath}"`), `site asset ${a.id} (${a.publicPath}) must not be a media src`);
 });
-await check("E7 version changes with every projected fact and with a record added/removed; stays for anything outside the projection (INV-2, RV2)", () => {
+// E7 RESTATED for media 1.1 (08): the cover, the gallery and the asset table's size/path are now
+// PROJECTED facts (records[].media), so changing them must move the resource version — before 1.1
+// they sat on the neutral list ("galleryGroups", "cover alt", "assets"). A version that did not move
+// would let a consumer keep stale images under an unchanged version (INV-2 / RV2 is the same rule;
+// only the projection grew). What stays neutral: before-images (not exported in V1), assets no
+// record's media references (site hero, logo, band …), and everything else outside the projection.
+await check("E7 version changes with every projected fact (media included, 08) and with a record added/removed; stays for anything outside the projection (INV-2, RV2)", () => {
   const base = demoEmission.portfolio!.version;
   const vary = (f: (s: SiteSnapshot) => void) => {
     const s = clone(demo.snapshot);
@@ -559,6 +627,16 @@ await check("E7 version changes with every projected fact and with a record adde
     ["record removed", (s) => void s.content.projects.pop()],
     // bi-09 … bi-19 now exist (26 §1.1), so the added record takes the next free id
     ["record added", (s) => void s.content.projects.push({ ...clone(s.content.projects[0]!), id: "bi-20", slug: "bi-20-slug" })],
+    // 08 — media is projected: every one of these reaches records[].media
+    ["galleryGroups removed", (s) => void delete s.content.projects[p()]!.galleryGroups],
+    ["gallery order", (s) => void s.content.projects[p()]!.galleryGroups!.reverse()],
+    ["gallery alt", (s) => void (s.content.projects[p()]!.galleryGroups![0]!.items[0]!.image.alt = "x")],
+    ["gallery 13th image dropped (totalCount 13 → 12)", (s) => void s.content.projects[p()]!.galleryGroups!.at(-1)!.items.pop()],
+    ["cover alt", (s) => void (s.content.projects[p()]!.cover.alt = "x")],
+    ["cover alt removed", (s) => void delete s.content.projects[p()]!.cover.alt],
+    ["cover asset", (s) => void (s.content.projects[p()]!.cover = { ...s.content.projects[p()]!.cover, asset: "bi01-kitchen-01" })],
+    ["asset width/height", (s) => void (s.assets.find((a) => a.id === s.content.projects[p()]!.cover.asset)!.width = 1599)],
+    ["asset publicPath (bytes)", (s) => void (s.assets.find((a) => a.id === s.content.projects[p()]!.cover.asset)!.publicPath = "/assets/00000000000000000000.jpg")],
   ];
   for (const [what, f] of changes) assert(vary(f) !== base, `${what}: version must change`);
   const neutral: [string, (s: SiteSnapshot) => void][] = [
@@ -567,16 +645,21 @@ await check("E7 version changes with every projected fact and with a record adde
     ["scope (retired facet, still display content)", (s) => void s.content.projects[p()]!.scope!.push("옥상")],
     ["summary", (s) => void (s.content.projects[p()]!.summary = "다른 요약")],
     ["body", (s) => void (s.content.projects[p()]!.body = ["다른 본문"])],
-    ["galleryGroups", (s) => void delete s.content.projects[p()]!.galleryGroups],
     ["customerQuote", (s) => void delete s.content.projects[p()]!.customerQuote],
-    ["cover alt", (s) => void (s.content.projects[p()]!.cover.alt = "x")],
+    // 08 — before images are not exported in V1 and not counted in totalCount
+    ["a before image (bi-04)", (s) => void s.content.projects.find((x) => x.id === "bi-04")!.galleryGroups!.forEach((g) => g.items.forEach((i) => void delete i.before))],
+    ["a gallery group's name", (s) => void (s.content.projects[p()]!.galleryGroups![0]!.name = "다른 이름")],
     ["builtYear / period / durationWeeks", (s) => void ((s.content.projects[p()]!.builtYear = 1999), (s.content.projects[p()]!.durationWeeks = 1), delete s.content.projects[p()]!.period)],
     ["settings", (s) => void (s.settings.overrides["home.projects-a"] = { limit: 2, selection: { mode: "latest" } })],
     ["theme", (s) => void (s.theme = s.theme ? { ...s.theme, tokens: { ...s.theme.tokens, "color-accent": "#123456" } } : undefined)],
     ["slots", (s) => void delete s.slots],
     ["banners / reviews", (s) => void (delete s.content.banners, delete s.content.reviews)],
     ["business", (s) => void (s.content.business.summary = "x")],
-    ["assets", (s) => void (s.assets = [])],
+    // 08 — only the assets some record's media names are projected; the others are not
+    ["assets no media references (site hero / band / logo / before / the 13th)", (s) => {
+      const used = new Set(s.content.projects.flatMap((x) => [x.cover.asset, ...(x.galleryGroups ?? []).flatMap((g) => g.items.map((i) => i.image.asset)).slice(0, MEDIA_GALLERY_MAX)]));
+      s.assets = s.assets.filter((a) => used.has(a.id));
+    }],
     ["brandName / logo", (s) => void ((s.site.identity.brandName = "x"), delete s.site.identity.logo)],
     ["record order in the snapshot", (s) => void s.content.projects.reverse()],
   ];
@@ -1037,6 +1120,85 @@ await check("A13 INV-22 provenance, metamorphic, over every demo record: moving 
   expectOnly("bi-01 coincidence area", moved(coincide.portfolio!.document, after(s, "bi-01", (p) => void (p.area!.value += 1))), ["records.0.property.area.value"], []);
 });
 
+console.log("\n[media] portfolio media 1.1 (08 = D1): the producer's sourcing on real data and crafted snapshots");
+/** the after images a record authors, in authored order (08 §3: `before` is never one of them) */
+const afterRefs = (p: Project) => (p.galleryGroups ?? []).flatMap((g) => g.items.map((i) => i.image));
+/** the MediaImage 08 §2 expects for an authored MediaRef — written from the snapshot's asset table */
+const expectImage = (ref: { asset: string; alt?: string }) => {
+  const a = demo.snapshot.assets.find((x) => x.id === ref.asset)!;
+  return { src: a.publicPath, ...(ref.alt ? { alt: ref.alt } : {}), width: a.width, height: a.height };
+};
+await check("E11 demo media = the authored cover + the authored AFTER gallery, first 12 in authored order, totalCount = all after images; bi-01 12 of 13 (hasMore derived), bi-02 … bi-08 complete, bi-09 … bi-19 cover only; bi-04's before images absent; 19 covers · 8 galleries · 41 images · totalCount 42", () => {
+  const d = demoEmission.portfolio!.document;
+  for (const r of d.records) {
+    const src = demo.snapshot.content.projects.find((p) => p.id === r.id)!;
+    const after = afterRefs(src);
+    const want = {
+      cover: expectImage(src.cover),
+      ...(after.length > 0 ? { gallery: after.slice(0, MEDIA_GALLERY_MAX).map(expectImage), totalCount: after.length } : {}),
+    };
+    eq(r.media, want, `${r.id}: media = the authored cover + after gallery (08 §3)`);
+    assert(PortfolioMediaSchema.safeParse(r.media).success, `${r.id}: media passes the 08 schema`);
+  }
+  const m = (id: string) => d.records.find((r) => r.id === id)!.media!;
+  eq([m("bi-01").gallery!.length, m("bi-01").totalCount], [12, 13], "bi-01: 12 exported of 13 → a consumer derives hasMore = true");
+  eq(m("bi-01").gallery!.map((g) => g.src).includes(expectImage({ asset: "bi01-bathroom-02" }).src), false, "bi-01: the 13th after image (bi01-bathroom-02) is counted, not exported");
+  eq(d.records.filter((r) => r.media?.gallery && r.media.totalCount! > r.media.gallery.length).map((r) => r.id), ["bi-01"], "derived hasMore only on bi-01");
+  eq(d.records.filter((r) => !r.media?.gallery).map((r) => r.id), ["bi-09", "bi-10", "bi-11", "bi-12", "bi-13", "bi-14", "bi-15", "bi-16", "bi-17", "bi-18", "bi-19"], "cover only: bi-09 … bi-19");
+  for (const id of ["bi-09", "bi-10", "bi-11", "bi-12", "bi-13", "bi-14", "bi-15", "bi-16", "bi-17", "bi-18", "bi-19"]) eq(Object.keys(m(id)), ["cover"], `${id}: media = { cover } — no gallery, no totalCount`);
+  // bi-09 … bi-19 reuse AUTHORED covers: each is an after image of one of bi-01 … bi-08 (a reused
+  // authored asset — the site itself renders it as that record's cover — not a guessed relation)
+  const earlyAfter = new Set(demo.snapshot.content.projects.filter((p) => afterRefs(p).length > 0).flatMap((p) => afterRefs(p).map((ref) => ref.asset)));
+  for (const p of demo.snapshot.content.projects.filter((x) => afterRefs(x).length === 0)) assert(earlyAfter.has(p.cover.asset), `${p.id}: cover ${p.cover.asset} is a reused authored gallery asset`);
+  const bi04 = demo.snapshot.content.projects.find((p) => p.id === "bi-04")!;
+  const befores = (bi04.galleryGroups ?? []).flatMap((g) => g.items.flatMap((i) => (i.before ? [i.before] : [])));
+  eq(befores.length, 2, "bi-04 authors two before images");
+  for (const b of befores) assert(!demoEmission.portfolio!.file.text.includes(`"${expectImage(b).src}"`), `before image ${b.asset} is not exported`);
+  eq(m("bi-04").totalCount, 4, "bi-04: totalCount counts the 4 after images only (not the 2 befores)");
+  const all = d.records.map((r) => r.media!);
+  eq([all.filter((x) => x.cover).length, all.filter((x) => x.gallery).length, all.reduce((n, x) => n + (x.gallery?.length ?? 0), 0), all.reduce((n, x) => n + (x.totalCount ?? 0), 0)], [19, 8, 41, 42], "covers · galleries · exported images · totalCount");
+  // every image of this corpus authors its alt and the registry gives every size
+  assert(all.flatMap((x) => [x.cover!, ...(x.gallery ?? [])]).every((i) => i.alt && i.width === 1600 && i.height === 1200 && /^\/assets\/[0-9a-f]{20}\.jpg$/.test(i.src)), "authored alt, 1600×1200, content-addressed same-origin jpg path");
+});
+await check("E12 media on crafted snapshots: alt only when authored (absent / \"\" → no key, never invented); exactly 12 → 12/12; 30 → 12/30; no gallery → { cover }; a before image is neither exported nor counted; an asset missing from the snapshot fails closed; media feeds no other field", async () => {
+  // alt: never invented
+  const noAlt = craft((p) => {
+    delete p.cover.alt;
+    p.galleryGroups![0]!.items[0]!.image.alt = "";
+  });
+  eq(noAlt.result.errors, [], "valid without alt");
+  eq(Object.keys(noAlt.record.media!.cover!), ["src", "width", "height"], "cover alt absent → no key");
+  eq(Object.keys(noAlt.record.media!.gallery![0]!), ["src", "width", "height"], "gallery alt \"\" → no key (MD2), never a placeholder");
+  // the 12 cap and totalCount
+  const withAfter = (n: number) => (p: Project) => {
+    const one = afterRefs(p)[0]!;
+    p.galleryGroups = [{ name: "거실", items: Array.from({ length: n }, () => ({ image: { ...one } })) }];
+  };
+  for (const [n, len] of [[1, 1], [12, 12], [13, 12], [30, 12]] as const) {
+    const c = craft(withAfter(n));
+    eq([c.record.media!.gallery!.length, c.record.media!.totalCount, c.result.errors], [len, n, []], `${n} after images → gallery ${len}, totalCount ${n}`);
+  }
+  const coverOnly = craft((p) => void delete p.galleryGroups);
+  eq([Object.keys(coverOnly.record.media!), coverOnly.result.errors], [["cover"], []], "no galleryGroups → { cover } only");
+  // before: not exported, not counted — adding one to every bi-01 item changes nothing
+  const withBefore = craft((p) => p.galleryGroups!.forEach((g) => g.items.forEach((i) => void (i.before = { asset: "bi04-kitchen-01-before", alt: "공사 전" }))));
+  eq(withBefore.record.media, demoEmission.portfolio!.document.records.find((r) => r.id === "bi-01")!.media, "before images change nothing in media");
+  eq(withBefore.emission.portfolio!.version, demoEmission.portfolio!.version, "…nor the version");
+  // fail closed on an asset the snapshot does not carry
+  const missing = clone(demo.snapshot);
+  missing.assets = missing.assets.filter((a) => a.id !== "bi01-kitchen-03");
+  await rejects(() => emitFor(missing), /record "bi-01" gallery\[5\]: asset "bi01-kitchen-03" is not in the site snapshot/);
+  // media is presentation only: stripping it from every record leaves exactly the documents a
+  // gallery-less / cover-swapped corpus produces with ITS media stripped — nothing else read it
+  const strip = (d: PortfolioDocument) => ({ ...d, version: "", records: d.records.map(({ media: _m, ...r }) => r) });
+  const other = clone(demo.snapshot);
+  for (const p of other.content.projects) {
+    delete p.galleryGroups;
+    p.cover = { asset: "bi01-hallway-01" };
+  }
+  eq(strip(emitFor(other).portfolio!.document), strip(demoEmission.portfolio!.document), "every non-media byte is independent of the media sources (08: media feeds no facet, no order, nothing else)");
+});
+
 console.log("\n[validator] fail closed");
 await check("V1 the demo emission validates: 0 errors, 0 warnings; the fixtures' emissions too", async () => {
   eq(validateFor(demoEmission, demo.snapshot), { errors: [], warnings: [] }, "demo");
@@ -1143,10 +1305,14 @@ await check("V9 shapes: 3 decimals, negative, bad unit, lowercase currency, an e
   err((x) => void ((x.manifest as any).recordCount = 8), /recordCount|Unrecognized/);
   err((x) => void (x.portfolio!.document.facets!["Bad Key"] = x.portfolio!.document.facets!.tag!), /Bad Key|facets/);
   err((x) => void (x.portfolio!.document.records[0]!.title = "x".repeat(121)), /title/);
-  // 07 §3 / INV-27: the DOCUMENT is "1.0" and the MANIFEST is "0.1"; neither may carry the other's.
+  // 07 §3 / 08 / INV-27: the DOCUMENT is "1.1" and the MANIFEST is "0.1"; neither may carry the
+  // other's, and this producer emits exactly "1.1" (a "1.0" label on a 1.1 emission is refused — the
+  // 1.0 compatibility case is M3: a 1.0-SHAPED record is valid under "1.1").
   err((x) => void ((x.portfolio!.document as any).schemaVersion = "0.1"), /schemaVersion/);
   err((x) => void ((x.portfolio!.document as any).schemaVersion = "0.2"), /schemaVersion/);
-  err((x) => void ((x.manifest as any).schemaVersion = "1.0"), /schemaVersion/);
+  err((x) => void ((x.portfolio!.document as any).schemaVersion = "1.0"), /schemaVersion/);
+  err((x) => void ((x.portfolio!.document as any).schemaVersion = "1.2"), /schemaVersion/);
+  err((x) => void ((x.manifest as any).schemaVersion = "1.1"), /schemaVersion/);
 });
 await check("V14 the V0.2 annex, fail closed: an unknown work-scope id, a broken WS2 closure either way, a partial_remodel with no scopes, a trades-only partial (INV-30) or full (INV-29), a style/tag overlap, a range with minAmount ≥ maxAmount, a perArea with no source → rejected (INV-17, INV-23, INV-24, INV-28, INV-29, INV-30)", () => {
   // staged on `plainEmission` (above): with all 19 demo records carrying their authored scopes,
@@ -1295,6 +1461,100 @@ await check("N1 known-bad mutations of the real V0.2 document, one violation eac
   err((x) => void ((x.portfolio!.document as any).schemaVersion = "0.1"), /schemaVersion/);
 });
 
+console.log("\n[media validator] 08 §2 rules, fail closed");
+/** a demo emission with one record's media replaced (bi-01 has a gallery, bi-09 is cover only) */
+const withMedia = (id: string, media: unknown) => (x: IntegrationEmission) => void ((x.portfolio!.document.records.find((r) => r.id === id) as any).media = media);
+const IMG = { src: "/assets/03c625140dc4df674fb8.jpg", alt: "거실", width: 1600, height: 1200 };
+const imgs = (n: number) => Array.from({ length: n }, () => ({ ...IMG }));
+await check("M1 media is OPTIONAL: every record with media removed (a 1.0-shaped record under schemaVersion 1.1) validates with 0 errors; cover only / gallery without cover / images without alt or size are valid too", () => {
+  const bare = remake(demoEmission, (x) => x.portfolio!.document.records.forEach((r) => void delete r.media));
+  eq(validateFor(bare, demo.snapshot), { errors: [], warnings: [] }, "no record carries media → valid (08: additive)");
+  for (const [what, media] of [
+    ["cover only", { cover: IMG }],
+    ["gallery only (no cover)", { gallery: imgs(3), totalCount: 3 }],
+    ["cover + full gallery", { cover: IMG, gallery: imgs(12), totalCount: 12 }],
+    ["12 of 13 (hasMore derived)", { cover: IMG, gallery: imgs(12), totalCount: 13 }],
+    ["12 of 500", { gallery: imgs(12), totalCount: 500 }],
+    ["no alt, no size", { cover: { src: "/assets/03c625140dc4df674fb8.jpg" } }],
+    ["percent-encoded / tilde path", { cover: { src: "/media/%EA%B1%B0%EC%8B%A4~1.webp", width: 1, height: 1 } }],
+  ] as const) {
+    eq(validateFor(remake(demoEmission, withMedia("bi-09", media)), demo.snapshot).errors, [], `${what} is valid`);
+    assert(PortfolioMediaSchema.safeParse(media).success, `${what}: schema`);
+  }
+});
+await check("M2 1.0 compatibility: the FROZEN V0.2 golden document is refused as an emission of this producer ONLY for its schemaVersion \"1.0\"; relabelled \"1.1\" (nothing else touched) it validates with 0 errors — every 1.0 record is a valid 1.1 record", async () => {
+  const v02 = await readJson(path.join(repoRoot, GOLDEN_V02_DIR, `portfolio.${V02_VERSION}.json`));
+  eq([v02.schemaVersion, v02.records.length, v02.records.some((r: { media?: unknown }) => r.media !== undefined)], ["1.0", 19, false], "the frozen 1.0 document: 19 records, no media");
+  const as10 = validateFor(remake(demoEmission, (x) => void (x.portfolio!.document = clone(v02))), demo.snapshot);
+  assert(as10.errors.length > 0 && as10.errors.every((m) => /schemaVersion/.test(m)), `only the schemaVersion is refused:\n${as10.errors.join("\n")}`);
+  const as11 = validateFor(remake(demoEmission, (x) => void (x.portfolio!.document = { ...clone(v02), schemaVersion: "1.1" })), demo.snapshot);
+  eq(as11, { errors: [], warnings: [] }, "relabelled 1.1 → valid");
+});
+await check("M3 invalid src refused — an absolute URL, //host, a `..` segment (also percent-encoded: %2e%2e, .%2E), an encoded slash / backslash / NUL, an empty or `.` segment, a malformed escape, javascript:, data:, a query, a fragment, a backslash, no leading slash, \"/\" alone, a space, non-ASCII, > 512 characters (08 §2, MD-1a)", () => {
+  for (const src of [
+    "https://interior-demo.boostweb.co.kr/assets/03c625140dc4df674fb8.jpg",
+    "http://evil.example/x.jpg",
+    "//evil.example/x.jpg",
+    "/assets/../x.jpg",
+    "/..",
+    "javascript:alert(1)",
+    "data:image/png;base64,AAAA",
+    "/assets/x.jpg?v=1",
+    "/assets/x.jpg#top",
+    "/assets\\x.jpg",
+    "assets/x.jpg",
+    "/",
+    "/assets/x y.jpg",
+    "/assets/거실.jpg",
+    `/${"a".repeat(512)}`,
+    // MD-1a — a URL parser resolves %2e as ".": each of these would escape or alias the path
+    "/assets/%2e%2e/_integration/manifest.json",
+    "/assets/%2E%2E/x.jpg",
+    "/assets/.%2E/x.jpg",
+    "/assets/%2e/x.jpg",
+    "/assets%2f..%2fx.jpg",
+    "/assets/%5c../x.jpg",
+    "/assets/x.jpg%00.png",
+    "/assets//x.jpg",
+    "/assets/./x.jpg",
+    "/.",
+    "/assets/x%zz.jpg",
+    "/assets/x.jpg%",
+  ]) {
+    err(withMedia("bi-09", { cover: { ...IMG, src } }), /media\.cover\.src: media src must (be a same-origin absolute path|not contain a `\.\.` segment|be a UR2 path)/);
+    err(withMedia("bi-01", { gallery: [{ ...IMG, src }], totalCount: 1 }), /media\.gallery\.0\.src/);
+  }
+  assert(MediaImageSchema.safeParse({ src: `/${"a".repeat(511)}` }).success, "512 characters is the maximum");
+});
+await check("M4 invalid image / media shapes refused: width without height (and the reverse), non-positive or fractional size, alt \"\" / > 160 / forbidden character, an unknown key, 13 gallery items, an empty gallery, a boolean hasMore, media {} or null, totalCount without gallery / gallery without totalCount / totalCount < gallery.length / gallery.length ≠ min(totalCount, 12) / totalCount 0 or fractional (08 §2)", () => {
+  const cover = (patch: Record<string, unknown>, re: RegExp) => err(withMedia("bi-09", { cover: { ...IMG, ...patch } }), re);
+  cover({ height: undefined }, /both present or both absent/);
+  cover({ width: undefined }, /both present or both absent/);
+  err(withMedia("bi-09", { cover: { src: IMG.src, width: 1600 } }), /both present or both absent/);
+  for (const w of [0, -1, 1.5]) cover({ width: w }, /media\.cover\.width/);
+  cover({ width: "1600" }, /media\.cover\.width/);
+  cover({ alt: "" }, /media\.cover\.alt|empty string/);
+  cover({ alt: "   " }, /media\.cover\.alt: media alt must not be blank/);
+  cover({ alt: "가".repeat(MEDIA_ALT_MAX + 1) }, /media\.cover\.alt/);
+  cover({ alt: "거실\u202e" }, /media\.cover\.alt: contains a forbidden character \(HT7\)/);
+  cover({ url: "https://x.example/a.jpg" }, /media\.cover.*(Unrecognized|url)/);
+  err(withMedia("bi-01", { cover: IMG, gallery: imgs(13), totalCount: 13 }), /media\.gallery: .*(12|Too big)/);
+  err(withMedia("bi-01", { cover: IMG, gallery: [], totalCount: 1 }), /media\.gallery/);
+  err(withMedia("bi-01", { cover: IMG, gallery: [], totalCount: 1 }), /media\.gallery: empty array/);
+  err(withMedia("bi-01", { cover: IMG, gallery: imgs(12), totalCount: 13, hasMore: true }), /media.*(Unrecognized|hasMore)/);
+  err(withMedia("bi-01", { cover: IMG, gallery: imgs(12), totalCount: 13, hasMore: true }), /media\.hasMore: booleans are not part of the V0 schema/);
+  err(withMedia("bi-09", {}), /media: empty object|never \{\}/);
+  err(withMedia("bi-09", null), /media: null is never emitted|media/);
+  err(withMedia("bi-09", { cover: IMG, totalCount: 1 }), /totalCount is present exactly when gallery is/);
+  err(withMedia("bi-01", { cover: IMG, gallery: imgs(4) }), /totalCount is present exactly when gallery is/);
+  err(withMedia("bi-01", { cover: IMG, gallery: imgs(4), totalCount: 3 }), /totalCount must be ≥ gallery\.length/);
+  err(withMedia("bi-01", { cover: IMG, gallery: imgs(4), totalCount: 5 }), /gallery\.length must equal min\(totalCount, 12\)/);
+  err(withMedia("bi-01", { cover: IMG, gallery: imgs(11), totalCount: 13 }), /gallery\.length must equal min\(totalCount, 12\)/);
+  err(withMedia("bi-01", { cover: IMG, gallery: imgs(1), totalCount: 0 }), /media\.totalCount/);
+  err(withMedia("bi-01", { cover: IMG, gallery: imgs(1), totalCount: 1.5 }), /media\.totalCount/);
+  err(withMedia("bi-09", { hero: IMG }), /media.*(Unrecognized|hero)/);
+});
+
 console.log("\n[builder] opt-in and build identity");
 await check("B1 default OFF: the fixtures have no integration.json → emit false, no integrationInputHash, buildInputId unchanged (= their current package)", async () => {
   for (const s of FIXTURES) {
@@ -1359,14 +1619,19 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
 // B2b states which package data/site-builds points at, per rollout state (demo-rollout.ts):
 //  PRE_PUBLISH_TRANSITION — the V0.1 package is current, the pilot package is its rollback, and the
 //    demo's V0.2 identity is NOT what site:publish would pick up (07 §16 steps 1–3);
-//  POST_PUBLISH_STEADY — the current package IS the demo's V0.2 identity (V0.2 contract pair, its
-//    _integration/ byte-identical to the canonical golden), and the rollback behind it is the V0.1
-//    package, intact at its frozen hash (07 §16 step 4; 39-) — while the current package is the first
-//    V0.2 one. The widget embed (2026-09-28) rebuilt the demo with its head scripts, so the rollback
-//    moved one step: behind any other current package it is exactly the first V0.2 package, intact
-//    at its frozen hash, with the same golden integration bytes. Any other previous fails: moving
-//    the rollback again is a reviewed restatement, not something a rebuild may do silently.
-await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's V0.2 identity current with the golden integration bytes, the frozen rollback lineage behind it (V0.1 behind the first V0.2 package, the first V0.2 package behind the widget build)", async () => {
+//  POST_PUBLISH_STEADY — the current package IS the demo's own identity (its contract pair, its
+//    _integration/ byte-identical to the canonical golden) and the rollback behind it is the frozen
+//    lineage. RESTATED for media 1.1 (08, docs/result/portfolio-media-1.1): the media build is the
+//    third steady package, so the rollback moved one step again — behind it is exactly the widget
+//    build (32303241…, live 2026-09-28), intact at its frozen hash, same pin, contract "1.0", its
+//    _integration/ = the FROZEN V0.2 golden's bytes. keep-2 retired the first V0.2 package
+//    (a4777cf9…, the widget build's own rollback); it is read from V02_FIRST_PACKAGE_COMMIT and
+//    re-hashed at its frozen packageHash, so the lineage proof keeps its strength (the V0.1 package
+//    before it is G1–G3's). The earlier branches (current = the first V0.2 or the widget package)
+//    are unreachable now: their integration part was producer 2, and `current = demo identity`
+//    below requires the current producer. Moving the rollback again is a reviewed restatement, not
+//    something a rebuild may do silently.
+await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's media 1.1 identity current with the golden integration bytes, the frozen rollback lineage behind it (the widget build, its own rollback — the first V0.2 package — retired by keep-2 and intact in git)", async () => {
   eq(demo.parts.integrationInputHash !== undefined, true, "the demo is still opted in");
   if (rollout === "PRE_PUBLISH_TRANSITION") {
     eq(currentRecord.buildInputId, V01_BUILD_INPUT_ID, "current = the V0.1 package");
@@ -1376,30 +1641,42 @@ await check("B2b the current/previous packages are exactly the rollout state's: 
     return;
   }
   eq(rollout, "POST_PUBLISH_STEADY", "rollout state");
-  eq(currentRecord.buildInputId, demo.buildInputId, "current = the demo's V0.2 identity (nothing stale, nothing else)");
+  eq(currentRecord.buildInputId, demo.buildInputId, "current = the demo's media 1.1 identity (nothing stale, nothing else)");
   eq([currentRecord.template.releaseId, currentRecord.template.releaseHash], [demoPin.releaseId, demoPin.releaseHash], "built with the pin");
-  eq(currentRecord.integration?.contract, { core: "0.1", portfolio: "1.0" }, "current package = V0.2 contract pair");
+  eq([currentRecord.integration?.contract, currentRecord.integration?.producerVersion], [{ core: "0.1", portfolio: "1.1" }, PRODUCER_VERSION], "current package = the media 1.1 contract pair, this producer");
   const files = (await readdir(path.join(currentDir, "site", INTEGRATION_DIR))).filter((f) => f !== ".DS_Store").sort();
-  eq(files, ["manifest.json", `portfolio.${DEMO_VERSION}.json`], "current _integration/ = the V0.2 manifest + document");
+  eq(files, ["manifest.json", `portfolio.${DEMO_VERSION}.json`], "current _integration/ = the media 1.1 manifest + document");
   for (const f of files) eq(sha256(await readFile(path.join(currentDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_DIR, f))), `${f} = the canonical golden's bytes`);
   eq([DEMO_DOC_SHA256, DEMO_MANIFEST_SHA256], [sha256(await readFile(path.join(currentDir, "site", INTEGRATION_DIR, `portfolio.${DEMO_VERSION}.json`))), sha256(await readFile(path.join(currentDir, "site", INTEGRATION_DIR, "manifest.json")))], "document / manifest sha256 = the contract literals");
   assert(await packageIntact(currentDir), "current package intact");
-  if (currentRecord.buildInputId === V02_FIRST_BUILD_INPUT_ID) {
-    eq(previousId, V01_BUILD_INPUT_ID, "previous = the V0.1 package (the rollback)");
-    assert(!v01FromGit, "the rollback package is on disk");
-    eq(needV01().packageHash, V01_PACKAGE_HASH, "the rollback's recorded packageHash");
-    assert(await packageIntact(v01Dir), "the rollback package is intact");
-    return;
-  }
-  eq(previousId, V02_FIRST_BUILD_INPUT_ID, "previous = the first V0.2 package (the rollback behind the widget build)");
-  const prevDir = path.join(demoBuilds, "packages", V02_FIRST_BUILD_INPUT_ID);
+  // 08 — every media src the current document names is a file of the current package (INV-5 for images)
+  const srcs = new Set(demoEmission.portfolio!.document.records.flatMap((r) => [r.media?.cover, ...(r.media?.gallery ?? [])]).filter((m) => m !== undefined).map((m) => m.src));
+  for (const src of srcs) assert(await exists(path.join(currentDir, "site", src.slice(1))), `media src ${src} is in the current package`);
+
+  eq(previousId, WIDGET_BUILD_INPUT_ID, "previous = the widget build (the rollback behind the media 1.1 build)");
+  const prevDir = path.join(demoBuilds, "packages", WIDGET_BUILD_INPUT_ID);
   const prevRecord = (await readJson(path.join(prevDir, "build-record.json"))) as BuildRecord;
-  eq(prevRecord.buildInputId, V02_FIRST_BUILD_INPUT_ID, "the rollback's recorded buildInputId");
-  eq(prevRecord.packageHash, V02_FIRST_PACKAGE_HASH, "the rollback's recorded packageHash");
+  eq([prevRecord.buildInputId, prevRecord.packageHash], [WIDGET_BUILD_INPUT_ID, WIDGET_PACKAGE_HASH], "the rollback's recorded identity");
   assert(await packageIntact(prevDir), "the rollback package is intact");
   eq([prevRecord.template.releaseId, prevRecord.template.releaseHash], [demoPin.releaseId, demoPin.releaseHash], "the rollback was built with the same pin");
-  eq(prevRecord.integration?.contract, { core: "0.1", portfolio: "1.0" }, "the rollback = V0.2 contract pair");
-  for (const f of files) eq(sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_DIR, f))), `rollback ${f} = the canonical golden's bytes`);
+  eq(prevRecord.integration?.contract, { core: "0.1", portfolio: "1.0" }, "the rollback = the V0.2 contract pair (document 1.0)");
+  const prevFiles = (await readdir(path.join(prevDir, "site", INTEGRATION_DIR))).filter((f) => f !== ".DS_Store").sort();
+  eq(prevFiles, ["manifest.json", `portfolio.${V02_VERSION}.json`], "the rollback's _integration/ = the V0.2 manifest + document");
+  for (const f of prevFiles) eq(sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_V02_DIR, f))), `rollback ${f} = the frozen V0.2 golden's bytes`);
+  eq([sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, `portfolio.${V02_VERSION}.json`))), sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, "manifest.json")))], [V02_DOC_SHA256, V02_MANIFEST_SHA256], "rollback document / manifest sha256 = the frozen literals");
+
+  // the widget build's own rollback, the first V0.2 package: retired from the working tree by keep-2
+  const firstOnDisk = path.join(demoBuilds, "packages", V02_FIRST_BUILD_INPUT_ID);
+  assert(!(await exists(firstOnDisk)), "keep-2 retired the first V0.2 package (current + previous only)");
+  const scratch = await mkdtemp(path.join(os.tmpdir(), "v02-first-package-"));
+  try {
+    const firstDir = gitMaterialize(repoRoot, V02_FIRST_PACKAGE_COMMIT, path.relative(repoRoot, firstOnDisk), scratch);
+    const firstRecord = (await readJson(path.join(firstDir, "build-record.json"))) as BuildRecord;
+    eq([firstRecord.buildInputId, firstRecord.packageHash], [V02_FIRST_BUILD_INPUT_ID, V02_FIRST_PACKAGE_HASH], "the first V0.2 package's recorded identity (from git)");
+    assert(await packageIntact(firstDir), "the first V0.2 package, read from git, is intact at its frozen packageHash");
+  } finally {
+    await rm(scratch, { recursive: true, force: true });
+  }
 });
 await check("B3 preview never emits (SE5): the demo in preview mode has no integration part", async () => {
   const p = await prepareSiteInput({ repoRoot, siteId: DEMO, mode: "preview", at: AT });
@@ -1548,8 +1825,8 @@ await check("G5 V0.1 package = live + exactly the two integration files: every o
   eq([live.size, fresh.size], [156, 158], "counts");
 });
 
-console.log("\n[golden V0.2] the pinned integration package shared with the consumer (platform/test/golden/portfolio-v0.2)");
-await check(`G6 (P-V2-16) the V0.2 golden package equals the pure emission byte for byte; golden.json records exactly the facts of those bytes; the file name carries the version (RV5)`, async () => {
+console.log("\n[golden] the pinned integration packages shared with the consumer: media 1.1 (platform/test/golden/portfolio-v1.1-media) and the FROZEN V0.2 one (platform/test/golden/portfolio-v0.2)");
+await check(`G6 (P-V2-16) the media 1.1 golden package equals the pure emission byte for byte; golden.json records exactly the facts of those bytes (media counts included); the file name carries the version (RV5)`, async () => {
   const dir = path.join(repoRoot, GOLDEN_DIR);
   eq((await readdir(dir)).filter((f) => f !== ".DS_Store").sort(), ["README.md", "golden.json", "manifest.json", `portfolio.${DEMO_VERSION}.json`], "golden files");
   for (const f of demoEmission.files) {
@@ -1558,12 +1835,23 @@ await check(`G6 (P-V2-16) the V0.2 golden package equals the pure emission byte 
   }
   const golden = await readJson(path.join(dir, "golden.json"));
   const v = validateFor(demoEmission, demo.snapshot);
-  eq(golden, goldenRecord02(demoEmission.portfolio!.document, demoEmission.files.map((f) => ({ name: path.basename(f.path), bytes: f.bytes.length, sha256: f.sha256 })), { errors: v.errors.length, warnings: v.warnings.length }), "golden.json");
-  eq([golden.input, golden.contractRevision, golden.manifestSchemaVersion, golden.documentSchemaVersion], [{ siteId: DEMO, mode: "public", at: AT, template: "interior-01/v1" }, "9.2.1", "0.1", "1.0"], "the pinned input and contract pair");
+  eq(golden, goldenRecord(demoEmission.portfolio!.document, demoEmission.files.map((f) => ({ name: path.basename(f.path), bytes: f.bytes.length, sha256: f.sha256 })), { errors: v.errors.length, warnings: v.warnings.length }), "golden.json");
+  eq([golden.input, golden.contractRevision, golden.addendum, golden.manifestSchemaVersion, golden.documentSchemaVersion, golden.producerVersion], [{ siteId: DEMO, mode: "public", at: AT, template: "interior-01/v1" }, "9.2.1", "08-portfolio-media-1.1", "0.1", "1.1", 3], "the pinned input and contract pair");
+  eq(golden.counts.media, { records: 19, cover: 19, gallery: 8, galleryImages: 41, totalCount: 42, derivedHasMore: 1 }, "media counts (08)");
   // the golden document parsed back is still its own version (the bytes, not only the in-memory emission)
   const doc = await readJson(path.join(dir, `portfolio.${DEMO_VERSION}.json`));
   eq([doc.version, portfolioVersion(doc)], [DEMO_VERSION, DEMO_VERSION], "golden document version = its body hash");
   eq((await readJson(path.join(dir, "manifest.json"))).resources.portfolio, { href: `/${INTEGRATION_DIR}/portfolio.${DEMO_VERSION}.json`, version: DEMO_VERSION }, "golden manifest points at the golden document (P-V2-04)");
+});
+await check("G6b the FROZEN V0.2 golden (document 1.0 — the consumer's 1.0 compatibility fixture) is untouched: its four files hash to their literals, golden.json still names the 1.0 / producer-2 facts, and its document is still its own version with no media", async () => {
+  const dir = path.join(repoRoot, GOLDEN_V02_DIR);
+  eq((await readdir(dir)).filter((f) => f !== ".DS_Store").sort(), ["README.md", "golden.json", "manifest.json", `portfolio.${V02_VERSION}.json`], "frozen golden files");
+  const hashes = await Promise.all(["README.md", "golden.json", "manifest.json", `portfolio.${V02_VERSION}.json`].map(async (f) => sha256(await readFile(path.join(dir, f)))));
+  eq(hashes, [V02_README_SHA256, V02_GOLDEN_JSON_SHA256, V02_MANIFEST_SHA256, V02_DOC_SHA256], "frozen bytes");
+  const golden = await readJson(path.join(dir, "golden.json"));
+  eq([golden.resourceVersion, golden.documentSchemaVersion, golden.producerVersion, golden.files.map((f: { bytes: number }) => f.bytes)], [V02_VERSION, "1.0", 2, [DEMO_MANIFEST_BYTES, V02_DOC_BYTES]], "golden.json facts");
+  const doc = await readJson(path.join(dir, `portfolio.${V02_VERSION}.json`));
+  eq([doc.schemaVersion, doc.version, portfolioVersion(doc), doc.records.filter((r: { media?: unknown }) => r.media !== undefined).length], ["1.0", V02_VERSION, V02_VERSION, 0], "a 1.0 document, its own version, no media");
 });
 await check("G7 (P-V2-05, 07 §11 RV) immutability: re-emitting the same canonical input gives the golden bytes again; changing one canonical fact gives new bytes AND a new resourceVersion, so one version never names two byte sequences", () => {
   const again = emitFor(clone(demo.snapshot));
@@ -1584,7 +1872,7 @@ console.log("\n[builds] real site:build on throwaway roots (data/sites + data/si
 // what the demo builds (B2b), and writing a V0.2 package into data/site-builds is what this release
 // deliberately does not do; so T1 builds the V0.2 demo on a throwaway root and checks what the
 // V0.2 document promises about the site it points into.
-await check("T1 (P-V2-07) the V0.2 demo really builds: the detail pages are exactly the 19 records' detailUrls, each resolves (never 404) and names its own record (<h1>, <title>, canonical); the listing page exists; the package's _integration bytes = the V0.2 golden", async () => {
+await check("T1 (P-V2-07) the demo really builds: the detail pages are exactly the 19 records' detailUrls, each resolves (never 404) and names its own record (<h1>, <title>, canonical); the listing page exists; every media src is a package file; the package's _integration bytes = the media 1.1 golden", async () => {
   const root = await throwawayRoot(DEMO);
   try {
     const r = await buildSite({ repoRoot: root, siteId: DEMO, at: AT });
@@ -1593,8 +1881,12 @@ await check("T1 (P-V2-07) the V0.2 demo really builds: the detail pages are exac
     eq((await readdir(path.join(site, INTEGRATION_DIR))).sort(), ["manifest.json", `portfolio.${DEMO_VERSION}.json`], "integration files");
     for (const f of demoEmission.files) eq(sha256(await readFile(path.join(site, f.path))), f.sha256, `${f.path} = the pure emission = the golden`);
     const i = r.record.integration!;
-    eq([i.contract, i.producerVersion, i.warnings, i.resources.portfolio?.version, i.resources.portfolio?.records], [{ core: "0.1", portfolio: "1.0" }, PRODUCER_VERSION, [], DEMO_VERSION, 19], "build record integration summary");
+    eq([i.contract, i.producerVersion, i.warnings, i.resources.portfolio?.version, i.resources.portfolio?.records], [{ core: "0.1", portfolio: "1.1" }, PRODUCER_VERSION, [], DEMO_VERSION, 19], "build record integration summary");
     const doc = demoEmission.portfolio!.document;
+    // 08 — every media src is a file of the same package (the images a consumer fetches exist)
+    const srcs = [...new Set(doc.records.flatMap((x) => [x.media?.cover, ...(x.media?.gallery ?? [])]).filter((m) => m !== undefined).map((m) => m.src))];
+    eq(srcs.length, 41, "41 distinct media images: the 41 exported gallery images; all 19 covers are among them (bi-01 … bi-08 their own, bi-09 … bi-19 reused)");
+    for (const src of srcs) assert(await exists(path.join(site, src.slice(1))), `media src ${src} is in the package`);
     const detailPages = (await readdir(path.join(site, "portfolio"))).filter((f) => f.endsWith(".html")).map((f) => `/portfolio/${f.slice(0, -".html".length)}`).sort();
     eq(detailPages, doc.records.map((x) => x.detailUrl).sort(), "generated detail pages = the records' detailUrls: none missing, none extra");
     eq(detailPages.length, 19, "19 detail pages");
@@ -1745,7 +2037,7 @@ await check("R1 an OFF package answers 404 on the manifest path with the package
   eq([doc.status, doc.headers.get("content-type"), await doc.text()], [200, "application/json", demoEmission.portfolio!.file.text], "ON document");
   eq((await handle(new Request(`https://${HOST}${MANIFEST_PATH}/`), env)).status, 404, "trailing slash 404 (HT8)");
 });
-await check("R2 publish plans the two files as application/json; the manifest revalidates (HT2/HT3); the baked origin equals the manifest origin — and it plans exactly the rollout state's current package: V0.1 before the V0.2 publish, the V0.2 package (golden bytes) after it", async () => {
+await check("R2 publish plans the two files as application/json; the manifest revalidates (HT2/HT3); the baked origin equals the manifest origin — and it plans exactly the rollout state's current package: V0.1 before the V0.2 publish, the current package (golden bytes) after it", async () => {
   const plan = await planPublish({ repoRoot, siteId: DEMO, hostname: "interior-demo.boostweb.co.kr" });
   const pre = rollout === "PRE_PUBLISH_TRANSITION";
   const [docVersion, otherVersion, docBytes] = pre ? [V01_DEMO_VERSION, DEMO_VERSION, V01_DEMO_DOC_BYTES] : [DEMO_VERSION, V01_DEMO_VERSION, DEMO_DOC_BYTES];
@@ -1758,7 +2050,8 @@ await check("R2 publish plans the two files as application/json; the manifest re
   const packaged = async (rel: string) => sha256(await readFile(path.join(currentDir, "site", rel)));
   eq([m.contentType, m.cacheControl, m.size, m.sha256], ["application/json", CACHE_REVALIDATE, DEMO_MANIFEST_BYTES, await packaged("_integration/manifest.json")], "manifest");
   eq([d.contentType, d.size, d.sha256], ["application/json", docBytes, await packaged(`_integration/portfolio.${docVersion}.json`)], "document");
-  if (!pre) eq([m.sha256, d.sha256], [DEMO_MANIFEST_SHA256, DEMO_DOC_SHA256], "the V0.2 golden's bytes");
+  if (!pre) eq([m.sha256, d.sha256], [DEMO_MANIFEST_SHA256, DEMO_DOC_SHA256], "the media 1.1 golden's bytes");
+  if (!pre) assert(!plan.files.some((f) => f.path === `_integration/portfolio.${V02_VERSION}.json`), "no V0.2 (1.0) document is planned beside the 1.1 one");
   eq([plan.packageHash, plan.releaseId, plan.files.length, plan.bakedOrigin, plan.manifestOrigin], [currentRecord.packageHash, currentRecord.template.releaseId, pre ? 158 : currentRecord.qa.files, demoEmission.manifest.site.publicOrigin, demoEmission.manifest.site.publicOrigin], "plan identity / origins");
   if (pre) eq(plan.packageHash, V01_PACKAGE_HASH, "the V0.1 package");
   // inventory, independent of the build record: the planned pages are the demo's composed page set

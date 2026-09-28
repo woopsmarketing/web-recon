@@ -1,7 +1,9 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { packageIntact, prepareSiteInput } from "../build/site-build";
-import { GOLDEN_DIR, GOLDEN_INPUT } from "../cli/integration-golden";
+// The PRE_PUBLISH_TRANSITION window is about the V0.2 golden (document "1.0"): since media 1.1 the
+// CLI's GOLDEN_DIR is the 1.1 golden, and the V0.2 one is kept, frozen, as GOLDEN_V02_DIR.
+import { GOLDEN_V02_DIR as GOLDEN_DIR, GOLDEN_INPUT } from "../cli/integration-golden";
 import { createContentReader } from "../content/reader";
 import { emitIntegration } from "../integration/emit";
 import { planPublish } from "../publish/publish";
