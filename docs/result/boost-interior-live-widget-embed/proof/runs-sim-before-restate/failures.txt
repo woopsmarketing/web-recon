@@ -1,0 +1,24 @@
+integration.log:  FAIL B2 the demo is ON: emit true, integrationInputHash = hash(producer, contract, config) with the V0.2 contract pair, and the V0.2 producer's identity ≠ the V0 one ≠ the live package
+integration.log:       pin rolled back to 1.5.2 → the re-authored demo's snapshot hash: "82f18af7130844d5913e793123f903591e6e11a4a3d3f646e0aa06459a301154" ≠ "8de4ff8710cd37f297e93d5926bf1244fad7ebfd81eab979711e050ad7d34140"
+integration.log:  FAIL B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's V0.2 identity current with the golden integration bytes, V0.1 as rollback
+integration.log:       previous = the V0.1 package (the rollback): "a4777cf9b71a0da0f7f52651ec027a219d7f09ce2e8f75ac4552a028cbfd413f" ≠ "0f80b2395724a721024bd43bcfdac383ba5328e820f2210eebe595002727127a"
+integration.log:  FAIL G1 V0.1 package: exactly its two V0.1 files, 8 records, the V0.1 contract pair and producer 1 in its build record; bytes intact at its frozen packageHash
+integration.log:       the V0.1 package 0f80b2395724… is missing — it is the current package before the V0.2 publish and the rollback after it
+integration.log:  FAIL G2 V0.1 package: manifest pointer = file name = document version (INV-3); the manifest origin = site.json; the runtime resolves both URLs
+integration.log:       the V0.1 package 0f80b2395724… is missing — it is the current package before the V0.2 publish and the rollback after it
+integration.log:  FAIL G3 V0.1 package: every detailUrl and the listingUrl have an HTML page in the package (INV-5); no absolute URL or external host in the document (INV-6)
+integration.log:       the V0.1 package 0f80b2395724… is missing — it is the current package before the V0.2 publish and the rollback after it
+integration.log:       the pilot package directory was retired by keep-2 (its sealed copy stays in R2); LIVE_PARTS stays checked by B2
+integration.log:       point-in-time: the pilot package was retired by keep-2 after the V0.2 publish; this proof stands at 0c34606 (39-)
+integration.log:  ok   T4 an opted-in public build FAILS without an https origin (http, or none) — never a silent skip (02 §4, INV-11)
+integration.log:  ok   T5 a forbidden character (U+2028 inside a title) FAILS the opted-in build (HT7, INV-12); the same site builds without the opt-in
+integration.log:  FAIL I2 the producer itself is not a release source (platform/integration, platform/build), and the V0.1 package was built from the stored 1.5.2 release
+integration.log:       the V0.1 package 0f80b2395724… is missing — it is the current package before the V0.2 publish and the rollback after it
+integration.log:  FAILED: B2 the demo is ON: emit true, integrationInputHash = hash(producer, contract, config) with the V0.2 contract pair, and the V0.2 producer's identity ≠ the V0 one ≠ the live package
+integration.log:  FAILED: B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's V0.2 identity current with the golden integration bytes, V0.1 as rollback
+integration.log:  FAILED: G1 V0.1 package: exactly its two V0.1 files, 8 records, the V0.1 contract pair and producer 1 in its build record; bytes intact at its frozen packageHash
+integration.log:  FAILED: G2 V0.1 package: manifest pointer = file name = document version (INV-3); the manifest origin = site.json; the runtime resolves both URLs
+integration.log:  FAILED: G3 V0.1 package: every detailUrl and the listingUrl have an HTML page in the package (INV-5); no absolute URL or external host in the document (INV-6)
+integration.log:  FAILED: I2 the producer itself is not a release source (platform/integration, platform/build), and the V0.1 package was built from the stored 1.5.2 release
+step6.log:  FAIL G no Apartmentary leakage: the release's frozen forbidden terms + the source brand (ko/en) are absent; package QA passed; no absolute URL leaves the site origin
+step6.log:       3d-portfolio.html: https://boostchat.co.kr/widget.js
