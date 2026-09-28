@@ -1,0 +1,116 @@
+  (the V0.1 package is retired from data/site-builds; read from cb781e8 and re-hashed)
+
+[contract] constants
+  ok   C1 fixed manifest path, the DIVERGED schema versions (manifest 0.1 · document 1.1, INV-27), an integer producer version, the V0.2 limits, the media 1.1 limits
+  ok   C4 the closed V0.2 vocabularies: 26 unique work-scope ids exactly as 07 §7.3 lists them, 2 project types, 6 property types, all frozen
+  ok   C2 HT7 forbidden characters: C0, DEL, C1, U+2028/2029, bidi controls hit; Korean, ASCII, middle dot, emoji do not
+  ok   C3 code point order: U+FF5E sorts before U+1F600 (UTF-16 code unit order says the opposite)
+
+[emitter] pure projection of the demo's real site data
+  ok   E1 demo → 19 records, manifest 274 B, facets category 4 · style 9 · tag 3 and NO scope facet (07 §8), the 17 authored work scopes, listingUrl /portfolio, V0.2 document key order
+  ok   E1b demo → version d95b5cb5f8f05e50e624eb44d39393f5, document 20158 B, manifest 274 B (the media 1.1 golden values, P-V2-05)
+  ok   E2 same snapshot → byte-identical emission, twice (INV-1/INV-26); an empty site emits the zero-record document with no listingUrl and no facets
+  ok   E2b the empty 1.1 document reproduces byte for byte (schemaVersion 1.1, records [] and nothing else)
+  ok   E3 records by id code point, facet values by id code point, a record's tag in authored order (§6.1); the retired scope facet is absent; V0.2 record key order (07 §10)
+  ok   E4 missing → omitted: records without a price have no pricing key at all (MD4); no projectType / workScopeIds / style without an authored source field (INV-25); no null / "" / {} / [] anywhere (MD1–MD3, INV-9)
+  ok   E5 property.area: value/unit as authored (no conversion), basis supply as stored on every demo record; unknown/absent basis → no key; exclusive stays exclusive (AR2/AR3, 07 §6); pricePerArea → pricing.perArea + source authored
+  ok   E6 allowlist: no summary / body / galleryGroups / before / quote / slug / status / builtYear / period / duration key or text (INV-7, SE2); media keys only under records[].media (08)
+  ok   E7 version changes with every projected fact (media included, 08) and with a record added/removed; stays for anything outside the projection (INV-2, RV2)
+  ok   E8 a record's style / tag / workScopeIds arrays keep the authored order and drop repeats (first occurrence) — INV-14, WS3, 07 §11; the declared values are unique
+  ok   E9 no item route over projects → the resource is NOT offered: manifest only with resources {} (02 §4/§5, CONFIRMED OFF (resource)); it validates; the manifest carries no pointer
+  ok   E10 emitter fails closed: no publicOrigin, http origin, ≥ 2 item routes over projects (ambiguous), a record whose detail page is not planned
+  ok   K1 (P-V2-01, 06, 08–13) the 19-record DEMO corpus still covers what the contract exercises: breadth 7 full / 7 partial / 5 absent; totals 10 exact / 1 range / 8 absent; per-area 6 authored / 4 derived and every derived one is RD1's; the area bases a visitor states; the partial room shapes; each field missing somewhere
+
+[annex] the V0.2 built-space annex on crafted snapshots (07 §5–§11, INV-17 … INV-30)
+  ok   A1 INV-20 / RD1 end to end: full_remodel + exact total + area + no authored perArea → a DERIVED perArea of exactly floor((2T+A)/(2A)), perUnit = the record's own area unit, currency = the total's
+  ok   A2 RD1 arithmetic: the eight independently verified values reproduce exactly, and 1e9 / 0.01 is refused by the OUTPUT guard (no perArea, one warning, no error)
+  ok   A3 07 §9.3 guard failure WARNS and omits — it never fails the build and never emits a number nobody can trust
+  ok   A4 INV-19 / D-1a: partial_remodel + exact total + area → NO perArea. *6,000,000 KRW for one bathroom of a 34평 flat has no per-area price.*
+  ok   A5 D-1 condition 2: full_remodel + a RANGE total + area → NO perArea (a range has no single right answer)
+  ok   A6 INV-21 / PA1: full_remodel + an AUTHORED perArea + an exact total → the AUTHORED value survives unchanged (and is never marked derived)
+  ok   A7 D-1 condition 3: full_remodel + exact total but NO area → no perArea, and the total is still emitted
+  ok   A8 INV-17 / WS2: document.workScopes is a sorted plain id array, closed both ways, and absent when no record has one; INV-18: never []
+  ok   A9 INV-24 / ST4: `style` is the authored `styles`, `tag` is the authored `keywords` MINUS them — `styles` is normally a SUBSET of `keywords`, and the subtraction makes the two facets disjoint by construction
+  ok   A10 INV-28 / WS7a: a partial_remodel without workScopeIds is refused; INV-29: a full_remodel whose scopes are TRADES ONLY (flooring, wallpaper, lighting) is refused — that is PT4(c), and it must never feed D-1; INV-30: the same refusal for a trades-only PARTIAL, which INV-28 let through because the set was non-empty
+  ok   A11 INV-23 / TP1: the content model refuses an equal-bounds or inverted range, a non-positive amount, a bad currency and an amount above 1e9; `exact` and `range` cannot coexist (structurally)
+  ok   A12 ST6 (07 §8, P: SHOULD warn at build): a value one record classifies as a style while another leaves it a plain keyword makes the DOCUMENT-level facets.style.values and facets.tag.values overlap — INV-24 is per record only (ST4), so this is authoring inconsistency, not a contract violation; it must never fail the build and must never change an emitted byte
+  ok   A13 INV-22 provenance, metamorphic, over every demo record: moving only area.value changes only property.area.value and a derived perArea; moving only the authored pricePerArea changes only pricing.perArea; moving only the authored total changes only pricing.total and a derived perArea — RD1 is the one dependency of any emitted value on the area
+
+[media] portfolio media 1.1 (08 = D1): the producer's sourcing on real data and crafted snapshots
+  ok   E11 demo media = the authored cover + the authored AFTER gallery, first 12 in authored order, totalCount = all after images; bi-01 12 of 13 (hasMore derived), bi-02 … bi-08 complete, bi-09 … bi-19 cover only; bi-04's before images absent; 19 covers · 8 galleries · 41 images · totalCount 42
+  ok   E12 media on crafted snapshots: alt only when authored (absent / "" → no key, never invented); exactly 12 → 12/12; 30 → 12/30; no gallery → { cover }; a before image is neither exported nor counted; an asset missing from the snapshot fails closed; media feeds no other field
+
+[validator] fail closed
+  ok   V1 the demo emission validates: 0 errors, 0 warnings; the fixtures' emissions too
+  ok   V1b INV-4 by name: fixture-large's document holds exactly the ids published at `at`; its draft and scheduled records are absent
+  ok   V2 duplicate record id · records out of code point order → rejected (ID3, §6.1)
+  ok   V3 URLs: absolute, protocol-relative, query, fragment, backslash, no leading slash, unplanned page → rejected (UR2, INV-5)
+  ok   V4 HT7 forbidden characters in a title / label / location / key → rejected; the manifest too
+  ok   V5 null · empty string · empty object · empty facet array · empty workScopeIds · placeholder "unknown" basis → rejected (MD1–MD3, WS5, AR2, INV-18)
+  ok   V6 site identity and origin: id ≠ siteId, origin ≠ site origin, http, origin with path, bad locale → rejected (§5, §13)
+  ok   V7 version echo, href pointer, file name, content hash → rejected when they disagree (RV1, RV3, RV5, INV-3)
+  ok   V8 facet closure both ways and ordering (VO1, INV-8): undeclared value, unused declared value, unsorted values, repeated value in a record → rejected
+  ok   V9 shapes: 3 decimals, negative, bad unit, lowercase currency, an extra key (totalCost), an unknown top-level key, a bad facet key, the WRONG schemaVersion → rejected (§7, §9, 07 §10)
+  ok   V14 the V0.2 annex, fail closed: an unknown work-scope id, a broken WS2 closure either way, a partial_remodel with no scopes, a trades-only partial (INV-30) or full (INV-29), a style/tag overlap, a range with minAmount ≥ maxAmount, a perArea with no source → rejected (INV-17, INV-23, INV-24, INV-28, INV-29, INV-30)
+  ok   V15 the D-1 rules are enforced on the document, not only on the code path: a derived perArea without full_remodel, without an exact total, or with the wrong arithmetic → rejected; so is a due derivation that is missing (INV-19, INV-20 both ways)
+  ok   V10 zero records with a listingUrl or facets → rejected (§7.2, VO1)
+  ok   V11 consumer-declared limits are warnings, never errors and never truncation (VO6, CH-R10) — now measured on `tag`, since the `scope` facet and its limit are retired
+  ok   V13 freeze-review rules: resources {} with a document, a pointer without a document, an explicit port, a non-ASCII or badly percent-encoded path, category ≠ 1 → rejected (C-05, C-07, C-08, MAJOR-2)
+  ok   V12 assertIntegration throws with every error listed; validateIntegration is pure (same input → same result)
+  ok   N1 known-bad mutations of the real V0.2 document, one violation each, each refused with ITS error: duplicate id, invalid projectType, invalid area basis, unknown work scope, malformed range, range min > max, a derived perArea with no area to derive from, a malformed detailUrl, a bad manifest pointer, a V0.1 document inside the V0.2 package
+
+[media validator] 08 §2 rules, fail closed
+  ok   M1 media is OPTIONAL: every record with media removed (a 1.0-shaped record under schemaVersion 1.1) validates with 0 errors; cover only / gallery without cover / images without alt or size are valid too
+  ok   M2 1.0 compatibility: the FROZEN V0.2 golden document is refused as an emission of this producer ONLY for its schemaVersion "1.0"; relabelled "1.1" (nothing else touched) it validates with 0 errors — every 1.0 record is a valid 1.1 record
+  ok   M3 invalid src refused — an absolute URL, //host, a `..` segment (also percent-encoded: %2e%2e, .%2E), an encoded slash / backslash / NUL, an empty or `.` segment, a malformed escape, javascript:, data:, a query, a fragment, a backslash, no leading slash, "/" alone, a space, non-ASCII, > 512 characters (08 §2, MD-1a)
+  ok   M4 invalid image / media shapes refused: width without height (and the reverse), non-positive or fractional size, alt "" / > 160 / forbidden character, an unknown key, 13 gallery items, an empty gallery, a boolean hasMore, media {} or null, totalCount without gallery / gallery without totalCount / totalCount < gallery.length / gallery.length ≠ min(totalCount, 12) / totalCount 0 or fractional (08 §2)
+
+[builder] opt-in and build identity
+  ok   B1 default OFF: the fixtures have no integration.json → emit false, no integrationInputHash, buildInputId unchanged (= their current package)
+  ok   B2 the demo is ON: emit true, integrationInputHash = hash(producer, contract, config) with the V0.2 contract pair, and the V0.2 producer's identity ≠ the V0 one ≠ the live package
+  ok   B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's media 1.1 identity current with the golden integration bytes, the frozen rollback lineage behind it (the widget build, its own rollback — the first V0.2 package — retired by keep-2 and intact in git)
+  ok   B3 preview never emits (SE5): the demo in preview mode has no integration part
+  ok   B4 OFF = the pre-integration identity: the demo without integration.json (or enabled:false) has exactly the pre-integration buildInputId of its current pin (the live package's, modulo the re-pin — B2)
+  ok   B5 an invalid integration.json fails closed (unknown key, non-boolean, wrong schemaVersion)
+  ok   B6 the producer version and the config are build inputs; a change outside the projection changes the buildInputId but not the resource version
+  ok   B7 no site is named in the producer or the builder seam (generic opt-in)
+
+[golden V0.1] the frozen V0.1 package (data/site-builds) — current before the V0.2 publish, the rollback after it
+  ok   G1 V0.1 package: exactly its two V0.1 files, 8 records, the V0.1 contract pair and producer 1 in its build record; bytes intact at its frozen packageHash
+  ok   G2 V0.1 package: manifest pointer = file name = document version (INV-3); the manifest origin = site.json; the runtime resolves both URLs
+  ok   G2b the runtime resolves the manifest and a document path to their package keys; a trailing slash is 404 (HT8) — the pure half of G2, independent of any package on disk
+  ok   G3 V0.1 package: every detailUrl and the listingUrl have an HTML page in the package (INV-5); no absolute URL or external host in the document (INV-6)
+       the pilot package directory was retired by keep-2 (its sealed copy stays in R2); LIVE_PARTS stays checked by B2
+  ok   G4 the live pilot package 18c0a5eff5ab… is untouched while on disk (intact, packageHash cd048406311f…, parts = LIVE_PARTS): the rollback (previous.json) before the V0.2 publish, retired by keep-2 after it
+       point-in-time: the pilot package was retired by keep-2 after the V0.2 publish; this proof stands at 0c34606 (39-)
+  ok   G5 V0.1 package = live + exactly the two integration files: every other file byte-identical once the build id (Next's generateBuildId = buildInputId[0:32], embedded in HTML/RSC and the _next/static/<id>/ path) is canonicalised
+
+[golden] the pinned integration packages shared with the consumer: media 1.1 (platform/test/golden/portfolio-v1.1-media) and the FROZEN V0.2 one (platform/test/golden/portfolio-v0.2)
+  ok   G6 (P-V2-16) the media 1.1 golden package equals the pure emission byte for byte; golden.json records exactly the facts of those bytes (media counts included); the file name carries the version (RV5)
+  ok   G6b the FROZEN V0.2 golden (document 1.0 — the consumer's 1.0 compatibility fixture) is untouched: its four files hash to their literals, golden.json still names the 1.0 / producer-2 facts, and its document is still its own version with no media
+  ok   G7 (P-V2-05, 07 §11 RV) immutability: re-emitting the same canonical input gives the golden bytes again; changing one canonical fact gives new bytes AND a new resourceVersion, so one version never names two byte sequences
+
+[builds] real site:build on throwaway roots (data/sites + data/site-builds untouched)
+  ok   T1 (P-V2-07) the demo really builds: the detail pages are exactly the 19 records' detailUrls, each resolves (never 404) and names its own record (<h1>, <title>, canonical); the listing page exists; every media src is a package file; the package's _integration bytes = the media 1.1 golden
+  ok   T2 generic opt-in: fixture-small with an integration.json builds /_integration/ for ITS records and origin (nothing demo-specific)
+  ok   T3 an empty site opted in emits the empty V0.2 document (records []) and a manifest that still lists the resource
+  ok   T4 an opted-in public build FAILS without an https origin (http, or none) — never a silent skip (02 §4, INV-11)
+  ok   T5 a forbidden character (U+2028 inside a title) FAILS the opted-in build (HT7, INV-12); the same site builds without the opt-in
+  ok   T6 a preview build of the opted-in demo has no /_integration/ (SE5) and no integration in its record
+  ok   T7 a fixture rebuilt OFF is byte-identical to its canonical package (INV-11 byte-neutral) and the export guard refuses a stray _integration/
+
+[serving] runtime + publish (fake R2, no wrangler)
+  ok   R1 an OFF package answers 404 on the manifest path with the package's 404 page — never 403 (CH-R11b); ON: 200 application/json, revalidate, exact bytes (HT1–HT3)
+  ok   R2 publish plans the two files as application/json; the manifest revalidates (HT2/HT3); the baked origin equals the manifest origin — and it plans exactly the rollout state's current package: V0.1 before the V0.2 publish, the current package (golden bytes) after it
+
+[release] Template Release immutability
+  ok   I1 every stored release verifies; 1.5.2's hash is unchanged and the demo's pin resolves to a stored release
+  ok   I2 the producer itself is not a release source (platform/integration, platform/build), and the V0.1 package was built from the stored 1.5.2 release
+  ok   I2b the working tree still equals the release the demo is pinned to
+
+82 passed, 0 failed, 0 skipped, 1 point-in-time
+
+POINT-IN-TIME (the artefact they compare was retired by keep-2; the proof stands at the named commit):
+  - G5 V0.1 package = live + two integration files — the pilot package was retired by keep-2 with the V0.2 build; proven at 0c34606, V0.1 bytes held by G1 (39-)
+exit=0
+exit=0

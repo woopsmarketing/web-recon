@@ -1,0 +1,23 @@
+
+[price] Korean per-pyeong notation, display only
+  ok   F1 ko + KRW + pyeong → 평당 N만 원 (ko-KR and bare ko); exact 만 fractions stay exact
+  ok   F2 never rounds: an amount 만 cannot show exactly (or outside 1만–1억) stays in won
+  ok   F3 every other locale / currency / unit combination (and no locale) keeps the generic form
+
+[contract] additive patch
+  ok   S1 Template ≥ 1.4.1; the two arrow labels are optional portfolio.detail slots with neutral defaults (every 1.4.0 slots document stays valid)
+
+[release] 1.4.0 stays immutable, the demo moved by an explicit re-pin
+  ok   R1 the 1.4.0 release verifies and every file of it is byte-identical to the pre-cut capture; exactly one 1.4.0 and one 1.4.1 release dir
+  ok   R2 boost-interior-demo pins a verified release ≥ 1.4.1 and its current package was built with it (QA pass) — pre-publish: with the V0.1 publish target (demo-rollout.ts)
+
+[site data] nothing of the customer's moved except the pin and the two new labels
+  ok   D1 every demo site file is byte-identical to the pre-cut capture except site.json (pin only) and slots.json (+2 labels only)
+  ok   D2 51 / 51 raster assets: registry = 51 rasters, 0 SVG stand-ins, and every one is served byte-identical from the current package
+
+[package] the built demo pages
+  ok   P1 the flagship detail shows 평당 290만 원; no page shows the KRW … / 평 form
+  ok   P2 every multi-photo room has ONE previous + ONE next arrow (site labels, aria-controls its strip, previous disabled on the server HTML) and keeps its counter; single-photo rooms have neither
+
+10 passed, 0 failed
+exit=0

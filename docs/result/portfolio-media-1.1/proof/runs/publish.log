@@ -1,0 +1,82 @@
+package under test: data/site-builds/boost-interior-demo/packages/3a897d2efbe04357071a8c633a7723f6ed169e7471c96c64258c2577bd026395 (200 files incl. build-record.json)
+
+path mapper
+  ok   15 paths resolve to the exact export file
+  ok   11 paths are never served (.html spelled out, framework pages, trailing slash, seal)
+  ok   11 traversal / encoding tricks are bad requests
+
+content-type / cache policy
+  ok   content types for every extension in the export; unknown extension → undefined [P13: extended to the full MIME table (html css js mjs json map xml txt svg png jpg jpeg gif webp avif ico woff woff2 webmanifest) + extensionless]
+  ok   immutable only for _next/static/** and names that ARE a prefix of their own sha256
+
+publish (memory store, real current package)
+  ok   plan: every package file planned under sites/<siteId>/packages/<packageHash>/, counts = build record
+  ok   dry run: no store call at all
+  ok   publish: all files, then seal, then pointer — pointer is the LAST write; previous = prior pointer
+  ok   republish of a sealed package: immutable skip (0 file uploads) and pointer unchanged
+  ok   sealed package re-pointed from another host: skip upload, write only that host's pointer
+  ok   invalid concurrency (NaN / 0 / -1 / 1.5) → refused before any upload: no file, no seal, pointer byte-identical (review B1)
+  ok   injected upload failure → error, no seal, existing pointer byte-identical
+  ok   injected corruption → read-back verify fails, no seal, existing pointer byte-identical
+  ok   injected seal write failure / seal corruption → existing pointer byte-identical
+  ok   injected pointer corruption → publish fails (pointer read-back verified)
+  ok   a different seal already at this packageHash → refused, nothing uploaded, pointer untouched
+  ok   hostname currently serving another site → refused unless allowSiteChange (after the seal, before the pointer)
+  ok   rollback: re-points to previous (sealed) package with no upload; the left package becomes previous; refused without a valid previous seal
+  ok   expectPackageHash: matching hash publishes; a different hash (site rebuilt since review) is refused before any store access
+  ok   invalid inputs refused before any store access: hostname with port / uppercase-invalid / unknown site
+
+publish: dry-run determinism, checkStore, guards (new)
+  ok   P1 dry-run determinism: two dry runs at different `now`, same package+store state → deep-equal result; DRY_RUN_PUBLISHED_AT sentinel
+  ok   P2a dry-run + checkStore, empty store: storeCheck reports it fresh, zero writes
+  ok   P2b dry-run + checkStore, store already sealed+published to this host: identical/unchanged, zero new writes, bytes unchanged
+  ok   P2c dry-run + checkStore, prior pointer at another package: live/pointerAction=write, pointer.previous filled, zero writes
+  ok   P3 dry-run + checkStore surfaces the real run's refusals with zero writes
+  ok   P4 expectLivePackageHash on the real path (stale-write guard)
+  ok   P5 activate:false: uploads+seals but the routing pointer is untouched either way; a later normal publish only switches the pointer
+  ok   P5b activate:false combined with expectLivePackageHash throws before any store access
+  ok   P6 reverify: sealed package read back file-by-file; missing or corrupted object → error, zero new writes, pointer byte-identical
+
+publish: immutable-path stability + baked origin
+  ok   G1 an immutable-cached path whose bytes differ from the LIVE package's seal → refused, pointer byte-identical (dry-run --check-store says the same, 0 writes)
+  ok   G2 a revalidate path that changed → published; a live package whose seal is missing or unreadable → REFUSED (fails closed), pointer byte-identical
+  ok   G4 sealed-skip never activates a package that lost index.html / 404.html (review R7): refused, pointer byte-identical; reverify names the first missing object
+  ok   G5 expectLivePackageHash is checked BEFORE anything is uploaded (review R8): a stale expectation leaves the store with zero writes
+  ok   G6 pointer hygiene: a pointer stored under this host's key that names ANOTHER hostname is never overwritten; checkStore without dryRun is refused; rollback onto a corrupt previous seal is refused by name (review N1 / R9)
+  ok   G3 baked origin: plan reports it; a host that is not that origin → warning, and a refusal before any store access with requireOriginMatch
+
+publish: invalid build input (fails closed)
+  ok   P7a build-record status "failed" → not publishable, zero writes
+  ok   P7b build-record qa.pass false → refused, zero writes
+  ok   P7c current.json buildInputId not schema-valid ("xyz") → throws, zero writes
+  ok   P7d build-record buildInputId ≠ current.json buildInputId → refused, zero writes
+  ok   P7e a file changed inside site/ → refused by packageIntact, zero writes
+  ok   P7f a package without 404.html / index.html → refused by name (the runtime needs both), zero writes
+
+recon-runtime handler (fake R2 over the published memory store)
+  ok   every addressable package file: 200, stored content-type + cache-control, ETag, bytes identical
+  ok   unknown path → 404 with the package's 404.html bytes, no-store, no ETag; HEAD same status, no body
+  ok   HEAD: headers + Content-Length, empty body; If-None-Match → 304 (strong, weak, list, *), mismatch → 200
+  ok   POST/PUT/DELETE/OPTIONS → 405 with Allow: GET, HEAD
+  ok   unknown host → plain 404 (no fallback site); malformed request path → 400
+  ok   corrupt routing pointer → 500, never another site
+  ok   seal bytes are deterministic (skip decision is stable across runs)
+
+recon-runtime: security / logging (synthetic fake R2, recorded keys)
+  ok   P8 adversarial paths: never 200/500; every R2 key touched is this host's own pointer or safely nested under the package prefix (no real '..' segment, never the seal)
+  ok   resolvePath called directly (bypassing URL normalisation): dot segments / backslash / no leading slash → never kind "key" with a ".." segment; double-encoded %252e%252e decodes exactly once
+  ok   P9 pointer switch changes what is served immediately; old package stays addressable; other hosts/sites unaffected throughout
+  ok   R1 a path whose R2 key would exceed 1024 bytes is a MISS (404 + the package's 404 page), never a thrown 500; R2 is never asked for the over-long key; the logged path is capped
+  ok   P10 package-missing: valid pointer, no objects under its prefix at all → 503 'package unavailable', no-store, empty HEAD body
+  ok   P11 trailing-dot host resolves the same pointer as the bare host; requestHost unit check
+  ok   P12 logTrace: one JSON line with the documented fields on ≥400, none on success unless LOG_ALL; default export never logs the query string; R2 failure → 500 + internal-error trace
+
+site:publish CLI (spawned, no shell)
+  ok   P14 --dry-run twice: exit 0, byte-identical stdout, contains packageHash/bucket/routingKey, no machine-absolute path, never creates tmp/recon-runtime-state
+  ok   P14 --remote --dry-run (offline, no store): refused while the package is built for another origin; --allow-origin-mismatch lets the plan through; --check-store --local on a state dir that does not exist creates nothing
+  ok   P14 usage errors (7): exit 2, nothing about a publish on stdout, tmp/recon-runtime-state not created
+       200 files · tree sha256 c7645227a9bf18ff…
+  ok   published package directory under data/site-builds is byte-identical before/after
+
+59 passed, 0 failed
+exit=0
