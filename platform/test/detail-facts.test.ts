@@ -1,8 +1,10 @@
 /**
  * Portfolio detail facts — the public detail page tells the V0.2 truth (interior-01 1.6.1).
  *
- * [unit] portfolioDetail() — the Template's own data function — over the REAL canonical demo corpus
- *        (19 records) in a SiteContext built from the demo's own snapshot:
+ * [unit] portfolioDetail() — the Template's own data function — over the demo's QA corpus (19 records:
+ *        the production records bi-01 … bi-08 + the TEST_ONLY synthetic fixture bi-09 … bi-19,
+ *        platform/test/portfolio-qa-corpus.ts; the fixture left production on 2026-09-29) in a
+ *        SiteContext built from the demo's own snapshot, and — F1 — over the production corpus (8):
  *          AREA-UI-1…5  the area label names the basis the record states (공급면적 / 전용면적), an
  *                       unstated basis gets the unqualified label, an absent area gets no row, and the
  *                       figure is never converted (no 평↔m², no supply↔exclusive);
@@ -10,14 +12,17 @@
  *                       when authored, are never inferred from title / category / scope / body / a price,
  *                       and a partial's total stays the whole case's total ("총 공사비"), never a per-room
  *                       price or a quote;
- *          G            every shown fact equals the golden integration document's record, 19/19.
- * [build] a REAL build of the demo's own inputs with its pinned release, in a throwaway root (data/sites
- *        and data/site-builds are never touched): the 19 detail routes the golden document lists are
- *        exactly the detail pages emitted, every page's visible fact rows agree with the integration
- *        document the same build emitted (no contradiction; the page may show fewer facts, never other
- *        ones), and that document is the golden, byte for byte (presentation never moves the resource);
- *        every media image the document names for a record (portfolio media 1.1: cover + after gallery)
- *        is an image that record's own detail page renders — the viewer never shows a foreign photo.
+ *          G            every shown fact equals the golden integration document's record: the
+ *                       production golden 8/8, the QA golden (the pre-split document) 19/19.
+ * [build] a REAL build of the demo's QA corpus with its pinned release, in a throwaway root (the composed
+ *        projects.json is written into that root only — data/sites and data/site-builds are never
+ *        touched): the 19 detail routes the QA golden document lists are exactly the detail pages
+ *        emitted, every page's visible fact rows agree with the integration document the same build
+ *        emitted (no contradiction; the page may show fewer facts, never other ones), and that document
+ *        is the QA golden, byte for byte (presentation never moves the resource); every media image the
+ *        document names for a record (portfolio media 1.1: cover + after gallery) is an image that
+ *        record's own detail page renders — the viewer never shows a foreign photo. (The PRODUCTION
+ *        build's pages are integration.test.ts T1's and portfolio-production-truth.test.ts's.)
  *
  * Every expected value is a literal written from the authored corpus and tied to the golden document
  * (check G) — never recomputed with the functions under test. The Korean fact labels are the demo's site
@@ -39,6 +44,7 @@ import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
 import { portfolioDetail } from "../../templates/interior-01/v1/sections/PortfolioDetail";
 import { formatTotalPrice } from "../../templates/interior-01/v1/lib/format";
+import { QA_GOLDEN_DIR, QA_GOLDEN_VERSION, composeQaSnapshot, readSyntheticFixture, writeQaProjects } from "./portfolio-qa-corpus";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -48,8 +54,12 @@ const DEMO = "boost-interior-demo";
  * (d56509c8…, now frozen as the 1.0 compatibility fixture); only the resource version moved.
  * Producer 4 (media ownership, docs/work/portfolio-experience-v1/03-media-truth-audit.md) dropped
  * the 11 shared covers of bi-09 … bi-19 — again no fact moved, only `media` and the version.
+ * Record truth split (2026-09-29): the production golden is bi-01 … bi-08 (968afbcc…); the pre-split
+ * 19-record document (856361f5…) is the QA golden (QA_GOLDEN_VERSION), which the QA corpus re-emits.
  */
-const GOLDEN_VERSION = "856361f52e3f1b5022cce13a31afc171";
+const GOLDEN_VERSION = "968afbccb944940d8d3c099dd54df5be";
+/** the production corpus since the split (docs/work/portfolio-experience-v1/04-record-truth-audit.md) */
+const PROD_IDS = ["bi-01", "bi-02", "bi-03", "bi-04", "bi-05", "bi-06", "bi-07", "bi-08"];
 
 let passed = 0;
 const failed: string[] = [];
@@ -105,7 +115,11 @@ const sup = (value: number, unit: "pyeong" | "m2"): Want["area"] => ({ raw: { va
 const FULL = { raw: "full_remodel", row: "전체 리모델링" };
 const PARTIAL = { raw: "partial_remodel", row: "부분 리모델링" };
 const W = (...ids: string[]) => ({ raw: ids, row: ids.map((id) => CONSUMER_WORDS[id]).join(", ") });
-/** Written from the authored corpus, record by record (docs/result/interior-portfolio-v0.2/26-, 28-); tied to the golden by G. */
+/**
+ * Written from the authored corpus, record by record (docs/result/interior-portfolio-v0.2/26-, 28-); tied to
+ * the goldens by G. bi-01 … bi-08 are the production records; bi-09 … bi-19 are the TEST_ONLY synthetic
+ * fixture's (platform/test/fixtures/boost-interior-synthetic), checked on the QA corpus.
+ */
 const WANT: Record<string, Want> = {
   "bi-01": { area: sup(34, "pyeong"), projectType: FULL, work: W("entrance", "kitchen", "bathroom", "flooring", "lighting", "built_in_furniture") },
   "bi-02": { area: sup(24, "pyeong"), work: W("kitchen", "flooring", "built_in_furniture") },
@@ -137,13 +151,17 @@ const V02_KEYS = ["area", "projectType", "workScopes", "totalPrice"] as const;
 // ----------------------------------------------------------------------- context --
 type Snapshot = Awaited<ReturnType<typeof buildSiteSnapshot>>["snapshot"];
 type Project = Snapshot["content"]["projects"][number];
+/** the demo's production snapshot (bi-01 … bi-08) */
 const base = (await buildSiteSnapshot({ repoRoot, siteId: DEMO, mode: GOLDEN_INPUT.mode, at: GOLDEN_INPUT.at })).snapshot;
+/** the QA corpus: production + the TEST_ONLY synthetic fixture (portfolio-qa-corpus.ts) — the pre-split 19 records */
+const fixture = await readSyntheticFixture(repoRoot);
+const qaBase = composeQaSnapshot(base, fixture, GOLDEN_INPUT.at);
 const PIN = base.site.template;
 assert(PIN.templateVersion === template.version, `the demo pins ${PIN.templateVersion} but the working-tree template is ${template.version} (run between a cut and its re-pin?)`);
 
-/** A SiteContext over (a copy of) the demo snapshot; `slots` replace portfolio.detail copy, `mutate` edits projects. */
-function ctxOf(opts: { slots?: Record<string, string | undefined>; mutate?: (projects: Project[]) => void } = {}) {
-  const snap = structuredClone(base) as Snapshot;
+/** A SiteContext over (a copy of) a demo snapshot — the QA corpus unless `corpus` says otherwise; `slots` replace portfolio.detail copy, `mutate` edits projects. */
+function ctxOf(opts: { corpus?: Snapshot; slots?: Record<string, string | undefined>; mutate?: (projects: Project[]) => void } = {}) {
+  const snap = structuredClone(opts.corpus ?? qaBase) as Snapshot;
   const values = (snap.slots!.values as Record<string, Record<string, unknown>>)["portfolio.detail"]!;
   for (const [k, v] of Object.entries(opts.slots ?? KO_LABELS)) {
     if (v === undefined) delete values[k];
@@ -165,24 +183,35 @@ const pair = (d: ReturnType<typeof detail>, key: string) => {
   const f = row(d, key);
   return f ? [f.label, f.value] : undefined;
 };
+/** the Korean-labelled context over the QA corpus (every [unit] check below), and over the production corpus (F1) */
 const ko = ctxOf();
-const ids = base.content.projects.map((p) => p.id);
+const koProd = ctxOf({ corpus: base });
+/** QA corpus ids (19) and production ids (8) */
+const ids = qaBase.content.projects.map((p) => p.id);
+const prodIds = base.content.projects.map((p) => p.id);
 
 // -------------------------------------------------------------------- the corpus --
-console.log("\n[corpus] the canonical 19-record demo corpus and its golden document");
+console.log("\n[corpus] the production corpus (8) and its golden; the QA corpus (19) and its QA golden");
 const golden = await readJson(path.join(GOLDEN_DIR, `portfolio.${GOLDEN_VERSION}.json`));
-await check("G0 the expectation table covers exactly the canonical corpus and the golden document's records (19/19, same ids)", () => {
-  eq(ids.length, 19, "corpus size");
-  eq([...ids].sort(), Object.keys(WANT).sort(), "table ids = corpus ids");
-  eq((golden.records as { id: string }[]).map((r) => r.id).sort(), Object.keys(WANT).sort(), "table ids = golden ids");
+const qaGolden = await readJson(path.join(QA_GOLDEN_DIR, `portfolio.${QA_GOLDEN_VERSION}.json`));
+await check("G0 the expectation table covers exactly the corpora and their golden documents' records: production 8/8 (bi-01 … bi-08), QA 19/19 (production + the synthetic fixture), same ids", () => {
+  eq(prodIds, PROD_IDS, "production corpus");
+  eq((golden.records as { id: string }[]).map((r) => r.id), PROD_IDS, "production golden ids");
+  eq(ids.length, 19, "QA corpus size");
+  eq([...ids].sort(), Object.keys(WANT).sort(), "table ids = QA corpus ids");
+  eq((qaGolden.records as { id: string }[]).map((r) => r.id).sort(), Object.keys(WANT).sort(), "table ids = QA golden ids");
+  eq(fixture.ids, Object.keys(WANT).filter((id) => !PROD_IDS.includes(id)), "the synthetic fixture = the table minus the production records");
 });
-await check("G the expectation table IS the golden document: area (value/unit/basis), projectType, workScopeIds (order), pricing.total — 19/19, nothing else authored", () => {
-  for (const r of golden.records as Record<string, any>[]) {
-    const w = WANT[r.id]!;
-    eq(r.property?.area, w.area?.raw, `${r.id} property.area`);
-    eq(r.projectType, w.projectType?.raw, `${r.id} projectType`);
-    eq(r.workScopeIds, w.work.raw, `${r.id} workScopeIds`);
-    eq(r.pricing?.total, w.total?.raw, `${r.id} pricing.total`);
+await check("G the expectation table IS the golden documents: area (value/unit/basis), projectType, workScopeIds (order), pricing.total — production 8/8, QA 19/19, nothing else authored", () => {
+  for (const [label, doc, n] of [["production", golden, 8], ["QA", qaGolden, 19]] as const) {
+    eq(doc.records.length, n, `${label} records`);
+    for (const r of doc.records as Record<string, any>[]) {
+      const w = WANT[r.id]!;
+      eq(r.property?.area, w.area?.raw, `${label} ${r.id} property.area`);
+      eq(r.projectType, w.projectType?.raw, `${label} ${r.id} projectType`);
+      eq(r.workScopeIds, w.work.raw, `${label} ${r.id} workScopeIds`);
+      eq(r.pricing?.total, w.total?.raw, `${label} ${r.id} pricing.total`);
+    }
   }
 });
 
@@ -230,14 +259,16 @@ await check("AREA-UI-6 a site that authored no basis labels gets the neutral def
 
 // ------------------------------------------------------------------------- facts --
 console.log("\n[facts] V0.2 structured facts: rendered only when authored, never inferred");
-await check("F1 every record, 19/19: area · projectType · main work scopes · total price rows are exactly the authored facts (a row iff authored), with the expected label and value", () => {
-  for (const id of ids) {
-    const d = detail(ko, id);
-    const w = WANT[id]!;
-    eq(pair(d, "area"), w.area?.row, `${id} area`);
-    eq(pair(d, "projectType"), w.projectType ? [KO_LABELS.projectTypeLabel, w.projectType.row] : undefined, `${id} projectType`);
-    eq(pair(d, "workScopes"), [KO_LABELS.workScopesLabel, w.work.row], `${id} workScopes`);
-    eq(pair(d, "totalPrice"), w.total ? [KO_LABELS.totalPriceLabel, w.total.row] : undefined, `${id} totalPrice`);
+await check("F1 every record, QA 19/19 and production 8/8: area · projectType · main work scopes · total price rows are exactly the authored facts (a row iff authored), with the expected label and value", () => {
+  for (const [label, c, list] of [["QA", ko, ids], ["production", koProd, prodIds]] as const) {
+    for (const id of list) {
+      const d = detail(c, id);
+      const w = WANT[id]!;
+      eq(pair(d, "area"), w.area?.row, `${label} ${id} area`);
+      eq(pair(d, "projectType"), w.projectType ? [KO_LABELS.projectTypeLabel, w.projectType.row] : undefined, `${label} ${id} projectType`);
+      eq(pair(d, "workScopes"), [KO_LABELS.workScopesLabel, w.work.row], `${label} ${id} workScopes`);
+      eq(pair(d, "totalPrice"), w.total ? [KO_LABELS.totalPriceLabel, w.total.row] : undefined, `${label} ${id} totalPrice`);
+    }
   }
 });
 await check("F2 projectType is never inferred: bi-02 / bi-03 / bi-05 (category 전체 리모델링) and bi-19 (category 부분 리모델링) have NO projectType row, even with a title / summary / body that says 전체 리모델링", () => {
@@ -316,7 +347,7 @@ await check("F7 the facts never ship the raw basis / ids: labels and words only 
 });
 
 // ------------------------------------------------------------------------- build --
-console.log("\n[build] a real build of the demo with its pinned release (throwaway root)");
+console.log("\n[build] a real build of the demo's QA corpus with its pinned release (throwaway root)");
 async function walkFiles(dir: string, rel = ""): Promise<string[]> {
   const out: string[] = [];
   for (const e of await readdir(dir, { withFileTypes: true })) {
@@ -341,10 +372,12 @@ try {
   await symlink(path.join(repoRoot, "data/template-releases"), path.join(tmpRoot, "data/template-releases"));
   await symlink(path.join(repoRoot, "node_modules"), path.join(tmpRoot, "node_modules"));
   await cp(path.join(repoRoot, "data/sites", DEMO), path.join(tmpRoot, "data/sites", DEMO), { recursive: true });
+  // the QA corpus: production + the TEST_ONLY synthetic fixture, written into THIS throwaway root only
+  await writeQaProjects(repoRoot, path.join(tmpRoot, "data/sites", DEMO));
   let site = "";
   const pages = new Map<string, string>();
 
-  await check(`B0 the demo builds with its pin ${PIN.releaseId}: status built, package QA pass, no builder warning`, async () => {
+  await check(`B0 the demo's QA corpus builds with its pin ${PIN.releaseId}: status built, package QA pass, no builder warning`, async () => {
     const r = await buildSite({ repoRoot: tmpRoot, siteId: DEMO, mode: GOLDEN_INPUT.mode, at: GOLDEN_INPUT.at });
     assert(r.status === "built", `status ${r.status}`);
     assert(r.record.qa.pass, `package QA: ${JSON.stringify(r.record.qa.failures ?? [])}`);
@@ -356,24 +389,24 @@ try {
     const values = (await readJson(`data/sites/${DEMO}/slots.json`)).values["portfolio.detail"];
     eq(Object.fromEntries(Object.keys(KO_LABELS).map((k) => [k, values[k]])), KO_LABELS, "portfolio.detail labels");
   });
-  await check("B2 DETAIL_ROUTES 19/19: the detail pages emitted are exactly the golden document's detailUrls (expected side = the golden, not the build)", async () => {
+  await check("B2 DETAIL_ROUTES 19/19: the detail pages emitted are exactly the QA golden document's detailUrls (expected side = the golden, not the build)", async () => {
     assert(site, "B0 build missing");
-    const want = (golden.records as { detailUrl: string }[]).map((r) => `${r.detailUrl.slice(1)}.html`).sort();
-    eq(want.length, 19, "golden detail routes");
+    const want = (qaGolden.records as { detailUrl: string }[]).map((r) => `${r.detailUrl.slice(1)}.html`).sort();
+    eq(want.length, 19, "QA golden detail routes");
     const got = (await walkFiles(site)).filter((f) => /^portfolio\/[^/]+\.html$/.test(f));
     eq(got, want, "emitted detail pages");
     for (const f of got) pages.set(f, await readFile(path.join(site, f), "utf8"));
   });
-  await check("B3 the build's own integration document IS the golden, byte for byte (manifest + portfolio document): presentation changes never move the resource", async () => {
+  await check("B3 the build's own integration document IS the QA golden, byte for byte (manifest + portfolio document): presentation changes never move the resource", async () => {
     assert(site, "B0 build missing");
-    for (const f of ["manifest.json", `portfolio.${GOLDEN_VERSION}.json`]) {
-      eq(sha256(await readFile(path.join(site, "_integration", f))), sha256(await readFile(path.join(repoRoot, GOLDEN_DIR, f))), `_integration/${f}`);
+    for (const f of ["manifest.json", `portfolio.${QA_GOLDEN_VERSION}.json`]) {
+      eq(sha256(await readFile(path.join(site, "_integration", f))), sha256(await readFile(path.join(repoRoot, QA_GOLDEN_DIR, f))), `_integration/${f}`);
     }
-    eq((await readdir(path.join(site, "_integration"))).sort(), ["manifest.json", `portfolio.${GOLDEN_VERSION}.json`], "_integration files");
+    eq((await readdir(path.join(site, "_integration"))).sort(), ["manifest.json", `portfolio.${QA_GOLDEN_VERSION}.json`], "_integration files");
   });
   await check("B4 DETAIL_INTEGRATION_CONSISTENCY 19/19: every visible area / projectType / main work / total / per-area row agrees with the build's integration record; a fact the record lacks has no row", async () => {
     assert(pages.size === 19, "B2 pages missing");
-    const doc = JSON.parse(await readFile(path.join(site, "_integration", `portfolio.${GOLDEN_VERSION}.json`), "utf8"));
+    const doc = JSON.parse(await readFile(path.join(site, "_integration", `portfolio.${QA_GOLDEN_VERSION}.json`), "utf8"));
     for (const r of doc.records as Record<string, any>[]) {
       const facts = pageFacts(pages.get(`${r.detailUrl.slice(1)}.html`)!);
       const w = WANT[r.id]!;
@@ -388,7 +421,7 @@ try {
     }
   });
   await check("B5 no contradiction anywhere on a detail page: no 공급면적 beside an exclusive record, no 전용면적 beside a supply one, no area label without an area, no 총 공사비 without a total, no quote wording in the facts", async () => {
-    for (const r of golden.records as Record<string, any>[]) {
+    for (const r of qaGolden.records as Record<string, any>[]) {
       const html = pages.get(`${r.detailUrl.slice(1)}.html`)!;
       const facts = pageFacts(html);
       const labels = [...facts.values()].map(([l]) => l);
@@ -413,7 +446,7 @@ try {
   // their shared cover photo (interior-01 requires a cover), their records carry no media at all.
   await check("B8 MEDIA_PAGE_CONSISTENCY 19/19 (media 1.1): every image the build's integration record names (cover + gallery) is an image its own detail page renders; bi-04's page also renders its 2 before images, which the record does not carry; the 11 records without media (bi-09 … bi-19) name nothing", async () => {
     assert(pages.size === 19, "B2 pages missing");
-    const doc = JSON.parse(await readFile(path.join(site, "_integration", `portfolio.${GOLDEN_VERSION}.json`), "utf8"));
+    const doc = JSON.parse(await readFile(path.join(site, "_integration", `portfolio.${QA_GOLDEN_VERSION}.json`), "utf8"));
     eq((doc.records as Record<string, any>[]).filter((r) => r.media === undefined).map((r) => r.id), ["bi-09", "bi-10", "bi-11", "bi-12", "bi-13", "bi-14", "bi-15", "bi-16", "bi-17", "bi-18", "bi-19"], "records without media");
     for (const r of doc.records as Record<string, any>[]) {
       const html = pages.get(`${r.detailUrl.slice(1)}.html`)!;
@@ -425,7 +458,7 @@ try {
   });
   await check("B7 representative records (full + area + total · full, no total · partial + total · exclusive area · no area · no projectType · range total) render as expected", () => {
     const show = (id: string) => {
-      const r = (golden.records as Record<string, any>[]).find((x) => x.id === id)!;
+      const r = (qaGolden.records as Record<string, any>[]).find((x) => x.id === id)!;
       const f = pageFacts(pages.get(`${r.detailUrl.slice(1)}.html`)!);
       return V02_KEYS.map((k) => f.get(k)?.join(" = ") ?? "—").join(" | ");
     };

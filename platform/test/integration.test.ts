@@ -17,9 +17,15 @@
  *     src/width/height from the snapshot's asset table, alt only when authored; the validator's
  *     MediaImage/media rules on crafted documents; a record without media (a 1.0 record) stays valid;
  *   - the pinned media 1.1 golden integration package (platform/test/golden/portfolio-v1.1-media,
- *     written by platform/cli/integration-golden.ts): the pure emission of the demo equals it byte
- *     for byte, its golden.json records the facts of those bytes, and the 19-record corpus still
- *     covers the shapes the contract exercises (counts, area bases, price shapes, missing fields);
+ *     written by platform/cli/integration-golden.ts): the pure emission of the demo — its PRODUCTION
+ *     corpus, bi-01 … bi-08 — equals it byte for byte and its golden.json records the facts of those
+ *     bytes;
+ *   - the QA corpus (portfolio-qa-corpus.ts: the production records + the TEST_ONLY synthetic fixture
+ *     bi-09 … bi-19, platform/test/fixtures/boost-interior-synthetic, which left production on
+ *     2026-09-29 — docs/work/portfolio-experience-v1/04-record-truth-audit.md): it re-emits the
+ *     pre-split 19-record document (its QA golden) byte for byte, and every edge-case check that the
+ *     19 records used to carry (counts, area bases, price shapes, missing fields, D-1, media
+ *     ownership, the validator's known-bad mutations) runs on it with unchanged literals;
  *     the V0.2 golden (platform/test/golden/portfolio-v0.2, document "1.0") is FROZEN as the 1.0
  *     compatibility fixture and pinned by its own literals;
  *   - V0.1 compatibility: the frozen V0.1 package (data/site-builds/…/packages/0f80b239…, read from
@@ -89,6 +95,7 @@ import { GOLDEN_DIR, GOLDEN_V02_DIR, goldenRecord } from "../cli/integration-gol
 import { MediaImageSchema, PortfolioMediaSchema } from "../integration/validate";
 import { demoExpectedPages, demoRollout } from "./demo-rollout";
 import { gitMaterialize } from "./git-checkout";
+import { QA_GOLDEN_DIR, QA_GOLDEN_DOC_BYTES, QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256, QA_GOLDEN_VERSION, composeQaSnapshot, readSyntheticFixture } from "./portfolio-qa-corpus";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -135,8 +142,15 @@ const LIVE_PIN = { templateId: "interior-01", templateVersion: "1.5.2", releaseI
  * settings.json turns `site.floating-cta` off (the chat launcher takes that bottom-right seat, as the
  * template's replacement seam says) — a fourth deliberate data delta. `_PRE_WIDGET` is the anchor
  * before it; B2 drops exactly those two and must land on it again, so they are the whole of it.
+ *
+ * Record truth split (2026-09-29, docs/work/portfolio-experience-v1/04-record-truth-audit.md): the
+ * 11 VERIFIED_SYNTHETIC records bi-09 … bi-19 left content/projects.json for the TEST_ONLY fixture —
+ * a fifth deliberate data delta. `_PRE_SPLIT` is the anchor before it; B2 composes the fixture back
+ * (portfolio-qa-corpus.ts) and must land on it again, so the split is the whole of that delta, and
+ * the widget / 1.6.1 reverts are then taken from that pre-split snapshot, so their anchors stay put.
  */
-const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN = "f63e293cbff852ab0896834bc326340fbc950a9324a520a1ecbaa544955e827e";
+const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN = "169883a3276d8feb10e2bc5c6488e191c9422a0f1d93043eef16c738eeb9d066";
+const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT = "f63e293cbff852ab0896834bc326340fbc950a9324a520a1ecbaa544955e827e";
 const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_WIDGET = "8de4ff8710cd37f297e93d5926bf1244fad7ebfd81eab979711e050ad7d34140";
 const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_161 = "515a797765defd5c1230dc49a2fc426b70b106c39301bf3e0731ac370ad75db3";
 /** portfolio.detail copy the 1.6.1 re-pin changed: key → [before (undefined = absent), now]. */
@@ -187,10 +201,22 @@ const WIDGET_PACKAGE_COMMIT = "aa2d94b1885076f9b162445a7d45d3c43ac41b20";
 /**
  * The producer-3 media 1.1 build (docs/result/portfolio-media-1.1, published 2026-09-29, commit
  * b7d8ef5): document "1.1" d95b5cb5… with the 11 shared covers of bi-09 … bi-19 (P3_MEDIA_* below).
- * Behind the producer-4 build (docs/result/portfolio-media-polish-v1) it is the rollback — B2b.
+ * It was the rollback behind the producer-4 build (docs/result/portfolio-media-polish-v1); the record
+ * truth split's build moved the rollback one step and keep-2 retired this directory. B2b reads it
+ * from MEDIA_P3_PACKAGE_COMMIT (the commit that recorded it) and re-hashes it.
  */
 const MEDIA_P3_BUILD_INPUT_ID = "3a897d2efbe04357071a8c633a7723f6ed169e7471c96c64258c2577bd026395";
 const MEDIA_P3_PACKAGE_HASH = "480e5e65b0611ab280de8ae0c242e050a5a9711bbeb7f0e90c46c9f5c107298c";
+const MEDIA_P3_PACKAGE_COMMIT = "b7d8ef5cf332d70c711af744398f591a2774c9aa";
+/**
+ * The producer-4 build of the PRE-SPLIT 19-record corpus (docs/result/portfolio-media-polish-v1,
+ * published 2026-09-29, commit 48d0043): document "1.1" 856361f5… — byte for byte the QA golden
+ * (QA_GOLDEN_*, portfolio-qa-corpus.ts). It is the live package until the record truth split's build
+ * (docs/result/data-truth-finalization-v1: the 8-record production corpus) is published, and the
+ * rollback behind that build — B2b.
+ */
+const PRE_SPLIT_BUILD_INPUT_ID = "71f7e5f3d1a1f6e7773153a1ec091e66b5cfd7d47687af16e94a5ef3c2379407";
+const PRE_SPLIT_PACKAGE_HASH = "77cc7f9f47adda09d119c6ec5a02626624b4e068b546e15185d39c1658bdbda0";
 const DEMO_MANIFEST_BYTES = 274;
 /**
  * The FROZEN V0.2 golden values (07 rev 9.2.1, document "1.0", manifest "0.1"), pinned in
@@ -209,11 +235,14 @@ const V02_README_SHA256 = "c15b285c453e6aaa657abb876e429976de796e34a7390c734528c
  * demo's pure emission at AT, pinned byte for byte in platform/test/golden/portfolio-v1.1-media (G6)
  * and shared with the consumer. A change here is a change of the canonical data or of the producer.
  * (The manifest keeps its 274 bytes: only the 32-hex version inside it moved.)
+ * 2026-09-29: the PRODUCTION corpus is bi-01 … bi-08 (record truth split) — a content change, the
+ * producer is unchanged (PRODUCER_VERSION 4). The pre-split 19-record document (856361f5…) is now the
+ * QA golden (QA_GOLDEN_*, portfolio-qa-corpus.ts), re-emitted by the QA corpus (E1q).
  */
-const DEMO_VERSION = "856361f52e3f1b5022cce13a31afc171";
-const DEMO_DOC_BYTES = 18520;
-const DEMO_DOC_SHA256 = "0ae164dc03b374665d52000f997391d4b4f77325b92c60f6a3da5ec586aaac22";
-const DEMO_MANIFEST_SHA256 = "9061827a746f986eb51127923af839930c01be7c9857ee2159a2dfae71e71e61";
+const DEMO_VERSION = "968afbccb944940d8d3c099dd54df5be";
+const DEMO_DOC_BYTES = 12060;
+const DEMO_DOC_SHA256 = "a3450a7d0cb48d8e5248c392aea6c6dc8a2ca39f448834bc252625bde218363c";
+const DEMO_MANIFEST_SHA256 = "ef3dff6f711b5a0a31f399d2b1a89b6cf23aa50b438e3445f678af27df7b4adb";
 /**
  * The media 1.1 golden of PRODUCER 3 (before media ownership, 03-media-truth-audit): the same
  * document with the 11 shared covers of bi-09 … bi-19. Superseded, read from the commit that pinned
@@ -227,18 +256,28 @@ const P3_MEDIA_COMMIT = "df68b10a1bc93c7d69723676ac4a6b772a2d14af";
 const EMPTY_VERSION = "94bea71d35178b52501438e3ed1c9a3d";
 const EMPTY_DOC = `{"schemaVersion":"1.1","resource":"portfolio","version":"${EMPTY_VERSION}","records":[]}`;
 /**
- * The 17 distinct work-scope ids the re-authored demo uses (26 §1.2), sorted in code point order —
- * i.e. what WS2 requires `document.workScopes` to be. Nine of the contract's 26 ids are unused by
- * this corpus (`balcony`, `hallway`, `storage`, `pantry`, `utility`, `tiling`, `plumbing`,
- * `electrical`, `demolition`), and WS2's closure forbids declaring them.
+ * The 17 distinct work-scope ids the 19-record QA corpus uses (26 §1.2 — the pre-split demo), sorted
+ * in code point order — i.e. what WS2 requires `document.workScopes` to be. Nine of the contract's 26
+ * ids are unused by this corpus (`balcony`, `hallway`, `storage`, `pantry`, `utility`, `tiling`,
+ * `plumbing`, `electrical`, `demolition`), and WS2's closure forbids declaring them.
  */
-const DEMO_WORK_SCOPES = [
+const QA_WORK_SCOPES = [
   "bathroom", "bedroom", "built_in_furniture", "dining", "doors", "dressing_room", "entrance",
   "expansion", "flooring", "kids_room", "kitchen", "lighting", "living_room", "painting", "study",
   "wallpaper", "windows",
 ];
-/** the demo's full `facets.style` vocabulary after 28's authoring pass, declared and sorted (VO1) */
-const DEMO_STYLE_VALUES = ["그레이지", "내추럴", "모던", "미니멀", "베이지", "우드 포인트", "월넛", "웜 화이트", "화이트"].map((id) => ({ id, label: id }));
+/**
+ * The 9 work-scope ids the PRODUCTION corpus (bi-01 … bi-08) authors, sorted — written from the
+ * records' workScopeIds: bi-01 entrance kitchen bathroom flooring lighting built_in_furniture · bi-02
+ * kitchen flooring built_in_furniture · bi-03 entrance lighting built_in_furniture · bi-04 kitchen
+ * bathroom · bi-05 flooring painting built_in_furniture · bi-06 entrance living_room lighting · bi-07
+ * kitchen flooring doors built_in_furniture · bi-08 living_room lighting.
+ */
+const DEMO_WORK_SCOPES = ["bathroom", "built_in_furniture", "doors", "entrance", "flooring", "kitchen", "lighting", "living_room", "painting"];
+/** the QA corpus's full `facets.style` vocabulary (28's authoring pass over the 19 records), declared and sorted (VO1) */
+const QA_STYLE_VALUES = ["그레이지", "내추럴", "모던", "미니멀", "베이지", "우드 포인트", "월넛", "웜 화이트", "화이트"].map((id) => ({ id, label: id }));
+/** the production corpus's `facets.style` vocabulary: the union of bi-01 … bi-08's authored styles, sorted */
+const DEMO_STYLE_VALUES = ["그레이지", "내추럴", "모던", "미니멀", "우드 포인트", "화이트"].map((id) => ({ id, label: id }));
 
 let passed = 0;
 const failed: string[] = [];
@@ -357,6 +396,17 @@ const editJson = async (file: string, f: (doc: any) => void) => {
 // ------------------------------------------------------------------ inputs --
 const demo = await prepareSiteInput({ repoRoot, siteId: DEMO, mode: "public", at: AT });
 const demoEmission = emitFor(demo.snapshot);
+/**
+ * The QA corpus (portfolio-qa-corpus.ts): the demo's production snapshot + the TEST_ONLY synthetic
+ * fixture bi-09 … bi-19, composed in memory exactly as the loader would serve the pre-split file
+ * (E1q, B2 prove it is the pre-split snapshot). Every edge-case check below that needs one of those
+ * 11 records — or a count over all 19 — runs on it; checks about the demo AS PUBLISHED run on `demo`.
+ */
+const synthetic = await readSyntheticFixture(repoRoot);
+const qaSnapshot = composeQaSnapshot(demo.snapshot, synthetic, AT);
+const qaEmission = emitFor(qaSnapshot);
+/** both corpora, for the rules that must hold on the published demo AND on the QA corpus */
+const CORPORA = [["production", demo.snapshot, demoEmission], ["QA", qaSnapshot, qaEmission]] as const;
 /** the demo's rollout state (demo-rollout.ts): PRE_PUBLISH_TRANSITION or POST_PUBLISH_STEADY; anything else throws */
 const rollout = (await demoRollout(repoRoot)).state;
 const demoBuilds = path.join(repoRoot, "data/site-builds", DEMO);
@@ -436,16 +486,19 @@ await check("C3 code point order: U+FF5E sorts before U+1F600 (UTF-16 code unit 
 });
 
 console.log("\n[emitter] pure projection of the demo's real site data");
-await check("E1 demo → 19 records, manifest 274 B, facets category 4 · style 9 · tag 3 and NO scope facet (07 §8), the 17 authored work scopes, listingUrl /portfolio, V0.2 document key order", () => {
+await check("E1 demo (production: bi-01 … bi-08) → 8 records, manifest 274 B, facets category 4 · style 6 · tag 2 and NO scope facet (07 §8), the 9 authored work scopes, listingUrl /portfolio, V0.2 document key order", () => {
   const e = demoEmission;
   const version = e.portfolio!.version;
   assert(/^[0-9a-f]{32}$/.test(version), `version shape: ${version}`);
   eq(e.manifestFile.bytes.length, DEMO_MANIFEST_BYTES, "manifest bytes (the manifest did not change shape)");
-  // The demo data is now V0.2-authored (26: 8 → 19 records with projectType / propertyType /
-  // workScopeIds / totalPrice; 28: `styles` on the original eight), so the document carries a
-  // `style` facet and a workScopes block. The retired `scope` facet is still gone — that is the
-  // shape change this release makes, and it is unaffected by the re-authoring.
-  eq([e.portfolio!.recordCount, e.portfolio!.facetCounts], [19, { category: 4, style: 9, tag: 3 }], "counts");
+  // The demo data is V0.2-authored (26: projectType / propertyType / workScopeIds; 28: `styles` on the
+  // original eight), so the document carries a `style` facet and a workScopes block. The retired
+  // `scope` facet is still gone. Since the record truth split (2026-09-29) the production corpus is
+  // the original eight; the 19-record counts are E1q's, on the QA corpus.
+  eq(e.portfolio!.document.records.map((r) => r.id), ["bi-01", "bi-02", "bi-03", "bi-04", "bi-05", "bi-06", "bi-07", "bi-08"], "the production records");
+  eq([e.portfolio!.recordCount, e.portfolio!.facetCounts], [8, { category: 4, style: 6, tag: 2 }], "counts");
+  eq(e.portfolio!.document.facets!.style!.values, DEMO_STYLE_VALUES, "the production style vocabulary (the eight records' authored styles)");
+  eq(e.portfolio!.document.facets!.tag!.values.map((v) => v.id), ["간접조명", "수납 특화"], "tag = keywords minus styles over the eight (ST4)");
   eq(e.portfolio!.document.workScopes, DEMO_WORK_SCOPES, "the authored work scopes, sorted and closed both ways (WS2)");
   eq(e.portfolio!.document.listingUrl, "/portfolio", "listingUrl");
   eq(e.manifest, {
@@ -468,6 +521,15 @@ await check(`E1b demo → version ${DEMO_VERSION}, document ${DEMO_DOC_BYTES} B,
   eq(portfolioVersion(JSON.parse(demoEmission.portfolio!.file.text)), DEMO_VERSION, "version = sha256(canonical body)[0:32]");
   eq(demoEmission.portfolio!.file.path, `${INTEGRATION_DIR}/portfolio.${DEMO_VERSION}.json`, "file name carries the version");
 });
+await check(`E1q the QA corpus (production + the TEST_ONLY synthetic fixture) → the pre-split 19-record document: version ${QA_GOLDEN_VERSION}, ${QA_GOLDEN_DOC_BYTES} B, facets category 4 · style 9 · tag 3, the 17 work scopes — the corpus every edge-case check below runs on`, () => {
+  eq(synthetic.ids, ["bi-09", "bi-10", "bi-11", "bi-12", "bi-13", "bi-14", "bi-15", "bi-16", "bi-17", "bi-18", "bi-19"], "the fixture's records");
+  eq(qaSnapshot.content.projects.map((p) => p.id), [...demo.snapshot.content.projects.map((p) => p.id), ...synthetic.ids], "QA = production + fixture, original order");
+  const e = qaEmission;
+  eq([e.portfolio!.recordCount, e.portfolio!.facetCounts], [19, { category: 4, style: 9, tag: 3 }], "counts");
+  eq(e.portfolio!.document.workScopes, QA_WORK_SCOPES, "the 19 records' work scopes, sorted and closed both ways (WS2)");
+  eq([e.portfolio!.version, e.portfolio!.file.bytes.length, e.portfolio!.file.sha256, e.manifestFile.sha256], [QA_GOLDEN_VERSION, QA_GOLDEN_DOC_BYTES, QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256], "the QA golden's bytes (the pre-split production document)");
+  eq(validateFor(e, qaSnapshot), { errors: [], warnings: [] }, "validates");
+});
 await check("E2 same snapshot → byte-identical emission, twice (INV-1/INV-26); an empty site emits the zero-record document with no listingUrl and no facets", () => {
   const a = emitFor(demo.snapshot);
   const b = emitFor(demo.snapshot);
@@ -482,71 +544,80 @@ await check("E2 same snapshot → byte-identical emission, twice (INV-1/INV-26);
 // E2b was "02 §21.2's two-record example and §21.3's empty document reproduce byte for byte". Both
 // are V0.1 documents, and 07 rev 9.2.1 has no byte-level V0.2 example (its §19 is acceptance rows,
 // §19's old worked example is archived), so the two-record half is retired; the empty document is
-// restored with its V0.2 bytes, and the 19-record V0.2 document is pinned by E1b and G6.
+// restored with its V0.2 bytes, and the production V0.2 document is pinned by E1b and G6 (the
+// pre-split 19-record one, now the QA golden, by E1q).
 await check("E2b the empty 1.1 document reproduces byte for byte (schemaVersion 1.1, records [] and nothing else)", () => {
   const empty = clone(demo.snapshot);
   empty.content.projects = [];
   eq(emitFor(empty).portfolio!.file.text, EMPTY_DOC, "exact bytes");
 });
-await check("E3 records by id code point, facet values by id code point, a record's tag in authored order (§6.1); the retired scope facet is absent; V0.2 record key order (07 §10)", () => {
-  const d = demoEmission.portfolio!.document;
-  eq(d.records.map((r) => r.id), [...d.records.map((r) => r.id)].sort(compareCodePoints), "record order");
-  for (const [k, f] of Object.entries(d.facets!)) eq(f.values.map((v) => v.id), [...f.values.map((v) => v.id)].sort(compareCodePoints), `facet ${k} order`);
-  eq(Object.keys(d.facets!), ["category", "style", "tag"], "facet key order, scope retired (07 §8)");
-  const bi01 = d.records.find((r) => r.id === "bi-01")!;
-  const src = demo.snapshot.content.projects.find((p) => p.id === "bi-01")!;
-  assert(src.scope && src.scope.length > 0, "the demo record still authors free-text scope (it is display text, and still rendered)");
-  eq(bi01.facets!.scope, undefined, "the scope FACET is retired: the free text never reaches the document (07 §8)");
-  eq(bi01.facets!.style, src.styles, "style = the authored styles, authored order");
-  eq(bi01.facets!.tag, src.keywords!.filter((k) => !(src.styles ?? []).includes(k)), "tag = keywords MINUS styles (ST4), survivors in authored order");
-  eq(bi01.facets!.category, [src.category], "category exactly one");
-  // 08: `media` is added LAST, after facets — every 1.0 key keeps its place
-  eq(Object.keys(bi01), ["id", "title", "detailUrl", "publishedAt", "location", "projectType", "property", "workScopeIds", "pricing", "facets", "media"], "record key order (07 §10, 08)");
-  eq(Object.keys(bi01.media!), ["cover", "gallery", "totalCount"], "media key order (08 §2)");
-  eq(Object.keys(bi01.media!.cover!), ["src", "alt", "width", "height"], "MediaImage key order (08 §2)");
-});
-await check("E4 missing → omitted: records without a price have no pricing key at all (MD4); no projectType / workScopeIds / style without an authored source field (INV-25); no null / \"\" / {} / [] anywhere (MD1–MD3, INV-9)", () => {
-  const d = demoEmission.portfolio!.document;
-  for (const id of ["bi-04", "bi-06"]) assert(!("pricing" in d.records.find((r) => r.id === id)!), `${id} must have no pricing key (MD4)`);
-  assert(d.records.filter((r) => r.pricing?.perArea).length === 10, "10 per-area prices: the 8 authored on bi-01 … bi-08 (minus bi-04/bi-06, which author no price at all) + the 4 D-1 derivations on bi-09 … bi-12");
-  // INV-25 / ND1 — every V0.2 field in the document has an authored source field in the record, and
-  // no record carries one it did not author. Before the demo was re-authored (26, 28) this could be
-  // stated as "none of them may appear at all"; the rule is unchanged, now written as the
-  // equivalence it always was, so a spurious field is still caught on every one of the 19.
-  for (const r of d.records) {
-    const src = demo.snapshot.content.projects.find((p) => p.id === r.id)!;
-    eq(
-      [r.projectType, r.workScopeIds, r.pricing?.total, r.property?.type, r.facets!.style],
-      [src.projectType, src.workScopeIds, src.totalPrice, src.propertyType, src.styles && src.styles.length > 0 ? src.styles : undefined],
-      `${r.id}: exactly the authored V0.2 fields, nothing invented (ND1, INV-25)`,
-    );
-    // PA1 / D-1a: an authored pricePerArea is copied as `authored` and never replaced; a per-area
-    // price appears without one only where D-1's conditions hold, and is then marked `derived`.
-    if (r.pricing?.perArea) eq(r.pricing.perArea.source, src.pricePerArea ? "authored" : "derived", `${r.id}: perArea source`);
+await check("E3 records by id code point, facet values by id code point, a record's tag in authored order (§6.1); the retired scope facet is absent; V0.2 record key order (07 §10) — on the production corpus and the QA corpus", () => {
+  for (const [label, snap, em] of CORPORA) {
+    const d = em.portfolio!.document;
+    eq(d.records.map((r) => r.id), [...d.records.map((r) => r.id)].sort(compareCodePoints), `${label}: record order`);
+    for (const [k, f] of Object.entries(d.facets!)) eq(f.values.map((v) => v.id), [...f.values.map((v) => v.id)].sort(compareCodePoints), `${label}: facet ${k} order`);
+    eq(Object.keys(d.facets!), ["category", "style", "tag"], `${label}: facet key order, scope retired (07 §8)`);
+    const bi01 = d.records.find((r) => r.id === "bi-01")!;
+    const src = snap.content.projects.find((p) => p.id === "bi-01")!;
+    assert(src.scope && src.scope.length > 0, "the demo record still authors free-text scope (it is display text, and still rendered)");
+    eq(bi01.facets!.scope, undefined, `${label}: the scope FACET is retired: the free text never reaches the document (07 §8)`);
+    eq(bi01.facets!.style, src.styles, `${label}: style = the authored styles, authored order`);
+    eq(bi01.facets!.tag, src.keywords!.filter((k) => !(src.styles ?? []).includes(k)), `${label}: tag = keywords MINUS styles (ST4), survivors in authored order`);
+    eq(bi01.facets!.category, [src.category], `${label}: category exactly one`);
+    // 08: `media` is added LAST, after facets — every 1.0 key keeps its place
+    eq(Object.keys(bi01), ["id", "title", "detailUrl", "publishedAt", "location", "projectType", "property", "workScopeIds", "pricing", "facets", "media"], `${label}: record key order (07 §10, 08)`);
+    eq(Object.keys(bi01.media!), ["cover", "gallery", "totalCount"], `${label}: media key order (08 §2)`);
+    eq(Object.keys(bi01.media!.cover!), ["src", "alt", "width", "height"], `${label}: MediaImage key order (08 §2)`);
   }
-  const hits: string[] = [];
-  deepScan(demoEmission.portfolio!.document, "", hits);
-  deepScan(demoEmission.manifest, "manifest", hits);
-  eq(hits, [], "no empty value");
-  assert(!demoEmission.portfolio!.file.text.includes("null") && !demoEmission.portfolio!.file.text.includes('"unknown"'), "no null / unknown literal in the bytes");
 });
-await check("E5 property.area: value/unit as authored (no conversion), basis supply as stored on every demo record; unknown/absent basis → no key; exclusive stays exclusive (AR2/AR3, 07 §6); pricePerArea → pricing.perArea + source authored", () => {
+await check("E4 missing → omitted: records without a price have no pricing key at all (MD4); no projectType / workScopeIds / style without an authored source field (INV-25); no null / \"\" / {} / [] anywhere (MD1–MD3, INV-9) — production: 6 per-area prices, all authored; QA corpus: 10 (6 authored + the 4 D-1 derivations on bi-09 … bi-12)", () => {
+  for (const [label, snap, em] of CORPORA) {
+    const d = em.portfolio!.document;
+    for (const id of ["bi-04", "bi-06"]) assert(!("pricing" in d.records.find((r) => r.id === id)!), `${label}: ${id} must have no pricing key (MD4)`);
+    // INV-25 / ND1 — every V0.2 field in the document has an authored source field in the record, and
+    // no record carries one it did not author. Before the demo was re-authored (26, 28) this could be
+    // stated as "none of them may appear at all"; the rule is unchanged, now written as the
+    // equivalence it always was, so a spurious field is still caught on every record of both corpora.
+    for (const r of d.records) {
+      const src = snap.content.projects.find((p) => p.id === r.id)!;
+      eq(
+        [r.projectType, r.workScopeIds, r.pricing?.total, r.property?.type, r.facets!.style],
+        [src.projectType, src.workScopeIds, src.totalPrice, src.propertyType, src.styles && src.styles.length > 0 ? src.styles : undefined],
+        `${label} ${r.id}: exactly the authored V0.2 fields, nothing invented (ND1, INV-25)`,
+      );
+      // PA1 / D-1a: an authored pricePerArea is copied as `authored` and never replaced; a per-area
+      // price appears without one only where D-1's conditions hold, and is then marked `derived`.
+      if (r.pricing?.perArea) eq(r.pricing.perArea.source, src.pricePerArea ? "authored" : "derived", `${label} ${r.id}: perArea source`);
+    }
+    const hits: string[] = [];
+    deepScan(em.portfolio!.document, "", hits);
+    deepScan(em.manifest, "manifest", hits);
+    eq(hits, [], `${label}: no empty value`);
+    assert(!em.portfolio!.file.text.includes("null") && !em.portfolio!.file.text.includes('"unknown"'), `${label}: no null / unknown literal in the bytes`);
+  }
+  assert(demoEmission.portfolio!.document.records.filter((r) => r.pricing?.perArea).length === 6, "production: 6 per-area prices, the ones authored on bi-01 … bi-08 (bi-04 / bi-06 author no price at all); no production record authors a total, so none is derived");
+  assert(demoEmission.portfolio!.document.records.every((r) => r.pricing?.perArea === undefined || r.pricing.perArea.source === "authored"), "production: every per-area price is authored");
+  assert(qaEmission.portfolio!.document.records.filter((r) => r.pricing?.perArea).length === 10, "QA corpus: 10 per-area prices: the 8 authored on bi-01 … bi-08 (minus bi-04/bi-06, which author no price at all) + the 4 D-1 derivations on bi-09 … bi-12");
+});
+await check("E5 property.area: value/unit as authored (no conversion), basis as stored on every record of both corpora; unknown/absent basis → no key; exclusive stays exclusive (AR2/AR3, 07 §6); pricePerArea → pricing.perArea + source authored", () => {
   // `property` is `{ type?, area? }` in that key order and is omitted entirely when both are absent
-  // (MD4). Since the re-authoring the corpus exercises all of it on real data: bi-15 authors no
-  // area, bi-04 and bi-06 author no propertyType (28 §2), and bi-14 is `exclusive` while the rest
-  // are `supply` — so the basis is read from the record instead of being hard-coded to "supply".
-  for (const r of demoEmission.portfolio!.document.records) {
-    const src = demo.snapshot.content.projects.find((p) => p.id === r.id)!;
-    const expected = {
-      ...(src.propertyType ? { type: src.propertyType } : {}),
-      ...(src.area ? { area: { value: src.area.value, unit: src.area.unit, ...(src.area.basis && src.area.basis !== "unknown" ? { basis: src.area.basis } : {}) } } : {}),
-    };
-    eq(r.property, Object.keys(expected).length > 0 ? expected : undefined, `${r.id} property: value / unit / basis as authored, no conversion`);
-    if (src.pricePerArea) eq(r.pricing!.perArea, { amount: src.pricePerArea.amount, currency: src.pricePerArea.currency, perUnit: src.pricePerArea.unit, source: "authored" }, `${r.id} price`);
+  // (MD4). The QA corpus exercises all of it: bi-15 authors no area, bi-04 and bi-06 author no
+  // propertyType (28 §2), and bi-14 is `exclusive` while the rest are `supply` — so the basis is read
+  // from the record instead of being hard-coded to "supply".
+  for (const [label, snap, em] of CORPORA) {
+    for (const r of em.portfolio!.document.records) {
+      const src = snap.content.projects.find((p) => p.id === r.id)!;
+      const expected = {
+        ...(src.propertyType ? { type: src.propertyType } : {}),
+        ...(src.area ? { area: { value: src.area.value, unit: src.area.unit, ...(src.area.basis && src.area.basis !== "unknown" ? { basis: src.area.basis } : {}) } } : {}),
+      };
+      eq(r.property, Object.keys(expected).length > 0 ? expected : undefined, `${label} ${r.id} property: value / unit / basis as authored, no conversion`);
+      if (src.pricePerArea) eq(r.pricing!.perArea, { amount: src.pricePerArea.amount, currency: src.pricePerArea.currency, perUnit: src.pricePerArea.unit, source: "authored" }, `${label} ${r.id} price`);
+    }
   }
-  assert(demoEmission.portfolio!.document.records.some((r) => r.property?.area?.basis === "exclusive"), "AR3: an exclusive basis survives as exclusive on real data (bi-14)");
-  assert(demoEmission.portfolio!.document.records.some((r) => r.property && !r.property.area), "MD4: a record with a type but no area still emits property (bi-15)");
-  const s = clone(demo.snapshot);
+  assert(qaEmission.portfolio!.document.records.some((r) => r.property?.area?.basis === "exclusive"), "AR3: an exclusive basis survives as exclusive on real-shaped data (bi-14, QA corpus)");
+  assert(qaEmission.portfolio!.document.records.some((r) => r.property && !r.property.area), "MD4: a record with a type but no area still emits property (bi-15, QA corpus)");
+  const s = clone(qaSnapshot);
   s.content.projects[0]!.area = { value: 84.5, unit: "m2", basis: "unknown" };
   s.content.projects[1]!.area = { value: 24, unit: "pyeong" };
   s.content.projects[2]!.area = { value: 59, unit: "m2", basis: "exclusive" };
@@ -565,50 +636,52 @@ await check("E5 property.area: value/unit as authored (no conversion), basis sup
 // `records[].media` (checked separately below), and everything else stays forbidden: the authored
 // `galleryGroups` / `items` / `image` / `before` shape never leaks, and neither does a `hasMore`
 // (08: derived, never emitted) or a URL key.
-await check("E6 allowlist: no summary / body / galleryGroups / before / quote / slug / status / builtYear / period / duration key or text (INV-7, SE2); media keys only under records[].media (08)", () => {
-  const text = demoEmission.portfolio!.file.text;
-  // `style` is no longer on this list — it is a V0.2 facet key (07 §8) — but `propertyType` still
-  // is: V0.2 takes it up as the STRUCTURED field `property.type`, never as a facet or a flat key.
-  for (const key of ["summary", "body", "galleryGroups", "items", "image", "before", "asset", "hasMore", "url", "href", "customerQuote", "slug", "status", "builtYear", "period", "durationWeeks", "keywords", "styles", "attribution", "propertyType", "totalCost", "scope"]) {
-    assert(!text.includes(`"${key}"`), `key ${key} must not be emitted`);
-  }
-  for (const p of demo.snapshot.content.projects) {
-    for (const s of [p.summary, ...(p.body ?? []), p.customerQuote?.text, p.customerQuote?.attribution]) if (s) assert(!text.includes(s), `${p.id}: text "${s.slice(0, 20)}…" leaked`);
-  }
-  const keys = new Set<string>();
-  const walk = (v: unknown) => {
-    if (Array.isArray(v)) v.forEach(walk);
-    else if (v && typeof v === "object") for (const [k, x] of Object.entries(v)) (keys.add(k), walk(x));
-  };
-  const stripped = clone(demoEmission.portfolio!.document) as unknown as Record<string, unknown>;
-  delete stripped.facets;
-  const mediaKeys = new Set<string>();
-  stripped.records = (stripped.records as Record<string, unknown>[]).map((r) => {
-    const { facets: _f, media, ...rest } = r;
-    if (media) {
-      const before = new Set(keys);
-      walk(media);
-      for (const k of keys) if (!before.has(k)) mediaKeys.add(k);
-      for (const k of [...keys]) if (!before.has(k)) keys.delete(k);
-      for (const k of Object.keys(media as object)) mediaKeys.add(k);
+await check("E6 allowlist: no summary / body / galleryGroups / before / quote / slug / status / builtYear / period / duration key or text (INV-7, SE2); media keys only under records[].media (08) — production and QA corpus", () => {
+  for (const [label, snap, em] of CORPORA) {
+    const text = em.portfolio!.file.text;
+    // `style` is no longer on this list — it is a V0.2 facet key (07 §8) — but `propertyType` still
+    // is: V0.2 takes it up as the STRUCTURED field `property.type`, never as a facet or a flat key.
+    for (const key of ["summary", "body", "galleryGroups", "items", "image", "before", "asset", "hasMore", "url", "href", "customerQuote", "slug", "status", "builtYear", "period", "durationWeeks", "keywords", "styles", "attribution", "propertyType", "totalCost", "scope"]) {
+      assert(!text.includes(`"${key}"`), `${label}: key ${key} must not be emitted`);
     }
-    return rest;
-  });
-  walk(stripped);
-  const allow = new Set([
-    "schemaVersion", "resource", "version", "listingUrl", "workScopes", "records",
-    "id", "title", "detailUrl", "publishedAt", "location",
-    "projectType", "property", "type", "area", "value", "unit", "basis", "workScopeIds",
-    "pricing", "total", "kind", "minAmount", "maxAmount", "perArea", "amount", "currency", "perUnit", "source",
-  ]);
-  eq([...keys].filter((k) => !allow.has(k)), [], "keys outside the allowlist");
-  // 08 — the media allowlist, and it is used ONLY under records[].media (none of these is a 1.0 key)
-  const mediaAllow = new Set(["cover", "gallery", "totalCount", "src", "alt", "width", "height"]);
-  eq([...mediaKeys].filter((k) => !mediaAllow.has(k)), [], "media keys outside the media allowlist");
-  eq([...keys].filter((k) => mediaAllow.has(k)), [], "no media key outside records[].media");
-  // 08 — the only images are the records' own: no og:image / site hero / band / logo / section
-  // image of the site ever becomes a media src (every non-project asset of the demo is checked).
-  for (const a of demo.snapshot.assets.filter((x) => !/^bi\d\d-/.test(x.id))) assert(!text.includes(`"${a.publicPath}"`), `site asset ${a.id} (${a.publicPath}) must not be a media src`);
+    for (const p of snap.content.projects) {
+      for (const s of [p.summary, ...(p.body ?? []), p.customerQuote?.text, p.customerQuote?.attribution]) if (s) assert(!text.includes(s), `${label} ${p.id}: text "${s.slice(0, 20)}…" leaked`);
+    }
+    const keys = new Set<string>();
+    const walk = (v: unknown) => {
+      if (Array.isArray(v)) v.forEach(walk);
+      else if (v && typeof v === "object") for (const [k, x] of Object.entries(v)) (keys.add(k), walk(x));
+    };
+    const stripped = clone(em.portfolio!.document) as unknown as Record<string, unknown>;
+    delete stripped.facets;
+    const mediaKeys = new Set<string>();
+    stripped.records = (stripped.records as Record<string, unknown>[]).map((r) => {
+      const { facets: _f, media, ...rest } = r;
+      if (media) {
+        const before = new Set(keys);
+        walk(media);
+        for (const k of keys) if (!before.has(k)) mediaKeys.add(k);
+        for (const k of [...keys]) if (!before.has(k)) keys.delete(k);
+        for (const k of Object.keys(media as object)) mediaKeys.add(k);
+      }
+      return rest;
+    });
+    walk(stripped);
+    const allow = new Set([
+      "schemaVersion", "resource", "version", "listingUrl", "workScopes", "records",
+      "id", "title", "detailUrl", "publishedAt", "location",
+      "projectType", "property", "type", "area", "value", "unit", "basis", "workScopeIds",
+      "pricing", "total", "kind", "minAmount", "maxAmount", "perArea", "amount", "currency", "perUnit", "source",
+    ]);
+    eq([...keys].filter((k) => !allow.has(k)), [], `${label}: keys outside the allowlist`);
+    // 08 — the media allowlist, and it is used ONLY under records[].media (none of these is a 1.0 key)
+    const mediaAllow = new Set(["cover", "gallery", "totalCount", "src", "alt", "width", "height"]);
+    eq([...mediaKeys].filter((k) => !mediaAllow.has(k)), [], `${label}: media keys outside the media allowlist`);
+    eq([...keys].filter((k) => mediaAllow.has(k)), [], `${label}: no media key outside records[].media`);
+    // 08 — the only images are the records' own: no og:image / site hero / band / logo / section
+    // image of the site ever becomes a media src (every non-project asset of the demo is checked).
+    for (const a of snap.assets.filter((x) => !/^bi\d\d-/.test(x.id))) assert(!text.includes(`"${a.publicPath}"`), `${label}: site asset ${a.id} (${a.publicPath}) must not be a media src`);
+  }
 });
 // E7 RESTATED for media 1.1 (08): the cover, the gallery and the asset table's size/path are now
 // PROJECTED facts (records[].media), so changing them must move the resource version — before 1.1
@@ -616,10 +689,10 @@ await check("E6 allowlist: no summary / body / galleryGroups / before / quote / 
 // would let a consumer keep stale images under an unchanged version (INV-2 / RV2 is the same rule;
 // only the projection grew). What stays neutral: before-images (not exported in V1), assets no
 // record's media references (site hero, logo, band …), and everything else outside the projection.
-await check("E7 version changes with every projected fact (media included, 08) and with a record added/removed; stays for anything outside the projection (INV-2, RV2)", () => {
-  const base = demoEmission.portfolio!.version;
+await check("E7 version changes with every projected fact (media included, 08) and with a record added/removed; stays for anything outside the projection (INV-2, RV2) — on the QA corpus", () => {
+  const base = qaEmission.portfolio!.version;
   const vary = (f: (s: SiteSnapshot) => void) => {
-    const s = clone(demo.snapshot);
+    const s = clone(qaSnapshot);
     f(s);
     return emitFor(s).portfolio!.version;
   };
@@ -644,7 +717,7 @@ await check("E7 version changes with every projected fact (media included, 08) a
     ["category id", (s) => void ((s.content.categories.find((c) => c.id === "full-remodel")!.id = "full-remodel-2"), s.content.projects.filter((x) => x.category === "full-remodel").forEach((x) => void (x.category = "full-remodel-2")))],
     ["slug (detailUrl)", (s) => void (s.content.projects[p()]!.slug = "other-slug")],
     ["record removed", (s) => void s.content.projects.pop()],
-    // bi-09 … bi-19 now exist (26 §1.1), so the added record takes the next free id
+    // bi-09 … bi-19 exist in the QA corpus (26 §1.1), so the added record takes the next free id
     ["record added", (s) => void s.content.projects.push({ ...clone(s.content.projects[0]!), id: "bi-20", slug: "bi-20-slug" })],
     // 08 — media is projected: every one of these reaches records[].media
     ["galleryGroups removed", (s) => void delete s.content.projects[p()]!.galleryGroups],
@@ -684,8 +757,8 @@ await check("E7 version changes with every projected fact (media included, 08) a
   ];
   for (const [what, f] of neutral) eq(vary(f), base, `${what}: version must not change`);
 });
-await check("E8 a record's style / tag / workScopeIds arrays keep the authored order and drop repeats (first occurrence) — INV-14, WS3, 07 §11; the declared values are unique", () => {
-  const s = clone(demo.snapshot);
+await check("E8 a record's style / tag / workScopeIds arrays keep the authored order and drop repeats (first occurrence) — INV-14, WS3, 07 §11; the declared values are unique (QA corpus)", () => {
+  const s = clone(qaSnapshot);
   s.content.projects[0]!.styles = ["화이트", "미니멀", "화이트"];
   s.content.projects[0]!.keywords = ["간접조명", "간접조명"];
   s.content.projects[0]!.workScopeIds = ["kitchen", "bathroom", "kitchen"];
@@ -693,10 +766,10 @@ await check("E8 a record's style / tag / workScopeIds arrays keep the authored o
   eq(d.records[0]!.facets!.style, ["화이트", "미니멀"], "style authored order + dedupe");
   eq(d.records[0]!.facets!.tag, ["간접조명"], "tag dedupe");
   eq(d.records[0]!.workScopeIds, ["kitchen", "bathroom"], "workScopeIds authored order + dedupe");
-  // The other 18 records carry their own authored scopes (26 §1), so the document declares the
+  // The other 18 records of the QA corpus carry their own authored scopes (26 §1), so the document declares the
   // union. Narrowing bi-01 to kitchen + bathroom removes no id from it: every one of bi-01's
   // authored six is also used by another record, so WS2's closure is unchanged by this craft.
-  eq(d.workScopes, DEMO_WORK_SCOPES, "document workScopes: sorted, closed both ways (WS2)");
+  eq(d.workScopes, QA_WORK_SCOPES, "document workScopes: sorted, closed both ways (WS2)");
   eq(new Set(d.facets!.style!.values.map((v) => v.id)).size, d.facets!.style!.values.length, "unique declared");
   eq(Object.keys(d.facets!), ["category", "style", "tag"], "facet key order (02 §6.1)");
 });
@@ -724,10 +797,12 @@ await check("E10 emitter fails closed: no publicOrigin, http origin, ≥ 2 item 
   await rejects(() => emitIntegration({ snapshot: demo.snapshot, declaredRoutes: template.routes, plannedRoutes: planned }), /not in the route plan/);
 });
 
-await check("K1 (P-V2-01, 06, 08–13) the 19-record DEMO corpus still covers what the contract exercises: breadth 7 full / 7 partial / 5 absent; totals 10 exact / 1 range / 8 absent; per-area 6 authored / 4 derived and every derived one is RD1's; the area bases a visitor states; the partial room shapes; each field missing somewhere", () => {
+await check("K1 (P-V2-01, 06, 08–13) the 19-record QA corpus (production bi-01 … bi-08 + the TEST_ONLY synthetic fixture bi-09 … bi-19) still covers what the contract exercises: breadth 7 full / 7 partial / 5 absent; totals 10 exact / 1 range / 8 absent; per-area 6 authored / 4 derived and every derived one is RD1's; the area bases a visitor states; the partial room shapes; each field missing somewhere", () => {
   // DATA COVERAGE only — the producer ranks nothing (07 §14 is the consumer's). A number moving here
-  // means the canonical corpus changed, and the reason has to be recorded before the value is.
-  const d = demoEmission.portfolio!.document;
+  // means the QA corpus changed, and the reason has to be recorded before the value is. Since the
+  // record truth split (2026-09-29) the published demo holds only bi-01 … bi-08; the shapes below are
+  // the synthetic fixture's, which is why this runs on the QA corpus with its literals unchanged.
+  const d = qaEmission.portfolio!.document;
   type Rec = (typeof d.records)[number];
   const tally = (f: (r: Rec) => string) => {
     const m: Record<string, number> = {};
@@ -776,9 +851,9 @@ await check("K1 (P-V2-01, 06, 08–13) the 19-record DEMO corpus still covers wh
 });
 
 console.log("\n[annex] the V0.2 built-space annex on crafted snapshots (07 §5–§11, INV-17 … INV-30)");
-/** the demo snapshot with ONE record re-authored: only the V0.2 fields under test change. */
+/** the QA corpus snapshot with ONE record re-authored: only the V0.2 fields under test change. */
 function craft(mutate: (p: Project) => void, id = "bi-01") {
-  const snapshot = clone(demo.snapshot);
+  const snapshot = clone(qaSnapshot);
   const source = snapshot.content.projects.find((x) => x.id === id)!;
   mutate(source);
   assert(ProjectSchema.safeParse(source).success, `crafted record ${id} must itself be valid content: ${JSON.stringify(ProjectSchema.safeParse(source).error?.issues)}`);
@@ -912,13 +987,13 @@ await check("A8 INV-17 / WS2: document.workScopes is a sorted plain id array, cl
   /**
    * WS2's two absence rules — the document block is the union of exactly what the records carry,
    * and is ABSENT when none carries any (INV-18: never `[]`) — can only be observed where a single
-   * record decides the block. Since the re-authoring all 19 demo records carry work scopes
+   * record decides the block. Since the re-authoring all 19 QA-corpus records carry work scopes
    * (26 §1.2), so this check stages its own corpus instead of relaxing what it asserts: every
    * record but bi-01 drops `projectType` + `workScopeIds`, which is the breadth-absent shape PT5
    * prescribes and is itself valid content (A10's last case proves INV-30 stays silent for it).
    */
   const soloCraft = (mutate: (p: Project) => void) => {
-    const snapshot = clone(demo.snapshot);
+    const snapshot = clone(qaSnapshot);
     for (const p of snapshot.content.projects) {
       if (p.id === "bi-01") continue;
       delete p.projectType;
@@ -960,7 +1035,7 @@ await check("A9 INV-24 / ST4: `style` is the authored `styles`, `tag` is the aut
   eq(record.facets!.style, ["화이트", "미니멀"], "style = the authored styles, authored order");
   eq(record.facets!.tag, ["간접조명", "수납 특화"], "tag = keywords MINUS styles, survivors in authored order (ST2 keeps these two as tags)");
   // the document's style vocabulary is the union over all 19 records (28 §1), not bi-01's alone
-  eq(document.facets!.style!.values, DEMO_STYLE_VALUES, "declared, sorted, {id,label}");
+  eq(document.facets!.style!.values, QA_STYLE_VALUES, "declared, sorted, {id,label}");
   eq(record.facets!.style!.filter((v) => record.facets!.tag!.includes(v)), [], "ST4/INV-24 holds on the record: no value in both of ITS facets");
   eq(result.errors, [], "valid — overlap in the AUTHORED fields is the normal case, not an error");
   // NOTE: the rule is per RECORD. A record that leaves 화이트 as a plain keyword still declares it
@@ -968,7 +1043,7 @@ await check("A9 INV-24 / ST4: `style` is the authored `styles`, `tag` is the aut
   // disjoint, only each record's two arrays. 28's authoring pass made the demo corpus CONSISTENT
   // (ST6), so that second record no longer exists in the data and is crafted here: bi-06 keeps
   // 화이트 / 미니멀 as plain keywords, exactly the shape A12 measures the ST6 warning on.
-  const mixed = clone(demo.snapshot);
+  const mixed = clone(qaSnapshot);
   const mixed01 = mixed.content.projects.find((p) => p.id === "bi-01")!;
   mixed01.keywords = ["화이트", "간접조명", "미니멀", "수납 특화"];
   mixed01.styles = ["화이트", "미니멀"];
@@ -978,7 +1053,7 @@ await check("A9 INV-24 / ST4: `style` is the authored `styles`, `tag` is the aut
   const mixedDoc = emitFor(mixed).portfolio!.document;
   assert(mixedDoc.facets!.tag!.values.some((v) => v.id === "화이트"), "the record that left 화이트 a plain keyword declares it in the document's tag vocabulary");
   assert(mixedDoc.facets!.style!.values.some((v) => v.id === "화이트"), "…while bi-01 declares it a style: the per-record subtraction cannot make the two DOCUMENT vocabularies disjoint");
-  assert(ProjectSchema.safeParse({ ...demo.snapshot.content.projects[0]!, styles: ["화이트"], keywords: ["화이트", "간접조명"] }).success, "the content model accepts styles ⊆ keywords");
+  assert(ProjectSchema.safeParse({ ...qaSnapshot.content.projects[0]!, styles: ["화이트"], keywords: ["화이트", "간접조명"] }).success, "the content model accepts styles ⊆ keywords");
   // every keyword marked as a style → `tag` is omitted entirely, never [] (MD3, INV-18)
   const all = craft((p) => {
     p.keywords = ["화이트"];
@@ -995,7 +1070,7 @@ await check("A10 INV-28 / WS7a: a partial_remodel without workScopeIds is refuse
    * pass. This is a purpose-built record, not a weakened assertion: every safeParse below is
    * unchanged, and INV-28 must still fire on it.
    */
-  const { projectType: _pt, workScopeIds: _ws, ...base } = demo.snapshot.content.projects[0]!;
+  const { projectType: _pt, workScopeIds: _ws, ...base } = qaSnapshot.content.projects[0]!;
   assert(ProjectSchema.safeParse(base).success, "the stripped base is itself valid content (breadth-absent, PT5/PT6)");
   const bad = ProjectSchema.safeParse({ ...base, projectType: "partial_remodel" });
   assert(!bad.success && /INV-28/.test(JSON.stringify(bad.error!.issues)), "content model refuses a partial_remodel with no scopes");
@@ -1020,7 +1095,7 @@ await check("A10 INV-28 / WS7a: a partial_remodel without workScopeIds is refuse
   }).result.errors, [], "a full_remodel with a space + trades is valid");
 });
 await check("A11 INV-23 / TP1: the content model refuses an equal-bounds or inverted range, a non-positive amount, a bad currency and an amount above 1e9; `exact` and `range` cannot coexist (structurally)", () => {
-  const base = demo.snapshot.content.projects[0]!;
+  const base = qaSnapshot.content.projects[0]!;
   const bad: [string, unknown][] = [
     ["equal bounds", { kind: "range", minAmount: 5_000_000, maxAmount: 5_000_000, currency: "KRW" }],
     ["inverted", { kind: "range", minAmount: 9_000_000, maxAmount: 5_000_000, currency: "KRW" }],
@@ -1039,7 +1114,7 @@ await check("A12 ST6 (07 §8, P: SHOULD warn at build): a value one record class
   // bi-01 marks 화이트/미니멀 as styles (both already its own keywords, so ST4 subtracts them from
   // its OWN tag); bi-06 (untouched) still carries both as plain keywords — no record carries either
   // value in both of ITS OWN facets, but the document-level vocabularies now intersect.
-  const inconsistent = clone(demo.snapshot);
+  const inconsistent = clone(qaSnapshot);
   const bi01 = inconsistent.content.projects.find((p) => p.id === "bi-01")!;
   const bi06 = inconsistent.content.projects.find((p) => p.id === "bi-06")!;
   bi01.styles = ["화이트", "미니멀"];
@@ -1072,7 +1147,7 @@ await check("A12 ST6 (07 §8, P: SHOULD warn at build): a value one record class
   eq(again.portfolio!.version, emission.portfolio!.version, "version unaffected by the warning");
 
   // negative: a style word no other record's tag carries → the vocabularies do not intersect → no warning
-  const consistent = clone(demo.snapshot);
+  const consistent = clone(qaSnapshot);
   const bi01c = consistent.content.projects.find((p) => p.id === "bi-01")!;
   // 빈티지 is ADDED to bi-01's authored styles rather than replacing them: dropping 화이트 /
   // 미니멀 back into its `tag` would re-create the very overlap this branch is proving absent,
@@ -1081,7 +1156,7 @@ await check("A12 ST6 (07 §8, P: SHOULD warn at build): a value one record class
   bi01c.keywords = [...(bi01c.keywords ?? []), "빈티지"];
   assert(consistent.content.projects.every((p) => p.id === "bi-01" || !(p.keywords ?? []).includes("빈티지")), "fixture assumption: no other record carries 빈티지");
   eq(emitFor(consistent).portfolio!.warnings, [], "no ST6 warning when the style and tag vocabularies do not intersect");
-  eq(emitFor(demo.snapshot).portfolio!.warnings, [], "the untouched demo emission (V1) carries no ST6 warning either");
+  eq(emitFor(qaSnapshot).portfolio!.warnings, [], "the untouched demo emission (V1) carries no ST6 warning either");
 });
 
 await check("A13 INV-22 provenance, metamorphic, over every demo record: moving only area.value changes only property.area.value and a derived perArea; moving only the authored pricePerArea changes only pricing.perArea; moving only the authored total changes only pricing.total and a derived perArea — RD1 is the one dependency of any emitted value on the area", () => {
@@ -1096,7 +1171,7 @@ await check("A13 INV-22 provenance, metamorphic, over every demo record: moving 
     const fb = flat({ ...b, version: 0 }, "", {});
     return [...new Set([...Object.keys(fa), ...Object.keys(fb)])].filter((k) => fa[k] !== fb[k]).sort();
   };
-  const base = demoEmission.portfolio!.document;
+  const base = qaEmission.portfolio!.document;
   const after = (snap: SiteSnapshot, id: string, mutate: (p: Project) => void) => {
     const s = clone(snap);
     mutate(s.content.projects.find((p) => p.id === id)!);
@@ -1107,20 +1182,20 @@ await check("A13 INV-22 provenance, metamorphic, over every demo record: moving 
   };
   let runs = 0;
   base.records.forEach((rec, i) => {
-    const src = demo.snapshot.content.projects.find((p) => p.id === rec.id)!;
+    const src = qaSnapshot.content.projects.find((p) => p.id === rec.id)!;
     const at = `records.${i}.`;
     const derived = rec.pricing?.perArea?.source === "derived" ? [`${at}pricing.perArea.amount`] : [];
     if (src.area) {
-      expectOnly(`${rec.id} area`, moved(base, after(demo.snapshot, rec.id, (p) => void (p.area!.value += 1))), [`${at}property.area.value`], derived);
+      expectOnly(`${rec.id} area`, moved(base, after(qaSnapshot, rec.id, (p) => void (p.area!.value += 1))), [`${at}property.area.value`], derived);
       runs++;
     }
     if (src.pricePerArea) {
-      expectOnly(`${rec.id} pricePerArea`, moved(base, after(demo.snapshot, rec.id, (p) => void (p.pricePerArea!.amount += 10_000))), [`${at}pricing.perArea.amount`], []);
+      expectOnly(`${rec.id} pricePerArea`, moved(base, after(qaSnapshot, rec.id, (p) => void (p.pricePerArea!.amount += 10_000))), [`${at}pricing.perArea.amount`], []);
       runs++;
     }
     if (src.totalPrice) {
       const t = src.totalPrice;
-      const got = moved(base, after(demo.snapshot, rec.id, (p) => {
+      const got = moved(base, after(qaSnapshot, rec.id, (p) => {
         p.totalPrice = t.kind === "exact" ? { ...t, amount: t.amount + 1_000_000 } : { ...t, minAmount: t.minAmount + 1_000_000, maxAmount: t.maxAmount + 1_000_000 };
       }));
       expectOnly(`${rec.id} total`, got, t.kind === "exact" ? [`${at}pricing.total.amount`] : [`${at}pricing.total.minAmount`, `${at}pricing.total.maxAmount`], derived);
@@ -1130,7 +1205,7 @@ await check("A13 INV-22 provenance, metamorphic, over every demo record: moving 
   eq(runs, 18 + 6 + 11, "18 areas, 6 authored per-area prices, 11 totals moved");
   // 07 §15's named valid case: an authored perArea of 1,000,000 and an area of 34 coincide with a real
   // total of 34,000,000 — it validates, and moving the area still moves nothing but the area
-  const s = clone(demo.snapshot);
+  const s = clone(qaSnapshot);
   const bi01 = s.content.projects.find((p) => p.id === "bi-01")!;
   bi01.pricePerArea = { ...bi01.pricePerArea!, amount: 1_000_000 };
   bi01.totalPrice = { kind: "exact", amount: 34_000_000, currency: "KRW" };
@@ -1145,10 +1220,11 @@ const afterRefs = (p: Project) => (p.galleryGroups ?? []).flatMap((g) => g.items
 /** every asset a record authors: cover, after and before images — the media-ownership inputs, re-derived here */
 const refAssets = (p: Project) => [p.cover.asset, ...(p.galleryGroups ?? []).flatMap((g) => g.items.flatMap((i) => [i.image.asset, ...(i.before ? [i.before.asset] : [])]))];
 const project = (s: SiteSnapshot, id: string) => s.content.projects.find((p) => p.id === id)!;
-const demoRecord = (id: string) => demoEmission.portfolio!.document.records.find((r) => r.id === id)!;
-/** the demo snapshot re-authored by `mutate` — several records and the asset table may move; every record stays valid content */
+/** a record of the QA corpus's emission (the crafts below are staged on the QA corpus) */
+const qaRecord = (id: string) => qaEmission.portfolio!.document.records.find((r) => r.id === id)!;
+/** the QA corpus snapshot re-authored by `mutate` — several records and the asset table may move; every record stays valid content */
 function craftMedia(mutate: (s: SiteSnapshot) => void) {
-  const snapshot = clone(demo.snapshot);
+  const snapshot = clone(qaSnapshot);
   mutate(snapshot);
   for (const p of snapshot.content.projects) assert(ProjectSchema.safeParse(p).success, `crafted record ${p.id} must itself be valid content`);
   const emission = emitFor(snapshot);
@@ -1167,51 +1243,56 @@ function addAssets(s: SiteSnapshot, n: number, prefix = "craft"): string[] {
 }
 /** the MediaImage 08 §2 expects for an authored MediaRef — written from the snapshot's asset table */
 const expectImage = (ref: { asset: string; alt?: string }) => {
-  const a = demo.snapshot.assets.find((x) => x.id === ref.asset)!;
+  const a = qaSnapshot.assets.find((x) => x.id === ref.asset)!;
   return { src: a.publicPath, ...(ref.alt ? { alt: ref.alt } : {}), width: a.width, height: a.height };
 };
-await check("E11 demo media = the cover when attributable (media ownership) + the authored AFTER gallery, first 12 in authored order, totalCount = all after images; bi-01 12 of 13 (hasMore derived), bi-02 … bi-08 complete with their own cover; bi-09 … bi-19 NO media (their cover is another record's gallery photo); bi-04's before images absent; 8 covers · 8 galleries · 41 images · totalCount 42", () => {
-  const d = demoEmission.portfolio!.document;
+await check("E11 demo media = the cover when attributable (media ownership) + the authored AFTER gallery, first 12 in authored order, totalCount = all after images; bi-01 12 of 13 (hasMore derived), bi-02 … bi-08 complete with their own cover; production: every record carries its own media; QA corpus: bi-09 … bi-19 NO media (their cover is another record's gallery photo); bi-04's before images absent; 8 covers · 8 galleries · 41 images · totalCount 42 on both", () => {
   const EARLY = ["bi-01", "bi-02", "bi-03", "bi-04", "bi-05", "bi-06", "bi-07", "bi-08"];
   const LATE = ["bi-09", "bi-10", "bi-11", "bi-12", "bi-13", "bi-14", "bi-15", "bi-16", "bi-17", "bi-18", "bi-19"];
-  for (const r of d.records) {
-    const src = demo.snapshot.content.projects.find((p) => p.id === r.id)!;
-    const after = afterRefs(src);
-    if (LATE.includes(r.id)) {
-      eq(r.media, undefined, `${r.id}: no media at all — never {} (MD-8)`);
-      continue;
+  // production = the eight EARLY records and nothing else; the QA corpus adds exactly the LATE ones
+  eq(demoEmission.portfolio!.document.records.map((r) => r.id), EARLY, "production records");
+  eq(qaEmission.portfolio!.document.records.map((r) => r.id), [...EARLY, ...LATE], "QA corpus records");
+  for (const [label, snap, em] of CORPORA) {
+    const d = em.portfolio!.document;
+    for (const r of d.records) {
+      const src = snap.content.projects.find((p) => p.id === r.id)!;
+      const after = afterRefs(src);
+      if (LATE.includes(r.id)) {
+        eq(r.media, undefined, `${label} ${r.id}: no media at all — never {} (MD-8)`);
+        continue;
+      }
+      // bi-01 … bi-08: the cover is one of the record's own after images (ownership rule (a)), no
+      // after image repeats, so the media is exactly the authored cover + the authored gallery
+      assert(after.some((ref) => ref.asset === src.cover.asset), `${label} ${r.id}: its cover ${src.cover.asset} is in its own gallery`);
+      eq(new Set(after.map((ref) => ref.asset)).size, after.length, `${label} ${r.id}: no repeated after image`);
+      eq(r.media, { cover: expectImage(src.cover), gallery: after.slice(0, MEDIA_GALLERY_MAX).map(expectImage), totalCount: after.length }, `${label} ${r.id}: media = the own cover + after gallery (08 §3)`);
+      assert(PortfolioMediaSchema.safeParse(r.media).success, `${label} ${r.id}: media passes the 08 schema`);
     }
-    // bi-01 … bi-08: the cover is one of the record's own after images (ownership rule (a)), no
-    // after image repeats, so the media is exactly the authored cover + the authored gallery
-    assert(after.some((ref) => ref.asset === src.cover.asset), `${r.id}: its cover ${src.cover.asset} is in its own gallery`);
-    eq(new Set(after.map((ref) => ref.asset)).size, after.length, `${r.id}: no repeated after image`);
-    eq(r.media, { cover: expectImage(src.cover), gallery: after.slice(0, MEDIA_GALLERY_MAX).map(expectImage), totalCount: after.length }, `${r.id}: media = the own cover + after gallery (08 §3)`);
-    assert(PortfolioMediaSchema.safeParse(r.media).success, `${r.id}: media passes the 08 schema`);
+    eq(d.records.filter((r) => r.media).map((r) => r.id), EARLY, `${label}: media on bi-01 … bi-08 only`);
+    const m = (id: string) => d.records.find((r) => r.id === id)!.media!;
+    eq([m("bi-01").gallery!.length, m("bi-01").totalCount], [12, 13], `${label}: bi-01: 12 exported of 13 → a consumer derives hasMore = true`);
+    eq(m("bi-01").gallery!.map((g) => g.src).includes(expectImage({ asset: "bi01-bathroom-02" }).src), false, `${label}: bi-01: the 13th after image (bi01-bathroom-02) is counted, not exported`);
+    eq(d.records.filter((r) => r.media?.gallery && r.media.totalCount! > r.media.gallery.length).map((r) => r.id), ["bi-01"], `${label}: derived hasMore only on bi-01`);
+    const bi04 = snap.content.projects.find((p) => p.id === "bi-04")!;
+    const befores = (bi04.galleryGroups ?? []).flatMap((g) => g.items.flatMap((i) => (i.before ? [i.before] : [])));
+    eq(befores.length, 2, `${label}: bi-04 authors two before images`);
+    for (const b of befores) assert(!em.portfolio!.file.text.includes(`"${expectImage(b).src}"`), `${label}: before image ${b.asset} is not exported`);
+    eq(m("bi-04").totalCount, 4, `${label}: bi-04: totalCount counts the 4 after images only (not the 2 befores)`);
+    const all = d.records.flatMap((r) => (r.media ? [r.media] : []));
+    eq([all.length, all.filter((x) => x.cover).length, all.filter((x) => x.gallery).length, all.reduce((n, x) => n + (x.gallery?.length ?? 0), 0), all.reduce((n, x) => n + (x.totalCount ?? 0), 0)], [8, 8, 8, 41, 42], `${label}: records with media · covers · galleries · exported images · totalCount`);
+    // every image of this corpus authors its alt and the registry gives every size
+    assert(all.flatMap((x) => [x.cover!, ...(x.gallery ?? [])]).every((i) => i.alt && i.width === 1600 && i.height === 1200 && /^\/assets\/[0-9a-f]{20}\.jpg$/.test(i.src)), `${label}: authored alt, 1600×1200, content-addressed same-origin jpg path`);
   }
-  eq(d.records.filter((r) => r.media).map((r) => r.id), EARLY, "media on bi-01 … bi-08 only");
-  const m = (id: string) => d.records.find((r) => r.id === id)!.media!;
-  eq([m("bi-01").gallery!.length, m("bi-01").totalCount], [12, 13], "bi-01: 12 exported of 13 → a consumer derives hasMore = true");
-  eq(m("bi-01").gallery!.map((g) => g.src).includes(expectImage({ asset: "bi01-bathroom-02" }).src), false, "bi-01: the 13th after image (bi01-bathroom-02) is counted, not exported");
-  eq(d.records.filter((r) => r.media?.gallery && r.media.totalCount! > r.media.gallery.length).map((r) => r.id), ["bi-01"], "derived hasMore only on bi-01");
-  // WHY bi-09 … bi-19 carry nothing: each authors no gallery and a cover that is an after image of
-  // one of bi-01 … bi-08 (04-demo-data-spec §5: "a shared photo … not a photograph of a distinct
-  // job"). Such a cover is not attributable to them, and there is no other image of theirs.
-  const earlyAfter = new Map(demo.snapshot.content.projects.flatMap((p) => afterRefs(p).map((ref) => [ref.asset, p.id] as const)));
+  // WHY bi-09 … bi-19 carry nothing (QA corpus): each authors no gallery and a cover that is an after
+  // image of one of bi-01 … bi-08 (04-demo-data-spec §5: "a shared photo … not a photograph of a
+  // distinct job"). Such a cover is not attributable to them, and there is no other image of theirs.
+  const earlyAfter = new Map(qaSnapshot.content.projects.flatMap((p) => afterRefs(p).map((ref) => [ref.asset, p.id] as const)));
   for (const id of LATE) {
-    const p = demo.snapshot.content.projects.find((x) => x.id === id)!;
+    const p = qaSnapshot.content.projects.find((x) => x.id === id)!;
     eq(afterRefs(p).length, 0, `${id}: authors no gallery`);
     const owner = earlyAfter.get(p.cover.asset);
     assert(owner !== undefined && owner !== id, `${id}: cover ${p.cover.asset} is another record's gallery photo`);
   }
-  const bi04 = demo.snapshot.content.projects.find((p) => p.id === "bi-04")!;
-  const befores = (bi04.galleryGroups ?? []).flatMap((g) => g.items.flatMap((i) => (i.before ? [i.before] : [])));
-  eq(befores.length, 2, "bi-04 authors two before images");
-  for (const b of befores) assert(!demoEmission.portfolio!.file.text.includes(`"${expectImage(b).src}"`), `before image ${b.asset} is not exported`);
-  eq(m("bi-04").totalCount, 4, "bi-04: totalCount counts the 4 after images only (not the 2 befores)");
-  const all = d.records.flatMap((r) => (r.media ? [r.media] : []));
-  eq([all.length, all.filter((x) => x.cover).length, all.filter((x) => x.gallery).length, all.reduce((n, x) => n + (x.gallery?.length ?? 0), 0), all.reduce((n, x) => n + (x.totalCount ?? 0), 0)], [8, 8, 8, 41, 42], "records with media · covers · galleries · exported images · totalCount");
-  // every image of this corpus authors its alt and the registry gives every size
-  assert(all.flatMap((x) => [x.cover!, ...(x.gallery ?? [])]).every((i) => i.alt && i.width === 1600 && i.height === 1200 && /^\/assets\/[0-9a-f]{20}\.jpg$/.test(i.src)), "authored alt, 1600×1200, content-addressed same-origin jpg path");
 });
 await check("E12 media on crafted snapshots: alt only when authored (absent / \"\" → no key, never invented); exactly 12 → 12/12; 30 → 12/30; no gallery → { cover }; a before image is neither exported nor counted; an asset missing from the snapshot fails closed; media feeds no other field", async () => {
   // alt: never invented
@@ -1239,21 +1320,21 @@ await check("E12 media on crafted snapshots: alt only when authored (absent / \"
   eq([Object.keys(coverOnly.record.media!), coverOnly.result.errors], [["cover"], []], "no galleryGroups, a sole-referenced cover → { cover } only");
   // before: not exported, not counted — adding one to every bi-01 item changes nothing
   const withBefore = craft((p) => p.galleryGroups!.forEach((g) => g.items.forEach((i) => void (i.before = { asset: "bi04-kitchen-01-before", alt: "공사 전" }))));
-  eq(withBefore.record.media, demoEmission.portfolio!.document.records.find((r) => r.id === "bi-01")!.media, "before images change nothing in media");
-  eq(withBefore.emission.portfolio!.version, demoEmission.portfolio!.version, "…nor the version");
+  eq(withBefore.record.media, qaEmission.portfolio!.document.records.find((r) => r.id === "bi-01")!.media, "before images change nothing in media");
+  eq(withBefore.emission.portfolio!.version, qaEmission.portfolio!.version, "…nor the version");
   // fail closed on an asset the snapshot does not carry
-  const missing = clone(demo.snapshot);
+  const missing = clone(qaSnapshot);
   missing.assets = missing.assets.filter((a) => a.id !== "bi01-kitchen-03");
   await rejects(() => emitFor(missing), /record "bi-01" gallery\[5\]: asset "bi01-kitchen-03" is not in the site snapshot/);
   // media is presentation only: stripping it from every record leaves exactly the documents a
   // gallery-less / cover-swapped corpus produces with ITS media stripped — nothing else read it
   const strip = (d: PortfolioDocument) => ({ ...d, version: "", records: d.records.map(({ media: _m, ...r }) => r) });
-  const other = clone(demo.snapshot);
+  const other = clone(qaSnapshot);
   for (const p of other.content.projects) {
     delete p.galleryGroups;
     p.cover = { asset: "bi01-hallway-01" };
   }
-  eq(strip(emitFor(other).portfolio!.document), strip(demoEmission.portfolio!.document), "every non-media byte is independent of the media sources (08: media feeds no facet, no order, nothing else)");
+  eq(strip(emitFor(other).portfolio!.document), strip(qaEmission.portfolio!.document), "every non-media byte is independent of the media sources (08: media feeds no facet, no order, nothing else)");
 });
 
 // MEDIA OWNERSHIP (producer 4, docs/work/portfolio-experience-v1/03-media-truth-audit.md): a record
@@ -1264,8 +1345,8 @@ await check("E13 media ownership on crafted snapshots: a cover that is another r
   // (1) a record WITH a gallery points its cover at another record's photo
   const foreign = craftMedia((s) => void (project(s, "bi-02").cover = { asset: "bi01-kitchen-03", alt: "주방" }));
   eq(Object.keys(foreign.record("bi-02").media!), ["gallery", "totalCount"], "bi-02: the cover from bi-01's gallery is not exported");
-  eq(foreign.record("bi-02").media!.gallery, demoRecord("bi-02").media!.gallery, "bi-02: its own gallery is untouched");
-  eq(foreign.record("bi-01").media, demoRecord("bi-01").media, "bi-01, the photo's record, is untouched");
+  eq(foreign.record("bi-02").media!.gallery, qaRecord("bi-02").media!.gallery, "bi-02: its own gallery is untouched");
+  eq(foreign.record("bi-01").media, qaRecord("bi-01").media, "bi-01, the photo's record, is untouched");
   // (2) two gallery-less records share one cover nobody else references
   const shared = craftMedia((s) => {
     const [a] = addAssets(s, 1, "shared");
@@ -1280,12 +1361,12 @@ await check("E13 media ownership on crafted snapshots: a cover that is another r
   const soleAsset = sole.snapshot.assets.find((a) => a.id === "sole-00")!;
   eq(sole.record("bi-09").media, { cover: { src: soleAsset.publicPath, alt: "단독 사진", width: soleAsset.width, height: soleAsset.height } }, "a sole-referenced cover without a gallery → { cover }");
   // (4) a cover that is a before image of the record's own gallery (rule (a) counts before images)
-  const bi04Before = project(demo.snapshot, "bi-04").galleryGroups!.flatMap((g) => g.items).find((i) => i.before)!.before!;
+  const bi04Before = project(qaSnapshot, "bi-04").galleryGroups!.flatMap((g) => g.items).find((i) => i.before)!.before!;
   const beforeCover = craftMedia((s) => void (project(s, "bi-04").cover = { ...bi04Before }));
   eq(beforeCover.record("bi-04").media!.cover, expectImage(bi04Before), "bi-04: its own before image as cover is exported (as cover only)");
-  eq(beforeCover.record("bi-04").media!.gallery, demoRecord("bi-04").media!.gallery, "bi-04: the before image does not enter the gallery");
+  eq(beforeCover.record("bi-04").media!.gallery, qaRecord("bi-04").media!.gallery, "bi-04: the before image does not enter the gallery");
   // (5) repeated assets inside one record's gallery
-  const [a, b, c] = afterRefs(project(demo.snapshot, "bi-02"));
+  const [a, b, c] = afterRefs(project(qaSnapshot, "bi-02"));
   const dup = craftMedia((s) => {
     const item = (ref: MediaRef) => ({ image: { ...ref } });
     project(s, "bi-02").galleryGroups = [{ name: "거실", items: [a!, b!, a!].map(item) }, { name: "주방", items: [c!, b!].map(item) }];
@@ -1313,36 +1394,40 @@ await check("E13 media ownership on crafted snapshots: a cover that is another r
   eq(unbannered.record("bi-09").media?.cover?.src, unbannered.snapshot.assets.find((a) => a.id === "site-hero-01")!.publicPath, "no site content uses it any more → sole-referenced → exported");
   for (const [what, c] of [["foreign", foreign], ["shared", shared], ["sole", sole], ["before cover", beforeCover], ["dup", dup], ["cap", cap], ["unbannered", unbannered]] as const) eq([c.result.errors, c.result.warnings], [[], []], `${what}: validates`);
 });
-await check("E14 MEDIA TRUTH over the real demo emission: every exported src (cover + gallery) is an asset attributable to ITS record (own galleryGroups, or referenced by that record alone); no src is in two records' media; a gallery ≤ 12 with no repeat; and every non-media byte equals producer 3's golden (same records, same order) while media only ever shrank — the 11 shared covers are all that left", async () => {
-  const d = demoEmission.portfolio!.document;
-  const assetOf = new Map(demo.snapshot.assets.map((a) => [a.publicPath, a.id]));
-  eq(assetOf.size, demo.snapshot.assets.length, "publicPath → asset id is one-to-one");
-  const referrers = new Map<string, Set<string>>();
-  for (const p of demo.snapshot.content.projects) for (const asset of refAssets(p)) referrers.set(asset, (referrers.get(asset) ?? new Set<string>()).add(p.id));
-  // the non-project uses of an asset (banner images, the logo, slot media values)
-  const siteUsed = new Set([...(demo.snapshot.content.banners ?? []).map((b) => b.image.asset), ...(demo.snapshot.site.identity.logo ? [demo.snapshot.site.identity.logo] : [])]);
-  for (const section of Object.values(demo.snapshot.slots?.values ?? {})) for (const v of Object.values(section)) if (typeof (v as { asset?: unknown } | null)?.asset === "string") siteUsed.add((v as { asset: string }).asset);
-  assert(siteUsed.has("site-hero-01") && siteUsed.has("logo") && siteUsed.has("site-intro"), "the demo's site-level images are enumerated");
-  const holder = new Map<string, string>();
-  for (const r of d.records) {
-    if (!r.media) continue;
-    const p = project(demo.snapshot, r.id);
-    const ownGallery = new Set(refAssets({ ...p, cover: { asset: "" } }).slice(1)); // after + before of its own galleryGroups
-    const attributable = (asset: string) => ownGallery.has(asset) || (referrers.get(asset)?.size === 1 && referrers.get(asset)!.has(p.id) && !siteUsed.has(asset));
-    const gallery = (r.media.gallery ?? []).map((i) => i.src);
-    assert(gallery.length <= MEDIA_GALLERY_MAX, `${r.id}: gallery ≤ ${MEDIA_GALLERY_MAX}`);
-    eq(new Set(gallery).size, gallery.length, `${r.id}: no image twice in its gallery`);
-    for (const [where, src] of [...(r.media.cover ? [["cover", r.media.cover.src] as const] : []), ...gallery.map((x, i) => [`gallery[${i}]`, x] as const)]) {
-      const asset = assetOf.get(src);
-      assert(asset !== undefined, `${r.id} ${where}: ${src} is an asset of the snapshot`);
-      assert(attributable(asset), `${r.id} ${where}: ${asset} is not attributable to ${r.id}`);
-      const other = holder.get(src);
-      assert(other === undefined || other === r.id, `${src} (${asset}) is in the media of both ${other} and ${r.id}`);
-      holder.set(src, r.id);
+await check("E14 MEDIA TRUTH over the real demo emission (production) and the QA corpus: every exported src (cover + gallery) is an asset attributable to ITS record (own galleryGroups, or referenced by that record alone); no src is in two records' media; a gallery ≤ 12 with no repeat; and the QA corpus's every non-media byte equals producer 3's golden (same records, same order) while media only ever shrank — the 11 shared covers are all that left", async () => {
+  for (const [label, snap, em] of CORPORA) {
+    const d = em.portfolio!.document;
+    const assetOf = new Map(snap.assets.map((a) => [a.publicPath, a.id]));
+    eq(assetOf.size, snap.assets.length, `${label}: publicPath → asset id is one-to-one`);
+    const referrers = new Map<string, Set<string>>();
+    for (const p of snap.content.projects) for (const asset of refAssets(p)) referrers.set(asset, (referrers.get(asset) ?? new Set<string>()).add(p.id));
+    // the non-project uses of an asset (banner images, the logo, slot media values)
+    const siteUsed = new Set([...(snap.content.banners ?? []).map((b) => b.image.asset), ...(snap.site.identity.logo ? [snap.site.identity.logo] : [])]);
+    for (const section of Object.values(snap.slots?.values ?? {})) for (const v of Object.values(section)) if (typeof (v as { asset?: unknown } | null)?.asset === "string") siteUsed.add((v as { asset: string }).asset);
+    assert(siteUsed.has("site-hero-01") && siteUsed.has("logo") && siteUsed.has("site-intro"), `${label}: the demo's site-level images are enumerated`);
+    const holder = new Map<string, string>();
+    for (const r of d.records) {
+      if (!r.media) continue;
+      const p = project(snap, r.id);
+      const ownGallery = new Set(refAssets({ ...p, cover: { asset: "" } }).slice(1)); // after + before of its own galleryGroups
+      const attributable = (asset: string) => ownGallery.has(asset) || (referrers.get(asset)?.size === 1 && referrers.get(asset)!.has(p.id) && !siteUsed.has(asset));
+      const gallery = (r.media.gallery ?? []).map((i) => i.src);
+      assert(gallery.length <= MEDIA_GALLERY_MAX, `${label} ${r.id}: gallery ≤ ${MEDIA_GALLERY_MAX}`);
+      eq(new Set(gallery).size, gallery.length, `${label} ${r.id}: no image twice in its gallery`);
+      for (const [where, src] of [...(r.media.cover ? [["cover", r.media.cover.src] as const] : []), ...gallery.map((x, i) => [`gallery[${i}]`, x] as const)]) {
+        const asset = assetOf.get(src);
+        assert(asset !== undefined, `${label} ${r.id} ${where}: ${src} is an asset of the snapshot`);
+        assert(attributable(asset), `${label} ${r.id} ${where}: ${asset} is not attributable to ${r.id}`);
+        const other = holder.get(src);
+        assert(other === undefined || other === r.id, `${label}: ${src} (${asset}) is in the media of both ${other} and ${r.id}`);
+        holder.set(src, r.id);
+      }
     }
+    eq(holder.size, 41, `${label}: 41 distinct exported images, each in exactly one record's media`);
   }
-  eq(holder.size, 41, "41 distinct exported images, each in exactly one record's media");
-  // producer 3's golden, from the commit that pinned it: only `media` (and so `version`) moved
+  // producer 3's golden (19 records), from the commit that pinned it: only `media` (and so `version`)
+  // moved — compared with the QA corpus, which is the pre-split corpus producer 3 emitted
+  const d = qaEmission.portfolio!.document;
   const scratch = await mkdtemp(path.join(os.tmpdir(), "p3-media-golden-"));
   try {
     const file = gitMaterialize(repoRoot, P3_MEDIA_COMMIT, path.join(GOLDEN_DIR, `portfolio.${P3_MEDIA_VERSION}.json`), scratch);
@@ -1360,8 +1445,9 @@ await check("E14 MEDIA TRUTH over the real demo emission: every exported src (co
 });
 
 console.log("\n[validator] fail closed");
-await check("V1 the demo emission validates: 0 errors, 0 warnings; the fixtures' emissions too", async () => {
+await check("V1 the demo emission validates: 0 errors, 0 warnings; the QA corpus's and the fixtures' emissions too", async () => {
   eq(validateFor(demoEmission, demo.snapshot), { errors: [], warnings: [] }, "demo");
+  eq(validateFor(qaEmission, qaSnapshot), { errors: [], warnings: [] }, "QA corpus");
   for (const s of FIXTURES) {
     const inp = await prepareSiteInput({ repoRoot, siteId: s, mode: "public", at: AT });
     const e = emitFor(inp.snapshot);
@@ -1370,19 +1456,22 @@ await check("V1 the demo emission validates: 0 errors, 0 warnings; the fixtures'
   }
 });
 const errFrom = (from: IntegrationEmission, f: (x: IntegrationEmission) => void, re: RegExp, opts?: { keepVersion?: boolean }) => {
-  const r = validateFor(remake(from, f, opts), demo.snapshot);
+  const r = validateFor(remake(from, f, opts), qaSnapshot);
   assert(r.errors.some((m) => re.test(m)), `expected an error matching ${re}, got:\n${r.errors.join("\n") || "(none)"}`);
 };
-const err = (f: (x: IntegrationEmission) => void, re: RegExp, opts?: { keepVersion?: boolean }) => errFrom(demoEmission, f, re, opts);
+const err = (f: (x: IntegrationEmission) => void, re: RegExp, opts?: { keepVersion?: boolean }) => errFrom(qaEmission, f, re, opts);
 /**
- * The demo emission with every record's V0.2 breadth fields stripped AT THE SOURCE — the corpus
+ * The known-bad mutations below (V2 … V15, N1, M1 … M4) are staged on the QA corpus's emission: they
+ * name bi-09 (full · exact 50,000,000 · 34평 · derived perArea) and other synthetic-fixture records.
+ *
+ * The QA corpus's emission with every record's V0.2 breadth fields stripped AT THE SOURCE — the corpus
  * shape WS2's two absence rules and INV-28/INV-29's "declared a breadth, named no scopes" refusals
- * describe. Since the re-authoring all 19 demo records carry `workScopeIds` (26 §1.2), so those
- * four cases can no longer be staged on `demoEmission` by mutating one record; they are staged on
+ * describe. Since the re-authoring all 19 QA-corpus records carry `workScopeIds` (26 §1.2), so those
+ * four cases can no longer be staged on `qaEmission` by mutating one record; they are staged on
  * this one instead, which keeps each case isolated to the single violation it is about.
  */
 const plainEmission = (() => {
-  const s = clone(demo.snapshot);
+  const s = clone(qaSnapshot);
   for (const p of s.content.projects) {
     delete p.projectType;
     delete p.workScopeIds;
@@ -1475,7 +1564,7 @@ await check("V9 shapes: 3 decimals, negative, bad unit, lowercase currency, an e
   err((x) => void ((x.manifest as any).schemaVersion = "1.1"), /schemaVersion/);
 });
 await check("V14 the V0.2 annex, fail closed: an unknown work-scope id, a broken WS2 closure either way, a partial_remodel with no scopes, a trades-only partial (INV-30) or full (INV-29), a style/tag overlap, a range with minAmount ≥ maxAmount, a perArea with no source → rejected (INV-17, INV-23, INV-24, INV-28, INV-29, INV-30)", () => {
-  // staged on `plainEmission` (above): with all 19 demo records carrying their authored scopes,
+  // staged on `plainEmission` (above): with all 19 QA-corpus records carrying their authored scopes,
   // overwriting `document.workScopes` with a two-id set would trip WS2 closure on the other 18 as
   // well, and each case below is about exactly one violation.
   const withScopes = (x: IntegrationEmission) => {
@@ -1559,7 +1648,7 @@ await check("V15 the D-1 rules are enforced on the document, not only on the cod
   // D-1 is DUE; a document that drops it is refused (a guard failure is still legal — A3)
   err((x) => void delete x.portfolio!.document.records.find((r) => r.id === "bi-09")!.pricing!.perArea, /D-1's conditions hold but no derived pricing\.perArea was emitted .* \(INV-20\)/);
   // the correct derivation validates (it must, or the emitter could never emit one)
-  const good = remake(demoEmission, (x) => {
+  const good = remake(qaEmission, (x) => {
     const r = x.portfolio!.document.records[0]!;
     r.projectType = "full_remodel";
     // INV-29. `document.workScopes` is NOT narrowed to these two: the other 18 records carry their
@@ -1569,13 +1658,13 @@ await check("V15 the D-1 rules are enforced on the document, not only on the cod
     r.property!.area = { value: 34, unit: "pyeong", basis: "supply" };
     r.pricing = { total: { kind: "exact", amount: 52_000_000, currency: "KRW" }, perArea: { amount: 1_529_412, currency: "KRW", perUnit: "pyeong", source: "derived" } };
   });
-  eq(validateFor(good, demo.snapshot).errors, [], "the RD1 value validates");
+  eq(validateFor(good, qaSnapshot).errors, [], "the RD1 value validates");
 });
 await check("V10 zero records with a listingUrl or facets → rejected (§7.2, VO1)", () => {
   err((x) => void (x.portfolio!.document.records = []), /listingUrl present with zero records|facets present with zero records/);
 });
 await check("V11 consumer-declared limits are warnings, never errors and never truncation (VO6, CH-R10) — now measured on `tag`, since the `scope` facet and its limit are retired", () => {
-  const s = clone(demo.snapshot);
+  const s = clone(qaSnapshot);
   const base = s.content.projects[0]!;
   // 16 records × 12 keywords = 192 distinct tag values, above the consumer-declared 150.
   while (s.content.projects.length < 16) {
@@ -1591,8 +1680,8 @@ await check("V11 consumer-declared limits are warnings, never errors and never t
 });
 await check("V13 freeze-review rules: resources {} with a document, a pointer without a document, an explicit port, a non-ASCII or badly percent-encoded path, category ≠ 1 → rejected (C-05, C-07, C-08, MAJOR-2)", () => {
   err((x) => void (x.manifest.resources = {}), /has no "portfolio" entry/, { keepVersion: true });
-  const noDoc = remake(demoEmission, (x) => void (x.portfolio = undefined), { keepVersion: true });
-  assert(validateFor(noDoc, demo.snapshot).errors.some((m) => /has a "portfolio" entry but no portfolio document/.test(m)), "pointer without document");
+  const noDoc = remake(qaEmission, (x) => void (x.portfolio = undefined), { keepVersion: true });
+  assert(validateFor(noDoc, qaSnapshot).errors.some((m) => /has a "portfolio" entry but no portfolio document/.test(m)), "pointer without document");
   err((x) => void (x.manifest.site.publicOrigin = "https://interior-demo.boostweb.co.kr:8443"), /explicit port is outside V0/);
   eq(["/portfolio/수성", "/portfolio/x%2", "/portfolio/x%zz", "/portfolio/x y"].map(isRootRelativePath), [false, false, false, false], "non-ASCII / bad percent");
   eq(["/portfolio/x%20y", "/portfolio/a_b.c~d", "/p/(x)!$&'*+,;=:@"].map(isRootRelativePath), [true, true, true], "RFC 3986 pchar allowed");
@@ -1600,12 +1689,12 @@ await check("V13 freeze-review rules: resources {} with a document, a pointer wi
   err((x) => void delete x.portfolio!.document.records[0]!.facets!.category, /facets.category must have exactly one value/);
 });
 await check("V12 assertIntegration throws with every error listed; validateIntegration is pure (same input → same result)", async () => {
-  const bad = remake(demoEmission, (x) => {
+  const bad = remake(qaEmission, (x) => {
     x.portfolio!.document.records[0]!.title = "";
     x.manifest.site.id = "x";
   });
-  await rejects(() => assertIntegration(bad, { siteId: DEMO, publicOrigin: demo.snapshot.site.identity.publicOrigin, pagePaths: new Set() }), /integration documents invalid:[\s\S]*≠ siteId[\s\S]*empty string/);
-  eq(validateFor(demoEmission, demo.snapshot), validateFor(demoEmission, demo.snapshot), "pure");
+  await rejects(() => assertIntegration(bad, { siteId: DEMO, publicOrigin: qaSnapshot.site.identity.publicOrigin, pagePaths: new Set() }), /integration documents invalid:[\s\S]*≠ siteId[\s\S]*empty string/);
+  eq(validateFor(qaEmission, qaSnapshot), validateFor(qaEmission, qaSnapshot), "pure");
 });
 await check("N1 known-bad mutations of the real V0.2 document, one violation each, each refused with ITS error: duplicate id, invalid projectType, invalid area basis, unknown work scope, malformed range, range min > max, a derived perArea with no area to derive from, a malformed detailUrl, a bad manifest pointer, a V0.1 document inside the V0.2 package", () => {
   const bi09 = (x: IntegrationEmission) => x.portfolio!.document.records.find((r) => r.id === "bi-09")!; // full · exact 50,000,000 · 34평 · derived perArea
@@ -1627,8 +1716,8 @@ const withMedia = (id: string, media: unknown) => (x: IntegrationEmission) => vo
 const IMG = { src: "/assets/03c625140dc4df674fb8.jpg", alt: "거실", width: 1600, height: 1200 };
 const imgs = (n: number) => Array.from({ length: n }, () => ({ ...IMG }));
 await check("M1 media is OPTIONAL: every record with media removed (a 1.0-shaped record under schemaVersion 1.1) validates with 0 errors; cover only / gallery without cover / images without alt or size are valid too", () => {
-  const bare = remake(demoEmission, (x) => x.portfolio!.document.records.forEach((r) => void delete r.media));
-  eq(validateFor(bare, demo.snapshot), { errors: [], warnings: [] }, "no record carries media → valid (08: additive)");
+  const bare = remake(qaEmission, (x) => x.portfolio!.document.records.forEach((r) => void delete r.media));
+  eq(validateFor(bare, qaSnapshot), { errors: [], warnings: [] }, "no record carries media → valid (08: additive)");
   for (const [what, media] of [
     ["cover only", { cover: IMG }],
     ["gallery only (no cover)", { gallery: imgs(3), totalCount: 3 }],
@@ -1638,16 +1727,16 @@ await check("M1 media is OPTIONAL: every record with media removed (a 1.0-shaped
     ["no alt, no size", { cover: { src: "/assets/03c625140dc4df674fb8.jpg" } }],
     ["percent-encoded / tilde path", { cover: { src: "/media/%EA%B1%B0%EC%8B%A4~1.webp", width: 1, height: 1 } }],
   ] as const) {
-    eq(validateFor(remake(demoEmission, withMedia("bi-09", media)), demo.snapshot).errors, [], `${what} is valid`);
+    eq(validateFor(remake(qaEmission, withMedia("bi-09", media)), qaSnapshot).errors, [], `${what} is valid`);
     assert(PortfolioMediaSchema.safeParse(media).success, `${what}: schema`);
   }
 });
 await check("M2 1.0 compatibility: the FROZEN V0.2 golden document is refused as an emission of this producer ONLY for its schemaVersion \"1.0\"; relabelled \"1.1\" (nothing else touched) it validates with 0 errors — every 1.0 record is a valid 1.1 record", async () => {
   const v02 = await readJson(path.join(repoRoot, GOLDEN_V02_DIR, `portfolio.${V02_VERSION}.json`));
   eq([v02.schemaVersion, v02.records.length, v02.records.some((r: { media?: unknown }) => r.media !== undefined)], ["1.0", 19, false], "the frozen 1.0 document: 19 records, no media");
-  const as10 = validateFor(remake(demoEmission, (x) => void (x.portfolio!.document = clone(v02))), demo.snapshot);
+  const as10 = validateFor(remake(qaEmission, (x) => void (x.portfolio!.document = clone(v02))), qaSnapshot);
   assert(as10.errors.length > 0 && as10.errors.every((m) => /schemaVersion/.test(m)), `only the schemaVersion is refused:\n${as10.errors.join("\n")}`);
-  const as11 = validateFor(remake(demoEmission, (x) => void (x.portfolio!.document = { ...clone(v02), schemaVersion: "1.1" })), demo.snapshot);
+  const as11 = validateFor(remake(qaEmission, (x) => void (x.portfolio!.document = { ...clone(v02), schemaVersion: "1.1" })), qaSnapshot);
   eq(as11, { errors: [], warnings: [] }, "relabelled 1.1 → valid");
 });
 await check("M3 invalid src refused — an absolute URL, //host, a `..` segment (also percent-encoded: %2e%2e, .%2E), an encoded slash / backslash / NUL, an empty or `.` segment, a malformed escape, javascript:, data:, a query, a fragment, a backslash, no leading slash, \"/\" alone, a space, non-ASCII, > 512 characters (08 §2, MD-1a)", () => {
@@ -1753,16 +1842,21 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
   // again, so the content is the whole of the remaining delta. What is asserted here is therefore
   // the pin's isolation on TODAY's data, against a frozen literal, plus the fact that the content
   // delta exists — a silent revert of the re-authoring would fail this check, not pass it.
+  // Record truth split (2026-09-29): bi-09 … bi-19 left projects.json for the TEST_ONLY fixture. Composing
+  // the fixture back (the QA corpus) must land on the pre-split anchor exactly, so the split is the whole
+  // of that delta; the widget and 1.6.1 reverts below are taken from that pre-split snapshot.
   eq(computeBuildInputId(LIVE_PARTS), LIVE_BUILD_INPUT_ID, "the live package's recorded parts reproduce its identity");
   const atLivePin = hashJson({ ...demo.snapshot, site: { ...demo.snapshot.site, template: LIVE_PIN } });
-  eq(atLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN, "pin rolled back to 1.5.2 → the re-authored demo's snapshot hash");
-  const { headScripts, ...withoutScripts } = demo.snapshot;
+  eq(atLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN, "pin rolled back to 1.5.2 → the production demo's snapshot hash (bi-01 … bi-08)");
+  eq(hashJson({ ...qaSnapshot, site: { ...qaSnapshot.site, template: LIVE_PIN } }), DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT, "…with the synthetic fixture composed back it is the pre-split anchor: the 11 records are the whole of the split");
+  assert(atLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT, "the split is a real delta (a silent re-insertion of the fixture would fail here)");
+  const { headScripts, ...withoutScripts } = qaSnapshot;
   assert(headScripts !== undefined && headScripts.headScripts.length > 0, "the demo declares its head scripts (scripts.json)");
   const { "site.floating-cta": seat, ...preWidgetOverrides } = withoutScripts.settings.overrides as Record<string, unknown>;
   eq(seat, { enabled: false }, "the chat launcher's seat: the demo's own floating CTA is off");
   const preWidget = { ...withoutScripts, settings: { ...withoutScripts.settings, overrides: preWidgetOverrides } };
   eq(hashJson({ ...preWidget, site: { ...preWidget.site, template: LIVE_PIN } }), DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_WIDGET, "…without headScripts and the seat override it is the pre-widget anchor: those two are the whole of the widget delta");
-  const slots = demo.snapshot.slots as { values: Record<string, Record<string, unknown>> };
+  const slots = qaSnapshot.slots as { values: Record<string, Record<string, unknown>> };
   const detail160: Record<string, unknown> = { ...slots.values["portfolio.detail"] };
   for (const [k, [before, now]] of Object.entries(DEMO_161_DETAIL_LABELS)) {
     eq(detail160[k], now, `1.6.1 site copy ${k}`);
@@ -1797,7 +1891,15 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
 //    = producer 3's golden bytes (P3_MEDIA_*). keep-2 retired the widget build (32303241…); it is
 //    read from WIDGET_PACKAGE_COMMIT and re-hashed, still with the frozen V0.2 golden's integration
 //    bytes, and the first V0.2 package behind it stays read from V02_FIRST_PACKAGE_COMMIT.
-await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's media 1.1 identity (producer 4) current with the golden integration bytes, the frozen rollback lineage behind it (the producer-3 media build; the widget build and the first V0.2 package retired by keep-2 and intact in git)", async () => {
+//    RESTATED for the record truth split (2026-09-29, docs/result/data-truth-finalization-v1): the
+//    fifth steady package is the 8-record production corpus (bi-01 … bi-08), same pin, same producer
+//    4 — a content change only. Behind it is exactly the producer-4 build of the pre-split 19-record
+//    corpus (71f7e5f3…, published 2026-09-29, live until this build is published), intact at its
+//    frozen hash, its _integration/ = the QA golden's bytes (856361f5…, QA_GOLDEN_*). keep-2 retired
+//    the producer-3 media build (3a897d2e…); it is read from MEDIA_P3_PACKAGE_COMMIT and re-hashed,
+//    still with producer 3's golden bytes; the widget build and the first V0.2 package stay read from
+//    their commits.
+await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's media 1.1 identity (producer 4, the 8-record production corpus) current with the golden integration bytes, the frozen rollback lineage behind it (the pre-split producer-4 build with the QA golden's bytes; the producer-3 media build, the widget build and the first V0.2 package retired by keep-2 and intact in git)", async () => {
   eq(demo.parts.integrationInputHash !== undefined, true, "the demo is still opted in");
   if (rollout === "PRE_PUBLISH_TRANSITION") {
     eq(currentRecord.buildInputId, V01_BUILD_INPUT_ID, "current = the V0.1 package");
@@ -1819,24 +1921,37 @@ await check("B2b the current/previous packages are exactly the rollout state's: 
   const srcs = new Set(demoEmission.portfolio!.document.records.flatMap((r) => [r.media?.cover, ...(r.media?.gallery ?? [])]).filter((m) => m !== undefined).map((m) => m.src));
   for (const src of srcs) assert(await exists(path.join(currentDir, "site", src.slice(1))), `media src ${src} is in the current package`);
 
-  eq(previousId, MEDIA_P3_BUILD_INPUT_ID, "previous = the producer-3 media 1.1 build (the rollback behind the producer-4 build)");
-  const prevDir = path.join(demoBuilds, "packages", MEDIA_P3_BUILD_INPUT_ID);
+  eq(previousId, PRE_SPLIT_BUILD_INPUT_ID, "previous = the producer-4 build of the pre-split 19-record corpus (the rollback behind the record truth split's build)");
+  const prevDir = path.join(demoBuilds, "packages", PRE_SPLIT_BUILD_INPUT_ID);
   const prevRecord = (await readJson(path.join(prevDir, "build-record.json"))) as BuildRecord;
-  eq([prevRecord.buildInputId, prevRecord.packageHash], [MEDIA_P3_BUILD_INPUT_ID, MEDIA_P3_PACKAGE_HASH], "the rollback's recorded identity");
+  eq([prevRecord.buildInputId, prevRecord.packageHash], [PRE_SPLIT_BUILD_INPUT_ID, PRE_SPLIT_PACKAGE_HASH], "the rollback's recorded identity");
   assert(await packageIntact(prevDir), "the rollback package is intact");
   eq([prevRecord.template.releaseId, prevRecord.template.releaseHash], [demoPin.releaseId, demoPin.releaseHash], "the rollback was built with the same pin");
-  eq([prevRecord.integration?.contract, prevRecord.integration?.producerVersion], [{ core: "0.1", portfolio: "1.1" }, 3], "the rollback = the media 1.1 contract pair, producer 3");
+  eq([prevRecord.integration?.contract, prevRecord.integration?.producerVersion], [{ core: "0.1", portfolio: "1.1" }, PRODUCER_VERSION], "the rollback = the media 1.1 contract pair, this producer (the split changed content, not the producer)");
   const prevFiles = (await readdir(path.join(prevDir, "site", INTEGRATION_DIR))).filter((f) => f !== ".DS_Store").sort();
-  eq(prevFiles, ["manifest.json", `portfolio.${P3_MEDIA_VERSION}.json`], "the rollback's _integration/ = producer 3's manifest + document");
-  eq([sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, `portfolio.${P3_MEDIA_VERSION}.json`))), sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, "manifest.json")))], [P3_MEDIA_DOC_SHA256, P3_MEDIA_MANIFEST_SHA256], "rollback document / manifest sha256 = producer 3's golden literals");
+  eq(prevFiles, ["manifest.json", `portfolio.${QA_GOLDEN_VERSION}.json`], "the rollback's _integration/ = the pre-split manifest + document");
+  for (const f of prevFiles) eq(sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, QA_GOLDEN_DIR, f))), `rollback ${f} = the QA golden's bytes`);
+  eq([sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, `portfolio.${QA_GOLDEN_VERSION}.json`))), sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, "manifest.json")))], [QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256], "rollback document / manifest sha256 = the QA golden literals");
+  assert(currentRecord.packageHash !== PRE_SPLIT_PACKAGE_HASH && currentRecord.integration?.resources?.portfolio?.version !== prevRecord.integration?.resources?.portfolio?.version, "the current package is not the pre-split one");
 
-  // retired from the working tree by keep-2: the widget build (the producer-3 build's rollback) and
-  // the first V0.2 package (the widget build's rollback) — each read from git and re-hashed
+  // retired from the working tree by keep-2: the producer-3 media build (the pre-split build's
+  // rollback), the widget build (the producer-3 build's rollback) and the first V0.2 package (the
+  // widget build's rollback) — each read from git and re-hashed
+  const p3OnDisk = path.join(demoBuilds, "packages", MEDIA_P3_BUILD_INPUT_ID);
   const widgetOnDisk = path.join(demoBuilds, "packages", WIDGET_BUILD_INPUT_ID);
   const firstOnDisk = path.join(demoBuilds, "packages", V02_FIRST_BUILD_INPUT_ID);
-  assert(!(await exists(widgetOnDisk)) && !(await exists(firstOnDisk)), "keep-2 retired the widget build and the first V0.2 package (current + previous only)");
+  assert(!(await exists(p3OnDisk)) && !(await exists(widgetOnDisk)) && !(await exists(firstOnDisk)), "keep-2 retired the producer-3 media build, the widget build and the first V0.2 package (current + previous only)");
   const scratch = await mkdtemp(path.join(os.tmpdir(), "v02-first-package-"));
   try {
+    const p3Dir = gitMaterialize(repoRoot, MEDIA_P3_PACKAGE_COMMIT, path.relative(repoRoot, p3OnDisk), scratch);
+    const p3Record = (await readJson(path.join(p3Dir, "build-record.json"))) as BuildRecord;
+    eq([p3Record.buildInputId, p3Record.packageHash], [MEDIA_P3_BUILD_INPUT_ID, MEDIA_P3_PACKAGE_HASH], "the producer-3 media build's recorded identity (from git)");
+    assert(await packageIntact(p3Dir), "the producer-3 media build, read from git, is intact at its frozen packageHash");
+    eq([p3Record.template.releaseId, p3Record.template.releaseHash], [demoPin.releaseId, demoPin.releaseHash], "the producer-3 media build was built with the same pin");
+    eq([p3Record.integration?.contract, p3Record.integration?.producerVersion], [{ core: "0.1", portfolio: "1.1" }, 3], "the producer-3 media build = the media 1.1 contract pair, producer 3");
+    const p3Files = (await readdir(path.join(p3Dir, "site", INTEGRATION_DIR))).filter((f) => f !== ".DS_Store").sort();
+    eq(p3Files, ["manifest.json", `portfolio.${P3_MEDIA_VERSION}.json`], "the producer-3 media build's _integration/ = producer 3's manifest + document");
+    eq([sha256(await readFile(path.join(p3Dir, "site", INTEGRATION_DIR, `portfolio.${P3_MEDIA_VERSION}.json`))), sha256(await readFile(path.join(p3Dir, "site", INTEGRATION_DIR, "manifest.json")))], [P3_MEDIA_DOC_SHA256, P3_MEDIA_MANIFEST_SHA256], "producer-3 document / manifest sha256 = producer 3's golden literals");
     const widgetDir = gitMaterialize(repoRoot, WIDGET_PACKAGE_COMMIT, path.relative(repoRoot, widgetOnDisk), scratch);
     const widgetRecord = (await readJson(path.join(widgetDir, "build-record.json"))) as BuildRecord;
     eq([widgetRecord.buildInputId, widgetRecord.packageHash], [WIDGET_BUILD_INPUT_ID, WIDGET_PACKAGE_HASH], "the widget build's recorded identity (from git)");
@@ -2013,7 +2128,8 @@ await check(`G6 (P-V2-16) the media 1.1 golden package equals the pure emission 
   const v = validateFor(demoEmission, demo.snapshot);
   eq(golden, goldenRecord(demoEmission.portfolio!.document, demoEmission.files.map((f) => ({ name: path.basename(f.path), bytes: f.bytes.length, sha256: f.sha256 })), { errors: v.errors.length, warnings: v.warnings.length }), "golden.json");
   eq([golden.input, golden.contractRevision, golden.addendum, golden.manifestSchemaVersion, golden.documentSchemaVersion, golden.producerVersion], [{ siteId: DEMO, mode: "public", at: AT, template: "interior-01/v1" }, "9.2.1", "08-portfolio-media-1.1", "0.1", "1.1", 4], "the pinned input and contract pair (producer 4: media ownership)");
-  eq(golden.counts.media, { records: 8, cover: 8, gallery: 8, galleryImages: 41, totalCount: 42, derivedHasMore: 1 }, "media counts (08, media ownership: bi-09 … bi-19 carry none)");
+  eq(golden.counts.media, { records: 8, cover: 8, gallery: 8, galleryImages: 41, totalCount: 42, derivedHasMore: 1 }, "media counts (08, media ownership): every one of the 8 production records carries its own cover + gallery");
+  eq([golden.records, golden.counts.projectType, golden.counts.total, golden.counts.perArea, golden.counts.workScopes, golden.counts.facets], [8, { absent: 4, full_remodel: 2, partial_remodel: 2 }, { absent: 8 }, { absent: 2, authored: 6 }, 9, { category: 4, style: 6, tag: 2 }], "the production record facts (bi-01 … bi-08: no total price, 6 authored per-area prices, none derived)");
   // the golden document parsed back is still its own version (the bytes, not only the in-memory emission)
   const doc = await readJson(path.join(dir, `portfolio.${DEMO_VERSION}.json`));
   eq([doc.version, portfolioVersion(doc)], [DEMO_VERSION, DEMO_VERSION], "golden document version = its body hash");
@@ -2032,15 +2148,26 @@ await check("G6b the FROZEN V0.2 golden (document 1.0 — the consumer's 1.0 com
 await check("G7 (P-V2-05, 07 §11 RV) immutability: re-emitting the same canonical input gives the golden bytes again; changing one canonical fact gives new bytes AND a new resourceVersion, so one version never names two byte sequences", () => {
   const again = emitFor(clone(demo.snapshot));
   eq(again.files.map((f) => f.sha256), [DEMO_MANIFEST_SHA256, DEMO_DOC_SHA256], "same input → the golden bytes");
+  // production: no record authors a total since the split, so the canonical fact moved is bi-01's
+  // authored per-area price
   const s = clone(demo.snapshot);
-  const bi09 = s.content.projects.find((p) => p.id === "bi-09")!;
-  assert(bi09.totalPrice?.kind === "exact", "bi-09 carries an exact total");
-  bi09.totalPrice = { ...bi09.totalPrice, amount: bi09.totalPrice.amount + 1_000_000 };
+  const bi01 = s.content.projects.find((p) => p.id === "bi-01")!;
+  assert(bi01.pricePerArea !== undefined, "bi-01 carries an authored per-area price");
+  bi01.pricePerArea = { ...bi01.pricePerArea, amount: bi01.pricePerArea.amount + 100_000 };
   const moved = emitFor(s);
   assert(moved.portfolio!.file.sha256 !== DEMO_DOC_SHA256, "changed data → changed bytes");
   assert(moved.portfolio!.version !== DEMO_VERSION, "changed data → a new resourceVersion");
   eq(moved.portfolio!.file.path, `${INTEGRATION_DIR}/portfolio.${moved.portfolio!.version}.json`, "…and a new file name (RV5)");
   eq(moved.manifest.resources.portfolio!.version, moved.portfolio!.version, "the manifest pointer follows");
+  // QA corpus: the same rule on its golden, with bi-09's exact total moved (as before the split)
+  eq(emitFor(clone(qaSnapshot)).files.map((f) => f.sha256), [QA_GOLDEN_MANIFEST_SHA256, QA_GOLDEN_DOC_SHA256], "QA: same input → the QA golden bytes");
+  const q = clone(qaSnapshot);
+  const bi09 = q.content.projects.find((p) => p.id === "bi-09")!;
+  assert(bi09.totalPrice?.kind === "exact", "bi-09 carries an exact total");
+  bi09.totalPrice = { ...bi09.totalPrice, amount: bi09.totalPrice.amount + 1_000_000 };
+  const qMoved = emitFor(q);
+  assert(qMoved.portfolio!.file.sha256 !== QA_GOLDEN_DOC_SHA256 && qMoved.portfolio!.version !== QA_GOLDEN_VERSION, "QA: changed data → changed bytes and a new resourceVersion");
+  eq(qMoved.portfolio!.file.path, `${INTEGRATION_DIR}/portfolio.${qMoved.portfolio!.version}.json`, "QA: …and a new file name (RV5)");
 });
 
 console.log("\n[builds] real site:build on throwaway roots (data/sites + data/site-builds untouched)");
@@ -2048,7 +2175,7 @@ console.log("\n[builds] real site:build on throwaway roots (data/sites + data/si
 // what the demo builds (B2b), and writing a V0.2 package into data/site-builds is what this release
 // deliberately does not do; so T1 builds the V0.2 demo on a throwaway root and checks what the
 // V0.2 document promises about the site it points into.
-await check("T1 (P-V2-07) the demo really builds: the detail pages are exactly the 19 records' detailUrls, each resolves (never 404) and names its own record (<h1>, <title>, canonical); the listing page exists; every media src is a package file; the package's _integration bytes = the media 1.1 golden", async () => {
+await check("T1 (P-V2-07) the demo really builds: the detail pages are exactly the 8 production records' detailUrls, each resolves (never 404) and names its own record (<h1>, <title>, canonical); the listing page exists; every media src is a package file; the package's _integration bytes = the media 1.1 golden", async () => {
   const root = await throwawayRoot(DEMO);
   try {
     const r = await buildSite({ repoRoot: root, siteId: DEMO, at: AT });
@@ -2057,15 +2184,15 @@ await check("T1 (P-V2-07) the demo really builds: the detail pages are exactly t
     eq((await readdir(path.join(site, INTEGRATION_DIR))).sort(), ["manifest.json", `portfolio.${DEMO_VERSION}.json`], "integration files");
     for (const f of demoEmission.files) eq(sha256(await readFile(path.join(site, f.path))), f.sha256, `${f.path} = the pure emission = the golden`);
     const i = r.record.integration!;
-    eq([i.contract, i.producerVersion, i.warnings, i.resources.portfolio?.version, i.resources.portfolio?.records], [{ core: "0.1", portfolio: "1.1" }, PRODUCER_VERSION, [], DEMO_VERSION, 19], "build record integration summary");
+    eq([i.contract, i.producerVersion, i.warnings, i.resources.portfolio?.version, i.resources.portfolio?.records], [{ core: "0.1", portfolio: "1.1" }, PRODUCER_VERSION, [], DEMO_VERSION, 8], "build record integration summary");
     const doc = demoEmission.portfolio!.document;
     // 08 — every media src is a file of the same package (the images a consumer fetches exist)
     const srcs = [...new Set(doc.records.flatMap((x) => [x.media?.cover, ...(x.media?.gallery ?? [])]).filter((m) => m !== undefined).map((m) => m.src))];
-    eq(srcs.length, 41, "41 distinct media images: the 41 exported gallery images; the 8 covers (bi-01 … bi-08, each its own) are among them; bi-09 … bi-19 carry no media");
+    eq(srcs.length, 41, "41 distinct media images: the 41 exported gallery images; the 8 covers (bi-01 … bi-08, each its own) are among them");
     for (const src of srcs) assert(await exists(path.join(site, src.slice(1))), `media src ${src} is in the package`);
     const detailPages = (await readdir(path.join(site, "portfolio"))).filter((f) => f.endsWith(".html")).map((f) => `/portfolio/${f.slice(0, -".html".length)}`).sort();
     eq(detailPages, doc.records.map((x) => x.detailUrl).sort(), "generated detail pages = the records' detailUrls: none missing, none extra");
-    eq(detailPages.length, 19, "19 detail pages");
+    eq(detailPages.length, 8, "8 detail pages");
     assert(await exists(path.join(site, `${doc.listingUrl!.slice(1)}.html`)), "listing page");
     for (const rec of doc.records) {
       const res = resolvePath(rec.detailUrl);

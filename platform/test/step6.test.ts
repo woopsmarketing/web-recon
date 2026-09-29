@@ -26,6 +26,12 @@
  * an area and a gallery / keywords may be absent (never invented), filter expectations are explicit
  * literals derived from the authored corpus, and the page set comes from the route plan — each checked
  * on the current package AND on the pinned release's build of the whole corpus (U's rebuild).
+ * Record truth split (2026-09-29, docs/work/portfolio-experience-v1/04-record-truth-audit.md): the
+ * published demo is bi-01 … bi-08; the 11 synthetic records bi-09 … bi-19 are a TEST_ONLY fixture
+ * (platform/test/fixtures/boost-interior-synthetic). The package / page-set rules run on the production
+ * corpus; the edge-case rules that need the synthetic records (H's witnesses, L's optional fields and
+ * cover-only fallback, N's literals) run on the QA corpus (portfolio-qa-corpus.ts: production + fixture,
+ * the pre-split 19 records) — in memory, and as a real build in its own throwaway root (Q·build).
  *
  * Run AFTER `pnpm site:build boost-interior-demo`:
  *   tsx --tsconfig platform/tsconfig.json platform/test/step6.test.ts
@@ -51,6 +57,7 @@ import { gitDirtyPaths } from "./git-checkout";
 import { integrationSurfaceBefore, isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
 import { isRelease160Added, release160SurfaceBefore } from "./release-160-surface";
+import { composeQaProjectsText, writeQaProjects } from "./portfolio-qa-corpus";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -137,6 +144,8 @@ const demoDir = path.join(repoRoot, "data/sites", DEMO);
 const demo = await pointer(DEMO);
 const projectsDoc = ProjectsDocSchema.parse(await readJson(path.join(demoDir, "content/projects.json")));
 const projects = projectsDoc.items as Project[];
+/** The QA corpus (portfolio-qa-corpus.ts): the production records + the TEST_ONLY synthetic fixture, in the pre-split order — the 19 records N's literals describe. */
+const qaProjects = ProjectsDocSchema.parse(JSON.parse(await composeQaProjectsText(repoRoot))).items as Project[];
 const slots = await readJson(path.join(demoDir, "slots.json"));
 const settings = await readJson(path.join(demoDir, "settings.json"));
 /** The demo's pin. `later` = the sites moved past the 1.4.0 proof release (see the header). */
@@ -378,9 +387,9 @@ function assertAreaRows(where: string, pages: Record<string, string>, records: r
 await check("H area basis (V0.2): the 34평 flagship is { 34, pyeong, supply }; an area may be ABSENT (never invented) and a present one is labelled by ITS basis — 공급면적 / 전용면적 / unqualified 면적 — with the authored figure, on every page of the current package (the pinned release over the whole corpus: H·build)", async () => {
   const flagship = projects.find((p) => p.id === FLAGSHIP)!;
   eq(flagship.area, { value: 34, unit: "pyeong", basis: "supply" }, "flagship area");
-  // every branch of the rule has a real witness in the corpus: supply 평, supply m², exclusive m², no area
-  const byId = (id: string) => projects.find((p) => p.id === id)!;
-  eq([byId("bi-17").area, byId("bi-14").area, byId("bi-15").area], [{ value: 112, unit: "m2", basis: "supply" }, { value: 84, unit: "m2", basis: "exclusive" }, undefined], "witnesses bi-17 / bi-14 / bi-15");
+  // every branch of the rule has a witness in the QA corpus (the synthetic fixture): supply 평, supply m², exclusive m², no area
+  const byId = (id: string) => qaProjects.find((p) => p.id === id)!;
+  eq([byId("bi-17").area, byId("bi-14").area, byId("bi-15").area], [{ value: 112, unit: "m2", basis: "supply" }, { value: 84, unit: "m2", basis: "exclusive" }, undefined], "witnesses bi-17 / bi-14 / bi-15 (QA corpus)");
   const labels = slots.values["portfolio.detail"];
   eq([labels.areaSupplyLabel, labels.areaExclusiveLabel, labels.areaLabel], [AREA_LABEL.supply, AREA_LABEL.exclusive, AREA_LABEL.unknown], "detail area labels (supply, exclusive, no stated basis)");
   assertAreaRows("current package", html, await demoPackagedProjects(repoRoot, projects));
@@ -397,7 +406,7 @@ await check("I no automatic 34 → 84: the area fact renders as authored (34평)
   assert(!/112(\.\d+)?\s*(㎡|m²)/.test(text), "a converted ㎡ figure is rendered");
   const equiv = /34\s*평\s*(=|≈|≒|→|\(|은|는)?\s*(약\s*)?84/;
   for (const t of texts) assert(!equiv.test(visibleText(t.text)), `${t.file}: 34평 presented as 84`);
-  for (const p of projects) for (const s of [p.title, p.summary ?? "", ...(p.body ?? [])]) assert(!equiv.test(s), `${p.id}: ${s.slice(0, 40)}`);
+  for (const p of qaProjects) for (const s of [p.title, p.summary ?? "", ...(p.body ?? [])]) assert(!equiv.test(s), `${p.id}: ${s.slice(0, 40)}`);
   // every other card/list surface shows the authored figure too. V0.2: an 84 on the list may only be a
   // record's OWN authored title / summary stating its OWN authored 84 m² (bi-14, 전용 84㎡) — never a
   // figure derived from 34평; everything else on the list is still held to "no 84"
@@ -499,13 +508,17 @@ async function assertVisuals(where: string, site: string, pages: Record<string, 
 }
 await check("L all published project slugs (and ids) are unique; ≥ 6 projects; every project has the Step 6 core fields (Korean title + summary, body, location, scope, period, duration); galleryGroups and keywords are OPTIONAL (V0.2 cover-only records, schema-valid when present); the flagship keeps its designed gallery; every page of the current package renders a usable visual (the whole corpus: L·build)", async () => {
   assert(projects.length >= 6, `${projects.length} projects`);
-  eq([new Set(projects.map((p) => p.slug)).size, new Set(projects.map((p) => p.id)).size], [projects.length, projects.length], "unique");
-  for (const p of projects) {
-    for (const k of ["summary", "body", "location", "scope", "period", "durationWeeks"] as const) assert(p[k] !== undefined, `${p.id}: ${k} missing`);
-    assert(/[가-힣]/.test(p.title) && /[가-힣]/.test(p.summary!), `${p.id}: not Korean`);
+  for (const [label, list] of [["production", projects], ["QA", qaProjects]] as const) {
+    eq([new Set(list.map((p) => p.slug)).size, new Set(list.map((p) => p.id)).size], [list.length, list.length], `${label}: unique`);
+    for (const p of list) {
+      for (const k of ["summary", "body", "location", "scope", "period", "durationWeeks"] as const) assert(p[k] !== undefined, `${label} ${p.id}: ${k} missing`);
+      assert(/[가-힣]/.test(p.title) && /[가-힣]/.test(p.summary!), `${label} ${p.id}: not Korean`);
+    }
   }
-  // the optional fields really are exercised both ways (bi-18: no keywords; bi-09…: cover only)
-  assert(projects.some((p) => p.keywords === undefined) && projects.some((p) => p.galleryGroups === undefined) && projects.some((p) => p.galleryGroups !== undefined), "optional gallery / keywords not exercised both ways");
+  // the optional fields really are exercised both ways on the QA corpus (bi-18: no keywords; bi-09…: cover only)
+  assert(qaProjects.some((p) => p.keywords === undefined) && qaProjects.some((p) => p.galleryGroups === undefined) && qaProjects.some((p) => p.galleryGroups !== undefined), "optional gallery / keywords not exercised both ways");
+  // the published demo: every record authors its own gallery (no cover-only record is customer-facing)
+  eq(projects.filter((p) => p.galleryGroups === undefined).map((p) => p.id), [], "production records without a gallery");
   const flagship = projects.find((p) => p.id === FLAGSHIP)!;
   const count = flagship.galleryGroups!.reduce((n, g) => n + g.items.length, 0);
   assert(count >= 10 && count <= 14, `flagship gallery ${count}`);
@@ -559,10 +572,10 @@ console.log("\n[filter] the unchanged filter contract against Korean demo conten
  * pricePerArea only; keyword tokens over title / summary / location / scope / keywords) — computed
  * independently of the evaluator under test, never by calling it (38-).
  */
-await check("N keyword / type / area / style / price / sort / combined / zero-result on the 19-record corpus, evaluated by the platform evaluator with the site's own scales (pyeong, krw-pyeong), against explicit expected ids", async () => {
+await check("N keyword / type / area / style / price / sort / combined / zero-result on the 19-record QA corpus (production + the TEST_ONLY synthetic fixture), evaluated by the platform evaluator with the site's own scales (pyeong, krw-pyeong), against explicit expected ids", async () => {
   eq(settings.overrides["portfolio.index"], { areaScale: "pyeong", priceScale: "krw-pyeong" }, "portfolio.index settings");
-  eq(projects.length, 19, "the canonical corpus these literals describe");
-  const records = projects.map((p) => toProjectFilterRecord({ ...p, category: p.category }));
+  eq(qaProjects.length, 19, "the QA corpus these literals describe");
+  const records = qaProjects.map((p) => toProjectFilterRecord({ ...p, category: p.category }));
   const categories = (await readJson(path.join(demoDir, "content/categories.json"))).items;
   const vocab = buildProjectFilterVocabulary(records, { groups: ["keyword", "type", "area", "style", "price"], categories, areaScale: "pyeong", priceScale: "krw-pyeong" });
   eq(vocab.groups, ["keyword", "type", "area", "style", "price"], "active groups");
@@ -588,6 +601,43 @@ await check("N keyword / type / area / style / price / sort / combined / zero-re
   eq(run({ sort: "area-desc" }).at(-1), "bi-15", "a project without an area sorts last");
   eq(run({ sort: "price-asc" }), ["bi-08", "bi-02", "bi-05", "bi-07", "bi-01", "bi-03", "bi-04", "bi-06", "bi-09", "bi-10", "bi-11", "bi-12", "bi-13", "bi-14", "bi-15", "bi-16", "bi-17", "bi-18", "bi-19"], "cheapest first; the 13 projects without an authored price last, in default order");
   eq(run({}), ["bi-01", "bi-02", "bi-03", "bi-04", "bi-05", "bi-06", "bi-07", "bi-08", "bi-09", "bi-10", "bi-11", "bi-12", "bi-13", "bi-14", "bi-15", "bi-16", "bi-17", "bi-18", "bi-19"], "default = newest first");
+});
+/**
+ * N·production: the same contract over what the published demo serves (bi-01 … bi-08). Literals written
+ * from the eight authored records, never by calling the evaluator: keywords 화이트 ×5 (01 02 04 06 07),
+ * 간접조명 ×3 (01 06 08), 모던 ×3 (03 04 08), 미니멀 ×3 (01 06 07), 수납 특화 ×3 (01 03 07), 그레이지 ×2
+ * (03 08), 내추럴 ×2 (02 05), 우드 포인트 ×2 (02 05); areas 34 · 24 · 42 · 32 · 29 · 34 · 19 · 51 평; authored
+ * 평당 prices 290 · 240 · 320 · — · 260 · — · 270 · 160만; categories full-remodel 01 02 03 05 07,
+ * kitchen-bath 04, partial-remodel 06, move-in-styling 08; publishedAt newest first = bi-01 … bi-08.
+ */
+await check("N·production keyword / type / area / style / price / sort / combined / zero-result on the PRODUCTION corpus (bi-01 … bi-08), evaluated by the platform evaluator with the site's own scales, against explicit expected ids", async () => {
+  eq(projects.map((p) => p.id), ["bi-01", "bi-02", "bi-03", "bi-04", "bi-05", "bi-06", "bi-07", "bi-08"], "the production corpus these literals describe");
+  const records = projects.map((p) => toProjectFilterRecord({ ...p, category: p.category }));
+  const categories = (await readJson(path.join(demoDir, "content/categories.json"))).items;
+  const vocab = buildProjectFilterVocabulary(records, { groups: ["keyword", "type", "area", "style", "price"], categories, areaScale: "pyeong", priceScale: "krw-pyeong" });
+  eq(vocab.groups, ["keyword", "type", "area", "style", "price"], "active groups");
+  eq(vocab.area!.buckets.map((b) => b.id), ["lt20", "20", "30", "40", "50plus"], "area buckets in use");
+  eq(vocab.price!.buckets.map((b) => b.id), ["lt180", "180", "250", "300"], "price buckets in use");
+  eq(vocab.types.map((t) => t.id), ["full-remodel", "kitchen-bath", "move-in-styling", "partial-remodel"], "types in use");
+  eq(vocab.styles, ["화이트", "간접조명", "모던", "미니멀", "수납 특화", "그레이지", "내추럴", "우드 포인트"], "styles by frequency, then code point");
+  const run = (input: ProjectFilterInput) => evaluateProjectFilter(records, normalizeProjectFilter(input, vocab), vocab).map((r) => r.id);
+  const set = (input: ProjectFilterInput) => run(input).sort();
+  eq(set({ keyword: "수납" }), ["bi-01", "bi-03", "bi-07"], "keyword 수납");
+  eq(set({ keyword: "수성구" }), ["bi-01", "bi-03", "bi-08"], "keyword 수성구 (location)");
+  eq(set({ keyword: "중문" }), ["bi-01", "bi-06"], "keyword 중문 (scope)");
+  eq(set({ keyword: "욕실 방수" }), [], "two keyword tokens = AND (no production record has both)");
+  eq(set({ type: ["kitchen-bath"] }), ["bi-04"], "type");
+  eq(set({ area: ["30"] }), ["bi-01", "bi-04", "bi-06"], "area 30평대");
+  eq(set({ area: ["lt20", "50plus"] }), ["bi-07", "bi-08"], "area OR");
+  eq(set({ style: ["그레이지"] }), ["bi-03", "bi-08"], "style");
+  eq(set({ price: ["250"] }), ["bi-01", "bi-05", "bi-07"], "price 250–300만 (authored 평당 prices only)");
+  eq(set({ type: ["full-remodel"], style: ["화이트"], area: ["30"] }), ["bi-01"], "combined");
+  eq(set({ type: ["partial-remodel"], area: ["30"] }), ["bi-06"], "combined partial + 30평대");
+  eq(set({ keyword: "한옥" }), [], "zero result");
+  eq(run({ sort: "area-desc" }).slice(0, 3), ["bi-08", "bi-03", "bi-01"], "largest first (bi-01 before bi-06 at 34평: newer)");
+  eq(run({ sort: "area-desc" }).at(-1), "bi-07", "smallest last (every production record states an area)");
+  eq(run({ sort: "price-asc" }), ["bi-08", "bi-02", "bi-05", "bi-07", "bi-01", "bi-03", "bi-04", "bi-06"], "cheapest first; bi-04 / bi-06 (no authored price) last, in default order");
+  eq(run({}), ["bi-01", "bi-02", "bi-03", "bi-04", "bi-05", "bi-06", "bi-07", "bi-08"], "default = newest first");
 });
 
 // ------------------------------------------------------------------ CTA --
@@ -669,6 +719,7 @@ await check("Y every demo document is declared fictional (origin synthetic-fixtu
 // ------------------------------------------------------------ throwaway --
 console.log("\n[integration] throwaway-root builds (reproducibility, seat off)");
 const tmpRoot = await mkdtemp(path.join(os.tmpdir(), "step6-root-"));
+const qaRoot = await mkdtemp(path.join(os.tmpdir(), "step6-qa-root-"));
 try {
   await mkdir(path.join(tmpRoot, "data/sites"), { recursive: true });
   await symlink(path.join(repoRoot, "data/template-releases"), path.join(tmpRoot, "data/template-releases"));
@@ -728,21 +779,41 @@ try {
     eq(pages.length, onPages, "page count");
     for (const f of pages) assert(!(await readFile(path.join(off, f), "utf8")).includes("i1-fcta"), `${f}: seat rendered while disabled`);
   });
-  const rebuiltDetails = async () => {
-    assert(rebuiltSite, "U's rebuild did not complete");
-    return Object.fromEntries(await Promise.all(projects.map(async (p) => [`portfolio/${p.slug}.html`, await readFile(path.join(rebuiltSite!, `portfolio/${p.slug}.html`), "utf8").catch(() => "")] as const)));
+  const detailsOf = async (site: string | undefined, records: readonly Project[], what: string) => {
+    assert(site, `${what} did not complete`);
+    return Object.fromEntries(await Promise.all(records.map(async (p) => [`portfolio/${p.slug}.html`, await readFile(path.join(site, `portfolio/${p.slug}.html`), "utf8").catch(() => "")] as const)));
   };
-  await check("H·build the pinned release over the WHOLE corpus (U's rebuild): every present area under its own basis label with the authored figure — bi-14 전용면적 84 m², bi-17 공급면적 112 m² — and no area row for bi-15", async () => {
-    const pages = await rebuiltDetails();
-    assertAreaRows("pinned release", pages, projects);
-    const page = (id: string) => pages[`portfolio/${projects.find((p) => p.id === id)!.slug}.html`]!;
+  const rebuiltDetails = () => detailsOf(rebuiltSite, projects, "U's rebuild");
+  /** the pinned release over the QA corpus (production + the TEST_ONLY synthetic fixture), on its own throwaway root — H·build / L·build's synthetic witnesses */
+  let qaSite: string | undefined;
+  await check("Q·build the pinned release over the QA corpus (the composed projects.json written into a throwaway root only — never data/sites): built, package QA pass, one detail page per QA record (19)", async () => {
+    await mkdir(path.join(qaRoot, "data/sites"), { recursive: true });
+    await symlink(path.join(repoRoot, "data/template-releases"), path.join(qaRoot, "data/template-releases"));
+    await symlink(path.join(repoRoot, "node_modules"), path.join(qaRoot, "node_modules"));
+    await cp(demoDir, path.join(qaRoot, "data/sites", DEMO), { recursive: true });
+    await writeQaProjects(repoRoot, path.join(qaRoot, "data/sites", DEMO));
+    const r = await buildSite({ repoRoot: qaRoot, siteId: DEMO, at });
+    assert(r.status === "built" && r.record.qa.pass, r.status);
+    qaSite = path.join(r.packageDir, "site");
+    const details = (await walkFiles(qaSite)).filter((f) => /^portfolio\/[^/]+\.html$/.test(f)).sort();
+    eq(details, qaProjects.map((p) => `portfolio/${p.slug}.html`).sort(), "QA detail pages");
+    eq(details.length, 19, "19 QA detail pages");
+  });
+  const qaDetails = () => detailsOf(qaSite, qaProjects, "the QA build");
+  await check("H·build the pinned release over the WHOLE production corpus (U's rebuild) and over the QA corpus (Q·build): every present area under its own basis label with the authored figure — bi-14 전용면적 84 m², bi-17 공급면적 112 m² — and no area row for bi-15 (QA witnesses)", async () => {
+    assertAreaRows("pinned release", await rebuiltDetails(), projects);
+    const pages = await qaDetails();
+    assertAreaRows("QA build", pages, qaProjects);
+    const page = (id: string) => pages[`portfolio/${qaProjects.find((p) => p.id === id)!.slug}.html`]!;
     eq([areaRowOf(page("bi-14")), areaRowOf(page("bi-17")), areaRowOf(page("bi-15"))], [["전용면적", "84 m²"], ["공급면적", "112 m²"], undefined], "witnesses");
   });
-  await check("L·build the pinned release over the WHOLE corpus (U's rebuild): every detail page renders a usable visual — its full gallery, or exactly its cover for the V0.2 cover-only records — with no broken image", async () => {
+  await check("L·build the pinned release over the WHOLE production corpus (U's rebuild) and over the QA corpus (Q·build): every detail page renders a usable visual — its full gallery, or exactly its cover for the V0.2 cover-only records (QA) — with no broken image", async () => {
     await assertVisuals("pinned release", rebuiltSite!, await rebuiltDetails(), projects);
+    await assertVisuals("QA build", qaSite!, await qaDetails(), qaProjects);
   });
 } finally {
   await rm(tmpRoot, { recursive: true, force: true });
+  await rm(qaRoot, { recursive: true, force: true });
 }
 
 console.log(`\nstep6: ${passed} passed, ${failed.length} failed`);
