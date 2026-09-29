@@ -1,0 +1,20 @@
+
+[fixture] TEST_ONLY / SYNTHETIC / NOT_CUSTOMER_FACING, test-only, never loaded by a runtime path
+  ok   X1 the synthetic fixture lives under platform/test/fixtures (never under data/sites), labels itself TEST_ONLY / SYNTHETIC / NOT_CUSTOMER_FACING in the file and its README, and holds the 11 records bi-09 … bi-19, each valid content
+  ok   X2 no runtime or production path names the fixture or the QA composition: platform/ (tests aside), templates/, workers/, scripts/, data/sites/, data/template-releases/ and package.json never mention boost-interior-synthetic / projects.synthetic / portfolio-qa-corpus
+
+[production] the published demo: bi-01 … bi-08, nothing synthetic
+  ok   P1 production data: content/projects.json keeps its file-level schema / origin and holds exactly bi-01 … bi-08; no file of data/sites/boost-interior-demo names a synthetic id, slug or title (the forbidden set read from the fixture)
+  ok   P2 (i) the production producer output is the production golden (968afbccb944940d8d3c099dd54df5be), validates, and contains none of the fixture's ids / slugs / titles; every production record's exported media is its own (cover and every gallery image in its own galleryGroups)
+
+[qa] the QA composition = the pre-split corpus, byte for byte
+  ok   Q1 (ii) the QA composition holds all 11 fixture records and reproduces the pre-split projects.json (54134 B, sha256 7c8c6a9ecfb6…) and, with exactly the later footer-notice delta reverted, the pre-split snapshot (siteSnapshotHash 5edadd724cfb…)
+  ok   Q2 (ii) the QA composition validates and its emission IS the pre-split document 856361f52e3f1b5022cce13a31afc171 byte for byte (the QA golden, 18520 B) — the split lost nothing and the producer did not change
+  ok   Q3 (iii) each of the 8 production records is emitted deep-equal to its own record in the pre-split document; the pre-split document's other records are exactly the fixture's
+
+[build] a real production build of the demo (throwaway root; data/sites + data/site-builds untouched)
+  ok   B0 the production demo builds: status built, package QA pass; its _integration/ is the production golden, byte for byte
+  ok   B1 (i) the detail routes are exactly the 8 production records' (none of the fixture's); the sitemap, the listing page and every shipped text file of the package carry none of the fixture's ids / slugs / titles
+  ok   B2 (iv) no dead public reference: every portfolio link in every HTML page (home, listing, details, the other pages) and every sitemap entry resolves to the listing or to one of the 8 production detail pages; the listing and the sitemap reach all 8
+
+portfolio-production-truth: 10 passed, 0 failed

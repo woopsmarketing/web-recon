@@ -1,0 +1,19 @@
+
+[contract] additive patch
+  ok   S1 Template ≥ 1.4.2; three optional portfolio.detail labels with neutral defaults + one optional site.footer notice with NO default (every 1.4.1 slots document stays valid)
+
+[release] 1.4.0 and 1.4.1 stay immutable, the demo moved by an explicit re-pin
+  ok   R1 the 1.4.0 and 1.4.1 releases verify and every file of them is byte-identical to the pre-cut capture; exactly one 1.4.0, one 1.4.1 and one 1.4.2 release dir
+  ok   R2 boost-interior-demo pins a verified release ≥ 1.4.2 and its current package was built with it (QA pass) — pre-publish: with the V0.1 publish target (demo-rollout.ts); the 1.4.1 package is the rollback (previous)
+
+[site data] nothing of the customer's moved except the pin, three labels and the notice
+  ok   D1 every demo site file is byte-identical to the pre-cut capture except site.json (pin only) and slots.json (+3 detail labels, + the footer notice, nothing else)
+  ok   D2 51 / 51 raster assets: registry = 51 rasters, 0 SVG stand-ins, and every one is served byte-identical from the current package
+
+[package] the built pages
+  ok   G1 a gallery with more than one room opens on the "all" view: first tab, selected, site label, count = every photo; its seats are the rooms' seats in room order; rooms keep their ids 0..n-1, unselected and hidden; a one-room gallery has neither tabs nor an "all" view
+  ok   G2 every photo seat ends with ONE viewer button labelled «site label n / N: the photo's alt» for its own view; the viewer itself is client-only (no <dialog> in any page)
+  ok   N1 the footer notice: on EVERY demo page, once, the site's exact text, inside the footer after the business facts and before the floating CTA; a site without a value renders no notice element at all
+  ok   H1 stylesheet: no rule hides the home hero arrows at any width (the only arrow-less hero is the one-slide hero, which renders no controls at all)
+
+9 passed, 0 failed

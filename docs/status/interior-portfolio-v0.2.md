@@ -1,5 +1,14 @@
 # Interior Portfolio Contract V0.2 — status
 
+> **2026-09-29 (evening) — sales demo final closeout; the technical stabilization milestone is closed.**
+> Live = package `b10d430b…` (build `ddbc72ad…`, same 8-record document `968afbcc…`), whose footer now
+> names the brand as fictional and the photos as AI-generated. The pointer's `previous` is the 8-record
+> `9d4036ba…`, so `--rollback` no longer reaches the 19-record `77cc7f9f…`. `rollbackHost` also refuses,
+> before any pointer write, a target whose portfolio ids are not in the site's current data
+> (runbook: [`../result/sales-demo-final-closeout-v1/rollback-truth-runbook.md`](../result/sales-demo-final-closeout-v1/rollback-truth-runbook.md)).
+> BoostChat's card labels are evidence-aware (its deploy `1db3201e`). The next step is sales assets, not development.
+> Report: [`../result/INTERIOR-SALES-DEMO-FINAL-CLOSEOUT-V1-2026-09-29.md`](../result/INTERIOR-SALES-DEMO-FINAL-CLOSEOUT-V1-2026-09-29.md).
+
 > **2026-09-29 — demo corpus is 8 records; the 11 V0.2 fixtures are TEST_ONLY.** bi-09 … bi-19 were
 > classified VERIFIED_SYNTHETIC (authored as test fixtures, borrowed covers, no source,
 > [`../work/portfolio-experience-v1/04-record-truth-audit.md`](../work/portfolio-experience-v1/04-record-truth-audit.md))
