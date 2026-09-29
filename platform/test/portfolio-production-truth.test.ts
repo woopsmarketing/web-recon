@@ -13,8 +13,9 @@
  *                fixture's ids, slugs or titles (the forbidden set is READ from the fixture, never
  *                hard-coded), and every production record's exported media is its own;
  *   [qa]         (ii) the QA composition holds all 11 fixture records, validates, and reproduces the
- *                pre-split projects.json, snapshot and Portfolio Document (856361f5…) byte for byte —
- *                the split lost nothing and the producer did not change;
+ *                pre-split projects.json, snapshot (once exactly the later footer-notice delta is
+ *                reverted) and Portfolio Document (856361f5…) byte for byte — the split lost nothing
+ *                and the producer did not change;
  *                (iii) each of the 8 production records is emitted deep-equal to its own record in the
  *                pre-split document — the removal changed nothing about the survivors;
  *   [build]      a real production build (throwaway root; data/sites and data/site-builds untouched):
@@ -50,9 +51,11 @@ import {
   SYNTHETIC_FIXTURE_DIR,
   SYNTHETIC_PROJECTS_FILE,
   SYNTHETIC_STATUS,
+  DEMO_FOOTER_NOTICE,
   composeQaProjectsText,
   composeQaSnapshot,
   readSyntheticFixture,
+  revertFooterNotice,
 } from "./portfolio-qa-corpus";
 
 const repoRoot = process.cwd();
@@ -94,6 +97,12 @@ async function walkFiles(dir: string, rel = ""): Promise<string[]> {
   return out.sort();
 }
 const TEXT = /\.(html|txt|js|mjs|cjs|ts|tsx|css|json|jsonl|xml|md|svg|map)$/;
+/** every leaf path at which two JSON values differ (objects and arrays walked key by key) */
+function deltaPaths(a: unknown, b: unknown, at = "$"): string[] {
+  const isObj = (x: unknown): x is Record<string, unknown> => typeof x === "object" && x !== null;
+  if (isObj(a) && isObj(b) && Array.isArray(a) === Array.isArray(b)) return [...new Set([...Object.keys(a), ...Object.keys(b)])].sort().flatMap((k) => deltaPaths(a[k], b[k], `${at}[${JSON.stringify(k)}]`));
+  return JSON.stringify(a) === JSON.stringify(b) ? [] : [at];
+}
 
 function emitFor(snapshot: SiteSnapshot): IntegrationEmission {
   const planned = planRoutes(template.routes, createContentReader(snapshot.content)).routes.map((r) => ({ key: r.key, pattern: r.pattern, paths: r.paths }));
@@ -201,13 +210,18 @@ await check(`P2 (i) the production producer output is the production golden (${P
 
 // ----------------------------------------------------------------------- qa --
 console.log("\n[qa] the QA composition = the pre-split corpus, byte for byte");
-await check(`Q1 (ii) the QA composition holds all 11 fixture records and reproduces the pre-split projects.json (${PRE_SPLIT_PROJECTS_BYTES} B, sha256 ${PRE_SPLIT_PROJECTS_SHA256.slice(0, 12)}…) and the pre-split snapshot (siteSnapshotHash ${PRE_SPLIT_SNAPSHOT_HASH.slice(0, 12)}…)`, async () => {
+await check(`Q1 (ii) the QA composition holds all 11 fixture records and reproduces the pre-split projects.json (${PRE_SPLIT_PROJECTS_BYTES} B, sha256 ${PRE_SPLIT_PROJECTS_SHA256.slice(0, 12)}…) and, with exactly the later footer-notice delta reverted, the pre-split snapshot (siteSnapshotHash ${PRE_SPLIT_SNAPSHOT_HASH.slice(0, 12)}…)`, async () => {
   const text = await composeQaProjectsText(repoRoot);
   const bytes = new TextEncoder().encode(text);
   eq([bytes.length, sha256(bytes)], [PRE_SPLIT_PROJECTS_BYTES, PRE_SPLIT_PROJECTS_SHA256], "composed projects.json = the pre-split file");
   eq((JSON.parse(text).items as { id: string }[]).map((p) => p.id), [...PROD_IDS, ...fixture.ids], "production + fixture, original order");
   eq(qaSnapshot.content.projects.map((p) => p.id), [...PROD_IDS, ...fixture.ids], "the QA snapshot serves all 19");
-  eq(hashJson(qaSnapshot), PRE_SPLIT_SNAPSHOT_HASH, "the QA snapshot = the pre-split snapshot (the producer-4 package 71f7e5f3…'s recorded siteSnapshotHash)");
+  // the footer notice changed after the split (DEMO_FOOTER_NOTICE): revert exactly that one field
+  const preFooter = revertFooterNotice(qaSnapshot);
+  eq(deltaPaths(qaSnapshot, preFooter), ['$["slots"]["values"]["site.footer"]["notice"]'], "the footer-notice delta is exactly one field");
+  eq([(qaSnapshot.slots!.values["site.footer"] as { notice?: string }).notice, (preFooter.slots!.values["site.footer"] as { notice?: string }).notice], [DEMO_FOOTER_NOTICE[1], DEMO_FOOTER_NOTICE[0]], "footer notice now / before");
+  assert(hashJson(qaSnapshot) !== PRE_SPLIT_SNAPSHOT_HASH, "the footer notice is a real delta (a silent revert of it would fail here)");
+  eq(hashJson(preFooter), PRE_SPLIT_SNAPSHOT_HASH, "the QA snapshot with the footer notice reverted = the pre-split snapshot (the producer-4 package 71f7e5f3…'s recorded siteSnapshotHash)");
 });
 await check(`Q2 (ii) the QA composition validates and its emission IS the pre-split document ${QA_GOLDEN_VERSION} byte for byte (the QA golden, ${QA_GOLDEN_DOC_BYTES} B) — the split lost nothing and the producer did not change`, async () => {
   eq(validateFor(qaEmission, qaSnapshot), { errors: [], warnings: [] }, "validates");

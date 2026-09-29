@@ -39,11 +39,29 @@ export const QA_GOLDEN_MANIFEST_SHA256 = "9061827a746f986eb51127923af839930c01be
 /**
  * data/sites/boost-interior-demo/content/projects.json BEFORE the split (19 records, commit ee953b1),
  * and the hashJson of its public snapshot — which is the siteSnapshotHash recorded by the producer-4
- * package 71f7e5f3… built from it. The composition must reproduce both exactly.
+ * package 71f7e5f3… built from it. The composition must reproduce both exactly (the snapshot once
+ * the later footer-notice delta below is reverted).
  */
 export const PRE_SPLIT_PROJECTS_BYTES = 54134;
 export const PRE_SPLIT_PROJECTS_SHA256 = "7c8c6a9ecfb67e4b4a8cb250196e8aabd9662fbc7e0c52b5b7759644e2a8b8cb";
 export const PRE_SPLIT_SNAPSHOT_HASH = "5edadd724cfbf3efb86398f22fb1d12000b819e6094c2b6b117e4fcbd939741b";
+/**
+ * Footer notice (2026-09-29, after the split): slots.json values["site.footer"].notice now names the
+ * brand as fictional — a sixth deliberate data delta, [before, now]. The pre-split snapshot and the
+ * record truth split's build (71a906c1…) carry `before`; `revertFooterNotice` puts back exactly it.
+ */
+export const DEMO_FOOTER_NOTICE: readonly [before: string, now: string] = [
+  "본 사이트는 서비스 시연을 위한 데모이며, 프로젝트 이미지·후기 등 일부 콘텐츠는 AI로 생성된 예시입니다.",
+  "부스트 인테리어는 BoostChat 기능 시연을 위한 가상 인테리어 브랜드입니다. 포트폴리오·후기는 데모용 예시이고, 사진은 AI로 생성한 예시 이미지입니다.",
+];
+
+/** The snapshot with exactly the footer-notice delta reverted; throws unless it carries the current notice. */
+export function revertFooterNotice(snapshot: SiteSnapshot): SiteSnapshot {
+  const [before, now] = DEMO_FOOTER_NOTICE;
+  const footer = snapshot.slots?.values["site.footer"];
+  if (!snapshot.slots || footer?.notice !== now) throw new Error(`site.footer notice is ${JSON.stringify(footer?.notice)}, not the current notice`);
+  return { ...snapshot, slots: { ...snapshot.slots, values: { ...snapshot.slots.values, "site.footer": { ...footer, notice: before } } } };
+}
 
 export interface SyntheticFixture {
   /** the fixture items exactly as stored (verbatim records, unparsed) */

@@ -95,7 +95,7 @@ import { GOLDEN_DIR, GOLDEN_V02_DIR, goldenRecord } from "../cli/integration-gol
 import { MediaImageSchema, PortfolioMediaSchema } from "../integration/validate";
 import { demoExpectedPages, demoRollout } from "./demo-rollout";
 import { gitMaterialize } from "./git-checkout";
-import { QA_GOLDEN_DIR, QA_GOLDEN_DOC_BYTES, QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256, QA_GOLDEN_VERSION, composeQaSnapshot, readSyntheticFixture } from "./portfolio-qa-corpus";
+import { PRE_SPLIT_SNAPSHOT_HASH, QA_GOLDEN_DIR, QA_GOLDEN_DOC_BYTES, QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256, QA_GOLDEN_VERSION, composeQaSnapshot, readSyntheticFixture, revertFooterNotice } from "./portfolio-qa-corpus";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -148,8 +148,15 @@ const LIVE_PIN = { templateId: "interior-01", templateVersion: "1.5.2", releaseI
  * a fifth deliberate data delta. `_PRE_SPLIT` is the anchor before it; B2 composes the fixture back
  * (portfolio-qa-corpus.ts) and must land on it again, so the split is the whole of that delta, and
  * the widget / 1.6.1 reverts are then taken from that pre-split snapshot, so their anchors stay put.
+ *
+ * Footer notice (2026-09-29, after the split): slots.json's `site.footer` notice now names the brand
+ * as fictional and the photos as AI-generated — a sixth deliberate data delta (DEMO_FOOTER_NOTICE, portfolio-qa-corpus.ts).
+ * `_PRE_FOOTER` is the anchor before it; B2 reverts exactly that one field and must land on it again,
+ * and the split / widget / 1.6.1 reverts are then taken from the reverted snapshots, so their anchors
+ * stay put.
  */
-const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN = "169883a3276d8feb10e2bc5c6488e191c9422a0f1d93043eef16c738eeb9d066";
+const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN = "0b5a0cc04d8583f3e4741d01135221ff8ca8b9b2eadebb1a715fe58a3e87a2f1";
+const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_FOOTER = "169883a3276d8feb10e2bc5c6488e191c9422a0f1d93043eef16c738eeb9d066";
 const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT = "f63e293cbff852ab0896834bc326340fbc950a9324a520a1ecbaa544955e827e";
 const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_WIDGET = "8de4ff8710cd37f297e93d5926bf1244fad7ebfd81eab979711e050ad7d34140";
 const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_161 = "515a797765defd5c1230dc49a2fc426b70b106c39301bf3e0731ac370ad75db3";
@@ -211,12 +218,21 @@ const MEDIA_P3_PACKAGE_COMMIT = "b7d8ef5cf332d70c711af744398f591a2774c9aa";
 /**
  * The producer-4 build of the PRE-SPLIT 19-record corpus (docs/result/portfolio-media-polish-v1,
  * published 2026-09-29, commit 48d0043): document "1.1" 856361f5… — byte for byte the QA golden
- * (QA_GOLDEN_*, portfolio-qa-corpus.ts). It is the live package until the record truth split's build
- * (docs/result/data-truth-finalization-v1: the 8-record production corpus) is published, and the
- * rollback behind that build — B2b.
+ * (QA_GOLDEN_*, portfolio-qa-corpus.ts). It was the rollback behind the record truth split's build;
+ * the footer-notice build moved the rollback one step and keep-2 retired this directory. B2b reads it
+ * from PRE_SPLIT_PACKAGE_COMMIT (the last commit carrying it) and re-hashes it.
  */
 const PRE_SPLIT_BUILD_INPUT_ID = "71f7e5f3d1a1f6e7773153a1ec091e66b5cfd7d47687af16e94a5ef3c2379407";
 const PRE_SPLIT_PACKAGE_HASH = "77cc7f9f47adda09d119c6ec5a02626624b4e068b546e15185d39c1658bdbda0";
+const PRE_SPLIT_PACKAGE_COMMIT = "490c7ddf027de3d36554afcc510372d0330f6d22";
+/**
+ * The record truth split's build (docs/result/data-truth-finalization-v1, published 2026-09-29): the
+ * 8-record production corpus, document "1.1" 968afbcc… = the production golden's bytes (DEMO_*), the
+ * footer notice before its change. It is the live package until the footer-notice build is
+ * published, and the rollback behind that build — B2b.
+ */
+const DATA_TRUTH_BUILD_INPUT_ID = "71a906c1f284a94f22146096313421b0c5c519ee524468c4e602b0f037a0ada8";
+const DATA_TRUTH_PACKAGE_HASH = "9d4036baeaa81ad4ec5c05eac230846a61267a2eb1a0c44b87b9a6e510f22819";
 const DEMO_MANIFEST_BYTES = 274;
 /**
  * The FROZEN V0.2 golden values (07 rev 9.2.1, document "1.0", manifest "0.1"), pinned in
@@ -1845,18 +1861,26 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
   // Record truth split (2026-09-29): bi-09 … bi-19 left projects.json for the TEST_ONLY fixture. Composing
   // the fixture back (the QA corpus) must land on the pre-split anchor exactly, so the split is the whole
   // of that delta; the widget and 1.6.1 reverts below are taken from that pre-split snapshot.
+  // Footer notice (2026-09-29, after the split): reverting exactly that one slots field must land on
+  // the pre-footer anchor; the split / widget / 1.6.1 reverts are then taken from the reverted snapshots.
   eq(computeBuildInputId(LIVE_PARTS), LIVE_BUILD_INPUT_ID, "the live package's recorded parts reproduce its identity");
   const atLivePin = hashJson({ ...demo.snapshot, site: { ...demo.snapshot.site, template: LIVE_PIN } });
-  eq(atLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN, "pin rolled back to 1.5.2 → the production demo's snapshot hash (bi-01 … bi-08)");
-  eq(hashJson({ ...qaSnapshot, site: { ...qaSnapshot.site, template: LIVE_PIN } }), DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT, "…with the synthetic fixture composed back it is the pre-split anchor: the 11 records are the whole of the split");
+  eq(atLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN, "pin rolled back to 1.5.2 → the production demo's snapshot hash (bi-01 … bi-08, the current footer notice)");
+  const preFooter = revertFooterNotice(demo.snapshot);
+  const preFooterAtLivePin = hashJson({ ...preFooter, site: { ...preFooter.site, template: LIVE_PIN } });
+  eq(preFooterAtLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_FOOTER, "…with the footer notice reverted it is the pre-footer anchor: that one field is the whole of the footer delta");
+  assert(atLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_FOOTER, "the footer notice is a real delta (a silent revert of it would fail here)");
+  const qaPreFooter = revertFooterNotice(qaSnapshot);
+  eq(hashJson({ ...qaPreFooter, site: { ...qaPreFooter.site, template: LIVE_PIN } }), DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT, "…with the synthetic fixture composed back it is the pre-split anchor: the 11 records are the whole of the split");
   assert(atLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT, "the split is a real delta (a silent re-insertion of the fixture would fail here)");
-  const { headScripts, ...withoutScripts } = qaSnapshot;
+  assert(preFooterAtLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT, "…also before the footer delta");
+  const { headScripts, ...withoutScripts } = qaPreFooter;
   assert(headScripts !== undefined && headScripts.headScripts.length > 0, "the demo declares its head scripts (scripts.json)");
   const { "site.floating-cta": seat, ...preWidgetOverrides } = withoutScripts.settings.overrides as Record<string, unknown>;
   eq(seat, { enabled: false }, "the chat launcher's seat: the demo's own floating CTA is off");
   const preWidget = { ...withoutScripts, settings: { ...withoutScripts.settings, overrides: preWidgetOverrides } };
   eq(hashJson({ ...preWidget, site: { ...preWidget.site, template: LIVE_PIN } }), DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_WIDGET, "…without headScripts and the seat override it is the pre-widget anchor: those two are the whole of the widget delta");
-  const slots = qaSnapshot.slots as { values: Record<string, Record<string, unknown>> };
+  const slots = qaPreFooter.slots as { values: Record<string, Record<string, unknown>> };
   const detail160: Record<string, unknown> = { ...slots.values["portfolio.detail"] };
   for (const [k, [before, now]] of Object.entries(DEMO_161_DETAIL_LABELS)) {
     eq(detail160[k], now, `1.6.1 site copy ${k}`);
@@ -1899,7 +1923,14 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
 //    the producer-3 media build (3a897d2e…); it is read from MEDIA_P3_PACKAGE_COMMIT and re-hashed,
 //    still with producer 3's golden bytes; the widget build and the first V0.2 package stay read from
 //    their commits.
-await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's media 1.1 identity (producer 4, the 8-record production corpus) current with the golden integration bytes, the frozen rollback lineage behind it (the pre-split producer-4 build with the QA golden's bytes; the producer-3 media build, the widget build and the first V0.2 package retired by keep-2 and intact in git)", async () => {
+//    RESTATED for the footer notice (2026-09-29, a site-copy change only): the sixth steady package
+//    is the same 8-record corpus and document (968afbcc…) with the new footer notice. Behind it is
+//    exactly the record truth split's build (71a906c1…, live until this build is published), intact
+//    at its frozen hash, its _integration/ = the production golden's bytes, its recorded parts = this
+//    build's with the footer notice reverted. keep-2 retired the pre-split build (71f7e5f3…); it is
+//    read from PRE_SPLIT_PACKAGE_COMMIT and re-hashed, still with the QA golden's bytes; the older
+//    lineage stays read from its commits.
+await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's media 1.1 identity (producer 4, the 8-record production corpus) current with the golden integration bytes, the frozen rollback lineage behind it (the record truth split's build with the same golden bytes, differing only by the footer notice; the pre-split producer-4 build, the producer-3 media build, the widget build and the first V0.2 package retired by keep-2 and intact in git)", async () => {
   eq(demo.parts.integrationInputHash !== undefined, true, "the demo is still opted in");
   if (rollout === "PRE_PUBLISH_TRANSITION") {
     eq(currentRecord.buildInputId, V01_BUILD_INPUT_ID, "current = the V0.1 package");
@@ -1921,28 +1952,46 @@ await check("B2b the current/previous packages are exactly the rollout state's: 
   const srcs = new Set(demoEmission.portfolio!.document.records.flatMap((r) => [r.media?.cover, ...(r.media?.gallery ?? [])]).filter((m) => m !== undefined).map((m) => m.src));
   for (const src of srcs) assert(await exists(path.join(currentDir, "site", src.slice(1))), `media src ${src} is in the current package`);
 
-  eq(previousId, PRE_SPLIT_BUILD_INPUT_ID, "previous = the producer-4 build of the pre-split 19-record corpus (the rollback behind the record truth split's build)");
-  const prevDir = path.join(demoBuilds, "packages", PRE_SPLIT_BUILD_INPUT_ID);
+  eq(previousId, DATA_TRUTH_BUILD_INPUT_ID, "previous = the record truth split's build of the 8-record corpus (the rollback behind the footer-notice build)");
+  const prevDir = path.join(demoBuilds, "packages", DATA_TRUTH_BUILD_INPUT_ID);
   const prevRecord = (await readJson(path.join(prevDir, "build-record.json"))) as BuildRecord;
-  eq([prevRecord.buildInputId, prevRecord.packageHash], [PRE_SPLIT_BUILD_INPUT_ID, PRE_SPLIT_PACKAGE_HASH], "the rollback's recorded identity");
+  eq([prevRecord.buildInputId, prevRecord.packageHash], [DATA_TRUTH_BUILD_INPUT_ID, DATA_TRUTH_PACKAGE_HASH], "the rollback's recorded identity");
   assert(await packageIntact(prevDir), "the rollback package is intact");
   eq([prevRecord.template.releaseId, prevRecord.template.releaseHash], [demoPin.releaseId, demoPin.releaseHash], "the rollback was built with the same pin");
-  eq([prevRecord.integration?.contract, prevRecord.integration?.producerVersion], [{ core: "0.1", portfolio: "1.1" }, PRODUCER_VERSION], "the rollback = the media 1.1 contract pair, this producer (the split changed content, not the producer)");
+  eq([prevRecord.integration?.contract, prevRecord.integration?.producerVersion], [{ core: "0.1", portfolio: "1.1" }, PRODUCER_VERSION], "the rollback = the media 1.1 contract pair, this producer (the footer notice changed site copy, not the producer)");
   const prevFiles = (await readdir(path.join(prevDir, "site", INTEGRATION_DIR))).filter((f) => f !== ".DS_Store").sort();
-  eq(prevFiles, ["manifest.json", `portfolio.${QA_GOLDEN_VERSION}.json`], "the rollback's _integration/ = the pre-split manifest + document");
-  for (const f of prevFiles) eq(sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, QA_GOLDEN_DIR, f))), `rollback ${f} = the QA golden's bytes`);
-  eq([sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, `portfolio.${QA_GOLDEN_VERSION}.json`))), sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, "manifest.json")))], [QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256], "rollback document / manifest sha256 = the QA golden literals");
-  assert(currentRecord.packageHash !== PRE_SPLIT_PACKAGE_HASH && currentRecord.integration?.resources?.portfolio?.version !== prevRecord.integration?.resources?.portfolio?.version, "the current package is not the pre-split one");
+  eq(prevFiles, ["manifest.json", `portfolio.${DEMO_VERSION}.json`], "the rollback's _integration/ = the production manifest + document (the footer notice is outside the projection)");
+  for (const f of prevFiles) eq(sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_DIR, f))), `rollback ${f} = the canonical golden's bytes`);
+  eq([sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, `portfolio.${DEMO_VERSION}.json`))), sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, "manifest.json")))], [DEMO_DOC_SHA256, DEMO_MANIFEST_SHA256], "rollback document / manifest sha256 = the contract literals");
+  eq(prevRecord.integration?.resources, currentRecord.integration?.resources, "the rollback and the current package carry the same integration resource");
+  // the footer notice is the whole of the difference between the rollback and the current build
+  eq(prevRecord.parts, { ...currentRecord.parts, siteSnapshotHash: hashJson(revertFooterNotice(demo.snapshot)) }, "the rollback's recorded parts = the current build's with exactly the footer notice reverted");
+  eq(computeBuildInputId(prevRecord.parts), DATA_TRUTH_BUILD_INPUT_ID, "…and they reproduce the rollback's identity");
+  assert(currentRecord.packageHash !== DATA_TRUTH_PACKAGE_HASH && currentRecord.buildInputId !== DATA_TRUTH_BUILD_INPUT_ID, "the current package is not the data-truth one");
 
-  // retired from the working tree by keep-2: the producer-3 media build (the pre-split build's
-  // rollback), the widget build (the producer-3 build's rollback) and the first V0.2 package (the
-  // widget build's rollback) — each read from git and re-hashed
+  // retired from the working tree by keep-2: the pre-split build (the data-truth build's rollback),
+  // the producer-3 media build (the pre-split build's rollback), the widget build (the producer-3
+  // build's rollback) and the first V0.2 package (the widget build's rollback) — each read from git
+  // and re-hashed
+  const preSplitOnDisk = path.join(demoBuilds, "packages", PRE_SPLIT_BUILD_INPUT_ID);
   const p3OnDisk = path.join(demoBuilds, "packages", MEDIA_P3_BUILD_INPUT_ID);
   const widgetOnDisk = path.join(demoBuilds, "packages", WIDGET_BUILD_INPUT_ID);
   const firstOnDisk = path.join(demoBuilds, "packages", V02_FIRST_BUILD_INPUT_ID);
-  assert(!(await exists(p3OnDisk)) && !(await exists(widgetOnDisk)) && !(await exists(firstOnDisk)), "keep-2 retired the producer-3 media build, the widget build and the first V0.2 package (current + previous only)");
+  assert(!(await exists(preSplitOnDisk)) && !(await exists(p3OnDisk)) && !(await exists(widgetOnDisk)) && !(await exists(firstOnDisk)), "keep-2 retired the pre-split build, the producer-3 media build, the widget build and the first V0.2 package (current + previous only)");
   const scratch = await mkdtemp(path.join(os.tmpdir(), "v02-first-package-"));
   try {
+    const preSplitDir = gitMaterialize(repoRoot, PRE_SPLIT_PACKAGE_COMMIT, path.relative(repoRoot, preSplitOnDisk), scratch);
+    const preSplitRecord = (await readJson(path.join(preSplitDir, "build-record.json"))) as BuildRecord;
+    eq([preSplitRecord.buildInputId, preSplitRecord.packageHash], [PRE_SPLIT_BUILD_INPUT_ID, PRE_SPLIT_PACKAGE_HASH], "the pre-split build's recorded identity (from git)");
+    assert(await packageIntact(preSplitDir), "the pre-split build, read from git, is intact at its frozen packageHash");
+    eq([preSplitRecord.template.releaseId, preSplitRecord.template.releaseHash], [demoPin.releaseId, demoPin.releaseHash], "the pre-split build was built with the same pin");
+    eq([preSplitRecord.integration?.contract, preSplitRecord.integration?.producerVersion], [{ core: "0.1", portfolio: "1.1" }, PRODUCER_VERSION], "the pre-split build = the media 1.1 contract pair, this producer (the split changed content, not the producer)");
+    eq(preSplitRecord.parts.siteSnapshotHash, PRE_SPLIT_SNAPSHOT_HASH, "the pre-split build's recorded siteSnapshotHash = the QA corpus's pre-split anchor");
+    const preSplitFiles = (await readdir(path.join(preSplitDir, "site", INTEGRATION_DIR))).filter((f) => f !== ".DS_Store").sort();
+    eq(preSplitFiles, ["manifest.json", `portfolio.${QA_GOLDEN_VERSION}.json`], "the pre-split build's _integration/ = the pre-split manifest + document");
+    for (const f of preSplitFiles) eq(sha256(await readFile(path.join(preSplitDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, QA_GOLDEN_DIR, f))), `pre-split ${f} = the QA golden's bytes`);
+    eq([sha256(await readFile(path.join(preSplitDir, "site", INTEGRATION_DIR, `portfolio.${QA_GOLDEN_VERSION}.json`))), sha256(await readFile(path.join(preSplitDir, "site", INTEGRATION_DIR, "manifest.json")))], [QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256], "pre-split document / manifest sha256 = the QA golden literals");
+    assert(currentRecord.packageHash !== PRE_SPLIT_PACKAGE_HASH && currentRecord.integration?.resources?.portfolio?.version !== preSplitRecord.integration?.resources?.portfolio?.version, "the current package is not the pre-split one");
     const p3Dir = gitMaterialize(repoRoot, MEDIA_P3_PACKAGE_COMMIT, path.relative(repoRoot, p3OnDisk), scratch);
     const p3Record = (await readJson(path.join(p3Dir, "build-record.json"))) as BuildRecord;
     eq([p3Record.buildInputId, p3Record.packageHash], [MEDIA_P3_BUILD_INPUT_ID, MEDIA_P3_PACKAGE_HASH], "the producer-3 media build's recorded identity (from git)");
