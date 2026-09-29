@@ -678,7 +678,7 @@ await runViewerSuite({ width: 390, height: 844, mobile: true, name: "390" });
 // =====================================================================================
 console.log("\n[D] footer notice");
 
-const FOOTER_TEXT = "본 사이트는 서비스 시연을 위한 데모이며, 프로젝트 이미지·후기 등 일부 콘텐츠는 AI로 생성된 예시입니다.";
+const FOOTER_TEXT = "부스트 인테리어는 BoostChat 기능 시연을 위한 가상 인테리어 브랜드입니다. 포트폴리오·후기는 데모용 예시이고, 사진은 AI로 생성한 예시 이미지입니다.";
 
 interface FooterState {
   exists: boolean;
