@@ -18,10 +18,12 @@ import { existsSync } from "node:fs";
 import { cp, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { planPublish, publishSite, PublishError, rollbackHost, sealBytes, DRY_RUN_PUBLISHED_AT } from "../publish/publish";
+import { planPublish, publishSite, PublishError, rollbackHost, sealBytes, DRY_RUN_PUBLISHED_AT, ROLLBACK_TRUTH_REFUSAL, ROLLBACK_TRUTH_RUNBOOK, type PortfolioTruthLoader } from "../publish/publish";
 import { MemoryStore, type ObjectStore } from "../publish/store";
 import { cachePolicyFor, contentTypeFor } from "../publish/media";
 import { sha256 } from "../util/hash";
+import { buildSiteSnapshot } from "../site/load";
+import { QA_GOLDEN_DIR, QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256, QA_GOLDEN_VERSION } from "./portfolio-qa-corpus";
 import { resolvePath } from "../../workers/recon-runtime/src/paths";
 import runtimeDefault, {
   handle,
@@ -175,6 +177,18 @@ function storeWithPrior(faults: ConstructorParameters<typeof MemoryStore>[0] = {
   s.objects.set(sealKey(SITE, OTHER_HASH), { body: new TextEncoder().encode(JSON.stringify({ ...plan.seal, packageHash: OTHER_HASH })), meta: { contentType: "application/json", cacheControl: "no-store" } });
   return s;
 }
+/** the site's CURRENT served portfolio ids — the set a fresh public build emits (what site:publish --rollback loads) */
+const SERVED_AT = new Date().toISOString();
+const SERVED_IDS = (await buildSiteSnapshot({ repoRoot, siteId: SITE, mode: "public", at: SERVED_AT })).snapshot.content.projects.map((p) => p.id);
+const SERVED_SOURCE = `data/sites/${SITE}/content/projects.json (served at ${SERVED_AT})`;
+/** a portfolioTruth loader over fixed ids that counts its calls */
+function truthLoader(ids: readonly string[] = SERVED_IDS): PortfolioTruthLoader & { calls: number } {
+  const loader = Object.assign(async () => {
+    loader.calls++;
+    return { authoritativeIds: ids, source: SERVED_SOURCE };
+  }, { calls: 0 });
+  return loader;
+}
 function pointerUnchanged(s: MemoryStore) {
   const now = s.objects.get(routingKey(HOST))?.body;
   assert(now && Buffer.compare(Buffer.from(now), Buffer.from(priorBytes)) === 0, "existing routing pointer was modified");
@@ -296,14 +310,18 @@ await check("rollback: re-points to previous (sealed) package with no upload; th
   const next = { siteId: SITE, packageHash: OTHER_HASH, buildInputId: "b".repeat(64), releaseId: "interior-01-9.9.9-next", publishedAt: "2026-09-22T00:00:00.000Z" };
   const fakeSeal = { ...plan.seal, packageHash: OTHER_HASH };
   s.objects.set(sealKey(SITE, OTHER_HASH), { body: new TextEncoder().encode(JSON.stringify(fakeSeal)), meta: { contentType: "application/json", cacheControl: "no-store" } });
+  // …and, like every sealed package, it has its objects (a byte copy of the real one)
+  for (const f of plan.files) s.objects.set(packageKey(SITE, OTHER_HASH, f.path), s.objects.get(f.key)!);
   const first = JSON.parse(Buffer.from(s.objects.get(routingKey(HOST))!.body).toString("utf8"));
   const curPtr = { schemaVersion: 1, hostname: HOST, ...next, previous: { siteId: SITE, packageHash: first.packageHash, buildInputId: first.buildInputId, releaseId: first.releaseId, publishedAt: first.publishedAt } };
   s.objects.set(routingKey(HOST), { body: new TextEncoder().encode(JSON.stringify(curPtr)), meta: { contentType: "application/json", cacheControl: "no-store" } });
   const w = s.writes.length;
-  const r = await rollbackHost({ store: s, siteId: SITE, hostname: HOST, now: T0 });
+  const truth = truthLoader();
+  const r = await rollbackHost({ store: s, siteId: SITE, hostname: HOST, now: T0, portfolioTruth: truth });
   eq([r.pointer.packageHash, r.pointer.previous?.packageHash, s.writes.slice(w)], [plan.packageHash, OTHER_HASH, [routingKey(HOST)]], "rolled back");
-  const again = await rollbackHost({ store: s, siteId: SITE, hostname: HOST, now: T0 });
+  const again = await rollbackHost({ store: s, siteId: SITE, hostname: HOST, now: T0, portfolioTruth: truth });
   eq(again.pointer.packageHash, OTHER_HASH, "second rollback rolls forward");
+  eq(truth.calls, plan.files.some((f) => f.path === "_integration/manifest.json") ? 2 : 0, "portfolio truth consulted once per portfolio-backed rollback");
   // previous without a seal → refused, pointer untouched
   s.objects.delete(sealKey(SITE, plan.packageHash));
   const beforeBytes = Buffer.from(s.objects.get(routingKey(HOST))!.body);
@@ -584,6 +602,196 @@ await check("G3 baked origin: plan reports it; a host that is not that origin �
   const matching = await planPublish({ repoRoot, siteId: SITE, hostname: new URL(origin).hostname, requireOriginMatch: true });
   eq(matching.warnings.filter((w) => w.includes("was built for")), [], "no warning when the host is the baked origin");
 });
+
+// ── 3b''. rollback portfolio-truth guard: an older package must not re-expose removed records ──
+console.log("\nrollback: portfolio-truth guard (production truth)");
+if (SITE === "boost-interior-demo") {
+  const JSON_META = { contentType: "application/json", cacheControl: "no-store" };
+  const enc = (v: unknown) => new TextEncoder().encode(typeof v === "string" ? v : JSON.stringify(v));
+  const routing = routingKey(HOST);
+  /** the old live package of the owner policy: 19 records incl. TEST_ONLY bi-09 … bi-19 (build 71f7e5f3…) */
+  const PKG19 = { packageHash: "77cc7f9f47adda09d119c6ec5a02626624b4e068b546e15185d39c1658bdbda0", buildInputId: "71f7e5f3d1a1f6e7773153a1ec091e66b5cfd7d47687af16e94a5ef3c2379407", releaseId: "interior-01-1.6.1-8da56de8d28f" };
+  const refFor = (p: { packageHash: string; buildInputId: string; releaseId: string }, publishedAt = "2026-09-20T00:00:00.000Z") => ({ siteId: SITE, packageHash: p.packageHash, buildInputId: p.buildInputId, releaseId: p.releaseId, publishedAt });
+  /** seal a crafted package: every file stored under its key, seal listing exactly those bytes */
+  function sealCrafted(s: MemoryStore, packageHash: string, files: Record<string, Uint8Array>) {
+    const sealFiles = Object.entries(files).map(([rel, body]) => {
+      const hash = sha256(body);
+      s.objects.set(packageKey(SITE, packageHash, rel), { body, meta: { contentType: contentTypeFor(rel)!, cacheControl: cachePolicyFor(rel, hash).cacheControl } });
+      return { path: rel, size: body.length, sha256: hash, contentType: contentTypeFor(rel)!, cacheControl: cachePolicyFor(rel, hash).cacheControl };
+    });
+    const seal: PackageSeal = { ...plan.seal, packageHash, buildInputId: "c".repeat(64), fileCount: sealFiles.length, bytes: sealFiles.reduce((n, f) => n + f.size, 0), files: sealFiles };
+    s.objects.set(sealKey(SITE, packageHash), { body: sealBytes(seal), meta: JSON_META });
+  }
+  /** a portfolio-backed crafted package whose document serves exactly `ids` */
+  function sealPortfolio(s: MemoryStore, packageHash: string, ids: string[]) {
+    const docPath = "_integration/portfolio.crafted.json";
+    const manifest = { schemaVersion: "0.1", site: { id: SITE, publicOrigin: "https://demo.test.example", locale: "ko-KR" }, resources: { portfolio: { href: `/${docPath}`, version: "crafted" } } };
+    sealCrafted(s, packageHash, { "index.html": enc("<!doctype html>"), "404.html": enc("<!doctype html>"), "_integration/manifest.json": enc(manifest), [docPath]: enc({ resource: "portfolio", records: ids.map((id) => ({ id })) }) });
+  }
+  /** the real 19-record integration documents (QA golden = byte-identical to build 71f7e5f3…'s _integration/) sealed as PKG19 */
+  async function sealPkg19(s: MemoryStore) {
+    const manifest = await readFile(path.join(repoRoot, QA_GOLDEN_DIR, "manifest.json"));
+    const doc = await readFile(path.join(repoRoot, QA_GOLDEN_DIR, `portfolio.${QA_GOLDEN_VERSION}.json`));
+    eq([sha256(manifest), sha256(doc)], [QA_GOLDEN_MANIFEST_SHA256, QA_GOLDEN_DOC_SHA256], "QA golden = the frozen 19-record bytes");
+    eq(JSON.parse(manifest.toString("utf8")).resources.portfolio.href, `/_integration/portfolio.${QA_GOLDEN_VERSION}.json`, "manifest names the document");
+    const index = s.objects.get(packageKey(SITE, plan.packageHash, "index.html"))!.body;
+    const nf = s.objects.get(packageKey(SITE, plan.packageHash, "404.html"))!.body;
+    sealCrafted(s, PKG19.packageHash, { "index.html": index, "404.html": nf, "_integration/manifest.json": manifest, [`_integration/portfolio.${QA_GOLDEN_VERSION}.json`]: doc });
+    const sealed = JSON.parse(Buffer.from(s.objects.get(sealKey(SITE, PKG19.packageHash))!.body).toString("utf8")) as PackageSeal;
+    s.objects.set(sealKey(SITE, PKG19.packageHash), { body: sealBytes({ ...sealed, buildInputId: PKG19.buildInputId, releaseId: PKG19.releaseId }), meta: JSON_META });
+  }
+  /** live = the real current package (published), previous = `prev` */
+  async function liveWithPrevious(s: MemoryStore, prev: { packageHash: string; buildInputId: string; releaseId: string }): Promise<Uint8Array> {
+    await publishSite({ repoRoot, siteId: SITE, hostname: HOST, store: s, now: T0 });
+    const cur = JSON.parse(Buffer.from(s.objects.get(routing)!.body).toString("utf8"));
+    const bytes = enc({ ...cur, previous: refFor(prev) });
+    s.objects.set(routing, { body: bytes, meta: JSON_META });
+    return bytes;
+  }
+  const sameAs = (s: MemoryStore, bytes: Uint8Array) => assert(Buffer.compare(Buffer.from(s.objects.get(routing)!.body), Buffer.from(bytes)) === 0, "routing pointer bytes changed");
+  /** records the keys put() is called with, then forwards */
+  function putSpy(s: MemoryStore): ObjectStore & { puts: string[] } {
+    const puts: string[] = [];
+    return { description: "put-spy", puts, get: (k) => s.get(k), put: (k, b, m) => (puts.push(k), s.put(k, b, m)) };
+  }
+  async function refusal(p: Promise<unknown>): Promise<string> {
+    try {
+      await p;
+    } catch (e) {
+      assert(e instanceof PublishError, `not a PublishError: ${(e as Error).message}`);
+      return e.message;
+    }
+    throw new Error("rollback did not fail");
+  }
+  const BI = (n: number) => `bi-${String(n).padStart(2, "0")}`;
+  const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => BI(a + i));
+
+  /** the local 8-record build the site served before the current one (data/site-builds/<site>/previous.json), sealed via a temp repo */
+  async function sealPreviousBuild(s: MemoryStore): Promise<{ packageHash: string; buildInputId: string; releaseId: string }> {
+    const prev = JSON.parse(await readFile(path.join(repoRoot, "data/site-builds", SITE, "previous.json"), "utf8")) as { buildInputId: string; packageDir: string };
+    const tmpRoot = await mkdtemp(path.join(os.tmpdir(), "recon-publish-prev-"));
+    try {
+      const dest = path.join(tmpRoot, "data/site-builds", SITE, "packages", prev.buildInputId);
+      await cp(path.join(repoRoot, prev.packageDir), dest, { recursive: true });
+      await writeFile(path.join(tmpRoot, "data/site-builds", SITE, "current.json"), JSON.stringify({ buildInputId: prev.buildInputId, packageDir: path.relative(tmpRoot, dest), finishedAt: "2026-09-20T00:00:00.000Z" }));
+      const r = await publishSite({ repoRoot: tmpRoot, siteId: SITE, hostname: HOST, store: s, now: T0, activate: false });
+      assert(r.status === "uploaded" && r.plan.packageHash !== plan.packageHash, "previous build sealed under its own packageHash");
+      return { packageHash: r.plan.packageHash, buildInputId: r.plan.buildInputId, releaseId: r.plan.releaseId };
+    } finally {
+      await rm(tmpRoot, { recursive: true, force: true });
+    }
+  }
+
+  await check("RT0 the authoritative served set of boost-interior-demo (buildSiteSnapshot public) is exactly bi-01 … bi-08", () => {
+    eq([...SERVED_IDS].sort(), range(1, 8), "served ids");
+  });
+
+  await check("RT1 SABOTAGE (real bytes): live = real 8-record package, previous = the 19-record package 77cc7f9f… → refused naming bi-09 … bi-19 only; routing pointer bytes unchanged; put-spy sees ZERO routing-key writes (LIVE_POINTER_WRITTEN_DURING_SABOTAGE = NO)", async () => {
+    const s = new MemoryStore();
+    const before = await liveWithPrevious(s, PKG19);
+    await sealPkg19(s);
+    const spy = putSpy(s);
+    const w = s.writes.length;
+    const truth = truthLoader();
+    const msg = await refusal(rollbackHost({ store: spy, siteId: SITE, hostname: HOST, now: T0, portfolioTruth: truth }));
+    assert(msg.startsWith(ROLLBACK_TRUTH_REFUSAL), `message prefix: ${msg}`);
+    const named = msg.match(/\bbi-\d{2}\b/g) ?? [];
+    eq([...new Set(named)].sort(), range(9, 19), "ids named = the 11 TEST_ONLY records, none of bi-01 … bi-08");
+    assert(msg.includes("11 record id(s)") && msg.includes("77cc7f9f47adda09") && msg.includes("routing pointer NOT written") && msg.includes(ROLLBACK_TRUTH_RUNBOOK) && msg.includes(SERVED_SOURCE), "message: count, target, pointer, runbook, source");
+    eq(truth.calls, 1, "authoritative data loaded once");
+    eq(spy.puts.filter((k) => k === routing).length, 0, "routing-key puts during the attempt");
+    eq([spy.puts.length, s.writes.length - w], [0, 0], "no store write at all");
+    sameAs(s, before);
+    console.log(`       LIVE_POINTER_WRITTEN_DURING_SABOTAGE = NO (routing-key puts: ${spy.puts.filter((k) => k === routing).length})`);
+    console.log(`       refusal: ${msg}`);
+  });
+
+  await check("RT2 NORMAL: live = real current 8-record package, previous = the real previous 8-record build → rolled back exactly as before (pointer re-pointed, previous swapped, one write), loader called once; rolling forward again passes too", async () => {
+    const s = new MemoryStore();
+    const prev = await sealPreviousBuild(s);
+    await liveWithPrevious(s, prev);
+    const w = s.writes.length;
+    const truth = truthLoader();
+    const lines: string[] = [];
+    const r = await rollbackHost({ store: s, siteId: SITE, hostname: HOST, now: T0, portfolioTruth: truth, log: (l) => lines.push(l) });
+    eq([r.pointer.packageHash, r.pointer.previous?.packageHash, r.from.packageHash, s.writes.slice(w)], [prev.packageHash, plan.packageHash, plan.packageHash, [routing]], "rolled back");
+    eq(truth.calls, 1, "loader calls");
+    assert(lines.some((l) => /portfolio truth: rollback target ids ⊆ authoritative \(8\/8\)/.test(l)), `pass line logged: ${lines.join(" | ")}`);
+    const again = await rollbackHost({ store: s, siteId: SITE, hostname: HOST, now: T0, portfolioTruth: truth });
+    eq([again.pointer.packageHash, truth.calls], [plan.packageHash, 2], "rolled forward");
+  });
+
+  await check("RT3 a proper subset (target serves bi-01, bi-03 of the 8 authoritative ids) → allowed", async () => {
+    const s = new MemoryStore();
+    const sub = { packageHash: "d".repeat(64), buildInputId: "c".repeat(64), releaseId: "interior-01-subset" };
+    await liveWithPrevious(s, sub);
+    sealPortfolio(s, sub.packageHash, ["bi-03", "bi-01"]);
+    const truth = truthLoader();
+    const r = await rollbackHost({ store: s, siteId: SITE, hostname: HOST, now: T0, portfolioTruth: truth });
+    eq([r.pointer.packageHash, truth.calls], [sub.packageHash, 1], "subset rollback");
+  });
+
+  await check("RT4 no portfolioTruth supplied + portfolio-backed target (even a truthful one) → refused, pointer untouched, zero writes; a loader that throws → refused (fails closed)", async () => {
+    const s = new MemoryStore();
+    const prev = await sealPreviousBuild(s);
+    const before = await liveWithPrevious(s, prev);
+    const w = s.writes.length;
+    const msg = await refusal(rollbackHost({ store: s, siteId: SITE, hostname: HOST, now: T0 }));
+    assert(/serves a portfolio document \(8 records\) but no authoritative site data was supplied/.test(msg) && msg.includes("routing pointer NOT written"), `message: ${msg}`);
+    await rejects(rollbackHost({ store: s, siteId: SITE, hostname: HOST, now: T0, portfolioTruth: async () => { throw new Error("projects.json unreadable"); } }), /could not load the site's current authoritative data .*projects\.json unreadable/, "throwing loader");
+    eq(s.writes.length - w, 0, "writes");
+    sameAs(s, before);
+  });
+
+  await check("RT5 target without _integration/manifest.json in its seal (or a manifest without a portfolio resource) → rolled back, loader NOT called", async () => {
+    const plain = { packageHash: "e".repeat(64), buildInputId: "c".repeat(64), releaseId: "interior-01-plain" };
+    const s = new MemoryStore();
+    await liveWithPrevious(s, plain);
+    sealCrafted(s, plain.packageHash, { "index.html": enc("<!doctype html>"), "404.html": enc("<!doctype html>") });
+    const truth = truthLoader();
+    const r = await rollbackHost({ store: s, siteId: SITE, hostname: HOST, now: T0, portfolioTruth: truth });
+    eq([r.pointer.packageHash, truth.calls], [plain.packageHash, 0], "no manifest");
+    const t = new MemoryStore();
+    await liveWithPrevious(t, plain);
+    sealCrafted(t, plain.packageHash, { "index.html": enc("<!doctype html>"), "404.html": enc("<!doctype html>"), "_integration/manifest.json": enc({ schemaVersion: "0.1", site: { id: SITE, publicOrigin: "https://x.example", locale: "ko-KR" }, resources: {} }) });
+    const r2 = await rollbackHost({ store: t, siteId: SITE, hostname: HOST, now: T0, portfolioTruth: truth });
+    eq([r2.pointer.packageHash, truth.calls], [plain.packageHash, 0], "manifest without portfolio resource");
+  });
+
+  await check("RT6 fails closed on the target's documents: portfolio document bytes ≠ seal / manifest missing from the store / records not an id array → refused before the loader, pointer untouched, zero writes", async () => {
+    const cases: [string, (s: MemoryStore) => void, RegExp][] = [
+      ["corrupted portfolio document", (s) => {
+        const o = s.objects.get(packageKey(SITE, PKG19.packageHash, `_integration/portfolio.${QA_GOLDEN_VERSION}.json`))!;
+        o.body[10] = o.body[10]! ^ 0xff;
+      }, /portfolio\.[0-9a-f]+\.json does not match its seal/],
+      ["overwritten portfolio document (8 records, not sealed)", (s) => {
+        s.objects.set(packageKey(SITE, PKG19.packageHash, `_integration/portfolio.${QA_GOLDEN_VERSION}.json`), { body: enc({ records: range(1, 8).map((id) => ({ id })) }), meta: JSON_META });
+      }, /does not match its seal/],
+      ["manifest missing", (s) => s.objects.delete(packageKey(SITE, PKG19.packageHash, "_integration/manifest.json")), /_integration\/manifest\.json is sealed but missing from the store/],
+    ];
+    for (const [label, sabotage, re] of cases) {
+      const s = new MemoryStore();
+      const before = await liveWithPrevious(s, PKG19);
+      await sealPkg19(s);
+      sabotage(s);
+      const w = s.writes.length;
+      const truth = truthLoader(range(1, 19)); // even an authority that would accept every id never gets asked
+      await rejects(rollbackHost({ store: s, siteId: SITE, hostname: HOST, now: T0, portfolioTruth: truth }), re, label);
+      eq([truth.calls, s.writes.length - w], [0, 0], `${label}: loader calls / writes`);
+      sameAs(s, before);
+    }
+    const s = new MemoryStore();
+    const bad = { packageHash: "f".repeat(64), buildInputId: "c".repeat(64), releaseId: "interior-01-bad" };
+    const before = await liveWithPrevious(s, bad);
+    sealCrafted(s, bad.packageHash, { "index.html": enc("<!doctype html>"), "_integration/manifest.json": enc({ resources: { portfolio: { href: "/_integration/p.json", version: "x" } } }), "_integration/p.json": enc({ records: [{ id: 7 }] }) });
+    const truth = truthLoader();
+    await rejects(rollbackHost({ store: s, siteId: SITE, hostname: HOST, now: T0, portfolioTruth: truth }), /no records array of objects with a string id/, "records without string ids");
+    eq(truth.calls, 0, "loader calls (bad records)");
+    sameAs(s, before);
+  });
+} else {
+  console.log(`  skip rollback portfolio-truth guard (boost-interior-demo only; PUBLISH_TEST_SITE=${SITE})`);
+}
 
 // ── 3c. P7: invalid build input fails closed, before any store write ─────────
 console.log("\npublish: invalid build input (fails closed)");

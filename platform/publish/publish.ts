@@ -30,15 +30,23 @@
  *   immutable policy must not have had different bytes in the package the hostname serves now —
  *   browsers would keep the old bytes. Refused; the fix is a build that emits a new file name.
  *   Fails closed: a live package whose seal cannot be read cannot be compared, so the switch is
- *   refused too. Rollback needs no check of its own: it only returns to `previous`, the pair the
- *   forward publish already compared.
+ *   refused too. Rollback skips this immutable-path check: it only returns to `previous`, the pair
+ *   the forward publish already compared.
  * Rollback (rollbackHost): re-point a hostname at its pointer's `previous` package; no upload.
+ *   Portfolio-truth guard (before the pointer write): when the target package serves a portfolio
+ *   document (_integration/manifest.json → resources.portfolio), every record id in it must still be
+ *   in the site's CURRENT authoritative data (options.portfolioTruth); an older package must never
+ *   re-expose records that were removed from source. Fails closed (unreadable / seal-mismatched
+ *   documents, or no authoritative data supplied, are refusals). Runbook:
+ *   docs/result/sales-demo-final-closeout-v1/rollback-truth-runbook.md
  */
 
 import { lstat, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { SITE_BUILDS_DIR, packageIntact } from "../build/site-build";
+import { INTEGRATION_DIR, MANIFEST_FILE, PORTFOLIO_KIND } from "../integration/contract";
+import { compareCodePoints } from "../integration/emit";
 import { sha256 } from "../util/hash";
 import {
   CACHE_IMMUTABLE,
@@ -566,12 +574,95 @@ async function writeRoutingPointer(store: ObjectStore, key: string, pointer: Rou
 }
 
 /**
+ * The ids a site's CURRENT authoritative data serves — the set a fresh build would emit into its
+ * portfolio document — and where they came from (for the refusal message). Lazy: rollbackHost only
+ * calls it when the target package actually serves a portfolio document.
+ */
+export type PortfolioTruthLoader = () => Promise<{ authoritativeIds: readonly string[]; source: string }>;
+
+export const ROLLBACK_TRUTH_REFUSAL = "Rollback target would reintroduce portfolio records no longer present in current authoritative site data";
+export const ROLLBACK_TRUTH_RUNBOOK = "docs/result/sales-demo-final-closeout-v1/rollback-truth-runbook.md";
+
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+
+/**
+ * Production-truth guard for rollback: a package that serves a portfolio document may become live
+ * again only if every record id in that document is still in the site's current authoritative data.
+ * Reads the target's sealed _integration/manifest.json and the portfolio document it names (both
+ * sha256/size-checked against the seal). No manifest in the seal / no portfolio resource → not
+ * portfolio-backed, nothing to check (the loader is not called). Everything else fails closed.
+ */
+async function assertRollbackPortfolioTruth(store: ObjectStore, target: PackageRef, seal: Partial<PackageSeal>, loader: PortfolioTruthLoader | undefined, log?: (line: string) => void): Promise<void> {
+  const files = (seal.files ?? []) as Partial<SealFile>[];
+  const manifestPath = `${INTEGRATION_DIR}/${MANIFEST_FILE}`;
+  const refuse = (why: string) =>
+    new PublishError(`rollback target ${shortHash(target.packageHash)}: ${why}; its portfolio records cannot be checked against current site data, refusing (fails closed) — routing pointer NOT written`);
+  const readSealedJson = async (rel: string): Promise<unknown> => {
+    const entry = files.find((f) => isRecord(f) && f.path === rel);
+    if (!entry) throw refuse(`${rel} is not in the package seal`);
+    const body = await store.get(packageKey(target.siteId, target.packageHash, rel));
+    if (!body) throw refuse(`${rel} is sealed but missing from the store`);
+    const hash = sha256(body);
+    if (body.length !== entry.size || hash !== entry.sha256) throw refuse(`${rel} does not match its seal (${body.length} B sha ${hash.slice(0, 12)} ≠ sealed ${String(entry.size)} B sha ${String(entry.sha256).slice(0, 12)})`);
+    try {
+      return JSON.parse(Buffer.from(body).toString("utf8")) as unknown;
+    } catch {
+      throw refuse(`${rel} is not valid JSON`);
+    }
+  };
+
+  if (!files.some((f) => isRecord(f) && f.path === manifestPath)) return; // no integration documents → not portfolio-backed
+  const manifest = await readSealedJson(manifestPath);
+  if (!isRecord(manifest) || !isRecord(manifest.resources)) throw refuse(`${manifestPath} has no resources object`);
+  const resource = manifest.resources[PORTFOLIO_KIND];
+  if (resource === undefined) return; // integration manifest without a portfolio resource
+  if (!isRecord(resource) || typeof resource.href !== "string" || !resource.href.startsWith("/")) throw refuse(`${manifestPath} resources.${PORTFOLIO_KIND}.href is not a package path`);
+  const docPath = resource.href.slice(1);
+  const doc = await readSealedJson(docPath);
+  const records = isRecord(doc) ? doc.records : undefined;
+  if (!Array.isArray(records) || !records.every((r) => isRecord(r) && typeof r.id === "string")) throw refuse(`${docPath} has no records array of objects with a string id`);
+  const targetIds = records.map((r) => (r as { id: string }).id);
+
+  if (!loader) {
+    throw new PublishError(`rollback target ${shortHash(target.packageHash)} serves a portfolio document (${targetIds.length} records) but no authoritative site data was supplied to check it against; refusing (production-truth guard) — routing pointer NOT written`);
+  }
+  let truth: Awaited<ReturnType<PortfolioTruthLoader>>;
+  try {
+    truth = await loader();
+  } catch (e) {
+    throw new PublishError(`could not load the site's current authoritative data to check rollback target ${shortHash(target.packageHash)} (${(e as Error).message}); refusing (fails closed) — routing pointer NOT written`);
+  }
+  const authoritative = new Set(truth.authoritativeIds);
+  const extra = [...new Set(targetIds.filter((id) => !authoritative.has(id)))].sort(compareCodePoints);
+  if (extra.length > 0) {
+    throw new PublishError(
+      `${ROLLBACK_TRUTH_REFUSAL}: ${extra.length} record id(s) served by target package ${shortHash(target.packageHash)} are not in ${truth.source}: ${extra.join(", ")} — routing pointer NOT written. ` +
+        `To restore content, restore the wanted state in source, build a new package and publish it forward — see ${ROLLBACK_TRUTH_RUNBOOK}`,
+    );
+  }
+  log?.(`[${target.siteId}] portfolio truth: rollback target ids ⊆ authoritative (${targetIds.length}/${authoritative.size})`);
+}
+
+/**
  * Rollback = re-point routing/<hostname>.json at its `previous` package (already sealed in the
  * store, so nothing is uploaded). The package being left becomes the new `previous`, so a second
  * rollback rolls forward again. Refuses when there is no previous, the pointer serves another
- * site, or the previous package's seal is missing / does not match.
+ * site, or the previous package's seal is missing / does not match. When the previous package
+ * serves a portfolio document, its record ids must all still be in the site's current
+ * authoritative data (portfolioTruth); otherwise — or when portfolioTruth is not given, or the
+ * sealed documents cannot be read and verified — it refuses before the pointer is written. There
+ * is no override: the fix is a new build published forward (ROLLBACK_TRUTH_RUNBOOK).
  */
-export async function rollbackHost(opts: { store: ObjectStore; siteId: string; hostname: string; expectLivePackageHash?: string; now?: () => Date; log?: (line: string) => void }): Promise<{ pointer: RoutingPointer; from: PackageRef }> {
+export async function rollbackHost(opts: {
+  store: ObjectStore;
+  siteId: string;
+  hostname: string;
+  expectLivePackageHash?: string;
+  /** current authoritative portfolio ids; only called when the target package serves a portfolio document */
+  portfolioTruth?: PortfolioTruthLoader;
+  now?: () => Date;
+  log?: (line: string) => void;
+}): Promise<{ pointer: RoutingPointer; from: PackageRef }> {
   const hostname = normalizeHostname(opts.hostname);
   const key = routingKey(hostname);
   const existing = await readRoutingPointer(opts.store, key);
@@ -591,6 +682,7 @@ export async function rollbackHost(opts: { store: ObjectStore; siteId: string; h
   if (!seal || seal.siteId !== target.siteId || seal.packageHash !== target.packageHash || !Array.isArray(seal.files) || seal.files.length === 0) {
     throw new PublishError(`previous package ${target.packageHash.slice(0, 16)}… has no valid seal in the store; refusing to roll back to it`);
   }
+  await assertRollbackPortfolioTruth(opts.store, target, seal, opts.portfolioTruth, opts.log);
   const pointer: RoutingPointer = { schemaVersion: SCHEMA_VERSION, hostname, ...refOf(target), publishedAt: (opts.now ?? (() => new Date()))().toISOString(), previous: refOf(existing) };
   await writeRoutingPointer(opts.store, key, pointer);
   opts.log?.(`[${opts.siteId}] ${key} rolled back ${existing.packageHash.slice(0, 16)}… → ${target.packageHash.slice(0, 16)}… (${target.releaseId})`);

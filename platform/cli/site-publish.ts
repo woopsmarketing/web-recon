@@ -30,9 +30,12 @@
  *  --allow-origin-mismatch  a --remote publish is refused when the origin baked into the package
  *                     (canonical / sitemap / robots URLs) is not https://<hostname>; this overrides it
  *  --rollback         re-point the hostname at its pointer's `previous` (already sealed) package; no upload
+ *                     refused (no override) when that package serves portfolio records that are no longer in
+ *                     data/sites/<siteId>/content/projects.json (served set) — docs/result/sales-demo-final-closeout-v1/rollback-truth-runbook.md
  */
-import { publishSite, rollbackHost, sealBytes, type PublishResult } from "../publish/publish";
+import { publishSite, rollbackHost, sealBytes, type PortfolioTruthLoader, type PublishResult } from "../publish/publish";
 import { WranglerStore } from "../publish/wrangler-store";
+import { buildSiteSnapshot } from "../site/load";
 
 const args = process.argv.slice(2);
 const VALUE_FLAGS = ["--site", "--host", "--bucket", "--persist-to", "--concurrency", "--expect-package", "--expect-live"];
@@ -88,8 +91,14 @@ const store =
     : new WranglerStore({ repoRoot: process.cwd(), bucket, mode: remote ? "remote" : "local", persistTo: remote ? undefined : persistTo, allowRemote: remote, readOnly: dryRun });
 
 if (has("--rollback")) {
+  // The served set a fresh public build would emit into the portfolio document (integration/emit.ts).
+  const portfolioTruth: PortfolioTruthLoader = async () => {
+    const at = new Date().toISOString();
+    const { snapshot } = await buildSiteSnapshot({ repoRoot: process.cwd(), siteId, mode: "public", at });
+    return { authoritativeIds: snapshot.content.projects.map((p) => p.id), source: `data/sites/${siteId}/content/projects.json (served at ${at})` };
+  };
   try {
-    const r = await rollbackHost({ store: store!, siteId, hostname: host, expectLivePackageHash: expectLive, log: (l) => console.log(l) });
+    const r = await rollbackHost({ store: store!, siteId, hostname: host, expectLivePackageHash: expectLive, portfolioTruth, log: (l) => console.log(l) });
     console.log(JSON.stringify({ status: "rolled-back", pointer: r.pointer }, null, 2));
   } catch (error) {
     console.error(`site:publish --rollback FAILED (routing pointer untouched unless the message says it was written): ${(error as Error).message}`);
