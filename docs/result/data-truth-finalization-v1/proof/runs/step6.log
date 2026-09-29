@@ -1,0 +1,59 @@
+
+[site] a NEW site instance, pinned to the existing immutable release
+  ok   A boost-interior-demo exists as its own Site Instance (siteId, Korean identity, own origin); fixtures are separate directories
+  ok   B pins EXACTLY ONE newer verified release (each fixture pins its own verified release) (id + full hash), and the current package was built with it — pre-publish: with the V0.1 publish target (demo-rollout.ts)
+
+[unchanged] Template source, releases and fixtures against the pre-Step-6 baseline
+  ok   C0 the baseline itself is the one captured at 2026-09-19T11:08:42Z (sha256 pinned): re-capturing it after a change fails here
+  ok   C release hash unchanged: the 1.4.0 release verifies, NO release was added or removed, every release tree is byte-identical
+  ok   D Template source unchanged: live templateSourceHash = baseline = the release record; live release sources have no drift; raw template + platform trees identical
+  ok   D2 independent of the baseline: no Template / Platform implementation file (test/ excluded) was modified after the 1.4.0 release was cut
+  ok   E old fixture sites unchanged: data/sites/fixture-* and data/site-builds/fixture-* (pointers, history, packages) byte-identical
+  ok   V same release, different site instances: every site's package carries its own pin's releaseId + templateSourceHash, and ≥ 2 sites share one release; buildInputIds, snapshots and rendered homes all differ
+
+[leakage] the demo package carries no fixture identity and no source-site material
+  ok   F no fixture identity anywhere in the demo package or its site documents: fixed patterns + every fixture's own brand, legal name, e-mail, origin, project ids and titles (read from the fixtures)
+  ok   G no Apartmentary leakage: the release's frozen forbidden terms + the source brand (ko/en) are absent; package QA passed; no absolute URL leaves the site origin except the site's declared head scripts, each exactly once per page, async
+
+[area] Korean area-basis contract
+  ok   H area basis (V0.2): the 34평 flagship is { 34, pyeong, supply }; an area may be ABSENT (never invented) and a present one is labelled by ITS basis — 공급면적 / 전용면적 / unqualified 면적 — with the authored figure, on every page of the current package (the pinned release over the whole corpus: H·build)
+  ok   I no automatic 34 → 84: the area fact renders as authored (34평) — no ㎡/112/84 derived beside it; 84㎡ appears only as the separately authored 전용면적 sentence; no '34평 = 84' anywhere
+
+[assets] registry, references, reference-image isolation
+  ok   K1b the tracked reference record equals references/ wherever that folder exists (skipped on a checkout without it)
+  ok   J every referenced asset exists: registry entry + file on disk + content-addressed copy in the package
+  ok   K no unreferenced public demo asset: registry = referenced set, no stray file in assets/, package /assets = referenced set
+  ok   K2 reference images are reference-only: no site/package asset is byte-identical to a reference file, none is copied by name, and no demo asset is a PNG
+  ok   K3 asset status is honest: 04-asset-status.json matches the registry (approved-generated = raster, stand-in = SVG) and its verdict follows the counts
+
+[content] one canonical projects collection, Korean, linked
+  ok   L all published project slugs (and ids) are unique; ≥ 6 projects; every project has the Step 6 core fields (Korean title + summary, body, location, scope, period, duration); galleryGroups and keywords are OPTIONAL (V0.2 cover-only records, schema-valid when present); the flagship keeps its designed gallery; every page of the current package renders a usable visual (the whole corpus: L·build)
+  ok   M every internal link of every generated page resolves inside the package; every project of the package has its detail page (pre-publish: the V0.1 package's own records, demo-rollout.ts)
+  ok   Z header navigation exposes only real routes (home, /portfolio, /3d-portfolio, /about, /contact — each an emitted page): no Service / FAQ / Journal
+  ok   Q+R the demo uses the ONE canonical projects collection: content/ holds only the platform documents, home A and B are two selections of projects.json, no second collection anywhere
+
+[filter] the unchanged filter contract against Korean demo content
+  ok   N keyword / type / area / style / price / sort / combined / zero-result on the 19-record QA corpus (production + the TEST_ONLY synthetic fixture), evaluated by the platform evaluator with the site's own scales (pyeong, krw-pyeong), against explicit expected ids
+  ok   N·production keyword / type / area / style / price / sort / combined / zero-result on the PRODUCTION corpus (bi-01 … bi-08), evaluated by the platform evaluator with the site's own scales, against explicit expected ids
+
+[cta] the site-wide floating seat
+  ok   O exactly one floating CTA on EVERY generated page — or none on any page while a declared head script takes the seat — the page set is the route plan of the package's own records (home, portfolio, details, 3D, about, contact) + Next's error pages — Korean label, → /contact
+
+[models] banners@1 (provisional) and reviews@1 carry the demo unchanged
+  ok   S banners@1 unchanged and sufficient: 3 slides = image + headline + text + closed CTA (2 project targets, 1 contact); all render with live destinations
+  ok   T reviews@1 unchanged: 6 published reviews, none attributed to a personal name, all rendered on the home page in stored order
+
+[identity] Korean identity, SEO data and theme through declared inputs only
+  ok   X <html lang=ko-KR>, brand title, Korean description, list/detail canonicals on the demo origin, sitemap lists every page (pre-publish: of the V0.1 package's own records, demo-rollout.ts)
+  ok   W theme = declared tokens only: every site token is consumed by the Template, resolves, and reaches the package stylesheet/markup
+  ok   Y every demo document is declared fictional (origin synthetic-fixture), never 'customer' or 'reference-fixture'
+
+[integration] throwaway-root builds (reproducibility, seat off)
+  ok   U reproducible: same release + snapshot + settings + theme + assets → same buildInputId (twice, and = current), and an independent rebuild gives the same packageHash (pre-publish: = a second independent rebuild, demo-rollout.ts)
+  ok   P no CTA when the configuration disables it: site.floating-cta.enabled = false → no seat on ANY page, nothing else about the pages' count changes
+  ok   Q·build the pinned release over the QA corpus (the composed projects.json written into a throwaway root only — never data/sites): built, package QA pass, one detail page per QA record (19)
+  ok   H·build the pinned release over the WHOLE production corpus (U's rebuild) and over the QA corpus (Q·build): every present area under its own basis label with the authored figure — bi-14 전용면적 84 m², bi-17 공급면적 112 m² — and no area row for bi-15 (QA witnesses)
+  ok   L·build the pinned release over the WHOLE production corpus (U's rebuild) and over the QA corpus (Q·build): every detail page renders a usable visual — its full gallery, or exactly its cover for the V0.2 cover-only records (QA) — with no broken image
+
+step6: 34 passed, 0 failed
+exit=0 seconds=22

@@ -100,6 +100,10 @@ unchanged (E14 compares against producer 3's golden read from git `df68b10`).
 
 ## Known limitation (out of scope)
 
+> **Resolved 2026-09-29 without the 1.6.2 cut.** `04-record-truth-audit.md` classified bi-09 … bi-19
+> as VERIFIED_SYNTHETIC and removed them from the production site, so no live page shows a borrowed
+> photo. The plan below was not executed and is not needed.
+
 Only the **Portfolio Document** (what BoostChat shows) is corrected. The demo website itself still
 renders the shared photo on bi-09 … bi-19's listing cards and detail pages: template interior-01
 requires a `cover` on every project, and the detail page falls back to it. Fixing the site needs a

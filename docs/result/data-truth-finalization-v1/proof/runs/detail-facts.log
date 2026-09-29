@@ -1,0 +1,43 @@
+
+[corpus] the production corpus (8) and its golden; the QA corpus (19) and its QA golden
+  ok   G0 the expectation table covers exactly the corpora and their golden documents' records: production 8/8 (bi-01 … bi-08), QA 19/19 (production + the synthetic fixture), same ids
+  ok   G the expectation table IS the golden documents: area (value/unit/basis), projectType, workScopeIds (order), pricing.total — production 8/8, QA 19/19, nothing else authored
+
+[area] basis-aware area label (AREA-UI)
+  ok   AREA-UI-1 supply + 평 (bi-01): 공급면적 = 34평
+  ok   AREA-UI-2 supply + m² (bi-17): 공급면적 = 112 m²
+  ok   AREA-UI-3 exclusive + m² (bi-14): 전용면적 = 84 m² — never 공급면적
+  ok   AREA-UI-4 area absent (bi-15): no area row, no area label, no area figure anywhere in the facts
+  ok   AREA-UI-4b basis unstated (absent) or explicitly "unknown": the unqualified label (면적), the figure as authored — no basis is guessed
+  ok   AREA-UI-5 no numerical conversion: re-labelling the same record through supply / exclusive / unknown changes ONLY the label (bi-01 34평, bi-14 84 m², bi-17 112 m²); no 평↔m² figure appears
+  ok   AREA-UI-6 a site that authored no basis labels gets the neutral defaults for a stated basis — never its own unqualified label (the old demo copy areaLabel = 공급면적 must not reach bi-14)
+
+[facts] V0.2 structured facts: rendered only when authored, never inferred
+  ok   F1 every record, QA 19/19 and production 8/8: area · projectType · main work scopes · total price rows are exactly the authored facts (a row iff authored), with the expected label and value
+  ok   F2 projectType is never inferred: bi-02 / bi-03 / bi-05 (category 전체 리모델링) and bi-19 (category 부분 리모델링) have NO projectType row, even with a title / summary / body that says 전체 리모델링
+  ok   F3 main work scopes come from workScopeIds only: display `scope` text never adds, drops or renames an id; the label says 주요 (never 전체) 공사 범위
+  ok   F4 total price: the whole case's total under 총 공사비 for full AND partial projects alike — never a per-room / per-trade price, never a quote; no total → no row (never pricePerArea × area)
+  ok   F5 total formatting (literals): 억/만 notation for a Korean locale + KRW, won when 만 cannot show it exactly, both ends of a range, generic form elsewhere
+  ok   F6 one business truth: the page and the integration producer read the SAME canonical record — editing it in the snapshot moves both (no second facts object)
+  ok   F7 the facts never ship the raw basis / ids: labels and words only (no "basis", "exclusive", "partial_remodel", "living_room" in any fact)
+
+[build] a real build of the demo's QA corpus with its pinned release (throwaway root)
+  ok   B0 the demo's QA corpus builds with its pin interior-01-1.6.1-8da56de8d28f: status built, package QA pass, no builder warning
+  ok   B1 the demo's site copy carries the basis-aware and V0.2 fact labels (the labels [unit] injects are its real copy)
+  ok   B2 DETAIL_ROUTES 19/19: the detail pages emitted are exactly the QA golden document's detailUrls (expected side = the golden, not the build)
+  ok   B3 the build's own integration document IS the QA golden, byte for byte (manifest + portfolio document): presentation changes never move the resource
+  ok   B4 DETAIL_INTEGRATION_CONSISTENCY 19/19: every visible area / projectType / main work / total / per-area row agrees with the build's integration record; a fact the record lacks has no row
+  ok   B5 no contradiction anywhere on a detail page: no 공급면적 beside an exclusive record, no 전용면적 beside a supply one, no area label without an area, no 총 공사비 without a total, no quote wording in the facts
+  ok   B6 the browser gets words, not data: no raw area basis, work-scope id list, price range or projectType value in any shipped page or payload (the integration document aside; data-fact row names are presentation)
+  ok   B8 MEDIA_PAGE_CONSISTENCY 19/19 (media 1.1): every image the build's integration record names (cover + gallery) is an image its own detail page renders; bi-04's page also renders its 2 before images, which the record does not carry; the 11 records without media (bi-09 … bi-19) name nothing
+       bi-09: 공급면적 = 34평 | 리모델링 구분 = 전체 리모델링 | 주요 공사 범위 = 현관, 주방, 욕실, 바닥, 도배, 조명, 붙박이·제작 가구 | 총 공사비 = 5,000만 원
+       bi-01: 공급면적 = 34평 | 리모델링 구분 = 전체 리모델링 | 주요 공사 범위 = 현관, 주방, 욕실, 바닥, 조명, 붙박이·제작 가구 | —
+       bi-17: 공급면적 = 112 m² | 리모델링 구분 = 부분 리모델링 | 주요 공사 범위 = 거실, 바닥 | 총 공사비 = 1,250만 원
+       bi-14: 전용면적 = 84 m² | 리모델링 구분 = 부분 리모델링 | 주요 공사 범위 = 주방 | 총 공사비 = 1,500만 원
+       bi-15: — | 리모델링 구분 = 부분 리모델링 | 주요 공사 범위 = 욕실 | 총 공사비 = 700만 원
+       bi-19: 공급면적 = 32평 | — | 주요 공사 범위 = 바닥, 도배, 조명 | 총 공사비 = 1,100만 원
+       bi-13: 공급면적 = 48평 | 리모델링 구분 = 전체 리모델링 | 주요 공사 범위 = 현관, 거실, 다이닝, 주방, 아이방, 드레스룸, 서재, 욕실, 창호, 조명, 붙박이·제작 가구 | 총 공사비 = 1억 2,500만 원 ~ 1억 4,000만 원
+  ok   B7 representative records (full + area + total · full, no total · partial + total · exclusive area · no area · no projectType · range total) render as expected
+
+detail-facts: 25 passed, 0 failed
+exit=0 seconds=8

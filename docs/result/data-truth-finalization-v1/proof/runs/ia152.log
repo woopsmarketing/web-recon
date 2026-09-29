@@ -1,0 +1,31 @@
+
+[contract] additive patch
+  ok   S1 Template ≥ 1.5.2, same routes as 1.5.1; one new settings section site.seo = { indexing: index | noindex }, default index, no slots; every 1.5.1 site's settings still resolve and stay indexable; the demo's resolve to noindex; anything else fails
+
+[release] every earlier release immutable, a Template-only patch
+  ok   R1 every release dir captured before the cut (1.0.0 … 1.5.1) verifies and is byte-identical to the capture; the only new dir is one 1.5.2 (+ later releases' own)
+  ok   R2 the 1.5.2 release = the 1.5.1 release except exactly the five declared Template files + one new (sections/homeHeroData.ts) (platform runtime, package.json, lockfile byte-identical); every platform/ file captured before the work is unchanged
+  ok   R3 the demo pins a verified release ≥ 1.5.2 and its current package was built with it (QA pass), rollback = the pre-cut package; every fixture's current package was built with the fixture's OWN verified pin — a fixture the cut did not re-pin still serves its pre-cut package (pointers untouched, nothing rotated away)
+
+[site data] only the pin, the public origin, the address and the indexing setting moved
+  ok   D1 every demo site file is byte-identical to the pre-cut capture except site.json (pin + publicOrigin), settings.json (+ site.seo noindex), content/business.json (contact.email) and slots.json (exactly the two {email} sentences re-worded)
+  ok   D2 every fixture's site files are byte-identical to the capture, except (only after a later re-pin of that fixture) site.json's pin
+
+[package] the built demo pages
+  ok   P1 every page except the 404: exactly one robots meta = noindex, exactly one canonical = the public origin + its path (the homepage included), OpenGraph from the same title / description / canonical, og:image = the first hero slide (absolute, 2400 × 1350)
+  ok   P2 the 404 page: noindex (exactly the framework's tag + the site's), no canonical, no OpenGraph
+       skipped: the pre-cut 1.5.1 package was pruned by a later build of the demo (keep-2); this proof stands at the cut commit
+  ok   P3 robots.txt allows the crawl (the noindex must be readable) and names the origin's sitemap; every sitemap <loc> is on the public origin; the page set, sitemap paths and robots.txt equal the 1.5.1 package's with only the origin moved
+       skipped: the pre-cut 1.5.1 package was pruned by a later build of the demo (keep-2); this proof stands at the cut commit
+  ok   P4 the <body> did not move: every page's header, <main> and footer equal the 1.5.1 package's with only the address changed
+  ok   P5 the address: the footer mailto on every page and the /contact direct address are the site's business email; the long-inquiry fallback copy names it via {email}; no page, payload, sitemap or script of the package still carries the old address or origin
+
+[fixtures] each on its own pin; the 1.5.2 default proven on a throwaway copy
+  ok   F1 every fixture's current package matches ITS OWN pin: a 1.5.1 pin = the 1.5.1 head (no site robots meta, no home canonical, no OpenGraph); a pin ≥ 1.5.2 = the default shape (indexable, home canonical, OpenGraph, no og:image for an SVG hero)
+  ok   F2 the 1.5.2 default on a throwaway-root copy of fixture-small re-pinned to 1.5.2 (data/sites + data/site-builds untouched): no site robots meta, a homepage canonical, OpenGraph = title / description / canonical, no og:image (SVG hero = the raster guard); header, <main>, footer, robots.txt and sitemap equal its 1.5.1 package's
+
+[source] one SEO source, no customer in the Template
+  ok   J1 pageMetadata derives canonical + OpenGraph from one { title, description, path } (og:url = canonical), only with a public origin, og:image only a raster; the homepage calls it with the layout's title / description; the layout's robots reads site.seo; no siteId, origin or address in the Template
+
+14 passed, 0 failed
+exit=0 seconds=8

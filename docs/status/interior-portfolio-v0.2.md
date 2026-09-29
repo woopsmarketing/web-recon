@@ -1,5 +1,16 @@
 # Interior Portfolio Contract V0.2 — status
 
+> **2026-09-29 — demo corpus is 8 records; the 11 V0.2 fixtures are TEST_ONLY.** bi-09 … bi-19 were
+> classified VERIFIED_SYNTHETIC (authored as test fixtures, borrowed covers, no source,
+> [`../work/portfolio-experience-v1/04-record-truth-audit.md`](../work/portfolio-experience-v1/04-record-truth-audit.md))
+> and removed from `data/sites/boost-interior-demo/content/projects.json`. They now live verbatim in
+> `platform/test/fixtures/boost-interior-synthetic/`, and every edge-case test still runs on them
+> through `platform/test/portfolio-qa-corpus.ts`. Live = package `9d4036ba…` (build `71a906c1…`, 8 records, document
+> `968afbcc…`, schema 1.1, producer 4, pin `interior-01@1.6.1`); rollback `77cc7f9f…` is the 19-record
+> package — do not `--rollback` this host (R1). The sections below that say "19 records" describe the
+> corpus before this date. Report:
+> [`../result/INTERIOR-DEMO-DATA-TRUTH-FINALIZATION-V1-2026-09-29.md`](../result/INTERIOR-DEMO-DATA-TRUTH-FINALIZATION-V1-2026-09-29.md).
+
 > **2026-09-27 (later) — V0.2 PUBLISHED on `boost-interior-demo` only; rollback drilled; BoostChat next.**
 > `https://interior-demo.boostweb.co.kr` serves package `3846a29d…` (build `a4777cf9…`,
 > `interior-01@1.6.1`). The live manifest (`"0.1"`) and document (`"1.0"`, 19 records,
@@ -127,7 +138,7 @@ Finishing the widget-seam work will trigger exactly this. That is the check work
 Cloudflare-pilot package directory and the `previous.json` rollback pointer `G4` asserts. A derived
 `DEMO_OFF_BUILD_INPUT_ID` was added instead, so the next re-pin self-updates.
 
-### Demo corpus: 19 records, V0.2-authored, applied
+### Demo corpus: 19 records, V0.2-authored, applied — *superseded 2026-09-29: production is 8 records, bi-09 … bi-19 are TEST_ONLY fixtures (banner above)*
 
 `data/sites/boost-interior-demo/content/projects.json` holds **19** records (was 8). Applied
 2026-09-24 from `04-demo-data-spec.md` §2 (bi-09…bi-19) and `18-existing-eight-workscopes.md`
