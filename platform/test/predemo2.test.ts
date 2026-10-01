@@ -29,7 +29,7 @@ const FROZEN = [
   { id: "interior-01-1.4.1-59179ca20368", hash: "59179ca20368d0f48093eacbe3930ce3f3de9b21a65ba27d9bc63defb67933bd", capture: "release141Files" },
 ] as const;
 const BEFORE_FILE = "docs/result/recon-template-platform-predemo-polish-2/proof/before.json";
-const NOTICE = "부스트 인테리어는 BoostChat 기능 시연을 위한 가상 인테리어 브랜드입니다. 포트폴리오·후기는 데모용 예시이고, 사진은 AI로 생성한 예시 이미지입니다.";
+const NOTICE = "부스트 인테리어는 BoostInterior 기능 시연을 위한 가상 인테리어 브랜드입니다. 포트폴리오·후기는 데모용 예시이고, 사진은 AI로 생성한 예시 이미지입니다.";
 const NEW_DETAIL_LABELS = { allRoomsLabel: "전체", openPhotoLabel: "사진 크게 보기", closeViewerLabel: "닫기" };
 
 let passed = 0;
