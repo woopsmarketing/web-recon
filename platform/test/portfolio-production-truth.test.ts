@@ -13,9 +13,9 @@
  *                fixture's ids, slugs or titles (the forbidden set is READ from the fixture, never
  *                hard-coded), and every production record's exported media is its own;
  *   [qa]         (ii) the QA composition holds all 11 fixture records, validates, and reproduces the
- *                pre-split projects.json, snapshot (once exactly the later footer-notice delta is
- *                reverted) and Portfolio Document (856361f5…) byte for byte — the split lost nothing
- *                and the producer did not change;
+ *                pre-split projects.json, snapshot (once exactly the later footer deltas — the
+ *                product rename, then the notice — are reverted) and Portfolio Document (856361f5…)
+ *                byte for byte — the split lost nothing and the producer did not change;
  *                (iii) each of the 8 production records is emitted deep-equal to its own record in the
  *                pre-split document — the removal changed nothing about the survivors;
  *   [build]      a real production build (throwaway root; data/sites and data/site-builds untouched):
@@ -52,10 +52,12 @@ import {
   SYNTHETIC_PROJECTS_FILE,
   SYNTHETIC_STATUS,
   DEMO_FOOTER_NOTICE,
+  DEMO_FOOTER_PRODUCT_NAME,
   composeQaProjectsText,
   composeQaSnapshot,
   readSyntheticFixture,
   revertFooterNotice,
+  revertFooterProductName,
 } from "./portfolio-qa-corpus";
 
 const repoRoot = process.cwd();
@@ -210,18 +212,29 @@ await check(`P2 (i) the production producer output is the production golden (${P
 
 // ----------------------------------------------------------------------- qa --
 console.log("\n[qa] the QA composition = the pre-split corpus, byte for byte");
-await check(`Q1 (ii) the QA composition holds all 11 fixture records and reproduces the pre-split projects.json (${PRE_SPLIT_PROJECTS_BYTES} B, sha256 ${PRE_SPLIT_PROJECTS_SHA256.slice(0, 12)}…) and, with exactly the later footer-notice delta reverted, the pre-split snapshot (siteSnapshotHash ${PRE_SPLIT_SNAPSHOT_HASH.slice(0, 12)}…)`, async () => {
+await check(`Q1 (ii) the QA composition holds all 11 fixture records and reproduces the pre-split projects.json (${PRE_SPLIT_PROJECTS_BYTES} B, sha256 ${PRE_SPLIT_PROJECTS_SHA256.slice(0, 12)}…) and, with exactly the later footer deltas (the product rename, then the notice) reverted, the pre-split snapshot (siteSnapshotHash ${PRE_SPLIT_SNAPSHOT_HASH.slice(0, 12)}…)`, async () => {
   const text = await composeQaProjectsText(repoRoot);
   const bytes = new TextEncoder().encode(text);
   eq([bytes.length, sha256(bytes)], [PRE_SPLIT_PROJECTS_BYTES, PRE_SPLIT_PROJECTS_SHA256], "composed projects.json = the pre-split file");
   eq((JSON.parse(text).items as { id: string }[]).map((p) => p.id), [...PROD_IDS, ...fixture.ids], "production + fixture, original order");
   eq(qaSnapshot.content.projects.map((p) => p.id), [...PROD_IDS, ...fixture.ids], "the QA snapshot serves all 19");
-  // the footer notice changed after the split (DEMO_FOOTER_NOTICE): revert exactly that one field
-  const preFooter = revertFooterNotice(qaSnapshot);
-  eq(deltaPaths(qaSnapshot, preFooter), ['$["slots"]["values"]["site.footer"]["notice"]'], "the footer-notice delta is exactly one field");
-  eq([(qaSnapshot.slots!.values["site.footer"] as { notice?: string }).notice, (preFooter.slots!.values["site.footer"] as { notice?: string }).notice], [DEMO_FOOTER_NOTICE[1], DEMO_FOOTER_NOTICE[0]], "footer notice now / before");
+  // the footer notice changed twice after the split, both times in the same one field: the notice
+  // itself (DEMO_FOOTER_NOTICE), then the product name in it (DEMO_FOOTER_PRODUCT_NAME, 2026-10-01).
+  // Revert exactly each, newest first.
+  const NOTICE_PATH = '$["slots"]["values"]["site.footer"]["notice"]';
+  const noticeOf = (s: SiteSnapshot) => (s.slots!.values["site.footer"] as { notice?: string }).notice;
+  const preRename = revertFooterProductName(qaSnapshot);
+  eq(deltaPaths(qaSnapshot, preRename), [NOTICE_PATH], "the product-rename delta is exactly one field");
+  eq([noticeOf(qaSnapshot), noticeOf(preRename)], [DEMO_FOOTER_PRODUCT_NAME[1], DEMO_FOOTER_PRODUCT_NAME[0]], "footer notice now / before the product rename");
+  eq(DEMO_FOOTER_PRODUCT_NAME[0].split("BoostChat").join("BoostInterior"), DEMO_FOOTER_PRODUCT_NAME[1], "the rename is the one word BoostChat → BoostInterior, nothing else in the sentence");
+  eq(DEMO_FOOTER_PRODUCT_NAME[0].split("BoostChat").length, 2, "…which the notice named exactly once");
+  const preFooter = revertFooterNotice(preRename);
+  eq(deltaPaths(preRename, preFooter), [NOTICE_PATH], "the footer-notice delta is exactly one field");
+  eq(deltaPaths(qaSnapshot, preFooter), [NOTICE_PATH], "…and the two together are still exactly that one field");
+  eq([noticeOf(preRename), noticeOf(preFooter)], [DEMO_FOOTER_NOTICE[1], DEMO_FOOTER_NOTICE[0]], "footer notice before the product rename / before the notice change");
   assert(hashJson(qaSnapshot) !== PRE_SPLIT_SNAPSHOT_HASH, "the footer notice is a real delta (a silent revert of it would fail here)");
-  eq(hashJson(preFooter), PRE_SPLIT_SNAPSHOT_HASH, "the QA snapshot with the footer notice reverted = the pre-split snapshot (the producer-4 package 71f7e5f3…'s recorded siteSnapshotHash)");
+  assert(hashJson(preRename) !== PRE_SPLIT_SNAPSHOT_HASH && hashJson(preRename) !== hashJson(qaSnapshot), "…and so is the product rename on top of it");
+  eq(hashJson(preFooter), PRE_SPLIT_SNAPSHOT_HASH, "the QA snapshot with the product rename and the footer notice reverted = the pre-split snapshot (the producer-4 package 71f7e5f3…'s recorded siteSnapshotHash)");
 });
 await check(`Q2 (ii) the QA composition validates and its emission IS the pre-split document ${QA_GOLDEN_VERSION} byte for byte (the QA golden, ${QA_GOLDEN_DOC_BYTES} B) — the split lost nothing and the producer did not change`, async () => {
   eq(validateFor(qaEmission, qaSnapshot), { errors: [], warnings: [] }, "validates");

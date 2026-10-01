@@ -95,7 +95,7 @@ import { GOLDEN_DIR, GOLDEN_V02_DIR, goldenRecord } from "../cli/integration-gol
 import { MediaImageSchema, PortfolioMediaSchema } from "../integration/validate";
 import { demoExpectedPages, demoRollout } from "./demo-rollout";
 import { gitMaterialize } from "./git-checkout";
-import { PRE_SPLIT_SNAPSHOT_HASH, QA_GOLDEN_DIR, QA_GOLDEN_DOC_BYTES, QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256, QA_GOLDEN_VERSION, composeQaSnapshot, readSyntheticFixture, revertFooterNotice } from "./portfolio-qa-corpus";
+import { PRE_SPLIT_SNAPSHOT_HASH, QA_GOLDEN_DIR, QA_GOLDEN_DOC_BYTES, QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256, QA_GOLDEN_VERSION, composeQaSnapshot, readSyntheticFixture, revertFooterNotice, revertFooterProductName } from "./portfolio-qa-corpus";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -154,8 +154,16 @@ const LIVE_PIN = { templateId: "interior-01", templateVersion: "1.5.2", releaseI
  * `_PRE_FOOTER` is the anchor before it; B2 reverts exactly that one field and must land on it again,
  * and the split / widget / 1.6.1 reverts are then taken from the reverted snapshots, so their anchors
  * stay put.
+ *
+ * Footer product name (2026-10-01): the same notice now names the product BoostInterior instead of
+ * BoostChat — a seventh deliberate data delta (DEMO_FOOTER_PRODUCT_NAME, portfolio-qa-corpus.ts), in
+ * the same one field. `_PRE_RENAME` is the anchor before it (the head anchor as the footer notice left
+ * it); B2 reverts exactly that field to the BoostChat wording and must land on it again, and the
+ * footer / split / widget / 1.6.1 reverts are then taken from the reverted snapshots, so their
+ * anchors stay put.
  */
-const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN = "0b5a0cc04d8583f3e4741d01135221ff8ca8b9b2eadebb1a715fe58a3e87a2f1";
+const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN = "827462813da53f6470d397f1451b1dc9740191e171a79e571e6b873fd83dc565";
+const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_RENAME = "0b5a0cc04d8583f3e4741d01135221ff8ca8b9b2eadebb1a715fe58a3e87a2f1";
 const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_FOOTER = "169883a3276d8feb10e2bc5c6488e191c9422a0f1d93043eef16c738eeb9d066";
 const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT = "f63e293cbff852ab0896834bc326340fbc950a9324a520a1ecbaa544955e827e";
 const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_WIDGET = "8de4ff8710cd37f297e93d5926bf1244fad7ebfd81eab979711e050ad7d34140";
@@ -228,11 +236,21 @@ const PRE_SPLIT_PACKAGE_COMMIT = "490c7ddf027de3d36554afcc510372d0330f6d22";
 /**
  * The record truth split's build (docs/result/data-truth-finalization-v1, published 2026-09-29): the
  * 8-record production corpus, document "1.1" 968afbcc… = the production golden's bytes (DEMO_*), the
- * footer notice before its change. It is the live package until the footer-notice build is
- * published, and the rollback behind that build — B2b.
+ * footer notice before its change. It was the rollback behind the footer-notice build; the
+ * product-rename build moved the rollback one step and keep-2 retired this directory. B2b reads it
+ * from DATA_TRUTH_PACKAGE_COMMIT (the last commit carrying it) and re-hashes it.
  */
 const DATA_TRUTH_BUILD_INPUT_ID = "71a906c1f284a94f22146096313421b0c5c519ee524468c4e602b0f037a0ada8";
 const DATA_TRUTH_PACKAGE_HASH = "9d4036baeaa81ad4ec5c05eac230846a61267a2eb1a0c44b87b9a6e510f22819";
+const DATA_TRUTH_PACKAGE_COMMIT = "822ee1209f2bcaa068e2848b745636c2939bfdfe";
+/**
+ * The footer-notice build (docs/result/INTERIOR-SALES-DEMO-FINAL-CLOSEOUT-V1-2026-09-29.md, published
+ * 2026-09-29): the same 8-record corpus and document 968afbcc…, the footer notice naming BoostChat
+ * (DEMO_FOOTER_NOTICE's `now`). It is the live package until the product-rename build is published,
+ * and the rollback behind that build — B2b.
+ */
+const FOOTER_NOTICE_BUILD_INPUT_ID = "ddbc72ad3fe018cf354d12b625436b60c169683474845081f9cf73fcf522a38a";
+const FOOTER_NOTICE_PACKAGE_HASH = "b10d430b2da3d954e5d2b59f8baec8933583c2eb94f7a713e0a7670cb8699535";
 const DEMO_MANIFEST_BYTES = 274;
 /**
  * The FROZEN V0.2 golden values (07 rev 9.2.1, document "1.0", manifest "0.1"), pinned in
@@ -1863,14 +1881,21 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
   // of that delta; the widget and 1.6.1 reverts below are taken from that pre-split snapshot.
   // Footer notice (2026-09-29, after the split): reverting exactly that one slots field must land on
   // the pre-footer anchor; the split / widget / 1.6.1 reverts are then taken from the reverted snapshots.
+  // Footer product name (2026-10-01): the same field, BoostChat → BoostInterior. Reverting exactly it
+  // must land on the pre-rename anchor; the footer-notice revert is then taken from that snapshot.
   eq(computeBuildInputId(LIVE_PARTS), LIVE_BUILD_INPUT_ID, "the live package's recorded parts reproduce its identity");
   const atLivePin = hashJson({ ...demo.snapshot, site: { ...demo.snapshot.site, template: LIVE_PIN } });
   eq(atLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN, "pin rolled back to 1.5.2 → the production demo's snapshot hash (bi-01 … bi-08, the current footer notice)");
-  const preFooter = revertFooterNotice(demo.snapshot);
+  const preRename = revertFooterProductName(demo.snapshot);
+  const preRenameAtLivePin = hashJson({ ...preRename, site: { ...preRename.site, template: LIVE_PIN } });
+  eq(preRenameAtLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_RENAME, "…with the product name reverted it is the pre-rename anchor: that one field is the whole of the rename delta");
+  assert(atLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_RENAME, "the product rename is a real delta (a silent revert of it would fail here)");
+  const preFooter = revertFooterNotice(preRename);
   const preFooterAtLivePin = hashJson({ ...preFooter, site: { ...preFooter.site, template: LIVE_PIN } });
   eq(preFooterAtLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_FOOTER, "…with the footer notice reverted it is the pre-footer anchor: that one field is the whole of the footer delta");
   assert(atLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_FOOTER, "the footer notice is a real delta (a silent revert of it would fail here)");
-  const qaPreFooter = revertFooterNotice(qaSnapshot);
+  assert(preRenameAtLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_FOOTER, "…also before the product rename");
+  const qaPreFooter = revertFooterNotice(revertFooterProductName(qaSnapshot));
   eq(hashJson({ ...qaPreFooter, site: { ...qaPreFooter.site, template: LIVE_PIN } }), DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT, "…with the synthetic fixture composed back it is the pre-split anchor: the 11 records are the whole of the split");
   assert(atLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT, "the split is a real delta (a silent re-insertion of the fixture would fail here)");
   assert(preFooterAtLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT, "…also before the footer delta");
@@ -1930,7 +1955,15 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
 //    build's with the footer notice reverted. keep-2 retired the pre-split build (71f7e5f3…); it is
 //    read from PRE_SPLIT_PACKAGE_COMMIT and re-hashed, still with the QA golden's bytes; the older
 //    lineage stays read from its commits.
-await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's media 1.1 identity (producer 4, the 8-record production corpus) current with the golden integration bytes, the frozen rollback lineage behind it (the record truth split's build with the same golden bytes, differing only by the footer notice; the pre-split producer-4 build, the producer-3 media build, the widget build and the first V0.2 package retired by keep-2 and intact in git)", async () => {
+//    RESTATED for the footer product name (2026-10-01, a site-copy change only): the seventh steady
+//    package is the same 8-record corpus and document (968afbcc…) with the notice naming
+//    BoostInterior. Behind it is exactly the footer-notice build (ddbc72ad…, live until this build is
+//    published), intact at its frozen hash, its _integration/ = the production golden's bytes, its
+//    recorded parts = this build's with the product name reverted. keep-2 retired the record truth
+//    split's build (71a906c1…); it is read from DATA_TRUTH_PACKAGE_COMMIT and re-hashed, still with
+//    the production golden's bytes and its recorded parts = this build's with both footer deltas
+//    reverted; the older lineage stays read from its commits.
+await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's media 1.1 identity (producer 4, the 8-record production corpus) current with the golden integration bytes, the frozen rollback lineage behind it (the footer-notice build with the same golden bytes, differing only by the product name in the footer notice; the record truth split's build, the pre-split producer-4 build, the producer-3 media build, the widget build and the first V0.2 package retired by keep-2 and intact in git)", async () => {
   eq(demo.parts.integrationInputHash !== undefined, true, "the demo is still opted in");
   if (rollout === "PRE_PUBLISH_TRANSITION") {
     eq(currentRecord.buildInputId, V01_BUILD_INPUT_ID, "current = the V0.1 package");
@@ -1952,34 +1985,50 @@ await check("B2b the current/previous packages are exactly the rollout state's: 
   const srcs = new Set(demoEmission.portfolio!.document.records.flatMap((r) => [r.media?.cover, ...(r.media?.gallery ?? [])]).filter((m) => m !== undefined).map((m) => m.src));
   for (const src of srcs) assert(await exists(path.join(currentDir, "site", src.slice(1))), `media src ${src} is in the current package`);
 
-  eq(previousId, DATA_TRUTH_BUILD_INPUT_ID, "previous = the record truth split's build of the 8-record corpus (the rollback behind the footer-notice build)");
-  const prevDir = path.join(demoBuilds, "packages", DATA_TRUTH_BUILD_INPUT_ID);
+  eq(previousId, FOOTER_NOTICE_BUILD_INPUT_ID, "previous = the footer-notice build of the 8-record corpus (the rollback behind the product-rename build)");
+  const prevDir = path.join(demoBuilds, "packages", FOOTER_NOTICE_BUILD_INPUT_ID);
   const prevRecord = (await readJson(path.join(prevDir, "build-record.json"))) as BuildRecord;
-  eq([prevRecord.buildInputId, prevRecord.packageHash], [DATA_TRUTH_BUILD_INPUT_ID, DATA_TRUTH_PACKAGE_HASH], "the rollback's recorded identity");
+  eq([prevRecord.buildInputId, prevRecord.packageHash], [FOOTER_NOTICE_BUILD_INPUT_ID, FOOTER_NOTICE_PACKAGE_HASH], "the rollback's recorded identity");
   assert(await packageIntact(prevDir), "the rollback package is intact");
   eq([prevRecord.template.releaseId, prevRecord.template.releaseHash], [demoPin.releaseId, demoPin.releaseHash], "the rollback was built with the same pin");
-  eq([prevRecord.integration?.contract, prevRecord.integration?.producerVersion], [{ core: "0.1", portfolio: "1.1" }, PRODUCER_VERSION], "the rollback = the media 1.1 contract pair, this producer (the footer notice changed site copy, not the producer)");
+  eq([prevRecord.integration?.contract, prevRecord.integration?.producerVersion], [{ core: "0.1", portfolio: "1.1" }, PRODUCER_VERSION], "the rollback = the media 1.1 contract pair, this producer (the product rename changed site copy, not the producer)");
   const prevFiles = (await readdir(path.join(prevDir, "site", INTEGRATION_DIR))).filter((f) => f !== ".DS_Store").sort();
   eq(prevFiles, ["manifest.json", `portfolio.${DEMO_VERSION}.json`], "the rollback's _integration/ = the production manifest + document (the footer notice is outside the projection)");
   for (const f of prevFiles) eq(sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_DIR, f))), `rollback ${f} = the canonical golden's bytes`);
   eq([sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, `portfolio.${DEMO_VERSION}.json`))), sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, "manifest.json")))], [DEMO_DOC_SHA256, DEMO_MANIFEST_SHA256], "rollback document / manifest sha256 = the contract literals");
   eq(prevRecord.integration?.resources, currentRecord.integration?.resources, "the rollback and the current package carry the same integration resource");
-  // the footer notice is the whole of the difference between the rollback and the current build
-  eq(prevRecord.parts, { ...currentRecord.parts, siteSnapshotHash: hashJson(revertFooterNotice(demo.snapshot)) }, "the rollback's recorded parts = the current build's with exactly the footer notice reverted");
-  eq(computeBuildInputId(prevRecord.parts), DATA_TRUTH_BUILD_INPUT_ID, "…and they reproduce the rollback's identity");
-  assert(currentRecord.packageHash !== DATA_TRUTH_PACKAGE_HASH && currentRecord.buildInputId !== DATA_TRUTH_BUILD_INPUT_ID, "the current package is not the data-truth one");
+  // the product name in the footer notice is the whole of the difference between the rollback and the current build
+  eq(prevRecord.parts, { ...currentRecord.parts, siteSnapshotHash: hashJson(revertFooterProductName(demo.snapshot)) }, "the rollback's recorded parts = the current build's with exactly the product name reverted");
+  eq(computeBuildInputId(prevRecord.parts), FOOTER_NOTICE_BUILD_INPUT_ID, "…and they reproduce the rollback's identity");
+  assert(currentRecord.packageHash !== FOOTER_NOTICE_PACKAGE_HASH && currentRecord.buildInputId !== FOOTER_NOTICE_BUILD_INPUT_ID, "the current package is not the footer-notice one");
 
-  // retired from the working tree by keep-2: the pre-split build (the data-truth build's rollback),
-  // the producer-3 media build (the pre-split build's rollback), the widget build (the producer-3
-  // build's rollback) and the first V0.2 package (the widget build's rollback) — each read from git
-  // and re-hashed
+  // retired from the working tree by keep-2: the record truth split's build (the footer-notice
+  // build's rollback), the pre-split build (the data-truth build's rollback), the producer-3 media
+  // build (the pre-split build's rollback), the widget build (the producer-3 build's rollback) and
+  // the first V0.2 package (the widget build's rollback) — each read from git and re-hashed
+  const dataTruthOnDisk = path.join(demoBuilds, "packages", DATA_TRUTH_BUILD_INPUT_ID);
   const preSplitOnDisk = path.join(demoBuilds, "packages", PRE_SPLIT_BUILD_INPUT_ID);
   const p3OnDisk = path.join(demoBuilds, "packages", MEDIA_P3_BUILD_INPUT_ID);
   const widgetOnDisk = path.join(demoBuilds, "packages", WIDGET_BUILD_INPUT_ID);
   const firstOnDisk = path.join(demoBuilds, "packages", V02_FIRST_BUILD_INPUT_ID);
-  assert(!(await exists(preSplitOnDisk)) && !(await exists(p3OnDisk)) && !(await exists(widgetOnDisk)) && !(await exists(firstOnDisk)), "keep-2 retired the pre-split build, the producer-3 media build, the widget build and the first V0.2 package (current + previous only)");
+  assert(!(await exists(dataTruthOnDisk)) && !(await exists(preSplitOnDisk)) && !(await exists(p3OnDisk)) && !(await exists(widgetOnDisk)) && !(await exists(firstOnDisk)), "keep-2 retired the record truth split's build, the pre-split build, the producer-3 media build, the widget build and the first V0.2 package (current + previous only)");
   const scratch = await mkdtemp(path.join(os.tmpdir(), "v02-first-package-"));
   try {
+    const dataTruthDir = gitMaterialize(repoRoot, DATA_TRUTH_PACKAGE_COMMIT, path.relative(repoRoot, dataTruthOnDisk), scratch);
+    const dataTruthRecord = (await readJson(path.join(dataTruthDir, "build-record.json"))) as BuildRecord;
+    eq([dataTruthRecord.buildInputId, dataTruthRecord.packageHash], [DATA_TRUTH_BUILD_INPUT_ID, DATA_TRUTH_PACKAGE_HASH], "the data-truth build's recorded identity (from git)");
+    assert(await packageIntact(dataTruthDir), "the data-truth build, read from git, is intact at its frozen packageHash");
+    eq([dataTruthRecord.template.releaseId, dataTruthRecord.template.releaseHash], [demoPin.releaseId, demoPin.releaseHash], "the data-truth build was built with the same pin");
+    eq([dataTruthRecord.integration?.contract, dataTruthRecord.integration?.producerVersion], [{ core: "0.1", portfolio: "1.1" }, PRODUCER_VERSION], "the data-truth build = the media 1.1 contract pair, this producer (the footer notice changed site copy, not the producer)");
+    const dataTruthFiles = (await readdir(path.join(dataTruthDir, "site", INTEGRATION_DIR))).filter((f) => f !== ".DS_Store").sort();
+    eq(dataTruthFiles, ["manifest.json", `portfolio.${DEMO_VERSION}.json`], "the data-truth build's _integration/ = the production manifest + document (the footer notice is outside the projection)");
+    for (const f of dataTruthFiles) eq(sha256(await readFile(path.join(dataTruthDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_DIR, f))), `data-truth ${f} = the canonical golden's bytes`);
+    eq([sha256(await readFile(path.join(dataTruthDir, "site", INTEGRATION_DIR, `portfolio.${DEMO_VERSION}.json`))), sha256(await readFile(path.join(dataTruthDir, "site", INTEGRATION_DIR, "manifest.json")))], [DEMO_DOC_SHA256, DEMO_MANIFEST_SHA256], "data-truth document / manifest sha256 = the contract literals");
+    eq(dataTruthRecord.integration?.resources, currentRecord.integration?.resources, "the data-truth build and the current package carry the same integration resource");
+    // the two footer deltas (the product rename, then the notice) are the whole of the difference between the data-truth build and the current build
+    eq(dataTruthRecord.parts, { ...currentRecord.parts, siteSnapshotHash: hashJson(revertFooterNotice(revertFooterProductName(demo.snapshot))) }, "the data-truth build's recorded parts = the current build's with exactly the product name and the footer notice reverted");
+    eq(computeBuildInputId(dataTruthRecord.parts), DATA_TRUTH_BUILD_INPUT_ID, "…and they reproduce the data-truth build's identity");
+    assert(currentRecord.packageHash !== DATA_TRUTH_PACKAGE_HASH && currentRecord.buildInputId !== DATA_TRUTH_BUILD_INPUT_ID, "the current package is not the data-truth one");
     const preSplitDir = gitMaterialize(repoRoot, PRE_SPLIT_PACKAGE_COMMIT, path.relative(repoRoot, preSplitOnDisk), scratch);
     const preSplitRecord = (await readJson(path.join(preSplitDir, "build-record.json"))) as BuildRecord;
     eq([preSplitRecord.buildInputId, preSplitRecord.packageHash], [PRE_SPLIT_BUILD_INPUT_ID, PRE_SPLIT_PACKAGE_HASH], "the pre-split build's recorded identity (from git)");
