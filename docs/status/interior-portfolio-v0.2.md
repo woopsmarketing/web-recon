@@ -1,5 +1,11 @@
 # Interior Portfolio Contract V0.2 — status
 
+> **2026-10-01 — the demo footer names the product BoostInterior.** Live = package `e562dedd…` (build `01f7ac78…`,
+> same 8-record document `968afbcc…`); the only change is the word BoostChat → BoostInterior in `site.footer.notice`.
+> The pointer's `previous` is the footer-notice package `b10d430b…` (8 records). keep-2 retired build `71a906c1…` from
+> the tree (intact in git at `822ee12`). The entries below describe the state before this date.
+> Report: [`../result/INTERIOR-DEMO-PRODUCT-RENAME-2026-10-01.md`](../result/INTERIOR-DEMO-PRODUCT-RENAME-2026-10-01.md).
+
 > **2026-09-29 (evening) — sales demo final closeout; the technical stabilization milestone is closed.**
 > Live = package `b10d430b…` (build `ddbc72ad…`, same 8-record document `968afbcc…`), whose footer now
 > names the brand as fictional and the photos as AI-generated. The pointer's `previous` is the 8-record
