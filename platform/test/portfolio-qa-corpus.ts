@@ -40,7 +40,8 @@ export const QA_GOLDEN_MANIFEST_SHA256 = "9061827a746f986eb51127923af839930c01be
  * data/sites/boost-interior-demo/content/projects.json BEFORE the split (19 records, commit ee953b1),
  * and the hashJson of its public snapshot — which is the siteSnapshotHash recorded by the producer-4
  * package 71f7e5f3… built from it. The composition must reproduce both exactly (the snapshot once
- * the later footer deltas below — the product rename, then the notice — are reverted).
+ * the later deltas below — the 1.6.2 online inquiry + its re-pin, the product rename, then the
+ * footer notice — are reverted, newest first).
  */
 export const PRE_SPLIT_PROJECTS_BYTES = 54134;
 export const PRE_SPLIT_PROJECTS_SHA256 = "7c8c6a9ecfb67e4b4a8cb250196e8aabd9662fbc7e0c52b5b7759644e2a8b8cb";
@@ -61,11 +62,101 @@ export const DEMO_FOOTER_NOTICE: readonly [before: string, now: string] = [
  * BoostChat — a seventh deliberate data delta, [before, now]. `before` IS the sixth delta's `now`
  * (the footer-notice build ddbc72ad… carries it), so the two reverts chain: `revertFooterProductName`
  * puts back exactly it, and `revertFooterNotice` then applies to what it returns.
+ * Since the online-inquiry delta below (2026-10-02), `now` is the notice as THIS delta left it (the
+ * product-rename build 01f7ac78… carries it), no longer the site's current one: it is what
+ * `revertOnlineInquiry` puts back, so `revertFooterProductName` applies to what that returns.
  */
 export const DEMO_FOOTER_PRODUCT_NAME: readonly [before: string, now: string] = [
   DEMO_FOOTER_NOTICE[1],
   "부스트 인테리어는 BoostInterior 기능 시연을 위한 가상 인테리어 브랜드입니다. 포트폴리오·후기는 데모용 예시이고, 사진은 AI로 생성한 예시 이미지입니다.",
 ];
+
+/**
+ * The pin the demo carried from the 1.6.1 re-pin (38-) until the 1.6.2 one (2026-10-02): every
+ * package from the first 1.6.1 build up to the product-rename build 01f7ac78… was built from it. The
+ * pin lives INSIDE the snapshot (snapshot.site.template), so those builds' recorded siteSnapshotHash
+ * is taken at this pin — `atPin(snapshot, DEMO_PIN_161)`. Literal: it names a frozen release.
+ */
+export const DEMO_PIN_161 = {
+  templateId: "interior-01",
+  templateVersion: "1.6.1",
+  releaseId: "interior-01-1.6.1-8da56de8d28f",
+  releaseHash: "8da56de8d28f372f645c5490436cd9da1b2ce70951e212a6b031ad991771855d",
+} as const;
+/** The snapshot with site.template replaced by `pin` — the pin is the only thing the substitution touches. */
+export function atPin(snapshot: SiteSnapshot, pin: SiteSnapshot["site"]["template"]): SiteSnapshot {
+  return { ...snapshot, site: { ...snapshot.site, template: { ...pin } } };
+}
+
+/**
+ * Online inquiry + terminology (2026-10-02, the 1.6.2 re-pin) — an eighth deliberate data delta:
+ *   - a NEW site document, inquiry.json (snapshot.inquiry): the endpoint the /contact form posts to;
+ *   - slots.json copy, every changed leaf listed as [section, path, before, now] (undefined = the key
+ *     is absent): "포트폴리오" / "시공 사례" → the one official term "시공사례" (nav, list title, links,
+ *     the 3D placeholder, the footer notice), and contact.page — the mail hand-off copy
+ *     (afterSubmit, mailSubject, tooLong, tooLongTextLabel, selectTextLabel and the "not connected
+ *     yet" notice) replaced by the online form's copy.
+ * `before` of site.footer.notice IS the seventh delta's `now` (DEMO_FOOTER_PRODUCT_NAME[1]: the
+ * product-rename build 01f7ac78… carries it), so the reverts chain: `revertOnlineInquiry` first,
+ * then `revertFooterProductName`, then `revertFooterNotice`. The 1.6.2 re-pin itself is not data:
+ * roll it back with `atPin(…, DEMO_PIN_161)`.
+ */
+export const DEMO_ONLINE_INQUIRY_ENDPOINT = "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead";
+export const DEMO_ONLINE_INQUIRY_SLOTS: readonly (readonly [section: string, path: readonly string[], before: unknown, now: unknown])[] = [
+  ["site.header", ["projectsNavLabel"], "포트폴리오", "시공사례"],
+  ["site.header", ["portfolio3dNavLabel"], "3D 포트폴리오", "3D 시공사례"],
+  ["home.intro", ["link", "label"], "포트폴리오 둘러보기", "시공사례 둘러보기"],
+  ["home.projects-b", ["title"], "다른 시공 사례", "다른 시공사례"],
+  ["portfolio.index", ["title"], "포트폴리오", "시공사례"],
+  ["portfolio.detail", ["backLabel"], "포트폴리오 목록으로", "시공사례 목록으로"],
+  ["site.footer", ["notice"], DEMO_FOOTER_PRODUCT_NAME[1], "부스트 인테리어는 BoostInterior 기능 시연을 위한 가상 인테리어 브랜드입니다. 시공사례·후기는 데모용 예시이고, 사진은 AI로 생성한 예시 이미지입니다."],
+  ["about.page", ["portfolioLabel"], "포트폴리오 보기", "시공사례 보기"],
+  ["portfolio3d.page", ["title"], "3D 포트폴리오", "3D 시공사례"],
+  ["portfolio3d.page", ["body"], "공간을 더 입체적으로 확인할 수 있는 3D 포트폴리오를 준비하고 있습니다.", "공간을 더 입체적으로 확인할 수 있는 3D 시공사례를 준비하고 있습니다."],
+  ["portfolio3d.page", ["portfolioLabel"], "포트폴리오 보기", "시공사례 보기"],
+  ["contact.page", ["lead", "paragraphs"], ["평형과 공사 범위, 원하시는 일정을 알려 주시면 내용을 확인한 뒤 연락드립니다."], ["평형과 공사 범위, 원하시는 일정을 알려 주시면 내용을 확인한 뒤 상담을 이어갈 수 있습니다."]],
+  ["contact.page", ["submitLabel"], "메일로 문의 보내기", "견적 문의 보내기"],
+  ["contact.page", ["notice"], "온라인 접수는 아직 연결되어 있지 않습니다. 버튼을 누르면 입력하신 내용이 담긴 메일 작성 창이 메일 앱에서 열립니다.", "이 페이지는 BoostInterior 기능 시연용입니다."],
+  ["contact.page", ["afterSubmit"], "메일 앱에서 내용을 확인한 뒤 보내 주세요. 아직 전송된 것은 아닙니다. 메일 앱이 열리지 않으면 {email} 주소로 보내 주세요.", undefined],
+  ["contact.page", ["mailSubject"], "[견적 문의] {name}님", undefined],
+  ["contact.page", ["tooLong"], "문의 내용이 길어 메일 앱으로 열 수 없습니다. 아직 전송된 것은 아닙니다. 아래 내용을 복사해 {email} 주소로 보내 주세요.", undefined],
+  ["contact.page", ["tooLongTextLabel"], "문의 내용 (복사용)", undefined],
+  ["contact.page", ["selectTextLabel"], "내용 전체 선택", undefined],
+  ["contact.page", ["consentLabel"], undefined, "개인정보 수집·이용에 동의합니다. (수집: 이름·연락처·입력한 문의 내용 / 이용: BoostInterior 시연 문의 확인 / 보관: 접수 후 90일 / 동의하지 않으면 접수되지 않습니다.)"],
+  ["contact.page", ["phoneHint"], undefined, "숫자 8자리 이상으로 입력해 주세요. (예: 010-1234-5678)"],
+  ["contact.page", ["noScriptText"], undefined, "문의 접수에는 JavaScript가 필요합니다. 이메일로 문의해 주세요."],
+  ["contact.page", ["submittingLabel"], undefined, "접수 중…"],
+  ["contact.page", ["successTitle"], undefined, "견적 문의가 접수되었습니다."],
+  ["contact.page", ["successBody"], undefined, "입력해주신 내용을 확인한 뒤 상담을 이어갈 수 있습니다."],
+  ["contact.page", ["failureText"], undefined, "문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."],
+  ["contact.page", ["messagePrefix"], undefined, "[홈페이지 견적 문의]"],
+];
+
+/**
+ * The snapshot with exactly the online-inquiry delta reverted: every listed slots leaf put back to
+ * its `before` (absent where `before` is undefined) and the inquiry document dropped. Throws unless
+ * the snapshot carries each leaf's `now` and exactly the declared endpoint — i.e. unless it is a
+ * snapshot of the site as that delta left it. The pin is NOT touched (see `atPin`).
+ */
+export function revertOnlineInquiry(snapshot: SiteSnapshot): SiteSnapshot {
+  if (!snapshot.slots) throw new Error("the snapshot has no slots document");
+  if (JSON.stringify(snapshot.inquiry) !== JSON.stringify({ schemaVersion: 1, endpoint: DEMO_ONLINE_INQUIRY_ENDPOINT })) {
+    throw new Error(`snapshot.inquiry is ${JSON.stringify(snapshot.inquiry)}, not the online-inquiry delta's endpoint document`);
+  }
+  const values = structuredClone(snapshot.slots.values) as Record<string, Record<string, unknown>>;
+  for (const [section, leafPath, before, now] of DEMO_ONLINE_INQUIRY_SLOTS) {
+    let holder: Record<string, unknown> | undefined = values[section];
+    for (const k of leafPath.slice(0, -1)) holder = holder?.[k] as Record<string, unknown> | undefined;
+    const leaf = leafPath[leafPath.length - 1]!;
+    const where = `${section}.${leafPath.join(".")}`;
+    if (holder === undefined || holder === null || typeof holder !== "object") throw new Error(`${where}: no such slot value`);
+    if (JSON.stringify(holder[leaf]) !== JSON.stringify(now)) throw new Error(`${where} is ${JSON.stringify(holder[leaf])}, not the online-inquiry delta's value`);
+    if (before === undefined) delete holder[leaf];
+    else holder[leaf] = structuredClone(before);
+  }
+  const { inquiry: _dropped, ...rest } = snapshot;
+  return { ...rest, slots: { ...snapshot.slots, values } };
+}
 
 /**
  * The snapshot with exactly the footer-notice delta reverted; throws unless it carries that delta's
@@ -78,11 +169,14 @@ export function revertFooterNotice(snapshot: SiteSnapshot): SiteSnapshot {
   return { ...snapshot, slots: { ...snapshot.slots, values: { ...snapshot.slots.values, "site.footer": { ...footer, notice: before } } } };
 }
 
-/** The snapshot with exactly the product-rename delta reverted; throws unless it carries the current notice. */
+/**
+ * The snapshot with exactly the product-rename delta reverted; throws unless it carries that delta's
+ * `now` — since the online-inquiry delta, a snapshot `revertOnlineInquiry` returned.
+ */
 export function revertFooterProductName(snapshot: SiteSnapshot): SiteSnapshot {
   const [before, now] = DEMO_FOOTER_PRODUCT_NAME;
   const footer = snapshot.slots?.values["site.footer"];
-  if (!snapshot.slots || footer?.notice !== now) throw new Error(`site.footer notice is ${JSON.stringify(footer?.notice)}, not the current notice`);
+  if (!snapshot.slots || footer?.notice !== now) throw new Error(`site.footer notice is ${JSON.stringify(footer?.notice)}, not the product-rename delta's notice`);
   return { ...snapshot, slots: { ...snapshot.slots, values: { ...snapshot.slots.values, "site.footer": { ...footer, notice: before } } } };
 }
 

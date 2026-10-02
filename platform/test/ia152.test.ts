@@ -21,6 +21,7 @@
  * Run AFTER the 1.5.2 build of boost-interior-demo:
  *   tsx --tsconfig platform/tsconfig.json platform/test/ia152.test.ts
  */
+import { existsSync } from "node:fs";
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -33,6 +34,7 @@ import { demoBuiltRelease, demoExpectedPages } from "./demo-rollout";
 import { isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
 import { isRelease160Added, release160SurfaceBefore } from "./release-160-surface";
+import { isRelease162Added, release162SurfaceBefore } from "./release-162-surface";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -183,12 +185,13 @@ await check("R2 the 1.5.2 release = the 1.5.1 release except exactly the five de
   eq(Object.keys(b).filter((f) => !(f in a)), ADDED_TEMPLATE_FILES, "added files");
   eq(Object.keys(b).filter((f) => f in a && a[f] !== b[f]), CHANGED_TEMPLATE_FILES, "changed files");
   // files the later 1.6.0 cut changed / added (V0.2 schema + widget seam) are judged at their pre-1.6.0
-  // hash / excluded (release-160-surface.ts); their current content is held by integration.test.ts I2b
+  // hash / excluded (release-160-surface.ts); their current content is held by integration.test.ts I2b.
+  // The 1.6.2 cut's surface (the inquiry seam + door, release-162-surface.ts) is treated the same way.
   const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/"));
-  for (const [f, h] of Object.entries(await release160SurfaceBefore(repoRoot))) if (f in now) now[f] = h;
+  for (const [f, h] of Object.entries({ ...(await release160SurfaceBefore(repoRoot)), ...release162SurfaceBefore() })) if (f in now) now[f] = h;
   // the post-build publish surface never feeds a build, render or release (publish-surface.ts) — excluded as in ia150/step6
   eq(Object.keys(before.platformFiles).filter((f) => now[f] !== before.platformFiles[f] && !isIntegrationSurface(f) && !isPublishSurface(f)), [], "platform files changed");
-  eq(Object.keys(now).filter((f) => !(f in before.platformFiles) && !isIntegrationSurface(f) && !isPublishSurface(f) && !isRelease160Added(f)), [], "platform files added");
+  eq(Object.keys(now).filter((f) => !(f in before.platformFiles) && !isIntegrationSurface(f) && !isPublishSurface(f) && !isRelease160Added(f) && !isRelease162Added(f)), [], "platform files added");
 });
 await check("R3 the demo pins a verified release ≥ 1.5.2 and its current package was built with it (QA pass), rollback = the pre-cut package; every fixture's current package was built with the fixture's OWN verified pin — a fixture the cut did not re-pin still serves its pre-cut package (pointers untouched, nothing rotated away)", async () => {
   assert(versionAtLeast(pin.templateVersion, "1.5.2"), pin.templateVersion);
@@ -322,14 +325,24 @@ await check("P4 the <body> did not move: every page's header, <main> and footer 
     assert(footerOf(h) === footerOf(p), `${f}: footer differs`);
   }
 });
-await check("P5 the address: the footer mailto on every page and the /contact direct address are the site's business email; the long-inquiry fallback copy names it via {email}; no page, payload, sitemap or script of the package still carries the old address or origin", async () => {
+await check("P5 the address: the footer mailto on every page and the /contact direct address are the site's business email; a mail hand-off form's fallback copy names it via {email} — an online form (the site declares an inquiry endpoint, ≥ the 1.6.2 re-pin) ships no hand-off copy at all, only its endpoint; no page, payload, sitemap or script of the package still carries the old address or origin", async () => {
   eq(EMAIL, DEMO_EMAIL, "demo address");
   for (const [f, h] of Object.entries(html)) {
     const mailtos = [...h.matchAll(/href="(mailto:[^"]*)"/g)].map((m) => m[1]);
     eq(mailtos, f === "contact.html" ? [`mailto:${EMAIL}`, `mailto:${EMAIL}`] : [`mailto:${EMAIL}`], `${f}: mailto links`);
   }
   assert(mainOf(html["contact.html"]!).includes(`<dt>이메일</dt><dd><a href="mailto:${EMAIL}">${EMAIL}</a></dd>`), "/contact direct address");
-  assert(html["contact.html"]!.includes(`아래 내용을 복사해 ${EMAIL} 주소로 보내 주세요.`) && html["contact.html"]!.includes(`메일 앱이 열리지 않으면 ${EMAIL} 주소로 보내 주세요.`), "/contact: the status copy (RSC props) names the address");
+  if (existsSync(path.join(demoDir, "inquiry.json"))) {
+    // the demo's form posts to its declared endpoint: the island's props carry that endpoint (once)
+    // and none of the mail hand-off copy — the address stays on the page as the direct address only
+    const endpoint = (await readJson(path.join(demoDir, "inquiry.json"))).endpoint as string;
+    eq(html["contact.html"]!.split(`\\"online\\":{\\"endpoint\\":\\"${endpoint}\\"`).length - 1, 1, "/contact: the form's props (RSC) carry the declared endpoint, once");
+    eq(html["contact.html"]!.split(endpoint).length - 1, 1, "/contact: the endpoint appears nowhere else on the page");
+    for (const gone of ["주소로 보내 주세요", "메일 앱", "복사", "mailSubject", "afterSubmit", "tooLong"]) assert(!html["contact.html"]!.includes(gone), `/contact: mail hand-off copy "${gone}" in an online form's page`);
+    for (const [f, h] of Object.entries(html)) if (f !== "contact.html") assert(!h.includes(endpoint), `${f}: carries the inquiry endpoint`);
+  } else {
+    assert(html["contact.html"]!.includes(`아래 내용을 복사해 ${EMAIL} 주소로 보내 주세요.`) && html["contact.html"]!.includes(`메일 앱이 열리지 않으면 ${EMAIL} 주소로 보내 주세요.`), "/contact: the status copy (RSC props) names the address");
+  }
   assert(!html["contact.html"]!.includes("{email}"), "/contact: an unsubstituted {email}");
   const oldEmail = before.businessJson.data.contact.email as string;
   const oldOrigin = before.siteJson.identity.publicOrigin as string;

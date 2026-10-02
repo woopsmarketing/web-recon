@@ -57,6 +57,7 @@ import { gitDirtyPaths } from "./git-checkout";
 import { integrationSurfaceBefore, isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
 import { isRelease160Added, release160SurfaceBefore } from "./release-160-surface";
+import { isRelease162Added, release162SurfaceBefore } from "./release-162-surface";
 import { composeQaProjectsText, writeQaProjects } from "./portfolio-qa-corpus";
 
 const repoRoot = process.cwd();
@@ -244,11 +245,13 @@ await check("D Template source unchanged: live templateSourceHash = baseline = t
   // this whole-tree fingerprint still proves the tree as of the task's start commit (be6b10a); the
   // current content of those four files is asserted by integration.test.ts instead. The 1.6.0 surface
   // (V0.2 schema + widget seam, release-160-surface.ts) is treated the same way; its current content
-  // is held by integration.test.ts I2b.
+  // is held by integration.test.ts I2b. So is the 1.6.2 surface (the inquiry seam + door,
+  // release-162-surface.ts); its current content is held by integration.test.ts I2b and inquiry162.test.ts.
   const overrides = await integrationSurfaceBefore(repoRoot);
   const overrides160 = await release160SurfaceBefore(repoRoot);
+  const overrides162 = release162SurfaceBefore();
   eq(
-    await treeHash("platform", ["test"], (p) => p === "publish" || isPublishSurface(p) || (isIntegrationSurface(p) && !(p in overrides)) || isRelease160Added(p), { ...overrides, ...overrides160 }),
+    await treeHash("platform", ["test"], (p) => p === "publish" || isPublishSurface(p) || (isIntegrationSurface(p) && !(p in overrides)) || isRelease160Added(p) || isRelease162Added(p), { ...overrides, ...overrides160, ...overrides162 }),
     baseline.trees["platform (test/ excluded)"].hash,
     "platform tree (test/ excluded)",
   );

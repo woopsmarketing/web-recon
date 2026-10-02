@@ -130,6 +130,9 @@ const TEMPLATE_IMPORT_ALLOW = new Set([
   // narrow browser URL-state door (history/query only; no network, no storage).
   "@platform/content/project-filter",
   "@platform/site/browser",
+  // 1.6.2: the narrow inquiry door (one fixed-shape POST to the endpoint the SITE declares; the
+  // Template still may not reference fetch / timers / window itself — BANNED_IDENTIFIERS).
+  "@platform/site/inquiry-client",
 ]);
 /**
  * Allowlisted modules that may be used only through the listed named imports.

@@ -15,6 +15,7 @@
  * Run AFTER `pnpm site:build boost-interior-demo`:
  *   tsx --tsconfig platform/tsconfig.json platform/test/ia151.test.ts
  */
+import { existsSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { loadRelease, verifyRelease } from "../release/release";
@@ -26,6 +27,7 @@ import { sitemapIaPaths } from "./canonical-151";
 import { demoBuiltRelease } from "./demo-rollout";
 import { isIntegrationSurface } from "./integration-surface";
 import { release160SurfaceBefore } from "./release-160-surface";
+import { release162SurfaceBefore } from "./release-162-surface";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -150,8 +152,10 @@ await check("R2 the 1.5.1 release = the 1.5.0 release except exactly the seven d
   // + the builder seam, isIntegrationSurface) — are outside the release's runtime dirs, as the file list
   // above shows). Files the later 1.6.0 cut changed (V0.2 schema + widget seam) are judged at their
   // pre-1.6.0 hash (release-160-surface.ts); their current content is held by integration.test.ts I2b.
+  // The one file the 1.6.2 cut changed and no earlier surface covers (release/release.ts: the inquiry
+  // door on the import allowlist) is judged at its pre-1.6.2 hash (release-162-surface.ts).
   const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/"));
-  for (const [f, h] of Object.entries(await release160SurfaceBefore(repoRoot))) if (f in now) now[f] = h;
+  for (const [f, h] of Object.entries({ ...(await release160SurfaceBefore(repoRoot)), ...release162SurfaceBefore() })) if (f in now) now[f] = h;
   const changed = Object.keys(before.platformFiles).filter((f) => now[f] !== before.platformFiles[f] && !isIntegrationSurface(f));
   eq(changed, [], "platform files changed");
 });
@@ -208,10 +212,21 @@ await check("P1 same page set and sitemap as the 1.5.0 package (the demo has a c
   }
   assert(mainOf(html["contact.html"]!) !== mainOf(prev["contact.html"]!), "/contact: the caps are there");
 });
-await check("P2 /contact server HTML: message textarea maxlength 500, each one-line field 100, the select none; empty status; no fallback / copy markup before a press", () => {
+await check("P2 /contact server HTML: message textarea maxlength 500, each one-line field 100 — the phone 20 where the form submits online (its pattern's own upper bound; a mail hand-off form keeps 100) — the select and the consent checkbox none; empty status; no fallback / copy markup before a press", () => {
   const m = mainOf(html["contact.html"]!);
   const caps = [...m.matchAll(/<(input|select|textarea) id="i1-inquiry-(\w+)"[^>]*?>/g)].map((x) => [x[2], /maxLength="(\d+)"/.exec(x[0])?.[1] ?? null]);
-  eq(caps, [["name", "100"], ["phone", "100"], ["region", "100"], ["area", "100"], ["workType", null], ["schedule", "100"], ["message", "500"]], "caps");
+  // the demo declares an inquiry endpoint since the 1.6.2 re-pin (data/sites/<site>/inquiry.json):
+  // its form is the online one — a tel field capped at its pattern's 20, plus the consent checkbox
+  const online = existsSync(path.join(demoDir, "inquiry.json"));
+  assert(online === m.includes('data-inquiry-trap=""') && online === m.includes('id="i1-inquiry-consent"'), "online markup iff the site declares an endpoint");
+  eq(
+    caps,
+    online
+      ? [["name", "100"], ["phone", "20"], ["region", "100"], ["area", "100"], ["workType", null], ["schedule", "100"], ["message", "500"], ["consent", null]]
+      : [["name", "100"], ["phone", "100"], ["region", "100"], ["area", "100"], ["workType", null], ["schedule", "100"], ["message", "500"]],
+    "caps",
+  );
+  if (online) assert(m.includes(' maxLength="20" pattern="(?=(?:[^0-9]*[0-9]){8})[0-9+\\-\\(\\) ]{8,20}" title="') && /<input id="i1-inquiry-phone"[^>]* maxLength="20" pattern="/.test(m), "phone cap = the pattern's upper bound");
   assert(m.includes('<p class="i1-form__status" role="status" data-inquiry-status=""></p>'), "empty status");
   assert(!/data-inquiry-fallback|data-inquiry-copy|i1-inquiry-copy/.test(stripScripts(m)), "fallback in the server HTML");
   for (const [f, h] of Object.entries(html)) assert(!/접수되었|접수 완료|전송되었|전송 완료|완료되었/.test(stripScripts(h)), `${f}: success wording`);
@@ -257,12 +272,43 @@ await check("J1 InquiryForm: CRLF message lines, the 2,000-character guard BEFOR
   assert(menu.includes("returnFocus(button.current)") && !menu.includes("button.current?.focus()"), "returnFocus");
   assert(/if \(isRendered\(button\)\) \{\s*button\.focus\(\);/.test(menu) && menu.includes('button.closest("header")'), "rendered-only restore");
 });
-await check("C1 stylesheet: the fallback block, its address and select button (44 px target) are styled; nothing of 1.5.0 removed", async () => {
+await check("C1 stylesheet: the fallback block, its address and select button (44 px target) are styled; nothing of 1.5.0 removed; the only other rules are the fourteen 1.6.2 online-inquiry rules (each exactly once; one of them inside the ≥ 900px block)", async () => {
   const css = (await readFile(path.join(repoRoot, TEMPLATE_REL, "styles/template.css"), "utf8")).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ");
   const css150 = (await readFile(path.join(repoRoot, "data/template-releases/interior-01", RELEASE_150, "files", TEMPLATE_REL, "styles/template.css"), "utf8")).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ");
   assert(css.includes(".i1-form__fallback {") && css.includes(".i1-form__fallback-to {") && /\.i1-form__select-text \{[^}]*min-height: 44px;/.test(css), "rules");
-  const added = css.replace(/ \.i1-form__fallback \{[^}]*\}| \.i1-form__fallback-to \{[^}]*\}| \.i1-form__fallback-to a \{[^}]*\}| \.i1-form__select-text \{[^}]*\}/g, "");
-  eq(added, css150, "stylesheet = 1.5.0 + the four fallback rules");
+  // 1.6.2 added the online form's rules (consent, the failure alert above the button, the disabled
+  // button, the noscript line, the confirmation) — whole new rules, each present exactly once; no
+  // existing rule was edited. A selector that ends another one's comes after it in this list.
+  const ONLINE_162 = [
+    ".i1-form__consent",
+    ".i1-form__check",
+    ".i1-form__consent-label",
+    ".i1-form__consent + .i1-form__notice",
+    ".i1-form__consent + .i1-form__error",
+    ".i1-form__consent + .i1-form__error:empty + .i1-form__submit",
+    ".i1-form__submit:disabled",
+    ".i1-form__noscript",
+    ".i1-form__error",
+    ".i1-form__error:empty",
+    ".i1-form__status--done",
+    ".i1-form__done-title",
+    ".i1-form__done-body",
+  ];
+  // the one grouped rule: the alert and the confirmation clear the taller sticky header at ≥ 900px.
+  // It is the last rule of the block that lays the contact page out in two columns.
+  const WIDE_162 = " .i1-form__error, .i1-form__status--done { scroll-margin-top: 88px; }";
+  eq(css.split(WIDE_162).length - 1, 1, "1.6.2 rule (≥ 900px) .i1-form__error, .i1-form__status--done");
+  assert(css.includes(`.i1-contact .i1-form, .i1-contact__unavailable { margin-top: 56px; }${WIDE_162} } @media (min-width: 1281px) {`), "the grouped rule closes the ≥ 900px contact block");
+  assert(/ \.i1-form__error \{ scroll-margin: 72px 0 88px; /.test(css) && / \.i1-form__status--done \{ scroll-margin-top: 72px; /.test(css), "scroll margins below 900px: clear of the 72px sticky header (the alert also keeps the button under it in view)");
+  let without162 = css.replace(WIDE_162, "");
+  for (const selector of ONLINE_162) {
+    const rule = new RegExp(` ${selector.replace(/[.+]/g, "\\$&")} \\{[^}]*\\}`, "g");
+    eq((without162.match(rule) ?? []).length, 1, `1.6.2 rule ${selector}`);
+    without162 = without162.replace(rule, "");
+  }
+  assert(/\.i1-form__check \{[^}]*width: 20px;[^}]*height: 20px;/.test(css) && /\.i1-form__consent-label \{[^}]*padding: 11px 0;[^}]*line-height: 1\.6;/.test(css), "consent: the label is the checkbox's 44 px target");
+  const added = without162.replace(/ \.i1-form__fallback \{[^}]*\}| \.i1-form__fallback-to \{[^}]*\}| \.i1-form__fallback-to a \{[^}]*\}| \.i1-form__select-text \{[^}]*\}/g, "");
+  eq(added, css150, "stylesheet = 1.5.0 + the four fallback rules + the fourteen 1.6.2 rules");
 });
 
 console.log(`\n${passed} passed, ${failed.length} failed`);

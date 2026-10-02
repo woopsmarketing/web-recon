@@ -7,7 +7,11 @@
  *   3. every contact CTA (header pill, floating seat, detail CTA, hero contact slide) → /contact,
  *      only when the site has a contact channel (business email);
  *   4. the demo's copy: "프로젝트" → "포트폴리오" in nav / list title / back link / intro link, and
- *      the three new sections' Korean copy.
+ *      the three new sections' Korean copy (D1, the point-in-time 1.5.0 proof). The CURRENT package
+ *      is asserted with the site's current copy: since the 1.6.2 re-pin the official term is
+ *      "시공사례" (nav, list title, links) and /contact is the ONLINE inquiry form — the site declares
+ *      an inquiry endpoint (data/sites/<site>/inquiry.json), so the form posts there instead of
+ *      composing an e-mail (inquiry162.test.ts owns the seam, the door and the contract).
  * Plus what must NOT have moved: the immutable 1.4.x releases, platform/ (outside test/), the demo
  * site's other documents and its 51 raster assets (against
  * docs/result/recon-template-platform-ia-final/proof/before.json, captured before the 1.5.0 work).
@@ -28,6 +32,7 @@ import { demoBuiltRelease, demoExpectedPages } from "./demo-rollout";
 import { integrationSurfaceBefore, isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
 import { isRelease160Added, release160SurfaceBefore } from "./release-160-surface";
+import { isRelease162Added, release162SurfaceBefore } from "./release-162-surface";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -42,8 +47,8 @@ const FROZEN = [
 ] as const;
 const BEFORE_FILE = "docs/result/recon-template-platform-ia-final/proof/before.json";
 const NAV = [
-  ["portfolio", "/portfolio", "포트폴리오"],
-  ["portfolio3d", "/3d-portfolio", "3D 포트폴리오"],
+  ["portfolio", "/portfolio", "시공사례"],
+  ["portfolio3d", "/3d-portfolio", "3D 시공사례"],
   ["about", "/about", "소개"],
   ["contact", "/contact", "견적 문의"],
 ] as const;
@@ -154,9 +159,10 @@ await check("R3 platform/ (test/ excluded) is byte-identical to the pre-change c
   // MODIFIED (but that pre-date it, and so are part of this capture) are instead judged at their
   // pre-integration hash: the capture is still proven for the tree as of the task's start commit
   // (be6b10a); the current content of those files is asserted by integration.test.ts instead.
-  // The 1.6.0 surface (V0.2 schema + widget seam, release-160-surface.ts) is treated the same way.
-  const overrides = { ...(await integrationSurfaceBefore(repoRoot)), ...(await release160SurfaceBefore(repoRoot)) };
-  const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/") || isPublishSurface(f) || (isIntegrationSurface(f) && !(f in before.platformFiles)) || isRelease160Added(f));
+  // The 1.6.0 surface (V0.2 schema + widget seam, release-160-surface.ts) is treated the same way,
+  // and so is the 1.6.2 surface (the inquiry seam + door, release-162-surface.ts).
+  const overrides = { ...(await integrationSurfaceBefore(repoRoot)), ...(await release160SurfaceBefore(repoRoot)), ...release162SurfaceBefore() };
+  const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/") || isPublishSurface(f) || (isIntegrationSurface(f) && !(f in before.platformFiles)) || isRelease160Added(f) || isRelease162Added(f));
   for (const f of Object.keys(overrides)) if (f in before.platformFiles) now[f] = overrides[f]!;
   eq(now, before.platformFiles, "platform files");
 });
@@ -270,25 +276,59 @@ await check("P4 /about: title, lead, the photo (existing site asset), body, the 
   const points = [...m.matchAll(/<li class="i1-about__point"><span class="i1-about__num" aria-hidden="true">(\d\d)<\/span><h3 class="i1-about__point-title">([^<]*)<\/h3><p>([^<]*)<\/p><\/li>/g)].map((x) => [x[1], x[2]]);
   eq(points, [["01", "생활 동선"], ["02", "수납"], ["03", "채광"], ["04", "오래 편안한 공간"], ["05", "실거주 중심"]], "principles");
   assert(m.includes('<h2 id="i1-about-points" class="i1-about__points-title">공간을 설계하는 다섯 가지 기준</h2>'), "principles title");
-  assert(/<a class="i1-pill" href="\/contact">견적 문의하기<svg/.test(m) && m.includes('<a class="i1-page__more" href="/portfolio">포트폴리오 보기</a>'), "actions");
+  assert(/<a class="i1-pill" href="\/contact">견적 문의하기<svg/.test(m) && m.includes('<a class="i1-page__more" href="/portfolio">시공사례 보기</a>'), "actions");
 });
 await check("P5 /3d-portfolio: exactly a title, the one line and a link to the portfolio (no images, forms or other links)", () => {
   const m = mainOf(html["3d-portfolio.html"]!);
-  assert(m.includes('<h1 class="i1-page__title">3D 포트폴리오</h1><p class="i1-soon__body">공간을 더 입체적으로 확인할 수 있는 3D 포트폴리오를 준비하고 있습니다.</p>'), "copy");
+  assert(m.includes('<h1 class="i1-page__title">3D 시공사례</h1><p class="i1-soon__body">공간을 더 입체적으로 확인할 수 있는 3D 시공사례를 준비하고 있습니다.</p>'), "copy");
+  assert(m.includes('</p><a class="i1-pill" href="/portfolio">시공사례 보기<svg'), "link label");
   eq(hrefsOf(m), ["/portfolio"], "links");
   assert(!/<img|<form|<iframe|<video|<canvas/.test(m), "nothing more");
 });
-await check("P6 /contact: 7 fields (name / phone / message required), the site's work types, the not-connected notice, an empty status, no form action/method (no backend), the direct address; no success wording anywhere", () => {
+await check("P6 /contact (online inquiry): 7 fields (name / phone / message required) + the required consent checkbox, the hidden trap, the site's work types, the demo notice, an empty alert above a button that is DISABLED in the server HTML, the noscript line and an empty status, no form action/method (the endpoint is page data, never a form target), the direct address; no not-connected / mail-app copy anywhere in the package's pages; no success wording in any page's visible HTML", () => {
   const m = mainOf(html["contact.html"]!);
-  assert(m.includes('<form class="i1-form" data-inquiry-form="">'), "form without action / method");
+  assert(m.includes('<form class="i1-form" data-inquiry-form="" noValidate="">'), "form without action / method (validated by its own script, after normalising)");
+  assert(!/<form\b[^>]*\s(?:action|method)=/i.test(html["contact.html"]!), "no form action / method anywhere on the page");
   const fields = [...m.matchAll(/<(input|select|textarea) id="i1-inquiry-(\w+)"[^>]*?>/g)].map((x) => [x[2], x[1], / required=""/.test(x[0])]);
-  eq(fields, [["name", "input", true], ["phone", "input", true], ["region", "input", false], ["area", "input", false], ["workType", "select", false], ["schedule", "input", false], ["message", "textarea", true]], "fields");
+  eq(
+    fields,
+    [["name", "input", true], ["phone", "input", true], ["region", "input", false], ["area", "input", false], ["workType", "select", false], ["schedule", "input", false], ["message", "textarea", true], ["consent", "input", true]],
+    "fields",
+  );
   for (const [id, label] of [["name", "이름"], ["phone", "연락처"], ["region", "지역"], ["area", "평형"], ["workType", "공사 유형"], ["schedule", "예상 일정"], ["message", "문의 내용"]]) assert(m.includes(`for="i1-inquiry-${id}">${label}`), `label ${id}`);
   eq([...m.matchAll(/<option value="([^"]*)"/g)].map((x) => x[1]), ["", "전체 리모델링", "부분 리모델링", "주방·욕실 리뉴얼", "입주 전 홈스타일링", "기타"], "work types");
-  assert(m.includes("온라인 접수는 아직 연결되어 있지 않습니다."), "notice");
-  assert(m.includes('<p class="i1-form__status" role="status" data-inquiry-status=""></p>'), "empty status");
+  // every form control the page renders: the eight above and the one hidden trap, nothing else
+  eq([...m.matchAll(/<(?:input|select|textarea)\b[^>]*?\sname="([^"]+)"/g)].map((x) => x[1]), ["name", "phone", "region", "area", "workType", "schedule", "message", "topic", "consent"], "named controls");
+  assert(
+    m.includes('<input id="i1-inquiry-phone" class="i1-form__input" type="tel" autoComplete="tel" inputMode="tel" required="" maxLength="20" pattern="(?=(?:[^0-9]*[0-9]){8})[0-9+\\-\\(\\) ]{8,20}" title="숫자 8자리 이상으로 입력해 주세요. (예: 010-1234-5678)" name="phone"/>'),
+    "phone: tel + pattern (at least 8 digits) + hint",
+  );
+  assert(m.includes('<div class="i1-sr" aria-hidden="true"><input type="text" tabindex="-1" autoComplete="off" aria-hidden="true" data-inquiry-trap="" name="topic"/></div>'), "trap: visually hidden, out of the tab order and the accessibility tree, not autofilled");
+  assert(
+    m.includes(
+      '<div class="i1-form__consent"><input id="i1-inquiry-consent" class="i1-form__check" type="checkbox" required="" name="consent"/><label class="i1-form__consent-label" for="i1-inquiry-consent">개인정보 수집·이용에 동의합니다. (수집: 이름·연락처·입력한 문의 내용 / 이용: BoostInterior 시연 문의 확인 / 보관: 접수 후 90일 / 동의하지 않으면 접수되지 않습니다.)<span class="i1-form__req" aria-hidden="true"> *</span></label></div>',
+    ),
+    "consent: a required, unchecked checkbox with the site's label",
+  );
+  assert(!/<input id="i1-inquiry-consent"[^>]*\schecked/.test(m), "consent is not pre-checked");
+  // the tail of the form, in order: notice, the empty alert, the submit button (disabled until the
+  // island is mounted: a press before that would be a native GET of the fields), the noscript line,
+  // the empty status
+  assert(
+    m.includes(
+      '<p class="i1-form__notice">이 페이지는 BoostInterior 기능 시연용입니다.</p><p class="i1-form__error" role="alert" data-inquiry-error=""></p><button type="submit" class="i1-button i1-form__submit" data-inquiry-submit="" disabled="">견적 문의 보내기</button><noscript><p class="i1-form__noscript">문의 접수에는 JavaScript가 필요합니다. 이메일로 문의해 주세요.</p></noscript><p class="i1-form__status" role="status" data-inquiry-status=""></p></form>',
+    ),
+    "notice, empty alert, disabled submit, noscript, empty status",
+  );
   assert(m.includes(`<dt>이메일</dt><dd><a href="mailto:${EMAIL}">${EMAIL}</a></dd>`), "direct address");
-  for (const [f, h] of Object.entries(html)) assert(!/접수되었|접수 완료|전송되었|전송 완료|완료되었/.test(stripScripts(h)), `${f}: success wording`);
+  for (const [f, h] of Object.entries(html)) {
+    for (const gone of ["연결되어 있지 않습니다", "메일 앱"]) assert(!h.includes(gone), `${f}: "${gone}"`);
+    assert(!/접수되었|접수 완료|전송되었|전송 완료|완료되었/.test(stripScripts(h)), `${f}: success wording`);
+  }
+  // the ban above is not vacuous: the success copy IS in the package — only as the client island's
+  // props (a script payload) on /contact, shown after a real successful submit, never as markup
+  const withSuccess = Object.entries(html).filter(([, h]) => h.includes("견적 문의가 접수되었습니다.")).map(([f]) => f);
+  eq(withSuccess, ["contact.html"], "pages carrying the success copy (props only)");
 });
 
 // ------------------------------------------------------------- fixtures --

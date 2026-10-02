@@ -16,6 +16,7 @@ import { SiteSettingsDocSchema } from "../settings/settings";
 import { SiteThemeDocSchema } from "../theme/theme";
 import { SiteSlotsDocSchema } from "../slots/slots";
 import { HEAD_SCRIPTS_FILE, SiteHeadScriptsDocSchema } from "./head-scripts";
+import { INQUIRY_FILE, SiteInquiryDocSchema } from "./inquiry";
 import { sha256 } from "../util/hash";
 import { SiteInstanceSchema, SiteSnapshotSchema, type BuildMode, type SiteSnapshot } from "./instance";
 
@@ -26,6 +27,7 @@ import { SiteInstanceSchema, SiteSnapshotSchema, type BuildMode, type SiteSnapsh
  *   theme.json              optional sparse theme overrides
  *   slots.json              optional sparse section slot values (copy/link/media)
  *   scripts.json            OPTIONAL third-party head scripts — platform/site/head-scripts.ts
+ *   inquiry.json            OPTIONAL online inquiry endpoint — platform/site/inquiry.ts
  *   content/business.json   Core singleton
  *   content/projects.json   Interior collection
  *   content/categories.json Interior taxonomy
@@ -124,6 +126,11 @@ export async function buildSiteSnapshot(opts: {
   const headScriptsRaw = await readJson(path.join(dir, HEAD_SCRIPTS_FILE), true);
   const headScripts = headScriptsRaw === undefined ? undefined : parse(SiteHeadScriptsDocSchema, headScriptsRaw, `${siteId}/${HEAD_SCRIPTS_FILE}`);
 
+  // Online inquiry endpoint: optional document, and like scripts.json a malformed one FAILS the
+  // build — it never degrades to "no endpoint" (a form that silently falls back is a lost inquiry).
+  const inquiryRaw = await readJson(path.join(dir, INQUIRY_FILE), true);
+  const inquiry = inquiryRaw === undefined ? undefined : parse(SiteInquiryDocSchema, inquiryRaw, `${siteId}/${INQUIRY_FILE}`);
+
   const business = parse(BusinessDocSchema, await readJson(path.join(dir, "content/business.json")), `${siteId}/content/business.json`);
   const projects = parse(ProjectsDocSchema, await readJson(path.join(dir, "content/projects.json")), `${siteId}/content/projects.json`);
   const categories = parse(CategoriesDocSchema, await readJson(path.join(dir, "content/categories.json")), `${siteId}/content/categories.json`);
@@ -214,6 +221,7 @@ export async function buildSiteSnapshot(opts: {
       ...(theme ? { theme } : {}),
       ...(slots ? { slots } : {}),
       ...(headScripts ? { headScripts } : {}),
+      ...(inquiry ? { inquiry } : {}),
       content: {
         business: business.data,
         projects: visibleProjects,

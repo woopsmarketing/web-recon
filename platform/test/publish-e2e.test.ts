@@ -15,10 +15,21 @@
  *      no document reload); mobile menu, desktop nav, gallery/photo viewer, contact form
  *      interaction smokes; a javaScriptEnabled:false pass over the main routes
  *   7. package directory under data/site-builds/** byte-identical before/after
- * Results → docs/result/static-deployment-foundation/proof/local-e2e.json
+ * Results → docs/result/static-deployment-foundation/proof/local-e2e.json (E2E_OUT overrides the
+ * file, in either mode — e.g. a scratch path for a run that must not rewrite the tracked proof).
+ *
+ * Third parties (Site Data, read from data/sites/<site>/):
+ *   - the head scripts the site declares (scripts.json) are the ONE permitted external request of a
+ *     page ("0 external" = nothing else). In LOCAL mode each is answered with an empty script, so
+ *     the run stays hermetic (the third party's own traffic is not this test's subject);
+ *   - the inquiry endpoint the site declares (inquiry.json) is NEVER contacted, in either mode:
+ *     every browser context answers it locally. The contact smoke (D) installs its own stub and
+ *     asserts the request the form would have sent; any other hit is a failure. A site without an
+ *     endpoint keeps the mail hand-off smoke.
  *
  *   tsx --tsconfig platform/tsconfig.json platform/test/publish-e2e.test.ts   (pnpm test:publish:e2e)
- *   env: E2E_PORT (8788), E2E_REUSE_STATE=1 keeps the existing state dir (skips the fresh upload)
+ *   env: E2E_PORT (8788), E2E_REUSE_STATE=1 keeps the existing state dir (skips the fresh upload),
+ *        E2E_OUT (results file; relative to the repo root, or absolute)
  *
  * LIVE mode (env E2E_BASE, e.g. E2E_BASE=https://pilot.example.com): read-only against an
  * already-deployed host. Steps 1–3 above are skipped entirely — no WranglerStore, no publishSite,
@@ -40,7 +51,7 @@ import http from "node:http";
 import https from "node:https";
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { chromium, type Page } from "playwright";
+import { chromium, type BrowserContext, type BrowserContextOptions, type Page } from "playwright";
 import { parse, type DefaultTreeAdapterTypes } from "parse5";
 import { planPublish, publishSite } from "../publish/publish";
 import { WranglerStore } from "../publish/wrangler-store";
@@ -60,7 +71,22 @@ const HOST = LIVE ? liveUrl!.hostname : "localhost";
 const PORT = LIVE ? Number(liveUrl!.port || (liveUrl!.protocol === "https:" ? 443 : 80)) : Number(process.env.E2E_PORT ?? 8788);
 const BASE = LIVE ? E2E_BASE!.replace(/\/+$/, "") : `http://${HOST}:${PORT}`;
 const STATE = "tmp/recon-runtime-e2e-state";
-const OUT = LIVE ? "docs/result/static-deployment-foundation/proof/live-e2e.json" : "docs/result/static-deployment-foundation/proof/local-e2e.json";
+const OUT = process.env.E2E_OUT?.trim() || (LIVE ? "docs/result/static-deployment-foundation/proof/live-e2e.json" : "docs/result/static-deployment-foundation/proof/local-e2e.json");
+// ── the site's declared third parties (Site Data; both documents are optional) ───────────────
+const readSiteJson = async (file: string): Promise<Record<string, unknown> | undefined> => {
+  try {
+    return JSON.parse(await readFile(path.join(repoRoot, "data/sites", SITE, file), "utf8"));
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+    throw e;
+  }
+};
+/** exact src of every head script the site declares — the only external request a page may make */
+const DECLARED_SCRIPTS: string[] = (((await readSiteJson("scripts.json"))?.headScripts as { src: string }[] | undefined) ?? []).map((h) => h.src);
+/** the endpoint the site's inquiry form posts to, if it declares one — never contacted by this test */
+const INQUIRY_ENDPOINT = (await readSiteJson("inquiry.json"))?.endpoint as string | undefined;
+/** requests a page sent to the inquiry endpoint outside the contact smoke's own stub (must stay empty) */
+const strayEndpointHits: string[] = [];
 
 let passed = 0;
 const failed: string[] = [];
@@ -405,6 +431,23 @@ try {
   console.log("\nbrowser (Playwright, chromium)");
   const ROUTES = ["/", "/portfolio", `/${detail}`, "/3d-portfolio", "/about", "/contact", "/no-such-page"];
   const browser = await chromium.launch();
+  /**
+   * Every context of this test: the declared head scripts answered with an empty script in LOCAL
+   * mode (hermetic), and the declared inquiry endpoint answered here in BOTH modes — a hit on this
+   * default handler is recorded as a stray. The contact smoke registers its own handler on top
+   * (Playwright runs the most recently registered matching route first).
+   */
+  async function newContext(options: BrowserContextOptions): Promise<BrowserContext> {
+    const ctx = await browser.newContext(options);
+    if (!LIVE) for (const src of DECLARED_SCRIPTS) await ctx.route(src, (route) => route.fulfill({ status: 200, contentType: "text/javascript; charset=utf-8", body: "/* declared head script: stubbed by the local e2e */" }));
+    if (INQUIRY_ENDPOINT) {
+      await ctx.route(INQUIRY_ENDPOINT, (route) => {
+        strayEndpointHits.push(`${route.request().method()} ${route.request().url()}`);
+        return route.fulfill({ status: 503, headers: { "access-control-allow-origin": "*" }, contentType: "application/json", body: '{"error":"stubbed"}' });
+      });
+    }
+    return ctx;
+  }
   const pageRows: Record<string, unknown>[] = [];
   let external: string[] = [];
   const allAborted = new Map<string, number>();
@@ -418,7 +461,7 @@ try {
     await page.waitForLoadState("networkidle");
   }
   for (const width of [390, 1440]) {
-    const ctx = await browser.newContext({ viewport: { width, height: 900 } });
+    const ctx = await newContext({ viewport: { width, height: 900 } });
     for (const route of ROUTES) {
       const page = await ctx.newPage();
       const consoleErrors: string[] = [];
@@ -429,7 +472,7 @@ try {
       page.on("pageerror", (e) => consoleErrors.push(`pageerror: ${e.message}`));
       page.on("request", (r) => {
         requests++;
-        if (!r.url().startsWith(BASE) && !r.url().startsWith("data:")) ext.push(r.url());
+        if (!r.url().startsWith(BASE) && !r.url().startsWith("data:") && !DECLARED_SCRIPTS.includes(r.url())) ext.push(r.url());
       });
       const aborted: string[] = [];
       // net::ERR_ABORTED = the client cancelled the request (Next cancels in-flight link prefetches
@@ -455,7 +498,7 @@ try {
       const row = { width, route, status: res?.status(), requests, aborted: aborted.length, broken: broken.length, consoleErrors: unexpectedConsole.length, external: ext.length, overflowPx: m.overflow, images: m.images, brokenImages: m.brokenImages.length, title: m.title };
       pageRows.push(row);
       external = external.concat(ext);
-      await check(`${width}px ${route}: ${expected}, 0 broken, 0 console errors, 0 external, 0 overflow, 0 broken images (${requests} requests, ${m.images} images)`, () => {
+      await check(`${width}px ${route}: ${expected}, 0 broken, 0 console errors, 0 external${DECLARED_SCRIPTS.length > 0 ? " (declared head scripts excepted)" : ""}, 0 overflow, 0 broken images (${requests} requests, ${m.images} images)`, () => {
         eq([res?.status(), broken, unexpectedConsole, ext, m.overflow, m.brokenImages], [expected, [], [], [], 0, []], `${width} ${route}`);
       });
       await page.close();
@@ -468,9 +511,10 @@ try {
     eq([...allAborted].filter(([, st]) => st !== 200), [], "aborted URLs not served 200");
   });
   results.externalRequests = [...new Set(external)];
+  results.declaredScripts = { srcs: DECLARED_SCRIPTS, stubbed: !LIVE };
 
   await check("client-side navigation / → /portfolio → detail → /about → back: no document reload, RSC .txt fetches all 200, each page <title> applied", async () => {
-    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const ctx = await newContext({ viewport: { width: 1440, height: 900 } });
     const page = await ctx.newPage();
     const docs: string[] = [];
     const rsc: { url: string; status: number; type: string | null }[] = [];
@@ -524,7 +568,7 @@ try {
 
   // A. mobile 390: hamburger → dialog → Esc closes + focus back → reopen → portfolio link navigates + closes
   await check("A 390px: hamburger opens the dialog; Esc closes it and returns focus to the menu button; reopening and clicking the portfolio link navigates to /portfolio and closes it (0 console errors, 0 responses ≥ 400)", async () => {
-    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+    const ctx = await newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
     const page = await ctx.newPage();
     const consoleErrors: string[] = [];
     const badResponses: string[] = [];
@@ -555,7 +599,7 @@ try {
 
   // B. desktop 1440: header nav links → client-side navigation to the 4 routes
   await check("B 1440px: header nav links navigate client-side to /portfolio, /3d-portfolio, /about, /contact (one document load, no console errors, 0 responses ≥ 400)", async () => {
-    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const ctx = await newContext({ viewport: { width: 1440, height: 900 } });
     const page = await ctx.newPage();
     const consoleErrors: string[] = [];
     const badResponses: string[] = [];
@@ -579,7 +623,7 @@ try {
 
   // C. gallery / photo viewer on the detail page, both widths
   async function gallerySmoke(width: number, height: number, mobile: boolean) {
-    const ctx = await browser.newContext(mobile ? { viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 } : { viewport: { width, height } });
+    const ctx = await newContext(mobile ? { viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 } : { viewport: { width, height } });
     const page = await ctx.newPage();
     const consoleErrors: string[] = [];
     const badResponses: string[] = [];
@@ -614,9 +658,9 @@ try {
   await check("C 390px: gallery photo viewer opens with a loaded same-origin image (200), next changes the counter, Escape closes it (0 console errors, 0 responses ≥ 400)", () => gallerySmoke(390, 844, true));
   await check("C 1440px: gallery photo viewer opens with a loaded same-origin image (200), next changes the counter, Escape closes it (0 console errors, 0 responses ≥ 400)", () => gallerySmoke(1440, 900, false));
 
-  // D. contact form: short message → mailto hand-off, no network, no success claim; long message → no hand-off, copy fallback shown
-  async function contactSmoke(width: number, height: number) {
-    const ctx = await browser.newContext({ viewport: { width, height } });
+  // D (a site WITHOUT a declared inquiry endpoint). contact form: short message → mailto hand-off, no network, no success claim; long message → no hand-off, copy fallback shown
+  async function contactMailSmoke(width: number, height: number) {
+    const ctx = await newContext({ viewport: { width, height } });
     const page = await ctx.newPage();
     const consoleErrors: string[] = [];
     const requests: string[] = [];
@@ -664,13 +708,185 @@ try {
     );
     await ctx.close();
   }
-  await check("D 1440px: contact form — short message hands off a mailto: link with no success claim and no network request; a too-long message hands off nothing and shows the copy fallback (0 console errors)", () => contactSmoke(1440, 900));
-  await check("D 390px: contact form — short message hands off a mailto: link with no success claim and no network request; a too-long message hands off nothing and shows the copy fallback (0 console errors)", () => contactSmoke(390, 844));
+  // D (a site WITH a declared inquiry endpoint). contact form, online: the endpoint is answered by a
+  // stub — nothing reaches the real backend. The button is disabled in the served document and
+  // enabled once the island is mounted. Pasted invisible characters are normalised in the fields
+  // before anything is validated; validation (a missing consent, a phone number with fewer than 8
+  // digits) blocks the request; a failing answer shows the failure alert ABOVE the button, both in
+  // view, focus left where it was, every input kept; the retry succeeds, the confirmation replaces
+  // the fields with its headline below the sticky header, and the page neither navigates nor
+  // reloads. The request is the contract's, exactly.
+  async function contactOnlineSmoke(width: number, height: number) {
+    const endpoint = INQUIRY_ENDPOINT!;
+    const slots = (JSON.parse(await readFile(path.join(repoRoot, "data/sites", SITE, "slots.json"), "utf8")).values["contact.page"] ?? {}) as Record<string, string | undefined>;
+    const ctx = await newContext({ viewport: { width, height } });
+    const page = await ctx.newPage();
+    const consoleErrors: string[] = [];
+    const stubFailures: string[] = [];
+    const posts: { contentType: string | undefined; cookie: string | undefined; body: string }[] = [];
+    const documents: string[] = [];
+    const otherRequests: string[] = [];
+    let answer: "500" | "ok" = "500";
+    // Chrome's own "Failed to load resource" line for the stub's deliberate 500 is the stub at work,
+    // not a page error: counted apart (it must be the endpoint's and nothing else)
+    page.on("console", (m) => {
+      if (m.type() !== "error") return;
+      if (m.text().startsWith("Failed to load resource") && m.location().url === endpoint) stubFailures.push(m.text());
+      else consoleErrors.push(m.text());
+    });
+    page.on("pageerror", (e) => consoleErrors.push(String(e)));
+    page.on("request", (r) => {
+      if (r.resourceType() === "document") documents.push(r.url());
+    });
+    await ctx.route(endpoint, (route) => {
+      const req = route.request();
+      if (req.method() !== "POST") {
+        otherRequests.push(`${req.method()} ${req.url()}`);
+        return route.fulfill({ status: 405, headers: { "access-control-allow-origin": "*" }, body: "" });
+      }
+      posts.push({ contentType: req.headers()["content-type"], cookie: req.headers()["cookie"], body: req.postData() ?? "" });
+      const headers = { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type" };
+      return answer === "ok"
+        ? route.fulfill({ status: 200, headers, contentType: "application/json", body: '{"received":true}' })
+        : route.fulfill({ status: 500, headers, contentType: "application/json", body: '{"error":"internal"}' });
+    });
+    const response = await page.goto(`${BASE}/contact`, { waitUntil: "networkidle" });
+    // the served document (before any script ran) vs the mounted island
+    const servedButton = /<button\b[^>]*data-inquiry-submit=""[^>]*>/.exec((await response?.text()) ?? "")?.[0] ?? null;
+    const enabledOnceMounted = await page
+      .waitForFunction(() => document.querySelector<HTMLButtonElement>("[data-inquiry-submit]")?.disabled === false, undefined, { timeout: 10_000 })
+      .then(() => true, () => false);
+    const mainText = () => page.evaluate(() => document.querySelector("main")!.textContent ?? "");
+    const invalidNames = () => page.evaluate(() => Array.from(document.querySelectorAll("form[data-inquiry-form] :invalid")).map((e) => e.getAttribute("name")));
+    const fieldValues = () => page.evaluate(() => ["name", "phone", "region", "message"].map((n) => (document.querySelector(`[name=${n}]`) as HTMLInputElement).value));
+    /**
+     * where things are, in viewport coordinates, and what has focus. (No named function inside the
+     * callback: it is serialised into the page, where the compiler's name helper does not exist.)
+     */
+    const layout = async () => {
+      const m = await page.evaluate(() => ({
+        vw: document.documentElement.clientWidth,
+        vh: window.innerHeight,
+        rects: ["header", "[data-inquiry-error]", "[data-inquiry-submit]", ".i1-form__done-title"].map((sel) => {
+          const r = document.querySelector(sel)?.getBoundingClientRect();
+          return r ? { top: Math.round(r.top), bottom: Math.round(r.bottom), left: Math.round(r.left), right: Math.round(r.right) } : null;
+        }),
+        focus: ["data-inquiry-submit", "data-inquiry-status", "data-inquiry-error"].find((attr) => document.activeElement?.hasAttribute(attr)) ?? document.activeElement?.getAttribute("name") ?? document.activeElement?.tagName ?? null,
+      }));
+      const [header, alert, button, headline] = m.rects;
+      const focus = m.focus === "data-inquiry-submit" ? "submit" : m.focus === "data-inquiry-status" ? "status" : m.focus === "data-inquiry-error" ? "alert" : m.focus;
+      return { vw: m.vw, vh: m.vh, header: header ?? null, alert: alert ?? null, button: button ?? null, headline: headline ?? null, focus };
+    };
+    const chr = (code: number) => String.fromCodePoint(code);
+    const press = async (ms: number) => {
+      await page.click("[data-inquiry-submit]");
+      await page.waitForTimeout(ms);
+    };
+    const atLoad = { successWording: SUCCESS.test(await mainText()), status: await page.textContent("[data-inquiry-status]"), alert: await page.textContent("[data-inquiry-error]") };
+    // 1. nothing filled → blocked, no request
+    await press(250);
+    const emptyInvalid = await invalidNames();
+    // 2. the required fields filled — as a paste would leave them: a zero-width space, a TAB, a BOM,
+    //    a left-to-right mark, CRLF — consent not given → still blocked, no request; the fields were
+    //    normalised in place before they were validated
+    await page.fill("[name=name]", `${chr(0x200b)}홍길동\t`);
+    await page.fill("[name=phone]", `${chr(0xfeff)}010-1234-5678 `);
+    await page.fill("[name=region]", `대구\t수성구${chr(0x200e)}`);
+    await page.fill("[name=message]", `간단한 문의입니다.\r\n견적 부탁드립니다.${chr(0x2060)}\n`);
+    await press(250);
+    const noConsentInvalid = await invalidNames();
+    const normalised = await fieldValues();
+    // 2b. consent given, a phone number of 9 allowed characters but only 7 digits → blocked by the
+    //     phone rule (the site's hint is the message), no request
+    await page.check("[name=consent]");
+    await page.fill("[name=phone]", "010-12-34");
+    await press(250);
+    const shortPhone = { invalid: await invalidNames(), message: await page.evaluate(() => (document.querySelector("[name=phone]") as HTMLInputElement).validationMessage) };
+    await page.fill("[name=phone]", "010-1234-5678");
+    const blockedPosts = posts.length;
+    // 3. the endpoint answers 500 → failure alert above the button, inputs kept, no success wording
+    answer = "500";
+    await press(700);
+    const failed = {
+      posts: posts.length,
+      alert: (await page.textContent("[data-inquiry-error]")) ?? "",
+      status: (await page.textContent("[data-inquiry-status]")) ?? "",
+      values: await fieldValues(),
+      layout: await layout(),
+      consent: await page.isChecked("[name=consent]"),
+      button: await page.evaluate(() => {
+        const b = document.querySelector<HTMLButtonElement>("[data-inquiry-submit]")!;
+        return [b.textContent, b.disabled];
+      }),
+      successWording: SUCCESS.test(await mainText()),
+    };
+    // 4. retry, the endpoint answers 200 {received:true} → the confirmation replaces the fields
+    answer = "ok";
+    await press(700);
+    const done = {
+      posts: posts.length,
+      status: (await page.textContent("[data-inquiry-status]")) ?? "",
+      controls: await page.evaluate(() => document.querySelectorAll("[data-inquiry-form] input, [data-inquiry-form] select, [data-inquiry-form] textarea, [data-inquiry-form] button").length),
+      alert: await page.evaluate(() => document.querySelector("[data-inquiry-error]")?.textContent ?? null),
+      layout: await layout(),
+      url: page.url(),
+      documents: documents.length,
+      overflow: await page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth)),
+    };
+    const bodies = posts.map((p) => JSON.parse(p.body) as Record<string, unknown>);
+    results[`contact${width}`] = { mode: "online", endpointStubbed: true, servedButton, enabledOnceMounted, atLoad, emptyInvalid, noConsentInvalid, normalised, shortPhone, blockedPosts, failed, done, posts, otherRequests, stubFailures: stubFailures.length, consoleErrors };
+    eq(
+      [servedButton, enabledOnceMounted],
+      ['<button type="submit" class="i1-button i1-form__submit" data-inquiry-submit="" disabled="">', true],
+      `contact @ ${width}: the button is disabled in the served document and enabled once the island is mounted`,
+    );
+    eq([atLoad.successWording, atLoad.status, atLoad.alert], [false, "", ""], `contact @ ${width}: at load — no success wording, empty status, empty alert`);
+    eq([emptyInvalid, noConsentInvalid, blockedPosts], [["name", "phone", "message", "consent"], ["consent"], 0], `contact @ ${width}: validation blocks the request`);
+    eq(normalised, ["홍길동", "010-1234-5678", "대구 수성구", "간단한 문의입니다.\n견적 부탁드립니다."], `contact @ ${width}: pasted TAB / zero-width / BOM / CRLF normalised in the fields before validation`);
+    eq([shortPhone.invalid, shortPhone.message], [["phone"], slots.phoneHint], `contact @ ${width}: a phone number with fewer than 8 digits is blocked, with the site's hint`);
+    {
+      const { vw, vh, header, alert, button, focus } = failed.layout;
+      assert(header && alert && button, `contact @ ${width}: header / alert / button not rendered (${JSON.stringify(failed.layout)})`);
+      assert(alert.bottom <= button.top, `contact @ ${width}: the failure alert is not above the button (${JSON.stringify(failed.layout)})`);
+      assert(alert.top >= header.bottom && button.bottom <= vh && alert.left >= 0 && alert.right <= vw, `contact @ ${width}: the alert and the button are not both in view below the header (${JSON.stringify(failed.layout)})`);
+      // the form never moves focus on a failure (where the engine leaves it once the pressed button
+      // was disabled for the request is the engine's business: recorded, not asserted)
+      assert(focus !== "alert" && focus !== "status", `contact @ ${width}: a failure moved focus to the ${focus}`);
+    }
+    eq(
+      [failed.posts, failed.alert, failed.status, failed.values, failed.consent, failed.button, failed.successWording],
+      [1, slots.failureText, "", ["홍길동", "010-1234-5678", "대구 수성구", "간단한 문의입니다.\n견적 부탁드립니다."], true, [slots.submitLabel, false], false],
+      `contact @ ${width}: a failing answer`,
+    );
+    assert(typeof slots.failureText === "string" && slots.failureText.length > 0 && typeof slots.successTitle === "string" && SUCCESS.test(slots.successTitle), `contact @ ${width}: the site's failure / success copy`);
+    eq([done.posts, done.status, done.controls, done.alert, done.url, done.documents, done.overflow], [2, `${slots.successTitle}${slots.successBody}`, 0, null, `${BASE}/contact`, 1, 0], `contact @ ${width}: the retry succeeds`);
+    {
+      const { vh, header, headline, focus } = done.layout;
+      assert(header && headline && headline.top >= header.bottom && headline.bottom <= vh, `contact @ ${width}: the confirmation's headline is not in view below the sticky header (${JSON.stringify(done.layout)})`);
+      eq(focus, "status", `contact @ ${width}: focus is on the confirmation`);
+    }
+    for (const [n, body] of bodies.entries()) {
+      eq(Object.keys(body).sort(), ["consent", "hp", "message", "name", "phone"], `contact @ ${width}: request ${n + 1} keys`);
+      eq(body, { consent: true, name: "홍길동", phone: "010-1234-5678", message: `${slots.messagePrefix}\n지역: 대구 수성구\n\n간단한 문의입니다.\n견적 부탁드립니다.`, hp: "" }, `contact @ ${width}: request ${n + 1} body`);
+    }
+    eq(posts.map((p) => [p.contentType, p.cookie ?? null]), [["application/json", null], ["application/json", null]], `contact @ ${width}: JSON, no cookie`);
+    eq([otherRequests, stubFailures.length, consoleErrors], [[], 1, []], `contact @ ${width}: only POSTs reached the stub; the one console line is the stubbed 500's; no page error`);
+    await ctx.close();
+  }
+  if (INQUIRY_ENDPOINT) {
+    const name = (w: number) =>
+      `D ${w}px: contact form (online, endpoint stubbed) — the button is disabled as served and enabled once mounted; pasted invisible characters are normalised; validation, a missing consent and a phone number under 8 digits send nothing; a 500 shows the failure alert above the button (both in view, focus not moved) and keeps every input with no success claim; the retry posts the same contract body, shows the confirmation in place of the fields with its headline below the header, no navigation (0 page errors)`;
+    await check(name(1440), () => contactOnlineSmoke(1440, 900));
+    await check(name(390), () => contactOnlineSmoke(390, 844));
+  } else {
+    await check("D 1440px: contact form — short message hands off a mailto: link with no success claim and no network request; a too-long message hands off nothing and shows the copy fallback (0 console errors)", () => contactMailSmoke(1440, 900));
+    await check("D 390px: contact form — short message hands off a mailto: link with no success claim and no network request; a too-long message hands off nothing and shows the copy fallback (0 console errors)", () => contactMailSmoke(390, 844));
+  }
 
   // ── F. JS disabled ───────────────────────────────────────────────────────────────────────────
   console.log("\nJS disabled (javaScriptEnabled: false)");
   {
-    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, javaScriptEnabled: false });
+    const ctx = await newContext({ viewport: { width: 1440, height: 900 }, javaScriptEnabled: false });
     const NAV_EXPECTED = NAV.map(({ key, href }) => ({ key, href }));
     results.jsDisabled = {};
     for (const route of ["/", "/portfolio", `/${detail}`, "/about", "/contact"]) {
@@ -703,10 +919,27 @@ try {
         await page.close();
       });
     }
+    if (INQUIRY_ENDPOINT) {
+      await check("F JS disabled /contact (online form): the submit button stays disabled (no native submit of the fields) and the form shows the site's noscript line", async () => {
+        const noScriptText = (JSON.parse(await readFile(path.join(repoRoot, "data/sites", SITE, "slots.json"), "utf8")).values["contact.page"] ?? {}).noScriptText as string | undefined;
+        assert(typeof noScriptText === "string" && noScriptText.length > 0, "the site sets no noscript text");
+        const page = await ctx.newPage();
+        await page.goto(`${BASE}/contact`, { waitUntil: "load" });
+        const line = page.locator("form[data-inquiry-form] .i1-form__noscript");
+        const state = { lines: await line.count(), text: await line.first().textContent(), visible: await line.first().isVisible(), buttonDisabled: await page.locator("[data-inquiry-submit]").isDisabled(), url: page.url() };
+        (results.jsDisabled as Record<string, unknown>)["/contact (form)"] = state;
+        eq(state, { lines: 1, text: noScriptText, visible: true, buttonDisabled: true, url: `${BASE}/contact` }, "noscript state");
+        await page.close();
+      });
+    }
     await ctx.close();
   }
 
   await browser.close();
+  if (INQUIRY_ENDPOINT) {
+    results.strayEndpointHits = strayEndpointHits;
+    await check("the inquiry endpoint was contacted by no page outside the contact smoke's stubbed submits (and never for real)", () => eq(strayEndpointHits, [], "stray endpoint requests"));
+  }
 } finally {
   stopDev();
 }
@@ -722,8 +955,8 @@ results.passed = passed;
 results.failed = failed;
 results.skipped = skipped;
 results.finishedAt = new Date().toISOString();
-await mkdir(path.dirname(path.join(repoRoot, OUT)), { recursive: true });
-await writeFile(path.join(repoRoot, OUT), `${JSON.stringify(results, null, 2)}\n`);
+await mkdir(path.dirname(path.resolve(repoRoot, OUT)), { recursive: true });
+await writeFile(path.resolve(repoRoot, OUT), `${JSON.stringify(results, null, 2)}\n`);
 console.log(`\n${passed} passed, ${failed.length} failed, ${skipped.length} skipped   (→ ${OUT})`);
 if (failed.length > 0) {
   for (const f of failed) console.log(`  FAILED: ${f}`);

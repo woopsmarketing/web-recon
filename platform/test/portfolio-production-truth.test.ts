@@ -53,6 +53,11 @@ import {
   SYNTHETIC_STATUS,
   DEMO_FOOTER_NOTICE,
   DEMO_FOOTER_PRODUCT_NAME,
+  DEMO_ONLINE_INQUIRY_ENDPOINT,
+  DEMO_ONLINE_INQUIRY_SLOTS,
+  DEMO_PIN_161,
+  atPin,
+  revertOnlineInquiry,
   composeQaProjectsText,
   composeQaSnapshot,
   readSyntheticFixture,
@@ -212,29 +217,46 @@ await check(`P2 (i) the production producer output is the production golden (${P
 
 // ----------------------------------------------------------------------- qa --
 console.log("\n[qa] the QA composition = the pre-split corpus, byte for byte");
-await check(`Q1 (ii) the QA composition holds all 11 fixture records and reproduces the pre-split projects.json (${PRE_SPLIT_PROJECTS_BYTES} B, sha256 ${PRE_SPLIT_PROJECTS_SHA256.slice(0, 12)}…) and, with exactly the later footer deltas (the product rename, then the notice) reverted, the pre-split snapshot (siteSnapshotHash ${PRE_SPLIT_SNAPSHOT_HASH.slice(0, 12)}…)`, async () => {
+await check(`Q1 (ii) the QA composition holds all 11 fixture records and reproduces the pre-split projects.json (${PRE_SPLIT_PROJECTS_BYTES} B, sha256 ${PRE_SPLIT_PROJECTS_SHA256.slice(0, 12)}…) and, with exactly the later deltas reverted newest first (the 1.6.2 online inquiry + terminology and its re-pin, the product rename, then the footer notice), the pre-split snapshot (siteSnapshotHash ${PRE_SPLIT_SNAPSHOT_HASH.slice(0, 12)}…)`, async () => {
   const text = await composeQaProjectsText(repoRoot);
   const bytes = new TextEncoder().encode(text);
   eq([bytes.length, sha256(bytes)], [PRE_SPLIT_PROJECTS_BYTES, PRE_SPLIT_PROJECTS_SHA256], "composed projects.json = the pre-split file");
   eq((JSON.parse(text).items as { id: string }[]).map((p) => p.id), [...PROD_IDS, ...fixture.ids], "production + fixture, original order");
   eq(qaSnapshot.content.projects.map((p) => p.id), [...PROD_IDS, ...fixture.ids], "the QA snapshot serves all 19");
-  // the footer notice changed twice after the split, both times in the same one field: the notice
-  // itself (DEMO_FOOTER_NOTICE), then the product name in it (DEMO_FOOTER_PRODUCT_NAME, 2026-10-01).
-  // Revert exactly each, newest first.
+  // Three deltas after the split, reverted newest first:
+  //  (8) 2026-10-02, the 1.6.2 re-pin: the online inquiry (inquiry.json + contact.page copy) and the
+  //      "시공사례" terminology (DEMO_ONLINE_INQUIRY_*), plus the pin itself (→ DEMO_PIN_161);
+  //  (7) 2026-10-01: the product name in the footer notice (DEMO_FOOTER_PRODUCT_NAME);
+  //  (6) 2026-09-29: the footer notice itself (DEMO_FOOTER_NOTICE).
   const NOTICE_PATH = '$["slots"]["values"]["site.footer"]["notice"]';
   const noticeOf = (s: SiteSnapshot) => (s.slots!.values["site.footer"] as { notice?: string }).notice;
-  const preRename = revertFooterProductName(qaSnapshot);
-  eq(deltaPaths(qaSnapshot, preRename), [NOTICE_PATH], "the product-rename delta is exactly one field");
-  eq([noticeOf(qaSnapshot), noticeOf(preRename)], [DEMO_FOOTER_PRODUCT_NAME[1], DEMO_FOOTER_PRODUCT_NAME[0]], "footer notice now / before the product rename");
+  const preInquiryData = revertOnlineInquiry(qaSnapshot);
+  const declaredLeaves = DEMO_ONLINE_INQUIRY_SLOTS.flatMap(([section, leafPath, before, now]) => deltaPaths(now, before, `$["slots"]["values"][${JSON.stringify(section)}]${leafPath.map((k) => `[${JSON.stringify(k)}]`).join("")}`));
+  eq(DEMO_ONLINE_INQUIRY_SLOTS.length, 27, "declared slot leaves of the online-inquiry delta");
+  eq(deltaPaths(qaSnapshot, preInquiryData).sort(), ['$["inquiry"]', ...declaredLeaves].sort(), "the online-inquiry delta is exactly the inquiry document + its declared slot leaves");
+  eq(preInquiryData.inquiry, undefined, "…the inquiry document is gone");
+  eq(qaSnapshot.inquiry, { schemaVersion: 1, endpoint: DEMO_ONLINE_INQUIRY_ENDPOINT }, "the demo declares exactly that endpoint");
+  const [noticeBefore162, noticeNow] = DEMO_ONLINE_INQUIRY_SLOTS.find(([section, leafPath]) => section === "site.footer" && leafPath.join(".") === "notice")!.slice(2) as [string, string];
+  eq([noticeOf(qaSnapshot), noticeOf(preInquiryData)], [noticeNow, noticeBefore162], "footer notice now / before the terminology change");
+  eq(noticeBefore162.split("포트폴리오").join("시공사례"), noticeNow, "in the notice the change is the one word 포트폴리오 → 시공사례, nothing else in the sentence");
+  eq(noticeBefore162.split("포트폴리오").length, 2, "…which the notice used exactly once");
+  for (const [section, leafPath, , now] of DEMO_ONLINE_INQUIRY_SLOTS) assert(!/포트폴리오|시공 사례|연결되어 있지 않습니다|메일 앱/.test(JSON.stringify(now ?? "")), `${section}.${leafPath.join(".")}: the delta's new value still carries retired wording`);
+  assert(!/포트폴리오|시공 사례|연결되어 있지 않습니다|메일 앱/.test(JSON.stringify(qaSnapshot.slots)), "no slot value of the site carries the retired wording any more");
+  const at161 = atPin(preInquiryData, DEMO_PIN_161);
+  eq(deltaPaths(preInquiryData, at161), ["releaseHash", "releaseId", "templateVersion"].map((k) => `$["site"]["template"]["${k}"]`), "the re-pin is exactly the pin's three fields");
+  assert(hashJson(preInquiryData) !== hashJson(qaSnapshot) && hashJson(at161) !== hashJson(preInquiryData), "the online inquiry and its re-pin are real deltas (a silent revert of either would fail here)");
+  const preRename = revertFooterProductName(at161);
+  eq(deltaPaths(at161, preRename), [NOTICE_PATH], "the product-rename delta is exactly one field");
+  eq([noticeOf(at161), noticeOf(preRename)], [DEMO_FOOTER_PRODUCT_NAME[1], DEMO_FOOTER_PRODUCT_NAME[0]], "footer notice before the terminology change / before the product rename");
   eq(DEMO_FOOTER_PRODUCT_NAME[0].split("BoostChat").join("BoostInterior"), DEMO_FOOTER_PRODUCT_NAME[1], "the rename is the one word BoostChat → BoostInterior, nothing else in the sentence");
   eq(DEMO_FOOTER_PRODUCT_NAME[0].split("BoostChat").length, 2, "…which the notice named exactly once");
   const preFooter = revertFooterNotice(preRename);
   eq(deltaPaths(preRename, preFooter), [NOTICE_PATH], "the footer-notice delta is exactly one field");
-  eq(deltaPaths(qaSnapshot, preFooter), [NOTICE_PATH], "…and the two together are still exactly that one field");
+  eq(deltaPaths(at161, preFooter), [NOTICE_PATH], "…and the two together are still exactly that one field");
   eq([noticeOf(preRename), noticeOf(preFooter)], [DEMO_FOOTER_NOTICE[1], DEMO_FOOTER_NOTICE[0]], "footer notice before the product rename / before the notice change");
-  assert(hashJson(qaSnapshot) !== PRE_SPLIT_SNAPSHOT_HASH, "the footer notice is a real delta (a silent revert of it would fail here)");
-  assert(hashJson(preRename) !== PRE_SPLIT_SNAPSHOT_HASH && hashJson(preRename) !== hashJson(qaSnapshot), "…and so is the product rename on top of it");
-  eq(hashJson(preFooter), PRE_SPLIT_SNAPSHOT_HASH, "the QA snapshot with the product rename and the footer notice reverted = the pre-split snapshot (the producer-4 package 71f7e5f3…'s recorded siteSnapshotHash)");
+  assert(hashJson(qaSnapshot) !== PRE_SPLIT_SNAPSHOT_HASH && hashJson(at161) !== PRE_SPLIT_SNAPSHOT_HASH, "the footer notice is a real delta (a silent revert of it would fail here)");
+  assert(hashJson(preRename) !== PRE_SPLIT_SNAPSHOT_HASH && hashJson(preRename) !== hashJson(at161), "…and so is the product rename on top of it");
+  eq(hashJson(preFooter), PRE_SPLIT_SNAPSHOT_HASH, "the QA snapshot with the online inquiry, its re-pin, the product rename and the footer notice reverted = the pre-split snapshot (the producer-4 package 71f7e5f3…'s recorded siteSnapshotHash)");
 });
 await check(`Q2 (ii) the QA composition validates and its emission IS the pre-split document ${QA_GOLDEN_VERSION} byte for byte (the QA golden, ${QA_GOLDEN_DOC_BYTES} B) — the split lost nothing and the producer did not change`, async () => {
   eq(validateFor(qaEmission, qaSnapshot), { errors: [], warnings: [] }, "validates");

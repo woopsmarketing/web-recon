@@ -294,7 +294,8 @@ export function droppedDestinationWarnings(
   const out: string[] = [];
   const served = new Set(snapshot.content.projects.map((p) => p.id));
   const status = new Map(unserved.map((p) => [p.id, p.status]));
-  const contact = !!snapshot.content.business.contact?.email;
+  // the Template's contact channel: the business email or, from 1.6.2, a declared inquiry endpoint
+  const contact = !!snapshot.content.business.contact?.email || !!snapshot.inquiry;
   for (const b of snapshot.content.banners ?? []) {
     const t = b.cta?.target;
     if (t?.kind === "project" && !served.has(t.project)) {
@@ -477,6 +478,8 @@ export async function buildSite(opts: SiteBuildOptions): Promise<SiteBuildResult
       publicOrigin: snapshot.site.identity.publicOrigin,
       // The site's own declared third-party scripts are the only remote URLs it may carry.
       declaredScriptSrcs: snapshot.headScripts?.headScripts.map((s) => s.src) ?? [],
+      // …and its declared inquiry endpoint the only remote URL its page data may carry.
+      declaredEndpoints: snapshot.inquiry ? [snapshot.inquiry.endpoint] : [],
     });
     const qaMs = Date.now() - t;
     if (!qa.pass) {
