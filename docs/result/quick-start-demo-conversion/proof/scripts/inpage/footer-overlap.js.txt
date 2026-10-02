@@ -1,0 +1,42 @@
+// In-page: scroll to the very bottom and intersect the fixed launcher iframe with the footer's last line.
+(async () => {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const R = (r) => ({ x: Math.round(r.left * 10) / 10, y: Math.round(r.top * 10) / 10, width: Math.round((r.right - r.left) * 10) / 10, height: Math.round((r.bottom - r.top) * 10) / 10, right: Math.round(r.right * 10) / 10, bottom: Math.round(r.bottom * 10) / 10 });
+  const inter = (a, b) => { const left = Math.max(a.left, b.left), top = Math.max(a.top, b.top), right = Math.min(a.right, b.right), bottom = Math.min(a.bottom, b.bottom); return right - left > 0.5 && bottom - top > 0.5 ? R({ left, top, right, bottom }) : null; };
+  const total = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+  window.scrollTo({ top: total, left: 0, behavior: "instant" });
+  await sleep(500);
+  const f = document.querySelector("iframe[data-boost-chat-frame]") || document.querySelector('iframe[src*="boostchat.co.kr/widget/"]');
+  const notice = document.querySelector("[data-footer-notice]");
+  const footer = document.querySelector("footer.i1-footer");
+  const out = { scrollY: Math.round(window.scrollY), maxScroll: total - window.innerHeight, viewport: { w: window.innerWidth, h: window.innerHeight }, launcher: null, noticeRect: null, lines: [], lastLine: null, overlapWithLastLine: null, overlapWithNotice: null, overlapWithFooter: null, otherFooterTextOverlaps: [] };
+  if (!f || !notice) return out;
+  const fr = f.getBoundingClientRect();
+  out.launcher = R(fr);
+  out.noticeRect = R(notice.getBoundingClientRect());
+  const range = document.createRange();
+  range.selectNodeContents(notice);
+  const rects = Array.from(range.getClientRects()).filter((r) => r.width > 0 && r.height > 0);
+  const byLine = new Map();
+  for (const r of rects) {
+    const key = Math.round(r.top);
+    const cur = byLine.get(key);
+    if (!cur) byLine.set(key, { left: r.left, top: r.top, right: r.right, bottom: r.bottom });
+    else { cur.left = Math.min(cur.left, r.left); cur.right = Math.max(cur.right, r.right); cur.bottom = Math.max(cur.bottom, r.bottom); }
+  }
+  const lines = Array.from(byLine.values()).sort((a, b) => a.top - b.top);
+  out.lines = lines.map((l) => ({ rect: R(l), overlap: inter(l, fr) }));
+  const last = lines[lines.length - 1];
+  if (last) { out.lastLine = R(last); out.overlapWithLastLine = inter(last, fr); }
+  out.overlapWithNotice = inter(notice.getBoundingClientRect(), fr);
+  if (footer) out.overlapWithFooter = inter(footer.getBoundingClientRect(), fr);
+  // any other footer text (links, facts) under the launcher box
+  if (footer) for (const el of footer.querySelectorAll("a, dt, dd, p")) {
+    if (el === notice) continue;
+    const ov = inter(el.getBoundingClientRect(), fr);
+    if (ov) out.otherFooterTextOverlaps.push({ tag: el.tagName, text: (el.textContent || "").trim().slice(0, 40), overlap: ov });
+  }
+  out.noticeFontSize = getComputedStyle(notice).fontSize;
+  out.footerPaddingBottom = footer ? getComputedStyle(footer).paddingBottom : null;
+  return out;
+})()

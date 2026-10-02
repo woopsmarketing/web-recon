@@ -1,0 +1,26 @@
+/**
+ * Rehearsal of real-submit.mts with the lead endpoint STUBBED (nothing reaches boostchat.co.kr's
+ * lead endpoint). Same flow module; output goes to the scratch directory only.
+ */
+import path from "node:path";
+import { runSubmitFlow, BASE } from "./submit-flow.mts";
+
+const here = path.dirname(new URL(import.meta.url).pathname);
+const stubSaw: string[] = [];
+const out = await runSubmitFlow({
+  installStub: async (ctx) => {
+    await ctx.route("**/api/widget/*/lead", async (route) => {
+      const req = route.request();
+      stubSaw.push(`${req.method()} ${req.url()}`);
+      if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: { "access-control-allow-origin": BASE, "access-control-allow-headers": "content-type", "access-control-allow-methods": "POST" } });
+      return route.fulfill({ status: 200, headers: { "access-control-allow-origin": BASE, "x-qa-stub": "1" }, contentType: "application/json", body: '{"received":true}' });
+    });
+  },
+  outJson: path.join(here, "rehearsal/rehearsal.json"),
+  shotBefore: path.join(here, "rehearsal/before.jpg"),
+  shotSuccess: path.join(here, "rehearsal/success.jpg"),
+  shotFilled: path.join(here, "rehearsal/filled.jpg"),
+});
+console.log(JSON.stringify({ stage: out.stage, stubSaw, clickAtUtc: out.clickAtUtc, post: out.post, success: out.success, counts: out.leadRequestCounts, navigated: out.pageNavigatedAfterClick, errors: out.errors, console: out.console, cdpRemote: out.cdp.lead.map((s: any) => s.events.map((e: any) => [e.event, e.type ?? "", e.method ?? "", e.status ?? "", e.remoteIPAddress ?? ""].join(":"))) }, null, 1));
+if (stubSaw.length !== out.playwright.requests.length) { console.log("STUB ASSERTION FAILED: lead requests seen by the context ≠ lead requests answered by the stub"); process.exit(1); }
+console.log(`stub assertion ok: ${stubSaw.length} lead request(s), all answered by the stub`);

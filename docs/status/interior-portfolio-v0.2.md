@@ -1,5 +1,13 @@
 # Interior Portfolio Contract V0.2 — status
 
+> **2026-10-03 — the demo inquiry form submits online (interior-01 1.6.2).** Live = package `eeb82881…` (build `38400831…`,
+> release `interior-01-1.6.2-d5d4b4557a20`, same 8-record document `968afbcc…`). `/contact` posts to the BoostChat site lead
+> route declared in `inquiry.json`; customer-facing wording is 시공사례. The pointer's `previous` is the BoostInterior-named
+> package `e562dedd…`. keep-2 retired build `ddbc72ad…` from the tree (intact in git at `1da1658`). BoostChat Contact Channels
+> is deployed but the demo tenant has no channel enabled (no owner-approved destination). The entries below describe the
+> state before this date.
+> Report: [`../result/BOOSTINTERIOR-TRACK-B-QUICK-START-DEMO-CONVERSION-2026-10-02.md`](../result/BOOSTINTERIOR-TRACK-B-QUICK-START-DEMO-CONVERSION-2026-10-02.md).
+
 > **2026-10-01 — the demo footer names the product BoostInterior.** Live = package `e562dedd…` (build `01f7ac78…`,
 > same 8-record document `968afbcc…`); the only change is the word BoostChat → BoostInterior in `site.footer.notice`.
 > The pointer's `previous` is the footer-notice package `b10d430b…` (8 records). keep-2 retired build `71a906c1…` from

@@ -1,0 +1,237 @@
+/**
+ * The /contact submission flow used by BOTH real-submit.mts (no stub — exactly one real POST) and
+ * rehearse-submit.mts (stubbed — nothing reaches boostchat.co.kr's lead endpoint).
+ * The caller decides whether a stub is installed by passing `installStub`; this module never
+ * decides that by itself, and it clicks the submit button exactly once.
+ */
+import { createRequire } from "node:module";
+import { writeFileSync, mkdirSync } from "node:fs";
+import path from "node:path";
+
+const require = createRequire("/Users/woops/projects/web-recon-track-b/package.json");
+const pw = require("playwright") as typeof import("playwright");
+
+export const BASE = "https://interior-demo.boostweb.co.kr";
+export const ENDPOINT = "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead";
+export const LEAD_RE = new RegExp("/api/widget/[^/]+/lead(?:[?#].*)?$");
+export const SUCCESS_TITLE = "견적 문의가 접수되었습니다.";
+export const SUCCESS_BODY = "입력해주신 내용을 확인한 뒤 상담을 이어갈 수 있습니다.";
+
+export const VALUES = {
+  name: "[TEST] Track B E2E",
+  phone: "010-0000-0000",
+  region: "테스트",
+  area: "0평",
+  schedule: "테스트",
+  message: "[TEST] Quick Start demo conversion E2E 2026-10-03 — 시연 검증용 테스트 접수입니다. 연락하지 마세요.",
+};
+
+export interface FlowOptions {
+  /** null = REAL (un-stubbed). Otherwise a function that installs the stub on the context. */
+  installStub: null | ((ctx: import("playwright").BrowserContext) => Promise<void>);
+  outJson: string;
+  shotBefore: string;
+  shotSuccess: string;
+  /** optional viewport shot of the filled form, taken before the click */
+  shotFilled?: string;
+  /** called right before the click (the real script writes its "clicked" sentinel here) */
+  beforeClick?: () => void;
+}
+
+export async function runSubmitFlow(opts: FlowOptions): Promise<Record<string, any>> {
+  mkdirSync(path.dirname(opts.outJson), { recursive: true });
+  const out: Record<string, any> = {
+    what: "STEP 2 — /contact 견적 문의 form submission on the live site (Chromium, 1440x900)",
+    stubbed: opts.installStub !== null,
+    base: BASE,
+    endpoint: ENDPOINT,
+    startedAt: new Date().toISOString(),
+    stage: "starting",
+    filled: { ...VALUES, workType: "(left at the default empty option “선택해 주세요” — the select is not required)", consent: true },
+    clickAtUtc: null,
+    clickReturnedAtUtc: null,
+    playwright: { requests: [], responses: [], requestFailed: [], requestFinished: [] },
+    cdp: { lead: [] },
+    boostchatRequests: [],
+    mainFrameNavigations: [],
+    console: [],
+    pageErrors: [],
+    errors: [],
+  };
+  const persist = (stage?: string) => {
+    if (stage) out.stage = stage;
+    out.persistedAt = new Date().toISOString();
+    writeFileSync(opts.outJson, JSON.stringify(out, null, 2));
+  };
+  persist();
+
+  const browser = await pw.chromium.launch();
+  out.browser = `chromium ${browser.version()} (playwright ${require("playwright/package.json").version})`;
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, locale: "ko-KR" });
+  if (opts.installStub) await opts.installStub(ctx);
+  const page = await ctx.newPage();
+
+  // ---- listeners: attached BEFORE anything is loaded, long before the click
+  const t0 = Date.now();
+  const rel = () => Date.now() - t0;
+  page.on("console", (m) => out.console.push({ t: rel(), type: m.type(), text: m.text(), url: m.location()?.url ?? null }));
+  page.on("pageerror", (e) => out.pageErrors.push({ t: rel(), text: String((e as Error)?.stack ?? e) }));
+  page.on("framenavigated", (f) => { if (f === page.mainFrame()) out.mainFrameNavigations.push({ t: rel(), at: new Date().toISOString(), url: f.url() }); });
+  ctx.on("request", (r) => {
+    const u = r.url();
+    if (u.startsWith("https://boostchat.co.kr/")) out.boostchatRequests.push({ t: rel(), method: r.method(), url: u, resourceType: r.resourceType(), frame: (() => { try { return r.frame().url(); } catch { return null; } })() });
+    if (LEAD_RE.test(u)) {
+      const entry: Record<string, any> = { t: rel(), at: new Date().toISOString(), method: r.method(), url: u, resourceType: r.resourceType(), headers: r.headers(), postData: r.postData() };
+      out.playwright.requests.push(entry);
+      r.allHeaders().then((h) => { entry.allHeaders = h; }, () => {});
+    }
+  });
+  ctx.on("requestfailed", (r) => { if (LEAD_RE.test(r.url())) out.playwright.requestFailed.push({ t: rel(), method: r.method(), url: r.url(), failure: r.failure()?.errorText ?? null }); });
+  ctx.on("requestfinished", (r) => { if (LEAD_RE.test(r.url())) out.playwright.requestFinished.push({ t: rel(), method: r.method(), url: r.url(), timing: r.timing() }); });
+  ctx.on("response", (r) => {
+    if (!LEAD_RE.test(r.url())) return;
+    const entry: Record<string, any> = { t: rel(), at: new Date().toISOString(), method: r.request().method(), url: r.url(), status: r.status(), statusText: r.statusText(), headers: r.headers() };
+    out.playwright.responses.push(entry);
+    r.allHeaders().then((h) => { entry.allHeaders = h; }, () => {});
+    r.text().then((b) => { entry.body = b; }, (e) => { entry.bodyError = String(e); });
+    r.serverAddr().then((a) => { entry.serverAddr = a; }, () => {});
+  });
+
+  // ---- CDP: the only place a CORS preflight is observable
+  const cdp = await ctx.newCDPSession(page);
+  await cdp.send("Network.enable");
+  const cdpById = new Map<string, Record<string, any>>();
+  const slot = (id: string) => { let s = cdpById.get(id); if (!s) { s = { requestId: id, events: [] }; cdpById.set(id, s); } return s; };
+  cdp.on("Network.requestWillBeSent", (e: any) => { const s = slot(e.requestId); s.url = e.request.url; s.events.push({ event: "requestWillBeSent", t: rel(), wallTime: e.wallTime, wallTimeIso: new Date(e.wallTime * 1000).toISOString(), type: e.type, method: e.request.method, url: e.request.url, headers: e.request.headers, postData: e.request.postData ?? null, hasPostData: e.request.hasPostData ?? false, initiatorType: e.initiator?.type, documentURL: e.documentURL }); });
+  cdp.on("Network.requestWillBeSentExtraInfo", (e: any) => { slot(e.requestId).events.push({ event: "requestWillBeSentExtraInfo", t: rel(), headers: e.headers, associatedCookies: e.associatedCookies }); });
+  cdp.on("Network.responseReceived", (e: any) => { slot(e.requestId).events.push({ event: "responseReceived", t: rel(), type: e.type, status: e.response.status, statusText: e.response.statusText, headers: e.response.headers, mimeType: e.response.mimeType, remoteIPAddress: e.response.remoteIPAddress ?? null, remotePort: e.response.remotePort ?? null, protocol: e.response.protocol ?? null, securityState: e.response.securityState ?? null }); });
+  cdp.on("Network.responseReceivedExtraInfo", (e: any) => { slot(e.requestId).events.push({ event: "responseReceivedExtraInfo", t: rel(), statusCode: e.statusCode, headers: e.headers }); });
+  cdp.on("Network.loadingFinished", (e: any) => { slot(e.requestId).events.push({ event: "loadingFinished", t: rel(), encodedDataLength: e.encodedDataLength }); });
+  cdp.on("Network.loadingFailed", (e: any) => { slot(e.requestId).events.push({ event: "loadingFailed", t: rel(), errorText: e.errorText, canceled: e.canceled, corsErrorStatus: e.corsErrorStatus ?? null, blockedReason: e.blockedReason ?? null }); });
+  const isPreflightSlot = (s: Record<string, any>) => s.events.some((e: any) => (e.event === "requestWillBeSent" && e.method === "OPTIONS") || (e.event === "responseReceived" && e.type === "Preflight"));
+  const collectCdp = async () => {
+    const lead = [...cdpById.values()].filter((s) => typeof s.url === "string" && LEAD_RE.test(s.url));
+    for (const s of lead) {
+      if (s.body !== undefined) continue;
+      const isPreflight = isPreflightSlot(s);
+      if (isPreflight || !s.events.some((e: any) => e.event === "loadingFinished")) continue;
+      try { const b: any = await cdp.send("Network.getResponseBody", { requestId: s.requestId }); s.body = b.base64Encoded ? Buffer.from(b.body, "base64").toString("utf8") : b.body; } catch (e) { s.bodyError = String(e); }
+    }
+    out.cdp.lead = lead;
+  };
+
+  const STATE_JS = `(() => {
+    const q = (s) => document.querySelector(s);
+    const v = (n) => { const el = q("[name=" + n + "]"); return el ? el.value : null; };
+    const shown = (el) => !!el && el.getClientRects().length > 0;
+    const rect = (el) => { if (!shown(el)) return null; const r = el.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom), left: Math.round(r.left), right: Math.round(r.right) }; };
+    const b = q("[data-inquiry-submit]");
+    const st = q("[data-inquiry-status]");
+    const t = q(".i1-form__done-title");
+    const header = q("header.i1-header");
+    return {
+      url: location.href,
+      title: document.title,
+      values: { name: v("name"), phone: v("phone"), region: v("region"), area: v("area"), workType: v("workType"), schedule: v("schedule"), message: v("message") },
+      trap: v("topic"),
+      consent: q("[name=consent]") ? q("[name=consent]").checked : null,
+      button: b ? { text: b.textContent, disabled: b.disabled } : null,
+      errorText: q("[data-inquiry-error]") ? q("[data-inquiry-error]").textContent : null,
+      statusRegionText: st ? st.innerText : null,
+      statusRegionVisible: shown(st),
+      doneTitleText: t ? t.textContent : null,
+      doneTitleRect: rect(t),
+      headerBottom: header ? Math.round(header.getBoundingClientRect().bottom) : null,
+      formInnerText: q("[data-inquiry-form]") ? q("[data-inquiry-form]").innerText : null,
+      formControls: document.querySelectorAll("[data-inquiry-form] input, [data-inquiry-form] select, [data-inquiry-form] textarea").length,
+      scrollY: Math.round(window.scrollY),
+      viewport: { w: window.innerWidth, h: window.innerHeight },
+    };
+  })()`;
+
+  try {
+    const resp = await page.goto(`${BASE}/contact`, { waitUntil: "load", timeout: 45_000 });
+    out.navigation = { status: resp?.status() ?? null, url: page.url() };
+    try { await page.waitForLoadState("networkidle", { timeout: 15_000 }); } catch {}
+    await page.waitForSelector("[data-inquiry-submit]:not([disabled])", { timeout: 15_000 });
+    await page.evaluate(`document.fonts.ready.then(() => true)`);
+    await page.waitForTimeout(1200);
+    out.before = await page.evaluate(STATE_JS);
+    await page.screenshot({ path: opts.shotBefore, type: "jpeg", quality: 80 });
+    persist("loaded");
+
+    await page.fill("[name=name]", VALUES.name);
+    await page.fill("[name=phone]", VALUES.phone);
+    await page.fill("[name=region]", VALUES.region);
+    await page.fill("[name=area]", VALUES.area);
+    await page.fill("[name=schedule]", VALUES.schedule);
+    await page.fill("[name=message]", VALUES.message);
+    await page.check("[name=consent]");
+    out.filledState = await page.evaluate(STATE_JS);
+    if (opts.shotFilled) await page.screenshot({ path: opts.shotFilled, type: "jpeg", quality: 80 });
+    out.navigationsBeforeClick = out.mainFrameNavigations.length;
+    out.leadRequestsBeforeClick = out.playwright.requests.length;
+    if (out.leadRequestsBeforeClick !== 0) throw new Error("a lead request was seen before the click — not clicking");
+    persist("filled");
+  } catch (e) {
+    out.errors.push({ phase: "before-click", error: String((e as Error)?.stack ?? e) });
+    persist("FAILED-BEFORE-CLICK");
+    await browser.close();
+    return out;
+  }
+
+  // ---- the click (exactly once). Nothing below this line may be retried.
+  const responsePromise = page.waitForResponse((r) => LEAD_RE.test(r.url()) && r.request().method() === "POST", { timeout: 30_000 });
+  responsePromise.catch(() => {});
+  opts.beforeClick?.();
+  out.clickAtUtc = new Date().toISOString();
+  persist("clicking");
+  try {
+    await page.click("[data-inquiry-submit]", { timeout: 10_000 });
+    out.clickReturnedAtUtc = new Date().toISOString();
+    persist("clicked");
+
+    const response = await responsePromise;
+    const body = await response.text().catch((e) => `<<body unreadable: ${e}>>`);
+    out.post = {
+      request: { method: response.request().method(), url: response.request().url(), headers: await response.request().allHeaders(), postData: response.request().postData(), postDataJson: (() => { try { return JSON.parse(response.request().postData() ?? ""); } catch { return null; } })() },
+      response: { status: response.status(), statusText: response.statusText(), headers: await response.allHeaders(), body, serverAddr: await response.serverAddr().catch(() => null), receivedAtUtc: new Date().toISOString() },
+    };
+    out.post.request.cookieHeaderPresent = Object.keys(out.post.request.headers).some((k) => k.toLowerCase() === "cookie");
+    persist("response-received");
+
+    try { await page.waitForSelector(".i1-form__done-title", { state: "visible", timeout: 10_000 }); } catch (e) { out.errors.push({ phase: "wait-success-title", error: String(e) }); }
+    await page.waitForTimeout(800);
+    out.after = await page.evaluate(STATE_JS);
+    out.success = {
+      titleShown: out.after.doneTitleText,
+      titleMatchesExpected: out.after.doneTitleText === SUCCESS_TITLE,
+      regionVisibleText: out.after.statusRegionText,
+      bodyMatchesExpected: typeof out.after.statusRegionText === "string" && out.after.statusRegionText.includes(SUCCESS_BODY),
+      titleBelowHeader: out.after.doneTitleRect && out.after.headerBottom !== null ? out.after.doneTitleRect.top >= out.after.headerBottom : null,
+    };
+    persist("success-state-read");
+    await page.screenshot({ path: opts.shotSuccess, type: "jpeg", quality: 80 });
+    persist("success-shot-taken");
+
+    // linger: would a second request follow?
+    await page.waitForTimeout(2500);
+  } catch (e) {
+    out.errors.push({ phase: "after-click", error: String((e as Error)?.stack ?? e) });
+    try { out.afterOnError = await page.evaluate(STATE_JS); } catch {}
+  }
+  try { await collectCdp(); } catch (e) { out.errors.push({ phase: "collect-cdp", error: String(e) }); }
+  out.pageNavigatedAfterClick = out.mainFrameNavigations.length > (out.navigationsBeforeClick ?? 0);
+  out.finalUrl = page.url();
+  out.leadRequestCounts = {
+    playwrightRequestEvents: out.playwright.requests.length,
+    playwrightPOST: out.playwright.requests.filter((r: any) => r.method === "POST").length,
+    cdpRequests: out.cdp.lead.length,
+    cdpPreflight: out.cdp.lead.filter((s: any) => isPreflightSlot(s)).length,
+    cdpPOST: out.cdp.lead.filter((s: any) => s.events.some((e: any) => e.event === "requestWillBeSent" && e.method === "POST")).length,
+  };
+  out.finishedAt = new Date().toISOString();
+  persist(out.errors.length ? "FINISHED-WITH-ERRORS" : "finished");
+  await browser.close();
+  return out;
+}

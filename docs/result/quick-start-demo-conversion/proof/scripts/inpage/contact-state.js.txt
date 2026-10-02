@@ -1,0 +1,82 @@
+// In-page: the state of the /contact inquiry form + geometry against the sticky header and the launcher iframe.
+(() => {
+  const q = (s) => document.querySelector(s);
+  const v = (n) => { const el = q("[name=" + n + "]"); return el ? el.value : null; };
+  const shown = (el) => !!el && el.getClientRects().length > 0;
+  const R = (r) => ({ x: Math.round(r.left * 10) / 10, y: Math.round(r.top * 10) / 10, width: Math.round((r.right - r.left) * 10) / 10, height: Math.round((r.bottom - r.top) * 10) / 10, right: Math.round(r.right * 10) / 10, bottom: Math.round(r.bottom * 10) / 10 });
+  const rect = (el) => (shown(el) ? R(el.getBoundingClientRect()) : null);
+  const inter = (a, b) => { if (!a || !b) return null; const left = Math.max(a.left, b.left), top = Math.max(a.top, b.top), right = Math.min(a.right, b.right), bottom = Math.min(a.bottom, b.bottom); return right - left > 0.5 && bottom - top > 0.5 ? R({ left, top, right, bottom }) : null; };
+  const raw = (el) => (shown(el) ? el.getBoundingClientRect() : null);
+  // is the element the top-most thing at its own centre (and at 4 inset corners)?
+  const hit = (el) => {
+    if (!shown(el)) return null;
+    const r = el.getBoundingClientRect();
+    const pts = [[r.left + r.width / 2, r.top + r.height / 2], [r.left + 4, r.top + 4], [r.right - 4, r.top + 4], [r.left + 4, r.bottom - 4], [r.right - 4, r.bottom - 4]];
+    return pts.map(([x, y]) => { if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) return "outside-viewport"; const h = document.elementFromPoint(x, y); if (!h) return "nothing"; if (h === el || el.contains(h)) return "self"; return h.tagName + (h.className ? "." + String(h.className).split(" ")[0] : ""); });
+  };
+  const inViewport = (el, headerBottom) => { if (!shown(el)) return false; const r = el.getBoundingClientRect(); return r.top >= headerBottom - 0.5 && r.bottom <= window.innerHeight + 0.5 && r.left >= -0.5 && r.right <= window.innerWidth + 0.5; };
+  const b = q("[data-inquiry-submit]");
+  const e = q("[data-inquiry-error]");
+  const st = q("[data-inquiry-status]");
+  const title = q(".i1-form__done-title");
+  const form = q("[data-inquiry-form]");
+  const notice = q(".i1-form__notice");
+  const header = q("header.i1-header");
+  const frame = q("iframe[data-boost-chat-frame]") || q('iframe[src*="boostchat.co.kr/widget/"]');
+  const hb = header ? header.getBoundingClientRect() : null;
+  const headerPos = header ? getComputedStyle(header).position : null;
+  // the header only covers content while it is on screen
+  const headerBottom = hb && hb.bottom > 0 ? hb.bottom : 0;
+  const fr = raw(frame);
+  const phone = q("[name=phone]");
+  const name = q("[name=name]");
+  const consent = q("[name=consent]");
+  const message = q("[name=message]");
+  const bodyText = document.body.innerText;
+  return {
+    path: location.pathname + location.search + location.hash,
+    values: { name: v("name"), phone: v("phone"), region: v("region"), area: v("area"), workType: v("workType"), schedule: v("schedule"), message: v("message") },
+    trap: v("topic"),
+    consent: consent ? consent.checked : null,
+    controls: document.querySelectorAll("[data-inquiry-form] input, [data-inquiry-form] select, [data-inquiry-form] textarea").length,
+    button: b ? { text: b.textContent, disabled: b.disabled } : null,
+    buttonRect: rect(b),
+    buttonHit: hit(b),
+    validity: {
+      name: name ? { valueMissing: name.validity.valueMissing, valid: name.validity.valid } : null,
+      phone: phone ? { valueMissing: phone.validity.valueMissing, patternMismatch: phone.validity.patternMismatch, customError: phone.validity.customError, valid: phone.validity.valid, message: phone.validationMessage } : null,
+      message: message ? { valueMissing: message.validity.valueMissing, valid: message.validity.valid } : null,
+      consent: consent ? { valueMissing: consent.validity.valueMissing, valid: consent.validity.valid } : null,
+    },
+    focus: document.activeElement ? (document.activeElement.getAttribute("name") || document.activeElement.tagName) : null,
+    noticeText: notice ? notice.textContent : null,
+    noticeVisible: shown(notice),
+    errorText: e ? e.textContent : null,
+    errorVisible: shown(e),
+    errorRect: rect(e),
+    errorInViewport: inViewport(e, headerBottom),
+    errorHit: hit(e),
+    statusText: st ? st.innerText : null,
+    statusVisible: shown(st),
+    statusRect: rect(st),
+    doneTitleText: title ? title.textContent : null,
+    doneTitleRect: rect(title),
+    doneTitleInViewport: inViewport(title, headerBottom),
+    doneTitleHit: hit(title),
+    statusInViewport: inViewport(st, headerBottom),
+    header: { position: headerPos, bottom: hb ? Math.round(hb.bottom * 10) / 10 : null, effectiveBottom: Math.round(headerBottom * 10) / 10 },
+    launcherRect: fr ? R(fr) : null,
+    launcherOverButton: inter(raw(b), fr),
+    launcherOverError: inter(raw(e), fr),
+    launcherOverStatus: inter(raw(st), fr),
+    launcherOverDoneTitle: inter(raw(title), fr),
+    launcherOverForm: inter(raw(form), fr),
+    buttonXRangeOverlapsLauncher: b && fr && shown(b) ? Math.min(b.getBoundingClientRect().right, fr.right) - Math.max(b.getBoundingClientRect().left, fr.left) > 0.5 : null,
+    oldCopy: { notConnected: bodyText.includes("연결되어 있지 않습니다"), mailApp: bodyText.includes("메일 앱") },
+    overflowX: document.documentElement.scrollWidth > window.innerWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+    scrollY: Math.round(window.scrollY),
+    viewport: { w: window.innerWidth, h: window.innerHeight },
+    formText: form ? form.innerText : null,
+  };
+})()

@@ -36,6 +36,7 @@ SOURCE SITE → Source Capture → Source-Preserved Faithful Clone     (preserva
 | 9 | **Storage boundary:** Template → site-scoped `ContentReader` / `SiteContext` → JSON initially → Supabase later if/when introduced. Template code never uses Supabase (or any storage) syntax directly. |
 | 10 | **MVP cache = the static per-site build.** Public visitors need no DB read per request. |
 | 11 | **New implementation lives separately from the legacy pipeline**, initially in this repository: `templates/` and `platform/`. |
+| 12 | **Online inquiry seam (accepted 2026-10-03).** A site may declare exactly one inquiry endpoint in `inquiry.json` (strict, https, exact URL). Template code still has no network access of its own: it submits only through the platform-owned client door `@platform/site/inquiry-client` (one JSON POST, no credentials). Package QA lets the declared URL through only inside an HTML `<script>` body or a `.txt` flight file. The static runtime Worker stays GET/HEAD only; the backend is external and owns CORS, storage and abuse control. A site without the declaration keeps the mail hand-off. Evidence: [`../result/BOOSTINTERIOR-TRACK-B-QUICK-START-DEMO-CONVERSION-2026-10-02.md`](../result/BOOSTINTERIOR-TRACK-B-QUICK-START-DEMO-CONVERSION-2026-10-02.md). |
 
 ## Template Release immutability (modifies the proposal's `id@major` floating pin)
 

@@ -1,0 +1,349 @@
+# STEP 3 — stubbed browser QA of https://interior-demo.boostweb.co.kr — 2026-10-02T16:42:06.769Z
+verdict: PASS   defects: 0
+
+## method
+  lead endpoint: STUBBED in every context (every browser context routes **/api/widget/*/lead (plus a path predicate as a net) to a canned answer: 200 {"received":true} / 500 / abort, with access-control-allow-origin: https://interior-demo.boostweb.co.kr; verified locally (probe-preflight.mts) that neither the POST nor its preflight reaches the network under such a route in Chromium and WebKit)
+  no chat message was typed or sent; the widget was only opened and closed; ≤ 4 page loads per 65 s across all scripts (widget bootstrap budget)
+  c1440: Chromium 1440x900, chromium 151.0.7922.34, 2026-10-02T16:11:59.983Z → 2026-10-02T16:15:47.560Z
+  c1024: Chromium 1024x768, chromium 151.0.7922.34, 2026-10-02T16:16:53.451Z → 2026-10-02T16:20:28.977Z
+  c768: Chromium 768x1024, chromium 151.0.7922.34, 2026-10-02T16:20:35.398Z → 2026-10-02T16:24:45.129Z
+  c390: Chromium 390x844 (isMobile + hasTouch, DSF 2), chromium 151.0.7922.34, 2026-10-02T16:24:51.339Z → 2026-10-02T16:28:31.040Z
+  c375: Chromium 375x667 (isMobile + hasTouch, DSF 2), chromium 151.0.7922.34, 2026-10-02T16:28:56.950Z → 2026-10-02T16:32:50.123Z
+  w390: WebKit devices["iPhone 13"] (390x664, DSF 3, touch), webkit 26.5, 2026-10-02T16:35:13.449Z → 2026-10-02T16:35:57.897Z
+  pages (13, from the live sitemap.xml): /  /portfolio  /portfolio/suseong-white-34py-apartment-remodeling  /portfolio/dalseo-24py-white-natural-newlywed-home  /portfolio/suseong-42py-family-storage-remodeling  /portfolio/buk-32py-kitchen-bathroom-renewal  /portfolio/dong-29py-bright-natural-remodeling  /portfolio/gyeongsan-34py-entrance-living-remodeling  /portfolio/jung-19py-compact-white-minimal-remodeling  /portfolio/suseong-51py-new-apartment-home-styling  /3d-portfolio  /about  /contact
+
+## per viewport (sums over the pages of that viewport; load + interactions)
+  viewport | pages 200 | overflow | broken img | console err | page err | failed req (genuine) | 4xx/5xx | aborted prefetch (load+interaction) | footer notice | nav labels | mobile menu | 포트폴리오 | 시공 사례
+  c1440    | 13/13 | 0 | 0 (of 125 <img>, 79 loaded in place, 46 lazy not requested) | 0 | 0 | 0 | 0 | 70+0 (fetch net::ERR_ABORTED; all targets are site pages: true) | 13/13 | 13/13 | 0/0 | 0 | 0
+  c1024    | 13/13 | 0 | 0 (of 125 <img>, 77 loaded in place, 48 lazy not requested) | 0 | 0 | 0 | 0 | 69+0 (fetch net::ERR_ABORTED; all targets are site pages: true) | 13/13 | 13/13 | 0/0 | 0 | 0
+  c768     | 13/13 | 0 | 0 (of 125 <img>, 69 loaded in place, 56 lazy not requested) | 0 | 0 | 0 | 0 | 40+6 (fetch net::ERR_ABORTED; all targets are site pages: true) | 13/13 | 13/13 | 13/13 | 0 | 0
+  c390     | 13/13 | 0 | 0 (of 125 <img>, 79 loaded in place, 46 lazy not requested) | 0 | 0 | 0 | 0 | 39+6 (fetch net::ERR_ABORTED; all targets are site pages: true) | 13/13 | 13/13 | 13/13 | 0 | 0
+  c375     | 13/13 | 0 | 0 (of 125 <img>, 79 loaded in place, 46 lazy not requested) | 0 | 0 | 0 | 0 | 39+6 (fetch net::ERR_ABORTED; all targets are site pages: true) | 13/13 | 13/13 | 13/13 | 0 | 0
+  w390     | 2/2 | 0 | 0 (of 16 <img>, 14 loaded in place, 2 lazy not requested) | 0 | 0 | 0 | 0 | 0+0 (none; all targets are site pages: true) | 2/2 | 2/2 | 2/2 | 0 | 0
+
+## per page × viewport (status · overflow scrollWidth/innerWidth · images loaded/total, broken, pending-lazy · console err · page err · failed · 4xx/5xx · aborted)
+  /
+    c1440  200 “부스트 인테리어” · no overflow 1440/1440 · img 15/15, broken 0, pending 0, sources ok 15/15 · 0 · 0 · 0 · 0 · 7 · footer ok · nav ok
+    c1024  200 “부스트 인테리어” · no overflow 1024/1024 · img 15/15, broken 0, pending 0, sources ok 15/15 · 0 · 0 · 0 · 0 · 7 · footer ok · nav ok
+    c768   200 “부스트 인테리어” · no overflow 768/768 · img 15/15, broken 0, pending 0, sources ok 15/15 · 0 · 0 · 0 · 0 · 7 · footer ok · nav ok
+    c390   200 “부스트 인테리어” · no overflow 390/390 · img 15/15, broken 0, pending 0, sources ok 15/15 · 0 · 0 · 0 · 0 · 7 · footer ok · nav ok
+    c375   200 “부스트 인테리어” · no overflow 375/375 · img 15/15, broken 0, pending 0, sources ok 15/15 · 0 · 0 · 0 · 0 · 7 · footer ok · nav ok
+    w390   200 “부스트 인테리어” · no overflow 390/390 · img 13/15, broken 0, pending 2, sources ok 15/15 · 0 · 0 · 0 · 0 · 0 · footer ok · nav ok
+  /portfolio
+    c1440  200 “시공사례 | 부스트 인테리어” · no overflow 1440/1440 · img 10/10, broken 0, pending 0, sources ok 10/10 · 0 · 0 · 0 · 0 · 8 · footer ok · nav ok
+    c1024  200 “시공사례 | 부스트 인테리어” · no overflow 1024/1024 · img 10/10, broken 0, pending 0, sources ok 10/10 · 0 · 0 · 0 · 0 · 7 · footer ok · nav ok
+    c768   200 “시공사례 | 부스트 인테리어” · no overflow 768/768 · img 10/10, broken 0, pending 0, sources ok 10/10 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c390   200 “시공사례 | 부스트 인테리어” · no overflow 390/390 · img 10/10, broken 0, pending 0, sources ok 10/10 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c375   200 “시공사례 | 부스트 인테리어” · no overflow 375/375 · img 10/10, broken 0, pending 0, sources ok 10/10 · 0 · 0 · 0 · 0 · 2 · footer ok · nav ok
+  /portfolio/suseong-white-34py-apartment-remodeling
+    c1440  200 “수성 화이트 34평 아파트 리모델링 | 부스트 인테리어” · no overflow 1440/1440 · img 7/27, broken 0, pending 20, sources ok 14/14 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c1024  200 “수성 화이트 34평 아파트 리모델링 | 부스트 인테리어” · no overflow 1024/1024 · img 6/27, broken 0, pending 21, sources ok 14/14 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c768   200 “수성 화이트 34평 아파트 리모델링 | 부스트 인테리어” · no overflow 768/768 · img 5/27, broken 0, pending 22, sources ok 14/14 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c390   200 “수성 화이트 34평 아파트 리모델링 | 부스트 인테리어” · no overflow 390/390 · img 7/27, broken 0, pending 20, sources ok 14/14 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c375   200 “수성 화이트 34평 아파트 리모델링 | 부스트 인테리어” · no overflow 375/375 · img 7/27, broken 0, pending 20, sources ok 14/14 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+  /portfolio/dalseo-24py-white-natural-newlywed-home
+    c1440  200 “신혼부부를 위한 24평 화이트 내추럴 리모델링 | 부스트 인테리어” · no overflow 1440/1440 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c1024  200 “신혼부부를 위한 24평 화이트 내추럴 리모델링 | 부스트 인테리어” · no overflow 1024/1024 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c768   200 “신혼부부를 위한 24평 화이트 내추럴 리모델링 | 부스트 인테리어” · no overflow 768/768 · img 5/9, broken 0, pending 4, sources ok 5/5 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c390   200 “신혼부부를 위한 24평 화이트 내추럴 리모델링 | 부스트 인테리어” · no overflow 390/390 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c375   200 “신혼부부를 위한 24평 화이트 내추럴 리모델링 | 부스트 인테리어” · no overflow 375/375 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+  /portfolio/suseong-42py-family-storage-remodeling
+    c1440  200 “42평 가족형 아파트 수납 중심 리모델링 | 부스트 인테리어” · no overflow 1440/1440 · img 7/11, broken 0, pending 4, sources ok 6/6 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c1024  200 “42평 가족형 아파트 수납 중심 리모델링 | 부스트 인테리어” · no overflow 1024/1024 · img 6/11, broken 0, pending 5, sources ok 6/6 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c768   200 “42평 가족형 아파트 수납 중심 리모델링 | 부스트 인테리어” · no overflow 768/768 · img 5/11, broken 0, pending 6, sources ok 6/6 · 0 · 0 · 0 · 0 · 4 · footer ok · nav ok
+    c390   200 “42평 가족형 아파트 수납 중심 리모델링 | 부스트 인테리어” · no overflow 390/390 · img 7/11, broken 0, pending 4, sources ok 6/6 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c375   200 “42평 가족형 아파트 수납 중심 리모델링 | 부스트 인테리어” · no overflow 375/375 · img 7/11, broken 0, pending 4, sources ok 6/6 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+  /portfolio/buk-32py-kitchen-bathroom-renewal
+    c1440  200 “32평 주방·욕실 중심 리뉴얼 | 부스트 인테리어” · no overflow 1440/1440 · img 6/13, broken 0, pending 7, sources ok 7/7 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c1024  200 “32평 주방·욕실 중심 리뉴얼 | 부스트 인테리어” · no overflow 1024/1024 · img 6/13, broken 0, pending 7, sources ok 7/7 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c768   200 “32평 주방·욕실 중심 리뉴얼 | 부스트 인테리어” · no overflow 768/768 · img 5/13, broken 0, pending 8, sources ok 7/7 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c390   200 “32평 주방·욕실 중심 리뉴얼 | 부스트 인테리어” · no overflow 390/390 · img 6/13, broken 0, pending 7, sources ok 7/7 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c375   200 “32평 주방·욕실 중심 리뉴얼 | 부스트 인테리어” · no overflow 375/375 · img 6/13, broken 0, pending 7, sources ok 7/7 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+  /portfolio/dong-29py-bright-natural-remodeling
+    c1440  200 “29평 밝은 내추럴 아파트 리모델링 | 부스트 인테리어” · no overflow 1440/1440 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c1024  200 “29평 밝은 내추럴 아파트 리모델링 | 부스트 인테리어” · no overflow 1024/1024 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c768   200 “29평 밝은 내추럴 아파트 리모델링 | 부스트 인테리어” · no overflow 768/768 · img 5/9, broken 0, pending 4, sources ok 5/5 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c390   200 “29평 밝은 내추럴 아파트 리모델링 | 부스트 인테리어” · no overflow 390/390 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c375   200 “29평 밝은 내추럴 아파트 리모델링 | 부스트 인테리어” · no overflow 375/375 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+  /portfolio/gyeongsan-34py-entrance-living-remodeling
+    c1440  200 “34평 현관·거실 중심 리모델링 | 부스트 인테리어” · no overflow 1440/1440 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c1024  200 “34평 현관·거실 중심 리모델링 | 부스트 인테리어” · no overflow 1024/1024 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c768   200 “34평 현관·거실 중심 리모델링 | 부스트 인테리어” · no overflow 768/768 · img 5/9, broken 0, pending 4, sources ok 5/5 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c390   200 “34평 현관·거실 중심 리모델링 | 부스트 인테리어” · no overflow 390/390 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c375   200 “34평 현관·거실 중심 리모델링 | 부스트 인테리어” · no overflow 375/375 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 2 · footer ok · nav ok
+  /portfolio/jung-19py-compact-white-minimal-remodeling
+    c1440  200 “19평 소형 아파트 화이트 미니멀 리모델링 | 부스트 인테리어” · no overflow 1440/1440 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c1024  200 “19평 소형 아파트 화이트 미니멀 리모델링 | 부스트 인테리어” · no overflow 1024/1024 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c768   200 “19평 소형 아파트 화이트 미니멀 리모델링 | 부스트 인테리어” · no overflow 768/768 · img 5/9, broken 0, pending 4, sources ok 5/5 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c390   200 “19평 소형 아파트 화이트 미니멀 리모델링 | 부스트 인테리어” · no overflow 390/390 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c375   200 “19평 소형 아파트 화이트 미니멀 리모델링 | 부스트 인테리어” · no overflow 375/375 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+  /portfolio/suseong-51py-new-apartment-home-styling
+    c1440  200 “51평 신축 아파트 입주 전 홈스타일링 | 부스트 인테리어” · no overflow 1440/1440 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c1024  200 “51평 신축 아파트 입주 전 홈스타일링 | 부스트 인테리어” · no overflow 1024/1024 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c768   200 “51평 신축 아파트 입주 전 홈스타일링 | 부스트 인테리어” · no overflow 768/768 · img 5/9, broken 0, pending 4, sources ok 5/5 · 0 · 0 · 0 · 0 · 4 · footer ok · nav ok
+    c390   200 “51평 신축 아파트 입주 전 홈스타일링 | 부스트 인테리어” · no overflow 390/390 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c375   200 “51평 신축 아파트 입주 전 홈스타일링 | 부스트 인테리어” · no overflow 375/375 · img 6/9, broken 0, pending 3, sources ok 5/5 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+  /3d-portfolio
+    c1440  200 “3D 시공사례 | 부스트 인테리어” · no overflow 1440/1440 · img 1/1, broken 0, pending 0, sources ok 1/1 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c1024  200 “3D 시공사례 | 부스트 인테리어” · no overflow 1024/1024 · img 1/1, broken 0, pending 0, sources ok 1/1 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c768   200 “3D 시공사례 | 부스트 인테리어” · no overflow 768/768 · img 1/1, broken 0, pending 0, sources ok 1/1 · 0 · 0 · 0 · 0 · 2 · footer ok · nav ok
+    c390   200 “3D 시공사례 | 부스트 인테리어” · no overflow 390/390 · img 1/1, broken 0, pending 0, sources ok 1/1 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c375   200 “3D 시공사례 | 부스트 인테리어” · no overflow 375/375 · img 1/1, broken 0, pending 0, sources ok 1/1 · 0 · 0 · 0 · 0 · 2 · footer ok · nav ok
+  /about
+    c1440  200 “소개 | 부스트 인테리어” · no overflow 1440/1440 · img 2/2, broken 0, pending 0 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c1024  200 “소개 | 부스트 인테리어” · no overflow 1024/1024 · img 2/2, broken 0, pending 0 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c768   200 “소개 | 부스트 인테리어” · no overflow 768/768 · img 2/2, broken 0, pending 0 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c390   200 “소개 | 부스트 인테리어” · no overflow 390/390 · img 2/2, broken 0, pending 0 · 0 · 0 · 0 · 0 · 3 · footer ok · nav ok
+    c375   200 “소개 | 부스트 인테리어” · no overflow 375/375 · img 2/2, broken 0, pending 0 · 0 · 0 · 0 · 0 · 4 · footer ok · nav ok
+  /contact
+    c1440  200 “견적 문의 | 부스트 인테리어” · no overflow 1440/1440 · img 1/1, broken 0, pending 0 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c1024  200 “견적 문의 | 부스트 인테리어” · no overflow 1024/1024 · img 1/1, broken 0, pending 0 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c768   200 “견적 문의 | 부스트 인테리어” · no overflow 768/768 · img 1/1, broken 0, pending 0 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c390   200 “견적 문의 | 부스트 인테리어” · no overflow 390/390 · img 1/1, broken 0, pending 0 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    c375   200 “견적 문의 | 부스트 인테리어” · no overflow 375/375 · img 1/1, broken 0, pending 0 · 0 · 0 · 0 · 0 · 5 · footer ok · nav ok
+    w390   200 “견적 문의 | 부스트 인테리어” · no overflow 390/390 · img 1/1, broken 0, pending 0 · 0 · 0 · 0 · 0 · 0 · footer ok · nav ok
+
+## footer disclosure — expected: 부스트 인테리어는 BoostInterior 기능 시연을 위한 가상 인테리어 브랜드입니다. 시공사례·후기는 데모용 예시이고, 사진은 AI로 생성한 예시 이미지입니다.
+  [data-footer-notice] present exactly once, visible, text identical: c1440 13/13, c1024 13/13, c768 13/13, c390 13/13, c375 13/13, w390 2/2
+
+## contact form (stubbed)
+  c1440: PASS (19/19)
+    ok   initial: submit button enabled after hydration
+    ok   initial: notice “이 페이지는 BoostInterior 기능 시연용입니다.” visible
+    ok   initial: no “연결되어 있지 않습니다” / “메일 앱” text
+    ok   initial: no error / success wording shown
+    ok   initial: launcher does not cover the submit button (as loaded, scrollY 0)
+    ok   validation: empty submit → 0 lead requests, name reported missing
+    ok   validation: consent unchecked → 0 lead requests, consent reported missing
+    ok   validation: 7-digit phone → 0 lead requests, phone invalid
+    ok   failure (stub 500): exactly 1 stubbed POST
+    ok   failure (stub 500): “문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.” shown, fully inside the viewport, not covered by header / launcher
+    ok   failure (stub 500): every input retained, consent still ticked, button ready
+    ok   failure (stub 500): no success wording, still on /contact, no horizontal overflow
+    ok   failure (stub abort): 1 stubbed POST, same message in view, inputs retained
+    ok   success (stub 200): exactly 1 stubbed POST
+    ok   success: title “견적 문의가 접수되었습니다.” + body shown
+    ok   success: title inside the viewport and not hidden under the sticky header
+    ok   success: launcher does not cover the success message
+    ok   success: form fields removed, still on /contact, no horizontal overflow
+    ok   launcher never over the submit button at the moment of a click, and no click was intercepted
+    geometry: failure alert {"x":662.7,"y":762.6,"width":737.3,"height":49.8,"right":1400,"bottom":812.4} in viewport 1440x900, header bottom 73, launcher {"x":1362,"y":822,"width":60,"height":60,"right":1422,"bottom":882}, button {"x":662.7,"y":828.4,"width":220,"height":48,"right":882.7,"bottom":876.4}; success title {"x":686.7,"y":193,"width":689.3,"height":28,"right":1376,"bottom":221}, header bottom 73
+    7-digit phone: {"valueMissing":false,"patternMismatch":true,"customError":true,"valid":false,"message":"숫자 8자리 이상으로 입력해 주세요. (예: 010-1234-5678)"}
+    body the stub received on success: {"consent":true,"name":"[TEST] stub QA","phone":"010-0000-0000","message":"[홈페이지 견적 문의]\n지역: 테스트\n평형: 0평\n예상 일정: 테스트\n\n[TEST] stubbed browser QA — 이 요청은 네트워크에 도달하지 않습니다.","hp":""}
+  c1024: PASS (19/19)
+    ok   initial: submit button enabled after hydration
+    ok   initial: notice “이 페이지는 BoostInterior 기능 시연용입니다.” visible
+    ok   initial: no “연결되어 있지 않습니다” / “메일 앱” text
+    ok   initial: no error / success wording shown
+    ok   initial: launcher does not cover the submit button (as loaded, scrollY 0)
+    ok   validation: empty submit → 0 lead requests, name reported missing
+    ok   validation: consent unchecked → 0 lead requests, consent reported missing
+    ok   validation: 7-digit phone → 0 lead requests, phone invalid
+    ok   failure (stub 500): exactly 1 stubbed POST
+    ok   failure (stub 500): “문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.” shown, fully inside the viewport, not covered by header / launcher
+    ok   failure (stub 500): every input retained, consent still ticked, button ready
+    ok   failure (stub 500): no success wording, still on /contact, no horizontal overflow
+    ok   failure (stub abort): 1 stubbed POST, same message in view, inputs retained
+    ok   success (stub 200): exactly 1 stubbed POST
+    ok   success: title “견적 문의가 접수되었습니다.” + body shown
+    ok   success: title inside the viewport and not hidden under the sticky header
+    ok   success: launcher does not cover the success message
+    ok   success: form fields removed, still on /contact, no horizontal overflow
+    ok   launcher never over the submit button at the moment of a click, and no click was intercepted
+    geometry: failure alert {"x":470.7,"y":621,"width":513.3,"height":49.8,"right":984,"bottom":670.8} in viewport 1024x768, header bottom 73, launcher {"x":946,"y":690,"width":60,"height":60,"right":1006,"bottom":750}, button {"x":470.7,"y":686.8,"width":220,"height":48,"right":690.7,"bottom":734.8}; success title {"x":494.7,"y":177,"width":465.3,"height":28,"right":960,"bottom":205}, header bottom 73
+    7-digit phone: {"valueMissing":false,"patternMismatch":true,"customError":true,"valid":false,"message":"숫자 8자리 이상으로 입력해 주세요. (예: 010-1234-5678)"}
+    body the stub received on success: {"consent":true,"name":"[TEST] stub QA","phone":"010-0000-0000","message":"[홈페이지 견적 문의]\n지역: 테스트\n평형: 0평\n예상 일정: 테스트\n\n[TEST] stubbed browser QA — 이 요청은 네트워크에 도달하지 않습니다.","hp":""}
+  c768: PASS (19/19)
+    ok   initial: submit button enabled after hydration
+    ok   initial: notice “이 페이지는 BoostInterior 기능 시연용입니다.” visible
+    ok   initial: no “연결되어 있지 않습니다” / “메일 앱” text
+    ok   initial: no error / success wording shown
+    ok   initial: launcher does not cover the submit button (as loaded, scrollY 0)
+    ok   validation: empty submit → 0 lead requests, name reported missing
+    ok   validation: consent unchecked → 0 lead requests, consent reported missing
+    ok   validation: 7-digit phone → 0 lead requests, phone invalid
+    ok   failure (stub 500): exactly 1 stubbed POST
+    ok   failure (stub 500): “문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.” shown, fully inside the viewport, not covered by header / launcher
+    ok   failure (stub 500): every input retained, consent still ticked, button ready
+    ok   failure (stub 500): no success wording, still on /contact, no horizontal overflow
+    ok   failure (stub abort): 1 stubbed POST, same message in view, inputs retained
+    ok   success (stub 200): exactly 1 stubbed POST
+    ok   success: title “견적 문의가 접수되었습니다.” + body shown
+    ok   success: title inside the viewport and not hidden under the sticky header
+    ok   success: launcher does not cover the success message
+    ok   success: form fields removed, still on /contact, no horizontal overflow
+    ok   launcher never over the submit button at the moment of a click, and no click was intercepted
+    geometry: failure alert {"x":20,"y":886.1,"width":728,"height":49.8,"right":748,"bottom":935.9} in viewport 768x1024, header bottom 57, launcher {"x":690,"y":946,"width":60,"height":60,"right":750,"bottom":1006}, button {"x":20,"y":951.9,"width":220,"height":48,"right":240,"bottom":999.9}; success title {"x":44,"y":333.5,"width":680,"height":28,"right":724,"bottom":361.5}, header bottom 57
+    7-digit phone: {"valueMissing":false,"patternMismatch":true,"customError":true,"valid":false,"message":"숫자 8자리 이상으로 입력해 주세요. (예: 010-1234-5678)"}
+    body the stub received on success: {"consent":true,"name":"[TEST] stub QA","phone":"010-0000-0000","message":"[홈페이지 견적 문의]\n지역: 테스트\n평형: 0평\n예상 일정: 테스트\n\n[TEST] stubbed browser QA — 이 요청은 네트워크에 도달하지 않습니다.","hp":""}
+  c390: PASS (19/19)
+    ok   initial: submit button enabled after hydration
+    ok   initial: notice “이 페이지는 BoostInterior 기능 시연용입니다.” visible
+    ok   initial: no “연결되어 있지 않습니다” / “메일 앱” text
+    ok   initial: no error / success wording shown
+    ok   initial: launcher does not cover the submit button (as loaded, scrollY 0)
+    ok   validation: empty submit → 0 lead requests, name reported missing
+    ok   validation: consent unchecked → 0 lead requests, consent reported missing
+    ok   validation: 7-digit phone → 0 lead requests, phone invalid
+    ok   failure (stub 500): exactly 1 stubbed POST
+    ok   failure (stub 500): “문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.” shown, fully inside the viewport, not covered by header / launcher
+    ok   failure (stub 500): every input retained, consent still ticked, button ready
+    ok   failure (stub 500): no success wording, still on /contact, no horizontal overflow
+    ok   failure (stub abort): 1 stubbed POST, same message in view, inputs retained
+    ok   success (stub 200): exactly 1 stubbed POST
+    ok   success: title “견적 문의가 접수되었습니다.” + body shown
+    ok   success: title inside the viewport and not hidden under the sticky header
+    ok   success: launcher does not cover the success message
+    ok   success: form fields removed, still on /contact, no horizontal overflow
+    ok   launcher never over the submit button at the moment of a click, and no click was intercepted
+    geometry: failure alert {"x":20,"y":681.9,"width":350,"height":73.6,"right":370,"bottom":755.5} in viewport 390x844, header bottom 57, launcher {"x":322,"y":776,"width":56,"height":56,"right":378,"bottom":832}, button {"x":20,"y":771.5,"width":154.7,"height":48,"right":174.7,"bottom":819.5}; success title {"x":44,"y":236.5,"width":302,"height":28,"right":346,"bottom":264.5}, header bottom 57
+    7-digit phone: {"valueMissing":false,"patternMismatch":true,"customError":true,"valid":false,"message":"숫자 8자리 이상으로 입력해 주세요. (예: 010-1234-5678)"}
+    body the stub received on success: {"consent":true,"name":"[TEST] stub QA","phone":"010-0000-0000","message":"[홈페이지 견적 문의]\n지역: 테스트\n평형: 0평\n예상 일정: 테스트\n\n[TEST] stubbed browser QA — 이 요청은 네트워크에 도달하지 않습니다.","hp":""}
+  c375: PASS (19/19)
+    ok   initial: submit button enabled after hydration
+    ok   initial: notice “이 페이지는 BoostInterior 기능 시연용입니다.” visible
+    ok   initial: no “연결되어 있지 않습니다” / “메일 앱” text
+    ok   initial: no error / success wording shown
+    ok   initial: launcher does not cover the submit button (as loaded, scrollY 0)
+    ok   validation: empty submit → 0 lead requests, name reported missing
+    ok   validation: consent unchecked → 0 lead requests, consent reported missing
+    ok   validation: 7-digit phone → 0 lead requests, phone invalid
+    ok   failure (stub 500): exactly 1 stubbed POST
+    ok   failure (stub 500): “문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.” shown, fully inside the viewport, not covered by header / launcher
+    ok   failure (stub 500): every input retained, consent still ticked, button ready
+    ok   failure (stub 500): no success wording, still on /contact, no horizontal overflow
+    ok   failure (stub abort): 1 stubbed POST, same message in view, inputs retained
+    ok   success (stub 200): exactly 1 stubbed POST
+    ok   success: title “견적 문의가 접수되었습니다.” + body shown
+    ok   success: title inside the viewport and not hidden under the sticky header
+    ok   success: launcher does not cover the success message
+    ok   success: form fields removed, still on /contact, no horizontal overflow
+    ok   launcher never over the submit button at the moment of a click, and no click was intercepted
+    geometry: failure alert {"x":20,"y":309.9,"width":335,"height":73.6,"right":355,"bottom":383.5} in viewport 375x667, header bottom 57, launcher {"x":307,"y":599,"width":56,"height":56,"right":363,"bottom":655}, button {"x":20,"y":399.5,"width":154.7,"height":48,"right":174.7,"bottom":447.5}; success title {"x":44,"y":119.5,"width":287,"height":28,"right":331,"bottom":147.5}, header bottom 57
+    7-digit phone: {"valueMissing":false,"patternMismatch":true,"customError":true,"valid":false,"message":"숫자 8자리 이상으로 입력해 주세요. (예: 010-1234-5678)"}
+    body the stub received on success: {"consent":true,"name":"[TEST] stub QA","phone":"010-0000-0000","message":"[홈페이지 견적 문의]\n지역: 테스트\n평형: 0평\n예상 일정: 테스트\n\n[TEST] stubbed browser QA — 이 요청은 네트워크에 도달하지 않습니다.","hp":""}
+  w390: PASS (19/19)
+    ok   initial: submit button enabled after hydration
+    ok   initial: notice “이 페이지는 BoostInterior 기능 시연용입니다.” visible
+    ok   initial: no “연결되어 있지 않습니다” / “메일 앱” text
+    ok   initial: no error / success wording shown
+    ok   initial: launcher does not cover the submit button (as loaded, scrollY 0)
+    ok   validation: empty submit → 0 lead requests, name reported missing
+    ok   validation: consent unchecked → 0 lead requests, consent reported missing
+    ok   validation: 7-digit phone → 0 lead requests, phone invalid
+    ok   failure (stub 500): exactly 1 stubbed POST
+    ok   failure (stub 500): “문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.” shown, fully inside the viewport, not covered by header / launcher
+    ok   failure (stub 500): every input retained, consent still ticked, button ready
+    ok   failure (stub 500): no success wording, still on /contact, no horizontal overflow
+    ok   failure (stub abort): 1 stubbed POST, same message in view, inputs retained
+    ok   success (stub 200): exactly 1 stubbed POST
+    ok   success: title “견적 문의가 접수되었습니다.” + body shown
+    ok   success: title inside the viewport and not hidden under the sticky header
+    ok   success: launcher does not cover the success message
+    ok   success: form fields removed, still on /contact, no horizontal overflow
+    ok   launcher never over the submit button at the moment of a click, and no click was intercepted
+    geometry: failure alert {"x":20,"y":307.9,"width":350,"height":73.6,"right":370,"bottom":381.5} in viewport 390x664, header bottom 57, launcher {"x":322,"y":596,"width":56,"height":56,"right":378,"bottom":652}, button {"x":20,"y":397.5,"width":154.7,"height":48,"right":174.7,"bottom":445.5}; success title {"x":44,"y":119.5,"width":302,"height":28,"right":346,"bottom":147.5}, header bottom 57
+    7-digit phone: {"valueMissing":false,"patternMismatch":true,"customError":true,"valid":false,"message":"숫자 8자리 이상으로 입력해 주세요. (예: 010-1234-5678)"}
+    body the stub received on success: {"consent":true,"name":"[TEST] stub QA","phone":"010-0000-0000","message":"[홈페이지 견적 문의]\n지역: 테스트\n평형: 0평\n예상 일정: 테스트\n\n[TEST] stubbed browser QA — 이 요청은 네트워크에 도달하지 않습니다.","hp":""}
+
+## widget (BoostChat iframe)
+  c1440 /: launcher visible true, 60x60 at x 1362, y 822 (right 18px, bottom 18px, z-index 2147483000); [data-launcher-face] ×1; aria-label “상담창 열기”
+      opened by click: true → iframe {"x":1050,"y":322,"width":372,"height":560,"right":1422,"bottom":882}; “Powered by boostchat”: true {"visible":true,"text":"Powered by boostchat","href":"https://boostchat.co.kr/"}; contact-channel UI: {"[data-contact-entry]":0,"[data-contact-row]":0,"[data-contact-sheet]":0,"textOtherWays":false} → present: false; closed again: true; API calls while open: []
+      page bottom: launcher {"x":1362,"y":822,"width":60,"height":60,"right":1422,"bottom":882}; footer last text line {"x":40,"y":810.3,"width":65,"height":15,"right":105,"bottom":825.3}; overlap with last line text: null; any notice text line under the launcher: []; overlap with the notice element's box: null; other footer text under it: []; per line (right edge, bottom, gap to launcher top/left): [{"right":692,"bottom":806.1,"gapToLauncherTopPx":15.9,"gapToLauncherLeftPx":670},{"right":105,"bottom":825.3,"gapToLauncherTopPx":-3.3,"gapToLauncherLeftPx":1257}]
+  c1440 /contact: launcher visible true, 60x60 at x 1362, y 822 (right 18px, bottom 18px, z-index 2147483000); [data-launcher-face] ×1; aria-label “상담창 열기”
+      opened by click: true → iframe {"x":1050,"y":322,"width":372,"height":560,"right":1422,"bottom":882}; “Powered by boostchat”: true {"visible":true,"text":"Powered by boostchat","href":"https://boostchat.co.kr/"}; contact-channel UI: {"[data-contact-entry]":0,"[data-contact-row]":0,"[data-contact-sheet]":0,"textOtherWays":false} → present: false; closed again: true; API calls while open: []
+      page bottom: launcher {"x":1362,"y":822,"width":60,"height":60,"right":1422,"bottom":882}; footer last text line {"x":40,"y":810.8,"width":65,"height":15,"right":105,"bottom":825.8}; overlap with last line text: null; any notice text line under the launcher: []; overlap with the notice element's box: null; other footer text under it: []; per line (right edge, bottom, gap to launcher top/left): [{"right":692,"bottom":806.6,"gapToLauncherTopPx":15.4,"gapToLauncherLeftPx":670},{"right":105,"bottom":825.8,"gapToLauncherTopPx":-3.8,"gapToLauncherLeftPx":1257}]
+  c1024 /: launcher visible true, 60x60 at x 946, y 690 (right 18px, bottom 18px, z-index 2147483000); [data-launcher-face] ×1; aria-label “상담창 열기”
+      opened by click: true → iframe {"x":634,"y":190,"width":372,"height":560,"right":1006,"bottom":750}; “Powered by boostchat”: true {"visible":true,"text":"Powered by boostchat","href":"https://boostchat.co.kr/"}; contact-channel UI: {"[data-contact-entry]":0,"[data-contact-row]":0,"[data-contact-sheet]":0,"textOtherWays":false} → present: false; closed again: true; API calls while open: []
+      page bottom: launcher {"x":946,"y":690,"width":60,"height":60,"right":1006,"bottom":750}; footer last text line {"x":40,"y":678.4,"width":65,"height":15,"right":105,"bottom":693.4}; overlap with last line text: null; any notice text line under the launcher: []; overlap with the notice element's box: null; other footer text under it: []; per line (right edge, bottom, gap to launcher top/left): [{"right":692,"bottom":674.2,"gapToLauncherTopPx":15.8,"gapToLauncherLeftPx":254},{"right":105,"bottom":693.4,"gapToLauncherTopPx":-3.4,"gapToLauncherLeftPx":841}]
+  c1024 /contact: launcher visible true, 60x60 at x 946, y 690 (right 18px, bottom 18px, z-index 2147483000); [data-launcher-face] ×1; aria-label “상담창 열기”
+      opened by click: true → iframe {"x":634,"y":190,"width":372,"height":560,"right":1006,"bottom":750}; “Powered by boostchat”: true {"visible":true,"text":"Powered by boostchat","href":"https://boostchat.co.kr/"}; contact-channel UI: {"[data-contact-entry]":0,"[data-contact-row]":0,"[data-contact-sheet]":0,"textOtherWays":false} → present: false; closed again: true; API calls while open: []
+      page bottom: launcher {"x":946,"y":690,"width":60,"height":60,"right":1006,"bottom":750}; footer last text line {"x":40,"y":679.2,"width":65,"height":15,"right":105,"bottom":694.2}; overlap with last line text: null; any notice text line under the launcher: []; overlap with the notice element's box: null; other footer text under it: []; per line (right edge, bottom, gap to launcher top/left): [{"right":692,"bottom":675,"gapToLauncherTopPx":15,"gapToLauncherLeftPx":254},{"right":105,"bottom":694.2,"gapToLauncherTopPx":-4.2,"gapToLauncherLeftPx":841}]
+  c768 /: launcher visible true, 60x60 at x 690, y 946 (right 18px, bottom 18px, z-index 2147483000); [data-launcher-face] ×1; aria-label “상담창 열기”
+      opened by click: true → iframe {"x":378,"y":446,"width":372,"height":560,"right":750,"bottom":1006}; “Powered by boostchat”: true {"visible":true,"text":"Powered by boostchat","href":"https://boostchat.co.kr/"}; contact-channel UI: {"[data-contact-entry]":0,"[data-contact-row]":0,"[data-contact-sheet]":0,"textOtherWays":false} → present: false; closed again: true; API calls while open: []
+      page bottom: launcher {"x":690,"y":946,"width":60,"height":60,"right":750,"bottom":1006}; footer last text line {"x":20,"y":958.8,"width":65,"height":15,"right":85,"bottom":973.8}; overlap with last line text: null; any notice text line under the launcher: []; overlap with the notice element's box: {"x":690,"y":946,"width":50,"height":30,"right":740,"bottom":976}; other footer text under it: []; per line (right edge, bottom, gap to launcher top/left): [{"right":672,"bottom":954.6,"gapToLauncherTopPx":-8.6,"gapToLauncherLeftPx":18},{"right":85,"bottom":973.8,"gapToLauncherTopPx":-27.8,"gapToLauncherLeftPx":605}]
+  c768 /contact: launcher visible true, 60x60 at x 690, y 946 (right 18px, bottom 18px, z-index 2147483000); [data-launcher-face] ×1; aria-label “상담창 열기”
+      opened by click: true → iframe {"x":378,"y":446,"width":372,"height":560,"right":750,"bottom":1006}; “Powered by boostchat”: true {"visible":true,"text":"Powered by boostchat","href":"https://boostchat.co.kr/"}; contact-channel UI: {"[data-contact-entry]":0,"[data-contact-row]":0,"[data-contact-sheet]":0,"textOtherWays":false} → present: false; closed again: true; API calls while open: []
+      page bottom: launcher {"x":690,"y":946,"width":60,"height":60,"right":750,"bottom":1006}; footer last text line {"x":20,"y":959.1,"width":65,"height":15,"right":85,"bottom":974.1}; overlap with last line text: null; any notice text line under the launcher: []; overlap with the notice element's box: {"x":690,"y":946,"width":50,"height":30.3,"right":740,"bottom":976.3}; other footer text under it: []; per line (right edge, bottom, gap to launcher top/left): [{"right":672,"bottom":954.9,"gapToLauncherTopPx":-8.9,"gapToLauncherLeftPx":18},{"right":85,"bottom":974.1,"gapToLauncherTopPx":-28.1,"gapToLauncherLeftPx":605}]
+  c390 /: launcher visible true, 56x56 at x 322, y 776 (right 12px, bottom 12px, z-index 2147483000); [data-launcher-face] ×1; aria-label “상담창 열기”
+      opened by click: true → iframe {"x":0,"y":0,"width":390,"height":844,"right":390,"bottom":844}; “Powered by boostchat”: true {"visible":true,"text":"Powered by boostchat","href":"https://boostchat.co.kr/"}; contact-channel UI: {"[data-contact-entry]":0,"[data-contact-row]":0,"[data-contact-sheet]":0,"textOtherWays":false} → present: false; closed again: true; API calls while open: []
+      page bottom: launcher {"x":322,"y":776,"width":56,"height":56,"right":378,"bottom":832}; footer last text line {"x":20,"y":779,"width":65,"height":15,"right":85,"bottom":794}; overlap with last line text: null; any notice text line under the launcher: []; overlap with the notice element's box: {"x":322,"y":776,"width":48,"height":20.2,"right":370,"bottom":796.2}; other footer text under it: []; per line (right edge, bottom, gap to launcher top/left): [{"right":326.3,"bottom":755.6,"gapToLauncherTopPx":20.4,"gapToLauncherLeftPx":-4.3},{"right":362.5,"bottom":774.8,"gapToLauncherTopPx":1.2,"gapToLauncherLeftPx":-40.5},{"right":85,"bottom":794,"gapToLauncherTopPx":-18,"gapToLauncherLeftPx":237}]
+  c390 /contact: launcher visible true, 56x56 at x 322, y 776 (right 12px, bottom 12px, z-index 2147483000); [data-launcher-face] ×1; aria-label “상담창 열기”
+      opened by click: true → iframe {"x":0,"y":0,"width":390,"height":844,"right":390,"bottom":844}; “Powered by boostchat”: true {"visible":true,"text":"Powered by boostchat","href":"https://boostchat.co.kr/"}; contact-channel UI: {"[data-contact-entry]":0,"[data-contact-row]":0,"[data-contact-sheet]":0,"textOtherWays":false} → present: false; closed again: true; API calls while open: []
+      page bottom: launcher {"x":322,"y":776,"width":56,"height":56,"right":378,"bottom":832}; footer last text line {"x":20,"y":779.1,"width":65,"height":15,"right":85,"bottom":794.1}; overlap with last line text: null; any notice text line under the launcher: []; overlap with the notice element's box: {"x":322,"y":776,"width":48,"height":20.3,"right":370,"bottom":796.3}; other footer text under it: []; per line (right edge, bottom, gap to launcher top/left): [{"right":326.3,"bottom":755.7,"gapToLauncherTopPx":20.3,"gapToLauncherLeftPx":-4.3},{"right":362.5,"bottom":774.9,"gapToLauncherTopPx":1.1,"gapToLauncherLeftPx":-40.5},{"right":85,"bottom":794.1,"gapToLauncherTopPx":-18.1,"gapToLauncherLeftPx":237}]
+  c375 /: launcher visible true, 56x56 at x 307, y 599 (right 12px, bottom 12px, z-index 2147483000); [data-launcher-face] ×1; aria-label “상담창 열기”
+      opened by click: true → iframe {"x":0,"y":0,"width":375,"height":667,"right":375,"bottom":667}; “Powered by boostchat”: true {"visible":true,"text":"Powered by boostchat","href":"https://boostchat.co.kr/"}; contact-channel UI: {"[data-contact-entry]":0,"[data-contact-row]":0,"[data-contact-sheet]":0,"textOtherWays":false} → present: false; closed again: true; API calls while open: []
+      page bottom: launcher {"x":307,"y":599,"width":56,"height":56,"right":363,"bottom":655}; footer last text line {"x":20,"y":602.2,"width":88.9,"height":15,"right":108.9,"bottom":617.2}; overlap with last line text: null; any notice text line under the launcher: []; overlap with the notice element's box: {"x":307,"y":599,"width":48,"height":20.4,"right":355,"bottom":619.4}; other footer text under it: []; per line (right edge, bottom, gap to launcher top/left): [{"right":326.3,"bottom":578.9,"gapToLauncherTopPx":20.1,"gapToLauncherLeftPx":-19.3},{"right":338.6,"bottom":598,"gapToLauncherTopPx":1,"gapToLauncherLeftPx":-31.6},{"right":108.9,"bottom":617.2,"gapToLauncherTopPx":-18.2,"gapToLauncherLeftPx":198.1}]
+  c375 /contact: launcher visible true, 56x56 at x 307, y 599 (right 12px, bottom 12px, z-index 2147483000); [data-launcher-face] ×1; aria-label “상담창 열기”
+      opened by click: true → iframe {"x":0,"y":0,"width":375,"height":667,"right":375,"bottom":667}; “Powered by boostchat”: true {"visible":true,"text":"Powered by boostchat","href":"https://boostchat.co.kr/"}; contact-channel UI: {"[data-contact-entry]":0,"[data-contact-row]":0,"[data-contact-sheet]":0,"textOtherWays":false} → present: false; closed again: true; API calls while open: []
+      page bottom: launcher {"x":307,"y":599,"width":56,"height":56,"right":363,"bottom":655}; footer last text line {"x":20,"y":601.5,"width":88.9,"height":15,"right":108.9,"bottom":616.5}; overlap with last line text: null; any notice text line under the launcher: []; overlap with the notice element's box: {"x":307,"y":599,"width":48,"height":19.7,"right":355,"bottom":618.7}; other footer text under it: []; per line (right edge, bottom, gap to launcher top/left): [{"right":326.3,"bottom":578.1,"gapToLauncherTopPx":20.9,"gapToLauncherLeftPx":-19.3},{"right":338.6,"bottom":597.3,"gapToLauncherTopPx":1.7,"gapToLauncherLeftPx":-31.6},{"right":108.9,"bottom":616.5,"gapToLauncherTopPx":-17.5,"gapToLauncherLeftPx":198.1}]
+  w390 /: launcher visible true, 56x56 at x 322, y 596 (right 12px, bottom 12px, z-index 2147483000); [data-launcher-face] ×1; aria-label “상담창 열기”
+      opened by click: true → iframe {"x":0,"y":0,"width":390,"height":664,"right":390,"bottom":664}; “Powered by boostchat”: true {"visible":true,"text":"Powered by boostchat","href":"https://boostchat.co.kr/"}; contact-channel UI: {"[data-contact-entry]":0,"[data-contact-row]":0,"[data-contact-sheet]":0,"textOtherWays":false} → present: false; closed again: true; API calls while open: []
+      page bottom: launcher {"x":322,"y":596,"width":56,"height":56,"right":378,"bottom":652}; footer last text line {"x":20,"y":599.6,"width":65,"height":14.4,"right":85,"bottom":614}; overlap with last line text: null; any notice text line under the launcher: []; overlap with the notice element's box: {"x":322,"y":596,"width":48,"height":20.4,"right":370,"bottom":616.4}; other footer text under it: []; per line (right edge, bottom, gap to launcher top/left): [{"right":326.3,"bottom":575.6,"gapToLauncherTopPx":20.4,"gapToLauncherLeftPx":-4.3},{"right":362.5,"bottom":594.8,"gapToLauncherTopPx":1.2,"gapToLauncherLeftPx":-40.5},{"right":85,"bottom":614,"gapToLauncherTopPx":-18,"gapToLauncherLeftPx":237}]
+  w390 /contact: launcher visible true, 56x56 at x 322, y 596 (right 12px, bottom 12px, z-index 2147483000); [data-launcher-face] ×1; aria-label “상담창 열기”
+      opened by click: true → iframe {"x":0,"y":0,"width":390,"height":664,"right":390,"bottom":664}; “Powered by boostchat”: true {"visible":true,"text":"Powered by boostchat","href":"https://boostchat.co.kr/"}; contact-channel UI: {"[data-contact-entry]":0,"[data-contact-row]":0,"[data-contact-sheet]":0,"textOtherWays":false} → present: false; closed again: true; API calls while open: []
+      page bottom: launcher {"x":322,"y":596,"width":56,"height":56,"right":378,"bottom":652}; footer last text line {"x":20,"y":599.5,"width":65,"height":14.4,"right":85,"bottom":613.9}; overlap with last line text: null; any notice text line under the launcher: []; overlap with the notice element's box: {"x":322,"y":596,"width":48,"height":20.3,"right":370,"bottom":616.3}; other footer text under it: []; per line (right edge, bottom, gap to launcher top/left): [{"right":326.3,"bottom":575.5,"gapToLauncherTopPx":20.5,"gapToLauncherLeftPx":-4.3},{"right":362.5,"bottom":594.7,"gapToLauncherTopPx":1.3,"gapToLauncherLeftPx":-40.5},{"right":85,"bottom":613.9,"gapToLauncherTopPx":-17.9,"gapToLauncherLeftPx":237}]
+
+## terminology
+  sources: visible text, DOM text, noscript, document.title, alt, aria-label, title, placeholder, meta description/og:*/twitter:* (+ the opened mobile menu)
+  occurrences of “포트폴리오” / “시공 사례”: c1440 0/0, c1024 0/0, c768 0/0, c390 0/0, c375 0/0, w390 0/0
+  header nav labels = 시공사례 / 3D 시공사례 / 소개 / 견적 문의: c1440 13/13, c1024 13/13, c768 13/13, c390 13/13, c375 13/13, w390 2/2; opened mobile menu: c1440 0/0, c1024 0/0, c768 13/13, c390 13/13, c375 13/13, w390 2/2
+  0 files of the 144-file package (byte-identical to live, proof/20) contain either term
+
+## links
+  internal a[href] targets (deduped over all pages/viewports, incl. the mobile menu): 13; 200: 13; dead: 0
+    200 / (text/html; charset=utf-8, 57016 B, linked from 13 page(s))
+    200 /3d-portfolio (text/html; charset=utf-8, 19483 B, linked from 13 page(s))
+    200 /about (text/html; charset=utf-8, 26954 B, linked from 13 page(s))
+    200 /contact (text/html; charset=utf-8, 24649 B, linked from 13 page(s))
+    200 /portfolio (text/html; charset=utf-8, 43835 B, linked from 13 page(s))
+    200 /portfolio/buk-32py-kitchen-bathroom-renewal (text/html; charset=utf-8, 38579 B, linked from 2 page(s))
+    200 /portfolio/dalseo-24py-white-natural-newlywed-home (text/html; charset=utf-8, 35515 B, linked from 2 page(s))
+    200 /portfolio/dong-29py-bright-natural-remodeling (text/html; charset=utf-8, 34330 B, linked from 2 page(s))
+    200 /portfolio/gyeongsan-34py-entrance-living-remodeling (text/html; charset=utf-8, 35751 B, linked from 2 page(s))
+    200 /portfolio/jung-19py-compact-white-minimal-remodeling (text/html; charset=utf-8, 34755 B, linked from 2 page(s))
+    200 /portfolio/suseong-42py-family-storage-remodeling (text/html; charset=utf-8, 37616 B, linked from 2 page(s))
+    200 /portfolio/suseong-51py-new-apartment-home-styling (text/html; charset=utf-8, 34251 B, linked from 2 page(s))
+    200 /portfolio/suseong-white-34py-apartment-remodeling (text/html; charset=utf-8, 53101 B, linked from 2 page(s))
+  external: mailto:vnfm0580@gmail.com (on 13 page(s))
+
+## portfolio regression
+  manifest 200 → /_integration/portfolio.968afbccb944940d8d3c099dd54df5be.json 200: 8 records [bi-01, bi-02, bi-03, bi-04, bi-05, bi-06, bi-07, bi-08] — exactly bi-01…bi-08: true
+  detail pages: 200 /portfolio/suseong-white-34py-apartment-remodeling; 200 /portfolio/dalseo-24py-white-natural-newlywed-home; 200 /portfolio/suseong-42py-family-storage-remodeling; 200 /portfolio/buk-32py-kitchen-bathroom-renewal; 200 /portfolio/dong-29py-bright-natural-remodeling; 200 /portfolio/gyeongsan-34py-entrance-living-remodeling; 200 /portfolio/jung-19py-compact-white-minimal-remodeling; 200 /portfolio/suseong-51py-new-apartment-home-styling — all 200: true; equal to the sitemap's detail URLs: true
+  removed synthetic slugs (sample of 3 from platform/test/fixtures/boost-interior-synthetic): 404 /portfolio/dalseo-34py-value-full-remodeling (bi-09); 404 /portfolio/dalseo-84m2-kitchen-only-renewal (bi-14); 404 /portfolio/dalseong-32py-whole-flat-wallpaper-flooring (bi-19) — all 404: true
+  images referenced by the portfolio document: 41/41 answer 200 image/*
+  browser, / + /portfolio + 8 detail pages: c1440 broken 0, distinct sources decoded 77/77; c1024 broken 0, distinct sources decoded 77/77; c768 broken 0, distinct sources decoded 77/77; c390 broken 0, distinct sources decoded 77/77; c375 broken 0, distinct sources decoded 77/77; w390 broken 0, distinct sources decoded 15/15
+  covers on /portfolio: c1440 8 cards, shared 0, all loaded true, = document true; c1024 8 cards, shared 0, all loaded true, = document true; c768 8 cards, shared 0, all loaded true, = document true; c390 8 cards, shared 0, all loaded true, = document true; c375 8 cards, shared 0, all loaded true, = document true; shared cover URL in the document: 0; shared cover bytes (sha256): 0
+    bi-01 /assets/03c625140dc4df674fb8.jpg sha256 03c625140dc4df67…
+    bi-02 /assets/4b97ec9364e732e50f19.jpg sha256 4b97ec9364e732e5…
+    bi-03 /assets/355dc4cf898996bc71c4.jpg sha256 355dc4cf898996bc…
+    bi-04 /assets/c562c8736b1f564a52ea.jpg sha256 c562c8736b1f564a…
+    bi-05 /assets/eedea9f15df0a895a8d6.jpg sha256 eedea9f15df0a895…
+    bi-06 /assets/1c6712572d180dc7c452.jpg sha256 1c6712572d180dc7…
+    bi-07 /assets/b079d5a93c72855ef8b1.jpg sha256 b079d5a93c72855e…
+    bi-08 /assets/e3bde7e30b04ce357a9f.jpg sha256 e3bde7e30b04ce35…
+
+## lead requests
+  un-stubbed lead POSTs sent in the whole task: 1 (real-submit.mts, click 2026-10-02T16:04:25.338Z, → 200 {"received":true}; its CORS preflight OPTIONS: 1)
+  stubbed lead requests: 25, every one answered by the stub: true
+    ok   browser-qa c1440: seen 3, answered by the stub 3
+    ok   browser-qa c1024: seen 3, answered by the stub 3
+    ok   browser-qa c768: seen 3, answered by the stub 3
+    ok   browser-qa c390: seen 3, answered by the stub 3
+    ok   browser-qa c375: seen 3, answered by the stub 3
+    ok   browser-qa w390: seen 3, answered by the stub 3
+    ok   browser-qa w390 (first run, superseded): seen 3, answered by the stub 3
+    ok   after-shots: seen 2, answered by the stub 2
+    ok   rehearse-submit (run twice; the file holds the 2nd run, 1 stubbed POST each): seen 2, answered by the stub 2
+    ok   probe-webkit-images (/ only, no form): seen 0, answered by the stub 0
+    ok   probe-preflight (local servers only, no real host): seen 0, answered by the stub 0
+
+## observations (not defects of the checks above)
+  - widget bootstrap POSTs per page load (…/api/widget/<key>/bootstrap, all 200): c1440 26/13, c1024 24/13, c768 24/13, c390 22/13, c375 24/13, w390 2/2 — Chromium usually sends TWO per page view (hello on iframe load + on shell ready), WebKit one. They spend the visitor's 10-per-60 s budget that chat shares, so about 5 page views inside one minute can exhaust it. This QA paced page loads to ≤ 4 per 65 s for that reason; no 429 was received.
+  - Chromium console WARNINGS (not errors): “The resource …/assets/33888d63a7dbd1775c78.jpg / 609e7b56f7660f5d1f9d.jpg was preloaded using link preload but not used within a few seconds” on detail pages and /contact — hero images of / and /portfolio preloaded as a side effect of route prefetch. Counts per viewport: c1440 18, c1024 23, c768 10, c390 5, c375 7, w390 0.
+  - <meta name="robots" content="noindex"> is present on the pages (recorded, not judged).
+  - Lazy <img> elements that were never requested in place (hidden gallery tabs on detail pages; the 4th card of each horizontal track on / in WebKit) are counted as “pending”, not broken; each distinct source was loaded through new Image() in the same page and all of them decoded.
+  - WebKit first run (superseded, kept as partial/w390.first-run-fast-scroll.json): scrolled through / at Chromium pace, 10 lazy images were still pending and 4 new Image() probes timed out at 15 s; with 300 px / 350 ms steps (settle-slow.js) 13/15 load in place and 15/15 through new Image(), reproduced in a separate probe. Treated as a scroll-pace artifact of the test, not a site defect.
+
+## after screenshots (docs/result/quick-start-demo-conversion/screenshots/after)
+  contact-1024.jpg  contact-1440.jpg  contact-375.jpg  contact-390.jpg  contact-768.jpg  contact-form-notice-390.jpg  home-1440.jpg  home-390.jpg  portfolio-1440.jpg  portfolio-390.jpg  submit-before-real-1440.jpg  submit-failure-390.jpg  submit-filled-real-1440.jpg  submit-success-390.jpg  submit-success-real-1440.jpg  widget-closed-1440.jpg  widget-closed-390.jpg  widget-open-1440.jpg  widget-open-390.jpg

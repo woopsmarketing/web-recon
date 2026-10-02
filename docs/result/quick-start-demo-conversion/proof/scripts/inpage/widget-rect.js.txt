@@ -1,0 +1,16 @@
+// In-page (top document): where the BoostChat iframe sits.
+(() => {
+  const f = document.querySelector("iframe[data-boost-chat-frame]") || document.querySelector('iframe[src*="boostchat.co.kr/widget/"]');
+  if (!f) return null;
+  const r = f.getBoundingClientRect();
+  const cs = getComputedStyle(f);
+  return {
+    rect: { x: Math.round(r.x * 10) / 10, y: Math.round(r.y * 10) / 10, width: Math.round(r.width * 10) / 10, height: Math.round(r.height * 10) / 10, right: Math.round(r.right * 10) / 10, bottom: Math.round(r.bottom * 10) / 10 },
+    fromViewportRight: Math.round((window.innerWidth - r.right) * 10) / 10,
+    fromViewportBottom: Math.round((window.innerHeight - r.bottom) * 10) / 10,
+    style: { position: cs.position, right: cs.right, bottom: cs.bottom, zIndex: cs.zIndex, borderRadius: cs.borderRadius, width: cs.width, height: cs.height },
+    title: f.getAttribute("title"),
+    src: f.getAttribute("src"),
+    viewport: { w: window.innerWidth, h: window.innerHeight },
+  };
+})()

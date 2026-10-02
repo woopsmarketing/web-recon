@@ -1,0 +1,51 @@
+/**
+ * LOCAL-ONLY experiment (no real host is contacted): does a CORS preflight leak to the network when
+ * the cross-origin POST itself is answered by a Playwright route? Two local servers on 127.0.0.1:
+ * A serves a blank page, B logs every request it receives. The page on A POSTs JSON to B.
+ */
+import { createRequire } from "node:module";
+import http from "node:http";
+const require = createRequire("/Users/woops/projects/web-recon-track-b/package.json");
+const pw = require("playwright") as typeof import("playwright");
+
+const seenByB: string[] = [];
+const a = http.createServer((_q, s) => { s.writeHead(200, { "content-type": "text/html" }); s.end("<!doctype html><title>a</title>"); });
+const b = http.createServer((q, s) => { seenByB.push(`${q.method} ${q.url}`); s.writeHead(200, { "content-type": "application/json", "access-control-allow-origin": "*", "access-control-allow-headers": "content-type" }); s.end('{"real":true}'); });
+await new Promise<void>((r) => a.listen(0, "127.0.0.1", r));
+await new Promise<void>((r) => b.listen(0, "localhost", r));
+const A = `http://127.0.0.1:${(a.address() as any).port}`;
+const B = `http://localhost:${(b.address() as any).port}`;
+
+for (const engine of ["chromium", "webkit"] as const) {
+  const browser = await pw[engine].launch();
+  for (const mode of ["fulfill-200", "fulfill-500", "abort"] as const) {
+    seenByB.length = 0;
+    const ctx = await browser.newContext();
+    const stubSaw: string[] = [];
+    const reqEvents: string[] = [];
+    ctx.on("request", (r) => r.url().includes("/api/widget/") && reqEvents.push(`${r.method()} ${new URL(r.url()).pathname}`));
+    await ctx.route("**/api/widget/*/lead", async (route) => {
+      const req = route.request();
+      stubSaw.push(req.method());
+      if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: { "access-control-allow-origin": A, "access-control-allow-headers": "content-type", "access-control-allow-methods": "POST" } });
+      if (mode === "abort") return route.abort("connectionfailed");
+      return route.fulfill({ status: mode === "fulfill-200" ? 200 : 500, headers: { "access-control-allow-origin": A, "x-qa-stub": "1" }, contentType: "application/json", body: '{"received":true}' });
+    });
+    const page = await ctx.newPage();
+    await page.goto(A);
+    const out = await page.evaluate(`fetch(${JSON.stringify(B)} + "/api/widget/wgt_x/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}", mode: "cors", credentials: "omit" }).then(async (r) => r.status + " " + (await r.text()) + " stubHeader=" + r.headers.get("x-qa-stub"), (e) => "threw " + e)`);
+    // control: an un-routed path on B does reach it (proves B is reachable and logging)
+    console.log(`${engine} ${mode}: page saw [${out}]; stub saw [${stubSaw.join(",")}]; request events [${reqEvents.join(",")}]; server B received [${seenByB.join(" | ")}]`);
+    await ctx.close();
+  }
+  // control without any route
+  seenByB.length = 0;
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto(A);
+  const out = await page.evaluate(`fetch(${JSON.stringify(B)} + "/control", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}", mode: "cors", credentials: "omit" }).then(async (r) => r.status + " " + (await r.text()), (e) => "threw " + e)`);
+  console.log(`${engine} control (no route): page saw [${out}]; server B received [${seenByB.join(" | ")}]`);
+  await ctx.close();
+  await browser.close();
+}
+a.close(); b.close();

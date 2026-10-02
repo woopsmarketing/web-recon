@@ -1,0 +1,178 @@
+/**
+ * Shared helpers for the STUBBED live QA scripts (browser-qa.mts, after-shots.mts).
+ * Every context created through newStubbedContext() answers the lead endpoint itself —
+ * nothing reaches https://boostchat.co.kr/api/widget/<key>/lead from these scripts.
+ */
+import { createRequire } from "node:module";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import https from "node:https";
+import path from "node:path";
+
+export const REPO = "/Users/woops/projects/web-recon-track-b";
+const require = createRequire(path.join(REPO, "package.json"));
+export const pw = require("playwright") as typeof import("playwright");
+export const PW_VERSION: string = require("playwright/package.json").version;
+
+export const HERE = path.dirname(new URL(import.meta.url).pathname);
+export const BASE = "https://interior-demo.boostweb.co.kr";
+export const HOST = "interior-demo.boostweb.co.kr";
+export const ENDPOINT = "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead";
+export const RESULT = path.join(REPO, "docs/result/quick-start-demo-conversion");
+export const SHOTS = path.join(RESULT, "screenshots/after");
+export const PARTIAL = path.join(HERE, "partial");
+mkdirSync(PARTIAL, { recursive: true });
+mkdirSync(SHOTS, { recursive: true });
+
+export const EXPECT = {
+  footer: "부스트 인테리어는 BoostInterior 기능 시연을 위한 가상 인테리어 브랜드입니다. 시공사례·후기는 데모용 예시이고, 사진은 AI로 생성한 예시 이미지입니다.",
+  formNotice: "이 페이지는 BoostInterior 기능 시연용입니다.",
+  failure: "문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.",
+  successTitle: "견적 문의가 접수되었습니다.",
+  successBody: "입력해주신 내용을 확인한 뒤 상담을 이어갈 수 있습니다.",
+  nav: ["시공사례", "3D 시공사례", "소개", "견적 문의"],
+};
+
+const js = (name: string) => readFileSync(path.join(HERE, "inpage", name), "utf8");
+export const JS = { settle: js("settle.js"), settleSlow: js("settle-slow.js"), facts: js("facts.js"), verifyImages: js("verify-images.js"), widgetRect: js("widget-rect.js"), footerOverlap: js("footer-overlap.js"), contactState: js("contact-state.js") };
+
+// ---------------------------------------------------------------- read-only HTTP (node, Accept: */*)
+export interface HttpRes { status: number; headers: Record<string, string | string[] | undefined>; body: Buffer }
+export function httpGet(p: string): Promise<HttpRes> {
+  return new Promise((resolve, reject) => {
+    const r = https.request({ hostname: HOST, port: 443, method: "GET", path: p, headers: { host: HOST, accept: "*/*", "user-agent": "recon-readonly-verify" } }, (res) => {
+      const chunks: Buffer[] = [];
+      res.on("data", (c) => chunks.push(c));
+      res.on("end", () => resolve({ status: res.statusCode ?? 0, headers: res.headers, body: Buffer.concat(chunks) }));
+    });
+    r.on("error", reject);
+    r.end();
+  });
+}
+export async function sitemapPaths(): Promise<string[]> {
+  const res = await httpGet("/sitemap.xml");
+  if (res.status !== 200) throw new Error(`sitemap.xml → ${res.status}`);
+  const locs = [...res.body.toString("utf8").matchAll(new RegExp("<loc>([^<]+)</loc>", "g"))].map((m) => new URL(m[1]!).pathname);
+  return locs;
+}
+
+// ---------------------------------------------------------------- widget bootstrap budget
+// Every page load boots the BoostChat widget once (POST …/bootstrap), which spends the same per-visitor
+// budget as a chat turn (10 / 60 s per client, 30 / 60 s per channel). Observed live: TWO bootstrap POSTs
+// per page load (the loader says hello on iframe load and again on the shell's "ready"). Loads are
+// therefore paced: at most MAX_LOADS navigations (= 8 bootstraps) in any WINDOW_MS, across all scripts
+// (the timestamps live in a file).
+const GATE_FILE = path.join(HERE, "page-load-times.json");
+const MAX_LOADS = 4;
+const WINDOW_MS = 65_000;
+export async function gate(label = ""): Promise<void> {
+  for (;;) {
+    const now = Date.now();
+    const times: number[] = existsSync(GATE_FILE) ? (JSON.parse(readFileSync(GATE_FILE, "utf8")) as number[]).filter((t) => now - t < WINDOW_MS) : [];
+    if (times.length < MAX_LOADS) {
+      times.push(now);
+      writeFileSync(GATE_FILE, JSON.stringify(times));
+      return;
+    }
+    const wait = times[0]! + WINDOW_MS - now + 250;
+    console.log(`    … pacing widget bootstraps: waiting ${(wait / 1000).toFixed(1)} s before ${label}`);
+    await new Promise((r) => setTimeout(r, wait));
+  }
+}
+
+// ---------------------------------------------------------------- the lead stub
+export type StubMode = "200" | "500" | "abort";
+export interface StubSeen { at: string; method: string; url: string; mode: StubMode; via: "glob" | "fallback"; postData: string | null; origin: string | null }
+export interface Stub { mode: StubMode; saw: StubSeen[] }
+const LEAD_PATH = new RegExp("/api/widget/[^/]+/lead/?$");
+export const isLeadUrl = (u: string) => { try { return LEAD_PATH.test(new URL(u).pathname); } catch { return false; } };
+
+export async function installLeadStub(ctx: import("playwright").BrowserContext): Promise<Stub> {
+  const stub: Stub = { mode: "200", saw: [] };
+  const handler = (via: "glob" | "fallback") => async (route: import("playwright").Route) => {
+    const req = route.request();
+    const cors = { "access-control-allow-origin": BASE, vary: "Origin", "cache-control": "no-store" };
+    stub.saw.push({ at: new Date().toISOString(), method: req.method(), url: req.url(), mode: stub.mode, via, postData: req.postData(), origin: req.headers()["origin"] ?? null });
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: { ...cors, "access-control-allow-methods": "POST", "access-control-allow-headers": "content-type" } });
+    if (stub.mode === "abort") return route.abort("connectionfailed");
+    if (stub.mode === "500") return route.fulfill({ status: 500, headers: cors, contentType: "application/json", body: '{"error":"qa_stub"}' });
+    return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: '{"received":true}' });
+  };
+  // a predicate over the path (catches the endpoint even with a query string or a trailing slash) …
+  await ctx.route((url) => LEAD_PATH.test(url.pathname), handler("fallback"));
+  // … and the glob the task names; registered last, so it is the one consulted first
+  await ctx.route("**/api/widget/*/lead", handler("glob"));
+  return stub;
+}
+
+// ---------------------------------------------------------------- per-page collectors
+export interface Collected {
+  phase: string;
+  console: { phase: string; type: string; text: string; url: string | null }[];
+  pageErrors: { phase: string; text: string }[];
+  failed: { phase: string; method: string; url: string; resourceType: string; error: string | null }[];
+  http: { phase: string; method: string; url: string; status: number; resourceType: string }[];
+  leadRequests: { phase: string; at: string; method: string; url: string }[];
+  leadResponses: { phase: string; method: string; status: number; serverAddr: unknown }[];
+  boostchat: { phase: string; method: string; path: string; status?: number }[];
+}
+export function attach(page: import("playwright").Page): Collected {
+  const c: Collected = { phase: "load", console: [], pageErrors: [], failed: [], http: [], leadRequests: [], leadResponses: [], boostchat: [] };
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") c.console.push({ phase: c.phase, type: m.type(), text: m.text(), url: m.location()?.url ?? null }); });
+  page.on("pageerror", (e) => c.pageErrors.push({ phase: c.phase, text: String((e as Error)?.stack ?? e) }));
+  page.on("requestfailed", (r) => c.failed.push({ phase: c.phase, method: r.method(), url: r.url(), resourceType: r.resourceType(), error: r.failure()?.errorText ?? null }));
+  page.on("request", (r) => {
+    if (isLeadUrl(r.url())) c.leadRequests.push({ phase: c.phase, at: new Date().toISOString(), method: r.method(), url: r.url() });
+  });
+  page.on("response", (r) => {
+    const u = r.url();
+    if (r.status() >= 400) c.http.push({ phase: c.phase, method: r.request().method(), url: u, status: r.status(), resourceType: r.request().resourceType() });
+    if (isLeadUrl(u)) { const e = { phase: c.phase, method: r.request().method(), status: r.status(), serverAddr: undefined as unknown }; c.leadResponses.push(e); r.serverAddr().then((a) => { e.serverAddr = a; }, () => { e.serverAddr = "n/a"; }); }
+    if (u.startsWith("https://boostchat.co.kr/api/")) c.boostchat.push({ phase: c.phase, method: r.request().method(), path: new URL(u).pathname, status: r.status() });
+  });
+  return c;
+}
+
+/** split what the page produced into the buckets the report needs */
+export function classify(c: Collected, phases?: string[]) {
+  const inPhase = <T extends { phase: string }>(xs: T[]) => (phases ? xs.filter((x) => phases.includes(x.phase)) : xs);
+  const isAbort = (e: string | null) => !!e && new RegExp("ERR_ABORTED|cancell?ed|NS_BINDING_ABORTED", "i").test(e);
+  const failed = inPhase(c.failed);
+  const lead = (u: string | null) => !!u && isLeadUrl(u);
+  const stubFailed = failed.filter((f) => lead(f.url));
+  const others = failed.filter((f) => !lead(f.url));
+  const consoleAll = inPhase(c.console);
+  // the browser's own line for the deliberately failing stub (HTTP 500 / aborted connection on the lead endpoint)
+  const stubConsole = consoleAll.filter((m) => m.type === "error" && (lead(m.url) || m.text.includes("/api/widget/")));
+  const consoleErrors = consoleAll.filter((m) => m.type === "error" && !stubConsole.includes(m));
+  const http = inPhase(c.http);
+  return {
+    consoleErrors,
+    consoleWarnings: consoleAll.filter((m) => m.type === "warning"),
+    pageErrors: inPhase(c.pageErrors),
+    genuineFailedRequests: others.filter((f) => !isAbort(f.error)),
+    abortedRequests: others.filter((f) => isAbort(f.error)),
+    httpErrors: http.filter((h) => !lead(h.url)),
+    stubInduced: { console: stubConsole, failedRequests: stubFailed, http: http.filter((h) => lead(h.url)) },
+  };
+}
+
+export async function settle(page: import("playwright").Page, slow = false): Promise<void> {
+  try { await page.waitForLoadState("networkidle", { timeout: 8000 }); } catch {}
+  await page.evaluate(slow ? JS.settleSlow : JS.settle);
+  try { await page.waitForLoadState("networkidle", { timeout: 5000 }); } catch {}
+  await page.waitForTimeout(400);
+}
+
+/** the widget frame + its launcher, once visible */
+export async function findLauncher(page: import("playwright").Page, timeoutMs = 15_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    for (const f of page.frames()) {
+      if (!f.url().startsWith("https://boostchat.co.kr/widget/")) continue;
+      const loc = f.locator("[data-boost-chat-launcher]").first();
+      if ((await loc.count().catch(() => 0)) > 0 && (await loc.isVisible().catch(() => false))) return { frame: f, loc };
+    }
+    await page.waitForTimeout(300);
+  }
+  return null;
+}

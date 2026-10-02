@@ -1,0 +1,316 @@
+/**
+ * STEP 3 (assembly, READ-ONLY): merges partial/<key>.json from browser-qa.mts + partial/after-shots.json,
+ * runs the HTTP-level checks (dead links, portfolio regression — node GET with Accept: * / *, no browser,
+ * no POST) and writes proof/22-live-browser-qa.json and proof/22-live-browser-qa.log.
+ */
+import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
+import { createHash } from "node:crypto";
+import path from "node:path";
+import { REPO, BASE, RESULT, PARTIAL, HERE, SHOTS, EXPECT, httpGet, sitemapPaths } from "./qa-lib.mts";
+
+const KEYS = ["c1440", "c1024", "c768", "c390", "c375", "w390"];
+const P: Record<string, any> = {};
+for (const k of KEYS) P[k] = JSON.parse(readFileSync(path.join(PARTIAL, `${k}.json`), "utf8"));
+const shots = JSON.parse(readFileSync(path.join(PARTIAL, "after-shots.json"), "utf8"));
+const real = JSON.parse(readFileSync(path.join(RESULT, "proof/21-live-real-submission.json"), "utf8"));
+const rehearsal = existsSync(path.join(HERE, "rehearsal/rehearsal.json")) ? JSON.parse(readFileSync(path.join(HERE, "rehearsal/rehearsal.json"), "utf8")) : null;
+const w390first = existsSync(path.join(PARTIAL, "w390.first-run-fast-scroll.json")) ? JSON.parse(readFileSync(path.join(PARTIAL, "w390.first-run-fast-scroll.json"), "utf8")) : null;
+
+const L: string[] = [];
+const say = (s = "") => { L.push(s); };
+const defects: string[] = [];
+const observations: string[] = [];
+const sitemap = await sitemapPaths();
+
+// ------------------------------------------------------------------ per viewport
+const perViewport: Record<string, any> = {};
+for (const k of KEYS) {
+  const d = P[k];
+  const pages = Object.values(d.pages) as any[];
+  const sum = (f: (r: any) => number) => pages.reduce((a, r) => a + f(r), 0);
+  const v: Record<string, any> = {
+    label: d.label, browserVersion: d.browserVersion, pages: pages.length,
+    http200: sum((r) => (r.httpStatus === 200 ? 1 : 0)),
+    pagesWithOverflow: pages.filter((r) => r.overflow.overflowX || r.overflow.scrollWidth > d.viewport.width).map((r) => r.path),
+    brokenImages: sum((r) => r.images.broken.length),
+    imagesTotal: sum((r) => r.images.total),
+    imagesLoaded: sum((r) => r.images.loaded),
+    imagesPendingLazy: sum((r) => r.images.pending.length),
+    consoleErrors: sum((r) => r.consoleErrors.length + r.duringInteraction.consoleErrors.length),
+    pageErrors: sum((r) => r.pageErrors.length + r.duringInteraction.pageErrors.length),
+    genuineFailedRequests: sum((r) => r.genuineFailedRequests.length + r.duringInteraction.genuineFailedRequests.length),
+    http4xx5xx: sum((r) => r.httpErrors.length + r.duringInteraction.httpErrors.length),
+    abortedPrefetchesLoad: sum((r) => r.abortedRequests.length),
+    abortedPrefetchesInteraction: sum((r) => r.duringInteraction.abortedRequests.length),
+    consoleWarnings: sum((r) => r.consoleWarnings.length + (r.duringInteraction.consoleWarnings?.length ?? 0)),
+    footerNoticeOk: sum((r) => (r.footerNotice.matches ? 1 : 0)),
+    navOk: sum((r) => (r.nav.matches ? 1 : 0)),
+    mobileMenuPages: pages.filter((r) => r.mobileMenu).length,
+    mobileMenuOk: pages.filter((r) => r.mobileMenu?.matches === true).length,
+    termPortfolio: sum((r) => r.terminology.total["포트폴리오"] + (r.mobileMenu?.terms?.["포트폴리오"] ?? 0)),
+    termSigongSarye: sum((r) => r.terminology.total["시공 사례"] + (r.mobileMenu?.terms?.["시공 사례"] ?? 0)),
+    bootstrapPosts: sum((r) => (r.bootstrapPosts ?? r.boostchatApi.filter((x: string) => x.includes("/bootstrap"))).length),
+    boostchatNon2xx: pages.flatMap((r) => r.boostchatApiNon2xx ?? r.boostchatApi.filter((x: string) => !x.includes("/lead") && !x.endsWith("→ 200") && !x.endsWith("→ 204"))),
+    pageErrorsField: pages.filter((r) => r.error).map((r) => `${r.path}: ${String(r.error).split("\n")[0]}`),
+    stub: { ok: d.stub.ok, contexts: d.stub.contexts, leadRequestsSeen: d.stub.leadRequestEventsTotal, answeredByStub: d.stub.sawTotal, violations: d.stub.violations },
+    abortedKinds: [...new Set(pages.flatMap((r) => [...r.abortedRequests, ...r.duringInteraction.abortedRequests].map((a: any) => `${a.resourceType} ${a.error}`)))],
+    abortedTargetsAreSitePages: pages.flatMap((r) => [...r.abortedRequests, ...r.duringInteraction.abortedRequests]).every((a: any) => { const u = new URL(a.url); return u.origin === BASE && sitemap.includes(u.pathname); }),
+    contactPass: d.contact?.pass ?? null,
+    contactFailed: d.contact ? Object.entries(d.contact.checks).filter(([, ok]) => !ok).map(([n]) => n) : [],
+  };
+  perViewport[k] = v;
+  if (v.http200 !== v.pages) defects.push(`${k}: ${v.pages - v.http200} page(s) did not answer 200`);
+  if (v.pagesWithOverflow.length) defects.push(`${k}: horizontal overflow on ${v.pagesWithOverflow.join(", ")}`);
+  if (v.brokenImages) defects.push(`${k}: ${v.brokenImages} broken image(s)`);
+  if (v.consoleErrors) defects.push(`${k}: ${v.consoleErrors} console error(s)`);
+  if (v.pageErrors) defects.push(`${k}: ${v.pageErrors} page error(s)`);
+  if (v.genuineFailedRequests) defects.push(`${k}: ${v.genuineFailedRequests} genuinely failed request(s)`);
+  if (v.http4xx5xx) defects.push(`${k}: ${v.http4xx5xx} 4xx/5xx response(s)`);
+  if (v.footerNoticeOk !== v.pages) defects.push(`${k}: footer disclosure wrong/missing on ${v.pages - v.footerNoticeOk} page(s)`);
+  if (v.navOk !== v.pages) defects.push(`${k}: header nav labels differ on ${v.pages - v.navOk} page(s)`);
+  if (v.mobileMenuOk !== v.mobileMenuPages) defects.push(`${k}: mobile menu labels differ on ${v.mobileMenuPages - v.mobileMenuOk} page(s)`);
+  if (v.termPortfolio || v.termSigongSarye) defects.push(`${k}: banned terminology present (포트폴리오 ${v.termPortfolio}, 시공 사례 ${v.termSigongSarye})`);
+  if (v.contactPass === false) defects.push(`${k}: contact form check(s) failed: ${v.contactFailed.join("; ")}`);
+  if (v.pageErrorsField.length) defects.push(`${k}: script error while checking ${v.pageErrorsField.join("; ")}`);
+  if (!v.stub.ok) defects.push(`${k}: STUB ASSERTION FAILED ${JSON.stringify(v.stub.violations)}`);
+  if (v.boostchatNon2xx.length) observations.push(`${k}: boostchat API non-2xx during the run: ${v.boostchatNon2xx.join(", ")}`);
+}
+
+// ------------------------------------------------------------------ dead links (HTTP)
+const internal = new Map<string, Set<string>>();
+const external = new Map<string, Set<string>>();
+for (const k of KEYS) for (const r of Object.values(P[k].pages) as any[]) {
+  const all = [...r.links, ...((r.mobileMenu?.hrefs ?? []) as string[]).map((h) => ({ raw: h, resolved: new URL(h, BASE + r.path).href }))];
+  for (const l of all) {
+    let u: URL;
+    try { u = new URL(l.resolved); } catch { (external.get(l.raw) ?? external.set(l.raw, new Set()).get(l.raw)!).add(r.path); continue; }
+    if (u.origin === BASE) { const key = u.pathname + u.search; (internal.get(key) ?? internal.set(key, new Set()).get(key)!).add(r.path); }
+    else (external.get(l.resolved) ?? external.set(l.resolved, new Set()).get(l.resolved)!).add(r.path);
+  }
+}
+const linkResults: { path: string; status: number; contentType: unknown; bytes: number; linkedFrom: number }[] = [];
+for (const p of [...internal.keys()].sort()) {
+  const res = await httpGet(p);
+  linkResults.push({ path: p, status: res.status, contentType: res.headers["content-type"], bytes: res.body.length, linkedFrom: internal.get(p)!.size });
+}
+const deadLinks = linkResults.filter((l) => l.status !== 200);
+if (deadLinks.length) defects.push(`dead internal links: ${deadLinks.map((l) => `${l.path} → ${l.status}`).join(", ")}`);
+const sitemapStatuses: Record<string, number> = {};
+for (const p of sitemap) sitemapStatuses[p] = (await httpGet(p)).status;
+
+// ------------------------------------------------------------------ portfolio regression (HTTP + browser data)
+const manifestRes = await httpGet("/_integration/manifest.json");
+const manifest = JSON.parse(manifestRes.body.toString("utf8"));
+const docHref: string = manifest.resources.portfolio.href;
+const docRes = await httpGet(docHref);
+const doc = JSON.parse(docRes.body.toString("utf8"));
+const ids: string[] = doc.records.map((r: any) => r.id);
+const expectedIds = ["bi-01", "bi-02", "bi-03", "bi-04", "bi-05", "bi-06", "bi-07", "bi-08"];
+const detail: Record<string, number> = {};
+for (const r of doc.records) detail[r.detailUrl] = (await httpGet(r.detailUrl)).status;
+const synthetic = JSON.parse(readFileSync(path.join(REPO, "platform/test/fixtures/boost-interior-synthetic/projects.synthetic.json"), "utf8"));
+const removedSample = [synthetic.items[0], synthetic.items[5], synthetic.items[synthetic.items.length - 1]].map((i: any) => ({ id: i.id, slug: i.slug }));
+const removed: Record<string, number> = {};
+for (const s of removedSample) removed[`/portfolio/${s.slug}`] = (await httpGet(`/portfolio/${s.slug}`)).status;
+// every image the portfolio document references (cover + gallery + before/after), over HTTP
+const mediaSrcs = new Set<string>();
+const walk = (x: any) => { if (!x || typeof x !== "object") return; if (typeof x.src === "string") mediaSrcs.add(x.src); for (const v of Object.values(x)) walk(v); };
+for (const r of doc.records) walk(r.media);
+const mediaResults: { src: string; status: number; contentType: unknown; bytes: number }[] = [];
+for (const src of [...mediaSrcs].sort()) { const res = await httpGet(src); mediaResults.push({ src, status: res.status, contentType: res.headers["content-type"], bytes: res.body.length }); }
+const mediaBad = mediaResults.filter((m) => m.status !== 200 || !String(m.contentType).startsWith("image/") || m.bytes === 0);
+// covers: the document, and what /portfolio actually rendered at every viewport
+const docCovers: Record<string, string> = Object.fromEntries(doc.records.map((r: any) => [r.id, r.media.cover.src]));
+const dup = (m: Record<string, string>) => { const by = new Map<string, string[]>(); for (const [id, c] of Object.entries(m)) (by.get(c) ?? by.set(c, []).get(c)!).push(id); return [...by.entries()].filter(([, v]) => v.length > 1).map(([c, v]) => ({ cover: c, records: v })); };
+const coverByViewport: Record<string, any> = {};
+for (const k of KEYS) {
+  const rec = P[k].pages["/portfolio"];
+  if (!rec) continue;
+  const m: Record<string, string> = Object.fromEntries(rec.cards.map((c: any) => [c.id, c.coverAttr]));
+  coverByViewport[k] = { cards: rec.cards.length, ids: rec.cards.map((c: any) => c.id), sharedCovers: dup(m), allLoaded: rec.cards.every((c: any) => c.coverLoaded === true), matchesDocument: JSON.stringify(m) === JSON.stringify(docCovers), hrefsMatchDocument: rec.cards.every((c: any) => c.href === doc.records.find((r: any) => r.id === c.id)?.detailUrl) };
+}
+// cover bytes distinct too (two different URLs could still be the same picture)
+const coverHashes: Record<string, string> = {};
+for (const [id, src] of Object.entries(docCovers)) coverHashes[id] = createHash("sha256").update((await httpGet(src)).body).digest("hex");
+const portfolioBrowser: Record<string, any> = {};
+for (const k of KEYS) {
+  const pages = (Object.values(P[k].pages) as any[]).filter((r) => r.path === "/" || r.path.startsWith("/portfolio"));
+  portfolioBrowser[k] = { pages: pages.length, broken: pages.reduce((a, r) => a + r.images.broken.length, 0), imgElements: pages.reduce((a, r) => a + r.images.total, 0), loadedInPlace: pages.reduce((a, r) => a + r.images.loaded, 0), lazyNotYetRequested: pages.reduce((a, r) => a + r.images.pending.length, 0), distinctSourcesLoadedViaImage: pages.reduce((a, r) => a + (r.imageVerify?.ok ?? 0), 0), distinctSources: pages.reduce((a, r) => a + (r.imageVerify?.total ?? 0), 0), failedViaImage: pages.flatMap((r) => (r.imageVerify?.failed ?? []).map((f: any) => `${r.path}: ${f.src} (${f.why})`)) };
+}
+const portfolio = {
+  manifest: { status: manifestRes.status, portfolioHref: docHref, version: manifest.resources.portfolio.version },
+  document: { status: docRes.status, schemaVersion: doc.schemaVersion, records: doc.records.length, ids, idsExactlyBi01ToBi08: JSON.stringify(ids) === JSON.stringify(expectedIds) },
+  detailPages: detail,
+  detailPagesAll200: Object.values(detail).every((s) => s === 200),
+  detailUrlsEqualSitemap: JSON.stringify(Object.keys(detail).sort()) === JSON.stringify(sitemap.filter((p) => p.startsWith("/portfolio/")).sort()),
+  removedSyntheticSample: removedSample.map((s) => ({ ...s, status: removed[`/portfolio/${s.slug}`] })),
+  removedAll404: Object.values(removed).every((s) => s === 404),
+  media: { referencedByDocument: mediaResults.length, ok: mediaResults.length - mediaBad.length, bad: mediaBad },
+  covers: { document: docCovers, sharedInDocument: dup(docCovers), sha256: coverHashes, sharedBytes: dup(coverHashes), renderedOnPortfolioPage: coverByViewport },
+  browserImages: portfolioBrowser,
+};
+if (!portfolio.document.idsExactlyBi01ToBi08) defects.push(`portfolio document ids are ${ids.join(",")}`);
+if (!portfolio.detailPagesAll200) defects.push(`portfolio detail page not 200: ${JSON.stringify(detail)}`);
+if (!portfolio.removedAll404) defects.push(`removed synthetic slug still served: ${JSON.stringify(removed)}`);
+if (mediaBad.length) defects.push(`portfolio media not loading over HTTP: ${JSON.stringify(mediaBad)}`);
+if (portfolio.covers.sharedInDocument.length || portfolio.covers.sharedBytes.length) defects.push(`portfolio records share a cover: ${JSON.stringify([...portfolio.covers.sharedInDocument, ...portfolio.covers.sharedBytes])}`);
+for (const [k, c] of Object.entries(coverByViewport) as [string, any][]) if (c.cards !== 8 || c.sharedCovers.length || !c.allLoaded || !c.matchesDocument) defects.push(`${k}: /portfolio cards — ${JSON.stringify(c)}`);
+for (const [k, b] of Object.entries(portfolioBrowser) as [string, any][]) if (b.broken || b.failedViaImage.length) defects.push(`${k}: portfolio images failing in the browser — ${JSON.stringify(b.failedViaImage)}`);
+
+// ------------------------------------------------------------------ widget
+const widget: Record<string, any> = {};
+for (const k of KEYS) {
+  const d = P[k];
+  widget[k] = {};
+  for (const p of ["/", "/contact"]) {
+    const w = d.widget[p];
+    const f = d.footerOverlap[p];
+    if (!w) continue;
+    widget[k][p] = {
+      launcherVisible: w.launcherVisible,
+      launcher: w.closed ? { ...w.closed.rect, fromRight: w.closed.fromViewportRight, fromBottom: w.closed.fromViewportBottom, zIndex: w.closed.style.zIndex, borderRadius: w.closed.style.borderRadius } : null,
+      launcherFace: { count: w.launcherFaceCount, box: w.launcherFaceBox }, ariaLabel: w.launcherAriaLabel, label: w.launcherText,
+      opened: w.panelOpened, openRect: w.open?.rect ?? null, openMethod: w.openMethod,
+      poweredBy: w.poweredByText, poweredByLink: w.poweredByLink,
+      contactUi: w.contactUi, contactUiPresent: w.contactUiPresent,
+      closedAgain: w.closedAgain, rectAfterClose: w.afterClose?.rect ?? null,
+      apiCallsWhileOpen: w.apiCallsWhileOpen,
+      footerAtPageBottom: f ? { launcher: f.launcher, noticeBox: f.noticeRect, lastLine: f.lastLine, overlapWithLastLineText: f.overlapWithLastLine, textLinesUnderLauncher: f.lines.filter((l: any) => l.overlap).map((l: any) => l.overlap), overlapWithNoticeBox: f.overlapWithNotice, otherFooterTextUnderLauncher: f.otherFooterTextOverlaps, closestTextLine: f.lines.map((l: any) => ({ right: l.rect.right, bottom: l.rect.bottom, gapToLauncherTopPx: Math.round((f.launcher.y - l.rect.bottom) * 10) / 10, gapToLauncherLeftPx: Math.round((f.launcher.x - l.rect.right) * 10) / 10 })) } : null,
+    };
+    if (!w.launcherVisible) defects.push(`${k} ${p}: widget launcher not visible`);
+    if (!w.panelOpened) defects.push(`${k} ${p}: widget panel did not open`);
+    if (!w.poweredByText) defects.push(`${k} ${p}: “Powered by boostchat” missing`);
+    if (w.contactUiPresent) defects.push(`${k} ${p}: contact-channel UI present (expected none): ${JSON.stringify(w.contactUi)}`);
+    if (!w.closedAgain) defects.push(`${k} ${p}: widget did not close`);
+    if (f?.overlapWithLastLine) observations.push(`${k} ${p}: launcher overlaps the footer's last text line at the page bottom — ${JSON.stringify(f.overlapWithLastLine)} (known, pre-existing)`);
+  }
+}
+
+// ------------------------------------------------------------------ lead-request accounting
+const stubbedRuns = [
+  ...KEYS.map((k) => ({ run: `browser-qa ${k}`, seen: P[k].stub.leadRequestEventsTotal, stub: P[k].stub.sawTotal, ok: P[k].stub.ok })),
+  ...(w390first ? [{ run: "browser-qa w390 (first run, superseded)", seen: w390first.stub.leadRequestEventsTotal, stub: w390first.stub.sawTotal, ok: w390first.stub.ok }] : []),
+  { run: "after-shots", seen: shots.stub.leadRequestEventsTotal, stub: shots.stub.sawTotal, ok: shots.stub.ok },
+  ...(rehearsal ? [{ run: "rehearse-submit (run twice; the file holds the 2nd run, 1 stubbed POST each)", seen: rehearsal.playwright.requests.length * 2, stub: rehearsal.playwright.requests.length * 2, ok: rehearsal.stubbed === true }] : []),
+  { run: "probe-webkit-images (/ only, no form)", seen: 0, stub: 0, ok: true },
+  { run: "probe-preflight (local servers only, no real host)", seen: 0, stub: 0, ok: true },
+];
+const leadAccounting = {
+  unstubbedLeadPostsSent: real.stubbed === false ? real.leadRequestCounts.cdpPOST : null,
+  unstubbedRun: { script: "real-submit.mts", clickAtUtc: real.clickAtUtc, status: real.post?.response?.status, body: real.post?.response?.body, preflightOptions: real.leadRequestCounts.cdpPreflight },
+  stubbedRuns,
+  stubbedLeadRequestsTotal: stubbedRuns.reduce((a, r) => a + r.seen, 0),
+  everyStubbedRunOk: stubbedRuns.every((r) => r.ok && r.seen === r.stub),
+};
+if (leadAccounting.unstubbedLeadPostsSent !== 1) defects.push(`un-stubbed lead POSTs = ${leadAccounting.unstubbedLeadPostsSent} (must be 1)`);
+if (!leadAccounting.everyStubbedRunOk) defects.push("a stubbed run saw a lead request the stub did not answer");
+
+// ------------------------------------------------------------------ observations (not failures of the checks asked for)
+const boot = KEYS.map((k) => `${k} ${perViewport[k].bootstrapPosts}/${perViewport[k].pages}`).join(", ");
+observations.push(`widget bootstrap POSTs per page load (…/api/widget/<key>/bootstrap, all 200): ${boot} — Chromium usually sends TWO per page view (hello on iframe load + on shell ready), WebKit one. They spend the visitor's 10-per-60 s budget that chat shares, so about 5 page views inside one minute can exhaust it. This QA paced page loads to ≤ 4 per 65 s for that reason; no 429 was received.`);
+observations.push(`Chromium console WARNINGS (not errors): “The resource …/assets/33888d63a7dbd1775c78.jpg / 609e7b56f7660f5d1f9d.jpg was preloaded using link preload but not used within a few seconds” on detail pages and /contact — hero images of / and /portfolio preloaded as a side effect of route prefetch. Counts per viewport: ${KEYS.map((k) => `${k} ${perViewport[k].consoleWarnings}`).join(", ")}.`);
+observations.push(`<meta name="robots" content="${(Object.values(P.c1440.pages) as any[])[0].metaRobots}"> is present on the pages (recorded, not judged).`);
+observations.push("Lazy <img> elements that were never requested in place (hidden gallery tabs on detail pages; the 4th card of each horizontal track on / in WebKit) are counted as “pending”, not broken; each distinct source was loaded through new Image() in the same page and all of them decoded.");
+if (w390first) observations.push(`WebKit first run (superseded, kept as partial/w390.first-run-fast-scroll.json): scrolled through / at Chromium pace, 10 lazy images were still pending and 4 new Image() probes timed out at 15 s; with 300 px / 350 ms steps (settle-slow.js) 13/15 load in place and 15/15 through new Image(), reproduced in a separate probe. Treated as a scroll-pace artifact of the test, not a site defect.`);
+
+// ------------------------------------------------------------------ output
+const result = {
+  what: "STEP 3 — stubbed browser QA of https://interior-demo.boostweb.co.kr (package eeb82881…e44d)",
+  generatedAt: new Date().toISOString(),
+  method: {
+    stub: "every browser context routes **/api/widget/*/lead (plus a path predicate as a net) to a canned answer: 200 {\"received\":true} / 500 / abort, with access-control-allow-origin: https://interior-demo.boostweb.co.kr; verified locally (probe-preflight.mts) that neither the POST nor its preflight reaches the network under such a route in Chromium and WebKit",
+    viewports: Object.fromEntries(KEYS.map((k) => [k, P[k].label])),
+    pages: sitemap,
+    pacing: "≤ 4 page loads per 65 s across all scripts (widget bootstrap budget)",
+    chat: "no chat message was typed or sent; the widget was only opened and closed",
+  },
+  verdict: defects.length === 0 ? "PASS" : "DEFECTS",
+  defects, observations,
+  perViewport,
+  contact: Object.fromEntries(KEYS.map((k) => [k, P[k].contact ? { pass: P[k].contact.pass, checks: P[k].contact.checks, launcherVsSubmit: P[k].contact.launcherVsSubmit, failure: { errorRect: P[k].contact.failure500.state.errorRect, headerBottom: P[k].contact.failure500.state.header.effectiveBottom, viewport: P[k].contact.failure500.state.viewport, buttonRect: P[k].contact.failure500.state.buttonRect, launcherRect: P[k].contact.failure500.state.launcherRect, scrollY: P[k].contact.failure500.state.scrollY }, success: { titleRect: P[k].contact.success.state.doneTitleRect, statusRect: P[k].contact.success.state.statusRect, headerBottom: P[k].contact.success.state.header.effectiveBottom, launcherRect: P[k].contact.success.state.launcherRect, scrollY: P[k].contact.success.state.scrollY, sentBody: P[k].contact.success.sentBody }, shortPhoneValidity: P[k].contact.shortPhone.validity.phone } : null])),
+  widget,
+  terminology: { banned: ["포트폴리오", "시공 사례 (시공\\s+사례)"], sources: "visible text, DOM text, noscript, document.title, alt, aria-label, title, placeholder, meta description/og:*/twitter:* (+ the opened mobile menu)", totals: Object.fromEntries(KEYS.map((k) => [k, { "포트폴리오": perViewport[k].termPortfolio, "시공 사례": perViewport[k].termSigongSarye }])), navLabelsExpected: EXPECT.nav, navOkPages: Object.fromEntries(KEYS.map((k) => [k, `${perViewport[k].navOk}/${perViewport[k].pages}`])), mobileMenuOkPages: Object.fromEntries(KEYS.map((k) => [k, `${perViewport[k].mobileMenuOk}/${perViewport[k].mobileMenuPages}`])), wholePackageGrep: "0 files of the 144-file package (byte-identical to live, proof/20) contain either term" },
+  links: { internalDistinct: linkResults.length, internalAll200: deadLinks.length === 0, dead: deadLinks, internal: linkResults, external: [...external.entries()].map(([href, from]) => ({ href, onPages: from.size })), sitemapStatuses },
+  portfolio,
+  leadAccounting,
+  afterScreenshots: { dir: path.relative(REPO, SHOTS), files: readdirSync(SHOTS).sort(), fromBrowserQa: KEYS.flatMap((k) => P[k].screenshots), fromAfterShots: shots.shots },
+  runs: Object.fromEntries(KEYS.map((k) => [k, P[k]])),
+};
+writeFileSync(path.join(RESULT, "proof/22-live-browser-qa.json"), JSON.stringify(result, null, 1));
+
+// ---- human summary
+say(`# STEP 3 — stubbed browser QA of ${BASE} — ${result.generatedAt}`);
+say(`verdict: ${result.verdict}   defects: ${defects.length}`);
+for (const d of defects) say(`  DEFECT ${d}`);
+say("");
+say("## method");
+say(`  lead endpoint: STUBBED in every context (${result.method.stub})`);
+say(`  ${result.method.chat}; ${result.method.pacing}`);
+for (const k of KEYS) say(`  ${k}: ${P[k].label}, ${P[k].engine} ${P[k].browserVersion}, ${P[k].startedAt} → ${P[k].finishedAt}`);
+say(`  pages (${sitemap.length}, from the live sitemap.xml): ${sitemap.join("  ")}`);
+say("");
+say("## per viewport (sums over the pages of that viewport; load + interactions)");
+say("  viewport | pages 200 | overflow | broken img | console err | page err | failed req (genuine) | 4xx/5xx | aborted prefetch (load+interaction) | footer notice | nav labels | mobile menu | 포트폴리오 | 시공 사례");
+for (const k of KEYS) { const v = perViewport[k]; say(`  ${k.padEnd(8)} | ${v.http200}/${v.pages} | ${v.pagesWithOverflow.length} | ${v.brokenImages} (of ${v.imagesTotal} <img>, ${v.imagesLoaded} loaded in place, ${v.imagesPendingLazy} lazy not requested) | ${v.consoleErrors} | ${v.pageErrors} | ${v.genuineFailedRequests} | ${v.http4xx5xx} | ${v.abortedPrefetchesLoad}+${v.abortedPrefetchesInteraction} (${v.abortedKinds.join(", ") || "none"}; all targets are site pages: ${v.abortedTargetsAreSitePages}) | ${v.footerNoticeOk}/${v.pages} | ${v.navOk}/${v.pages} | ${v.mobileMenuOk}/${v.mobileMenuPages} | ${v.termPortfolio} | ${v.termSigongSarye}`); }
+say("");
+say("## per page × viewport (status · overflow scrollWidth/innerWidth · images loaded/total, broken, pending-lazy · console err · page err · failed · 4xx/5xx · aborted)");
+for (const p of sitemap) {
+  say(`  ${p}`);
+  for (const k of KEYS) { const r = P[k].pages[p]; if (!r) continue; say(`    ${k.padEnd(6)} ${r.httpStatus} “${r.title}” · ${r.overflow.overflowX ? "OVERFLOW" : "no overflow"} ${r.overflow.scrollWidth}/${r.overflow.innerWidth} · img ${r.images.loaded}/${r.images.total}, broken ${r.images.broken.length}, pending ${r.images.pending.length}${r.imageVerify ? `, sources ok ${r.imageVerify.ok}/${r.imageVerify.total}` : ""} · ${r.consoleErrors.length + r.duringInteraction.consoleErrors.length} · ${r.pageErrors.length + r.duringInteraction.pageErrors.length} · ${r.genuineFailedRequests.length + r.duringInteraction.genuineFailedRequests.length} · ${r.httpErrors.length + r.duringInteraction.httpErrors.length} · ${r.abortedRequests.length + r.duringInteraction.abortedRequests.length} · footer ${r.footerNotice.matches ? "ok" : "MISMATCH"} · nav ${r.nav.matches ? "ok" : "MISMATCH"}`); }
+}
+say("");
+say(`## footer disclosure — expected: ${EXPECT.footer}`);
+say(`  [data-footer-notice] present exactly once, visible, text identical: ${KEYS.map((k) => `${k} ${perViewport[k].footerNoticeOk}/${perViewport[k].pages}`).join(", ")}`);
+say("");
+say("## contact form (stubbed)");
+for (const k of KEYS) {
+  const c = P[k].contact; if (!c) continue;
+  say(`  ${k}: ${c.pass ? "PASS" : "FAIL"} (${Object.values(c.checks).filter(Boolean).length}/${Object.keys(c.checks).length})`);
+  for (const [n, ok] of Object.entries(c.checks)) say(`    ${ok ? "ok  " : "FAIL"} ${n}`);
+  const f = c.failure500.state, s = c.success.state;
+  say(`    geometry: failure alert ${JSON.stringify(f.errorRect)} in viewport ${f.viewport.w}x${f.viewport.h}, header bottom ${f.header.effectiveBottom}, launcher ${JSON.stringify(f.launcherRect)}, button ${JSON.stringify(f.buttonRect)}; success title ${JSON.stringify(s.doneTitleRect)}, header bottom ${s.header.effectiveBottom}`);
+  say(`    7-digit phone: ${JSON.stringify(c.shortPhone.validity.phone)}`);
+  say(`    body the stub received on success: ${JSON.stringify(c.success.sentBody)}`);
+}
+say("");
+say("## widget (BoostChat iframe)");
+for (const k of KEYS) for (const p of ["/", "/contact"]) {
+  const w = widget[k]?.[p]; if (!w) continue;
+  say(`  ${k} ${p}: launcher visible ${w.launcherVisible}, ${w.launcher.width}x${w.launcher.height} at x ${w.launcher.x}, y ${w.launcher.y} (right ${w.launcher.fromRight}px, bottom ${w.launcher.fromBottom}px, z-index ${w.launcher.zIndex}); [data-launcher-face] ×${w.launcherFace.count}; aria-label “${w.ariaLabel}”`);
+  say(`      opened by ${w.openMethod}: ${w.opened} → iframe ${JSON.stringify(w.openRect)}; “Powered by boostchat”: ${w.poweredBy} ${JSON.stringify(w.poweredByLink)}; contact-channel UI: ${JSON.stringify(w.contactUi)} → present: ${w.contactUiPresent}; closed again: ${w.closedAgain}; API calls while open: ${JSON.stringify(w.apiCallsWhileOpen)}`);
+  const f = w.footerAtPageBottom;
+  if (f) say(`      page bottom: launcher ${JSON.stringify(f.launcher)}; footer last text line ${JSON.stringify(f.lastLine)}; overlap with last line text: ${JSON.stringify(f.overlapWithLastLineText)}; any notice text line under the launcher: ${JSON.stringify(f.textLinesUnderLauncher)}; overlap with the notice element's box: ${JSON.stringify(f.overlapWithNoticeBox)}; other footer text under it: ${JSON.stringify(f.otherFooterTextUnderLauncher)}; per line (right edge, bottom, gap to launcher top/left): ${JSON.stringify(f.closestTextLine)}`);
+}
+say("");
+say("## terminology");
+say(`  sources: ${result.terminology.sources}`);
+say(`  occurrences of “포트폴리오” / “시공 사례”: ${KEYS.map((k) => `${k} ${perViewport[k].termPortfolio}/${perViewport[k].termSigongSarye}`).join(", ")}`);
+say(`  header nav labels = ${EXPECT.nav.join(" / ")}: ${KEYS.map((k) => `${k} ${perViewport[k].navOk}/${perViewport[k].pages}`).join(", ")}; opened mobile menu: ${KEYS.map((k) => `${k} ${perViewport[k].mobileMenuOk}/${perViewport[k].mobileMenuPages}`).join(", ")}`);
+say(`  ${result.terminology.wholePackageGrep}`);
+say("");
+say("## links");
+say(`  internal a[href] targets (deduped over all pages/viewports, incl. the mobile menu): ${linkResults.length}; 200: ${linkResults.length - deadLinks.length}; dead: ${deadLinks.length}`);
+for (const l of linkResults) say(`    ${l.status} ${l.path} (${l.contentType}, ${l.bytes} B, linked from ${l.linkedFrom} page(s))`);
+say(`  external: ${[...external.entries()].map(([h, from]) => `${h} (on ${from.size} page(s))`).join(", ") || "none"}`);
+say("");
+say("## portfolio regression");
+say(`  manifest ${portfolio.manifest.status} → ${portfolio.manifest.portfolioHref} ${portfolio.document.status}: ${portfolio.document.records} records [${ids.join(", ")}] — exactly bi-01…bi-08: ${portfolio.document.idsExactlyBi01ToBi08}`);
+say(`  detail pages: ${Object.entries(detail).map(([u, s]) => `${s} ${u}`).join("; ")} — all 200: ${portfolio.detailPagesAll200}; equal to the sitemap's detail URLs: ${portfolio.detailUrlsEqualSitemap}`);
+say(`  removed synthetic slugs (sample of 3 from platform/test/fixtures/boost-interior-synthetic): ${portfolio.removedSyntheticSample.map((s: any) => `${s.status} /portfolio/${s.slug} (${s.id})`).join("; ")} — all 404: ${portfolio.removedAll404}`);
+say(`  images referenced by the portfolio document: ${portfolio.media.ok}/${portfolio.media.referencedByDocument} answer 200 image/*`);
+say(`  browser, / + /portfolio + 8 detail pages: ${KEYS.map((k) => `${k} broken ${portfolioBrowser[k].broken}, distinct sources decoded ${portfolioBrowser[k].distinctSourcesLoadedViaImage}/${portfolioBrowser[k].distinctSources}`).join("; ")}`);
+say(`  covers on /portfolio: ${Object.entries(coverByViewport).map(([k, c]: [string, any]) => `${k} ${c.cards} cards, shared ${c.sharedCovers.length}, all loaded ${c.allLoaded}, = document ${c.matchesDocument}`).join("; ")}; shared cover URL in the document: ${portfolio.covers.sharedInDocument.length}; shared cover bytes (sha256): ${portfolio.covers.sharedBytes.length}`);
+for (const [id, c] of Object.entries(docCovers)) say(`    ${id} ${c} sha256 ${coverHashes[id]!.slice(0, 16)}…`);
+say("");
+say("## lead requests");
+say(`  un-stubbed lead POSTs sent in the whole task: ${leadAccounting.unstubbedLeadPostsSent} (real-submit.mts, click ${real.clickAtUtc}, → ${real.post?.response?.status} ${real.post?.response?.body}; its CORS preflight OPTIONS: ${real.leadRequestCounts.cdpPreflight})`);
+say(`  stubbed lead requests: ${leadAccounting.stubbedLeadRequestsTotal}, every one answered by the stub: ${leadAccounting.everyStubbedRunOk}`);
+for (const r of stubbedRuns) say(`    ${r.ok && r.seen === r.stub ? "ok  " : "FAIL"} ${r.run}: seen ${r.seen}, answered by the stub ${r.stub}`);
+say("");
+say("## observations (not defects of the checks above)");
+for (const o of observations) say(`  - ${o}`);
+say("");
+say(`## after screenshots (${path.relative(REPO, SHOTS)})`);
+say(`  ${readdirSync(SHOTS).sort().join("  ")}`);
+writeFileSync(path.join(RESULT, "proof/22-live-browser-qa.log"), L.join("\n") + "\n");
+console.log(L.join("\n"));

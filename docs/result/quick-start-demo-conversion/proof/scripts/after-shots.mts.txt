@@ -1,0 +1,120 @@
+/**
+ * STEP 4 — AFTER screenshots that the QA matrix did not already take (STUBBED: the lead endpoint is
+ * answered by a Playwright route; nothing reaches it). Same context settings as the BEFORE set
+ * (plain Chromium viewport, deviceScaleFactor 1), JPEG q80:
+ *   home-390, portfolio-390, contact-390, contact-375 (full page, scrolled through first),
+ *   contact-form-notice-390 ([data-inquiry-form] element, 390x2200 viewport),
+ *   widget-closed-390, widget-open-390 (viewport only, on /),
+ *   submit-failure-390 (stub 500), submit-success-390 (stub 200) (viewport only).
+ * (home-1440, portfolio-1440, contact-1440/1024/768 and widget-closed/open-1440 come from browser-qa.mts;
+ *  submit-success-real-1440 from real-submit.mts.)
+ */
+import { writeFileSync } from "node:fs";
+import path from "node:path";
+import { pw, BASE, EXPECT, JS, PARTIAL, SHOTS, gate, installLeadStub, attach, settle, findLauncher, type Stub } from "./qa-lib.mts";
+
+const jpg = (name: string) => ({ path: path.join(SHOTS, `${name}.jpg`), type: "jpeg" as const, quality: 80 });
+const browser = await pw.chromium.launch();
+const report: Record<string, any> = { startedAt: new Date().toISOString(), browser: `chromium ${browser.version()}`, context: "viewport only, deviceScaleFactor 1 (as the BEFORE set)", shots: {}, stub: { sawTotal: 0, leadRequestEventsTotal: 0, violations: [] as string[] } };
+
+async function open(vp: { width: number; height: number }, p: string) {
+  await gate(`shots ${vp.width} ${p}`);
+  const ctx = await browser.newContext({ viewport: vp, deviceScaleFactor: 1 });
+  const stub = await installLeadStub(ctx);
+  const page = await ctx.newPage();
+  const col = attach(page);
+  const resp = await page.goto(BASE + p, { waitUntil: "load", timeout: 45_000 });
+  await settle(page);
+  const done = async () => {
+    await page.waitForTimeout(200);
+    report.stub.sawTotal += stub.saw.length;
+    report.stub.leadRequestEventsTotal += col.leadRequests.length;
+    if (stub.saw.length !== col.leadRequests.length) report.stub.violations.push(`${vp.width} ${p}: ${col.leadRequests.length} lead request event(s), stub answered ${stub.saw.length}`);
+    for (const r of col.leadResponses) if (r.serverAddr !== null && r.serverAddr !== undefined && r.serverAddr !== "n/a") report.stub.violations.push(`${vp.width} ${p}: lead response from a real server ${JSON.stringify(r.serverAddr)}`);
+    await ctx.close();
+  };
+  return { page, stub, col, status: resp?.status() ?? null, done };
+}
+const meta = async (page: import("playwright").Page) => page.evaluate(`({ title: document.title, scrollWidth: document.documentElement.scrollWidth, innerWidth: window.innerWidth, docHeight: document.documentElement.scrollHeight, overflowX: document.documentElement.scrollWidth > window.innerWidth, brokenImages: Array.from(document.images).filter((i) => i.complete && i.naturalWidth === 0).length, imgTotal: document.images.length })`);
+
+// ---- home-390 (full page) + widget-closed-390 / widget-open-390 (viewport)
+{
+  const { page, status, done } = await open({ width: 390, height: 844 }, "/");
+  await page.screenshot({ ...jpg("home-390"), fullPage: true });
+  report.shots["home-390"] = { status, ...(await meta(page) as object) };
+  await page.evaluate(`window.scrollTo({ top: 0, left: 0, behavior: "instant" })`);
+  const found = await findLauncher(page);
+  await page.waitForTimeout(800);
+  await page.screenshot(jpg("widget-closed-390"));
+  report.shots["widget-closed-390"] = { launcherVisible: !!found, iframe: await page.evaluate(JS.widgetRect) };
+  if (found) {
+    await found.loc.click({ timeout: 5000 });   // opens the panel; nothing is typed
+    await found.frame.locator("[data-boost-chat-panel]").first().waitFor({ state: "visible", timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(3500);
+    await page.screenshot(jpg("widget-open-390"));
+    report.shots["widget-open-390"] = { iframe: await page.evaluate(JS.widgetRect), poweredBy: ((await found.frame.locator("body").innerText()) as string).includes("Powered by boostchat") };
+    await found.frame.locator('button[aria-label="상담창 닫기"]').first().click({ timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(500);
+  }
+  await done();
+}
+// ---- portfolio-390 (full page)
+{
+  const { page, status, done } = await open({ width: 390, height: 844 }, "/portfolio");
+  await page.screenshot({ ...jpg("portfolio-390"), fullPage: true });
+  report.shots["portfolio-390"] = { status, ...(await meta(page) as object) };
+  await done();
+}
+// ---- contact-390 (full page) + submit-failure-390 + submit-success-390 (viewport, stubbed)
+{
+  const { page, stub, status, done } = await open({ width: 390, height: 844 }, "/contact");
+  await page.waitForSelector("[data-inquiry-submit]:not([disabled])", { timeout: 10_000 });
+  await page.screenshot({ ...jpg("contact-390"), fullPage: true });
+  report.shots["contact-390"] = { status, ...(await meta(page) as object) };
+  const VALUES = { name: "[TEST] stub QA", phone: "010-0000-0000", region: "테스트", area: "0평", schedule: "테스트", message: "[TEST] stubbed screenshot — 이 요청은 네트워크에 도달하지 않습니다." };
+  for (const [k, v] of Object.entries(VALUES)) await page.fill(`[name=${k}]`, v);
+  await page.check("[name=consent]");
+  (stub as Stub).mode = "500";
+  await page.click("[data-inquiry-submit]");
+  await page.waitForTimeout(1200);
+  const f = (await page.evaluate(JS.contactState)) as any;
+  await page.screenshot(jpg("submit-failure-390"));
+  report.shots["submit-failure-390"] = { stub: "500", errorText: f.errorText, matches: f.errorText === EXPECT.failure, errorRect: f.errorRect, errorInViewport: f.errorInViewport, valuesKept: f.values, consent: f.consent, launcherOverError: f.launcherOverError, launcherOverButton: f.launcherOverButton, scrollY: f.scrollY };
+  (stub as Stub).mode = "200";
+  await page.click("[data-inquiry-submit]");
+  await page.waitForSelector(".i1-form__done-title", { state: "visible", timeout: 8000 });
+  await page.waitForTimeout(1200);
+  const s = (await page.evaluate(JS.contactState)) as any;
+  await page.screenshot(jpg("submit-success-390"));
+  report.shots["submit-success-390"] = { stub: "200", title: s.doneTitleText, matches: s.doneTitleText === EXPECT.successTitle && String(s.statusText).includes(EXPECT.successBody), titleRect: s.doneTitleRect, headerBottom: s.header.effectiveBottom, titleInViewport: s.doneTitleInViewport, launcherOverStatus: s.launcherOverStatus, scrollY: s.scrollY };
+  report.shots["submit-*-390 stub log"] = stub.saw.map((x) => `${x.method} mode=${x.mode} via=${x.via}`);
+  await done();
+}
+// ---- contact-375 (full page)
+{
+  const { page, status, done } = await open({ width: 375, height: 667 }, "/contact");
+  await page.waitForSelector("[data-inquiry-submit]:not([disabled])", { timeout: 10_000 });
+  await page.screenshot({ ...jpg("contact-375"), fullPage: true });
+  report.shots["contact-375"] = { status, ...(await meta(page) as object) };
+  await done();
+}
+// ---- contact-form-notice-390: the form element in a tall viewport, so neither the sticky header nor the launcher covers it
+{
+  const { page, status, done } = await open({ width: 390, height: 2200 }, "/contact");
+  await page.waitForSelector("[data-inquiry-submit]:not([disabled])", { timeout: 10_000 });
+  await page.evaluate(`window.scrollTo({ top: 0, left: 0, behavior: "instant" })`);
+  await page.waitForTimeout(1500);
+  const form = page.locator("[data-inquiry-form]").first();
+  const formBox = await form.boundingBox();
+  const st = (await page.evaluate(JS.contactState)) as any;
+  await form.screenshot(jpg("contact-form-notice-390"));
+  report.shots["contact-form-notice-390"] = { status, viewport: "390x2200", formBox, launcherRect: st.launcherRect, launcherOverForm: st.launcherOverForm, headerBottom: st.header.effectiveBottom, notice: st.noticeText, button: st.button };
+  await done();
+}
+report.finishedAt = new Date().toISOString();
+report.stub.ok = report.stub.violations.length === 0 && report.stub.sawTotal === report.stub.leadRequestEventsTotal;
+writeFileSync(path.join(PARTIAL, "after-shots.json"), JSON.stringify(report, null, 2));
+await browser.close();
+console.log(JSON.stringify(report, null, 1));
+console.log(`STUB ASSERTION: ${report.stub.ok ? "ok" : "FAILED"} — lead requests seen ${report.stub.leadRequestEventsTotal}, answered by the stub ${report.stub.sawTotal}`);
+if (!report.stub.ok) process.exit(1);

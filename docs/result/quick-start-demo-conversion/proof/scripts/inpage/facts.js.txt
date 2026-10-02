@@ -1,0 +1,101 @@
+// In-page: everything recorded per page x viewport (read-only).
+(() => {
+  const t = (s) => (s == null ? "" : String(s)).replace(/\s+/g, " ").trim();
+  const shown = (el) => { if (!el) return false; const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.visibility !== "hidden" && cs.display !== "none"; };
+  const de = document.documentElement;
+
+  // ---- overflow
+  const overflow = { scrollWidth: de.scrollWidth, innerWidth: window.innerWidth, clientWidth: de.clientWidth, bodyScrollWidth: document.body.scrollWidth, docHeight: de.scrollHeight, innerHeight: window.innerHeight };
+  overflow.overflowX = de.scrollWidth > window.innerWidth;
+  overflow.overflowVsClientWidth = de.scrollWidth > de.clientWidth;
+  overflow.offenders = [];
+  if (overflow.overflowX || overflow.overflowVsClientWidth) {
+    for (const el of document.querySelectorAll("body *")) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.right > de.clientWidth + 0.5) overflow.offenders.push({ tag: el.tagName, cls: String(el.className).slice(0, 80), right: Math.round(r.right), width: Math.round(r.width) });
+      if (overflow.offenders.length >= 8) break;
+    }
+  }
+
+  // ---- images
+  const imgs = Array.from(document.images).map((img) => ({
+    src: img.currentSrc || img.src,
+    attrSrc: img.getAttribute("src"),
+    alt: img.getAttribute("alt"),
+    loading: img.getAttribute("loading"),
+    complete: img.complete,
+    naturalWidth: img.naturalWidth,
+    naturalHeight: img.naturalHeight,
+    rendered: img.getClientRects().length > 0,
+    card: img.closest("[data-project-card]") ? img.closest("[data-project-card]").getAttribute("data-project-card") : null,
+  }));
+  const images = {
+    total: imgs.length,
+    loaded: imgs.filter((i) => i.complete && i.naturalWidth > 0).length,
+    broken: imgs.filter((i) => i.complete && i.naturalWidth === 0).map((i) => i.src),
+    pending: imgs.filter((i) => !i.complete).map((i) => ({ src: i.src, loading: i.loading, rendered: i.rendered })),
+    distinctSrc: Array.from(new Set(imgs.map((i) => i.src))),
+  };
+
+  // ---- portfolio cards (cover per record)
+  const cards = Array.from(document.querySelectorAll("[data-project-card]")).map((c) => {
+    const img = c.querySelector("img");
+    const a = c.querySelector("a[href]");
+    return { id: c.getAttribute("data-project-card"), href: a ? a.getAttribute("href") : null, title: t(c.querySelector(".i1-card__title") ? c.querySelector(".i1-card__title").textContent : ""), cover: img ? (img.currentSrc || img.src) : null, coverAttr: img ? img.getAttribute("src") : null, coverLoaded: img ? img.complete && img.naturalWidth > 0 : null };
+  });
+
+  // ---- footer disclosure
+  const notices = Array.from(document.querySelectorAll("[data-footer-notice]"));
+  const footerNotice = { count: notices.length, texts: notices.map((n) => t(n.textContent)), visible: notices.map(shown) };
+
+  // ---- header nav
+  const navLinks = Array.from(document.querySelectorAll("header.i1-header nav a"));
+  const menuBtn = document.querySelector("[data-menu-button]");
+  const nav = { labelsInDom: navLinks.map((a) => t(a.textContent)), labelsVisible: navLinks.filter(shown).map((a) => t(a.textContent)), hrefs: navLinks.map((a) => a.getAttribute("href")), menuButtonVisible: shown(menuBtn), menuButtonLabel: menuBtn ? menuBtn.getAttribute("aria-label") : null };
+
+  // ---- links
+  const links = Array.from(document.querySelectorAll("a[href]")).map((a) => ({ raw: a.getAttribute("href"), resolved: a.href, text: t(a.textContent).slice(0, 60) || t(a.getAttribute("aria-label")), target: a.getAttribute("target") }));
+
+  // ---- terminology
+  const clone = document.body.cloneNode(true);
+  const noscriptText = Array.from(clone.querySelectorAll("noscript")).map((n) => n.textContent).join("\n");
+  clone.querySelectorAll("script,style,noscript,template").forEach((e) => e.remove());
+  const attrs = (name) => Array.from(document.querySelectorAll("[" + name + "]")).map((e) => e.getAttribute(name)).join("\n");
+  const metas = Array.from(document.querySelectorAll('meta[name="description"], meta[property^="og:"], meta[name^="twitter:"]')).map((m) => ({ key: m.getAttribute("name") || m.getAttribute("property"), content: m.getAttribute("content") }));
+  const sources = {
+    visibleText: document.body.innerText,
+    domText: clone.textContent,
+    noscript: noscriptText,
+    documentTitle: document.title,
+    alt: attrs("alt"),
+    ariaLabel: attrs("aria-label"),
+    titleAttr: attrs("title"),
+    placeholder: attrs("placeholder"),
+    meta: metas.map((m) => m.content).join("\n"),
+  };
+  const TERMS = { "포트폴리오": new RegExp("포트폴리오", "g"), "시공 사례": new RegExp("시공\\s+사례", "g") };
+  const terminology = { counts: {}, total: {}, hits: [] };
+  for (const [term, re] of Object.entries(TERMS)) {
+    terminology.counts[term] = {};
+    terminology.total[term] = 0;
+    for (const [src, text] of Object.entries(sources)) {
+      const s = text || "";
+      const m = s.match(re);
+      const n = m ? m.length : 0;
+      terminology.counts[term][src] = n;
+      terminology.total[term] += n;
+      if (n) { const i = s.search(re); terminology.hits.push({ term, source: src, sample: s.slice(Math.max(0, i - 30), i + 40) }); }
+    }
+  }
+  terminology.infoEnglishPortfolioInVisibleText = (document.body.innerText.match(new RegExp("portfolio", "gi")) || []).length;
+
+  return {
+    url: location.href,
+    title: document.title,
+    metaDescription: (metas.find((m) => m.key === "description") || {}).content || null,
+    metaRobots: document.querySelector('meta[name="robots"]') ? document.querySelector('meta[name="robots"]').getAttribute("content") : null,
+    metas,
+    h1: Array.from(document.querySelectorAll("h1")).map((h) => t(h.textContent)),
+    overflow, images, cards, footerNotice, nav, links, terminology,
+  };
+})()

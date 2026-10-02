@@ -1,0 +1,13 @@
+// In-page: load every distinct <img> source of the page through a fresh Image() — proves each one decodes
+// in this browser even when the <img> itself is lazy and off-screen (hidden gallery tab, horizontal track).
+(async () => {
+  const srcs = Array.from(new Set(Array.from(document.images).map((i) => i.currentSrc || i.src).filter(Boolean)));
+  const results = await Promise.all(srcs.map((src) => new Promise((res) => {
+    const im = new Image();
+    const timer = setTimeout(() => res({ src, ok: false, why: "timeout" }), 15000);
+    im.onload = () => { clearTimeout(timer); res({ src, ok: im.naturalWidth > 0, w: im.naturalWidth, h: im.naturalHeight }); };
+    im.onerror = () => { clearTimeout(timer); res({ src, ok: false, why: "error" }); };
+    im.src = src;
+  })));
+  return { total: results.length, ok: results.filter((r) => r.ok).length, failed: results.filter((r) => !r.ok) };
+})()

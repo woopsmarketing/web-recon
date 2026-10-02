@@ -1,0 +1,32 @@
+/** Probe (stubbed): why do lazy images on / stay pending in WebKit iPhone 13? */
+import { pw, BASE, gate, installLeadStub, attach, JS } from "./qa-lib.mts";
+const browser = await pw.webkit.launch();
+await gate("probe webkit /");
+const ctx = await browser.newContext({ ...pw.devices["iPhone 13"] });
+const stub = await installLeadStub(ctx);
+const page = await ctx.newPage();
+const col = attach(page);
+const assets: Record<string, any> = {};
+page.on("request", (r) => { if (r.url().includes("/assets/")) assets[r.url().split("/").pop()!] = { req: Date.now() }; });
+page.on("response", (r) => { if (r.url().includes("/assets/")) Object.assign(assets[r.url().split("/").pop()!] ?? {}, { status: r.status(), resp: Date.now() }); });
+page.on("requestfinished", (r) => { if (r.url().includes("/assets/")) Object.assign(assets[r.url().split("/").pop()!] ?? {}, { fin: Date.now() }); });
+page.on("requestfailed", (r) => { if (r.url().includes("/assets/")) Object.assign(assets[r.url().split("/").pop()!] ?? {}, { failed: r.failure()?.errorText }); });
+const t0 = Date.now();
+await page.goto(BASE + "/", { waitUntil: "load" });
+const snap = async (label: string) => console.log(label, Date.now() - t0, JSON.stringify(await page.evaluate(`(() => { const im = Array.from(document.images); return { total: im.length, loaded: im.filter(i => i.complete && i.naturalWidth > 0).length, broken: im.filter(i => i.complete && i.naturalWidth === 0).length, pending: im.filter(i => !i.complete).map(i => (i.currentSrc || i.src).split("/").pop() + ":" + i.loading + ":" + Math.round(i.getBoundingClientRect().top)) }; })()`)));
+await snap("after load");
+// slow, human-like scrolling with the wheel-less touch device: scrollBy in small steps
+const total = await page.evaluate(`Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)`) as number;
+for (let y = 0; y <= total; y += 300) { await page.evaluate(`window.scrollTo(0, ${y})`); await page.waitForTimeout(350); }
+await snap("after slow scroll");
+await page.waitForTimeout(5000);
+await snap("5 s later");
+await page.evaluate(`window.scrollTo(0, 0)`);
+await page.waitForTimeout(3000);
+await snap("back at top + 3 s");
+console.log("asset requests:", Object.entries(assets).map(([k, v]) => `${k} ${v.status ?? "-"} ${v.resp ? v.resp - v.req : "-"}ms fin=${v.fin ? v.fin - v.req : "-"} ${v.failed ?? ""}`).join("\n  "));
+console.log("verify:", JSON.stringify(await page.evaluate(JS.verifyImages)));
+await snap("after verify");
+console.log("failed:", JSON.stringify(col.failed), "lead seen by stub:", stub.saw.length, "lead events:", col.leadRequests.length);
+await ctx.close();
+await browser.close();

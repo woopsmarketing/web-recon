@@ -1,0 +1,19 @@
+// In-page: scroll through the whole page so lazy images load, wait for fonts and images, return to the top.
+(async () => {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const total = () => Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+  const to = (y) => window.scrollTo({ top: y, left: 0, behavior: "instant" });
+  const step = Math.max(200, Math.floor(window.innerHeight * 0.6));
+  for (let y = 0; y < total(); y += step) { to(y); await sleep(150); }
+  to(total());
+  await sleep(400);
+  try { await document.fonts.ready; } catch (e) {}
+  await Promise.all(Array.from(document.images).map((img) => img.complete ? null : new Promise((res) => {
+    img.addEventListener("load", res, { once: true });
+    img.addEventListener("error", res, { once: true });
+    setTimeout(res, 4000);
+  })));
+  to(0);
+  await sleep(300);
+  return total();
+})()

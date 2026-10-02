@@ -1,0 +1,34 @@
+/**
+ * STEP 2 — THE ONE REAL (un-stubbed) SUBMISSION. Run exactly once.
+ *
+ *   ./node_modules/.bin/tsx --tsconfig platform/tsconfig.json real-submit.mts
+ *
+ * No route is installed: the POST reaches https://boostchat.co.kr/api/widget/<key>/lead, stores a
+ * real lead and e-mails the tenant owner. A sentinel file next to this script makes a second run
+ * refuse to start: it is written when the script starts and again right before the click.
+ * If anything throws after the click, DO NOT re-run — report what proof/21-live-real-submission.json holds.
+ */
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { runSubmitFlow } from "./submit-flow.mts";
+
+const here = path.dirname(new URL(import.meta.url).pathname);
+const SENTINEL = path.join(here, "real-submit.sentinel.json");
+const RESULT = "/Users/woops/projects/web-recon-track-b/docs/result/quick-start-demo-conversion";
+const OUT_JSON = path.join(RESULT, "proof/21-live-real-submission.json");
+
+if (existsSync(SENTINEL) || existsSync(OUT_JSON)) {
+  console.error(`REFUSING TO RUN: this script already ran (${existsSync(SENTINEL) ? readFileSync(SENTINEL, "utf8") : "result JSON exists"}). The real submission may be sent only once.`);
+  process.exit(2);
+}
+writeFileSync(SENTINEL, JSON.stringify({ stage: "started", at: new Date().toISOString() }));
+
+const out = await runSubmitFlow({
+  installStub: null,
+  outJson: OUT_JSON,
+  shotBefore: path.join(RESULT, "screenshots/after/submit-before-real-1440.jpg"),
+  shotFilled: path.join(RESULT, "screenshots/after/submit-filled-real-1440.jpg"),
+  shotSuccess: path.join(RESULT, "screenshots/after/submit-success-real-1440.jpg"),
+  beforeClick: () => writeFileSync(SENTINEL, JSON.stringify({ stage: "CLICKED — never re-run", at: new Date().toISOString() })),
+});
+console.log(JSON.stringify({ stage: out.stage, clickAtUtc: out.clickAtUtc, clickReturnedAtUtc: out.clickReturnedAtUtc, post: out.post, success: out.success, counts: out.leadRequestCounts, navigated: out.pageNavigatedAfterClick, finalUrl: out.finalUrl, errors: out.errors, cdp: out.cdp.lead.map((s: any) => s.events.map((e: any) => [e.event, e.type ?? "", e.method ?? "", e.status ?? e.statusCode ?? "", e.remoteIPAddress ?? ""].join(":"))) }, null, 1));

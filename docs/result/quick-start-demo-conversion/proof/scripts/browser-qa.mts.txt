@@ -1,0 +1,300 @@
+/**
+ * STEP 3 — STUBBED browser QA of the live site, one viewport per invocation.
+ *
+ *   tsx --tsconfig platform/tsconfig.json browser-qa.mts <c1440|c1024|c768|c390|c375|w390>
+ *
+ * The lead endpoint is answered by a Playwright route in every context (see qa-lib.mts); the script
+ * asserts at the end that the stub answered every lead request it saw. No chat message is typed.
+ * Result: partial/<key>.json (assembled into proof/22-live-browser-qa.{json,log} by assemble-qa.mts).
+ */
+import { writeFileSync } from "node:fs";
+import path from "node:path";
+import { pw, PW_VERSION, BASE, EXPECT, JS, PARTIAL, SHOTS, HERE, gate, installLeadStub, attach, classify, settle, findLauncher, sitemapPaths, isLeadUrl, type Stub, type Collected } from "./qa-lib.mts";
+
+const KEY = process.argv[2] ?? "";
+const iPhone13 = pw.devices["iPhone 13"];
+const PROFILES: Record<string, { engine: "chromium" | "webkit"; label: string; context: Record<string, any>; pages: "all" | string[] }> = {
+  c1440: { engine: "chromium", label: "Chromium 1440x900", context: { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }, pages: "all" },
+  c1024: { engine: "chromium", label: "Chromium 1024x768", context: { viewport: { width: 1024, height: 768 }, deviceScaleFactor: 1 }, pages: "all" },
+  c768: { engine: "chromium", label: "Chromium 768x1024", context: { viewport: { width: 768, height: 1024 }, deviceScaleFactor: 1 }, pages: "all" },
+  c390: { engine: "chromium", label: "Chromium 390x844 (isMobile + hasTouch, DSF 2)", context: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, pages: "all" },
+  c375: { engine: "chromium", label: "Chromium 375x667 (isMobile + hasTouch, DSF 2)", context: { viewport: { width: 375, height: 667 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, pages: "all" },
+  w390: { engine: "webkit", label: `WebKit devices["iPhone 13"] (${iPhone13.viewport.width}x${iPhone13.viewport.height}, DSF ${iPhone13.deviceScaleFactor}, touch)`, context: { ...iPhone13 }, pages: ["/", "/contact"] },
+};
+const profile = PROFILES[KEY];
+if (!profile) throw new Error(`usage: browser-qa.mts <${Object.keys(PROFILES).join("|")}>`);
+const width: number = profile.context.viewport.width;
+
+/** full-page AFTER screenshots that this run can take with the same context settings as the BEFORE set (plain viewport, DSF 1) */
+const FULL_SHOTS: Record<string, Record<string, string>> = {
+  c1440: { "/": "home-1440", "/portfolio": "portfolio-1440", "/contact": "contact-1440" },
+  c1024: { "/contact": "contact-1024" },
+  c768: { "/contact": "contact-768" },
+};
+const WIDGET_SHOTS: Record<string, { closed: string; open: string }> = { c1440: { closed: "widget-closed-1440", open: "widget-open-1440" } };
+const jpg = (name: string) => ({ path: path.join(SHOTS, `${name}.jpg`), type: "jpeg" as const, quality: 80 });
+const scratchShot = (name: string) => ({ path: path.join(PARTIAL, `${KEY}-${name}.jpg`), type: "jpeg" as const, quality: 70 });
+
+const paths = profile.pages === "all" ? await sitemapPaths() : profile.pages;
+const browser = await pw[profile.engine].launch();
+const out: Record<string, any> = {
+  key: KEY, engine: profile.engine, label: profile.label, viewport: profile.context.viewport, contextOptions: { ...profile.context, defaultBrowserType: undefined },
+  browserVersion: browser.version(), playwright: PW_VERSION, base: BASE, startedAt: new Date().toISOString(),
+  pages: {}, contact: null, widget: {}, footerOverlap: {}, stub: { contexts: 0, sawTotal: 0, leadRequestEventsTotal: 0, perContext: [] as any[], violations: [] as string[] },
+  screenshots: [] as string[],
+};
+const save = () => writeFileSync(path.join(PARTIAL, `${KEY}.json`), JSON.stringify(out, null, 2));
+
+// ------------------------------------------------------------------------------------------------ widget
+async function widgetCheck(page: import("playwright").Page, col: Collected, where: string, shots?: { closed: string; open: string }) {
+  const w: Record<string, any> = { page: where };
+  col.phase = "widget";
+  await page.evaluate(`window.scrollTo({ top: 0, left: 0, behavior: "instant" })`);
+  await page.waitForTimeout(300);
+  const found = await findLauncher(page);
+  w.launcherVisible = !!found;
+  w.closed = await page.evaluate(JS.widgetRect);
+  if (!found) return w;
+  const { frame, loc } = found;
+  w.frameUrl = frame.url();
+  w.launcherBox = await loc.boundingBox();
+  w.launcherAriaLabel = await loc.getAttribute("aria-label");
+  w.launcherText = (await loc.innerText().catch(() => "")).replace(new RegExp("\\s+", "g"), " ").trim();
+  const face = frame.locator("[data-launcher-face]");
+  w.launcherFaceCount = await face.count();
+  w.launcherFaceBox = w.launcherFaceCount ? await face.first().boundingBox() : null;
+  if (shots) { await page.waitForTimeout(500); await page.screenshot(jpg(shots.closed)); out.screenshots.push(`${shots.closed}.jpg`); }
+
+  // open — a click on the launcher, nothing is typed
+  const apiBefore = col.boostchat.length;
+  w.openMethod = "click";
+  try { await loc.click({ timeout: 5000 }); } catch (e) {
+    w.openMethod = `click failed (${String((e as Error).message).split("\n")[0]}) → tap`;
+    try { await loc.tap({ timeout: 5000 }); } catch (e2) { w.openMethod += ` failed (${String((e2 as Error).message).split("\n")[0]})`; }
+  }
+  const panel = frame.locator("[data-boost-chat-panel]").first();
+  try { await panel.waitFor({ state: "visible", timeout: 8000 }); w.panelOpened = true; } catch { w.panelOpened = false; }
+  await page.waitForTimeout(3000);
+  w.open = await page.evaluate(JS.widgetRect);
+  w.panelBox = await panel.boundingBox().catch(() => null);
+  const frameText = (await frame.locator("body").innerText().catch(() => "")) as string;
+  w.panelText = frameText.replace(new RegExp("[ \\t]+", "g"), " ").trim().slice(0, 600);
+  w.poweredByText = frameText.includes("Powered by boostchat");
+  const powered = frame.locator('a[aria-label="boostchat 알아보기"]');
+  w.poweredByLink = (await powered.count()) ? { visible: await powered.first().isVisible(), text: (await powered.first().innerText()).trim(), href: await powered.first().getAttribute("href") } : null;
+  w.contactUi = {
+    "[data-contact-entry]": await frame.locator("[data-contact-entry]").count(),
+    "[data-contact-row]": await frame.locator("[data-contact-row]").count(),
+    "[data-contact-sheet]": await frame.locator("[data-contact-sheet]").count(),
+    textOtherWays: frameText.includes("다른 방법으로 문의"),
+  };
+  w.contactUiPresent = Object.values(w.contactUi).some((v) => v === true || (typeof v === "number" && v > 0));
+  w.inputPresent = await frame.locator("textarea, input[type=text]").count();
+  if (shots) { await page.screenshot(jpg(shots.open)); out.screenshots.push(`${shots.open}.jpg`); }
+  else await page.screenshot(scratchShot(`widget-open-${where === "/" ? "home" : where.slice(1)}`));
+
+  // close again
+  const close = frame.locator('button[aria-label="상담창 닫기"]').first();
+  w.closeMethod = "click";
+  try { await close.click({ timeout: 5000 }); } catch (e) {
+    w.closeMethod = `click failed (${String((e as Error).message).split("\n")[0]}) → tap`;
+    try { await close.tap({ timeout: 5000 }); } catch (e2) { w.closeMethod += ` failed (${String((e2 as Error).message).split("\n")[0]})`; }
+  }
+  try { await loc.waitFor({ state: "visible", timeout: 6000 }); w.closedAgain = true; } catch { w.closedAgain = false; }
+  await page.waitForTimeout(800);
+  w.afterClose = await page.evaluate(JS.widgetRect);
+  w.apiCallsWhileOpen = col.boostchat.slice(apiBefore).map((b) => `${b.method} ${b.path} → ${b.status}`);
+  return w;
+}
+
+// ------------------------------------------------------------------------------------------------ contact form
+async function contactChecks(page: import("playwright").Page, col: Collected, stub: Stub) {
+  const c: Record<string, any> = { checks: {} as Record<string, boolean>, notes: [] as string[] };
+  const state = () => page.evaluate(JS.contactState) as Promise<any>;
+  const leadCount = () => stub.saw.filter((s) => s.method === "POST").length;
+  const submit = async (label: string, wait = 700) => {
+    const btn = page.locator("[data-inquiry-submit]");
+    await btn.scrollIntoViewIfNeeded().catch(() => {});
+    await page.waitForTimeout(150);
+    const pre = await state();
+    let clickError: string | null = null;
+    try { await btn.click({ timeout: 8000 }); } catch (e) { clickError = String((e as Error).message).split("\n").slice(0, 4).join(" | "); }
+    await page.waitForTimeout(wait);
+    return { label, clickError, preClick: { buttonRect: pre.buttonRect, buttonHit: pre.buttonHit, launcherRect: pre.launcherRect, launcherOverButton: pre.launcherOverButton, scrollY: pre.scrollY } };
+  };
+  col.phase = "form";
+  await page.evaluate(`window.scrollTo({ top: 0, left: 0, behavior: "instant" })`);
+  let hydrated = true;
+  try { await page.waitForSelector("[data-inquiry-submit]:not([disabled])", { timeout: 10_000 }); } catch { hydrated = false; }
+  const initial = await state();
+  c.initial = initial;
+  c.checks["initial: submit button enabled after hydration"] = hydrated && initial.button?.disabled === false && initial.button?.text === "견적 문의 보내기";
+  c.checks[`initial: notice “${EXPECT.formNotice}” visible`] = initial.noticeText === EXPECT.formNotice && initial.noticeVisible === true;
+  c.checks["initial: no “연결되어 있지 않습니다” / “메일 앱” text"] = initial.oldCopy.notConnected === false && initial.oldCopy.mailApp === false;
+  c.checks["initial: no error / success wording shown"] = initial.errorVisible === false && initial.statusVisible === false && !String(initial.formText).includes(EXPECT.successTitle);
+  c.checks["initial: launcher does not cover the submit button (as loaded, scrollY 0)"] = initial.launcherOverButton === null;
+
+  // ---- validation: nothing may reach the endpoint
+  const v1 = await submit("empty form", 400);
+  const s1 = await state();
+  c.emptySubmit = { ...v1, leadRequests: stub.saw.length, validity: s1.validity, errorText: s1.errorText, focus: s1.focus };
+  c.checks["validation: empty submit → 0 lead requests, name reported missing"] = stub.saw.length === 0 && s1.validity.name.valueMissing === true && v1.clickError === null;
+
+  const VALUES = { name: "[TEST] stub QA", phone: "010-0000-0000", region: "테스트", area: "0평", schedule: "테스트", message: "[TEST] stubbed browser QA — 이 요청은 네트워크에 도달하지 않습니다." };
+  for (const [k, val] of Object.entries(VALUES)) await page.fill(`[name=${k}]`, val);
+  const v2 = await submit("all fields filled, consent unchecked", 400);
+  const s2 = await state();
+  c.noConsent = { ...v2, leadRequests: stub.saw.length, validity: s2.validity, consent: s2.consent, focus: s2.focus };
+  c.checks["validation: consent unchecked → 0 lead requests, consent reported missing"] = stub.saw.length === 0 && s2.consent === false && s2.validity.consent.valueMissing === true && v2.clickError === null;
+
+  await page.check("[name=consent]");
+  await page.fill("[name=phone]", "1234567");
+  const v3 = await submit("7-digit phone", 400);
+  const s3 = await state();
+  c.shortPhone = { ...v3, leadRequests: stub.saw.length, validity: s3.validity, focus: s3.focus };
+  c.checks["validation: 7-digit phone → 0 lead requests, phone invalid"] = stub.saw.length === 0 && s3.validity.phone.valid === false && v3.clickError === null;
+  await page.fill("[name=phone]", VALUES.phone);
+
+  // ---- failure (stub answers 500): message fully in view, inputs kept
+  const expectValues = { ...VALUES, workType: "" };
+  const failureOk = (s: any) => s.errorText === EXPECT.failure && s.errorVisible === true && s.errorInViewport === true && Array.isArray(s.errorHit) && s.errorHit[0] === "self" && s.launcherOverError === null;
+  const keptOk = (s: any) => JSON.stringify(s.values) === JSON.stringify({ name: expectValues.name, phone: expectValues.phone, region: expectValues.region, area: expectValues.area, workType: "", schedule: expectValues.schedule, message: expectValues.message }) && s.consent === true && s.controls === 9 && s.button?.disabled === false;
+  stub.mode = "500";
+  const before500 = leadCount();
+  const f1 = await submit("stub 500", 900);
+  const sf1 = await state();
+  c.failure500 = { ...f1, leadPosts: leadCount() - before500, state: sf1 };
+  c.checks["failure (stub 500): exactly 1 stubbed POST"] = leadCount() - before500 === 1 && f1.clickError === null;
+  c.checks[`failure (stub 500): “${EXPECT.failure}” shown, fully inside the viewport, not covered by header / launcher`] = failureOk(sf1);
+  c.checks["failure (stub 500): every input retained, consent still ticked, button ready"] = keptOk(sf1);
+  c.checks["failure (stub 500): no success wording, still on /contact, no horizontal overflow"] = sf1.statusVisible === false && sf1.doneTitleText === null && sf1.path === "/contact" && sf1.overflowX === false;
+  await page.screenshot(scratchShot("contact-failure"));
+
+  stub.mode = "abort";
+  const beforeAbort = leadCount();
+  const f2 = await submit("stub abort", 900);
+  const sf2 = await state();
+  c.failureAbort = { ...f2, leadPosts: leadCount() - beforeAbort, state: sf2 };
+  c.checks["failure (stub abort): 1 stubbed POST, same message in view, inputs retained"] = leadCount() - beforeAbort === 1 && failureOk(sf2) && keptOk(sf2) && f2.clickError === null;
+
+  // ---- success (stub answers 200 {"received":true})
+  stub.mode = "200";
+  const before200 = leadCount();
+  const ok = await submit("stub 200", 300);
+  try { await page.waitForSelector(".i1-form__done-title", { state: "visible", timeout: 8000 }); } catch {}
+  await page.waitForTimeout(900);
+  const ss = await state();
+  c.success = { ...ok, leadPosts: leadCount() - before200, state: ss, sentBody: (() => { try { return JSON.parse(stub.saw[stub.saw.length - 1]?.postData ?? ""); } catch { return null; } })() };
+  c.checks["success (stub 200): exactly 1 stubbed POST"] = leadCount() - before200 === 1 && ok.clickError === null;
+  c.checks[`success: title “${EXPECT.successTitle}” + body shown`] = ss.doneTitleText === EXPECT.successTitle && String(ss.statusText).includes(EXPECT.successBody);
+  c.checks["success: title inside the viewport and not hidden under the sticky header"] = ss.doneTitleInViewport === true && Array.isArray(ss.doneTitleHit) && ss.doneTitleHit.every((h: string) => h === "self") && ss.doneTitleRect !== null && ss.doneTitleRect.y >= ss.header.effectiveBottom - 0.5;
+  c.checks["success: launcher does not cover the success message"] = ss.launcherOverStatus === null && ss.launcherOverDoneTitle === null;
+  c.checks["success: form fields removed, still on /contact, no horizontal overflow"] = ss.controls === 0 && ss.path === "/contact" && ss.overflowX === false;
+  await page.screenshot(scratchShot("contact-success"));
+  c.launcherVsSubmit = {
+    asLoaded: initial.launcherOverButton,
+    beforeEachClick: [v1, v2, v3, f1, f2, ok].map((x) => ({ step: x.label, overlap: x.preClick.launcherOverButton, buttonHit: x.preClick.buttonHit, clickError: x.clickError })),
+    buttonXRangeOverlapsLauncher: initial.buttonXRangeOverlapsLauncher,
+    note: "The launcher is position:fixed, the button scrolls. When their x-ranges overlap there is always some scroll position at which the launcher's box is over part of the button; recorded here is whether that is the case as loaded and at the position each click was made from (button scrolled into view).",
+  };
+  c.checks["launcher never over the submit button at the moment of a click, and no click was intercepted"] = c.launcherVsSubmit.beforeEachClick.every((x: any) => x.overlap === null && x.clickError === null && x.buttonHit && x.buttonHit[0] === "self");
+  c.pass = Object.values(c.checks).every(Boolean);
+  return c;
+}
+
+// ------------------------------------------------------------------------------------------------ main loop
+for (const p of paths) {
+  await gate(`${KEY} ${p}`);
+  const ctx = await browser.newContext(profile.context);
+  const stub = await installLeadStub(ctx);
+  const page = await ctx.newPage();
+  const col = attach(page);
+  const t0 = Date.now();
+  const rec: Record<string, any> = { path: p };
+  try {
+    const resp = await page.goto(BASE + p, { waitUntil: "load", timeout: 45_000 });
+    rec.httpStatus = resp?.status() ?? null;
+    await settle(page, profile.engine === "webkit");
+    const facts = (await page.evaluate(JS.facts)) as any;
+    Object.assign(rec, facts);
+    rec.footerNotice.matches = facts.footerNotice.count === 1 && facts.footerNotice.texts[0] === EXPECT.footer && facts.footerNotice.visible[0] === true;
+    rec.nav.matches = JSON.stringify(facts.nav.labelsInDom) === JSON.stringify(EXPECT.nav);
+    if (p.startsWith("/portfolio") || p === "/" || p === "/3d-portfolio") rec.imageVerify = await page.evaluate(JS.verifyImages);
+
+    // mobile menu (only where the menu button is the visible navigation)
+    if (facts.nav.menuButtonVisible) {
+      col.phase = "menu";
+      try {
+        await page.click("[data-menu-button]", { timeout: 5000 });
+        await page.waitForSelector(".i1-menu__list", { state: "visible", timeout: 5000 });
+        rec.mobileMenu = await page.evaluate(`(() => { const d = document.querySelector(".i1-menu__list").closest("dialog, [role=dialog], div"); const links = Array.from(document.querySelectorAll(".i1-menu__list a")); const root = document.querySelector("[data-menu-close]") ? document.querySelector("[data-menu-close]").closest("dialog") || document.body : document.body; const text = root.innerText + "\\n" + Array.from(root.querySelectorAll("[aria-label]")).map((e) => e.getAttribute("aria-label")).join("\\n"); return { labels: links.map((a) => a.textContent.trim()), hrefs: links.map((a) => a.getAttribute("href")), terms: { "포트폴리오": (text.match(new RegExp("포트폴리오", "g")) || []).length, "시공 사례": (text.match(new RegExp("시공\\\\s+사례", "g")) || []).length }, overflowX: document.documentElement.scrollWidth > window.innerWidth }; })()`);
+        rec.mobileMenu.matches = JSON.stringify(rec.mobileMenu.labels) === JSON.stringify(EXPECT.nav);
+        await page.click("[data-menu-close]", { timeout: 5000 });
+        await page.waitForTimeout(300);
+      } catch (e) { rec.mobileMenu = { error: String((e as Error).message).split("\n")[0] }; }
+      col.phase = "load";
+    }
+
+    const shot = FULL_SHOTS[KEY]?.[p];
+    if (shot) { await page.screenshot({ ...jpg(shot), fullPage: true }); out.screenshots.push(`${shot}.jpg`); }
+
+    if (p === "/" || p === "/contact") {
+      col.phase = "footer-overlap";
+      out.footerOverlap[p] = await page.evaluate(JS.footerOverlap);
+      await page.screenshot(scratchShot(`footer-${p === "/" ? "home" : "contact"}`));
+      await page.evaluate(`window.scrollTo({ top: 0, left: 0, behavior: "instant" })`);
+      await page.waitForTimeout(300);
+    }
+    if (p === "/contact") out.contact = await contactChecks(page, col, stub);
+    if (p === "/" || p === "/contact") out.widget[p] = await widgetCheck(page, col, p, p === "/" ? WIDGET_SHOTS[KEY] : undefined);
+    await page.waitForTimeout(300);
+  } catch (e) {
+    rec.error = String((e as Error)?.stack ?? e);
+  }
+  // ---- what the page produced. "load" = navigation + scroll-through (+ menu); the rest is reported separately.
+  const base = classify(col, ["load", "menu"]);
+  const all = classify(col);
+  rec.consoleErrors = base.consoleErrors;
+  rec.consoleWarnings = base.consoleWarnings;
+  rec.pageErrors = base.pageErrors;
+  rec.genuineFailedRequests = base.genuineFailedRequests;
+  rec.abortedRequests = base.abortedRequests;
+  rec.httpErrors = base.httpErrors;
+  rec.duringInteraction = {
+    consoleErrors: all.consoleErrors.filter((m) => !base.consoleErrors.includes(m)),
+    consoleWarnings: all.consoleWarnings.filter((m) => !base.consoleWarnings.includes(m)),
+    pageErrors: all.pageErrors.filter((m) => !base.pageErrors.includes(m)),
+    genuineFailedRequests: all.genuineFailedRequests.filter((m) => !base.genuineFailedRequests.includes(m)),
+    abortedRequests: all.abortedRequests.filter((m) => !base.abortedRequests.includes(m)),
+    httpErrors: all.httpErrors.filter((m) => !base.httpErrors.includes(m)),
+    stubInduced: all.stubInduced,
+  };
+  rec.boostchatApi = col.boostchat.map((b) => `${b.phase}: ${b.method} ${b.path} → ${b.status}`);
+  rec.bootstrapPosts = col.boostchat.filter((b) => b.method === "POST" && b.path.endsWith("/bootstrap")).map((b) => b.status);
+  rec.boostchatApiNon2xx = col.boostchat.filter((b) => !isLeadUrl("https://boostchat.co.kr" + b.path) && (b.status ?? 0) >= 400).map((b) => `${b.method} ${b.path} → ${b.status}`);
+  rec.ms = Date.now() - t0;
+
+  // ---- the stub must be the only thing that saw lead requests in this context
+  await page.waitForTimeout(200);
+  const perCtx = { path: p, stubSaw: stub.saw.length, viaFallback: stub.saw.filter((s) => s.via === "fallback").length, leadRequestEvents: col.leadRequests.length, leadResponses: col.leadResponses.map((r) => ({ status: r.status, serverAddr: r.serverAddr })) };
+  out.stub.contexts++;
+  out.stub.sawTotal += perCtx.stubSaw;
+  out.stub.leadRequestEventsTotal += perCtx.leadRequestEvents;
+  out.stub.perContext.push(perCtx);
+  if (perCtx.stubSaw !== perCtx.leadRequestEvents) out.stub.violations.push(`${p}: ${perCtx.leadRequestEvents} lead request event(s) but the stub answered ${perCtx.stubSaw}`);
+  for (const r of col.leadResponses) if (r.serverAddr !== null && r.serverAddr !== undefined && r.serverAddr !== "n/a") out.stub.violations.push(`${p}: a lead response came from a real server address ${JSON.stringify(r.serverAddr)}`);
+  if (p !== "/contact" && perCtx.stubSaw !== 0) out.stub.violations.push(`${p}: unexpected lead request on a page without the form`);
+  out.pages[p] = rec;
+  save();
+  await ctx.close();
+  console.log(`${KEY} ${p} → ${rec.httpStatus} “${rec.title}” overflow=${rec.overflow?.overflowX} imgs=${rec.images?.loaded}/${rec.images?.total} broken=${rec.images?.broken?.length} pending=${rec.images?.pending?.length} consoleErr=${rec.consoleErrors.length} pageErr=${rec.pageErrors.length} failed=${rec.genuineFailedRequests.length} aborted=${rec.abortedRequests.length} http4xx5xx=${rec.httpErrors.length} footer=${rec.footerNotice?.matches} nav=${rec.nav?.matches} terms=${JSON.stringify(rec.terminology?.total)} bootstraps=${JSON.stringify(rec.bootstrapPosts)} ${rec.ms}ms${rec.error ? " ERROR " + rec.error.split("\n")[0] : ""}`);
+}
+out.finishedAt = new Date().toISOString();
+out.stub.ok = out.stub.violations.length === 0 && out.stub.sawTotal === out.stub.leadRequestEventsTotal;
+save();
+await browser.close();
+if (out.contact) { console.log(`contact form: ${out.contact.pass ? "PASS" : "FAIL"}`); for (const [k, v] of Object.entries(out.contact.checks)) console.log(`  ${v ? "ok  " : "FAIL"} ${k}`); }
+for (const [p, w] of Object.entries(out.widget) as [string, any][]) console.log(`widget ${p}: launcher=${w.launcherVisible} closed=${JSON.stringify(w.closed?.rect)} opened=${w.panelOpened} open=${JSON.stringify(w.open?.rect)} poweredBy=${w.poweredByText} contactUi=${JSON.stringify(w.contactUi)} closedAgain=${w.closedAgain} api=[${(w.apiCallsWhileOpen ?? []).join("; ")}]`);
+for (const [p, f] of Object.entries(out.footerOverlap) as [string, any][]) console.log(`footer overlap ${p}: launcher=${JSON.stringify(f.launcher)} lastLine=${JSON.stringify(f.lastLine)} overlap=${JSON.stringify(f.overlapWithLastLine)}`);
+console.log(`STUB ASSERTION: ${out.stub.ok ? "ok" : "FAILED"} — contexts ${out.stub.contexts}, lead requests seen ${out.stub.leadRequestEventsTotal}, answered by the stub ${out.stub.sawTotal}, violations ${JSON.stringify(out.stub.violations)}`);
+if (!out.stub.ok) process.exit(1);

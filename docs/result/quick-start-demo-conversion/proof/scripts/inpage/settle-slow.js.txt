@@ -1,0 +1,19 @@
+// In-page (WebKit runs): like settle.js but in 300 px steps with 350 ms pauses — WebKit only starts a lazy
+// image when it comes near the viewport and, scrolled through at settle.js's pace, leaves most of them pending.
+(async () => {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const total = () => Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+  const to = (y) => window.scrollTo({ top: y, left: 0, behavior: "instant" });
+  for (let y = 0; y < total(); y += 300) { to(y); await sleep(350); }
+  to(total());
+  await sleep(600);
+  try { await document.fonts.ready; } catch (e) {}
+  await Promise.all(Array.from(document.images).map((img) => img.complete ? null : new Promise((res) => {
+    img.addEventListener("load", res, { once: true });
+    img.addEventListener("error", res, { once: true });
+    setTimeout(res, 4000);
+  })));
+  to(0);
+  await sleep(300);
+  return total();
+})()
