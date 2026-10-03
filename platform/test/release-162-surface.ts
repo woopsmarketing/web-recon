@@ -14,9 +14,21 @@
  *      site/load.ts, build/site-build.ts
  *                           already judged at their pre-integration hash (integration-surface.ts).
  * Their CURRENT content is held elsewhere: the release sources by integration.test.ts I2b (working
- * tree = the pinned 1.6.2 release, byte for byte); release/release.ts's allowlist by
- * inquiry162.test.ts G1 / G2 and slice1's Template-gate checks; build/qa.ts's declared-endpoint
- * allowance by inquiry162.test.ts Q1; the loader and the snapshot by inquiry162.test.ts L1 – L3.
+ * tree = the release the demo pins, byte for byte — 1.6.2 when this surface was written);
+ * release/release.ts's allowlist by inquiry162.test.ts G1 / G2 and slice1's Template-gate checks;
+ * build/qa.ts's declared-endpoint allowance by inquiry162.test.ts Q1; the loader and the snapshot by
+ * inquiry162.test.ts L1 – L3.
+ *
+ * interior-01 1.6.3 (inquiry delivery) changed platform/ once more, in exactly ONE file:
+ * site/inquiry-client.ts — the door now hands the form a sender (one submission_id per logical
+ * inquiry, joined presses, the closed failure vocabulary, the Retry-After pause). That is a file
+ * 1.6.2 ADDED, so it is already excluded above and every 1.5.x cut proof holds as written: there is
+ * NO release-163-surface.ts, because it would have nothing to say (no other platform file moved,
+ * none was added). The file's 1.6.3 content is held by integration.test.ts I2b (working tree = the
+ * pinned 1.6.3 release, byte for byte) and its behaviour by inquiry163.test.ts (the sender
+ * lifecycle), on top of inquiry162.test.ts D1 – D6 (the fixed-shape POST, the normaliser, the phone
+ * rule). A later cut that touches any OTHER platform file is not covered here: the cut proofs fail
+ * until it is given a surface of its own.
  */
 const ADDED = new Set(["site/inquiry.ts", "site/inquiry-client.ts"]);
 /** sha256 of platform/release/release.ts at d325ac0, the last commit before the inquiry door joined the allowlist */

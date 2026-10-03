@@ -13,9 +13,10 @@
  *                fixture's ids, slugs or titles (the forbidden set is READ from the fixture, never
  *                hard-coded), and every production record's exported media is its own;
  *   [qa]         (ii) the QA composition holds all 11 fixture records, validates, and reproduces the
- *                pre-split projects.json, snapshot (once exactly the later footer deltas — the
- *                product rename, then the notice — are reverted) and Portfolio Document (856361f5…)
- *                byte for byte — the split lost nothing and the producer did not change;
+ *                pre-split projects.json, snapshot (once exactly the later deltas — the 1.6.3
+ *                inquiry delivery and the 1.6.2 online inquiry, each with its re-pin, the product
+ *                rename, then the footer notice — are reverted, newest first) and Portfolio Document
+ *                (856361f5…) byte for byte — the split lost nothing and the producer did not change;
  *                (iii) each of the 8 production records is emitted deep-equal to its own record in the
  *                pre-split document — the removal changed nothing about the survivors;
  *   [build]      a real production build (throwaway root; data/sites and data/site-builds untouched):
@@ -53,10 +54,13 @@ import {
   SYNTHETIC_STATUS,
   DEMO_FOOTER_NOTICE,
   DEMO_FOOTER_PRODUCT_NAME,
+  DEMO_INQUIRY_DELIVERY_SLOTS,
   DEMO_ONLINE_INQUIRY_ENDPOINT,
   DEMO_ONLINE_INQUIRY_SLOTS,
   DEMO_PIN_161,
+  DEMO_PIN_162,
   atPin,
+  revertInquiryDelivery,
   revertOnlineInquiry,
   composeQaProjectsText,
   composeQaSnapshot,
@@ -217,23 +221,42 @@ await check(`P2 (i) the production producer output is the production golden (${P
 
 // ----------------------------------------------------------------------- qa --
 console.log("\n[qa] the QA composition = the pre-split corpus, byte for byte");
-await check(`Q1 (ii) the QA composition holds all 11 fixture records and reproduces the pre-split projects.json (${PRE_SPLIT_PROJECTS_BYTES} B, sha256 ${PRE_SPLIT_PROJECTS_SHA256.slice(0, 12)}…) and, with exactly the later deltas reverted newest first (the 1.6.2 online inquiry + terminology and its re-pin, the product rename, then the footer notice), the pre-split snapshot (siteSnapshotHash ${PRE_SPLIT_SNAPSHOT_HASH.slice(0, 12)}…)`, async () => {
+await check(`Q1 (ii) the QA composition holds all 11 fixture records and reproduces the pre-split projects.json (${PRE_SPLIT_PROJECTS_BYTES} B, sha256 ${PRE_SPLIT_PROJECTS_SHA256.slice(0, 12)}…) and, with exactly the later deltas reverted newest first (the 1.6.3 inquiry delivery and its re-pin, the 1.6.2 online inquiry + terminology and its re-pin, the product rename, then the footer notice), the pre-split snapshot (siteSnapshotHash ${PRE_SPLIT_SNAPSHOT_HASH.slice(0, 12)}…)`, async () => {
   const text = await composeQaProjectsText(repoRoot);
   const bytes = new TextEncoder().encode(text);
   eq([bytes.length, sha256(bytes)], [PRE_SPLIT_PROJECTS_BYTES, PRE_SPLIT_PROJECTS_SHA256], "composed projects.json = the pre-split file");
   eq((JSON.parse(text).items as { id: string }[]).map((p) => p.id), [...PROD_IDS, ...fixture.ids], "production + fixture, original order");
   eq(qaSnapshot.content.projects.map((p) => p.id), [...PROD_IDS, ...fixture.ids], "the QA snapshot serves all 19");
-  // Three deltas after the split, reverted newest first:
+  // Four deltas after the split, reverted newest first:
+  //  (9) 2026-10-03, the 1.6.3 re-pin: the inquiry-delivery texts (five contact.page leaves,
+  //      DEMO_INQUIRY_DELIVERY_SLOTS), plus the pin itself (→ DEMO_PIN_162);
   //  (8) 2026-10-02, the 1.6.2 re-pin: the online inquiry (inquiry.json + contact.page copy) and the
   //      "시공사례" terminology (DEMO_ONLINE_INQUIRY_*), plus the pin itself (→ DEMO_PIN_161);
   //  (7) 2026-10-01: the product name in the footer notice (DEMO_FOOTER_PRODUCT_NAME);
   //  (6) 2026-09-29: the footer notice itself (DEMO_FOOTER_NOTICE).
   const NOTICE_PATH = '$["slots"]["values"]["site.footer"]["notice"]';
+  const PIN_PATHS = ["releaseHash", "releaseId", "templateVersion"].map((k) => `$["site"]["template"]["${k}"]`);
   const noticeOf = (s: SiteSnapshot) => (s.slots!.values["site.footer"] as { notice?: string }).notice;
-  const preInquiryData = revertOnlineInquiry(qaSnapshot);
-  const declaredLeaves = DEMO_ONLINE_INQUIRY_SLOTS.flatMap(([section, leafPath, before, now]) => deltaPaths(now, before, `$["slots"]["values"][${JSON.stringify(section)}]${leafPath.map((k) => `[${JSON.stringify(k)}]`).join("")}`));
+  const leafPathsOf = (leaves: typeof DEMO_ONLINE_INQUIRY_SLOTS) => leaves.flatMap(([section, leafPath, before, now]) => deltaPaths(now, before, `$["slots"]["values"][${JSON.stringify(section)}]${leafPath.map((k) => `[${JSON.stringify(k)}]`).join("")}`));
+  const preDeliveryData = revertInquiryDelivery(qaSnapshot);
+  eq(
+    DEMO_INQUIRY_DELIVERY_SLOTS.map(([section, leafPath, before]) => [section, leafPath.join("."), before === undefined]),
+    ["invalidText", "conflictText", "rateLimitedText", "capacityText", "fallbackLead"].map((k) => ["contact.page", k, true]),
+    "declared slot leaves of the inquiry-delivery delta: five contact.page texts, each absent before",
+  );
+  eq(deltaPaths(qaSnapshot, preDeliveryData).sort(), leafPathsOf(DEMO_INQUIRY_DELIVERY_SLOTS).sort(), "the inquiry-delivery delta is exactly its five declared slot leaves");
+  eq(leafPathsOf(DEMO_INQUIRY_DELIVERY_SLOTS).length, 5, "…five paths, one per leaf");
+  eq(preDeliveryData.inquiry, qaSnapshot.inquiry, "…the inquiry document is not part of it (the endpoint did not move)");
+  const onlineLeafKeys = new Set(DEMO_ONLINE_INQUIRY_SLOTS.map(([section, leafPath]) => `${section}.${leafPath.join(".")}`));
+  for (const [section, leafPath] of DEMO_INQUIRY_DELIVERY_SLOTS) assert(!onlineLeafKeys.has(`${section}.${leafPath.join(".")}`), `${section}.${leafPath.join(".")}: also a leaf of the online-inquiry delta — the two deltas must not overlap`);
+  eq((DEMO_INQUIRY_DELIVERY_SLOTS.find(([, leafPath]) => leafPath.join(".") === "rateLimitedText")![3] as string).split("{minutes}").length, 2, "rateLimitedText names the pause once, as {minutes}");
+  const at162 = atPin(preDeliveryData, DEMO_PIN_162);
+  eq(deltaPaths(preDeliveryData, at162), PIN_PATHS, "the 1.6.3 re-pin is exactly the pin's three fields");
+  assert(hashJson(preDeliveryData) !== hashJson(qaSnapshot) && hashJson(at162) !== hashJson(preDeliveryData), "the inquiry delivery and its re-pin are real deltas (a silent revert of either would fail here)");
+  const preInquiryData = revertOnlineInquiry(at162);
+  const declaredLeaves = leafPathsOf(DEMO_ONLINE_INQUIRY_SLOTS);
   eq(DEMO_ONLINE_INQUIRY_SLOTS.length, 27, "declared slot leaves of the online-inquiry delta");
-  eq(deltaPaths(qaSnapshot, preInquiryData).sort(), ['$["inquiry"]', ...declaredLeaves].sort(), "the online-inquiry delta is exactly the inquiry document + its declared slot leaves");
+  eq(deltaPaths(at162, preInquiryData).sort(), ['$["inquiry"]', ...declaredLeaves].sort(), "the online-inquiry delta is exactly the inquiry document + its declared slot leaves");
   eq(preInquiryData.inquiry, undefined, "…the inquiry document is gone");
   eq(qaSnapshot.inquiry, { schemaVersion: 1, endpoint: DEMO_ONLINE_INQUIRY_ENDPOINT }, "the demo declares exactly that endpoint");
   const [noticeBefore162, noticeNow] = DEMO_ONLINE_INQUIRY_SLOTS.find(([section, leafPath]) => section === "site.footer" && leafPath.join(".") === "notice")!.slice(2) as [string, string];
@@ -243,8 +266,8 @@ await check(`Q1 (ii) the QA composition holds all 11 fixture records and reprodu
   for (const [section, leafPath, , now] of DEMO_ONLINE_INQUIRY_SLOTS) assert(!/포트폴리오|시공 사례|연결되어 있지 않습니다|메일 앱/.test(JSON.stringify(now ?? "")), `${section}.${leafPath.join(".")}: the delta's new value still carries retired wording`);
   assert(!/포트폴리오|시공 사례|연결되어 있지 않습니다|메일 앱/.test(JSON.stringify(qaSnapshot.slots)), "no slot value of the site carries the retired wording any more");
   const at161 = atPin(preInquiryData, DEMO_PIN_161);
-  eq(deltaPaths(preInquiryData, at161), ["releaseHash", "releaseId", "templateVersion"].map((k) => `$["site"]["template"]["${k}"]`), "the re-pin is exactly the pin's three fields");
-  assert(hashJson(preInquiryData) !== hashJson(qaSnapshot) && hashJson(at161) !== hashJson(preInquiryData), "the online inquiry and its re-pin are real deltas (a silent revert of either would fail here)");
+  eq(deltaPaths(preInquiryData, at161), PIN_PATHS, "the 1.6.2 re-pin is exactly the pin's three fields");
+  assert(hashJson(preInquiryData) !== hashJson(qaSnapshot) && hashJson(preInquiryData) !== hashJson(at162) && hashJson(at161) !== hashJson(preInquiryData), "the online inquiry and its re-pin are real deltas (a silent revert of either would fail here)");
   const preRename = revertFooterProductName(at161);
   eq(deltaPaths(at161, preRename), [NOTICE_PATH], "the product-rename delta is exactly one field");
   eq([noticeOf(at161), noticeOf(preRename)], [DEMO_FOOTER_PRODUCT_NAME[1], DEMO_FOOTER_PRODUCT_NAME[0]], "footer notice before the terminology change / before the product rename");
@@ -254,9 +277,9 @@ await check(`Q1 (ii) the QA composition holds all 11 fixture records and reprodu
   eq(deltaPaths(preRename, preFooter), [NOTICE_PATH], "the footer-notice delta is exactly one field");
   eq(deltaPaths(at161, preFooter), [NOTICE_PATH], "…and the two together are still exactly that one field");
   eq([noticeOf(preRename), noticeOf(preFooter)], [DEMO_FOOTER_NOTICE[1], DEMO_FOOTER_NOTICE[0]], "footer notice before the product rename / before the notice change");
-  assert(hashJson(qaSnapshot) !== PRE_SPLIT_SNAPSHOT_HASH && hashJson(at161) !== PRE_SPLIT_SNAPSHOT_HASH, "the footer notice is a real delta (a silent revert of it would fail here)");
+  assert(hashJson(qaSnapshot) !== PRE_SPLIT_SNAPSHOT_HASH && hashJson(at162) !== PRE_SPLIT_SNAPSHOT_HASH && hashJson(at161) !== PRE_SPLIT_SNAPSHOT_HASH, "the footer notice is a real delta (a silent revert of it would fail here)");
   assert(hashJson(preRename) !== PRE_SPLIT_SNAPSHOT_HASH && hashJson(preRename) !== hashJson(at161), "…and so is the product rename on top of it");
-  eq(hashJson(preFooter), PRE_SPLIT_SNAPSHOT_HASH, "the QA snapshot with the online inquiry, its re-pin, the product rename and the footer notice reverted = the pre-split snapshot (the producer-4 package 71f7e5f3…'s recorded siteSnapshotHash)");
+  eq(hashJson(preFooter), PRE_SPLIT_SNAPSHOT_HASH, "the QA snapshot with the inquiry delivery, the online inquiry, their two re-pins, the product rename and the footer notice reverted = the pre-split snapshot (the producer-4 package 71f7e5f3…'s recorded siteSnapshotHash)");
 });
 await check(`Q2 (ii) the QA composition validates and its emission IS the pre-split document ${QA_GOLDEN_VERSION} byte for byte (the QA golden, ${QA_GOLDEN_DOC_BYTES} B) — the split lost nothing and the producer did not change`, async () => {
   eq(validateFor(qaEmission, qaSnapshot), { errors: [], warnings: [] }, "validates");

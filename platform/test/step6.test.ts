@@ -63,6 +63,17 @@ import { composeQaProjectsText, writeQaProjects } from "./portfolio-qa-corpus";
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
 const FIXTURES = ["fixture-large", "fixture-small", "fixture-empty"] as const;
+/**
+ * The online-inquiry reuse fixture (interior-01 1.6.3): a clearly fictional SECOND customer with its
+ * own inquiry endpoint (its own inquiry.json; no scripts.json, no integration.json), pinned to the
+ * demo's release — it exists to prove a second site gets the online inquiry by config only
+ * (inquiry163-reuse.test.ts). It is NOT one of the three generated Slice-1 FIXTURES above: it has
+ * no pre-Step-6 baseline tree and no byte-identity proof, and its pin is held next to the demo's by
+ * inquiry163-reuse.test.ts REUSE-1 — so it is named on its own and joins none of their loops (B,
+ * E, V); A lists it as a site directory and holds its origin apart from the demo's, F keeps its
+ * identity out of the demo package.
+ */
+const INQUIRY_FIXTURE = "fixture-online-inquiry";
 const RELEASE = { id: "interior-01-1.4.0-9e1ea20da947", hash: "9e1ea20da9472d3bb003a27ff5f7374c76fa350c5941beb79457441576130961" };
 const FLAGSHIP = "bi-01";
 const BASELINE_FILE = "docs/result/recon-template-platform-step6-demo/proof/baseline.json";
@@ -169,13 +180,15 @@ const html = Object.fromEntries(await Promise.all(htmlFiles.map(async (f) => [f,
 
 // ------------------------------------------------------- site instance --
 console.log("\n[site] a NEW site instance, pinned to the existing immutable release");
-await check("A boost-interior-demo exists as its own Site Instance (siteId, Korean identity, own origin); fixtures are separate directories", async () => {
+await check("A boost-interior-demo exists as its own Site Instance (siteId, Korean identity, own origin); the three generated fixtures and the online-inquiry reuse fixture are separate directories, and data/sites holds nothing else", async () => {
   const site = await loadSiteInstance(repoRoot, DEMO);
   eq([site.siteId, site.identity.brandName, site.identity.locale], [DEMO, "부스트 인테리어", "ko-KR"], "identity");
   // its own https origin, shared with no fixture (the value itself is Site Data; the package checks G / X hold the output to it)
   assert(site.identity.publicOrigin === ORIGIN && new URL(ORIGIN).protocol === "https:", String(site.identity.publicOrigin));
-  for (const f of FIXTURES) assert((await loadSiteInstance(repoRoot, f)).identity.publicOrigin !== ORIGIN, `${f} shares the demo origin`);
-  eq((await readdir(path.join(repoRoot, "data/sites"))).filter((d) => !d.startsWith(".")).sort(), [DEMO, ...FIXTURES].sort(), "data/sites");
+  for (const f of [...FIXTURES, INQUIRY_FIXTURE]) assert((await loadSiteInstance(repoRoot, f)).identity.publicOrigin !== ORIGIN, `${f} shares the demo origin`);
+  // exactly: the demo, the three generated fixtures, and the online-inquiry reuse fixture (INQUIRY_FIXTURE, its own entry)
+  eq((await readdir(path.join(repoRoot, "data/sites"))).filter((d) => !d.startsWith(".")).sort(), [DEMO, ...FIXTURES, INQUIRY_FIXTURE].sort(), "data/sites");
+  eq((await loadSiteInstance(repoRoot, INQUIRY_FIXTURE)).siteId, INQUIRY_FIXTURE, "the reuse fixture loads as its own Site Instance");
 });
 await check(`B pins EXACTLY ${later ? "ONE newer verified release (each fixture pins its own verified release)" : RELEASE.id} (id + full hash), and the current package was built with it — pre-publish: with the V0.1 publish target (demo-rollout.ts)`, async () => {
   const site = await loadSiteInstance(repoRoot, DEMO);
@@ -247,6 +260,8 @@ await check("D Template source unchanged: live templateSourceHash = baseline = t
   // (V0.2 schema + widget seam, release-160-surface.ts) is treated the same way; its current content
   // is held by integration.test.ts I2b. So is the 1.6.2 surface (the inquiry seam + door,
   // release-162-surface.ts); its current content is held by integration.test.ts I2b and inquiry162.test.ts.
+  // 1.6.3 changed one platform file — the door that surface already excludes as added by 1.6.2 — so
+  // this fingerprint needs no further surface; the door's 1.6.3 content is held by I2b and inquiry163.test.ts.
   const overrides = await integrationSurfaceBefore(repoRoot);
   const overrides160 = await release160SurfaceBefore(repoRoot);
   const overrides162 = release162SurfaceBefore();
@@ -317,7 +332,7 @@ await check("V same release, different site instances: every site's package carr
 // ------------------------------------------------------------ leakage --
 console.log("\n[leakage] the demo package carries no fixture identity and no source-site material");
 const texts = await packageTexts(demo.site);
-await check("F no fixture identity anywhere in the demo package or its site documents: fixed patterns + every fixture's own brand, legal name, e-mail, origin, project ids and titles (read from the fixtures)", async () => {
+await check("F no fixture identity anywhere in the demo package or its site documents: fixed patterns + every fixture's own brand, legal name, e-mail, origin, project ids and titles (read from the fixtures), and the online-inquiry reuse fixture's site id, identity and inquiry endpoint (read from its documents)", async () => {
   const bad = /harbor|pine studio|fixture-(large|small|empty)|fictional fixture|hp-0\d{3}|마루 아틀리에|픽스처|quiet room/i;
   const tokens = new Set<string>();
   for (const s of FIXTURES) {
@@ -329,6 +344,21 @@ await check("F no fixture identity anywhere in the demo package or its site docu
     for (const p of fixtureProjects) { tokens.add(p.title.toLowerCase()); if (!/^bi-/.test(p.id)) tokens.add(`/portfolio/${p.slug}`.toLowerCase()); }
   }
   assert(tokens.size > 100, `fixture tokens: ${tokens.size}`);
+  // the online-inquiry reuse fixture (INQUIRY_FIXTURE) is not one of the three: its identity joins
+  // the set on its own — site id, brand, legal name, origin, e-mail, summary and its inquiry
+  // endpoint + that endpoint's host, each read from its documents and each required to be there
+  {
+    const dir = path.join(repoRoot, "data/sites", INQUIRY_FIXTURE);
+    const site = await readJson(path.join(dir, "site.json"));
+    const business = await readJson(path.join(dir, "content/business.json"));
+    const endpoint = (await readJson(path.join(dir, "inquiry.json"))).endpoint as string;
+    const own = [site.siteId, site.identity?.brandName, site.identity?.legalName, site.identity?.publicOrigin, business.data?.contact?.email, business.data?.summary, endpoint, new URL(endpoint).host];
+    eq(site.siteId, INQUIRY_FIXTURE, "reuse fixture site id");
+    for (const t of own) {
+      assert(typeof t === "string" && t.length >= 6, `reuse fixture token ${JSON.stringify(t)}`);
+      tokens.add(t.toLowerCase());
+    }
+  }
   const scan = (where: string, text: string) => {
     assert(!bad.test(text), `${where}: ${bad.exec(text)?.[0]}`);
     const lower = text.toLowerCase();

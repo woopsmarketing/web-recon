@@ -40,8 +40,8 @@ export const QA_GOLDEN_MANIFEST_SHA256 = "9061827a746f986eb51127923af839930c01be
  * data/sites/boost-interior-demo/content/projects.json BEFORE the split (19 records, commit ee953b1),
  * and the hashJson of its public snapshot — which is the siteSnapshotHash recorded by the producer-4
  * package 71f7e5f3… built from it. The composition must reproduce both exactly (the snapshot once
- * the later deltas below — the 1.6.2 online inquiry + its re-pin, the product rename, then the
- * footer notice — are reverted, newest first).
+ * the later deltas below — the 1.6.3 inquiry delivery + its re-pin, the 1.6.2 online inquiry + its
+ * re-pin, the product rename, then the footer notice — are reverted, newest first).
  */
 export const PRE_SPLIT_PROJECTS_BYTES = 54134;
 export const PRE_SPLIT_PROJECTS_SHA256 = "7c8c6a9ecfb67e4b4a8cb250196e8aabd9662fbc7e0c52b5b7759644e2a8b8cb";
@@ -83,6 +83,18 @@ export const DEMO_PIN_161 = {
   releaseId: "interior-01-1.6.1-8da56de8d28f",
   releaseHash: "8da56de8d28f372f645c5490436cd9da1b2ce70951e212a6b031ad991771855d",
 } as const;
+/**
+ * The pin the demo carried from the 1.6.2 re-pin (2026-10-02) until the 1.6.3 one (2026-10-03):
+ * exactly one package was built from it, the online-inquiry build 38400831…. Its recorded
+ * siteSnapshotHash is taken at this pin — `atPin(snapshot, DEMO_PIN_162)`. Literal: it names a
+ * frozen release.
+ */
+export const DEMO_PIN_162 = {
+  templateId: "interior-01",
+  templateVersion: "1.6.2",
+  releaseId: "interior-01-1.6.2-d5d4b4557a20",
+  releaseHash: "d5d4b4557a20b1bce2c071cb73bf18c26bf9ef2b5914d8c4fb31ebe5b8207a18",
+} as const;
 /** The snapshot with site.template replaced by `pin` — the pin is the only thing the substitution touches. */
 export function atPin(snapshot: SiteSnapshot, pin: SiteSnapshot["site"]["template"]): SiteSnapshot {
   return { ...snapshot, site: { ...snapshot.site, template: { ...pin } } };
@@ -100,6 +112,10 @@ export function atPin(snapshot: SiteSnapshot, pin: SiteSnapshot["site"]["templat
  * product-rename build 01f7ac78… carries it), so the reverts chain: `revertOnlineInquiry` first,
  * then `revertFooterProductName`, then `revertFooterNotice`. The 1.6.2 re-pin itself is not data:
  * roll it back with `atPin(…, DEMO_PIN_161)`.
+ * Since the inquiry-delivery delta below (2026-10-03), each `now` here is the value as THIS delta
+ * left it (the online-inquiry build 38400831… carries them) — still the site's current value, as
+ * that delta only ADDED contact.page leaves — and contact.page is no longer exactly these leaves:
+ * `revertOnlineInquiry` applies to what `revertInquiryDelivery` returns.
  */
 export const DEMO_ONLINE_INQUIRY_ENDPOINT = "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead";
 export const DEMO_ONLINE_INQUIRY_SLOTS: readonly (readonly [section: string, path: readonly string[], before: unknown, now: unknown])[] = [
@@ -133,27 +149,79 @@ export const DEMO_ONLINE_INQUIRY_SLOTS: readonly (readonly [section: string, pat
 ];
 
 /**
- * The snapshot with exactly the online-inquiry delta reverted: every listed slots leaf put back to
- * its `before` (absent where `before` is undefined) and the inquiry document dropped. Throws unless
- * the snapshot carries each leaf's `now` and exactly the declared endpoint — i.e. unless it is a
- * snapshot of the site as that delta left it. The pin is NOT touched (see `atPin`).
+ * Inquiry delivery (2026-10-03, the 1.6.3 re-pin) — a ninth deliberate data delta: slots.json
+ * contact.page gained the five texts the online form shows for the failures the endpoint tells
+ * apart (refused values, a changed inquiry, too many attempts, no inquiries for now) and the line
+ * before the site's other contact channels. Every changed leaf is listed as [section, path, before,
+ * now]; each `before` is undefined — the key was absent, so the delta is five ADDITIONS and edits
+ * no value the online-inquiry delta wrote. inquiry.json (the endpoint) and every other site document
+ * are untouched, and the demo sets neither optional link slot (fallbackLinkA / fallbackLinkB).
+ * The reverts chain: `revertInquiryDelivery` first, then `revertOnlineInquiry`, then
+ * `revertFooterProductName`, then `revertFooterNotice`. The 1.6.3 re-pin itself is not data: roll it
+ * back with `atPin(…, DEMO_PIN_162)`.
  */
-export function revertOnlineInquiry(snapshot: SiteSnapshot): SiteSnapshot {
-  if (!snapshot.slots) throw new Error("the snapshot has no slots document");
-  if (JSON.stringify(snapshot.inquiry) !== JSON.stringify({ schemaVersion: 1, endpoint: DEMO_ONLINE_INQUIRY_ENDPOINT })) {
-    throw new Error(`snapshot.inquiry is ${JSON.stringify(snapshot.inquiry)}, not the online-inquiry delta's endpoint document`);
-  }
-  const values = structuredClone(snapshot.slots.values) as Record<string, Record<string, unknown>>;
-  for (const [section, leafPath, before, now] of DEMO_ONLINE_INQUIRY_SLOTS) {
+export const DEMO_INQUIRY_DELIVERY_SLOTS: readonly (readonly [section: string, path: readonly string[], before: unknown, now: unknown])[] = [
+  ["contact.page", ["invalidText"], undefined, "입력하신 내용을 다시 확인해 주세요."],
+  ["contact.page", ["conflictText"], undefined, "문의 내용이 변경되었습니다. 다시 보내 주세요."],
+  ["contact.page", ["rateLimitedText"], undefined, "요청이 많아 잠시 접수가 어렵습니다. 약 {minutes}분 후 다시 시도해 주세요."],
+  ["contact.page", ["capacityText"], undefined, "지금은 온라인 문의 접수가 일시적으로 어렵습니다. 나중에 다시 시도해 주세요."],
+  ["contact.page", ["fallbackLead"], undefined, "다른 방법으로 문의하실 수 있습니다."],
+];
+
+/**
+ * A copy of the slot values with every listed leaf put back to its `before` (absent where `before`
+ * is undefined). Throws unless the values carry each leaf's `now` — `delta` names the delta in the
+ * message.
+ */
+function revertSlotLeaves(
+  source: NonNullable<SiteSnapshot["slots"]>["values"],
+  leaves: readonly (readonly [section: string, path: readonly string[], before: unknown, now: unknown])[],
+  delta: string,
+): Record<string, Record<string, unknown>> {
+  const values = structuredClone(source) as Record<string, Record<string, unknown>>;
+  for (const [section, leafPath, before, now] of leaves) {
     let holder: Record<string, unknown> | undefined = values[section];
     for (const k of leafPath.slice(0, -1)) holder = holder?.[k] as Record<string, unknown> | undefined;
     const leaf = leafPath[leafPath.length - 1]!;
     const where = `${section}.${leafPath.join(".")}`;
     if (holder === undefined || holder === null || typeof holder !== "object") throw new Error(`${where}: no such slot value`);
-    if (JSON.stringify(holder[leaf]) !== JSON.stringify(now)) throw new Error(`${where} is ${JSON.stringify(holder[leaf])}, not the online-inquiry delta's value`);
+    if (JSON.stringify(holder[leaf]) !== JSON.stringify(now)) throw new Error(`${where} is ${JSON.stringify(holder[leaf])}, not the ${delta} delta's value`);
     if (before === undefined) delete holder[leaf];
     else holder[leaf] = structuredClone(before);
   }
+  return values;
+}
+
+/**
+ * The snapshot with exactly the inquiry-delivery delta reverted: every listed slots leaf put back to
+ * its `before` (here: removed). Throws unless the snapshot carries each leaf's `now` — i.e. unless
+ * it is a snapshot of the site as that delta left it. Nothing else is touched: the inquiry document
+ * stays (the endpoint is the eighth delta's), and so does the pin (see `atPin`).
+ */
+export function revertInquiryDelivery(snapshot: SiteSnapshot): SiteSnapshot {
+  if (!snapshot.slots) throw new Error("the snapshot has no slots document");
+  return { ...snapshot, slots: { ...snapshot.slots, values: revertSlotLeaves(snapshot.slots.values, DEMO_INQUIRY_DELIVERY_SLOTS, "inquiry-delivery") } };
+}
+
+/**
+ * The snapshot with exactly the online-inquiry delta reverted: every listed slots leaf put back to
+ * its `before` (absent where `before` is undefined) and the inquiry document dropped. Throws unless
+ * the snapshot carries each leaf's `now` and exactly the declared endpoint, or while it still carries
+ * a leaf of the later inquiry-delivery delta — i.e. unless it is a snapshot of the site as that
+ * delta left it: since the inquiry-delivery delta, a snapshot `revertInquiryDelivery` returned. The
+ * pin is NOT touched (see `atPin`).
+ */
+export function revertOnlineInquiry(snapshot: SiteSnapshot): SiteSnapshot {
+  if (!snapshot.slots) throw new Error("the snapshot has no slots document");
+  for (const [section, leafPath] of DEMO_INQUIRY_DELIVERY_SLOTS) {
+    let later: unknown = snapshot.slots.values[section];
+    for (const k of leafPath) later = later !== null && typeof later === "object" ? (later as Record<string, unknown>)[k] : undefined;
+    if (later !== undefined) throw new Error(`${section}.${leafPath.join(".")} is still set: the snapshot carries the later inquiry-delivery delta — revert that first (revertInquiryDelivery)`);
+  }
+  if (JSON.stringify(snapshot.inquiry) !== JSON.stringify({ schemaVersion: 1, endpoint: DEMO_ONLINE_INQUIRY_ENDPOINT })) {
+    throw new Error(`snapshot.inquiry is ${JSON.stringify(snapshot.inquiry)}, not the online-inquiry delta's endpoint document`);
+  }
+  const values = revertSlotLeaves(snapshot.slots.values, DEMO_ONLINE_INQUIRY_SLOTS, "online-inquiry");
   const { inquiry: _dropped, ...rest } = snapshot;
   return { ...rest, slots: { ...snapshot.slots, values } };
 }

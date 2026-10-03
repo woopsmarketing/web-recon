@@ -187,6 +187,8 @@ await check("R2 the 1.5.2 release = the 1.5.1 release except exactly the five de
   // files the later 1.6.0 cut changed / added (V0.2 schema + widget seam) are judged at their pre-1.6.0
   // hash / excluded (release-160-surface.ts); their current content is held by integration.test.ts I2b.
   // The 1.6.2 cut's surface (the inquiry seam + door, release-162-surface.ts) is treated the same way.
+  // The 1.6.3 cut changed only the door (site/inquiry-client.ts), which that surface already excludes
+  // as added by 1.6.2 — no further surface.
   const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/"));
   for (const [f, h] of Object.entries({ ...(await release160SurfaceBefore(repoRoot)), ...release162SurfaceBefore() })) if (f in now) now[f] = h;
   // the post-build publish surface never feeds a build, render or release (publish-surface.ts) — excluded as in ia150/step6
@@ -325,7 +327,7 @@ await check("P4 the <body> did not move: every page's header, <main> and footer 
     assert(footerOf(h) === footerOf(p), `${f}: footer differs`);
   }
 });
-await check("P5 the address: the footer mailto on every page and the /contact direct address are the site's business email; a mail hand-off form's fallback copy names it via {email} — an online form (the site declares an inquiry endpoint, ≥ the 1.6.2 re-pin) ships no hand-off copy at all, only its endpoint; no page, payload, sitemap or script of the package still carries the old address or origin", async () => {
+await check("P5 the address: the footer mailto on every page and the /contact direct address are the site's business email; a mail hand-off form's fallback copy names it via {email} — an online form (the site declares an inquiry endpoint, ≥ the 1.6.2 re-pin) ships no hand-off copy at all, only its endpoint and — built from ≥ 1.6.3 — the address once more, as the one other contact channel its alert may list; no page, payload, sitemap or script of the package still carries the old address or origin", async () => {
   eq(EMAIL, DEMO_EMAIL, "demo address");
   for (const [f, h] of Object.entries(html)) {
     const mailtos = [...h.matchAll(/href="(mailto:[^"]*)"/g)].map((m) => m[1]);
@@ -334,12 +336,26 @@ await check("P5 the address: the footer mailto on every page and the /contact di
   assert(mainOf(html["contact.html"]!).includes(`<dt>이메일</dt><dd><a href="mailto:${EMAIL}">${EMAIL}</a></dd>`), "/contact direct address");
   if (existsSync(path.join(demoDir, "inquiry.json"))) {
     // the demo's form posts to its declared endpoint: the island's props carry that endpoint (once)
-    // and none of the mail hand-off copy — the address stays on the page as the direct address only
+    // and none of the mail hand-off copy. Up to the 1.6.2 package the address stayed on the page as
+    // the direct address only; a package built from ≥ 1.6.3 carries it once more in the form's
+    // props, as the other contact channel the alert lists after a failure another press may not
+    // cure — for the demo exactly its business email under the page's own e-mail label (it sets
+    // neither fallback link slot). A link inside the alert, never a hand-off, and not rendered
+    // before such a failure (inquiry163.test.ts TPL-2 / TPL-4 / PKG-3 own the behaviour).
     const endpoint = (await readJson(path.join(demoDir, "inquiry.json"))).endpoint as string;
     eq(html["contact.html"]!.split(`\\"online\\":{\\"endpoint\\":\\"${endpoint}\\"`).length - 1, 1, "/contact: the form's props (RSC) carry the declared endpoint, once");
     eq(html["contact.html"]!.split(endpoint).length - 1, 1, "/contact: the endpoint appears nowhere else on the page");
     for (const gone of ["주소로 보내 주세요", "메일 앱", "복사", "mailSubject", "afterSubmit", "tooLong"]) assert(!html["contact.html"]!.includes(gone), `/contact: mail hand-off copy "${gone}" in an online form's page`);
     for (const [f, h] of Object.entries(html)) if (f !== "contact.html") assert(!h.includes(endpoint), `${f}: carries the inquiry endpoint`);
+    const emailLabel = (await readJson(path.join(demoDir, "slots.json"))).values["contact.page"].emailLabel as string;
+    assert(typeof emailLabel === "string" && emailLabel.length > 0, "the demo's contact.page emailLabel");
+    if (versionAtLeast(record.template.templateVersion, "1.6.3")) {
+      eq(html["contact.html"]!.split(`\\"fallback\\":[{\\"name\\":\\"${emailLabel}\\",\\"text\\":\\"${EMAIL}\\",\\"href\\":\\"mailto:${EMAIL}\\"}]`).length - 1, 1, "/contact: the form's props (RSC) list exactly one other contact channel — the business email — once");
+      eq(html["contact.html"]!.split('\\"fallback\\":').length - 1, 1, "/contact: …and carry no second channel list");
+    } else {
+      assert(!html["contact.html"]!.includes('\\"fallback\\":'), "/contact: a form built before 1.6.3 carries no contact channels");
+    }
+    assert(!/data-inquiry-contacts|i1-form__contacts/.test(stripScripts(html["contact.html"]!)), "/contact: the contact channels are not in the server HTML (only after a failure)");
   } else {
     assert(html["contact.html"]!.includes(`아래 내용을 복사해 ${EMAIL} 주소로 보내 주세요.`) && html["contact.html"]!.includes(`메일 앱이 열리지 않으면 ${EMAIL} 주소로 보내 주세요.`), "/contact: the status copy (RSC props) names the address");
   }

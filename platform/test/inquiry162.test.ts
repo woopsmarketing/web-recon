@@ -1,21 +1,31 @@
 /**
- * Online inquiry validation (interior-01 1.6.2):
+ * Online inquiry validation (interior-01 1.6.2, carried into 1.6.3):
  *   1. a site may declare ONE inquiry endpoint (data/sites/<siteId>/inquiry.json): an exact,
  *      canonical https URL — validated fail-closed, part of the snapshot only when present;
  *   2. package QA allows that URL as page DATA only, matched whole, and only where a page's flight
  *      payload lives (a .txt file, a <script> body of an .html page) — never a host, a prefix, an
  *      attribute value of any kind, or any other emitted file; nothing else is loosened;
  *   3. Template code reaches the network only through the platform door
- *      (@platform/site/inquiry-client): fixed method / headers / five-key body, no credentials,
- *      text normalised and the phone rule enforced before any request, "ok" only for HTTP 200 +
- *      { received: true }, never a throw;
+ *      (@platform/site/inquiry-client): fixed method / headers / body, no credentials, text
+ *      normalised and the phone rule enforced before any request, "ok" only for HTTP 200 +
+ *      { received: true }, never a throw. 1.6.3 adds a `submission_id` to the body (one per
+ *      logical inquiry, made by the door, never the Template) and a closed failure vocabulary
+ *      (InquiryFailure) in place of the old bare "failed" — this file (D1-D6) still asserts the
+ *      fixed request shape, the never-throws contract and the normaliser/phone-rule gate against
+ *      `createInquirySender`; the full sender LIFECYCLE (one id per logical inquiry, joining a
+ *      press, the rate-limit pause, every failure reason, the per-endpoint sender cache) is
+ *      platform/test/inquiry163.test.ts;
  *   4. the demo's /contact submits online: consent + trap field + phone rule (8 digits) in the
  *      server HTML, the button DISABLED there (enabled only once the island is mounted) with a
  *      noscript line, the failure alert above the button, online props only (none of the mail
  *      hand-off's labels), no success or failure wording before a submit; a site without an
  *      endpoint renders the mail hand-off byte-for-byte as release 1.6.1 did; the removed "not
  *      connected" copy and the old terminology are gone from every emitted file / every
- *      customer-facing string.
+ *      customer-facing string. 1.6.3 adds five optional failure-text slots and two optional
+ *      fallback-link slots (contact.page) and lists the site's other contact channels after
+ *      every failure but a conflict; the demo sets the five texts and authors no fallback links
+ *      (so its only fallback contact is the business email) — the Template/Template-render and
+ *      built-package assertions for those additions are also inquiry163.test.ts.
  * Client behaviour (validation, failure keeps the input, retry, confirmation) is exercised in a
  * browser by publish-e2e.test.ts D; this file asserts the contract, the gates and the built output.
  *
@@ -32,7 +42,7 @@ import { qaStaticPackage } from "../build/qa";
 import { scanTemplateSource } from "../release/release";
 import { createSiteContext } from "../site/context";
 import { INQUIRY_FILE, SiteInquiryDocSchema, inquiryEndpointProblem, inquiryTarget } from "../site/inquiry";
-import { INQUIRY_PHONE_PATTERN, INQUIRY_TIMEOUT_MS, isInquiryPhone, normalizeInquiryText, submitInquiry, type InquirySubmission } from "../site/inquiry-client";
+import { INQUIRY_PHONE_PATTERN, INQUIRY_TIMEOUT_MS, createInquirySender, isInquiryPhone, normalizeInquiryText, type InquiryFailure, type InquirySubmission } from "../site/inquiry-client";
 import { SiteSnapshotSchema } from "../site/instance";
 import { buildSiteSnapshot } from "../site/load";
 import { resolveSlots } from "../slots/slots";
@@ -59,7 +69,15 @@ const COPY = {
   successBody: "입력해주신 내용을 확인한 뒤 상담을 이어갈 수 있습니다.",
   failure: "문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.",
   messagePrefix: "[홈페이지 견적 문의]",
+  /** 1.6.3 */
+  invalid: "입력하신 내용을 다시 확인해 주세요.",
+  conflict: "문의 내용이 변경되었습니다. 다시 보내 주세요.",
+  rateLimited: "요청이 많아 잠시 접수가 어렵습니다. 약 {minutes}분 후 다시 시도해 주세요.",
+  capacity: "지금은 온라인 문의 접수가 일시적으로 어렵습니다. 나중에 다시 시도해 주세요.",
+  fallbackLead: "다른 방법으로 문의하실 수 있습니다.",
 } as const;
+/** 1.6.3: a door-made submission id — a random v4 UUID */
+const SUBMISSION_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 /** copy the demo no longer carries anywhere (data or package) */
 const REMOVED = ["연결되어 있지 않습니다", "메일 앱"] as const;
 /** terminology: the official term is "시공사례"; these two spellings are no longer customer-facing */
@@ -374,21 +392,25 @@ await check("Q3 declared, it is still refused in an .html page anywhere outside 
 
 // ----------------------------------------------------------------- gates --
 console.log("\n[gates] Template code reaches the network only through the door");
-await check("G1 the door is the one new allowed import; fetch / XMLHttpRequest / timers / window / navigator.sendBeacon stay banned in Template code; the schema module and the loader are not importable", () => {
-  const scan = (code: string) => scanTemplateSource(`${TEMPLATE_REL}/components/X.tsx`, code, []);
-  eq(scan('import { submitInquiry } from "@platform/site/inquiry-client";\nexport const f = () => submitInquiry;'), [], "door import");
-  for (const bad of [
-    'export const f = () => fetch("/x");',
-    "export const f = () => new XMLHttpRequest();",
-    "export const f = () => setTimeout(() => {}, 1);",
-    "export const f = () => window.location.href;",
-    'export const f = () => navigator.sendBeacon("/x");',
-    "export const f = () => new WebSocket(\"wss://x.example\");",
-    'import { SiteInquiryDocSchema } from "@platform/site/inquiry";\nexport const s = SiteInquiryDocSchema;',
-    'import { buildSiteSnapshot } from "@platform/site/load";\nexport const s = buildSiteSnapshot;',
-    'export const f = () => import("@platform/site/head-scripts");',
-  ]) assert(scan(bad).length > 0, `not caught: ${bad}`);
-});
+await check(
+  "G1 the door is the one new allowed import; fetch / XMLHttpRequest / timers / window / navigator.sendBeacon / crypto stay banned in Template code (the Template may not make ids itself); the schema module and the loader are not importable",
+  () => {
+    const scan = (code: string) => scanTemplateSource(`${TEMPLATE_REL}/components/X.tsx`, code, []);
+    eq(scan('import { createInquirySender } from "@platform/site/inquiry-client";\nexport const f = () => createInquirySender;'), [], "door import");
+    for (const bad of [
+      'export const f = () => fetch("/x");',
+      "export const f = () => new XMLHttpRequest();",
+      "export const f = () => setTimeout(() => {}, 1);",
+      "export const f = () => window.location.href;",
+      'export const f = () => navigator.sendBeacon("/x");',
+      "export const f = () => new WebSocket(\"wss://x.example\");",
+      "export const f = () => crypto.randomUUID();",
+      'import { SiteInquiryDocSchema } from "@platform/site/inquiry";\nexport const s = SiteInquiryDocSchema;',
+      'import { buildSiteSnapshot } from "@platform/site/load";\nexport const s = buildSiteSnapshot;',
+      'export const f = () => import("@platform/site/head-scripts");',
+    ]) assert(scan(bad).length > 0, `not caught: ${bad}`);
+  },
+);
 await check("G2 the Template's own sources are gate-clean, only InquiryForm imports the door, and no Template file names the endpoint, its host or a widget key", async () => {
   const files = (await walkFiles(path.join(repoRoot, TEMPLATE_REL))).filter((f) => /\.(ts|tsx|mjs)$/.test(f) && !/^(node_modules|\.next|out)\//.test(f));
   const importers: string[] = [];
@@ -421,66 +443,87 @@ async function withFetch<T>(impl: (args: FetchArgs) => Promise<Response>, run: (
   }
 }
 const json = (status: number, body: string, type = "application/json") => new Response(body, { status, headers: { "content-type": type } });
-await check("D1 request shape: POST to exactly the endpoint, Content-Type application/json and no other header, no credentials, redirects refused, an abort signal, and NO cache mode (a POST is not cached; the option would only add request headers); body = exactly { consent: true, name, phone, message, hp }", async () => {
-  await withFetch(async () => json(200, '{"received":true}'), async (calls) => {
-    eq(await submitInquiry(DEMO_ENDPOINT, { ...SUBMISSION, hp: "bot" }), { status: "ok" }, "result");
-    eq(calls.length, 1, "one request");
-    const { url, init } = calls[0]!;
-    eq([url, init.method, init.headers, init.credentials, init.mode, init.redirect, init.signal instanceof AbortSignal], [DEMO_ENDPOINT, "POST", { "Content-Type": "application/json" }, "omit", "cors", "error", true], "init");
-    eq(Object.keys(init).sort(), ["body", "credentials", "headers", "method", "mode", "redirect", "signal"], "no other option");
-    assert(!("cache" in init), "a cache mode");
-    const body = JSON.parse(init.body as string);
-    eq(Object.keys(body), ["consent", "name", "phone", "message", "hp"], "body keys");
-    eq(body, { consent: true, name: "홍길동", phone: "010-1234-5678", message: "[홈페이지 견적 문의]\n\n문의", hp: "bot" }, "body");
-    // a caller cannot smuggle a sixth key (an endpoint that validates strictly would refuse the inquiry)
-    await submitInquiry(DEMO_ENDPOINT, { ...SUBMISSION, email: "a@b.example", extra: 1 } as unknown as InquirySubmission);
-    eq(Object.keys(JSON.parse(calls[1]!.init.body as string)), ["consent", "name", "phone", "message", "hp"], "extra keys dropped");
-  });
-});
-await check("D2 failed, never a throw: 500 / 400 / 404 / 201 / 204, a 200 that is not JSON, a 200 without received: true, a rejected fetch, a body that fails mid-read", async () => {
-  const cases: [string, () => Promise<Response>][] = [
-    ["500", async () => json(500, '{"received":true}')],
-    ["400", async () => json(400, '{"error":"bad"}')],
-    ["404", async () => json(404, "not found", "text/plain")],
-    ["201", async () => json(201, '{"received":true}')],
-    ["204", async () => new Response(null, { status: 204 })],
-    ["200 html", async () => json(200, "<html>ok</html>", "text/html")],
-    ["200 empty", async () => json(200, "")],
-    ["200 null", async () => json(200, "null")],
-    ["200 received:false", async () => json(200, '{"received":false}')],
-    ['200 received:"true"', async () => json(200, '{"received":"true"}')],
-    ["200 other key", async () => json(200, '{"ok":true}')],
-    ["network error", async () => Promise.reject(new TypeError("Failed to fetch"))],
-    ["body read fails", async () => ({ status: 200, json: () => Promise.reject(new Error("aborted")) }) as unknown as Response],
-  ];
-  for (const [what, impl] of cases) eq(await withFetch(impl, () => submitInquiry(DEMO_ENDPOINT, SUBMISSION)), { status: "failed" }, what);
-});
-await check(`D3 no request at all for a non-https endpoint or without consent; an unanswered request is aborted after ${INQUIRY_TIMEOUT_MS} ms and reported failed`, async () => {
-  await withFetch(async () => json(200, '{"received":true}'), async (calls) => {
-    for (const endpoint of ["http://boostchat.co.kr/lead", "/api/lead", "//boostchat.co.kr/lead", ""]) eq(await submitInquiry(endpoint, SUBMISSION), { status: "failed" }, endpoint);
-    eq(await submitInquiry(DEMO_ENDPOINT, { ...SUBMISSION, consent: false } as unknown as InquirySubmission), { status: "failed" }, "no consent");
-    eq(calls.length, 0, "requests");
-  });
-  eq(INQUIRY_TIMEOUT_MS, 15_000, "timeout");
-  // the timer is captured instead of waited for: firing it must abort the pending request
-  const originalSet = globalThis.setTimeout;
-  const timers: { fn: () => void; ms: number }[] = [];
-  globalThis.setTimeout = ((fn: () => void, ms: number) => {
-    timers.push({ fn, ms });
-    return 0;
-  }) as unknown as typeof setTimeout;
-  try {
-    const pending = withFetch(
-      ({ init }) => new Promise<Response>((_resolve, reject) => init.signal!.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))),
-      () => submitInquiry(DEMO_ENDPOINT, SUBMISSION),
-    );
-    eq(timers.map((t) => t.ms), [INQUIRY_TIMEOUT_MS], "one timer, at the timeout");
-    timers[0]!.fn();
-    eq(await pending, { status: "failed" }, "timed out");
-  } finally {
-    globalThis.setTimeout = originalSet;
-  }
-});
+await check(
+  "D1 request shape: POST to exactly the endpoint, Content-Type application/json and no other header, no credentials, redirects refused, an abort signal, and NO cache mode (a POST is not cached; the option would only add request headers); body = exactly { consent: true, name, phone, message, hp, submission_id }, submission_id a random v4 UUID, and a smuggled extra key is still dropped",
+  async () => {
+    await withFetch(async () => json(200, '{"received":true}'), async (calls) => {
+      const sender = createInquirySender(DEMO_ENDPOINT);
+      eq(await sender({ ...SUBMISSION, hp: "bot" }), { status: "ok" }, "result");
+      eq(calls.length, 1, "one request");
+      const { url, init } = calls[0]!;
+      eq([url, init.method, init.headers, init.credentials, init.mode, init.redirect, init.signal instanceof AbortSignal], [DEMO_ENDPOINT, "POST", { "Content-Type": "application/json" }, "omit", "cors", "error", true], "init");
+      eq(Object.keys(init).sort(), ["body", "credentials", "headers", "method", "mode", "redirect", "signal"], "no other option");
+      assert(!("cache" in init), "a cache mode");
+      const body = JSON.parse(init.body as string);
+      eq(Object.keys(body), ["consent", "name", "phone", "message", "hp", "submission_id"], "body keys");
+      assert(SUBMISSION_ID_RE.test(body.submission_id), `submission_id shape: ${body.submission_id}`);
+      const { submission_id: _id, ...rest } = body;
+      eq(rest, { consent: true, name: "홍길동", phone: "010-1234-5678", message: "[홈페이지 견적 문의]\n\n문의", hp: "bot" }, "body");
+      // a caller cannot smuggle a sixth key (an endpoint that validates strictly would refuse the inquiry)
+      const sender2 = createInquirySender(DEMO_ENDPOINT);
+      await sender2({ ...SUBMISSION, email: "a@b.example", extra: 1 } as unknown as InquirySubmission);
+      eq(Object.keys(JSON.parse(calls[1]!.init.body as string)).sort(), ["consent", "hp", "message", "name", "phone", "submission_id"].sort(), "extra keys dropped");
+    });
+  },
+);
+await check(
+  'D2 failed, never a throw, each with its own closed-vocabulary reason: 500 / 404 / 201 / 204 / a 200 that is not JSON / a 200 without received: true → "unknown"; 400 → "invalid"; a rejected fetch → "network"; a body that fails mid-read on a 200 → "unknown"',
+  async () => {
+    const cases: [string, InquiryFailure, () => Promise<Response>][] = [
+      ["500", "unknown", async () => json(500, '{"received":true}')],
+      ["400", "invalid", async () => json(400, '{"error":"bad"}')],
+      ["404", "unknown", async () => json(404, "not found", "text/plain")],
+      ["201", "unknown", async () => json(201, '{"received":true}')],
+      ["204", "unknown", async () => new Response(null, { status: 204 })],
+      ["200 html", "unknown", async () => json(200, "<html>ok</html>", "text/html")],
+      ["200 empty", "unknown", async () => json(200, "")],
+      ["200 null", "unknown", async () => json(200, "null")],
+      ["200 received:false", "unknown", async () => json(200, '{"received":false}')],
+      ['200 received:"true"', "unknown", async () => json(200, '{"received":"true"}')],
+      ["200 other key", "unknown", async () => json(200, '{"ok":true}')],
+      ["network error", "network", async () => Promise.reject(new TypeError("Failed to fetch"))],
+      ["body read fails", "unknown", async () => ({ status: 200, json: () => Promise.reject(new Error("aborted")) }) as unknown as Response],
+    ];
+    for (const [what, reason, impl] of cases) {
+      const sender = createInquirySender(DEMO_ENDPOINT);
+      eq(await withFetch(impl, () => sender(SUBMISSION)), { status: "failed", reason }, what);
+    }
+  },
+);
+await check(
+  `D3 no request at all: a non-https endpoint or a browser without fetch → "unknown"; no consent → "invalid"; an unanswered request is aborted after ${INQUIRY_TIMEOUT_MS} ms and reported "timeout"`,
+  async () => {
+    await withFetch(async () => json(200, '{"received":true}'), async (calls) => {
+      for (const endpoint of ["http://boostchat.co.kr/lead", "/api/lead", "//boostchat.co.kr/lead", ""]) {
+        const sender = createInquirySender(endpoint);
+        eq(await sender(SUBMISSION), { status: "failed", reason: "unknown" }, endpoint);
+      }
+      const sender = createInquirySender(DEMO_ENDPOINT);
+      eq(await sender({ ...SUBMISSION, consent: false } as unknown as InquirySubmission), { status: "failed", reason: "invalid" }, "no consent");
+      eq(calls.length, 0, "requests");
+    });
+    eq(INQUIRY_TIMEOUT_MS, 15_000, "timeout");
+    // the timer is captured instead of waited for: firing it must abort the pending request
+    const originalSet = globalThis.setTimeout;
+    const timers: { fn: () => void; ms: number }[] = [];
+    globalThis.setTimeout = ((fn: () => void, ms: number) => {
+      timers.push({ fn, ms });
+      return 0;
+    }) as unknown as typeof setTimeout;
+    try {
+      const sender = createInquirySender(DEMO_ENDPOINT);
+      const pending = withFetch(
+        ({ init }) => new Promise<Response>((_resolve, reject) => init.signal!.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))),
+        () => sender(SUBMISSION),
+      );
+      eq(timers.map((t) => t.ms), [INQUIRY_TIMEOUT_MS], "one timer, at the timeout");
+      timers[0]!.fn();
+      eq(await pending, { status: "failed", reason: "timeout" }, "timed out");
+    } finally {
+      globalThis.setTimeout = originalSet;
+    }
+  },
+);
 
 await check("D4 normaliser: a TAB becomes one space; a line break becomes \\n in a message and a space in a one-line value; every C0 / C1 control, DEL, soft hyphen, zero-width and bidi format character, line / paragraph separator, Hangul filler and BOM is removed; then trimmed; neighbouring characters are kept; idempotent", () => {
   eq(REMOVED_CODES.length, 86, "characters removed");
@@ -536,44 +579,50 @@ await check("D5 phone rule: only digits, spaces, + - ( ), 8 to 20 characters, at
     "010-1234-5678;ext=1",
   ]) eq(judge(bad), [false, false, false], `accepted: ${JSON.stringify(bad)}`);
 });
-await check("D6 the door sends the NORMALISED text and makes no request at all for an empty name, an empty message or a phone number that fails the rule — each judged after normalisation; the trap value is forwarded as it is", async () => {
-  await withFetch(async () => json(200, '{"received":true}'), async (calls) => {
-    const dirty: InquirySubmission = {
-      consent: true,
-      name: `  홍\t길동${chr(0x200b)} `,
-      phone: `${chr(0xfeff)}010-1234-5678${chr(0x200e)}\t`,
-      message: `첫 줄\r\n둘째 줄\r${chr(0x202e)}\t끝${chr(0x00)}\n`,
-      hp: " bot ",
-    };
-    eq(await submitInquiry(DEMO_ENDPOINT, dirty), { status: "ok" }, "result");
-    eq(calls.length, 1, "one request");
-    const raw = calls[0]!.init.body as string;
-    eq(JSON.parse(raw), { consent: true, name: "홍 길동", phone: "010-1234-5678", message: "첫 줄\n둘째 줄\n 끝", hp: " bot " }, "body");
-    assert(!INVISIBLE.test(raw) && !/\\[tr]|\\u00|\\u20|\\ufe/i.test(raw), `an invisible character in the request: ${raw}`);
-    calls.length = 0;
-    for (const [what, submission] of [
-      ["empty name", { ...SUBMISSION, name: "" }],
-      ["name of spaces", { ...SUBMISSION, name: " \t " }],
-      ["name of invisible characters", { ...SUBMISSION, name: chr(0x200b, 0x3164, 0xfeff) }],
-      ["empty message", { ...SUBMISSION, message: "" }],
-      ["message of line breaks and invisible characters", { ...SUBMISSION, message: `\r\n${chr(0x2060)}\n\t` }],
-      ["empty phone", { ...SUBMISSION, phone: "" }],
-      ["7 digits", { ...SUBMISSION, phone: "1234567" }],
-      ["8 characters, 7 digits", { ...SUBMISSION, phone: "010-12-34" }],
-      ["no digit", { ...SUBMISSION, phone: "+-() +-()" }],
-      ["letters", { ...SUBMISSION, phone: "전화주세요 01012345678" }],
-      ["21 characters", { ...SUBMISSION, phone: "010-1234-5678-9012-34" }],
-    ] as const) {
-      eq(await submitInquiry(DEMO_ENDPOINT, submission), { status: "failed" }, what);
-      eq(calls.length, 0, `${what}: requests`);
-    }
-  });
-});
+await check(
+  'D6 the door sends the NORMALISED text and makes no request at all (reason "invalid" in every case) for an empty name, an empty message or a phone number that fails the rule — each judged after normalisation; the trap value is forwarded as it is',
+  async () => {
+    await withFetch(async () => json(200, '{"received":true}'), async (calls) => {
+      const dirty: InquirySubmission = {
+        consent: true,
+        name: `  홍\t길동${chr(0x200b)} `,
+        phone: `${chr(0xfeff)}010-1234-5678${chr(0x200e)}\t`,
+        message: `첫 줄\r\n둘째 줄\r${chr(0x202e)}\t끝${chr(0x00)}\n`,
+        hp: " bot ",
+      };
+      const sender = createInquirySender(DEMO_ENDPOINT);
+      eq(await sender(dirty), { status: "ok" }, "result");
+      eq(calls.length, 1, "one request");
+      const raw = calls[0]!.init.body as string;
+      const { submission_id: _id, ...body } = JSON.parse(raw);
+      eq(body, { consent: true, name: "홍 길동", phone: "010-1234-5678", message: "첫 줄\n둘째 줄\n 끝", hp: " bot " }, "body");
+      assert(!INVISIBLE.test(raw) && !/\\[tr]|\\u00|\\u20|\\ufe/i.test(raw), `an invisible character in the request: ${raw}`);
+      calls.length = 0;
+      for (const [what, submission] of [
+        ["empty name", { ...SUBMISSION, name: "" }],
+        ["name of spaces", { ...SUBMISSION, name: " \t " }],
+        ["name of invisible characters", { ...SUBMISSION, name: chr(0x200b, 0x3164, 0xfeff) }],
+        ["empty message", { ...SUBMISSION, message: "" }],
+        ["message of line breaks and invisible characters", { ...SUBMISSION, message: `\r\n${chr(0x2060)}\n\t` }],
+        ["empty phone", { ...SUBMISSION, phone: "" }],
+        ["7 digits", { ...SUBMISSION, phone: "1234567" }],
+        ["8 characters, 7 digits", { ...SUBMISSION, phone: "010-12-34" }],
+        ["no digit", { ...SUBMISSION, phone: "+-() +-()" }],
+        ["letters", { ...SUBMISSION, phone: "전화주세요 01012345678" }],
+        ["21 characters", { ...SUBMISSION, phone: "010-1234-5678-9012-34" }],
+      ] as const) {
+        const s2 = createInquirySender(DEMO_ENDPOINT);
+        eq(await s2(submission), { status: "failed", reason: "invalid" }, what);
+        eq(calls.length, 0, `${what}: requests`);
+      }
+    });
+  },
+);
 
 // -------------------------------------------------------------- contract --
 console.log("\n[contract] additive patch");
-await check("T1 Template 1.6.2: nine optional contact.page slots with neutral defaults (no cap raised for the demo's copy); every earlier slot still declared; the fixtures' slots documents still resolve; the demo sets the online copy and none of the mail hand-off's", async () => {
-  eq(template.version, "1.6.2", "version");
+await check("T1 Template 1.6.2: nine optional contact.page slots with neutral defaults (no cap raised for the demo's copy); every earlier slot still declared; the fixtures' slots documents still resolve; the demo sets the online copy and none of the mail hand-off's (the 1.6.3 slots are inquiry163.test.ts's TPL-1/TPL-5)", async () => {
+  eq(template.version, "1.6.3", "version (the template is at 1.6.3; this check is only about the nine 1.6.2 slots)");
   const slots = template.sections["contact.page"].slots as Record<string, { type: string; maxLength?: number; neutralDefault?: string; required?: boolean }>;
   for (const k of ONLINE_SLOTS) {
     eq([slots[k]?.type, typeof slots[k]?.neutralDefault, slots[k]?.required ?? false], ["text", "string", false], `slot ${k}`);
@@ -615,56 +664,67 @@ await check("T2 the folded message can never exceed the endpoint's 2,000-charact
   assert(fieldMax <= 100 && phoneMax <= 40, "name / phone caps");
   assert(form.includes(".slice(0, ONLINE_MESSAGE_MAX_LENGTH)"), "the cut of last resort");
 });
-await check("T3 source shape: the online path never opens a mail link, normalises every field BEFORE it validates, checks the phone rule in script as well, claims success only on the door's ok, keeps the form mounted on failure without moving focus, renders the alert above a button that is disabled until mounted, and guards a second press; the mail path does none of it", async () => {
-  const form = await readFile(path.join(repoRoot, TEMPLATE_REL, "components/InquiryForm.tsx"), "utf8");
-  const online = form.slice(form.indexOf("function OnlineInquiryForm("));
-  const at = (needle: string) => {
-    eq(count(online, needle), 1, `occurrences of ${needle}`);
-    return online.indexOf(needle);
-  };
-  assert(online.length > 0 && !/mailto|link\.click|mailLink|encodeURIComponent/.test(online), "the online form touches the mail hand-off");
-  // order of the submit handler: second-press guard → normalise → validate (browser + script) → consent → request
-  const steps = [
-    "if (inFlight.current) return;",
-    'const text = normalizeInquiryText(c?.value ?? "", f === "message");',
-    'if (c && !(c instanceof HTMLSelectElement) && c.value !== text) c.value = text;',
-    'phone.setCustomValidity(values.phone === "" || isInquiryPhone(values.phone) ? "" : online.labels.phoneHint);',
-    "if (!form.reportValidity()) return;",
-    "if (!(consent instanceof HTMLInputElement) || !consent.checked) return;",
-    'if (values.name === "" || values.message === "" || !isInquiryPhone(values.phone)) return;',
-    "inFlight.current = true;",
-    "await submitInquiry(online.endpoint, {",
-  ].map(at);
-  eq(steps, [...steps].sort((x, y) => x - y), "order of the submit handler");
-  assert(online.includes("for (const f of FIELDS) {") && form.includes('const FIELDS: readonly Field[] = ["name", "phone", "region", "area", "workType", "schedule", "message"];'), "every field is normalised");
-  assert(online.includes("consent: true,") && online.includes("name: values.name,") && online.includes("phone: values.phone,") && online.includes('hp: control(TRAP_FIELD)?.value ?? "",'), "body fields");
-  assert(/result\.status === "ok" \? \{ phase: "done"/.test(online), "done only on ok");
-  // the form: noValidate (so the normalised value is what gets validated), alert above the button, noscript after it
-  at('<form className="i1-form" data-inquiry-form="" noValidate onSubmit={onSubmit} aria-busy={submitting ? true : undefined}>');
-  const markup = ["{labels.notice ? <p className=\"i1-form__notice\">{labels.notice}</p> : null}", 'role="alert"', 'data-inquiry-submit=""', "<noscript>", 'role="status"'].map(at);
-  eq(markup, [...markup].sort((x, y) => x - y), "notice → alert → button → noscript → status");
-  assert(/\{done \? null : \(/.test(online), "fields unmounted only when done");
-  // disabled in the server HTML and until the island is mounted; then only while sending
-  at("const [mounted, setMounted] = useState(false);");
-  at("useEffect(() => {\n    setMounted(true);\n  }, []);");
-  at("disabled={!mounted || submitting}");
-  assert(online.includes("{submitting ? online.labels.submitting : labels.submit}"), "button label while sending");
-  // a failure never moves focus; only the confirmation takes it
-  const failedBranch = online.slice(at('if (phase === "failed") {'), at('if (phase !== "done") return;'));
-  assert(!/focus/.test(failedBranch.replace(/\/\/.*$/gm, "")) && failedBranch.includes('alertNode.current?.scrollIntoView({ block: "nearest" });'), "failure branch");
-  eq(count(online, ".focus("), 1, "focus calls");
-  at("node.focus({ preventScroll: true });");
-  // the phone rule has one source: the door
-  assert(form.includes('import { INQUIRY_PHONE_PATTERN, isInquiryPhone, normalizeInquiryText, submitInquiry } from "@platform/site/inquiry-client";'), "door import");
-  at("pattern: INQUIRY_PHONE_PATTERN, title: online.labels.phoneHint }");
-  assert(!/new RegExp|\/\[0-9|PHONE_PATTERN = /.test(form), "a second phone rule or a regular expression in the Template");
-  const mail = form.slice(form.indexOf("function MailInquiryForm("), form.indexOf("function OnlineInquiryForm("));
-  assert(mail.length > 0 && !/submitInquiry|normalizeInquiryText|isInquiryPhone|INQUIRY_PHONE_PATTERN|online\.|noValidate|noscript|disabled|mounted|useEffect/.test(mail.replace(/\/\*[\s\S]*?\*\//g, "")), "the mail form took something from the online path");
-  const page = await readFile(path.join(repoRoot, TEMPLATE_REL, "sections/ContactPage.tsx"), "utf8");
-  const onlineProps = page.slice(page.indexOf("const online:"), page.indexOf("return {", page.indexOf("const online:")));
-  for (const k of MAIL_ONLY_SLOTS) assert(!onlineProps.includes(`"${k}"`), `online props read the mail-only slot ${k}`);
-  assert(!/\bemail\b/.test(onlineProps), "online props carry the address");
-});
+await check(
+  "T3 source shape: the online path never opens a mail link, normalises every field BEFORE it validates, checks the phone rule in script as well, claims success only on the door's ok, keeps the form mounted on failure without moving focus, renders the alert above a button that is disabled until mounted or paused, and guards a second press; the mail path does none of it",
+  async () => {
+    const form = await readFile(path.join(repoRoot, TEMPLATE_REL, "components/InquiryForm.tsx"), "utf8");
+    const online = form.slice(form.indexOf("function OnlineInquiryForm("));
+    const at = (needle: string) => {
+      eq(count(online, needle), 1, `occurrences of ${needle}`);
+      return online.indexOf(needle);
+    };
+    assert(online.length > 0 && !/mailto|link\.click|mailLink|encodeURIComponent/.test(online), "the online form touches the mail hand-off");
+    // order of the submit handler: second-press guard → normalise → validate (browser + script) → consent → request
+    const steps = [
+      "if (inFlight.current) return;",
+      'const text = normalizeInquiryText(c?.value ?? "", f === "message");',
+      'if (c && !(c instanceof HTMLSelectElement) && c.value !== text) c.value = text;',
+      'phone.setCustomValidity(values.phone === "" || isInquiryPhone(values.phone) ? "" : online.labels.phoneHint);',
+      "if (!form.reportValidity()) return;",
+      "if (!(consent instanceof HTMLInputElement) || !consent.checked) return;",
+      'if (values.name === "" || values.message === "" || !isInquiryPhone(values.phone)) return;',
+      "inFlight.current = true;",
+      "await inquirySender(online.endpoint)({",
+    ].map(at);
+    eq(steps, [...steps].sort((x, y) => x - y), "order of the submit handler");
+    assert(online.includes("for (const f of FIELDS) {") && form.includes('const FIELDS: readonly Field[] = ["name", "phone", "region", "area", "workType", "schedule", "message"];'), "every field is normalised");
+    assert(online.includes("consent: true,") && online.includes("name: values.name,") && online.includes("phone: values.phone,") && online.includes('hp: control(TRAP_FIELD)?.value ?? "",'), "body fields");
+    assert(/if \(result\.status === "ok"\) \{[\s\S]{0,200}phase: "done"/.test(online), "done only on ok");
+    // the form: noValidate (so the normalised value is what gets validated), alert above the button, noscript after it
+    at('<form className="i1-form" data-inquiry-form="" noValidate onSubmit={onSubmit} aria-busy={submitting ? true : undefined}>');
+    const markup = ["{labels.notice ? <p className=\"i1-form__notice\">{labels.notice}</p> : null}", 'role="alert"', 'data-inquiry-submit=""', "<noscript>", 'role="status"'].map(at);
+    eq(markup, [...markup].sort((x, y) => x - y), "notice → alert → button → noscript → status");
+    assert(/\{done \? null : \(/.test(online), "fields unmounted only when done");
+    // disabled in the server HTML and until the island is mounted; then only while sending or paused
+    at("const [mounted, setMounted] = useState(false);");
+    at("useEffect(() => {\n    setMounted(true);\n  }, []);");
+    at("disabled={!mounted || submitting || paused}");
+    assert(online.includes("{submitting ? online.labels.submitting : labels.submit}"), "button label while sending");
+    // a failure (or a pause) never moves focus; only the confirmation takes it
+    const failedBranch = online.slice(at('if (phase === "failed" || phase === "paused") {'), at('if (phase !== "done") return;'));
+    assert(!/focus/.test(failedBranch.replace(/\/\/.*$/gm, "")) && failedBranch.includes('alertNode.current?.scrollIntoView({ block: "nearest" });'), "failure branch");
+    eq(count(online, ".focus("), 1, "focus calls");
+    at("node.focus({ preventScroll: true });");
+    // the phone rule has one source: the door
+    assert(
+      form.includes('import { INQUIRY_PHONE_PATTERN, inquirySender, isInquiryPhone, normalizeInquiryText, type InquiryFailure } from "@platform/site/inquiry-client";'),
+      "door import",
+    );
+    at("pattern: INQUIRY_PHONE_PATTERN, title: online.labels.phoneHint }");
+    assert(!/new RegExp|\/\[0-9|PHONE_PATTERN = /.test(form), "a second phone rule or a regular expression in the Template");
+    const mail = form.slice(form.indexOf("function MailInquiryForm("), form.indexOf("function OnlineInquiryForm("));
+    assert(
+      mail.length > 0 && !/inquirySender|normalizeInquiryText|isInquiryPhone|INQUIRY_PHONE_PATTERN|online\.|noValidate|noscript|disabled|mounted|useEffect/.test(mail.replace(/\/\*[\s\S]*?\*\//g, "")),
+      "the mail form took something from the online path",
+    );
+    const page = await readFile(path.join(repoRoot, TEMPLATE_REL, "sections/ContactPage.tsx"), "utf8");
+    const onlineProps = page.slice(page.indexOf("const online:"), page.indexOf("return {", page.indexOf("const online:")));
+    for (const k of MAIL_ONLY_SLOTS) assert(!onlineProps.includes(`"${k}"`), `online props read the mail-only slot ${k}`);
+    // 1.6.3: the business email reaches the online props only as a fallback contact link (onlineFallback), never a mail hand-off
+    assert(onlineProps.includes('fallback: onlineFallback(ctx, email, t("emailLabel")),'), "the email reaches online props only through onlineFallback(...)");
+    assert(!/\bemail\b/.test(onlineProps.replace('fallback: onlineFallback(ctx, email, t("emailLabel")),', "")), "online props carry the address outside onlineFallback(...)");
+  },
+);
 await check("T4 no literal invisible character (and no CR) in any source of this change: the door, the Template's sources and styles, the demo's site data, package QA, this file — the door's character class is written as escapes", async () => {
   const files = [
     "platform/site/inquiry-client.ts",
@@ -692,7 +752,22 @@ await check("T4 no literal invisible character (and no CR) in any source of this
 /** the form rendered on the server, as static markup */
 const FIELD_LABELS = { name: "N", phone: "P", region: "R", area: "A", workType: "W", select: "S", schedule: "Sc", message: "M", required: "* required", submit: "Send", notice: "Note" };
 const MAIL_LABELS = { ...FIELD_LABELS, afterSubmit: "after", subject: "inquiry from {name}", tooLong: "too long: {email}", tooLongText: "text", selectText: "select", email: "Email" };
-const ONLINE_LABELS = { consent: "Consent", phoneHint: "Hint", noScript: "No script", submitting: "Sending", successTitle: "Done", successBody: "Thanks", failure: "Failed", messagePrefix: "[p]" };
+const ONLINE_LABELS = {
+  consent: "Consent",
+  phoneHint: "Hint",
+  noScript: "No script",
+  submitting: "Sending",
+  successTitle: "Done",
+  successBody: "Thanks",
+  failure: "Failed",
+  messagePrefix: "[p]",
+  // 1.6.3
+  invalid: "Invalid",
+  conflict: "Conflict",
+  rateLimited: "RateLimited {minutes}",
+  capacity: "Capacity",
+  fallbackLead: "FallbackLead",
+};
 await check("T5 mail-mode markup unchanged: a site without an endpoint renders the form byte-for-byte as release 1.6.1 did (with and without work types) — an ENABLED button, no noscript line, no noValidate, no consent box, no alert, no trap field; the online form's tail is notice → empty alert → DISABLED button → noscript → empty status, and an unset notice / noscript text leaves no element", async () => {
   // the 1.6.1 file is compiled outside the platform's tsconfig (classic JSX runtime): it needs React in scope
   (globalThis as { React?: unknown }).React = React;
@@ -709,7 +784,8 @@ await check("T5 mail-mode markup unchanged: a site without an endpoint renders t
     );
     assert(!/disabled|<noscript|noValidate|data-inquiry-error|data-inquiry-trap|i1-form__consent|pattern=/.test(now), "mail-mode markup took something from the online form");
   }
-  const onlineOf = (labels: typeof FIELD_LABELS, online: typeof ONLINE_LABELS) => renderToStaticMarkup(createElement(InquiryForm, { workTypes: ["a"], labels, online: { endpoint: E, labels: online } }));
+  const onlineOf = (labels: typeof FIELD_LABELS, online: typeof ONLINE_LABELS) =>
+    renderToStaticMarkup(createElement(InquiryForm, { workTypes: ["a"], labels, online: { endpoint: E, labels: online, fallback: [] } }));
   const on = onlineOf(FIELD_LABELS, ONLINE_LABELS);
   assert(on.startsWith('<form class="i1-form" data-inquiry-form="" noValidate=""><p class="i1-form__required-note">* required</p>'), `online form tag: ${on.slice(0, 120)}`);
   assert(
@@ -717,7 +793,7 @@ await check("T5 mail-mode markup unchanged: a site without an endpoint renders t
     `online tail: ${on.slice(-400)}`,
   );
   assert(on.includes(`pattern="${PHONE_PATTERN}" title="Hint"`), "phone rule and hint");
-  assert(!on.includes(E) && !/Done|Thanks|Failed|Sending|\[p\]/.test(on), "the endpoint or an outcome in the rendered form");
+  assert(!on.includes(E) && !/Done|Thanks|Failed|Sending|\[p\]|Invalid|Conflict|RateLimited|Capacity|FallbackLead/.test(on), "the endpoint or an outcome in the rendered form");
   const bare = onlineOf({ ...FIELD_LABELS, notice: "" }, { ...ONLINE_LABELS, noScript: "" });
   assert(
     bare.endsWith('</label></div><p class="i1-form__error" role="alert" data-inquiry-error=""></p><button type="submit" class="i1-button i1-form__submit" data-inquiry-submit="" disabled="">Send</button><p class="i1-form__status" role="status" data-inquiry-status=""></p></form>'),
@@ -729,8 +805,8 @@ await check("T5 mail-mode markup unchanged: a site without an endpoint renders t
 console.log("\n[package] the built demo");
 const contact = html.get("contact.html")!;
 const contactMain = mainOf(contact);
-await check("P1 built with the pinned 1.6.2 release (QA pass); the endpoint is in the snapshot the package was built from", () => {
-  eq([pin.templateVersion, record.template.releaseId, record.template.releaseHash, record.status, record.qa.pass], ["1.6.2", pin.releaseId, pin.releaseHash, "success", true], "build record");
+await check("P1 built with the pinned release (the template's current version, QA pass); the endpoint is in the snapshot the package was built from", () => {
+  eq([pin.templateVersion, record.template.releaseId, record.template.releaseHash, record.status, record.qa.pass], [template.version, pin.releaseId, pin.releaseHash, "success", true], "build record");
   eq(record.parts.siteSnapshotHash, hashJson({ ...demoSnap }), "the package's snapshot = today's site data (the endpoint included)");
 });
 await check("P2 /contact server HTML: a noValidate form with no action / method; name, phone, message and the consent box required; phone type=tel, inputmode tel, the phone rule (8 digits) as pattern, the hint as title, cap 20; the trap field hidden by class (no inline style), out of the tab order and the accessibility tree; the EMPTY alert directly above a DISABLED button, the noscript line, an EMPTY status", () => {
@@ -782,20 +858,24 @@ await check("P2 /contact server HTML: a noValidate form with no action / method;
   assert(!/data-inquiry-mailto|data-inquiry-fallback|i1-inquiry-copy/.test(contact), "mail hand-off markup on an online form");
   assert(contactMain.includes(`<div class="i1-page__lead"><p>${COPY.lead}</p></div>`), "lead");
 });
-await check("P3 online props only: the page payload carries the endpoint and the online copy once, and none of the mail hand-off's labels; the confirmation and the failure text exist ONLY inside the payload script — never in the rendered HTML of any page", () => {
-  const visible = stripScripts(contact);
-  for (const f of ["contact.html", "contact.txt"]) {
-    const t = packageText.get(f)!;
-    for (const key of ["afterSubmit", "tooLong", "tooLongText", "selectText", "subject"]) assert(!new RegExp(`\\\\?"${key}\\\\?":`).test(t), `${f}: mail-only prop ${key}`);
-    for (const key of ["consent", "phoneHint", "noScript", "submitting", "successTitle", "successBody", "failure", "messagePrefix", "endpoint"]) eq(count(t, `"${key}`) + count(t, `\\"${key}\\"`) > 0, true, `${f}: online prop ${key}`);
-    eq(count(t, DEMO_ENDPOINT), 1, `${f}: endpoint occurrences`);
-  }
-  for (const text of [COPY.successTitle, COPY.successBody, COPY.failure, COPY.submitting, COPY.messagePrefix]) {
-    assert(!visible.includes(text), `rendered before a submit: ${text}`);
-    assert(contact.includes(text), `not in the payload: ${text}`);
-  }
-  for (const [f, h] of html) assert(!/접수되었|접수 완료|전송되었|전송 완료|완료되었|문제가 발생/.test(stripScripts(h)), `${f}: outcome wording in the rendered HTML`);
-});
+await check(
+  "P3 online props only: the page payload carries the endpoint and the online copy once (including the five 1.6.3 failure-text props), and none of the mail hand-off's labels; the confirmation and every failure text exist ONLY inside the payload script — never in the rendered HTML of any page",
+  () => {
+    const visible = stripScripts(contact);
+    for (const f of ["contact.html", "contact.txt"]) {
+      const t = packageText.get(f)!;
+      for (const key of ["afterSubmit", "tooLong", "tooLongText", "selectText", "subject"]) assert(!new RegExp(`\\\\?"${key}\\\\?":`).test(t), `${f}: mail-only prop ${key}`);
+      for (const key of ["consent", "phoneHint", "noScript", "submitting", "successTitle", "successBody", "failure", "messagePrefix", "invalid", "conflict", "rateLimited", "capacity", "fallbackLead", "endpoint"])
+        eq(count(t, `"${key}`) + count(t, `\\"${key}\\"`) > 0, true, `${f}: online prop ${key}`);
+      eq(count(t, DEMO_ENDPOINT), 1, `${f}: endpoint occurrences`);
+    }
+    for (const text of [COPY.successTitle, COPY.successBody, COPY.failure, COPY.submitting, COPY.messagePrefix, COPY.invalid, COPY.conflict, COPY.rateLimited, COPY.capacity, COPY.fallbackLead]) {
+      assert(!visible.includes(text), `rendered before a submit: ${text}`);
+      assert(contact.includes(text), `not in the payload: ${text}`);
+    }
+    for (const [f, h] of html) assert(!/접수되었|접수 완료|전송되었|전송 완료|완료되었|문제가 발생/.test(stripScripts(h)), `${f}: outcome wording in the rendered HTML`);
+  },
+);
 await check("P4 the endpoint appears only in /contact's document and payloads, as data — in the page only inside a script body, never an attribute, never in a JS / CSS file; today's package QA passes the built package with the endpoint declared and refuses it undeclared; no other foreign URL joined it (the declared widget script aside)", async () => {
   const withEndpoint = [...packageText].filter(([, t]) => t.includes("boostchat.co.kr/api")).map(([f]) => f);
   eq(withEndpoint, ["contact.html", "contact.txt", "contact/__next._full.txt", "contact/__next.contact.__PAGE__.txt"].sort(), "files naming the endpoint");

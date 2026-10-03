@@ -11,7 +11,10 @@
  *      is asserted with the site's current copy: since the 1.6.2 re-pin the official term is
  *      "시공사례" (nav, list title, links) and /contact is the ONLINE inquiry form — the site declares
  *      an inquiry endpoint (data/sites/<site>/inquiry.json), so the form posts there instead of
- *      composing an e-mail (inquiry162.test.ts owns the seam, the door and the contract).
+ *      composing an e-mail (inquiry162.test.ts owns the seam, the door and the contract). Since the
+ *      1.6.3 re-pin the same form sends one submission_id per logical inquiry and names the failures
+ *      the endpoint tells apart (inquiry163.test.ts); its server HTML — what P6 asserts — did not
+ *      move: the alert is empty and the contact channels are not rendered before a failure.
  * Plus what must NOT have moved: the immutable 1.4.x releases, platform/ (outside test/), the demo
  * site's other documents and its 51 raster assets (against
  * docs/result/recon-template-platform-ia-final/proof/before.json, captured before the 1.5.0 work).
@@ -160,7 +163,8 @@ await check("R3 platform/ (test/ excluded) is byte-identical to the pre-change c
   // pre-integration hash: the capture is still proven for the tree as of the task's start commit
   // (be6b10a); the current content of those files is asserted by integration.test.ts instead.
   // The 1.6.0 surface (V0.2 schema + widget seam, release-160-surface.ts) is treated the same way,
-  // and so is the 1.6.2 surface (the inquiry seam + door, release-162-surface.ts).
+  // and so is the 1.6.2 surface (the inquiry seam + door, release-162-surface.ts). 1.6.3 changed one
+  // platform file, the door 1.6.2 added — already excluded there, so it needs no surface of its own.
   const overrides = { ...(await integrationSurfaceBefore(repoRoot)), ...(await release160SurfaceBefore(repoRoot)), ...release162SurfaceBefore() };
   const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/") || isPublishSurface(f) || (isIntegrationSurface(f) && !(f in before.platformFiles)) || isRelease160Added(f) || isRelease162Added(f));
   for (const f of Object.keys(overrides)) if (f in before.platformFiles) now[f] = overrides[f]!;

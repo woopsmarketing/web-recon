@@ -17,6 +17,8 @@
  *   7. package directory under data/site-builds/** byte-identical before/after
  * Results → docs/result/static-deployment-foundation/proof/local-e2e.json (E2E_OUT overrides the
  * file, in either mode — e.g. a scratch path for a run that must not rewrite the tracked proof).
+ * A submission id is never written there in full: the recorded request bodies carry its first 8
+ * characters + "…" (every assertion is made on the full value).
  *
  * Third parties (Site Data, read from data/sites/<site>/):
  *   - the head scripts the site declares (scripts.json) are the ONE permitted external request of a
@@ -55,7 +57,11 @@ import { chromium, type BrowserContext, type BrowserContextOptions, type Page } 
 import { parse, type DefaultTreeAdapterTypes } from "parse5";
 import { planPublish, publishSite } from "../publish/publish";
 import { WranglerStore } from "../publish/wrangler-store";
+import { createSiteContext } from "../site/context";
+import { buildSiteSnapshot } from "../site/load";
 import { sha256 } from "../util/hash";
+import { contactPage } from "../../templates/interior-01/v1/sections/ContactPage";
+import template from "../../templates/interior-01/v1/template";
 
 // wrangler dev listens on 127.0.0.1; Node would otherwise try ::1 first for "localhost"
 dns.setDefaultResultOrder("ipv4first");
@@ -719,6 +725,22 @@ try {
   async function contactOnlineSmoke(width: number, height: number) {
     const endpoint = INQUIRY_ENDPOINT!;
     const slots = (JSON.parse(await readFile(path.join(repoRoot, "data/sites", SITE, "slots.json"), "utf8")).values["contact.page"] ?? {}) as Record<string, string | undefined>;
+    // 1.6.3: after every failure but a conflict the alert also lists the site's other contact
+    // channels under the site's lead line — what they are comes from the real resolver the builder
+    // uses (contactPage over the site's own data), never from a literal here
+    const AT = "2026-10-04T00:00:00Z";
+    const pin = JSON.parse(await readFile(path.join(repoRoot, "data/sites", SITE, "site.json"), "utf8")).template as { templateId: string; templateVersion: string; releaseId: string; releaseHash: string };
+    const { snapshot } = await buildSiteSnapshot({ repoRoot, siteId: SITE, mode: "public", at: AT });
+    const form = contactPage(createSiteContext({ siteId: SITE, template, templateRelease: pin, mode: "public", at: AT, snapshot })).form;
+    assert(form && "online" in form && form.online, `contact @ ${width}: the site declares an endpoint but resolves no online form`);
+    const channels = form.online.fallback;
+    /** the text the contact list adds to the alert: the lead line, then every channel */
+    const channelsText = channels.length > 0 ? `${form.online.labels.fallbackLead}${channels.map((c) => `${c.name ? `${c.name}: ` : ""}${c.text}`).join("")}` : "";
+    /**
+     * A request body as the proof file records it: a submission id is never written down in full —
+     * its first 8 characters + "…". Every assertion below is made on the full value (`posts`).
+     */
+    const forProof = (body: string) => body.replace(new RegExp('("submission_id":")([^"]{0,8})[^"]*"', "g"), '$1$2…"');
     const ctx = await newContext({ viewport: { width, height } });
     const page = await ctx.newPage();
     const consoleErrors: string[] = [];
@@ -820,6 +842,7 @@ try {
       }),
       successWording: SUCCESS.test(await mainText()),
     };
+    const failedChannels = await page.$$eval("[data-inquiry-error] [data-inquiry-contacts] a", (as) => as.map((a) => [a.getAttribute("href"), a.textContent]));
     // 4. retry, the endpoint answers 200 {received:true} → the confirmation replaces the fields
     answer = "ok";
     await press(700);
@@ -834,7 +857,7 @@ try {
       overflow: await page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth)),
     };
     const bodies = posts.map((p) => JSON.parse(p.body) as Record<string, unknown>);
-    results[`contact${width}`] = { mode: "online", endpointStubbed: true, servedButton, enabledOnceMounted, atLoad, emptyInvalid, noConsentInvalid, normalised, shortPhone, blockedPosts, failed, done, posts, otherRequests, stubFailures: stubFailures.length, consoleErrors };
+    results[`contact${width}`] = { mode: "online", endpointStubbed: true, servedButton, enabledOnceMounted, atLoad, emptyInvalid, noConsentInvalid, normalised, shortPhone, blockedPosts, failed, done, posts: posts.map((p) => ({ ...p, body: forProof(p.body) })), otherRequests, stubFailures: stubFailures.length, consoleErrors };
     eq(
       [servedButton, enabledOnceMounted],
       ['<button type="submit" class="i1-button i1-form__submit" data-inquiry-submit="" disabled="">', true],
@@ -855,9 +878,10 @@ try {
     }
     eq(
       [failed.posts, failed.alert, failed.status, failed.values, failed.consent, failed.button, failed.successWording],
-      [1, slots.failureText, "", ["홍길동", "010-1234-5678", "대구 수성구", "간단한 문의입니다.\n견적 부탁드립니다."], true, [slots.submitLabel, false], false],
-      `contact @ ${width}: a failing answer`,
+      [1, `${slots.failureText}${channelsText}`, "", ["홍길동", "010-1234-5678", "대구 수성구", "간단한 문의입니다.\n견적 부탁드립니다."], true, [slots.submitLabel, false], false],
+      `contact @ ${width}: a failing answer (the alert: the site's failure text, then its other contact channels)`,
     );
+    eq(failedChannels, channels.map((c) => [c.href, c.text]), `contact @ ${width}: the failure alert lists exactly the site's other contact channels, as links`);
     assert(typeof slots.failureText === "string" && slots.failureText.length > 0 && typeof slots.successTitle === "string" && SUCCESS.test(slots.successTitle), `contact @ ${width}: the site's failure / success copy`);
     eq([done.posts, done.status, done.controls, done.alert, done.url, done.documents, done.overflow], [2, `${slots.successTitle}${slots.successBody}`, 0, null, `${BASE}/contact`, 1, 0], `contact @ ${width}: the retry succeeds`);
     {
@@ -865,10 +889,15 @@ try {
       assert(header && headline && headline.top >= header.bottom && headline.bottom <= vh, `contact @ ${width}: the confirmation's headline is not in view below the sticky header (${JSON.stringify(done.layout)})`);
       eq(focus, "status", `contact @ ${width}: focus is on the confirmation`);
     }
+    // 1.6.3: every request also carries the door's submission id — ONE id for the logical inquiry,
+    // so the retry of the unanswered-as-far-as-the-visitor-knows first request repeats it exactly
     for (const [n, body] of bodies.entries()) {
-      eq(Object.keys(body).sort(), ["consent", "hp", "message", "name", "phone"], `contact @ ${width}: request ${n + 1} keys`);
-      eq(body, { consent: true, name: "홍길동", phone: "010-1234-5678", message: `${slots.messagePrefix}\n지역: 대구 수성구\n\n간단한 문의입니다.\n견적 부탁드립니다.`, hp: "" }, `contact @ ${width}: request ${n + 1} body`);
+      eq(Object.keys(body).sort(), ["consent", "hp", "message", "name", "phone", "submission_id"], `contact @ ${width}: request ${n + 1} keys`);
+      const { submission_id: id, ...values } = body;
+      eq(values, { consent: true, name: "홍길동", phone: "010-1234-5678", message: `${slots.messagePrefix}\n지역: 대구 수성구\n\n간단한 문의입니다.\n견적 부탁드립니다.`, hp: "" }, `contact @ ${width}: request ${n + 1} body`);
+      assert(typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(id), `contact @ ${width}: request ${n + 1} submission id is not a version 4 UUID`);
     }
+    eq(new Set(bodies.map((body) => body.submission_id)).size, 1, `contact @ ${width}: the retry carries the first request's submission id`);
     eq(posts.map((p) => [p.contentType, p.cookie ?? null]), [["application/json", null], ["application/json", null]], `contact @ ${width}: JSON, no cookie`);
     eq([otherRequests, stubFailures.length, consoleErrors], [[], 1, []], `contact @ ${width}: only POSTs reached the stub; the one console line is the stubbed 500's; no page error`);
     await ctx.close();

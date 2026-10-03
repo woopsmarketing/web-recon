@@ -153,7 +153,9 @@ await check("R2 the 1.5.1 release = the 1.5.0 release except exactly the seven d
   // above shows). Files the later 1.6.0 cut changed (V0.2 schema + widget seam) are judged at their
   // pre-1.6.0 hash (release-160-surface.ts); their current content is held by integration.test.ts I2b.
   // The one file the 1.6.2 cut changed and no earlier surface covers (release/release.ts: the inquiry
-  // door on the import allowlist) is judged at its pre-1.6.2 hash (release-162-surface.ts).
+  // door on the import allowlist) is judged at its pre-1.6.2 hash (release-162-surface.ts). The 1.6.3
+  // cut changed only the door itself (site/inquiry-client.ts) — a file 1.6.2 added, so it is in no
+  // 1.5.x capture and nothing here has to be judged differently.
   const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/"));
   for (const [f, h] of Object.entries({ ...(await release160SurfaceBefore(repoRoot)), ...release162SurfaceBefore() })) if (f in now) now[f] = h;
   const changed = Object.keys(before.platformFiles).filter((f) => now[f] !== before.platformFiles[f] && !isIntegrationSurface(f));
@@ -212,7 +214,7 @@ await check("P1 same page set and sitemap as the 1.5.0 package (the demo has a c
   }
   assert(mainOf(html["contact.html"]!) !== mainOf(prev["contact.html"]!), "/contact: the caps are there");
 });
-await check("P2 /contact server HTML: message textarea maxlength 500, each one-line field 100 — the phone 20 where the form submits online (its pattern's own upper bound; a mail hand-off form keeps 100) — the select and the consent checkbox none; empty status; no fallback / copy markup before a press", () => {
+await check("P2 /contact server HTML: message textarea maxlength 500, each one-line field 100 — the phone 20 where the form submits online (its pattern's own upper bound; a mail hand-off form keeps 100) — the select and the consent checkbox none; empty status; no fallback / copy markup — nor, since 1.6.3, the alert's contact channels — before a press", () => {
   const m = mainOf(html["contact.html"]!);
   const caps = [...m.matchAll(/<(input|select|textarea) id="i1-inquiry-(\w+)"[^>]*?>/g)].map((x) => [x[2], /maxLength="(\d+)"/.exec(x[0])?.[1] ?? null]);
   // the demo declares an inquiry endpoint since the 1.6.2 re-pin (data/sites/<site>/inquiry.json):
@@ -229,6 +231,9 @@ await check("P2 /contact server HTML: message textarea maxlength 500, each one-l
   if (online) assert(m.includes(' maxLength="20" pattern="(?=(?:[^0-9]*[0-9]){8})[0-9+\\-\\(\\) ]{8,20}" title="') && /<input id="i1-inquiry-phone"[^>]* maxLength="20" pattern="/.test(m), "phone cap = the pattern's upper bound");
   assert(m.includes('<p class="i1-form__status" role="status" data-inquiry-status=""></p>'), "empty status");
   assert(!/data-inquiry-fallback|data-inquiry-copy|i1-inquiry-copy/.test(stripScripts(m)), "fallback in the server HTML");
+  // 1.6.3: the online form may list the site's other contact channels under its alert — only after
+  // a failure another press may not cure, so never in the server HTML (the alert is rendered empty)
+  assert(!/data-inquiry-contacts|i1-form__contacts/.test(stripScripts(m)), "contact channels in the server HTML");
   for (const [f, h] of Object.entries(html)) assert(!/접수되었|접수 완료|전송되었|전송 완료|완료되었/.test(stripScripts(h)), `${f}: success wording`);
 });
 
@@ -272,7 +277,7 @@ await check("J1 InquiryForm: CRLF message lines, the 2,000-character guard BEFOR
   assert(menu.includes("returnFocus(button.current)") && !menu.includes("button.current?.focus()"), "returnFocus");
   assert(/if \(isRendered\(button\)\) \{\s*button\.focus\(\);/.test(menu) && menu.includes('button.closest("header")'), "rendered-only restore");
 });
-await check("C1 stylesheet: the fallback block, its address and select button (44 px target) are styled; nothing of 1.5.0 removed; the only other rules are the fourteen 1.6.2 online-inquiry rules (each exactly once; one of them inside the ≥ 900px block)", async () => {
+await check("C1 stylesheet: the fallback block, its address and select button (44 px target) are styled; nothing of 1.5.0 removed; the only other rules are the fourteen 1.6.2 online-inquiry rules (each exactly once; one of them inside the ≥ 900px block) and the three 1.6.3 contact-channel rules (each exactly once, in a row right after the alert's own rules)", async () => {
   const css = (await readFile(path.join(repoRoot, TEMPLATE_REL, "styles/template.css"), "utf8")).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ");
   const css150 = (await readFile(path.join(repoRoot, "data/template-releases/interior-01", RELEASE_150, "files", TEMPLATE_REL, "styles/template.css"), "utf8")).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ");
   assert(css.includes(".i1-form__fallback {") && css.includes(".i1-form__fallback-to {") && /\.i1-form__select-text \{[^}]*min-height: 44px;/.test(css), "rules");
@@ -307,8 +312,29 @@ await check("C1 stylesheet: the fallback block, its address and select button (4
     without162 = without162.replace(rule, "");
   }
   assert(/\.i1-form__check \{[^}]*width: 20px;[^}]*height: 20px;/.test(css) && /\.i1-form__consent-label \{[^}]*padding: 11px 0;[^}]*line-height: 1\.6;/.test(css), "consent: the label is the checkbox's 44 px target");
-  const added = without162.replace(/ \.i1-form__fallback \{[^}]*\}| \.i1-form__fallback-to \{[^}]*\}| \.i1-form__fallback-to a \{[^}]*\}| \.i1-form__select-text \{[^}]*\}/g, "");
-  eq(added, css150, "stylesheet = 1.5.0 + the four fallback rules + the fourteen 1.6.2 rules");
+  // 1.6.3 added the rules of the alert's contact channels (the site's other ways to reach the
+  // business, listed under the alert's text after a failure another press may not cure) — three
+  // whole new rules, each present exactly once; no existing rule was edited, 1.6.2's included (they
+  // were just counted and removed above, from the stylesheet as it is now).
+  const CONTACTS_163 = [".i1-form__contacts", ".i1-form__contact a"];
+  // the one grouped rule: the lead line and each channel are block boxes that may shrink
+  const GROUPED_163 = " .i1-form__contacts-lead, .i1-form__contact { display: block; min-width: 0; }";
+  eq(css.split(GROUPED_163).length - 1, 1, "1.6.3 rule .i1-form__contacts-lead, .i1-form__contact");
+  // where they are: in a row, between the alert's last rule and the confirmation's first
+  assert(
+    /\.i1-form__error:empty \{ display: none; \} \.i1-form__contacts \{[^}]*\} \.i1-form__contacts-lead, \.i1-form__contact \{[^}]*\} \.i1-form__contact a \{[^}]*\} \.i1-form__status--done \{/.test(css),
+    "the three 1.6.3 rules follow .i1-form__error:empty, in order, and nothing else sits before .i1-form__status--done",
+  );
+  let without163 = without162.replace(GROUPED_163, "");
+  for (const selector of CONTACTS_163) {
+    const rule = new RegExp(` ${selector.replace(/[.+]/g, "\\$&")} \\{[^}]*\\}`, "g");
+    eq((without163.match(rule) ?? []).length, 1, `1.6.3 rule ${selector}`);
+    without163 = without163.replace(rule, "");
+  }
+  eq((css.match(/i1-form__contact/g) ?? []).length, 4, "the stylesheet names the contact-channel classes in those three rules only (.i1-form__contacts, -contacts-lead, .i1-form__contact, .i1-form__contact a)");
+  assert(/\.i1-form__contact a \{[^}]*display: inline-block;[^}]*padding: 11px 0;/.test(css) && /\.i1-form__error \{[^}]*font-size: 14px;[^}]*line-height: 1\.7;/.test(css), "contact channels: each link is a ≥ 44 px target (11 px above and below the alert's own 14 px × 1.7 line)");
+  const added = without163.replace(/ \.i1-form__fallback \{[^}]*\}| \.i1-form__fallback-to \{[^}]*\}| \.i1-form__fallback-to a \{[^}]*\}| \.i1-form__select-text \{[^}]*\}/g, "");
+  eq(added, css150, "stylesheet = 1.5.0 + the four fallback rules + the fourteen 1.6.2 rules + the three 1.6.3 rules");
 });
 
 console.log(`\n${passed} passed, ${failed.length} failed`);

@@ -95,7 +95,7 @@ import { GOLDEN_DIR, GOLDEN_V02_DIR, goldenRecord } from "../cli/integration-gol
 import { MediaImageSchema, PortfolioMediaSchema } from "../integration/validate";
 import { demoExpectedPages, demoRollout } from "./demo-rollout";
 import { gitMaterialize } from "./git-checkout";
-import { PRE_SPLIT_SNAPSHOT_HASH, QA_GOLDEN_DIR, QA_GOLDEN_DOC_BYTES, QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256, QA_GOLDEN_VERSION, DEMO_ONLINE_INQUIRY_ENDPOINT, DEMO_PIN_161, atPin, composeQaSnapshot, readSyntheticFixture, revertFooterNotice, revertFooterProductName, revertOnlineInquiry } from "./portfolio-qa-corpus";
+import { PRE_SPLIT_SNAPSHOT_HASH, QA_GOLDEN_DIR, QA_GOLDEN_DOC_BYTES, QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256, QA_GOLDEN_VERSION, DEMO_INQUIRY_DELIVERY_SLOTS, DEMO_ONLINE_INQUIRY_ENDPOINT, DEMO_PIN_161, DEMO_PIN_162, atPin, composeQaSnapshot, readSyntheticFixture, revertFooterNotice, revertFooterProductName, revertInquiryDelivery, revertOnlineInquiry } from "./portfolio-qa-corpus";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -169,8 +169,18 @@ const LIVE_PIN = { templateId: "interior-01", templateVersion: "1.5.2", releaseI
  * anchor as the product rename left it); B2 drops exactly the inquiry document, reverts exactly the
  * declared slot leaves and must land on it again, and the rename / footer / split / widget / 1.6.1
  * reverts are then taken from the reverted snapshots, so their anchors stay put.
+ *
+ * Inquiry delivery (2026-10-03, the 1.6.3 re-pin): the demo's slots.json contact.page carries the
+ * five texts the online form shows for the failures the endpoint tells apart, and the line before
+ * the site's other contact channels — a ninth deliberate data delta (DEMO_INQUIRY_DELIVERY_SLOTS,
+ * portfolio-qa-corpus.ts): five added leaves, nothing edited, inquiry.json untouched.
+ * `_PRE_DELIVERY` is the anchor before it (the head anchor as the online inquiry left it); B2
+ * removes exactly the declared slot leaves and must land on it again, and the inquiry / rename /
+ * footer / split / widget / 1.6.1 reverts are then taken from the reverted snapshots, so their
+ * anchors stay put.
  */
-const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN = "7311903d6511530121ff9a17f47719c52371681ed327e5ebded9669cea762c97";
+const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN = "c119e5e81155a40cac6f929caab760828df1f96cc694541f4cffa63f208f03d0";
+const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_DELIVERY = "7311903d6511530121ff9a17f47719c52371681ed327e5ebded9669cea762c97";
 const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_INQUIRY = "827462813da53f6470d397f1451b1dc9740191e171a79e571e6b873fd83dc565";
 const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_RENAME = "0b5a0cc04d8583f3e4741d01135221ff8ca8b9b2eadebb1a715fe58a3e87a2f1";
 const DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_FOOTER = "169883a3276d8feb10e2bc5c6488e191c9422a0f1d93043eef16c738eeb9d066";
@@ -267,11 +277,24 @@ const FOOTER_NOTICE_PACKAGE_COMMIT = "1da16587baebeaa01ef264e1fc111e6207e22930";
  * The product-rename build (docs/result/INTERIOR-DEMO-PRODUCT-RENAME-2026-10-01.md, published
  * 2026-10-01, commit 1da1658): the same 8-record corpus and document 968afbcc…, the footer notice
  * naming BoostInterior (DEMO_FOOTER_PRODUCT_NAME's `now`), the mail hand-off /contact form — the
- * LAST package built from the 1.6.1 pin (DEMO_PIN_161). It is the live package until the
- * online-inquiry (1.6.2) build is published, and the rollback behind that build — B2b.
+ * LAST package built from the 1.6.1 pin (DEMO_PIN_161). It was the rollback behind the
+ * online-inquiry (1.6.2) build; the inquiry-delivery (1.6.3) build moved the rollback one step and
+ * keep-2 retired this directory. B2b reads it from PRODUCT_RENAME_PACKAGE_COMMIT (the commit that
+ * recorded the online-inquiry build next to it) and re-hashes it.
  */
 const PRODUCT_RENAME_BUILD_INPUT_ID = "01f7ac782e5c67246443ef7a074ab20a60305b10912a11512c0be3b0d5d4cd3d";
 const PRODUCT_RENAME_PACKAGE_HASH = "e562dedd17e9b7aeaf44e3c12e5474de40b155427bea97679c7ac11f57d47be8";
+const PRODUCT_RENAME_PACKAGE_COMMIT = "be065c5422bd6a6a5f45c12404ae7f2ffce6dbad";
+/**
+ * The online-inquiry build (docs/result/BOOSTINTERIOR-TRACK-B-QUICK-START-DEMO-CONVERSION-2026-10-02.md,
+ * published 2026-10-02, commit be065c5): the same 8-record corpus and document 968afbcc…, the
+ * demo's inquiry endpoint on /contact and the "시공사례" copy — the ONLY package built from the 1.6.2
+ * pin (DEMO_PIN_162): its form posts once per press, without a submission_id and without the
+ * delivery texts. It is the live package until the inquiry-delivery (1.6.3) build is published, and
+ * the rollback behind that build — B2b.
+ */
+const ONLINE_INQUIRY_BUILD_INPUT_ID = "384008316a39e1d58a0311af2410bcb20e57afabf1c2af6836fbfeb2bdbb0924";
+const ONLINE_INQUIRY_PACKAGE_HASH = "eeb82881a2fcf5f10dafa1148c1e4d3eb6aef84dd4afbfa8a2af3f8c6870e44d";
 const DEMO_MANIFEST_BYTES = 274;
 /**
  * The FROZEN V0.2 golden values (07 rev 9.2.1, document "1.0", manifest "0.1"), pinned in
@@ -1907,14 +1930,22 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
   // Online inquiry + terminology (2026-10-02, the 1.6.2 re-pin): a new site document (inquiry.json)
   // and the declared slots leaves. Dropping / reverting exactly those must land on the pre-inquiry
   // anchor; the product-rename revert is then taken from that snapshot.
+  // Inquiry delivery (2026-10-03, the 1.6.3 re-pin): five added contact.page leaves. Removing exactly
+  // those must land on the pre-delivery anchor; the online-inquiry revert is then taken from that
+  // snapshot.
   eq(computeBuildInputId(LIVE_PARTS), LIVE_BUILD_INPUT_ID, "the live package's recorded parts reproduce its identity");
   const atLivePin = hashJson({ ...demo.snapshot, site: { ...demo.snapshot.site, template: LIVE_PIN } });
-  eq(atLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN, "pin rolled back to 1.5.2 → the production demo's snapshot hash (bi-01 … bi-08, the online inquiry form, the current copy)");
+  eq(atLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN, "pin rolled back to 1.5.2 → the production demo's snapshot hash (bi-01 … bi-08, the online inquiry form with its delivery texts, the current copy)");
   eq(demo.snapshot.inquiry, { schemaVersion: 1, endpoint: DEMO_ONLINE_INQUIRY_ENDPOINT }, "the demo declares its inquiry endpoint (inquiry.json)");
-  const preInquiry = revertOnlineInquiry(demo.snapshot);
+  const preDelivery = revertInquiryDelivery(demo.snapshot);
+  const preDeliveryAtLivePin = hashJson(atPin(preDelivery, LIVE_PIN));
+  eq(preDeliveryAtLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_DELIVERY, "…with the five declared contact.page leaves removed it is the pre-delivery anchor: those are the whole of the inquiry-delivery delta");
+  assert(atLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_DELIVERY, "the inquiry delivery is a real delta (a silent revert of it would fail here)");
+  eq(preDelivery.inquiry, demo.snapshot.inquiry, "…and the inquiry document is not part of it: the endpoint did not move");
+  const preInquiry = revertOnlineInquiry(preDelivery);
   const preInquiryAtLivePin = hashJson(atPin(preInquiry, LIVE_PIN));
   eq(preInquiryAtLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_INQUIRY, "…without the inquiry document and with the declared slot leaves reverted it is the pre-inquiry anchor: those are the whole of the online-inquiry delta");
-  assert(atLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_INQUIRY, "the online inquiry is a real delta (a silent revert of it would fail here)");
+  assert(atLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_INQUIRY && preDeliveryAtLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_INQUIRY, "the online inquiry is a real delta (a silent revert of it would fail here)");
   const preRename = revertFooterProductName(preInquiry);
   const preRenameAtLivePin = hashJson({ ...preRename, site: { ...preRename.site, template: LIVE_PIN } });
   eq(preRenameAtLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_RENAME, "…with the product name reverted it is the pre-rename anchor: that one field is the whole of the rename delta");
@@ -1924,7 +1955,7 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
   eq(preFooterAtLivePin, DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_FOOTER, "…with the footer notice reverted it is the pre-footer anchor: that one field is the whole of the footer delta");
   assert(atLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_FOOTER, "the footer notice is a real delta (a silent revert of it would fail here)");
   assert(preRenameAtLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_FOOTER, "…also before the product rename");
-  const qaPreFooter = revertFooterNotice(revertFooterProductName(revertOnlineInquiry(qaSnapshot)));
+  const qaPreFooter = revertFooterNotice(revertFooterProductName(revertOnlineInquiry(revertInquiryDelivery(qaSnapshot))));
   eq(hashJson({ ...qaPreFooter, site: { ...qaPreFooter.site, template: LIVE_PIN } }), DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT, "…with the synthetic fixture composed back it is the pre-split anchor: the 11 records are the whole of the split");
   assert(atLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT, "the split is a real delta (a silent re-insertion of the fixture would fail here)");
   assert(preFooterAtLivePin !== DEMO_SNAPSHOT_HASH_AT_LIVE_PIN_PRE_SPLIT, "…also before the footer delta");
@@ -2004,7 +2035,21 @@ await check("B2 the demo is ON: emit true, integrationInputHash = hash(producer,
 //    bytes and its recorded parts = the 1.6.1 lineage's with the product name also reverted. Every
 //    older package of the lineage was built from the 1.6.1 pin too, which is now a literal
 //    (DEMO_PIN_161) instead of "the demo's current pin".
-await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's media 1.1 identity (producer 4, the 8-record production corpus) current with the golden integration bytes, the frozen rollback lineage behind it (the product-rename build — the last 1.6.1 package — with the same golden bytes, differing only by the release and the online-inquiry site data; the footer-notice build, the record truth split's build, the pre-split producer-4 build, the producer-3 media build, the widget build and the first V0.2 package retired by keep-2 and intact in git)", async () => {
+//    RESTATED for the inquiry delivery (2026-10-03, the 1.6.3 re-pin — a Template release AND site
+//    data): the ninth steady package is the same 8-record corpus and document (968afbcc…) built
+//    from the 1.6.3 pin; its online form sends one submission_id per logical inquiry and carries
+//    the five delivery texts. Behind it is exactly the online-inquiry build (38400831…, live until
+//    this build is published), intact at its frozen hash, built from the 1.6.2 pin (DEMO_PIN_162),
+//    its _integration/ = the production golden's bytes, its recorded parts = this build's with the
+//    release rolled back to 1.6.2 and the snapshot taken with the inquiry-delivery delta reverted
+//    at that pin — so a rollback restores the 1.6.2 online form: the same endpoint on /contact,
+//    no submission_id and none of the delivery texts. keep-2 retired the product-rename build
+//    (01f7ac78…); it is read from PRODUCT_RENAME_PACKAGE_COMMIT and re-hashed, still with the
+//    production golden's bytes, the mail hand-off form and nothing of the endpoint, and its
+//    recorded parts = the 1.6.2 lineage's with the release rolled back to 1.6.1 and the
+//    online-inquiry delta also reverted at that pin. The 1.6.2 pin is now a literal too
+//    (DEMO_PIN_162).
+await check("B2b the current/previous packages are exactly the rollout state's: PRE = V0.1 current, pilot as rollback, nothing V0.2 staged; POST = the demo's media 1.1 identity (producer 4, the 8-record production corpus) current with the golden integration bytes, the frozen rollback lineage behind it (the online-inquiry build — the one 1.6.2 package — with the same golden bytes, differing only by the release and the inquiry-delivery site data; the product-rename build — the last 1.6.1 package —, the footer-notice build, the record truth split's build, the pre-split producer-4 build, the producer-3 media build, the widget build and the first V0.2 package retired by keep-2 and intact in git)", async () => {
   eq(demo.parts.integrationInputHash !== undefined, true, "the demo is still opted in");
   if (rollout === "PRE_PUBLISH_TRANSITION") {
     eq(currentRecord.buildInputId, V01_BUILD_INPUT_ID, "current = the V0.1 package");
@@ -2026,29 +2071,36 @@ await check("B2b the current/previous packages are exactly the rollout state's: 
   const srcs = new Set(demoEmission.portfolio!.document.records.flatMap((r) => [r.media?.cover, ...(r.media?.gallery ?? [])]).filter((m) => m !== undefined).map((m) => m.src));
   for (const src of srcs) assert(await exists(path.join(currentDir, "site", src.slice(1))), `media src ${src} is in the current package`);
 
-  // the 1.6.1 lineage: the demo's snapshot with the online-inquiry delta reverted, at the 1.6.1 pin —
-  // what the product-rename build (the rollback) was built from; older builds revert further from it
-  const pre162 = atPin(revertOnlineInquiry(demo.snapshot), DEMO_PIN_161);
+  // the 1.6.2 lineage: the demo's snapshot with the inquiry-delivery delta reverted, at the 1.6.2 pin —
+  // what the online-inquiry build (the rollback) was built from
+  const pre163 = atPin(revertInquiryDelivery(demo.snapshot), DEMO_PIN_162);
+  const partsAt162 = (snapshot: SiteSnapshot) => ({ ...currentRecord.parts, releaseHash: DEMO_PIN_162.releaseHash, siteSnapshotHash: hashJson(snapshot) });
+  // the 1.6.1 lineage: that snapshot with the online-inquiry delta also reverted, at the 1.6.1 pin —
+  // what the product-rename build was built from; older builds revert further from it
+  const pre162 = atPin(revertOnlineInquiry(pre163), DEMO_PIN_161);
   const partsAt161 = (snapshot: SiteSnapshot) => ({ ...currentRecord.parts, releaseHash: DEMO_PIN_161.releaseHash, siteSnapshotHash: hashJson(snapshot) });
-  assert(demoPin.releaseHash !== DEMO_PIN_161.releaseHash && currentRecord.parts.releaseHash === demoPin.releaseHash, "the current build is not a 1.6.1 build: the release moved");
-  eq(previousId, PRODUCT_RENAME_BUILD_INPUT_ID, "previous = the product-rename build of the 8-record corpus (the rollback behind the online-inquiry build)");
-  const prevDir = path.join(demoBuilds, "packages", PRODUCT_RENAME_BUILD_INPUT_ID);
+  assert(demoPin.releaseHash !== DEMO_PIN_162.releaseHash && demoPin.releaseHash !== DEMO_PIN_161.releaseHash && currentRecord.parts.releaseHash === demoPin.releaseHash, "the current build is neither a 1.6.2 nor a 1.6.1 build: the release moved");
+  eq(previousId, ONLINE_INQUIRY_BUILD_INPUT_ID, "previous = the online-inquiry build of the 8-record corpus (the rollback behind the inquiry-delivery build)");
+  const prevDir = path.join(demoBuilds, "packages", ONLINE_INQUIRY_BUILD_INPUT_ID);
   const prevRecord = (await readJson(path.join(prevDir, "build-record.json"))) as BuildRecord;
-  eq([prevRecord.buildInputId, prevRecord.packageHash], [PRODUCT_RENAME_BUILD_INPUT_ID, PRODUCT_RENAME_PACKAGE_HASH], "the rollback's recorded identity");
+  eq([prevRecord.buildInputId, prevRecord.packageHash], [ONLINE_INQUIRY_BUILD_INPUT_ID, ONLINE_INQUIRY_PACKAGE_HASH], "the rollback's recorded identity");
   assert(await packageIntact(prevDir), "the rollback package is intact");
-  eq([prevRecord.template.releaseId, prevRecord.template.releaseHash], [DEMO_PIN_161.releaseId, DEMO_PIN_161.releaseHash], "the rollback was built with the 1.6.1 pin");
-  eq([prevRecord.integration?.contract, prevRecord.integration?.producerVersion], [{ core: "0.1", portfolio: "1.1" }, PRODUCER_VERSION], "the rollback = the media 1.1 contract pair, this producer (the online inquiry changed the Template and site copy, not the producer)");
+  eq([prevRecord.template.releaseId, prevRecord.template.releaseHash], [DEMO_PIN_162.releaseId, DEMO_PIN_162.releaseHash], "the rollback was built with the 1.6.2 pin");
+  eq([prevRecord.integration?.contract, prevRecord.integration?.producerVersion], [{ core: "0.1", portfolio: "1.1" }, PRODUCER_VERSION], "the rollback = the media 1.1 contract pair, this producer (the inquiry delivery changed the Template, the inquiry door and site copy, not the producer)");
   const prevFiles = (await readdir(path.join(prevDir, "site", INTEGRATION_DIR))).filter((f) => f !== ".DS_Store").sort();
   eq(prevFiles, ["manifest.json", `portfolio.${DEMO_VERSION}.json`], "the rollback's _integration/ = the production manifest + document (the inquiry form and the site copy are outside the projection)");
   for (const f of prevFiles) eq(sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_DIR, f))), `rollback ${f} = the canonical golden's bytes`);
   eq([sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, `portfolio.${DEMO_VERSION}.json`))), sha256(await readFile(path.join(prevDir, "site", INTEGRATION_DIR, "manifest.json")))], [DEMO_DOC_SHA256, DEMO_MANIFEST_SHA256], "rollback document / manifest sha256 = the contract literals");
   eq(prevRecord.integration?.resources, currentRecord.integration?.resources, "the rollback and the current package carry the same integration resource");
-  // the release (1.6.1 → 1.6.2) and the online-inquiry site data are the whole of the difference between the rollback and the current build
-  eq(prevRecord.parts, partsAt161(pre162), "the rollback's recorded parts = the current build's with exactly the release rolled back to 1.6.1 and the online-inquiry delta reverted at that pin");
-  eq(computeBuildInputId(prevRecord.parts), PRODUCT_RENAME_BUILD_INPUT_ID, "…and they reproduce the rollback's identity");
-  assert(currentRecord.packageHash !== PRODUCT_RENAME_PACKAGE_HASH && currentRecord.buildInputId !== PRODUCT_RENAME_BUILD_INPUT_ID, "the current package is not the product-rename one");
-  // what a rollback would serve: the mail hand-off form, no endpoint anywhere; the current package
-  // carries the endpoint on /contact only (its page + that page's flight payloads)
+  // the release (1.6.2 → 1.6.3) and the inquiry-delivery site data are the whole of the difference between the rollback and the current build
+  eq(prevRecord.parts, partsAt162(pre163), "the rollback's recorded parts = the current build's with exactly the release rolled back to 1.6.2 and the inquiry-delivery delta reverted at that pin");
+  eq(computeBuildInputId(prevRecord.parts), ONLINE_INQUIRY_BUILD_INPUT_ID, "…and they reproduce the rollback's identity");
+  assert(currentRecord.packageHash !== ONLINE_INQUIRY_PACKAGE_HASH && currentRecord.buildInputId !== ONLINE_INQUIRY_BUILD_INPUT_ID, "the current package is not the online-inquiry one");
+  // what a rollback would serve: the 1.6.2 online form — the same endpoint, on /contact only (its page
+  // + that page's flight payloads), but no submission_id in any script and none of the delivery
+  // texts; the current package carries the endpoint in the same four files, the submission_id in
+  // its script and the five texts in /contact's payload. The mail hand-off form with no endpoint
+  // anywhere is one step further back: the product-rename build, read from git below.
   const textFilesWith = async (dir: string, needle: string) => {
     const hits: string[] = [];
     const walk = async (rel: string) => {
@@ -2061,24 +2113,62 @@ await check("B2b the current/previous packages are exactly the rollout state's: 
     await walk("");
     return hits.sort();
   };
-  eq(await textFilesWith(prevDir, DEMO_ONLINE_INQUIRY_ENDPOINT), [], "the rollback package carries the inquiry endpoint nowhere");
-  eq(await textFilesWith(prevDir, "boostchat.co.kr/api/"), [], "…nor any other API URL of that host");
-  eq(await textFilesWith(currentDir, DEMO_ONLINE_INQUIRY_ENDPOINT), ["contact.html", "contact.txt", "contact/__next._full.txt", "contact/__next.contact.__PAGE__.txt"], "the current package carries the endpoint on /contact only");
-  assert((await readFile(path.join(prevDir, "site/contact.html"), "utf8")).includes("온라인 접수는 아직 연결되어 있지 않습니다.") && !(await readFile(path.join(currentDir, "site/contact.html"), "utf8")).includes("연결되어 있지 않습니다"), "the not-connected notice: on the rollback's /contact, not on the current one");
+  const CONTACT_FILES = ["contact.html", "contact.txt", "contact/__next._full.txt", "contact/__next.contact.__PAGE__.txt"];
+  for (const [what, dir] of [["rollback", prevDir], ["current", currentDir]] as const) {
+    eq(await textFilesWith(dir, DEMO_ONLINE_INQUIRY_ENDPOINT), CONTACT_FILES, `the ${what} package carries the endpoint on /contact only`);
+    eq(await textFilesWith(dir, "boostchat.co.kr/api/"), CONTACT_FILES, `the ${what} package names that host's API in the same files only`);
+    for (const f of CONTACT_FILES) {
+      const text = await readFile(path.join(dir, "site", f), "utf8");
+      eq(text.split("boostchat.co.kr/api/").length, text.split(DEMO_ONLINE_INQUIRY_ENDPOINT).length, `${what} ${f}: an API URL of that host other than the endpoint`);
+    }
+  }
+  eq(await textFilesWith(prevDir, "submission_id"), [], "the rollback package sends no submission_id (the 1.6.2 door: one POST per press)");
+  const withSubmissionId = await textFilesWith(currentDir, "submission_id");
+  assert(withSubmissionId.length === 1 && /^_next\/static\/chunks\/[^/]+\.js$/.test(withSubmissionId[0]!), `the current package sends the submission_id from exactly one script chunk, and names it nowhere else: ${JSON.stringify(withSubmissionId)}`);
+  eq(DEMO_INQUIRY_DELIVERY_SLOTS.length, 5, "the inquiry-delivery texts");
+  for (const [section, leafPath, , now] of DEMO_INQUIRY_DELIVERY_SLOTS) {
+    assert(typeof now === "string" && now.length > 0, `${section}.${leafPath.join(".")}: a text`);
+    eq(await textFilesWith(prevDir, now), [], `the rollback package carries no ${leafPath.join(".")} text`);
+    eq(await textFilesWith(currentDir, now), CONTACT_FILES, `the current package carries the ${leafPath.join(".")} text on /contact only`);
+  }
+  for (const [what, dir] of [["rollback", prevDir], ["current", currentDir]] as const) assert(!(await readFile(path.join(dir, "site/contact.html"), "utf8")).includes("연결되어 있지 않습니다"), `the not-connected notice is on the ${what} package's /contact`);
 
-  // retired from the working tree by keep-2: the footer-notice build (the product-rename build's
-  // rollback), the record truth split's build (the footer-notice build's rollback), the pre-split build (the data-truth build's rollback), the producer-3 media
-  // build (the pre-split build's rollback), the widget build (the producer-3 build's rollback) and
-  // the first V0.2 package (the widget build's rollback) — each read from git and re-hashed
+  // retired from the working tree by keep-2: the product-rename build (the online-inquiry build's
+  // rollback), the footer-notice build (the product-rename build's rollback), the record truth
+  // split's build (the footer-notice build's rollback), the pre-split build (the data-truth build's
+  // rollback), the producer-3 media build (the pre-split build's rollback), the widget build (the
+  // producer-3 build's rollback) and the first V0.2 package (the widget build's rollback) — each
+  // read from git and re-hashed
+  const productRenameOnDisk = path.join(demoBuilds, "packages", PRODUCT_RENAME_BUILD_INPUT_ID);
   const footerNoticeOnDisk = path.join(demoBuilds, "packages", FOOTER_NOTICE_BUILD_INPUT_ID);
   const dataTruthOnDisk = path.join(demoBuilds, "packages", DATA_TRUTH_BUILD_INPUT_ID);
   const preSplitOnDisk = path.join(demoBuilds, "packages", PRE_SPLIT_BUILD_INPUT_ID);
   const p3OnDisk = path.join(demoBuilds, "packages", MEDIA_P3_BUILD_INPUT_ID);
   const widgetOnDisk = path.join(demoBuilds, "packages", WIDGET_BUILD_INPUT_ID);
   const firstOnDisk = path.join(demoBuilds, "packages", V02_FIRST_BUILD_INPUT_ID);
-  assert(!(await exists(footerNoticeOnDisk)) && !(await exists(dataTruthOnDisk)) && !(await exists(preSplitOnDisk)) && !(await exists(p3OnDisk)) && !(await exists(widgetOnDisk)) && !(await exists(firstOnDisk)), "keep-2 retired the footer-notice build, the record truth split's build, the pre-split build, the producer-3 media build, the widget build and the first V0.2 package (current + previous only)");
+  assert(!(await exists(productRenameOnDisk)) && !(await exists(footerNoticeOnDisk)) && !(await exists(dataTruthOnDisk)) && !(await exists(preSplitOnDisk)) && !(await exists(p3OnDisk)) && !(await exists(widgetOnDisk)) && !(await exists(firstOnDisk)), "keep-2 retired the product-rename build, the footer-notice build, the record truth split's build, the pre-split build, the producer-3 media build, the widget build and the first V0.2 package (current + previous only)");
   const scratch = await mkdtemp(path.join(os.tmpdir(), "v02-first-package-"));
   try {
+    const productRenameDir = gitMaterialize(repoRoot, PRODUCT_RENAME_PACKAGE_COMMIT, path.relative(repoRoot, productRenameOnDisk), scratch);
+    const productRenameRecord = (await readJson(path.join(productRenameDir, "build-record.json"))) as BuildRecord;
+    eq([productRenameRecord.buildInputId, productRenameRecord.packageHash], [PRODUCT_RENAME_BUILD_INPUT_ID, PRODUCT_RENAME_PACKAGE_HASH], "the product-rename build's recorded identity (from git)");
+    assert(await packageIntact(productRenameDir), "the product-rename build, read from git, is intact at its frozen packageHash");
+    eq([productRenameRecord.template.releaseId, productRenameRecord.template.releaseHash], [DEMO_PIN_161.releaseId, DEMO_PIN_161.releaseHash], "the product-rename build was built with the 1.6.1 pin");
+    eq([productRenameRecord.integration?.contract, productRenameRecord.integration?.producerVersion], [{ core: "0.1", portfolio: "1.1" }, PRODUCER_VERSION], "the product-rename build = the media 1.1 contract pair, this producer (the online inquiry changed the Template and site copy, not the producer)");
+    const productRenameFiles = (await readdir(path.join(productRenameDir, "site", INTEGRATION_DIR))).filter((f) => f !== ".DS_Store").sort();
+    eq(productRenameFiles, ["manifest.json", `portfolio.${DEMO_VERSION}.json`], "the product-rename build's _integration/ = the production manifest + document (the inquiry form and the site copy are outside the projection)");
+    for (const f of productRenameFiles) eq(sha256(await readFile(path.join(productRenameDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_DIR, f))), `product-rename ${f} = the canonical golden's bytes`);
+    eq([sha256(await readFile(path.join(productRenameDir, "site", INTEGRATION_DIR, `portfolio.${DEMO_VERSION}.json`))), sha256(await readFile(path.join(productRenameDir, "site", INTEGRATION_DIR, "manifest.json")))], [DEMO_DOC_SHA256, DEMO_MANIFEST_SHA256], "product-rename document / manifest sha256 = the contract literals");
+    eq(productRenameRecord.integration?.resources, currentRecord.integration?.resources, "the product-rename build and the current package carry the same integration resource");
+    // the release (1.6.1 → 1.6.2) and the online-inquiry site data are the whole of the difference between the product-rename build and the rollback (the online-inquiry build)
+    eq(productRenameRecord.parts, partsAt161(pre162), "the product-rename build's recorded parts = the 1.6.2 lineage's with exactly the release rolled back to 1.6.1 and the online-inquiry delta reverted at that pin");
+    eq(productRenameRecord.parts, { ...prevRecord.parts, releaseHash: DEMO_PIN_161.releaseHash, siteSnapshotHash: productRenameRecord.parts.siteSnapshotHash }, "…i.e. the rollback's own recorded parts but for the release and the snapshot");
+    eq(computeBuildInputId(productRenameRecord.parts), PRODUCT_RENAME_BUILD_INPUT_ID, "…and they reproduce the product-rename build's identity");
+    assert(currentRecord.packageHash !== PRODUCT_RENAME_PACKAGE_HASH && currentRecord.buildInputId !== PRODUCT_RENAME_BUILD_INPUT_ID && prevRecord.packageHash !== PRODUCT_RENAME_PACKAGE_HASH, "neither the current package nor the rollback is the product-rename one");
+    // what the product-rename build serves: the mail hand-off form, no endpoint anywhere
+    eq(await textFilesWith(productRenameDir, DEMO_ONLINE_INQUIRY_ENDPOINT), [], "the product-rename build carries the inquiry endpoint nowhere");
+    eq(await textFilesWith(productRenameDir, "boostchat.co.kr/api/"), [], "…nor any other API URL of that host");
+    assert((await readFile(path.join(productRenameDir, "site/contact.html"), "utf8")).includes("온라인 접수는 아직 연결되어 있지 않습니다."), "the not-connected notice: on the product-rename build's /contact (and on neither the rollback's nor the current one, above)");
     const footerNoticeDir = gitMaterialize(repoRoot, FOOTER_NOTICE_PACKAGE_COMMIT, path.relative(repoRoot, footerNoticeOnDisk), scratch);
     const footerNoticeRecord = (await readJson(path.join(footerNoticeDir, "build-record.json"))) as BuildRecord;
     eq([footerNoticeRecord.buildInputId, footerNoticeRecord.packageHash], [FOOTER_NOTICE_BUILD_INPUT_ID, FOOTER_NOTICE_PACKAGE_HASH], "the footer-notice build's recorded identity (from git)");
@@ -2090,11 +2180,11 @@ await check("B2b the current/previous packages are exactly the rollout state's: 
     for (const f of footerNoticeFiles) eq(sha256(await readFile(path.join(footerNoticeDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_DIR, f))), `footer-notice ${f} = the canonical golden's bytes`);
     eq([sha256(await readFile(path.join(footerNoticeDir, "site", INTEGRATION_DIR, `portfolio.${DEMO_VERSION}.json`))), sha256(await readFile(path.join(footerNoticeDir, "site", INTEGRATION_DIR, "manifest.json")))], [DEMO_DOC_SHA256, DEMO_MANIFEST_SHA256], "footer-notice document / manifest sha256 = the contract literals");
     eq(footerNoticeRecord.integration?.resources, currentRecord.integration?.resources, "the footer-notice build and the current package carry the same integration resource");
-    // the product name in the footer notice is the whole of the difference between the footer-notice build and the rollback (the product-rename build)
+    // the product name in the footer notice is the whole of the difference between the footer-notice build and the product-rename build
     eq(footerNoticeRecord.parts, partsAt161(revertFooterProductName(pre162)), "the footer-notice build's recorded parts = the 1.6.1 lineage's with exactly the product name reverted");
-    eq(footerNoticeRecord.parts, { ...prevRecord.parts, siteSnapshotHash: footerNoticeRecord.parts.siteSnapshotHash }, "…i.e. the rollback's own recorded parts but for the snapshot");
+    eq(footerNoticeRecord.parts, { ...productRenameRecord.parts, siteSnapshotHash: footerNoticeRecord.parts.siteSnapshotHash }, "…i.e. the product-rename build's own recorded parts but for the snapshot");
     eq(computeBuildInputId(footerNoticeRecord.parts), FOOTER_NOTICE_BUILD_INPUT_ID, "…and they reproduce the footer-notice build's identity");
-    assert(currentRecord.packageHash !== FOOTER_NOTICE_PACKAGE_HASH && currentRecord.buildInputId !== FOOTER_NOTICE_BUILD_INPUT_ID && prevRecord.packageHash !== FOOTER_NOTICE_PACKAGE_HASH, "neither the current package nor the rollback is the footer-notice one");
+    assert(currentRecord.packageHash !== FOOTER_NOTICE_PACKAGE_HASH && currentRecord.buildInputId !== FOOTER_NOTICE_BUILD_INPUT_ID && prevRecord.packageHash !== FOOTER_NOTICE_PACKAGE_HASH && productRenameRecord.packageHash !== FOOTER_NOTICE_PACKAGE_HASH, "neither the current package, the rollback nor the product-rename build is the footer-notice one");
     const dataTruthDir = gitMaterialize(repoRoot, DATA_TRUTH_PACKAGE_COMMIT, path.relative(repoRoot, dataTruthOnDisk), scratch);
     const dataTruthRecord = (await readJson(path.join(dataTruthDir, "build-record.json"))) as BuildRecord;
     eq([dataTruthRecord.buildInputId, dataTruthRecord.packageHash], [DATA_TRUTH_BUILD_INPUT_ID, DATA_TRUTH_PACKAGE_HASH], "the data-truth build's recorded identity (from git)");
@@ -2106,7 +2196,7 @@ await check("B2b the current/previous packages are exactly the rollout state's: 
     for (const f of dataTruthFiles) eq(sha256(await readFile(path.join(dataTruthDir, "site", INTEGRATION_DIR, f))), sha256(await readFile(path.join(repoRoot, GOLDEN_DIR, f))), `data-truth ${f} = the canonical golden's bytes`);
     eq([sha256(await readFile(path.join(dataTruthDir, "site", INTEGRATION_DIR, `portfolio.${DEMO_VERSION}.json`))), sha256(await readFile(path.join(dataTruthDir, "site", INTEGRATION_DIR, "manifest.json")))], [DEMO_DOC_SHA256, DEMO_MANIFEST_SHA256], "data-truth document / manifest sha256 = the contract literals");
     eq(dataTruthRecord.integration?.resources, currentRecord.integration?.resources, "the data-truth build and the current package carry the same integration resource");
-    // the two footer deltas (the product rename, then the notice) are the whole of the difference between the data-truth build and the rollback (the 1.6.1 lineage)
+    // the two footer deltas (the product rename, then the notice) are the whole of the difference between the data-truth build and the product-rename build (the 1.6.1 lineage)
     eq(dataTruthRecord.parts, partsAt161(revertFooterNotice(revertFooterProductName(pre162))), "the data-truth build's recorded parts = the 1.6.1 lineage's with exactly the product name and the footer notice reverted");
     eq(computeBuildInputId(dataTruthRecord.parts), DATA_TRUTH_BUILD_INPUT_ID, "…and they reproduce the data-truth build's identity");
     assert(currentRecord.packageHash !== DATA_TRUTH_PACKAGE_HASH && currentRecord.buildInputId !== DATA_TRUTH_BUILD_INPUT_ID, "the current package is not the data-truth one");
