@@ -1,0 +1,34 @@
+ guard: expected system identifier 
+-----------------------------------
+ 7675084143306387491
+(1 row)
+
+            now_utc            | read_only 
+-------------------------------+-----------
+ 2026-10-03 20:13:01.608449+00 | on
+(1 row)
+
+
+## rows named exactly [TEST] Shared Inquiry V2
+ lead_rows | source_website_form | submission_id_not_null | distinct_submission_ids | notified 
+-----------+---------------------+------------------------+-------------------------+----------
+         1 |                   1 |                      1 |                       1 |        1
+(1 row)
+
+
+## each such row (no contents)
+    id    |  tenant  |          created_at           |    source    | submission_id_prefix | has_fingerprint | no_conversation |          notified_at          | status 
+----------+----------+-------------------------------+--------------+----------------------+-----------------+-----------------+-------------------------------+--------
+ e45600cf | a4f98274 | 2026-10-03 20:12:46.527625+00 | website_form | 0ba99ff2             | t               | t               | 2026-10-03 20:12:46.534759+00 | new
+(1 row)
+
+
+## lead_request by source (whole table)
+    source    | rows 
+--------------+------
+ chat_form    |    1
+ chat_handoff |    1
+ (null)       |    8
+ website_form |    2
+(4 rows)
+

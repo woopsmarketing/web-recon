@@ -1,0 +1,1695 @@
+{
+  "what": "40 — /contact inquiry form: ONE logical inquiry (fast double click → one POST) + one idempotent replay (Chromium, 1440x900) — REHEARSAL",
+  "kind": "REHEARSAL",
+  "stubbed": true,
+  "result": "PASS",
+  "mode": "local",
+  "base": "http://127.0.0.1:53617",
+  "endpoint": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+  "startedAt": "2026-10-03T20:00:07.020Z",
+  "stage": "finished",
+  "tooling": {
+    "node": "v22.22.3",
+    "playwright": "1.62.1",
+    "browser": "chromium 151.0.7922.34"
+  },
+  "package": {
+    "buildInputId": "8a0c21182f47bd45bc26f087da4538fe101d8411445de2fe2e7a71ad41effd60",
+    "packageDir": "data/site-builds/boost-interior-demo/packages/8a0c21182f47bd45bc26f087da4538fe101d8411445de2fe2e7a71ad41effd60",
+    "packageHash": "3d2501990056f8da6d5e2d9cbed8491a518ca7934bb55309956cd721ad04733b",
+    "template": {
+      "templateId": "interior-01",
+      "templateVersion": "1.6.3",
+      "releaseId": "interior-01-1.6.3-93977937c0b4",
+      "releaseHash": "93977937c0b4030b29b477fb8a6379fd576697473b815b2a26b91a5f0aba58e4",
+      "templateSourceHash": "f47b9dfb3bbb85fd4ef6ee6fe0a7113c565e57f4cfc46bc250ff737f7a78c67a"
+    }
+  },
+  "filled": {
+    "name": "[TEST] Shared Inquiry V2",
+    "phone": "010-0000-0000",
+    "region": "테스트",
+    "area": "0평",
+    "schedule": "테스트",
+    "message": "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요.",
+    "workType": "(left at the default empty option — the select is not required)",
+    "consent": true
+  },
+  "submissionIdPolicy": "only the first 8 characters and whether it is a v4 UUID are recorded — never the id",
+  "clickAtUtc": "2026-10-03T20:00:09.047Z",
+  "errors": [],
+  "persistedAt": "2026-10-03T20:00:14.409Z",
+  "checks": [
+    {
+      "group": "pre-click",
+      "id": "the base serves the 1.6.3 form — checked before a browser is started",
+      "ok": true,
+      "passed": 4,
+      "total": 4,
+      "failed": []
+    },
+    {
+      "group": "pre-click",
+      "id": "the page is the 1.6.3 form, filled as specified, and nothing was sent yet",
+      "ok": true,
+      "passed": 7,
+      "total": 7,
+      "failed": []
+    },
+    {
+      "group": "press",
+      "id": "a fast double click sends exactly ONE POST",
+      "ok": true,
+      "passed": 5,
+      "total": 5,
+      "failed": [],
+      "detail": {
+        "press": {
+          "clicks": 2,
+          "withinOneTick": true,
+          "ms": 1.6,
+          "disabledAfterFirst": false,
+          "disabledAfterSecond": false
+        }
+      }
+    },
+    {
+      "group": "press",
+      "id": "the POST is answered 200 {\"received\":true}",
+      "ok": true,
+      "passed": 4,
+      "total": 4,
+      "failed": [],
+      "detail": {
+        "status": 200,
+        "body": "{\"received\":true}",
+        "headers": {
+          "access-control-allow-origin": "http://127.0.0.1:53617",
+          "retry-after": null,
+          "access-control-allow-methods": null,
+          "access-control-allow-headers": null,
+          "access-control-max-age": null,
+          "access-control-expose-headers": "Retry-After",
+          "content-type": "application/json",
+          "cache-control": "no-store",
+          "vary": "Origin"
+        }
+      }
+    },
+    {
+      "group": "press",
+      "id": "the request: no cookie, exactly the six keys, a v4 submission_id, the folded message",
+      "ok": true,
+      "passed": 7,
+      "total": 7,
+      "failed": [],
+      "detail": {
+        "headerNames": [
+          "accept",
+          "accept-language",
+          "content-type",
+          "origin",
+          "referer",
+          "sec-ch-ua",
+          "sec-ch-ua-mobile",
+          "sec-ch-ua-platform",
+          "user-agent"
+        ],
+        "body": {
+          "bytes": 357,
+          "keys": [
+            "consent",
+            "name",
+            "phone",
+            "message",
+            "hp",
+            "submission_id"
+          ],
+          "keysExactlyExpected": true,
+          "forbiddenKeys": [],
+          "consent": true,
+          "name": "[TEST] Shared Inquiry V2",
+          "phone": "010-0000-0000",
+          "hp": "",
+          "message": {
+            "firstLine": "[홈페이지 견적 문의]",
+            "lines": [
+              "[홈페이지 견적 문의]",
+              "지역: 테스트",
+              "평형: 0평",
+              "예상 일정: 테스트",
+              "",
+              "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요."
+            ],
+            "length": 114
+          },
+          "submissionId": {
+            "first8": "a74b6ca6",
+            "isV4Uuid": true,
+            "length": 36
+          }
+        }
+      }
+    },
+    {
+      "group": "press",
+      "id": "the success UI",
+      "ok": true,
+      "passed": 5,
+      "total": 5,
+      "failed": []
+    },
+    {
+      "group": "replay",
+      "id": "the same body sent once more is answered as already received",
+      "ok": true,
+      "passed": 6,
+      "total": 6,
+      "failed": [],
+      "detail": {
+        "asThePageSawIt": {
+          "ok": true,
+          "status": 200,
+          "type": "cors",
+          "text": "{\"received\":true}",
+          "json": {
+            "received": true
+          },
+          "retryAfterAsThePageSeesIt": null
+        },
+        "status": 200,
+        "body": "{\"received\":true}",
+        "headers": {
+          "access-control-allow-origin": "http://127.0.0.1:53617",
+          "retry-after": null,
+          "access-control-allow-methods": null,
+          "access-control-allow-headers": null,
+          "access-control-max-age": null,
+          "access-control-expose-headers": "Retry-After",
+          "content-type": "application/json",
+          "cache-control": "no-store",
+          "vary": "Origin"
+        }
+      }
+    },
+    {
+      "group": "replay",
+      "id": "the endpoint was addressed by exactly 2 POSTs — 1 form POST + 1 replay (preflights aside)",
+      "ok": true,
+      "passed": 5,
+      "total": 5,
+      "failed": []
+    },
+    {
+      "group": "page",
+      "id": "console errors 0, page errors 0",
+      "ok": true,
+      "passed": 2,
+      "total": 2,
+      "failed": []
+    },
+    {
+      "group": "page",
+      "id": "no request went to a turnstile / challenges.cloudflare.com host",
+      "ok": true,
+      "passed": 1,
+      "total": 1,
+      "failed": []
+    },
+    {
+      "group": "stub",
+      "id": "the idempotent stub holds exactly ONE stored inquiry after the replay",
+      "ok": true,
+      "passed": 4,
+      "total": 4,
+      "failed": [],
+      "detail": {
+        "stored": 1,
+        "answeredAsAlreadyReceived": 1,
+        "conflicts": 0,
+        "invalid": 0,
+        "storeCount": 1
+      }
+    },
+    {
+      "group": "stub",
+      "id": "every lead request was answered by the stub — none reached a server",
+      "ok": true,
+      "passed": 4,
+      "total": 4,
+      "failed": []
+    },
+    {
+      "group": "output",
+      "id": "no full submission id in the result (first 8 characters only)",
+      "ok": true,
+      "passed": 1,
+      "total": 1,
+      "failed": []
+    }
+  ],
+  "notes": [],
+  "servedBuild": {
+    "contact": {
+      "status": 200,
+      "bytes": 25226,
+      "sha256": "18974bac558d2d6527ef9ce6e9a08a12e4e4ec5b1d091fc93a6134d11349876d",
+      "identicalToLocalPackage": true
+    },
+    "chunkNames": [
+      "3yh5jaalv1u8v.js",
+      "22lgiphrawvbj.js",
+      "1fx8wyr62n54x.js",
+      "2fo9hoy1stmbs.js",
+      "turbopack-3oqcsbkplb52c.js",
+      "332uslzbhf388.js",
+      "0hyfkvg55a3sz.js",
+      "0cz1d0mv5g_q7.js"
+    ],
+    "chunks": [
+      {
+        "name": "3yh5jaalv1u8v.js",
+        "status": 200,
+        "bytes": 5364,
+        "sha256": "d240b1f487074dae30276381cd3620fe904fc8e3e0f982093755f0416cdec23d",
+        "door": false,
+        "containsSubmissionId": false
+      },
+      {
+        "name": "22lgiphrawvbj.js",
+        "status": 200,
+        "bytes": 29003,
+        "sha256": "e5b05cd975fb25b24dcaf882412328d4fd58817ada09b90346d0612588049a33",
+        "door": false,
+        "containsSubmissionId": false
+      },
+      {
+        "name": "1fx8wyr62n54x.js",
+        "status": 200,
+        "bytes": 229075,
+        "sha256": "493a8fb099312900b047e51a0ba656e16f7352c8ec9a3fd4667d8c7a631c78fe",
+        "door": false,
+        "containsSubmissionId": false
+      },
+      {
+        "name": "2fo9hoy1stmbs.js",
+        "status": 200,
+        "bytes": 163778,
+        "sha256": "d8732d454d68d7bd6c09103fc01acbcfc448346e4e3528f41bc47c93c8dcce13",
+        "door": false,
+        "containsSubmissionId": false
+      },
+      {
+        "name": "turbopack-3oqcsbkplb52c.js",
+        "status": 200,
+        "bytes": 9652,
+        "sha256": "a7fdcd6a359dc628f0004e904c61ac919b549584942547421b76f37d9ab61160",
+        "door": false,
+        "containsSubmissionId": false
+      },
+      {
+        "name": "332uslzbhf388.js",
+        "status": 200,
+        "bytes": 23133,
+        "sha256": "8ba030d7dfd589a3fa6e5da7d72b78998b47f20963289a5ae328a7a5e9536417",
+        "door": false,
+        "containsSubmissionId": false
+      },
+      {
+        "name": "0hyfkvg55a3sz.js",
+        "status": 200,
+        "bytes": 15226,
+        "sha256": "ec7556ad2da225b0731603830fdd850fce4dfee873f0c919ebd5c3063d5a4450",
+        "door": true,
+        "containsSubmissionId": true
+      },
+      {
+        "name": "0cz1d0mv5g_q7.js",
+        "status": 200,
+        "bytes": 112594,
+        "sha256": "0973c1d64c88adc8e3c950410cb58b288f72118d5965b78049438deb8f2f9683",
+        "door": false,
+        "containsSubmissionId": false
+      }
+    ],
+    "doorChunks": [
+      "0hyfkvg55a3sz.js"
+    ],
+    "doorChunkContainsSubmissionId": true,
+    "endpointDeclaredInContactHtml": true,
+    "localPackage": {
+      "chunkNames": [
+        "3yh5jaalv1u8v.js",
+        "22lgiphrawvbj.js",
+        "1fx8wyr62n54x.js",
+        "2fo9hoy1stmbs.js",
+        "turbopack-3oqcsbkplb52c.js",
+        "332uslzbhf388.js",
+        "0hyfkvg55a3sz.js",
+        "0cz1d0mv5g_q7.js"
+      ],
+      "doorChunks": [
+        "0hyfkvg55a3sz.js"
+      ],
+      "sameChunkNames": true
+    }
+  },
+  "navigation": {
+    "status": 200,
+    "url": "http://127.0.0.1:53617/contact"
+  },
+  "before": {
+    "path": "/contact",
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "scrollY": 0,
+    "overflow": {
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflowX": false
+    },
+    "values": {
+      "name": "",
+      "phone": "",
+      "region": "",
+      "area": "",
+      "workType": "",
+      "schedule": "",
+      "message": ""
+    },
+    "trap": "",
+    "consent": false,
+    "controls": 9,
+    "ariaBusy": null,
+    "button": {
+      "text": "견적 문의 보내기",
+      "disabled": false
+    },
+    "buttonRect": {
+      "left": 662.7,
+      "top": 806.6,
+      "right": 882.7,
+      "bottom": 854.6,
+      "width": 220,
+      "height": 48
+    },
+    "buttonHit": [
+      "self",
+      "FORM.i1-form",
+      "FORM.i1-form",
+      "FORM.i1-form",
+      "FORM.i1-form"
+    ],
+    "validity": {
+      "name": {
+        "valueMissing": true,
+        "valid": false
+      },
+      "phone": {
+        "valueMissing": true,
+        "patternMismatch": false,
+        "customError": false,
+        "valid": false,
+        "message": "Please fill out this field."
+      },
+      "message": {
+        "valueMissing": true,
+        "valid": false
+      },
+      "consent": {
+        "valueMissing": true,
+        "valid": false
+      }
+    },
+    "focus": "BODY",
+    "alertText": "",
+    "alertOwnText": "",
+    "alertVisible": false,
+    "alertRect": null,
+    "alertInViewport": false,
+    "alertClippedBy": 0,
+    "alertHit": null,
+    "contacts": {
+      "present": false,
+      "leadText": null,
+      "links": 0,
+      "schemes": [],
+      "heights": [],
+      "rects": []
+    },
+    "consentRect": {
+      "left": 662.7,
+      "top": 704.1,
+      "right": 682.7,
+      "bottom": 724.1,
+      "width": 20,
+      "height": 20
+    },
+    "consentRowRect": {
+      "left": 662.7,
+      "top": 692.1,
+      "right": 1400,
+      "bottom": 758.8,
+      "width": 737.3,
+      "height": 66.8
+    },
+    "formRect": {
+      "left": 662.7,
+      "top": 145,
+      "right": 1400,
+      "bottom": 854.6,
+      "width": 737.3,
+      "height": 709.6
+    },
+    "statusText": "",
+    "statusVisible": false,
+    "statusRect": null,
+    "doneTitleText": null,
+    "doneTitleRect": null,
+    "doneTitleInViewport": false,
+    "doneTitleHit": null,
+    "header": {
+      "bottom": 73,
+      "effectiveBottom": 73
+    },
+    "launcher": null,
+    "launcherOver": null,
+    "launcherXRangeOverlapsButton": null
+  },
+  "filledState": {
+    "path": "/contact",
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "scrollY": 0,
+    "overflow": {
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflowX": false
+    },
+    "values": {
+      "name": "[TEST] Shared Inquiry V2",
+      "phone": "010-0000-0000",
+      "region": "테스트",
+      "area": "0평",
+      "workType": "",
+      "schedule": "테스트",
+      "message": "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요."
+    },
+    "trap": "",
+    "consent": true,
+    "controls": 9,
+    "ariaBusy": null,
+    "button": {
+      "text": "견적 문의 보내기",
+      "disabled": false
+    },
+    "buttonRect": {
+      "left": 662.7,
+      "top": 806.6,
+      "right": 882.7,
+      "bottom": 854.6,
+      "width": 220,
+      "height": 48
+    },
+    "buttonHit": [
+      "self",
+      "FORM.i1-form",
+      "FORM.i1-form",
+      "FORM.i1-form",
+      "FORM.i1-form"
+    ],
+    "validity": {
+      "name": {
+        "valueMissing": false,
+        "valid": true
+      },
+      "phone": {
+        "valueMissing": false,
+        "patternMismatch": false,
+        "customError": false,
+        "valid": true,
+        "message": ""
+      },
+      "message": {
+        "valueMissing": false,
+        "valid": true
+      },
+      "consent": {
+        "valueMissing": false,
+        "valid": true
+      }
+    },
+    "focus": "consent",
+    "alertText": "",
+    "alertOwnText": "",
+    "alertVisible": false,
+    "alertRect": null,
+    "alertInViewport": false,
+    "alertClippedBy": 0,
+    "alertHit": null,
+    "contacts": {
+      "present": false,
+      "leadText": null,
+      "links": 0,
+      "schemes": [],
+      "heights": [],
+      "rects": []
+    },
+    "consentRect": {
+      "left": 662.7,
+      "top": 704.1,
+      "right": 682.7,
+      "bottom": 724.1,
+      "width": 20,
+      "height": 20
+    },
+    "consentRowRect": {
+      "left": 662.7,
+      "top": 692.1,
+      "right": 1400,
+      "bottom": 758.8,
+      "width": 737.3,
+      "height": 66.8
+    },
+    "formRect": {
+      "left": 662.7,
+      "top": 145,
+      "right": 1400,
+      "bottom": 854.6,
+      "width": 737.3,
+      "height": 709.6
+    },
+    "statusText": "",
+    "statusVisible": false,
+    "statusRect": null,
+    "doneTitleText": null,
+    "doneTitleRect": null,
+    "doneTitleInViewport": false,
+    "doneTitleHit": null,
+    "header": {
+      "bottom": 73,
+      "effectiveBottom": 73
+    },
+    "launcher": null,
+    "launcherOver": null,
+    "launcherXRangeOverlapsButton": null
+  },
+  "navigationsBeforeClick": 2,
+  "leadRequests": [
+    {
+      "t": 1891,
+      "at": "2026-10-03T20:00:09.051Z",
+      "phase": "form",
+      "method": "POST",
+      "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+      "headerNames": [
+        "accept",
+        "accept-language",
+        "content-type",
+        "origin",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "sec-ch-ua-platform",
+        "user-agent"
+      ],
+      "cookieHeaderPresent": false,
+      "body": {
+        "bytes": 357,
+        "keys": [
+          "consent",
+          "name",
+          "phone",
+          "message",
+          "hp",
+          "submission_id"
+        ],
+        "keysExactlyExpected": true,
+        "forbiddenKeys": [],
+        "consent": true,
+        "name": "[TEST] Shared Inquiry V2",
+        "phone": "010-0000-0000",
+        "hp": "",
+        "message": {
+          "firstLine": "[홈페이지 견적 문의]",
+          "lines": [
+            "[홈페이지 견적 문의]",
+            "지역: 테스트",
+            "평형: 0평",
+            "예상 일정: 테스트",
+            "",
+            "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요."
+          ],
+          "length": 114
+        },
+        "submissionId": {
+          "first8": "a74b6ca6",
+          "isV4Uuid": true,
+          "length": 36
+        }
+      }
+    },
+    {
+      "t": 5228,
+      "at": "2026-10-03T20:00:12.388Z",
+      "phase": "replay",
+      "method": "POST",
+      "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+      "headerNames": [
+        "accept",
+        "accept-language",
+        "content-type",
+        "origin",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "sec-ch-ua-platform",
+        "user-agent"
+      ],
+      "cookieHeaderPresent": false,
+      "body": {
+        "bytes": 357,
+        "keys": [
+          "consent",
+          "name",
+          "phone",
+          "message",
+          "hp",
+          "submission_id"
+        ],
+        "keysExactlyExpected": true,
+        "forbiddenKeys": [],
+        "consent": true,
+        "name": "[TEST] Shared Inquiry V2",
+        "phone": "010-0000-0000",
+        "hp": "",
+        "message": {
+          "firstLine": "[홈페이지 견적 문의]",
+          "lines": [
+            "[홈페이지 견적 문의]",
+            "지역: 테스트",
+            "평형: 0평",
+            "예상 일정: 테스트",
+            "",
+            "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요."
+          ],
+          "length": 114
+        },
+        "submissionId": {
+          "first8": "a74b6ca6",
+          "isV4Uuid": true,
+          "length": 36
+        }
+      }
+    }
+  ],
+  "leadResponses": [
+    {
+      "t": 1892,
+      "at": "2026-10-03T20:00:09.052Z",
+      "phase": "form",
+      "method": "POST",
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        "access-control-allow-origin": "http://127.0.0.1:53617",
+        "retry-after": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-max-age": null,
+        "access-control-expose-headers": "Retry-After",
+        "content-type": "application/json",
+        "cache-control": "no-store",
+        "vary": "Origin"
+      },
+      "body": "{\"received\":true}",
+      "serverAddr": null
+    },
+    {
+      "t": 5230,
+      "at": "2026-10-03T20:00:12.390Z",
+      "phase": "replay",
+      "method": "POST",
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        "access-control-allow-origin": "http://127.0.0.1:53617",
+        "retry-after": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-max-age": null,
+        "access-control-expose-headers": "Retry-After",
+        "content-type": "application/json",
+        "cache-control": "no-store",
+        "vary": "Origin"
+      },
+      "body": "{\"received\":true}",
+      "serverAddr": null
+    }
+  ],
+  "leadRequestsFailed": [],
+  "cdp": {
+    "lead": [
+      {
+        "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+        "preflight": true,
+        "events": [
+          {
+            "event": "requestWillBeSent",
+            "t": 1890,
+            "phase": "form",
+            "method": "OPTIONS",
+            "type": "Other",
+            "initiatorType": "preflight",
+            "headerNames": [
+              "Accept",
+              "Access-Control-Request-Headers",
+              "Access-Control-Request-Method",
+              "Origin",
+              "Sec-Fetch-Mode",
+              "User-Agent"
+            ]
+          },
+          {
+            "event": "responseReceived",
+            "t": 1891,
+            "phase": "form",
+            "type": "Preflight",
+            "status": 204,
+            "headers": {
+              "access-control-allow-origin": "http://127.0.0.1:53617",
+              "retry-after": null,
+              "access-control-allow-methods": "POST",
+              "access-control-allow-headers": "content-type",
+              "access-control-max-age": null,
+              "access-control-expose-headers": null,
+              "content-type": null,
+              "cache-control": null,
+              "vary": null
+            },
+            "remoteIPAddress": "",
+            "protocol": "http/1.1"
+          },
+          {
+            "event": "loadingFinished",
+            "t": 1892
+          }
+        ]
+      },
+      {
+        "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+        "preflight": false,
+        "events": [
+          {
+            "event": "requestWillBeSent",
+            "t": 1891,
+            "phase": "form",
+            "method": "POST",
+            "type": "Fetch",
+            "initiatorType": "script",
+            "headerNames": [
+              "Accept-Language",
+              "Content-Type",
+              "Referer",
+              "User-Agent",
+              "sec-ch-ua",
+              "sec-ch-ua-mobile",
+              "sec-ch-ua-platform"
+            ]
+          },
+          {
+            "event": "responseReceived",
+            "t": 1894,
+            "phase": "form",
+            "type": "Fetch",
+            "status": 200,
+            "headers": {
+              "access-control-allow-origin": "http://127.0.0.1:53617",
+              "retry-after": null,
+              "access-control-allow-methods": null,
+              "access-control-allow-headers": null,
+              "access-control-max-age": null,
+              "access-control-expose-headers": "Retry-After",
+              "content-type": "application/json",
+              "cache-control": "no-store",
+              "vary": "Origin"
+            },
+            "remoteIPAddress": null,
+            "protocol": "http/1.1"
+          },
+          {
+            "event": "loadingFinished",
+            "t": 1894
+          }
+        ]
+      },
+      {
+        "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+        "preflight": true,
+        "events": [
+          {
+            "event": "requestWillBeSent",
+            "t": 5228,
+            "phase": "replay",
+            "method": "OPTIONS",
+            "type": "Other",
+            "initiatorType": "preflight",
+            "headerNames": [
+              "Accept",
+              "Access-Control-Request-Headers",
+              "Access-Control-Request-Method",
+              "Origin",
+              "Sec-Fetch-Mode",
+              "User-Agent"
+            ]
+          },
+          {
+            "event": "responseReceived",
+            "t": 5228,
+            "phase": "replay",
+            "type": "Preflight",
+            "status": 204,
+            "headers": {
+              "access-control-allow-origin": "http://127.0.0.1:53617",
+              "retry-after": null,
+              "access-control-allow-methods": "POST",
+              "access-control-allow-headers": "content-type",
+              "access-control-max-age": null,
+              "access-control-expose-headers": null,
+              "content-type": null,
+              "cache-control": null,
+              "vary": null
+            },
+            "remoteIPAddress": "",
+            "protocol": "http/1.1"
+          },
+          {
+            "event": "loadingFinished",
+            "t": 5229
+          }
+        ]
+      },
+      {
+        "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+        "preflight": false,
+        "events": [
+          {
+            "event": "requestWillBeSent",
+            "t": 5228,
+            "phase": "replay",
+            "method": "POST",
+            "type": "Fetch",
+            "initiatorType": "script",
+            "headerNames": [
+              "Accept-Language",
+              "Content-Type",
+              "Referer",
+              "User-Agent",
+              "sec-ch-ua",
+              "sec-ch-ua-mobile",
+              "sec-ch-ua-platform"
+            ]
+          },
+          {
+            "event": "responseReceived",
+            "t": 5231,
+            "phase": "replay",
+            "type": "Fetch",
+            "status": 200,
+            "headers": {
+              "access-control-allow-origin": "http://127.0.0.1:53617",
+              "retry-after": null,
+              "access-control-allow-methods": null,
+              "access-control-allow-headers": null,
+              "access-control-max-age": null,
+              "access-control-expose-headers": "Retry-After",
+              "content-type": "application/json",
+              "cache-control": "no-store",
+              "vary": "Origin"
+            },
+            "remoteIPAddress": null,
+            "protocol": "http/1.1"
+          },
+          {
+            "event": "loadingFinished",
+            "t": 5231
+          }
+        ]
+      }
+    ]
+  },
+  "preflight": {
+    "observable": true,
+    "count": 2,
+    "answeredBy": "Playwright's request interception (stubbed run) — not a server",
+    "responses": [
+      [
+        {
+          "event": "responseReceived",
+          "status": 204,
+          "headers": {
+            "access-control-allow-origin": "http://127.0.0.1:53617",
+            "retry-after": null,
+            "access-control-allow-methods": "POST",
+            "access-control-allow-headers": "content-type",
+            "access-control-max-age": null,
+            "access-control-expose-headers": null,
+            "content-type": null,
+            "cache-control": null,
+            "vary": null
+          }
+        }
+      ],
+      [
+        {
+          "event": "responseReceived",
+          "status": 204,
+          "headers": {
+            "access-control-allow-origin": "http://127.0.0.1:53617",
+            "retry-after": null,
+            "access-control-allow-methods": "POST",
+            "access-control-allow-headers": "content-type",
+            "access-control-max-age": null,
+            "access-control-expose-headers": null,
+            "content-type": null,
+            "cache-control": null,
+            "vary": null
+          }
+        }
+      ]
+    ]
+  },
+  "console": [
+    {
+      "t": 13,
+      "phase": "load",
+      "type": "error",
+      "text": "Failed to load resource: net::ERR_FAILED",
+      "url": "https://boostchat.co.kr/widget.js"
+    },
+    {
+      "t": 4901,
+      "phase": "form",
+      "type": "warning",
+      "text": "The resource http://127.0.0.1:53617/assets/609e7b56f7660f5d1f9d.jpg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+      "url": "http://127.0.0.1:53617/contact"
+    },
+    {
+      "t": 4901,
+      "phase": "form",
+      "type": "warning",
+      "text": "The resource http://127.0.0.1:53617/assets/33888d63a7dbd1775c78.jpg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+      "url": "http://127.0.0.1:53617/contact"
+    }
+  ],
+  "pageErrors": [],
+  "mainFrameNavigations": [
+    {
+      "t": 7,
+      "at": "2026-10-03T20:00:07.167Z",
+      "url": "http://127.0.0.1:53617/contact"
+    },
+    {
+      "t": 44,
+      "at": "2026-10-03T20:00:07.204Z",
+      "url": "http://127.0.0.1:53617/contact"
+    }
+  ],
+  "hostsRequested": [
+    "127.0.0.1:53617",
+    "boostchat.co.kr"
+  ],
+  "widgetRequests": {
+    "count": 1,
+    "bootstrapPosts": 0,
+    "byResourceType": {
+      "script": 1
+    }
+  },
+  "scriptsLoadedByThePage": [
+    {
+      "name": "3yh5jaalv1u8v.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "22lgiphrawvbj.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "turbopack-3oqcsbkplb52c.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "332uslzbhf388.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "0hyfkvg55a3sz.js",
+      "status": 200,
+      "door": true,
+      "containsSubmissionId": true
+    },
+    {
+      "name": "2fo9hoy1stmbs.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "1fx8wyr62n54x.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "03av4zwinu01d.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "0rnsp54yxojro.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "1yjyq_0ur7v-3.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    }
+  ],
+  "leadRequestCounts": {
+    "playwrightRequestEvents": 2,
+    "playwrightPOST": 2,
+    "playwrightOther": 0,
+    "formPOST": 1,
+    "replayPOST": 1,
+    "cdpRequests": 4,
+    "cdpPreflight": 2,
+    "cdpPOST": 2
+  },
+  "press": {
+    "clicks": 2,
+    "withinOneTick": true,
+    "ms": 1.6,
+    "disabledAfterFirst": false,
+    "disabledAfterSecond": false
+  },
+  "clickReturnedAtUtc": "2026-10-03T20:00:09.050Z",
+  "formPostAnsweredAtUtc": "2026-10-03T20:00:09.053Z",
+  "after": {
+    "path": "/contact",
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "scrollY": 0,
+    "overflow": {
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflowX": false
+    },
+    "values": {
+      "name": null,
+      "phone": null,
+      "region": null,
+      "area": null,
+      "workType": null,
+      "schedule": null,
+      "message": null
+    },
+    "trap": null,
+    "consent": null,
+    "controls": 0,
+    "ariaBusy": null,
+    "button": null,
+    "buttonRect": null,
+    "buttonHit": null,
+    "validity": {
+      "name": null,
+      "phone": null,
+      "message": null,
+      "consent": null
+    },
+    "focus": "status",
+    "alertText": null,
+    "alertOwnText": null,
+    "alertVisible": false,
+    "alertRect": null,
+    "alertInViewport": false,
+    "alertClippedBy": 0,
+    "alertHit": null,
+    "contacts": {
+      "present": false,
+      "leadText": null,
+      "links": 0,
+      "schemes": [],
+      "heights": [],
+      "rects": []
+    },
+    "consentRect": null,
+    "consentRowRect": null,
+    "formRect": {
+      "left": 662.7,
+      "top": 145,
+      "right": 1400,
+      "bottom": 304.5,
+      "width": 737.3,
+      "height": 159.5
+    },
+    "statusText": "견적 문의가 접수되었습니다.\n입력해주신 내용을 확인한 뒤 상담을 이어갈 수 있습니다.",
+    "statusVisible": true,
+    "statusRect": {
+      "left": 662.7,
+      "top": 145,
+      "right": 1400,
+      "bottom": 304.5,
+      "width": 737.3,
+      "height": 159.5
+    },
+    "doneTitleText": "견적 문의가 접수되었습니다.",
+    "doneTitleRect": {
+      "left": 686.7,
+      "top": 193,
+      "right": 1376,
+      "bottom": 221,
+      "width": 689.3,
+      "height": 28
+    },
+    "doneTitleInViewport": true,
+    "doneTitleHit": [
+      "self",
+      "self",
+      "self",
+      "self",
+      "self"
+    ],
+    "header": {
+      "bottom": 73,
+      "effectiveBottom": 73
+    },
+    "launcher": null,
+    "launcherOver": null,
+    "launcherXRangeOverlapsButton": null
+  },
+  "post": {
+    "request": {
+      "method": "POST",
+      "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+      "headerNames": [
+        "accept",
+        "accept-language",
+        "content-type",
+        "origin",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "sec-ch-ua-platform",
+        "user-agent"
+      ],
+      "cookieHeaderPresent": false,
+      "body": {
+        "bytes": 357,
+        "keys": [
+          "consent",
+          "name",
+          "phone",
+          "message",
+          "hp",
+          "submission_id"
+        ],
+        "keysExactlyExpected": true,
+        "forbiddenKeys": [],
+        "consent": true,
+        "name": "[TEST] Shared Inquiry V2",
+        "phone": "010-0000-0000",
+        "hp": "",
+        "message": {
+          "firstLine": "[홈페이지 견적 문의]",
+          "lines": [
+            "[홈페이지 견적 문의]",
+            "지역: 테스트",
+            "평형: 0평",
+            "예상 일정: 테스트",
+            "",
+            "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요."
+          ],
+          "length": 114
+        },
+        "submissionId": {
+          "first8": "a74b6ca6",
+          "isV4Uuid": true,
+          "length": 36
+        }
+      }
+    },
+    "response": {
+      "t": 1892,
+      "at": "2026-10-03T20:00:09.052Z",
+      "phase": "form",
+      "method": "POST",
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        "access-control-allow-origin": "http://127.0.0.1:53617",
+        "retry-after": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-max-age": null,
+        "access-control-expose-headers": "Retry-After",
+        "content-type": "application/json",
+        "cache-control": "no-store",
+        "vary": "Origin"
+      },
+      "body": "{\"received\":true}",
+      "serverAddr": null
+    },
+    "playwrightResponseStatus": 200
+  },
+  "afterReplay": {
+    "path": "/contact",
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "scrollY": 0,
+    "overflow": {
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflowX": false
+    },
+    "values": {
+      "name": null,
+      "phone": null,
+      "region": null,
+      "area": null,
+      "workType": null,
+      "schedule": null,
+      "message": null
+    },
+    "trap": null,
+    "consent": null,
+    "controls": 0,
+    "ariaBusy": null,
+    "button": null,
+    "buttonRect": null,
+    "buttonHit": null,
+    "validity": {
+      "name": null,
+      "phone": null,
+      "message": null,
+      "consent": null
+    },
+    "focus": "status",
+    "alertText": null,
+    "alertOwnText": null,
+    "alertVisible": false,
+    "alertRect": null,
+    "alertInViewport": false,
+    "alertClippedBy": 0,
+    "alertHit": null,
+    "contacts": {
+      "present": false,
+      "leadText": null,
+      "links": 0,
+      "schemes": [],
+      "heights": [],
+      "rects": []
+    },
+    "consentRect": null,
+    "consentRowRect": null,
+    "formRect": {
+      "left": 662.7,
+      "top": 145,
+      "right": 1400,
+      "bottom": 304.5,
+      "width": 737.3,
+      "height": 159.5
+    },
+    "statusText": "견적 문의가 접수되었습니다.\n입력해주신 내용을 확인한 뒤 상담을 이어갈 수 있습니다.",
+    "statusVisible": true,
+    "statusRect": {
+      "left": 662.7,
+      "top": 145,
+      "right": 1400,
+      "bottom": 304.5,
+      "width": 737.3,
+      "height": 159.5
+    },
+    "doneTitleText": "견적 문의가 접수되었습니다.",
+    "doneTitleRect": {
+      "left": 686.7,
+      "top": 193,
+      "right": 1376,
+      "bottom": 221,
+      "width": 689.3,
+      "height": 28
+    },
+    "doneTitleInViewport": true,
+    "doneTitleHit": [
+      "self",
+      "self",
+      "self",
+      "self",
+      "self"
+    ],
+    "header": {
+      "bottom": 73,
+      "effectiveBottom": 73
+    },
+    "launcher": null,
+    "launcherOver": null,
+    "launcherXRangeOverlapsButton": null
+  },
+  "replay": {
+    "sent": true,
+    "how": "page.evaluate(fetch(endpoint, { method: \"POST\", headers: { \"Content-Type\": \"application/json\" }, body: <the captured body>, mode: \"cors\", credentials: \"omit\" })) — once",
+    "bodyIdenticalToTheFormPost": true,
+    "request": {
+      "method": "POST",
+      "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+      "headerNames": [
+        "accept",
+        "accept-language",
+        "content-type",
+        "origin",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "sec-ch-ua-platform",
+        "user-agent"
+      ],
+      "cookieHeaderPresent": false,
+      "body": {
+        "bytes": 357,
+        "keys": [
+          "consent",
+          "name",
+          "phone",
+          "message",
+          "hp",
+          "submission_id"
+        ],
+        "keysExactlyExpected": true,
+        "forbiddenKeys": [],
+        "consent": true,
+        "name": "[TEST] Shared Inquiry V2",
+        "phone": "010-0000-0000",
+        "hp": "",
+        "message": {
+          "firstLine": "[홈페이지 견적 문의]",
+          "lines": [
+            "[홈페이지 견적 문의]",
+            "지역: 테스트",
+            "평형: 0평",
+            "예상 일정: 테스트",
+            "",
+            "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요."
+          ],
+          "length": 114
+        },
+        "submissionId": {
+          "first8": "a74b6ca6",
+          "isV4Uuid": true,
+          "length": 36
+        }
+      }
+    },
+    "asThePageSawIt": {
+      "ok": true,
+      "status": 200,
+      "type": "cors",
+      "text": "{\"received\":true}",
+      "json": {
+        "received": true
+      },
+      "retryAfterAsThePageSeesIt": null
+    },
+    "response": {
+      "t": 5230,
+      "at": "2026-10-03T20:00:12.390Z",
+      "phase": "replay",
+      "method": "POST",
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        "access-control-allow-origin": "http://127.0.0.1:53617",
+        "retry-after": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-max-age": null,
+        "access-control-expose-headers": "Retry-After",
+        "content-type": "application/json",
+        "cache-control": "no-store",
+        "vary": "Origin"
+      },
+      "body": "{\"received\":true}",
+      "serverAddr": null
+    }
+  },
+  "finalUrl": "http://127.0.0.1:53617/contact",
+  "finishedAt": "2026-10-03T20:00:14.409Z",
+  "stub": {
+    "contract": "in memory: id → values; new id → stored + 200; same id + same values → 200, nothing stored; same id + other values → 409",
+    "ledger": {
+      "stored": 1,
+      "answeredAsAlreadyReceived": 1,
+      "conflicts": 0,
+      "invalid": 0
+    },
+    "storeCount": 1,
+    "routes": [
+      "exact endpoint URL",
+      "**/api/widget/*/lead",
+      "predicate over the path"
+    ],
+    "installedBeforeAnyPage": true,
+    "selfTest": {
+      "glob": true,
+      "predicate": true,
+      "detail": {
+        "plain": {
+          "type": "opaque"
+        },
+        "withQuery": {
+          "type": "opaque"
+        },
+        "caughtBy": [
+          "glob",
+          "predicate"
+        ]
+      }
+    },
+    "leadRequestEventsInContext": 4,
+    "answeredByStub": 4,
+    "formPosts": 2,
+    "via": {
+      "glob": 1,
+      "predicate": 1,
+      "exact": 2
+    },
+    "responses": [
+      {
+        "status": 200,
+        "marked": true,
+        "serverAddr": null
+      },
+      {
+        "status": 200,
+        "marked": true,
+        "serverAddr": null
+      },
+      {
+        "status": 200,
+        "marked": true,
+        "serverAddr": null
+      },
+      {
+        "status": 200,
+        "marked": true,
+        "serverAddr": null
+      }
+    ],
+    "problems": [],
+    "answers": [
+      {
+        "n": 1,
+        "at": "2026-10-03T20:00:07.131Z",
+        "method": "POST",
+        "via": "glob",
+        "selfTest": true,
+        "answered": "self-test 200",
+        "origin": "null",
+        "headerNames": [
+          "accept",
+          "accept-language",
+          "content-type",
+          "origin",
+          "sec-ch-ua",
+          "sec-ch-ua-mobile",
+          "sec-ch-ua-platform",
+          "user-agent"
+        ],
+        "cookieHeaderPresent": false,
+        "body": null
+      },
+      {
+        "n": 2,
+        "at": "2026-10-03T20:00:07.134Z",
+        "method": "POST",
+        "via": "predicate",
+        "selfTest": true,
+        "answered": "self-test 200",
+        "origin": "null",
+        "headerNames": [
+          "accept",
+          "accept-language",
+          "content-type",
+          "origin",
+          "sec-ch-ua",
+          "sec-ch-ua-mobile",
+          "sec-ch-ua-platform",
+          "user-agent"
+        ],
+        "cookieHeaderPresent": false,
+        "body": null
+      },
+      {
+        "n": 3,
+        "at": "2026-10-03T20:00:09.052Z",
+        "method": "POST",
+        "via": "exact",
+        "selfTest": false,
+        "answered": "200 received",
+        "origin": "http://127.0.0.1:53617",
+        "headerNames": [
+          "accept",
+          "accept-language",
+          "content-type",
+          "origin",
+          "referer",
+          "sec-ch-ua",
+          "sec-ch-ua-mobile",
+          "sec-ch-ua-platform",
+          "user-agent"
+        ],
+        "cookieHeaderPresent": false,
+        "body": {
+          "bytes": 357,
+          "keys": [
+            "consent",
+            "name",
+            "phone",
+            "message",
+            "hp",
+            "submission_id"
+          ],
+          "keysExactlyExpected": true,
+          "forbiddenKeys": [],
+          "consent": true,
+          "name": "[TEST] Shared Inquiry V2",
+          "phone": "010-0000-0000",
+          "hp": "",
+          "message": {
+            "firstLine": "[홈페이지 견적 문의]",
+            "lines": [
+              "[홈페이지 견적 문의]",
+              "지역: 테스트",
+              "평형: 0평",
+              "예상 일정: 테스트",
+              "",
+              "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요."
+            ],
+            "length": 114
+          },
+          "submissionId": {
+            "first8": "a74b6ca6",
+            "isV4Uuid": true,
+            "length": 36
+          }
+        }
+      },
+      {
+        "n": 4,
+        "at": "2026-10-03T20:00:12.389Z",
+        "method": "POST",
+        "via": "exact",
+        "selfTest": false,
+        "answered": "200 received",
+        "origin": "http://127.0.0.1:53617",
+        "headerNames": [
+          "accept",
+          "accept-language",
+          "content-type",
+          "origin",
+          "referer",
+          "sec-ch-ua",
+          "sec-ch-ua-mobile",
+          "sec-ch-ua-platform",
+          "user-agent"
+        ],
+        "cookieHeaderPresent": false,
+        "body": {
+          "bytes": 357,
+          "keys": [
+            "consent",
+            "name",
+            "phone",
+            "message",
+            "hp",
+            "submission_id"
+          ],
+          "keysExactlyExpected": true,
+          "forbiddenKeys": [],
+          "consent": true,
+          "name": "[TEST] Shared Inquiry V2",
+          "phone": "010-0000-0000",
+          "hp": "",
+          "message": {
+            "firstLine": "[홈페이지 견적 문의]",
+            "lines": [
+              "[홈페이지 견적 문의]",
+              "지역: 테스트",
+              "평형: 0평",
+              "예상 일정: 테스트",
+              "",
+              "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요."
+            ],
+            "length": 114
+          },
+          "submissionId": {
+            "first8": "a74b6ca6",
+            "isV4Uuid": true,
+            "length": 36
+          }
+        }
+      }
+    ],
+    "blockedThirdParty": [
+      "https://boostchat.co.kr/widget.js"
+    ]
+  },
+  "clicked": true,
+  "summary": {
+    "rows": 13,
+    "pass": 13,
+    "fail": 0,
+    "skipped": 0,
+    "assertions": 55,
+    "notes": 0
+  }
+}

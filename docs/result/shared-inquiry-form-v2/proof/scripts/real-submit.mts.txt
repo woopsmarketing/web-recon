@@ -1,0 +1,127 @@
+/**
+ * 40 — THE ONE REAL (un-stubbed) SUBMISSION. Run exactly once, by the coordinator, after the
+ * production publish and after live-parity / live-browser-qa / the live stubbed rehearsal passed.
+ *
+ *   I_UNDERSTAND_THIS_SENDS_ONE_REAL_LEAD=yes ./node_modules/.bin/tsx --tsconfig platform/tsconfig.json docs/result/shared-inquiry-form-v2/proof/scripts/real-submit.mts
+ *
+ * NO route is installed and no stub is imported: the form's POST reaches
+ * https://boostchat.co.kr/api/widget/<key>/lead, stores a real lead and e-mails the tenant owner;
+ * the replay that follows carries the same submission id and the same values, which the endpoint
+ * answers without storing anything again. In total: exactly 2 POSTs, one stored inquiry.
+ *
+ * It refuses to start (exit 2 — nothing opened, nothing sent, no sentinel written) unless
+ *   - I_UNDERSTAND_THIS_SENDS_ONE_REAL_LEAD=yes is set,
+ *   - QA_BASE is unset or the live URL,
+ *   - it never ran before (no sentinel file, no result JSON),
+ *   - the live site serves the 1.6.3 form of the current package (door chunk with "submission_id"),
+ *   - the same flow passed STUBBED against this very build (proof/32-live-stubbed-rehearsal.json;
+ *     SKIP_LIVE_REHEARSAL_GATE=yes goes without).
+ * Then the sentinel next to this script is written ("started"), and again right before the press
+ * ("CLICKED — never re-run"); a second run refuses. Inside the flow the page itself is checked once
+ * more before the press (the script it really loaded contains "submission_id", the fields hold the
+ * values, no lead request was made): if not, the button is NOT pressed.
+ *
+ * If anything fails AFTER the press: DO NOT RE-RUN. Report proof/40-live-real-submission.json as it is.
+ */
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { HERE, LIVE_BASE, PROOF, REPO, RESULT, loadSite, openTarget, say, scrub, servedBuild } from "./qa-lib.mts";
+import { buildRefusal, rehearsalRefusal, staticRefusal } from "./real-guard.mts";
+import { finalizeFlow, runSubmitFlow, type FlowResult } from "./submit-flow.mts";
+
+const SENTINEL = path.join(HERE, "real-submit.sentinel.json");
+const OUT_JSON = path.join(PROOF, "40-live-real-submission.json");
+const REHEARSAL_JSON = path.join(PROOF, "32-live-stubbed-rehearsal.json");
+const rel = (f: string) => path.relative(REPO, f);
+
+function refuse(why: string): never {
+  console.error(`REFUSING TO RUN: ${why}`);
+  console.error("Nothing was opened, nothing was sent, no sentinel was written.");
+  process.exit(2);
+}
+
+// ---- 1. refusals that need nothing but the environment and two file names
+const r1 = staticRefusal(process.env, LIVE_BASE, { sentinel: existsSync(SENTINEL) ? readFileSync(SENTINEL, "utf8") : null, outJsonExists: existsSync(OUT_JSON) });
+if (r1) refuse(r1);
+
+const site = loadSite();
+const target = await openTarget(site);
+if (target.mode !== "live" || target.base !== LIVE_BASE) refuse(`the target is ${target.base} (${target.mode}), not the live site.`);
+
+// ---- 2. read-only preconditions (GET, the live site's own host only)
+const build = await servedBuild(target, site);
+const rehearsal = existsSync(REHEARSAL_JSON) ? (JSON.parse(readFileSync(REHEARSAL_JSON, "utf8")) as Record<string, any>) : null;
+const r2 = buildRefusal(build) ?? rehearsalRefusal(process.env, rehearsal, build);
+if (r2) refuse(r2);
+
+// ---- 3. from here on this run counts. The sentinel is CREATED, never overwritten ("wx"): of two
+//         launches that both passed the check in 1, exactly one gets past this line
+try {
+  writeFileSync(SENTINEL, JSON.stringify({ stage: "started", at: new Date().toISOString() }), { flag: "wx" });
+} catch {
+  refuse(`${rel(SENTINEL)} was created by another run after this one started.`);
+}
+/** an error's text with every submission id this run saw cut to its prefix */
+const errorText = (e: unknown) => scrub(String((e as Error)?.stack ?? e)).text;
+let clicked = false;
+const doNotRerun = () => {
+  console.error("\n" + "!".repeat(100));
+  console.error("DO NOT RE-RUN. The button was pressed: the real inquiry may already be stored and e-mailed.");
+  console.error(`Report ${rel(OUT_JSON)} as it is.`);
+  console.error("!".repeat(100) + "\n");
+};
+const notClicked = (why: string) => {
+  writeFileSync(SENTINEL, JSON.stringify({ stage: "aborted-before-click — nothing was sent", why, at: new Date().toISOString() }));
+  console.error(`\nNOT CLICKED — ${why}`);
+  console.error("The button was not pressed and no request was made to the lead endpoint.");
+  console.error(`To arm the script again once the cause is fixed, remove by hand: ${rel(SENTINEL)} and ${rel(OUT_JSON)}`);
+};
+// a stray rejected promise must not cut the record short: it is printed and the run goes on
+process.on("unhandledRejection", (e) => console.error(`unhandledRejection (the run goes on): ${errorText(e)}`));
+process.on("uncaughtException", (e) => {
+  console.error(`uncaughtException: ${errorText(e)}`);
+  if (clicked) doNotRerun();
+  else notClicked("uncaughtException before the press");
+  process.exit(1);
+});
+
+say(`# 40 THE ONE REAL SUBMISSION — ${new Date().toISOString()}`);
+say(`base: ${target.base}   template: ${site.template.releaseId}   endpoint (REAL, not stubbed): ${site.endpoint}`);
+say(`stubbed rehearsal on this build: ${rehearsal ? `${rehearsal.result} at ${rehearsal.finishedAt}` : "skipped (SKIP_LIVE_REHEARSAL_GATE=yes)"}`);
+
+let result: FlowResult | undefined;
+try {
+  result = await runSubmitFlow({
+    kind: "REAL",
+    target,
+    site,
+    installStub: null,
+    outJson: OUT_JSON,
+    shotsDir: path.join(RESULT, "screenshots/live"),
+    shotPrefix: "real-submit",
+    beforeClick: () => {
+      clicked = true;
+      writeFileSync(SENTINEL, JSON.stringify({ stage: "CLICKED — never re-run", at: new Date().toISOString() }));
+    },
+  });
+} catch (e) {
+  console.error(`ERROR: ${errorText(e)}`);
+}
+
+if (!result) {
+  if (clicked) doNotRerun();
+  else notClicked("the flow stopped with an error before the press");
+  process.exit(1);
+}
+result.out.liveStubbedRehearsal = rehearsal ? { file: rel(REHEARSAL_JSON), result: rehearsal.result, finishedAt: rehearsal.finishedAt, sameContactAsServedNow: rehearsal.servedBuild?.contact?.sha256 === build.contact.sha256 } : { skipped: "SKIP_LIVE_REHEARSAL_GATE=yes" };
+const pass = finalizeFlow(result);
+if (!result.clicked) {
+  notClicked(`stage "${result.out.stage}"`);
+  process.exit(1);
+}
+if (!pass) {
+  doNotRerun();
+  process.exit(1);
+}
+say("\nThe one real submission is done: 1 form POST + 1 replay, both answered 200 {\"received\":true}. This script will not run again (sentinel).");
+process.exit(0);

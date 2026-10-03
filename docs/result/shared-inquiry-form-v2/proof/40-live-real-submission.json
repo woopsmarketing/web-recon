@@ -1,0 +1,1703 @@
+{
+  "what": "40 — /contact inquiry form: ONE logical inquiry (fast double click → one POST) + one idempotent replay (Chromium, 1440x900) — REAL",
+  "kind": "REAL",
+  "stubbed": false,
+  "result": "PASS",
+  "mode": "live",
+  "base": "https://interior-demo.boostweb.co.kr",
+  "endpoint": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+  "startedAt": "2026-10-03T20:12:34.022Z",
+  "stage": "finished",
+  "tooling": {
+    "node": "v22.22.3",
+    "playwright": "1.62.1",
+    "browser": "chromium 151.0.7922.34"
+  },
+  "package": {
+    "buildInputId": "8a0c21182f47bd45bc26f087da4538fe101d8411445de2fe2e7a71ad41effd60",
+    "packageDir": "data/site-builds/boost-interior-demo/packages/8a0c21182f47bd45bc26f087da4538fe101d8411445de2fe2e7a71ad41effd60",
+    "packageHash": "3d2501990056f8da6d5e2d9cbed8491a518ca7934bb55309956cd721ad04733b",
+    "template": {
+      "templateId": "interior-01",
+      "templateVersion": "1.6.3",
+      "releaseId": "interior-01-1.6.3-93977937c0b4",
+      "releaseHash": "93977937c0b4030b29b477fb8a6379fd576697473b815b2a26b91a5f0aba58e4",
+      "templateSourceHash": "f47b9dfb3bbb85fd4ef6ee6fe0a7113c565e57f4cfc46bc250ff737f7a78c67a"
+    }
+  },
+  "filled": {
+    "name": "[TEST] Shared Inquiry V2",
+    "phone": "010-0000-0000",
+    "region": "테스트",
+    "area": "0평",
+    "schedule": "테스트",
+    "message": "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요.",
+    "workType": "(left at the default empty option — the select is not required)",
+    "consent": true
+  },
+  "submissionIdPolicy": "only the first 8 characters and whether it is a v4 UUID are recorded — never the id",
+  "clickAtUtc": "2026-10-03T20:12:46.045Z",
+  "errors": [],
+  "persistedAt": "2026-10-03T20:12:52.276Z",
+  "checks": [
+    {
+      "group": "pre-click",
+      "id": "the base serves the 1.6.3 form — checked before a browser is started",
+      "ok": true,
+      "passed": 4,
+      "total": 4,
+      "failed": []
+    },
+    {
+      "group": "pre-click",
+      "id": "the page is the 1.6.3 form, filled as specified, and nothing was sent yet",
+      "ok": true,
+      "passed": 7,
+      "total": 7,
+      "failed": []
+    },
+    {
+      "group": "press",
+      "id": "a fast double click sends exactly ONE POST",
+      "ok": true,
+      "passed": 5,
+      "total": 5,
+      "failed": [],
+      "detail": {
+        "press": {
+          "clicks": 2,
+          "withinOneTick": true,
+          "ms": 1.7,
+          "disabledAfterFirst": false,
+          "disabledAfterSecond": false
+        }
+      }
+    },
+    {
+      "group": "press",
+      "id": "the POST is answered 200 {\"received\":true}",
+      "ok": true,
+      "passed": 4,
+      "total": 4,
+      "failed": [],
+      "detail": {
+        "status": 200,
+        "body": "{\"received\":true}",
+        "headers": {
+          "access-control-allow-origin": "https://interior-demo.boostweb.co.kr",
+          "retry-after": null,
+          "access-control-allow-methods": null,
+          "access-control-allow-headers": null,
+          "access-control-max-age": null,
+          "access-control-expose-headers": null,
+          "content-type": "application/json",
+          "cache-control": "no-store",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Origin"
+        }
+      }
+    },
+    {
+      "group": "press",
+      "id": "the request: no cookie, exactly the six keys, a v4 submission_id, the folded message",
+      "ok": true,
+      "passed": 7,
+      "total": 7,
+      "failed": [],
+      "detail": {
+        "headerNames": [
+          ":authority",
+          ":method",
+          ":path",
+          ":scheme",
+          "accept",
+          "accept-encoding",
+          "accept-language",
+          "content-length",
+          "content-type",
+          "origin",
+          "priority",
+          "referer",
+          "sec-ch-ua",
+          "sec-ch-ua-mobile",
+          "sec-ch-ua-platform",
+          "sec-fetch-dest",
+          "sec-fetch-mode",
+          "sec-fetch-site",
+          "user-agent"
+        ],
+        "body": {
+          "bytes": 357,
+          "keys": [
+            "consent",
+            "name",
+            "phone",
+            "message",
+            "hp",
+            "submission_id"
+          ],
+          "keysExactlyExpected": true,
+          "forbiddenKeys": [],
+          "consent": true,
+          "name": "[TEST] Shared Inquiry V2",
+          "phone": "010-0000-0000",
+          "hp": "",
+          "message": {
+            "firstLine": "[홈페이지 견적 문의]",
+            "lines": [
+              "[홈페이지 견적 문의]",
+              "지역: 테스트",
+              "평형: 0평",
+              "예상 일정: 테스트",
+              "",
+              "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요."
+            ],
+            "length": 114
+          },
+          "submissionId": {
+            "first8": "0ba99ff2",
+            "isV4Uuid": true,
+            "length": 36
+          }
+        }
+      }
+    },
+    {
+      "group": "press",
+      "id": "the success UI",
+      "ok": true,
+      "passed": 5,
+      "total": 5,
+      "failed": []
+    },
+    {
+      "group": "replay",
+      "id": "the same body sent once more is answered as already received",
+      "ok": true,
+      "passed": 6,
+      "total": 6,
+      "failed": [],
+      "detail": {
+        "asThePageSawIt": {
+          "ok": true,
+          "status": 200,
+          "type": "cors",
+          "text": "{\"received\":true}",
+          "json": {
+            "received": true
+          },
+          "retryAfterAsThePageSeesIt": null
+        },
+        "status": 200,
+        "body": "{\"received\":true}",
+        "headers": {
+          "access-control-allow-origin": "https://interior-demo.boostweb.co.kr",
+          "retry-after": null,
+          "access-control-allow-methods": null,
+          "access-control-allow-headers": null,
+          "access-control-max-age": null,
+          "access-control-expose-headers": null,
+          "content-type": "application/json",
+          "cache-control": "no-store",
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Origin"
+        }
+      }
+    },
+    {
+      "group": "replay",
+      "id": "the endpoint was addressed by exactly 2 POSTs — 1 form POST + 1 replay (preflights aside)",
+      "ok": true,
+      "passed": 5,
+      "total": 5,
+      "failed": []
+    },
+    {
+      "group": "page",
+      "id": "console errors 0, page errors 0",
+      "ok": true,
+      "passed": 2,
+      "total": 2,
+      "failed": []
+    },
+    {
+      "group": "page",
+      "id": "no request went to a turnstile / challenges.cloudflare.com host",
+      "ok": true,
+      "passed": 1,
+      "total": 1,
+      "failed": []
+    },
+    {
+      "group": "output",
+      "id": "no full submission id in the result (first 8 characters only)",
+      "ok": true,
+      "passed": 1,
+      "total": 1,
+      "failed": []
+    }
+  ],
+  "notes": [],
+  "servedBuild": {
+    "contact": {
+      "status": 200,
+      "bytes": 25226,
+      "sha256": "18974bac558d2d6527ef9ce6e9a08a12e4e4ec5b1d091fc93a6134d11349876d",
+      "identicalToLocalPackage": true
+    },
+    "chunkNames": [
+      "3yh5jaalv1u8v.js",
+      "22lgiphrawvbj.js",
+      "1fx8wyr62n54x.js",
+      "2fo9hoy1stmbs.js",
+      "turbopack-3oqcsbkplb52c.js",
+      "332uslzbhf388.js",
+      "0hyfkvg55a3sz.js",
+      "0cz1d0mv5g_q7.js"
+    ],
+    "chunks": [
+      {
+        "name": "3yh5jaalv1u8v.js",
+        "status": 200,
+        "bytes": 5364,
+        "sha256": "d240b1f487074dae30276381cd3620fe904fc8e3e0f982093755f0416cdec23d",
+        "door": false,
+        "containsSubmissionId": false
+      },
+      {
+        "name": "22lgiphrawvbj.js",
+        "status": 200,
+        "bytes": 29003,
+        "sha256": "e5b05cd975fb25b24dcaf882412328d4fd58817ada09b90346d0612588049a33",
+        "door": false,
+        "containsSubmissionId": false
+      },
+      {
+        "name": "1fx8wyr62n54x.js",
+        "status": 200,
+        "bytes": 229075,
+        "sha256": "493a8fb099312900b047e51a0ba656e16f7352c8ec9a3fd4667d8c7a631c78fe",
+        "door": false,
+        "containsSubmissionId": false
+      },
+      {
+        "name": "2fo9hoy1stmbs.js",
+        "status": 200,
+        "bytes": 163778,
+        "sha256": "d8732d454d68d7bd6c09103fc01acbcfc448346e4e3528f41bc47c93c8dcce13",
+        "door": false,
+        "containsSubmissionId": false
+      },
+      {
+        "name": "turbopack-3oqcsbkplb52c.js",
+        "status": 200,
+        "bytes": 9652,
+        "sha256": "a7fdcd6a359dc628f0004e904c61ac919b549584942547421b76f37d9ab61160",
+        "door": false,
+        "containsSubmissionId": false
+      },
+      {
+        "name": "332uslzbhf388.js",
+        "status": 200,
+        "bytes": 23133,
+        "sha256": "8ba030d7dfd589a3fa6e5da7d72b78998b47f20963289a5ae328a7a5e9536417",
+        "door": false,
+        "containsSubmissionId": false
+      },
+      {
+        "name": "0hyfkvg55a3sz.js",
+        "status": 200,
+        "bytes": 15226,
+        "sha256": "ec7556ad2da225b0731603830fdd850fce4dfee873f0c919ebd5c3063d5a4450",
+        "door": true,
+        "containsSubmissionId": true
+      },
+      {
+        "name": "0cz1d0mv5g_q7.js",
+        "status": 200,
+        "bytes": 112594,
+        "sha256": "0973c1d64c88adc8e3c950410cb58b288f72118d5965b78049438deb8f2f9683",
+        "door": false,
+        "containsSubmissionId": false
+      }
+    ],
+    "doorChunks": [
+      "0hyfkvg55a3sz.js"
+    ],
+    "doorChunkContainsSubmissionId": true,
+    "endpointDeclaredInContactHtml": true,
+    "localPackage": {
+      "chunkNames": [
+        "3yh5jaalv1u8v.js",
+        "22lgiphrawvbj.js",
+        "1fx8wyr62n54x.js",
+        "2fo9hoy1stmbs.js",
+        "turbopack-3oqcsbkplb52c.js",
+        "332uslzbhf388.js",
+        "0hyfkvg55a3sz.js",
+        "0cz1d0mv5g_q7.js"
+      ],
+      "doorChunks": [
+        "0hyfkvg55a3sz.js"
+      ],
+      "sameChunkNames": true
+    }
+  },
+  "navigation": {
+    "status": 200,
+    "url": "https://interior-demo.boostweb.co.kr/contact"
+  },
+  "before": {
+    "path": "/contact",
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "scrollY": 0,
+    "overflow": {
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflowX": false
+    },
+    "values": {
+      "name": "",
+      "phone": "",
+      "region": "",
+      "area": "",
+      "workType": "",
+      "schedule": "",
+      "message": ""
+    },
+    "trap": "",
+    "consent": false,
+    "controls": 9,
+    "ariaBusy": null,
+    "button": {
+      "text": "견적 문의 보내기",
+      "disabled": false
+    },
+    "buttonRect": {
+      "left": 662.7,
+      "top": 806.6,
+      "right": 882.7,
+      "bottom": 854.6,
+      "width": 220,
+      "height": 48
+    },
+    "buttonHit": [
+      "self",
+      "FORM.i1-form",
+      "FORM.i1-form",
+      "FORM.i1-form",
+      "FORM.i1-form"
+    ],
+    "validity": {
+      "name": {
+        "valueMissing": true,
+        "valid": false
+      },
+      "phone": {
+        "valueMissing": true,
+        "patternMismatch": false,
+        "customError": false,
+        "valid": false,
+        "message": "Please fill out this field."
+      },
+      "message": {
+        "valueMissing": true,
+        "valid": false
+      },
+      "consent": {
+        "valueMissing": true,
+        "valid": false
+      }
+    },
+    "focus": "BODY",
+    "alertText": "",
+    "alertOwnText": "",
+    "alertVisible": false,
+    "alertRect": null,
+    "alertInViewport": false,
+    "alertClippedBy": 0,
+    "alertHit": null,
+    "contacts": {
+      "present": false,
+      "leadText": null,
+      "links": 0,
+      "schemes": [],
+      "heights": [],
+      "rects": []
+    },
+    "consentRect": {
+      "left": 662.7,
+      "top": 704.1,
+      "right": 682.7,
+      "bottom": 724.1,
+      "width": 20,
+      "height": 20
+    },
+    "consentRowRect": {
+      "left": 662.7,
+      "top": 692.1,
+      "right": 1400,
+      "bottom": 758.8,
+      "width": 737.3,
+      "height": 66.8
+    },
+    "formRect": {
+      "left": 662.7,
+      "top": 145,
+      "right": 1400,
+      "bottom": 854.6,
+      "width": 737.3,
+      "height": 709.6
+    },
+    "statusText": "",
+    "statusVisible": false,
+    "statusRect": null,
+    "doneTitleText": null,
+    "doneTitleRect": null,
+    "doneTitleInViewport": false,
+    "doneTitleHit": null,
+    "header": {
+      "bottom": 73,
+      "effectiveBottom": 73
+    },
+    "launcher": {
+      "detectedBy": "iframe[data-boost-chat-frame]",
+      "tag": "IFRAME",
+      "rect": {
+        "left": 1358,
+        "top": 818,
+        "right": 1422,
+        "bottom": 882,
+        "width": 64,
+        "height": 64
+      },
+      "fromViewportRight": 18,
+      "fromViewportBottom": 18,
+      "style": {
+        "position": "fixed",
+        "zIndex": "2147483000",
+        "borderRadius": "32px",
+        "pointerEvents": "auto"
+      },
+      "title": "상담창",
+      "srcPath": "https://boostchat.co.kr/widget"
+    },
+    "launcherOver": {
+      "button": null,
+      "alert": null,
+      "consentCheckbox": null,
+      "consentRow": null,
+      "doneTitle": null,
+      "status": null
+    },
+    "launcherXRangeOverlapsButton": false
+  },
+  "filledState": {
+    "path": "/contact",
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "scrollY": 0,
+    "overflow": {
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflowX": false
+    },
+    "values": {
+      "name": "[TEST] Shared Inquiry V2",
+      "phone": "010-0000-0000",
+      "region": "테스트",
+      "area": "0평",
+      "workType": "",
+      "schedule": "테스트",
+      "message": "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요."
+    },
+    "trap": "",
+    "consent": true,
+    "controls": 9,
+    "ariaBusy": null,
+    "button": {
+      "text": "견적 문의 보내기",
+      "disabled": false
+    },
+    "buttonRect": {
+      "left": 662.7,
+      "top": 806.6,
+      "right": 882.7,
+      "bottom": 854.6,
+      "width": 220,
+      "height": 48
+    },
+    "buttonHit": [
+      "self",
+      "FORM.i1-form",
+      "FORM.i1-form",
+      "FORM.i1-form",
+      "FORM.i1-form"
+    ],
+    "validity": {
+      "name": {
+        "valueMissing": false,
+        "valid": true
+      },
+      "phone": {
+        "valueMissing": false,
+        "patternMismatch": false,
+        "customError": false,
+        "valid": true,
+        "message": ""
+      },
+      "message": {
+        "valueMissing": false,
+        "valid": true
+      },
+      "consent": {
+        "valueMissing": false,
+        "valid": true
+      }
+    },
+    "focus": "consent",
+    "alertText": "",
+    "alertOwnText": "",
+    "alertVisible": false,
+    "alertRect": null,
+    "alertInViewport": false,
+    "alertClippedBy": 0,
+    "alertHit": null,
+    "contacts": {
+      "present": false,
+      "leadText": null,
+      "links": 0,
+      "schemes": [],
+      "heights": [],
+      "rects": []
+    },
+    "consentRect": {
+      "left": 662.7,
+      "top": 704.1,
+      "right": 682.7,
+      "bottom": 724.1,
+      "width": 20,
+      "height": 20
+    },
+    "consentRowRect": {
+      "left": 662.7,
+      "top": 692.1,
+      "right": 1400,
+      "bottom": 758.8,
+      "width": 737.3,
+      "height": 66.8
+    },
+    "formRect": {
+      "left": 662.7,
+      "top": 145,
+      "right": 1400,
+      "bottom": 854.6,
+      "width": 737.3,
+      "height": 709.6
+    },
+    "statusText": "",
+    "statusVisible": false,
+    "statusRect": null,
+    "doneTitleText": null,
+    "doneTitleRect": null,
+    "doneTitleInViewport": false,
+    "doneTitleHit": null,
+    "header": {
+      "bottom": 73,
+      "effectiveBottom": 73
+    },
+    "launcher": {
+      "detectedBy": "iframe[data-boost-chat-frame]",
+      "tag": "IFRAME",
+      "rect": {
+        "left": 1358,
+        "top": 818,
+        "right": 1422,
+        "bottom": 882,
+        "width": 64,
+        "height": 64
+      },
+      "fromViewportRight": 18,
+      "fromViewportBottom": 18,
+      "style": {
+        "position": "fixed",
+        "zIndex": "2147483000",
+        "borderRadius": "32px",
+        "pointerEvents": "auto"
+      },
+      "title": "상담창",
+      "srcPath": "https://boostchat.co.kr/widget"
+    },
+    "launcherOver": {
+      "button": null,
+      "alert": null,
+      "consentCheckbox": null,
+      "consentRow": null,
+      "doneTitle": null,
+      "status": null
+    },
+    "launcherXRangeOverlapsButton": false
+  },
+  "navigationsBeforeClick": 2,
+  "leadRequests": [
+    {
+      "t": 6848,
+      "at": "2026-10-03T20:12:46.048Z",
+      "phase": "form",
+      "method": "POST",
+      "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+      "headerNames": [
+        ":authority",
+        ":method",
+        ":path",
+        ":scheme",
+        "accept",
+        "accept-encoding",
+        "accept-language",
+        "content-length",
+        "content-type",
+        "origin",
+        "priority",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "sec-ch-ua-platform",
+        "sec-fetch-dest",
+        "sec-fetch-mode",
+        "sec-fetch-site",
+        "user-agent"
+      ],
+      "cookieHeaderPresent": false,
+      "body": {
+        "bytes": 357,
+        "keys": [
+          "consent",
+          "name",
+          "phone",
+          "message",
+          "hp",
+          "submission_id"
+        ],
+        "keysExactlyExpected": true,
+        "forbiddenKeys": [],
+        "consent": true,
+        "name": "[TEST] Shared Inquiry V2",
+        "phone": "010-0000-0000",
+        "hp": "",
+        "message": {
+          "firstLine": "[홈페이지 견적 문의]",
+          "lines": [
+            "[홈페이지 견적 문의]",
+            "지역: 테스트",
+            "평형: 0평",
+            "예상 일정: 테스트",
+            "",
+            "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요."
+          ],
+          "length": 114
+        },
+        "submissionId": {
+          "first8": "0ba99ff2",
+          "isV4Uuid": true,
+          "length": 36
+        }
+      }
+    },
+    {
+      "t": 10782,
+      "at": "2026-10-03T20:12:49.982Z",
+      "phase": "replay",
+      "method": "POST",
+      "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+      "headerNames": [
+        ":authority",
+        ":method",
+        ":path",
+        ":scheme",
+        "accept",
+        "accept-encoding",
+        "accept-language",
+        "content-length",
+        "content-type",
+        "origin",
+        "priority",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "sec-ch-ua-platform",
+        "sec-fetch-dest",
+        "sec-fetch-mode",
+        "sec-fetch-site",
+        "user-agent"
+      ],
+      "cookieHeaderPresent": false,
+      "body": {
+        "bytes": 357,
+        "keys": [
+          "consent",
+          "name",
+          "phone",
+          "message",
+          "hp",
+          "submission_id"
+        ],
+        "keysExactlyExpected": true,
+        "forbiddenKeys": [],
+        "consent": true,
+        "name": "[TEST] Shared Inquiry V2",
+        "phone": "010-0000-0000",
+        "hp": "",
+        "message": {
+          "firstLine": "[홈페이지 견적 문의]",
+          "lines": [
+            "[홈페이지 견적 문의]",
+            "지역: 테스트",
+            "평형: 0평",
+            "예상 일정: 테스트",
+            "",
+            "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요."
+          ],
+          "length": 114
+        },
+        "submissionId": {
+          "first8": "0ba99ff2",
+          "isV4Uuid": true,
+          "length": 36
+        }
+      }
+    }
+  ],
+  "leadResponses": [
+    {
+      "t": 7454,
+      "at": "2026-10-03T20:12:46.654Z",
+      "phase": "form",
+      "method": "POST",
+      "status": 200,
+      "statusText": "",
+      "headers": {
+        "access-control-allow-origin": "https://interior-demo.boostweb.co.kr",
+        "retry-after": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-max-age": null,
+        "access-control-expose-headers": null,
+        "content-type": "application/json",
+        "cache-control": "no-store",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Origin"
+      },
+      "body": "{\"received\":true}",
+      "serverAddr": {
+        "ipAddress": "69.46.46.125",
+        "port": 443
+      }
+    },
+    {
+      "t": 11059,
+      "at": "2026-10-03T20:12:50.259Z",
+      "phase": "replay",
+      "method": "POST",
+      "status": 200,
+      "statusText": "",
+      "headers": {
+        "access-control-allow-origin": "https://interior-demo.boostweb.co.kr",
+        "retry-after": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-max-age": null,
+        "access-control-expose-headers": null,
+        "content-type": "application/json",
+        "cache-control": "no-store",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Origin"
+      },
+      "body": "{\"received\":true}",
+      "serverAddr": {
+        "ipAddress": "69.46.46.125",
+        "port": 443
+      }
+    }
+  ],
+  "leadRequestsFailed": [],
+  "cdp": {
+    "lead": [
+      {
+        "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+        "preflight": true,
+        "events": [
+          {
+            "event": "requestWillBeSent",
+            "t": 6848,
+            "phase": "form",
+            "method": "OPTIONS",
+            "type": "Other",
+            "initiatorType": "preflight",
+            "headerNames": [
+              "Accept",
+              "Access-Control-Request-Headers",
+              "Access-Control-Request-Method",
+              "Origin",
+              "Sec-Fetch-Mode",
+              "User-Agent"
+            ]
+          },
+          {
+            "event": "requestWillBeSentExtraInfo",
+            "t": 6914,
+            "headerNames": [
+              ":authority",
+              ":method",
+              ":path",
+              ":scheme",
+              "accept",
+              "accept-encoding",
+              "access-control-request-headers",
+              "access-control-request-method",
+              "origin",
+              "priority",
+              "referer",
+              "sec-fetch-dest",
+              "sec-fetch-mode",
+              "sec-fetch-site",
+              "user-agent"
+            ],
+            "cookiesSent": 0
+          },
+          {
+            "event": "responseReceivedExtraInfo",
+            "t": 7180,
+            "status": 204,
+            "headers": {
+              "access-control-allow-origin": "https://interior-demo.boostweb.co.kr",
+              "retry-after": null,
+              "access-control-allow-methods": "POST",
+              "access-control-allow-headers": "content-type",
+              "access-control-max-age": "600",
+              "access-control-expose-headers": null,
+              "content-type": null,
+              "cache-control": "no-store",
+              "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch\nOrigin"
+            }
+          },
+          {
+            "event": "responseReceived",
+            "t": 7181,
+            "phase": "form",
+            "type": "Preflight",
+            "status": 204,
+            "headers": {
+              "access-control-allow-origin": "https://interior-demo.boostweb.co.kr",
+              "retry-after": null,
+              "access-control-allow-methods": "POST",
+              "access-control-allow-headers": "content-type",
+              "access-control-max-age": "600",
+              "access-control-expose-headers": null,
+              "content-type": null,
+              "cache-control": "no-store",
+              "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch\nOrigin"
+            },
+            "remoteIPAddress": "69.46.46.125",
+            "protocol": "h2"
+          },
+          {
+            "event": "loadingFinished",
+            "t": 7181
+          }
+        ]
+      },
+      {
+        "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+        "preflight": false,
+        "events": [
+          {
+            "event": "requestWillBeSent",
+            "t": 6849,
+            "phase": "form",
+            "method": "POST",
+            "type": "Fetch",
+            "initiatorType": "script",
+            "headerNames": [
+              "Accept-Language",
+              "Content-Type",
+              "Referer",
+              "User-Agent",
+              "sec-ch-ua",
+              "sec-ch-ua-mobile",
+              "sec-ch-ua-platform"
+            ]
+          },
+          {
+            "event": "requestWillBeSentExtraInfo",
+            "t": 7181,
+            "headerNames": [
+              ":authority",
+              ":method",
+              ":path",
+              ":scheme",
+              "accept",
+              "accept-encoding",
+              "accept-language",
+              "content-length",
+              "content-type",
+              "origin",
+              "priority",
+              "referer",
+              "sec-ch-ua",
+              "sec-ch-ua-mobile",
+              "sec-ch-ua-platform",
+              "sec-fetch-dest",
+              "sec-fetch-mode",
+              "sec-fetch-site",
+              "user-agent"
+            ],
+            "cookiesSent": 0
+          },
+          {
+            "event": "responseReceivedExtraInfo",
+            "t": 7454,
+            "status": 200,
+            "headers": {
+              "access-control-allow-origin": "https://interior-demo.boostweb.co.kr",
+              "retry-after": null,
+              "access-control-allow-methods": null,
+              "access-control-allow-headers": null,
+              "access-control-max-age": null,
+              "access-control-expose-headers": null,
+              "content-type": "application/json",
+              "cache-control": "no-store",
+              "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch\nOrigin"
+            }
+          },
+          {
+            "event": "responseReceived",
+            "t": 7459,
+            "phase": "form",
+            "type": "Fetch",
+            "status": 200,
+            "headers": {
+              "access-control-allow-origin": "https://interior-demo.boostweb.co.kr",
+              "retry-after": null,
+              "access-control-allow-methods": null,
+              "access-control-allow-headers": null,
+              "access-control-max-age": null,
+              "access-control-expose-headers": null,
+              "content-type": "application/json",
+              "cache-control": "no-store",
+              "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Origin"
+            },
+            "remoteIPAddress": "69.46.46.125",
+            "protocol": "h2"
+          },
+          {
+            "event": "loadingFinished",
+            "t": 7459
+          }
+        ]
+      },
+      {
+        "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+        "preflight": false,
+        "events": [
+          {
+            "event": "requestWillBeSent",
+            "t": 10783,
+            "phase": "replay",
+            "method": "POST",
+            "type": "Fetch",
+            "initiatorType": "script",
+            "headerNames": [
+              "Accept-Language",
+              "Content-Type",
+              "Referer",
+              "User-Agent",
+              "sec-ch-ua",
+              "sec-ch-ua-mobile",
+              "sec-ch-ua-platform"
+            ]
+          },
+          {
+            "event": "requestWillBeSentExtraInfo",
+            "t": 10783,
+            "headerNames": [
+              ":authority",
+              ":method",
+              ":path",
+              ":scheme",
+              "accept",
+              "accept-encoding",
+              "accept-language",
+              "content-length",
+              "content-type",
+              "origin",
+              "priority",
+              "referer",
+              "sec-ch-ua",
+              "sec-ch-ua-mobile",
+              "sec-ch-ua-platform",
+              "sec-fetch-dest",
+              "sec-fetch-mode",
+              "sec-fetch-site",
+              "user-agent"
+            ],
+            "cookiesSent": 0
+          },
+          {
+            "event": "responseReceivedExtraInfo",
+            "t": 11058,
+            "status": 200,
+            "headers": {
+              "access-control-allow-origin": "https://interior-demo.boostweb.co.kr",
+              "retry-after": null,
+              "access-control-allow-methods": null,
+              "access-control-allow-headers": null,
+              "access-control-max-age": null,
+              "access-control-expose-headers": null,
+              "content-type": "application/json",
+              "cache-control": "no-store",
+              "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch\nOrigin"
+            }
+          },
+          {
+            "event": "responseReceived",
+            "t": 11061,
+            "phase": "replay",
+            "type": "Fetch",
+            "status": 200,
+            "headers": {
+              "access-control-allow-origin": "https://interior-demo.boostweb.co.kr",
+              "retry-after": null,
+              "access-control-allow-methods": null,
+              "access-control-allow-headers": null,
+              "access-control-max-age": null,
+              "access-control-expose-headers": null,
+              "content-type": "application/json",
+              "cache-control": "no-store",
+              "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Origin"
+            },
+            "remoteIPAddress": "69.46.46.125",
+            "protocol": "h2"
+          },
+          {
+            "event": "loadingFinished",
+            "t": 11061
+          }
+        ]
+      }
+    ]
+  },
+  "preflight": {
+    "observable": true,
+    "count": 1,
+    "answeredBy": "the endpoint",
+    "responses": [
+      [
+        {
+          "event": "responseReceivedExtraInfo",
+          "status": 204,
+          "headers": {
+            "access-control-allow-origin": "https://interior-demo.boostweb.co.kr",
+            "retry-after": null,
+            "access-control-allow-methods": "POST",
+            "access-control-allow-headers": "content-type",
+            "access-control-max-age": "600",
+            "access-control-expose-headers": null,
+            "content-type": null,
+            "cache-control": "no-store",
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch\nOrigin"
+          }
+        },
+        {
+          "event": "responseReceived",
+          "status": 204,
+          "headers": {
+            "access-control-allow-origin": "https://interior-demo.boostweb.co.kr",
+            "retry-after": null,
+            "access-control-allow-methods": "POST",
+            "access-control-allow-headers": "content-type",
+            "access-control-max-age": "600",
+            "access-control-expose-headers": null,
+            "content-type": null,
+            "cache-control": "no-store",
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch\nOrigin"
+          }
+        }
+      ]
+    ]
+  },
+  "console": [
+    {
+      "t": 10462,
+      "phase": "form",
+      "type": "warning",
+      "text": "The resource https://interior-demo.boostweb.co.kr/assets/33888d63a7dbd1775c78.jpg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+      "url": "https://interior-demo.boostweb.co.kr/contact"
+    },
+    {
+      "t": 10463,
+      "phase": "form",
+      "type": "warning",
+      "text": "The resource https://interior-demo.boostweb.co.kr/assets/609e7b56f7660f5d1f9d.jpg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+      "url": "https://interior-demo.boostweb.co.kr/contact"
+    }
+  ],
+  "pageErrors": [],
+  "mainFrameNavigations": [
+    {
+      "t": 846,
+      "at": "2026-10-03T20:12:40.046Z",
+      "url": "https://interior-demo.boostweb.co.kr/contact"
+    },
+    {
+      "t": 1935,
+      "at": "2026-10-03T20:12:41.135Z",
+      "url": "https://interior-demo.boostweb.co.kr/contact"
+    }
+  ],
+  "hostsRequested": [
+    "boostchat.co.kr",
+    "interior-demo.boostweb.co.kr",
+    "static.cloudflareinsights.com"
+  ],
+  "widgetRequests": {
+    "count": 15,
+    "bootstrapPosts": 1,
+    "byResourceType": {
+      "script": 12,
+      "document": 1,
+      "stylesheet": 1,
+      "fetch": 1
+    }
+  },
+  "scriptsLoadedByThePage": [
+    {
+      "name": "0hyfkvg55a3sz.js",
+      "status": 200,
+      "door": true,
+      "containsSubmissionId": true
+    },
+    {
+      "name": "3yh5jaalv1u8v.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "22lgiphrawvbj.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "turbopack-3oqcsbkplb52c.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "2fo9hoy1stmbs.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "332uslzbhf388.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "1fx8wyr62n54x.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "03av4zwinu01d.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "1yjyq_0ur7v-3.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    },
+    {
+      "name": "0rnsp54yxojro.js",
+      "status": 200,
+      "door": false,
+      "containsSubmissionId": false
+    }
+  ],
+  "leadRequestCounts": {
+    "playwrightRequestEvents": 2,
+    "playwrightPOST": 2,
+    "playwrightOther": 0,
+    "formPOST": 1,
+    "replayPOST": 1,
+    "cdpRequests": 3,
+    "cdpPreflight": 1,
+    "cdpPOST": 2
+  },
+  "press": {
+    "clicks": 2,
+    "withinOneTick": true,
+    "ms": 1.7,
+    "disabledAfterFirst": false,
+    "disabledAfterSecond": false
+  },
+  "clickReturnedAtUtc": "2026-10-03T20:12:46.049Z",
+  "formPostAnsweredAtUtc": "2026-10-03T20:12:46.655Z",
+  "after": {
+    "path": "/contact",
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "scrollY": 0,
+    "overflow": {
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflowX": false
+    },
+    "values": {
+      "name": null,
+      "phone": null,
+      "region": null,
+      "area": null,
+      "workType": null,
+      "schedule": null,
+      "message": null
+    },
+    "trap": null,
+    "consent": null,
+    "controls": 0,
+    "ariaBusy": null,
+    "button": null,
+    "buttonRect": null,
+    "buttonHit": null,
+    "validity": {
+      "name": null,
+      "phone": null,
+      "message": null,
+      "consent": null
+    },
+    "focus": "status",
+    "alertText": null,
+    "alertOwnText": null,
+    "alertVisible": false,
+    "alertRect": null,
+    "alertInViewport": false,
+    "alertClippedBy": 0,
+    "alertHit": null,
+    "contacts": {
+      "present": false,
+      "leadText": null,
+      "links": 0,
+      "schemes": [],
+      "heights": [],
+      "rects": []
+    },
+    "consentRect": null,
+    "consentRowRect": null,
+    "formRect": {
+      "left": 662.7,
+      "top": 145,
+      "right": 1400,
+      "bottom": 304.5,
+      "width": 737.3,
+      "height": 159.5
+    },
+    "statusText": "견적 문의가 접수되었습니다.\n입력해주신 내용을 확인한 뒤 상담을 이어갈 수 있습니다.",
+    "statusVisible": true,
+    "statusRect": {
+      "left": 662.7,
+      "top": 145,
+      "right": 1400,
+      "bottom": 304.5,
+      "width": 737.3,
+      "height": 159.5
+    },
+    "doneTitleText": "견적 문의가 접수되었습니다.",
+    "doneTitleRect": {
+      "left": 686.7,
+      "top": 193,
+      "right": 1376,
+      "bottom": 221,
+      "width": 689.3,
+      "height": 28
+    },
+    "doneTitleInViewport": true,
+    "doneTitleHit": [
+      "self",
+      "self",
+      "self",
+      "self",
+      "self"
+    ],
+    "header": {
+      "bottom": 73,
+      "effectiveBottom": 73
+    },
+    "launcher": {
+      "detectedBy": "iframe[data-boost-chat-frame]",
+      "tag": "IFRAME",
+      "rect": {
+        "left": 1358,
+        "top": 818,
+        "right": 1422,
+        "bottom": 882,
+        "width": 64,
+        "height": 64
+      },
+      "fromViewportRight": 18,
+      "fromViewportBottom": 18,
+      "style": {
+        "position": "fixed",
+        "zIndex": "2147483000",
+        "borderRadius": "32px",
+        "pointerEvents": "auto"
+      },
+      "title": "상담창",
+      "srcPath": "https://boostchat.co.kr/widget"
+    },
+    "launcherOver": {
+      "button": null,
+      "alert": null,
+      "consentCheckbox": null,
+      "consentRow": null,
+      "doneTitle": null,
+      "status": null
+    },
+    "launcherXRangeOverlapsButton": false
+  },
+  "post": {
+    "request": {
+      "method": "POST",
+      "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+      "headerNames": [
+        ":authority",
+        ":method",
+        ":path",
+        ":scheme",
+        "accept",
+        "accept-encoding",
+        "accept-language",
+        "content-length",
+        "content-type",
+        "origin",
+        "priority",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "sec-ch-ua-platform",
+        "sec-fetch-dest",
+        "sec-fetch-mode",
+        "sec-fetch-site",
+        "user-agent"
+      ],
+      "cookieHeaderPresent": false,
+      "body": {
+        "bytes": 357,
+        "keys": [
+          "consent",
+          "name",
+          "phone",
+          "message",
+          "hp",
+          "submission_id"
+        ],
+        "keysExactlyExpected": true,
+        "forbiddenKeys": [],
+        "consent": true,
+        "name": "[TEST] Shared Inquiry V2",
+        "phone": "010-0000-0000",
+        "hp": "",
+        "message": {
+          "firstLine": "[홈페이지 견적 문의]",
+          "lines": [
+            "[홈페이지 견적 문의]",
+            "지역: 테스트",
+            "평형: 0평",
+            "예상 일정: 테스트",
+            "",
+            "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요."
+          ],
+          "length": 114
+        },
+        "submissionId": {
+          "first8": "0ba99ff2",
+          "isV4Uuid": true,
+          "length": 36
+        }
+      }
+    },
+    "response": {
+      "t": 7454,
+      "at": "2026-10-03T20:12:46.654Z",
+      "phase": "form",
+      "method": "POST",
+      "status": 200,
+      "statusText": "",
+      "headers": {
+        "access-control-allow-origin": "https://interior-demo.boostweb.co.kr",
+        "retry-after": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-max-age": null,
+        "access-control-expose-headers": null,
+        "content-type": "application/json",
+        "cache-control": "no-store",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Origin"
+      },
+      "body": "{\"received\":true}",
+      "serverAddr": {
+        "ipAddress": "69.46.46.125",
+        "port": 443
+      }
+    },
+    "playwrightResponseStatus": 200
+  },
+  "afterReplay": {
+    "path": "/contact",
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "scrollY": 0,
+    "overflow": {
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflowX": false
+    },
+    "values": {
+      "name": null,
+      "phone": null,
+      "region": null,
+      "area": null,
+      "workType": null,
+      "schedule": null,
+      "message": null
+    },
+    "trap": null,
+    "consent": null,
+    "controls": 0,
+    "ariaBusy": null,
+    "button": null,
+    "buttonRect": null,
+    "buttonHit": null,
+    "validity": {
+      "name": null,
+      "phone": null,
+      "message": null,
+      "consent": null
+    },
+    "focus": "status",
+    "alertText": null,
+    "alertOwnText": null,
+    "alertVisible": false,
+    "alertRect": null,
+    "alertInViewport": false,
+    "alertClippedBy": 0,
+    "alertHit": null,
+    "contacts": {
+      "present": false,
+      "leadText": null,
+      "links": 0,
+      "schemes": [],
+      "heights": [],
+      "rects": []
+    },
+    "consentRect": null,
+    "consentRowRect": null,
+    "formRect": {
+      "left": 662.7,
+      "top": 145,
+      "right": 1400,
+      "bottom": 304.5,
+      "width": 737.3,
+      "height": 159.5
+    },
+    "statusText": "견적 문의가 접수되었습니다.\n입력해주신 내용을 확인한 뒤 상담을 이어갈 수 있습니다.",
+    "statusVisible": true,
+    "statusRect": {
+      "left": 662.7,
+      "top": 145,
+      "right": 1400,
+      "bottom": 304.5,
+      "width": 737.3,
+      "height": 159.5
+    },
+    "doneTitleText": "견적 문의가 접수되었습니다.",
+    "doneTitleRect": {
+      "left": 686.7,
+      "top": 193,
+      "right": 1376,
+      "bottom": 221,
+      "width": 689.3,
+      "height": 28
+    },
+    "doneTitleInViewport": true,
+    "doneTitleHit": [
+      "self",
+      "self",
+      "self",
+      "self",
+      "self"
+    ],
+    "header": {
+      "bottom": 73,
+      "effectiveBottom": 73
+    },
+    "launcher": {
+      "detectedBy": "iframe[data-boost-chat-frame]",
+      "tag": "IFRAME",
+      "rect": {
+        "left": 1358,
+        "top": 818,
+        "right": 1422,
+        "bottom": 882,
+        "width": 64,
+        "height": 64
+      },
+      "fromViewportRight": 18,
+      "fromViewportBottom": 18,
+      "style": {
+        "position": "fixed",
+        "zIndex": "2147483000",
+        "borderRadius": "32px",
+        "pointerEvents": "auto"
+      },
+      "title": "상담창",
+      "srcPath": "https://boostchat.co.kr/widget"
+    },
+    "launcherOver": {
+      "button": null,
+      "alert": null,
+      "consentCheckbox": null,
+      "consentRow": null,
+      "doneTitle": null,
+      "status": null
+    },
+    "launcherXRangeOverlapsButton": false
+  },
+  "replay": {
+    "sent": true,
+    "how": "page.evaluate(fetch(endpoint, { method: \"POST\", headers: { \"Content-Type\": \"application/json\" }, body: <the captured body>, mode: \"cors\", credentials: \"omit\" })) — once",
+    "bodyIdenticalToTheFormPost": true,
+    "request": {
+      "method": "POST",
+      "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+      "headerNames": [
+        ":authority",
+        ":method",
+        ":path",
+        ":scheme",
+        "accept",
+        "accept-encoding",
+        "accept-language",
+        "content-length",
+        "content-type",
+        "origin",
+        "priority",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "sec-ch-ua-platform",
+        "sec-fetch-dest",
+        "sec-fetch-mode",
+        "sec-fetch-site",
+        "user-agent"
+      ],
+      "cookieHeaderPresent": false,
+      "body": {
+        "bytes": 357,
+        "keys": [
+          "consent",
+          "name",
+          "phone",
+          "message",
+          "hp",
+          "submission_id"
+        ],
+        "keysExactlyExpected": true,
+        "forbiddenKeys": [],
+        "consent": true,
+        "name": "[TEST] Shared Inquiry V2",
+        "phone": "010-0000-0000",
+        "hp": "",
+        "message": {
+          "firstLine": "[홈페이지 견적 문의]",
+          "lines": [
+            "[홈페이지 견적 문의]",
+            "지역: 테스트",
+            "평형: 0평",
+            "예상 일정: 테스트",
+            "",
+            "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요."
+          ],
+          "length": 114
+        },
+        "submissionId": {
+          "first8": "0ba99ff2",
+          "isV4Uuid": true,
+          "length": 36
+        }
+      }
+    },
+    "asThePageSawIt": {
+      "ok": true,
+      "status": 200,
+      "type": "cors",
+      "text": "{\"received\":true}",
+      "json": {
+        "received": true
+      },
+      "retryAfterAsThePageSeesIt": null
+    },
+    "response": {
+      "t": 11059,
+      "at": "2026-10-03T20:12:50.259Z",
+      "phase": "replay",
+      "method": "POST",
+      "status": 200,
+      "statusText": "",
+      "headers": {
+        "access-control-allow-origin": "https://interior-demo.boostweb.co.kr",
+        "retry-after": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-max-age": null,
+        "access-control-expose-headers": null,
+        "content-type": "application/json",
+        "cache-control": "no-store",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Origin"
+      },
+      "body": "{\"received\":true}",
+      "serverAddr": {
+        "ipAddress": "69.46.46.125",
+        "port": 443
+      }
+    }
+  },
+  "finalUrl": "https://interior-demo.boostweb.co.kr/contact",
+  "finishedAt": "2026-10-03T20:12:52.276Z",
+  "liveStubbedRehearsal": {
+    "file": "docs/result/shared-inquiry-form-v2/proof/32-live-stubbed-rehearsal.json",
+    "result": "PASS",
+    "finishedAt": "2026-10-03T20:12:06.058Z",
+    "sameContactAsServedNow": true
+  },
+  "clicked": true,
+  "summary": {
+    "rows": 11,
+    "pass": 11,
+    "fail": 0,
+    "skipped": 0,
+    "assertions": 47,
+    "notes": 0
+  }
+}

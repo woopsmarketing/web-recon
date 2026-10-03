@@ -1,0 +1,519 @@
+/**
+ * The /contact submission flow of the shared inquiry form (interior-01 1.6.3), used by BOTH
+ *   real-submit.mts     — NO stub: exactly one real inquiry (1 form POST + 1 idempotent replay), and
+ *   rehearse-submit.mts — stubbed: nothing reaches the real lead endpoint.
+ * Whether a stub exists is the CALLER's decision (`installStub`); this module installs no route of
+ * its own, presses the button in exactly one place and replays in exactly one place.
+ *
+ * The flow (Chromium, 1440x900):
+ *   0. before a browser exists: the base must serve the 1.6.3 form — /contact is the current
+ *      package's /contact and its door chunk contains "submission_id". If not: stop, nothing opened.
+ *   1. open /contact, wait for the form, fill the [TEST] values, tick the consent.
+ *   2. gates — any one failing means NO press: the script the page really loaded contains
+ *      "submission_id", the fields hold the values, no lead request was made yet.
+ *   3. the press: a fast DOUBLE CLICK (two click() calls in one tick) → exactly ONE POST expected.
+ *   4. the success UI; then, only if exactly one POST was answered 200 {"received":true}:
+ *   5. the REPLAY — the exact captured body, sent once more from the same page → 200 {"received":true}
+ *      expected (same id, same values: stored once).
+ *   6. the endpoint was addressed by exactly 2 POSTs (preflights aside).
+ *
+ * The submission id is never written down: files and console lines carry only its first 8 characters
+ * and whether it is a v4 UUID (qa-lib redactBody / scrub).
+ */
+import { mkdirSync } from "node:fs";
+import path from "node:path";
+import type { BrowserContext } from "playwright";
+import {
+  Checks, DOOR_MARKER, PW_VERSION, REPO, callInPage, countFullIds, gate, isDoorSource, isLeadUrl, isTurnstileHost, packageSummary, pw, redactBody, say, servedBuild, sleep, state, writeJson,
+  type RedactedBody, type SiteData, type Target,
+} from "./qa-lib.mts";
+
+export const VALUES = {
+  name: "[TEST] Shared Inquiry V2",
+  phone: "010-0000-0000",
+  region: "테스트",
+  area: "0평",
+  schedule: "테스트",
+  message: "[TEST] Shared Inquiry Form V2 E2E 2026-10-04 — 시연 검증용 테스트 접수입니다. 연락하지 마세요.",
+};
+
+export interface FlowOptions {
+  kind: "REAL" | "REHEARSAL";
+  target: Target;
+  site: SiteData;
+  /** null = REAL: no route of any kind. Otherwise it installs the stub on the fresh context (no page exists yet). */
+  installStub: null | ((ctx: BrowserContext) => Promise<{ blockedThirdParty: string[] }>);
+  outJson: string;
+  shotsDir: string;
+  /** screenshot file prefix, e.g. "real-submit" */
+  shotPrefix: string;
+  launchArgs?: string[];
+  /** called right before the press (the real script writes its "clicked" sentinel here) */
+  beforeClick?: () => void;
+}
+export interface FlowResult {
+  out: Record<string, any>;
+  checks: Checks;
+  /** true once the press was dispatched — from then on nothing may be run again */
+  clicked: boolean;
+  opts: FlowOptions;
+}
+
+const INTEREST = ["access-control-allow-origin", "retry-after", "access-control-allow-methods", "access-control-allow-headers", "access-control-max-age", "access-control-expose-headers", "content-type", "cache-control", "vary"];
+const interest = (h: Record<string, string>) => {
+  const lower: Record<string, string> = {};
+  for (const [k, v] of Object.entries(h)) lower[k.toLowerCase()] = String(v);
+  const out: Record<string, string | null> = {};
+  for (const k of INTEREST) out[k] = lower[k] ?? null;
+  return out;
+};
+
+/** two click() calls on the submit button in one tick */
+const DOUBLE_CLICK_JS = `() => {
+  const b = document.querySelector("[data-inquiry-submit]");
+  if (!b) return { clicks: 0, reason: "no submit button" };
+  if (b.disabled) return { clicks: 0, reason: "submit button disabled" };
+  const t = performance.now();
+  b.click();
+  const disabledAfterFirst = b.disabled;
+  b.click();
+  return { clicks: 2, withinOneTick: true, ms: Math.round((performance.now() - t) * 100) / 100, disabledAfterFirst, disabledAfterSecond: b.disabled };
+}`;
+/** the replay: the captured body, once more, from the page (its Origin, real CORS) */
+const REPLAY_JS = `async (a) => {
+  try {
+    const res = await fetch(a.endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: a.body, mode: "cors", credentials: "omit" });
+    const text = await res.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch (e) {}
+    return { ok: res.ok, status: res.status, type: res.type, text: text.slice(0, 500), json, retryAfterAsThePageSeesIt: res.headers.get("retry-after") };
+  } catch (e) {
+    return { error: String(e) };
+  }
+}`;
+
+interface LeadRequest {
+  t: number;
+  at: string;
+  phase: string;
+  method: string;
+  url: string;
+  /** memory only */
+  raw: string | null;
+  headerNames: string[];
+  cookieHeaderPresent: boolean | null;
+}
+interface LeadResponse {
+  t: number;
+  at: string;
+  phase: string;
+  method: string;
+  status: number;
+  statusText: string;
+  headers: Record<string, string | null>;
+  body: string | null;
+  serverAddr: unknown;
+}
+
+export async function runSubmitFlow(opts: FlowOptions): Promise<FlowResult> {
+  const { target, site } = opts;
+  const copy = site.copy;
+  const checks = new Checks();
+  mkdirSync(path.dirname(opts.outJson), { recursive: true });
+  mkdirSync(opts.shotsDir, { recursive: true });
+  const shot = (name: string) => path.join(opts.shotsDir, `${opts.shotPrefix}-${name}-1440.jpg`);
+  const expectedMessage = [copy.messagePrefix, `${copy.regionLabel}: ${VALUES.region}`, `${copy.areaLabel}: ${VALUES.area}`, `${copy.scheduleLabel}: ${VALUES.schedule}`, "", VALUES.message].join("\n");
+
+  const out: Record<string, any> = {
+    what: `40 — /contact inquiry form: ONE logical inquiry (fast double click → one POST) + one idempotent replay (Chromium, 1440x900) — ${opts.kind}`,
+    kind: opts.kind,
+    stubbed: opts.installStub !== null,
+    result: "FAIL",
+    mode: target.mode,
+    base: target.base,
+    endpoint: site.endpoint,
+    startedAt: new Date().toISOString(),
+    stage: "starting",
+    tooling: { node: process.version, playwright: PW_VERSION },
+    package: packageSummary(site),
+    filled: { ...VALUES, workType: "(left at the default empty option — the select is not required)", consent: true },
+    submissionIdPolicy: "only the first 8 characters and whether it is a v4 UUID are recorded — never the id",
+    clickAtUtc: null,
+    errors: [] as { phase: string; error: string }[],
+  };
+  const persist = (stage?: string) => {
+    if (stage) out.stage = stage;
+    out.persistedAt = new Date().toISOString();
+    out.checks = checks.rows;
+    out.notes = checks.notes;
+    writeJson(opts.outJson, out);
+  };
+  const result: FlowResult = { out, checks, clicked: false, opts };
+  persist();
+
+  // ================================================================ 0. the served build — before any browser
+  const build = await servedBuild(target, site);
+  out.servedBuild = build;
+  const gate0 = checks.row("pre-click", "the base serves the 1.6.3 form — checked before a browser is started", {
+    "/contact answers 200": build.contact.status === 200,
+    [`door chunk (${build.doorChunks.join(", ") || "none found"}) contains "${DOOR_MARKER}"`]: build.doorChunkContainsSubmissionId,
+    "served contact HTML == the current package's contact.html": build.contact.identicalToLocalPackage,
+    "the served page declares the site's endpoint": build.endpointDeclaredInContactHtml,
+  });
+  if (!gate0.ok) {
+    persist("ABORTED-BEFORE-BROWSER — nothing was opened, nothing was sent");
+    return result;
+  }
+
+  // ================================================================ 1. browser, context, (stub), page
+  const browser = await pw.chromium.launch({ args: opts.launchArgs ?? [] });
+  try {
+    out.tooling.browser = `chromium ${browser.version()}`;
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, locale: "ko-KR", serviceWorkers: "block" });
+    const hook = opts.installStub ? await opts.installStub(ctx) : null;
+    const page = await ctx.newPage();
+
+    // ---- listeners: attached before anything is loaded
+    const t0 = Date.now();
+    const rel = () => Date.now() - t0;
+    let phase = "load";
+    const consoleLines: { t: number; phase: string; type: string; text: string; url: string | null }[] = [];
+    const pageErrors: { t: number; phase: string; text: string }[] = [];
+    const navigations: { t: number; at: string; url: string }[] = [];
+    const leadRequests: LeadRequest[] = [];
+    const leadResponses: LeadResponse[] = [];
+    const leadFailed: { t: number; phase: string; method: string; failure: string | null }[] = [];
+    const hosts = new Set<string>();
+    const widgetRequests: { t: number; method: string; path: string; resourceType: string }[] = [];
+    const scripts: { name: string; status: number; door: boolean; containsSubmissionId: boolean }[] = [];
+    const pending: Promise<unknown>[] = [];
+    page.on("console", (m) => consoleLines.push({ t: rel(), phase, type: m.type(), text: m.text(), url: m.location()?.url ?? null }));
+    page.on("pageerror", (e) => pageErrors.push({ t: rel(), phase, text: String((e as Error)?.stack ?? e) }));
+    page.on("framenavigated", (f) => {
+      if (f === page.mainFrame()) navigations.push({ t: rel(), at: new Date().toISOString(), url: f.url() });
+    });
+    ctx.on("request", (r) => {
+      const u = r.url();
+      try {
+        hosts.add(new URL(u).host);
+      } catch {
+        /* about:blank, data: */
+      }
+      if (site.widgetOrigin && u.startsWith(site.widgetOrigin + "/") && !isLeadUrl(u)) widgetRequests.push({ t: rel(), method: r.method(), path: new URL(u).pathname, resourceType: r.resourceType() });
+      if (!isLeadUrl(u)) return;
+      const entry: LeadRequest = { t: rel(), at: new Date().toISOString(), phase, method: r.method(), url: u, raw: r.postData(), headerNames: [], cookieHeaderPresent: null };
+      leadRequests.push(entry);
+      redactBody(entry.raw); // registers the id with the scrubber at once
+      pending.push(
+        r.allHeaders().then(
+          (h) => {
+            entry.headerNames = Object.keys(h).sort();
+            entry.cookieHeaderPresent = Object.keys(h).some((k) => k.toLowerCase() === "cookie");
+          },
+          () => {},
+        ),
+      );
+    });
+    ctx.on("requestfailed", (r) => {
+      if (isLeadUrl(r.url())) leadFailed.push({ t: rel(), phase, method: r.method(), failure: r.failure()?.errorText ?? null });
+    });
+    ctx.on("response", (r) => {
+      const u = r.url();
+      if (u.startsWith(target.base + "/_next/static/chunks/") && u.split("?")[0]!.endsWith(".js")) {
+        pending.push(
+          r.text().then(
+            (js) => scripts.push({ name: path.basename(new URL(u).pathname), status: r.status(), door: isDoorSource(js), containsSubmissionId: js.includes(DOOR_MARKER) }),
+            () => scripts.push({ name: path.basename(new URL(u).pathname), status: r.status(), door: false, containsSubmissionId: false }),
+          ),
+        );
+      }
+      if (!isLeadUrl(u)) return;
+      const entry: LeadResponse = { t: rel(), at: new Date().toISOString(), phase, method: r.request().method(), status: r.status(), statusText: r.statusText(), headers: {}, body: null, serverAddr: undefined };
+      leadResponses.push(entry);
+      pending.push(r.allHeaders().then((h) => void (entry.headers = interest(h)), () => {}));
+      pending.push(r.text().then((b) => void (entry.body = b.slice(0, 2000)), (e) => void (entry.body = `<<body unreadable: ${String(e).split("\n")[0]}>>`)));
+      pending.push(r.serverAddr().then((a) => void (entry.serverAddr = a), () => void (entry.serverAddr = null)));
+    });
+
+    // ---- CDP: the only place a CORS preflight is observable. The request body is never read here.
+    const cdp = await ctx.newCDPSession(page);
+    await cdp.send("Network.enable");
+    const cdpById = new Map<string, { url?: string; events: Record<string, any>[] }>();
+    const slot = (id: string) => cdpById.get(id) ?? cdpById.set(id, { events: [] }).get(id)!;
+    cdp.on("Network.requestWillBeSent", (e: any) => {
+      const s = slot(e.requestId);
+      s.url = e.request.url;
+      s.events.push({ event: "requestWillBeSent", t: rel(), phase, method: e.request.method, type: e.type, initiatorType: e.initiator?.type ?? null, headerNames: Object.keys(e.request.headers ?? {}).sort() });
+    });
+    cdp.on("Network.requestWillBeSentExtraInfo", (e: any) => void slot(e.requestId).events.push({ event: "requestWillBeSentExtraInfo", t: rel(), headerNames: Object.keys(e.headers ?? {}).sort(), cookiesSent: (e.associatedCookies ?? []).filter((c: any) => !c.blockedReasons || c.blockedReasons.length === 0).length }));
+    cdp.on("Network.responseReceived", (e: any) => void slot(e.requestId).events.push({ event: "responseReceived", t: rel(), phase, type: e.type, status: e.response.status, headers: interest(e.response.headers ?? {}), remoteIPAddress: e.response.remoteIPAddress ?? null, protocol: e.response.protocol ?? null }));
+    cdp.on("Network.responseReceivedExtraInfo", (e: any) => void slot(e.requestId).events.push({ event: "responseReceivedExtraInfo", t: rel(), status: e.statusCode, headers: interest(e.headers ?? {}) }));
+    cdp.on("Network.loadingFinished", (e: any) => void slot(e.requestId).events.push({ event: "loadingFinished", t: rel() }));
+    cdp.on("Network.loadingFailed", (e: any) => void slot(e.requestId).events.push({ event: "loadingFailed", t: rel(), errorText: e.errorText, corsErrorStatus: e.corsErrorStatus ?? null, blockedReason: e.blockedReason ?? null }));
+    const cdpLead = () => [...cdpById.values()].filter((s) => typeof s.url === "string" && isLeadUrl(s.url));
+    const isPreflight = (s: { events: Record<string, any>[] }) => s.events.some((e) => (e.event === "requestWillBeSent" && e.method === "OPTIONS") || (e.event === "responseReceived" && e.type === "Preflight"));
+
+    const posts = () => leadRequests.filter((r) => r.method === "POST");
+    const settle = async () => {
+      await Promise.allSettled([...pending]);
+    };
+    /** console errors: every line counts, except (local only) the line for a third-party request this run blocked */
+    const consoleErrors = () => {
+      const blocked = hook?.blockedThirdParty ?? [];
+      return consoleLines.filter((m) => m.type === "error" && !((m.url !== null && blocked.includes(m.url)) || blocked.some((u) => m.text.includes(u))));
+    };
+    const collect = () => {
+      out.leadRequests = leadRequests.map((r) => ({ t: r.t, at: r.at, phase: r.phase, method: r.method, url: r.url, headerNames: r.headerNames, cookieHeaderPresent: r.cookieHeaderPresent, body: redactBody(r.raw) }));
+      out.leadResponses = leadResponses;
+      out.leadRequestsFailed = leadFailed;
+      out.cdp = { lead: cdpLead().map((s) => ({ url: s.url, preflight: isPreflight(s), events: s.events })) };
+      out.preflight = { observable: cdpLead().some(isPreflight), count: cdpLead().filter(isPreflight).length, answeredBy: opts.installStub ? "Playwright's request interception (stubbed run) — not a server" : "the endpoint", responses: cdpLead().filter(isPreflight).map((s) => s.events.filter((e) => e.event === "responseReceived" || e.event === "responseReceivedExtraInfo").map((e) => ({ event: e.event, status: e.status, headers: e.headers }))) };
+      out.console = consoleLines;
+      out.pageErrors = pageErrors;
+      out.mainFrameNavigations = navigations;
+      out.hostsRequested = [...hosts].sort();
+      out.widgetRequests = { count: widgetRequests.length, bootstrapPosts: widgetRequests.filter((w) => w.method === "POST" && w.path.endsWith("/bootstrap")).length, byResourceType: widgetRequests.reduce<Record<string, number>>((m, w) => ((m[w.resourceType] = (m[w.resourceType] ?? 0) + 1), m), {}) };
+      out.scriptsLoadedByThePage = scripts;
+      out.leadRequestCounts = {
+        playwrightRequestEvents: leadRequests.length,
+        playwrightPOST: posts().length,
+        playwrightOther: leadRequests.length - posts().length,
+        formPOST: posts().filter((r) => r.phase !== "replay").length,
+        replayPOST: posts().filter((r) => r.phase === "replay").length,
+        cdpRequests: cdpLead().length,
+        cdpPreflight: cdpLead().filter(isPreflight).length,
+        cdpPOST: cdpLead().filter((s) => s.events.some((e) => e.event === "requestWillBeSent" && e.method === "POST")).length,
+      };
+    };
+
+    // ================================================================ 1–2. load, fill, gates
+    let goAhead = false;
+    try {
+      await gate(target, `${opts.kind} submit flow`);
+      const resp = await page.goto(`${target.base}/contact`, { waitUntil: "load", timeout: 45_000 });
+      out.navigation = { status: resp?.status() ?? null, url: page.url() };
+      try {
+        await page.waitForLoadState("networkidle", { timeout: 15_000 });
+      } catch {
+        /* a widget may keep a connection open */
+      }
+      await page.waitForSelector("[data-inquiry-submit]:not([disabled])", { timeout: 15_000 });
+      await page.evaluate(`document.fonts.ready.then(() => true)`);
+      await sleep(1200);
+      await settle();
+      out.before = await state(page, site);
+      await page.screenshot({ path: shot("before"), type: "jpeg", quality: 80 });
+      persist("loaded");
+
+      phase = "fill";
+      await page.fill("[name=name]", VALUES.name);
+      await page.fill("[name=phone]", VALUES.phone);
+      await page.fill("[name=region]", VALUES.region);
+      await page.fill("[name=area]", VALUES.area);
+      await page.fill("[name=schedule]", VALUES.schedule);
+      await page.fill("[name=message]", VALUES.message);
+      await page.check("[name=consent]");
+      const filled = (out.filledState = await state(page, site));
+      await page.screenshot({ path: shot("filled"), type: "jpeg", quality: 80 });
+      out.navigationsBeforeClick = navigations.length;
+      collect();
+
+      const door = scripts.filter((s) => s.door);
+      const gate1 = checks.row("pre-click", "the page is the 1.6.3 form, filled as specified, and nothing was sent yet", {
+        "/contact answered 200 and the form is mounted": out.navigation.status === 200 && filled.button?.disabled === false,
+        [`the door script this page loaded (${door.map((s) => s.name).join(", ") || "none"}) contains "${DOOR_MARKER}"`]: door.length > 0 && door.every((s) => s.containsSubmissionId && s.status === 200),
+        "name, phone, region, area, schedule, message hold the [TEST] values; work type left empty": filled.values.name === VALUES.name && filled.values.phone === VALUES.phone && filled.values.region === VALUES.region && filled.values.area === VALUES.area && filled.values.schedule === VALUES.schedule && filled.values.message === VALUES.message && filled.values.workType === "",
+        "consent ticked, trap field empty": filled.consent === true && filled.trap === "",
+        [`button enabled and says "${copy.submitLabel}"`]: filled.button?.disabled === false && filled.button?.text === copy.submitLabel,
+        "still on /contact": filled.path === "/contact",
+        "NO request to the lead endpoint so far": leadRequests.length === 0 && cdpLead().length === 0,
+      });
+      goAhead = gate1.ok;
+      persist(goAhead ? "filled" : "ABORTED-BEFORE-CLICK — a gate failed; the button was not pressed, nothing was sent");
+    } catch (e) {
+      out.errors.push({ phase: "before-click", error: String((e as Error)?.stack ?? e) });
+      checks.row("pre-click", "the page loaded and was filled without a script error", { [`no error (${String((e as Error)?.message ?? e).split("\n")[0]})`]: false });
+      collect();
+      persist("ABORTED-BEFORE-CLICK — error before the press; the button was not pressed, nothing was sent");
+    }
+    if (!goAhead) return result;
+
+    // ================================================================ 3. the press — exactly once. Nothing below may be retried.
+    const responsePromise = page.waitForResponse((r) => isLeadUrl(r.url()) && r.request().method() === "POST", { timeout: 30_000 });
+    responsePromise.catch(() => {});
+    phase = "form";
+    opts.beforeClick?.();
+    result.clicked = true;
+    out.clickAtUtc = new Date().toISOString();
+    persist("clicking");
+    try {
+      const press = (out.press = await callInPage(page, DOUBLE_CLICK_JS));
+      out.clickReturnedAtUtc = new Date().toISOString();
+      persist("clicked");
+
+      const response = await responsePromise;
+      out.formPostAnsweredAtUtc = new Date().toISOString();
+      try {
+        await page.waitForSelector(".i1-form__done-title", { state: "visible", timeout: 10_000 });
+      } catch (e) {
+        out.errors.push({ phase: "wait-success-title", error: String(e).split("\n")[0]! });
+      }
+      await sleep(800);
+      const after = (out.after = await state(page, site));
+      await page.screenshot({ path: shot("success"), type: "jpeg", quality: 80 });
+      persist("success-state-read");
+
+      // would a second request follow?
+      await sleep(2500);
+      await settle();
+      const form = posts();
+      const first = form[0];
+      const firstBody: RedactedBody | null = first ? redactBody(first.raw) : null;
+      const firstResponse = leadResponses.find((r) => r.method === "POST") ?? null;
+      const firstJson = (() => {
+        try {
+          return JSON.parse(firstResponse?.body ?? "") as { received?: unknown };
+        } catch {
+          return null;
+        }
+      })();
+      let sentMessage: unknown = null;
+      let sentName: unknown = null;
+      let sentPhone: unknown = null;
+      try {
+        const b = JSON.parse(first?.raw ?? "") as Record<string, unknown>;
+        sentMessage = b.message;
+        sentName = b.name;
+        sentPhone = b.phone;
+      } catch {
+        /* stays null */
+      }
+      out.post = {
+        request: first ? { method: first.method, url: first.url, headerNames: first.headerNames, cookieHeaderPresent: first.cookieHeaderPresent, body: firstBody } : null,
+        response: firstResponse,
+        playwrightResponseStatus: response.status(),
+      };
+      checks.row("press", "a fast double click sends exactly ONE POST", {
+        "two click() calls were dispatched in one tick": press.clicks === 2,
+        "exactly one POST on the wire (Playwright request events)": form.length === 1,
+        "CDP agrees: one POST": cdpLead().filter((s) => s.events.some((e) => e.event === "requestWillBeSent" && e.method === "POST")).length === 1,
+        "no other request to the endpoint (preflights aside)": leadRequests.length === 1,
+        "it went to the endpoint the site declares": first?.url === site.endpoint,
+      }, { press });
+      checks.row("press", 'the POST is answered 200 {"received":true}', {
+        "status 200": firstResponse?.status === 200,
+        'body is {"received":true}': firstJson?.received === true,
+        [`access-control-allow-origin is the page's origin (${target.base})`]: firstResponse?.headers["access-control-allow-origin"] === target.base,
+        "no retry-after": (firstResponse?.headers["retry-after"] ?? null) === null,
+      }, { status: firstResponse?.status ?? null, body: firstResponse?.body ?? null, headers: firstResponse?.headers ?? null });
+      checks.row("press", "the request: no cookie, exactly the six keys, a v4 submission_id, the folded message", {
+        "no cookie header": first?.cookieHeaderPresent === false,
+        "body keys are exactly consent, name, phone, message, hp, submission_id": firstBody?.keysExactlyExpected === true,
+        "never source / turnstile_token": (firstBody?.forbiddenKeys.length ?? 1) === 0,
+        "submission_id is a v4 UUID": firstBody?.submissionId?.isV4Uuid === true,
+        [`the message's first line is "${copy.messagePrefix}"`]: firstBody?.message?.firstLine === copy.messagePrefix,
+        "the message is the prefix, the three filled details, a blank line and the typed text": sentMessage === expectedMessage,
+        "name and phone as typed, consent true, hp empty": sentName === VALUES.name && sentPhone === VALUES.phone && firstBody?.consent === true && firstBody?.hp === "",
+      }, { headerNames: first?.headerNames ?? null, body: firstBody });
+      checks.row("press", "the success UI", {
+        [`"${copy.successTitle}" visible`]: after.doneTitleText === copy.successTitle && after.doneTitleRect !== null,
+        [`"${copy.successBody}" visible`]: after.statusVisible === true && String(after.statusText ?? "").includes(copy.successBody!),
+        "the fields are removed": after.controls === 0 && after.button === null,
+        "headline below the sticky header, inside the viewport": after.doneTitleInViewport === true,
+        "no navigation: still /contact, no new document": after.path === "/contact" && navigations.length === out.navigationsBeforeClick,
+      });
+      collect();
+      persist("form-post-verified");
+
+      // ================================================================ 5. the replay — exactly once, and only after a clean first POST
+      const replayAllowed = form.length === 1 && leadRequests.length === 1 && firstResponse?.status === 200 && firstJson?.received === true && typeof first?.raw === "string";
+      if (!replayAllowed) {
+        out.replay = { sent: false, reason: "the form POST was not exactly one request answered 200 {\"received\":true} — no further request is made to the endpoint" };
+        checks.row("replay", "the replay", { "sent (it is only sent after exactly one POST answered 200)": false });
+      } else {
+        phase = "replay";
+        persist("replaying");
+        const replayResponse = page.waitForResponse((r) => isLeadUrl(r.url()) && r.request().method() === "POST", { timeout: 30_000 });
+        replayResponse.catch(() => {});
+        const inPage = await callInPage(page, REPLAY_JS, { endpoint: first!.url, body: first!.raw });
+        await replayResponse.catch(() => null);
+        await sleep(2000);
+        await settle();
+        const all = posts();
+        const second = all.find((r) => r.phase === "replay") ?? null;
+        const secondResponse = leadResponses.filter((r) => r.method === "POST")[1] ?? null;
+        const afterReplay = (out.afterReplay = await state(page, site));
+        await page.screenshot({ path: shot("after-replay"), type: "jpeg", quality: 80 });
+        out.replay = {
+          sent: true,
+          how: 'page.evaluate(fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: <the captured body>, mode: "cors", credentials: "omit" })) — once',
+          bodyIdenticalToTheFormPost: second !== null && second.raw === first!.raw,
+          request: second ? { method: second.method, url: second.url, headerNames: second.headerNames, cookieHeaderPresent: second.cookieHeaderPresent, body: redactBody(second.raw) } : null,
+          asThePageSawIt: inPage,
+          response: secondResponse,
+        };
+        checks.row("replay", "the same body sent once more is answered as already received", {
+          "the replay left the page exactly once": all.filter((r) => r.phase === "replay").length === 1,
+          "its body is byte-identical to the form's POST (same submission_id, same values)": second !== null && second.raw === first!.raw,
+          "status 200": secondResponse?.status === 200 && inPage?.status === 200,
+          'body is {"received":true}': inPage?.json?.received === true,
+          "no retry-after": (secondResponse?.headers["retry-after"] ?? null) === null,
+          "no cookie header": second?.cookieHeaderPresent === false,
+        }, { asThePageSawIt: inPage, status: secondResponse?.status ?? null, body: secondResponse?.body ?? null, headers: secondResponse?.headers ?? null });
+        checks.row("replay", "the endpoint was addressed by exactly 2 POSTs — 1 form POST + 1 replay (preflights aside)", {
+          "2 POSTs in total": all.length === 2,
+          "1 from the form, 1 from the replay": all.filter((r) => r.phase !== "replay").length === 1 && all.filter((r) => r.phase === "replay").length === 1,
+          "no request of another method (Playwright request events)": leadRequests.length === 2,
+          "CDP agrees: 2 POSTs": cdpLead().filter((s) => s.events.some((e) => e.event === "requestWillBeSent" && e.method === "POST")).length === 2,
+          "the page still shows the confirmation, no navigation": afterReplay.doneTitleText === copy.successTitle && afterReplay.path === "/contact" && navigations.length === out.navigationsBeforeClick,
+        });
+      }
+    } catch (e) {
+      out.errors.push({ phase: "after-click", error: String((e as Error)?.stack ?? e) });
+      checks.row("press", "the flow ran to its end after the press", { [`no script error (${String((e as Error)?.message ?? e).split("\n")[0]})`]: false });
+      try {
+        out.afterOnError = await state(page, site);
+      } catch {
+        /* the page may be gone */
+      }
+    }
+
+    // ================================================================ 6. what the page said, where requests went
+    await settle();
+    collect();
+    const errors = consoleErrors();
+    checks.row("page", "console errors 0, page errors 0", { [`console errors: ${errors.length}`]: errors.length === 0, [`page errors: ${pageErrors.length}`]: pageErrors.length === 0 }, errors.length + pageErrors.length > 0 ? { errors, pageErrors } : undefined);
+    const turnstile = [...hosts].filter(isTurnstileHost);
+    checks.row("page", "no request went to a turnstile / challenges.cloudflare.com host", { [`${hosts.size} host(s) requested, ${turnstile.length} of them a challenge host`]: turnstile.length === 0 });
+    out.finalUrl = page.url();
+    out.finishedAt = new Date().toISOString();
+    persist(out.errors.length ? "FINISHED-WITH-ERRORS" : "finished");
+    return result;
+  } finally {
+    await browser.close().catch(() => {});
+  }
+}
+
+/** adds the last rows, writes the JSON, prints the verdict; true = PASS */
+export function finalizeFlow(result: FlowResult): boolean {
+  const { out, checks, opts } = result;
+  const leaks = countFullIds({ out, rows: checks.rows });
+  checks.row("output", "no full submission id in the result (first 8 characters only)", { [`full ids found before writing: ${leaks}`]: leaks === 0 });
+  const summary = checks.summary();
+  const pass = summary.fail === 0 && result.clicked && String(out.stage).startsWith("finished");
+  out.result = pass ? "PASS" : "FAIL";
+  out.clicked = result.clicked;
+  out.summary = summary;
+  out.checks = checks.rows;
+  out.notes = checks.notes;
+  out.finishedAt = out.finishedAt ?? new Date().toISOString();
+  writeJson(opts.outJson, out);
+  const id = out.post?.request?.body?.submissionId;
+  say(`\nRESULT: ${out.result} — ${opts.kind}, stage "${out.stage}", rows ${summary.pass}/${summary.rows} PASS (${summary.assertions} assertions), ${summary.fail} FAIL`);
+  say(`  pressed: ${result.clicked}${out.clickAtUtc ? ` at ${out.clickAtUtc}` : ""}; lead requests: ${JSON.stringify(out.leadRequestCounts ?? null)}`);
+  if (out.post) say(`  form POST → ${out.post.response?.status ?? "no response"} ${out.post.response?.body ?? ""}; submission_id ${id ? `${id.first8}… (v4 UUID: ${id.isV4Uuid})` : "absent"}`);
+  if (out.replay) say(`  replay    → ${out.replay.sent ? `${out.replay.response?.status ?? "no response"} ${out.replay.response?.body ?? ""}` : `NOT SENT (${out.replay.reason})`}`);
+  for (const f of checks.failures) say(`  FAILED: ${f.group}  ${f.id}`);
+  say(`  → ${path.relative(REPO, opts.outJson)}`);
+  return pass;
+}

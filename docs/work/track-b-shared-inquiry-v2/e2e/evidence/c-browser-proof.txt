@@ -1,0 +1,93 @@
+LOCAL E2E idempotency proof — C (browser level, the real built page)
+started:            2026-10-03T20:02:26.782Z
+boostchat commit:   3ff3a2335d086a200c9a18a415c85d3efc11c768 (isolated git-archive copy)
+database:           boost_chat_test on loopback (name contains "test": yes)
+migration 0055:     present — unique index (tenant_id, source, submission_id) WHERE (submission_id IS NOT NULL); _migration says applied 2026-10-03 19:19:37.450514+09; nothing was migrated by this run
+package:            boost-interior-demo 8a0c21182f47bd45… (current.json), interior-01-1.6.3-93977937c0b4, built 2026-10-03T19:38:58.071Z .. 2026-10-03T19:39:05.391Z
+door in the page:   chunk 0hyfkvg55a3sz.js (contains "submission_id"); door source sha256 b2400be338eef4f6…; door + form sources older than this build: yes
+declared endpoint:  https://boostchat.co.kr/api/widget/<declared key>/lead  (carried to the local server — never contacted)
+
+== A. bring-up ==
+static:   http://127.0.0.1:53752 serves the package's site/ unmodified (/contact -> contact.html)
+seeded:   tenant trackb-inquiry-v2-e2e-c-a4c2bf85 (id 4e19351a…), widget channel 6a67aad5… key wgt_c3fp… enabled, allowed_origins=[http://127.0.0.1:53752], owner trackb-inquiry-v2-e2e-c-a4c2bf85-owner@example.com
+server:   http://127.0.0.1:53754 (next start, BUILD_ID LL_FLy6kPQsJcu2uLpTRk), WIDGET_SITE_LEAD_KEYS = this key only, Turnstile OFF
+mail:     SMTP sink on 127.0.0.1:53753 — no real mail
+LEAD_ROWS at start: 0
+
+== C.R — mode R: context.route -> route.fetch(local BoostChat) -> route.fulfill(real response) ==
+[INFO] C.R.0  second layer (no name resolves in this browser): http://localhost:<static port>/ -> page.goto: net::ERR_NAME_NOT_RESOLVED
+[PASS] C.R.1a submit pressed 5 times (5 trusted mouse clicks in a row)
+         expected: POSTs that reached BoostChat = 1 (200), the page shows the success state (fields removed), LEAD_ROWS +1
+         observed: POSTs = 1 (200), submission_id 98d416d2…, success shown: true ("견적 문의가 접수되었습니다."), fields left: 0, LEAD_ROWS 0 -> 1
+[PASS] C.R.1b submit pressed 5 times within one script task (the button not yet disabled)
+         expected: 5 submit events, POSTs that reached BoostChat = 1 (200), success state, LEAD_ROWS +1
+         observed: submit events = 5, POSTs = 1 (200), success shown: true, LEAD_ROWS 1 -> 2
+[PASS] C.R.2a the first answer is lost on the way back
+         expected: BoostChat answered 200 and stored the row, the page shows the failure alert, every input is preserved, the button is ready again
+         observed: server 200 (answer withheld: true), LEAD_ROWS 2 -> 3, alert: "문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요." (other contact channels offered: true), name/phone/message kept: true/true/true, consent kept: true, button disabled: false
+[PASS] C.R.2b the visitor presses again
+         expected: the SAME submission_id on the wire, 200, success state, NO further row: exactly 1 row for this inquiry (not 2)
+         observed: submission_id 3b8583f9… -> 3b8583f9… (same: true, body identical: true), 200, success shown: true, LEAD_ROWS 3 -> 3, rows with that id = 1
+[PASS] C.R.3 the 6th POST of a visitor, from the page
+         expected: real 429 with Retry-After; the alert names ceil(Retry-After/60) minutes (>= 3, i.e. NOT the 1 minute the door falls back to when it cannot read the header), the button is disabled, a further press makes no request, LEAD_ROWS unchanged
+         observed: budget: 200,200,200,200,200; then 429, Retry-After=450, Access-Control-Expose-Headers=Retry-After; alert: "요청이 많아 잠시 접수가 어렵습니다. 약 8분 후 다시 시도해 주세요." (expected 8 min: true), button disabled: true, POSTs of this step after one more press = 1 (still only the 429), LEAD_ROWS 3 -> 3  [450s of the window were left]
+[PASS] C.R.4 what the browser put on the wire, and what it was given back
+         expected: Origin=http://127.0.0.1:53752 set by the browser, Content-Type application/json, no cookie; answer: Access-Control-Allow-Origin=http://127.0.0.1:53752, no Allow-Credentials
+         observed: Origin=http://127.0.0.1:53752, Content-Type=application/json, cookie sent: false; answer: Allow-Origin=http://127.0.0.1:53752, Allow-Credentials=absent
+[INFO] C.R.5  CORS preflights that surfaced to the route handler: 0 — Playwright fulfils a preflight itself while interception is on, so mode R does NOT exercise BoostChat's OPTIONS handler (mode G does)
+[INFO] C.R.6  requests refused: boostchat.co.kr/widget.js (aborted by the route)
+[INFO] C.R.7  reached BoostChat: POST 200, POST 200, POST 200 (answer withheld), POST 200, POST 429
+
+== C.G — mode G: no interception; loopback proxy -> loopback TLS relay -> local BoostChat ==
+[PASS] C.G.0 the browser can only reach the gateway
+         expected: a tunnel request for probe.invalid:443 arrives at the loopback gateway and is refused there
+         observed: gateway saw: probe.invalid:443
+[PASS] C.G.1a submit pressed 5 times (5 trusted mouse clicks in a row)
+         expected: POSTs that reached BoostChat = 1 (200), the page shows the success state (fields removed), LEAD_ROWS +1
+         observed: POSTs = 1 (200), submission_id b236c015…, success shown: true ("견적 문의가 접수되었습니다."), fields left: 0, LEAD_ROWS 3 -> 4
+[PASS] C.G.1b submit pressed 5 times within one script task (the button not yet disabled)
+         expected: 5 submit events, POSTs that reached BoostChat = 1 (200), success state, LEAD_ROWS +1
+         observed: submit events = 5, POSTs = 1 (200), success shown: true, LEAD_ROWS 4 -> 5
+[PASS] C.G.2r the connection dies before the answer, on an already-used connection
+         expected: the page makes ONE request; 2 POSTs with the identical body reach BoostChat (the browser's own resend), both 200; success state with no alert; LEAD_ROWS +1 — exactly 1 row for that id
+         observed: page requests = 1; POSTs at BoostChat = 2 (200 answer withheld on a connection that had served 3; 200 on a connection that had served 0), bodies identical: true, submission_id 5b6086f0…; success shown: true; LEAD_ROWS 5 -> 6, rows with that id = 1
+[PASS] C.G.2a the first answer is lost on the way back
+         expected: BoostChat answered 200 and stored the row, the page shows the failure alert, every input is preserved, the button is ready again
+         observed: server 200 (answer withheld: true, on a connection that had served 0), LEAD_ROWS 6 -> 7, alert: "문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요." (other contact channels offered: true), name/phone/message kept: true/true/true, consent kept: true, button disabled: false
+[PASS] C.G.2b the visitor presses again
+         expected: the SAME submission_id on the wire, 200, success state, NO further row: exactly 1 row for this inquiry (not 2)
+         observed: submission_id 73de809d… -> 73de809d… (same: true, body identical: true), 200, success shown: true, LEAD_ROWS 7 -> 7, rows with that id = 1
+[PASS] C.G.3 the 6th POST of a visitor, from the page
+         expected: real 429 with Retry-After; the alert names ceil(Retry-After/60) minutes (>= 3, i.e. NOT the 1 minute the door falls back to when it cannot read the header), the button is disabled, a further press makes no request, LEAD_ROWS unchanged
+         observed: budget: 200,200,200,200,200; then 429, Retry-After=446, Access-Control-Expose-Headers=Retry-After; alert: "요청이 많아 잠시 접수가 어렵습니다. 약 8분 후 다시 시도해 주세요." (expected 8 min: true), button disabled: true, POSTs of this step after one more press = 1 (still only the 429), LEAD_ROWS 7 -> 7  [446s of the window were left]
+[PASS] C.G.4 the browser's OWN preflight, answered by the real route
+         expected: an OPTIONS before the first POST (Origin=http://127.0.0.1:53752, Access-Control-Request-Method=POST, Access-Control-Request-Headers=content-type) answered 204 with Allow-Origin=http://127.0.0.1:53752, Allow-Headers=content-type — and the browser then sent the POST
+         observed: preflights that reached BoostChat: 1 (204); first: Origin=http://127.0.0.1:53752, Request-Method=POST, Request-Headers=content-type, other access-control-request-*: none -> 204, Allow-Origin=http://127.0.0.1:53752, Allow-Methods=POST, Allow-Headers=content-type, Max-Age=600
+[PASS] C.G.5 what the browser put on the wire
+         expected: Origin=http://127.0.0.1:53752 set by the browser, Content-Type application/json, no cookie
+         observed: Origin=http://127.0.0.1:53752, Content-Type=application/json, cookie sent: false, sec-fetch-mode=cors, sec-fetch-site=cross-site
+[PASS] C.G.8 negative control: the page served from an origin that is not registered
+         expected: the browser's preflight gets the route's uniform 403 without CORS headers, so the browser never sends the POST; the page shows the failure alert with the other contact channels; LEAD_ROWS unchanged
+         observed: reached BoostChat: OPTIONS 403 (Allow-Origin absent); alert: "문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요." (other contact channels offered: true); LEAD_ROWS 7 -> 7
+[INFO] C.G.6  tunnels asked of the gateway: probe.invalid:443, boostchat.co.kr:443; refused / not relayed: probe.invalid:443 (tunnel refused by the gateway); boostchat.co.kr/widget.js (not the lead route: 404 from the gateway)
+[INFO] C.G.7  reached BoostChat: OPTIONS 204, POST 200, POST 200, POST 200 (answer withheld), POST 200, POST 200 (answer withheld), POST 200, POST 429, OPTIONS 403
+
+== notifications ==
+[PASS] C.N one owner notification per stored row
+         expected: mails in the sink for this tenant = LEAD_ROWS
+         observed: mails = 7, LEAD_ROWS = 7
+
+== teardown ==
+servers stopped: BoostChat yes (port 53754 free), static yes, gateway yes, browsers closed
+server log lines (the route throttles its warnings — a count of LINES, not of events): site_lead_idempotent_replay=1, site_lead_idempotency_conflict=0, site_lead_client_rate_limited=1, site_lead_origin_rejected=1, site_lead_schema_behind=0, site_lead_failed=0, site_lead_store_rejected=0, site_lead_client_limit_skipped=0, [lead-notify]=0
+[PASS] C.log the server log
+         expected: no schema_behind / failed / store_rejected / limit_skipped line, no form content in the log
+         observed: schema_behind=0, failed=0, store_rejected=0, limit_skipped=0, form content found: 0
+cleaned up: tenant 1 (with 7 lead rows, its widget channel and membership by cascade), owner user 1, rate-limit buckets 17
+[PASS] C.cleanup nothing of this harness is left in the test database
+         expected: fixtures under "trackb-inquiry-v2-e2e-" as before the run (0 tenants, 0 users, 0 leads)
+         observed: 0 tenants, 0 users, 0 leads
+
+== result ==
+19 passed, 0 failed
+finished: 2026-10-03T20:02:37.090Z

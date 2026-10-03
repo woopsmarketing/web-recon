@@ -1,0 +1,150 @@
+/**
+ * 30 — the base serves the CURRENT built package, byte for byte (READ-ONLY: GET only, the base host only).
+ *
+ *   ./node_modules/.bin/tsx --tsconfig platform/tsconfig.json docs/result/shared-inquiry-form-v2/proof/scripts/live-parity.mts
+ *   env: QA_BASE (unset = the live site | "local"), QA_OUT_TAG (optional: writes 30-live-http-parity.<tag>.json)
+ *
+ * For every file of the package's site/ directory: GET its URL with `Accept: * / *` and compare status,
+ * size and sha256. X.html is served at /X, index.html at /. 404.html and _not-found.html are not
+ * addressable: an unknown path must answer 404 with the 404.html body.
+ * No browser is started and the inquiry endpoint is never addressed (httpGet() only knows the base host).
+ * Result: proof/30-live-http-parity.json (proof/rehearsal/… when QA_BASE=local). Exit code 1 on FAIL.
+ */
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import path from "node:path";
+import { Checks, PW_VERSION, REPO, httpGetRetry, loadSite, openTarget, outJsonPath, packageSummary, say, servedBuild, sha256, writeJson, type HttpRes } from "./qa-lib.mts";
+
+const site = loadSite();
+const target = await openTarget(site);
+const OUT = outJsonPath(target, "30-live-http-parity");
+const checks = new Checks();
+const startedAt = new Date().toISOString();
+say(`# 30 live-vs-package parity — ${startedAt}`);
+say(`base: ${target.base} (${target.mode})   package: ${path.relative(REPO, site.pkgDir)}   template: ${site.template.releaseId}`);
+
+function walk(dir: string, rel = ""): string[] {
+  let out: string[] = [];
+  for (const e of readdirSync(dir).sort()) {
+    const p = path.join(dir, e);
+    const r = rel ? `${rel}/${e}` : e;
+    if (statSync(p).isDirectory()) out = out.concat(walk(p, r));
+    else out.push(r);
+  }
+  return out;
+}
+const enc = (rel: string) => "/" + rel.split("/").map((s) => encodeURIComponent(s).split("%24").join("$")).join("/");
+function urlFor(rel: string): string | null {
+  if (rel === "index.html") return "/";
+  if (rel === "404.html" || rel === "_not-found.html") return null;
+  if (rel.endsWith(".html")) return enc(rel.slice(0, -5));
+  return enc(rel);
+}
+
+let exitCode = 1;
+try {
+  const files = walk(site.siteDir);
+  const rows: { rel: string; url: string; status: number; same: boolean; localBytes: number; servedBytes: number; localSha256: string; servedSha256: string }[] = [];
+  const notAddressable: string[] = [];
+  const errors: { rel: string; url: string; error: string }[] = [];
+  const queue = [...files];
+  async function worker() {
+    while (queue.length) {
+      const rel = queue.shift()!;
+      const url = urlFor(rel);
+      if (!url) {
+        notAddressable.push(rel);
+        continue;
+      }
+      const local = readFileSync(path.join(site.siteDir, rel));
+      let res: HttpRes;
+      try {
+        res = await httpGetRetry(target, url);
+      } catch (e) {
+        errors.push({ rel, url, error: String(e) });
+        continue;
+      }
+      const localSha = sha256(local);
+      const servedSha = sha256(res.body);
+      rows.push({ rel, url, status: res.status, same: res.status === 200 && localSha === servedSha && local.length === res.body.length, localBytes: local.length, servedBytes: res.body.length, localSha256: localSha, servedSha256: servedSha });
+    }
+  }
+  await Promise.all([worker(), worker(), worker(), worker()]);
+  rows.sort((a, b) => a.url.localeCompare(b.url));
+  const mismatches = rows.filter((r) => !r.same);
+  const addressable = files.length - notAddressable.length;
+  const byExt: Record<string, { identical: number; total: number }> = {};
+  for (const r of rows) {
+    const ext = path.extname(r.rel) || "(none)";
+    const slot = (byExt[ext] ??= { identical: 0, total: 0 });
+    slot.total++;
+    if (r.same) slot.identical++;
+  }
+
+  // unknown paths → 404 with the package's 404.html
+  const local404 = readFileSync(path.join(site.siteDir, "404.html"));
+  const probes: { path: string; required: boolean; status: number; contentType: unknown; bytes: number; sha256: string; bodyIs404Html: boolean }[] = [];
+  for (const [p, required] of [
+    ["/definitely-not-a-page-qa-20261004", true],
+    ["/portfolio/definitely-not-a-record-qa-20261004", true],
+    ["/404.html", false],
+    ["/_not-found.html", false],
+    ["/404", false],
+    ["/_not-found", false],
+  ] as const) {
+    const r = await httpGetRetry(target, p);
+    probes.push({ path: p, required, status: r.status, contentType: r.headers["content-type"], bytes: r.body.length, sha256: sha256(r.body), bodyIs404Html: sha256(r.body) === sha256(local404) });
+  }
+
+  const build = await servedBuild(target, site);
+
+  checks.row("parity", "every addressable file is served byte-identically (status 200, size, sha256)", {
+    [`${rows.filter((r) => r.same).length} / ${addressable} identical`]: mismatches.length === 0 && errors.length === 0 && rows.length === addressable,
+    "no request failed": errors.length === 0,
+  });
+  checks.row("parity", "an unknown path answers 404 with the package's 404.html", {
+    [`${probes.filter((p) => p.required && p.status === 404).length} / 2 required probes → 404`]: probes.filter((p) => p.required).every((p) => p.status === 404),
+    "the 404 body is the package's 404.html": probes.filter((p) => p.required).every((p) => p.bodyIs404Html),
+  });
+  checks.row("build", "the served /contact is the package's /contact and its inquiry door carries submission_id", {
+    "served contact HTML == package contact.html": build.contact.identicalToLocalPackage,
+    "same JS chunk names as the package": build.localPackage.sameChunkNames,
+    [`door chunk (${build.doorChunks.join(", ") || "none found"}) contains "submission_id"`]: build.doorChunkContainsSubmissionId,
+    "the served page declares the site's endpoint": build.endpointDeclaredInContactHtml,
+  });
+  if (mismatches.length > 0) say(`      first mismatches: ${mismatches.slice(0, 8).map((m) => `${m.url} (${m.status}, ${m.servedBytes} B vs ${m.localBytes} B)`).join("; ")}${mismatches.length > 8 ? ` … +${mismatches.length - 8} more` : ""}`);
+
+  const summary = checks.summary();
+  const pass = summary.fail === 0;
+  const out = {
+    what: "30 — every addressable file of the current built package is served byte-identically by the base (GET only)",
+    result: pass ? "PASS" : "FAIL",
+    mode: target.mode,
+    base: target.base,
+    startedAt,
+    finishedAt: new Date().toISOString(),
+    request: { method: "GET", accept: "*/*", userAgent: "recon-readonly-verify" },
+    tooling: { node: process.version, playwrightInstalled: PW_VERSION, browserStarted: false },
+    package: packageSummary(site),
+    servedBuild: build,
+    counts: { filesInSiteDir: files.length, addressable, identical: rows.filter((r) => r.same).length, mismatches: mismatches.length, requestErrors: errors.length, notAddressable: notAddressable.length },
+    identicalByExtension: byExt,
+    notAddressable,
+    mismatches,
+    requestErrors: errors,
+    notFoundProbes: probes,
+    summary,
+    checks: checks.rows,
+    notes: checks.notes,
+    files: rows,
+  };
+  writeJson(OUT, out);
+  say(`\nRESULT: ${out.result} — identical ${out.counts.identical}/${addressable} addressable, ${notAddressable.length} non-addressable, mismatches ${mismatches.length}; served door chunk ${build.doorChunks.join(", ") || "(none)"} has submission_id: ${build.doorChunkContainsSubmissionId}`);
+  say(`rows ${summary.pass}/${summary.rows} PASS → ${path.relative(REPO, OUT)}`);
+  exitCode = pass ? 0 : 1;
+} catch (e) {
+  say(`ERROR: ${String((e as Error)?.stack ?? e)}`);
+  exitCode = 1;
+} finally {
+  await target.close();
+}
+process.exit(exitCode);

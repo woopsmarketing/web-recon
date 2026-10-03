@@ -1,0 +1,755 @@
+/**
+ * Shared helpers of the shared-inquiry-form-v2 (interior-01 1.6.3) live proof scripts.
+ *
+ * SAFETY. The demo's inquiry endpoint (https://boostchat.co.kr/api/widget/<key>/lead) stores a REAL
+ * lead and e-mails a real person on every un-stubbed POST. Everything in this file that opens a
+ * browser context does it through installLeadStub(), which
+ *   1. registers THREE routes for the endpoint before any page exists — the exact URL, the glob
+ *      for /api/widget/<any key>/lead and a predicate over the path (query string / trailing slash),
+ *   2. proves in that very context that the interception is live, with two canary requests to a
+ *      host that cannot resolve (*.invalid) — the target page is not opened if either is missed,
+ *   3. marks every answer it gives ("x-qa-stub: 1") and exits the process at once (code 97) when a
+ *      lead response arrives without that mark or with a real server address.
+ * The only script that sends a real request is real-submit.mts; it never calls installLeadStub()
+ * and it does not import a stub of any kind.
+ *
+ * QA_BASE selects the target: unset / the live URL → https://interior-demo.boostweb.co.kr;
+ * "local" → a static server on 127.0.0.1 over the CURRENT built demo package (routed with the real
+ * runtime's resolvePath). Anything else is refused.
+ */
+import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import http from "node:http";
+import https from "node:https";
+import path from "node:path";
+import type { AddressInfo } from "node:net";
+import type { BrowserContext, Page, Route } from "playwright";
+import { resolvePath, NOT_FOUND_KEY } from "../../../../../workers/recon-runtime/src/paths.ts";
+
+export const HERE = path.dirname(new URL(import.meta.url).pathname);
+export const REPO = path.resolve(HERE, "../../../../..");
+const require = createRequire(path.join(REPO, "package.json"));
+export const pw = require("playwright") as typeof import("playwright");
+export const PW_VERSION: string = require("playwright/package.json").version;
+
+export const SITE_ID = "boost-interior-demo";
+export const LIVE_BASE = "https://interior-demo.boostweb.co.kr";
+export const RESULT = path.join(REPO, "docs/result/shared-inquiry-form-v2");
+export const PROOF = path.join(RESULT, "proof");
+
+export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+export const sha256 = (b: Buffer | string) => createHash("sha256").update(b).digest("hex");
+const readJson = (f: string) => JSON.parse(readFileSync(f, "utf8")) as Record<string, any>;
+
+// ------------------------------------------------------------------------------------------------ site data
+export interface SiteData {
+  buildInputId: string;
+  pkgDir: string;
+  siteDir: string;
+  packageHash: string;
+  template: Record<string, string>;
+  /** the endpoint the SITE declares (data/sites/<site>/inquiry.json) */
+  endpoint: string;
+  /** contact.page copy (data/sites/<site>/slots.json) */
+  copy: Record<string, string>;
+  /** the third-party chat widget script the site loads (data/sites/<site>/scripts.json) */
+  widgetScript: string;
+  widgetOrigin: string;
+}
+export function loadSite(): SiteData {
+  const cur = readJson(path.join(REPO, "data/site-builds", SITE_ID, "current.json"));
+  const pkgDir = path.join(REPO, cur.packageDir);
+  const record = readJson(path.join(pkgDir, "build-record.json"));
+  const endpoint = String(readJson(path.join(REPO, "data/sites", SITE_ID, "inquiry.json")).endpoint);
+  const copy = readJson(path.join(REPO, "data/sites", SITE_ID, "slots.json")).values["contact.page"] as Record<string, string>;
+  const widgetScript = String(readJson(path.join(REPO, "data/sites", SITE_ID, "scripts.json")).headScripts?.[0]?.src ?? "");
+  if (!isLeadUrl(endpoint)) throw new Error(`the declared endpoint does not look like a lead endpoint: ${endpoint}`);
+  return {
+    buildInputId: cur.buildInputId,
+    pkgDir,
+    siteDir: path.join(pkgDir, "site"),
+    packageHash: record.packageHash,
+    template: record.template,
+    endpoint,
+    copy,
+    widgetScript,
+    widgetOrigin: widgetScript ? new URL(widgetScript).origin : "",
+  };
+}
+export const packageSummary = (site: SiteData) => ({ buildInputId: site.buildInputId, packageDir: path.relative(REPO, site.pkgDir), packageHash: site.packageHash, template: site.template });
+
+// ------------------------------------------------------------------------------------------------ target (QA_BASE)
+export interface Target {
+  mode: "live" | "local";
+  /** no trailing slash; also the page origin */
+  base: string;
+  /** where result JSON goes: proof/ (live) or proof/rehearsal/ (local) */
+  proofDir: string;
+  /** where screenshots go: screenshots/live/ (live) or proof/rehearsal/screenshots/ (local) */
+  shotsDir: string;
+  close: () => Promise<void>;
+}
+
+const CONTENT_TYPES: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".mjs": "application/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".woff2": "font/woff2",
+  ".xml": "application/xml; charset=utf-8",
+  ".map": "application/json; charset=utf-8",
+  ".webmanifest": "application/manifest+json; charset=utf-8",
+};
+/** a static server over a package's site/ dir, routed exactly as the real runtime routes (resolvePath) */
+async function startStaticServer(siteDir: string): Promise<{ origin: string; close: () => Promise<void> }> {
+  const server = http.createServer((req, res) => {
+    void (async () => {
+      const u = new URL(req.url ?? "/", "http://localhost");
+      const resolved = resolvePath(u.pathname);
+      const key = resolved.kind === "key" ? resolved.key : NOT_FOUND_KEY;
+      try {
+        const data = await readFile(path.join(siteDir, key));
+        res.writeHead(resolved.kind === "key" ? 200 : 404, { "content-type": CONTENT_TYPES[path.extname(key).toLowerCase()] ?? "application/octet-stream", "cache-control": "no-store" });
+        res.end(data);
+      } catch {
+        try {
+          const notFound = await readFile(path.join(siteDir, NOT_FOUND_KEY));
+          res.writeHead(404, { "content-type": CONTENT_TYPES[".html"]!, "cache-control": "no-store" });
+          res.end(notFound);
+        } catch {
+          res.writeHead(404, { "content-type": "text/plain" });
+          res.end("not found");
+        }
+      }
+    })();
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address() as AddressInfo;
+  return { origin: `http://127.0.0.1:${port}`, close: () => new Promise<void>((resolve) => server.close(() => resolve())) };
+}
+
+export async function openTarget(site: SiteData): Promise<Target> {
+  const raw = (process.env.QA_BASE ?? "").trim();
+  const trimmed = raw.endsWith("/") ? raw.slice(0, -1) : raw;
+  if (trimmed === "" || trimmed === LIVE_BASE) {
+    return { mode: "live", base: LIVE_BASE, proofDir: PROOF, shotsDir: path.join(RESULT, "screenshots/live"), close: async () => {} };
+  }
+  if (trimmed === "local") {
+    const server = await startStaticServer(site.siteDir);
+    return { mode: "local", base: server.origin, proofDir: path.join(PROOF, "rehearsal"), shotsDir: path.join(PROOF, "rehearsal/screenshots"), close: server.close };
+  }
+  throw new Error(`QA_BASE must be unset, "${LIVE_BASE}" or "local" (got "${raw}")`);
+}
+/** proof/<name>.json — or proof/<name>.<QA_OUT_TAG>.json when a tag is set (a run that must not be taken for the final proof) */
+export function outJsonPath(target: Target, name: string, tag = process.env.QA_OUT_TAG ?? ""): string {
+  const clean = tag.replace(new RegExp("[^A-Za-z0-9_-]", "g"), "");
+  mkdirSync(target.proofDir, { recursive: true });
+  return path.join(target.proofDir, clean ? `${name}.${clean}.json` : `${name}.json`);
+}
+
+// ------------------------------------------------------------------------------------------------ read-only HTTP (node; GET only; the base host only)
+export interface HttpRes {
+  status: number;
+  headers: http.IncomingHttpHeaders;
+  body: Buffer;
+}
+/** GET <base><p> with `Accept: * / *`. Only ever addresses the target's own host — never the endpoint. */
+export function httpGet(target: Target, p: string): Promise<HttpRes> {
+  const base = new URL(target.base);
+  if (!p.startsWith("/")) throw new Error(`httpGet: path must start with "/": ${p}`);
+  const lib = base.protocol === "https:" ? https : http;
+  return new Promise((resolve, reject) => {
+    const r = lib.request({ hostname: base.hostname, port: base.port || (base.protocol === "https:" ? 443 : 80), method: "GET", path: p, headers: { host: base.host, accept: "*/*", "user-agent": "recon-readonly-verify" } }, (res) => {
+      const chunks: Buffer[] = [];
+      res.on("data", (c) => chunks.push(c));
+      res.on("end", () => resolve({ status: res.statusCode ?? 0, headers: res.headers, body: Buffer.concat(chunks) }));
+    });
+    r.setTimeout(30_000, () => r.destroy(new Error(`GET ${p}: no answer in 30 s`)));
+    r.on("error", reject);
+    r.end();
+  });
+}
+export async function httpGetRetry(target: Target, p: string, tries = 3): Promise<HttpRes> {
+  for (let a = 1; ; a++) {
+    try {
+      return await httpGet(target, p);
+    } catch (e) {
+      if (a >= tries) throw e;
+      await sleep(400 * a);
+    }
+  }
+}
+
+// ------------------------------------------------------------------------------------------------ the served build's identity
+const CHUNK_RE = new RegExp("/_next/static/chunks/[A-Za-z0-9_.~-]+\\.js", "g");
+/** the platform's inquiry door, as it appears in a built chunk (true of 1.6.2 and of 1.6.3) */
+export const isDoorSource = (js: string) => js.includes('credentials:"omit"') && js.includes('redirect:"error"');
+/** what only the 1.6.3 door has */
+export const DOOR_MARKER = "submission_id";
+
+export interface ServedBuild {
+  contact: { status: number; bytes: number; sha256: string; identicalToLocalPackage: boolean };
+  /** the JS chunks the served /contact names, in document order */
+  chunkNames: string[];
+  chunks: { name: string; status: number; bytes: number; sha256: string; door: boolean; containsSubmissionId: boolean }[];
+  doorChunks: string[];
+  /** true when the served door chunk is the 1.6.3 door */
+  doorChunkContainsSubmissionId: boolean;
+  endpointDeclaredInContactHtml: boolean;
+  localPackage: { chunkNames: string[]; doorChunks: string[]; sameChunkNames: boolean };
+}
+export async function servedBuild(target: Target, site: SiteData): Promise<ServedBuild> {
+  const res = await httpGetRetry(target, "/contact");
+  const html = res.body.toString("utf8");
+  const names = (text: string) => [...new Set([...text.matchAll(CHUNK_RE)].map((m) => m[0]))];
+  const chunkPaths = names(html);
+  const chunks: ServedBuild["chunks"] = [];
+  for (const p of chunkPaths) {
+    const c = await httpGetRetry(target, p);
+    const js = c.body.toString("utf8");
+    chunks.push({ name: path.basename(p), status: c.status, bytes: c.body.length, sha256: sha256(c.body), door: c.status === 200 && isDoorSource(js), containsSubmissionId: c.status === 200 && js.includes(DOOR_MARKER) });
+  }
+  const localHtml = readFileSync(path.join(site.siteDir, "contact.html"));
+  const localChunkPaths = names(localHtml.toString("utf8"));
+  const localDoor = localChunkPaths.filter((p) => {
+    const f = path.join(site.siteDir, p);
+    return existsSync(f) && isDoorSource(readFileSync(f, "utf8"));
+  });
+  const door = chunks.filter((c) => c.door);
+  return {
+    contact: { status: res.status, bytes: res.body.length, sha256: sha256(res.body), identicalToLocalPackage: sha256(res.body) === sha256(localHtml) },
+    chunkNames: chunks.map((c) => c.name),
+    chunks,
+    doorChunks: door.map((c) => c.name),
+    doorChunkContainsSubmissionId: door.length > 0 && door.every((c) => c.containsSubmissionId),
+    endpointDeclaredInContactHtml: html.includes(site.endpoint),
+    localPackage: { chunkNames: localChunkPaths.map((p) => path.basename(p)), doorChunks: localDoor.map((p) => path.basename(p)), sameChunkNames: JSON.stringify(localChunkPaths) === JSON.stringify(chunkPaths) },
+  };
+}
+
+// ------------------------------------------------------------------------------------------------ submission ids are never written down
+const UUID_V4 = new RegExp("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", "i");
+export const EXPECTED_BODY_KEYS = ["consent", "name", "phone", "message", "hp", "submission_id"];
+/** every submission id any script saw — kept in memory only, to scrub output with */
+const knownIds = new Set<string>();
+/** replaces every known submission id by its first 8 characters; returns the text and how many were found */
+export function scrub(text: string): { text: string; found: number } {
+  let found = 0;
+  let out = text;
+  for (const id of knownIds) {
+    if (!id || !out.includes(id)) continue;
+    found += out.split(id).length - 1;
+    out = out.split(id).join(`${id.slice(0, 8)}-[redacted]`);
+  }
+  return { text: out, found };
+}
+/** console output goes through the scrubber */
+export const say = (line = "") => console.log(scrub(line).text);
+
+const short = (v: unknown) => (typeof v === "string" && v.length > 160 ? { length: v.length, head: v.slice(0, 40), allSameChar: new Set(v).size === 1 } : v);
+export interface RedactedBody {
+  bytes: number;
+  parseError?: true;
+  /** the keys, in the order they are on the wire */
+  keys: string[];
+  keysExactlyExpected: boolean;
+  forbiddenKeys: string[];
+  consent: unknown;
+  name: unknown;
+  phone: unknown;
+  hp: unknown;
+  message: { firstLine: string; lines: unknown[]; length: number } | null;
+  /** ONLY the first 8 characters and whether it is a v4 UUID — the id itself is never recorded */
+  submissionId: { first8: string; isV4Uuid: boolean; length: number } | null;
+}
+/** what may be recorded of a request body: its keys and values, and of the submission id only a prefix */
+export function redactBody(raw: string | null): RedactedBody {
+  const empty: RedactedBody = { bytes: Buffer.byteLength(raw ?? ""), keys: [], keysExactlyExpected: false, forbiddenKeys: [], consent: null, name: null, phone: null, hp: null, message: null, submissionId: null };
+  let body: Record<string, unknown>;
+  try {
+    body = JSON.parse(raw ?? "") as Record<string, unknown>;
+    if (typeof body !== "object" || body === null) throw new Error("not an object");
+  } catch {
+    return { ...empty, parseError: true };
+  }
+  const id = body.submission_id;
+  if (typeof id === "string" && id !== "") knownIds.add(id);
+  const keys = Object.keys(body);
+  const message = typeof body.message === "string" ? body.message : null;
+  return {
+    bytes: empty.bytes,
+    keys,
+    keysExactlyExpected: JSON.stringify([...keys].sort()) === JSON.stringify([...EXPECTED_BODY_KEYS].sort()),
+    forbiddenKeys: keys.filter((k) => k === "source" || k === "turnstile_token"),
+    consent: body.consent,
+    name: short(body.name),
+    phone: body.phone,
+    hp: body.hp,
+    message: message === null ? null : { firstLine: message.split("\n")[0] ?? "", lines: message.split("\n").map(short), length: message.length },
+    submissionId: typeof id === "string" ? { first8: id.slice(0, 8), isV4Uuid: UUID_V4.test(id), length: id.length } : null,
+  };
+}
+/** the raw id of a body — for comparing two requests in memory; never to be recorded */
+export function rawId(raw: string | null): string | undefined {
+  try {
+    const id = (JSON.parse(raw ?? "") as { submission_id?: unknown }).submission_id;
+    return typeof id === "string" ? id : undefined;
+  } catch {
+    return undefined;
+  }
+}
+/** writes JSON with every known submission id scrubbed; returns how many full ids the text held before scrubbing */
+export function writeJson(file: string, value: unknown): number {
+  mkdirSync(path.dirname(file), { recursive: true });
+  const { text, found } = scrub(JSON.stringify(value, null, 2));
+  writeFileSync(file, text + "\n");
+  return found;
+}
+export const countFullIds = (value: unknown) => scrub(JSON.stringify(value)).found;
+
+// ------------------------------------------------------------------------------------------------ PASS / FAIL rows
+export interface Row {
+  group: string;
+  id: string;
+  ok: boolean;
+  /** "skip": not applicable in this run (not a failure) */
+  skipped?: string;
+  passed: number;
+  total: number;
+  failed: string[];
+  detail?: unknown;
+}
+export class Checks {
+  rows: Row[] = [];
+  notes: string[] = [];
+  /** one row = a named set of assertions; the row passes when every assertion is true */
+  row(group: string, id: string, assertions: Record<string, boolean>, detail?: unknown): Row {
+    const names = Object.keys(assertions);
+    const failed = names.filter((n) => assertions[n] !== true);
+    const row: Row = { group, id, ok: failed.length === 0, passed: names.length - failed.length, total: names.length, failed, detail };
+    this.rows.push(row);
+    say(`${row.ok ? "PASS" : "FAIL"}  ${group}  ${id} (${row.passed}/${row.total})`);
+    for (const f of failed) say(`        x ${f}`);
+    return row;
+  }
+  skip(group: string, id: string, reason: string): void {
+    this.rows.push({ group, id, ok: true, skipped: reason, passed: 0, total: 0, failed: [] });
+    say(`SKIP  ${group}  ${id} — ${reason}`);
+  }
+  note(text: string): void {
+    this.notes.push(text);
+    say(`NOTE  ${text}`);
+  }
+  get failures(): Row[] {
+    return this.rows.filter((r) => !r.ok);
+  }
+  summary() {
+    const run = this.rows.filter((r) => !r.skipped);
+    return { rows: run.length, pass: run.filter((r) => r.ok).length, fail: this.failures.length, skipped: this.rows.length - run.length, assertions: run.reduce((n, r) => n + r.total, 0), notes: this.notes.length };
+  }
+}
+
+// ------------------------------------------------------------------------------------------------ the lead stub + guard
+/** any path that goes through /api/widget/<key>/lead — deliberately broad: a false positive is only stubbed */
+const LEAD_PATH = new RegExp("/api/widget/[^/]+/lead");
+export function isLeadUrl(u: string): boolean {
+  try {
+    return LEAD_PATH.test(new URL(u).pathname);
+  } catch {
+    return LEAD_PATH.test(u);
+  }
+}
+const TURNSTILE = new RegExp("turnstile|challenges\\.cloudflare\\.com", "i");
+export const isTurnstileHost = (host: string) => TURNSTILE.test(host);
+
+export type Reply = { kind: "json"; status: number; body: string; headers?: Record<string, string>; label: string } | { kind: "abort"; label: string } | { kind: "hold" };
+export const REPLY = {
+  ok: (): Reply => ({ kind: "json", status: 200, body: '{"received":true}', label: "200 received" }),
+  invalid: (): Reply => ({ kind: "json", status: 400, body: '{"error":"field_invalid","field":"phone"}', label: "400 field_invalid" }),
+  timeout: (): Reply => ({ kind: "json", status: 408, body: '{"error":"request_timeout"}', label: "408 request_timeout" }),
+  conflict: (): Reply => ({ kind: "json", status: 409, body: '{"error":"idempotency_conflict"}', label: "409 idempotency_conflict" }),
+  rateLimited: (retryAfter: number): Reply => ({ kind: "json", status: 429, body: '{"error":"rate_limited"}', headers: { "Retry-After": String(retryAfter) }, label: `429 rate_limited, Retry-After ${retryAfter}` }),
+  unavailable: (): Reply => ({ kind: "json", status: 503, body: '{"error":"unavailable"}', label: "503 unavailable" }),
+  network: (): Reply => ({ kind: "abort", label: "network failure (aborted)" }),
+  hold: (): Reply => ({ kind: "hold" }),
+};
+
+export interface StubSeen {
+  n: number;
+  at: string;
+  method: string;
+  url: string;
+  /** which of the three routes caught it */
+  via: "exact" | "glob" | "predicate";
+  /** the raw body — memory only; what is written down is `body` */
+  raw: string | null;
+  body: RedactedBody | null;
+  headerNames: string[];
+  cookieHeaderPresent: boolean;
+  origin: string | null;
+  answered: string;
+  selfTest: boolean;
+}
+export interface LeadStub {
+  seen: StubSeen[];
+  /** the form's own POSTs (self-test canaries left out) */
+  posts: () => StubSeen[];
+  heldCount: () => number;
+  /** answers the oldest held request */
+  release: (reply: Reply) => Promise<void>;
+  /** lead requests the CONTEXT reported (request events) — must equal seen.length */
+  requestEvents: { at: string; method: string; url: string }[];
+  responses: { status: number; marked: boolean; serverAddr: unknown }[];
+  blockedThirdParty: string[];
+  hosts: Set<string>;
+  selfTest: { glob: boolean; predicate: boolean; detail: unknown };
+  /** problems that are not fatal by themselves (fatal ones exit the process) */
+  problems: () => string[];
+  record: () => Record<string, unknown>;
+}
+
+/** stops everything, loudly: a lead request got past the stub (or would have) */
+export function fatal(message: string): never {
+  console.error("\n" + "!".repeat(100));
+  console.error(`SAFETY VIOLATION — ${scrub(message).text}`);
+  console.error("A request to the lead endpoint was not answered by the stub. Stopping at once. Do not re-run before this is understood.");
+  console.error("!".repeat(100) + "\n");
+  process.exit(97);
+}
+
+const CANARY_HOST = "lead-stub-selftest.invalid";
+const CANARY_JS = "async (u) => { try { const r = await fetch(u, { method: 'POST', mode: 'no-cors', body: 'selftest' }); return { type: r.type }; } catch (e) { return { error: String(e) }; } }";
+/** runs `(src)(arg)` in the page — the source is a string, so nothing the bundler adds can leak into it */
+export function callInPage<T = any>(page: Page, src: string, arg: unknown = null): Promise<T> {
+  return page.evaluate(`(${src})(${JSON.stringify(arg)})`) as Promise<T>;
+}
+
+/**
+ * Installs the lead stub on a context that has NO page yet, proves that it intercepts, and returns
+ * its ledger. `decide` chooses the answer to each POST of the form.
+ * local mode: every request that is neither the local origin nor the endpoint is aborted and
+ * recorded (the chat widget script among them) — nothing leaves the machine.
+ */
+export async function installLeadStub(ctx: BrowserContext, target: Target, site: SiteData, decide: (seen: StubSeen) => Reply | Promise<Reply>): Promise<LeadStub> {
+  if (ctx.pages().length !== 0) fatal("installLeadStub() was called on a context that already has a page");
+  const held: { route: Route; entry: StubSeen; cors: Record<string, string> }[] = [];
+  const stub: LeadStub = {
+    seen: [],
+    posts: () => stub.seen.filter((s) => !s.selfTest && s.method === "POST"),
+    heldCount: () => held.length,
+    release: async (reply) => {
+      const h = held.shift();
+      if (!h) throw new Error("lead stub: nothing is held");
+      await answer(h.route, h.entry, h.cors, reply);
+    },
+    requestEvents: [],
+    responses: [],
+    blockedThirdParty: [],
+    hosts: new Set<string>(),
+    selfTest: { glob: false, predicate: false, detail: null },
+    problems: () => {
+      const out: string[] = [];
+      if (stub.requestEvents.length !== stub.seen.length) out.push(`the context reported ${stub.requestEvents.length} lead request(s) but the stub answered ${stub.seen.length}`);
+      if (!stub.selfTest.glob || !stub.selfTest.predicate) out.push("the stub self-test did not pass");
+      for (const s of stub.seen) if (!s.selfTest && s.via !== "exact") out.push(`request #${s.n} was caught by the ${s.via} route, not by the exact endpoint URL (${s.url})`);
+      if (held.length !== 0) out.push(`${held.length} request(s) still held`);
+      return out;
+    },
+    record: () => ({
+      routes: ["exact endpoint URL", "**/api/widget/*/lead", "predicate over the path"],
+      installedBeforeAnyPage: true,
+      selfTest: stub.selfTest,
+      leadRequestEventsInContext: stub.requestEvents.length,
+      answeredByStub: stub.seen.length,
+      formPosts: stub.posts().length,
+      via: stub.seen.reduce<Record<string, number>>((m, s) => ((m[s.via] = (m[s.via] ?? 0) + 1), m), {}),
+      responses: stub.responses,
+      problems: stub.problems(),
+      answers: stub.seen.map((s) => ({ n: s.n, at: s.at, method: s.method, via: s.via, selfTest: s.selfTest, answered: s.answered, origin: s.origin, headerNames: s.headerNames, cookieHeaderPresent: s.cookieHeaderPresent, body: s.selfTest ? null : s.body })),
+      blockedThirdParty: [...new Set(stub.blockedThirdParty)],
+    }),
+  };
+
+  async function answer(route: Route, entry: StubSeen, cors: Record<string, string>, reply: Reply): Promise<void> {
+    if (reply.kind === "hold") {
+      entry.answered = "held";
+      held.push({ route, entry, cors });
+      return;
+    }
+    entry.answered = reply.label;
+    if (reply.kind === "abort") return route.abort("failed");
+    return route.fulfill({ status: reply.status, headers: { ...cors, ...(reply.headers ?? {}) }, contentType: "application/json", body: reply.body });
+  }
+  const handler = (via: StubSeen["via"]) => async (route: Route) => {
+    const req = route.request();
+    const url = req.url();
+    const headers = req.headers();
+    const raw = req.postData();
+    const selfTest = new URL(url).hostname === CANARY_HOST;
+    const entry: StubSeen = {
+      n: stub.seen.length + 1,
+      at: new Date().toISOString(),
+      method: req.method(),
+      url,
+      via,
+      raw,
+      body: selfTest || req.method() !== "POST" ? null : redactBody(raw),
+      headerNames: Object.keys(headers).sort(),
+      cookieHeaderPresent: Object.keys(headers).some((k) => k.toLowerCase() === "cookie"),
+      origin: headers["origin"] ?? null,
+      answered: "",
+      selfTest,
+    };
+    stub.seen.push(entry);
+    const cors = { "access-control-allow-origin": headers["origin"] ?? target.base, "access-control-expose-headers": "Retry-After", vary: "Origin", "cache-control": "no-store", "x-qa-stub": "1" };
+    if (selfTest) return answer(route, entry, cors, { kind: "json", status: 200, body: '{"selftest":true}', label: "self-test 200" });
+    if (req.method() === "OPTIONS") {
+      entry.answered = "preflight 204";
+      return route.fulfill({ status: 204, headers: { ...cors, "access-control-allow-methods": "POST", "access-control-allow-headers": "content-type" } });
+    }
+    if (req.method() !== "POST") return answer(route, entry, cors, { kind: "json", status: 405, body: '{"error":"method_not_allowed"}', label: "405" });
+    return answer(route, entry, cors, await decide(entry));
+  };
+
+  // local: a catch-all, registered FIRST (so consulted LAST) — only the local origin gets through
+  if (target.mode === "local") {
+    await ctx.route("**/*", async (route) => {
+      const url = route.request().url();
+      if (url === target.base || url.startsWith(target.base + "/")) return route.continue();
+      if (isLeadUrl(url)) fatal(`a lead URL fell through to the catch-all route: ${route.request().method()} ${url}`);
+      stub.blockedThirdParty.push(url);
+      return route.abort("failed");
+    });
+  }
+  // the endpoint — three routes; the last registered is consulted first
+  await ctx.route((url) => isLeadUrl(url.href), handler("predicate"));
+  await ctx.route("**/api/widget/*/lead", handler("glob"));
+  await ctx.route(site.endpoint, handler("exact"));
+
+  ctx.on("request", (r) => {
+    const url = r.url();
+    try {
+      stub.hosts.add(new URL(url).host);
+    } catch {
+      /* about:blank, data: */
+    }
+    if (isLeadUrl(url)) stub.requestEvents.push({ at: new Date().toISOString(), method: r.method(), url });
+  });
+  ctx.on("response", (r) => {
+    if (!isLeadUrl(r.url())) return;
+    const marked = r.headers()["x-qa-stub"] === "1";
+    const rec = { status: r.status(), marked, serverAddr: null as unknown };
+    stub.responses.push(rec);
+    if (!marked) fatal(`a lead response WITHOUT the stub's mark: ${r.request().method()} ${r.url()} → ${r.status()}`);
+    r.serverAddr().then(
+      (a) => {
+        rec.serverAddr = a;
+        if (a) fatal(`a lead response came from a real server address ${JSON.stringify(a)}: ${r.request().method()} ${r.url()}`);
+      },
+      () => {},
+    );
+  });
+
+  // prove the interception in THIS context, with a host that cannot resolve, before anything else is opened
+  const probe = await ctx.newPage();
+  const a = await callInPage(probe, CANARY_JS, `https://${CANARY_HOST}/api/widget/selftest/lead`);
+  const b = await callInPage(probe, CANARY_JS, `https://${CANARY_HOST}/api/widget/selftest/lead?probe=1`);
+  await probe.close();
+  const canaries = stub.seen.filter((s) => s.selfTest);
+  stub.selfTest = { glob: a?.type === "opaque" && canaries[0]?.via === "glob", predicate: b?.type === "opaque" && canaries[1]?.via === "predicate", detail: { plain: a, withQuery: b, caughtBy: canaries.map((s) => s.via) } };
+  if (!stub.selfTest.glob || !stub.selfTest.predicate || canaries.length !== 2) fatal(`the lead stub did not intercept its self-test requests: ${JSON.stringify(stub.selfTest)}`);
+  if (!new RegExp("/api/widget/[^/]+/lead$").test(new URL(site.endpoint).pathname)) fatal(`the declared endpoint is not matched by **/api/widget/*/lead: ${site.endpoint}`);
+  return stub;
+}
+
+/** chromium, local mode: host names cannot even resolve — a second wall behind the routes */
+export const localChromiumArgs = (target: Target) => (target.mode === "local" ? ["--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1"] : []);
+
+// ------------------------------------------------------------------------------------------------ widget bootstrap budget (live only)
+// Every live page load boots the chat widget (POST …/bootstrap, observed twice per load), which spends
+// a per-visitor budget (10 / 60 s per client). Loads are therefore paced across ALL scripts: at most
+// MAX_LOADS navigations in any WINDOW_MS (the timestamps live in a file next to the scripts).
+const GATE_FILE = path.join(HERE, "page-load-times.json");
+const MAX_LOADS = 4;
+const WINDOW_MS = 65_000;
+export async function gate(target: Target, label = ""): Promise<void> {
+  if (target.mode !== "live") return;
+  for (;;) {
+    const now = Date.now();
+    const times: number[] = existsSync(GATE_FILE) ? (JSON.parse(readFileSync(GATE_FILE, "utf8")) as number[]).filter((t) => now - t < WINDOW_MS) : [];
+    if (times.length < MAX_LOADS) {
+      times.push(now);
+      writeFileSync(GATE_FILE, JSON.stringify(times));
+      return;
+    }
+    const wait = times[0]! + WINDOW_MS - now + 250;
+    say(`      … pacing widget bootstraps: waiting ${(wait / 1000).toFixed(1)} s before ${label}`);
+    await sleep(wait);
+  }
+}
+
+// ------------------------------------------------------------------------------------------------ in-page: the form's state and geometry
+/**
+ * (a) => state. a = { widgetOrigin }. Run through callInPage(). Geometry is in CSS px of the top
+ * document. The launcher is the chat widget's element in the TOP document (a cross-origin iframe):
+ * its own box is what covers the page, whatever is drawn inside it.
+ */
+export const STATE_JS = `(a) => {
+  const q = (s) => document.querySelector(s);
+  const v = (n) => { const el = q("[name=" + n + "]"); return el ? el.value : null; };
+  const shown = (el) => !!el && el.getClientRects().length > 0;
+  const r1 = (n) => Math.round(n * 10) / 10;
+  const R = (r) => ({ left: r1(r.left), top: r1(r.top), right: r1(r.right), bottom: r1(r.bottom), width: r1(r.right - r.left), height: r1(r.bottom - r.top) });
+  const raw = (el) => (shown(el) ? el.getBoundingClientRect() : null);
+  const rect = (el) => { const r = raw(el); return r ? R(r) : null; };
+  const inter = (x, y) => { if (!x || !y) return null; const left = Math.max(x.left, y.left), top = Math.max(x.top, y.top), right = Math.min(x.right, y.right), bottom = Math.min(x.bottom, y.bottom); return right - left > 0.5 && bottom - top > 0.5 ? R({ left, top, right, bottom }) : null; };
+  const hit = (el) => {
+    if (!shown(el)) return null;
+    const r = el.getBoundingClientRect();
+    const pts = [[r.left + r.width / 2, r.top + r.height / 2], [r.left + 4, r.top + 4], [r.right - 4, r.top + 4], [r.left + 4, r.bottom - 4], [r.right - 4, r.bottom - 4]];
+    return pts.map(([x, y]) => { if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) return "outside-viewport"; const h = document.elementFromPoint(x, y); if (!h) return "nothing"; if (h === el || el.contains(h)) return "self"; return h.tagName + (h.className && typeof h.className === "string" ? "." + h.className.split(" ")[0] : ""); });
+  };
+  const frames = Array.from(document.querySelectorAll("iframe"));
+  const src = (f) => f.getAttribute("src") || "";
+  const candidates = [
+    ["[data-qa-fake-launcher] (SIMULATED)", q("[data-qa-fake-launcher]")],
+    ["iframe[data-boost-chat-frame]", q("iframe[data-boost-chat-frame]")],
+    ["iframe[src^=<widget origin>/widget/]", a.widgetOrigin ? frames.find((f) => src(f).indexOf(a.widgetOrigin + "/widget/") === 0) || null : null],
+    ["iframe[src^=<widget origin>]", a.widgetOrigin ? frames.find((f) => src(f).indexOf(a.widgetOrigin) === 0) || null : null],
+    ["iframe{position:fixed}", frames.find((f) => getComputedStyle(f).position === "fixed") || null],
+  ];
+  let launcher = null;
+  let launcherRaw = null;
+  for (const [by, el] of candidates) {
+    if (!shown(el)) continue;
+    const cs = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1 || cs.visibility === "hidden" || cs.display === "none") continue;
+    launcherRaw = r;
+    launcher = { detectedBy: by, tag: el.tagName, rect: R(r), fromViewportRight: r1(window.innerWidth - r.right), fromViewportBottom: r1(window.innerHeight - r.bottom), style: { position: cs.position, zIndex: cs.zIndex, borderRadius: cs.borderRadius, pointerEvents: cs.pointerEvents }, title: el.getAttribute("title"), srcPath: src(el) ? src(el).split("?")[0].split("/").slice(0, 4).join("/") : null };
+    break;
+  }
+  const b = q("[data-inquiry-submit]");
+  const e = q("[data-inquiry-error]");
+  const st = q("[data-inquiry-status]");
+  const title = q(".i1-form__done-title");
+  const form = q("[data-inquiry-form]");
+  const consent = q("[name=consent]");
+  const consentRow = q(".i1-form__consent");
+  const header = q("header.i1-header");
+  const hb = header ? header.getBoundingClientRect() : null;
+  const headerBottom = hb && hb.bottom > 0 ? hb.bottom : 0;
+  const inViewport = (el) => { if (!shown(el)) return false; const r = el.getBoundingClientRect(); return r.top >= headerBottom - 0.5 && r.bottom <= window.innerHeight + 0.5 && r.left >= -0.5 && r.right <= window.innerWidth + 0.5; };
+  const name = q("[name=name]");
+  const phone = q("[name=phone]");
+  const message = q("[name=message]");
+  const links = Array.from(document.querySelectorAll("[data-inquiry-contacts] a"));
+  const active = document.activeElement;
+  const lead = q(".i1-form__contacts-lead");
+  // the alert's text with each contact link's own text left out (an address is the site's to show, not this record's to keep)
+  const alertText = (() => { if (!e) return null; const c = e.cloneNode(true); c.querySelectorAll("a").forEach((l) => { l.textContent = "<link>"; }); return c.textContent; })();
+  const xOverlap = (x, y) => !!x && !!y && Math.min(x.right, y.right) - Math.max(x.left, y.left) > 0.5;
+  return {
+    path: location.pathname + location.search + location.hash,
+    viewport: { w: window.innerWidth, h: window.innerHeight },
+    scrollY: Math.round(window.scrollY),
+    overflow: { scrollWidth: document.documentElement.scrollWidth, innerWidth: window.innerWidth, overflowX: document.documentElement.scrollWidth > window.innerWidth + 1 },
+    values: { name: v("name"), phone: v("phone"), region: v("region"), area: v("area"), workType: v("workType"), schedule: v("schedule"), message: v("message") },
+    trap: v("topic"),
+    consent: consent ? consent.checked : null,
+    controls: document.querySelectorAll("[data-inquiry-form] input, [data-inquiry-form] select, [data-inquiry-form] textarea").length,
+    ariaBusy: form ? form.getAttribute("aria-busy") : null,
+    button: b ? { text: b.textContent, disabled: b.disabled } : null,
+    buttonRect: rect(b),
+    buttonHit: hit(b),
+    validity: {
+      name: name ? { valueMissing: name.validity.valueMissing, valid: name.validity.valid } : null,
+      phone: phone ? { valueMissing: phone.validity.valueMissing, patternMismatch: phone.validity.patternMismatch, customError: phone.validity.customError, valid: phone.validity.valid, message: phone.validationMessage } : null,
+      message: message ? { valueMissing: message.validity.valueMissing, valid: message.validity.valid } : null,
+      consent: consent ? { valueMissing: consent.validity.valueMissing, valid: consent.validity.valid } : null,
+    },
+    focus: active ? (active.getAttribute("name") || (active.hasAttribute("data-inquiry-submit") ? "submit" : active.hasAttribute("data-inquiry-status") ? "status" : active.hasAttribute("data-inquiry-error") ? "alert" : active.tagName)) : null,
+    alertText,
+    alertOwnText: e && e.firstElementChild && e.firstElementChild.firstChild && e.firstElementChild.firstChild.nodeType === 3 ? e.firstElementChild.firstChild.textContent : alertText,
+    alertVisible: shown(e),
+    alertRect: rect(e),
+    alertInViewport: inViewport(e),
+    alertClippedBy: e ? e.scrollWidth - e.clientWidth : 0,
+    alertHit: hit(e),
+    contacts: { present: !!q("[data-inquiry-contacts]"), leadText: lead ? lead.textContent : null, links: links.length, schemes: links.map((l) => (l.getAttribute("href") || "").split(":")[0]), heights: links.map((l) => r1(l.getBoundingClientRect().height)), rects: links.map((l) => R(l.getBoundingClientRect())) },
+    consentRect: rect(consent),
+    consentRowRect: rect(consentRow),
+    formRect: rect(form),
+    statusText: st ? st.innerText : null,
+    statusVisible: shown(st),
+    statusRect: rect(st),
+    doneTitleText: title ? title.textContent : null,
+    doneTitleRect: rect(title),
+    doneTitleInViewport: inViewport(title),
+    doneTitleHit: hit(title),
+    header: { bottom: hb ? r1(hb.bottom) : null, effectiveBottom: r1(headerBottom) },
+    launcher,
+    launcherOver: launcher ? { button: inter(raw(b), launcherRaw), alert: inter(raw(e), launcherRaw), consentCheckbox: inter(raw(consent), launcherRaw), consentRow: inter(raw(consentRow), launcherRaw), doneTitle: inter(raw(title), launcherRaw), status: inter(raw(st), launcherRaw) } : null,
+    launcherXRangeOverlapsButton: launcher ? xOverlap(raw(b), launcherRaw) : null,
+  };
+}`;
+
+/** scrolls the element matching `sel` to the middle of the viewport (instantly) */
+export const CENTER_JS = `(sel) => { const el = document.querySelector(sel); if (!el) return false; el.scrollIntoView({ block: "center", behavior: "instant" }); return true; }`;
+/** a stand-in for the chat launcher, LOCAL rehearsal only — geometry as measured on the live site on 2026-10-03 */
+export const FAKE_LAUNCHER_JS = `() => {
+  if (document.querySelector("[data-qa-fake-launcher]")) return true;
+  const small = window.innerWidth <= 640;
+  const d = document.createElement("div");
+  d.setAttribute("data-qa-fake-launcher", "");
+  d.setAttribute("title", "SIMULATED launcher");
+  const size = small ? 56 : 60, gap = small ? 12 : 18;
+  d.style.cssText = "position:fixed;right:" + gap + "px;bottom:" + gap + "px;width:" + size + "px;height:" + size + "px;border-radius:50%;background:rgba(200,0,120,0.75);z-index:2147483000;";
+  document.body.appendChild(d);
+  return true;
+}`;
+
+export const state = (page: Page, site: SiteData) => callInPage<Record<string, any>>(page, STATE_JS, { widgetOrigin: site.widgetOrigin });
+
+// ------------------------------------------------------------------------------------------------ console
+export interface ConsoleLine {
+  phase: string;
+  type: string;
+  text: string;
+  url: string | null;
+}
+export interface PageLog {
+  phase: string;
+  console: ConsoleLine[];
+  pageErrors: { phase: string; text: string }[];
+}
+export function attachLog(page: Page): PageLog {
+  const log: PageLog = { phase: "load", console: [], pageErrors: [] };
+  page.on("console", (m) => {
+    if (m.type() === "error" || m.type() === "warning") log.console.push({ phase: log.phase, type: m.type(), text: m.text(), url: m.location()?.url ?? null });
+  });
+  page.on("pageerror", (e) => log.pageErrors.push({ phase: log.phase, text: String((e as Error)?.stack ?? e) }));
+  return log;
+}
+/**
+ * console errors by cause: the browser's own line for an answer the STUB made fail (429, 409, an
+ * aborted connection — on the lead URL), the line for a third-party request the LOCAL run blocked,
+ * and everything else — which is what "no console error" is about.
+ */
+export function classifyConsole(log: PageLog, blocked: string[]) {
+  const errors = log.console.filter((m) => m.type === "error");
+  const stubInduced = errors.filter((m) => (m.url !== null && isLeadUrl(m.url)) || m.text.includes("/api/widget/"));
+  const blockedSet = new Set(blocked);
+  const blockedThirdParty = errors.filter((m) => !stubInduced.includes(m) && ((m.url !== null && blockedSet.has(m.url)) || blocked.some((u) => m.text.includes(u))));
+  const genuine = errors.filter((m) => !stubInduced.includes(m) && !blockedThirdParty.includes(m));
+  return { genuine, stubInduced, blockedThirdParty, warnings: log.console.filter((m) => m.type === "warning"), pageErrors: log.pageErrors };
+}

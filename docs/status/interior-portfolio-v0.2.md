@@ -1,5 +1,14 @@
 # Interior Portfolio Contract V0.2 — status
 
+> **2026-10-04 — the inquiry form sends one submission id per logical inquiry (interior-01 1.6.3).** Live = package `3d250199…`
+> (build `8a0c2118…`, release `interior-01-1.6.3-93977937c0b4`, same 8-record document `968afbcc…`). `/contact` posts
+> `consent, name, phone, message, hp, submission_id`; a double press, a retry or a replay stores one lead (verified on
+> production with one `[TEST] Shared Inquiry V2` lead, left in place). The pointer's `previous` is the 1.6.2 package `eeb82881…`.
+> keep-2 retired build `01f7ac78…` from the tree (intact in git at `be065c5`). A second, fictional site
+> (`fixture-online-inquiry`) pins the same release and is built but never published. The entries below describe the state
+> before this date.
+> Report: [`../result/WEB-RECON-TRACK-B-SHARED-INQUIRY-FORM-V2-2026-10-04.md`](../result/WEB-RECON-TRACK-B-SHARED-INQUIRY-FORM-V2-2026-10-04.md).
+
 > **2026-10-03 — the demo inquiry form submits online (interior-01 1.6.2).** Live = package `eeb82881…` (build `38400831…`,
 > release `interior-01-1.6.2-d5d4b4557a20`, same 8-record document `968afbcc…`). `/contact` posts to the BoostChat site lead
 > route declared in `inquiry.json`; customer-facing wording is 시공사례. The pointer's `previous` is the BoostInterior-named

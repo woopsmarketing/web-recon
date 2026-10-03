@@ -1,0 +1,41 @@
+/**
+ * The reasons real-submit.mts refuses to start — as pure functions, so that they can be exercised
+ * without ever running real-submit.mts itself. Each returns the reason as text, or null (= go on).
+ * Nothing here opens a file, a socket or a browser.
+ */
+import type { ServedBuild } from "./qa-lib.mts";
+
+export const ACK_ENV = "I_UNDERSTAND_THIS_SENDS_ONE_REAL_LEAD";
+export const SKIP_REHEARSAL_ENV = "SKIP_LIVE_REHEARSAL_GATE";
+
+/** 1 — the acknowledgement, the target, and "this already ran" */
+export function staticRefusal(env: Record<string, string | undefined>, liveBase: string, files: { sentinel: string | null; outJsonExists: boolean }): string | null {
+  if (env[ACK_ENV] !== "yes") return `${ACK_ENV}=yes is not set. This script sends ONE REAL inquiry to the production lead endpoint (a stored lead and an e-mail to a real person).`;
+  const raw = (env.QA_BASE ?? "").trim();
+  const base = raw.endsWith("/") ? raw.slice(0, -1) : raw;
+  if (base !== "" && base !== liveBase) return `QA_BASE is "${raw}". The real submission is made against ${liveBase} only (leave QA_BASE unset). For a local run use rehearse-submit.mts.`;
+  if (files.sentinel !== null) return `this script already ran (sentinel: ${files.sentinel.trim()}). The real submission may be sent only once.`;
+  if (files.outJsonExists) return "the result JSON of the real submission already exists. The real submission may be sent only once.";
+  return null;
+}
+
+/** 2 — the live site must serve the 1.6.3 form of the current package */
+export function buildRefusal(build: ServedBuild): string | null {
+  if (build.contact.status !== 200) return `the live /contact answers ${build.contact.status}.`;
+  if (build.doorChunks.length === 0) return "no inquiry door chunk was found among the scripts of the live /contact.";
+  if (!build.doorChunkContainsSubmissionId) return `the live site still serves the OLD form: its door chunk (${build.doorChunks.join(", ")}) does not contain "submission_id". Publish first.`;
+  if (!build.contact.identicalToLocalPackage) return "the live /contact is not the current package's contact.html (run live-parity.mts to see what differs).";
+  if (!build.endpointDeclaredInContactHtml) return "the live /contact does not declare the endpoint of data/sites/<site>/inquiry.json.";
+  return null;
+}
+
+/** 3 — the same flow must have passed, STUBBED, against this very build of the live site */
+export function rehearsalRefusal(env: Record<string, string | undefined>, rehearsal: Record<string, any> | null, build: ServedBuild): string | null {
+  if (env[SKIP_REHEARSAL_ENV] === "yes") return null;
+  const how = `Run rehearse-submit.mts against the live site first (stubbed — it writes proof/32-live-stubbed-rehearsal.json), or set ${SKIP_REHEARSAL_ENV}=yes to go without it.`;
+  if (rehearsal === null) return `no stubbed rehearsal of this flow on the live site was found. ${how}`;
+  if (rehearsal.kind !== "REHEARSAL" || rehearsal.stubbed !== true || rehearsal.mode !== "live") return `proof/32-live-stubbed-rehearsal.json is not a stubbed rehearsal on the live site. ${how}`;
+  if (rehearsal.result !== "PASS") return `the stubbed rehearsal on the live site did not pass (result: ${String(rehearsal.result)}). Fix that first. ${how}`;
+  if (rehearsal.servedBuild?.contact?.sha256 !== build.contact.sha256) return `the stubbed rehearsal was made against another build of /contact than the one served now. ${how}`;
+  return null;
+}

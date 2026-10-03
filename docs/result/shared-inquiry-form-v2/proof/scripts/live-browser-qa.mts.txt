@@ -1,0 +1,558 @@
+/**
+ * 31 — browser QA of the /contact inquiry form (interior-01 1.6.3) with the endpoint STUBBED.
+ *
+ *   ./node_modules/.bin/tsx --tsconfig platform/tsconfig.json docs/result/shared-inquiry-form-v2/proof/scripts/live-browser-qa.mts
+ *   env: QA_BASE (unset = the live site | "local"), QA_PROFILES (comma list, default all six),
+ *        QA_FAKE_LAUNCHER=1 (LOCAL only: a simulated launcher, to rehearse the widget check)
+ *
+ * NOTHING reaches https://boostchat.co.kr/api/widget/<key>/lead: every context gets the lead stub
+ * (qa-lib installLeadStub — three routes, installed and self-tested before any page is opened) and
+ * the process exits at once (code 97) if a lead response ever arrives without the stub's mark.
+ * Live mode loads the real chat widget (its script, its iframe, its own bootstrap call) — that is
+ * the point of the widget check; local mode blocks every third-party request.
+ *
+ * Per profile (Chromium 1440x900, 1024x768, 768x1024, 390x844, 375x667; WebKit iPhone 13), two page
+ * loads of /contact:
+ *   A  initial → validation (empty name; bad phone) → loading (answer held) → error + fallback
+ *      contacts (network failure) → rate-limited (429, Retry-After 2: fallback contacts again,
+ *      button disabled, then enabled again and the alert cleared) → conflict (409: no fallback
+ *      contacts — the one failure without them) → success (200)
+ *   B  keyboard (Tab order to the button) → 100-char name + 500-char message → Enter submits once
+ * and, where the launcher is present, that its box never lies over the submit button, the alert, the
+ * consent checkbox or the confirmation headline.
+ * Result: proof/31-live-browser-qa.json (proof/rehearsal/… when local). Exit code 1 on FAIL.
+ */
+import { mkdirSync } from "node:fs";
+import path from "node:path";
+import type { Browser } from "playwright";
+import {
+  CENTER_JS, Checks, FAKE_LAUNCHER_JS, PW_VERSION, REPLY, REPO, attachLog, callInPage, classifyConsole, countFullIds, gate, installLeadStub, isTurnstileHost, loadSite, localChromiumArgs,
+  openTarget, outJsonPath, packageSummary, pw, rawId, say, servedBuild, sleep, state, writeJson, type Reply, type StubSeen,
+} from "./qa-lib.mts";
+
+const site = loadSite();
+const target = await openTarget(site);
+const FAKE = process.env.QA_FAKE_LAUNCHER === "1";
+if (FAKE && target.mode !== "local") {
+  console.error("QA_FAKE_LAUNCHER=1 is a LOCAL rehearsal aid; it is refused against the live site.");
+  await target.close();
+  process.exit(2);
+}
+const OUT = outJsonPath(target, "31-live-browser-qa", FAKE ? "fake-launcher" : undefined);
+const SHOTS = FAKE ? path.join(target.proofDir, "screenshots-fake-launcher") : target.shotsDir;
+mkdirSync(SHOTS, { recursive: true });
+const copy = site.copy;
+const checks = new Checks();
+const startedAt = new Date().toISOString();
+
+const iPhone13 = pw.devices["iPhone 13"];
+interface Profile {
+  engine: "chromium" | "webkit";
+  label: string;
+  context: Record<string, any>;
+  /** the widths the widget check is asserted at: 1440, 768, 390, 375 */
+  widgetAsserted: boolean;
+}
+const PROFILES: Record<string, Profile> = {
+  c1440: { engine: "chromium", label: "Chromium 1440x900", context: { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }, widgetAsserted: true },
+  c1024: { engine: "chromium", label: "Chromium 1024x768", context: { viewport: { width: 1024, height: 768 }, deviceScaleFactor: 1 }, widgetAsserted: false },
+  c768: { engine: "chromium", label: "Chromium 768x1024", context: { viewport: { width: 768, height: 1024 }, deviceScaleFactor: 1 }, widgetAsserted: true },
+  c390: { engine: "chromium", label: "Chromium 390x844 (isMobile + hasTouch, DSF 2)", context: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, widgetAsserted: true },
+  c375: { engine: "chromium", label: "Chromium 375x667 (isMobile + hasTouch, DSF 2)", context: { viewport: { width: 375, height: 667 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, widgetAsserted: true },
+  w390: { engine: "webkit", label: `WebKit devices["iPhone 13"] (${iPhone13.viewport.width}x${iPhone13.viewport.height}, DSF ${iPhone13.deviceScaleFactor}, touch)`, context: { ...iPhone13 }, widgetAsserted: true },
+};
+const wanted = (process.env.QA_PROFILES ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+for (const k of wanted) if (!PROFILES[k]) throw new Error(`QA_PROFILES: unknown profile "${k}" (known: ${Object.keys(PROFILES).join(", ")})`);
+const keys = wanted.length > 0 ? wanted : Object.keys(PROFILES);
+
+const VALUES = { name: "[TEST] stub QA", phone: "010-0000-0000", region: "테스트", area: "0평", schedule: "테스트", message: "[TEST] stubbed browser QA — 이 요청은 네트워크에 도달하지 않습니다." };
+const LONG_NAME = "나".repeat(100);
+const LONG_MESSAGE = "가".repeat(500);
+const TAB_ORDER = ["phone", "region", "area", "workType", "schedule", "message", "consent", "submit"];
+const FOCUS_JS = `() => { const el = document.activeElement; if (!el) return null; return el.getAttribute("name") || (el.hasAttribute("data-inquiry-submit") ? "submit" : el.tagName); }`;
+const PRESS_AGAIN_JS = `() => { const b = document.querySelector("[data-inquiry-submit]"); if (b) b.click(); const f = document.querySelector("form[data-inquiry-form]"); if (f && f.requestSubmit) { try { f.requestSubmit(); } catch (e) {} } return true; }`;
+const within = (r: any, w: number) => !r || (r.left >= -1 && r.right <= w + 1);
+
+say(`# 31 stubbed browser QA — ${startedAt}`);
+say(`base: ${target.base} (${target.mode})   template: ${site.template.releaseId}   profiles: ${keys.join(", ")}${FAKE ? "   [SIMULATED launcher]" : ""}`);
+
+const out: Record<string, any> = {
+  what: "31 — /contact inquiry form, every state, with the lead endpoint STUBBED (no request reaches the real endpoint)",
+  result: "FAIL",
+  mode: target.mode,
+  base: target.base,
+  startedAt,
+  tooling: { node: process.version, playwright: PW_VERSION, browsers: {} as Record<string, string> },
+  package: packageSummary(site),
+  servedBuild: null,
+  endpoint: site.endpoint,
+  widgetCheck: target.mode === "live" ? "live widget (real script + iframe)" : FAKE ? "SIMULATED launcher (local rehearsal of the check — not evidence about the real widget)" : "skipped (local: the widget script is blocked)",
+  profilesRun: keys,
+  partial: keys.length !== Object.keys(PROFILES).length,
+  stub: {} as Record<string, unknown>,
+  profiles: {} as Record<string, any>,
+  crossRun: {},
+};
+const save = () => writeJson(OUT, out);
+
+let exitCode = 1;
+const browsers: Partial<Record<"chromium" | "webkit", Browser>> = {};
+const allPosts: { profile: string; seen: StubSeen }[] = [];
+const allHosts = new Set<string>();
+
+async function runProfile(key: string, profile: Profile) {
+  const vw: number = profile.context.viewport.width;
+  const phone = vw <= 390;
+  const rec: Record<string, any> = { label: profile.label, engine: profile.engine, viewport: profile.context.viewport, states: {}, widget: { asserted: profile.widgetAsserted }, screenshots: [] as string[] };
+  out.profiles[key] = rec;
+  const browser = (browsers[profile.engine] ??= await pw[profile.engine].launch(profile.engine === "chromium" ? { args: localChromiumArgs(target) } : {}));
+  out.tooling.browsers[profile.engine] = browser.version();
+  const ctx = await browser.newContext({ ...profile.context, locale: "ko-KR", serviceWorkers: "block" });
+  // the answers the stub gives, in order; a request nobody scripted is answered 500 and reported
+  const script: Reply[] = [];
+  const unscripted: number[] = [];
+  const stub = await installLeadStub(ctx, target, site, (seen) => {
+    const next = script.shift();
+    if (next) return next;
+    unscripted.push(seen.n);
+    return { kind: "json", status: 500, body: '{"error":"qa_stub_unscripted"}', label: "UNSCRIPTED → 500" };
+  });
+  const page = await ctx.newPage();
+  const log = attachLog(page);
+  let navigations = 0;
+  page.on("framenavigated", (f) => {
+    if (f === page.mainFrame()) navigations++;
+  });
+
+  const st = () => state(page, site);
+  const posts = () => stub.posts();
+  const idOf = (n: number) => rawId(posts()[n]?.raw ?? null);
+  const snap = async (name: string, fullPage = false) => {
+    const file = `qa-${key}-${name}.jpg`;
+    await page.screenshot({ path: path.join(SHOTS, file), type: "jpeg", quality: 70, fullPage });
+    rec.screenshots.push(file);
+  };
+  const press = async (): Promise<string | null> => {
+    try {
+      await page.click("[data-inquiry-submit]", { timeout: 8000 });
+      return null;
+    } catch (e) {
+      return String((e as Error).message).split("\n").slice(0, 3).join(" | ");
+    }
+  };
+  const until = async (expr: string, timeout = 8000): Promise<boolean> => {
+    try {
+      await page.waitForFunction(expr, undefined, { timeout });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const ALERT_SHOWN = `(document.querySelector("[data-inquiry-error]")?.textContent ?? "").length > 0`;
+  const geometry = (s: any): Record<string, boolean> => {
+    const a: Record<string, boolean> = {
+      "no horizontal overflow": s.overflow.overflowX === false,
+      "form inside the viewport width": within(s.formRect, s.viewport.w),
+    };
+    if (s.buttonRect) a["submit button inside the viewport width"] = within(s.buttonRect, s.viewport.w);
+    if (s.alertVisible) {
+      a["alert inside the viewport width"] = within(s.alertRect, s.viewport.w);
+      a["alert text not clipped"] = s.alertClippedBy <= 1;
+    }
+    if (s.statusVisible) a["status region inside the viewport width"] = within(s.statusRect, s.viewport.w);
+    if (phone && s.buttonRect) a["submit button at least 44 px tall (phone)"] = s.buttonRect.height >= 43.5;
+    if (phone && s.contacts.links > 0) a["fallback links at least 44 px tall (phone)"] = s.contacts.heights.every((h: number) => h >= 43.5);
+    return a;
+  };
+  const open = async (label: string) => {
+    await gate(target, `${key} ${label}`);
+    log.phase = label;
+    const resp = await page.goto(`${target.base}/contact`, { waitUntil: "load", timeout: 45_000 });
+    const mounted = await until(`(() => { const b = document.querySelector("[data-inquiry-submit]"); return !!b && b.disabled === false; })()`, 15_000);
+    await page.evaluate(`document.fonts.ready.then(() => true)`).catch(() => {});
+    if (FAKE) await callInPage(page, FAKE_LAUNCHER_JS);
+    return { status: resp?.status() ?? null, mounted };
+  };
+  const keep = (name: string, s: any) => {
+    rec.states[name] = s;
+    return s;
+  };
+
+  // ---------------------------------------------------------------- widget
+  const widgetExpected = target.mode === "live" || FAKE;
+  let launcherSeen = false;
+  const waitLauncher = async () => {
+    const deadline = Date.now() + 10_000;
+    for (;;) {
+      const s = await st();
+      if (s.launcher) return s.launcher;
+      if (Date.now() >= deadline) return null;
+      await sleep(300);
+    }
+  };
+  /** the launcher against the form, at the position the page is in and again with `centre` in the middle of the viewport */
+  const widgetAt = async (centre: string, pick: (s: any) => Record<string, boolean>) => {
+    const natural = await st();
+    await callInPage(page, CENTER_JS, centre);
+    await sleep(200);
+    const centred = await st();
+    const assertions: Record<string, boolean> = {};
+    for (const [where, s] of [["as the page left it", natural], [`${centre} centred`, centred]] as const) {
+      if (!s.launcher) {
+        assertions[`[${where}] launcher present`] = false;
+        continue;
+      }
+      for (const [name, ok] of Object.entries(pick(s))) assertions[`[${where}] ${name}`] = ok;
+    }
+    const brief = (s: any) => ({ scrollY: s.scrollY, launcher: s.launcher?.rect ?? null, detectedBy: s.launcher?.detectedBy ?? null, buttonRect: s.buttonRect, alertRect: s.alertRect, consentRect: s.consentRect, doneTitleRect: s.doneTitleRect, buttonHit: s.buttonHit, launcherOver: s.launcherOver, launcherXRangeOverlapsButton: s.launcherXRangeOverlapsButton });
+    return { assertions, detail: { natural: brief(natural), centred: brief(centred) } };
+  };
+  const widgetRow = (id: string, w: { assertions: Record<string, boolean>; detail: unknown }) => {
+    rec.widget[id] = w.detail;
+    if (profile.widgetAsserted) checks.row(key, id, w.assertions, w.detail);
+    else say(`INFO  ${key}  ${id} — recorded only at this width (${Object.values(w.assertions).every(Boolean) ? "would pass" : "WOULD FAIL: " + Object.entries(w.assertions).filter(([, ok]) => !ok).map(([n]) => n).join("; ")})`);
+  };
+
+  try {
+    // ================================================================ load A — the states
+    const a = await open("load-A");
+    const initial = keep("initial", await st());
+    checks.row(key, "load: /contact answers 200 and the form is ready", { "status 200": a.status === 200, "submit button enabled once the form is mounted": a.mounted && initial.button?.disabled === false });
+    if (widgetExpected) {
+      const launcher = await waitLauncher();
+      launcherSeen = launcher !== null;
+      rec.widget.launcher = launcher;
+      if (!launcherSeen) checks.note(`${key}: the chat launcher did not appear within 10 s of the page load — widget checks not run at this profile`);
+    } else {
+      checks.skip(key, "widget: launcher vs submit button / alert / consent checkbox / confirmation", "local run — the widget script is blocked");
+    }
+
+    log.phase = "initial";
+    await callInPage(page, CENTER_JS, "[data-inquiry-submit]");
+    await sleep(150);
+    const init2 = keep("initial (button in view)", await st());
+    checks.row(key, "initial", {
+      [`button says "${copy.submitLabel}"`]: initial.button?.text === copy.submitLabel,
+      "no alert, no confirmation": initial.alertVisible === false && initial.statusVisible === false && initial.doneTitleText === null,
+      "9 form controls (7 fields + consent + trap), all empty": initial.controls === 9 && Object.values(initial.values).every((v) => v === "") && initial.consent === false && initial.trap === "",
+      "no lead request yet": posts().length === 0,
+      "the submit button is the top-most element at its own centre": init2.buttonHit?.[0] === "self",
+      ...geometry(init2),
+    });
+    await snap("initial");
+    if (launcherSeen) {
+      widgetRow("widget: launcher vs form (as loaded)", await widgetAt("[data-inquiry-submit]", (s) => ({
+        "launcher does not intersect the submit button": s.launcherOver.button === null,
+        "launcher does not intersect the consent checkbox": s.launcherOver.consentCheckbox === null,
+        "elementFromPoint(centre of the submit button) is the button": s.buttonHit?.[0] === "self",
+      })));
+    }
+
+    // ---- validation: nothing may reach the endpoint
+    log.phase = "validation";
+    const e1 = await press();
+    await sleep(400);
+    const v1 = keep("validation: empty name", await st());
+    checks.row(key, "validation: empty name", {
+      "the press went through": e1 === null,
+      "name reported missing by the browser": v1.validity.name?.valueMissing === true,
+      "focus moved to the name field": v1.focus === "name",
+      "no lead request": posts().length === 0,
+      "no alert": v1.alertVisible === false,
+      ...geometry(v1),
+    });
+    await snap("validation-empty-name");
+
+    for (const [k, val] of Object.entries(VALUES)) await page.fill(`[name=${k}]`, k === "phone" ? "123" : val);
+    await page.check("[name=consent]");
+    const e2 = await press();
+    await sleep(400);
+    const v2 = keep("validation: bad phone", await st());
+    checks.row(key, "validation: bad phone", {
+      "the press went through": e2 === null,
+      "phone reported invalid by the browser": v2.validity.phone?.valid === false && v2.validity.name?.valid === true,
+      "focus moved to the phone field": v2.focus === "phone",
+      "no lead request": posts().length === 0,
+      "what was typed is kept": v2.values.name === VALUES.name && v2.values.message === VALUES.message && v2.values.phone === "123" && v2.consent === true,
+      ...geometry(v2),
+    });
+    await snap("validation-bad-phone");
+    await page.fill("[name=phone]", VALUES.phone);
+
+    // ---- loading: the stub holds the answer
+    log.phase = "loading";
+    script.push(REPLY.hold());
+    const e3 = await press();
+    for (let i = 0; i < 50 && stub.heldCount() < 1; i++) await sleep(100);
+    await until(`document.querySelector("[data-inquiry-submit]")?.disabled === true`, 4000);
+    const loading = keep("loading", await st());
+    await snap("loading");
+    await callInPage(page, PRESS_AGAIN_JS);
+    await sleep(350);
+    checks.row(key, "loading (answer held)", {
+      "the press went through": e3 === null,
+      "exactly one POST, held by the stub": posts().length === 1 && stub.heldCount() === 1,
+      "button disabled": loading.button?.disabled === true,
+      [`button says "${copy.submittingLabel}"`]: loading.button?.text === copy.submittingLabel,
+      "form is aria-busy": loading.ariaBusy === "true",
+      "a second press while loading sends nothing": posts().length === 1 && unscripted.length === 0,
+      ...geometry(loading),
+    });
+
+    // ---- error + fallback contacts: the held request fails on the network
+    log.phase = "error";
+    const navBefore = navigations;
+    await stub.release(REPLY.network());
+    await until(ALERT_SHOWN);
+    await sleep(250);
+    const failed = keep("error + fallback contacts", await st());
+    checks.row(key, "error + fallback contacts (network failure)", {
+      [`alert says "${copy.failureText}"`]: failed.alertOwnText === copy.failureText,
+      [`fallback contacts offered under "${copy.fallbackLead}"`]: failed.contacts.present === true && failed.contacts.leadText === copy.fallbackLead && failed.contacts.links >= 1,
+      "alert fully inside the viewport, top-most at its own centre": failed.alertInViewport === true && failed.alertHit?.[0] === "self",
+      "every field keeps what was typed, consent still ticked": failed.values.name === VALUES.name && failed.values.phone === VALUES.phone && failed.values.region === VALUES.region && failed.values.area === VALUES.area && failed.values.schedule === VALUES.schedule && failed.values.message === VALUES.message && failed.consent === true && failed.controls === 9,
+      [`button enabled again, says "${copy.submitLabel}"`]: failed.button?.disabled === false && failed.button?.text === copy.submitLabel,
+      "focus not moved to the alert": failed.focus !== "alert" && failed.focus !== "status",
+      "no navigation, still /contact, no confirmation": navigations === navBefore && failed.path === "/contact" && failed.doneTitleText === null,
+      "still exactly one POST (nothing retried by itself)": posts().length === 1,
+      ...geometry(failed),
+    });
+    await snap("error-fallback");
+    if (launcherSeen) {
+      widgetRow("widget: launcher vs form (failure alert visible)", await widgetAt("[data-inquiry-submit]", (s) => ({
+        "failure alert visible": s.alertVisible === true && (s.alertOwnText ?? "").length > 0,
+        "launcher does not intersect the submit button": s.launcherOver.button === null,
+        "launcher does not intersect the alert": s.launcherOver.alert === null,
+        "launcher does not intersect the consent checkbox": s.launcherOver.consentCheckbox === null,
+        "elementFromPoint(centre of the submit button) is the button": s.buttonHit?.[0] === "self",
+      })));
+      await snap("widget-failure-button-centred");
+    }
+
+    // ---- rate-limited: 429 rate_limited, Retry-After 2
+    log.phase = "rate-limited";
+    const rateText = copy.rateLimitedText!.split("{minutes}").join("1");
+    script.push(REPLY.rateLimited(2));
+    const e4 = await press();
+    await until(`(document.querySelector("[data-inquiry-error]")?.textContent ?? "").includes(${JSON.stringify(rateText)})`);
+    const pausedAt = Date.now();
+    const limited = keep("rate-limited", await st());
+    await snap("rate-limited");
+    await callInPage(page, PRESS_AGAIN_JS);
+    await sleep(250);
+    const postsWhilePaused = posts().length;
+    checks.row(key, "rate-limited (429, Retry-After 2)", {
+      "the press went through": e4 === null,
+      [`alert says "${rateText}"`]: limited.alertOwnText === rateText,
+      [`fallback contacts offered under "${copy.fallbackLead}" during the pause`]: limited.contacts.present === true && limited.contacts.leadText === copy.fallbackLead && limited.contacts.links >= 1,
+      "button disabled during the pause": limited.button?.disabled === true,
+      "the retry carried the SAME submission_id as the failed request": posts().length >= 2 && idOf(1) !== undefined && idOf(1) === idOf(0),
+      "a press during the pause sends nothing": postsWhilePaused === 2 && unscripted.length === 0,
+      "fields kept": limited.values.name === VALUES.name && limited.values.message === VALUES.message && limited.consent === true,
+      ...geometry(limited),
+    });
+    const reenabled = await until(`(() => { const b = document.querySelector("[data-inquiry-submit]"); return !!b && b.disabled === false && (document.querySelector("[data-inquiry-error]")?.textContent ?? "") === ""; })()`, 10_000);
+    const afterPause = keep("rate-limit pause over", await st());
+    rec.pauseMs = Date.now() - pausedAt;
+    checks.row(key, "rate-limit pause over", {
+      "button enabled again": reenabled && afterPause.button?.disabled === false,
+      "alert cleared": afterPause.alertText === "" && afterPause.alertVisible === false,
+      "nothing was sent by itself": posts().length === 2,
+      "took about the 2 s the endpoint asked for (not the 60 s default)": rec.pauseMs < 9000,
+      ...geometry(afterPause),
+    });
+
+    // ---- conflict: 409
+    log.phase = "conflict";
+    script.push(REPLY.conflict());
+    const e5 = await press();
+    await until(ALERT_SHOWN);
+    await sleep(250);
+    const conflict = keep("conflict", await st());
+    const leaked = ["idempotency", "409", "conflict", "submission"].filter((w) => String(conflict.alertText ?? "").toLowerCase().includes(w));
+    checks.row(key, "conflict (409)", {
+      "the press went through": e5 === null,
+      [`alert says "${copy.conflictText}"`]: conflict.alertOwnText === copy.conflictText,
+      "no raw vocabulary in the alert, no fallback contacts": leaked.length === 0 && conflict.contacts.present === false,
+      "button enabled, fields kept": conflict.button?.disabled === false && conflict.values.name === VALUES.name && conflict.values.message === VALUES.message,
+      "exactly three POSTs so far, the third with the SAME submission_id": posts().length === 3 && idOf(2) !== undefined && idOf(2) === idOf(0),
+      ...geometry(conflict),
+    });
+    await snap("conflict");
+
+    // ---- success: 200 {"received":true}
+    log.phase = "success";
+    script.push(REPLY.ok());
+    const e6 = await press();
+    const done = await page.waitForSelector(".i1-form__status--done", { timeout: 8000 }).then(() => true, () => false);
+    await sleep(500);
+    const success = keep("success", await st());
+    checks.row(key, "success (200)", {
+      "the press went through": e6 === null,
+      [`confirmation "${copy.successTitle}" + body shown`]: done && success.doneTitleText === copy.successTitle && String(success.statusText ?? "").includes(copy.successBody!),
+      "form fields removed": success.controls === 0 && success.button === null,
+      "focus on the confirmation": success.focus === "status",
+      "confirmation headline inside the viewport, below the header, top-most at its centre": success.doneTitleInViewport === true && success.doneTitleHit?.[0] === "self",
+      "still /contact, no navigation": success.path === "/contact" && navigations === navBefore,
+      "exactly four POSTs in this page load; after the conflict a NEW submission_id": posts().length === 4 && idOf(3) !== undefined && idOf(3) !== idOf(0),
+      "no request the stub was not told to expect": unscripted.length === 0,
+      ...geometry(success),
+    });
+    await snap("success");
+    if (launcherSeen) {
+      widgetRow("widget: launcher vs confirmation (success visible)", await widgetAt(".i1-form__done-title", (s) => ({
+        "confirmation headline visible": s.doneTitleText === copy.successTitle && s.doneTitleRect !== null,
+        "launcher does not intersect the confirmation headline": s.launcherOver.doneTitle === null,
+      })));
+    }
+
+    // ================================================================ load B — keyboard, long content
+    const b = await open("load-B");
+    const postsBeforeB = posts().length;
+    log.phase = "keyboard";
+    // WebKit follows the Safari convention: plain Tab stops at text fields and menus only, and
+    // Option+Tab stops at every control — so there the full order is walked with Alt+Tab, and what
+    // plain Tab does is recorded next to it.
+    const walk = async (chord: string) => {
+      await page.focus("[name=name]");
+      const order: (string | null)[] = [];
+      for (let i = 0; i < TAB_ORDER.length; i++) {
+        await page.keyboard.press(chord);
+        order.push(await callInPage<string | null>(page, FOCUS_JS));
+      }
+      return order;
+    };
+    const chord = profile.engine === "webkit" ? "Alt+Tab" : "Tab";
+    const plainOrder = profile.engine === "webkit" ? await walk("Tab") : null;
+    const order = await walk(chord);
+    rec.tabOrder = { chord, order, plainTabOrder: plainOrder };
+    checks.row(key, `keyboard: ${chord} order name → phone → region → area → work type → schedule → message → consent → submit`, {
+      "page reloaded and ready": b.status === 200 && b.mounted,
+      [`order is ${TAB_ORDER.join(" → ")}`]: JSON.stringify(order) === JSON.stringify(TAB_ORDER),
+      ...(plainOrder ? { "plain Tab walks the text fields and the menu in the same order (phone … message)": JSON.stringify(plainOrder.slice(0, 6)) === JSON.stringify(TAB_ORDER.slice(0, 6)) } : {}),
+    }, rec.tabOrder);
+
+    log.phase = "long-content";
+    await page.fill("[name=name]", LONG_NAME);
+    await page.fill("[name=phone]", VALUES.phone);
+    await page.fill("[name=message]", LONG_MESSAGE);
+    await page.check("[name=consent]");
+    await callInPage(page, CENTER_JS, "[name=message]");
+    await sleep(150);
+    const long = keep("long content", await st());
+    checks.row(key, "long content (100-char name, 500-char message)", {
+      "name holds all 100 characters": long.values.name === LONG_NAME,
+      "message holds all 500 characters": long.values.message === LONG_MESSAGE,
+      ...geometry(long),
+    });
+    rec.states["long content"] = { ...long, values: { ...long.values, name: `(${long.values.name?.length} chars)`, message: `(${long.values.message?.length} chars)` } };
+    await snap("long-content", true);
+
+    log.phase = "enter";
+    script.push(REPLY.ok());
+    await page.focus("[name=name]");
+    await page.keyboard.press("Enter");
+    const doneB = await page.waitForSelector(".i1-form__status--done", { timeout: 8000 }).then(() => true, () => false);
+    await sleep(700);
+    const sentB = posts().slice(postsBeforeB);
+    let bodyB: Record<string, unknown> = {};
+    try {
+      bodyB = JSON.parse(sentB[0]?.raw ?? "{}") as Record<string, unknown>;
+    } catch {
+      /* stays {} */
+    }
+    const linesB = typeof bodyB.message === "string" ? bodyB.message.split("\n") : [];
+    const successB = keep("long content: success", await st());
+    checks.row(key, "keyboard: Enter in a field submits exactly once (long content → success)", {
+      "exactly one POST": sentB.length === 1 && unscripted.length === 0,
+      "the 100-char name was sent whole": bodyB.name === LONG_NAME,
+      [`message starts with "${copy.messagePrefix}" and ends with the 500 typed characters`]: linesB[0] === copy.messagePrefix && linesB[linesB.length - 1] === LONG_MESSAGE,
+      "confirmation shown, fields removed": doneB && successB.doneTitleText === copy.successTitle && successB.controls === 0,
+      ...geometry(successB),
+    });
+    await snap("long-content-success");
+  } catch (e) {
+    rec.error = String((e as Error)?.stack ?? e);
+    checks.row(key, "the profile ran to its end", { [`no script error (${String((e as Error)?.message ?? e).split("\n")[0]})`]: false });
+  }
+
+  // ---------------------------------------------------------------- what the page said, and the stub's ledger
+  await sleep(300);
+  const c = classifyConsole(log, stub.blockedThirdParty);
+  rec.console = { errors: c.genuine, pageErrors: c.pageErrors, stubInduced: c.stubInduced.length, blockedThirdPartyLocal: c.blockedThirdParty.length, warnings: c.warnings };
+  checks.row(key, "console: no console error, no page error (lines the stub's failing answers caused are counted apart)", {
+    [`console errors: ${c.genuine.length}`]: c.genuine.length === 0,
+    [`page errors: ${c.pageErrors.length}`]: c.pageErrors.length === 0,
+  }, c.genuine.length + c.pageErrors.length > 0 ? { errors: c.genuine, pageErrors: c.pageErrors } : undefined);
+  const problems = stub.problems();
+  checks.row(key, "stub: every lead request of this context was answered by the stub", {
+    [`${stub.requestEvents.length} lead request(s) seen by the context = ${stub.seen.length} answered by the stub`]: stub.requestEvents.length === stub.seen.length,
+    "self-test passed before the page was opened (glob + predicate routes)": stub.selfTest.glob && stub.selfTest.predicate,
+    "every form request was caught by the exact-URL route; none left held": problems.length === 0,
+    "every lead response carried the stub's mark and no server address": stub.responses.every((r) => r.marked && !r.serverAddr),
+    "no unscripted request": unscripted.length === 0,
+  }, problems.length ? { problems } : undefined);
+  out.stub[key] = stub.record();
+  for (const s of stub.posts()) allPosts.push({ profile: key, seen: s });
+  for (const h of stub.hosts) allHosts.add(h);
+  rec.blockedThirdPartyLocal = [...new Set(stub.blockedThirdParty)];
+  await ctx.close();
+  save();
+}
+
+try {
+  const build = await servedBuild(target, site);
+  out.servedBuild = build;
+  const buildRow = checks.row("build", "the base serves the 1.6.3 form (door chunk with submission_id) — checked before any browser is started", {
+    "/contact answers 200": build.contact.status === 200,
+    [`door chunk (${build.doorChunks.join(", ") || "none found"}) contains "submission_id"`]: build.doorChunkContainsSubmissionId,
+    "served contact HTML == the current package's contact.html": build.contact.identicalToLocalPackage,
+    "the served page declares the site's endpoint (the one the stub answers)": build.endpointDeclaredInContactHtml,
+  });
+  if (!buildRow.ok) {
+    checks.note("the base does not serve the current package's form — no browser was started (publish first, then run again)");
+  } else {
+    for (const key of keys) {
+      say(`\n== ${key} — ${PROFILES[key]!.label}`);
+      await runProfile(key, PROFILES[key]!);
+    }
+    for (const b of Object.values(browsers)) await b?.close();
+
+    say("\n== across the run");
+    const bodies = allPosts.map((p) => p.seen.body);
+    const badKeys = allPosts.filter((p) => !p.seen.body?.keysExactlyExpected);
+    const forbidden = allPosts.filter((p) => (p.seen.body?.forbiddenKeys.length ?? 0) > 0);
+    checks.row("run", "every stubbed request body has exactly the keys consent, name, phone, message, hp, submission_id", {
+      [`${bodies.length} request bodies, ${badKeys.length} with other keys`]: bodies.length > 0 && badKeys.length === 0,
+      "never source / turnstile_token": forbidden.length === 0,
+      "every submission_id is a v4 UUID": allPosts.every((p) => p.seen.body?.submissionId?.isV4Uuid === true),
+      "consent is the literal true, hp is empty": allPosts.every((p) => p.seen.body?.consent === true && p.seen.body?.hp === ""),
+      "no request carried a cookie": allPosts.every((p) => !p.seen.cookieHeaderPresent),
+    }, badKeys.length + forbidden.length > 0 ? { badKeys: badKeys.map((p) => ({ profile: p.profile, keys: p.seen.body?.keys })) } : undefined);
+    const turnstile = [...allHosts].filter(isTurnstileHost);
+    checks.row("run", "no request went to a turnstile / challenges.cloudflare.com host", { [`${allHosts.size} host(s) requested, ${turnstile.length} of them a challenge host`]: turnstile.length === 0 }, { hosts: [...allHosts].sort() });
+    out.crossRun = { requestBodies: bodies.length, hosts: [...allHosts].sort(), turnstileHosts: turnstile };
+  }
+  const leaks = countFullIds({ out, rows: checks.rows });
+  checks.row("run", "no full submission id in the result (first 8 characters only)", { [`full ids found before writing: ${leaks}`]: leaks === 0 });
+  const summary = checks.summary();
+  out.result = summary.fail === 0 ? "PASS" : "FAIL";
+  out.finishedAt = new Date().toISOString();
+  out.summary = summary;
+  out.checks = checks.rows;
+  out.notes = checks.notes;
+  save();
+  say(`\nRESULT: ${out.result} — rows ${summary.pass}/${summary.rows} PASS (${summary.assertions} assertions), ${summary.fail} FAIL, ${summary.skipped} skipped, ${summary.notes} note(s) → ${path.relative(REPO, OUT)}`);
+  for (const f of checks.failures) say(`  FAILED: ${f.group}  ${f.id}`);
+  exitCode = summary.fail === 0 ? 0 : 1;
+} catch (e) {
+  say(`ERROR: ${String((e as Error)?.stack ?? e)}`);
+  out.error = String((e as Error)?.stack ?? e);
+  out.checks = checks.rows;
+  save();
+  exitCode = 1;
+} finally {
+  for (const b of Object.values(browsers)) await b?.close().catch(() => {});
+  await target.close();
+}
+process.exit(exitCode);

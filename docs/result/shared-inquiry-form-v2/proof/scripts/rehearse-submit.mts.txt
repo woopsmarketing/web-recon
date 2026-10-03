@@ -1,0 +1,97 @@
+/**
+ * Rehearsal of real-submit.mts with the lead endpoint STUBBED — the identical flow (submit-flow.mts):
+ * fill, fast double click, success UI, one replay of the captured body. Nothing reaches
+ * https://boostchat.co.kr/api/widget/<key>/lead: the stub is installed (three routes) and self-tested
+ * on the context before any page is opened, and the process exits at once (code 97) if a lead
+ * response ever arrives without the stub's mark (qa-lib installLeadStub).
+ *
+ *   QA_BASE=local ./node_modules/.bin/tsx --tsconfig platform/tsconfig.json docs/result/shared-inquiry-form-v2/proof/scripts/rehearse-submit.mts
+ *     → proof/rehearsal/40-rehearsal-submit.json          (local static server over the built package)
+ *   ./node_modules/.bin/tsx --tsconfig platform/tsconfig.json docs/result/shared-inquiry-form-v2/proof/scripts/rehearse-submit.mts
+ *     → proof/32-live-stubbed-rehearsal.json              (the published page, still stubbed — the go / no-go for real-submit.mts)
+ *
+ * The stub implements the endpoint's idempotent contract in memory: a submission id is stored once;
+ * the same id with the same values is answered 200 without a new entry; the same id with other
+ * values is answered 409. After the replay the store must hold exactly ONE entry.
+ */
+import { REPLY, installLeadStub, loadSite, localChromiumArgs, openTarget, outJsonPath, say, type LeadStub, type Reply, type StubSeen } from "./qa-lib.mts";
+import { finalizeFlow, runSubmitFlow } from "./submit-flow.mts";
+
+const site = loadSite();
+const target = await openTarget(site);
+const OUT = target.mode === "local" ? outJsonPath(target, "40-rehearsal-submit") : outJsonPath(target, "32-live-stubbed-rehearsal");
+say(`# submit rehearsal (STUBBED) — ${new Date().toISOString()}`);
+say(`base: ${target.base} (${target.mode})   template: ${site.template.releaseId}   endpoint answered by the stub: ${site.endpoint}`);
+
+// ---- the idempotent contract, in memory (ids live here only; nothing of them is written down)
+const store = new Map<string, string>();
+const ledger = { stored: 0, answeredAsAlreadyReceived: 0, conflicts: 0, invalid: 0 };
+function decide(seen: StubSeen): Reply {
+  let body: Record<string, unknown>;
+  try {
+    body = JSON.parse(seen.raw ?? "") as Record<string, unknown>;
+  } catch {
+    ledger.invalid++;
+    return REPLY.invalid();
+  }
+  const id = typeof body.submission_id === "string" ? body.submission_id : "";
+  if (id === "" || body.consent !== true || typeof body.name !== "string" || typeof body.phone !== "string" || typeof body.message !== "string") {
+    ledger.invalid++;
+    return REPLY.invalid();
+  }
+  const values = JSON.stringify([body.name, body.phone, body.message, body.hp]);
+  const existing = store.get(id);
+  if (existing === undefined) {
+    store.set(id, values);
+    ledger.stored++;
+    return REPLY.ok();
+  }
+  if (existing === values) {
+    ledger.answeredAsAlreadyReceived++;
+    return REPLY.ok();
+  }
+  ledger.conflicts++;
+  return REPLY.conflict();
+}
+
+let stub: LeadStub | undefined;
+let exitCode = 1;
+try {
+  const result = await runSubmitFlow({
+    kind: "REHEARSAL",
+    target,
+    site,
+    installStub: async (ctx) => {
+      stub = await installLeadStub(ctx, target, site, decide);
+      return { blockedThirdParty: stub.blockedThirdParty };
+    },
+    outJson: OUT,
+    shotsDir: target.shotsDir,
+    shotPrefix: "rehearse-submit",
+    launchArgs: localChromiumArgs(target),
+  });
+  if (stub) {
+    const s = stub;
+    const problems = s.problems();
+    result.checks.row("stub", "the idempotent stub holds exactly ONE stored inquiry after the replay", {
+      "store count is 1": store.size === 1 && ledger.stored === 1,
+      "the replay (same id, same values) was answered 200 without a new entry": ledger.answeredAsAlreadyReceived === 1,
+      "no conflict, no refused body": ledger.conflicts === 0 && ledger.invalid === 0,
+      "the stub answered exactly 2 POSTs of the form page": s.posts().length === 2,
+    }, { ...ledger, storeCount: store.size });
+    result.checks.row("stub", "every lead request was answered by the stub — none reached a server", {
+      [`${s.requestEvents.length} lead request(s) seen by the context = ${s.seen.length} answered by the stub`]: s.requestEvents.length === s.seen.length,
+      "self-test passed before the page was opened (glob + predicate routes)": s.selfTest.glob && s.selfTest.predicate,
+      "every form request was caught by the exact-URL route; none left held": problems.length === 0,
+      "every lead response carried the stub's mark and no server address": s.responses.every((r) => r.marked && !r.serverAddr),
+    }, problems.length ? { problems } : undefined);
+    result.out.stub = { contract: "in memory: id → values; new id → stored + 200; same id + same values → 200, nothing stored; same id + other values → 409", ledger, storeCount: store.size, ...s.record() };
+  }
+  exitCode = finalizeFlow(result) ? 0 : 1;
+} catch (e) {
+  say(`ERROR: ${String((e as Error)?.stack ?? e)}`);
+  exitCode = 1;
+} finally {
+  await target.close();
+}
+process.exit(exitCode);

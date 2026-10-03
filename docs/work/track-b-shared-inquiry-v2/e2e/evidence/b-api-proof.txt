@@ -1,0 +1,138 @@
+LOCAL E2E idempotency proof — B (API level, the real door from Node)
+started:            2026-10-03T20:02:16.847Z
+boostchat commit:   3ff3a2335d086a200c9a18a415c85d3efc11c768 (isolated git-archive copy)
+database:           boost_chat_test on loopback (name contains "test": yes)
+migration 0055:     present — unique index (tenant_id, source, submission_id) WHERE (submission_id IS NOT NULL); _migration says applied 2026-10-03 19:19:37.450514+09; nothing was migrated by this run
+door:               platform/site/inquiry-client.ts sha256 b2400be338eef4f6…
+declared endpoint:  https://boostchat.co.kr/api/widget/<declared key>/lead  (rewritten to the local server — never contacted)
+
+== A. bring-up ==
+seeded:   tenant trackb-inquiry-v2-e2e-b-6b71db55 (id 541c8eda…), widget channel 46207a01… key wgt_Mwqh… enabled, allowed_origins=[http://127.0.0.1:4173], owner trackb-inquiry-v2-e2e-b-6b71db55-owner@example.com
+server:   http://127.0.0.1:53706 (next start, BUILD_ID LL_FLy6kPQsJcu2uLpTRk), WIDGET_SITE_LEAD_KEYS = this key only, Turnstile OFF
+mail:     SMTP sink on 127.0.0.1:53705 (BoostChat's scripts/smtp-sink.ts) — no real mail
+LEAD_ROWS at start: 0
+
+== B0. the route's gate and CORS answers (nothing is weakened) ==
+[PASS] B0.1 preflight, registered origin
+         expected: 204, Allow-Origin=http://127.0.0.1:4173, Allow-Methods=POST, Allow-Headers=content-type, no Allow-Credentials
+         observed: 204, Allow-Origin=http://127.0.0.1:4173, Allow-Methods=POST, Allow-Headers=content-type, Max-Age=600, Allow-Credentials=null
+[PASS] B0.2 unregistered origin / no Origin / key not opted in
+         expected: 403 + 403 + 403, no Access-Control-Allow-Origin, LEAD_ROWS unchanged
+         observed: 403 + 403 + 403, Allow-Origin=null, LEAD_ROWS 0 -> 0
+
+== B1. FORM-ID-14 — one logical submission sent 10 times concurrently -> one row ==
+[PASS] B1.1 door: 10 concurrent calls of the sender join ONE request
+         expected: HTTP requests = 1, 10 results ok, LEAD_ROWS +1
+         observed: HTTP requests = 1 (status 200), results = 10x ok, LEAD_ROWS 0 -> 1
+[PASS] B1.2 (a) the door's exact body (id A), 10 concurrent POSTs from 10 visitors
+         expected: 10x200 {"received":true}, LEAD_ROWS +1, rows with submission_id A = 1
+         observed: 10x200, bodies all {"received":true}: true, LEAD_ROWS 1 -> 2, rows with id A (194d41a9…) = 1  [door's captured first request: failed/network, not forwarded]
+[PASS] B6.1 owner notifications for the 10-concurrent case
+         expected: exactly 1 mail in the SMTP sink for this tenant's owner, the row's notified_at set
+         observed: mails 1 -> 2 (+1), notified_at set: true
+[PASS] B1.3 the door's own retry after that (same values) carries the same body
+         expected: byte-identical body (same submission_id), result ok, LEAD_ROWS unchanged
+         observed: identical: true, status 200, result ok, LEAD_ROWS 2 -> 2
+[PASS] B1.4 (b) a fresh submission (id B), 10 concurrent POSTs from ONE visitor
+         expected: a mix: 5x200 + 5x429 rate_limited, LEAD_ROWS +1, rows with submission_id B = 1
+         observed: 5x200 + 5x429 rate_limited, LEAD_ROWS 2 -> 3, rows with id B (cf0fbcb5…) = 1  [460s of the budget window were left]
+
+== B2. A+P -> 200, A+P again -> 200 without a row, A + changed P -> 409 ==
+[PASS] B2.1 A+P through the door
+         expected: 200 {"received":true}, LEAD_ROWS +1
+         observed: 200 {"received":true}, door ok, LEAD_ROWS 3 -> 4
+[PASS] B2.2 A+P again (the same body, replayed)
+         expected: 200 {"received":true} (idempotent), LEAD_ROWS unchanged
+         observed: 200 {"received":true}, LEAD_ROWS 4 -> 4
+[PASS] B2.3 A + changed P (the id reused with another message)
+         expected: 409 {"error":"idempotency_conflict"} with CORS headers, LEAD_ROWS unchanged, the stored row untouched
+         observed: 409 {"error":"idempotency_conflict"}, Allow-Origin=http://127.0.0.1:4173, LEAD_ROWS 4 -> 4, stored message unchanged: true
+
+== B3. the door's client state ==
+[PASS] B3.1 after the 200, the same values sent again
+         expected: a NEW submission_id, 200, LEAD_ROWS +1 — a second LOGICAL inquiry (the first was confirmed), not a duplicate of the first
+         observed: id 3e96f1c9… -> f615bca5… (different: true), 200, LEAD_ROWS 4 -> 5
+[PASS] B3.2 lost answer, then the visitor presses again
+         expected: 1st: server 200 (row stored) but the door reports failed/network; 2nd: the SAME submission_id -> 200, NO additional row
+         observed: 1st: server 200, door failed/network, LEAD_ROWS 5 -> 6; 2nd: id ae600be7… -> ae600be7… (same: true), 200, door ok, LEAD_ROWS 6 -> 6
+[PASS] B3.3 lost answer, then the visitor edits the message
+         expected: the edited text gets a NEW submission_id -> 200 and a new row (two rows in all: the stored-but-unconfirmed first text, and the edited one — two different inquiries)
+         observed: 1st: server 200, door failed/network, LEAD_ROWS 6 -> 7; edited: id 8861beda… -> 9fb4f243… (different: true), 200, LEAD_ROWS 7 -> 8
+[PASS] B3.4 … and then goes BACK to the earlier text
+         expected: the EARLIER submission_id is reused (byte-identical body) -> 200, NO additional row: the stored-but-unconfirmed inquiry is not stored twice
+         observed: id 8861beda… = first id 8861beda…: true, 200, door ok, LEAD_ROWS 8 -> 8, rows with the first id = 1
+[PASS] B3.5 a call with DIFFERENT values while a request is on its way
+         expected: refused locally (failed/unknown) without a request; the request on its way is unaffected: HTTP requests = 1, LEAD_ROWS +1
+         observed: other values: failed/unknown; same values: ok / ok; HTTP requests = 1, LEAD_ROWS 8 -> 9
+[PASS] B3.6 a real 409 fed back to the door
+         expected: server 409 {"error":"idempotency_conflict"} -> door failed/conflict, 0 automatic resends, the door's own inquiry NOT stored; the next press: a NEW submission_id -> 200, LEAD_ROWS +1
+         observed: server 409 {"error":"idempotency_conflict"} -> door failed/conflict, automatic resends in 1.5s = 0, LEAD_ROWS 9 -> 10 (+1 = the different inquiry stored first under that id); next press: id 6ef10aa5… -> d79e60d7…, 200, door ok, LEAD_ROWS 10 -> 11
+
+== B4. source = website_form is the server's; the body allow-list is strict ==
+[PASS] B4.1 every row so far (all sent with the door's body shape)
+         expected: the door's body keys are exactly consent,hp,message,name,phone,submission_id (no `source`); every row has source='website_form' and submission_id NOT NULL
+         observed: door body key sets: [consent,hp,message,name,phone,submission_id] over 14 door requests; rows 11: source='website_form' 11, submission_id NOT NULL 11
+[PASS] B4.2 a body that carries `source`
+         expected: 400 (refused by the real route), LEAD_ROWS unchanged
+         observed: 400 {"error":"invalid_request","message":"잘못된 요청입니다."}, LEAD_ROWS 11 -> 11
+[PASS] B4.3 the five legacy keys only (no submission_id)
+         expected: 200 {"received":true}, LEAD_ROWS +1, that row: source='website_form', submission_id NULL
+         observed: 200 {"received":true}, LEAD_ROWS 11 -> 12, row 71c7358d…: source=website_form, submission_id=NULL
+
+== B5. the visitor budget exhausted: the door reads the real Retry-After and waits ==
+[PASS] B5.1 the 6th POST of the visitor, through the door
+         expected: 5x200 (budget used), then 429 {"error":"rate_limited"} with Retry-After (exposed to cross-origin script); door: failed/rate_limited, wait.seconds = that header
+         observed: budget: 200,200,200,200,200; then 429 {"error":"rate_limited"}, Retry-After=458, Access-Control-Expose-Headers=Retry-After, Allow-Origin=http://127.0.0.1:4173; door failed/rate_limited wait=458s  [458s of the window were left when the step began]
+[PASS] B5.2 presses during the pause
+         expected: failed/rate_limited with the REMAINING seconds (1..Retry-After), 0 requests made, LEAD_ROWS unchanged
+         observed: same values: failed/rate_limited wait=458s; other values: failed/rate_limited wait=458s; requests made = 0; LEAD_ROWS 12 -> 12
+[PASS] B5.3 a press 2.5 s later, still in the pause
+         expected: the wall clock is what counts: fewer seconds left than Retry-After (by 2..4), still 0 requests
+         observed: failed/rate_limited wait=456s (Retry-After was 458), requests made = 0
+
+== B7. contract edges: the OTHER 429, and the tenant's own lead-form settings (extras, not in the brief's list) ==
+[PASS] B7.1 the channel's daily cap is reached (429 channel_capacity)
+         expected: server 429 {"error":"channel_capacity"} (also with Retry-After); door: failed/capacity WITHOUT a pause — a further press does send again (same submission_id), LEAD_ROWS unchanged
+         observed: server 429 {"error":"channel_capacity"}, Retry-After=14256; door failed/capacity; second press: failed/capacity, requests made = 2, same body: true; LEAD_ROWS 12 -> 12
+[PASS] B7.2 the tenant's form settings require e-mail (a field the Track B form does not have)
+         expected: server 400 field_required (field: email); door failed/invalid — the visitor cannot cure it; LEAD_ROWS unchanged
+         observed: server 400 error=field_required field=email; door failed/invalid; LEAD_ROWS 12 -> 12
+[PASS] B7.3 the tenant's form settings switch the message field off
+         expected: server 200, door ok, LEAD_ROWS +1 — but the stored row has NO message: the server silently drops a field the tenant switched off (and the form's folded details with it)
+         observed: server 200; door ok; LEAD_ROWS 12 -> 13; stored row c0a526fc…: message present = false
+
+== B6. owner notifications overall ==
+[PASS] B6.2 one notification per STORED row, none for a replay / 409 / 429 / 400
+         expected: mails in the sink for this tenant = LEAD_ROWS, every row's notified_at set
+         observed: mails = 13, LEAD_ROWS = 13, rows with notified_at = 13; all mails the sink received (any recipient) = 13
+
+rows of the test tenant (ids shortened):
+  b2a695af…  source=website_form  submission_id=4a38e9c9…  notified=true
+  685d1bde…  source=website_form  submission_id=194d41a9…  notified=true
+  d4bdb589…  source=website_form  submission_id=cf0fbcb5…  notified=true
+  38b27b52…  source=website_form  submission_id=3e96f1c9…  notified=true
+  d762cb7d…  source=website_form  submission_id=f615bca5…  notified=true
+  a17e1206…  source=website_form  submission_id=ae600be7…  notified=true
+  acf820d0…  source=website_form  submission_id=8861beda…  notified=true
+  c4029013…  source=website_form  submission_id=9fb4f243…  notified=true
+  8955ef78…  source=website_form  submission_id=afb95f45…  notified=true
+  a9389447…  source=website_form  submission_id=6ef10aa5…  notified=true
+  2e0b40ce…  source=website_form  submission_id=d79e60d7…  notified=true
+  71c7358d…  source=website_form  submission_id=NULL  notified=true
+  c0a526fc…  source=website_form  submission_id=f34866dc…  notified=true
+requests on the wire: 49 (door 19, of which forwarded 17; raw 30)
+
+== teardown ==
+server stopped: yes (port 53706 free)
+server log lines (the route throttles its warnings — a count of LINES, not of events): site_lead_idempotent_replay=1, site_lead_idempotency_conflict=1, site_lead_client_rate_limited=1, site_lead_origin_rejected=1, site_lead_schema_behind=0, site_lead_failed=0, site_lead_store_rejected=0, site_lead_client_limit_skipped=0, [lead-notify]=0
+[PASS] B.log the server log
+         expected: no schema_behind / failed / store_rejected / limit_skipped line, no form content in the log
+         observed: schema_behind=0, failed=0, store_rejected=0, limit_skipped=0, form content found: 0
+cleaned up: tenant 1 (with 13 lead rows, its widget channel and membership by cascade), owner user 1, rate-limit buckets 42
+[PASS] B.cleanup nothing of this harness is left in the test database
+         expected: fixtures under "trackb-inquiry-v2-e2e-" as before the run (0 tenants, 0 users, 0 leads)
+         observed: 0 tenants, 0 users, 0 leads
+
+== result ==
+28 passed, 0 failed
+finished: 2026-10-03T20:02:26.641Z

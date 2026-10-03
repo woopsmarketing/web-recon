@@ -1,0 +1,22 @@
+# Production contract probe BEFORE the publish — write-free (no lead can be stored: consent is false)
+# question: does the DEPLOYED route accept the key submission_id (strict body allow-list)?
+#   allow-list lacks it  -> 400 invalid_request   (envelope check, before everything else)
+#   allow-list has it    -> 400 consent_required  (reached only after the envelope, honeypot and submission_id shape checks)
+# endpoint: https://boostchat.co.kr/api/widget/<demo key>/lead   origin: https://interior-demo.boostweb.co.kr
+# at: 2026-10-03T19:38:49Z   submission_id prefix: 9e8862c1…
+
+## 1. preflight (OPTIONS)
+HTTP/2 204 
+access-control-allow-headers: content-type
+access-control-allow-methods: POST
+access-control-allow-origin: https://interior-demo.boostweb.co.kr
+access-control-max-age: 600
+vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+vary: Origin
+
+## 2. POST, body keys consent(false),name,phone,message,hp(empty),submission_id
+HTTP/2 400 
+access-control-allow-origin: https://interior-demo.boostweb.co.kr
+content-type: application/json
+{"error":"consent_required","message":"개인정보 수집 및 이용에 동의해 주세요."}
+
