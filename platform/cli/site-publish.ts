@@ -35,7 +35,8 @@
  */
 import { publishSite, rollbackHost, sealBytes, type PortfolioTruthLoader, type PublishResult } from "../publish/publish";
 import { WranglerStore } from "../publish/wrangler-store";
-import { buildSiteSnapshot } from "../site/load";
+import { hasSourceMarker, SOURCE_MARKER_FILE } from "../portfolio-sync/managed";
+import { buildSiteSnapshot, siteDir } from "../site/load";
 
 const args = process.argv.slice(2);
 const VALUE_FLAGS = ["--site", "--host", "--bucket", "--persist-to", "--concurrency", "--expect-package", "--expect-live"];
@@ -82,6 +83,24 @@ const persistTo = flag("--persist-to") ?? "tmp/recon-runtime-state";
 if (remote && (!dryRun || checkStore) && process.env.RECON_PUBLISH_ALLOW_REMOTE !== "1") {
   console.error("site:publish: --remote reaches the live bucket; refused unless RECON_PUBLISH_ALLOW_REMOTE=1 (see docs/result/static-deployment-foundation/07-live-deploy-plan.md)");
   process.exit(2);
+}
+
+// A site whose portfolio BoostChat owns (the tracked marker) is published by site:portfolio-sync only:
+// it regenerates the site from what is live, publishes exactly the package it built, checks the public
+// URLs and reports. A manual publish from a checkout could put an older portfolio back. (--rollback
+// stays available: it is the emergency path and keeps its own portfolio-truth guard.)
+if (!dryRun && !has("--rollback")) {
+  let adopted = false;
+  try {
+    adopted = await hasSourceMarker(siteDir(process.cwd(), siteId));
+  } catch (error) {
+    console.error(`site:publish: ${siteId}/${(error as Error).message}`);
+    process.exit(2);
+  }
+  if (adopted) {
+    console.error(`site:publish: the portfolio of "${siteId}" is owned by BoostChat (${SOURCE_MARKER_FILE}); a manual publish is refused. Run: pnpm site:portfolio-sync --site ${siteId} --host ${host} --force${remote ? " --remote" : ""}`);
+    process.exit(2);
+  }
 }
 
 // A dry run gets a store only for --check-store, and then one that cannot write.

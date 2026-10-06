@@ -115,7 +115,9 @@
     "runtime:dev": "wrangler dev -c workers/recon-runtime/wrangler.jsonc --local --persist-to tmp/recon-runtime-state",
     "typecheck:runtime": "tsc -p workers/recon-runtime/tsconfig.json",
     "test:publish": "tsx --tsconfig platform/tsconfig.json platform/test/publish.test.ts",
-    "test:publish:e2e": "tsx --tsconfig platform/tsconfig.json platform/test/publish-e2e.test.ts"
+    "test:publish:e2e": "tsx --tsconfig platform/tsconfig.json platform/test/publish-e2e.test.ts",
+    "site:portfolio-sync": "tsx --tsconfig platform/tsconfig.json platform/cli/site-portfolio-sync.ts",
+    "test:portfolio-sync": "tsx --tsconfig platform/tsconfig.json platform/test/portfolio-sync.test.ts"
   },
   "engines": {
     "node": ">=22"

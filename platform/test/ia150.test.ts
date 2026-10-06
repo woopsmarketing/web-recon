@@ -34,6 +34,7 @@ import { IA_HTML, IA_PATHS, IA_ROUTES, canonical150Sitemap } from "./canonical-1
 import { demoBuiltRelease, demoExpectedPages } from "./demo-rollout";
 import { integrationSurfaceBefore, isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
+import { isPortfolioSyncSurface } from "./portfolio-sync-surface";
 import { isRelease160Added, release160SurfaceBefore } from "./release-160-surface";
 import { isRelease162Added, release162SurfaceBefore } from "./release-162-surface";
 
@@ -166,7 +167,7 @@ await check("R3 platform/ (test/ excluded) is byte-identical to the pre-change c
   // and so is the 1.6.2 surface (the inquiry seam + door, release-162-surface.ts). 1.6.3 changed one
   // platform file, the door 1.6.2 added — already excluded there, so it needs no surface of its own.
   const overrides = { ...(await integrationSurfaceBefore(repoRoot)), ...(await release160SurfaceBefore(repoRoot)), ...release162SurfaceBefore() };
-  const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/") || isPublishSurface(f) || (isIntegrationSurface(f) && !(f in before.platformFiles)) || isRelease160Added(f) || isRelease162Added(f));
+  const now = await hashTree(path.join(repoRoot, "platform"), (f) => f.startsWith("test/") || isPublishSurface(f) || isPortfolioSyncSurface(f) || (isIntegrationSurface(f) && !(f in before.platformFiles)) || isRelease160Added(f) || isRelease162Added(f));
   for (const f of Object.keys(overrides)) if (f in before.platformFiles) now[f] = overrides[f]!;
   eq(now, before.platformFiles, "platform files");
 });

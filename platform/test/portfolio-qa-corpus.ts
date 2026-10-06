@@ -311,11 +311,12 @@ export function composeQaSnapshot(production: SiteSnapshot, fixture: SyntheticFi
 /**
  * Writes the QA projects.json into a THROWAWAY copy of the demo's site directory (a test's own temp
  * root). Refuses any directory inside the repository's data/sites — the production corpus is never
- * the target.
+ * the target. `productionProjectsFile` names the production document to compose from when it is not
+ * the live one (the frozen dataset, demo-frozen-dataset.ts).
  */
-export async function writeQaProjects(repoRoot: string, throwawaySiteDir: string): Promise<void> {
+export async function writeQaProjects(repoRoot: string, throwawaySiteDir: string, productionProjectsFile?: string): Promise<void> {
   const target = await realpath(throwawaySiteDir);
   const sites = await realpath(path.join(repoRoot, "data/sites"));
   if (target === sites || target.startsWith(`${sites}${path.sep}`)) throw new Error(`refusing to write the QA corpus into ${target}: it is the repository's data/sites`);
-  await writeFile(path.join(target, "content/projects.json"), await composeQaProjectsText(repoRoot));
+  await writeFile(path.join(target, "content/projects.json"), await composeQaProjectsText(repoRoot, productionProjectsFile));
 }

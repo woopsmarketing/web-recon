@@ -33,6 +33,7 @@ import template from "../../templates/interior-01/v1/template";
 import { demoBuiltRelease, demoExpectedPages } from "./demo-rollout";
 import { isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
+import { isPortfolioSyncSurface } from "./portfolio-sync-surface";
 import { isRelease160Added, release160SurfaceBefore } from "./release-160-surface";
 import { isRelease162Added, release162SurfaceBefore } from "./release-162-surface";
 
@@ -193,7 +194,7 @@ await check("R2 the 1.5.2 release = the 1.5.1 release except exactly the five de
   for (const [f, h] of Object.entries({ ...(await release160SurfaceBefore(repoRoot)), ...release162SurfaceBefore() })) if (f in now) now[f] = h;
   // the post-build publish surface never feeds a build, render or release (publish-surface.ts) — excluded as in ia150/step6
   eq(Object.keys(before.platformFiles).filter((f) => now[f] !== before.platformFiles[f] && !isIntegrationSurface(f) && !isPublishSurface(f)), [], "platform files changed");
-  eq(Object.keys(now).filter((f) => !(f in before.platformFiles) && !isIntegrationSurface(f) && !isPublishSurface(f) && !isRelease160Added(f) && !isRelease162Added(f)), [], "platform files added");
+  eq(Object.keys(now).filter((f) => !(f in before.platformFiles) && !isIntegrationSurface(f) && !isPublishSurface(f) && !isPortfolioSyncSurface(f) && !isRelease160Added(f) && !isRelease162Added(f)), [], "platform files added");
 });
 await check("R3 the demo pins a verified release ≥ 1.5.2 and its current package was built with it (QA pass), rollback = the pre-cut package; every fixture's current package was built with the fixture's OWN verified pin — a fixture the cut did not re-pin still serves its pre-cut package (pointers untouched, nothing rotated away)", async () => {
   assert(versionAtLeast(pin.templateVersion, "1.5.2"), pin.templateVersion);

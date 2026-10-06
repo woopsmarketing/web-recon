@@ -25,6 +25,18 @@
  *                details, the other pages) and every sitemap entry resolves to one of the 8 production
  *                detail pages — no dead public reference.
  *
+ * Since Portfolio Content System V1 the demo's portfolio is regenerated from BoostChat by
+ * site:portfolio-sync, so data/sites/boost-interior-demo legitimately changes. Every LITERAL above
+ * (bi-01 … bi-08, 968afbcc…, the pre-split hashes, "the 8") is therefore asserted against the dataset
+ * frozen on 2026-10-06 (demo-frozen-dataset.ts: the live site directory with the frozen portfolio in
+ * place of the current one — today that composition IS the live directory, byte for byte), and
+ *
+ *   [live]       data/sites/boost-interior-demo as it is now is checked for what holds for ANY dataset:
+ *                it is the frozen dataset or a consistent generated one (sidecar hashes), nothing
+ *                synthetic leaks into its files or its producer output, every record's exported media
+ *                is its own, and — whenever it is not the frozen dataset — a real build of it has no
+ *                synthetic leak and no dead portfolio link / sitemap entry.
+ *
  *   tsx --tsconfig platform/tsconfig.json platform/test/portfolio-production-truth.test.ts
  */
 import { cp, mkdir, mkdtemp, readdir, readFile, rm, stat, symlink } from "node:fs/promises";
@@ -35,10 +47,12 @@ import { GOLDEN_DIR, GOLDEN_INPUT } from "../cli/integration-golden";
 import { createContentReader } from "../content/reader";
 import { emitIntegration, type IntegrationEmission, type PortfolioDocument } from "../integration/emit";
 import { validateIntegration } from "../integration/validate";
+import { managedPortfolioProblems, readManagedManifest } from "../portfolio-sync/managed";
 import type { SiteSnapshot } from "../site/instance";
 import { planRoutes } from "../site/routes";
 import { hashJson, sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
+import { frozenDemoRoot } from "./demo-frozen-dataset";
 import {
   DEMO_SITE_ID,
   PRE_SPLIT_PROJECTS_BYTES,
@@ -139,7 +153,13 @@ function forbiddenIn(text: string): string[] {
   for (const t of fixture.titles) if (text.includes(t)) hits.push(`title ${t}`);
   return hits;
 }
-const demo = await prepareSiteInput({ repoRoot, siteId: DEMO, mode: "public", at: AT });
+/** the literal pins: the frozen dataset inside the live site (see the header) */
+const frozen = await frozenDemoRoot(repoRoot);
+const demo = await prepareSiteInput({ repoRoot: frozen.root, siteId: DEMO, mode: "public", at: AT });
+/** the live directory as it is now; a generated dataset may hold records published after the golden instant */
+const LIVE_AT = frozen.live.identical ? AT : new Date().toISOString();
+const live = await prepareSiteInput({ repoRoot, siteId: DEMO, mode: "public", at: LIVE_AT });
+const liveEmission = emitFor(live.snapshot);
 const prodEmission = emitFor(demo.snapshot);
 const qaSnapshot = composeQaSnapshot(demo.snapshot, fixture, AT);
 const qaEmission = emitFor(qaSnapshot);
@@ -187,7 +207,7 @@ await check("X2 no runtime or production path names the fixture or the QA compos
 // --------------------------------------------------------------- production --
 console.log("\n[production] the published demo: bi-01 … bi-08, nothing synthetic");
 await check("P1 production data: content/projects.json keeps its file-level schema / origin and holds exactly bi-01 … bi-08; no file of data/sites/boost-interior-demo names a synthetic id, slug or title (the forbidden set read from the fixture)", async () => {
-  const siteDir = path.join(repoRoot, "data/sites", DEMO);
+  const siteDir = frozen.siteDir;
   const doc = JSON.parse(await readFile(path.join(siteDir, "content/projects.json"), "utf8"));
   eq([doc.schema, doc.origin], ["projects@1", "synthetic-fixture"], "file-level schema / origin (the demo's documents stay declared fictional)");
   eq((doc.items as { id: string }[]).map((p) => p.id), PROD_IDS, "production records");
@@ -222,7 +242,7 @@ await check(`P2 (i) the production producer output is the production golden (${P
 // ----------------------------------------------------------------------- qa --
 console.log("\n[qa] the QA composition = the pre-split corpus, byte for byte");
 await check(`Q1 (ii) the QA composition holds all 11 fixture records and reproduces the pre-split projects.json (${PRE_SPLIT_PROJECTS_BYTES} B, sha256 ${PRE_SPLIT_PROJECTS_SHA256.slice(0, 12)}…) and, with exactly the later deltas reverted newest first (the 1.6.3 inquiry delivery and its re-pin, the 1.6.2 online inquiry + terminology and its re-pin, the product rename, then the footer notice), the pre-split snapshot (siteSnapshotHash ${PRE_SPLIT_SNAPSHOT_HASH.slice(0, 12)}…)`, async () => {
-  const text = await composeQaProjectsText(repoRoot);
+  const text = await composeQaProjectsText(repoRoot, path.join(frozen.siteDir, "content/projects.json"));
   const bytes = new TextEncoder().encode(text);
   eq([bytes.length, sha256(bytes)], [PRE_SPLIT_PROJECTS_BYTES, PRE_SPLIT_PROJECTS_SHA256], "composed projects.json = the pre-split file");
   eq((JSON.parse(text).items as { id: string }[]).map((p) => p.id), [...PROD_IDS, ...fixture.ids], "production + fixture, original order");
@@ -303,73 +323,133 @@ await check("Q3 (iii) each of the 8 production records is emitted deep-equal to 
 });
 
 // -------------------------------------------------------------------- build --
-console.log("\n[build] a real production build of the demo (throwaway root; data/sites + data/site-builds untouched)");
-const tmpRoot = await mkdtemp(path.join(os.tmpdir(), "production-truth-root-"));
-try {
-  await mkdir(path.join(tmpRoot, "data/sites"), { recursive: true });
-  await symlink(path.join(repoRoot, "data/template-releases"), path.join(tmpRoot, "data/template-releases"));
-  await symlink(path.join(repoRoot, "node_modules"), path.join(tmpRoot, "node_modules"));
-  await cp(path.join(repoRoot, "data/sites", DEMO), path.join(tmpRoot, "data/sites", DEMO), { recursive: true });
-  let site = "";
-  let files: string[] = [];
-  const ORIGIN = demo.snapshot.site.identity.publicOrigin!;
-  const prodSlugs = demo.snapshot.content.projects.map((p) => p.slug);
-  const detailPaths = new Set(prodSlugs.map((s) => `/portfolio/${s}`));
+interface BuildTarget {
+  /** check-name prefix: B = the frozen dataset (the literal pins), LB = the live directory when it differs */
+  tag: string;
+  what: string;
+  siteDir: string;
+  input: typeof demo;
+  emission: IntegrationEmission;
+  /** the Portfolio Document version the package must carry */
+  version: string;
+  /** how many records (= detail pages) the dataset serves */
+  records: number;
+  at: string;
+}
+async function realBuild(t: BuildTarget) {
+  const tmpRoot = await mkdtemp(path.join(os.tmpdir(), "production-truth-root-"));
+  try {
+    await mkdir(path.join(tmpRoot, "data/sites"), { recursive: true });
+    await symlink(path.join(repoRoot, "data/template-releases"), path.join(tmpRoot, "data/template-releases"));
+    await symlink(path.join(repoRoot, "node_modules"), path.join(tmpRoot, "node_modules"));
+    await cp(t.siteDir, path.join(tmpRoot, "data/sites", DEMO), { recursive: true });
+    let site = "";
+    let files: string[] = [];
+    const ORIGIN = t.input.snapshot.site.identity.publicOrigin!;
+    const prodSlugs = t.input.snapshot.content.projects.map((p) => p.slug);
+    const detailPaths = new Set(prodSlugs.map((s) => `/portfolio/${s}`));
 
-  await check("B0 the production demo builds: status built, package QA pass; its _integration/ is the production golden, byte for byte", async () => {
-    const r = await buildSite({ repoRoot: tmpRoot, siteId: DEMO, at: AT });
-    assert(r.status === "built" && r.record.qa.pass, `built: ${r.status}`);
-    site = path.join(r.packageDir, "site");
-    files = await walkFiles(site);
-    eq((await readdir(path.join(site, "_integration"))).sort(), ["manifest.json", `portfolio.${PROD_VERSION}.json`], "_integration files");
-    for (const f of prodEmission.files) eq(sha256(await readFile(path.join(site, f.path))), f.sha256, f.path);
-  });
-  await check("B1 (i) the detail routes are exactly the 8 production records' (none of the fixture's); the sitemap, the listing page and every shipped text file of the package carry none of the fixture's ids / slugs / titles", async () => {
-    assert(site, "B0 build missing");
-    eq(files.filter((f) => /^portfolio\/[^/]+\.html$/.test(f)), prodSlugs.map((s) => `portfolio/${s}.html`).sort(), "detail pages = the production records");
-    for (const s of fixture.slugs) assert(!files.some((f) => f.includes(s)), `a package file is named after the synthetic slug ${s}`);
-    for (const f of ["sitemap.xml", "portfolio.html", "index.html"]) assert(files.includes(f), `${f} missing`);
-    let scanned = 0;
-    for (const f of files) {
-      if (!TEXT.test(f)) continue;
-      eq(forbiddenIn(await readFile(path.join(site, f), "utf8")), [], f);
-      scanned++;
-    }
-    assert(scanned > 20, `scanned only ${scanned} text files`);
-  });
-  await check("B2 (iv) no dead public reference: every portfolio link in every HTML page (home, listing, details, the other pages) and every sitemap entry resolves to the listing or to one of the 8 production detail pages; the listing and the sitemap reach all 8", async () => {
-    assert(site, "B0 build missing");
-    const toPath = (href: string): string | undefined => {
-      const u = new URL(href, ORIGIN);
-      return u.origin === ORIGIN ? u.pathname.replace(/\/$/, "") || "/" : undefined;
-    };
-    const isPortfolio = (p: string | undefined) => p !== undefined && (p === "/portfolio" || p.startsWith("/portfolio/"));
-    const htmlFiles = files.filter((f) => f.endsWith(".html"));
-    assert(htmlFiles.length >= 8 + 5, `html pages: ${htmlFiles.length}`);
-    let links = 0;
-    for (const f of htmlFiles) {
-      const html = await readFile(path.join(site, f), "utf8");
-      for (const m of html.matchAll(/\bhref="([^"]+)"/g)) {
-        const p = toPath(m[1]!.replace(/&amp;/g, "&").split(/[?#]/)[0]!);
-        if (!isPortfolio(p)) continue;
-        links++;
-        assert(p === "/portfolio" || detailPaths.has(p!), `${f}: dead portfolio link ${m[1]}`);
-        assert(files.includes(`${p!.slice(1)}.html`), `${f}: ${p} has no page in the package`);
+    await check(`${t.tag}0 ${t.what}: the production demo builds: status built, package QA pass; its _integration/ is the production golden, byte for byte`, async () => {
+      const r = await buildSite({ repoRoot: tmpRoot, siteId: DEMO, at: t.at });
+      assert(r.status === "built" && r.record.qa.pass, `built: ${r.status}`);
+      site = path.join(r.packageDir, "site");
+      files = await walkFiles(site);
+      eq((await readdir(path.join(site, "_integration"))).sort(), ["manifest.json", `portfolio.${t.version}.json`], "_integration files");
+      for (const f of t.emission.files) eq(sha256(await readFile(path.join(site, f.path))), f.sha256, f.path);
+    });
+    await check(`${t.tag}1 ${t.what}: (i) the detail routes are exactly the 8 production records' (none of the fixture's); the sitemap, the listing page and every shipped text file of the package carry none of the fixture's ids / slugs / titles`, async () => {
+      assert(site, "B0 build missing");
+      eq(files.filter((f) => /^portfolio\/[^/]+\.html$/.test(f)), prodSlugs.map((s) => `portfolio/${s}.html`).sort(), "detail pages = the production records");
+      for (const s of fixture.slugs) assert(!files.some((f) => f.includes(s)), `a package file is named after the synthetic slug ${s}`);
+      for (const f of ["sitemap.xml", "portfolio.html", "index.html"]) assert(files.includes(f), `${f} missing`);
+      let scanned = 0;
+      for (const f of files) {
+        if (!TEXT.test(f)) continue;
+        eq(forbiddenIn(await readFile(path.join(site, f), "utf8")), [], f);
+        scanned++;
       }
-    }
-    assert(links > 0, "no portfolio link found at all");
-    const listing = await readFile(path.join(site, "portfolio.html"), "utf8");
-    const listed = new Set([...listing.matchAll(/\bhref="(\/portfolio\/[^"?#]+)"/g)].map((m) => m[1]!));
-    eq([...listed].sort(), [...detailPaths].sort(), "the listing links exactly the 8 production detail pages");
-    const sitemap = await readFile(path.join(site, "sitemap.xml"), "utf8");
-    const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => toPath(m[1]!));
-    assert(locs.every((p) => p !== undefined), "every sitemap entry is on the site origin");
-    const portfolioLocs = locs.filter(isPortfolio) as string[];
-    for (const p of portfolioLocs) assert(p === "/portfolio" || detailPaths.has(p), `sitemap: dead portfolio entry ${p}`);
-    eq(portfolioLocs.filter((p) => p !== "/portfolio").sort(), [...detailPaths].sort(), "the sitemap lists exactly the 8 production detail pages");
+      assert(scanned > 20, `scanned only ${scanned} text files`);
+    });
+    await check(`${t.tag}2 ${t.what}: (iv) no dead public reference: every portfolio link in every HTML page (home, listing, details, the other pages) and every sitemap entry resolves to the listing or to one of the 8 production detail pages; the listing and the sitemap reach all 8`, async () => {
+      assert(site, "B0 build missing");
+      const toPath = (href: string): string | undefined => {
+        const u = new URL(href, ORIGIN);
+        return u.origin === ORIGIN ? u.pathname.replace(/\/$/, "") || "/" : undefined;
+      };
+      const isPortfolio = (p: string | undefined) => p !== undefined && (p === "/portfolio" || p.startsWith("/portfolio/"));
+      const htmlFiles = files.filter((f) => f.endsWith(".html"));
+      assert(htmlFiles.length >= t.records + 5, `html pages: ${htmlFiles.length}`);
+      let links = 0;
+      for (const f of htmlFiles) {
+        const html = await readFile(path.join(site, f), "utf8");
+        for (const m of html.matchAll(/\bhref="([^"]+)"/g)) {
+          const p = toPath(m[1]!.replace(/&amp;/g, "&").split(/[?#]/)[0]!);
+          if (!isPortfolio(p)) continue;
+          links++;
+          assert(p === "/portfolio" || detailPaths.has(p!), `${f}: dead portfolio link ${m[1]}`);
+          assert(files.includes(`${p!.slice(1)}.html`), `${f}: ${p} has no page in the package`);
+        }
+      }
+      assert(links > 0, "no portfolio link found at all");
+      const listing = await readFile(path.join(site, "portfolio.html"), "utf8");
+      const listed = new Set([...listing.matchAll(/\bhref="(\/portfolio\/[^"?#]+)"/g)].map((m) => m[1]!));
+      eq([...listed].sort(), [...detailPaths].sort(), "the listing links exactly the 8 production detail pages");
+      const sitemap = await readFile(path.join(site, "sitemap.xml"), "utf8");
+      const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => toPath(m[1]!));
+      assert(locs.every((p) => p !== undefined), "every sitemap entry is on the site origin");
+      const portfolioLocs = locs.filter(isPortfolio) as string[];
+      for (const p of portfolioLocs) assert(p === "/portfolio" || detailPaths.has(p), `sitemap: dead portfolio entry ${p}`);
+      eq(portfolioLocs.filter((p) => p !== "/portfolio").sort(), [...detailPaths].sort(), "the sitemap lists exactly the 8 production detail pages");
+    });
+  } finally {
+    await rm(tmpRoot, { recursive: true, force: true });
+  }
+}
+console.log("\n[build] a real production build of the demo's frozen dataset (throwaway root; data/sites + data/site-builds untouched)");
+eq(demo.snapshot.content.projects.map((p) => p.id), PROD_IDS, "the frozen dataset serves the 8 production records");
+await realBuild({ tag: "B", what: "frozen dataset, the 8 production records", siteDir: frozen.siteDir, input: demo, emission: prodEmission, version: PROD_VERSION, records: 8, at: AT });
+
+// --------------------------------------------------------------------- live --
+console.log("\n[live] data/sites/boost-interior-demo as it is NOW — what holds for any dataset, hand-authored or generated");
+const liveDir = path.join(repoRoot, "data/sites", DEMO);
+await check("LV1 the live directory is either the frozen dataset byte for byte (hand-authored) or a consistent generated portfolio (sidecar present and every generated file at its recorded hash) — never a silently hand-edited one; its projects.json is a projects@1 document whose records are exactly the served ones; no file of it names a synthetic id, slug or title", async () => {
+  const manifest = await readManagedManifest(liveDir);
+  eq(manifest !== undefined, frozen.live.managed, "sidecar present = managed");
+  assert(frozen.live.identical || manifest !== undefined, `data/sites/${DEMO}: the portfolio dataset is neither the frozen one nor generated by site:portfolio-sync (no ${"portfolio.managed.json"}) — it was edited by hand`);
+  eq(await managedPortfolioProblems(liveDir, DEMO), [], "managed sidecar consistency");
+  if (manifest) eq(manifest.source.siteId, DEMO, "the sidecar is this site's");
+  const doc = JSON.parse(await readFile(path.join(liveDir, "content/projects.json"), "utf8"));
+  assert(doc.schema === "projects@1" && typeof doc.origin === "string" && doc.origin.length > 0, `file-level schema / origin: ${doc.schema} / ${doc.origin}`);
+  eq(live.snapshot.content.projects.map((p) => p.id), (doc.items as { id: string }[]).map((p) => p.id).sort(), "served records = the file's records");
+  let scanned = 0;
+  for (const f of await walkFiles(liveDir)) {
+    if (!TEXT.test(f)) continue;
+    eq(forbiddenIn(await readFile(path.join(liveDir, f), "utf8")), [], `data/sites/${DEMO}/${f}`);
+    scanned++;
+  }
+  assert(scanned >= 10, `scanned only ${scanned} files`);
+  if (frozen.live.identical) eq([live.parts.siteSnapshotHash, live.buildInputId], [demo.parts.siteSnapshotHash, demo.buildInputId], "live = the frozen composition: same siteSnapshotHash, same buildInputId (every literal above describes the real site)");
+});
+await check("LV2 the live producer output validates and contains none of the fixture's ids / slugs / titles; it emits exactly the served records, and every record's exported media is its own (its authored cover; every gallery image one of its own after images)", async () => {
+  eq(validateFor(liveEmission, live.snapshot), { errors: [], warnings: [] }, "validates");
+  for (const f of liveEmission.files) eq(forbiddenIn(f.text), [], f.path);
+  const d = liveEmission.portfolio!.document;
+  eq(d.records.map((r) => r.id), live.snapshot.content.projects.map((p) => p.id), "records = the served records");
+  const assetOf = new Map(live.snapshot.assets.map((a) => [a.publicPath, a.id]));
+  for (const r of d.records) {
+    const p = live.snapshot.content.projects.find((x) => x.id === r.id)!;
+    const ownAfter = new Set((p.galleryGroups ?? []).flatMap((g) => g.items.map((i) => i.image.asset)));
+    if (r.media?.cover) eq(assetOf.get(r.media.cover.src), p.cover.asset, `${r.id}: exported cover is its authored cover`);
+    for (const g of r.media?.gallery ?? []) assert(ownAfter.has(assetOf.get(g.src) ?? ""), `${r.id}: gallery image ${g.src} is one of its own after images`);
+  }
+});
+if (live.buildInputId === demo.buildInputId) {
+  await check("LV3 the live directory builds the SAME package as the frozen dataset (same buildInputId): B0 – B2 above are its build — no synthetic leak, no dead portfolio link, sitemap exact", () => {
+    eq([live.parts.siteSnapshotHash, liveEmission.portfolio!.version], [demo.parts.siteSnapshotHash, PROD_VERSION], "same snapshot, same document");
   });
-} finally {
-  await rm(tmpRoot, { recursive: true, force: true });
+} else {
+  console.log("       the live dataset differs from the frozen one → its own real build");
+  await realBuild({ tag: "LB", what: "live dataset", siteDir: liveDir, input: live, emission: liveEmission, version: liveEmission.portfolio!.version, records: live.snapshot.content.projects.length, at: LIVE_AT });
 }
 
 console.log(`\nportfolio-production-truth: ${passed} passed, ${failed.length} failed`);

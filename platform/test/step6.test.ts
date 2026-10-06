@@ -56,6 +56,7 @@ import { demoBuiltRelease, demoPackagedProjects, demoRollout } from "./demo-roll
 import { gitDirtyPaths } from "./git-checkout";
 import { integrationSurfaceBefore, isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
+import { isPortfolioSyncSurface } from "./portfolio-sync-surface";
 import { isRelease160Added, release160SurfaceBefore } from "./release-160-surface";
 import { isRelease162Added, release162SurfaceBefore } from "./release-162-surface";
 import { composeQaProjectsText, writeQaProjects } from "./portfolio-qa-corpus";
@@ -262,11 +263,13 @@ await check("D Template source unchanged: live templateSourceHash = baseline = t
   // release-162-surface.ts); its current content is held by integration.test.ts I2b and inquiry162.test.ts.
   // 1.6.3 changed one platform file — the door that surface already excludes as added by 1.6.2 — so
   // this fingerprint needs no further surface; the door's 1.6.3 content is held by I2b and inquiry163.test.ts.
+  // The portfolio-sync surface (portfolio-sync-surface.ts, 2026-10-06) only ADDED files (its one seam,
+  // site/load.ts, is already judged at its pre-integration hash) — excluded like publish/.
   const overrides = await integrationSurfaceBefore(repoRoot);
   const overrides160 = await release160SurfaceBefore(repoRoot);
   const overrides162 = release162SurfaceBefore();
   eq(
-    await treeHash("platform", ["test"], (p) => p === "publish" || isPublishSurface(p) || (isIntegrationSurface(p) && !(p in overrides)) || isRelease160Added(p) || isRelease162Added(p), { ...overrides, ...overrides160, ...overrides162 }),
+    await treeHash("platform", ["test"], (p) => p === "publish" || isPublishSurface(p) || isPortfolioSyncSurface(p) || (isIntegrationSurface(p) && !(p in overrides)) || isRelease160Added(p) || isRelease162Added(p), { ...overrides, ...overrides160, ...overrides162 }),
     baseline.trees["platform (test/ excluded)"].hash,
     "platform tree (test/ excluded)",
   );
@@ -284,7 +287,7 @@ await check("D2 independent of the baseline: no Template / Platform implementati
   const late: string[] = [];
   for (const root of ["templates/interior-01/v1", "platform"]) {
     for (const f of await walkFiles(path.join(repoRoot, root))) {
-      if (root === "platform" && (f.startsWith("test/") || isPublishSurface(f) || isIntegrationSurface(f))) continue;
+      if (root === "platform" && (f.startsWith("test/") || isPublishSurface(f) || isPortfolioSyncSurface(f) || isIntegrationSurface(f))) continue;
       if (/(^|\/)(node_modules|\.next|out)\//.test(f)) continue;
       if (dirty && !dirty.has(`${root}/${f}`)) continue;
       if ((await stat(path.join(repoRoot, root, f))).mtimeMs > cut + 1000) late.push(`${root}/${f}`);
