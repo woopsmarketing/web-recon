@@ -133,7 +133,7 @@ assertion 을 삭제하거나 약화하지 않았고, cut proof 가 지키려는
 | F4 MAJOR — watch 무한 반복 | 수정 | `sync.ts`(`nextFailureMemory`, `backoff` → `backing-off`), `cli/site-portfolio-sync.ts` | F4 |
 
 - F1: runtime 은 서빙 중인 package hash 를 노출하지 않으므로 detail 페이지·cover 이미지·목록 페이지의 **응답 바이트 sha256** 을 방금 빌드한 package 파일과 비교한다.
-- F2: `boost-interior-demo` 에는 마커를 만들지 않았다(도입은 rollout 단계, 런북 8.1). `site:publish --dry-run` / `--rollback` 은 도입된 사이트에서도 허용된다.
+- F2: `boost-interior-demo` 에는 마커를 만들지 않았다(도입은 rollout 단계, 런북 8.1) → **2026-10-07 에 마커를 commit 했다(`03-demo-managed-marker.md`)**. `site:publish --dry-run` / `--rollback` 은 도입된 사이트에서도 허용된다.
 - scope cut 이전에 이미 들어가 있던 것(전용 회귀 테스트 유무 표시):
   F5 무응답은 `unverified`(S5 로 검증), F6 publish 실패 시 포인터 재확인(S3), F12 단계별 고정 실패 문장(S3/S4/S5),
   F13 주석/테스트 이름만, F14 중 `--from-file --remote` 거부(X1)와 watch 종료 코드(테스트 없음),

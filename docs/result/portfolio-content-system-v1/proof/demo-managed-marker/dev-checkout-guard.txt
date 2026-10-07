@@ -1,0 +1,32 @@
+# dev checkout HEAD 4aff93f · data/sites/boost-interior-demo: assets content inquiry.json integration.json portfolio.source.json scripts.json settings.json site.json slots.json theme.json 
+# portfolio.managed.json: absent
+# before: git-status 3e1bc63da3b3 · site-builds files 293 · current.json 0e85339c9ea7 · tmp/recon-runtime-state absent
+
+$ pnpm site:build boost-interior-demo
+site:build FAILED: managed portfolio check failed:
+  boost-interior-demo: the portfolio of this site is owned by BoostChat (portfolio.source.json) but this checkout holds no generated portfolio (portfolio.managed.json is missing) — its content files may be older than what is live. Run "pnpm site:portfolio-sync --site boost-interior-demo --host <hostname> --force" (or --generate-only) to regenerate them
+exit=1
+
+$ pnpm site:build boost-interior-demo --force
+site:build FAILED: managed portfolio check failed:
+  boost-interior-demo: the portfolio of this site is owned by BoostChat (portfolio.source.json) but this checkout holds no generated portfolio (portfolio.managed.json is missing) — its content files may be older than what is live. Run "pnpm site:portfolio-sync --site boost-interior-demo --host <hostname> --force" (or --generate-only) to regenerate them
+exit=1
+
+$ pnpm site:publish --site boost-interior-demo --host interior-demo.boostweb.co.kr
+site:publish: the portfolio of "boost-interior-demo" is owned by BoostChat (portfolio.source.json); a manual publish is refused. Run: pnpm site:portfolio-sync --site boost-interior-demo --host interior-demo.boostweb.co.kr --force
+exit=2
+
+$ pnpm site:publish --site boost-interior-demo --host interior-demo.boostweb.co.kr --local --allow-site-change --no-activate
+site:publish: the portfolio of "boost-interior-demo" is owned by BoostChat (portfolio.source.json); a manual publish is refused. Run: pnpm site:portfolio-sync --site boost-interior-demo --host interior-demo.boostweb.co.kr --force
+exit=2
+
+# a site without the marker is unaffected
+
+$ pnpm site:build fixture-small
+[fixture-small] release interior-01-1.5.1-6bbdd07eb9bf · buildInputId 36c3a04c9045e8dc…
+[fixture-small] up-to-date (same buildInputId as current successful package)
+{
+  "status": "up-to-date",
+exit=0
+
+# after:  git-status 3e1bc63da3b3 · site-builds files 293 · current.json 0e85339c9ea7 · tmp/recon-runtime-state absent

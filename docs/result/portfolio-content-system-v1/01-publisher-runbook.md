@@ -1,6 +1,6 @@
 # Portfolio Content System V1 — Publisher 운영 런북 (`site:portfolio-sync`)
 
-작성: 2026-10-06 (독립 리뷰 F1–F4 반영 개정) · 대상: Track B 운영자
+작성: 2026-10-06 (독립 리뷰 F1–F4 반영 개정) · 2026-10-07 개정(demo 도입 마커 commit — §8.1, §9, `03-demo-managed-marker.md`) · 대상: Track B 운영자
 
 BoostChat 이 포트폴리오의 원본(canonical)이다. 이 저장소는 BoostChat 의 export 를 받아
 사이트의 포트폴리오 파일을 **결정적으로 재생성**하고, 기존 `buildSite` + `publishSite` 로 배포한 뒤
@@ -167,7 +167,23 @@ sidecar 는 commit 하지 않으므로(9 절) "이 사이트는 BoostChat 이 �
 3. 그 뒤로 모든 checkout 에서: 마커가 있는데 sidecar 가 없으면 로더/`site:build` 실패, 수동 `site:publish` 거부.
    개발용 checkout 에서 이 사이트를 빌드하려면 `pnpm site:portfolio-sync --site <id> --host <host> --generate-only` (BoostChat 에서 받아 디렉터리만 생성)를 먼저 실행한다.
 
-`boost-interior-demo` 에는 아직 마커를 만들지 않았다 — 도입은 rollout 결정이다. 마커를 commit 하면 9 절 목록의 테스트(live demo 디렉터리를 직접 읽는 suite)도 sidecar 없는 checkout 에서 실패하므로 같은 rollout 에서 함께 처리해야 한다.
+**`boost-interior-demo` 는 2026-10-07 에 도입됐다** — `data/sites/boost-interior-demo/portfolio.source.json` 이 commit 돼 있다(`03-demo-managed-marker.md`).
+
+- 개발용 checkout(이 저장소의 일반 clone)에는 마커만 있고 sidecar 가 없다. 따라서 거기서 demo 는 load · `site:build` 가 실패하고(exit 1),
+  수동 `site:publish` 는 거부된다(exit 2). commit 된 `content/projects.json` 은 2026-10-06 시점의 사본일 뿐 더 이상 원본이 아니다.
+- demo 를 로컬에서 build 해야 하면 `pnpm site:portfolio-sync --site boost-interior-demo --host interior-demo.boostweb.co.kr --generate-only`
+  (BoostChat env 필요)로 먼저 생성한다. 그 결과물(생성 파일 · sidecar)은 commit 하지 않는다.
+  개발용 checkout 을 다시 commit 된 상태로 돌리려면 `git status -- data/sites/boost-interior-demo` 로 바뀐 것을 본 뒤
+  `git restore data/sites/boost-interior-demo` + 추적되지 않는 생성물(`portfolio.managed.json`, 새 이미지) 삭제. (1 절의 "`git checkout` 으로 되돌리지 않는다" 는
+  publisher checkout 의 생성 파일을 고칠 때의 규칙이다.) `git add -A` 로 sidecar · 생성 파일을 commit 하지 않도록 주의 — `.gitignore` 는 `data/sites/**` 를 전부 포함한다.
+- guard 를 통과시키려고 `portfolio.managed.json` 을 손으로 만들거나 마커를 지우지 않는다.
+- 오류 메시지가 안내하는 `site:portfolio-sync … --force [--remote]` 는 **publisher 전용 checkout 기준**이다. 개발용 checkout 에서는 `--generate-only` 만 쓴다(9 절: 개발용 checkout 에서 운영 sync 금지).
+- `site:publish --rollback` 은 마커로 막지 않는 비상 경로다. portfolio-truth guard 가 "이 checkout 이 지금 서빙할 레코드" 를 로더로 읽으므로,
+  생성된 포트폴리오가 없는 개발용 checkout 에서는 로더가 거부해 rollback 도 실패한다(fail closed). 예전에 `--generate-only` 해 둔 checkout 은 그 시점의 목록을 진실로 삼으므로
+  **rollback 은 publisher 전용 checkout 에서, 방금 sync 된 상태로만** 실행한다.
+- 운영 publisher 전용 checkout(`web-recon-track-b-publisher`, detached `8e1b06f`)은 그대로다: sidecar 를 갖고 있고 이 commit 을 받지 않았다.
+  나중에 그 checkout 을 새 commit 으로 올려도 sidecar 가 있으므로 load · build · sync 는 지금과 같다(마커 + 일관된 sidecar = 정상 load).
+  달라지는 것은 하나: 그 checkout 에서도 수동 `site:publish` 가 거부된다(의도된 동작 — 배포는 `site:portfolio-sync` 만).
 
 ## 9. V1 운영 정책 — publisher 전용 checkout
 
@@ -179,8 +195,14 @@ sidecar 는 commit 하지 않으므로(9 절) "이 사이트는 BoostChat 이 �
   - 다시 빌드된 `data/site-builds/<id>/…` (current.json, history.jsonl, packages/…)
 - 개발용 checkout 은 commit 된 dataset 을 그대로 유지한다. 그래서 리터럴 pin 테스트(`portfolio-production-truth`, `integration`, `detail-facts`)는
   live 디렉터리가 아니라 frozen fixture(`platform/test/fixtures/boost-interior-demo-frozen`, `platform/test/demo-frozen-dataset.ts`)를 읽는다.
+- **2026-10-07 (demo 도입) 이후**: demo 를 "build 되는 사이트" 로 쓰는 suite 는 모두 frozen composition 으로 읽는다(`frozenDemoRoot` / `testSiteRoot` — live 디렉터리의
+  사이트 소유 파일 + frozen 포트폴리오, 마커 · sidecar 제외): `step6`, `inquiry162`, `inquiry163`, `inquiry163-browser`, `publish`(RT0 의 served set), `publish-e2e`(contact smoke).
+  `[live]` 검사(`portfolio-production-truth` LV1–LV3/LB, `integration` V1, `detail-facts` LIVE)는 live 디렉터리가 dataset 인 checkout(도입 전 또는 sidecar 있음)에서는 예전 그대로 내용을 검사하고,
+  마커만 있는 checkout 에서는 **거부를 검증**한다(LVA: 로더 · 실제 build 모두 거부, package 미생성). guard 자체는 `portfolio-sync` F2(fixture) · L3(저장소의 도입 사이트),
+  `publish` P14(실제 demo 의 수동 publish 거부, usage error 별 메시지)가 검증한다. 마커가 지워지면 `portfolio-production-truth` LV1 과 `portfolio-sync` L3 가 실패한다.
 - managed 사이트 데이터와 빌드 산출물을 git tree 밖으로 옮기는 것은 **Phase 2** 항목이다.
-- 누군가 변경된 managed 내용을 의도적으로 commit 한다면, 아래 테스트는 여전히 live demo 디렉터리 또는 tracked `data/site-builds/boost-interior-demo` 를 직접 읽으므로 rollout 갱신이 필요하다:
+- 누군가 변경된 managed 내용을 의도적으로 commit 한다면, 아래 테스트는 여전히 live demo 디렉터리의 사이트 소유 파일 또는 tracked `data/site-builds/boost-interior-demo` 를 직접 읽으므로 rollout 갱신이 필요하다
+  (포트폴리오 dataset 자체는 위 항목대로 frozen composition 에서 읽는다):
   - `platform/test/demo-rollout.ts` (helper: current/previous package 리터럴)
   - `platform/test/integration.test.ts` — rollout/lineage 검사(B2, B2b, R2, G1–G6 등; dataset pin 은 이미 frozen 으로 이동)
   - `platform/test/publish.test.ts` (RT0 "served set = bi-01 … bi-08", current package 검사), `platform/test/publish-e2e.test.ts`

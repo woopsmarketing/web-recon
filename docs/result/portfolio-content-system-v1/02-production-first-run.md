@@ -43,6 +43,6 @@ zone 설정에서 HTML minify · 이메일 난독화 · 이미지 최적화를 �
 2. **이 host 에서 `site:publish --rollback` 을 쓰지 않는다.** pointer 의 `previous` 가 revision 1 의 package(`081f8be9…`, 테스트 record 포함)다.
    rollback 하면 그 페이지가 다시 공개된다. 다음 정상 게시가 한 번 지나가면 `previous` 는 `3d250199…` 가 된다.
    비상시 pointer 만 되돌릴 때는 `--expect-package 3d2501990056f8da6d5e2d9cbed8491a518ca7934bb55309956cd721ad04733b --expect-live <현재 hash>`.
-3. **demo 의 managed marker(`portfolio.source.json`)는 아직 커밋하지 않았다**(runbook §8.1). 이 checkout 에서 수동 `site:publish` 를 하면
-   커밋된 포트폴리오가 올라간다 — 지금은 운영 DB 와 내용이 같지만, Admin 에서 내용이 바뀌기 시작하면 달라진다.
+3. **[닫힘 2026-10-07] demo 의 managed marker(`portfolio.source.json`)를 커밋했다**(runbook §8.1, `03-demo-managed-marker.md`). 이 checkout 에서
+   demo 의 `site:build` 와 수동 `site:publish` 는 거부된다 — 커밋된 옛 포트폴리오가 올라갈 수 없다.
 4. 이 checkout(`web-recon-track-b`)의 `data/` 는 실행 전후로 변화가 없다.
