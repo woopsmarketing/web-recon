@@ -45,6 +45,7 @@ import { INQUIRY_FILE, SiteInquiryDocSchema, inquiryEndpointProblem, inquiryTarg
 import { INQUIRY_PHONE_PATTERN, INQUIRY_TIMEOUT_MS, createInquirySender, isInquiryPhone, normalizeInquiryText, type InquiryFailure, type InquirySubmission } from "../site/inquiry-client";
 import { SiteSnapshotSchema } from "../site/instance";
 import { buildSiteSnapshot } from "../site/load";
+import { frozenDemoRoot } from "./demo-frozen-dataset";
 import { resolveSlots } from "../slots/slots";
 import { hashJson } from "../util/hash";
 import { InquiryForm } from "../../templates/interior-01/v1/components/InquiryForm";
@@ -146,6 +147,8 @@ const REMOVED_CODES = [
 const INVISIBLE = new RegExp(`[${REMOVED_CODES.map((c) => `\\u{${c.toString(16)}}`).join("")}]`, "u");
 
 const demoDir = path.join(repoRoot, "data/sites", DEMO);
+// The demo is copied / snapshotted through the frozen composition (demo-frozen-dataset.ts): its site directory is the live one byte for byte except the adoption marker, which makes the live directory refuse to load without a generated portfolio. Plain reads of site-owned files below stay on the live directory.
+const frozen = await frozenDemoRoot(repoRoot);
 const pin = (await readJson(path.join(demoDir, "site.json"))).template as { templateId: string; templateVersion: string; releaseId: string; releaseHash: string };
 const pkg = path.join(repoRoot, (await readJson(path.join(repoRoot, "data/site-builds", DEMO, "current.json"))).packageDir);
 const record = await readJson(path.join(pkg, "build-record.json"));
@@ -213,11 +216,11 @@ async function siteRoot(mutate: (dir: string) => Promise<void>): Promise<string>
   const root = await mkdtemp(path.join(os.tmpdir(), "inquiry162-"));
   const dir = path.join(root, "data/sites", DEMO);
   await mkdir(path.dirname(dir), { recursive: true });
-  await cp(demoDir, dir, { recursive: true });
+  await cp(frozen.siteDir, dir, { recursive: true });
   await mutate(dir);
   return root;
 }
-const demoSnap = (await buildSiteSnapshot({ repoRoot, siteId: DEMO, mode: "public", at: AT })).snapshot;
+const demoSnap = (await buildSiteSnapshot({ repoRoot: frozen.root, siteId: DEMO, mode: "public", at: AT })).snapshot;
 await check("L1 the demo's snapshot carries exactly its document; without inquiry.json there is NO inquiry key and the snapshot is otherwise identical (absent ≠ empty)", async () => {
   eq(demoSnap.inquiry, { schemaVersion: 1, endpoint: DEMO_ENDPOINT }, "snapshot.inquiry");
   const root = await siteRoot((dir) => rm(path.join(dir, INQUIRY_FILE)));

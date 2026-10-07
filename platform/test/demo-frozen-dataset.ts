@@ -21,6 +21,16 @@
  * managed, the pins keep describing the frozen dataset and the live directory is covered by the checks
  * that hold for any dataset (portfolio-production-truth.test.ts [live]).
  *
+ * Since 2026-10-07 the demo is ADOPTED: its tracked marker portfolio.source.json is committed
+ * (platform/portfolio-sync/managed.ts). The generated portfolio itself (portfolio.managed.json and the
+ * files it lists) is produced in the publisher's checkout and never committed, so a development
+ * checkout holds the marker and NO generated portfolio: there the live directory is not a dataset at
+ * all — the loader, site:build and the manual site:publish refuse it (`live.dataset` = false). The
+ * marker is not a snapshot input and the composition drops it, so nothing below changes: a test that
+ * needs the demo as a buildable site (a literal pin, the tracked current package, or just "a real
+ * site") reads it through `frozenDemoRoot` / `testSiteRoot`, and a [live] check runs only where the
+ * live directory is a dataset — elsewhere it asserts the refusal (`NOT_GENERATED`).
+ *
  * Imported by tests only. Nothing is ever written under data/sites.
  */
 import { rmSync } from "node:fs";
@@ -28,7 +38,7 @@ import { cp, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "n
 import os from "node:os";
 import path from "node:path";
 import { AssetRegistryDocSchema } from "../assets/assets";
-import { MANAGED_FILE, SOURCE_MARKER_FILE, readManagedManifest } from "../portfolio-sync/managed";
+import { MANAGED_FILE, SOURCE_MARKER_FILE, hasSourceMarker, readManagedManifest } from "../portfolio-sync/managed";
 import { hashJson, sha256 } from "../util/hash";
 
 export const FROZEN_DEMO_SITE_ID = "boost-interior-demo";
@@ -41,6 +51,8 @@ export const FROZEN_REGISTRY_SHA256 = "e9419831553a932089bacacaacb278b9c3172e87f
 /** hashJson of [{ file, sha256 }] over the 44 image files, by file name */
 export const FROZEN_ASSETS_DIGEST = "1443f135e7042051d36ed8379f45676e34c55d4f5369c58163482060e1f69a22";
 export const FROZEN_ASSET_COUNT = 44;
+/** what the loader says for an adopted site in a checkout that holds no generated portfolio (managed.ts) */
+export const NOT_GENERATED = /owned by BoostChat \(portfolio\.source\.json\) but this checkout holds no generated portfolio \(portfolio\.managed\.json is missing\)[\s\S]*site:portfolio-sync --site boost-interior-demo/;
 
 export interface FrozenDemoRoot {
   /** a repository-root-shaped throwaway directory: data/sites/<demo>, data/template-releases, node_modules */
@@ -51,6 +63,14 @@ export interface FrozenDemoRoot {
     managed: boolean;
     /** the live directory's portfolio dataset is byte-identical to the frozen one */
     identical: boolean;
+    /** the live site directory carries the tracked adoption marker (portfolio.source.json) */
+    adopted: boolean;
+    /**
+     * the live directory is a portfolio dataset this checkout may load and build: hand-authored and
+     * not adopted, or generated (sidecar). false = adopted without a generated portfolio — its content
+     * files may be older than what is live, and every loader path refuses it (NOT_GENERATED)
+     */
+    dataset: boolean;
   };
 }
 
@@ -83,6 +103,7 @@ export async function frozenDemoRoot(repoRoot: string): Promise<FrozenDemoRoot> 
   await symlink(path.join(repoRoot, "node_modules"), path.join(root, "node_modules"));
   const siteDir = path.join(root, "data/sites", FROZEN_DEMO_SITE_ID);
   await cp(liveDir, siteDir, { recursive: true });
+  const adopted = await hasSourceMarker(liveDir);
 
   // 1. drop the portfolio the live directory holds now, when it is a generated one
   const managed = await readManagedManifest(siteDir);
@@ -107,5 +128,17 @@ export async function frozenDemoRoot(repoRoot: string): Promise<FrozenDemoRoot> 
   const registrySame = JSON.stringify(items) === JSON.stringify(liveRegistry.items);
   identical &&= registrySame;
   if (!registrySame) await writeFile(path.join(siteDir, "assets/registry.json"), `${JSON.stringify({ schema: "assets@1", origin: liveRegistry.origin, items }, null, 2)}\n`);
-  return { root, siteDir, live: { managed: managed !== undefined, identical } };
+  return { root, siteDir, live: { managed: managed !== undefined, identical, adopted, dataset: !adopted || managed !== undefined } };
+}
+
+/**
+ * Where a test that needs site `siteId` as a BUILDABLE site reads it from: the repository itself for
+ * every site but the demo, the frozen composition for the demo (the live demo directory is regenerated
+ * by site:portfolio-sync, and in a checkout without a generated portfolio it does not load at all).
+ * `root` holds data/sites/<siteId> and the template releases only — data/site-builds stays in `repoRoot`.
+ */
+export async function testSiteRoot(repoRoot: string, siteId: string): Promise<{ root: string; siteDir: string }> {
+  if (siteId !== FROZEN_DEMO_SITE_ID) return { root: repoRoot, siteDir: path.join(repoRoot, "data/sites", siteId) };
+  const { root, siteDir } = await frozenDemoRoot(repoRoot);
+  return { root, siteDir };
 }

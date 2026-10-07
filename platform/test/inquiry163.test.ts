@@ -38,6 +38,7 @@ import {
   type InquirySubmission,
 } from "../site/inquiry-client";
 import { buildSiteSnapshot } from "../site/load";
+import { frozenDemoRoot } from "./demo-frozen-dataset";
 import { InquiryForm, type InquiryFieldLabels, type InquiryOnline } from "../../templates/interior-01/v1/components/InquiryForm";
 import { contactPage } from "../../templates/interior-01/v1/sections/ContactPage";
 import type { Ctx } from "../../templates/interior-01/v1/sections/types";
@@ -561,6 +562,8 @@ await check("SND-1 inquirySender(endpoint) caches one sender per endpoint for th
 // ------------------------------------------------------------------ template --
 console.log("\n[template] 1.6.3 contact.page slots, onlineFallback, the release gate and the unchanged initial render");
 const demoDir = path.join(repoRoot, "data/sites", DEMO);
+// The demo is copied / snapshotted through the frozen composition (demo-frozen-dataset.ts): its site directory is the live one byte for byte except the adoption marker, which makes the live directory refuse to load without a generated portfolio. Plain reads of site-owned files below stay on the live directory.
+const frozen = await frozenDemoRoot(repoRoot);
 const pin = (await readJson(path.join(demoDir, "site.json"))).template as { templateId: string; templateVersion: string; releaseId: string; releaseHash: string };
 
 await check(
@@ -592,7 +595,7 @@ async function demoSiteRoot(mutate: (dir: string) => Promise<void>): Promise<str
   const root = await mkdtemp(path.join(os.tmpdir(), "inquiry163-"));
   const dir = path.join(root, "data/sites", DEMO);
   await mkdir(path.dirname(dir), { recursive: true });
-  await cp(demoDir, dir, { recursive: true });
+  await cp(frozen.siteDir, dir, { recursive: true });
   await mutate(dir);
   return root;
 }

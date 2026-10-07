@@ -23,6 +23,7 @@ import { MemoryStore, type ObjectStore } from "../publish/store";
 import { cachePolicyFor, contentTypeFor } from "../publish/media";
 import { sha256 } from "../util/hash";
 import { buildSiteSnapshot } from "../site/load";
+import { testSiteRoot } from "./demo-frozen-dataset";
 import { QA_GOLDEN_DIR, QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256, QA_GOLDEN_VERSION } from "./portfolio-qa-corpus";
 import { resolvePath } from "../../workers/recon-runtime/src/paths";
 import runtimeDefault, {
@@ -179,7 +180,9 @@ function storeWithPrior(faults: ConstructorParameters<typeof MemoryStore>[0] = {
 }
 /** the site's CURRENT served portfolio ids — the set a fresh public build emits (what site:publish --rollback loads) */
 const SERVED_AT = new Date().toISOString();
-const SERVED_IDS = (await buildSiteSnapshot({ repoRoot, siteId: SITE, mode: "public", at: SERVED_AT })).snapshot.content.projects.map((p) => p.id);
+// the demo is read through the frozen composition (demo-frozen-dataset.ts): the live directory holds the adoption marker and refuses to load without a generated portfolio
+const servedSite = await testSiteRoot(repoRoot, SITE);
+const SERVED_IDS = (await buildSiteSnapshot({ repoRoot: servedSite.root, siteId: SITE, mode: "public", at: SERVED_AT })).snapshot.content.projects.map((p) => p.id);
 const SERVED_SOURCE = `data/sites/${SITE}/content/projects.json (served at ${SERVED_AT})`;
 /** a portfolioTruth loader over fixed ids that counts its calls */
 function truthLoader(ids: readonly string[] = SERVED_IDS): PortfolioTruthLoader & { calls: number } {
@@ -1258,21 +1261,34 @@ await check("P14 --remote --dry-run (offline, no store): refused while the packa
   assert(!existsSync(path.join(repoRoot, fresh)) && !local.createdStateDir, "a read-only look must not create local state");
 });
 
-const USAGE_ERRORS: [string, string[], Record<string, string | undefined>?][] = [
-  ["--expect-live xyz", ["--site", "boost-interior-demo", "--host", "demo.example", "--dry-run", "--expect-live", "xyz"]],
-  ["--check-store without --dry-run", ["--site", "boost-interior-demo", "--host", "demo.example", "--check-store"]],
-  ["--concurrency abc", ["--site", "boost-interior-demo", "--host", "demo.example", "--dry-run", "--concurrency", "abc"]],
-  ["--bucket -bad", ["--site", "boost-interior-demo", "--host", "demo.example", "--dry-run", "--bucket", "-bad"]],
-  ["--remote without RECON_PUBLISH_ALLOW_REMOTE", ["--site", "boost-interior-demo", "--host", "demo.example", "--remote"], { RECON_PUBLISH_ALLOW_REMOTE: undefined }],
-  ["--remote --dry-run --check-store without RECON_PUBLISH_ALLOW_REMOTE (a live READ is gated too, review R6)", ["--site", "boost-interior-demo", "--host", "demo.example", "--remote", "--dry-run", "--check-store", "--allow-origin-mismatch"], { RECON_PUBLISH_ALLOW_REMOTE: undefined }],
-  ["--no-activate --expect-live none", ["--site", "boost-interior-demo", "--host", "demo.example", "--no-activate", "--expect-live", "none"]],
+// Each case names the refusal it must get: the demo is an adopted site (tracked portfolio.source.json), so a
+// non-dry-run call that slipped past its own check would still exit 2 — on the manual-publish refusal below.
+const REMOTE_GATE = /--remote reaches the live bucket; refused unless RECON_PUBLISH_ALLOW_REMOTE=1/;
+const USAGE_ERRORS: [string, string[], RegExp, Record<string, string | undefined>?][] = [
+  ["--expect-live xyz", ["--site", "boost-interior-demo", "--host", "demo.example", "--dry-run", "--expect-live", "xyz"], /--expect-live must be "none" or a 64-hex packageHash/],
+  ["--check-store without --dry-run", ["--site", "boost-interior-demo", "--host", "demo.example", "--check-store"], /--check-store is a --dry-run option/],
+  ["--concurrency abc", ["--site", "boost-interior-demo", "--host", "demo.example", "--dry-run", "--concurrency", "abc"], /--concurrency must be a positive integer/],
+  ["--bucket -bad", ["--site", "boost-interior-demo", "--host", "demo.example", "--dry-run", "--bucket", "-bad"], /is not a valid R2 bucket name/],
+  ["--remote without RECON_PUBLISH_ALLOW_REMOTE", ["--site", "boost-interior-demo", "--host", "demo.example", "--remote"], REMOTE_GATE, { RECON_PUBLISH_ALLOW_REMOTE: undefined }],
+  ["--remote --dry-run --check-store without RECON_PUBLISH_ALLOW_REMOTE (a live READ is gated too, review R6)", ["--site", "boost-interior-demo", "--host", "demo.example", "--remote", "--dry-run", "--check-store", "--allow-origin-mismatch"], REMOTE_GATE, { RECON_PUBLISH_ALLOW_REMOTE: undefined }],
+  ["--no-activate --expect-live none", ["--site", "boost-interior-demo", "--host", "demo.example", "--no-activate", "--expect-live", "none"], /--expect-live guards the pointer write/],
 ];
-await check(`P14 usage errors (${USAGE_ERRORS.length}): exit 2, nothing about a publish on stdout, tmp/recon-runtime-state not created`, () => {
-  for (const [name, args, envOv] of USAGE_ERRORS) {
+await check(`P14 usage errors (${USAGE_ERRORS.length}): exit 2 with its own message, nothing about a publish on stdout, tmp/recon-runtime-state not created`, () => {
+  for (const [name, args, message, envOv] of USAGE_ERRORS) {
     const r = runCli(args, envOv);
     eq(r.status, 2, `${name}: exit code`);
+    assert(message.test(r.stderr) && !/a manual publish is refused/.test(r.stderr), `${name}: refused for another reason: ${r.stderr.slice(0, 300)}`);
     eq(r.stdout, "", `${name}: stdout`);
     assert(!r.createdStateDir, `${name}: must not create tmp/recon-runtime-state`);
+  }
+});
+await check("P14 the demo is ADOPTED (tracked portfolio.source.json): the manual site:publish of its current package is refused — exit 2, names site:portfolio-sync, nothing on stdout, no store touched — with every flag that is not --dry-run / --rollback; the offline --dry-run above still plans", () => {
+  for (const extra of [[], ["--local"], ["--no-activate"], ["--allow-site-change", "--allow-origin-mismatch"], ["--expect-package", plan.packageHash]]) {
+    const r = runCli(["--site", "boost-interior-demo", "--host", "demo.example", ...extra], { RECON_PUBLISH_ALLOW_REMOTE: undefined });
+    eq(r.status, 2, `${extra.join(" ") || "(no flag)"}: exit code`);
+    assert(/the portfolio of "boost-interior-demo" is owned by BoostChat \(portfolio\.source\.json\); a manual publish is refused\. Run: pnpm site:portfolio-sync --site boost-interior-demo --host demo\.example --force/.test(r.stderr), `${extra.join(" ")}: ${r.stderr.slice(0, 300)}`);
+    eq(r.stdout, "", `${extra.join(" ")}: stdout`);
+    assert(!r.createdStateDir, `${extra.join(" ")}: must not create tmp/recon-runtime-state`);
   }
 });
 

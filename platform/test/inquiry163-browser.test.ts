@@ -23,6 +23,7 @@ import type { AddressInfo } from "node:net";
 import { chromium, webkit, devices, type Browser, type BrowserContext, type Page, type Route } from "playwright";
 import { createSiteContext } from "../site/context";
 import { buildSiteSnapshot } from "../site/load";
+import { testSiteRoot } from "./demo-frozen-dataset";
 import template from "../../templates/interior-01/v1/template";
 import { contactPage } from "../../templates/interior-01/v1/sections/ContactPage";
 import type { InquiryContact, InquiryOnline } from "../../templates/interior-01/v1/components/InquiryForm";
@@ -321,9 +322,10 @@ async function loadSiteExpectations(siteId: string): Promise<SiteExpectations | 
     return undefined;
   }
   const siteRoot = path.join(repoRoot, current.packageDir, "site");
-  const siteDir = path.join(repoRoot, "data/sites", siteId);
+  // the demo is read through the frozen composition (demo-frozen-dataset.ts): the live directory holds the adoption marker and refuses to load without a generated portfolio
+  const { root: dataRoot, siteDir } = await testSiteRoot(repoRoot, siteId);
   const pin = (await readJson(path.join(siteDir, "site.json"))).template as { templateId: string; templateVersion: string; releaseId: string; releaseHash: string };
-  const snapshot = (await buildSiteSnapshot({ repoRoot, siteId, mode: "public", at: AT })).snapshot;
+  const snapshot = (await buildSiteSnapshot({ repoRoot: dataRoot, siteId, mode: "public", at: AT })).snapshot;
   const ctx = createSiteContext({ siteId, template, templateRelease: pin, mode: "public", at: AT, snapshot });
   const data = contactPage(ctx);
   if (!data.form || !("online" in data.form) || !data.form.online) return undefined;

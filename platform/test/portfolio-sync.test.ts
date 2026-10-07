@@ -465,10 +465,18 @@ await check("L2 what the SITE owns stays editable on a managed site: a new site-
   assert(after.includes("new-hero") && (await exists(path.join(dir, "assets/new-hero.svg"))), "the site-level asset survived the regeneration");
   await buildSiteSnapshot({ repoRoot: root, siteId: SITE, mode: "public", at: GOLDEN_INPUT.at });
 });
-await check("L3 sites without the sidecar are exactly as before: the guard reports nothing for them, and every unmanaged site of the repository still has the buildInputId of its current package (no behaviour or hash change)", async () => {
+await check("L3 sites without the sidecar and without the marker are exactly as before: the guard reports nothing for them, and every unmanaged site of the repository still has the buildInputId of its current package (no behaviour or hash change); an ADOPTED site of the repository (tracked marker) is not one of them — without a generated portfolio in this checkout the guard reports exactly that", async () => {
   let compared = 0;
+  const adoptedSites: string[] = [];
   for (const siteId of (await readdir(path.join(repoRoot, "data/sites"))).filter((d) => !d.startsWith(".")).sort()) {
     const dir = path.join(repoRoot, "data/sites", siteId);
+    if (await hasSourceMarker(dir)) {
+      adoptedSites.push(siteId);
+      // generated here (the publisher's checkout) → L1's rules; not generated → refused, by the tracked marker alone
+      const problems = await managedPortfolioProblems(dir, siteId);
+      if (!(await exists(path.join(dir, MANAGED_FILE)))) assert(problems.length === 1 && /owned by BoostChat \(portfolio\.source\.json\) but this checkout holds no generated portfolio/.test(problems[0]!), `${siteId}: adopted without a generated portfolio must be reported, got ${JSON.stringify(problems)}`);
+      continue;
+    }
     if (await exists(path.join(dir, MANAGED_FILE))) continue;
     eq(await managedPortfolioProblems(dir, siteId), [], `${siteId}: guard`);
     const builds = path.join(repoRoot, "data/site-builds", siteId);
@@ -480,6 +488,7 @@ await check("L3 sites without the sidecar are exactly as before: the guard repor
     compared++;
   }
   assert(compared >= 3, `only ${compared} unmanaged sites compared`);
+  assert(adoptedSites.includes(FROZEN_DEMO_SITE_ID), `the demo is adopted (its tracked ${SOURCE_MARKER_FILE} is committed); adopted sites found: ${JSON.stringify(adoptedSites)}`);
 });
 
 /** An export of a hand-authored site directory as it is, minus `drop` (those are reported as removing, with their slugs). */
@@ -596,7 +605,11 @@ await check(`M1 LOSSLESS MIGRATION: an export built from the demo dataset (proje
   const frozen = await frozenDemoRoot(repoRoot);
   // today the composition IS the live directory (hand-authored, unchanged); once the live site is managed it is the frozen dataset
   assert(frozen.live.identical || frozen.live.managed, "data/sites/boost-interior-demo is neither the frozen dataset nor a managed site");
-  if (frozen.live.identical) eq(await digest(frozen.siteDir), await digest(path.join(repoRoot, "data/sites", DEMO)), "the source of this proof is the CURRENT data/sites/boost-interior-demo, byte for byte");
+  if (frozen.live.identical) {
+    // the tracked adoption marker is the one file the composition drops: it is not a site input (outside the snapshot)
+    const { [SOURCE_MARKER_FILE]: _marker, ...liveFiles } = await digest(path.join(repoRoot, "data/sites", DEMO));
+    eq(await digest(frozen.siteDir), liveFiles, "the source of this proof is the CURRENT data/sites/boost-interior-demo, byte for byte");
+  }
   const src = frozen.siteDir;
   const projectsDoc = await readJson(path.join(src, "content/projects.json"));
   const categoriesDoc = await readJson(path.join(src, "content/categories.json"));

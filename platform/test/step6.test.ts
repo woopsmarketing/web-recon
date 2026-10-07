@@ -60,6 +60,7 @@ import { isPortfolioSyncSurface } from "./portfolio-sync-surface";
 import { isRelease160Added, release160SurfaceBefore } from "./release-160-surface";
 import { isRelease162Added, release162SurfaceBefore } from "./release-162-surface";
 import { composeQaProjectsText, writeQaProjects } from "./portfolio-qa-corpus";
+import { frozenDemoRoot } from "./demo-frozen-dataset";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -153,7 +154,9 @@ const CTA = /<div class="i1-fcta" data-section="site\.floating-cta"><a class="i1
 const ctasOf = (h: string) => [...h.matchAll(CTA)].map((m) => ({ href: (m[1] ?? m[2])!, label: m[3]! }));
 
 const baseline = await readJson(path.join(repoRoot, "docs/result/recon-template-platform-step6-demo/proof/baseline.json"));
-const demoDir = path.join(repoRoot, "data/sites", DEMO);
+// The demo's site directory is read through the frozen composition (demo-frozen-dataset.ts): byte-identical to the live one but for the adoption marker, which makes the live directory refuse to load without a generated portfolio. data/site-builds and the template releases stay in the real repoRoot.
+const frozen = await frozenDemoRoot(repoRoot);
+const demoDir = frozen.siteDir;
 const demo = await pointer(DEMO);
 const projectsDoc = ProjectsDocSchema.parse(await readJson(path.join(demoDir, "content/projects.json")));
 const projects = projectsDoc.items as Project[];
@@ -476,7 +479,7 @@ await check("K1b the tracked reference record equals references/ wherever that f
   }
 });
 const registry = AssetRegistryDocSchema.parse(await readJson(path.join(demoDir, "assets/registry.json")));
-const { snapshot } = await buildSiteSnapshot({ repoRoot, siteId: DEMO, mode: "public", at: demo.record.at });
+const { snapshot } = await buildSiteSnapshot({ repoRoot: frozen.root, siteId: DEMO, mode: "public", at: demo.record.at });
 await check("J every referenced asset exists: registry entry + file on disk + content-addressed copy in the package", async () => {
   const onDisk = new Set(await readdir(path.join(demoDir, "assets")));
   for (const a of snapshot.assets) {
@@ -769,7 +772,7 @@ try {
     // Pre-publish (Portfolio V0.2 window) the current package is the frozen V0.1 one, not built from
     // these inputs, so "= current" becomes "= a second independent rebuild on its own root".
     const pre = later && (await demoRollout(repoRoot)).state === "PRE_PUBLISH_TRANSITION";
-    const [a, b] = await Promise.all([1, 2].map(() => prepareSiteInput({ repoRoot, siteId: DEMO, mode: "public", at })));
+    const [a, b] = await Promise.all([1, 2].map(() => prepareSiteInput({ repoRoot: frozen.root, siteId: DEMO, mode: "public", at })));
     const want = pre ? a!.buildInputId : demo.record.buildInputId;
     eq([a!.buildInputId, b!.buildInputId], [want, want], "buildInputId");
     await cp(demoDir, path.join(tmpRoot, "data/sites", DEMO), { recursive: true });

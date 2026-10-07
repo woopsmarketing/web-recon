@@ -59,6 +59,7 @@ import { planPublish, publishSite } from "../publish/publish";
 import { WranglerStore } from "../publish/wrangler-store";
 import { createSiteContext } from "../site/context";
 import { buildSiteSnapshot } from "../site/load";
+import { testSiteRoot } from "./demo-frozen-dataset";
 import { sha256 } from "../util/hash";
 import { contactPage } from "../../templates/interior-01/v1/sections/ContactPage";
 import template from "../../templates/interior-01/v1/template";
@@ -724,13 +725,15 @@ try {
   // reloads. The request is the contract's, exactly.
   async function contactOnlineSmoke(width: number, height: number) {
     const endpoint = INQUIRY_ENDPOINT!;
-    const slots = (JSON.parse(await readFile(path.join(repoRoot, "data/sites", SITE, "slots.json"), "utf8")).values["contact.page"] ?? {}) as Record<string, string | undefined>;
+    // the site is read through the frozen composition for the demo (demo-frozen-dataset.ts): the live demo directory holds the adoption marker and refuses to load without a generated portfolio
+    const site = await testSiteRoot(repoRoot, SITE);
+    const slots = (JSON.parse(await readFile(path.join(site.siteDir, "slots.json"), "utf8")).values["contact.page"] ?? {}) as Record<string, string | undefined>;
     // 1.6.3: after every failure but a conflict the alert also lists the site's other contact
     // channels under the site's lead line — what they are comes from the real resolver the builder
     // uses (contactPage over the site's own data), never from a literal here
     const AT = "2026-10-04T00:00:00Z";
-    const pin = JSON.parse(await readFile(path.join(repoRoot, "data/sites", SITE, "site.json"), "utf8")).template as { templateId: string; templateVersion: string; releaseId: string; releaseHash: string };
-    const { snapshot } = await buildSiteSnapshot({ repoRoot, siteId: SITE, mode: "public", at: AT });
+    const pin = JSON.parse(await readFile(path.join(site.siteDir, "site.json"), "utf8")).template as { templateId: string; templateVersion: string; releaseId: string; releaseHash: string };
+    const { snapshot } = await buildSiteSnapshot({ repoRoot: site.root, siteId: SITE, mode: "public", at: AT });
     const form = contactPage(createSiteContext({ siteId: SITE, template, templateRelease: pin, mode: "public", at: AT, snapshot })).form;
     assert(form && "online" in form && form.online, `contact @ ${width}: the site declares an endpoint but resolves no online form`);
     const channels = form.online.fallback;

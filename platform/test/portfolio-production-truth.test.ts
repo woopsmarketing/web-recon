@@ -36,6 +36,11 @@
  *                synthetic leaks into its files or its producer output, every record's exported media
  *                is its own, and — whenever it is not the frozen dataset — a real build of it has no
  *                synthetic leak and no dead portfolio link / sitemap entry.
+ *                The demo is ADOPTED (tracked marker portfolio.source.json): in a checkout that holds
+ *                no generated portfolio the live directory is NOT a dataset — its committed content
+ *                files may be older than what is live — so there the [live] block asserts exactly
+ *                that instead: the guard reports it, the loader and a real build of a copy refuse
+ *                it, and its committed files are still the frozen dataset with nothing synthetic.
  *
  *   tsx --tsconfig platform/tsconfig.json platform/test/portfolio-production-truth.test.ts
  */
@@ -47,12 +52,12 @@ import { GOLDEN_DIR, GOLDEN_INPUT } from "../cli/integration-golden";
 import { createContentReader } from "../content/reader";
 import { emitIntegration, type IntegrationEmission, type PortfolioDocument } from "../integration/emit";
 import { validateIntegration } from "../integration/validate";
-import { managedPortfolioProblems, readManagedManifest } from "../portfolio-sync/managed";
+import { SOURCE_MARKER_FILE, SOURCE_MARKER_TEXT, managedPortfolioProblems, readManagedManifest } from "../portfolio-sync/managed";
 import type { SiteSnapshot } from "../site/instance";
 import { planRoutes } from "../site/routes";
 import { hashJson, sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
-import { frozenDemoRoot } from "./demo-frozen-dataset";
+import { NOT_GENERATED, frozenDemoRoot } from "./demo-frozen-dataset";
 import {
   DEMO_SITE_ID,
   PRE_SPLIT_PROJECTS_BYTES,
@@ -110,6 +115,11 @@ function assert(cond: unknown, msg: string): asserts cond {
 }
 const eq = (a: unknown, b: unknown, msg: string) => assert(JSON.stringify(a) === JSON.stringify(b), `${msg}: ${JSON.stringify(a)} ≠ ${JSON.stringify(b)}`);
 const exists = (p: string) => stat(p).then(() => true, () => false);
+async function rejects(fn: () => unknown | Promise<unknown>, re: RegExp, msg: string) {
+  let message: string | undefined;
+  await Promise.resolve().then(fn).then(() => undefined, (e: Error) => (message = e.message));
+  assert(message !== undefined && re.test(message), `${msg}: ${message === undefined ? "did not throw" : `wrong error "${message}"`}`);
+}
 const SKIP_DIRS = new Set([".DS_Store", "node_modules", ".next", "out", ".git"]);
 async function walkFiles(dir: string, rel = ""): Promise<string[]> {
   const out: string[] = [];
@@ -158,8 +168,9 @@ const frozen = await frozenDemoRoot(repoRoot);
 const demo = await prepareSiteInput({ repoRoot: frozen.root, siteId: DEMO, mode: "public", at: AT });
 /** the live directory as it is now; a generated dataset may hold records published after the golden instant */
 const LIVE_AT = frozen.live.identical ? AT : new Date().toISOString();
-const live = await prepareSiteInput({ repoRoot, siteId: DEMO, mode: "public", at: LIVE_AT });
-const liveEmission = emitFor(live.snapshot);
+/** undefined = adopted and not generated in this checkout: there is no live dataset to load (see [live]) */
+const live = frozen.live.dataset ? await prepareSiteInput({ repoRoot, siteId: DEMO, mode: "public", at: LIVE_AT }) : undefined;
+const liveEmission = live ? emitFor(live.snapshot) : undefined;
 const prodEmission = emitFor(demo.snapshot);
 const qaSnapshot = composeQaSnapshot(demo.snapshot, fixture, AT);
 const qaEmission = emitFor(qaSnapshot);
@@ -412,15 +423,20 @@ await realBuild({ tag: "B", what: "frozen dataset, the 8 production records", si
 // --------------------------------------------------------------------- live --
 console.log("\n[live] data/sites/boost-interior-demo as it is NOW — what holds for any dataset, hand-authored or generated");
 const liveDir = path.join(repoRoot, "data/sites", DEMO);
-await check("LV1 the live directory is either the frozen dataset byte for byte (hand-authored) or a consistent generated portfolio (sidecar present and every generated file at its recorded hash) — never a silently hand-edited one; its projects.json is a projects@1 document whose records are exactly the served ones; no file of it names a synthetic id, slug or title", async () => {
+await check("LV1 the live directory is either the frozen dataset byte for byte (hand-authored) or a consistent generated portfolio (sidecar present and every generated file at its recorded hash) — never a silently hand-edited one; its projects.json is a projects@1 document whose records are exactly the served ones; no file of it names a synthetic id, slug or title. Adopted without a generated portfolio: the guard reports exactly that, and the committed files are still the frozen dataset", async () => {
   const manifest = await readManagedManifest(liveDir);
   eq(manifest !== undefined, frozen.live.managed, "sidecar present = managed");
+  // the demo is adopted: its tracked marker is committed, exactly as site:portfolio-sync --adopt writes it
+  eq([frozen.live.adopted, await readFile(path.join(liveDir, SOURCE_MARKER_FILE), "utf8").catch(() => "(missing)")], [true, SOURCE_MARKER_TEXT], `data/sites/${DEMO}/${SOURCE_MARKER_FILE}`);
   assert(frozen.live.identical || manifest !== undefined, `data/sites/${DEMO}: the portfolio dataset is neither the frozen one nor generated by site:portfolio-sync (no ${"portfolio.managed.json"}) — it was edited by hand`);
-  eq(await managedPortfolioProblems(liveDir, DEMO), [], "managed sidecar consistency");
+  const problems = await managedPortfolioProblems(liveDir, DEMO);
+  if (live) eq(problems, [], "managed sidecar consistency");
+  else assert(problems.length === 1 && NOT_GENERATED.test(problems[0]!), `adopted without a generated portfolio: the guard must report exactly that, got ${JSON.stringify(problems)}`);
   if (manifest) eq(manifest.source.siteId, DEMO, "the sidecar is this site's");
   const doc = JSON.parse(await readFile(path.join(liveDir, "content/projects.json"), "utf8"));
   assert(doc.schema === "projects@1" && typeof doc.origin === "string" && doc.origin.length > 0, `file-level schema / origin: ${doc.schema} / ${doc.origin}`);
-  eq(live.snapshot.content.projects.map((p) => p.id), (doc.items as { id: string }[]).map((p) => p.id).sort(), "served records = the file's records");
+  // not a dataset here: the committed file is the frozen one (asserted above), whose served records the frozen checks pin
+  eq((live ?? demo).snapshot.content.projects.map((p) => p.id), (doc.items as { id: string }[]).map((p) => p.id).sort(), "served records = the file's records");
   let scanned = 0;
   for (const f of await walkFiles(liveDir)) {
     if (!TEXT.test(f)) continue;
@@ -428,28 +444,46 @@ await check("LV1 the live directory is either the frozen dataset byte for byte (
     scanned++;
   }
   assert(scanned >= 10, `scanned only ${scanned} files`);
-  if (frozen.live.identical) eq([live.parts.siteSnapshotHash, live.buildInputId], [demo.parts.siteSnapshotHash, demo.buildInputId], "live = the frozen composition: same siteSnapshotHash, same buildInputId (every literal above describes the real site)");
+  if (live && frozen.live.identical) eq([live.parts.siteSnapshotHash, live.buildInputId], [demo.parts.siteSnapshotHash, demo.buildInputId], "live = the frozen composition: same siteSnapshotHash, same buildInputId (every literal above describes the real site)");
 });
-await check("LV2 the live producer output validates and contains none of the fixture's ids / slugs / titles; it emits exactly the served records, and every record's exported media is its own (its authored cover; every gallery image one of its own after images)", async () => {
-  eq(validateFor(liveEmission, live.snapshot), { errors: [], warnings: [] }, "validates");
-  for (const f of liveEmission.files) eq(forbiddenIn(f.text), [], f.path);
-  const d = liveEmission.portfolio!.document;
-  eq(d.records.map((r) => r.id), live.snapshot.content.projects.map((p) => p.id), "records = the served records");
-  const assetOf = new Map(live.snapshot.assets.map((a) => [a.publicPath, a.id]));
-  for (const r of d.records) {
-    const p = live.snapshot.content.projects.find((x) => x.id === r.id)!;
-    const ownAfter = new Set((p.galleryGroups ?? []).flatMap((g) => g.items.map((i) => i.image.asset)));
-    if (r.media?.cover) eq(assetOf.get(r.media.cover.src), p.cover.asset, `${r.id}: exported cover is its authored cover`);
-    for (const g of r.media?.gallery ?? []) assert(ownAfter.has(assetOf.get(g.src) ?? ""), `${r.id}: gallery image ${g.src} is one of its own after images`);
-  }
-});
-if (live.buildInputId === demo.buildInputId) {
-  await check("LV3 the live directory builds the SAME package as the frozen dataset (same buildInputId): B0 – B2 above are its build — no synthetic leak, no dead portfolio link, sitemap exact", () => {
-    eq([live.parts.siteSnapshotHash, liveEmission.portfolio!.version], [demo.parts.siteSnapshotHash, PROD_VERSION], "same snapshot, same document");
+if (live && liveEmission) {
+  await check("LV2 the live producer output validates and contains none of the fixture's ids / slugs / titles; it emits exactly the served records, and every record's exported media is its own (its authored cover; every gallery image one of its own after images)", async () => {
+    eq(validateFor(liveEmission, live.snapshot), { errors: [], warnings: [] }, "validates");
+    for (const f of liveEmission.files) eq(forbiddenIn(f.text), [], f.path);
+    const d = liveEmission.portfolio!.document;
+    eq(d.records.map((r) => r.id), live.snapshot.content.projects.map((p) => p.id), "records = the served records");
+    const assetOf = new Map(live.snapshot.assets.map((a) => [a.publicPath, a.id]));
+    for (const r of d.records) {
+      const p = live.snapshot.content.projects.find((x) => x.id === r.id)!;
+      const ownAfter = new Set((p.galleryGroups ?? []).flatMap((g) => g.items.map((i) => i.image.asset)));
+      if (r.media?.cover) eq(assetOf.get(r.media.cover.src), p.cover.asset, `${r.id}: exported cover is its authored cover`);
+      for (const g of r.media?.gallery ?? []) assert(ownAfter.has(assetOf.get(g.src) ?? ""), `${r.id}: gallery image ${g.src} is one of its own after images`);
+    }
   });
+  if (live.buildInputId === demo.buildInputId) {
+    await check("LV3 the live directory builds the SAME package as the frozen dataset (same buildInputId): B0 – B2 above are its build — no synthetic leak, no dead portfolio link, sitemap exact", () => {
+      eq([live.parts.siteSnapshotHash, liveEmission.portfolio!.version], [demo.parts.siteSnapshotHash, PROD_VERSION], "same snapshot, same document");
+    });
+  } else {
+    console.log("       the live dataset differs from the frozen one → its own real build");
+    await realBuild({ tag: "LB", what: "live dataset", siteDir: liveDir, input: live, emission: liveEmission, version: liveEmission.portfolio!.version, records: live.snapshot.content.projects.length, at: LIVE_AT });
+  }
 } else {
-  console.log("       the live dataset differs from the frozen one → its own real build");
-  await realBuild({ tag: "LB", what: "live dataset", siteDir: liveDir, input: live, emission: liveEmission, version: liveEmission.portfolio!.version, records: live.snapshot.content.projects.length, at: LIVE_AT });
+  console.log(`       the live directory is adopted (${SOURCE_MARKER_FILE}) and this checkout holds no generated portfolio → it is not a dataset here; LV2 / LV3 have nothing to load`);
+  await check("LVA an ADOPTED live directory without a generated portfolio is never loaded or built: prepareSiteInput refuses it and names site:portfolio-sync, and a real build of a verbatim copy (throwaway root) refuses the same way and writes no package — the committed projects.json cannot reach a build from this checkout", async () => {
+    await rejects(() => prepareSiteInput({ repoRoot, siteId: DEMO, mode: "public", at: LIVE_AT }), NOT_GENERATED, "prepareSiteInput");
+    const tmpRoot = await mkdtemp(path.join(os.tmpdir(), "production-truth-adopted-"));
+    try {
+      await mkdir(path.join(tmpRoot, "data/sites"), { recursive: true });
+      await symlink(path.join(repoRoot, "data/template-releases"), path.join(tmpRoot, "data/template-releases"));
+      await symlink(path.join(repoRoot, "node_modules"), path.join(tmpRoot, "node_modules"));
+      await cp(liveDir, path.join(tmpRoot, "data/sites", DEMO), { recursive: true });
+      await rejects(() => buildSite({ repoRoot: tmpRoot, siteId: DEMO, at: LIVE_AT }), NOT_GENERATED, "buildSite");
+      assert(!(await exists(path.join(tmpRoot, "data/site-builds"))), "the refused build wrote under data/site-builds");
+    } finally {
+      await rm(tmpRoot, { recursive: true, force: true });
+    }
+  });
 }
 
 console.log(`\nportfolio-production-truth: ${passed} passed, ${failed.length} failed`);
