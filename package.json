@@ -103,7 +103,7 @@
     "template:release": "tsx --tsconfig platform/tsconfig.json platform/cli/template-release.ts",
     "site:build": "tsx --tsconfig platform/tsconfig.json platform/cli/site-build.ts",
     "fixtures:generate": "tsx --tsconfig platform/tsconfig.json platform/dev/generate-fixtures.ts",
-    "test:platform": "tsx --tsconfig platform/tsconfig.json platform/test/slice1.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step4.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step41.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step5.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/polish.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step52.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step6.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/predemo.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/predemo2.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/ia150.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/ia151.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/ia152.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/integration.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/detail-facts.test.ts",
+    "test:platform": "tsx --tsconfig platform/tsconfig.json platform/test/slice1.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step4.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step41.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step5.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/polish.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step52.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/step6.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/predemo.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/predemo2.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/ia150.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/ia151.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/ia152.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/integration.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/detail-facts.test.ts && tsx --tsconfig platform/tsconfig.json platform/test/preview-parity.test.ts",
     "test:integration": "tsx --tsconfig platform/tsconfig.json platform/test/integration.test.ts",
     "proof:ef6": "node docs/result/interior-portfolio-v0.2/proof/ef6-totality.mjs",
     "proof:pipeline": "node docs/result/interior-portfolio-v0.2/proof/contract-pipeline.mjs",
@@ -117,7 +117,9 @@
     "test:publish": "tsx --tsconfig platform/tsconfig.json platform/test/publish.test.ts",
     "test:publish:e2e": "tsx --tsconfig platform/tsconfig.json platform/test/publish-e2e.test.ts",
     "site:portfolio-sync": "tsx --tsconfig platform/tsconfig.json platform/cli/site-portfolio-sync.ts",
-    "test:portfolio-sync": "tsx --tsconfig platform/tsconfig.json platform/test/portfolio-sync.test.ts"
+    "test:portfolio-sync": "tsx --tsconfig platform/tsconfig.json platform/test/portfolio-sync.test.ts",
+    "site:preview-kit": "tsx --tsconfig platform/tsconfig.json platform/cli/preview-kit.ts",
+    "test:preview-kit": "tsx --tsconfig platform/tsconfig.json platform/test/preview-parity.test.ts"
   },
   "engines": {
     "node": ">=22"
@@ -139,6 +141,7 @@
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "esbuild": "0.28.2",
     "server-only": "^0.0.1",
     "tsx": "^4.20.7",
     "typescript": "^5.9.3",
