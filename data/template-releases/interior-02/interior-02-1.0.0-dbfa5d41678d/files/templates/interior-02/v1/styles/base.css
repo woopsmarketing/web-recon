@@ -1,0 +1,575 @@
+/*
+ * base.css (SHELL shared block) — reset, template custom properties, type scale, container,
+ * section rhythm, buttons, chips, badges, screen-reader text, the project card and the section
+ * heading. Desktop-first; breakpoints (max-width) 640 · 860 · 920 · 960 · 1024 · 1280 · 1500.
+ *
+ * Custom properties (all on :root):
+ *   --i2-wrap-pad      side padding of .i2-wrap (20px; 0 above 1500 where the box is a fixed 1440)
+ *   --i2-gutter        inner padding of the header card / footer block (20px; 48px above 1500)
+ *   --i2-page-max      1440px
+ *   --i2-gap           grid gap (24px; 20px ≤ 1280)
+ *   --i2-sec-gap       section padding-top (160px; 120px ≤ 1280; 100px ≤ 640)
+ *   --i2-header-h      70px; 60px ≤ 1024; 52px ≤ 640
+ *   --i2-tabbar-h      69px ≤ 640, else 0
+ *   --i2-yellow / --i2-mint / --i2-navy       theme accent aliases
+ *   --i2-rule          1px rules (#ddd), --i2-rule-soft (#e9e9e9), --i2-surface (#f5f5f5)
+ *   --i2-text-2 / --i2-text-3                 secondary (#555) / muted (#999) text
+ *   --i2-on-yellow / --i2-on-mint / --i2-on-navy   tint text colours on the coloured tiles
+ *   --i2-w-display     weight of display text (headings / titles ≥ 18px): 700. The source draws them
+ *                      in a heavy display face; without webfonts the system Korean font renders the
+ *                      nominal 600 visibly lighter, so every ≥ 18px heading uses this one step up.
+ * Classes: .i2-wrap · .i2-sec · .i2-main (+ .i2-main--sub on every page but HOME) · .i2-btn (+ --outline --black --navy --mint) · .i2-chip
+ *   (+ [aria-pressed="true"] / .is-on) · .i2-badge (+ --yellow --mint --navy) · .i2-sr · .i2-card … ·
+ *   .i2-cards (3-col grid, 2 ≤ 1280, 1 ≤ 640) · .i2-head / .i2-head__title / .i2-head__more · .i2-icon
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --i2-gutter: 20px;
+  --i2-wrap-pad: 20px;
+  --i2-page-max: 1440px;
+  --i2-gap: 24px;
+  --i2-sec-gap: 160px;
+  --i2-header-h: 70px;
+  --i2-header-top: 24px;
+  --i2-tabbar-h: 0px;
+  --i2-yellow: var(--color-accent-secondary);
+  --i2-mint: var(--color-accent-primary);
+  --i2-navy: var(--color-action-primary);
+  --i2-navy-deep: color-mix(in srgb, var(--color-action-primary) 72%, #000);
+  --i2-rule: var(--color-border-default);
+  --i2-rule-soft: color-mix(in srgb, var(--color-border-default) 55%, var(--color-canvas));
+  --i2-surface: var(--color-surface-secondary);
+  --i2-text-2: var(--color-text-secondary);
+  --i2-text-3: var(--color-text-muted);
+  --i2-on-yellow: color-mix(in srgb, var(--color-accent-secondary) 45%, #5a3d00);
+  --i2-on-mint: color-mix(in srgb, var(--color-accent-primary) 55%, #003a3a);
+  --i2-on-navy: color-mix(in srgb, var(--color-action-primary) 35%, #d7dde6);
+  --i2-ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+  --i2-w-display: 700;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: var(--i2-header-h);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--typography-body);
+  font-size: 1rem;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  color: var(--color-text-primary);
+  background: var(--color-canvas);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol,
+dl,
+dd,
+figure {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--typography-heading);
+  font-weight: var(--i2-w-display);
+  line-height: 1.13;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+button {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
+.i2-icon {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+
+/* ---------------------------------------------------------------- layout */
+/* fluid (100% − 2 × 20px) up to 1500; a fixed 1440 box with no padding from 1501 */
+.i2-wrap {
+  width: 100%;
+  max-width: var(--i2-page-max);
+  margin-inline: auto;
+  padding-inline: var(--i2-wrap-pad);
+}
+
+.i2-sec {
+  padding-top: var(--i2-sec-gap);
+}
+
+.i2-main {
+  display: block;
+  min-height: 50vh;
+}
+
+/* every page but HOME: the content block starts 80px below the sticky header bar (30px ≤ 1280) */
+.i2-main--sub {
+  padding-top: 80px;
+}
+
+.i2-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --------------------------------------------------------------- buttons */
+.i2-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 210px;
+  min-height: 60px;
+  padding: 18px 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+  text-align: center;
+  color: var(--color-text-primary);
+  background: var(--color-canvas);
+  border-radius: var(--decoration-radius-small);
+  box-shadow: inset 0 0 0 1px var(--i2-rule);
+  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.i2-btn--outline:hover {
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+}
+
+.i2-btn--black {
+  color: var(--color-text-inverse);
+  background: var(--color-border-strong);
+  box-shadow: none;
+}
+
+.i2-btn--navy {
+  color: var(--color-action-primary-text);
+  background: var(--i2-navy);
+  box-shadow: none;
+}
+
+.i2-btn--mint {
+  color: var(--color-text-primary);
+  background: var(--i2-mint);
+  box-shadow: none;
+}
+
+.i2-btn--black:hover,
+.i2-btn--navy:hover,
+.i2-btn--mint:hover {
+  filter: brightness(1.08);
+}
+
+/* a centred button row under a grid */
+.i2-btn-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 80px;
+}
+
+/* ----------------------------------------------------------------- chips */
+.i2-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 16.5px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 36px;
+  white-space: nowrap;
+  color: var(--color-text-primary);
+  background: var(--color-canvas);
+  border-radius: var(--decoration-radius-small);
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+}
+
+.i2-chip[aria-pressed="true"],
+.i2-chip.is-on {
+  font-weight: 600;
+  color: var(--color-text-inverse);
+  background: var(--color-border-strong);
+}
+
+/* ---------------------------------------------------------------- badges */
+.i2-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 23px;
+  padding: 0 10.5px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 23px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+  background: var(--i2-mint);
+  border-radius: var(--decoration-radius-small);
+  white-space: nowrap;
+}
+
+.i2-badge--yellow {
+  background: var(--i2-yellow);
+}
+
+.i2-badge--mint {
+  background: var(--i2-mint);
+}
+
+.i2-badge--navy {
+  color: var(--color-text-inverse);
+  background: var(--i2-navy);
+}
+
+.i2-badge__full {
+  display: none;
+}
+
+/* ---------------------------------------------------------- project card */
+.i2-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 44px var(--i2-gap);
+}
+
+.i2-card {
+  min-width: 0;
+}
+
+.i2-card__link {
+  display: block;
+}
+
+.i2-card__media {
+  position: relative;
+  aspect-ratio: 464 / 286;
+  overflow: hidden;
+  background: var(--i2-surface);
+}
+
+.i2-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease-out;
+}
+
+.i2-card__media .i2-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.i2-card__link:hover .i2-card__media img,
+.i2-card__link:focus-visible .i2-card__media img {
+  transform: scale(1.05);
+}
+
+.i2-card__link:hover .i2-badge__short,
+.i2-card__link:focus-visible .i2-badge__short {
+  display: none;
+}
+
+.i2-card__link:hover .i2-badge__full,
+.i2-card__link:focus-visible .i2-badge__full {
+  display: inline;
+}
+
+.i2-card__body {
+  padding-top: 27px;
+}
+
+.i2-card__title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 1.25rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+
+.i2-card__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.i2-card__area {
+  flex: none;
+}
+
+.i2-card__area small {
+  margin-left: 2px;
+  font-size: 0.75em;
+  font-weight: 500;
+}
+
+.i2-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding-top: 8px;
+  font-size: 0.9375rem;
+  line-height: 22px;
+  color: var(--i2-text-2);
+}
+
+/* the figures of a meta bit (built year, per-area price) are a step heavier, as on the source card */
+.i2-card__meta b {
+  font-weight: 600;
+}
+
+.i2-card__meta span + span::before {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  margin: 0 12px;
+  vertical-align: -3px;
+  background: var(--i2-rule);
+}
+
+/* inline flow (not flex): a range such as "175,000,000 ~ 190,000,000" may wrap at the tilde and
+   the unit stays attached to the last figure instead of being pushed to the far right */
+.i2-card__price {
+  padding-top: 16px;
+  line-height: 1.1;
+  word-break: keep-all;
+}
+
+.i2-card__price strong {
+  font-size: 1.875rem;
+  font-weight: 700;
+}
+
+.i2-card__price small {
+  margin-left: 8px;
+  font-size: 1.125rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.i2-card__withheld {
+  padding-top: 16px;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  line-height: 30px;
+  color: var(--i2-text-3);
+}
+
+/* ------------------------------------------------------- section heading */
+.i2-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  margin-bottom: 38px;
+}
+
+.i2-head__title {
+  font-size: 1.875rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.13;
+  letter-spacing: -0.02em;
+}
+
+.i2-head__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.i2-head__more .i2-icon {
+  transition: transform 0.3s ease-out;
+}
+
+.i2-head__more:hover .i2-icon {
+  transform: translateX(6px);
+}
+
+/* ---------------------------------------------------------- breakpoints */
+@media (min-width: 1501px) {
+  :root {
+    --i2-gutter: 48px;
+    --i2-wrap-pad: 0px;
+    --i2-header-top: 32px;
+  }
+}
+
+@media (max-width: 1280px) {
+  :root {
+    --i2-gap: 20px;
+    --i2-sec-gap: 120px;
+  }
+
+  html {
+    font-size: 15px;
+  }
+
+  .i2-main--sub {
+    padding-top: 30px;
+  }
+
+  .i2-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .i2-head__title {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --i2-header-h: 60px;
+  }
+}
+
+@media (max-width: 860px) {
+  .i2-head__title {
+    font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --i2-sec-gap: 100px;
+    --i2-header-h: 52px;
+    --i2-tabbar-h: 69px;
+  }
+
+  body {
+    padding-bottom: var(--i2-tabbar-h);
+  }
+
+  .i2-cards {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 29px;
+  }
+
+  .i2-btn {
+    min-height: 53px;
+    padding: 14px 10px;
+    font-size: 1rem;
+  }
+
+  .i2-btn-row {
+    margin-top: 50px;
+  }
+
+  .i2-head {
+    margin-bottom: 24px;
+  }
+
+  .i2-head__title {
+    font-size: 1.3333rem;
+    line-height: 1.13;
+  }
+
+  .i2-head__more .i2-icon {
+    width: 23px;
+    height: 23px;
+  }
+
+  .i2-card__title {
+    font-size: 1.2rem;
+  }
+
+  .i2-card__price {
+    padding-top: 9px;
+  }
+
+  .i2-card__price strong {
+    font-size: 1.8rem;
+  }
+
+  .i2-card__price small {
+    font-size: 1.08rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

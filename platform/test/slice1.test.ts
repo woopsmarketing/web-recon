@@ -567,10 +567,10 @@ await check("every fixture site has no scripts.json → no headScripts key in it
 console.log("\n[static] template source rules (L, M, N)");
 const templateRoot = path.join(repoRoot, "templates");
 const templateFiles = (await walkFiles(templateRoot)).filter((f) => !/(^|\/)(node_modules|\.next|out)\//.test(f));
-await check("templates/ contains exactly one Template major (no per-site forks)", async () => {
-  const majors = (await readdir(templateRoot)).flatMap((t) => [t]);
-  assert(majors.join() === "interior-01", `templates: ${majors.join()}`);
-  assert((await readdir(path.join(templateRoot, "interior-01"))).join() === "v1", "unexpected template dirs");
+await check("templates/ contains exactly the two authored Templates, one major each (no per-site forks)", async () => {
+  const majors = (await readdir(templateRoot)).sort();
+  assert(majors.join() === "interior-01,interior-02", `templates: ${majors.join()}`);
+  for (const t of majors) assert((await readdir(path.join(templateRoot, t))).join() === "v1", `unexpected template dirs in ${t}`);
 });
 await check("L/M/N no fs/Supabase/DB/legacy imports, no siteId literals, no wall clock, no env reads", async () => {
   const siteIds = await readdir(path.join(repoRoot, "data/sites"));

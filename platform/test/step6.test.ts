@@ -77,7 +77,13 @@ const FIXTURES = ["fixture-large", "fixture-small", "fixture-empty"] as const;
  * identity out of the demo package.
  */
 const INQUIRY_FIXTURE = "fixture-online-inquiry";
-const RELEASE = { id: "interior-01-1.4.0-9e1ea20da947", hash: "9e1ea20da9472d3bb003a27ff5f7374c76fa350c5941beb79457441576130961" };
+/**
+ * The second Template's own fictional site (interior-02): a different Template, so it joins none of
+ * the interior-01 loops here (B, E, V) — A lists it as a site directory, holds its origin apart from
+ * the demo's and its pin apart from interior-01.
+ */
+const SECOND_TEMPLATE_SITE = "ongyeol-interior-demo";
+const RELEASE ={ id: "interior-01-1.4.0-9e1ea20da947", hash: "9e1ea20da9472d3bb003a27ff5f7374c76fa350c5941beb79457441576130961" };
 const FLAGSHIP = "bi-01";
 const BASELINE_FILE = "docs/result/recon-template-platform-step6-demo/proof/baseline.json";
 const BASELINE_SHA256 = "28728a75ad7d72d8ff1cf1502bc8f22a6bd97267950e5bf1fcbc2e9501adf78a"; // captured 2026-09-19T11:08:42Z
@@ -190,9 +196,11 @@ await check("A boost-interior-demo exists as its own Site Instance (siteId, Kore
   eq([site.siteId, site.identity.brandName, site.identity.locale], [DEMO, "부스트 인테리어", "ko-KR"], "identity");
   // its own https origin, shared with no fixture (the value itself is Site Data; the package checks G / X hold the output to it)
   assert(site.identity.publicOrigin === ORIGIN && new URL(ORIGIN).protocol === "https:", String(site.identity.publicOrigin));
-  for (const f of [...FIXTURES, INQUIRY_FIXTURE]) assert((await loadSiteInstance(repoRoot, f)).identity.publicOrigin !== ORIGIN, `${f} shares the demo origin`);
-  // exactly: the demo, the three generated fixtures, and the online-inquiry reuse fixture (INQUIRY_FIXTURE, its own entry)
-  eq((await readdir(path.join(repoRoot, "data/sites"))).filter((d) => !d.startsWith(".")).sort(), [DEMO, ...FIXTURES, INQUIRY_FIXTURE].sort(), "data/sites");
+  for (const f of [...FIXTURES, INQUIRY_FIXTURE, SECOND_TEMPLATE_SITE]) assert((await loadSiteInstance(repoRoot, f)).identity.publicOrigin !== ORIGIN, `${f} shares the demo origin`);
+  // exactly: the demo, the three generated fixtures, the online-inquiry reuse fixture (INQUIRY_FIXTURE, its own entry)
+  // and the second Template's site (SECOND_TEMPLATE_SITE, pinned to interior-02 — never to this Template)
+  eq((await readdir(path.join(repoRoot, "data/sites"))).filter((d) => !d.startsWith(".")).sort(), [DEMO, ...FIXTURES, INQUIRY_FIXTURE, SECOND_TEMPLATE_SITE].sort(), "data/sites");
+  eq((await loadSiteInstance(repoRoot, SECOND_TEMPLATE_SITE)).template.templateId, "interior-02", "the second Template's site pins its own Template");
   eq((await loadSiteInstance(repoRoot, INQUIRY_FIXTURE)).siteId, INQUIRY_FIXTURE, "the reuse fixture loads as its own Site Instance");
 });
 await check(`B pins EXACTLY ${later ? "ONE newer verified release (each fixture pins its own verified release)" : RELEASE.id} (id + full hash), and the current package was built with it — pre-publish: with the V0.1 publish target (demo-rollout.ts)`, async () => {
