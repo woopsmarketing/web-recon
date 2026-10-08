@@ -1,5 +1,6 @@
 /**
- * interior-02 — the second authored Template and its fictional site (ongyeol-interior-demo).
+ * interior-02 — the second authored Template, its fictional site (ongyeol-interior-demo) and its reuse
+ * site (boost-interior-demo-02).
  *
  * [source]  the Template's working tree: declared identity and routes, the release gate (imports,
  *           identifiers, siteId literals, forbidden terms) over the tree as it is now, isolation from the
@@ -10,11 +11,15 @@
  * [package] the site's current package: built with that pin from the site's present data (identity
  *           recomputed here), QA pass, every page the fixture's data plans, no source term of either
  *           Template in any emitted text file, and no site of the first Template pinned to this one.
+ * [reuse]   a second site on the SAME immutable release: its own identity, origin, content and theme
+ *           as Site Data only, its own package, neither site's brand in the other's package, and the
+ *           third-party script it declares (a per-site key) nowhere in the Template or its release.
  *
  * Every expected value is a literal or is read from the site's own authored data — never recomputed
  * with the Template code under test. Reads only: builds nothing, writes nothing.
  *
- * Run AFTER `template:release interior-02@1` + `site:build ongyeol-interior-demo`:
+ * Run AFTER `template:release interior-02@1` + `site:build ongyeol-interior-demo` +
+ * `site:build boost-interior-demo-02`:
  *   tsx --tsconfig platform/tsconfig.json platform/test/interior-02.test.ts
  */
 import { readFile, readdir, stat } from "node:fs/promises";
@@ -30,6 +35,8 @@ const repoRoot = process.cwd();
 const TEMPLATE = "interior-02";
 const OTHER_TEMPLATE = "interior-01";
 const SITE = "ongyeol-interior-demo";
+/** the same release under another brand: nothing but Site Data differs */
+const REUSE_SITE = "boost-interior-demo-02";
 /** the fixed pages of the Template's route table (the list's later pages and the detail pages come from data) */
 const FIXED_PAGES = ["index.html", "portfolio.html", "service.html", "about.html", "faq.html", "contact.html"] as const;
 const TEXT_FILE = /\.(html|txt|js|css|json|xml|svg|map)$/;
@@ -194,11 +201,109 @@ await check("J no emitted text file holds a source term of either Template, the 
   }
   assert(hits.length === 0, hits.slice(0, 12).join("\n"));
 });
-await check("K interior-02 is pinned by its own site only: every other site stays on the first Template", async () => {
+await check("K interior-02 is pinned by its own two sites only: every other site stays on the first Template", async () => {
   const pins: Record<string, string> = {};
   for (const id of (await readdir(path.join(repoRoot, "data/sites"))).filter((d) => !d.startsWith(".")).sort()) pins[id] = (await loadSiteInstance(repoRoot, id)).template.templateId;
-  eq(Object.entries(pins).filter(([, t]) => t === TEMPLATE).map(([id]) => id), [SITE], "sites on interior-02");
-  eq([...new Set(Object.entries(pins).filter(([id]) => id !== SITE).map(([, t]) => t))], [OTHER_TEMPLATE], "the other sites' Template");
+  eq(Object.entries(pins).filter(([, t]) => t === TEMPLATE).map(([id]) => id), [REUSE_SITE, SITE].sort(), "sites on interior-02");
+  eq([...new Set(Object.entries(pins).filter(([id]) => id !== SITE && id !== REUSE_SITE).map(([, t]) => t))], [OTHER_TEMPLATE], "the other sites' Template");
+});
+
+// ------------------------------------------------------------------ reuse --
+console.log("\n[reuse] a second site on the same release");
+const reuse = await loadSiteInstance(repoRoot, REUSE_SITE);
+const reuseCurrent = await readJson(`data/site-builds/${REUSE_SITE}/current.json`);
+const reuseRecord = await readJson(`${reuseCurrent.packageDir}/build-record.json`);
+const reuseSiteDir = path.join(repoRoot, reuseCurrent.packageDir, "site");
+const textFiles = async (dir: string) => (await walkFiles(dir)).filter((f) => TEXT_FILE.test(f));
+await check("L the reuse site pins the SAME release as the first site (id + full hash), and its current package was built with it from its present data, package QA pass", async () => {
+  eq(reuse.template, pin, "pin");
+  eq([reuseRecord.siteId, reuseRecord.status, reuseRecord.parts.mode], [REUSE_SITE, "success", "public"], "record");
+  eq([reuseRecord.template.templateId, reuseRecord.template.releaseId, reuseRecord.template.releaseHash], [pin.templateId, pin.releaseId, pin.releaseHash], "the package's Template");
+  eq([reuseRecord.qa.pass, reuseRecord.qa.failures], [true, []], "package QA");
+  const input = await prepareSiteInput({ repoRoot, siteId: REUSE_SITE, mode: "public", at: reuseRecord.at });
+  eq([input.parts.siteSnapshotHash, input.buildInputId], [reuseRecord.parts.siteSnapshotHash, reuseCurrent.buildInputId], "identity = the site's present data");
+  assert(reuseCurrent.buildInputId !== current.buildInputId && reuseCurrent.packageDir !== current.packageDir, "the two sites share a package");
+});
+await check("M the two sites differ in Site Data only: identity, origin, projects, and theme values (the first site shows the Template defaults, the reuse site overrides declared tokens)", async () => {
+  assert(reuse.siteId !== site.siteId && reuse.identity.brandName !== site.identity.brandName, "identity");
+  assert(new URL(reuse.identity.publicOrigin!).origin !== new URL(site.identity.publicOrigin!).origin, "the two sites share an origin");
+  const slugs = async (id: string): Promise<string[]> => (await readJson(`data/sites/${id}/content/projects.json`)).items.map((p: { slug: string }) => p.slug);
+  const [a, b] = [await slugs(SITE), await slugs(REUSE_SITE)];
+  eq(a.filter((s) => b.includes(s)), [], "project slugs in both sites");
+  // the first site authors no theme.json (it shows the Template's default values); the reuse site overrides them
+  assert(!(await exists(`data/sites/${SITE}/theme.json`)), "the first site authors a theme.json: compare the two documents instead");
+  const defaults: Record<string, string> = (await readJson(`${templateDir(TEMPLATE)}/theme.default.json`)).tokens;
+  const overrides: Record<string, string> = (await readJson(`data/sites/${REUSE_SITE}/theme.json`)).tokens;
+  eq(Object.keys(overrides).filter((t) => !(t in defaults)), [], "tokens the Template does not declare");
+  // the tonal roles a visitor sees first: page ground, the dark block colour, both accents
+  for (const t of ["color.canvas", "color.action.primary", "color.accent.primary", "color.accent.secondary"]) {
+    assert(typeof defaults[t] === "string" && typeof overrides[t] === "string", `${t} is not set on both sides`);
+    assert(defaults[t] !== overrides[t], `${t}: the reuse site repeats the Template default (${defaults[t]})`);
+  }
+});
+await check("N the reuse site's package: the pages its data plans, no source term of either Template, neither site's brand in the other's package", async () => {
+  const projects: { slug: string; status: string }[] = (await readJson(`data/sites/${REUSE_SITE}/content/projects.json`)).items;
+  const published = projects.filter((p) => p.status === "published");
+  const pages = Math.ceil(published.length / PORTFOLIO_PAGE_SIZE);
+  const expected = [...FIXED_PAGES, ...published.map((p) => `portfolio/${p.slug}.html`), ...Array.from({ length: pages - 1 }, (_, i) => `portfolio/page/${i + 2}.html`)].sort();
+  eq((await walkFiles(reuseSiteDir)).filter((f) => f.endsWith(".html") && !/^(404|_not-found)\.html$/.test(f)).sort(), expected, "pages");
+  const terms = [...(await termsOf(TEMPLATE)), ...(await termsOf(OTHER_TEMPLATE)), OTHER_TEMPLATE];
+  const hits: string[] = [];
+  // a brand name, its Latin spelling and the site id each: none of them may cross into the other package
+  const foreign: [string, string[]][] = [
+    [reuseSiteDir, [site.identity.brandName, site.siteId, "온결", "ongyeol"]],
+    [siteDir, [reuse.identity.brandName, reuse.siteId, "부스트", "boostinterior"]],
+  ];
+  for (const [dir, own] of [[siteDir, site.identity.brandName], [reuseSiteDir, reuse.identity.brandName]] as const) {
+    assert((await readFile(path.join(dir, "index.html"), "utf8")).includes(own), `${own} is not in its own home page`);
+  }
+  for (const [dir, brand] of foreign) {
+    for (const f of await textFiles(dir)) {
+      const text = await readFile(path.join(dir, f), "utf8");
+      if (dir === reuseSiteDir) hits.push(...scanForbiddenTerms(f, text, terms).map((h) => `${REUSE_SITE}/${h.file}: ${h.why}`));
+      hits.push(...scanForbiddenTerms(f, text, brand).map((h) => `${path.basename(path.dirname(path.dirname(dir)))}/${h.file}: the other site's ${h.why}`));
+    }
+  }
+  assert(hits.length === 0, hits.slice(0, 12).join("\n"));
+});
+await check("O the third-party script the reuse site declares is Site Data: its host and key are in no Template or release file, in every page of its own package, and nowhere in the first site's package; no other remote reference", async () => {
+  const scripts: { src: string; attrs?: Record<string, string> }[] = (await readJson(`data/sites/${REUSE_SITE}/scripts.json`)).headScripts;
+  assert(scripts.length > 0, "the reuse site declares no head script");
+  assert(!(await exists(`data/sites/${SITE}/scripts.json`)), "the first site declares head scripts too: this check assumes it does not");
+  const needles = scripts.flatMap((sc) => [new URL(sc.src).host, ...Object.values(sc.attrs ?? {})]);
+  const hits: string[] = [];
+  const holds = (text: string) => needles.filter((n) => text.includes(n));
+  const release = await loadRelease(repoRoot, TEMPLATE, pin.releaseId);
+  const releaseDir = path.join(repoRoot, "data/template-releases", TEMPLATE, pin.releaseId);
+  assert(release.files.length > 0, "the release lists no file");
+  const scanned: Record<string, number> = {};
+  for (const dir of [path.join(repoRoot, templateDir(TEMPLATE)), releaseDir, siteDir]) {
+    for (const f of await walkFiles(dir)) {
+      if (/(^|\/)(node_modules|\.next|out)\//.test(f) || (dir === siteDir && !TEXT_FILE.test(f))) continue;
+      scanned[dir] = (scanned[dir] ?? 0) + 1;
+      const found = holds(await readFile(path.join(dir, f), "utf8"));
+      if (found.length) hits.push(`${path.relative(repoRoot, dir)}/${f}: ${found.join(", ")}`);
+    }
+  }
+  assert(hits.length === 0, hits.slice(0, 12).join("\n"));
+  // the scan read real trees: every file the release lists, and at least the Template's share of them in the working tree
+  const ownShare = release.files.filter((r) => r.path.startsWith(`${templateDir(TEMPLATE)}/`)).length;
+  assert(ownShare > 0 && (scanned[path.join(repoRoot, templateDir(TEMPLATE))] ?? 0) >= ownShare, `${templateDir(TEMPLATE)}: ${scanned[path.join(repoRoot, templateDir(TEMPLATE))] ?? 0} files scanned, the release lists ${ownShare}`);
+  assert((scanned[releaseDir] ?? 0) >= release.files.length, `release: only ${scanned[releaseDir] ?? 0} files scanned`);
+  const own = new URL(reuse.identity.publicOrigin!).origin;
+  const declared = new Set(scripts.map((sc) => sc.src));
+  for (const f of (await walkFiles(reuseSiteDir)).filter((p) => p.endsWith(".html"))) {
+    const html = await readFile(path.join(reuseSiteDir, f), "utf8");
+    for (const sc of scripts) {
+      assert(html.includes(`src="${sc.src}"`), `${f}: the declared script ${sc.src} is missing`);
+      for (const [k, v] of Object.entries(sc.attrs ?? {})) assert(html.includes(`${k}="${v}"`), `${f}: the declared attribute ${k} is missing`);
+    }
+    for (const m of html.matchAll(/\s(?:src|href|srcset|poster|action)="(https?:)?\/\/([^"]*)"/g)) {
+      const url = `${m[1] ?? "https:"}//${m[2]}`;
+      if (!url.startsWith(`${own}/`) && url !== own && !declared.has(url)) hits.push(`${f}: remote reference ${url.slice(0, 120)}`);
+    }
+  }
+  assert(hits.length === 0, hits.slice(0, 12).join("\n"));
 });
 
 console.log(`\ninterior-02: ${passed} passed, ${failed.length} failed`);
