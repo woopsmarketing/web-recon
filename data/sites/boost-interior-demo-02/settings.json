@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "templateId": "interior-02",
+  "overrides": {
+    "home.projects": {
+      "limit": 3,
+      "selection": {
+        "mode": "manual",
+        "ids": ["bi-01", "bi-03", "bi-02"]
+      }
+    },
+    "home.keywords": {
+      "limit": 8,
+      "areaScale": "pyeong",
+      "priceScale": "krw-pyeong",
+      "chip1": { "area": ["lt20", "20"] },
+      "chip2": { "area": ["30"] },
+      "chip3": { "area": ["40", "50plus"] },
+      "chip4": { "style": ["화이트"] },
+      "chip5": { "style": ["내추럴"] },
+      "chip6": { "type": ["full-remodel"] }
+    },
+    "home.recent": {
+      "limit": 3,
+      "selection": {
+        "mode": "manual",
+        "ids": ["bi-04", "bi-06", "bi-08"]
+      }
+    },
+    "service.page": {
+      "team1Icon": "clipboard",
+      "team2Icon": "people",
+      "team3Icon": "pen",
+      "team4Icon": "monitor"
+    },
+    "about.page": {
+      "value1Tone": "navy",
+      "value2Tone": "yellow",
+      "value3Tone": "mint",
+      "value4Tone": "dark",
+      "value1Icon": "waves",
+      "value2Icon": "grid",
+      "value3Icon": "rays",
+      "value4Icon": "rings"
+    },
+    "portfolio.index": {
+      "filtersEnabled": true,
+      "filterGroups": ["keyword", "type", "area", "style", "price"],
+      "areaScale": "pyeong",
+      "priceScale": "krw-pyeong",
+      "batchSize": 6
+    },
+    "portfolio.detail": {
+      "relatedCount": 4,
+      "relatedAutoplay": true
+    },
+    "site.seo": {
+      "indexing": "noindex"
+    },
+    "site.floater": {
+      "contact": false
+    }
+  }
+}
