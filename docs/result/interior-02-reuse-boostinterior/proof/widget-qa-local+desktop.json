@@ -1,0 +1,283 @@
+{
+ "startedAt": "2026-10-08T22:54:32.605Z",
+ "checks": [
+  {
+   "name": "local origin: widget script answered 200",
+   "ok": true
+  },
+  {
+   "name": "local origin (not allow-listed): no launcher shown",
+   "ok": true,
+   "detail": {
+    "iframeCount": 0,
+    "visible": false
+   }
+  },
+  {
+   "name": "desktop: page served from the Demo 02 package",
+   "ok": true,
+   "detail": "부스트 인테리어"
+  },
+  {
+   "name": "desktop: widget loader fetched",
+   "ok": true,
+   "detail": {
+    "startMs": 10,
+    "durationMs": 362,
+    "transferSize": 0
+   }
+  },
+  {
+   "name": "desktop: launcher visible (closed frame 64x64, 18px seat)",
+   "ok": true,
+   "detail": {
+    "rect": {
+     "x": 1358,
+     "y": 818,
+     "w": 64,
+     "h": 64
+    },
+    "seat": {
+     "right": 18,
+     "bottom": 18
+    }
+   }
+  },
+  {
+   "name": "desktop: widget opens (372x560 panel)",
+   "ok": true,
+   "detail": {
+    "rect": {
+     "x": 1050,
+     "y": 322,
+     "w": 372,
+     "h": 560
+    },
+    "seat": {
+     "right": 18,
+     "bottom": 18
+    }
+   }
+  },
+  {
+   "name": "desktop: panel names this tenant (부스트 인테리어)",
+   "ok": true,
+   "detail": "부스트 인테리어 AI 상담원 상담 도우미 ✕ 상담 도우미 안녕하세요, 부스트 인테리어입니다. 주거 공간 리모델링과 부분 인테리어 상담을 도와드리고 있어요. 지금 살고 계신 집의 지역과 평수, 생각하고 계신 공사 범위를 알려주시면 상담에 도움이 됩니다. 편하게 말씀해 주세요. 다른 방법으"
+  },
+  {
+   "name": "desktop: message1 — an answer arrived",
+   "ok": true,
+   "detail": {
+    "ms": 2854,
+    "reply": "상담 도우미\n…"
+   }
+  },
+  {
+   "name": "desktop: message2 — an answer arrived",
+   "ok": true,
+   "detail": {
+    "ms": 6117,
+    "reply": "상담 도우미\n34평 아파트 전체 리모델링과 가장 유사한 사례로 A · 수성 화이트 34평 아파트 리모델링을 추천드려요. 현관·주방·욕실과 바닥, 조명, 붙박이·제작 가구를 진행한 사례이며, 대구 수성구에 있습니다. "
+   }
+  },
+  {
+   "name": "desktop: no other brand in the conversation",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "desktop: widget closes back to the launcher",
+   "ok": true,
+   "detail": {
+    "x": 1358,
+    "y": 818,
+    "w": 64,
+    "h": 64
+   }
+  },
+  {
+   "name": "desktop: reopening keeps the conversation",
+   "ok": true,
+   "detail": 5
+  },
+  {
+   "name": "desktop: no console / page errors",
+   "ok": true,
+   "detail": {
+    "console": [],
+    "page": []
+   }
+  },
+  {
+   "name": "desktop: no failed requests or HTTP >= 400",
+   "ok": false,
+   "detail": {
+    "failed": [
+     "HEAD https://interior-demo.boostweb.co.kr/ net::ERR_ABORTED",
+     "HEAD https://interior-demo.boostweb.co.kr/portfolio net::ERR_ABORTED",
+     "HEAD https://interior-demo.boostweb.co.kr/service net::ERR_ABORTED"
+    ],
+    "http": []
+   }
+  },
+  {
+   "name": "desktop: every BoostChat API path carries this site's key only",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "desktop: no third host besides the chat service",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "desktop: no lead request during chat",
+   "ok": true,
+   "detail": 0
+  }
+ ],
+ "phases": {
+  "local": {
+   "url": "http://127.0.0.1:4322/",
+   "iframeCount": 0,
+   "iframeVisible": false,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failed": [
+    "HEAD http://127.0.0.1:4322/ net::ERR_ABORTED",
+    "HEAD http://127.0.0.1:4322/portfolio net::ERR_ABORTED",
+    "HEAD http://127.0.0.1:4322/service net::ERR_ABORTED",
+    "HEAD http://127.0.0.1:4322/about net::ERR_ABORTED",
+    "HEAD http://127.0.0.1:4322/faq net::ERR_ABORTED",
+    "HEAD http://127.0.0.1:4322/contact net::ERR_ABORTED",
+    "HEAD http://127.0.0.1:4322/portfolio/suseong-white-34py-apartment-remodeling net::ERR_ABORTED",
+    "GET http://127.0.0.1:4322/__next._index.txt?_rsc=yIp22O3xgPPxC28X net::ERR_ABORTED",
+    "GET http://127.0.0.1:4322/__next.__PAGE__.txt?_rsc=8nTjltbQWvg6NcbE net::ERR_ABORTED",
+    "GET http://127.0.0.1:4322/portfolio/suseong-white-34py-apartment-remodeling/__next.portfolio.$d$slug.__PAGE__.txt?_rsc=zsUgpGj2h9XuEVXv net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/2ts65czrjjd_k.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/02z1c-5d50yjh.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/1a-wt888tjh05.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/3vbq83n63da77.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/turbopack-2jq77pfnd5htx.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/22i43cg4l4-dq.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/0w6i7m-yieybn.js net::ERR_ABORTED"
+   ],
+   "httpErrors": [],
+   "leads": [],
+   "otherKeyPaths": [],
+   "otherHosts": [],
+   "chatSummary": [
+    "1x GET /widget.js 200",
+    "1x GET /widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3 200",
+    "5x GET /_next/* 200"
+   ]
+  },
+  "desktop": {
+   "timing": {
+    "navToLoadMs": 1072,
+    "navToWidgetScriptMs": 374,
+    "navToIframeMs": 1087,
+    "navToLauncherMs": 1096,
+    "scriptToLauncherMs": 722
+   },
+   "widgetScriptResource": {
+    "startMs": 10,
+    "durationMs": 362,
+    "transferSize": 0
+   },
+   "closed": {
+    "rect": {
+     "x": 1358,
+     "y": 818,
+     "w": 64,
+     "h": 64
+    },
+    "seat": {
+     "right": 18,
+     "bottom": 18
+    }
+   },
+   "toTop": {
+    "rect": {
+     "x": 1360,
+     "y": 820,
+     "w": 56,
+     "h": 56
+    },
+    "overlapWithLauncher": {
+     "w": 56,
+     "h": 56,
+     "pctOfB": 100
+    }
+   },
+   "opened": {
+    "rect": {
+     "x": 1050,
+     "y": 322,
+     "w": 372,
+     "h": 560
+    },
+    "seat": {
+     "right": 18,
+     "bottom": 18
+    }
+   },
+   "panelText": "부스트 인테리어 AI 상담원 상담 도우미 ✕ 상담 도우미 안녕하세요, 부스트 인테리어입니다. 주거 공간 리모델링과 부분 인테리어 상담을 도와드리고 있어요. 지금 살고 계신 집의 지역과 평수, 생각하고 계신 공사 범위를 알려주시면 상담에 도움이 됩니다. 편하게 말씀해 주세요. 다른 방법으로 문의 카카오톡 네이버 인스타그램 전화 전송 Powered by boostchat",
+   "welcomeCount": 1,
+   "message1": {
+    "sent": "안녕하세요. 어떤 공사를 상담할 수 있나요?",
+    "firstStableMs": 2854,
+    "timedOut": false,
+    "reply": "상담 도우미\n…",
+    "linksInPanel": [],
+    "sentAtIso": "2026-10-08T22:54:43.329Z"
+   },
+   "message2": {
+    "sent": "34평 아파트 전체 리모델링 시공사례를 보여 주세요.",
+    "firstStableMs": 6117,
+    "timedOut": false,
+    "reply": "상담 도우미\n34평 아파트 전체 리모델링과 가장 유사한 사례로 A · 수성 화이트 34평 아파트 리모델링을 추천드려요. 현관·주방·욕실과 바닥, 조명, 붙박이·제작 가구를 진행한 사례이며, 대구 수성구에 있습니다. 스타일은 화이트·미니멀이고, 총 공사비 정보는 없습니다.\nA\n사례 A,\n수성 화이트 34평 아파트 리모델링\n대구 수성구 · 공급 34평\n요청과 매우 유사한 사례\n전체 리모델링\n현관\n주방\n사례 자세히 보기 →\nB\n사례 B,\n19평 소형 아파트 화이트 미니멀 리모델링\n대구 중구 · 공급 19평\n공사 범위가 같은 사례\n전체 리모델링\n주방\n바닥\n사례 자세히 보기 →\nC\n사례 C,\n32평 주방·욕실 중심 리뉴얼\n대구 북구 · 공급 32평\n참고 사례\n부분 리모델링\n주방\n욕실\n사례 자세히 보기 →\n더 보기 (+2)",
+    "linksInPanel": [],
+    "sentAtIso": "2026-10-08T22:54:48.584Z"
+   },
+   "portfolioLinks": [],
+   "panelTextAfter": "부스트 인테리어 AI 상담원 상담 도우미 ✕ 상담 도우미 안녕하세요, 부스트 인테리어입니다. 주거 공간 리모델링과 부분 인테리어 상담을 도와드리고 있어요. 지금 살고 계신 집의 지역과 평수, 생각하고 계신 공사 범위를 알려주시면 상담에 도움이 됩니다. 편하게 말씀해 주세요. 안녕하세요. 어떤 공사를 상담할 수 있나요? 상담 도우미 안녕하세요 😊 부스트 인테리어에서는 주거 공간의 전체 리모델링, 부분 리모델링, 주방·욕실 리뉴얼, 입주 전 홈스타일링 상담을 도와드립니다. 원하시는 공간이나 공사 범위를 말씀해 주시면 그에 맞춰 안내해 드릴게요. 34평 아파트 전체 리모델링 시공사례를 보여 주세요. 상담 도우미 34평 아파트 전체 리모델링과 가장 유사한 사례로 A · 수성 화이트 34평 아파트 리모델링을 추천드려요. 현관·주방·욕실과 바닥, 조명, 붙박이·제작 가구를 진행한 사례이며, 대구 수성구에 있습니다. 스타일은 화이트·미니멀이고, 총 공사비 정보는 없습니다. A 사례 A, 수성 화이트 34평 아파트 리모델링 대구 수성구 · 공급 34평 요청과 매우 유사한 사례 전체 리모델링 현관 주방 사례 자세히 보기 → B 사례 B, 19평 소형 아파트 화이트 미니멀 리모델링 대구 중구 · 공급 19평 공사 범위가 같은 사례 전체 리모델링 주방 바닥 사례 자세히 보기 → C 사례 C, 32평 주방·욕실 중심 리뉴얼 대구 북구 · 공급 32평 참고 사례 부분 리모델링 주방 욕실 사례 자세히 보기 → 더 보기 (+2) 상담 요청 남기기 전송 Powered by boostchat",
+   "reclosed": {
+    "x": 1358,
+    "y": 818,
+    "w": 64,
+    "h": 64
+   },
+   "reopenedMessageCount": 5,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failed": [
+    "HEAD https://interior-demo.boostweb.co.kr/ net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/portfolio net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/service net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/about net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/faq net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/contact net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/portfolio/suseong-white-34py-apartment-remodeling net::ERR_ABORTED",
+    "POST https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/chat net::ERR_ABORTED",
+    "POST https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/chat net::ERR_ABORTED"
+   ],
+   "httpErrors": [],
+   "leads": [],
+   "otherKeyPaths": [],
+   "otherHosts": [],
+   "chatSummary": [
+    "1x GET /widget.js 200",
+    "1x GET /widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3 200",
+    "12x GET /_next/* 200",
+    "1x POST /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/bootstrap 200",
+    "2x POST /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/chat 200",
+    "1x GET /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/portfolio/bi-04/media/cover 200",
+    "1x GET /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/portfolio/bi-07/media/cover 200",
+    "1x GET /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/portfolio/bi-01/media/cover 200"
+   ]
+  }
+ },
+ "finishedAt": "2026-10-08T22:54:57.418Z",
+ "pass": false
+}

@@ -1,0 +1,39 @@
+#!/bin/sh
+# READ-ONLY production check (same guard as docs/result/shared-inquiry-form-v2/proof/scripts/prod-db-check.sh):
+# what the widget QA of boost-interior-demo-02 left behind for ONE widget key inside ONE time window.
+# One READ ONLY transaction, guarded by the database's system identifier. Prints counts, token sums, model
+# names, origins and timestamps only — never a message, a name, a phone number or the connection string.
+set -eu
+EXPECT_SID="${EXPECT_SYSTEM_IDENTIFIER:-7675084143306387491}"
+LINKED_DIR="${RAILWAY_LINKED_DIR:-/Users/woops/projects/boost-chat}"
+KEY="$1"; FROM="$2"
+DBURL=$(cd "$LINKED_DIR" && railway variables -e production -s pgvector --kv 2>/dev/null | grep '^DATABASE_URL=' | cut -d= -f2-)
+[ -n "$DBURL" ] || { echo "FAILED: no DATABASE_URL from railway"; exit 1; }
+PGOPTIONS='-c default_transaction_read_only=on' PGCONNECT_TIMEOUT=20 psql "$DBURL" -X -q -v ON_ERROR_STOP=1 -v sid="$EXPECT_SID" -v key="$KEY" -v from="$FROM" -P pager=off 2>&1 <<'SQL' | sed -E 's#postgres(ql)?://[^ ]+#<redacted>#g'
+begin transaction read only;
+select set_config('check.sid', :'sid', true) as "guard: expected system identifier";
+do $$ begin
+  if (select system_identifier::text from pg_control_system()) <> current_setting('check.sid') then
+    raise exception 'system_identifier mismatch';
+  end if;
+end $$;
+select now() as now_utc, current_setting('transaction_read_only') as read_only, :'from'::timestamptz as window_from;
+\echo
+\echo ## the widget row of this key (no secrets: the key is public, printed in every page)
+select left(w.tenant_id::text, 8) as tenant, w.enabled, w.version, to_jsonb(w) -> 'allowed_origins' as allowed_origins
+  from tenant_public_widget w where w.public_key = :'key';
+\echo
+\echo ## ai_usage_event of that tenant inside the window
+select e.provider, e.operation, coalesce(e.surface, '(null)') as surface, coalesce(e.model, '(null)') as model, e.status,
+       count(*)::int as events, coalesce(sum(e.input_tokens), 0)::int as input_tokens, coalesce(sum(e.output_tokens), 0)::int as output_tokens,
+       coalesce(sum(e.total_tokens), 0)::int as total_tokens, min(e.created_at) as first_at, max(e.created_at) as last_at
+  from ai_usage_event e join tenant_public_widget w on w.tenant_id = e.tenant_id
+ where w.public_key = :'key' and e.created_at >= :'from'::timestamptz
+ group by 1, 2, 3, 4, 5 order by 1, 2, 3, 4, 5;
+\echo
+\echo ## lead_request rows of that tenant inside the window (the QA stubbed the endpoint: expected 0)
+select count(*)::int as lead_rows_in_window
+  from lead_request l join tenant_public_widget w on w.tenant_id = l.tenant_id
+ where w.public_key = :'key' and l.created_at >= :'from'::timestamptz;
+rollback;
+SQL

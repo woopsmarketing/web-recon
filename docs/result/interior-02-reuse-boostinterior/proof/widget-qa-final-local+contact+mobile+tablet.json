@@ -1,0 +1,481 @@
+{
+ "startedAt": "2026-10-08T23:27:24.776Z",
+ "checks": [
+  {
+   "name": "local origin: widget script answered 200",
+   "ok": true
+  },
+  {
+   "name": "local origin (not allow-listed): no launcher shown",
+   "ok": true,
+   "detail": {
+    "iframeCount": 0,
+    "visible": false
+   }
+  },
+  {
+   "name": "contact: form is in online mode",
+   "ok": true,
+   "detail": "online"
+  },
+  {
+   "name": "contact: empty submit shows field errors and sends nothing",
+   "ok": true,
+   "detail": [
+    "name",
+    "phone",
+    "message",
+    "consent"
+   ]
+  },
+  {
+   "name": "contact: failure state shown, fields kept",
+   "ok": true,
+   "detail": "문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요. 다른 방법으로 문의하실 수 있습니다. 이메일: vnfm0580@gmail.com"
+  },
+  {
+   "name": "contact: two POSTs, both to this site's lead endpoint",
+   "ok": true,
+   "detail": [
+    "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+    "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead"
+   ]
+  },
+  {
+   "name": "contact: body is exactly consent,hp,message,name,phone,submission_id",
+   "ok": true,
+   "detail": [
+    "consent,hp,message,name,phone,submission_id",
+    "consent,hp,message,name,phone,submission_id"
+   ]
+  },
+  {
+   "name": "contact: consent true, honeypot empty",
+   "ok": true,
+   "detail": [
+    [
+     true,
+     ""
+    ],
+    [
+     true,
+     ""
+    ]
+   ]
+  },
+  {
+   "name": "contact: the retry carries the same submission_id",
+   "ok": true,
+   "detail": [
+    "d05ca685-fc3c-4b5a-8e2f-c60ad4d28ecc",
+    "d05ca685-fc3c-4b5a-8e2f-c60ad4d28ecc"
+   ]
+  },
+  {
+   "name": "contact: success state shown",
+   "ok": true,
+   "detail": "견적 문의가 접수되었습니다. 입력해주신 내용을 확인한 뒤 상담을 이어갈 수 있습니다."
+  },
+  {
+   "name": "contact: no console / page errors besides the stubbed 500",
+   "ok": true,
+   "detail": {
+    "console": [
+     "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ],
+    "page": []
+   }
+  },
+  {
+   "name": "mobile: launcher visible (60x60, 12px seat)",
+   "ok": true,
+   "detail": {
+    "rect": {
+     "x": 318,
+     "y": 592,
+     "w": 60,
+     "h": 60
+    },
+    "seat": {
+     "right": 12,
+     "bottom": 12
+    }
+   }
+  },
+  {
+   "name": "mobile: widget opens full screen",
+   "ok": true,
+   "detail": {
+    "opened": {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 664
+    },
+    "vp": {
+     "width": 390,
+     "height": 664
+    }
+   }
+  },
+  {
+   "name": "mobile: widget closes back to the launcher",
+   "ok": true,
+   "detail": {
+    "x": 318,
+    "y": 592,
+    "w": 60,
+    "h": 60
+   }
+  },
+  {
+   "name": "mobile: no horizontal overflow with the widget",
+   "ok": true,
+   "detail": 0
+  },
+  {
+   "name": "mobile: no console / page errors",
+   "ok": true,
+   "detail": {
+    "console": [],
+    "page": []
+   }
+  },
+  {
+   "name": "mobile: no failed requests or HTTP >= 400",
+   "ok": true,
+   "detail": {
+    "failed": [],
+    "http": []
+   }
+  },
+  {
+   "name": "tablet: launcher visible on a project page",
+   "ok": true,
+   "detail": {
+    "rect": {
+     "x": 686,
+     "y": 942,
+     "w": 64,
+     "h": 64
+    },
+    "seat": {
+     "right": 18,
+     "bottom": 18
+    }
+   }
+  },
+  {
+   "name": "tablet: widget opens inside the viewport",
+   "ok": true,
+   "detail": {
+    "x": 378,
+    "y": 446,
+    "w": 372,
+    "h": 560
+   }
+  },
+  {
+   "name": "tablet: widget closes",
+   "ok": true,
+   "detail": {
+    "x": 686,
+    "y": 942,
+    "w": 64,
+    "h": 64
+   }
+  },
+  {
+   "name": "tablet: no console / page errors, no failed requests",
+   "ok": true,
+   "detail": {
+    "console": [],
+    "failed": [
+     "HEAD https://interior-demo.boostweb.co.kr/ net::ERR_ABORTED",
+     "HEAD https://interior-demo.boostweb.co.kr/contact net::ERR_ABORTED",
+     "HEAD https://interior-demo.boostweb.co.kr/portfolio net::ERR_ABORTED"
+    ],
+    "http": []
+   }
+  }
+ ],
+ "phases": {
+  "local": {
+   "url": "http://127.0.0.1:4322/",
+   "iframeCount": 0,
+   "iframeVisible": false,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failed": [
+    "HEAD http://127.0.0.1:4322/ net::ERR_ABORTED",
+    "HEAD http://127.0.0.1:4322/portfolio net::ERR_ABORTED",
+    "HEAD http://127.0.0.1:4322/service net::ERR_ABORTED",
+    "HEAD http://127.0.0.1:4322/about net::ERR_ABORTED",
+    "HEAD http://127.0.0.1:4322/faq net::ERR_ABORTED",
+    "HEAD http://127.0.0.1:4322/contact net::ERR_ABORTED",
+    "HEAD http://127.0.0.1:4322/portfolio/suseong-white-34py-apartment-remodeling net::ERR_ABORTED",
+    "GET http://127.0.0.1:4322/__next._index.txt?_rsc=yIp22O3xgPPxC28X net::ERR_ABORTED",
+    "GET http://127.0.0.1:4322/portfolio/suseong-white-34py-apartment-remodeling/__next.portfolio.$d$slug.__PAGE__.txt?_rsc=zsUgpGj2h9XuEVXv net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/2ts65czrjjd_k.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/3vbq83n63da77.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/0o5dks_pxmun9.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/2qvqp6yyglcpt.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/turbopack-2jq77pfnd5htx.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/0w6i7m-yieybn.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/1a-wt888tjh05.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/3fntmmi971322.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/1nq0sqdultszo.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/22i43cg4l4-dq.js net::ERR_ABORTED",
+    "GET https://boostchat.co.kr/_next/static/chunks/02z1c-5d50yjh.js net::ERR_ABORTED"
+   ],
+   "httpErrors": [],
+   "leads": [],
+   "otherKeyPaths": [],
+   "otherHosts": [],
+   "chatSummary": [
+    "1x GET /widget.js 200",
+    "1x GET /widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3 200",
+    "1x GET /_next/* 200"
+   ]
+  },
+  "contact": {
+   "mode": "online",
+   "emptyErrors": [
+    "name",
+    "phone",
+    "message",
+    "consent"
+   ],
+   "consentChecked": true,
+   "failureText": "문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요. 다른 방법으로 문의하실 수 있습니다. 이메일: vnfm0580@gmail.com",
+   "fieldsKeptAfterFailure": true,
+   "statusText": "견적 문의가 접수되었습니다. 입력해주신 내용을 확인한 뒤 상담을 이어갈 수 있습니다.",
+   "formGoneAfterSuccess": true,
+   "posts": [
+    {
+     "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+     "contentType": "application/json",
+     "replied": 500,
+     "body": {
+      "consent": true,
+      "name": "[TEST] QA 스텁",
+      "phone": "010-0000-0000",
+      "message": "[홈페이지 견적 문의]\n\n[TEST] interior-02 재사용 검증용 스텁 제출입니다. 실제 접수되지 않습니다.",
+      "hp": "",
+      "submission_id": "d05ca685-fc3c-4b5a-8e2f-c60ad4d28ecc"
+     }
+    },
+    {
+     "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+     "contentType": "application/json",
+     "replied": 200,
+     "body": {
+      "consent": true,
+      "name": "[TEST] QA 스텁",
+      "phone": "010-0000-0000",
+      "message": "[홈페이지 견적 문의]\n\n[TEST] interior-02 재사용 검증용 스텁 제출입니다. 실제 접수되지 않습니다.",
+      "hp": "",
+      "submission_id": "d05ca685-fc3c-4b5a-8e2f-c60ad4d28ecc"
+     }
+    }
+   ],
+   "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+   ],
+   "pageErrors": [],
+   "failed": [
+    "HEAD https://interior-demo.boostweb.co.kr/ net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/portfolio net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/service net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/about net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/faq net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/contact net::ERR_ABORTED"
+   ],
+   "httpErrors": [
+    "500 POST https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead"
+   ],
+   "otherKeyPaths": [],
+   "otherHosts": [],
+   "chatSummary": [
+    "1x GET /widget.js 200",
+    "1x GET /widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3 200",
+    "12x GET /_next/* 200",
+    "1x POST /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead 500",
+    "1x POST /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead 200",
+    "1x POST /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/bootstrap 200"
+   ]
+  },
+  "mobile": {
+   "viewport": {
+    "width": 390,
+    "height": 664
+   },
+   "closed": {
+    "rect": {
+     "x": 318,
+     "y": 592,
+     "w": 60,
+     "h": 60
+    },
+    "seat": {
+     "right": 12,
+     "bottom": 12
+    }
+   },
+   "tabbar": {
+    "rect": {
+     "x": 0,
+     "y": 595,
+     "w": 390,
+     "h": 69
+    },
+    "tabs": [
+     {
+      "label": "홈",
+      "x": 0,
+      "y": 595,
+      "w": 78,
+      "h": 69,
+      "overlap": {
+       "w": 0,
+       "h": 0,
+       "pctOfB": 0
+      }
+     },
+     {
+      "label": "시공사례",
+      "x": 78,
+      "y": 595,
+      "w": 78,
+      "h": 69,
+      "overlap": {
+       "w": 0,
+       "h": 0,
+       "pctOfB": 0
+      }
+     },
+     {
+      "label": "공사 유형",
+      "x": 156,
+      "y": 595,
+      "w": 78,
+      "h": 69,
+      "overlap": {
+       "w": 0,
+       "h": 0,
+       "pctOfB": 0
+      }
+     },
+     {
+      "label": "FAQ",
+      "x": 234,
+      "y": 595,
+      "w": 78,
+      "h": 69,
+      "overlap": {
+       "w": 0,
+       "h": 0,
+       "pctOfB": 0
+      }
+     },
+     {
+      "label": "견적 문의",
+      "x": 312,
+      "y": 595,
+      "w": 78,
+      "h": 69,
+      "overlap": {
+       "w": 60,
+       "h": 57,
+       "pctOfB": 64
+      }
+     }
+    ]
+   },
+   "scrolled": {
+    "toTop": {
+     "x": 322,
+     "y": 524,
+     "w": 56,
+     "h": 56
+    },
+    "toTopOverlap": {
+     "w": 0,
+     "h": 0,
+     "pctOfB": 0
+    },
+    "tabbar": {
+     "x": 0,
+     "y": 595,
+     "w": 390,
+     "h": 69
+    },
+    "tabbarHiddenAttr": null
+   },
+   "opened": {
+    "rect": {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 664
+    }
+   },
+   "overflowPx": 0,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failed": [],
+   "httpErrors": [],
+   "leads": [],
+   "otherKeyPaths": [],
+   "otherHosts": [],
+   "chatSummary": [
+    "1x GET /widget.js 200",
+    "1x GET /widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3 200",
+    "12x GET /_next/* 200",
+    "1x POST /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/bootstrap 200"
+   ]
+  },
+  "tablet": {
+   "closed": {
+    "rect": {
+     "x": 686,
+     "y": 942,
+     "w": 64,
+     "h": 64
+    },
+    "seat": {
+     "right": 18,
+     "bottom": 18
+    }
+   },
+   "opened": {
+    "x": 378,
+    "y": 446,
+    "w": 372,
+    "h": 560
+   },
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failed": [
+    "HEAD https://interior-demo.boostweb.co.kr/ net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/contact net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/portfolio net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/service net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/about net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/faq net::ERR_ABORTED"
+   ],
+   "httpErrors": [],
+   "leads": [],
+   "otherKeyPaths": [],
+   "otherHosts": [],
+   "chatSummary": [
+    "1x GET /widget.js 200",
+    "1x GET /widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3 200",
+    "12x GET /_next/* 200",
+    "1x POST /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/bootstrap 200"
+   ]
+  }
+ },
+ "finishedAt": "2026-10-08T23:28:33.278Z",
+ "pass": true
+}

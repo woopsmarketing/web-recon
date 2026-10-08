@@ -1,0 +1,462 @@
+// Scratch tooling (not a repo file): BoostChat functional QA for boost-interior-demo-02.
+//
+// The tenant's widget allow-list holds https://interior-demo.boostweb.co.kr only, so the widget tears itself
+// down on http://127.0.0.1:4322. This script loads the Demo 02 package UNDER the allow-listed origin: every
+// request to that origin is answered from the local preview server (nothing reaches the real host), while
+// boostchat.co.kr is the real production service. No BoostChat configuration is written.
+//
+// SAFETY: every /api/widget/<key>/lead request is answered here (marked "x-qa-stub: 1"); a lead response without
+// the mark aborts the run. Page loads are paced (<= 3 per 65 s) to stay inside the widget's bootstrap budget.
+//
+//   node widget-qa.mjs <outDir> [phase...]      phases: local desktop contact mobile tablet
+import { chromium, webkit, devices } from "/Users/woops/projects/web-recon-track-b/node_modules/playwright/index.mjs";
+import { mkdirSync, writeFileSync } from "node:fs";
+
+const LOCAL = "http://127.0.0.1:4322";
+const ORIGIN = "https://interior-demo.boostweb.co.kr";
+const CHAT = "https://boostchat.co.kr";
+const KEY = "wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3";
+const [outDir, ...phaseArgs] = process.argv.slice(2);
+const phases = phaseArgs.length ? phaseArgs : ["local", "desktop", "contact", "mobile", "tablet"];
+mkdirSync(outDir, { recursive: true });
+
+const result = { startedAt: new Date().toISOString(), checks: [], phases: {} };
+const check = (name, ok, detail) => {
+  result.checks.push({ name, ok: !!ok, detail });
+  console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail === undefined ? "" : "  " + JSON.stringify(detail).slice(0, 260)}`);
+};
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const loads = [];
+const pace = async (label) => {
+  for (;;) {
+    const now = Date.now();
+    const recent = loads.filter((t) => now - t < 65000);
+    if (recent.length < 3) break;
+    const wait = 65000 - (now - recent[0]) + 500;
+    console.log(`      … pacing: ${(wait / 1000).toFixed(1)} s before ${label}`);
+    await sleep(wait);
+  }
+  loads.push(Date.now());
+};
+
+/** context wiring: local bytes under the allow-listed origin, lead stub, request log */
+const wire = async (ctx, log, leadReply) => {
+  await ctx.route(`${ORIGIN}/**`, async (route) => {
+    const u = new URL(route.request().url());
+    const response = await route.fetch({ url: LOCAL + u.pathname + u.search });
+    await route.fulfill({ response });
+  });
+  // registered last = consulted first
+  await ctx.route((url) => /\/api\/widget\/[^/]+\/lead/.test(url.pathname), async (route) => {
+    const req = route.request();
+    const cors = { "access-control-allow-origin": req.headers()["origin"] ?? ORIGIN, vary: "Origin", "cache-control": "no-store", "x-qa-stub": "1" };
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: { ...cors, "access-control-allow-methods": "POST", "access-control-allow-headers": "content-type" } });
+    const reply = leadReply(req);
+    log.leads.push({ method: req.method(), url: req.url(), contentType: req.headers()["content-type"], body: req.postData(), replied: reply.status });
+    return route.fulfill({ status: reply.status, headers: cors, contentType: "application/json", body: reply.body });
+  });
+};
+const watch = (page, log) => {
+  page.on("console", (m) => m.type() === "error" && log.consoleErrors.push(m.text().slice(0, 300)));
+  page.on("pageerror", (e) => log.pageErrors.push(String(e).slice(0, 300)));
+  page.on("requestfailed", (r) => log.failed.push(`${r.method()} ${r.url().slice(0, 140)} ${r.failure()?.errorText ?? ""}`));
+  page.on("response", async (r) => {
+    const u = r.url();
+    if (r.status() >= 400) log.httpErrors.push(`${r.status()} ${r.request().method()} ${u.slice(0, 140)}`);
+    if (/\/api\/widget\/[^/]+\/lead/.test(u) && r.headers()["x-qa-stub"] !== "1") {
+      console.error("FATAL: an un-stubbed lead response was seen: " + u);
+      process.exit(97);
+    }
+    if (u.startsWith(CHAT)) {
+      const p = new URL(u).pathname;
+      log.chat.push({ at: Date.now(), method: r.request().method(), path: p, status: r.status() });
+      if (!p.includes(KEY) && p !== "/widget.js" && !p.startsWith("/_next/") && !/\.(js|css|woff2?|png|svg|ico|webp|jpg)$/.test(p)) log.otherKeyPaths.push(p);
+    } else if (!u.startsWith(ORIGIN) && !u.startsWith(LOCAL) && !u.startsWith("data:") && !u.startsWith("blob:")) log.otherHosts.add(new URL(u).origin);
+  });
+};
+const newLog = () => ({ consoleErrors: [], pageErrors: [], failed: [], httpErrors: [], chat: [], leads: [], otherKeyPaths: [], otherHosts: new Set() });
+const sealLog = (log) => ({ ...log, otherHosts: [...log.otherHosts], chat: undefined, chatSummary: summarise(log.chat) });
+const summarise = (rows) => {
+  const m = new Map();
+  for (const r of rows) {
+    const k = `${r.method} ${r.path.replace(/\/_next\/.*/, "/_next/*")} ${r.status}`;
+    m.set(k, (m.get(k) ?? 0) + 1);
+  }
+  return [...m].map(([k, n]) => `${n}x ${k}`);
+};
+const FRAME = `iframe[src*="/widget/${KEY}"]`;
+const rect = async (loc) => {
+  const b = await loc.boundingBox();
+  return b ? { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height) } : null;
+};
+const seat = (r, vp) => (r ? { right: vp.width - (r.x + r.w), bottom: vp.height - (r.y + r.h) } : null);
+const overlap = (a, b) => {
+  if (!a || !b) return null;
+  const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+  const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+  return w > 0 && h > 0 ? { w, h, pctOfB: Math.round((100 * w * h) / (b.w * b.h)) } : { w: 0, h: 0, pctOfB: 0 };
+};
+/** wait until the newest assistant message stops changing */
+const settledReply = async (frame, countBefore, maxMs = 90000) => {
+  const msgs = frame.locator('[data-testid="chat-message"][data-role="assistant"]');
+  const t0 = Date.now();
+  let last = "";
+  let stableSince = 0;
+  while (Date.now() - t0 < maxMs) {
+    const n = await msgs.count();
+    if (n > countBefore) {
+      const text = ((await msgs.nth(n - 1).innerText()) ?? "").trim();
+      const body = text.split("\n").slice(1).join("\n").trim();
+      if (body && !/^[.…\s]+$/.test(body) && text === last) {
+        if (Date.now() - stableSince > 2500) return { text, ms: Date.now() - t0, count: n };
+      } else {
+        last = text;
+        stableSince = Date.now();
+      }
+    }
+    await sleep(400);
+  }
+  return { text: last, ms: Date.now() - t0, timedOut: true };
+};
+
+// ------------------------------------------------------------------------------------------------ local (negative control)
+if (phases.includes("local")) {
+  const browser = await chromium.launch();
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "ko-KR" });
+  const log = newLog();
+  await wire(ctx, log, () => ({ status: 200, body: '{"received":true}' }));
+  const page = await ctx.newPage();
+  watch(page, log);
+  await pace("local /");
+  await page.goto(LOCAL + "/", { waitUntil: "load" });
+  await sleep(6000);
+  const frames = await page.locator("iframe").count();
+  const visible = frames ? await page.locator("iframe").first().isVisible().catch(() => false) : false;
+  result.phases.local = { url: LOCAL + "/", iframeCount: frames, iframeVisible: visible, ...sealLog(log) };
+  check("local origin: widget script answered 200", log.chat.some((r) => r.path === "/widget.js" && r.status === 200));
+  check("local origin (not allow-listed): no launcher shown", !visible, { iframeCount: frames, visible });
+  await browser.close();
+}
+
+// ------------------------------------------------------------------------------------------------ desktop: loader, launcher, open, chat, close
+if (phases.includes("desktop")) {
+  const vp = { width: 1440, height: 900 };
+  const browser = await chromium.launch();
+  const ctx = await browser.newContext({ viewport: vp, locale: "ko-KR", timezoneId: "Asia/Seoul" });
+  const log = newLog();
+  await wire(ctx, log, () => ({ status: 200, body: '{"received":true}' }));
+  const page = await ctx.newPage();
+  watch(page, log);
+  const out = {};
+  let tScript = 0;
+  page.on("response", (r) => r.url() === `${CHAT}/widget.js` && !tScript && (tScript = Date.now()));
+  await pace("desktop /");
+  const tNav = Date.now();
+  const res = await page.goto(ORIGIN + "/", { waitUntil: "load" });
+  const tLoad = Date.now();
+  check("desktop: page served from the Demo 02 package", res.status() === 200 && (await page.title()) === "부스트 인테리어", await page.title());
+  const frameEl = page.locator(FRAME);
+  await frameEl.waitFor({ state: "attached", timeout: 20000 });
+  const tFrame = Date.now();
+  const frame = page.frameLocator(FRAME);
+  const launcher = frame.locator('button[aria-label="상담창 열기"]');
+  await launcher.waitFor({ state: "visible", timeout: 30000 });
+  const tLauncher = Date.now();
+  out.timing = { navToLoadMs: tLoad - tNav, navToWidgetScriptMs: tScript - tNav, navToIframeMs: tFrame - tNav, navToLauncherMs: tLauncher - tNav, scriptToLauncherMs: tLauncher - tScript };
+  const perf = await page.evaluate(() => {
+    const e = performance.getEntriesByType("resource").find((r) => r.name.endsWith("/widget.js"));
+    return e ? { startMs: Math.round(e.startTime), durationMs: Math.round(e.duration), transferSize: e.transferSize } : null;
+  });
+  out.widgetScriptResource = perf;
+  check("desktop: widget loader fetched", log.chat.some((r) => r.path === "/widget.js" && r.status === 200), perf);
+  const closed = await rect(frameEl);
+  out.closed = { rect: closed, seat: seat(closed, vp) };
+  check("desktop: launcher visible (closed frame 64x64, 18px seat)", closed && closed.w === 64 && closed.h === 64 && seat(closed, vp).right === 18 && seat(closed, vp).bottom === 18, out.closed);
+  await page.screenshot({ path: `${outDir}/desktop-1-closed.png` });
+
+  // to-top button vs launcher (after scrolling)
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  await sleep(900);
+  const top = page.locator("[data-to-top]");
+  const topRect = (await top.isVisible()) ? await rect(top) : null;
+  out.toTop = { rect: topRect, overlapWithLauncher: overlap(await rect(frameEl), topRect) };
+  await page.screenshot({ path: `${outDir}/desktop-2-bottom-totop.png` });
+  await page.evaluate(() => scrollTo(0, 0));
+  await sleep(400);
+
+  await launcher.click();
+  const input = frame.locator('[data-testid="chat-input"]');
+  await input.waitFor({ state: "visible", timeout: 20000 });
+  await sleep(700);
+  const opened = await rect(frameEl);
+  out.opened = { rect: opened, seat: seat(opened, vp) };
+  check("desktop: widget opens (372x560 panel)", opened && opened.w === 372 && opened.h === 560, out.opened);
+  const panelText = (await frame.locator("body").innerText()).replace(/\s+/g, " ").trim();
+  out.panelText = panelText.slice(0, 500);
+  check("desktop: panel names this tenant (부스트 인테리어)", panelText.includes("부스트 인테리어"), panelText.slice(0, 160));
+  await page.screenshot({ path: `${outDir}/desktop-3-open.png` });
+
+  const assistant = frame.locator('[data-testid="chat-message"][data-role="assistant"]');
+  const send = async (label, text) => {
+    const before = await assistant.count();
+    await input.fill(text);
+    const t = Date.now();
+    await frame.locator('[data-testid="chat-send"]').click();
+    const reply = await settledReply(frame, before);
+    const links = await frame.locator('[data-testid="chat-message"] a[href], a[href*="/portfolio/"]').evaluateAll((as) => [...new Set(as.map((a) => a.href))]);
+    out[label] = { sent: text, firstStableMs: reply.ms, timedOut: !!reply.timedOut, reply: reply.text.slice(0, 700), linksInPanel: links, sentAtIso: new Date(t).toISOString() };
+    check(`desktop: ${label} — an answer arrived`, !reply.timedOut && reply.text.length > 0, { ms: reply.ms, reply: reply.text.slice(0, 120) });
+    return out[label];
+  };
+  out.welcomeCount = await assistant.count();
+  await send("message1", "안녕하세요. 어떤 공사를 상담할 수 있나요?");
+  await page.screenshot({ path: `${outDir}/desktop-4-reply1.png` });
+  const m2 = await send("message2", "34평 아파트 전체 리모델링 시공사례를 보여 주세요.");
+  await sleep(1500);
+  await page.screenshot({ path: `${outDir}/desktop-5-reply2.png` });
+  // every portfolio link the panel offers must exist in THIS package
+  const portfolioLinks = (await frame.locator('a[href*="/portfolio/"]').evaluateAll((as) => [...new Set(as.map((a) => a.href))])).slice(0, 12);
+  const linkStatus = [];
+  for (const h of portfolioLinks) {
+    const u = new URL(h);
+    const r = await ctx.request.get(LOCAL + u.pathname);
+    linkStatus.push({ href: h, sameOrigin: u.origin === ORIGIN, statusInThisPackage: r.status() });
+  }
+  out.portfolioLinks = linkStatus;
+  if (linkStatus.length) check("desktop: portfolio links offered by the chat resolve in this package", linkStatus.every((l) => l.sameOrigin && l.statusInThisPackage === 200), linkStatus);
+  out.panelTextAfter = (await frame.locator("body").innerText()).replace(/\s+/g, " ").trim().slice(0, 1600);
+  const foreign = ["온결", "동그라미", "ongyeol"].filter((t) => out.panelTextAfter.includes(t) || (m2.reply ?? "").includes(t));
+  check("desktop: no other brand in the conversation", foreign.length === 0, foreign);
+
+  await frame.locator('button[aria-label="상담창 닫기"]').click();
+  await sleep(900);
+  const reclosed = await rect(frameEl);
+  out.reclosed = reclosed;
+  check("desktop: widget closes back to the launcher", reclosed && reclosed.w === 64 && reclosed.h === 64, reclosed);
+  await launcher.click();
+  await input.waitFor({ state: "visible", timeout: 10000 });
+  out.reopenedMessageCount = await frame.locator('[data-testid="chat-message"]').count();
+  check("desktop: reopening keeps the conversation", out.reopenedMessageCount >= 4, out.reopenedMessageCount);
+  await frame.locator('button[aria-label="상담창 닫기"]').click();
+
+  check("desktop: no console / page errors", log.consoleErrors.length === 0 && log.pageErrors.length === 0, { console: log.consoleErrors.slice(0, 3), page: log.pageErrors.slice(0, 3) });
+  check("desktop: no failed requests or HTTP >= 400", log.failed.filter((f) => !f.includes("ERR_ABORTED")).length === 0 && log.httpErrors.length === 0, { failed: log.failed.slice(0, 3), http: log.httpErrors.slice(0, 3) });
+  check("desktop: every BoostChat API path carries this site's key only", log.otherKeyPaths.length === 0, log.otherKeyPaths.slice(0, 5));
+  check("desktop: no third host besides the chat service", log.otherHosts.size === 0, [...log.otherHosts]);
+  check("desktop: no lead request during chat", log.leads.length === 0, log.leads.length);
+  result.phases.desktop = { ...out, ...sealLog(log) };
+  await browser.close();
+}
+
+// ------------------------------------------------------------------------------------------------ contact: online inquiry form, endpoint stubbed
+if (phases.includes("contact")) {
+  const vp = { width: 1440, height: 900 };
+  const browser = await chromium.launch();
+  const ctx = await browser.newContext({ viewport: vp, locale: "ko-KR", timezoneId: "Asia/Seoul" });
+  const log = newLog();
+  let mode = "fail";
+  await wire(ctx, log, () => (mode === "fail" ? { status: 500, body: '{"error":"qa_stub_failure"}' } : { status: 200, body: '{"received":true}' }));
+  const page = await ctx.newPage();
+  watch(page, log);
+  await pace("contact");
+  await page.goto(ORIGIN + "/contact", { waitUntil: "load" });
+  await page.frameLocator(FRAME).locator('button[aria-label="상담창 열기"]').waitFor({ state: "visible", timeout: 30000 });
+  const form = page.locator("[data-inquiry-form]");
+  const out = { mode: await form.getAttribute("data-inquiry-mode") };
+  check("contact: form is in online mode", out.mode === "online", out.mode);
+  await page.locator("[data-inquiry-submit]").click();
+  out.emptyErrors = await page.locator("[data-inquiry-field-error]").evaluateAll((els) => els.map((e) => e.getAttribute("data-inquiry-field-error")));
+  check("contact: empty submit shows field errors and sends nothing", out.emptyErrors.length >= 3 && log.leads.length === 0, out.emptyErrors);
+  await page.locator("#i2-inq-name").fill("[TEST] QA 스텁");
+  await page.locator("#i2-inq-phone").fill("010-0000-0000");
+  await page.locator("#i2-inq-message").fill("[TEST] interior-02 재사용 검증용 스텁 제출입니다. 실제 접수되지 않습니다.");
+  const consent = page.locator("#i2-inq-consent");
+  await consent.focus();
+  await page.keyboard.press("Space");
+  out.consentChecked = await consent.isChecked();
+  // 1) the endpoint fails
+  await page.locator("[data-inquiry-submit]").click();
+  await page.locator("[data-inquiry-error]").waitFor({ state: "visible", timeout: 10000 });
+  out.failureText = ((await page.locator("[data-inquiry-error]").innerText()) ?? "").replace(/\s+/g, " ").trim().slice(0, 240);
+  out.fieldsKeptAfterFailure = (await page.locator("#i2-inq-name").inputValue()) === "[TEST] QA 스텁";
+  check("contact: failure state shown, fields kept", out.failureText.length > 0 && out.fieldsKeptAfterFailure, out.failureText);
+  await page.screenshot({ path: `${outDir}/contact-1-failure.png`, fullPage: false });
+  // 2) the endpoint accepts
+  mode = "ok";
+  await page.locator("[data-inquiry-submit]").click();
+  await page.waitForFunction(() => !document.querySelector("#i2-inq-name"), null, { timeout: 10000 }).catch(() => {});
+  await sleep(500);
+  out.statusText = ((await page.locator("[data-inquiry-status]").first().innerText().catch(() => "")) ?? "").replace(/\s+/g, " ").trim().slice(0, 240);
+  out.formGoneAfterSuccess = (await page.locator("#i2-inq-name").count()) === 0;
+  await page.screenshot({ path: `${outDir}/contact-2-success.png`, fullPage: false });
+  const posts = log.leads.filter((l) => l.method === "POST");
+  out.posts = posts.map((p) => ({ url: p.url, contentType: p.contentType, replied: p.replied, body: JSON.parse(p.body) }));
+  const bodies = out.posts.map((p) => p.body);
+  const keys = bodies.map((b) => Object.keys(b).sort().join());
+  check("contact: two POSTs, both to this site's lead endpoint", posts.length === 2 && posts.every((p) => p.url === `${CHAT}/api/widget/${KEY}/lead`), posts.map((p) => p.url));
+  check("contact: body is exactly consent,hp,message,name,phone,submission_id", keys.every((k) => k === "consent,hp,message,name,phone,submission_id"), keys);
+  check("contact: consent true, honeypot empty", bodies.every((b) => b.consent === true && b.hp === ""), bodies.map((b) => [b.consent, b.hp]));
+  check("contact: the retry carries the same submission_id", bodies.length === 2 && bodies[0].submission_id === bodies[1].submission_id && /^[0-9a-f-]{16,}$/i.test(bodies[0].submission_id), bodies.map((b) => b.submission_id));
+  check("contact: success state shown", out.formGoneAfterSuccess && out.statusText.length > 0, out.statusText);
+  check("contact: no console / page errors besides the stubbed 500", log.pageErrors.length === 0 && log.consoleErrors.filter((e) => !/500/.test(e)).length === 0, { console: log.consoleErrors.slice(0, 3), page: log.pageErrors.slice(0, 3) });
+  result.phases.contact = { ...out, ...sealLog(log), leads: undefined };
+  await browser.close();
+}
+
+// ------------------------------------------------------------------------------------------------ mobile (WebKit iPhone 13): launcher, tab bar, fullscreen, close
+if (phases.includes("mobile")) {
+  const browser = await webkit.launch();
+  const ctx = await browser.newContext({ ...devices["iPhone 13"], locale: "ko-KR", timezoneId: "Asia/Seoul" });
+  const log = newLog();
+  await wire(ctx, log, () => ({ status: 200, body: '{"received":true}' }));
+  const page = await ctx.newPage();
+  watch(page, log);
+  await pace("mobile /");
+  await page.goto(ORIGIN + "/", { waitUntil: "load" });
+  const vp = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+  const frameEl = page.locator(FRAME);
+  const frame = page.frameLocator(FRAME);
+  const launcher = frame.locator('button[aria-label="상담창 열기"]');
+  await launcher.waitFor({ state: "visible", timeout: 30000 });
+  const out = { viewport: vp };
+  const closed = await rect(frameEl);
+  out.closed = { rect: closed, seat: seat(closed, vp) };
+  check("mobile: launcher visible (60x60, 12px seat)", closed && closed.w === 60 && closed.h === 60 && seat(closed, vp).right === 12, out.closed);
+  const tabs = await page.locator(".i2-tabbar__link").evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { label: e.textContent.trim(), x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) }; }));
+  const bar = await rect(page.locator(".i2-tabbar"));
+  out.tabbar = { rect: bar, tabs: tabs.map((t) => ({ ...t, overlap: overlap(closed, t) })) };
+  await page.screenshot({ path: `${outDir}/mobile-1-closed.png` });
+  await page.evaluate(() => scrollTo(0, 1400));
+  await sleep(900);
+  const top = page.locator("[data-to-top]");
+  const topRect = (await top.isVisible()) ? await rect(top) : null;
+  const bar2 = (await page.locator(".i2-tabbar").isVisible()) ? await rect(page.locator(".i2-tabbar")) : null;
+  out.scrolled = { toTop: topRect, toTopOverlap: overlap(await rect(frameEl), topRect), tabbar: bar2, tabbarHiddenAttr: await page.locator(".i2-tabbar").getAttribute("data-hidden") };
+  await page.screenshot({ path: `${outDir}/mobile-2-scrolled.png` });
+  await page.evaluate(() => scrollTo(0, 0));
+  await sleep(500);
+  await launcher.tap();
+  await frame.locator('[data-testid="chat-input"]').waitFor({ state: "visible", timeout: 20000 });
+  await sleep(700);
+  const opened = await rect(frameEl);
+  out.opened = { rect: opened };
+  check("mobile: widget opens full screen", opened && opened.w === vp.width && opened.h >= vp.height - 2, { opened, vp });
+  await page.screenshot({ path: `${outDir}/mobile-3-open.png` });
+  await frame.locator('button[aria-label="상담창 닫기"]').tap();
+  await sleep(900);
+  const reclosed = await rect(frameEl);
+  check("mobile: widget closes back to the launcher", reclosed && reclosed.w === 60 && reclosed.h === 60, reclosed);
+  out.overflowPx = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  check("mobile: no horizontal overflow with the widget", out.overflowPx === 0, out.overflowPx);
+  check("mobile: no console / page errors", log.consoleErrors.length === 0 && log.pageErrors.length === 0, { console: log.consoleErrors.slice(0, 3), page: log.pageErrors.slice(0, 3) });
+  check("mobile: no failed requests or HTTP >= 400", log.failed.filter((f) => !f.includes("ERR_ABORTED")).length === 0 && log.httpErrors.length === 0, { failed: log.failed.slice(0, 3), http: log.httpErrors.slice(0, 3) });
+  result.phases.mobile = { ...out, ...sealLog(log) };
+  await browser.close();
+}
+
+// ------------------------------------------------------------------------------------------------ tablet 768: launcher on a sub page, open/close
+if (phases.includes("tablet")) {
+  const vp = { width: 768, height: 1024 };
+  const browser = await chromium.launch();
+  const ctx = await browser.newContext({ viewport: vp, locale: "ko-KR", timezoneId: "Asia/Seoul" });
+  const log = newLog();
+  await wire(ctx, log, () => ({ status: 200, body: '{"received":true}' }));
+  const page = await ctx.newPage();
+  watch(page, log);
+  await pace("tablet /portfolio/…");
+  await page.goto(ORIGIN + "/portfolio/suseong-white-34py-apartment-remodeling", { waitUntil: "load" });
+  const frameEl = page.locator(FRAME);
+  const frame = page.frameLocator(FRAME);
+  const launcher = frame.locator('button[aria-label="상담창 열기"]');
+  await launcher.waitFor({ state: "visible", timeout: 30000 });
+  const closed = await rect(frameEl);
+  const out = { closed: { rect: closed, seat: seat(closed, vp) } };
+  check("tablet: launcher visible on a project page", closed && closed.w === 64 && closed.h === 64, out.closed);
+  await launcher.click();
+  await frame.locator('[data-testid="chat-input"]').waitFor({ state: "visible", timeout: 20000 });
+  await sleep(600);
+  out.opened = await rect(frameEl);
+  check("tablet: widget opens inside the viewport", out.opened && out.opened.x >= 0 && out.opened.x + out.opened.w <= vp.width && out.opened.y >= 0, out.opened);
+  await page.screenshot({ path: `${outDir}/tablet-1-open.png` });
+  await frame.locator('button[aria-label="상담창 닫기"]').click();
+  await sleep(800);
+  const reclosed = await rect(frameEl);
+  check("tablet: widget closes", reclosed && reclosed.w === 64, reclosed);
+  check("tablet: no console / page errors, no failed requests", log.consoleErrors.length === 0 && log.pageErrors.length === 0 && log.failed.filter((f) => !f.includes("ERR_ABORTED")).length === 0 && log.httpErrors.length === 0, { console: log.consoleErrors.slice(0, 3), failed: log.failed.slice(0, 3), http: log.httpErrors.slice(0, 3) });
+  result.phases.tablet = { ...out, ...sealLog(log) };
+  await browser.close();
+}
+
+// ------------------------------------------------------------------------------------------------ cards: recommendation card -> viewer -> project page of THIS package
+if (phases.includes("cards")) {
+  const vp = { width: 1280, height: 800 };
+  const browser = await chromium.launch();
+  const ctx = await browser.newContext({ viewport: vp, locale: "ko-KR", timezoneId: "Asia/Seoul" });
+  const log = newLog();
+  await wire(ctx, log, () => ({ status: 200, body: '{"received":true}' }));
+  const page = await ctx.newPage();
+  watch(page, log);
+  const events = [];
+  const t0 = Date.now();
+  const isChat = (r) => r.url().endsWith("/chat");
+  page.on("request", (r) => isChat(r) && events.push([Date.now() - t0, "request"]));
+  page.on("response", (r) => isChat(r.request()) && events.push([Date.now() - t0, "response " + r.status()]));
+  page.on("requestfinished", (r) => isChat(r) && events.push([Date.now() - t0, "requestfinished"]));
+  page.on("requestfailed", (r) => isChat(r) && events.push([Date.now() - t0, "requestfailed " + (r.failure()?.errorText ?? "")]));
+  await pace("cards /portfolio");
+  await page.goto(ORIGIN + "/portfolio", { waitUntil: "load" });
+  const frameEl = page.locator(FRAME);
+  const frame = page.frameLocator(FRAME);
+  await frame.locator('button[aria-label="상담창 열기"]').click({ timeout: 30000 });
+  const input = frame.locator('[data-testid="chat-input"]');
+  await input.waitFor({ state: "visible", timeout: 20000 });
+  const assistant = frame.locator('[data-testid="chat-message"][data-role="assistant"]');
+  const before = await assistant.count();
+  await input.fill("주방이랑 욕실만 고친 사례가 있을까요?");
+  await frame.locator('[data-testid="chat-send"]').click();
+  const reply = await settledReply(frame, before);
+  events.push([Date.now() - t0, "reply settled in the panel"]);
+  const out = { reply: reply.text.slice(0, 500), replyMs: reply.ms };
+  check("cards: an answer arrived", !reply.timedOut && reply.text.length > 0, reply.text.slice(0, 120));
+  const cardsLoc = frame.locator("[data-portfolio-card]");
+  out.cardCount = await cardsLoc.count();
+  out.cardIds = await cardsLoc.evaluateAll((els) => els.map((e) => e.getAttribute("data-portfolio-card")));
+  out.cardAnchors = await frame.locator('a[data-testid="portfolio-card"]').evaluateAll((as) => as.map((a) => a.href));
+  check("cards: recommendation cards rendered", out.cardCount > 0, out.cardIds);
+  await page.screenshot({ path: `${outDir}/cards-1-list.png` });
+  if (out.cardCount > 0) {
+    await cardsLoc.first().locator("button, a").first().click();
+    await sleep(2500);
+    const openPage = frame.locator('[data-testid="portfolio-viewer-page"]');
+    out.viewerHasPageButton = (await openPage.count()) > 0;
+    out.viewerFrameRect = await rect(frameEl);
+    await page.screenshot({ path: `${outDir}/cards-2-viewer.png` });
+    if (out.viewerHasPageButton) {
+      const popupP = ctx.waitForEvent("page", { timeout: 8000 }).catch(() => null);
+      await openPage.click();
+      const popup = await popupP;
+      await sleep(1500);
+      const target = popup ?? page;
+      await target.waitForLoadState("load").catch(() => {});
+      out.opened = { how: popup ? "new tab" : "same tab", url: target.url(), title: await target.title(), h1: ((await target.locator("h1").first().innerText().catch(() => "")) ?? "").trim() };
+      const u = new URL(out.opened.url);
+      const r = await ctx.request.get(LOCAL + u.pathname);
+      out.opened.statusInThisPackage = r.status();
+      check("cards: the card's project page exists in this package", u.origin === ORIGIN && r.status() === 200 && out.opened.title.includes("부스트 인테리어"), out.opened);
+      await target.screenshot({ path: `${outDir}/cards-3-project-page.png` });
+    }
+  }
+  await sleep(1500);
+  out.chatEvents = events;
+  check("cards: no console / page errors", log.consoleErrors.length === 0 && log.pageErrors.length === 0, { console: log.consoleErrors.slice(0, 3), page: log.pageErrors.slice(0, 3) });
+  check("cards: no HTTP >= 400", log.httpErrors.length === 0, log.httpErrors.slice(0, 3));
+  result.phases.cards = { ...out, ...sealLog(log) };
+  await browser.close();
+  result.phases.cards.chatEvents.push([Date.now() - t0, "browser closed"]);
+}
+
+result.finishedAt = new Date().toISOString();
+result.pass = result.checks.every((c) => c.ok);
+writeFileSync(`${outDir}/widget-qa-${phases.join("+")}.json`, JSON.stringify(result, null, 1));
+console.log(`RESULT: ${result.pass ? "PASS" : "FAIL"}  (${result.checks.filter((c) => c.ok).length}/${result.checks.length})`);
+process.exit(result.pass ? 0 : 1);

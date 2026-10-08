@@ -1,0 +1,557 @@
+{
+ "startedAt": "2026-10-08T22:56:19.680Z",
+ "checks": [
+  {
+   "name": "contact: form is in online mode",
+   "ok": true,
+   "detail": "online"
+  },
+  {
+   "name": "contact: empty submit shows field errors and sends nothing",
+   "ok": true,
+   "detail": [
+    "name",
+    "phone",
+    "message",
+    "consent"
+   ]
+  },
+  {
+   "name": "contact: failure state shown, fields kept",
+   "ok": true,
+   "detail": "문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요. 다른 방법으로 문의하실 수 있습니다. 이메일: vnfm0580@gmail.com"
+  },
+  {
+   "name": "contact: two POSTs, both to this site's lead endpoint",
+   "ok": true,
+   "detail": [
+    "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+    "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead"
+   ]
+  },
+  {
+   "name": "contact: body is exactly consent,hp,message,name,phone,submission_id",
+   "ok": true,
+   "detail": [
+    "consent,hp,message,name,phone,submission_id",
+    "consent,hp,message,name,phone,submission_id"
+   ]
+  },
+  {
+   "name": "contact: consent true, honeypot empty",
+   "ok": true,
+   "detail": [
+    [
+     true,
+     ""
+    ],
+    [
+     true,
+     ""
+    ]
+   ]
+  },
+  {
+   "name": "contact: the retry carries the same submission_id",
+   "ok": true,
+   "detail": [
+    "9a4f9557-f145-4c6b-8826-7b15ea1763df",
+    "9a4f9557-f145-4c6b-8826-7b15ea1763df"
+   ]
+  },
+  {
+   "name": "contact: success state shown",
+   "ok": true,
+   "detail": "견적 문의가 접수되었습니다. 입력해주신 내용을 확인한 뒤 상담을 이어갈 수 있습니다."
+  },
+  {
+   "name": "contact: no console / page errors besides the stubbed 500",
+   "ok": true,
+   "detail": {
+    "console": [
+     "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ],
+    "page": []
+   }
+  },
+  {
+   "name": "mobile: launcher visible (60x60, 12px seat)",
+   "ok": true,
+   "detail": {
+    "rect": {
+     "x": 318,
+     "y": 592,
+     "w": 60,
+     "h": 60
+    },
+    "seat": {
+     "right": 12,
+     "bottom": 12
+    }
+   }
+  },
+  {
+   "name": "mobile: widget opens full screen",
+   "ok": true,
+   "detail": {
+    "opened": {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 664
+    },
+    "vp": {
+     "width": 390,
+     "height": 664
+    }
+   }
+  },
+  {
+   "name": "mobile: widget closes back to the launcher",
+   "ok": true,
+   "detail": {
+    "x": 318,
+    "y": 592,
+    "w": 60,
+    "h": 60
+   }
+  },
+  {
+   "name": "mobile: no horizontal overflow with the widget",
+   "ok": true,
+   "detail": 0
+  },
+  {
+   "name": "mobile: no console / page errors",
+   "ok": true,
+   "detail": {
+    "console": [],
+    "page": []
+   }
+  },
+  {
+   "name": "mobile: no failed requests or HTTP >= 400",
+   "ok": true,
+   "detail": {
+    "failed": [],
+    "http": []
+   }
+  },
+  {
+   "name": "tablet: launcher visible on a project page",
+   "ok": true,
+   "detail": {
+    "rect": {
+     "x": 686,
+     "y": 942,
+     "w": 64,
+     "h": 64
+    },
+    "seat": {
+     "right": 18,
+     "bottom": 18
+    }
+   }
+  },
+  {
+   "name": "tablet: widget opens inside the viewport",
+   "ok": true,
+   "detail": {
+    "x": 378,
+    "y": 446,
+    "w": 372,
+    "h": 560
+   }
+  },
+  {
+   "name": "tablet: widget closes",
+   "ok": true,
+   "detail": {
+    "x": 686,
+    "y": 942,
+    "w": 64,
+    "h": 64
+   }
+  },
+  {
+   "name": "tablet: no console / page errors, no failed requests",
+   "ok": true,
+   "detail": {
+    "console": [],
+    "failed": [
+     "HEAD https://interior-demo.boostweb.co.kr/ net::ERR_ABORTED",
+     "HEAD https://interior-demo.boostweb.co.kr/contact net::ERR_ABORTED",
+     "HEAD https://interior-demo.boostweb.co.kr/portfolio net::ERR_ABORTED"
+    ],
+    "http": []
+   }
+  },
+  {
+   "name": "cards: an answer arrived",
+   "ok": true,
+   "detail": "상담 도우미\n네, 있습니다 😊  \nA · 32평 주방·욕실 중심 리뉴얼이 주방과 욕실을 진행한 공사 범위가 같은 사례예요. 공급 32평, 대구 북구 사례이며 화이트·모던 스타일입니다. 총 공사비 정보는 없어요.\nA"
+  },
+  {
+   "name": "cards: recommendation cards rendered",
+   "ok": true,
+   "detail": [
+    "bi-04",
+    "bi-01",
+    "bi-02"
+   ]
+  },
+  {
+   "name": "cards: the card's project page exists in this package",
+   "ok": true,
+   "detail": {
+    "how": "same tab",
+    "url": "https://interior-demo.boostweb.co.kr/portfolio/buk-32py-kitchen-bathroom-renewal",
+    "title": "32평 주방·욕실 중심 리뉴얼 | 부스트 인테리어",
+    "h1": "32평 주방·욕실 중심 리뉴얼\n32PY",
+    "statusInThisPackage": 200
+   }
+  },
+  {
+   "name": "cards: no console / page errors",
+   "ok": true,
+   "detail": {
+    "console": [],
+    "page": []
+   }
+  },
+  {
+   "name": "cards: no HTTP >= 400",
+   "ok": true,
+   "detail": []
+  }
+ ],
+ "phases": {
+  "contact": {
+   "mode": "online",
+   "emptyErrors": [
+    "name",
+    "phone",
+    "message",
+    "consent"
+   ],
+   "consentChecked": true,
+   "failureText": "문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요. 다른 방법으로 문의하실 수 있습니다. 이메일: vnfm0580@gmail.com",
+   "fieldsKeptAfterFailure": true,
+   "statusText": "견적 문의가 접수되었습니다. 입력해주신 내용을 확인한 뒤 상담을 이어갈 수 있습니다.",
+   "formGoneAfterSuccess": true,
+   "posts": [
+    {
+     "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+     "contentType": "application/json",
+     "replied": 500,
+     "body": {
+      "consent": true,
+      "name": "[TEST] QA 스텁",
+      "phone": "010-0000-0000",
+      "message": "[홈페이지 견적 문의]\n\n[TEST] interior-02 재사용 검증용 스텁 제출입니다. 실제 접수되지 않습니다.",
+      "hp": "",
+      "submission_id": "9a4f9557-f145-4c6b-8826-7b15ea1763df"
+     }
+    },
+    {
+     "url": "https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead",
+     "contentType": "application/json",
+     "replied": 200,
+     "body": {
+      "consent": true,
+      "name": "[TEST] QA 스텁",
+      "phone": "010-0000-0000",
+      "message": "[홈페이지 견적 문의]\n\n[TEST] interior-02 재사용 검증용 스텁 제출입니다. 실제 접수되지 않습니다.",
+      "hp": "",
+      "submission_id": "9a4f9557-f145-4c6b-8826-7b15ea1763df"
+     }
+    }
+   ],
+   "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+   ],
+   "pageErrors": [],
+   "failed": [
+    "HEAD https://interior-demo.boostweb.co.kr/ net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/portfolio net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/service net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/about net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/faq net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/contact net::ERR_ABORTED"
+   ],
+   "httpErrors": [
+    "500 POST https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead"
+   ],
+   "otherKeyPaths": [],
+   "otherHosts": [],
+   "chatSummary": [
+    "1x GET /widget.js 200",
+    "1x GET /widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3 200",
+    "12x GET /_next/* 200",
+    "1x POST /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead 500",
+    "1x POST /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/lead 200",
+    "1x POST /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/bootstrap 200"
+   ]
+  },
+  "mobile": {
+   "viewport": {
+    "width": 390,
+    "height": 664
+   },
+   "closed": {
+    "rect": {
+     "x": 318,
+     "y": 592,
+     "w": 60,
+     "h": 60
+    },
+    "seat": {
+     "right": 12,
+     "bottom": 12
+    }
+   },
+   "tabbar": {
+    "rect": {
+     "x": 0,
+     "y": 595,
+     "w": 390,
+     "h": 69
+    },
+    "tabs": [
+     {
+      "label": "홈",
+      "x": 0,
+      "y": 595,
+      "w": 78,
+      "h": 69,
+      "overlap": {
+       "w": 0,
+       "h": 0,
+       "pctOfB": 0
+      }
+     },
+     {
+      "label": "시공사례",
+      "x": 78,
+      "y": 595,
+      "w": 78,
+      "h": 69,
+      "overlap": {
+       "w": 0,
+       "h": 0,
+       "pctOfB": 0
+      }
+     },
+     {
+      "label": "공사 유형",
+      "x": 156,
+      "y": 595,
+      "w": 78,
+      "h": 69,
+      "overlap": {
+       "w": 0,
+       "h": 0,
+       "pctOfB": 0
+      }
+     },
+     {
+      "label": "FAQ",
+      "x": 234,
+      "y": 595,
+      "w": 78,
+      "h": 69,
+      "overlap": {
+       "w": 0,
+       "h": 0,
+       "pctOfB": 0
+      }
+     },
+     {
+      "label": "견적 문의",
+      "x": 312,
+      "y": 595,
+      "w": 78,
+      "h": 69,
+      "overlap": {
+       "w": 60,
+       "h": 57,
+       "pctOfB": 64
+      }
+     }
+    ]
+   },
+   "scrolled": {
+    "toTop": {
+     "x": 322,
+     "y": 524,
+     "w": 56,
+     "h": 56
+    },
+    "toTopOverlap": {
+     "w": 0,
+     "h": 0,
+     "pctOfB": 0
+    },
+    "tabbar": {
+     "x": 0,
+     "y": 595,
+     "w": 390,
+     "h": 69
+    },
+    "tabbarHiddenAttr": null
+   },
+   "opened": {
+    "rect": {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 664
+    }
+   },
+   "overflowPx": 0,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failed": [],
+   "httpErrors": [],
+   "leads": [],
+   "otherKeyPaths": [],
+   "otherHosts": [],
+   "chatSummary": [
+    "1x GET /widget.js 200",
+    "1x GET /widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3 200",
+    "12x GET /_next/* 200",
+    "1x POST /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/bootstrap 200"
+   ]
+  },
+  "tablet": {
+   "closed": {
+    "rect": {
+     "x": 686,
+     "y": 942,
+     "w": 64,
+     "h": 64
+    },
+    "seat": {
+     "right": 18,
+     "bottom": 18
+    }
+   },
+   "opened": {
+    "x": 378,
+    "y": 446,
+    "w": 372,
+    "h": 560
+   },
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failed": [
+    "HEAD https://interior-demo.boostweb.co.kr/ net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/contact net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/portfolio net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/service net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/about net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/faq net::ERR_ABORTED"
+   ],
+   "httpErrors": [],
+   "leads": [],
+   "otherKeyPaths": [],
+   "otherHosts": [],
+   "chatSummary": [
+    "1x GET /widget.js 200",
+    "1x GET /widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3 200",
+    "12x GET /_next/* 200",
+    "1x POST /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/bootstrap 200"
+   ]
+  },
+  "cards": {
+   "reply": "상담 도우미\n네, 있습니다 😊  \nA · 32평 주방·욕실 중심 리뉴얼이 주방과 욕실을 진행한 공사 범위가 같은 사례예요. 공급 32평, 대구 북구 사례이며 화이트·모던 스타일입니다. 총 공사비 정보는 없어요.\nA\n사례 A,\n32평 주방·욕실 중심 리뉴얼\n대구 북구 · 공급 32평\n공사 범위가 같은 사례\n부분 리모델링\n주방\n욕실\n사례 자세히 보기 →\nB\n사례 B,\n수성 화이트 34평 아파트 리모델링\n대구 수성구 · 공급 34평\n참고 사례\n전체 리모델링\n현관\n주방\n사례 자세히 보기 →\nC\n사례 C,\n신혼부부를 위한 24평 화이트 내추럴 리모델링\n대구 달서구 · 공급 24평\n참고 사례\n주방\n바닥\n붙박이·제작 가구\n사례 자세히 보기 →\n더 보기 (+2)",
+   "replyMs": 4915,
+   "cardCount": 3,
+   "cardIds": [
+    "bi-04",
+    "bi-01",
+    "bi-02"
+   ],
+   "cardAnchors": [],
+   "viewerHasPageButton": true,
+   "viewerFrameRect": {
+    "x": 0,
+    "y": 0,
+    "w": 1280,
+    "h": 800
+   },
+   "opened": {
+    "how": "same tab",
+    "url": "https://interior-demo.boostweb.co.kr/portfolio/buk-32py-kitchen-bathroom-renewal",
+    "title": "32평 주방·욕실 중심 리뉴얼 | 부스트 인테리어",
+    "h1": "32평 주방·욕실 중심 리뉴얼\n32PY",
+    "statusInThisPackage": 200
+   },
+   "chatEvents": [
+    [
+     55806,
+     "request"
+    ],
+    [
+     57254,
+     "response 200"
+    ],
+    [
+     57936,
+     "requestfailed net::ERR_ABORTED"
+    ],
+    [
+     60722,
+     "reply settled in the panel"
+    ],
+    [
+     74525,
+     "browser closed"
+    ]
+   ],
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failed": [
+    "HEAD https://interior-demo.boostweb.co.kr/ net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/contact net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/portfolio net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/service net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/about net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/faq net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/portfolio/suseong-white-34py-apartment-remodeling net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/portfolio/dalseo-24py-white-natural-newlywed-home net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/portfolio/suseong-42py-family-storage-remodeling net::ERR_ABORTED",
+    "POST https://boostchat.co.kr/api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/chat net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/ net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/contact net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/portfolio net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/service net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/about net::ERR_ABORTED",
+    "HEAD https://interior-demo.boostweb.co.kr/faq net::ERR_ABORTED"
+   ],
+   "httpErrors": [],
+   "leads": [],
+   "otherKeyPaths": [
+    "/api/public/workflow/portfolio-event"
+   ],
+   "otherHosts": [],
+   "chatSummary": [
+    "2x GET /widget.js 200",
+    "2x GET /widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3 200",
+    "24x GET /_next/* 200",
+    "2x POST /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/bootstrap 200",
+    "1x POST /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/chat 200",
+    "1x GET /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/portfolio/bi-04/media/cover 200",
+    "1x GET /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/portfolio/bi-01/media/cover 200",
+    "1x GET /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/portfolio/bi-02/media/cover 200",
+    "1x GET /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/portfolio/bi-04 200",
+    "1x POST /api/public/workflow/portfolio-event 202",
+    "1x GET /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/portfolio/bi-04/media/0 200",
+    "1x GET /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/portfolio/bi-04/media/1 200",
+    "1x GET /api/widget/wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3/conversation/<conversation-id> 200"
+   ]
+  }
+ },
+ "finishedAt": "2026-10-08T22:57:45.895Z",
+ "pass": true
+}
