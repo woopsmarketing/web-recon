@@ -1,0 +1,570 @@
+/*
+ * home.css (HOME area) — hero · gallery tiles · band · portfolio grid. Desktop-first; breakpoints
+ * 768 · 480. Colours: theme tokens only (base.css, COLOUR RULE). The section frame and the title
+ * block come from base.css (.i3-sec, .i3-tit__line, .i3-tit, .i3-btn--pill, .i3-cards). Hover
+ * changes are instant (no transition): the hero cross-fade is the only animated part of this area.
+ *
+ *   .i3-hero     full-width stage 800px (370 ≤ 768; 260 ≤ 480) over the quiet surface: the slides
+ *                stacked and cross-fading by opacity (1.5 s, quint ease-out), the slogan block centred
+ *                over them (emblem · 44px/54px lines; 26/32 ≤ 768; 20/26 ≤ 480), the dots 20px from the
+ *                bottom (15 ≤ 768; 10 ≤ 480): 10 × 10, the current one 20 × 10, then the stop / start
+ *                control (autoplay only; hidden under reduced motion). `.i3-hero__wait` is the
+ *                hidden 4 s wait of the autoplay (its animationend shows the next slide; the component
+ *                removes `is-waiting` while rotation must pause; reduced motion removes the animation)
+ *   .i3-gal      two tiles per row (49% + 2%, wrapped rows 40px apart; 30 ≤ 768), one per row ≤ 480; picture 27:16, name, muted caption
+ *   .i3-band     the quiet band: the photo covers it from behind, veiled on the text side (wide) or
+ *                lightly all over (narrow); eyebrow · title · round buttons 130 (100 ≤ 768; 120 in a
+ *                2 × 2 block ≤ 480)
+ *   .i3-pf       lead under the title, 3 columns (32% + 2%; 49% ≤ 768), the pill button under the grid
+ */
+
+/* ---------- hero ---------- */
+
+.i3-hero {
+  position: relative;
+  --i3-ease-quint: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.i3-hero__stage {
+  position: relative;
+  height: 800px;
+  overflow: hidden;
+  background: var(--i3-surface);
+}
+
+.i3-hero__slides {
+  position: absolute;
+  inset: 0;
+}
+
+.i3-hero__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.5s var(--i3-ease-quint);
+}
+
+.i3-hero__slide[data-active] {
+  opacity: 1;
+}
+
+.i3-hero__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+}
+
+/* the slogan block: 50% down, pulled up by the reference offset (the emblem + two lines) */
+.i3-hero__typo {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  margin-top: -140px;
+  padding-inline: 12px;
+  color: var(--color-text-primary);
+  text-align: center;
+  text-shadow: 0 1px 14px color-mix(in srgb, var(--color-canvas) 55%, transparent);
+}
+
+.i3-hero__mark {
+  width: 108px;
+  height: auto;
+  margin-inline: auto;
+}
+
+.i3-hero__mark + .i3-hero__slogan {
+  margin-top: 20px;
+}
+
+.i3-hero__slogan {
+  font-size: 44px;
+  font-weight: 400;
+  line-height: 54px;
+  letter-spacing: -2px;
+}
+
+.i3-hero__line {
+  display: block;
+}
+
+.i3-hero__line--strong {
+  font-weight: var(--i3-w-strong);
+}
+
+/* dots: centred, 20px from the bottom; each button is a 20 × 20 hit box around a 10 × 10 dot */
+.i3-hero__dots {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.i3-hero__dot {
+  display: block;
+  padding: 5px;
+  margin-inline: -3px;
+}
+
+.i3-hero__dot::before {
+  content: "";
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--decoration-radius-pill);
+  background: color-mix(in srgb, var(--color-canvas) 62%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text-primary) 14%, transparent);
+}
+
+.i3-hero__dot[aria-current="true"]::before {
+  width: 20px;
+  background: var(--color-canvas);
+}
+
+/* the stop / start control: as quiet as the dots, a 20 × 20 hit box, 7px after the last dot */
+.i3-hero__ctl {
+  margin-left: 7px;
+}
+
+.i3-hero__toggle {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--decoration-radius-pill);
+  color: var(--color-canvas);
+  filter: drop-shadow(0 0 1px color-mix(in srgb, var(--color-text-primary) 40%, transparent));
+}
+
+/* the glyph is swapped on a press: it never is the pointer's target, so the bar still sees the
+   pointer leave afterwards (a removed target would swallow that) */
+.i3-hero__glyph {
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+}
+
+/* the autoplay wait: a hidden 4 s animation whose end shows the next slide */
+.i3-hero__wait {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.i3-hero__wait.is-waiting {
+  animation: i3-hero-wait 4s linear forwards;
+}
+
+@keyframes i3-hero-wait {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.01;
+  }
+}
+
+/* ---------- gallery tiles ---------- */
+
+.i3-gal__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px 2%;
+  margin-top: 50px;
+}
+
+.i3-gal__tile {
+  flex: 0 0 49%;
+  min-width: 0;
+}
+
+.i3-gal__link {
+  display: block;
+}
+
+.i3-gal__pic {
+  display: block;
+  aspect-ratio: 27 / 16;
+  overflow: hidden;
+  background: var(--i3-surface);
+}
+
+.i3-gal__pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.i3-gal__name {
+  margin-top: 20px;
+  font-size: 22px;
+  font-weight: var(--i3-w-strong);
+  line-height: 20px;
+  color: var(--color-text-primary);
+}
+
+.i3-gal__cap {
+  margin-top: 5px;
+  font-size: 12.3px;
+  font-weight: 300;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: var(--i3-text-3);
+}
+
+/* ---------- band ---------- */
+
+.i3-band {
+  position: relative;
+  overflow: hidden;
+  padding: 80px;
+  background: var(--i3-surface);
+}
+
+.i3-band__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+}
+
+/* the photo is any site picture: the text side stays on the quiet surface */
+.i3-band::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: linear-gradient(90deg, var(--i3-surface) 0%, var(--i3-surface) 42%, transparent 72%);
+  pointer-events: none;
+}
+
+.i3-band__in {
+  position: relative;
+  z-index: 2;
+  text-align: left;
+}
+
+.i3-band__eyebrow {
+  font-family: var(--typography-heading);
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 1px;
+  color: var(--i3-gold);
+}
+
+.i3-band__title {
+  margin-top: 5px;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 31px;
+  letter-spacing: -1px;
+  color: var(--color-text-primary);
+}
+
+.i3-band__title strong {
+  font-weight: var(--i3-w-strong);
+}
+
+.i3-band__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.i3-band__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 130px;
+  height: 130px;
+  padding-top: 20px;
+  border: 1px solid var(--i3-rule);
+  border-radius: var(--decoration-radius-pill);
+  background: var(--color-surface-primary);
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+.i3-band__glyph {
+  width: 50px;
+  height: 50px;
+  color: var(--i3-gold);
+}
+
+.i3-band__label {
+  margin-top: 5px;
+  font-size: 16px;
+  font-weight: var(--i3-w-strong);
+  line-height: 20px;
+  letter-spacing: -1px;
+}
+
+/* ---------- portfolio grid ---------- */
+
+.i3-pf__lead {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -1px;
+  color: var(--i3-text-3);
+}
+
+.i3-cards--home {
+  gap: 22px 2%;
+  margin-top: 40px;
+}
+
+.i3-cards--home .i3-card {
+  flex: 0 0 32%;
+}
+
+.i3-cards--home .i3-card__subject {
+  padding-top: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+/* the row gap of the grid + the button's own 30px */
+.i3-pf__more {
+  margin-top: 52px;
+}
+
+/* ---------- hover ---------- */
+
+@media (hover: hover) {
+  .i3-gal__link:hover,
+  .i3-cards--home .i3-card__link:hover {
+    opacity: 0.8;
+  }
+
+  .i3-band__btn:hover {
+    border-color: color-mix(in srgb, var(--i3-gold) 55%, var(--color-canvas));
+  }
+}
+
+/* ---------- breakpoints ---------- */
+
+@media (max-width: 768px) {
+  .i3-hero__stage {
+    height: 370px;
+  }
+
+  .i3-hero__typo {
+    margin-top: -80px;
+  }
+
+  .i3-hero__mark {
+    width: 66px;
+  }
+
+  .i3-hero__mark + .i3-hero__slogan {
+    margin-top: 10px;
+  }
+
+  .i3-hero__slogan {
+    font-size: 26px;
+    line-height: 32px;
+  }
+
+  .i3-hero__dots {
+    bottom: 15px;
+  }
+
+  .i3-gal__list {
+    gap: 30px 2%;
+    margin-top: 30px;
+  }
+
+  .i3-gal__name {
+    margin-top: 15px;
+    font-size: 18px;
+  }
+
+  .i3-gal__cap {
+    margin-top: 2px;
+  }
+
+  .i3-band {
+    padding: 50px 0;
+  }
+
+  .i3-band__bg {
+    object-position: 58% 50%;
+  }
+
+  .i3-band::before {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--i3-surface) 88%, transparent) 0%,
+      color-mix(in srgb, var(--i3-surface) 70%, transparent) 34%,
+      color-mix(in srgb, var(--i3-surface) 30%, transparent) 62%
+    );
+  }
+
+  .i3-band__eyebrow {
+    font-size: 12.3px;
+    line-height: 18px;
+  }
+
+  .i3-band__title {
+    margin-top: 0;
+    font-size: 22px;
+    line-height: 26px;
+  }
+
+  .i3-band__links {
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .i3-band__btn {
+    width: 100px;
+    height: 100px;
+    padding-top: 14px;
+  }
+
+  .i3-band__glyph {
+    width: 42px;
+    height: 42px;
+  }
+
+  .i3-band__label {
+    font-size: 14px;
+  }
+
+  .i3-pf__lead {
+    margin-top: 0;
+    font-size: 12px;
+    line-height: 18px;
+  }
+
+  .i3-cards--home {
+    gap: 20px 2%;
+    margin-top: 30px;
+  }
+
+  .i3-cards--home .i3-card {
+    flex-basis: 49%;
+  }
+
+  .i3-cards--home .i3-card__subject {
+    font-size: 13px;
+  }
+
+  .i3-pf__more {
+    margin-top: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .i3-hero__stage {
+    height: 260px;
+  }
+
+  .i3-hero__typo {
+    margin-top: -65px;
+  }
+
+  .i3-hero__mark {
+    width: 55px;
+  }
+
+  .i3-hero__slogan {
+    font-size: 20px;
+    line-height: 26px;
+  }
+
+  .i3-hero__dots {
+    bottom: 10px;
+  }
+
+  /* one per row: the tile's own 30px bottom margin is the rhythm, no row gap on top of it */
+  .i3-gal__list {
+    gap: 0;
+    margin-top: 20px;
+  }
+
+  .i3-gal__tile {
+    flex-basis: 100%;
+    margin-bottom: 30px;
+  }
+
+  .i3-gal__name {
+    margin-top: 10px;
+  }
+
+  .i3-band {
+    padding: 40px 0 20px;
+  }
+
+  .i3-band__bg {
+    object-position: 73% 50%;
+  }
+
+  .i3-band__in {
+    text-align: center;
+  }
+
+  .i3-band__title {
+    font-size: 18px;
+    line-height: 22px;
+  }
+
+  .i3-band__links {
+    max-width: 300px;
+    margin: 20px auto 0;
+    justify-content: center;
+    gap: 15px 14px;
+  }
+
+  .i3-band__btn {
+    width: 120px;
+    height: 120px;
+    padding-top: 22px;
+  }
+
+  .i3-pf__lead {
+    font-size: 12.3px;
+  }
+
+  .i3-cards--home {
+    gap: 12px 2%;
+    margin-top: 25px;
+  }
+
+  .i3-cards--home .i3-card__subject {
+    padding-top: 8px;
+  }
+
+  .i3-pf__more {
+    margin-top: 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .i3-hero__slide {
+    transition: none;
+  }
+
+  .i3-hero__wait.is-waiting {
+    animation: none;
+  }
+
+  /* the rotation is off here: nothing to stop or start */
+  .i3-hero__ctl {
+    display: none;
+  }
+}

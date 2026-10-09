@@ -32,8 +32,15 @@ import template from "../../templates/interior-02/v1/template";
 
 const repoRoot = process.cwd();
 const TEMPLATE = "interior-02";
-/** a Template that declares no portfolio runtime */
+/**
+ * A release of a Template that declared no portfolio runtime when it was cut (interior-03 declares one
+ * since 1.1.0). It is re-cut below from its OWN frozen files, so the check does not depend on any
+ * working tree staying without a runtime.
+ */
 const PLAIN_TEMPLATE = "interior-03";
+const PLAIN_RELEASE = "interior-03-1.0.0-2a949e9f0247";
+/** the releases of OTHER Templates that declare the capability — each one cut through the gate, each proven by portfolio-runtime.test.ts */
+const OTHER_DECLARED_RELEASES = ["interior-03-1.1.0-0e434d80b8e4"] as const;
 const SHELL_SITE = "boost-interior-demo-02";
 /** THE release cut before the capability existed that ships a portfolio runtime — a live site pins it */
 const LEGACY_RELEASE = "interior-02-1.1.0-be2c1e2d3850";
@@ -120,7 +127,7 @@ try {
     }
   });
 
-  await check(`C3 the resolver over the whole store (${allReleases.length} releases): declared by the release = the working tree's; legacy = exactly ${LEGACY_RELEASE}; every other release is unsupported and says why`, () => {
+  await check(`C3 the resolver over the whole store (${allReleases.length} releases): declared by the release = the working tree's and ${OTHER_DECLARED_RELEASES.length} named release(s) of other Templates; legacy = exactly ${LEGACY_RELEASE}; every other release is unsupported and says why`, () => {
     const by = { release: [] as string[], legacy: [] as string[], unsupported: [] as string[] };
     for (const r of allReleases) {
       const support = resolvePortfolioRuntime(r);
@@ -132,11 +139,17 @@ try {
         by.unsupported.push(r.releaseId);
       }
     }
-    eq(by.release, [headId], "releases that declare the capability");
+    const declared = [headId, ...OTHER_DECLARED_RELEASES].sort();
+    eq([...by.release].sort(), declared, "releases that declare the capability");
     eq(by.legacy, [LEGACY_RELEASE], "releases the legacy inference applies to — a closed set: nothing may join it");
-    eq(by.unsupported.length, allReleases.length - 2, "everything else");
+    eq(by.unsupported.length, allReleases.length - declared.length - 1, "everything else");
+    // a declared release carries the member AND its passed gate with a recorded empty state
+    for (const r of allReleases.filter((x) => declared.includes(x.releaseId))) {
+      eq([r.portfolioRuntime, r.gates[PORTFOLIO_RUNTIME_GATE]?.pass], [{ supported: true, contract: CONTRACT }, true], `${r.releaseId} record`);
+      assert(recordedEmptyState(r) !== undefined, `${r.releaseId}: the gate recorded no empty state`);
+    }
     // a release without the capability carries neither the member nor the gate (its hash is what it was)
-    for (const r of allReleases.filter((x) => x.releaseId !== headId)) eq([r.portfolioRuntime, r.gates[PORTFOLIO_RUNTIME_GATE]], [undefined, undefined], `${r.releaseId} record`);
+    for (const r of allReleases.filter((x) => !declared.includes(x.releaseId))) eq([r.portfolioRuntime, r.gates[PORTFOLIO_RUNTIME_GATE]], [undefined, undefined], `${r.releaseId} record`);
   });
 
   await check("C4 the resolver's rules, on records: a declaration needs its passed gate and a contract this platform speaks; the legacy inference needs BOTH runtime modules and a record with neither the member nor the gate", () => {
@@ -180,7 +193,9 @@ try {
   });
 
   await check("K2 a release without the capability has no kit — the kit builder says what the resolver says", async () => {
-    for (const r of allReleases.filter((x) => (x.templateId === TEMPLATE && x.templateVersion.startsWith("1.0.")) || x.templateId === PLAIN_TEMPLATE)) {
+    const plain = allReleases.filter((x) => (x.templateId === TEMPLATE && x.templateVersion.startsWith("1.0.")) || x.releaseId === PLAIN_RELEASE);
+    assert(plain.some((x) => x.releaseId === PLAIN_RELEASE) && plain.length > 1, `releases without the capability: ${plain.map((x) => x.releaseId).join(", ")}`);
+    for (const r of plain) {
       const said = await refusal(RuntimeKitError, () => buildRuntimeKit({ repoRoot, templateId: r.templateId, releaseId: r.releaseId, sourceCommit: "test" }), r.releaseId);
       assert(said.includes("cannot be composed at publish time") && said.includes("does not declare the portfolio runtime"), `${r.releaseId}: ${said}`);
     }
@@ -265,9 +280,17 @@ try {
   });
 
   await check("G2 a Template that declares no portfolio runtime cuts the very release it always did: same id, no member, no gate — the gate is passed as not applicable", async () => {
-    const stored = allReleases.filter((r) => r.templateId === PLAIN_TEMPLATE);
-    eq(stored.length, 1, `${PLAIN_TEMPLATE} releases in the store`);
-    const root = await cutRoot("plain", PLAIN_TEMPLATE);
+    const stored = allReleases.filter((r) => r.releaseId === PLAIN_RELEASE);
+    eq(stored.map((r) => r.templateId), [PLAIN_TEMPLATE], `${PLAIN_RELEASE} in the store`);
+    // what that release was cut from: its own frozen files, laid out as the repository was (the terms it froze stand in for provenance.json)
+    const root = path.join(tmp, "plain");
+    const frozen = path.join(store, PLAIN_TEMPLATE, PLAIN_RELEASE, "files");
+    await cp(path.join(frozen, "templates"), path.join(root, "templates"), { recursive: true });
+    await cp(path.join(frozen, "platform"), path.join(root, "platform"), { recursive: true });
+    await mkdir(path.join(root, "platform/runtime"), { recursive: true });
+    await cp(path.join(frozen, "package.json"), path.join(root, "platform/runtime/package.json"));
+    await cp(path.join(frozen, "pnpm-lock.yaml"), path.join(root, "platform/runtime/pnpm-lock.yaml"));
+    await writeFile(path.join(root, "templates", PLAIN_TEMPLATE, "v1/provenance.json"), JSON.stringify({ forbiddenTerms: stored[0]!.forbiddenTerms }));
     const res = await cut(root, PLAIN_TEMPLATE, stored[0]!.templateVersion);
     eq([res.record.releaseId, res.record.releaseHash], [stored[0]!.releaseId, stored[0]!.releaseHash], "release identity is untouched by the new gate");
     eq([res.record.portfolioRuntime, Object.keys(res.record.gates)], [undefined, ["source-isolation", "template-code-rules"]], "nothing is added to the record");
