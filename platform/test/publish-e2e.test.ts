@@ -60,6 +60,7 @@ import { WranglerStore } from "../publish/wrangler-store";
 import { createSiteContext } from "../site/context";
 import { buildSiteSnapshot } from "../site/load";
 import { testSiteRoot } from "./demo-frozen-dataset";
+import { demoOrdinaryRoot } from "./demo-rollout";
 import { sha256 } from "../util/hash";
 import { contactPage } from "../../templates/interior-01/v1/sections/ContactPage";
 import template from "../../templates/interior-01/v1/template";
@@ -67,8 +68,12 @@ import template from "../../templates/interior-01/v1/template";
 // wrangler dev listens on 127.0.0.1; Node would otherwise try ::1 first for "localhost"
 dns.setDefaultResultOrder("ipv4first");
 
-const repoRoot = process.cwd();
 const SITE = process.env.PUBLISH_TEST_SITE ?? "boost-interior-demo";
+// The manual publisher over an ORDINARY package, as in publish.test.ts: since 2026-10-10 the demo is
+// published incrementally (its current package is a shell, whose pointer that publisher refuses to
+// write without a published portfolio), so the demo is read through demoOrdinaryRoot — the
+// repository as it stood when the site was converted, the last ordinary package current.
+const repoRoot = SITE === "boost-interior-demo" ? await demoOrdinaryRoot(process.cwd()) : process.cwd();
 
 // ── LOCAL vs LIVE ────────────────────────────────────────────────────────────────────────────
 const E2E_BASE = process.env.E2E_BASE?.trim() || undefined;
@@ -726,7 +731,8 @@ try {
   async function contactOnlineSmoke(width: number, height: number) {
     const endpoint = INQUIRY_ENDPOINT!;
     // the site is read through the frozen composition for the demo (demo-frozen-dataset.ts): the live demo directory holds the adoption marker and refuses to load without a generated portfolio
-    const site = await testSiteRoot(repoRoot, SITE);
+    // (read from the repository itself, not from the ordinary root: the resolver below is today's Template code and needs the site's own pin; the form's settings are site data, the same in both)
+    const site = await testSiteRoot(process.cwd(), SITE);
     const slots = (JSON.parse(await readFile(path.join(site.siteDir, "slots.json"), "utf8")).values["contact.page"] ?? {}) as Record<string, string | undefined>;
     // 1.6.3: after every failure but a conflict the alert also lists the site's other contact
     // channels under the site's lead line — what they are comes from the real resolver the builder

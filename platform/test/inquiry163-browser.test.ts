@@ -16,13 +16,14 @@
  *   env: INQUIRY_BROWSER_SITES (comma list)
  * Screenshots → docs/result/shared-inquiry-form-v2/screenshots/<site>-<viewport>-<state>.jpg
  */
-import { mkdir, readFile } from "node:fs/promises";
+import { mkdir, readdir, readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import type { AddressInfo } from "node:net";
 import { chromium, webkit, devices, type Browser, type BrowserContext, type Page, type Route } from "playwright";
 import { createSiteContext } from "../site/context";
 import { buildSiteSnapshot } from "../site/load";
+import { loadRelease } from "../release/release";
 import { testSiteRoot } from "./demo-frozen-dataset";
 import template from "../../templates/interior-01/v1/template";
 import { contactPage } from "../../templates/interior-01/v1/sections/ContactPage";
@@ -312,6 +313,12 @@ interface SiteExpectations {
   endpoint: string;
   online: InquiryOnline;
   siteRoot: string;
+  /**
+   * The package is a portfolio SHELL (an incrementally published site): its internal links are plain
+   * anchors, so moving between two pages is a DOCUMENT load — there is no client-side navigation, and
+   * what the sender remembers (memory only, by design) ends with the page view.
+   */
+  shell: boolean;
 }
 async function loadSiteExpectations(siteId: string): Promise<SiteExpectations | undefined> {
   const buildDir = path.join(repoRoot, "data/site-builds", siteId);
@@ -324,12 +331,23 @@ async function loadSiteExpectations(siteId: string): Promise<SiteExpectations | 
   const siteRoot = path.join(repoRoot, current.packageDir, "site");
   // the demo is read through the frozen composition (demo-frozen-dataset.ts): the live directory holds the adoption marker and refuses to load without a generated portfolio
   const { root: dataRoot, siteDir } = await testSiteRoot(repoRoot, siteId);
-  const pin = (await readJson(path.join(siteDir, "site.json"))).template as { templateId: string; templateVersion: string; releaseId: string; releaseHash: string };
+  let pin = (await readJson(path.join(siteDir, "site.json"))).template as { templateId: string; templateVersion: string; releaseId: string; releaseHash: string };
   const snapshot = (await buildSiteSnapshot({ repoRoot: dataRoot, siteId, mode: "public", at: AT })).snapshot;
+  // A site's pin may lag the working-tree Template (1.7.0 re-pinned only the demo). The resolver below
+  // is the working-tree code, so the snapshot is given the release that describes it — the pairing
+  // slice1's livePin makes; the form's settings are site data, the same under either release.
+  if (pin.templateVersion !== template.version) {
+    const ids = (await readdir(path.join(repoRoot, "data/template-releases", template.id))).filter((d) => d.startsWith(`${template.id}-${template.version}-`));
+    if (ids.length !== 1) throw new Error(`releases of the working-tree version ${template.version}: ${ids.join(", ")}`);
+    const r = await loadRelease(repoRoot, template.id, ids[0]!);
+    pin = { templateId: r.templateId, templateVersion: r.templateVersion, releaseId: r.releaseId, releaseHash: r.releaseHash };
+    (snapshot as { site: { template: typeof pin } }).site.template = pin;
+  }
   const ctx = createSiteContext({ siteId, template, templateRelease: pin, mode: "public", at: AT, snapshot });
   const data = contactPage(ctx);
   if (!data.form || !("online" in data.form) || !data.form.online) return undefined;
-  return { endpoint: data.form.online.endpoint, online: data.form.online, siteRoot };
+  const shell = await readFile(path.join(siteRoot, "_runtime/portfolio/shell.json")).then(() => true, () => false);
+  return { endpoint: data.form.online.endpoint, online: data.form.online, siteRoot, shell };
 }
 
 // ── page helpers ──────────────────────────────────────────────────────────────────────────────
@@ -782,7 +800,9 @@ async function runFullSuite(site: string, engine: EngineCtx, exp: SiteExpectatio
   await siteCheck(
     site,
     "FORM-ID-8",
-    "after a success, a CLIENT-SIDE navigation away and back (no document load: the page's script — and the sender's memory — lives on) and the SAME values → a DIFFERENT id (the confirmed id was dropped)",
+    exp.shell
+      ? "after a success, away and back through the header links — in a shell package two DOCUMENT loads (plain anchors, no client-side navigation) — and the SAME values → a DIFFERENT id"
+      : "after a success, a CLIENT-SIDE navigation away and back (no document load: the page's script — and the sender's memory — lives on) and the SAME values → a DIFFERENT id (the confirmed id was dropped)",
     async () => {
       stub.useScriptedMode();
       stub.clearQueue();
@@ -809,7 +829,8 @@ async function runFullSuite(site: string, engine: EngineCtx, exp: SiteExpectatio
       await page.click('a[data-nav="contact"]');
       await page.waitForSelector("[data-inquiry-form]", { state: "attached", timeout: 8000 });
       await waitMounted(page);
-      eq(documents.length, 0, "client-side navigation issued a new document request");
+      if (exp.shell) eq(documents.length, 2, "a shell package's links are plain anchors: away and back = two document loads");
+      else eq(documents.length, 0, "client-side navigation issued a new document request");
       eq(new URL(page.url()).pathname, "/contact", "back on /contact");
       await fillValid(page);
       await page.click("[data-inquiry-submit]");
@@ -876,7 +897,9 @@ async function runFullSuite(site: string, engine: EngineCtx, exp: SiteExpectatio
   await siteCheck(
     site,
     "FORM-ID-9c",
-    "idempotent store: a stored-but-network-failed request, then a CLIENT-SIDE navigation away and back (no document reload) and the same values → SAME submission_id, store count stays 1",
+    exp.shell
+      ? "idempotent store, shell package: a stored-but-network-failed request resent from the same page view → SAME submission_id, store count stays 1; away and back is two DOCUMENT loads (no client-side navigation), after which the sender starts from nothing — the same values get a NEW id (store count 2), as after a reload of an ordinary site"
+      : "idempotent store: a stored-but-network-failed request, then a CLIENT-SIDE navigation away and back (no document reload) and the same values → SAME submission_id, store count stays 1",
     async () => {
       stub.useStoreMode();
       stub.resetStore();
@@ -896,6 +919,34 @@ async function runFullSuite(site: string, engine: EngineCtx, exp: SiteExpectatio
       eq(stub.storedCount, 1, "the first request was stored");
       const firstId = sitePosts[sitePosts.length - 1]!.body.submission_id;
       assert(typeof firstId === "string" && firstId.length > 0, "no submission_id on the first (stored) request");
+      if (exp.shell) {
+        // what a shell package keeps of the rule: the resend of the SAME page view carries the same id
+        await page.click("[data-inquiry-submit]");
+        await waitDone(page);
+        eq(sitePosts.length - before, 2, "resend from the same page view sent");
+        eq(sitePosts[sitePosts.length - 1]!.body.submission_id, firstId, "submission_id changed on a resend from the same page view");
+        eq(stub.storedCount, 1, "store count stayed at 1 across the resend from the same page view");
+        // …and what it does not: its links are plain anchors, so away and back loads two documents
+        // and the sender (memory only, by design) starts from nothing — the limit an ordinary site
+        // has on a reload. Stated here so that the difference is a recorded fact, not a surprise.
+        const loadsBefore = documents.length;
+        await page.click('a[data-nav="about"]');
+        await page.waitForSelector("[data-inquiry-form]", { state: "detached", timeout: 8000 });
+        await page.click('a[data-nav="contact"]');
+        await page.waitForSelector("[data-inquiry-form]", { state: "attached", timeout: 8000 });
+        eq(documents.length - loadsBefore, 2, "a shell package's links are plain anchors: away and back = two document loads");
+        await waitMounted(page);
+        await fillValid(page, { message });
+        await page.click("[data-inquiry-submit]");
+        await waitDone(page);
+        eq(sitePosts.length - before, 3, "request after the document loads sent");
+        const laterId = sitePosts[sitePosts.length - 1]!.body.submission_id;
+        assert(typeof laterId === "string" && UUID_V4.test(laterId) && laterId !== firstId, `expected a new v4 id after two document loads, got: ${laterId}`);
+        eq(stub.storedCount, 2, "store count after the same values were sent from a new page view");
+        await page.close();
+        stub.useScriptedMode();
+        return;
+      }
       const navCountBefore = documents.length;
       await page.click('a[data-nav="about"]');
       await page.waitForLoadState("domcontentloaded");
