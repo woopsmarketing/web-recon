@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { getSiteContext } from "@platform/site/bound";
 import template from "../template";
 import { headScriptTags } from "./head-scripts";
@@ -29,11 +29,23 @@ export function generateMetadata(): Metadata {
  * The site shell. Every page renders its own <SiteHeader> (variant + current page) and <main>;
  * the footer and the fixed floater are rendered HERE once, after every page. The bottom tab bar
  * is part of SiteHeader (it needs the current page).
+ *
+ * A site that loads a third-party fixed widget in the bottom-right corner declares its closed box
+ * (`site.floater.externalWidget`); <html> then carries `data-ext-widget` and the four numbers as
+ * custom properties (--i2-ext-w / -h / -right / -bottom, inline) for the shell CSS. Nothing is
+ * emitted when the site declares none.
  */
 export default function RootLayout({ children }: { children: ReactNode }) {
   const ctx = getSiteContext(template);
+  const ext = ctx.settings["site.floater"].externalWidget;
+  const extAttrs = ext
+    ? {
+        "data-ext-widget": "",
+        style: { "--i2-ext-w": `${ext.width}px`, "--i2-ext-h": `${ext.height}px`, "--i2-ext-right": `${ext.right}px`, "--i2-ext-bottom": `${ext.bottom}px` } as CSSProperties,
+      }
+    : {};
   return (
-    <html lang={ctx.identity.locale}>
+    <html lang={ctx.identity.locale} {...extAttrs}>
       <head>
         <style id="site-theme" dangerouslySetInnerHTML={{ __html: ctx.themeCss }} />
         {headScriptTags(ctx)}

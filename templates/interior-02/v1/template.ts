@@ -19,7 +19,7 @@ import { supportSections } from "./manifest/support";
  */
 export const template = defineTemplate({
   id: "interior-02",
-  version: "1.0.0",
+  version: "1.0.1",
   vertical: "interior",
   routes: [
     { key: "home", path: "/" },

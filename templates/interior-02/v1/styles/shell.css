@@ -425,6 +425,12 @@ html:has(.i2-drawer[data-drawer-open]) {
   .i2-tabbar {
     display: block;
   }
+
+  /* a site-declared corner widget (html[data-ext-widget], base.css) sits over the bar's right end:
+     the links share the width to its left; the bar's background still spans the full width */
+  html[data-ext-widget] .i2-tabbar__list {
+    padding-right: calc(var(--i2-ext-right) + var(--i2-ext-w) + 8px);
+  }
 }
 
 /* ------------------------------------------------------------------ floater */
@@ -460,6 +466,13 @@ html:has(.i2-drawer[data-drawer-open]) {
   background: var(--i2-yellow);
 }
 
+/* a site-declared corner widget (html[data-ext-widget] + --i2-ext-*, base.css) owns the corner: the
+   column sits 14 px above its box and is centred on it (never closer than 12 px to the edge) */
+html[data-ext-widget] .i2-floater {
+  right: max(12px, calc(var(--i2-ext-right) + (var(--i2-ext-w) - 56px) / 2));
+  bottom: calc(var(--i2-ext-bottom) + var(--i2-ext-h) + 14px);
+}
+
 @media (max-width: 640px) {
   .i2-floater {
     right: 12px;
@@ -473,6 +486,17 @@ html:has(.i2-drawer[data-drawer-open]) {
 
   html:has(.i2-tabbar[data-hidden]) .i2-floater {
     bottom: 20px;
+  }
+
+  /* with a corner widget: the higher of "above the tab bar" and "above the widget", and it stays
+     above the widget while the tab bar is hidden */
+  html[data-ext-widget] .i2-floater {
+    right: 12px;
+    bottom: max(calc(var(--i2-tabbar-h) + 15px), calc(var(--i2-ext-bottom) + var(--i2-ext-h) + 14px));
+  }
+
+  html[data-ext-widget]:has(.i2-tabbar[data-hidden]) .i2-floater {
+    bottom: calc(var(--i2-ext-bottom) + var(--i2-ext-h) + 14px);
   }
 }
 
@@ -516,15 +540,17 @@ html:has(.i2-drawer[data-drawer-open]) {
   object-fit: cover;
 }
 
-/* navy-tinted veil strong enough for white copy on a bright photo. z-index 1 lifts it above the
-   photo (the ::before precedes the <img> in DOM order, so at z-index auto it painted underneath);
-   the body is also z-index 1 and comes later, so it stays on top of the veil */
+/* veil in the dark block's tone (the action colour, deepened) strong enough for white copy on a
+   bright photo. z-index 1 lifts it above the photo (the ::before precedes the <img> in DOM order, so
+   at z-index auto it painted underneath); the body is also z-index 1 and comes later, so it stays on
+   top of the veil */
 .i2-fcta__half--showcase::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(to right, rgb(12 22 36 / 0.74) 0%, rgb(12 22 36 / 0.62) 60%, rgb(12 22 36 / 0.54) 100%);
+  --i2-veil: color-mix(in srgb, var(--color-action-primary) 80%, #000);
+  background: linear-gradient(to right, color-mix(in srgb, var(--i2-veil) 74%, transparent) 0%, color-mix(in srgb, var(--i2-veil) 62%, transparent) 60%, color-mix(in srgb, var(--i2-veil) 54%, transparent) 100%);
 }
 
 .i2-fcta__body {

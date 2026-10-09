@@ -7,7 +7,10 @@ import { Icon } from "../ui/Icon";
  * The fixed bottom-right controls (client): a to-top button (always) and an optional contact link
  * (the place where the reference has its chat launcher). To-top scrolls the document to 0 — smooth
  * unless the visitor prefers reduced motion. Position: bottom/right 24 (84/12 at ≤ 640, above the
- * tab bar; bottom 20 while the tab bar is hidden — CSS).
+ * tab bar; bottom 20 while the tab bar is hidden — CSS). When the site declares an external corner
+ * widget (`site.floater.externalWidget` → `html[data-ext-widget]` + --i2-ext-* custom properties, set
+ * by the root layout) the column instead sits 14 px above that box and, above 640, centres on it — CSS
+ * only; this component renders the same markup either way.
  */
 export function Floater({ topLabel, contact }: { topLabel: string; contact?: { href: string; label: string } }) {
   const toTop = () => {

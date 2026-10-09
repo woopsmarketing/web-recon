@@ -73,9 +73,29 @@ export const shellSections = {
       contactLabel: text(12, "Contact"),
     },
   },
-  /** Fixed bottom-right controls: to-top (always) and a contact link (when allowed and the contact route exists). */
+  /**
+   * Fixed bottom-right controls: to-top (always) and a contact link (when allowed and the contact route exists).
+   * `externalWidget` (optional) declares that a third-party fixed widget the site loads (its scripts.json)
+   * occupies the bottom-right corner: the largest box its CLOSED launcher can take, in CSS px from the
+   * viewport's right / bottom edges. The root layout hands the four numbers to CSS (`html[data-ext-widget]`,
+   * --i2-ext-w / -h / -right / -bottom) and the floater, the ≤ 640 tab bar and the full-height hero's control
+   * row keep clear of that box. Absent = no such widget (the default); the Template knows no vendor.
+   */
   "site.floater": {
-    schema: z.object({ contact: z.boolean() }).strict(),
+    schema: z
+      .object({
+        contact: z.boolean(),
+        externalWidget: z
+          .object({
+            width: z.number().int().positive().max(200),
+            height: z.number().int().positive().max(200),
+            right: z.number().int().min(0).max(200),
+            bottom: z.number().int().min(0).max(200),
+          })
+          .strict()
+          .optional(),
+      })
+      .strict(),
     defaults: { contact: true },
     slots: {
       topLabel: text(24, "Back to top"),

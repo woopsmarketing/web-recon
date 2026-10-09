@@ -11,10 +11,16 @@
  *   --i2-sec-gap       section padding-top (160px; 120px ≤ 1280; 100px ≤ 640)
  *   --i2-header-h      70px; 60px ≤ 1024; 52px ≤ 640
  *   --i2-tabbar-h      69px ≤ 640, else 0
+ *   --i2-corner-reserve  width of the bottom-right corner that fixed controls occupy: the floater's
+ *                      right offset + button + 12px (92px); under html[data-ext-widget] (a site-declared
+ *                      third-party corner widget, --i2-ext-w/-h/-right/-bottom set on <html> by the root
+ *                      layout) the larger of that and the widget's right + width + 12px. The full-height
+ *                      hero's control row keeps this much clear of the viewport's right edge (home.css).
  *   --i2-yellow / --i2-mint / --i2-navy       theme accent aliases
  *   --i2-rule          1px rules (#ddd), --i2-rule-soft (#e9e9e9), --i2-surface (#f5f5f5)
  *   --i2-text-2 / --i2-text-3                 secondary (#555) / muted (#999) text
- *   --i2-on-yellow / --i2-on-mint / --i2-on-navy   tint text colours on the coloured tiles
+ *   --i2-on-yellow / --i2-on-mint / --i2-on-navy   tint text colours on the coloured tiles: each accent
+ *                      darkened (navy: lightened towards the inverse text) so a site theme keeps the hue
  *   --i2-w-display     weight of display text (headings / titles ≥ 18px): 700. The source draws them
  *                      in a heavy display face; without webfonts the system Korean font renders the
  *                      nominal 600 visibly lighter, so every ≥ 18px heading uses this one step up.
@@ -38,6 +44,7 @@
   --i2-header-h: 70px;
   --i2-header-top: 24px;
   --i2-tabbar-h: 0px;
+  --i2-corner-reserve: 92px;
   --i2-yellow: var(--color-accent-secondary);
   --i2-mint: var(--color-accent-primary);
   --i2-navy: var(--color-action-primary);
@@ -47,11 +54,17 @@
   --i2-surface: var(--color-surface-secondary);
   --i2-text-2: var(--color-text-secondary);
   --i2-text-3: var(--color-text-muted);
-  --i2-on-yellow: color-mix(in srgb, var(--color-accent-secondary) 45%, #5a3d00);
-  --i2-on-mint: color-mix(in srgb, var(--color-accent-primary) 55%, #003a3a);
-  --i2-on-navy: color-mix(in srgb, var(--color-action-primary) 35%, #d7dde6);
+  --i2-on-yellow: color-mix(in srgb, var(--color-accent-secondary) 62%, #000);
+  --i2-on-mint: color-mix(in srgb, var(--color-accent-primary) 68%, #000);
+  --i2-on-navy: color-mix(in srgb, var(--color-action-primary) 44%, var(--color-text-inverse));
   --i2-ease-out: cubic-bezier(0.25, 1, 0.5, 1);
   --i2-w-display: 700;
+}
+
+/* a site-declared third-party widget sits in the bottom-right corner (see the header): the corner
+   reserve grows to its box when that is the larger one */
+html[data-ext-widget] {
+  --i2-corner-reserve: max(92px, calc(var(--i2-ext-right) + var(--i2-ext-w) + 12px));
 }
 
 html {

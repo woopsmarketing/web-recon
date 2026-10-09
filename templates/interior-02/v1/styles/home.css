@@ -156,6 +156,16 @@
   --i2-c-fill: var(--color-text-inverse);
 }
 
+/* full-height hero only: the row's bottom (52 px) is level with the fixed corner controls, so its
+   right end keeps --i2-corner-reserve clear of the viewport's right edge. 100% = the hero's width
+   (the row's containing block); the subtraction is the row's auto side margin once the viewport is
+   wider than the page box, so the padding shrinks continuously back to the gutter */
+@media (min-width: 1025px) {
+  .i2-hero .i2-c__bar {
+    padding-right: max(var(--i2-gutter), calc(var(--i2-corner-reserve) - max(0px, (100% - var(--i2-page-max)) / 2)));
+  }
+}
+
 /* ================================================================== projects */
 .i2-projects__grid {
   display: grid;
