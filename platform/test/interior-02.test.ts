@@ -6,8 +6,10 @@
  *           identifiers, siteId literals, forbidden terms) over the tree as it is now, isolation from the
  *           first Template (no import either way, neither Template's source terms in the other) and no
  *           Template-owned static files.
- * [release] the site's pin: an immutable release that exists, verifies byte for byte, froze the
- *           provenance terms, passed every gate, and IS the working tree (no unreleased drift).
+ * [release] the working tree IS a release (no unreleased drift) that declares the portfolio runtime
+ *           and proved it at the release gate; the site's pin is an immutable release that exists,
+ *           verifies byte for byte, froze the provenance terms, passed every gate — the working
+ *           tree's, or an earlier one that differs from it only in files no site build is changed by.
  * [package] the site's current package: built with that pin from the site's present data (identity
  *           recomputed here), QA pass, every page the fixture's data plans, no source term of either
  *           Template in any emitted text file, and no site of the first Template pinned to this one.
@@ -26,6 +28,7 @@ import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { prepareSiteInput } from "../build/site-build";
 import { collectReleaseSources, gateTemplateSources, loadRelease, scanForbiddenTerms, verifyRelease } from "../release/release";
+import { PORTFOLIO_RUNTIME_GATE, recordedEmptyState, resolvePortfolioRuntime, type PortfolioRuntimeCapability } from "../portfolio-runtime/capability";
 import { readPortfolioSource } from "../portfolio-sync/managed";
 import { loadSiteInstance } from "../site/load";
 import { sha256 } from "../util/hash";
@@ -133,25 +136,46 @@ await check("D the Template ships no static files of its own (every image is a s
 });
 
 // ---------------------------------------------------------------- release --
-console.log("\n[release] the site's pin");
+console.log("\n[release] the working tree's release and the site's pin");
 const site = await loadSiteInstance(repoRoot, SITE);
 const pin = site.template;
-await check("E the site pins an exact interior-02 release (id + full hash) that verifies byte for byte", async () => {
-  eq([pin.templateId, pin.templateVersion], [TEMPLATE, template.version], "pin");
+/** the release of the working-tree version: exactly one */
+const headId = await (async () => {
+  const ids = (await readdir(path.join(repoRoot, "data/template-releases", TEMPLATE))).filter((d) => d.startsWith(`${TEMPLATE}-${template.version}-`));
+  if (ids.length !== 1) throw new Error(`releases of the working-tree version ${template.version}: ${ids.join(", ") || "none"} (run template:release ${TEMPLATE}@1)`);
+  return ids[0]!;
+})();
+/**
+ * What the sites' pin may lag the working tree in. Re-pinning a site is a build + a publish, so a
+ * release that changes nothing a site build reads does not force one: 1.1.1 is 1.1.0 plus the
+ * declared portfolio runtime capability — template.ts (the declaration and the version), and no
+ * other file. A release that touches anything else is not on this list: the sites are re-pinned.
+ */
+const PIN_MAY_LAG_IN = [`${templateDir(TEMPLATE)}/template.ts`];
+const versionOf = (v: string) => v.split(".").map(Number) as [number, number, number];
+const notNewer = (a: string, b: string) => {
+  const [x, y] = [versionOf(a), versionOf(b)];
+  return x[0] !== y[0] ? x[0] < y[0] : x[1] !== y[1] ? x[1] < y[1] : x[2] <= y[2];
+};
+await check("E the site pins an exact interior-02 release (id + full hash) that verifies byte for byte: the working tree's version or an earlier one", async () => {
+  eq([pin.templateId, notNewer(pin.templateVersion, template.version)], [TEMPLATE, true], `pin ${pin.templateVersion} vs working tree ${template.version}`);
   const record = await loadRelease(repoRoot, TEMPLATE, pin.releaseId);
   eq(record.releaseHash, pin.releaseHash, "releaseHash");
   await verifyRelease(repoRoot, record);
+  await verifyRelease(repoRoot, await loadRelease(repoRoot, TEMPLATE, headId));
 });
-await check("F the release froze the provenance terms and passed every gate", async () => {
-  const record = await loadRelease(repoRoot, TEMPLATE, pin.releaseId);
-  eq([...record.forbiddenTerms].sort(), [...(await termsOf(TEMPLATE))].sort(), "forbiddenTerms");
-  const gates = Object.entries(record.gates);
-  assert(gates.length > 0, "the release recorded no gate");
-  eq(gates.filter(([, g]) => !g.pass).map(([k]) => k), [], "failed gates");
-  assert(!record.files.some((f) => f.path.endsWith("provenance.json")), "provenance.json is inside the release");
+await check("F each of the two releases froze the provenance terms and passed every gate", async () => {
+  for (const id of new Set([pin.releaseId, headId])) {
+    const record = await loadRelease(repoRoot, TEMPLATE, id);
+    eq([...record.forbiddenTerms].sort(), [...(await termsOf(TEMPLATE))].sort(), `${id} forbiddenTerms`);
+    const gates = Object.entries(record.gates);
+    assert(gates.length > 0, `${id} recorded no gate`);
+    eq(gates.filter(([, g]) => !g.pass).map(([k]) => k), [], `${id} failed gates`);
+    assert(!record.files.some((f) => f.path.endsWith("provenance.json")), `provenance.json is inside ${id}`);
+  }
 });
-await check("G the pinned release IS the working tree: same files, same bytes (no unreleased drift)", async () => {
-  const record = await loadRelease(repoRoot, TEMPLATE, pin.releaseId);
+await check("G the release of the working-tree version IS the working tree: same files, same bytes (no unreleased drift)", async () => {
+  const record = await loadRelease(repoRoot, TEMPLATE, headId);
   const { sources } = await collectReleaseSources(repoRoot, TEMPLATE, 1);
   const live: [string, string][] = [];
   for (const [rel, abs] of sources) live.push([rel, sha256(await readFile(abs))]);
@@ -161,6 +185,30 @@ await check("G the pinned release IS the working tree: same files, same bytes (n
     ...[...released.keys()].filter((rel) => !sources.has(rel)).map((rel) => `removed ${rel}`),
   ];
   assert(drift.length === 0, drift.slice(0, 12).join("\n"));
+});
+await check("G2 the site's pin is that release, or lags it only where a site build is not changed (PIN_MAY_LAG_IN): every other file is byte-identical in both", async () => {
+  if (pin.releaseId === headId) return;
+  const [pinned, head] = [await loadRelease(repoRoot, TEMPLATE, pin.releaseId), await loadRelease(repoRoot, TEMPLATE, headId)];
+  const a = new Map(pinned.files.map((f) => [f.path, f.sha256]));
+  const b = new Map(head.files.map((f) => [f.path, f.sha256]));
+  const differs = [...new Set([...a.keys(), ...b.keys()])].filter((rel) => a.get(rel) !== b.get(rel)).sort();
+  eq(differs.filter((rel) => !PIN_MAY_LAG_IN.includes(rel)), [], `files that differ between ${pin.releaseId} and ${headId}`);
+  // …and in that file, the manifest a build reads is the same but for the version: routes, sections, theme
+  const text = async (id: string) => readFile(path.join(repoRoot, "data/template-releases", TEMPLATE, id, "files", PIN_MAY_LAG_IN[0]!), "utf8");
+  const body = (t: string) => t.slice(t.indexOf("vertical:"), t.indexOf("\n});") + 4);
+  const [before, after] = [await text(pin.releaseId), await text(headId)];
+  assert(body(before).length > 500 && body(before) === body(after), "the manifest body (routes, sections, theme) differs between the two releases");
+});
+await check("G3 the Template declares the portfolio runtime, and its release records exactly that after proving it: gate passed, a safe empty state; the pinned release still resolves (declared, or legacy for one cut before the capability)", async () => {
+  // typed: the declaration is assignable to what the platform reads
+  const declared: PortfolioRuntimeCapability = template.portfolioRuntime;
+  eq(declared, { supported: true, contract: "portfolio-runtime@1" }, "manifest declaration");
+  const head = await loadRelease(repoRoot, TEMPLATE, headId);
+  eq(head.portfolioRuntime, declared, "release record");
+  eq([head.gates[PORTFOLIO_RUNTIME_GATE]?.pass, recordedEmptyState(head)], [true, "supported"], `gate: ${head.gates[PORTFOLIO_RUNTIME_GATE]?.detail}`);
+  eq(resolvePortfolioRuntime(head), { supported: true, contract: "portfolio-runtime@1", declared: "release" }, "the working-tree release");
+  const pinned = resolvePortfolioRuntime(await loadRelease(repoRoot, TEMPLATE, pin.releaseId));
+  eq([pinned.supported, pinned.supported && pinned.contract], [true, "portfolio-runtime@1"], `the pinned release ${pin.releaseId}`);
 });
 
 // ---------------------------------------------------------------- package --

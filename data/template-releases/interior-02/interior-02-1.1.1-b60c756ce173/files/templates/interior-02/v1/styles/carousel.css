@@ -1,0 +1,169 @@
+/* interior-02 v1 — shared slider (components/ui/Carousel.tsx).
+   Layout custom properties (set per breakpoint by the owning section on the root):
+     --i2-c-per     slides per view (1)
+     --i2-c-gap     gap between slides (0px)
+     --i2-c-stage   width of the strip of fully visible slides inside the clipping viewport (100%)
+     --i2-c-track / --i2-c-fill   progress bar colours
+   Timing (set by the component from its props): --i2-c-duration, --i2-c-dwell. */
+
+.i2-c {
+  position: relative;
+  --i2-c-per: 1;
+  --i2-c-gap: 0px;
+  --i2-c-stage: 100%;
+}
+
+.i2-c__viewport {
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.i2-c__stage {
+  width: var(--i2-c-stage);
+  margin: 0 auto;
+}
+
+/* one track; pitch = (stage + gap) / per, so a percentage translate needs no measuring */
+.i2-c__track {
+  display: flex;
+  gap: var(--i2-c-gap);
+  transform: translateX(calc(var(--i2-c-pos, 0) * (100% + var(--i2-c-gap)) / var(--i2-c-per) * -1));
+  transition: transform var(--i2-c-duration, 500ms) ease;
+  will-change: transform;
+}
+
+.i2-c__track.is-static {
+  transition: none;
+}
+
+.i2-c__slide {
+  flex: 0 0 calc((100% - (var(--i2-c-per) - 1) * var(--i2-c-gap)) / var(--i2-c-per));
+  min-width: 0;
+}
+
+/* ---- control row: progress bar (flex 1) + prev / next / stop-play ---- */
+
+.i2-c__bar {
+  display: flex;
+  align-items: center;
+}
+
+.i2-c__progress {
+  position: relative;
+  flex: 1 1 auto;
+  height: 2px;
+  overflow: hidden;
+  background: var(--i2-c-track, color-mix(in srgb, var(--color-text-primary) 10%, transparent));
+}
+
+.i2-c__fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--i2-c-fill, var(--color-text-primary));
+}
+
+/* continuous mode: the fill IS the dwell timer; its animationend advances the slide */
+.i2-c__fill.is-timing {
+  animation: i2-c-dwell var(--i2-c-dwell, 4000ms) linear forwards;
+}
+
+/* stepped mode: width = (index + 1) / count, 200 ms */
+.i2-c__fill--steps {
+  transition: width 200ms ease;
+}
+
+/* hidden dwell timer for the stepped and bar-less modes */
+.i2-c__timer {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.i2-c__timer.is-timing {
+  animation: i2-c-tick var(--i2-c-dwell, 4000ms) linear forwards;
+}
+
+.i2-c[data-stopped="true"] .is-timing {
+  animation-play-state: paused;
+}
+
+@keyframes i2-c-dwell {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes i2-c-tick {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.01;
+  }
+}
+
+.i2-c__controls {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 12px;
+  margin-left: 52px;
+}
+
+.i2-c__btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.i2-c__btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* a non-endless slider at either end */
+.i2-c__btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.i2-c__btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .i2-c__controls {
+    gap: 6px;
+    margin-left: 32px;
+  }
+}
+
+/* reduced motion: no slide transition (navigation is immediate) and no dwell animation (no
+   animationend = no rotation) */
+@media (prefers-reduced-motion: reduce) {
+  .i2-c__track {
+    transition: none;
+  }
+
+  .i2-c .is-timing {
+    animation: none;
+  }
+
+  .i2-c__fill--steps {
+    transition: none;
+  }
+}
