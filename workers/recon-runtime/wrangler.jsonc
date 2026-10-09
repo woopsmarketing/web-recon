@@ -46,9 +46,13 @@
       // 2026-10-09: second exact route for the interior-02 demo (docs/result/interior-02-reuse-boostinterior/
       // 05-production-demo-02.md), same form (b) and the same wildcard DNS record. `wrangler deploy` PUTs the
       // whole list, so every live hostname must stay in this array.
+      //
+      // 2026-10-09: third exact route for the interior-03 demo (docs/result/interior-03-dagamhome-e2e/
+      // 05-boostchat-and-domain.md), same form (b), same wildcard DNS record.
       ,"routes": [
         { "pattern": "interior-demo.boostweb.co.kr/*", "zone_name": "boostweb.co.kr" },
-        { "pattern": "interior-demo-2.boostweb.co.kr/*", "zone_name": "boostweb.co.kr" }
+        { "pattern": "interior-demo-2.boostweb.co.kr/*", "zone_name": "boostweb.co.kr" },
+        { "pattern": "interior-demo-3.boostweb.co.kr/*", "zone_name": "boostweb.co.kr" }
       ]
     }
   }
