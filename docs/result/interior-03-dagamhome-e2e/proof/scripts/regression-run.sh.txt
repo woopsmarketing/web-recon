@@ -1,0 +1,24 @@
+#!/bin/zsh
+# Full local verification: 3 typechecks, the platform chain in package.json order, then the other local suites.
+cd /Users/woops/projects/web-recon-track-b || exit 1
+OUT=/private/tmp/claude-501/-Users-woops-projects-web-recon-track-b/4aa129e6-128e-4014-a500-c3a843250bf3/scratchpad/regression2
+SUM=$OUT/summary.tsv
+: > $SUM
+git status --porcelain > $OUT/00-before.txt; git rev-parse HEAD >> $OUT/00-before.txt
+run() { # name, command...
+  local name=$1; shift
+  local t0=$(date +%s)
+  "$@" > $OUT/$name.log 2>&1
+  local code=$?
+  local t1=$(date +%s)
+  local line=$(grep -E "[0-9]+ passed, [0-9]+ failed" $OUT/$name.log | tail -1)
+  printf "%s\t%s\t%s\t%s\n" "$name" "$code" "$((t1-t0))s" "$line" >> $SUM
+}
+run tsc-root ./node_modules/.bin/tsc --noEmit
+run tsc-platform ./node_modules/.bin/tsc -p platform/tsconfig.json
+run tsc-runtime ./node_modules/.bin/tsc -p workers/recon-runtime/tsconfig.json
+CHAIN=(${(f)"$(node -e 'const s=require("./package.json").scripts["test:platform"];console.log(s.split(" && ").map(c=>c.split("/").pop()).join("\n"))')"})
+for f in $CHAIN; do run chain-$f ./node_modules/.bin/tsx --tsconfig platform/tsconfig.json platform/test/$f; done
+for f in inquiry162 inquiry163 inquiry163-reuse inquiry163-browser portfolio-production-truth portfolio-sync publish publish-e2e; do run extra-$f.test.ts ./node_modules/.bin/tsx --tsconfig platform/tsconfig.json platform/test/$f.test.ts; done
+git status --porcelain > $OUT/99-after.txt
+echo DONE >> $SUM

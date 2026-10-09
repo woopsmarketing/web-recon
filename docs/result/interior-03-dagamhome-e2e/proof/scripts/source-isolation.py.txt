@@ -1,0 +1,95 @@
+# Source isolation audit: derive identifying terms from the captured reference pages (kept in scratch only),
+# then scan the template, its release, both sites' data and both packages. The committed result lists
+# CATEGORIES and COUNTS only — never the terms themselves.
+import re, os, json, sys, hashlib, glob
+REPO='/Users/woops/projects/web-recon-track-b/'
+SP='/private/tmp/claude-501/-Users-woops-projects-web-recon-track-b/4aa129e6-128e-4014-a500-c3a843250bf3/scratchpad/'
+src=''
+files=glob.glob(SP+'src/*.html')+glob.glob(REPO+'data/www.dagamhome.com/2026-10-09T09-*/viewports/desktop/rendered.html')+glob.glob(REPO+'data/www.dagamhome.com/2026-10-09T09-*/viewports/desktop/document-response.html')
+for f in files:
+    try: src+=open(f,encoding='utf-8',errors='ignore').read()+'\n'
+    except Exception as e: print('skip',f,e)
+print('reference files read:',len(files),'chars',len(src))
+terms={}
+def add(cat,vals):
+    for v in vals:
+        v=v.strip()
+        if len(v)>=4: terms.setdefault(cat,set()).add(v)
+prov=json.load(open(REPO+'templates/interior-03/v1/provenance.json'))['forbiddenTerms']
+terms['provenance']=set(prov)  # every declared term, whatever its length
+# terms that are NOT allowed in the committed provenance list (personal names, street names, registration number,
+# phone fragments, account handles): kept in a local-only file, never in the repository
+terms['removed-from-provenance']=set(json.load(open(SP+'audit/removed-from-provenance.local-only.json',encoding='utf-8'))['removed-from-provenance'])
+# hosts referenced by the reference pages (its own domain, API / CDN / analytics / widget / map / blog hosts)
+hosts=set(re.findall(r'https?://([a-z0-9.-]+\.[a-z]{2,})',src,re.I))
+GENERIC={'www.w3.org','fonts.googleapis.com','fonts.gstatic.com','ajax.googleapis.com','code.jquery.com','cdnjs.cloudflare.com','use.fontawesome.com','maxcdn.bootstrapcdn.com','schema.org','ogp.me','gmpg.org','www.google.com','google.com','developers.google.com','purl.org','www.facebook.com','twitter.com','www.youtube.com','youtube.com','cdn.jsdelivr.net','unpkg.com','getbootstrap.com','jquery.com','www.apple.com','www.adobe.com','ns.adobe.com','www.googletagmanager.com','www.google-analytics.com','blog.naver.com','naver.com','www.naver.com','pf.kakao.com','map.naver.com','map.kakao.com','github.com','opensource.org','creativecommons.org','www.gnu.org','daneden.me','jqueryui.com','api.jquery.com','api.jqueryui.com','nicolasgallagher.com','necolas.github.io','github.io','stackoverflow.com','modernizr.com','fontawesome.io','fontawesome.com','scripts.sil.org','www.linkedin.com','instagram.com','www.instagram.com'}
+add('host',[h for h in hosts if h.lower() not in GENERIC])
+generic_hosts_seen=sorted(h for h in hosts if h.lower() in GENERIC)
+# phones, e-mails, registration numbers, analytics / verification ids
+add('phone',re.findall(r'0\d{1,2}[-.)\s]\d{3,4}[-.\s]\d{4}',src))
+add('phone',[re.sub(r'\D','',p) for p in re.findall(r'0\d{1,2}[-.)\s]\d{3,4}[-.\s]\d{4}',src)])
+add('email',re.findall(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}',src))
+add('registration',re.findall(r'\b\d{3}-\d{2}-\d{5}\b',src))
+add('analytics-id',re.findall(r'\b(?:UA-\d{4,}-\d+|G-[A-Z0-9]{6,}|GTM-[A-Z0-9]{4,}|AW-\d{6,})\b',src))
+add('analytics-id',re.findall(r'wcs_add\[["\']wa["\']\]\s*=\s*["\']([^"\']+)',src))
+add('analytics-id',re.findall(r'naver-site-verification["\'][^>]*content=["\']([^"\']+)',src))
+add('analytics-id',re.findall(r'google-site-verification["\'][^>]*content=["\']([^"\']+)',src))
+# blog / social handles in outbound links
+add('handle',re.findall(r'blog\.naver\.com/([A-Za-z0-9_]+)',src))
+add('handle',re.findall(r'pf\.kakao\.com/([A-Za-z0-9_]+)',src))
+add('handle',re.findall(r'instagram\.com/([A-Za-z0-9_.]+)',src))
+# the reference's own titles / brand strings
+add('brand',re.findall(r'<title>([^<]{2,60})</title>',src))
+add('brand',[m for m in re.findall(r'content=["\']([^"\']{2,60})["\']\s*(?:property|name)=["\']og:site_name',src)])
+add('brand',[m for m in re.findall(r'og:site_name["\']\s*content=["\']([^"\']{2,60})',src)])
+# runtime file names specific to the reference (its scripts)
+add('runtime-file',[os.path.basename(u) for u in re.findall(r'src=["\']([^"\']+\.js)',src) if not re.search(r'jquery|bootstrap|fontawesome|swiper|slick|modernizr|html5shiv|respond',u,re.I)])
+json.dump({k:sorted(v) for k,v in terms.items()},open(SP+'audit/terms.local-only.json','w'),ensure_ascii=False,indent=1)
+print({k:len(v) for k,v in terms.items()}); print('generic hosts ignored:',generic_hosts_seen)
+TEXT=re.compile(r'\.(html?|txt|js|mjs|css|json|xml|ts|tsx|svg|md|map)$',re.I)
+def walk(root):
+    for d,_,fs in os.walk(root):
+        if '/node_modules' in d or '/.next' in d: continue
+        for f in fs:
+            p=os.path.join(d,f)
+            if TEXT.search(f): yield p
+cur=lambda s: json.load(open(REPO+f'data/site-builds/{s}/current.json'))['packageDir']
+targets={
+ 'template (templates/interior-03/v1, provenance.json excluded)': [p for p in walk(REPO+'templates/interior-03/v1') if not p.endswith('provenance.json')],
+ 'release (data/template-releases/interior-03, provenance.json + release.json excluded)': [p for p in walk(REPO+'data/template-releases/interior-03') if not p.endswith(('provenance.json','release.json'))],
+ 'committed term list itself (provenance.json + release.json; personal categories only)': [REPO+'templates/interior-03/v1/provenance.json']+[p for p in walk(REPO+'data/template-releases/interior-03') if p.endswith('release.json')],
+ 'fixture site data (data/sites/nuridam-interior-demo)': list(walk(REPO+'data/sites/nuridam-interior-demo')),
+ 'demo03 site data (data/sites/boost-interior-demo-03)': list(walk(REPO+'data/sites/boost-interior-demo-03')),
+ 'fixture package': list(walk(REPO+cur('nuridam-interior-demo'))),
+ 'demo03 package': list(walk(REPO+cur('boost-interior-demo-03'))),
+}
+out={'referenceFilesRead':len(files),'termCountsByCategory':{k:len(v) for k,v in terms.items()},'targets':{}}
+detail={}
+for name,paths in targets.items():
+    hits={}
+    for p in paths:
+        try: s=open(p,encoding='utf-8',errors='ignore').read().lower()
+        except Exception: continue
+        for cat,vals in terms.items():
+            if name.startswith('committed term list itself') and cat in ('provenance','host','brand'): continue  # the list exists to name the source brand and host
+            for v in vals:
+                n=s.count(v.lower())
+                if n:
+                    hits[cat]=hits.get(cat,0)+n
+                    detail.setdefault(name,[]).append((cat,v,p.replace(REPO,''),n))
+    out['targets'][name]={'textFilesScanned':len(paths),'hitsByCategory':hits,'totalHits':sum(hits.values())}
+# fixture brand in the demo03 package / demo03 identity in the fixture package
+def count(paths,needles):
+    n=0
+    for p in paths:
+        s=open(p,encoding='utf-8',errors='ignore').read().lower()
+        n+=sum(s.count(x.lower()) for x in needles)
+    return n
+out['fixtureBrandInDemo03Package']=count(targets['demo03 package'],['누리담','nuridam'])
+out['fixtureBrandInDemo03SiteData']=count(targets['demo03 site data (data/sites/boost-interior-demo-03)'],['누리담','nuridam'])
+out['demo03IdentityInFixturePackage']=count(targets['fixture package'],['부스트 인테리어','boostweb','boostchat','wgt_','interior-demo-3'])
+out['SOURCE_BRAND_LEAK']=sum(t['totalHits'] for t in out['targets'].values())
+json.dump(out,open(SP+'audit/source-isolation.json','w'),ensure_ascii=False,indent=1)
+print(json.dumps(out,ensure_ascii=False,indent=1))
+for k,v in detail.items():
+    print('DETAIL',k); [print('  ',x) for x in v[:25]]

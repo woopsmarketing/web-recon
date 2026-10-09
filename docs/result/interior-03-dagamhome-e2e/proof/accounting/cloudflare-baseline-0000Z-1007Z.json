@@ -1,0 +1,90 @@
+{
+ "window": {
+  "start": "2026-10-09T00:00:00Z",
+  "end": "2026-10-09T10:07:52Z"
+ },
+ "worker": [
+  {
+   "dimensions": {
+    "status": "clientDisconnected"
+   },
+   "quantiles": {
+    "cpuTimeP50": 800,
+    "cpuTimeP99": 4531,
+    "wallTimeP50": 295627,
+    "wallTimeP99": 494665
+   },
+   "sum": {
+    "errors": 0,
+    "requests": 218,
+    "subrequests": 0
+   }
+  },
+  {
+   "dimensions": {
+    "status": "success"
+   },
+   "quantiles": {
+    "cpuTimeP50": 1317,
+    "cpuTimeP99": 3315,
+    "wallTimeP50": 429685,
+    "wallTimeP99": 900635
+   },
+   "sum": {
+    "errors": 0,
+    "requests": 2600,
+    "subrequests": 0
+   }
+  }
+ ],
+ "r2ops": [
+  {
+   "dimensions": {
+    "actionType": "PutObject"
+   },
+   "sum": {
+    "requests": 169,
+    "responseObjectSize": 9263391
+   }
+  },
+  {
+   "dimensions": {
+    "actionType": "HeadBucket"
+   },
+   "sum": {
+    "requests": 5,
+    "responseObjectSize": 0
+   }
+  },
+  {
+   "dimensions": {
+    "actionType": "GetObject"
+   },
+   "sum": {
+    "requests": 5119,
+    "responseObjectSize": 110999510
+   }
+  },
+  {
+   "dimensions": {
+    "actionType": "HeadObject"
+   },
+   "sum": {
+    "requests": 583,
+    "responseObjectSize": 0
+   }
+  }
+ ],
+ "r2storage": [
+  {
+   "dimensions": {
+    "datetime": "2026-10-09T09:20:00Z"
+   },
+   "max": {
+    "metadataSize": 201485,
+    "objectCount": 2385,
+    "payloadSize": 131522069
+   }
+  }
+ ]
+}

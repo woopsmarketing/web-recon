@@ -1,0 +1,26 @@
+prod-run: railway run -e production -s pgvector (public proxy host 확인)
+prod-run: railway run -e production -s app (app 변수 주입)
+prod-run: system_identifier OK (7675084143306387491, db=railway) · session=READ ONLY
+prod-run: DATABASE_URL=set PORTFOLIO_PUBLISHER_TOKEN=set PORTFOLIO_ASSET_STORE=set PORTFOLIO_ASSET_S3_ENDPOINT=set PORTFOLIO_ASSET_S3_BUCKET=set PORTFOLIO_ASSET_S3_REGION=set PORTFOLIO_ASSET_S3_PREFIX=set PORTFOLIO_ASSET_S3_ACCESS_KEY_ID=set PORTFOLIO_ASSET_S3_SECRET_ACCESS_KEY=set PUBLIC_ACTION_TOOLS_ENABLED=set
+prod-run: node proof/provision/provision-demo03.mts 2 arg(s)
+provision: mode=DRY-RUN phase=binding db=railway system_identifier=7675084143306387491 session_read_only=on
+provision: env PUBLIC_WIDGET_ENABLED=true PUBLIC_CHAT_PROFILE=true OPENAI_API_KEY=set OPS_OPERATOR_EMAILS=1 entr(y|ies)
+provision: operator=vnf***@gmail.com user=RS3jeCzT… owner-of-template=yes stored-email-matches-allowlist-bytewise=yes
+provision: target boost-interior-demo-03 exists id=0ebf3f9e… status=active members=1 owner-is-operator=yes
+
+== binding plan for boost-interior-demo-03 ==
+  [create   ] register — registerFirstPartyBinding(tenantSlug, capability=portfolio.search, origin, previousOrigin=null) → ops.first_party.create; label is server-fixed "홈페이지 시공 사례"
+             before: absent
+             after : origin=https://interior-demo-3.boostweb.co.kr enabled=false kind=first_party_static label=홈페이지 시공 사례
+  [update   ] enable — setFirstPartyBindingEnabled(enabled=true, expectedOrigin=https://interior-demo-3.boostweb.co.kr) → ops.first_party.enable
+             before: absent
+             after : true
+  [skip: n/a] refresh — NOT run by this script. Use scripts/ops-first-party-refresh.ts (dry-run first, then --apply); gates: plan+pilot, cooldown 10 min
+             before: manifest https://interior-demo-3.boostweb.co.kr/_integration/manifest.json → 200 application/json
+             after : snapshot state=ON after refresh
+
+refresh commands (run after this phase; dry-run reads only, --apply fetches the manifest and writes the snapshot + ops.first_party.refresh audit):
+  node scripts/prod-run.mjs --read-only -- scripts/ops-first-party-refresh.ts --tenant boost-interior-demo-03 --expect-system-identifier 7675084143306387491 --operator-email "$(railway variables -e production -s app --kv | grep '^OPS_OPERATOR_EMAILS=' | cut -d= -f2- | cut -d, -f1)" --reason "demo tenant #3 (interior-demo-3.boostweb.co.kr) provisioning - mirror of boost-interior-demo"
+  node scripts/prod-run.mjs -- scripts/ops-first-party-refresh.ts --tenant boost-interior-demo-03 --expect-system-identifier 7675084143306387491 --operator-email "$(railway variables -e production -s app --kv | grep '^OPS_OPERATOR_EMAILS=' | cut -d= -f2- | cut -d, -f1)" --reason "demo tenant #3 (interior-demo-3.boostweb.co.kr) provisioning - mirror of boost-interior-demo" --apply
+
+provision: DRY-RUN complete — no write was issued (read-only transaction rolled back).

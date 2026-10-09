@@ -1,0 +1,41 @@
+# Scratch tooling: reference|fixture side-by-side pairs. python3 pairs-i03.py <proofDir>
+import sys, os
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
+proof = sys.argv[1]
+M = "/Users/woops/projects/web-recon-track-b/data/www.dagamhome.com/manual-observation"
+out = f"{proof}/source-vs-template"; os.makedirs(out, exist_ok=True)
+A = lambda n, w: f"{M}/A-discovery/{n}-{w}.jpg"
+B = lambda n, w: f"{M}/B-visual/shots/{n}-{w}-full.jpg"
+F = lambda n, w: f"{proof}/fixture/{n}-{w}.jpg"
+pairs = []
+for w in (1440, 390):
+    pairs += [(f"home-{w}", A("A-home", w), F("home", w), w, None),
+              (f"portfolio-list-{w}", A("B-works-list", w), F("portfolio", w), w, None),
+              (f"portfolio-detail-{w}", A("C-works-detail", w), F("portfolio_sejong-dodam-34py-apartment", w), w, 2400),
+              (f"about-{w}", A("D-about", w), F("about", w), w, None),
+              (f"service-vs-blog-{w}", A("E-blog", w), F("service", w), w, None),
+              (f"contact-form-{w}", A("G-request-write-form", w), F("contact", w), w, None)]
+for w in (768, 1024):
+    pairs += [(f"home-{w}", B("home", w), F("home", w), w, None), (f"portfolio-list-{w}", B("list", w), F("portfolio", w), w, None)]
+made, skipped = [], []
+for name, l, r, w, crop in pairs:
+    if not (os.path.exists(l) and os.path.exists(r)):
+        skipped.append((name, "missing " + (l if not os.path.exists(l) else r))); continue
+    L, R = Image.open(l).convert("RGB"), Image.open(r).convert("RGB")
+    ls, rs = L.width / w, R.width / w  # device scale of each shot
+    lh, rh = L.height / ls, R.height / rs  # css-px heights
+    H = min(crop, lh, rh) if crop else max(lh, rh)
+    H = int(min(H, 9000))
+    def fit(im, h_css, sc):
+        if crop: im = im.crop((0, 0, im.width, int(min(crop * sc, im.height))))
+        hh = im.height
+        return im.resize((max(1, round(im.width * H / hh)), H), Image.LANCZOS)
+    Ls, Rs = fit(L, lh, ls), fit(R, rh, rs)
+    sep = 6
+    canvas = Image.new("RGB", (Ls.width + sep + Rs.width, H), (230, 30, 30))
+    canvas.paste(Ls, (0, 0)); canvas.paste(Rs, (Ls.width + sep, 0))
+    canvas.save(f"{out}/{name}.jpg", quality=78)
+    made.append((name, canvas.size, round(ls, 2), round(lh), round(rh)))
+for m in made: print("OK", m)
+for s in skipped: print("SKIP", s)

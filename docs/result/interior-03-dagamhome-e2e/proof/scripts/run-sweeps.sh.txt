@@ -1,0 +1,9 @@
+R=/Users/woops/projects/web-recon-track-b
+# provenance terms of the three templates, plus the personal-data terms that are kept OUTSIDE the repository (local-only file)
+P=$(node -e 'const R=process.argv[1];const o=[];for(const t of ["interior-01","interior-02","interior-03"])o.push(...require(R+"/templates/"+t+"/v1/provenance.json").forbiddenTerms);try{o.push(...require(process.argv[2])["removed-from-provenance"])}catch{};console.log(o.join(","))' $R "$LOCAL_ONLY_TERMS")
+OUT=$R/docs/result/interior-03-dagamhome-e2e/proof
+mkdir -p $OUT
+cd /private/tmp/claude-501/-Users-woops-projects-web-recon-track-b/4aa129e6-128e-4014-a500-c3a843250bf3/scratchpad/sweep
+ROUTES="/,/portfolio,/portfolio/page/2,/portfolio/sejong-dodam-34py-apartment,/portfolio/daejeon-songchon-40py-townhouse,/about,/service,/faq,/contact,/no-such-page" TERMS="$P,부스트 인테리어,boostweb,boostchat,wgt_" EXPECT404=/no-such-page node sweep-i03.mjs http://127.0.0.1:4340 $OUT/sweep-fixture.json > sweep-fixture.out 2>&1 &
+ROUTES="/,/portfolio,/portfolio/page/2,/portfolio/suseong-white-34py-apartment-remodeling,/portfolio/buk-32py-kitchen-bathroom-renewal,/about,/service,/faq,/contact,/no-such-page" TERMS="$P,누리담,nuridam" EXPECT404=/no-such-page,/portfolio/page/2 BLOCK="**://boostchat.co.kr/**" ALLOW_OFF=https://boostchat.co.kr node sweep-i03.mjs http://127.0.0.1:4341 $OUT/sweep-demo03.json > sweep-demo03.out 2>&1 &
+wait

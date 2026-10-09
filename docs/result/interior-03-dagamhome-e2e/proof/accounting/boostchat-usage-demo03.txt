@@ -1,0 +1,34 @@
+ guard: expected system identifier 
+-----------------------------------
+ 7675084143306387491
+(1 row)
+
+            now_utc            | read_only |      window_from       
+-------------------------------+-----------+------------------------
+ 2026-10-09 12:01:07.091018+00 | on        | 2026-10-09 09:00:00+00
+(1 row)
+
+
+## the widget row of this key (no secrets: the key is public, printed in every page)
+  tenant  | enabled | version |              allowed_origins               
+----------+---------+---------+--------------------------------------------
+ 0ebf3f9e | t       |       3 | ["https://interior-demo-3.boostweb.co.kr"]
+(1 row)
+
+
+## ai_usage_event of that tenant inside the window
+ provider |      operation       | surface |         model          |  status   | events | input_tokens | output_tokens | total_tokens |           first_at            |            last_at            
+----------+----------------------+---------+------------------------+-----------+--------+--------------+---------------+--------------+-------------------------------+-------------------------------
+ openai   | chat                 | widget  | gpt-5.6-luna           | completed |      7 |        37697 |           961 |        38658 | 2026-10-09 10:57:44.249427+00 | 2026-10-09 11:49:52.864391+00
+ openai   | conversation_summary | (null)  | gpt-5.6-luna           | completed |      1 |          447 |            70 |          517 | 2026-10-09 11:13:04.847316+00 | 2026-10-09 11:13:04.847316+00
+ openai   | knowledge_embedding  | (null)  | text-embedding-3-small | completed |      7 |         1143 |             0 |         1143 | 2026-10-09 09:37:10.328409+00 | 2026-10-09 09:38:21.657845+00
+ openai   | query_embedding      | widget  | text-embedding-3-small | completed |      7 |          173 |             0 |          173 | 2026-10-09 10:57:42.007919+00 | 2026-10-09 11:49:49.848501+00
+(4 rows)
+
+
+## lead_request rows of that tenant inside the window (the QA stubbed the endpoint: expected 0)
+ lead_rows_in_window 
+---------------------
+                   0
+(1 row)
+

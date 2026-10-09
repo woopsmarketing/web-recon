@@ -1,0 +1,2324 @@
+{
+ "counters": {
+  "chatAborted": 48,
+  "leadStubbed": 2,
+  "leadRequestsSeen": 2,
+  "offOrigin": []
+ },
+ "total": 128,
+ "failed": 0,
+ "results": [
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "header nav reaches every page",
+   "pass": true,
+   "evidence": [
+    {
+     "link": [
+      "about",
+      "/about"
+     ],
+     "landed": "/about",
+     "ok": true
+    },
+    {
+     "link": [
+      "portfolio",
+      "/portfolio"
+     ],
+     "landed": "/portfolio",
+     "ok": true
+    },
+    {
+     "link": [
+      "service",
+      "/service"
+     ],
+     "landed": "/service",
+     "ok": true
+    },
+    {
+     "link": [
+      "contact",
+      "/contact"
+     ],
+     "landed": "/contact",
+     "ok": true
+    },
+    {
+     "link": [
+      "faq",
+      "/faq"
+     ],
+     "landed": "/faq",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "logo returns home",
+   "pass": true,
+   "evidence": "/"
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "portfolio nav link on ?category returns full list at /portfolio",
+   "pass": true,
+   "evidence": {
+    "before": "13",
+    "after": "20",
+    "url": "/portfolio",
+    "selectedTab": "*",
+    "expectedTotal": 20
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "menu button hidden on wide viewport",
+   "pass": true,
+   "evidence": "isVisible=false expected"
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "hero autoplay advances (~4 s)",
+   "pass": true,
+   "evidence": {
+    "slides": 3,
+    "from": "0",
+    "to": "1",
+    "ms": 3187
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "hero dot press switches slide",
+   "pass": true,
+   "evidence": {
+    "target": 0,
+    "idx": "0",
+    "current": "true"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "hero toggle stops rotation; label swaps",
+   "pass": true,
+   "evidence": {
+    "before": {
+     "label": "슬라이드 멈춤",
+     "state": "pause"
+    },
+    "after": {
+     "label": "슬라이드 재생",
+     "state": "play",
+     "stopped": "true"
+    },
+    "indexChangedWhileStopped": false
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "hero toggle resumes; next slide within ~4.5 s after pointer away",
+   "pass": true,
+   "evidence": {
+    "label": {
+     "label": "슬라이드 멈춤",
+     "state": "pause"
+    },
+    "msToNextSlide": 4102
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "prefers-reduced-motion: no rotation",
+   "pass": true,
+   "evidence": {
+    "start": "0",
+    "after6_5s": "0",
+    "waitAnimationName": "none"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "home gallery tile -> /portfolio?category shows that category",
+   "pass": true,
+   "evidence": [
+    {
+     "tile": "apartment",
+     "href": "/portfolio?category=apartment",
+     "url": "/portfolio?category=apartment",
+     "shownCount": "13",
+     "expected": 13,
+     "selectedTab": "apartment",
+     "ok": true
+    },
+    {
+     "tile": "house-villa",
+     "href": "/portfolio?category=house-villa",
+     "url": "/portfolio?category=house-villa",
+     "shownCount": "7",
+     "expected": 7,
+     "selectedTab": "house-villa",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "portfolio category tabs filter",
+   "pass": true,
+   "evidence": [
+    {
+     "tab": "*",
+     "count": 20,
+     "expected": 20,
+     "cardsShown": 18,
+     "pressed": "true",
+     "url": "/portfolio",
+     "ok": true
+    },
+    {
+     "tab": "apartment",
+     "count": 13,
+     "expected": 13,
+     "cardsShown": 13,
+     "pressed": "true",
+     "url": "/portfolio?category=apartment",
+     "ok": true
+    },
+    {
+     "tab": "house-villa",
+     "count": 7,
+     "expected": 7,
+     "cardsShown": 7,
+     "pressed": "true",
+     "url": "/portfolio?category=house-villa",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "title search: a hit",
+   "pass": true,
+   "evidence": {
+    "token": "인테리어",
+    "count": 20,
+    "url": "/portfolio?q=%EC%9D%B8%ED%85%8C%EB%A6%AC%EC%96%B4",
+    "firstCardHasProject": true
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "title search: empty result",
+   "pass": true,
+   "evidence": {
+    "count": 0,
+    "emptyVisible": true,
+    "emptyText": "조건에 맞는 시공사례가 없습니다.",
+    "url": "/portfolio?q=%E3%85%8B%E3%85%8B%EC%97%86%EB%8A%94%EA%B2%80%EC%83%89%EC%96%B4qq"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "clearing the search restores the list",
+   "pass": true,
+   "evidence": {
+    "count": 20,
+    "url": "/portfolio"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "Back/Forward restore filtered views",
+   "pass": true,
+   "evidence": {
+    "searched": {
+     "url": "/portfolio?category=apartment&q=%EC%9D%B8%ED%85%8C%EB%A6%AC%EC%96%B4",
+     "count": 13
+    },
+    "back1": {
+     "url": "/portfolio?category=apartment",
+     "count": 13,
+     "inputValue": ""
+    },
+    "back2": {
+     "url": "/portfolio",
+     "count": 20
+    },
+    "forward": {
+     "url": "/portfolio?category=apartment",
+     "count": 13
+    }
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "static pager: page 2 via link",
+   "pass": true,
+   "evidence": {
+    "pager": {
+     "kind": "static",
+     "links": [
+      "/portfolio/page/2"
+     ]
+    },
+    "url": "/portfolio/page/2",
+    "cards": 2,
+    "cur": "2"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "?page=2 in a filtered view",
+   "pass": null,
+   "evidence": "not applicable: largest category has 13 (<= 18) results"
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "(extra) /portfolio?page=2 unfiltered",
+   "pass": null,
+   "evidence": {
+    "url": "/portfolio",
+    "count": "20",
+    "cards": 18
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "detail: one h1, photos load, list button returns to project's category",
+   "pass": true,
+   "evidence": [
+    {
+     "slug": "sejong-dodam-34py-apartment",
+     "h1": 1,
+     "h1Text": [
+      "세종 도담동 34평 아파트 인테리어"
+     ],
+     "photos": {
+      "n": 14,
+      "bad": 0
+     },
+     "backUrl": "/portfolio?category=apartment",
+     "shownCount": "13",
+     "expected": 13,
+     "selectedTab": "apartment",
+     "ok": true
+    },
+    {
+     "slug": "cheongju-sannam-24py-apartment",
+     "h1": 1,
+     "h1Text": [
+      "청주 서원구 산남동 24평 아파트 인테리어"
+     ],
+     "photos": {
+      "n": 4,
+      "bad": 0
+     },
+     "backUrl": "/portfolio?category=apartment",
+     "shownCount": "13",
+     "expected": 13,
+     "selectedTab": "apartment",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "FAQ open/close by click",
+   "pass": true,
+   "evidence": {
+    "s0": {
+     "exp": "false",
+     "panelHidden": true
+    },
+    "s1": {
+     "exp": "true",
+     "panelHidden": false
+    },
+    "s2": {
+     "exp": "false",
+     "panelHidden": true
+    }
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "FAQ open/close by Enter and Space",
+   "pass": true,
+   "evidence": {
+    "enter": [
+     "true",
+     "false"
+    ],
+    "space": [
+     "true",
+     "false"
+    ]
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "FAQ several open at once",
+   "pass": true,
+   "evidence": {
+    "opened": 3,
+    "attempted": 3,
+    "items": 8
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "FAQ topic tabs filter",
+   "pass": true,
+   "evidence": {
+    "tabRes": [
+     {
+      "tab": "전체",
+      "visibleRows": 8,
+      "ok": true
+     },
+     {
+      "tab": "상담·견적",
+      "visibleRows": 3,
+      "ok": true
+     },
+     {
+      "tab": "공사 진행",
+      "visibleRows": 4,
+      "ok": true
+     },
+     {
+      "tab": "사후 관리",
+      "visibleRows": 1,
+      "ok": true
+     }
+    ],
+    "sumOfTopicRows": 8,
+    "items": 8
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "contact: submit disabled in raw HTML, enabled after load",
+   "pass": true,
+   "evidence": {
+    "rawDisabled": true,
+    "enabledAfterLoad": true,
+    "mode": "mail",
+    "expectedMode": "mail"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "contact: empty submit -> inline errors, focus on first invalid",
+   "pass": true,
+   "evidence": {
+    "errs": [
+     "name",
+     "phone",
+     "message",
+     "consent"
+    ],
+    "focus": "i3-inq-name"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "contact: bad phone -> phone error only, focus on phone",
+   "pass": true,
+   "evidence": {
+    "errs": [
+     [
+      "phone",
+      "숫자 8자리 이상으로 적어 주세요. 공백, +, -, 괄호를 쓸 수 있습니다."
+     ]
+    ],
+    "focus": "i3-inq-phone",
+    "invalid": "true"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "contact: reset clears fields and messages",
+   "pass": true,
+   "evidence": {
+    "errs": 0,
+    "name": "",
+    "phone": "",
+    "msg": "",
+    "consent": false
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "contact (mail): mailto hand-off prepared, nothing sent",
+   "pass": true,
+   "evidence": {
+    "hrefLen": 381,
+    "to": "hello@nuridam-interior.example",
+    "subject": "테스트님의 상담 문의",
+    "bodyHasMsg": true,
+    "status": "메일 앱에서 내용을 확인하고 보내 주세요. 아직 전송된 것은 아닙니다. 메일 앱이 열리지 않으면 hello@nuridam-interior.example 로 보내 주세요.",
+    "stayedOn": "/contact"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "to-top button absent on this site",
+   "pass": true,
+   "evidence": {
+    "present": false
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 1440,
+   "name": "no page <html> has data-ext-widget",
+   "pass": true,
+   "evidence": [
+    {
+     "r": "/",
+     "status": 200,
+     "ext": false
+    },
+    {
+     "r": "/portfolio",
+     "status": 200,
+     "ext": false
+    },
+    {
+     "r": "/portfolio/page/2",
+     "status": 200,
+     "ext": false
+    },
+    {
+     "r": "/portfolio/sejong-dodam-34py-apartment",
+     "status": 200,
+     "ext": false
+    },
+    {
+     "r": "/about",
+     "status": 200,
+     "ext": false
+    },
+    {
+     "r": "/service",
+     "status": 200,
+     "ext": false
+    },
+    {
+     "r": "/faq",
+     "status": 200,
+     "ext": false
+    },
+    {
+     "r": "/contact",
+     "status": 200,
+     "ext": false
+    },
+    {
+     "r": "/no-such-page",
+     "status": 404,
+     "ext": false
+    }
+   ]
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "header nav reaches every page",
+   "pass": true,
+   "evidence": [
+    {
+     "link": [
+      "회사소개",
+      "/about"
+     ],
+     "landed": "/about",
+     "ok": true
+    },
+    {
+     "link": [
+      "시공사례",
+      "/portfolio"
+     ],
+     "landed": "/portfolio",
+     "ok": true
+    },
+    {
+     "link": [
+      "서비스",
+      "/service"
+     ],
+     "landed": "/service",
+     "ok": true
+    },
+    {
+     "link": [
+      "상담문의",
+      "/contact"
+     ],
+     "landed": "/contact",
+     "ok": true
+    },
+    {
+     "link": [
+      "자주 묻는 질문",
+      "/faq"
+     ],
+     "landed": "/faq",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "logo returns home",
+   "pass": true,
+   "evidence": "/"
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "portfolio nav link on ?category returns full list at /portfolio",
+   "pass": true,
+   "evidence": {
+    "before": "13",
+    "after": "20",
+    "url": "/portfolio",
+    "selectedTab": "*",
+    "expectedTotal": 20
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "drawer opens (menu button)",
+   "pass": true,
+   "evidence": {
+    "open": true,
+    "exp": "true",
+    "modal": "true",
+    "focusInDrawer": true,
+    "focusIs": true,
+    "x": 0,
+    "w": 250
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "drawer: initial focus on close button, inside drawer",
+   "pass": true,
+   "evidence": {
+    "open": true,
+    "exp": "true",
+    "modal": "true",
+    "focusInDrawer": true,
+    "focusIs": true,
+    "x": 0,
+    "w": 250
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "drawer: Tab / Shift+Tab never leave the open drawer",
+   "pass": true,
+   "evidence": {
+    "presses": 25,
+    "focusables": 7
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "drawer closes by close button; focus returns to menu button",
+   "pass": true,
+   "evidence": {
+    "open": false,
+    "inert": true,
+    "focusOnBtn": true
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "drawer closes by Escape",
+   "pass": true,
+   "evidence": {
+    "open": false,
+    "focusOnBtn": true
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "drawer closes on link press and navigates",
+   "pass": true,
+   "evidence": {
+    "open": false,
+    "path": "/faq"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "hero autoplay advances (~4 s)",
+   "pass": true,
+   "evidence": {
+    "slides": 3,
+    "from": "0",
+    "to": "1",
+    "ms": 3175
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "hero dot press switches slide",
+   "pass": true,
+   "evidence": {
+    "target": 0,
+    "idx": "0",
+    "current": "true"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "hero toggle stops rotation; label swaps",
+   "pass": true,
+   "evidence": {
+    "before": {
+     "label": "슬라이드 멈춤",
+     "state": "pause"
+    },
+    "after": {
+     "label": "슬라이드 재생",
+     "state": "play",
+     "stopped": "true"
+    },
+    "indexChangedWhileStopped": false
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "hero toggle resumes; next slide within ~4.5 s after pointer away",
+   "pass": true,
+   "evidence": {
+    "label": {
+     "label": "슬라이드 멈춤",
+     "state": "pause"
+    },
+    "msToNextSlide": 4100
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "prefers-reduced-motion: no rotation",
+   "pass": true,
+   "evidence": {
+    "start": "0",
+    "after6_5s": "0",
+    "waitAnimationName": "none"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "home gallery tile -> /portfolio?category shows that category",
+   "pass": true,
+   "evidence": [
+    {
+     "tile": "apartment",
+     "href": "/portfolio?category=apartment",
+     "url": "/portfolio?category=apartment",
+     "shownCount": "13",
+     "expected": 13,
+     "selectedTab": "apartment",
+     "ok": true
+    },
+    {
+     "tile": "house-villa",
+     "href": "/portfolio?category=house-villa",
+     "url": "/portfolio?category=house-villa",
+     "shownCount": "7",
+     "expected": 7,
+     "selectedTab": "house-villa",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "portfolio category tabs filter",
+   "pass": true,
+   "evidence": [
+    {
+     "tab": "*",
+     "count": 20,
+     "expected": 20,
+     "cardsShown": 18,
+     "pressed": "true",
+     "url": "/portfolio",
+     "ok": true
+    },
+    {
+     "tab": "apartment",
+     "count": 13,
+     "expected": 13,
+     "cardsShown": 13,
+     "pressed": "true",
+     "url": "/portfolio?category=apartment",
+     "ok": true
+    },
+    {
+     "tab": "house-villa",
+     "count": 7,
+     "expected": 7,
+     "cardsShown": 7,
+     "pressed": "true",
+     "url": "/portfolio?category=house-villa",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "title search: a hit",
+   "pass": true,
+   "evidence": {
+    "token": "인테리어",
+    "count": 20,
+    "url": "/portfolio?q=%EC%9D%B8%ED%85%8C%EB%A6%AC%EC%96%B4",
+    "firstCardHasProject": true
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "title search: empty result",
+   "pass": true,
+   "evidence": {
+    "count": 0,
+    "emptyVisible": true,
+    "emptyText": "조건에 맞는 시공사례가 없습니다.",
+    "url": "/portfolio?q=%E3%85%8B%E3%85%8B%EC%97%86%EB%8A%94%EA%B2%80%EC%83%89%EC%96%B4qq"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "clearing the search restores the list",
+   "pass": true,
+   "evidence": {
+    "count": 20,
+    "url": "/portfolio"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "Back/Forward restore filtered views",
+   "pass": true,
+   "evidence": {
+    "searched": {
+     "url": "/portfolio?category=apartment&q=%EC%9D%B8%ED%85%8C%EB%A6%AC%EC%96%B4",
+     "count": 13
+    },
+    "back1": {
+     "url": "/portfolio?category=apartment",
+     "count": 13,
+     "inputValue": ""
+    },
+    "back2": {
+     "url": "/portfolio",
+     "count": 20
+    },
+    "forward": {
+     "url": "/portfolio?category=apartment",
+     "count": 13
+    }
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "static pager: page 2 via link",
+   "pass": true,
+   "evidence": {
+    "pager": {
+     "kind": "static",
+     "links": [
+      "/portfolio/page/2"
+     ]
+    },
+    "url": "/portfolio/page/2",
+    "cards": 2,
+    "cur": "2"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "?page=2 in a filtered view",
+   "pass": null,
+   "evidence": "not applicable: largest category has 13 (<= 18) results"
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "(extra) /portfolio?page=2 unfiltered",
+   "pass": null,
+   "evidence": {
+    "url": "/portfolio",
+    "count": "20",
+    "cards": 18
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "detail: one h1, photos load, list button returns to project's category",
+   "pass": true,
+   "evidence": [
+    {
+     "slug": "sejong-dodam-34py-apartment",
+     "h1": 1,
+     "h1Text": [
+      "세종 도담동 34평 아파트 인테리어"
+     ],
+     "photos": {
+      "n": 14,
+      "bad": 0
+     },
+     "backUrl": "/portfolio?category=apartment",
+     "shownCount": "13",
+     "expected": 13,
+     "selectedTab": "apartment",
+     "ok": true
+    },
+    {
+     "slug": "cheongju-sannam-24py-apartment",
+     "h1": 1,
+     "h1Text": [
+      "청주 서원구 산남동 24평 아파트 인테리어"
+     ],
+     "photos": {
+      "n": 4,
+      "bad": 0
+     },
+     "backUrl": "/portfolio?category=apartment",
+     "shownCount": "13",
+     "expected": 13,
+     "selectedTab": "apartment",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "FAQ open/close by click",
+   "pass": true,
+   "evidence": {
+    "s0": {
+     "exp": "false",
+     "panelHidden": true
+    },
+    "s1": {
+     "exp": "true",
+     "panelHidden": false
+    },
+    "s2": {
+     "exp": "false",
+     "panelHidden": true
+    }
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "FAQ open/close by Enter and Space",
+   "pass": true,
+   "evidence": {
+    "enter": [
+     "true",
+     "false"
+    ],
+    "space": [
+     "true",
+     "false"
+    ]
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "FAQ several open at once",
+   "pass": true,
+   "evidence": {
+    "opened": 3,
+    "attempted": 3,
+    "items": 8
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "FAQ topic tabs filter",
+   "pass": true,
+   "evidence": {
+    "tabRes": [
+     {
+      "tab": "전체",
+      "visibleRows": 8,
+      "ok": true
+     },
+     {
+      "tab": "상담·견적",
+      "visibleRows": 3,
+      "ok": true
+     },
+     {
+      "tab": "공사 진행",
+      "visibleRows": 4,
+      "ok": true
+     },
+     {
+      "tab": "사후 관리",
+      "visibleRows": 1,
+      "ok": true
+     }
+    ],
+    "sumOfTopicRows": 8,
+    "items": 8
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "contact: submit disabled in raw HTML, enabled after load",
+   "pass": true,
+   "evidence": {
+    "rawDisabled": true,
+    "enabledAfterLoad": true,
+    "mode": "mail",
+    "expectedMode": "mail"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "contact: empty submit -> inline errors, focus on first invalid",
+   "pass": true,
+   "evidence": {
+    "errs": [
+     "name",
+     "phone",
+     "message",
+     "consent"
+    ],
+    "focus": "i3-inq-name"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "contact: bad phone -> phone error only, focus on phone",
+   "pass": true,
+   "evidence": {
+    "errs": [
+     [
+      "phone",
+      "숫자 8자리 이상으로 적어 주세요. 공백, +, -, 괄호를 쓸 수 있습니다."
+     ]
+    ],
+    "focus": "i3-inq-phone",
+    "invalid": "true"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "contact: reset clears fields and messages",
+   "pass": true,
+   "evidence": {
+    "errs": 0,
+    "name": "",
+    "phone": "",
+    "msg": "",
+    "consent": false
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "contact (mail): mailto hand-off prepared, nothing sent",
+   "pass": true,
+   "evidence": {
+    "hrefLen": 381,
+    "to": "hello@nuridam-interior.example",
+    "subject": "테스트님의 상담 문의",
+    "bodyHasMsg": true,
+    "status": "메일 앱에서 내용을 확인하고 보내 주세요. 아직 전송된 것은 아닙니다. 메일 앱이 열리지 않으면 hello@nuridam-interior.example 로 보내 주세요.",
+    "stayedOn": "/contact"
+   }
+  },
+  {
+   "site": "fixture",
+   "vp": 390,
+   "name": "to-top button absent on this site",
+   "pass": true,
+   "evidence": {
+    "present": false
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "header nav reaches every page",
+   "pass": true,
+   "evidence": [
+    {
+     "link": [
+      "about",
+      "/about"
+     ],
+     "landed": "/about",
+     "ok": true
+    },
+    {
+     "link": [
+      "portfolio",
+      "/portfolio"
+     ],
+     "landed": "/portfolio",
+     "ok": true
+    },
+    {
+     "link": [
+      "service",
+      "/service"
+     ],
+     "landed": "/service",
+     "ok": true
+    },
+    {
+     "link": [
+      "contact",
+      "/contact"
+     ],
+     "landed": "/contact",
+     "ok": true
+    },
+    {
+     "link": [
+      "faq",
+      "/faq"
+     ],
+     "landed": "/faq",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "logo returns home",
+   "pass": true,
+   "evidence": "/"
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "portfolio nav link on ?category returns full list at /portfolio",
+   "pass": true,
+   "evidence": {
+    "before": "5",
+    "after": "8",
+    "url": "/portfolio",
+    "selectedTab": "*",
+    "expectedTotal": 8
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "menu button hidden on wide viewport",
+   "pass": true,
+   "evidence": "isVisible=false expected"
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "hero autoplay advances (~4 s)",
+   "pass": true,
+   "evidence": {
+    "slides": 3,
+    "from": "0",
+    "to": "1",
+    "ms": 3216
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "hero dot press switches slide",
+   "pass": true,
+   "evidence": {
+    "target": 0,
+    "idx": "0",
+    "current": "true"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "hero toggle stops rotation; label swaps",
+   "pass": true,
+   "evidence": {
+    "before": {
+     "label": "슬라이드 멈춤",
+     "state": "pause"
+    },
+    "after": {
+     "label": "슬라이드 재생",
+     "state": "play",
+     "stopped": "true"
+    },
+    "indexChangedWhileStopped": false
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "hero toggle resumes; next slide within ~4.5 s after pointer away",
+   "pass": true,
+   "evidence": {
+    "label": {
+     "label": "슬라이드 멈춤",
+     "state": "pause"
+    },
+    "msToNextSlide": 4095
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "prefers-reduced-motion: no rotation",
+   "pass": true,
+   "evidence": {
+    "start": "0",
+    "after6_5s": "0",
+    "waitAnimationName": "none"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "home gallery tile -> /portfolio?category shows that category",
+   "pass": true,
+   "evidence": [
+    {
+     "tile": "full-remodel",
+     "href": "/portfolio?category=full-remodel",
+     "url": "/portfolio?category=full-remodel",
+     "shownCount": "5",
+     "expected": 5,
+     "selectedTab": "full-remodel",
+     "ok": true
+    },
+    {
+     "tile": "kitchen-bath",
+     "href": "/portfolio?category=kitchen-bath",
+     "url": "/portfolio?category=kitchen-bath",
+     "shownCount": "1",
+     "expected": 1,
+     "selectedTab": "kitchen-bath",
+     "ok": true
+    },
+    {
+     "tile": "move-in-styling",
+     "href": "/portfolio?category=move-in-styling",
+     "url": "/portfolio?category=move-in-styling",
+     "shownCount": "1",
+     "expected": 1,
+     "selectedTab": "move-in-styling",
+     "ok": true
+    },
+    {
+     "tile": "partial-remodel",
+     "href": "/portfolio?category=partial-remodel",
+     "url": "/portfolio?category=partial-remodel",
+     "shownCount": "1",
+     "expected": 1,
+     "selectedTab": "partial-remodel",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "portfolio category tabs filter",
+   "pass": true,
+   "evidence": [
+    {
+     "tab": "*",
+     "count": 8,
+     "expected": 8,
+     "cardsShown": 8,
+     "pressed": "true",
+     "url": "/portfolio",
+     "ok": true
+    },
+    {
+     "tab": "full-remodel",
+     "count": 5,
+     "expected": 5,
+     "cardsShown": 5,
+     "pressed": "true",
+     "url": "/portfolio?category=full-remodel",
+     "ok": true
+    },
+    {
+     "tab": "kitchen-bath",
+     "count": 1,
+     "expected": 1,
+     "cardsShown": 1,
+     "pressed": "true",
+     "url": "/portfolio?category=kitchen-bath",
+     "ok": true
+    },
+    {
+     "tab": "move-in-styling",
+     "count": 1,
+     "expected": 1,
+     "cardsShown": 1,
+     "pressed": "true",
+     "url": "/portfolio?category=move-in-styling",
+     "ok": true
+    },
+    {
+     "tab": "partial-remodel",
+     "count": 1,
+     "expected": 1,
+     "cardsShown": 1,
+     "pressed": "true",
+     "url": "/portfolio?category=partial-remodel",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "title search: a hit",
+   "pass": true,
+   "evidence": {
+    "token": "리모델링",
+    "count": 6,
+    "url": "/portfolio?q=%EB%A6%AC%EB%AA%A8%EB%8D%B8%EB%A7%81",
+    "firstCardHasProject": true
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "title search: empty result",
+   "pass": true,
+   "evidence": {
+    "count": 0,
+    "emptyVisible": true,
+    "emptyText": "조건에 맞는 프로젝트가 없습니다",
+    "url": "/portfolio?q=%E3%85%8B%E3%85%8B%EC%97%86%EB%8A%94%EA%B2%80%EC%83%89%EC%96%B4qq"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "clearing the search restores the list",
+   "pass": true,
+   "evidence": {
+    "count": 8,
+    "url": "/portfolio"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "Back/Forward restore filtered views",
+   "pass": true,
+   "evidence": {
+    "searched": {
+     "url": "/portfolio?category=full-remodel&q=%EB%A6%AC%EB%AA%A8%EB%8D%B8%EB%A7%81",
+     "count": 5
+    },
+    "back1": {
+     "url": "/portfolio?category=full-remodel",
+     "count": 5,
+     "inputValue": ""
+    },
+    "back2": {
+     "url": "/portfolio",
+     "count": 8
+    },
+    "forward": {
+     "url": "/portfolio?category=full-remodel",
+     "count": 5
+    }
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "pager absent when everything fits one page",
+   "pass": true,
+   "evidence": "8 projects <= 18; pager element present=false; static pager / ?page=2 not applicable"
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "detail: one h1, photos load, list button returns to project's category",
+   "pass": true,
+   "evidence": [
+    {
+     "slug": "suseong-white-34py-apartment-remodeling",
+     "h1": 1,
+     "h1Text": [
+      "수성 화이트 34평 아파트 리모델링"
+     ],
+     "photos": {
+      "n": 13,
+      "bad": 0
+     },
+     "backUrl": "/portfolio?category=full-remodel",
+     "shownCount": "5",
+     "expected": 5,
+     "selectedTab": "full-remodel",
+     "ok": true
+    },
+    {
+     "slug": "suseong-51py-new-apartment-home-styling",
+     "h1": 1,
+     "h1Text": [
+      "51평 신축 아파트 입주 전 홈스타일링"
+     ],
+     "photos": {
+      "n": 4,
+      "bad": 0
+     },
+     "backUrl": "/portfolio?category=move-in-styling",
+     "shownCount": "1",
+     "expected": 1,
+     "selectedTab": "move-in-styling",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "FAQ open/close by click",
+   "pass": true,
+   "evidence": {
+    "s0": {
+     "exp": "false",
+     "panelHidden": true
+    },
+    "s1": {
+     "exp": "true",
+     "panelHidden": false
+    },
+    "s2": {
+     "exp": "false",
+     "panelHidden": true
+    }
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "FAQ open/close by Enter and Space",
+   "pass": true,
+   "evidence": {
+    "enter": [
+     "true",
+     "false"
+    ],
+    "space": [
+     "true",
+     "false"
+    ]
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "FAQ several open at once",
+   "pass": true,
+   "evidence": {
+    "opened": 3,
+    "attempted": 3,
+    "items": 9
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "FAQ topic tabs filter",
+   "pass": true,
+   "evidence": {
+    "tabRes": [
+     {
+      "tab": "전체",
+      "visibleRows": 9,
+      "ok": true
+     },
+     {
+      "tab": "데모 안내",
+      "visibleRows": 2,
+      "ok": true
+     },
+     {
+      "tab": "시공사례",
+      "visibleRows": 3,
+      "ok": true
+     },
+     {
+      "tab": "견적 문의",
+      "visibleRows": 4,
+      "ok": true
+     }
+    ],
+    "sumOfTopicRows": 9,
+    "items": 9
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "contact: submit disabled in raw HTML, enabled after load",
+   "pass": true,
+   "evidence": {
+    "rawDisabled": true,
+    "enabledAfterLoad": true,
+    "mode": "online",
+    "expectedMode": "online"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "contact: empty submit -> inline errors, focus on first invalid",
+   "pass": true,
+   "evidence": {
+    "errs": [
+     "name",
+     "phone",
+     "message",
+     "consent"
+    ],
+    "focus": "i3-inq-name"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "contact: bad phone -> phone error only, focus on phone",
+   "pass": true,
+   "evidence": {
+    "errs": [
+     [
+      "phone",
+      "숫자 8자리 이상으로 입력해 주세요. (예: 010-1234-5678)"
+     ]
+    ],
+    "focus": "i3-inq-phone",
+    "invalid": "true"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "contact: reset clears fields and messages",
+   "pass": true,
+   "evidence": {
+    "errs": 0,
+    "name": "",
+    "phone": "",
+    "msg": "",
+    "consent": false
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "contact (online): exactly one POST to stub, six keys, success shown",
+   "pass": true,
+   "evidence": {
+    "posts": 1,
+    "url": "https://boostchat.co.kr/api/widget/wgt_2B09bTToSXnSi8tl2o9yuUCFlyOnoKXP/lead",
+    "keys": [
+     "consent",
+     "hp",
+     "message",
+     "name",
+     "phone",
+     "submission_id"
+    ],
+    "consent": true,
+    "hp": "",
+    "submissionIdLen": 36,
+    "done": true,
+    "title": "견적 문의가 접수되었습니다.",
+    "fieldsGone": true,
+    "focusIsStatus": true
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "to-top appears after scrolling",
+   "pass": true,
+   "evidence": {
+    "shownAtTop": false,
+    "afterScroll": true,
+    "opacity": "1",
+    "scrollY": 1098
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "to-top box clear of reserved 64x64 corner (right 18 / bottom 18)",
+   "pass": true,
+   "evidence": {
+    "toTop": {
+     "l": 1368,
+     "t": 762,
+     "r": 1412,
+     "b": 806
+    },
+    "reservedBox": {
+     "l": 1358,
+     "r": 1422,
+     "t": 818,
+     "b": 882
+    },
+    "intersects": false
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "to-top returns to top and hides",
+   "pass": true,
+   "evidence": {
+    "scrollY": 0,
+    "hidden": true
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 1440,
+   "name": "every page <html> has data-ext-widget",
+   "pass": true,
+   "evidence": [
+    {
+     "r": "/",
+     "status": 200,
+     "ext": true
+    },
+    {
+     "r": "/portfolio",
+     "status": 200,
+     "ext": true
+    },
+    {
+     "r": "/portfolio/page/2",
+     "status": 404,
+     "ext": true
+    },
+    {
+     "r": "/portfolio/suseong-white-34py-apartment-remodeling",
+     "status": 200,
+     "ext": true
+    },
+    {
+     "r": "/about",
+     "status": 200,
+     "ext": true
+    },
+    {
+     "r": "/service",
+     "status": 200,
+     "ext": true
+    },
+    {
+     "r": "/faq",
+     "status": 200,
+     "ext": true
+    },
+    {
+     "r": "/contact",
+     "status": 200,
+     "ext": true
+    },
+    {
+     "r": "/no-such-page",
+     "status": 404,
+     "ext": true
+    }
+   ]
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "header nav reaches every page",
+   "pass": true,
+   "evidence": [
+    {
+     "link": [
+      "소개",
+      "/about"
+     ],
+     "landed": "/about",
+     "ok": true
+    },
+    {
+     "link": [
+      "시공사례",
+      "/portfolio"
+     ],
+     "landed": "/portfolio",
+     "ok": true
+    },
+    {
+     "link": [
+      "공사 유형",
+      "/service"
+     ],
+     "landed": "/service",
+     "ok": true
+    },
+    {
+     "link": [
+      "견적 문의",
+      "/contact"
+     ],
+     "landed": "/contact",
+     "ok": true
+    },
+    {
+     "link": [
+      "자주 묻는 질문",
+      "/faq"
+     ],
+     "landed": "/faq",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "logo returns home",
+   "pass": true,
+   "evidence": "/"
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "portfolio nav link on ?category returns full list at /portfolio",
+   "pass": true,
+   "evidence": {
+    "before": "5",
+    "after": "8",
+    "url": "/portfolio",
+    "selectedTab": "*",
+    "expectedTotal": 8
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "drawer opens (menu button)",
+   "pass": true,
+   "evidence": {
+    "open": true,
+    "exp": "true",
+    "modal": "true",
+    "focusInDrawer": true,
+    "focusIs": true,
+    "x": 0,
+    "w": 250
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "drawer: initial focus on close button, inside drawer",
+   "pass": true,
+   "evidence": {
+    "open": true,
+    "exp": "true",
+    "modal": "true",
+    "focusInDrawer": true,
+    "focusIs": true,
+    "x": 0,
+    "w": 250
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "drawer: Tab / Shift+Tab never leave the open drawer",
+   "pass": true,
+   "evidence": {
+    "presses": 25,
+    "focusables": 7
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "drawer closes by close button; focus returns to menu button",
+   "pass": true,
+   "evidence": {
+    "open": false,
+    "inert": true,
+    "focusOnBtn": true
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "drawer closes by Escape",
+   "pass": true,
+   "evidence": {
+    "open": false,
+    "focusOnBtn": true
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "drawer closes on link press and navigates",
+   "pass": true,
+   "evidence": {
+    "open": false,
+    "path": "/faq"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "hero autoplay advances (~4 s)",
+   "pass": true,
+   "evidence": {
+    "slides": 3,
+    "from": "0",
+    "to": "1",
+    "ms": 3178
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "hero dot press switches slide",
+   "pass": true,
+   "evidence": {
+    "target": 0,
+    "idx": "0",
+    "current": "true"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "hero toggle stops rotation; label swaps",
+   "pass": true,
+   "evidence": {
+    "before": {
+     "label": "슬라이드 멈춤",
+     "state": "pause"
+    },
+    "after": {
+     "label": "슬라이드 재생",
+     "state": "play",
+     "stopped": "true"
+    },
+    "indexChangedWhileStopped": false
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "hero toggle resumes; next slide within ~4.5 s after pointer away",
+   "pass": true,
+   "evidence": {
+    "label": {
+     "label": "슬라이드 멈춤",
+     "state": "pause"
+    },
+    "msToNextSlide": 4089
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "prefers-reduced-motion: no rotation",
+   "pass": true,
+   "evidence": {
+    "start": "0",
+    "after6_5s": "0",
+    "waitAnimationName": "none"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "home gallery tile -> /portfolio?category shows that category",
+   "pass": true,
+   "evidence": [
+    {
+     "tile": "full-remodel",
+     "href": "/portfolio?category=full-remodel",
+     "url": "/portfolio?category=full-remodel",
+     "shownCount": "5",
+     "expected": 5,
+     "selectedTab": "full-remodel",
+     "ok": true
+    },
+    {
+     "tile": "kitchen-bath",
+     "href": "/portfolio?category=kitchen-bath",
+     "url": "/portfolio?category=kitchen-bath",
+     "shownCount": "1",
+     "expected": 1,
+     "selectedTab": "kitchen-bath",
+     "ok": true
+    },
+    {
+     "tile": "move-in-styling",
+     "href": "/portfolio?category=move-in-styling",
+     "url": "/portfolio?category=move-in-styling",
+     "shownCount": "1",
+     "expected": 1,
+     "selectedTab": "move-in-styling",
+     "ok": true
+    },
+    {
+     "tile": "partial-remodel",
+     "href": "/portfolio?category=partial-remodel",
+     "url": "/portfolio?category=partial-remodel",
+     "shownCount": "1",
+     "expected": 1,
+     "selectedTab": "partial-remodel",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "portfolio category tabs filter",
+   "pass": true,
+   "evidence": [
+    {
+     "tab": "*",
+     "count": 8,
+     "expected": 8,
+     "cardsShown": 8,
+     "pressed": "true",
+     "url": "/portfolio",
+     "ok": true
+    },
+    {
+     "tab": "full-remodel",
+     "count": 5,
+     "expected": 5,
+     "cardsShown": 5,
+     "pressed": "true",
+     "url": "/portfolio?category=full-remodel",
+     "ok": true
+    },
+    {
+     "tab": "kitchen-bath",
+     "count": 1,
+     "expected": 1,
+     "cardsShown": 1,
+     "pressed": "true",
+     "url": "/portfolio?category=kitchen-bath",
+     "ok": true
+    },
+    {
+     "tab": "move-in-styling",
+     "count": 1,
+     "expected": 1,
+     "cardsShown": 1,
+     "pressed": "true",
+     "url": "/portfolio?category=move-in-styling",
+     "ok": true
+    },
+    {
+     "tab": "partial-remodel",
+     "count": 1,
+     "expected": 1,
+     "cardsShown": 1,
+     "pressed": "true",
+     "url": "/portfolio?category=partial-remodel",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "title search: a hit",
+   "pass": true,
+   "evidence": {
+    "token": "리모델링",
+    "count": 6,
+    "url": "/portfolio?q=%EB%A6%AC%EB%AA%A8%EB%8D%B8%EB%A7%81",
+    "firstCardHasProject": true
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "title search: empty result",
+   "pass": true,
+   "evidence": {
+    "count": 0,
+    "emptyVisible": true,
+    "emptyText": "조건에 맞는 프로젝트가 없습니다",
+    "url": "/portfolio?q=%E3%85%8B%E3%85%8B%EC%97%86%EB%8A%94%EA%B2%80%EC%83%89%EC%96%B4qq"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "clearing the search restores the list",
+   "pass": true,
+   "evidence": {
+    "count": 8,
+    "url": "/portfolio"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "Back/Forward restore filtered views",
+   "pass": true,
+   "evidence": {
+    "searched": {
+     "url": "/portfolio?category=full-remodel&q=%EB%A6%AC%EB%AA%A8%EB%8D%B8%EB%A7%81",
+     "count": 5
+    },
+    "back1": {
+     "url": "/portfolio?category=full-remodel",
+     "count": 5,
+     "inputValue": ""
+    },
+    "back2": {
+     "url": "/portfolio",
+     "count": 8
+    },
+    "forward": {
+     "url": "/portfolio?category=full-remodel",
+     "count": 5
+    }
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "pager absent when everything fits one page",
+   "pass": true,
+   "evidence": "8 projects <= 18; pager element present=false; static pager / ?page=2 not applicable"
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "detail: one h1, photos load, list button returns to project's category",
+   "pass": true,
+   "evidence": [
+    {
+     "slug": "suseong-white-34py-apartment-remodeling",
+     "h1": 1,
+     "h1Text": [
+      "수성 화이트 34평 아파트 리모델링"
+     ],
+     "photos": {
+      "n": 13,
+      "bad": 0
+     },
+     "backUrl": "/portfolio?category=full-remodel",
+     "shownCount": "5",
+     "expected": 5,
+     "selectedTab": "full-remodel",
+     "ok": true
+    },
+    {
+     "slug": "suseong-51py-new-apartment-home-styling",
+     "h1": 1,
+     "h1Text": [
+      "51평 신축 아파트 입주 전 홈스타일링"
+     ],
+     "photos": {
+      "n": 4,
+      "bad": 0
+     },
+     "backUrl": "/portfolio?category=move-in-styling",
+     "shownCount": "1",
+     "expected": 1,
+     "selectedTab": "move-in-styling",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "FAQ open/close by click",
+   "pass": true,
+   "evidence": {
+    "s0": {
+     "exp": "false",
+     "panelHidden": true
+    },
+    "s1": {
+     "exp": "true",
+     "panelHidden": false
+    },
+    "s2": {
+     "exp": "false",
+     "panelHidden": true
+    }
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "FAQ open/close by Enter and Space",
+   "pass": true,
+   "evidence": {
+    "enter": [
+     "true",
+     "false"
+    ],
+    "space": [
+     "true",
+     "false"
+    ]
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "FAQ several open at once",
+   "pass": true,
+   "evidence": {
+    "opened": 3,
+    "attempted": 3,
+    "items": 9
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "FAQ topic tabs filter",
+   "pass": true,
+   "evidence": {
+    "tabRes": [
+     {
+      "tab": "전체",
+      "visibleRows": 9,
+      "ok": true
+     },
+     {
+      "tab": "데모 안내",
+      "visibleRows": 2,
+      "ok": true
+     },
+     {
+      "tab": "시공사례",
+      "visibleRows": 3,
+      "ok": true
+     },
+     {
+      "tab": "견적 문의",
+      "visibleRows": 4,
+      "ok": true
+     }
+    ],
+    "sumOfTopicRows": 9,
+    "items": 9
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "contact: submit disabled in raw HTML, enabled after load",
+   "pass": true,
+   "evidence": {
+    "rawDisabled": true,
+    "enabledAfterLoad": true,
+    "mode": "online",
+    "expectedMode": "online"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "contact: empty submit -> inline errors, focus on first invalid",
+   "pass": true,
+   "evidence": {
+    "errs": [
+     "name",
+     "phone",
+     "message",
+     "consent"
+    ],
+    "focus": "i3-inq-name"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "contact: bad phone -> phone error only, focus on phone",
+   "pass": true,
+   "evidence": {
+    "errs": [
+     [
+      "phone",
+      "숫자 8자리 이상으로 입력해 주세요. (예: 010-1234-5678)"
+     ]
+    ],
+    "focus": "i3-inq-phone",
+    "invalid": "true"
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "contact: reset clears fields and messages",
+   "pass": true,
+   "evidence": {
+    "errs": 0,
+    "name": "",
+    "phone": "",
+    "msg": "",
+    "consent": false
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "contact (online): exactly one POST to stub, six keys, success shown",
+   "pass": true,
+   "evidence": {
+    "posts": 1,
+    "url": "https://boostchat.co.kr/api/widget/wgt_2B09bTToSXnSi8tl2o9yuUCFlyOnoKXP/lead",
+    "keys": [
+     "consent",
+     "hp",
+     "message",
+     "name",
+     "phone",
+     "submission_id"
+    ],
+    "consent": true,
+    "hp": "",
+    "submissionIdLen": 36,
+    "done": true,
+    "title": "견적 문의가 접수되었습니다.",
+    "fieldsGone": true,
+    "focusIsStatus": true
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "to-top appears after scrolling",
+   "pass": true,
+   "evidence": {
+    "shownAtTop": false,
+    "afterScroll": true,
+    "opacity": "1",
+    "scrollY": 625
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "to-top box clear of reserved 64x64 corner (right 18 / bottom 18)",
+   "pass": true,
+   "evidence": {
+    "toTop": {
+     "l": 318,
+     "t": 706,
+     "r": 362,
+     "b": 750
+    },
+    "reservedBox": {
+     "l": 308,
+     "r": 372,
+     "t": 762,
+     "b": 826
+    },
+    "intersects": false
+   }
+  },
+  {
+   "site": "demo03",
+   "vp": 390,
+   "name": "to-top returns to top and hides",
+   "pass": true,
+   "evidence": {
+    "scrollY": 0,
+    "hidden": true
+   }
+  }
+ ]
+}

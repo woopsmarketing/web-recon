@@ -1,0 +1,17 @@
+warning: Config as Code (railway.json / railway.toml) is deprecated. Prefer Infrastructure as Code (.railway/railway.ts). Run `railway config migrate` or see https://docs.railway.com/infrastructure-as-code#migrating-from-config-as-code
+  → Migrate: `railway config migrate` — https://docs.railway.com/infrastructure-as-code#migrating-from-config-as-code
+  Existing files keep working until 2026-12-01.
+prod-run: railway run -e production -s pgvector (public proxy host 확인)
+prod-run: railway run -e production -s app (app 변수 주입)
+prod-run: system_identifier OK (7675084143306387491, db=railway) · session=read-write
+prod-run: DATABASE_URL=set PORTFOLIO_PUBLISHER_TOKEN=set PORTFOLIO_ASSET_STORE=set PORTFOLIO_ASSET_S3_ENDPOINT=set PORTFOLIO_ASSET_S3_BUCKET=set PORTFOLIO_ASSET_S3_REGION=set PORTFOLIO_ASSET_S3_PREFIX=set PORTFOLIO_ASSET_S3_ACCESS_KEY_ID=set PORTFOLIO_ASSET_S3_SECRET_ACCESS_KEY=set PUBLIC_ACTION_TOOLS_ENABLED=set
+prod-run: node scripts/ops-first-party-refresh.ts 9 arg(s)
+> DB=railway system_identifier=7675084143306387491
+> 연동: capability=portfolio.search origin=https://interior-demo-3.boostweb.co.kr enabled=true originCanonical=true
+> 현재 사본: 사본 행 없음
+> 요청: apply=true force=false reparse=false 사유="demo tenant #3 (interior-demo-3.boostweb.co.kr) provisioning - mirror of boost-interior-demo"
+[first-party] refresh tenant=boost-interior-demo-03 capability=portfolio.search manifest=json/200 observation=ok decision=applied:upsert state=ON joined=false force=false
+> 결과: decision=applied:upsert observation=ok manifest=json/200 document=json/200 cooldown=ok joined=false
+> 검증: {"accepted":8,"dropped":0,"disabledFacets":[],"resourceVersion":"968afbccb944940d8d3c099dd54df5be","mediaRecords":8,"mediaIgnored":0}
+> 갱신 후 사본: version=968afbccb944940d8d3c099dd54df5be schema=1.1 state=ON lastSuccessAt=2026-10-09T10:51:56.670Z lastCheckedAt=2026-10-09T10:51:56.670Z records=8 media: records=8 cover=8 gallery=8 galleryImages=41 totalCount=42 hasMore=1
+> resourceVersion: - → 968afbccb944940d8d3c099dd54df5be (바뀜) · records - → 8 · media records - → 8

@@ -1,0 +1,65 @@
+prod-run: railway run -e production -s pgvector (public proxy host 확인)
+prod-run: railway run -e production -s app (app 변수 주입)
+prod-run: system_identifier OK (7675084143306387491, db=railway) · session=read-write
+prod-run: DATABASE_URL=set PORTFOLIO_PUBLISHER_TOKEN=set PORTFOLIO_ASSET_STORE=set PORTFOLIO_ASSET_S3_ENDPOINT=set PORTFOLIO_ASSET_S3_BUCKET=set PORTFOLIO_ASSET_S3_REGION=set PORTFOLIO_ASSET_S3_PREFIX=set PORTFOLIO_ASSET_S3_ACCESS_KEY_ID=set PORTFOLIO_ASSET_S3_SECRET_ACCESS_KEY=set PUBLIC_ACTION_TOOLS_ENABLED=set
+prod-run: node proof/provision/provision-demo03.mts 3 arg(s)
+provision: mode=APPLY phase=tenant-config db=railway system_identifier=7675084143306387491 session_read_only=off
+provision: env PUBLIC_WIDGET_ENABLED=true PUBLIC_CHAT_PROFILE=true OPENAI_API_KEY=set OPS_OPERATOR_EMAILS=1 entr(y|ies)
+provision: operator=vnf***@gmail.com user=RS3jeCzT… owner-of-template=yes stored-email-matches-allowlist-bytewise=yes
+provision: target boost-interior-demo-03 exists id=0ebf3f9e… status=active members=1 owner-is-operator=yes
+
+== tenant-config plan for boost-interior-demo-03 (template boost-interior-demo) ==
+  [update   ] plan — setTenantPlanByOperator → ops_audit_log ops.plan.set
+             before: legacy (no assignment row)
+             after : master (source=operator)
+  [update   ] action pilot — setTenantActionPilotByOperator → ops.action_pilot.set
+             before: false
+             after : true
+  [update   ] capability portfolio.search — setTenantCapabilityByOperator → ops.capability.set
+             before: no row (= disabled)
+             after : true
+  [create   ] business facts — runTenantMutation(business_facts.update) + insertBusinessFactsIfAbsent
+             before: absent
+             after : {"name":"부스트 인테리어","industry":"주거 인테리어 · 리모델링","phone":null,"businessHours":"평일 09:00–18:00, 토요일 09:00–13:00, 일요일·공휴일 휴무 (데모 기준값)","serviceArea":"대구 전역(수성구·달서구·북구·동구·중구)과 경북 경산 등 인근 지역 — 실제 시공 사례가 있는 지역 기준","address":null,"services":["전체 리모델링","부분 리모델링","주방·욕실 리뉴얼","입주 전 홈스타일링","견적 문의 접수 및 상담"],"contactMethods":["이 채팅에서 상담 요청 남기기","이메일 vnf***@gmail.com"]}
+  [create   ] AI config — runTenantMutation(ai_config.update) + insertAiConfigIfAbsent
+             before: absent
+             after : {"name":"상담 도우미","tone":"friendly","answerLength":"medium","unknownAnswerPolicy":"consult","canAskQuestionsFirst":true,"greeting":"안녕하세요, 부스트 인테리어입니다. 주거 공간 리모델링과 부분 인테리어 상담을 도와드리고 있어요. 지금 살고 계신 집의 지역과 평수, 생각하고 계신 공사 범위를 알려주시면 상담에 도움이 됩니다. 편하게 말씀해 주세요."}
+  [create   ] public profile — runTenantMutation(public_profile.update) + insertPublicProfile
+             before: absent
+             after : {"handle":"boost-interior-3","tagline":"생활에 맞춘 설계로 더 편안하고 정돈된 집","bio":"생활에 맞춘 설계로 더 편안하고 정돈된 집을 만듭니다. 화이트톤 아파트 리모델링과 실거주 중심의 수납·동선 설계를 합니다. 전체 리모델링부터 주방·욕실 리뉴얼, 입주 전 홈스타일링까지 상담해 드립니다.","websiteUrl":"https://interior-demo-3.boostweb.co.kr/","contactEmail":"vnf***@gmail.com","instagramUrl":null,"youtubeUrl":null,"blogUrl":null,"kakaoUrl":null,"showPhone":false,"showBusinessHours":true,"showAddress":false,"showServiceArea":true,"showServices":true}
+  [update   ] public profile publish — runTenantMutation(public_profile.publish) + publishPublicProfile
+             before: absent
+             after : true
+  [create   ] widget channel — ensureWidgetChannel (insert .. on conflict do nothing)
+             before: absent
+             after : row with public_key=<to be generated on apply>, enabled=false, approval=pending
+  [update   ] widget allowed origins — runTenantMutation(widget.update, changed_fields=[allowed_origins]) — same statement as POST …/widget action=set_origins
+             before: absent
+             after : ["https://interior-demo-3.boostweb.co.kr"]
+  [update   ] widget enabled — runTenantMutation(widget.update, changed_fields=[enabled]) — same statement as POST …/widget action=update
+             before: absent
+             after : true
+  [skip: n/a] widget presentation (tenant_widget_presentation) — NOT written; product default applies (chat_dots · brand_blue · label 상담 · showLabel true)
+             before: template row: see verify.sh (launcher json)
+             after : (no row — default)
+  [skip: n/a] lead_form_config — NOT written; DEFAULT_LEAD_FORM applies when the row is absent
+             before: absent
+             after : (no row — default)
+
+== applying ==
+plan: {"ok":true,"tenantSlug":"boost-interior-demo-03","previousPlan":"legacy","previousSource":null,"plan":"master","changed":true}
+pilot: {"ok":true,"tenantSlug":"boost-interior-demo-03","previousEnabled":false,"enabled":true,"changed":true}
+capability: {"ok":true,"tenantSlug":"boost-interior-demo-03","capability":"portfolio.search","previousEnabled":false,"enabled":true,"changed":true}
+business facts: created v1
+ai config: created v1
+public profile: created handle=boost-interior-3 v1
+public profile publish: published v2
+widget channel: key=wgt_2B09bTToSXnSi8tl2o9yuUCFlyOnoKXP enabled=false v1 approval=pending
+widget origins: origins set v1 → v2 ["https://interior-demo-3.boostweb.co.kr"]
+widget enabled: enabled v2 → v3
+
+== widget public key: wgt_2B09bTToSXnSi8tl2o9yuUCFlyOnoKXP
+== install snippet: <script async src="https://boostchat.co.kr/widget.js" data-boost-chat-key="wgt_2B09bTToSXnSi8tl2o9yuUCFlyOnoKXP"></script>
+
+== fence: template tenant boost-interior-demo unchanged? YES
+== audit scope since 2026-10-09T09:36:13.165Z: ops_audit_log rows not for target=0 admin_audit_log rows not for target=0 (expected 0; non-zero = another actor wrote concurrently, or a bug — investigate)

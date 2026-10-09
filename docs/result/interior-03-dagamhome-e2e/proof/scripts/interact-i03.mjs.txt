@@ -1,0 +1,357 @@
+// Scratch tooling: navigation + interaction checks for interior-03 sites (fixture + Demo 03).
+//   node interact-i03.mjs <out.json> <shotsRootDir>
+// Chat host is aborted for every context; the lead endpoint is ALWAYS fulfilled by a stub. No real submit.
+import { chromium } from "/Users/woops/projects/web-recon-track-b/node_modules/playwright/index.mjs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+
+const R = "/Users/woops/projects/web-recon-track-b";
+const [outFile, shotsRoot] = process.argv.slice(2);
+const SITES = [
+  { id: "fixture", base: "http://127.0.0.1:4340", dir: "nuridam-interior-demo", mode: "mail", shots: `${shotsRoot}/fixture`, toTop: false, extWidget: false },
+  { id: "demo03", base: "http://127.0.0.1:4341", dir: "boost-interior-demo-03", mode: "online", shots: `${shotsRoot}/demo03-local`, toTop: true, extWidget: true },
+];
+const VPS = [{ w: 1440, h: 900, mobile: false }, { w: 390, h: 844, mobile: true }];
+const results = [];
+const counters = { chatAborted: 0, leadStubbed: 0, leadRequestsSeen: 0, offOrigin: [] };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const jsonOf = (f) => { const j = JSON.parse(readFileSync(f, "utf8")); return Array.isArray(j) ? j : j.projects ?? j.items; };
+
+for (const site of SITES) {
+  mkdirSync(site.shots, { recursive: true });
+  const projects = jsonOf(`${R}/data/sites/${site.dir}/content/projects.json`);
+  const cats = JSON.parse(readFileSync(`${R}/data/sites/${site.dir}/content/categories.json`, "utf8")).items;
+  const countOf = (c) => projects.filter((p) => p.category === c).length;
+  const total = projects.length;
+  const browser = await chromium.launch();
+  for (const vp of VPS) {
+    const tag = `${site.id}@${vp.w}`;
+    const rec = (name, pass, evidence) => { results.push({ site: site.id, vp: vp.w, name, pass, evidence }); console.log(`${pass === null ? "N/A " : pass ? "PASS" : "FAIL"} ${tag} ${name} :: ${typeof evidence === "string" ? evidence : JSON.stringify(evidence)}`); };
+    const mk = async (extra = {}) => {
+      const ctx = await browser.newContext({ viewport: { width: vp.w, height: vp.h }, isMobile: vp.mobile, hasTouch: vp.mobile, locale: "ko-KR", timezoneId: "Asia/Seoul", ...extra });
+      await ctx.route("**://boostchat.co.kr/**", (r) => { counters.chatAborted++; return r.abort("aborted"); });
+      // stub registered AFTER the block: later routes win
+      await ctx.route("**/api/widget/*/lead", async (r) => {
+        counters.leadStubbed++;
+        const h = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
+        if (r.request().method() === "OPTIONS") return r.fulfill({ status: 204, headers: h });
+        return r.fulfill({ status: 200, headers: { ...h, "content-type": "application/json" }, body: JSON.stringify({ received: true }) });
+      });
+      await ctx.addInitScript(() => {
+        document.addEventListener("click", (e) => { const a = e.target?.closest?.("a"); if (a && /^mailto:/i.test(a.href)) { window.__mailto = a.href; e.preventDefault(); } }, true);
+      });
+      return ctx;
+    };
+    const ctx = await mk();
+    const watch = (page) => {
+      page.on("request", (r) => {
+        const u = r.url();
+        if (/\/api\/widget\/[^/]+\/lead/.test(u) && r.method() === "POST") counters.leadRequestsSeen++;
+        if (!u.startsWith(site.base) && !u.startsWith("data:") && !u.startsWith("blob:") && !u.includes("boostchat.co.kr")) counters.offOrigin.push(u);
+      });
+      return page;
+    };
+    const pg = async (path) => { const p = watch(await ctx.newPage()); const res = await p.goto(site.base + path, { waitUntil: "networkidle" }); await p.waitForTimeout(300); return [p, res]; };
+    const shot = async (p, name) => { await p.evaluate(() => scrollTo(0, 0)); await p.screenshot({ path: `${site.shots}/${name}-${vp.w}.jpg`, type: "jpeg", quality: 72, fullPage: true }); };
+    const pathOf = (p) => { const u = new URL(p.url()); return u.pathname + u.search; };
+    const navKeys = ["home", "about", "portfolio", "service", "contact", "faq"];
+
+    // ---------- 1. header nav / logo / drawer ----------
+    {
+      const [p] = await pg("/");
+      const hrefs = await p.$$eval(vp.mobile ? ".i3-drawer__link" : ".i3-nav__link", (a) => a.map((x) => [x.getAttribute("data-nav") ?? x.textContent, x.getAttribute("href")]));
+      const got = [];
+      for (let i = 0; i < hrefs.length; i++) {
+        await p.goto(site.base + "/", { waitUntil: "networkidle" });
+        if (vp.mobile) { await p.click("[data-menu-button]"); await p.waitForSelector("[data-drawer-open]"); await p.click(`.i3-drawer__link >> nth=${i}`); }
+        else await p.click(`.i3-nav__link >> nth=${i}`);
+        await p.waitForTimeout(700);
+        const r = await p.evaluate(() => ({ p: location.pathname, h1: document.querySelectorAll("h1").length, status: document.title }));
+        got.push({ link: hrefs[i], landed: r.p, ok: r.p === new URL(hrefs[i][1], "http://x").pathname });
+      }
+      rec("header nav reaches every page", got.every((g) => g.ok) && got.length >= 5, got);
+      // logo -> home from /about
+      await p.goto(site.base + "/about", { waitUntil: "networkidle" });
+      await p.click(".i3-header__brand");
+      await p.waitForTimeout(700);
+      rec("logo returns home", p.url() === site.base + "/", pathOf(p));
+      // portfolio link on a filtered list
+      await p.goto(`${site.base}/portfolio?category=${cats[0].id}`, { waitUntil: "networkidle" });
+      await p.waitForTimeout(400);
+      const before = await p.$eval("[data-result-count]", (e) => e.getAttribute("data-result-count"));
+      if (vp.mobile) { await p.click("[data-menu-button]"); await p.waitForSelector("[data-drawer-open]"); await p.click('.i3-drawer__link[href="/portfolio"]'); }
+      else await p.click('.i3-nav__link[data-nav="portfolio"]');
+      await p.waitForLoadState("networkidle"); await p.waitForTimeout(600);
+      const after = await p.$eval("[data-result-count]", (e) => e.getAttribute("data-result-count"));
+      const sel = await p.$eval('.i3-lnb [aria-pressed="true"]', (e) => e.getAttribute("data-lnb-item")).catch(() => null);
+      rec("portfolio nav link on ?category returns full list at /portfolio", pathOf(p) === "/portfolio" && after === String(total) && sel === "*", { before, after, url: pathOf(p), selectedTab: sel, expectedTotal: total });
+      await p.close();
+    }
+
+    // ---------- 2. mobile drawer ----------
+    if (vp.mobile) {
+      const [p] = await pg("/about");
+      const btnVisible = await p.isVisible("[data-menu-button]");
+      await p.click("[data-menu-button]"); await p.waitForTimeout(500);
+      const st = await p.evaluate(() => ({ open: document.querySelector("#i3-drawer").hasAttribute("data-drawer-open"), exp: document.querySelector("[data-menu-button]").getAttribute("aria-expanded"), modal: document.querySelector("#i3-drawer").getAttribute("aria-modal"), focusInDrawer: !!document.activeElement.closest("#i3-drawer"), focusIs: document.activeElement.getAttribute("data-drawer-close") !== null, x: Math.round(document.querySelector("#i3-drawer").getBoundingClientRect().left), w: Math.round(document.querySelector("#i3-drawer").getBoundingClientRect().width) }));
+      rec("drawer opens (menu button)", btnVisible && st.open && st.exp === "true" && st.modal === "true", st);
+      await shot(p, "state-drawer-open");
+      rec("drawer: initial focus on close button, inside drawer", st.focusInDrawer && st.focusIs, st);
+      const nLinks = await p.$$eval("#i3-drawer a[href], #i3-drawer button", (e) => e.length);
+      const trail = [];
+      for (let i = 0; i < nLinks * 2 + 2; i++) { await p.keyboard.press("Tab"); trail.push(await p.evaluate(() => !!document.activeElement.closest("#i3-drawer"))); }
+      for (let i = 0; i < nLinks + 2; i++) { await p.keyboard.press("Shift+Tab"); trail.push(await p.evaluate(() => !!document.activeElement.closest("#i3-drawer"))); }
+      rec("drawer: Tab / Shift+Tab never leave the open drawer", trail.every(Boolean), { presses: trail.length, focusables: nLinks });
+      await p.click("[data-drawer-close]"); await p.waitForTimeout(500);
+      const c1 = await p.evaluate(() => ({ open: document.querySelector("#i3-drawer").hasAttribute("data-drawer-open"), inert: document.querySelector("#i3-drawer").inert, focusOnBtn: document.activeElement.hasAttribute("data-menu-button") }));
+      rec("drawer closes by close button; focus returns to menu button", !c1.open && c1.inert && c1.focusOnBtn, c1);
+      await p.click("[data-menu-button]"); await p.waitForTimeout(400); await p.keyboard.press("Escape"); await p.waitForTimeout(500);
+      const c2 = await p.evaluate(() => ({ open: document.querySelector("#i3-drawer").hasAttribute("data-drawer-open"), focusOnBtn: document.activeElement.hasAttribute("data-menu-button") }));
+      rec("drawer closes by Escape", !c2.open && c2.focusOnBtn, c2);
+      await p.click("[data-menu-button]"); await p.waitForTimeout(400);
+      await p.click('.i3-drawer__link[href="/faq"]'); await p.waitForTimeout(900);
+      const c3 = await p.evaluate(() => ({ open: document.querySelector("#i3-drawer").hasAttribute("data-drawer-open"), path: location.pathname }));
+      rec("drawer closes on link press and navigates", !c3.open && c3.path === "/faq", c3);
+      await p.close();
+    } else {
+      const [p] = await pg("/about");
+      rec("menu button hidden on wide viewport", !(await p.isVisible("[data-menu-button]")), "isVisible=false expected");
+      await p.close();
+    }
+
+    // ---------- 3. hero ----------
+    {
+      const [p] = await pg("/");
+      const info = await p.evaluate(() => ({ slides: document.querySelectorAll("[data-hero-slide]").length, dots: document.querySelectorAll("[data-hero-dot]").length, hasToggle: !!document.querySelector("[data-hero-toggle]"), idx: document.querySelector("[data-hero-stage]").getAttribute("data-index") }));
+      await p.mouse.move(vp.w / 2, 2);
+      const idx = () => p.$eval("[data-hero-stage]", (e) => e.getAttribute("data-index"));
+      const waitChange = async (from, maxMs) => { const t0 = Date.now(); while (Date.now() - t0 < maxMs) { if ((await idx()) !== from) return Date.now() - t0; await sleep(100); } return null; };
+      const i0 = await idx();
+      const dt = await waitChange(i0, 7000);
+      rec("hero autoplay advances (~4 s)", dt !== null && dt >= 2500 && dt <= 6500, { slides: info.slides, from: i0, to: await idx(), ms: dt });
+      const cur = Number(await idx());
+      const target = (cur + 2) % info.dots;
+      await p.click(`[data-hero-dot="${target}"]`);
+      await sleep(150);
+      const dotState = await p.evaluate((t) => ({ idx: document.querySelector("[data-hero-stage]").getAttribute("data-index"), current: document.querySelector(`[data-hero-dot="${t}"]`).getAttribute("aria-current") }), target);
+      rec("hero dot press switches slide", dotState.idx === String(target) && dotState.current === "true", { target, ...dotState });
+      const lab0 = await p.$eval("[data-hero-toggle]", (e) => ({ label: e.getAttribute("aria-label"), state: e.getAttribute("data-hero-toggle") }));
+      await p.click("[data-hero-toggle]");
+      const lab1 = await p.$eval("[data-hero-toggle]", (e) => ({ label: e.getAttribute("aria-label"), state: e.getAttribute("data-hero-toggle"), stopped: e.closest("[data-hero-stage]").getAttribute("data-stopped") }));
+      await p.mouse.move(vp.w / 2, 2);
+      const iStop = await idx();
+      const moved = await waitChange(iStop, 6000);
+      rec("hero toggle stops rotation; label swaps", lab0.label !== lab1.label && lab1.stopped === "true" && moved === null, { before: lab0, after: lab1, indexChangedWhileStopped: moved !== null });
+      await p.click("[data-hero-toggle]");
+      const lab2 = await p.$eval("[data-hero-toggle]", (e) => ({ label: e.getAttribute("aria-label"), state: e.getAttribute("data-hero-toggle") }));
+      await p.mouse.move(vp.w / 2, 2);
+      const iRes = await idx();
+      const mv2 = await waitChange(iRes, 6500);
+      rec("hero toggle resumes; next slide within ~4.5 s after pointer away", lab2.label === lab0.label && mv2 !== null && mv2 <= 5200, { label: lab2, msToNextSlide: mv2 });
+      await p.close();
+      const rctx = await mk({ reducedMotion: "reduce" });
+      const rp = watch(await rctx.newPage());
+      await rp.goto(site.base + "/", { waitUntil: "networkidle" });
+      const r0 = await rp.$eval("[data-hero-stage]", (e) => e.getAttribute("data-index"));
+      await rp.mouse.move(vp.w / 2, 2);
+      await sleep(6500);
+      const r1 = await rp.$eval("[data-hero-stage]", (e) => e.getAttribute("data-index"));
+      const an = await rp.evaluate(() => getComputedStyle(document.querySelector(".i3-hero__wait")).animationName);
+      rec("prefers-reduced-motion: no rotation", r0 === r1, { start: r0, after6_5s: r1, waitAnimationName: an });
+      await rctx.close();
+    }
+
+    // ---------- 4. home gallery tiles ----------
+    {
+      const tiles = await (async () => { const [p] = await pg("/"); const t = await p.$$eval("[data-gallery-tile]", (e) => e.map((x) => [x.getAttribute("data-gallery-tile"), x.querySelector("a")?.getAttribute("href") ?? null])); await p.close(); return t; })();
+      const out = [];
+      for (let i = 0; i < tiles.length; i++) {
+        const [p] = await pg("/");
+        await p.click(`[data-gallery-tile] a >> nth=${i}`);
+        await p.waitForLoadState("networkidle"); await p.waitForTimeout(700);
+        const r = await p.evaluate(() => ({ cnt: document.querySelector("[data-result-count]")?.getAttribute("data-result-count"), sel: document.querySelector('.i3-lnb [aria-pressed="true"]')?.getAttribute("data-lnb-item"), h: document.querySelector(".i3-plist h1, .i3-plist h2")?.textContent }));
+        out.push({ tile: tiles[i][0], href: tiles[i][1], url: pathOf(p), shownCount: r.cnt, expected: countOf(tiles[i][0]), selectedTab: r.sel, ok: r.cnt === String(countOf(tiles[i][0])) && r.sel === tiles[i][0] && pathOf(p) === tiles[i][1] });
+        await p.close();
+      }
+      rec("home gallery tile -> /portfolio?category shows that category", out.length > 0 && out.every((o) => o.ok), out);
+    }
+
+    // ---------- 5. portfolio list ----------
+    {
+      const [p] = await pg("/portfolio");
+      const cnt = () => p.$eval("[data-result-count]", (e) => Number(e.getAttribute("data-result-count")));
+      const cards = () => p.$$eval("[data-project-card]", (e) => e.length);
+      const tabs = await p.$$eval(".i3-lnb [data-lnb-item]", (e) => e.map((x) => x.getAttribute("data-lnb-item")));
+      const tabRes = [];
+      for (const t of tabs) {
+        await p.click(`.i3-lnb [data-lnb-item="${t}"]`); await p.waitForTimeout(350);
+        const exp = t === "*" ? total : countOf(t);
+        const shown = await cards(); const c = await cnt();
+        const pressed = await p.$eval(`.i3-lnb [data-lnb-item="${t}"]`, (e) => e.getAttribute("aria-pressed"));
+        const url = pathOf(p);
+        tabRes.push({ tab: t, count: c, expected: exp, cardsShown: shown, pressed, url, ok: c === exp && pressed === "true" && shown === Math.min(exp, 18) && (t === "*" ? url === "/portfolio" : url === `/portfolio?category=${t}`) });
+      }
+      rec("portfolio category tabs filter", tabRes.every((t) => t.ok), tabRes);
+      await p.click('.i3-lnb [data-lnb-item="*"]'); await p.waitForTimeout(300);
+      const tok = projects[0].title.split(/\s+/).sort((a, b) => b.length - a.length)[0];
+      await p.fill("input[type=search]", tok); await p.keyboard.press("Enter"); await p.waitForTimeout(400);
+      const hit = { token: tok, count: await cnt(), url: pathOf(p), firstCardHasProject: await p.$$eval("[data-project-card] .i3-card__subject", (e, t) => e.some((x) => x.textContent.includes(t)), tok) };
+      rec("title search: a hit", hit.count >= 1 && hit.url.includes("q="), hit);
+      await p.fill("input[type=search]", "ㅋㅋ없는검색어qq"); await p.keyboard.press("Enter"); await p.waitForTimeout(400);
+      const empty = { count: await cnt(), emptyVisible: await p.isVisible("[data-list-empty]"), emptyText: await p.$eval("[data-list-empty]", (e) => e.textContent).catch(() => null), url: pathOf(p) };
+      rec("title search: empty result", empty.count === 0 && empty.emptyVisible, empty);
+      await p.fill("input[type=search]", ""); await p.waitForTimeout(400);
+      rec("clearing the search restores the list", (await cnt()) === total && pathOf(p) === "/portfolio", { count: await cnt(), url: pathOf(p) });
+      // Back / Forward
+      const c0 = cats[0].id;
+      await p.click(`.i3-lnb [data-lnb-item="${c0}"]`); await p.waitForTimeout(300);
+      await p.fill("input[type=search]", tok); await p.keyboard.press("Enter"); await p.waitForTimeout(400);
+      const s3 = { url: pathOf(p), count: await cnt() };
+      await p.goBack(); await p.waitForTimeout(500);
+      const b1 = { url: pathOf(p), count: await cnt(), inputValue: await p.inputValue("input[type=search]") };
+      await p.goBack(); await p.waitForTimeout(500);
+      const b2 = { url: pathOf(p), count: await cnt() };
+      await p.goForward(); await p.waitForTimeout(500);
+      const f1 = { url: pathOf(p), count: await cnt() };
+      rec("Back/Forward restore filtered views", b1.url === `/portfolio?category=${c0}` && b1.count === countOf(c0) && b1.inputValue === "" && b2.url === "/portfolio" && b2.count === total && f1.url === b1.url && f1.count === b1.count, { searched: s3, back1: b1, back2: b2, forward: f1 });
+      await p.close();
+      // pager
+      const [p2] = await pg("/portfolio");
+      const pageCount = Math.ceil(total / 18);
+      if (pageCount > 1) {
+        const pager = await p2.$eval(".i3-pager", (e) => ({ kind: e.getAttribute("data-pager"), links: [...e.querySelectorAll("a[data-page]")].map((a) => a.getAttribute("href")) }));
+        await p2.click('.i3-pager a[data-page="2"]'); await p2.waitForLoadState("networkidle"); await p2.waitForTimeout(600);
+        const pp = { url: pathOf(p2), cards: await p2.$$eval("[data-project-card]", (e) => e.length), cur: await p2.$eval('.i3-pager [aria-current="page"]', (e) => e.textContent) };
+        rec("static pager: page 2 via link", pp.url === "/portfolio/page/2" && pp.cards === total - 18 && pp.cur === "2", { pager, ...pp });
+        const big = cats.find((c) => countOf(c.id) > 18);
+        rec("?page=2 in a filtered view", null, big ? "n/a-check-skipped" : `not applicable: largest category has ${Math.max(...cats.map((c) => countOf(c.id)))} (<= 18) results`);
+        await p2.goto(`${site.base}/portfolio?page=2`, { waitUntil: "networkidle" }); await p2.waitForTimeout(500);
+        rec("(extra) /portfolio?page=2 unfiltered", null, { url: pathOf(p2), count: await p2.$eval("[data-result-count]", (e) => e.getAttribute("data-result-count")), cards: await p2.$$eval("[data-project-card]", (e) => e.length) });
+      } else {
+        const has = await p2.$(".i3-pager");
+        rec("pager absent when everything fits one page", !has, `${total} projects <= 18; pager element present=${!!has}; static pager / ?page=2 not applicable`);
+      }
+      await p2.close();
+    }
+
+    // ---------- 6. detail ----------
+    {
+      const slugs = [projects[0], projects[projects.length > 7 ? 7 : projects.length - 1]];
+      const out = [];
+      for (const pr of slugs) {
+        const [p] = await pg(`/portfolio/${pr.slug}`);
+        const h = await p.evaluate(() => document.querySelectorAll("h1").length);
+        const hh = await p.$$eval("h1", (e) => e.map((x) => x.textContent));
+        const docH = await p.evaluate(() => document.documentElement.scrollHeight);
+        for (let y = 0; y < docH; y += 600) { await p.evaluate((y) => scrollTo(0, y), y); await p.waitForTimeout(60); }
+        await p.waitForLoadState("networkidle");
+        const ph = await p.$$eval(".i3-pview__photo img", (e) => ({ n: e.length, bad: e.filter((i) => !(i.complete && i.naturalWidth > 0)).length }));
+        await p.evaluate(() => scrollTo(0, 0));
+        await p.click("[data-detail-back]"); await p.waitForLoadState("networkidle"); await p.waitForTimeout(700);
+        const r = await p.evaluate(() => ({ cnt: document.querySelector("[data-result-count]")?.getAttribute("data-result-count"), sel: document.querySelector('.i3-lnb [aria-pressed="true"]')?.getAttribute("data-lnb-item") }));
+        out.push({ slug: pr.slug, h1: h, h1Text: hh, photos: ph, backUrl: pathOf(p), shownCount: r.cnt, expected: countOf(pr.category), selectedTab: r.sel, ok: h === 1 && ph.n > 0 && ph.bad === 0 && pathOf(p) === `/portfolio?category=${pr.category}` && r.cnt === String(countOf(pr.category)) && r.sel === pr.category });
+        await p.close();
+      }
+      rec("detail: one h1, photos load, list button returns to project's category", out.every((o) => o.ok), out);
+    }
+
+    // ---------- 7. FAQ ----------
+    {
+      const [p] = await pg("/faq");
+      const nItems = await p.$$eval("[data-faq-toggle]", (e) => e.length);
+      const st = (i) => p.evaluate((i) => { const b = document.querySelectorAll("[data-faq-toggle]")[i]; const panel = document.getElementById(b.getAttribute("aria-controls")); return { exp: b.getAttribute("aria-expanded"), panelHidden: panel.hidden }; }, i);
+      const s0 = await st(0);
+      await p.click("[data-faq-toggle] >> nth=0"); const s1 = await st(0);
+      await p.click("[data-faq-toggle] >> nth=0"); const s2 = await st(0);
+      rec("FAQ open/close by click", s0.exp === "false" && s0.panelHidden && s1.exp === "true" && !s1.panelHidden && s2.exp === "false" && s2.panelHidden, { s0, s1, s2 });
+      await p.focus("[data-faq-toggle] >> nth=1"); await p.keyboard.press("Enter"); const k1 = await st(1); await p.keyboard.press("Enter"); const k2 = await st(1);
+      await p.keyboard.press("Space"); const k3 = await st(1); await p.keyboard.press("Space"); const k4 = await st(1);
+      rec("FAQ open/close by Enter and Space", k1.exp === "true" && k2.exp === "false" && k3.exp === "true" && k4.exp === "false", { enter: [k1.exp, k2.exp], space: [k3.exp, k4.exp] });
+      const n = Math.min(3, nItems);
+      for (let i = 0; i < n; i++) await p.click(`[data-faq-toggle] >> nth=${i}`);
+      const open = await p.$$eval('[data-faq-toggle][aria-expanded="true"]', (e) => e.length);
+      rec("FAQ several open at once", open === n && n >= 2, { opened: open, attempted: n, items: nItems });
+      await shot(p, "state-faq-open");
+      for (let i = 0; i < n; i++) await p.click(`[data-faq-toggle] >> nth=${i}`);
+      const tabs = await p.$$eval(".i3-lnb [data-lnb-item]", (e) => e.map((x) => [x.getAttribute("data-lnb-item"), x.textContent.trim()]));
+      const tabRes = [];
+      for (const [k, label] of tabs) {
+        await p.click(`.i3-lnb [data-lnb-item="${k}"]`); await p.waitForTimeout(200);
+        const vis = await p.$$eval("tr.i3-board__row:not([hidden])", (e) => e.map((r) => r.querySelector("td.i3-board__topic")?.textContent ?? ""));
+        tabRes.push({ tab: label, visibleRows: vis.length, ok: k === "all" ? vis.length === nItems : vis.length > 0 && vis.every((t) => t === label) });
+      }
+      const sumTopics = tabRes.filter((t) => t.tab !== tabs[0][1]).reduce((a, t) => a + t.visibleRows, 0);
+      rec("FAQ topic tabs filter", tabRes.length >= 2 && tabRes.every((t) => t.ok) && sumTopics === nItems, { tabRes, sumOfTopicRows: sumTopics, items: nItems });
+      await p.close();
+    }
+
+    // ---------- 8. contact ----------
+    {
+      const raw = await (await ctx.request.get(site.base + "/contact")).text();
+      const rawDisabled = /<button[^>]*data-inquiry-submit[^>]*disabled/.test(raw) || /<button[^>]*disabled[^>]*data-inquiry-submit/.test(raw);
+      const [p] = await pg("/contact");
+      const dis = await p.$eval("[data-inquiry-submit]", (e) => e.disabled);
+      const mode = await p.$eval("[data-inquiry-form]", (e) => e.getAttribute("data-inquiry-mode"));
+      rec("contact: submit disabled in raw HTML, enabled after load", rawDisabled && !dis, { rawDisabled, enabledAfterLoad: !dis, mode, expectedMode: site.mode });
+      await p.click("[data-inquiry-submit]"); await p.waitForTimeout(300);
+      const e1 = await p.evaluate(() => ({ errs: [...document.querySelectorAll("[data-inquiry-field-error]")].map((e) => e.getAttribute("data-inquiry-field-error")), focus: document.activeElement.id }));
+      rec("contact: empty submit -> inline errors, focus on first invalid", ["name", "phone", "message", "consent"].every((k) => e1.errs.includes(k)) && e1.focus === "i3-inq-name", e1);
+      await shot(p, "state-contact-validation");
+      await p.fill("#i3-inq-name", "테스트"); await p.fill("#i3-inq-phone", "abc"); await p.fill("#i3-inq-message", "자동 점검용 문의입니다"); await p.check("#i3-inq-consent");
+      await p.click("[data-inquiry-submit]"); await p.waitForTimeout(300);
+      const e2 = await p.evaluate(() => ({ errs: [...document.querySelectorAll("[data-inquiry-field-error]")].map((e) => [e.getAttribute("data-inquiry-field-error"), e.textContent]), focus: document.activeElement.id, invalid: document.getElementById("i3-inq-phone").getAttribute("aria-invalid") }));
+      rec("contact: bad phone -> phone error only, focus on phone", e2.errs.length === 1 && e2.errs[0][0] === "phone" && e2.focus === "i3-inq-phone" && e2.invalid === "true", e2);
+      await p.click("[data-inquiry-reset]"); await p.waitForTimeout(300);
+      const e3 = await p.evaluate(() => ({ errs: document.querySelectorAll("[data-inquiry-field-error]").length, name: document.getElementById("i3-inq-name").value, phone: document.getElementById("i3-inq-phone").value, msg: document.getElementById("i3-inq-message").value, consent: document.getElementById("i3-inq-consent").checked }));
+      rec("contact: reset clears fields and messages", e3.errs === 0 && !e3.name && !e3.phone && !e3.msg && !e3.consent, e3);
+      await p.fill("#i3-inq-name", "테스트"); await p.fill("#i3-inq-phone", "010-1234-5678"); await p.fill("#i3-inq-message", "자동 점검용 문의입니다. 실제 문의가 아닙니다."); await p.check("#i3-inq-consent");
+      const posts = [];
+      p.on("request", (r) => { if (/\/api\/widget\/[^/]+\/lead/.test(r.url()) && r.method() === "POST") posts.push({ url: r.url(), body: r.postData() }); });
+      await p.click("[data-inquiry-submit]"); await p.waitForTimeout(1500);
+      if (site.mode === "mail") {
+        const m = await p.evaluate(() => ({ mailto: window.__mailto ?? null, status: document.querySelector("[data-inquiry-status]").textContent, path: location.pathname }));
+        let dec = null; try { const u = new URL(m.mailto); dec = { to: u.pathname, subject: u.searchParams.get("subject"), bodyHasMsg: (u.searchParams.get("body") ?? "").includes("자동 점검용") }; } catch {}
+        rec("contact (mail): mailto hand-off prepared, nothing sent", !!m.mailto && m.mailto.startsWith("mailto:") && !!m.status.trim() && posts.length === 0, { hrefLen: m.mailto?.length, ...dec, status: m.status.slice(0, 120), stayedOn: m.path });
+        await shot(p, "state-contact-mail-handoff");
+      } else {
+        const keys = posts[0] ? Object.keys(JSON.parse(posts[0].body)).sort() : [];
+        const done = await p.evaluate(() => ({ done: !!document.querySelector(".i3-form__status--done"), title: document.querySelector(".i3-form__done-title")?.textContent, fieldsGone: !document.querySelector("#i3-inq-name"), focusIsStatus: document.activeElement.hasAttribute("data-inquiry-status") }));
+        const want = ["consent", "hp", "message", "name", "phone", "submission_id"];
+        const parsed = posts[0] ? JSON.parse(posts[0].body) : {};
+        rec("contact (online): exactly one POST to stub, six keys, success shown", posts.length === 1 && JSON.stringify(keys) === JSON.stringify(want) && done.done, { posts: posts.length, url: posts[0]?.url, keys, consent: parsed.consent, hp: parsed.hp, submissionIdLen: String(parsed.submission_id ?? "").length, ...done });
+        await shot(p, "state-contact-success");
+      }
+      await p.close();
+    }
+
+    // ---------- 9. to-top + ext-widget ----------
+    {
+      const [p] = await pg("/portfolio");
+      const hasBtn = !!(await p.$("[data-to-top]"));
+      if (!site.toTop) rec("to-top button absent on this site", !hasBtn, { present: hasBtn });
+      else {
+        const shownAt0 = await p.$eval("[data-to-top]", (e) => e.hasAttribute("data-shown"));
+        await p.evaluate(() => scrollTo(0, 1600)); await p.waitForTimeout(900);
+        const g = await p.evaluate(() => { const e = document.querySelector("[data-to-top]"); const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return { shown: e.hasAttribute("data-shown"), opacity: cs.opacity, rect: { l: r.left, t: r.top, r: r.right, b: r.bottom }, vw: document.documentElement.clientWidth, vh: innerHeight, sy: scrollY }; });
+        const box = { l: g.vw - 18 - 64, r: g.vw - 18, t: g.vh - 18 - 64, b: g.vh - 18 };
+        const inter = g.rect.l < box.r && g.rect.r > box.l && g.rect.t < box.b && g.rect.b > box.t;
+        rec("to-top appears after scrolling", !shownAt0 && g.shown && g.opacity === "1", { shownAtTop: shownAt0, afterScroll: g.shown, opacity: g.opacity, scrollY: g.sy });
+        rec("to-top box clear of reserved 64x64 corner (right 18 / bottom 18)", g.shown && !inter, { toTop: g.rect, reservedBox: box, intersects: inter });
+        await p.click("[data-to-top]"); await p.waitForTimeout(1500);
+        const sy = await p.evaluate(() => scrollY);
+        const hidden = await p.$eval("[data-to-top]", (e) => !e.hasAttribute("data-shown"));
+        rec("to-top returns to top and hides", sy === 0 && hidden, { scrollY: sy, hidden });
+      }
+      await p.close();
+      const routes = ["/", "/portfolio", "/portfolio/page/2", `/portfolio/${projects[0].slug}`, "/about", "/service", "/faq", "/contact", "/no-such-page"];
+      const ext = [];
+      for (const r of routes) { const rr = await ctx.request.get(site.base + r); const html = await rr.text(); const tagm = html.match(/<html[^>]*>/)?.[0] ?? ""; ext.push({ r, status: rr.status(), ext: /data-ext-widget/.test(tagm) }); }
+      if (vp.w === 1440) rec(site.extWidget ? "every page <html> has data-ext-widget" : "no page <html> has data-ext-widget", ext.every((e) => e.ext === site.extWidget), ext);
+    }
+    await ctx.close();
+  }
+  await browser.close();
+}
+const fails = results.filter((r) => r.pass === false);
+writeFileSync(outFile, JSON.stringify({ counters, total: results.length, failed: fails.length, results }, null, 1));
+console.log(`\nchecks: ${results.length}, failed: ${fails.length}; counters ${JSON.stringify(counters)}`);
+for (const f of fails) console.log("FAILED", f.site, f.vp, f.name);

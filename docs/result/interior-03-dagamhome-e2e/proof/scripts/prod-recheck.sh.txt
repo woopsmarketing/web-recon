@@ -1,0 +1,55 @@
+#!/bin/sh
+# READ-ONLY production re-check after the duplicate-process incident. One READ ONLY transaction, guarded by the
+# database's system identifier. Prints timestamps, operations, models, token counts, audit actions and masked
+# operator e-mail only: never a message body, a name, a phone number or the connection string.
+set -eu
+EXPECT_SID=7675084143306387491
+FROM="$1"
+DBURL=$(cd /Users/woops/projects/boost-chat && railway variables -e production -s pgvector --kv 2>/dev/null | grep '^DATABASE_URL=' | cut -d= -f2-)
+[ -n "$DBURL" ] || { echo "FAILED: no DATABASE_URL from railway"; exit 1; }
+PGOPTIONS='-c default_transaction_read_only=on' PGCONNECT_TIMEOUT=20 psql "$DBURL" -X -q -v ON_ERROR_STOP=1 -v sid="$EXPECT_SID" -v from="$FROM" -P pager=off 2>&1 <<'SQL' | sed -E 's#postgres(ql)?://[^ ]+#<redacted-url>#g'
+begin transaction read only;
+select set_config('check.sid', :'sid', true) as "guard: expected system identifier";
+do $$ begin
+  if (select system_identifier::text from pg_control_system()) <> current_setting('check.sid') then
+    raise exception 'system_identifier mismatch';
+  end if;
+end $$;
+select now() as now_utc, current_setting('transaction_read_only') as read_only, :'from'::timestamptz as window_from;
+\echo
+\echo ## A. every ai_usage_event of boost-interior-demo-02 in the window (one row per event)
+select to_char(e.created_at at time zone 'utc', 'HH24:MI:SS.MS') as at_utc, e.operation, coalesce(e.surface,'-') as surface,
+       coalesce(e.model,'-') as model, e.status, e.input_tokens as in_tok, e.output_tokens as out_tok, e.total_tokens as tot_tok,
+       left(e.request_id::text, 8) as request
+  from ai_usage_event e join tenant t on t.id = e.tenant_id
+ where t.slug = 'boost-interior-demo-02' and e.created_at >= :'from'::timestamptz order by e.created_at;
+\echo
+\echo ## B. same events grouped (operation, model)
+select e.operation, coalesce(e.model,'-') as model, count(*)::int as n, coalesce(sum(e.input_tokens),0)::int as in_tok,
+       coalesce(sum(e.output_tokens),0)::int as out_tok, coalesce(sum(e.total_tokens),0)::int as tot_tok
+  from ai_usage_event e join tenant t on t.id = e.tenant_id
+ where t.slug = 'boost-interior-demo-02' and e.created_at >= :'from'::timestamptz group by 1,2 order by 1,2;
+\echo
+\echo ## C. ai_usage_event of the FIRST demo tenant (boost-interior-demo) in the window
+select e.operation, coalesce(e.model,'-') as model, count(*)::int as n, coalesce(sum(e.total_tokens),0)::int as tot_tok,
+       min(e.created_at) as first_at, max(e.created_at) as last_at
+  from ai_usage_event e join tenant t on t.id = e.tenant_id
+ where t.slug = 'boost-interior-demo' and e.created_at >= :'from'::timestamptz group by 1,2 order by 1,2;
+\echo
+\echo ## D. ops_audit_log rows of the FIRST demo tenant in the window
+select o.created_at, o.action, o.target, regexp_replace(o.operator_email, '^(.{3})[^@]*', '\1***') as operator_masked, o.detail
+  from ops_audit_log o join tenant t on t.id = o.tenant_id
+ where t.slug = 'boost-interior-demo' and o.created_at >= :'from'::timestamptz order by o.created_at;
+\echo
+\echo ## E. ops_audit_log rows of every tenant in the window (who else is operating)
+select to_char(o.created_at at time zone 'utc', 'HH24:MI:SS') as at_utc, o.action, o.target
+  from ops_audit_log o where o.created_at >= :'from'::timestamptz order by o.created_at;
+\echo
+\echo ## F. tenants created in the window
+select slug, status, created_at from tenant where created_at >= :'from'::timestamptz order by created_at;
+\echo
+\echo ## G. lead_request rows in the window, by tenant (COUNT only)
+select t.slug, count(*)::int as lead_rows from lead_request l join tenant t on t.id = l.tenant_id
+ where l.created_at >= :'from'::timestamptz group by 1 order by 1;
+rollback;
+SQL

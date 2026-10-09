@@ -1,0 +1,13 @@
+warning: Config as Code (railway.json / railway.toml) is deprecated. Prefer Infrastructure as Code (.railway/railway.ts). Run `railway config migrate` or see https://docs.railway.com/infrastructure-as-code#migrating-from-config-as-code
+  → Migrate: `railway config migrate` — https://docs.railway.com/infrastructure-as-code#migrating-from-config-as-code
+  Existing files keep working until 2026-12-01.
+prod-run: railway run -e production -s pgvector (public proxy host 확인)
+prod-run: railway run -e production -s app (app 변수 주입)
+prod-run: system_identifier OK (7675084143306387491, db=railway) · session=READ ONLY
+prod-run: DATABASE_URL=set PORTFOLIO_PUBLISHER_TOKEN=set PORTFOLIO_ASSET_STORE=set PORTFOLIO_ASSET_S3_ENDPOINT=set PORTFOLIO_ASSET_S3_BUCKET=set PORTFOLIO_ASSET_S3_REGION=set PORTFOLIO_ASSET_S3_PREFIX=set PORTFOLIO_ASSET_S3_ACCESS_KEY_ID=set PORTFOLIO_ASSET_S3_SECRET_ACCESS_KEY=set PUBLIC_ACTION_TOOLS_ENABLED=set
+prod-run: node scripts/ops-first-party-refresh.ts 8 arg(s)
+> DB=railway system_identifier=7675084143306387491
+> 연동: capability=portfolio.search origin=https://interior-demo-3.boostweb.co.kr enabled=true originCanonical=true
+> 현재 사본: 사본 행 없음
+> 요청: apply=false force=false reparse=false 사유="demo tenant #3 (interior-demo-3.boostweb.co.kr) provisioning - mirror of boost-interior-demo"
+> dry-run — manifest 를 가져오지 않았고 아무것도 쓰지 않았습니다. --apply 로 실행합니다.

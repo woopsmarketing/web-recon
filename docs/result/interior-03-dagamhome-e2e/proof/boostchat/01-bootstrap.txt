@@ -1,0 +1,17 @@
+prod-run: railway run -e production -s pgvector (public proxy host 확인)
+prod-run: railway run -e production -s app (app 변수 주입)
+prod-run: system_identifier OK (7675084143306387491, db=railway) · session=read-write
+prod-run: DATABASE_URL=set PORTFOLIO_PUBLISHER_TOKEN=set PORTFOLIO_ASSET_STORE=set PORTFOLIO_ASSET_S3_ENDPOINT=set PORTFOLIO_ASSET_S3_BUCKET=set PORTFOLIO_ASSET_S3_REGION=set PORTFOLIO_ASSET_S3_PREFIX=set PORTFOLIO_ASSET_S3_ACCESS_KEY_ID=set PORTFOLIO_ASSET_S3_SECRET_ACCESS_KEY=set PUBLIC_ACTION_TOOLS_ENABLED=set
+prod-run: node scripts/tenant-bootstrap.ts 6 arg(s)
+✅ tenant 생성 — slug=boost-interior-demo-03
+↩︎  사용자 이미 존재 — id=RS3jeCzT… (password 변경하지 않음)
+✅ membership 생성 — tenant=boost-interior-demo-03 role=owner
+
+bootstrap 완료: boost-interior-demo-03 (tenant · 관리자 · membership)
+
+⚠️  아직 사업 정보 / AI 상담 설정이 없습니다 — Admin 편집기가 열리지 않습니다.
+   STEP 4-A 이후 이 값들은 PostgreSQL에 있고, 자동으로 만들지 않습니다
+   (관리자가 입력한 적 없는 값이 고객 답변에 사실로 쓰이면 안 되기 때문입니다).
+
+   기존 파일 데이터가 있다면:  npm run data:migrate-core -- --tenant boost-interior-demo-03
+   (data/boost-interior-demo-03/business.json · ai-config.json 이 필요합니다)

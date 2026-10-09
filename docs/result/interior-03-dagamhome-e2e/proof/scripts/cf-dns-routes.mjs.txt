@@ -1,0 +1,18 @@
+// Read-only Cloudflare lookups for the zone boostweb.co.kr: DNS records touching the demo hosts and the zone's Worker routes.
+// (token read from wrangler's OAuth file, never printed)
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+const toml = readFileSync(`${homedir()}/Library/Preferences/.wrangler/config/default.toml`, "utf8");
+const token = /oauth_token\s*=\s*"([^"]+)"/.exec(toml)?.[1];
+if (!token) throw new Error("no oauth token");
+const api = async (path) => (await fetch(`https://api.cloudflare.com/client/v4${path}`, { headers: { authorization: `Bearer ${token}` } })).json();
+const z = await api("/zones?name=boostweb.co.kr");
+const zone = z.result?.[0];
+if (!zone) { console.log("zone lookup failed", JSON.stringify(z.errors ?? z).slice(0, 300)); process.exit(1); }
+console.log("zone", zone.name, "status", zone.status, "plan", zone.plan?.name);
+for (const name of ["interior-demo-3.boostweb.co.kr", "interior-demo-2.boostweb.co.kr", "interior-demo.boostweb.co.kr", "*.boostweb.co.kr"]) {
+  const r = await api(`/zones/${zone.id}/dns_records?name=${encodeURIComponent(name)}`);
+  console.log("dns", name, r.success ? JSON.stringify((r.result ?? []).map((x) => ({ type: x.type, name: x.name, content: x.content, proxied: x.proxied }))) : "ERR " + JSON.stringify(r.errors).slice(0, 200));
+}
+const routes = await api(`/zones/${zone.id}/workers/routes`);
+console.log("routes", routes.success ? JSON.stringify((routes.result ?? []).map((x) => ({ pattern: x.pattern, script: x.script }))) : "ERR " + JSON.stringify(routes.errors).slice(0, 200));

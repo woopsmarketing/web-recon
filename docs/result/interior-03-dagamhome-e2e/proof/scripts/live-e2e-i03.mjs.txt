@@ -1,0 +1,816 @@
+#!/usr/bin/env node
+// live-e2e-i03.mjs — adapted from live-e2e.mjs (interior-02) to the interior-03 template (class prefix `i3-`, no bottom tab
+// bar, a menu drawer at <= 768 px). Reusable Playwright end-to-end run for a LIVE static site that embeds the
+// BoostChat widget. Talks to the real deployed origin: NO request routing of the site, nothing is answered locally.
+// The only request ever intercepted is the inquiry endpoint `**/api/widget/*/lead`, and only to STUB it (default) or
+// to count it (--real-lead: exactly one un-stubbed POST, a second one aborts the whole run with exit 97).
+//
+//   node live-e2e.mjs --origin https://<host> --key wgt_… [--out <dir>] [--phases site,widget,chat,inquiry,shots]
+//                     [--old-key wgt_…]* [--old-origin https://…]* [--chat-max 3] [--real-lead] [--block-chat]
+//                     [--q1 "…"] [--q2 "…"] [--brand "…"] [--allow-origin https://…]* [--probes all|options|none]
+//                     [--pace 3/65 | --pace 0] [--skip-origin-asserts] [--sel name=css]* [--headed]
+//   --old-key / --old-origin may be repeated or comma-separated (E2E_OLD_KEY=a,b): none may appear in any page's HTML.
+//   --block-chat (default off, LOCAL validation only): abort EVERY request to the chat origin; refuses the widget and chat
+//   phases and --real-lead, and forces --probes none. The lead stub still answers locally (it never reaches the chat host).
+//   Every flag can also come from the environment as E2E_<FLAG> (E2E_ORIGIN, E2E_KEY, E2E_OUT, E2E_OLD_KEY, …).
+//
+// Exit codes: 0 all checks passed · 1 at least one check failed · 2 no failure but at least one check is `blocked`
+// (cannot run because of server-side configuration; the reason is in the JSON) · 97 safety abort (lead guard).
+//
+// Known Playwright quirks that are NOT failures: the streamed `POST …/chat` is reported as `requestfailed ERR_ABORTED`
+// although the answer renders — chat is judged by HTTP status + rendered answer + console errors. Chrome touch
+// emulation does not reach the cross-origin widget iframe — the mobile widget phases use WebKit + devices["iPhone 13"].
+import { createRequire } from "node:module";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+// ----------------------------------------------------------------------------------------------------- flags / env
+const BOOL = new Set(["real-lead", "skip-origin-asserts", "headed", "help", "block-chat"]);
+const MULTI = new Set(["allow-origin", "sel", "old-key", "old-origin"]);
+const opts = {};
+{
+  const argv = process.argv.slice(2);
+  for (let i = 0; i < argv.length; i++) {
+    const m = /^--([^=]+)(?:=([\s\S]*))?$/.exec(argv[i]);
+    if (!m) continue;
+    const k = m[1];
+    let v = m[2];
+    if (BOOL.has(k)) v = v === undefined ? true : !/^(0|false|no)$/i.test(v);
+    else if (v === undefined) v = argv[++i];
+    if (MULTI.has(k)) (opts[k] ??= []).push(v);
+    else opts[k] = v;
+  }
+}
+const flag = (name, dflt) => {
+  if (opts[name] !== undefined) return opts[name];
+  const env = process.env["E2E_" + name.toUpperCase().replace(/-/g, "_")];
+  if (env !== undefined && env !== "") return BOOL.has(name) ? !/^(0|false|no)$/i.test(env) : MULTI.has(name) ? env.split(",") : env;
+  return dflt;
+};
+if (flag("help")) {
+  console.log("usage: node live-e2e.mjs --origin <https://host> --key <wgt_…> [--out <dir>] [--phases site,widget,chat,inquiry,shots] [--old-key …]* [--old-origin …]* [--chat-max 3] [--real-lead] [--block-chat] [--q1 …] [--q2 …] [--brand …] [--allow-origin …] [--probes all|options|none] [--pace 3/65] [--skip-origin-asserts] [--sel name=css] [--headed]");
+  process.exit(0);
+}
+const stripSlash = (s) => (s ? String(s).replace(/\/+$/, "") : s);
+const ORIGIN = stripSlash(flag("origin"));
+const KEY = flag("key");
+if (!ORIGIN || !KEY || !/^https?:\/\/[^/]+$/.test(ORIGIN)) {
+  console.error("live-e2e: --origin <scheme://host> and --key <widget key> are required (or E2E_ORIGIN / E2E_KEY)");
+  process.exit(64);
+}
+const csv = (v) => (v || []).flatMap((x) => String(x).split(",")).map((x) => x.trim()).filter(Boolean);
+const OLD_KEYS = csv(flag("old-key", []));
+const OLD_ORIGINS = csv(flag("old-origin", [])).map(stripSlash);
+const BLOCK_CHAT = !!flag("block-chat", false);
+const CHAT = stripSlash(flag("chat-origin", "https://boostchat.co.kr"));
+const REPO = flag("repo", "/Users/woops/projects/web-recon-track-b");
+const OUT = flag("out", path.join(tmpdir(), "live-e2e", new Date().toISOString().replace(/[:.]/g, "-")));
+const REAL_LEAD = !!flag("real-lead", false);
+const SKIP_ORIGIN_ASSERTS = !!flag("skip-origin-asserts", false);
+const HEADED = !!flag("headed", false);
+const CHAT_MAX = Math.max(0, Number(flag("chat-max", 3)) || 0);
+const Q1 = flag("q1", "30평대 아파트 리모델링 상담 가능한가요?");
+const Q2 = flag("q2", "화이트 톤 30평대 아파트 시공 사례를 보여주세요");
+const BRAND = flag("brand", ""); // optional: text the widget header must contain
+const PROBES_REQUESTED = flag("probes", "all");
+const PROBES = BLOCK_CHAT ? "none" : PROBES_REQUESTED; // all | options | none  (write-free probes of the lead endpoint, non-real mode only)
+const LEAD_NAME = flag("lead-name", "[TEST] Demo03 E2E");
+const LEAD_PHONE = flag("lead-phone", "010-0000-0000");
+const LEAD_MESSAGE = flag("lead-message", "[TEST] interior-demo-3 live E2E — please ignore");
+const ALLOWED_ORIGINS = new Set([ORIGIN, CHAT, ...(flag("allow-origin", []) || []).map(stripSlash)]);
+const ALL_PHASES = ["site", "widget", "chat", "inquiry", "shots"];
+const PHASES = String(flag("phases", ALL_PHASES.join(","))).split(",").map((s) => s.trim()).filter(Boolean);
+for (const p of PHASES) if (!ALL_PHASES.includes(p)) { console.error(`live-e2e: unknown phase "${p}" (known: ${ALL_PHASES.join(", ")})`); process.exit(64); }
+const PACE = (() => { const m = /^(\d+)\s*\/\s*(\d+)$/.exec(String(flag("pace", "3/65"))); return m && Number(m[1]) > 0 ? { n: Number(m[1]), ms: Number(m[2]) * 1000 } : null; })();
+
+if (BLOCK_CHAT) {
+  const refused = PHASES.filter((p) => p === "widget" || p === "chat");
+  if (refused.length) { console.error(`live-e2e-i03: --block-chat aborts every request to ${CHAT}; the ${refused.join(" and ")} phase(s) need the chat host and are refused. Use --phases site,inquiry,shots.`); process.exit(64); }
+  if (REAL_LEAD) { console.error("live-e2e-i03: --block-chat cannot be combined with --real-lead."); process.exit(64); }
+  if (PROBES_REQUESTED !== "none") console.log(`note: --block-chat forces --probes none (requested: ${PROBES_REQUESTED})`);
+}
+
+const require = createRequire(path.join(REPO, "package.json"));
+const { chromium, webkit, devices, request: pwRequest } = require("playwright");
+
+// ----------------------------------------------------------------------------------------------------- selectors
+// Widget selectors (inside the cross-origin iframe) — "verified" = used by the 2026-10-08 widget-qa run against the
+// same widget; "GUESSED" = not yet seen in a real run, re-check when the site is live. Override with --sel name=css.
+const SEL = {
+  frame: 'iframe[data-boost-chat-frame], iframe[src*="/widget/"]', // host page; documented by the widget (data attr), src fallback
+  launcher: 'button[aria-label="상담창 열기"]', // verified
+  close: 'button[aria-label="상담창 닫기"]', // verified
+  input: '[data-testid="chat-input"]', // verified
+  send: '[data-testid="chat-send"]', // verified
+  message: '[data-testid="chat-message"]', // verified
+  assistant: '[data-testid="chat-message"][data-role="assistant"]', // verified
+  card: "[data-portfolio-card]", // verified (recommendation card container)
+  cardLink: 'a[data-testid="portfolio-card"]', // verified (anchor with the project href)
+  viewerPage: '[data-testid="portfolio-viewer-page"]', // verified (viewer's "open the project page" control)
+  header: '[data-testid="chat-header"], header, [class*="header" i]', // GUESSED — brand/assistant name in the panel header
+  // site (interior-03 template) selectors — each checked against the built package served by boost-interior-demo-03
+  navPortfolio: 'a.i3-nav__link[data-nav="portfolio"]', // desktop header nav (hidden <= 768)
+  navContact: 'a.i3-nav__link[data-nav="contact"]', // desktop header nav; plain a[data-nav="contact"] could match elsewhere
+  cardLinkSite: "a.i3-card__link",
+  notFound: ".i3-notfound",
+  detailTitle: "h1.i3-pview__subject, h1",
+  menuButton: "[data-menu-button]", // <= 768 only
+  drawer: "#i3-drawer", // [data-drawer-open] while open; visibility hidden + inert when closed
+  drawerClose: "[data-drawer-close]",
+  drawerLink: "a.i3-drawer__link",
+  toTop: "[data-to-top]", // always in the DOM; visibility hidden until [data-shown] (scrolled past 600 px)
+  form: "[data-inquiry-form]",
+  submit: "[data-inquiry-submit]",
+  fieldError: "[data-inquiry-field-error]",
+  status: "[data-inquiry-status]",
+  formError: "[data-inquiry-error]",
+  name: "#i3-inq-name",
+  phone: "#i3-inq-phone",
+  message: "#i3-inq-message", // NB: overrides the chat `message` key above, as in the i2 script (the chat code uses SEL.assistant only)
+  consent: "#i3-inq-consent",
+};
+for (const kv of flag("sel", []) || []) { const i = kv.indexOf("="); if (i > 0) SEL[kv.slice(0, i)] = kv.slice(i + 1); }
+const T = { launcher: 30000, panel: 20000, reply: 90000, cards: 60000, nav: 20000 };
+
+// ----------------------------------------------------------------------------------------------------- result / helpers
+mkdirSync(OUT, { recursive: true });
+const t0 = Date.now();
+const result = {
+  startedAt: new Date(t0).toISOString(),
+  args: { origin: ORIGIN, key: KEY, oldKey: OLD_KEYS.join(",") || null, oldOrigin: OLD_ORIGINS.join(",") || null, oldKeys: OLD_KEYS, oldOrigins: OLD_ORIGINS, blockChat: BLOCK_CHAT, chatOrigin: CHAT, phases: PHASES, chatMax: CHAT_MAX, realLead: REAL_LEAD, probes: PROBES, pace: PACE, skipOriginAsserts: SKIP_ORIGIN_ASSERTS, allowedOrigins: [...ALLOWED_ORIGINS], out: OUT },
+  checks: [],
+  timings: {},
+  chatHost: { origin: CHAT, requests: 0, aborted: 0, stubbedLocally: 0, completedOnNetwork: 0, other: 0 }, // every request this run made to the chat origin
+  networkErrors: [],
+  consoleErrors: [],
+  foreignOrigins: [], // origins requested besides --origin, --chat-origin and --allow-origin (e.g. an edge-injected analytics beacon)
+  counts: { chatMessagesSent: 0, leadPostsSentUnstubbed: 0, pageLoads: 0 },
+  phases: {},
+};
+const short = (v) => { const s = JSON.stringify(v); return s === undefined ? "" : s.length > 240 ? s.slice(0, 237) + "…" : s; };
+const record = (status, id, detail) => {
+  result.checks.push({ id, pass: status === "pass" || status === "skipped", status, detail });
+  const tag = { pass: "PASS ", fail: "FAIL ", blocked: "BLOCK", skipped: "SKIP " }[status];
+  console.log(`${tag}  ${id}${detail === undefined ? "" : "  " + short(detail)}`);
+};
+const check = (id, ok, detail) => record(ok ? "pass" : "fail", id, detail);
+const blocked = (id, reason, detail) => record("blocked", id, { reason, ...(detail ?? {}) });
+const skipped = (id, reason) => record("skipped", id, { reason });
+const timing = (key, ms) => { if (result.timings[key] === undefined && ms !== undefined && ms !== null) result.timings[key] = Math.round(ms); };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const save = () => { result.finishedAt = new Date().toISOString(); result.timings.totalWallClockMs = Date.now() - t0; writeFileSync(path.join(OUT, "live-e2e.json"), JSON.stringify(result, null, 1)); };
+const fatal = (why) => { console.error("FATAL (safety abort): " + why); result.fatal = why; save(); process.exit(97); };
+
+const loads = [];
+const pace = async (label) => {
+  result.counts.pageLoads++;
+  if (!PACE) return;
+  for (;;) {
+    const now = Date.now();
+    const recent = loads.filter((t) => now - t < PACE.ms);
+    if (recent.length < PACE.n) break;
+    const wait = PACE.ms - (now - recent[0]) + 500;
+    console.log(`      … pacing ${(wait / 1000).toFixed(1)} s before ${label} (≤ ${PACE.n} loads / ${PACE.ms / 1000} s)`);
+    await sleep(wait);
+  }
+  loads.push(Date.now());
+};
+const LEAD_RE = /\/api\/widget\/[^/]+\/lead(?:[?#]|$)/;
+const isAbort = (txt) => /ERR_ABORTED|cancel/i.test(txt ?? "");
+const originOf = (u) => { try { return new URL(u).origin; } catch { return u; } };
+
+/** per-context log: console, page errors, failed requests, HTTP >= 400, BoostChat responses, foreign origins, leads */
+const newLog = (phase) => ({ phase, consoleErrors: [], pageErrors: [], failed: [], aborted: [], httpErrors: [], chat: [], leads: [], corsMessages: [], otherOrigins: new Set(), pages: [] });
+const watch = (page, log) => {
+  page.on("console", (m) => {
+    const text = m.text().slice(0, 400);
+    const blockedByUs = BLOCK_CHAT && ((m.location()?.url ?? "").startsWith(CHAT) || /ERR_BLOCKED_BY_CLIENT/.test(text) || text.includes(CHAT));
+    if (m.type() === "error" && !blockedByUs) log.consoleErrors.push(`[${pageTag(page)}] ${text}`);
+    if (/cors|access-control|origin|blocked|not allowed/i.test(text)) log.corsMessages.push(`[${m.type()}] ${text}`);
+  });
+  page.on("pageerror", (e) => log.pageErrors.push(`[${pageTag(page)}] ${String(e).slice(0, 400)}`));
+  page.on("request", (r) => {
+    const o = originOf(r.url());
+    if (!/^(data|blob|about):/.test(r.url()) && !ALLOWED_ORIGINS.has(o)) log.otherOrigins.add(o);
+    if (o === CHAT) result.chatHost.requests++;
+  });
+  page.on("requestfinished", (r) => {
+    if (originOf(r.url()) !== CHAT) return;
+    r.response().then((res) => { if (res?.headers()["x-qa-stub"] === "1") result.chatHost.stubbedLocally++; else result.chatHost.completedOnNetwork++; }).catch(() => { result.chatHost.other++; });
+  });
+  page.on("requestfailed", (r) => {
+    const line = `${r.method()} ${r.url().slice(0, 160)} ${r.failure()?.errorText ?? ""}`;
+    const ours = BLOCK_CHAT && originOf(r.url()) === CHAT; // aborted by --block-chat: expected, not a failure
+    if (originOf(r.url()) === CHAT) result.chatHost.aborted++;
+    (ours || isAbort(r.failure()?.errorText) ? log.aborted : log.failed).push(line);
+  });
+  page.on("response", async (r) => {
+    const u = r.url();
+    const st = r.status();
+    if (st >= 400 && !r.request().isNavigationRequest()) log.httpErrors.push(`${st} ${r.request().method()} ${u.slice(0, 160)}`);
+    if (LEAD_RE.test(new URL(u).pathname) && r.request().method() === "POST") {
+      const stubbed = r.headers()["x-qa-stub"] === "1";
+      if (!stubbed && !REAL_LEAD) fatal("an un-stubbed lead POST response was seen: " + u);
+      if (!stubbed && REAL_LEAD && result.counts.leadPostsSentUnstubbed > 1) fatal("more than one un-stubbed lead POST in this run");
+      const body = await r.text().catch(() => null);
+      const tm = r.request().timing();
+      log.leads.push({ at: new Date().toISOString(), url: u, status: st, stubbed, body: body?.slice(0, 500) ?? null, acao: r.headers()["access-control-allow-origin"] ?? null, responseMs: tm && tm.responseEnd >= 0 ? Math.round(tm.responseEnd) : null, requestBody: r.request().postData() });
+    }
+    if (u.startsWith(CHAT)) {
+      const p = new URL(u).pathname;
+      log.chat.push({ method: r.request().method(), path: p.replace(/\/_next\/.*/, "/_next/*"), status: st });
+    }
+  });
+};
+const pageTag = (page) => { try { return new URL(page.url()).pathname; } catch { return "?"; } };
+const summarise = (rows) => { const m = new Map(); for (const r of rows) { const k = `${r.method} ${r.path} ${r.status}`; m.set(k, (m.get(k) ?? 0) + 1); } return [...m].map(([k, n]) => `${n}x ${k}`); };
+const sealLog = (log) => {
+  for (const e of log.consoleErrors) result.consoleErrors.push(`${log.phase}: ${e}`);
+  for (const e of log.pageErrors) result.consoleErrors.push(`${log.phase}: pageerror ${e}`);
+  for (const e of log.failed) result.networkErrors.push(`${log.phase}: ${e}`);
+  for (const e of log.httpErrors) result.networkErrors.push(`${log.phase}: ${e}`);
+  for (const o of log.otherOrigins) if (!result.foreignOrigins.includes(o)) result.foreignOrigins.push(o);
+  return { ...log, otherOrigins: [...log.otherOrigins], chat: summarise(log.chat), chatRows: log.chat.filter((r) => r.status >= 400) };
+};
+const rect = async (loc) => { const b = await loc.boundingBox().catch(() => null); return b ? { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height) } : null; };
+const seat = (r, vp) => (r ? { right: vp.width - (r.x + r.w), bottom: vp.height - (r.y + r.h) } : null);
+const overlap = (a, b) => {
+  if (!a || !b) return null;
+  const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+  const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+  return w > 0 && h > 0 ? { w, h, pctOfB: Math.round((100 * w * h) / (b.w * b.h)) } : { w: 0, h: 0, pctOfB: 0 };
+};
+const near = (a, b, tol = 2) => typeof a === "number" && Math.abs(a - b) <= tol;
+const viewportOf = (page) => page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+const perfOf = (page) => page.evaluate(() => {
+  const nav = performance.getEntriesByType("navigation")[0];
+  const w = performance.getEntriesByType("resource").find((r) => /\/widget\.js(\?|$)/.test(r.name));
+  return { loadEventEndMs: nav ? Math.round(nav.loadEventEnd) : null, widgetScript: w ? { startMs: Math.round(w.startTime), responseEndMs: Math.round(w.responseEnd), durationMs: Math.round(w.duration), transferSize: w.transferSize } : null, nowMs: Math.round(performance.now()) };
+});
+const stubLead = async (ctx, log) => {
+  // registered on the context: the ONLY interception in this script. Default = answer every lead POST locally.
+  await ctx.route((url) => LEAD_RE.test(url.pathname), async (route) => {
+    const req = route.request();
+    if (REAL_LEAD) {
+      if (req.method() !== "POST") return route.continue();
+      if (result.counts.leadPostsSentUnstubbed >= 1) { await route.abort("blockedbyclient").catch(() => {}); fatal("a SECOND un-stubbed lead POST was about to be sent (" + req.url() + ")"); }
+      result.counts.leadPostsSentUnstubbed++;
+      log.leadRequests = [...(log.leadRequests ?? []), { url: req.url(), body: req.postData(), at: new Date().toISOString() }];
+      return route.continue();
+    }
+    const cors = { "access-control-allow-origin": req.headers()["origin"] ?? ORIGIN, vary: "Origin", "cache-control": "no-store", "x-qa-stub": "1" };
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: { ...cors, "access-control-allow-methods": "POST", "access-control-allow-headers": "content-type" } });
+    log.leadRequests = [...(log.leadRequests ?? []), { url: req.url(), body: req.postData(), at: new Date().toISOString(), stubbed: true }];
+    return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: '{"received":true}' });
+  });
+};
+/** launcher iframe + button: returns handles and timings relative to navigation start (page performance clock) */
+const attachWidget = async (page, { timeout = T.launcher } = {}) => {
+  const frameEl = page.locator(SEL.frame).first();
+  const frame = page.frameLocator(SEL.frame).first();
+  const launcher = frame.locator(SEL.launcher);
+  const out = { attached: false, launcherVisible: false };
+  if (BLOCK_CHAT) return { frameEl, frame, launcher, close: frame.locator(SEL.close), input: frame.locator(SEL.input), info: { ...out, blockedByFlag: true, error: "--block-chat: chat origin requests are aborted" } };
+  try {
+    await frameEl.waitFor({ state: "attached", timeout });
+    out.attached = true;
+    out.iframeAttachedMs = (await perfOf(page)).nowMs;
+    await launcher.waitFor({ state: "visible", timeout });
+    out.launcherVisible = true;
+    const p = await perfOf(page);
+    out.launcherVisibleMs = p.nowMs;
+    out.widgetScript = p.widgetScript;
+    out.loadEventEndMs = p.loadEventEndMs;
+  } catch (e) {
+    out.error = String(e).split("\n")[0].slice(0, 200);
+    out.iframeCount = await page.locator("iframe").count();
+    out.widgetScript = (await perfOf(page).catch(() => ({}))).widgetScript ?? null;
+  }
+  out.src = out.attached ? await frameEl.getAttribute("src").catch(() => null) : null;
+  return { frameEl, frame, launcher, close: frame.locator(SEL.close), input: frame.locator(SEL.input), info: out };
+};
+const openWidget = async (w, touch) => { await (touch ? w.launcher.tap() : w.launcher.click()); await w.input.waitFor({ state: "visible", timeout: T.panel }); await sleep(700); return rect(w.frameEl); };
+const closeWidget = async (w, touch) => { await (touch ? w.close.tap() : w.close.click()); await sleep(900); await w.launcher.waitFor({ state: "visible", timeout: 10000 }).catch(() => {}); return rect(w.frameEl); };
+const expectClosed = (vp) => (vp.width <= 480 ? { w: 60, h: 60, seat: 12 } : { w: 64, h: 64, seat: 18 });
+/** poll the newest assistant message: first non-placeholder text, then stability for 2.5 s */
+const awaitReply = async (frame, countBefore, maxMs = T.reply) => {
+  const msgs = frame.locator(SEL.assistant);
+  const start = Date.now();
+  let last = "", stableSince = 0, firstTokenMs = null;
+  while (Date.now() - start < maxMs) {
+    const n = await msgs.count();
+    if (n > countBefore) {
+      const text = ((await msgs.nth(n - 1).innerText().catch(() => "")) ?? "").trim();
+      const body = text.split("\n").slice(1).join("\n").trim() || text; // first line = sender label when present
+      const real = body && !/^[.…\s]+$/.test(body);
+      if (real && firstTokenMs === null) firstTokenMs = Date.now() - start;
+      if (real && text === last) { if (Date.now() - stableSince > 2500) return { text, firstTokenMs, completeMs: stableSince - start, count: n }; }
+      else { last = text; stableSince = Date.now(); }
+    }
+    await sleep(300);
+  }
+  return { text: last, firstTokenMs, completeMs: Date.now() - start, timedOut: true };
+};
+const launchFor = async (cfg) => {
+  const browser = await (cfg.browser === "webkit" ? webkit : chromium).launch({ headless: !HEADED });
+  const ctx = await browser.newContext(cfg.device ? { ...devices[cfg.device], locale: "ko-KR", timezoneId: "Asia/Seoul" } : { viewport: cfg.viewport, locale: "ko-KR", timezoneId: "Asia/Seoul" });
+  if (BLOCK_CHAT) await ctx.route((url) => url.origin === CHAT, (route) => route.abort("blockedbyclient")); // registered first = lowest priority: the lead stub (registered later) still wins
+  return { browser, ctx };
+};
+const htmlOf = async (ctx, url) => { const r = await ctx.request.get(url, { maxRedirects: 0 }).catch((e) => ({ error: String(e) })); return r.error ? { status: 0, text: "", error: r.error } : { status: r.status(), text: await r.text(), headers: r.headers() }; };
+const attr = (html, re) => { const m = re.exec(html); return m ? m[1] : null; };
+const sameOrigin = (href) => href === ORIGIN || (href ?? "").startsWith(ORIGIN + "/");
+const runPhase = async (name, fn) => {
+  if (!PHASES.includes(name)) return;
+  console.log(`\n=== phase ${name} ===`);
+  const tp = Date.now();
+  try { await fn(); } catch (e) { check(`${name}:completed`, false, { error: String(e).split("\n").slice(0, 3).join(" | ").slice(0, 500) }); }
+  result.phases[name] = { ...(result.phases[name] ?? {}), wallClockMs: Date.now() - tp };
+  save();
+};
+
+// ================================================================================================= site
+await runPhase("site", async () => {
+  const vp = { width: 1440, height: 900 };
+  const { browser, ctx } = await launchFor({ browser: "chromium", viewport: vp });
+  const out = { pages: {} };
+  // discover one portfolio detail slug from /portfolio (raw HTML, no browser load)
+  const list = await htmlOf(ctx, ORIGIN + "/portfolio");
+  const slug = attr(list.text, /href="\/portfolio\/([^"/?#]+)"/);
+  check("site:discover-detail-slug", !!slug, { status: list.status, slug });
+  const pages = ["/", "/portfolio", ...(slug ? [`/portfolio/${slug}`] : []), "/service", "/about", "/faq", "/contact"];
+  for (const p of pages) {
+    const log = newLog("site");
+    const page = await ctx.newPage();
+    watch(page, log);
+    await pace(`site ${p}`);
+    const tNav = Date.now();
+    const res = await page.goto(ORIGIN + p, { waitUntil: "load", timeout: 60000 }).catch((e) => ({ error: String(e).split("\n")[0] }));
+    const loadMs = Date.now() - tNav;
+    timing("firstPageLoadMs", loadMs); // wall clock around goto(): request start -> load event
+    if (p === "/") timing("firstPageLoadEventMs", (await perfOf(page).catch(() => ({}))).loadEventEndMs); // navigation start -> loadEventEnd (browser clock)
+    const info = { status: res?.error ? 0 : res.status(), error: res?.error, loadMs, title: await page.title().catch(() => "") };
+    check(`site:${p}:status-200`, info.status === 200, info);
+    if (ORIGIN.startsWith("https://") && !res?.error) {
+      const sd = await res.securityDetails().catch(() => null);
+      info.tls = sd ? { protocol: sd.protocol, subject: sd.subjectName, issuer: sd.issuer, validTo: sd.validTo ? new Date(sd.validTo * 1000).toISOString() : null } : null;
+      check(`site:${p}:tls`, !!sd && (!sd.validTo || sd.validTo * 1000 > Date.now()), info.tls);
+    }
+    const idleOk = await page.waitForLoadState("networkidle", { timeout: 12000 }).then(() => true, () => false);
+    if (p === "/") { timing("firstPageNetworkIdleMs", Date.now() - tNav); info.networkIdleReached = idleOk; } // navigation start -> networkidle (Playwright: 500 ms without requests); the cap is 12 s after load
+    // images: force lazy ones, then wait for every <img> to settle
+    const imgs = await page.evaluate(async () => {
+      const list = [...document.images];
+      for (const i of list) if (i.loading === "lazy") i.loading = "eager";
+      await Promise.race([Promise.all(list.map((i) => (i.complete ? null : new Promise((r) => { i.addEventListener("load", r, { once: true }); i.addEventListener("error", r, { once: true }); })))), new Promise((r) => setTimeout(r, 15000))]);
+      return list.map((i) => ({ src: (i.currentSrc || i.src || "").slice(0, 160), complete: i.complete, w: i.naturalWidth })).filter((i) => i.src);
+    });
+    const broken = imgs.filter((i) => !i.complete || i.w === 0);
+    check(`site:${p}:images-loaded`, broken.length === 0, { total: imgs.length, broken: broken.slice(0, 5) });
+    await sleep(500);
+    check(`site:${p}:no-console-errors`, log.consoleErrors.length === 0 && log.pageErrors.length === 0, { console: log.consoleErrors.slice(0, 4), page: log.pageErrors.slice(0, 2) });
+    check(`site:${p}:no-failed-subresources`, log.failed.length === 0 && log.httpErrors.length === 0, { failed: log.failed.slice(0, 4), http: log.httpErrors.slice(0, 4), abortedCount: log.aborted.length });
+    check(`site:${p}:only-site-and-chat-origins`, log.otherOrigins.size === 0, [...log.otherOrigins]);
+    // raw HTML as served
+    const raw = await htmlOf(ctx, ORIGIN + p);
+    const html = raw.text;
+    check(`site:${p}:html-has-key`, html.includes(KEY), { status: raw.status, bytes: html.length });
+    if (OLD_KEYS.length) { const found = OLD_KEYS.filter((k) => html.includes(k)); check(`site:${p}:html-no-old-key`, found.length === 0, found.length ? { found } : { checked: OLD_KEYS.length }); } else skipped(`site:${p}:html-no-old-key`, "--old-key not given");
+    if (OLD_ORIGINS.length) { const found = OLD_ORIGINS.filter((o) => html.includes(o)); check(`site:${p}:html-no-old-origin`, found.length === 0, found.length ? { found } : { checked: OLD_ORIGINS.length }); } else skipped(`site:${p}:html-no-old-origin`, "--old-origin not given");
+    const canonical = attr(html, /<link[^>]*rel="canonical"[^>]*href="([^"]+)"/) ?? attr(html, /<link[^>]*href="([^"]+)"[^>]*rel="canonical"/);
+    const ogUrl = attr(html, /<meta[^>]*property="og:url"[^>]*content="([^"]+)"/) ?? attr(html, /<meta[^>]*content="([^"]+)"[^>]*property="og:url"/);
+    info.canonical = canonical; info.ogUrl = ogUrl;
+    if (SKIP_ORIGIN_ASSERTS) skipped(`site:${p}:canonical-og-origin`, "--skip-origin-asserts");
+    else check(`site:${p}:canonical-og-origin`, sameOrigin(canonical) && sameOrigin(ogUrl), { canonical, ogUrl });
+    out.pages[p] = { ...info, images: imgs.length, log: sealLog(log) };
+    await page.close();
+  }
+  // internal navigation by clicking header links: home -> portfolio -> a detail -> contact
+  {
+    const log = newLog("site:nav");
+    const page = await ctx.newPage();
+    watch(page, log);
+    await pace("site nav /");
+    await page.goto(ORIGIN + "/", { waitUntil: "load", timeout: 60000 });
+    const nav = [];
+    const step = async (label, clickSel, urlRe, verify) => {
+      const t = Date.now();
+      try {
+        await page.locator(clickSel).first().click({ timeout: T.nav });
+        await page.waitForURL(urlRe, { timeout: T.nav });
+        await page.waitForLoadState("load", { timeout: T.nav }).catch(() => {});
+        await sleep(600);
+        const v = await verify();
+        nav.push({ step: label, url: page.url(), ms: Date.now() - t, ...v });
+        check(`site:nav:${label}`, v.ok, nav[nav.length - 1]);
+      } catch (e) { nav.push({ step: label, url: page.url(), error: String(e).split("\n")[0].slice(0, 200) }); check(`site:nav:${label}`, false, nav[nav.length - 1]); }
+    };
+    const notFound = async () => (await page.locator(SEL.notFound).count()) > 0;
+    await step("home->portfolio", SEL.navPortfolio, /\/portfolio\/?$/, async () => ({ ok: !(await notFound()) && (await page.locator(SEL.cardLinkSite).count()) > 0, cards: await page.locator(SEL.cardLinkSite).count() }));
+    await step("portfolio->detail", SEL.cardLinkSite, /\/portfolio\/[^/?#]+$/, async () => { const h1 = ((await page.locator(SEL.detailTitle).first().innerText().catch(() => "")) ?? "").trim(); return { ok: !(await notFound()) && h1.length > 0, h1: h1.slice(0, 80), title: await page.title() }; });
+    await step("detail->contact", SEL.navContact, /\/contact\/?$/, async () => ({ ok: !(await notFound()) && (await page.locator(SEL.form).count()) > 0, formMode: await page.locator(SEL.form).getAttribute("data-inquiry-mode").catch(() => null) }));
+    out.nav = { steps: nav, log: sealLog(log) };
+    await page.close();
+  }
+  // unknown path -> the site's own 404 page with status 404
+  {
+    const page = await ctx.newPage();
+    const log = newLog("site:404");
+    watch(page, log);
+    await pace("site 404");
+    const res = await page.goto(ORIGIN + "/__no-such-page__", { waitUntil: "load", timeout: 60000 });
+    const own = (await page.locator(SEL.notFound).count()) > 0;
+    out.notFound = { status: res.status(), ownMarkup: own, title: await page.title() };
+    check("site:404-page", res.status() === 404 && own, out.notFound);
+    const raw404 = (await htmlOf(ctx, ORIGIN + "/__no-such-page__")).text;
+    if (OLD_KEYS.length) { const found = OLD_KEYS.filter((k) => raw404.includes(k)); check("site:404:html-no-old-key", found.length === 0, found.length ? { found } : { checked: OLD_KEYS.length }); }
+    if (OLD_ORIGINS.length) { const found = OLD_ORIGINS.filter((o) => raw404.includes(o)); check("site:404:html-no-old-origin", found.length === 0, found.length ? { found } : { checked: OLD_ORIGINS.length }); }
+    await page.close();
+  }
+  // robots.txt / sitemap.xml / integration manifest
+  const robots = await htmlOf(ctx, ORIGIN + "/robots.txt");
+  const sitemapLine = attr(robots.text, /^\s*Sitemap:\s*(\S+)/im);
+  out.robots = { status: robots.status, sitemapLine };
+  const sitemap = await htmlOf(ctx, ORIGIN + "/sitemap.xml");
+  const locs = [...sitemap.text.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].trim());
+  out.sitemap = { status: sitemap.status, count: locs.length, foreign: locs.filter((l) => !sameOrigin(l)).slice(0, 5), sample: locs.slice(0, 3) };
+  const manifest = await htmlOf(ctx, ORIGIN + "/_integration/manifest.json");
+  let manifestJson = null; try { manifestJson = JSON.parse(manifest.text); } catch {}
+  out.manifest = { status: manifest.status, publicOrigin: manifestJson?.site?.publicOrigin ?? null, schemaVersion: manifestJson?.schemaVersion ?? null };
+  if (SKIP_ORIGIN_ASSERTS) {
+    check("site:robots-present", robots.status === 200 && !!sitemapLine, out.robots);
+    check("site:sitemap-present", sitemap.status === 200 && locs.length > 0, out.sitemap);
+    skipped("site:robots-sitemap-origin", "--skip-origin-asserts"); skipped("site:sitemap-locs-origin", "--skip-origin-asserts"); skipped("site:integration-manifest-origin", "--skip-origin-asserts (local package has no _integration/)");
+  } else {
+    check("site:robots-sitemap-origin", robots.status === 200 && sitemapLine === `${ORIGIN}/sitemap.xml`, out.robots);
+    check("site:sitemap-locs-origin", sitemap.status === 200 && locs.length > 0 && locs.every(sameOrigin) && locs.includes(`${ORIGIN}/`) && locs.includes(`${ORIGIN}/portfolio`), out.sitemap);
+    check("site:integration-manifest-origin", manifest.status === 200 && manifestJson?.site?.publicOrigin === ORIGIN, out.manifest);
+  }
+  result.phases.site = out;
+  await browser.close();
+});
+
+// ================================================================================================= widget
+const WIDGET_VIEWPORTS = [
+  { name: "desktop-1440", browser: "chromium", viewport: { width: 1440, height: 900 } },
+  { name: "desktop-1280", browser: "chromium", viewport: { width: 1280, height: 800 } },
+  { name: "tablet-768", browser: "chromium", viewport: { width: 768, height: 1024 } },
+  { name: "mobile-iphone13", browser: "webkit", device: "iPhone 13", touch: true },
+];
+await runPhase("widget", async () => {
+  result.phases.widget = {};
+  for (const cfg of WIDGET_VIEWPORTS) {
+    const id = `widget:${cfg.name}`;
+    const { browser, ctx } = await launchFor(cfg);
+    const log = newLog(id);
+    await stubLead(ctx, log);
+    const page = await ctx.newPage();
+    watch(page, log);
+    await pace(`${id} /`);
+    const tNav = Date.now();
+    const res = await page.goto(ORIGIN + "/", { waitUntil: "load", timeout: 60000 });
+    const out = { status: res.status(), loadMs: Date.now() - tNav, browser: cfg.browser, device: cfg.device ?? null };
+    const vp = await viewportOf(page);
+    out.viewport = vp;
+    const w = await attachWidget(page);
+    out.widget = w.info;
+    out.timing = { navToWidgetScriptResponseEndMs: w.info.widgetScript?.responseEndMs ?? null, navToIframeAttachedMs: w.info.iframeAttachedMs ?? null, navToLauncherVisibleMs: w.info.launcherVisibleMs ?? null, navToLoadEventEndMs: w.info.loadEventEndMs ?? null };
+    if (cfg.name === "desktop-1440" || result.timings.launcherReadyMs === undefined) { timing("widgetScriptMs", out.timing.navToWidgetScriptResponseEndMs); timing("launcherReadyMs", out.timing.navToLauncherVisibleMs); }
+    check(`${id}:launcher-visible`, w.info.launcherVisible, { ...out.timing, error: w.info.error, iframeCount: w.info.iframeCount });
+    check(`${id}:iframe-src-has-key`, !!w.info.src && w.info.src.includes(KEY), { src: w.info.src?.slice(0, 160) });
+    if (w.info.launcherVisible) {
+      const exp = expectClosed(vp);
+      const closed = await rect(w.frameEl);
+      out.closed = { rect: closed, seat: seat(closed, vp), expected: exp };
+      check(`${id}:closed-launcher-rect`, closed && near(closed.w, exp.w) && near(closed.h, exp.h) && near(seat(closed, vp).right, exp.seat) && near(seat(closed, vp).bottom, exp.seat), out.closed);
+      const opened = await openWidget(w, cfg.touch).catch((e) => ({ error: String(e).split("\n")[0] }));
+      out.opened = { rect: opened, seat: opened && !opened.error ? seat(opened, vp) : null };
+      const full = vp.width <= 480;
+      const okOpen = opened && !opened.error && (full ? opened.w >= vp.width - 1 && opened.h >= vp.height - 2 : near(opened.w, 372, 4) && near(opened.h, 560, 4) && opened.x >= 0 && opened.y >= 0 && opened.x + opened.w <= vp.width);
+      check(`${id}:open-panel-rect`, okOpen, { ...out.opened, expected: full ? "full screen" : "372x560 inside viewport" });
+      const reclosed = await closeWidget(w, cfg.touch).catch((e) => ({ error: String(e).split("\n")[0] }));
+      out.reclosed = reclosed;
+      check(`${id}:closes-back-to-launcher`, reclosed && !reclosed.error && near(reclosed.w, exp.w) && near(reclosed.h, exp.h) && (await w.launcher.isVisible().catch(() => false)), reclosed);
+    }
+    check(`${id}:no-console-errors`, log.consoleErrors.length === 0 && log.pageErrors.length === 0, { console: log.consoleErrors.slice(0, 4), page: log.pageErrors.slice(0, 2) });
+    check(`${id}:no-http-errors`, log.failed.length === 0 && log.httpErrors.length === 0, { failed: log.failed.slice(0, 4), http: log.httpErrors.slice(0, 4), aborted: log.aborted.length });
+    check(`${id}:no-foreign-origins`, log.otherOrigins.size === 0, [...log.otherOrigins]);
+    result.phases.widget[cfg.name] = { ...out, log: sealLog(log) };
+    await browser.close();
+  }
+});
+
+// ================================================================================================= chat (desktop only)
+await runPhase("chat", async () => {
+  const vp = { width: 1440, height: 900 };
+  const { browser, ctx } = await launchFor({ browser: "chromium", viewport: vp });
+  const log = newLog("chat");
+  await stubLead(ctx, log);
+  const page = await ctx.newPage();
+  watch(page, log);
+  const out = { messages: [] };
+  await pace("chat /");
+  await page.goto(ORIGIN + "/", { waitUntil: "load", timeout: 60000 });
+  const w = await attachWidget(page);
+  out.widget = w.info;
+  timing("widgetScriptMs", w.info.widgetScript?.responseEndMs); timing("launcherReadyMs", w.info.launcherVisibleMs);
+  check("chat:launcher-visible", w.info.launcherVisible, { error: w.info.error });
+  if (!w.info.launcherVisible) { result.phases.chat = { ...out, log: sealLog(log) }; await browser.close(); return; }
+  await openWidget(w, false);
+  await sleep(1500);
+  const bootstrap = log.chat.find((r) => /\/bootstrap(?:$|\?)/.test(r.path));
+  const assistant = w.frame.locator(SEL.assistant);
+  out.welcomeCount = await assistant.count();
+  out.bootstrap = bootstrap ?? null;
+  check("chat:bootstrap-ok", !!bootstrap && bootstrap.status === 200 && (await w.input.isVisible()), { bootstrap, welcomeMessages: out.welcomeCount });
+  const headerText = ((await w.frame.locator(SEL.header).first().innerText({ timeout: 3000 }).catch(() => "")) ?? "").replace(/\s+/g, " ").trim();
+  const bodyFirstLine = ((await w.frame.locator("body").innerText().catch(() => "")) ?? "").split("\n").map((s) => s.trim()).filter(Boolean)[0] ?? "";
+  out.header = { text: headerText.slice(0, 200), bodyFirstLine: bodyFirstLine.slice(0, 200), selector: SEL.header };
+  if (BRAND) check("chat:header-brand", (headerText + " " + bodyFirstLine).includes(BRAND), out.header);
+  else check("chat:header-brand-recorded", headerText.length > 0 || bodyFirstLine.length > 0, out.header);
+  const send = async (label, text) => {
+    const before = await assistant.count();
+    await w.input.fill(text);
+    const sentAt = Date.now();
+    await w.frame.locator(SEL.send).click();
+    result.counts.chatMessagesSent++;
+    const reply = await awaitReply(w.frame, before);
+    const row = { label, text, sentAtIso: new Date(sentAt).toISOString(), firstTokenMs: reply.firstTokenMs, completeMs: reply.completeMs, timedOut: !!reply.timedOut, reply: reply.text.slice(0, 700) };
+    out.messages.push(row);
+    return row;
+  };
+  if (CHAT_MAX >= 1) {
+    const m1 = await send("q1", Q1);
+    timing("chatFirstResponseMs", m1.firstTokenMs); // send -> first assistant text rendered
+    timing("chatCompleteMs", m1.completeMs); // send -> answer complete (text stable for 2.5 s; the stable window itself is not counted)
+    check("chat:q1-answer-rendered", !m1.timedOut && m1.reply.length > 0, { firstTokenMs: m1.firstTokenMs, completeMs: m1.completeMs, reply: m1.reply.slice(0, 160) });
+    await page.screenshot({ path: path.join(OUT, "chat-q1.jpg"), type: "jpeg", quality: 80 }).catch(() => {});
+  } else skipped("chat:q1-answer-rendered", "--chat-max 0");
+  if (CHAT_MAX >= 2) {
+    const before = await assistant.count();
+    await w.input.fill(Q2);
+    const sentAt = Date.now();
+    await w.frame.locator(SEL.send).click();
+    result.counts.chatMessagesSent++;
+    const cards = w.frame.locator(SEL.card);
+    let firstCardMs = null;
+    while (Date.now() - sentAt < T.cards) { if ((await cards.count()) > 0) { firstCardMs = Date.now() - sentAt; break; } await sleep(300); }
+    const reply = await awaitReply(w.frame, before, Math.max(5000, T.reply - (Date.now() - sentAt)));
+    const m2 = { label: "q2", text: Q2, sentAtIso: new Date(sentAt).toISOString(), firstTokenMs: reply.firstTokenMs, completeMs: reply.completeMs, timedOut: !!reply.timedOut, reply: reply.text.slice(0, 700), firstCardMs, cardCount: await cards.count() };
+    out.messages.push(m2);
+    timing("portfolioCardReadyMs", firstCardMs); // send of the recommendation question -> first card rendered
+    timing("chatQ2CompleteMs", m2.completeMs);
+    check("chat:q2-portfolio-card-rendered", m2.cardCount > 0, { firstCardMs, cardCount: m2.cardCount, reply: m2.reply.slice(0, 160) });
+    await sleep(1000);
+    await page.screenshot({ path: path.join(OUT, "chat-q2-cards.jpg"), type: "jpeg", quality: 80 }).catch(() => {});
+    const hrefs = await w.frame.locator(`${SEL.cardLink}[href], ${SEL.card} a[href]`).evaluateAll((as) => [...new Set(as.map((a) => a.href))]).catch(() => []);
+    out.cardHrefs = hrefs;
+    const bad = hrefs.filter((h) => !h.startsWith(ORIGIN + "/portfolio/") || OLD_ORIGINS.some((o) => h.includes(o)));
+    check("chat:card-hrefs-on-origin", hrefs.length > 0 && bad.length === 0, { hrefs: hrefs.slice(0, 6), bad: bad.slice(0, 6) });
+    if (m2.cardCount > 0) {
+      // click the first card; the project page may open in a new tab, in this tab, or behind a viewer step
+      const before = page.url();
+      let popup = null;
+      const popupP = ctx.waitForEvent("page", { timeout: 15000 }).then((p) => (popup = p)).catch(() => null);
+      const firstCard = cards.first().locator("a, button").first();
+      await ((await firstCard.count()) ? firstCard : cards.first()).click();
+      const waitOpen = async (ms) => { const t = Date.now(); while (Date.now() - t < ms) { if (popup || page.url() !== before) return true; await sleep(250); } return false; };
+      let how = null;
+      if (await waitOpen(6000)) how = popup ? "new tab" : "same tab";
+      else if ((await w.frame.locator(SEL.viewerPage).count()) > 0) { out.viewerStep = true; await w.frame.locator(SEL.viewerPage).first().click(); if (await waitOpen(10000)) how = popup ? "new tab (via viewer)" : "same tab (via viewer)"; }
+      await popupP.catch(() => {});
+      const target = popup ?? page;
+      if (how) {
+        await target.waitForLoadState("load", { timeout: 30000 }).catch(() => {});
+        await sleep(500);
+        const url = target.url();
+        const h1 = ((await target.locator(SEL.detailTitle).first().innerText({ timeout: 5000 }).catch(() => "")) ?? "").trim();
+        const title = await target.title().catch(() => "");
+        const own404 = (await target.locator(SEL.notFound).count().catch(() => 0)) > 0;
+        const st = (await htmlOf(ctx, url)).status;
+        out.cardOpen = { how, url, status: st, title: title.slice(0, 120), h1: h1.slice(0, 120), is404Markup: own404 };
+        check("chat:card-opens-portfolio-detail", url.startsWith(ORIGIN + "/portfolio/") && st === 200 && !own404 && (h1.length > 0 || title.length > 0), out.cardOpen);
+        if (popup) await popup.close().catch(() => {});
+      } else { out.cardOpen = { how: null, viewerStep: out.viewerStep ?? false, urlAfter: page.url() }; check("chat:card-opens-portfolio-detail", false, out.cardOpen); }
+    } else skipped("chat:card-opens-portfolio-detail", "no card rendered");
+  } else { skipped("chat:q2-portfolio-card-rendered", `--chat-max ${CHAT_MAX}`); skipped("chat:card-hrefs-on-origin", `--chat-max ${CHAT_MAX}`); skipped("chat:card-opens-portfolio-detail", `--chat-max ${CHAT_MAX}`); }
+  await sleep(1000);
+  out.chatHttpErrors = log.chat.filter((r) => r.status >= 400);
+  check("chat:no-boostchat-4xx-5xx", out.chatHttpErrors.length === 0, out.chatHttpErrors.slice(0, 6));
+  check("chat:no-cors-or-origin-rejection-messages", log.corsMessages.length === 0, log.corsMessages.slice(0, 4));
+  check("chat:no-console-errors", log.consoleErrors.length === 0 && log.pageErrors.length === 0, { console: log.consoleErrors.slice(0, 4), page: log.pageErrors.slice(0, 2) });
+  check("chat:no-lead-request-during-chat", (log.leadRequests ?? []).length === 0 && log.leads.length === 0);
+  result.phases.chat = { ...out, log: sealLog(log) };
+  await browser.close();
+});
+
+// ================================================================================================= inquiry
+await runPhase("inquiry", async () => {
+  const vp = { width: 1440, height: 900 };
+  const { browser, ctx } = await launchFor({ browser: "chromium", viewport: vp });
+  const log = newLog("inquiry");
+  await stubLead(ctx, log);
+  const page = await ctx.newPage();
+  watch(page, log);
+  const out = { mode: REAL_LEAD ? "REAL (one un-stubbed POST)" : "stubbed" };
+  await pace("inquiry /contact");
+  await page.goto(ORIGIN + "/contact", { waitUntil: "load", timeout: 60000 });
+  const form = page.locator(SEL.form);
+  out.formMode = await form.getAttribute("data-inquiry-mode").catch(() => null);
+  if (out.formMode !== "online") { blocked("inquiry:form-online-mode", "the contact form is not in online mode (no inquiry endpoint published for this site)", { formMode: out.formMode }); result.phases.inquiry = { ...out, log: sealLog(log) }; await browser.close(); return; }
+  check("inquiry:form-online-mode", true, { formMode: out.formMode });
+  const sent = () => (log.leadRequests ?? []).length;
+  // 1) empty submit -> field errors, nothing sent
+  await page.locator(SEL.submit).click();
+  await sleep(500);
+  out.emptyErrors = await page.locator(SEL.fieldError).evaluateAll((els) => els.map((e) => e.getAttribute("data-inquiry-field-error")));
+  check("inquiry:empty-submit-blocked-client-side", out.emptyErrors.length >= 3 && sent() === 0, { errors: out.emptyErrors, leadRequests: sent() });
+  // 2) invalid phone -> phone error, nothing sent
+  const stamp = new Date().toISOString();
+  const message = REAL_LEAD ? `${LEAD_MESSAGE} (${stamp})` : `${LEAD_MESSAGE} (${stamp}) — stubbed, never sent`;
+  await page.locator(SEL.name).fill(LEAD_NAME);
+  await page.locator(SEL.phone).fill("12-34");
+  await page.locator(SEL.message).fill(message);
+  const consent = page.locator(SEL.consent);
+  await consent.check({ timeout: 3000 }).catch(async () => { await consent.focus(); await page.keyboard.press("Space"); });
+  out.consentChecked = await consent.isChecked();
+  await page.locator(SEL.submit).click();
+  await sleep(500);
+  out.invalidPhoneErrors = await page.locator(SEL.fieldError).evaluateAll((els) => els.map((e) => e.getAttribute("data-inquiry-field-error")));
+  check("inquiry:invalid-phone-rejected-client-side", out.invalidPhoneErrors.includes("phone") && sent() === 0, { errors: out.invalidPhoneErrors, leadRequests: sent(), consentChecked: out.consentChecked });
+  // 3) the submission (stubbed by default; --real-lead sends exactly one)
+  await page.locator(SEL.phone).fill(LEAD_PHONE);
+  if (!(await consent.isChecked())) { await consent.focus(); await page.keyboard.press("Space"); }
+  const tSubmit = Date.now();
+  await page.locator(SEL.submit).click();
+  await page.waitForFunction((sel) => !document.querySelector(sel) || !!document.querySelector(".i3-form__status--done") || ((document.querySelector("[data-inquiry-error]")?.textContent ?? "").trim() !== ""), SEL.name, { timeout: 20000 }).catch(() => {});
+  await sleep(800);
+  out.submitMs = Date.now() - tSubmit;
+  out.statusText = ((await page.locator(SEL.status).first().innerText().catch(() => "")) ?? "").replace(/\s+/g, " ").trim().slice(0, 240);
+  out.errorText = ((await page.locator(SEL.formError).first().innerText().catch(() => "")) ?? "").replace(/\s+/g, " ").trim().slice(0, 240);
+  out.formGone = (await page.locator(SEL.name).count()) === 0;
+  await page.screenshot({ path: path.join(OUT, REAL_LEAD ? "inquiry-real-result.jpg" : "inquiry-stub-result.jpg"), type: "jpeg", quality: 80 }).catch(() => {});
+  const reqs = log.leadRequests ?? [];
+  out.leadRequests = reqs.map((r) => { let body = null; try { body = JSON.parse(r.body); } catch {} return { url: r.url, at: r.at, stubbed: !!r.stubbed, keys: body ? Object.keys(body).sort() : null, body: body ? { ...body, message: String(body.message ?? "").slice(0, 160) } : r.body?.slice(0, 200) }; });
+  const want = ["consent", "hp", "message", "name", "phone", "submission_id"];
+  check("inquiry:exactly-one-post", reqs.length === 1, { posts: reqs.length });
+  check("inquiry:endpoint-url", reqs.length > 0 && reqs.every((r) => r.url === `${CHAT}/api/widget/${KEY}/lead`), reqs.map((r) => r.url));
+  check("inquiry:body-six-keys", out.leadRequests.length > 0 && out.leadRequests.every((r) => r.keys && r.keys.join() === want.join()), out.leadRequests.map((r) => r.keys));
+  check("inquiry:body-values", out.leadRequests.length > 0 && out.leadRequests.every((r) => r.body?.consent === true && r.body?.hp === "" && r.body?.name === LEAD_NAME && r.body?.phone === LEAD_PHONE && String(r.body?.message ?? "").includes(LEAD_MESSAGE) && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(r.body?.submission_id ?? "")), out.leadRequests.map((r) => r.body));
+  if (!REAL_LEAD) {
+    check("inquiry:stubbed-submission-success-state", out.formGone && out.statusText.length > 0, { statusText: out.statusText, errorText: out.errorText, submitMs: out.submitMs });
+  } else {
+    const resp = log.leads[0] ?? null;
+    out.realLead = resp;
+    timing("leadResponseMs", resp?.responseMs ?? out.submitMs);
+    if (!resp) check("inquiry:real-lead-response", false, { reason: "no lead response observed", statusText: out.statusText, errorText: out.errorText });
+    else if (resp.status === 403 && !resp.acao) blocked("inquiry:real-lead-response", "403 without CORS headers: the server has not enabled this key for site leads from this origin", resp);
+    else check("inquiry:real-lead-response", resp.status === 200 && /"received"\s*:\s*true/.test(resp.body ?? "") && (resp.acao === ORIGIN || resp.acao === "*") && out.formGone, { status: resp.status, body: resp.body, acao: resp.acao, responseMs: resp.responseMs, statusText: out.statusText, errorText: out.errorText });
+  }
+  // 4) write-free probes of the real endpoint (non-real mode only): OPTIONS preflight, POST with consent:false
+  if (REAL_LEAD || PROBES === "none") { skipped("inquiry:probe-preflight", REAL_LEAD ? "--real-lead" : "--probes none"); skipped("inquiry:probe-consent-false", REAL_LEAD ? "--real-lead" : "--probes none"); }
+  else {
+    const api = await pwRequest.newContext({ extraHTTPHeaders: { origin: ORIGIN } });
+    const leadUrl = `${CHAT}/api/widget/${KEY}/lead`;
+    const pre = await api.fetch(leadUrl, { method: "OPTIONS", headers: { "access-control-request-method": "POST", "access-control-request-headers": "content-type" }, timeout: 20000 }).catch((e) => ({ error: String(e) }));
+    const preInfo = pre.error ? { error: pre.error } : { status: pre.status(), acao: pre.headers()["access-control-allow-origin"] ?? null, methods: pre.headers()["access-control-allow-methods"] ?? null, body: (await pre.text().catch(() => "")).slice(0, 200) };
+    out.probePreflight = preInfo;
+    if (preInfo.error) check("inquiry:probe-preflight", false, preInfo);
+    else if ((preInfo.status === 403 || preInfo.status === 401) && !preInfo.acao) blocked("inquiry:probe-preflight", "preflight refused without CORS headers: the server has not enabled this key for site leads from this origin", preInfo);
+    else check("inquiry:probe-preflight", (preInfo.status === 204 || preInfo.status === 200) && (preInfo.acao === ORIGIN || preInfo.acao === "*"), preInfo);
+    if (PROBES === "options") skipped("inquiry:probe-consent-false", "--probes options");
+    else {
+      const body = { consent: false, name: LEAD_NAME, phone: LEAD_PHONE, message: `${LEAD_MESSAGE} — consent:false probe, must not be stored`, hp: "", submission_id: globalThis.crypto.randomUUID() };
+      const t = Date.now();
+      const r = await api.post(leadUrl, { data: body, headers: { "content-type": "application/json" }, timeout: 20000 }).catch((e) => ({ error: String(e) }));
+      const info = r.error ? { error: r.error } : { status: r.status(), acao: r.headers()["access-control-allow-origin"] ?? null, body: (await r.text().catch(() => "")).slice(0, 300), ms: Date.now() - t };
+      out.probeConsentFalse = info;
+      if (info.error) check("inquiry:probe-consent-false", false, info);
+      else if (info.status === 403 && !info.acao) blocked("inquiry:probe-consent-false", "403 without CORS headers: the server has not enabled this key for site leads from this origin", info);
+      else check("inquiry:probe-consent-false", info.status === 400 && /consent_required/.test(info.body), info);
+    }
+    await api.dispose();
+  }
+  check("inquiry:no-console-errors", log.consoleErrors.length === 0 && log.pageErrors.length === 0, { console: log.consoleErrors.slice(0, 4), page: log.pageErrors.slice(0, 2) });
+  result.phases.inquiry = { ...out, log: sealLog(log) };
+  await browser.close();
+});
+
+// ================================================================================================= shots (jpg)
+await runPhase("shots", async () => {
+  const dir = path.join(OUT, "shots");
+  mkdirSync(dir, { recursive: true });
+  const out = {};
+  const shot = async (page, name) => { const file = path.join(dir, `${name}.jpg`); await page.screenshot({ path: file, type: "jpeg", quality: 82 }); return file; };
+  const configs = [
+    { name: "1440", browser: "chromium", viewport: { width: 1440, height: 900 } },
+    { name: "iphone13", browser: "webkit", device: "iPhone 13", touch: true },
+  ];
+  for (const cfg of configs) {
+    const { browser, ctx } = await launchFor(cfg);
+    const log = newLog(`shots:${cfg.name}`);
+    await stubLead(ctx, log);
+    // home: closed (scroll 0), mid-page closed (back-to-top visible), widget open
+    const page = await ctx.newPage();
+    watch(page, log);
+    await pace(`shots ${cfg.name} /`);
+    await page.goto(ORIGIN + "/", { waitUntil: "load", timeout: 60000 });
+    const vp = await viewportOf(page);
+    // no horizontal overflow at load (measured before any scrolling / widget work; innerWidth is the layout viewport actually in use)
+    const ov = await page.evaluate(() => ({ innerWidth: innerWidth, docScrollWidth: document.documentElement.scrollWidth, bodyScrollWidth: document.body.scrollWidth }));
+    check(`shots:${cfg.name}:no-horizontal-overflow-at-load`, ov.docScrollWidth <= ov.innerWidth + 1 && ov.bodyScrollWidth <= ov.innerWidth + 1, ov);
+    const toTopAtTop = await page.locator(SEL.toTop).first().isVisible().catch(() => false);
+    check(`shots:${cfg.name}:to-top-hidden-at-top`, !toTopAtTop, { toTopAtTop });
+    const w = await attachWidget(page);
+    const files = {};
+    await sleep(500);
+    files.homeClosed = await shot(page, `home-${cfg.name}-closed`);
+    await page.evaluate(() => scrollTo(0, Math.round(document.documentElement.scrollHeight / 2)));
+    await sleep(1000);
+    const toTop = page.locator(SEL.toTop).first();
+    const toTopVisible = await toTop.isVisible().catch(() => false);
+    const toTopRect = toTopVisible ? await rect(toTop) : null;
+    files.homeMidClosed = await shot(page, `home-${cfg.name}-mid-closed`);
+    out[cfg.name] = { viewport: vp, launcherVisible: w.info.launcherVisible, launcherRect: w.info.launcherVisible ? await rect(w.frameEl) : null, toTopVisible, toTopRect, toTopOverlapWithLauncher: overlap(w.info.launcherVisible ? await rect(w.frameEl) : null, toTopRect) };
+    check(`shots:${cfg.name}:back-to-top-visible-mid-page`, toTopVisible, { toTopRect, scrollY: await page.evaluate(() => scrollY) });
+    // the template reserves a 64x64 corner box at right 18 / bottom 18 for the chat launcher; the to-top button must stand clear of it (and of the real launcher when it is there)
+    const reserved = { x: vp.width - 18 - 64, y: vp.height - 18 - 64, w: 64, h: 64 };
+    const ovReserved = overlap(reserved, toTopRect);
+    const ovLauncher = overlap(w.info.launcherVisible ? await rect(w.frameEl) : null, toTopRect);
+    out[cfg.name].reservedLauncherBox = reserved; out[cfg.name].toTopOverlapWithReservedBox = ovReserved;
+    check(`shots:${cfg.name}:to-top-clear-of-launcher-box`, toTopVisible && !!ovReserved && ovReserved.w === 0 && (!ovLauncher || ovLauncher.w === 0), { toTopRect, reserved, overlapReserved: ovReserved, overlapLauncher: ovLauncher });
+    if (cfg.touch) skipped(`shots:${cfg.name}:no-bottom-bar`, "interior-03 has no bottom tab bar; the only bottom UI is the to-top button and the reserved launcher box");
+    await page.evaluate(() => scrollTo(0, 0));
+    await sleep(600);
+    if (w.info.launcherVisible) {
+      const opened = await openWidget(w, cfg.touch).catch((e) => ({ error: String(e).split("\n")[0] }));
+      files.homeOpen = await shot(page, `home-${cfg.name}-open`);
+      out[cfg.name].openRect = opened;
+      check(`shots:${cfg.name}:widget-open-shot`, opened && !opened.error, opened);
+      await closeWidget(w, cfg.touch).catch(() => {});
+    } else if (BLOCK_CHAT) skipped(`shots:${cfg.name}:widget-open-shot`, "--block-chat");
+    else check(`shots:${cfg.name}:widget-open-shot`, false, { reason: "launcher not visible", error: w.info.error });
+    await page.close();
+    // contact
+    const page2 = await ctx.newPage();
+    watch(page2, log);
+    await pace(`shots ${cfg.name} /contact`);
+    await page2.goto(ORIGIN + "/contact", { waitUntil: "load", timeout: 60000 });
+    await attachWidget(page2, { timeout: 15000 });
+    await sleep(500);
+    files.contact = await shot(page2, `contact-${cfg.name}`);
+    await page2.close();
+    out[cfg.name].files = files;
+    // mobile menu drawer (<= 768): open, close, open again and navigate by a drawer link
+    if (vp.width <= 768) {
+      const page3 = await ctx.newPage();
+      watch(page3, log);
+      await pace(`shots ${cfg.name} drawer /`);
+      await page3.goto(ORIGIN + "/", { waitUntil: "load", timeout: 60000 });
+      const tap = (loc) => (cfg.touch ? loc.tap() : loc.click());
+      const btn = page3.locator(SEL.menuButton).first();
+      const drawer = page3.locator(SEL.drawer);
+      const dr = { menuButtonVisible: await btn.isVisible().catch(() => false) };
+      check(`shots:${cfg.name}:drawer-menu-button-visible`, dr.menuButtonVisible, dr);
+      if (dr.menuButtonVisible) {
+        await sleep(800); // hydration
+        const state = async () => ({ open: (await drawer.getAttribute("data-drawer-open")) !== null, visible: await drawer.isVisible().catch(() => false), expanded: await btn.getAttribute("aria-expanded"), rect: await rect(drawer) });
+        dr.before = await state();
+        await tap(btn); await sleep(700);
+        dr.afterOpen = await state();
+        files.drawerOpen = await shot(page3, `home-${cfg.name}-drawer-open`);
+        check(`shots:${cfg.name}:drawer-opens`, !dr.before.open && !dr.before.visible && dr.afterOpen.open && dr.afterOpen.visible && dr.afterOpen.expanded === "true" && dr.afterOpen.rect && dr.afterOpen.rect.x >= -1 && dr.afterOpen.rect.w > 0, dr);
+        await tap(page3.locator(SEL.drawerClose).first()); await sleep(700);
+        dr.afterClose = await state();
+        check(`shots:${cfg.name}:drawer-closes`, !dr.afterClose.open && !dr.afterClose.visible && dr.afterClose.expanded === "false", dr.afterClose);
+        await tap(btn); await sleep(700);
+        const target = page3.locator(`${SEL.drawerLink}[href="/service"]`).first();
+        await tap(target);
+        const navOk = await page3.waitForURL(/\/service\/?$/, { timeout: T.nav }).then(() => true, () => false);
+        await page3.waitForLoadState("load", { timeout: T.nav }).catch(() => {});
+        await sleep(700);
+        dr.afterNav = { url: page3.url(), navOk, ...(await state()), notFound: (await page3.locator(SEL.notFound).count()) > 0, h1: ((await page3.locator("h1").first().innerText().catch(() => "")) ?? "").trim().slice(0, 60) };
+        check(`shots:${cfg.name}:drawer-link-navigates-and-closes`, navOk && !dr.afterNav.open && !dr.afterNav.notFound && dr.afterNav.h1.length > 0, dr.afterNav);
+        const ov2 = await page3.evaluate(() => ({ innerWidth: innerWidth, docScrollWidth: document.documentElement.scrollWidth }));
+        check(`shots:${cfg.name}:no-horizontal-overflow-after-drawer-nav`, ov2.docScrollWidth <= ov2.innerWidth + 1, ov2);
+      }
+      out[cfg.name].drawer = dr;
+      await page3.close();
+    }
+    check(`shots:${cfg.name}:no-console-errors`, log.consoleErrors.length === 0 && log.pageErrors.length === 0, { console: log.consoleErrors.slice(0, 4), page: log.pageErrors.slice(0, 2) });
+    out[cfg.name].log = sealLog(log);
+    await browser.close();
+  }
+  result.phases.shots = out;
+});
+
+// ================================================================================================= summary
+save();
+const n = (s) => result.checks.filter((c) => c.status === s).length;
+console.log(`chat-host requests: ${JSON.stringify(result.chatHost)}`);
+const summary = `chat-host requests ${result.chatHost.requests} (aborted ${result.chatHost.aborted}, stubbed locally ${result.chatHost.stubbedLocally}, completed on network ${result.chatHost.completedOnNetwork}) · pass ${n("pass")} · fail ${n("fail")} · blocked ${n("blocked")} · skipped ${n("skipped")} · chat messages sent ${result.counts.chatMessagesSent} · un-stubbed lead POSTs ${result.counts.leadPostsSentUnstubbed} · page loads ${result.counts.pageLoads} · ${Math.round(result.timings.totalWallClockMs / 1000)} s`;
+result.summary = summary;
+save();
+console.log(`\nRESULT: ${n("fail") ? "FAIL" : n("blocked") ? "BLOCKED" : "PASS"}  ${summary}\nJSON: ${path.join(OUT, "live-e2e.json")}`);
+process.exit(n("fail") ? 1 : n("blocked") ? 2 : 0);

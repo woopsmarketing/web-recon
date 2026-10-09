@@ -1,0 +1,39 @@
+// Local only: what a visitor sees when the lead endpoint refuses (403 without CORS headers, as production does today).
+import { createRequire } from "node:module";
+const require = createRequire("/Users/woops/projects/web-recon-track-b/package.json");
+const { chromium } = require("playwright");
+const browser = await chromium.launch();
+const out = [];
+for (const [name, vp] of [["1440", { width: 1440, height: 900 }], ["390", { width: 390, height: 844 }]]) {
+  const ctx = await browser.newContext({ viewport: vp, locale: "ko-KR" });
+  const page = await ctx.newPage();
+  let leadCalls = 0;
+  await page.route("**/*", (route) => {
+    const u = route.request().url();
+    if (/\/api\/widget\/[^/]+\/lead/.test(u)) { leadCalls++; return route.fulfill({ status: 403, contentType: "application/json", body: '{"error":"forbidden"}' }); } // no CORS headers
+    if (u.startsWith("https://boostchat.co.kr")) return route.abort();
+    return route.continue();
+  });
+  await page.goto("http://127.0.0.1:4341/contact", { waitUntil: "load" });
+  await page.waitForSelector("[data-inquiry-submit]:not([disabled])", { timeout: 15000 });
+  await page.fill("#i3-inq-name", "[TEST] 실패 화면 확인");
+  await page.fill("#i3-inq-phone", "010-0000-0000");
+  await page.fill("#i3-inq-message", "[TEST] local only");
+  await page.check("#i3-inq-consent");
+  await page.click("[data-inquiry-submit]");
+  await page.waitForTimeout(2500);
+  const info = await page.evaluate(() => ({
+    error: document.querySelector("[data-inquiry-error]")?.textContent?.trim() ?? null,
+    status: document.querySelector("[data-inquiry-status]")?.textContent?.trim() ?? null,
+    alertRole: document.querySelector("[data-inquiry-error]")?.getAttribute("role") ?? null,
+    submitDisabled: document.querySelector("[data-inquiry-submit]")?.disabled ?? null,
+    fallback: [...document.querySelectorAll(".i3-form__fallback, .i3-form__contacts, .i3-form__fallback-to")].map((e) => e.textContent.trim().slice(0, 200)),
+    mailto: [...document.querySelectorAll('form a[href^="mailto:"], .i3-form__fallback a')].map((a) => a.getAttribute("href").slice(0, 60)),
+    nameKept: document.querySelector("#i3-inq-name")?.value ?? null,
+  }));
+  await page.screenshot({ path: `fail-ux/contact-refused-${name}.jpg`, type: "jpeg", quality: 80, fullPage: true });
+  out.push({ name, leadCalls, ...info });
+  await ctx.close();
+}
+await browser.close();
+console.log(JSON.stringify(out, null, 1));

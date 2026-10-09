@@ -1,0 +1,24 @@
+// Summarises the BoostChat app HTTP log (already downloaded, read-only) by widget key.
+// usage: node rw-http-summary.mjs <raw.jsonl> <out.json> [<splitISO> ...]
+// Writes method + normalised path + status counts only: no IP address, no request id, no query string.
+import { readFileSync, writeFileSync } from "node:fs";
+const [file, out, ...splits] = process.argv.slice(2);
+const KEYS = { demo03: "wgt_2B09bTToSXnSi8tl2o9yuUCFlyOnoKXP", demo02: "wgt_xVMphzTAQKf3AD7xpPOB7KuSUFsJsexR", demo01: "wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3" };
+const rows = readFileSync(file, "utf8").split("\n").filter((l) => l.trim().startsWith("{")).map((l) => JSON.parse(l)).sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1));
+const norm = (r) => r.method + " " + r.path.split("?")[0].replace(/wgt_[A-Za-z0-9_-]+/, "<key>").replace(/\/portfolio\/[^/]+\/media\/.*/, "/portfolio/<id>/media/*").replace(/\/portfolio\/[^/]+/, "/portfolio/<id>").replace(/[0-9a-f]{8}-[0-9a-f-]{27}/g, "<uuid>") + " " + r.httpStatus;
+const count = (list, f) => { const o = {}; for (const r of list) { const k = f(r); o[k] = (o[k] || 0) + 1; } return o; };
+const part = (list) => ({ requests: list.length, status: count(list, (r) => r.httpStatus), paths: Object.fromEntries(Object.entries(count(list, norm)).sort((a, b) => b[1] - a[1])), first: list[0]?.timestamp.slice(0, 19) ?? null, last: list.at(-1)?.timestamp.slice(0, 19) ?? null, txBytes: list.reduce((a, r) => a + (r.txBytes || 0), 0), rxBytes: list.reduce((a, r) => a + (r.rxBytes || 0), 0) });
+const o = { window: [rows[0].timestamp.slice(0, 19), rows.at(-1).timestamp.slice(0, 19)], total: rows.length, status: count(rows, (r) => r.httpStatus), instances: count(rows, (r) => `${String(r.deploymentId).slice(0, 8)}/${String(r.deploymentInstanceId).slice(0, 8)}`) };
+for (const [name, key] of Object.entries(KEYS)) o[name] = part(rows.filter((r) => r.path.includes(key)));
+o["5xx"] = rows.filter((r) => r.httpStatus >= 500).map((r) => `${r.timestamp.slice(11, 19)} ${norm(r)}`);
+if (splits.length) {
+  const edges = [rows[0].timestamp.slice(0, 19) + "Z", ...splits, "9999"];
+  o.demo03ByWindow = {};
+  for (let i = 0; i < edges.length - 1; i++) {
+    const inW = rows.filter((r) => r.timestamp >= edges[i].replace("Z", "") && r.timestamp < edges[i + 1].replace("Z", ""));
+    const mine = inW.filter((r) => r.path.includes(KEYS.demo03));
+    o.demo03ByWindow[`${edges[i].slice(11, 19)} → ${edges[i + 1] === "9999" ? "end" : edges[i + 1].slice(11, 19)}`] = { allTenants: inW.length, demo03: mine.length, chat: mine.filter((r) => /\/chat$/.test(r.path.split("?")[0])).length, lead: mine.filter((r) => /\/lead$/.test(r.path.split("?")[0])).length, status: count(mine, (r) => r.httpStatus) };
+  }
+}
+writeFileSync(out, JSON.stringify(o, null, 1));
+console.log(JSON.stringify(o, null, 1));
