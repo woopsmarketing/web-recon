@@ -20,9 +20,13 @@
  *                               manifest.assets[path]  → portfolio-assets/<key>            (immutable)
  *                               path owned by the manifest, in neither table → the package's 404 page
  *                               anything else          → the package
- *   present, does not verify    the package alone + one log line (trace.overlay); a manifest is used
- *                               only when the pointer's and the manifest's schema, siteId and package
- *                               hash match the routing pointer and the bytes hash to manifestSha256
+ *   present, does not verify    503 "content unavailable", no-store, + one log line (outcome
+ *                               overlay-refused, trace.overlay = which check refused). FAILS CLOSED: a
+ *                               pointer exists only for a shell package, whose own portfolio pages are
+ *                               empty placeholders — they are never served in place of a portfolio that
+ *                               cannot be verified. A manifest is used only when the pointer's and the
+ *                               manifest's schema, siteId and package hash match the routing pointer
+ *                               and the bytes hash to manifestSha256
  * The pointer is read on every request, so a publish / rollback is live on the next one; manifests are
  * immutable and kept parsed in isolate memory by key + sha256. portfolio-assets/ is reachable through
  * manifest.assets only, so an image that is not in the live manifest has no URL.
@@ -38,11 +42,14 @@
  *                                                                     404.html, so the package the
  *                                                                     pointer names is not there)
  *   object the live manifest lists missing 503   overlay-missing     (never the package's file instead)
+ *   overlay pointer present, not verified  503   overlay-refused     (never the shell package's pages;
+ *                                                                     /_next/ and /_runtime/ are answered
+ *                                                                     as always — they read no pointer)
  *   R2 / unexpected error                  500   internal-error
  *
  * Logs: one JSON line per response with status >= 400 (every response when LOG_ALL = "1"):
  * host, path (no query string, first 256 characters), method, status, outcome, siteId,
- * packageHash, key, plus overlay when a portfolio pointer / manifest was refused (always logged).
+ * packageHash, key, plus overlay = the check that refused a portfolio pointer / manifest (a 503).
  * No headers, no query strings, no bodies.
  */
 
@@ -91,6 +98,7 @@ export type Outcome =
   | "not-found"
   | "package-missing"
   | "overlay-missing"
+  | "overlay-refused"
   | "unknown-host"
   | "pointer-invalid"
   | "bad-path"
@@ -108,7 +116,7 @@ export interface Trace {
   packageHash?: string;
   /** package-relative key, or the full R2 key of an overlay object */
   key?: string;
-  /** why this site's portfolio pointer / manifest was refused (the request was answered from the package) */
+  /** which check refused this site's portfolio pointer / manifest (the request was answered 503 overlay-refused) */
   overlay?: string;
   error?: string;
 }
@@ -185,9 +193,10 @@ function parseManifest(bytes: ArrayBuffer): PortfolioManifest | undefined {
 }
 
 /**
- * The live portfolio manifest of the routed package; undefined when the site has none.
- * Fail safe: a pointer or manifest that does not verify is refused (trace.overlay says why) and the
- * request is answered from the package alone — nothing is ever served from an unverified manifest.
+ * The live portfolio manifest of the routed package; undefined when the site has none (no pointer:
+ * trace.overlay stays unset) or when a pointer exists and it or its manifest does not verify
+ * (trace.overlay says which check refused). Nothing is ever served from an unverified manifest, and
+ * the caller answers a refusal with 503 — never with the package's pages.
  *
  * Exported for the publisher (platform/publish): before it points a hostname at a shell package it
  * asks this very function whether the Worker would use the overlay, with `cache: null` so the
@@ -301,7 +310,14 @@ export async function handle(request: Request, env: Env, trace: Trace = newTrace
 
   // Build output and publisher inputs are the package's alone: no overlay read for them.
   const packageOnly = /^\/_(next|runtime)\//.test(pathname) || packageFile?.startsWith("_next/") === true;
-  const manifest = packageOnly ? undefined : await loadOverlay(env, pointer, trace);
+  // The verdict is taken from a fresh object, so a caller-supplied trace cannot pre-set or mask it.
+  const verdict: Pick<Trace, "overlay"> = {};
+  const manifest = packageOnly ? undefined : await loadOverlay(env, pointer, verdict);
+  if (verdict.overlay !== undefined) {
+    // A pointer exists but cannot be trusted: fail closed. The package is a shell — its portfolio pages are placeholders.
+    trace.overlay = verdict.overlay;
+    return end("overlay-refused", plain(503, "content unavailable\n"));
+  }
   if (manifest) {
     // The path as requested, and as the package resolver reads it (percent-escapes decoded).
     const paths = packageFile === undefined || routeOfKey(packageFile) === pathname ? [pathname] : [pathname, routeOfKey(packageFile)];

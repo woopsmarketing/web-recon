@@ -9,15 +9,17 @@
  *
  *   S1  plan            a shell package is recognised by its own files; an ordinary one is not
  *   S2  refused         no overlay pointer → no routing write (package uploaded + sealed, nothing else)
- *   S3  refused         every way the Worker refuses an overlay — and the Worker gives the same reason
+ *   S3  refused         every way the Worker refuses an overlay — and the Worker gives the same reason (503)
  *   S4  accepted        a valid overlay → the pointer is the last write; the Worker serves the overlay
  *   S5  unaffected      activate:false, dry run (reports the guard, never throws for it), a pointer that
  *                       already names the package
  *   S6  ordinary        an ordinary package activates as before and no overlay key is ever read
- *   S7  rollback        shell → ordinary needs no overlay; → shell needs one; the portfolio-truth guard
- *                       still refuses what it refused
- *   S7b rollback truth  an incrementally published site: the authoritative ids are the live overlay
- *                       manifest's projects (what site:publish --rollback uses for such a site)
+ *   S7  rollback        an ordinary target is not held to the shell guard; a shell target is
+ *   S7b rollback truth  the STORE decides: live package = shell → the authoritative ids are the live
+ *                       overlay manifest's projects, and the caller's (checkout) loader is never asked;
+ *                       live package = ordinary → the caller's loader, as before
+ *   S10 incremental host  an ordinary build may not replace the shell package a host serves — from any
+ *                       checkout — unless leaveIncremental says so
  *   S8  serving         every addressable file of the shell package is served; /_runtime/** never is
  *   S9  CLI             the offline dry run names the guard
  */
@@ -26,7 +28,7 @@ import { createHash } from "node:crypto";
 import { cp, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { planPublish, portfolioOverlayState, publishedPortfolioTruth, publishSite, PublishError, rollbackHost, ROLLBACK_TRUTH_REFUSAL, type PortfolioTruthLoader, type PublishPlan } from "../publish/publish";
+import { planPublish, portfolioOverlayState, publishedPortfolioTruth, publishSite, PublishError, rollbackHost, ROLLBACK_TRUTH_REFUSAL, type PortfolioTruthLoader } from "../publish/publish";
 import { MemoryStore, type ObjectStore } from "../publish/store";
 import { RUNTIME_DIR, RUNTIME_FILE, SHELL_FILE } from "../portfolio-runtime/contract";
 import { handle, newTrace, type Env, type R2BucketLike, type R2ObjectBodyLike } from "../../workers/recon-runtime/src/index";
@@ -185,7 +187,7 @@ const DEFECTS: [label: string, reason: string, edit: OverlayEdit, siteId?: strin
   ["manifest of another shell package", "manifest-identity", { manifest: (m) => (m.shell.packageHash = "d".repeat(64)) }],
 ];
 
-await check(`S3 an overlay the Worker would refuse is refused here too (${DEFECTS.length} defects): same reason code as the Worker's trace.overlay, no routing write; and with the pointer forced, the Worker does serve the raw shell page — the hole the guard closes`, async () => {
+await check(`S3 an overlay the Worker would refuse is refused here too (${DEFECTS.length} defects): same reason code as the Worker's trace.overlay, no routing write; with the pointer forced, the Worker fails closed for that same reason (503 overlay-refused, never the shell page)`, async () => {
   for (const [label, reason, edit] of DEFECTS) {
     const s = new MemoryStore();
     await publishSite({ repoRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0, activate: false });
@@ -197,12 +199,12 @@ await check(`S3 an overlay the Worker would refuse is refused here too (${DEFECT
     assert(REFUSAL.test(message) && message.includes(`(${reason}:`), `${label}: message carries the reason: ${message}`);
     eq([s.writes.length - w, s.objects.has(shellPlan.routingKey)], [0, false], `${label}: zero writes, no pointer`);
 
-    // the Worker, asked for "/" on a host forced onto this package, refuses the overlay for the same reason and answers with the shell page
+    // the Worker, asked for "/" on a host forced onto this package, refuses the overlay for the same reason and answers 503
     s.objects.set(shellPlan.routingKey, { body: enc({ schemaVersion: 1, hostname: HOST, siteId: SHELL_SITE, packageHash: HASH, buildInputId: shellPlan.buildInputId, releaseId: shellPlan.releaseId, publishedAt: T0().toISOString() }), meta: JSON_META });
     const request = new Request(`https://${HOST}/`);
     const trace = newTrace(request);
     const r = await handle(request, { SITES: bucketOf(s) }, trace);
-    eq([r.status, trace.overlay, sha256(new Uint8Array(await r.arrayBuffer()))], [200, reason, shellPlan.files.find((f) => f.path === "index.html")!.sha256], `${label}: Worker`);
+    eq([r.status, trace.outcome, trace.overlay, r.headers.get("cache-control"), await r.text()], [503, "overlay-refused", reason, "no-store", "content unavailable\n"], `${label}: Worker`);
   }
 });
 
@@ -282,108 +284,160 @@ await check("S6 an ordinary package is unaffected: it activates with no overlay 
   assert(dry.status === "dry-run" && dry.storeCheck !== undefined && !("portfolioOverlay" in dry.storeCheck), "no overlay report for an ordinary package");
 });
 
-// ── rollback ─────────────────────────────────────────────────────────────────────────────────────
-/** Demo 02's last ORDINARY build (data/site-builds/<site>/previous.json), sealed through a temp repo root; returns its ref and its portfolio record ids */
-async function sealOrdinaryBuild(s: MemoryStore): Promise<{ ref: { siteId: string; packageHash: string; buildInputId: string; releaseId: string; publishedAt: string }; plan: PublishPlan; ids: string[] }> {
-  const prev = JSON.parse(await readFile(path.join(repoRoot, "data/site-builds", SHELL_SITE, "previous.json"), "utf8")) as { buildInputId: string; packageDir: string };
-  const tmpRoot = await mkdtemp(path.join(os.tmpdir(), "recon-shell-guard-"));
-  try {
-    const dest = path.join(tmpRoot, "data/site-builds", SHELL_SITE, "packages", prev.buildInputId);
-    await cp(path.join(repoRoot, prev.packageDir), dest, { recursive: true });
-    await writeFile(path.join(tmpRoot, "data/site-builds", SHELL_SITE, "current.json"), JSON.stringify({ buildInputId: prev.buildInputId, packageDir: path.relative(tmpRoot, dest), finishedAt: "2026-10-09T09:09:40.032Z" }));
-    const r = await publishSite({ repoRoot: tmpRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0, activate: false });
-    assert(r.status === "uploaded" && r.plan.shell === undefined && r.plan.packageHash !== HASH, "the previous build is an ordinary package of its own");
-    const integration = path.join(dest, "site/_integration");
-    const docName = (await readdir(integration)).find((n) => n.startsWith("portfolio."));
-    assert(docName, "the ordinary build serves a portfolio document");
-    const ids = (JSON.parse(await readFile(path.join(integration, docName), "utf8")) as { records: { id: string }[] }).records.map((x) => x.id);
-    return { ref: { siteId: SHELL_SITE, packageHash: r.plan.packageHash, buildInputId: r.plan.buildInputId, releaseId: r.plan.releaseId, publishedAt: "2026-10-09T09:10:00.000Z" }, plan: r.plan, ids };
-  } finally {
-    await rm(tmpRoot, { recursive: true, force: true });
-  }
+// ── rollback / the host's live package ───────────────────────────────────────────────────────────
+/**
+ * A checkout in which Demo 02 is still an ORDINARY site: its current.json names the site's last ordinary
+ * build (data/site-builds/<site>/previous.json) and there is no portfolio.source.json in it at all.
+ */
+const prevBuild = JSON.parse(await readFile(path.join(repoRoot, "data/site-builds", SHELL_SITE, "previous.json"), "utf8")) as { buildInputId: string; packageDir: string };
+const ordinaryRoot = await mkdtemp(path.join(os.tmpdir(), "recon-shell-guard-"));
+const ordinaryDest = path.join(ordinaryRoot, "data/site-builds", SHELL_SITE, "packages", prevBuild.buildInputId);
+await cp(path.join(repoRoot, prevBuild.packageDir), ordinaryDest, { recursive: true });
+await writeFile(path.join(ordinaryRoot, "data/site-builds", SHELL_SITE, "current.json"), JSON.stringify({ buildInputId: prevBuild.buildInputId, packageDir: path.relative(ordinaryRoot, ordinaryDest), finishedAt: "2026-10-09T09:09:40.032Z" }));
+const ordinaryBuildPlan = await planPublish({ repoRoot: ordinaryRoot, siteId: SHELL_SITE, hostname: HOST });
+const ORDINARY_IDS = await (async () => {
+  const integration = path.join(ordinaryDest, "site/_integration");
+  const docName = (await readdir(integration)).find((n) => n.startsWith("portfolio."));
+  assert(docName, "the ordinary build serves a portfolio document");
+  return (JSON.parse(await readFile(path.join(integration, docName), "utf8")) as { records: { id: string }[] }).records.map((x) => x.id);
+})();
+const ORDINARY_REF = { siteId: SHELL_SITE, packageHash: ordinaryBuildPlan.packageHash, buildInputId: ordinaryBuildPlan.buildInputId, releaseId: ordinaryBuildPlan.releaseId, publishedAt: "2026-10-09T09:10:00.000Z" };
+/** upload + seal the ordinary build (no pointer) */
+async function sealOrdinaryBuild(s: MemoryStore): Promise<void> {
+  const r = await publishSite({ repoRoot: ordinaryRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0, activate: false });
+  assert(r.status === "uploaded" && r.plan.shell === undefined && r.plan.packageHash !== HASH && ORDINARY_IDS.length > 0, "the previous build is an ordinary, portfolio-backed package of its own");
 }
+/** a loader as a checkout would supply it (projects.json), counting its calls */
 function truthLoader(ids: readonly string[]): PortfolioTruthLoader & { calls: number } {
-  const loader = Object.assign(async () => (loader.calls++, { authoritativeIds: ids, source: "test truth" }), { calls: 0 });
+  const loader = Object.assign(async () => (loader.calls++, { authoritativeIds: ids, source: "checkout projects.json (test)" }), { calls: 0 });
   return loader;
 }
-
-await check("S7 rollback: live shell → previous ORDINARY package needs no overlay (none is read) and still answers to the portfolio-truth guard exactly as before; ordinary → previous SHELL package is refused without a usable overlay (pointer byte-identical, zero writes) and passes with one", async () => {
+const projectsOf = (ids: readonly string[]) => (m: Record<string, any>) => (m.projects = Object.fromEntries(ids.map((id) => [id, { slug: id, key: `projects/${id}/${"e".repeat(64)}.json`, sha256: "e".repeat(64) }])));
+const pointerBytes = (s: MemoryStore) => Buffer.from(s.objects.get(shellPlan.routingKey)!.body);
+/** store with: ordinary build sealed, shell package sealed, an overlay publishing `ids`, host live on the SHELL package with previous = the ordinary build */
+async function liveOnShell(ids: readonly string[]): Promise<MemoryStore> {
   const s = new MemoryStore();
-  const ordinary = await sealOrdinaryBuild(s);
-  assert(ordinary.ids.length > 0, "the ordinary build has records");
-  // live = the shell package (activated with a valid overlay), previous = the ordinary build
+  await sealOrdinaryBuild(s);
   await publishSite({ repoRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0, activate: false });
-  publishOverlay(s);
-  s.objects.set(shellPlan.routingKey, { body: enc(`${JSON.stringify({ schemaVersion: 1, hostname: HOST, ...ordinary.ref }, null, 2)}\n`), meta: JSON_META });
+  publishOverlay(s, { manifest: projectsOf(ids) });
+  s.objects.set(shellPlan.routingKey, { body: enc(`${JSON.stringify({ schemaVersion: 1, hostname: HOST, ...ORDINARY_REF }, null, 2)}\n`), meta: JSON_META });
   const activated = await publishSite({ repoRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0 });
-  assert(activated.status === "published" && activated.pointer.previous?.packageHash === ordinary.ref.packageHash, "live = shell, previous = ordinary");
-  const liveShell = Buffer.from(s.objects.get(shellPlan.routingKey)!.body);
+  assert(activated.status === "published" && activated.pointerWrite === "written" && activated.pointer.previous?.packageHash === ORDINARY_REF.packageHash, "live = shell, previous = ordinary");
+  return s;
+}
 
-  // (1a) the truth guard is not weakened: records that are not in the authoritative data → refused, as for any site
-  const noTruth = await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0, portfolioTruth: truthLoader([]) }), "empty truth");
-  assert(noTruth.startsWith(ROLLBACK_TRUTH_REFUSAL), `truth guard message: ${noTruth}`);
-  assert((await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0 }), "no loader")).includes("no authoritative site data was supplied"), "no loader → refused");
-  eq(Buffer.compare(Buffer.from(s.objects.get(shellPlan.routingKey)!.body), liveShell), 0, "pointer untouched by the refusals");
-
-  // (1b) with the records still authoritative: rolled back, and the overlay is not consulted (delete it first to prove it is not needed)
-  s.objects.delete(CURRENT_KEY);
+await check("S7 rollback and the shell guard: an ORDINARY target is not held to it (a target without a portfolio document rolls back with no overlay in the store and no overlay read); a SHELL target is refused without a usable overlay (pointer byte-identical, zero writes) and passes with one", async () => {
+  // live = shell, previous = a crafted ordinary package with no integration documents; the overlay is gone
+  const s = new MemoryStore();
+  await publishSite({ repoRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0, activate: false });
+  const PLAIN = "f".repeat(64);
+  const plainFiles = ["index.html", "404.html"].map((rel) => ({ path: rel, size: 15, sha256: sha256("<!doctype html>"), contentType: "text/html; charset=utf-8", cacheControl: "public, max-age=0, must-revalidate" }));
+  s.objects.set(sealKey(SHELL_SITE, PLAIN), { body: enc({ schemaVersion: 1, siteId: SHELL_SITE, packageHash: PLAIN, buildInputId: "1".repeat(64), releaseId: "interior-02-0.0.0-plain", fileCount: 2, bytes: 30, files: plainFiles }), meta: JSON_META });
+  const plainRef = { siteId: SHELL_SITE, packageHash: PLAIN, buildInputId: "1".repeat(64), releaseId: "interior-02-0.0.0-plain", publishedAt: "2026-10-01T00:00:00.000Z" };
+  s.objects.set(shellPlan.routingKey, { body: enc({ schemaVersion: 1, hostname: HOST, siteId: SHELL_SITE, packageHash: HASH, buildInputId: shellPlan.buildInputId, releaseId: shellPlan.releaseId, publishedAt: T0().toISOString(), previous: plainRef }), meta: JSON_META });
   const sp = spy(s);
-  const truth = truthLoader(ordinary.ids);
-  const back = await rollbackHost({ store: sp, siteId: SHELL_SITE, hostname: HOST, now: T0, portfolioTruth: truth });
-  eq([back.pointer.packageHash, back.pointer.previous?.packageHash, sp.puts, truth.calls], [ordinary.ref.packageHash, HASH, [shellPlan.routingKey], 1], "rolled back to the ordinary package");
-  eq(sp.gets.filter((k) => k.startsWith("portfolio-public/")), [], "no overlay key read for an ordinary target");
+  const back = await rollbackHost({ store: sp, siteId: SHELL_SITE, hostname: HOST, now: T0 });
+  eq([back.pointer.packageHash, back.pointer.previous?.packageHash, sp.puts], [PLAIN, HASH, [shellPlan.routingKey]], "rolled back to the ordinary package");
+  eq(sp.gets.filter((k) => k.startsWith("portfolio-public/")), [], "no overlay key read for an ordinary target without a portfolio document");
 
-  // (2) now previous = the shell package: no overlay → refused; a defective one → refused; a valid one → rolled forward
-  const liveOrdinary = Buffer.from(s.objects.get(shellPlan.routingKey)!.body);
+  // now previous = the shell package: no overlay → refused; a defective one → refused; a valid one → rolled forward
+  const liveOrdinary = pointerBytes(s);
   const w = s.writes.length;
-  const absent = await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0, portfolioTruth: truthLoader(ordinary.ids) }), "rollback to shell, no overlay");
-  assert(REFUSAL.test(absent) && absent.includes(`${CURRENT_KEY} does not exist`) && absent.includes("routing pointer NOT written"), `message: ${absent}`);
+  const absent = await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0 }), "rollback to shell, no overlay");
+  assert(REFUSAL.test(absent) && absent.includes(`${CURRENT_KEY} does not exist`) && absent.includes("would serve the empty shell pages") && absent.includes("routing pointer NOT written"), `message: ${absent}`);
   publishOverlay(s, { storedManifest: enc("{}") });
-  const defective = await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0, portfolioTruth: truthLoader(ordinary.ids) }), "rollback to shell, bad manifest");
-  assert(REFUSAL.test(defective) && defective.includes("(manifest-sha256:"), `message: ${defective}`);
-  eq([s.writes.length - w, Buffer.compare(Buffer.from(s.objects.get(shellPlan.routingKey)!.body), liveOrdinary)], [0, 0], "zero writes, pointer byte-identical");
+  const defective = await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0 }), "rollback to shell, bad manifest");
+  assert(REFUSAL.test(defective) && defective.includes("(manifest-sha256:") && defective.includes("answer 503"), `message: ${defective}`);
+  eq([s.writes.length - w, Buffer.compare(pointerBytes(s), liveOrdinary)], [0, 0], "zero writes, pointer byte-identical");
   publishOverlay(s);
-  const none = truthLoader(ordinary.ids);
+  const none = truthLoader([]);
   const forward = await rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0, portfolioTruth: none });
-  eq([forward.pointer.packageHash, forward.pointer.previous?.packageHash, s.writes.slice(w), none.calls], [HASH, ordinary.ref.packageHash, [shellPlan.routingKey], 0], "rolled forward to the shell package (no portfolio document in it → truth loader not called)");
+  eq([forward.pointer.packageHash, forward.pointer.previous?.packageHash, s.writes.slice(w), none.calls], [HASH, PLAIN, [shellPlan.routingKey], 0], "rolled forward to the shell package (no portfolio document in it → no truth needed)");
 });
 
-await check("S7b portfolio truth of an incrementally published site = the record ids BoostChat has published for the package the host serves now: rollback to the ordinary build passes while every id of it is still published, is refused by name when one was withdrawn, and fails closed without a usable overlay / pointer", async () => {
-  const s = new MemoryStore();
-  const ordinary = await sealOrdinaryBuild(s);
-  await publishSite({ repoRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0, activate: false });
-  const projectsOf = (ids: readonly string[]) => (m: Record<string, any>) => (m.projects = Object.fromEntries(ids.map((id) => [id, { slug: id, key: `projects/${id}/${"e".repeat(64)}.json`, sha256: "e".repeat(64) }])));
-  const loader: PortfolioTruthLoader = () => publishedPortfolioTruth(s, SHELL_SITE, HOST);
-
-  // no routing pointer yet → nothing is "served now"
-  assert((await refusal(publishedPortfolioTruth(s, SHELL_SITE, HOST), "no pointer")).includes("does not exist"), "no pointer");
-  const o = publishOverlay(s, { manifest: projectsOf([...ordinary.ids, "bi-extra"]) });
-  s.objects.set(shellPlan.routingKey, { body: enc(`${JSON.stringify({ schemaVersion: 1, hostname: HOST, ...ordinary.ref }, null, 2)}\n`), meta: JSON_META });
-  // live = the ordinary package: it has no overlay → no published set to read
-  assert((await refusal(publishedPortfolioTruth(s, SHELL_SITE, HOST), "live ordinary")).includes("has no overlay recon-runtime would use"), "live ordinary package");
-  assert((await refusal(publishedPortfolioTruth(s, "another-site", HOST), "other site")).includes(`names site "${SHELL_SITE}"`), "another site's pointer");
-  await publishSite({ repoRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0 });
-
-  const truth = await publishedPortfolioTruth(s, SHELL_SITE, HOST);
-  eq([...truth.authoritativeIds].sort(), [...ordinary.ids, "bi-extra"].sort(), "ids = manifest.projects");
-  assert(truth.source.includes(CURRENT_KEY) && truth.source.includes(`revision ${o.revision}`), `source: ${truth.source}`);
-
-  // one record of the ordinary build was withdrawn in BoostChat since → the rollback would re-expose it → refused by name
-  const withdrawn = ordinary.ids[0]!;
-  publishOverlay(s, { manifest: projectsOf(ordinary.ids.slice(1)) });
-  const liveShell = Buffer.from(s.objects.get(shellPlan.routingKey)!.body);
+await check("S7b rollback truth is decided by the STORE: while the host serves a shell package, the authoritative ids are the record ids BoostChat has published for it — the caller's loader (a checkout WITHOUT the @2 marker that would vouch for every id from its projects.json, or one that knows none) is never called; a withdrawn record is refused by name; no usable overlay → fails closed", async () => {
+  // BoostChat has withdrawn one record of the ordinary build since the host went incremental
+  const withdrawn = ORDINARY_IDS[0]!;
+  const s = await liveOnShell(ORDINARY_IDS.slice(1));
+  const liveShell = pointerBytes(s);
   const w = s.writes.length;
-  const re = await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0, portfolioTruth: loader }), "withdrawn record");
-  assert(re.startsWith(ROLLBACK_TRUTH_REFUSAL) && re.includes(`: ${withdrawn} —`) && re.includes("the portfolio BoostChat has published"), `message: ${re}`);
-  // the overlay stops verifying → no authoritative data → fails closed
+  // an old checkout: no marker, projects.json still lists all the ids → by ITS truth the rollback would pass
+  const stale = truthLoader(ORDINARY_IDS);
+  const re = await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0, portfolioTruth: stale }), "withdrawn record, vouching checkout");
+  assert(re.startsWith(ROLLBACK_TRUTH_REFUSAL) && re.includes(`: ${withdrawn} —`) && re.includes("the portfolio BoostChat has published") && !re.includes("checkout projects.json"), `message: ${re}`);
+  eq(stale.calls, 0, "the checkout's loader was not asked");
+  // no loader at all: same verdict (the store's), not "no authoritative data supplied"
+  const bare = await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0 }), "withdrawn record, no loader");
+  assert(bare.startsWith(ROLLBACK_TRUTH_REFUSAL) && bare.includes(withdrawn), `message: ${bare}`);
+  // the overlay stops verifying → no authoritative data → fails closed, still without asking the checkout
   publishOverlay(s, { storedManifest: null });
-  const closed = await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0, portfolioTruth: loader }), "no usable overlay");
+  const closed = await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0, portfolioTruth: stale }), "no usable overlay");
   assert(closed.includes("could not load the site's current authoritative data") && closed.includes("manifest-missing") && closed.includes("fails closed"), `message: ${closed}`);
-  eq([s.writes.length - w, Buffer.compare(Buffer.from(s.objects.get(shellPlan.routingKey)!.body), liveShell)], [0, 0], "zero writes, pointer byte-identical");
-  // every record of the ordinary build is published → rolled back
-  publishOverlay(s, { manifest: projectsOf(ordinary.ids) });
-  const back = await rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0, portfolioTruth: loader });
-  eq([back.pointer.packageHash, back.pointer.previous?.packageHash, s.writes.slice(w)], [ordinary.ref.packageHash, HASH, [shellPlan.routingKey]], "rolled back");
+  s.objects.delete(CURRENT_KEY);
+  const gone = await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0, portfolioTruth: stale }), "no overlay pointer");
+  assert(gone.includes("could not load the site's current authoritative data") && gone.includes(`${CURRENT_KEY} does not exist`), `message: ${gone}`);
+  eq([stale.calls, s.writes.length - w, Buffer.compare(pointerBytes(s), liveShell)], [0, 0, 0], "checkout never asked, zero writes, pointer byte-identical");
+
+  // every record of the ordinary build is published → rolled back, even though the checkout's loader knows none of them (an @2 checkout)
+  const o = publishOverlay(s, { manifest: projectsOf([...ORDINARY_IDS, "bi-extra"]) });
+  const truth = await publishedPortfolioTruth(s, SHELL_SITE, HOST);
+  eq([...truth.authoritativeIds].sort(), [...ORDINARY_IDS, "bi-extra"].sort(), "published ids = manifest.projects");
+  assert(truth.source.includes(CURRENT_KEY) && truth.source.includes(`revision ${o.revision}`), `source: ${truth.source}`);
+  const empty = truthLoader([]);
+  const back = await rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0, portfolioTruth: empty });
+  eq([back.pointer.packageHash, back.pointer.previous?.packageHash, s.writes.slice(w), empty.calls], [ORDINARY_REF.packageHash, HASH, [shellPlan.routingKey], 0], "rolled back on the store's truth");
+
+  // the host now serves the ORDINARY package: nothing changed for it — the caller's loader decides, as before
+  assert((await refusal(publishedPortfolioTruth(s, SHELL_SITE, HOST), "live ordinary")).includes("has no overlay recon-runtime would use"), "an ordinary live package has no published set");
+  assert((await refusal(publishedPortfolioTruth(s, "another-site", HOST), "other site")).includes(`names site "${SHELL_SITE}"`), "another site's pointer");
+  assert((await refusal(publishedPortfolioTruth(new MemoryStore(), SHELL_SITE, HOST), "no pointer")).includes("does not exist"), "no pointer");
+  // second ordinary package as the rollback target of an ordinary live host: previous := the ordinary build itself under another hash is not available, so re-use it via a pointer whose previous is the same ordinary ref
+  const ptr = JSON.parse(text(s, shellPlan.routingKey));
+  s.objects.set(shellPlan.routingKey, { body: enc({ ...ptr, previous: ORDINARY_REF }), meta: JSON_META });
+  const refusedByCheckout = await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0, portfolioTruth: empty }), "ordinary live, empty checkout truth");
+  assert(refusedByCheckout.startsWith(ROLLBACK_TRUTH_REFUSAL) && refusedByCheckout.includes("checkout projects.json") && empty.calls === 1, `ordinary live host → the caller's loader: ${refusedByCheckout}`);
+  assert((await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0 }), "ordinary live, no loader")).includes("no authoritative site data was supplied"), "ordinary live host, no loader → refused as before");
+  const ok = truthLoader(ORDINARY_IDS);
+  const again = await rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0, portfolioTruth: ok });
+  eq([again.pointer.packageHash, ok.calls], [ORDINARY_REF.packageHash, 1], "ordinary live host, truthful loader → rolled back as before");
+});
+
+await check("S10 incremental-host guard: a host that serves a SHELL package (per its seal in the store) cannot be pointed at an ordinary build by a forward publish — here from a checkout that has no @2 marker and whose current build is ordinary: refused, zero writes, pointer byte-identical, the dry run with checkStore says the same; leaveIncremental is the only way through; shell → shell and ordinary → ordinary are untouched", async () => {
+  const s = await liveOnShell(ORDINARY_IDS);
+  const liveShell = pointerBytes(s);
+  const w = s.writes.length;
+  const INCREMENTAL = /is published incrementally from BoostChat: the package it serves now \(7ef062643a5e5889…, [^)]+\) is a portfolio shell package, and [0-9a-f]{16}… is an ordinary build\. .*re-expose statically built portfolio pages.*strand BoostChat's publishing.*routing pointer NOT written.*--rollback.*--leave-incremental/s;
+  const message = await refusal(publishSite({ repoRoot: ordinaryRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0 }), "ordinary over shell");
+  assert(INCREMENTAL.test(message) && message.includes(HOST), `message: ${message}`);
+  // no other option implies the override
+  for (const [label, extra] of [
+    ["allowSiteChange", { allowSiteChange: true }],
+    ["expectLivePackageHash", { expectLivePackageHash: HASH }],
+    ["expectPackageHash + reverify", { expectPackageHash: ordinaryBuildPlan.packageHash, reverify: true }],
+  ] as const) {
+    assert(INCREMENTAL.test(await refusal(publishSite({ repoRoot: ordinaryRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0, ...extra }), label)), `${label} does not imply the override`);
+  }
+  assert(INCREMENTAL.test(await refusal(publishSite({ repoRoot: ordinaryRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0, dryRun: true, checkStore: true }), "dry run")), "dry run + checkStore raises the same refusal");
+  // an ordinary package of ANOTHER site, with allowSiteChange: the host still leaves incremental publishing → refused
+  await publishSite({ repoRoot, siteId: ORDINARY_SITE, hostname: "elsewhere.test.example", store: s, now: T0, activate: false });
+  const w2 = s.writes.length;
+  assert(INCREMENTAL.test(await refusal(publishSite({ repoRoot, siteId: ORDINARY_SITE, hostname: HOST, store: s, now: T0, allowSiteChange: true }), "another site's ordinary package")), "another site's ordinary package is refused too");
+  eq([w2 - w > 0, s.writes.length - w2, Buffer.compare(pointerBytes(s), liveShell)], [true, 0, 0], "zero writes by the refusals, pointer byte-identical");
+  // republishing the shell package itself (shell → the same shell) is not a switch
+  const same = await publishSite({ repoRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0 });
+  assert(same.status === "published" && same.pointerWrite === "unchanged", "shell → same shell: unchanged");
+
+  // the deliberate override
+  const dry = await publishSite({ repoRoot: ordinaryRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0, dryRun: true, checkStore: true, leaveIncremental: true });
+  assert(dry.status === "dry-run" && dry.storeCheck?.pointerAction === "write", "dry run with the override plans the write");
+  const left = await publishSite({ repoRoot: ordinaryRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0, leaveIncremental: true });
+  assert(left.status === "published" && left.pointerWrite === "written", "published with leaveIncremental");
+  eq([left.pointer.packageHash, left.pointer.previous?.packageHash, s.writes.slice(w2)], [ORDINARY_REF.packageHash, HASH, [shellPlan.routingKey]], "pointer → the ordinary build, previous = the shell package");
+  // the host is ordinary now: an ordinary → ordinary publish needs no flag (nothing changed for such hosts)
+  const o2 = new MemoryStore();
+  await publishSite({ repoRoot, siteId: ORDINARY_SITE, hostname: HOST, store: o2, now: T0 });
+  const re = await publishSite({ repoRoot, siteId: ORDINARY_SITE, hostname: HOST, store: o2, now: T0 });
+  assert(re.status === "published" && re.pointerWrite === "unchanged", "ordinary host: as before");
 });
 
 await check("S8 serving a shell package: every addressable file is served byte for byte with its stored headers — except /_runtime/**, which is a 404 (the package's 404 page) for both documents, with and without an overlay", async () => {
@@ -425,7 +479,16 @@ await check("S9 CLI: the offline --dry-run of the shell site exits 0, names the 
   const ordinary = run(ORDINARY_SITE);
   eq(ordinary.status, 0, "ordinary exit");
   assert(!ordinary.stdout.includes("SHELL PACKAGE") && !ordinary.stdout.includes("portfolioShell"), "nothing for an ordinary site");
+  // --leave-incremental: accepted by a dry run, in the usage text, and refused next to the flags that write no pointer / have their own way back
+  const cli = (...flags: string[]) => spawnSync(path.join(repoRoot, "node_modules/.bin/tsx"), ["--tsconfig", "platform/tsconfig.json", path.join(repoRoot, "platform/cli/site-publish.ts"), "--site", ORDINARY_SITE, "--host", HOST, ...flags], { cwd: repoRoot, encoding: "utf8" });
+  eq(cli("--dry-run", "--leave-incremental").status, 0, "--dry-run --leave-incremental");
+  const noActivate = cli("--no-activate", "--leave-incremental");
+  assert(noActivate.status === 2 && noActivate.stderr.includes("--leave-incremental overrides a refusal of the pointer write") && noActivate.stderr.includes("[--leave-incremental]"), `--no-activate --leave-incremental: ${noActivate.status} ${noActivate.stderr.slice(0, 200)}`);
+  const rollback = cli("--rollback", "--leave-incremental");
+  assert(rollback.status === 2 && rollback.stderr.includes("--rollback only combines with"), `--rollback --leave-incremental: ${rollback.status}`);
 });
+
+await rm(ordinaryRoot, { recursive: true, force: true });
 
 console.log(`\n${passed} passed, ${failed.length} failed`);
 if (failed.length > 0) {

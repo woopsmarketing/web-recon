@@ -6,7 +6,8 @@
  *   2. /_next/ and /_runtime/ never consult the overlay; /_runtime/ is never served
  *   3. routes / assets from the verified live manifest (headers, HEAD, 304)
  *   4. owned paths and their RSC payloads answer from the manifest or 404, never from the package
- *   5. unpublished media, site isolation, unsafe manifest keys, every refusal → package + one log line
+ *   5. unpublished media, site isolation, unsafe manifest keys; every refusal → 503 no-store + one log
+ *      line, never a page of the (shell) package — only /_next/ and /_runtime/ answer as always
  *   6. the manifest cache: no re-read while the pointer is unchanged, never stale after it changes
  *
  * Run: tsx --tsconfig platform/tsconfig.json platform/test/runtime-overlay.test.ts
@@ -491,6 +492,7 @@ const REFUSALS: [label: string, input: PublishInput, reason: string][] = [
   ["pointer manifestKey is not a string", { pointer: (p) => void (p.manifestKey = 7) }, "current-manifest-ref"],
   ["manifest object is absent", { storedManifest: null }, "manifest-missing"],
   ["manifest bytes do not hash to manifestSha256", { storedManifest: '{"schema":"portfolio-manifest@1"}' }, "manifest-sha256"],
+  ["manifest object is over the 4 MiB cap", { storedManifest: " ".repeat(4 * 1024 * 1024 + 1) }, "manifest-too-large"],
   ["pointer sha256 is another manifest's", { pointer: (p) => void (p.manifestSha256 = OTHER_HASH) }, "manifest-sha256"],
   ["manifest schema", { manifest: (m) => void (m.schema = "portfolio-manifest@2") }, "manifest-invalid"],
   ["manifest without routes", { manifest: (m) => void delete m.routes }, "manifest-invalid"],
@@ -500,19 +502,22 @@ const REFUSALS: [label: string, input: PublishInput, reason: string][] = [
   ["manifest names another package hash", { manifest: (m) => void (m.shell = { packageHash: OTHER_HASH, releaseId: "rel-1" }) }, "manifest-identity"],
 ];
 
-await check(`a pointer / manifest that does not verify (${REFUSALS.length + 1} ways) → the package alone for every path + one log line; nothing from the manifest, nothing outside this site`, async () => {
+await check(`a pointer / manifest that does not verify (${REFUSALS.length + 1} ways) FAILS CLOSED: 503 no-store for every path the overlay decides (GET and HEAD) + one log line naming the check; no page, RSC payload, sitemap or 404 page of the shell package is read; /_next/ and /_runtime/ answer as always; nothing outside this site`, async () => {
   const run = async (label: string, fx: Fixture, reason: string) => {
-    for (const [p, body] of [
-      ["/", "SHELL index"],
-      ["/portfolio", "SHELL portfolio"],
-      ["/index.txt", "SHELL rsc index"],
-      ["/about", "PKG about"],
-    ] as const) {
+    for (const p of ["/", "/portfolio", "/portfolio/shell-slug", "/index.txt", "/sitemap.xml", "/about", "/robots.txt", "/assets/pkg.jpg", "/assets/0123456789abcdef0123.jpg", "/no-such-page"]) {
       const got = await call(fx, p);
-      eq([got.status, got.text, got.trace.overlay], [200, body, reason], `${label}: ${p}`);
+      eq([got.status, got.text, got.trace.outcome, got.trace.overlay], [503, "content unavailable\n", "overlay-refused", reason], `${label}: ${p}`);
+      eq([got.headers["cache-control"], got.headers["content-type"], got.headers["etag"]], ["no-store", "text/plain; charset=utf-8", undefined], `${label}: ${p} headers`);
+      assert(!got.keys.some((k) => k.includes(`/packages/${fx.hash}/`)), `${label}: ${p} read a package object: ${got.keys.join(", ")}`);
+      assert(!got.keys.some(readsAssets), `${label}: ${p} read portfolio-assets/: ${got.keys.join(", ")}`);
     }
-    const asset = await call(fx, "/assets/0123456789abcdef0123.jpg");
-    eq([asset.status, asset.text, asset.trace.overlay], [404, "PKG 404", reason], `${label}: manifest asset`);
+    const head = await call(fx, "/portfolio", { method: "HEAD" });
+    eq([head.status, head.text, head.trace.outcome, head.headers["cache-control"]], [503, "", "overlay-refused", "no-store"], `${label}: HEAD`);
+    // what never consults the overlay is untouched by a refusal
+    const next = await call(fx, "/_next/static/app.js");
+    eq([next.status, next.text, next.trace.overlay, next.keys], [200, "PKG js", undefined, [ROUTING(fx), `get ${pkg(fx, "_next/static/app.js")}`]], `${label}: /_next/ is the package's`);
+    const runtime = await call(fx, "/_runtime/portfolio/shell.json");
+    eq([runtime.status, runtime.text, runtime.trace.overlay], [404, "PKG 404", undefined], `${label}: /_runtime/ stays a 404`);
     const own = [`routing/${fx.host}.json`, `sites/${fx.siteId}/packages/${fx.hash}/`, `portfolio-public/${fx.siteId}/`];
     assert(fx.b.recorded.every((k) => own.some((prefix) => k.slice(k.indexOf(" ") + 1).startsWith(prefix))), `${label}: read outside the site: ${fx.b.recorded.join(", ")}`);
 
@@ -521,18 +526,43 @@ await check(`a pointer / manifest that does not verify (${REFUSALS.length + 1} w
     const trace = newTrace(request);
     await handle(request, fx.env, trace);
     logTrace(fx.env, trace, (l) => lines.push(l));
-    eq(lines.length, 1, `${label}: a refused overlay is logged even on a 200`);
+    eq(lines.length, 1, `${label}: a refused overlay is logged`);
     const line = JSON.parse(lines[0]!);
-    eq([line.evt, line.status, line.outcome, line.overlay, line.siteId], ["recon-runtime", 200, "served", reason, fx.siteId], `${label}: log line`);
+    eq([line.evt, line.status, line.outcome, line.overlay, line.siteId], ["recon-runtime", 503, "overlay-refused", reason, fx.siteId], `${label}: log line`);
   };
+  const seen = new Set<string>();
   for (const [label, input, reason] of REFUSALS) {
     const fx = site("refuse");
     publish(fx, 1, { ...LIVE, ...input });
     await run(label, fx, reason);
+    seen.add(reason);
   }
   const fx = site("refuse");
   fx.b.set(portfolioCurrentKey(fx.siteId, fx.hash), "{not json", "application/json");
   await run("pointer is unparsable", fx, "current-unparsable");
+  seen.add("current-unparsable");
+  eq([...seen].sort(), ["current-identity", "current-manifest-ref", "current-schema", "current-unparsable", "manifest-identity", "manifest-invalid", "manifest-missing", "manifest-sha256", "manifest-too-large"], "every refusal class of loadOverlay is covered");
+});
+
+await check("fail closed is about a pointer that EXISTS: the same site with the pointer removed answers from the package again, byte for byte as a site that never had one; an R2 failure is still the 500", async () => {
+  const fx = site("closed");
+  publish(fx, 1, { ...LIVE, storedManifest: null });
+  eq([(await call(fx, "/")).status, (await call(fx, "/about")).status], [503, 503], "refused while the pointer is there");
+  fx.b.objects.delete(portfolioCurrentKey(fx.siteId, fx.hash));
+  const home = await call(fx, "/");
+  eq([home.status, home.text, home.trace.outcome, home.trace.overlay, home.headers["cache-control"]], [200, "SHELL index", "served", undefined, CACHE_REVALIDATE], "pointer absent → the package, as before");
+  eq(home.keys, [ROUTING(fx), CURRENT(fx), `get ${pkg(fx, "index.html")}`], "…with the one extra read");
+  const broken: Env = { SITES: { get: async (key) => (key.startsWith("portfolio-public/") ? Promise.reject(new Error("r2 down")) : fx.b.get(key)), head: (key) => fx.b.head(key) } };
+  const lines: string[] = [];
+  const original = console.log;
+  console.log = (l: string) => void lines.push(l);
+  let r: Response;
+  try {
+    r = await runtimeDefault.fetch(new Request(`https://${fx.host}/`), broken);
+  } finally {
+    console.log = original;
+  }
+  eq([r.status, await r.text(), JSON.parse(lines[0]!).outcome], [500, "internal error\n", "internal-error"], "an R2 throw while reading the pointer is the existing 500");
 });
 
 await check("a manifest cached for one package is refused under another package's pointer (identity is checked on every request, cached or not)", async () => {
@@ -546,8 +576,8 @@ await check("a manifest cached for one package is refused under another package'
   for (const [rel, [body, contentType]] of Object.entries(PACKAGE)) b.set(packageKey(next.siteId, next.hash, rel), `NEXT ${body}`, contentType);
   b.set(portfolioCurrentKey(next.siteId, next.hash), live.pointerBytes.replace(one.hash, next.hash));
   const got = await call(next, "/");
-  eq([got.status, got.text, got.trace.overlay], [200, "NEXT SHELL index", "manifest-identity"], "refused for the new package");
-  eq(got.keys, [ROUTING(next), CURRENT(next), `get ${pkg(next, "index.html")}`], "…from the cache, without another manifest read");
+  eq([got.status, got.text, got.trace.outcome, got.trace.overlay], [503, "content unavailable\n", "overlay-refused", "manifest-identity"], "refused for the new package: never its shell page");
+  eq(got.keys, [ROUTING(next), CURRENT(next)], "…from the cache, without another manifest read, and without a package read");
   eq((await call(one, "/")).text, "LIVE home", "package 1 is unaffected");
 });
 
@@ -676,10 +706,10 @@ await check("the cache is bounded: after 32 newer manifests the first one is rea
   }
   fx.b.set(portfolioCurrentKey(fx.siteId, fx.hash), r1.pointerBytes, "application/json");
   const tampered = await call(fx, "/");
-  eq([tampered.text, tampered.trace.overlay], ["SHELL index", "manifest-sha256"], "once evicted, the tampered object fails verification");
+  eq([tampered.status, tampered.text, tampered.trace.overlay], [503, "content unavailable\n", "manifest-sha256"], "once evicted, the tampered object fails verification → 503, not the shell page");
 });
 
-await check("default export: a refused overlay logs exactly one line (200, overlay reason, no query string); a served overlay logs none", async () => {
+await check("default export: a refused overlay is a 503 that logs exactly one line (overlay-refused, the reason, no query string); a served overlay logs none", async () => {
   const fx = site("log");
   publish(fx, 1, { ...LIVE, pointer: (p) => void (p.siteId = "other-site") });
   const ok = site("log");
@@ -689,7 +719,7 @@ await check("default export: a refused overlay logs exactly one line (200, overl
   console.log = (l: string) => void lines.push(l);
   try {
     const r = await runtimeDefault.fetch(new Request(`https://${fx.host}/?secret=1`), fx.env);
-    eq([r.status, await r.text()], [200, "SHELL index"], "refused → package");
+    eq([r.status, await r.text(), r.headers.get("cache-control")], [503, "content unavailable\n", "no-store"], "refused → 503, never the package page");
     const served = await runtimeDefault.fetch(new Request(`https://${ok.host}/`), ok.env);
     eq(await served.text(), "LIVE home", "served");
   } finally {
@@ -697,7 +727,7 @@ await check("default export: a refused overlay logs exactly one line (200, overl
   }
   eq(lines.length, 1, "one line");
   const line = JSON.parse(lines[0]!);
-  eq([line.host, line.path, line.status, line.overlay], [fx.host, "/", 200, "current-identity"], "line fields");
+  eq([line.host, line.path, line.status, line.outcome, line.overlay], [fx.host, "/", 503, "overlay-refused", "current-identity"], "line fields");
   assert(!lines[0]!.includes("secret"), "no query string");
 });
 

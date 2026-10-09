@@ -18,6 +18,13 @@
  *   evaluates steps 5 and 8 READ-ONLY (seal present? live pointer? every refusal the real run would
  *   raise) through a wrapper whose put() throws, so it can say what would be skipped / uploaded.
  *   Dry-run results carry no clock value: same package + same store state → same output.
+ * Incremental-host guard (step 8, before the write): what a hostname is published as is decided by
+ *   the STORE, not by the checkout running the command. When the package the hostname serves now is a
+ *   shell package (its seal lists _runtime/portfolio/*) and the package about to replace it is an
+ *   ordinary build, the switch is refused: it would put statically built portfolio pages back and
+ *   strand BoostChat's publishing (its overlay belongs to the shell package). rollbackHost is the way
+ *   back to the previous package; leaveIncremental (CLI --leave-incremental) is the explicit override
+ *   and is implied by nothing else. A dry run with checkStore throws it like every other refusal.
  * activate: false → stop after the verified seal (steps 1–7); the pointer is not read or written.
  * reverify → a package that is already sealed is read back file by file instead of being trusted.
  * expectLivePackageHash → stale-write guard: refuse unless routing/<hostname>.json currently names
@@ -38,8 +45,8 @@
  *   portfolio-public/<siteId>/current/<packageHash>.json and the manifest it names, checked by the
  *   Worker's own loadOverlay (pointer schema / siteId / shellPackageHash, manifest object present,
  *   bytes = manifestSha256, manifest schema / siteId / shell.packageHash). Without one the Worker
- *   would serve the empty shell pages with 200, so the switch is refused; BoostChat publishes the
- *   portfolio for the package first. An ordinary package is not looked at. activate: false never
+ *   would serve the empty shell pages with 200 (no pointer) or answer 503 (a pointer it refuses), so
+ *   the switch is refused; BoostChat publishes the portfolio for the package first. An ordinary package is not looked at. activate: false never
  *   reads the overlay; a dry run reports the overlay (StoreCheck.portfolioOverlay) and never throws
  *   for it — the normal order is package first (activate: false), portfolio second, switch last.
  * Rollback (rollbackHost): re-point a hostname at its pointer's `previous` package; no upload.
@@ -49,9 +56,11 @@
  *   re-expose records that were removed from source. Fails closed (unreadable / seal-mismatched
  *   documents, or no authoritative data supplied, are refusals). Runbook:
  *   docs/result/sales-demo-final-closeout-v1/rollback-truth-runbook.md
- *   For an INCREMENTALLY published site the checkout holds no portfolio, so its authoritative data is
- *   what BoostChat has published: publishedPortfolioTruth reads the record ids of the live overlay
- *   manifest of the package the hostname serves now (no verified overlay → no data → refused).
+ *   When the package the hostname serves NOW is a shell package (per its seal in the store), the
+ *   authoritative data is what BoostChat has published — the record ids of that package's live overlay
+ *   manifest — whatever the checkout says and whatever loader was supplied: options.portfolioTruth is
+ *   not called (no verified overlay → no data → refused). A live package whose seal cannot be read
+ *   cannot be classified, so a portfolio-backed target is refused then too.
  */
 
 import { lstat, readFile, readdir } from "node:fs/promises";
@@ -185,6 +194,8 @@ export interface PublishOptions {
   expectPackageHash?: string;
   /** allow pointing a hostname that currently serves a different site at this one */
   allowSiteChange?: boolean;
+  /** allow replacing the SHELL package a hostname serves now with an ordinary build (takes the host out of incremental publishing) */
+  leaveIncremental?: boolean;
   /** stale-write guard: the packageHash routing/<hostname>.json must currently name, or "none" */
   expectLivePackageHash?: string;
   /** false → upload + verify + seal only; the routing pointer is neither read nor written (default true) */
@@ -410,7 +421,7 @@ async function assertPortfolioLive(store: ObjectStore, target: { siteId: string;
   const found = state.state === "absent" ? `${state.key} does not exist` : `${state.key} is refused by recon-runtime (${state.reason}: ${OVERLAY_REFUSALS[state.reason] ?? "see workers/recon-runtime/src/index.ts loadOverlay"})`;
   throw new PublishError(
     `package ${shortHash(target.packageHash)} of "${target.siteId}" is a portfolio shell package (its portfolio pages are empty placeholders until BoostChat publishes them) and ${store.description} holds no usable portfolio for it: ${found}. ` +
-      `Pointing ${hostname} at it would serve the empty shell pages; refusing — routing pointer NOT written. ` +
+      `Pointing ${hostname} at it would ${state.state === "absent" ? "serve the empty shell pages" : "make recon-runtime answer 503 for the whole site"}; refusing — routing pointer NOT written. ` +
       `Publish the portfolio of "${target.siteId}" for this package from BoostChat first (it writes that pointer last), then run this command again. The package itself is already uploaded and sealed.`,
   );
 }
@@ -479,21 +490,37 @@ function decidePointer(existing: RoutingPointer | undefined, plan: PublishPlan, 
   return "write";
 }
 
-/**
- * Browsers keep an immutable-cached URL for a year, so a path served immutable by BOTH the package
- * a hostname serves now and the one about to replace it must carry the same bytes. Compared against
- * the live package's seal only. A live seal that is absent or unreadable is a refusal, not a pass.
- */
-async function assertImmutablePathsStable(store: ObjectStore, live: RoutingPointer, plan: PublishPlan): Promise<void> {
-  const raw = await store.get(sealKey(live.siteId, live.packageHash));
-  let seal: Partial<PackageSeal> | undefined;
+/** The seal of a package as the store holds it; undefined when it is absent, not JSON, or has no file list. */
+async function readSeal(store: ObjectStore, ref: { siteId: string; packageHash: string }): Promise<(Partial<PackageSeal> & { files: SealFile[] }) | undefined> {
+  const raw = await store.get(sealKey(ref.siteId, ref.packageHash));
   try {
-    seal = raw ? (JSON.parse(Buffer.from(raw).toString("utf8")) as Partial<PackageSeal>) : undefined;
+    const seal = raw ? (JSON.parse(Buffer.from(raw).toString("utf8")) as Partial<PackageSeal>) : undefined;
+    return seal && Array.isArray(seal.files) ? (seal as Partial<PackageSeal> & { files: SealFile[] }) : undefined;
   } catch {
-    seal = undefined;
+    return undefined;
   }
-  if (!seal || !Array.isArray(seal.files)) {
+}
+
+/**
+ * Everything that is judged against the package a hostname serves NOW, from that package's seal in
+ * the store, before the pointer may move to `plan`. A live seal that is absent or unreadable is a
+ * refusal, not a pass.
+ *  - Incremental-host guard: a host that serves a SHELL package is published incrementally from
+ *    BoostChat; an ordinary build may not replace it unless leaveIncremental says so.
+ *  - Immutable paths: browsers keep an immutable-cached URL for a year, so a path served immutable by
+ *    BOTH packages must carry the same bytes.
+ */
+async function assertSwitchFromLive(store: ObjectStore, live: RoutingPointer, plan: PublishPlan, opts: Pick<PublishOptions, "leaveIncremental">): Promise<void> {
+  const seal = await readSeal(store, live);
+  if (!seal) {
     throw new PublishError(`${plan.hostname} serves package ${shortHash(live.packageHash)} whose seal cannot be read, so immutable-cached paths cannot be compared; refusing to switch. Inspect ${sealKey(live.siteId, live.packageHash)}; to start the hostname over, delete ${plan.routingKey} and publish again`);
+  }
+  if (isShellPackage(seal.files) && !plan.shell && !opts.leaveIncremental) {
+    throw new PublishError(
+      `${plan.hostname} is published incrementally from BoostChat: the package it serves now (${shortHash(live.packageHash)}, ${String(live.releaseId)}) is a portfolio shell package, and ${shortHash(plan.packageHash)} is an ordinary build. ` +
+        `Replacing it would re-expose statically built portfolio pages (the portfolio baked into this build) and strand BoostChat's publishing for this host; refusing — routing pointer NOT written. ` +
+        `To return to the previous package use --rollback; to take the host out of incremental publishing on purpose pass --leave-incremental (leaveIncremental).`,
+    );
   }
   const liveImmutable = new Map(seal.files.filter((f) => f.cacheControl === CACHE_IMMUTABLE).map((f) => [f.path, f.sha256]));
   const changed = plan.files.filter((f) => f.cacheControl === CACHE_IMMUTABLE && liveImmutable.has(f.path) && liveImmutable.get(f.path) !== f.sha256).map((f) => f.path);
@@ -534,7 +561,7 @@ export async function publishSite(opts: PublishOptions): Promise<PublishResult> 
     if (activate) {
       const existing = await readRoutingPointer(ro, plan.routingKey);
       pointerAction = decidePointer(existing, plan, opts);
-      if (existing && pointerAction === "write") await assertImmutablePathsStable(ro, existing, plan);
+      if (existing && pointerAction === "write") await assertSwitchFromLive(ro, existing, plan, opts);
       live = existing ? refOf(existing) : null;
       if (existing && pointerAction === "write") pointer.previous = refOf(existing);
     }
@@ -630,7 +657,7 @@ export async function publishSite(opts: PublishOptions): Promise<PublishResult> 
     log(`[${plan.siteId}] ${plan.routingKey} already points at this package → unchanged`);
     return { status: "published", plan, upload, uploaded, verified, pointer: existing!, pointerWrite: "unchanged" };
   }
-  if (existing) await assertImmutablePathsStable(store, existing, plan);
+  if (existing) await assertSwitchFromLive(store, existing, plan, opts);
   if (plan.shell) await assertPortfolioLive(store, plan, plan.hostname, log);
   const pointer: RoutingPointer = { schemaVersion: SCHEMA_VERSION, hostname: plan.hostname, ...ref(now().toISOString()) };
   if (existing) pointer.previous = refOf(existing);
@@ -741,25 +768,34 @@ async function assertRollbackPortfolioTruth(store: ObjectStore, target: PackageR
   log?.(`[${target.siteId}] portfolio truth: rollback target ids ⊆ authoritative (${targetIds.length}/${authoritative.size})`);
 }
 
-/**
- * The authoritative portfolio ids of an INCREMENTALLY published site (portfolio-source@2), for the
- * rollback portfolio-truth guard. Such a site keeps no portfolio in the checkout — BoostChat owns it
- * and publishes it as the overlay of the site's shell package — so "what the site serves now" is the
- * record set of the live overlay manifest (manifest.projects) of the package the hostname serves at
- * this moment. Throws when that cannot be established (no pointer, another site's pointer, no
- * overlay recon-runtime would use, a manifest without a projects table): the guard then refuses.
- */
-export async function publishedPortfolioTruth(store: ObjectStore, siteId: string, hostnameInput: string): Promise<{ authoritativeIds: readonly string[]; source: string }> {
-  const hostname = normalizeHostname(hostnameInput);
-  const live = await readRoutingPointer(store, routingKey(hostname));
-  const why = `"${siteId}" is published incrementally: its portfolio lives in BoostChat, not in this checkout, and the published set is read from the portfolio overlay of the package ${hostname} serves now`;
-  if (!live || live.siteId !== siteId) throw new PublishError(`${why} — ${routingKey(hostname)} ${live ? `names site "${live.siteId}"` : "does not exist"}`);
-  const { state, manifest } = await inspectOverlay(store, siteId, live.packageHash);
+/** The record set BoostChat has published for the shell package `live` — the manifest.projects of its verified overlay. Throws when there is none. */
+async function overlayTruth(store: ObjectStore, hostname: string, live: { siteId: string; packageHash: string }): Promise<{ authoritativeIds: readonly string[]; source: string }> {
+  const why = `${hostname} is published incrementally: its portfolio lives in BoostChat, not in a checkout, and the published set is read from the portfolio overlay of the package the hostname serves now`;
+  const { state, manifest } = await inspectOverlay(store, live.siteId, live.packageHash);
   if (!manifest) {
     throw new PublishError(`${why} — package ${shortHash(live.packageHash)} has no overlay recon-runtime would use (${state.key} ${state.state === "refused" ? `refused: ${state.reason}` : "does not exist"})`);
   }
   if (!isRecord(manifest.projects)) throw new PublishError(`${why} — the live manifest of package ${shortHash(live.packageHash)} has no projects table`);
   return { authoritativeIds: Object.keys(manifest.projects), source: `the portfolio BoostChat has published for ${hostname} (${state.key}, revision ${String(manifest.revision)})` };
+}
+
+/**
+ * The authoritative portfolio ids of an INCREMENTALLY published site, for the rollback
+ * portfolio-truth guard. Such a site keeps no portfolio in the checkout — BoostChat owns it and
+ * publishes it as the overlay of the site's shell package — so "what the site serves now" is the
+ * record set of the live overlay manifest (manifest.projects) of the package the hostname serves at
+ * this moment. Throws when that cannot be established (no pointer, another site's pointer, no
+ * overlay recon-runtime would use, a manifest without a projects table): the guard then refuses.
+ * rollbackHost uses this truth by itself whenever the live package is a shell package; this export is
+ * for a caller whose checkout says "incremental" while the host serves something else.
+ */
+export async function publishedPortfolioTruth(store: ObjectStore, siteId: string, hostnameInput: string): Promise<{ authoritativeIds: readonly string[]; source: string }> {
+  const hostname = normalizeHostname(hostnameInput);
+  const live = await readRoutingPointer(store, routingKey(hostname));
+  if (!live || live.siteId !== siteId) {
+    throw new PublishError(`"${siteId}" is published incrementally and its published portfolio is read from the package ${hostname} serves now — ${routingKey(hostname)} ${live ? `names site "${live.siteId}"` : "does not exist"}`);
+  }
+  return overlayTruth(store, hostname, live);
 }
 
 /**
@@ -773,13 +809,17 @@ export async function publishedPortfolioTruth(store: ObjectStore, siteId: string
  * is no override: the fix is a new build published forward (ROLLBACK_TRUTH_RUNBOOK).
  * When the previous package is a SHELL package, the store must hold a portfolio overlay recon-runtime
  * would use for it (assertPortfolioLive), exactly as for a forward publish.
+ * Which truth: decided by the STORE. If the package the hostname serves now is a shell package, the
+ * truth is the portfolio BoostChat has published for it (overlayTruth) and portfolioTruth is NOT
+ * called — a checkout that does not know the host is incremental must not vouch for it with its own
+ * projects.json. If the live package is ordinary, portfolioTruth is used exactly as before.
  */
 export async function rollbackHost(opts: {
   store: ObjectStore;
   siteId: string;
   hostname: string;
   expectLivePackageHash?: string;
-  /** current authoritative portfolio ids; only called when the target package serves a portfolio document */
+  /** current authoritative portfolio ids; only called when the target package serves a portfolio document AND the live package is not a shell package */
   portfolioTruth?: PortfolioTruthLoader;
   now?: () => Date;
   log?: (line: string) => void;
@@ -803,7 +843,16 @@ export async function rollbackHost(opts: {
   if (!seal || seal.siteId !== target.siteId || seal.packageHash !== target.packageHash || !Array.isArray(seal.files) || seal.files.length === 0) {
     throw new PublishError(`previous package ${target.packageHash.slice(0, 16)}… has no valid seal in the store; refusing to roll back to it`);
   }
-  await assertRollbackPortfolioTruth(opts.store, target, seal, opts.portfolioTruth, opts.log);
+  // The store decides whose truth applies: a host that serves a shell package is published from BoostChat.
+  const liveSeal = await readSeal(opts.store, existing);
+  const truth: PortfolioTruthLoader | undefined = !liveSeal
+    ? async () => {
+        throw new PublishError(`the seal of the package ${hostname} serves now (${sealKey(existing.siteId, existing.packageHash)}) cannot be read, so it cannot be told whether the host is published incrementally`);
+      }
+    : isShellPackage(liveSeal.files)
+      ? () => overlayTruth(opts.store, hostname, existing)
+      : opts.portfolioTruth;
+  await assertRollbackPortfolioTruth(opts.store, target, seal, truth, opts.log);
   // Shell-package guard: the same rule as a forward publish. An ordinary target is not looked at.
   if (isShellPackage(seal.files)) await assertPortfolioLive(opts.store, target, hostname, opts.log);
   const pointer: RoutingPointer = { schemaVersion: SCHEMA_VERSION, hostname, ...refOf(target), publishedAt: (opts.now ?? (() => new Date()))().toISOString(), previous: refOf(existing) };

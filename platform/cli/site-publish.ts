@@ -2,7 +2,7 @@
  * pnpm site:publish --site <siteId> --host <hostname> [--bucket boost-sites-artifacts]
  *                   [--dry-run [--check-store]] [--local | --remote] [--persist-to <dir>]
  *                   [--concurrency N] [--allow-site-change] [--expect-package <packageHash>]
- *                   [--expect-live <packageHash|none>] [--no-activate] [--reverify]
+ *                   [--expect-live <packageHash|none>] [--no-activate] [--reverify] [--leave-incremental]
  * pnpm site:publish --site <siteId> --host <hostname> --rollback [--expect-live <packageHash>]
  *                   [--local | --remote] [--persist-to <dir>]
  *
@@ -36,12 +36,18 @@
  *                     sha256/size instead of trusting the seal (read-only; mismatches are reported)
  *  --allow-origin-mismatch  a --remote publish is refused when the origin baked into the package
  *                     (canonical / sitemap / robots URLs) is not https://<hostname>; this overrides it
+ *  --leave-incremental  a hostname that serves a SHELL package now is published incrementally from
+ *                     BoostChat (the store decides this, not the checkout); pointing it at an ordinary
+ *                     build is refused — it would put statically built portfolio pages back and strand
+ *                     BoostChat's publishing. This flag is the one deliberate override; no other flag
+ *                     implies it. To go back to the previous package use --rollback instead.
  *  --rollback         re-point the hostname at its pointer's `previous` (already sealed) package; no upload
  *                     refused (no override) when that package serves portfolio records that are no longer in
  *                     data/sites/<siteId>/content/projects.json (served set) — docs/result/sales-demo-final-closeout-v1/rollback-truth-runbook.md
- *                     For an incrementally published site that file is not the truth (BoostChat is): the
- *                     served set is read from the live portfolio overlay of the package the hostname
- *                     serves now; without a usable overlay there is nothing to check against → refused.
+ *                     When the hostname serves a SHELL package now (per the store, whatever this
+ *                     checkout's marker says) that file is not the truth — BoostChat is: the served set
+ *                     is read from the live portfolio overlay of that package; without a usable overlay
+ *                     there is nothing to check against → refused.
  */
 import { publishedPortfolioTruth, publishSite, rollbackHost, sealBytes, type PortfolioTruthLoader, type PublishResult } from "../publish/publish";
 import { WranglerStore } from "../publish/wrangler-store";
@@ -50,14 +56,14 @@ import { buildSiteSnapshot, siteDir } from "../site/load";
 
 const args = process.argv.slice(2);
 const VALUE_FLAGS = ["--site", "--host", "--bucket", "--persist-to", "--concurrency", "--expect-package", "--expect-live"];
-const BOOL_FLAGS = ["--dry-run", "--check-store", "--local", "--remote", "--allow-site-change", "--allow-origin-mismatch", "--rollback", "--no-activate", "--reverify"];
+const BOOL_FLAGS = ["--dry-run", "--check-store", "--local", "--remote", "--allow-site-change", "--allow-origin-mismatch", "--rollback", "--no-activate", "--reverify", "--leave-incremental"];
 function flag(name: string): string | undefined {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : undefined;
 }
 const has = (name: string) => args.includes(name);
 const usage =
-  "usage: pnpm site:publish --site <siteId> --host <hostname> [--bucket boost-sites-artifacts] [--dry-run [--check-store] | --rollback] [--local|--remote] [--persist-to <dir>] [--concurrency N] [--allow-site-change] [--expect-package <packageHash>] [--expect-live <packageHash|none>] [--no-activate] [--reverify] [--allow-origin-mismatch]";
+  "usage: pnpm site:publish --site <siteId> --host <hostname> [--bucket boost-sites-artifacts] [--dry-run [--check-store] | --rollback] [--local|--remote] [--persist-to <dir>] [--concurrency N] [--allow-site-change] [--expect-package <packageHash>] [--expect-live <packageHash|none>] [--no-activate] [--reverify] [--allow-origin-mismatch] [--leave-incremental]";
 function usageError(message?: string): never {
   console.error(message ? `site:publish: ${message}\n${usage}` : usage);
   process.exit(2);
@@ -69,9 +75,10 @@ const siteId = flag("--site");
 const host = flag("--host");
 if (!siteId || !host) usageError();
 if (has("--local") && has("--remote")) usageError("--local and --remote are exclusive");
-if (has("--rollback") && (has("--dry-run") || has("--no-activate") || has("--reverify") || has("--expect-package"))) usageError("--rollback only combines with --expect-live and the store flags");
+if (has("--rollback") && (has("--dry-run") || has("--no-activate") || has("--reverify") || has("--expect-package") || has("--leave-incremental"))) usageError("--rollback only combines with --expect-live and the store flags");
 if (has("--check-store") && !has("--dry-run")) usageError("--check-store is a --dry-run option");
 if (has("--no-activate") && has("--expect-live")) usageError("--expect-live guards the pointer write; it cannot be combined with --no-activate");
+if (has("--no-activate") && has("--leave-incremental")) usageError("--leave-incremental overrides a refusal of the pointer write; it cannot be combined with --no-activate");
 
 const HASH = /^[0-9a-f]{64}$/;
 const expectPackage = flag("--expect-package");
@@ -127,8 +134,9 @@ if (has("--rollback")) {
   const portfolioTruth: PortfolioTruthLoader = async () => {
     const at = new Date().toISOString();
     const { snapshot, portfolio } = await buildSiteSnapshot({ repoRoot: process.cwd(), siteId, mode: "public", at });
-    // An incrementally published site has no portfolio in this checkout (the snapshot holds none by design):
-    // its served set is what BoostChat has published for the package the hostname serves now.
+    // Only reached when the hostname's live package is NOT a shell package (rollbackHost reads the published
+    // overlay by itself otherwise, whatever this checkout says). A checkout marked incremental still holds no
+    // portfolio (the snapshot has none by design), so it cannot vouch either: ask the store, which then refuses.
     if (portfolio === "incremental") return publishedPortfolioTruth(store!, siteId, host);
     return { authoritativeIds: snapshot.content.projects.map((p) => p.id), source: `data/sites/${siteId}/content/projects.json (served at ${at})` };
   };
@@ -154,6 +162,7 @@ try {
     dryRun,
     checkStore,
     allowSiteChange: has("--allow-site-change"),
+    leaveIncremental: has("--leave-incremental"),
     expectPackageHash: expectPackage,
     expectLivePackageHash: expectLive,
     activate: !has("--no-activate"),

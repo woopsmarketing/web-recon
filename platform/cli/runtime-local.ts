@@ -31,7 +31,7 @@
  *     null                                       no overlay in play: the Worker did not look for one
  *                                                (/_next/, /_runtime/, or the request ended earlier) or
  *                                                the site has no pointer for this package
- *     {"state":"refused","reason":"<trace.overlay>"}   the pointer / manifest was refused → the package alone
+ *     {"state":"refused","reason":"<trace.overlay>"}   the pointer / manifest was refused → 503 no-store (fails closed)
  *     {"state":"live","source":"overlay","key":"<R2 key>"}   answered from an object the manifest lists
  *     {"state":"live","source":"package","key":"<package file>"|null}
  *                                                a verified manifest is live and this path is not one of
@@ -40,7 +40,7 @@
  * --listen: an HTTP server on 127.0.0.1:<port> (0 = any free port) that answers every request as if it
  *   had arrived for --host. First stdout line: {"listening":"http://127.0.0.1:<port>","host":…,"bucketDir":…}.
  *
- * The Worker's own log lines (status >= 400, a refused overlay; every request with --log-all) go to stderr.
+ * The Worker's own log lines (status >= 400, which includes a refused overlay; every request with --log-all) go to stderr.
  */
 import { createHash } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
