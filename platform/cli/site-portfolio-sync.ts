@@ -3,7 +3,12 @@
  *        [--once | --watch [--interval <seconds>]] [--dry-run] [--force] [--generate-only]
  *        [--from-file <export.json> --assets-dir <dir>]
  *        [--local | --remote] [--persist-to <dir>] [--bucket boost-sites-artifacts] [--allow-origin-mismatch]
- *        [--verify-base <origin>] [--adopt]
+ *        [--verify-base <origin>] [--adopt --legacy-v1]
+ *
+ * THE V1 PUBLISHER — a compatibility / emergency path. A NEW BoostChat-managed site is Portfolio
+ * Publishing V2: declare it with `pnpm site:portfolio-managed --site <siteId>` and ship it with
+ * `pnpm site:publish` (one command). Sites that already carry the `portfolio-source@1` marker keep
+ * working with this publisher exactly as before.
  *
  * The portfolio publisher (platform/portfolio-sync): pulls the canonical portfolio of ONE site from
  * BoostChat, regenerates the site's portfolio files, runs the EXISTING site build and the EXISTING
@@ -29,9 +34,12 @@
  *                     without a report) unless --generate-only / --dry-run
  *  --allow-origin-mismatch   as site:publish: a --remote publish of a package baked for another origin
  *  --verify-base      origin the published site is checked on (default https://<hostname> with --remote)
- *  --adopt            once the site directory is generated, write the TRACKED marker portfolio.source.json
- *                     (commit it: from then on every checkout refuses to build / publish this site
- *                     without a generated portfolio)
+ *  --adopt --legacy-v1  once the site directory is generated, write the TRACKED marker
+ *                     portfolio.source.json as `portfolio-source@1` (commit it: from then on every
+ *                     checkout refuses to build / publish this site without a generated portfolio).
+ *                     This makes the site a V1 managed site ON PURPOSE, which is why --adopt is refused
+ *                     without --legacy-v1: the default for a new managed site is V2
+ *                     (`pnpm site:portfolio-managed --site <siteId>`).
  *
  * Exit codes: 0 done / nothing to do · 1 a stage failed (reported as failed) · 2 usage, an inconsistent
  * combination, or remote not allowed · 3 BoostChat could not be asked (network, 401, 429, 5xx, 503, 404)
@@ -52,14 +60,14 @@ import { SOURCE_MARKER_FILE, readPortfolioSource } from "../portfolio-sync/manag
 
 const args = process.argv.slice(2);
 const VALUE_FLAGS = ["--site", "--host", "--interval", "--from-file", "--assets-dir", "--persist-to", "--bucket", "--verify-base"];
-const BOOL_FLAGS = ["--once", "--watch", "--dry-run", "--force", "--generate-only", "--local", "--remote", "--allow-origin-mismatch", "--adopt"];
+const BOOL_FLAGS = ["--once", "--watch", "--dry-run", "--force", "--generate-only", "--local", "--remote", "--allow-origin-mismatch", "--adopt", "--legacy-v1"];
 const flag = (name: string): string | undefined => {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : undefined;
 };
 const has = (name: string) => args.includes(name);
 const usage =
-  "usage: pnpm site:portfolio-sync --site <siteId> --host <hostname> [--once | --watch [--interval <seconds>]] [--dry-run] [--force] [--generate-only] [--from-file <export.json> --assets-dir <dir>] [--local | --remote] [--persist-to <dir>] [--bucket <name>] [--adopt] [--allow-origin-mismatch] [--verify-base <origin>]";
+  "usage: pnpm site:portfolio-sync --site <siteId> --host <hostname> [--once | --watch [--interval <seconds>]] [--dry-run] [--force] [--generate-only] [--from-file <export.json> --assets-dir <dir>] [--local | --remote] [--persist-to <dir>] [--bucket <name>] [--adopt --legacy-v1] [--allow-origin-mismatch] [--verify-base <origin>]";
 function usageError(message?: string): never {
   console.error(message ? `site:portfolio-sync: ${message}\n${usage}` : usage);
   process.exit(2);
@@ -97,6 +105,16 @@ const bucket = flag("--bucket") ?? "boost-sites-artifacts";
 if (!/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(bucket)) usageError(`--bucket "${bucket}" is not a valid R2 bucket name`);
 const persistTo = flag("--persist-to") ?? "tmp/recon-runtime-state";
 const adopt = has("--adopt");
+// V1 is the compatibility path: nothing becomes a V1 managed site by default.
+if (has("--legacy-v1") && !adopt) usageError("--legacy-v1 qualifies --adopt; it does nothing by itself");
+if (adopt && !has("--legacy-v1")) {
+  console.error(
+    `site:portfolio-sync: --adopt would make "${siteId}" a V1 managed site (${SOURCE_MARKER_FILE} = portfolio-source@1: its portfolio is generated into a checkout on every change). ` +
+      `A new BoostChat-managed site is V2 — declare it with: pnpm site:portfolio-managed --site ${siteId}   then ship it with: pnpm site:build ${siteId} && pnpm site:publish --site ${siteId} --host ${hostInput}. ` +
+      `To adopt it as V1 on purpose (compatibility path), run this command again with --adopt --legacy-v1. Nothing was changed.`,
+  );
+  process.exit(2);
+}
 if (adopt && dryRun) usageError("--adopt writes the adoption marker; it does not combine with --dry-run");
 
 let hostname: string;

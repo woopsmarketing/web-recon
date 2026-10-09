@@ -11,10 +11,15 @@
  *  - MODIFIED: site/load.ts only (the managed-portfolio guard, one call). It is already judged at its
  *    pre-integration hash by integration-surface.ts, so no further override is needed here.
  *
+ *  - ADDED with the managed publish flow (2026-10-10): portfolio-sync/declare.ts and
+ *    cli/site-portfolio-managed.ts — the one supported way to declare a site BoostChat-managed. It
+ *    writes one file of site DATA (data/sites/<id>/portfolio.source.json, outside the site snapshot)
+ *    and reads a release RECORD; no build, render or release reads either file.
+ *
  * What the cut proofs care about — a site WITHOUT the sidecar still loads and builds byte-identically
  * (same siteSnapshotHash, same buildInputId as its current package) — is asserted by
  * portfolio-sync.test.ts L3; the guard's behaviour by L1 / L2; the lossless conversion by M1.
  */
 export function isPortfolioSyncSurface(rel: string): boolean {
-  return rel === "portfolio-sync" || rel.startsWith("portfolio-sync/") || rel === "cli/site-portfolio-sync.ts";
+  return rel === "portfolio-sync" || rel.startsWith("portfolio-sync/") || rel === "cli/site-portfolio-sync.ts" || rel === "cli/site-portfolio-managed.ts";
 }

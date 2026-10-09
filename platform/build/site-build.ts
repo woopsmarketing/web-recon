@@ -221,7 +221,12 @@ export async function prepareSiteInput(opts: { repoRoot: string; siteId: string;
   if (incremental) {
     const support = resolvePortfolioRuntime(release);
     if (!support.supported) {
-      throw new SiteBuildError(`site "${opts.siteId}" is published incrementally, but release ${release.releaseId} cannot be: ${support.reason}. Pin a release of the Template that declares the portfolio runtime.`);
+      throw new SiteBuildError(
+        `site "${opts.siteId}" is published incrementally (portfolio.source.json is portfolio-source@2), but release ${release.releaseId} cannot be: ${support.reason}. Nothing was built. ` +
+          `What to do: re-pin site.json (template.templateVersion / releaseId / releaseHash) to a release of ${release.templateId} that declares the portfolio runtime and build again — ` +
+          `"pnpm site:portfolio-managed --site ${opts.siteId} --dry-run" checks a pin without writing anything. ` +
+          `A site that must stay on this release cannot be incremental: remove portfolio.source.json to build it hand-authored (the V1 generated flow is only a compatibility path: site:portfolio-sync --adopt --legacy-v1).`,
+      );
     }
   }
   // The snapshot the BUILD reads: for a shell build, the site snapshot + the Template's shell switch.
