@@ -12,6 +12,7 @@
  *   - extensionless /404, /_not-found, …/index: framework pages, never a route of the site
  *   - trailing slash (/about/): the export has trailingSlash false and the runtime never redirects
  *   - the package seal /_package.json
+ *   - anything under /_runtime/: inputs of the portfolio publisher, not site files
  * Rejected (→ bad request): undecodable percent-escapes, encoded "/" or "\" (%2F, %5C), empty,
  * "." or ".." segments, control characters. The query string is ignored (Next adds ?_rsc=…).
  * Percent-escapes are decoded exactly once per segment, so "/x/__next.portfolio.%24d%24slug.__PAGE__.txt"
@@ -25,6 +26,14 @@ export type PathResolution = { kind: "key"; key: string } | { kind: "not-found";
 /** HTML files the framework always emits that are not routes of the site. */
 const FRAMEWORK_PAGES = new Set(["404", "_not-found"]);
 export const NOT_FOUND_KEY = "404.html";
+/** Package directory of the portfolio publisher's inputs (runtime.json, shell.json). */
+const RUNTIME_DIR = "_runtime";
+
+/** The percent-decoded URL path that resolvePath maps to this package key ("about.html" → "/about"). */
+export function routeOfKey(key: string): string {
+  if (key === "index.html") return "/";
+  return `/${key.endsWith(".html") ? key.slice(0, -".html".length) : key}`;
+}
 
 export function resolvePath(pathname: string): PathResolution {
   if (!pathname.startsWith("/")) return { kind: "bad-request", reason: "path must start with /" };
@@ -45,6 +54,7 @@ export function resolvePath(pathname: string): PathResolution {
     segments.push(seg);
   }
 
+  if (segments.length > 1 && segments[0] === RUNTIME_DIR) return { kind: "not-found", reason: "publisher runtime inputs are not site files" };
   const rel = segments.join("/");
   const last = segments[segments.length - 1]!;
   const ext = /\.([A-Za-z0-9]+)$/.exec(last)?.[1];

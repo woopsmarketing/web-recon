@@ -36,7 +36,7 @@ import runtimeDefault, {
   type R2ObjectBodyLike,
   type R2ObjectLike,
 } from "../../workers/recon-runtime/src/index";
-import { CACHE_IMMUTABLE, CACHE_REVALIDATE, packageKey, routingKey, sealKey, type PackageSeal } from "../../workers/recon-runtime/src/contract";
+import { CACHE_IMMUTABLE, CACHE_REVALIDATE, packageKey, portfolioCurrentKey, routingKey, sealKey, type PackageSeal } from "../../workers/recon-runtime/src/contract";
 
 const repoRoot = process.cwd();
 const SITE = process.env.PUBLISH_TEST_SITE ?? "boost-interior-demo";
@@ -1021,7 +1021,8 @@ await check("P8 adversarial paths: never 200/500; every R2 key touched is this h
     const r = await handle(new Request(`https://${PHOST}${p}`), penv);
     assert(r.status === 400 || r.status === 404, `${p}: status ${r.status}`);
     for (const k of b.recorded.slice(before)) {
-      const ok = k === routingKey(PHOST) || k.startsWith(prefix);
+      // the third known namespace: this site's own portfolio overlay pointer (absent here → package behaviour)
+      const ok = k === routingKey(PHOST) || k === portfolioCurrentKey(PSITE, PHASH) || k.startsWith(prefix);
       assert(ok, `${p}: key escaped known namespaces: ${k}`);
       if (k.startsWith(prefix)) {
         const rest = k.slice(prefix.length);

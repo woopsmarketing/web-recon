@@ -42,6 +42,69 @@ export function routingKey(hostname: string): string {
   return `routing/${hostname}.json`;
 }
 
+/**
+ * Portfolio overlay — written by the BoostChat publisher, read by the Worker, same bucket:
+ *   portfolio-public/<siteId>/current/<packageHash>.json   the only mutable object: names the live manifest
+ *   portfolio-public/<siteId>/<manifestKey>                 manifest (immutable)
+ *   portfolio-public/<siteId>/<route.key>                   rendered page / file (immutable)
+ *   portfolio-assets/<asset.key>                            canonical image; public only at a URL path the
+ *                                                           verified live manifest lists
+ */
+export const PORTFOLIO_CURRENT_SCHEMA = "portfolio-current@1" as const;
+export const PORTFOLIO_MANIFEST_SCHEMA = "portfolio-manifest@1" as const;
+
+/** A key relative to an overlay prefix, as a pointer or manifest may name it. */
+export const PORTFOLIO_KEY_RE = /^[A-Za-z0-9._-]{1,128}(\/[A-Za-z0-9._-]{1,128})*$/;
+export function isPortfolioKey(key: unknown): key is string {
+  return typeof key === "string" && PORTFOLIO_KEY_RE.test(key) && !key.split("/").some((seg) => seg === "." || seg === "..");
+}
+
+export function portfolioPublicKey(siteId: string, relKey: string): string {
+  return `portfolio-public/${siteId}/${relKey}`;
+}
+export function portfolioCurrentKey(siteId: string, packageHash: string): string {
+  return portfolioPublicKey(siteId, `current/${packageHash}.json`);
+}
+export function portfolioAssetKey(storageKey: string): string {
+  return `portfolio-assets/${storageKey}`;
+}
+
+/** portfolio-public/<siteId>/current/<packageHash>.json */
+export interface PortfolioCurrentPointer {
+  schema: typeof PORTFOLIO_CURRENT_SCHEMA;
+  siteId: string;
+  shellPackageHash: string;
+  revision: number;
+  /** relative to portfolio-public/<siteId>/ */
+  manifestKey: string;
+  manifestSha256: string;
+  publishedAt: string;
+  previous?: { revision: number; manifestKey: string; manifestSha256: string };
+}
+
+export interface PortfolioManifestEntry {
+  /** routes: relative to portfolio-public/<siteId>/ · assets: relative to portfolio-assets/ */
+  key: string;
+  sha256: string;
+  size: number;
+  contentType: string;
+}
+
+/** portfolio-public/<siteId>/revisions/<revision>/<manifestSha256[0:16]>.json */
+export interface PortfolioManifest {
+  schema: typeof PORTFOLIO_MANIFEST_SCHEMA;
+  siteId: string;
+  revision: number;
+  shell: { packageHash: string; releaseId: string };
+  /** URL space the overlay answers alone: a path here that is not in `routes` is a 404, never a package file */
+  owned: { exact: string[]; prefixes: string[] };
+  /** exact URL pathname → rendered object */
+  routes: Record<string, PortfolioManifestEntry>;
+  /** exact URL pathname → canonical image */
+  assets: Record<string, PortfolioManifestEntry>;
+  projects: Record<string, { slug: string; key: string; sha256: string }>;
+}
+
 export interface PackageRef {
   siteId: string;
   packageHash: string;
