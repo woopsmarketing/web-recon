@@ -51,6 +51,14 @@
  *   for it — the normal order is package first (activate: false), portfolio second, switch last.
  *   That order as ONE command (upload → announce to BoostChat → wait for the overlay → this guarded
  *   write) is managed-flow.ts; it calls publishSite for the write and adds no way around this guard.
+ *   Not older than what is served (same guard, same moment, store only): a package that was live
+ *   earlier keeps the overlay it had when the hostname moved away, and that overlay still verifies.
+ *   So when the package the hostname serves NOW (same siteId, another packageHash) has an overlay
+ *   recon-runtime would use, the target's overlay revision must be >= that one; a LOWER revision is
+ *   refused — the switch would put back a portfolio older than the one visitors see (it may list a
+ *   project unpublished since). Equal or newer passes. Nothing is compared when the live package has
+ *   no usable overlay (an ordinary package, or a shell package that is itself closed), when it belongs
+ *   to another site, or when there is no pointer yet. Forward publish and rollback alike.
  * Rollback (rollbackHost): re-point a hostname at its pointer's `previous` package; no upload.
  *   Portfolio-truth guard (before the pointer write): when the target package serves a portfolio
  *   document (_integration/manifest.json → resources.portfolio), every record id in it must still be
@@ -176,7 +184,11 @@ export interface StoreCheck {
   live: PackageRef | null;
   pointerAction: "write" | "unchanged" | "not-activated";
   /** shell packages only: the overlay the store holds for this package, and what a pointer write would meet (never thrown by a dry run) */
-  portfolioOverlay?: PortfolioOverlayState & { activation: "would-pass" | "would-refuse" };
+  portfolioOverlay?: PortfolioOverlayState & {
+    activation: "would-pass" | "would-refuse";
+    /** set when the refusal is "older than what is served": the overlay revision of the package the hostname serves now */
+    servedRevision?: number;
+  };
 }
 
 /** What the store holds as the portfolio overlay of (siteId, packageHash), judged by recon-runtime's own loadOverlay. */
@@ -423,16 +435,57 @@ const OVERLAY_REFUSALS: Readonly<Record<string, string>> = {
   "manifest-identity": "the manifest's siteId / shell.packageHash do not name this site and package",
 };
 
+/** What the shell-package guard finds for a pointer write to `target` (read-only; a verdict, never thrown). */
+export type ShellGuardVerdict =
+  | { pass: true; overlay: Extract<PortfolioOverlayState, { state: "live" }>; served?: { packageHash: string; revision: number } }
+  /** the store holds no overlay recon-runtime would use for the target */
+  | { pass: false; why: "no-overlay"; overlay: Exclude<PortfolioOverlayState, { state: "live" }> }
+  /** the target's overlay verifies but is older than the overlay of the package the hostname serves now */
+  | { pass: false; why: "older-than-served"; overlay: Extract<PortfolioOverlayState, { state: "live" }>; served: { packageHash: string; revision: number } };
+
+/**
+ * THE shell-package guard, as a verdict. `served` = what the routing pointer names now (absent = no
+ * pointer yet). Two rules, both judged from the store at this moment:
+ *   1. the target has an overlay recon-runtime would use (loadOverlay);
+ *   2. when the served package is another package of the SAME site and has such an overlay too, the
+ *      target's revision is not lower than the served one.
+ * The revision is the one of the manifest recon-runtime would serve (the manifest the pointer names,
+ * hash-checked) — what visitors would get, whatever the pointer file itself claims.
+ */
+export async function shellGuardVerdict(store: ObjectStore, target: { siteId: string; packageHash: string }, served?: { siteId: string; packageHash: string }): Promise<ShellGuardVerdict> {
+  const overlay = await portfolioOverlayState(store, target.siteId, target.packageHash);
+  if (overlay.state !== "live") return { pass: false, why: "no-overlay", overlay };
+  if (served && served.siteId === target.siteId && served.packageHash !== target.packageHash) {
+    const now = await portfolioOverlayState(store, served.siteId, served.packageHash);
+    if (now.state === "live") {
+      const ref = { packageHash: served.packageHash, revision: now.revision };
+      return overlay.revision < now.revision ? { pass: false, why: "older-than-served", overlay, served: ref } : { pass: true, overlay, served: ref };
+    }
+  }
+  return { pass: true, overlay };
+}
+
 /**
  * Shell-package guard: refuse to point `hostname` at a shell package unless the store holds an
- * overlay recon-runtime would use for it. Call it immediately before the routing pointer write.
+ * overlay recon-runtime would use for it — and one that is not older than the overlay of the package
+ * the hostname serves now (`served`, the existing routing pointer). Call it immediately before the
+ * routing pointer write.
  */
-async function assertPortfolioLive(store: ObjectStore, target: { siteId: string; packageHash: string }, hostname: string, log?: (line: string) => void): Promise<void> {
-  const state = await portfolioOverlayState(store, target.siteId, target.packageHash);
-  if (state.state === "live") {
-    log?.(`[${target.siteId}] shell package ${shortHash(target.packageHash)}: portfolio overlay is live (revision ${state.revision}, ${state.key}) → the hostname may point at it`);
+async function assertPortfolioLive(store: ObjectStore, target: { siteId: string; packageHash: string }, hostname: string, log: ((line: string) => void) | undefined, served: { siteId: string; packageHash: string } | undefined): Promise<void> {
+  const verdict = await shellGuardVerdict(store, target, served);
+  if (verdict.pass) {
+    const state = verdict.overlay;
+    log?.(`[${target.siteId}] shell package ${shortHash(target.packageHash)}: portfolio overlay is live (revision ${state.revision}, ${state.key}${verdict.served ? `; the package served now, ${shortHash(verdict.served.packageHash)}, is at revision ${verdict.served.revision}` : ""}) → the hostname may point at it`);
     return;
   }
+  if (verdict.why === "older-than-served") {
+    throw new PublishError(
+      `package ${shortHash(target.packageHash)} of "${target.siteId}" is a portfolio shell package and its portfolio overlay is older than the one being served: ${verdict.overlay.key} is at revision ${verdict.overlay.revision}, and ${hostname} serves package ${shortHash(verdict.served.packageHash)} at revision ${verdict.served.revision} now. ` +
+        `Pointing ${hostname} at it would put an older portfolio back (it may still list a project that was unpublished since); refusing — routing pointer NOT written. ` +
+        `Let BoostChat publish the portfolio of "${target.siteId}" for this package first: run this command again with the announce (BOOSTCHAT_BASE_URL + BOOSTCHAT_PUBLISHER_TOKEN set, without --no-announce), or republish in BoostChat, then run it again.`,
+    );
+  }
+  const state = verdict.overlay;
   const found = state.state === "absent" ? `${state.key} does not exist` : `${state.key} is refused by recon-runtime (${state.reason}: ${OVERLAY_REFUSALS[state.reason] ?? "see workers/recon-runtime/src/index.ts loadOverlay"})`;
   throw new PublishError(
     `package ${shortHash(target.packageHash)} of "${target.siteId}" is a portfolio shell package (its portfolio pages are empty placeholders until BoostChat publishes them) and ${store.description} holds no usable portfolio for it: ${found}. ` +
@@ -583,15 +636,17 @@ export async function publishSite(opts: PublishOptions): Promise<PublishResult> 
     }
     let live: PackageRef | null = null;
     let pointerAction: StoreCheck["pointerAction"] = "not-activated";
+    let existing: RoutingPointer | undefined;
     if (activate) {
-      const existing = await readRoutingPointer(ro, plan.routingKey);
+      existing = await readRoutingPointer(ro, plan.routingKey);
       pointerAction = decidePointer(existing, plan, opts);
       if (existing && pointerAction === "write") await assertSwitchFromLive(ro, existing, plan, opts);
       live = existing ? refOf(existing) : null;
       if (existing && pointerAction === "write") pointer.previous = refOf(existing);
     }
     // Shell-package guard: reported, not thrown — at review time the portfolio is normally not published yet.
-    const overlay = plan.shell ? await portfolioOverlayState(ro, plan.siteId, plan.packageHash) : undefined;
+    // With activate: false the pointer is not read, so only the overlay's own state is reported.
+    const verdict = plan.shell ? await shellGuardVerdict(ro, plan, pointerAction === "write" ? existing : undefined) : undefined;
     const storeCheck: StoreCheck = {
       store: opts.store.description,
       seal: seal ? "identical" : "absent",
@@ -599,7 +654,7 @@ export async function publishSite(opts: PublishOptions): Promise<PublishResult> 
       wouldSkip: seal ? plan.files.length : 0,
       live,
       pointerAction,
-      ...(overlay ? { portfolioOverlay: { ...overlay, activation: overlay.state === "live" ? ("would-pass" as const) : ("would-refuse" as const) } } : {}),
+      ...(verdict ? { portfolioOverlay: { ...verdict.overlay, activation: verdict.pass ? ("would-pass" as const) : ("would-refuse" as const), ...(!verdict.pass && verdict.why === "older-than-served" ? { servedRevision: verdict.served.revision } : {}) } } : {}),
     };
     return { status: "dry-run", plan, pointer, storeCheck };
   }
@@ -683,7 +738,7 @@ export async function publishSite(opts: PublishOptions): Promise<PublishResult> 
     return { status: "published", plan, upload, uploaded, verified, pointer: existing!, pointerWrite: "unchanged" };
   }
   if (existing) await assertSwitchFromLive(store, existing, plan, opts);
-  if (plan.shell) await assertPortfolioLive(store, plan, plan.hostname, log);
+  if (plan.shell) await assertPortfolioLive(store, plan, plan.hostname, log, existing);
   const pointer: RoutingPointer = { schemaVersion: SCHEMA_VERSION, hostname: plan.hostname, ...ref(now().toISOString()) };
   if (existing) pointer.previous = refOf(existing);
   await writeRoutingPointer(store, plan.routingKey, pointer);
@@ -833,22 +888,35 @@ export async function publishedPortfolioTruth(store: ObjectStore, siteId: string
  * sealed documents cannot be read and verified — it refuses before the pointer is written. There
  * is no override: the fix is a new build published forward (ROLLBACK_TRUTH_RUNBOOK).
  * When the previous package is a SHELL package, the store must hold a portfolio overlay recon-runtime
- * would use for it (assertPortfolioLive), exactly as for a forward publish.
+ * would use for it — and not an older one than the overlay of the package served now
+ * (assertPortfolioLive), exactly as for a forward publish. BoostChat republishing for the target
+ * first is what managed-flow.ts rollbackManaged arranges; this function only judges.
  * Which truth: decided by the STORE. If the package the hostname serves now is a shell package, the
  * truth is the portfolio BoostChat has published for it (overlayTruth) and portfolioTruth is NOT
  * called — a checkout that does not know the host is incremental must not vouch for it with its own
  * projects.json. If the live package is ordinary, portfolioTruth is used exactly as before.
  */
-export async function rollbackHost(opts: {
-  store: ObjectStore;
-  siteId: string;
+export interface RollbackPlan {
   hostname: string;
-  expectLivePackageHash?: string;
-  /** current authoritative portfolio ids; only called when the target package serves a portfolio document AND the live package is not a shell package */
-  portfolioTruth?: PortfolioTruthLoader;
-  now?: () => Date;
-  log?: (line: string) => void;
-}): Promise<{ pointer: RoutingPointer; from: PackageRef }> {
+  routingKey: string;
+  /** what the hostname serves now */
+  live: RoutingPointer;
+  /** the pointer's `previous`: the package a rollback returns to */
+  target: PackageRef;
+  /** the target's seal as the store holds it (identity checked, file list present) */
+  seal: Partial<PackageSeal> & { files: SealFile[] };
+  /** the target is a shell package: the write is held to the shell-package guard */
+  shell: boolean;
+}
+
+/**
+ * What a rollback of `hostname` would do, and every refusal that does not depend on the portfolio:
+ * a pointer exists, it serves this site, it is the expected one, it has a previous package of this
+ * site, and that package's seal is in the store. Read-only. rollbackHost starts with exactly this;
+ * a caller that has something to do BEFORE the write (managed-flow.ts announces a shell target to
+ * BoostChat) reads it first.
+ */
+export async function planRollback(opts: { store: ObjectStore; siteId: string; hostname: string; expectLivePackageHash?: string }): Promise<RollbackPlan> {
   const hostname = normalizeHostname(opts.hostname);
   const key = routingKey(hostname);
   const existing = await readRoutingPointer(opts.store, key);
@@ -868,6 +936,26 @@ export async function rollbackHost(opts: {
   if (!seal || seal.siteId !== target.siteId || seal.packageHash !== target.packageHash || !Array.isArray(seal.files) || seal.files.length === 0) {
     throw new PublishError(`previous package ${target.packageHash.slice(0, 16)}… has no valid seal in the store; refusing to roll back to it`);
   }
+  const sealed = seal as Partial<PackageSeal> & { files: SealFile[] };
+  return { hostname, routingKey: key, live: existing, target: refOf(target), seal: sealed, shell: isShellPackage(sealed.files) };
+}
+
+export async function rollbackHost(opts: {
+  store: ObjectStore;
+  siteId: string;
+  hostname: string;
+  expectLivePackageHash?: string;
+  /** refuse unless the pointer's `previous` is exactly this package (a caller that announced a target and waited for it) */
+  expectTargetPackageHash?: string;
+  /** current authoritative portfolio ids; only called when the target package serves a portfolio document AND the live package is not a shell package */
+  portfolioTruth?: PortfolioTruthLoader;
+  now?: () => Date;
+  log?: (line: string) => void;
+}): Promise<{ pointer: RoutingPointer; from: PackageRef }> {
+  const { hostname, routingKey: key, live: existing, target, seal, shell } = await planRollback(opts);
+  if (opts.expectTargetPackageHash !== undefined && target.packageHash !== opts.expectTargetPackageHash) {
+    throw new PublishError(`${key} would roll back to ${shortHash(target.packageHash)}, not the expected ${shortHash(opts.expectTargetPackageHash)} — it was changed since it was read; refusing (stale-write guard)`);
+  }
   // The store decides whose truth applies: a host that serves a shell package is published from BoostChat.
   const liveSeal = await readSeal(opts.store, existing);
   const truth: PortfolioTruthLoader | undefined = !liveSeal
@@ -878,8 +966,8 @@ export async function rollbackHost(opts: {
       ? () => overlayTruth(opts.store, hostname, existing)
       : opts.portfolioTruth;
   await assertRollbackPortfolioTruth(opts.store, target, seal, truth, opts.log);
-  // Shell-package guard: the same rule as a forward publish. An ordinary target is not looked at.
-  if (isShellPackage(seal.files)) await assertPortfolioLive(opts.store, target, hostname, opts.log);
+  // Shell-package guard: the same rule as a forward publish (a usable overlay, not older than the one served). An ordinary target is not looked at.
+  if (shell) await assertPortfolioLive(opts.store, target, hostname, opts.log, existing);
   const pointer: RoutingPointer = { schemaVersion: SCHEMA_VERSION, hostname, ...refOf(target), publishedAt: (opts.now ?? (() => new Date()))().toISOString(), previous: refOf(existing) };
   await writeRoutingPointer(opts.store, key, pointer);
   opts.log?.(`[${opts.siteId}] ${key} rolled back ${existing.packageHash.slice(0, 16)}… → ${target.packageHash.slice(0, 16)}… (${target.releaseId})`);
