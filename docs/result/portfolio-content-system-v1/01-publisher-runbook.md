@@ -1,10 +1,40 @@
 # Portfolio Content System V1 — Publisher 운영 런북 (`site:portfolio-sync`)
 
-작성: 2026-10-06 (독립 리뷰 F1–F4 반영 개정) · 2026-10-07 개정(demo 도입 마커 commit — §8.1, §9, `03-demo-managed-marker.md`) · 대상: Track B 운영자
+작성: 2026-10-06 (독립 리뷰 F1–F4 반영 개정) · 2026-10-07 개정(demo 도입 마커 commit — §8.1, §9, `03-demo-managed-marker.md`) · 2026-10-10 개정(§0 — 이 런북은 V1 호환 경로, `--adopt` 는 `--legacy-v1` 필요) · 대상: Track B 운영자
 
 BoostChat 이 포트폴리오의 원본(canonical)이다. 이 저장소는 BoostChat 의 export 를 받아
 사이트의 포트폴리오 파일을 **결정적으로 재생성**하고, 기존 `buildSite` + `publishSite` 로 배포한 뒤
 공개 URL 을 확인해 결과를 BoostChat 에 보고한다. 별도 플랫폼/배포 경로는 없다.
+
+## 0. 먼저 읽을 것 — 이 런북은 V1(호환·비상) 경로다 (2026-10-10)
+
+**새로 BoostChat 관리(managed)로 만드는 사이트는 V2(Portfolio Publishing V2, 증분 발행)가 기본이다.**
+이 런북의 `site:portfolio-sync` 는 이미 `portfolio-source@1` 마커를 가진 사이트를 위한 호환·비상 경로로만 남는다
+(기존 `@1` 사이트의 동작은 그대로다).
+
+V2 사이트의 절차 (이 런북의 2–9 절은 V2 사이트에 적용되지 않는다):
+
+```bash
+# 1) managed 선언 — tracked 마커 portfolio.source.json 을 portfolio-source@2 로 쓴다 (commit 할 것).
+#    pin 된 release 가 portfolio runtime 을 지원하지 않으면 거부하고 할 일을 알려 준다. --dry-run 가능, 멱등.
+pnpm site:portfolio-managed --site <siteId>
+
+# 2) shell package 빌드
+pnpm site:build <siteId>
+
+# 3) 배포 — 명령 하나: 업로드 → BoostChat 에 알림(announce) → BoostChat 의 포트폴리오 발행 대기 → 호스트 전환
+RECON_PUBLISH_ALLOW_REMOTE=1 BOOSTCHAT_BASE_URL=… BOOSTCHAT_PUBLISHER_TOKEN=… \
+  pnpm site:publish --site <siteId> --host <hostname> --remote
+```
+
+- 중간에 멈춰도(exit 3 = BoostChat 에 알리지 못함/거부, 4 = BoostChat 이 아직 V1 모드, 5 = 제한 시간 안에 발행되지 않음)
+  package 는 봉인된 채 남고 routing pointer 는 바뀌지 않는다. 원인을 고친 뒤 **같은 명령을 다시 실행**하면 된다.
+- 이전 package 로 되돌리기: 같은 명령에 `--rollback`. 되돌아갈 package 가 shell package 면 같은 흐름
+  (announce → 대기 → 전환)을 탄다.
+- 플래그·exit code 전체는 `platform/cli/site-publish.ts`, `platform/cli/site-portfolio-managed.ts` 머리 주석 참조.
+
+**`--adopt` 는 이제 `--legacy-v1` 과 함께만 동작한다.** `--adopt` 단독은 exit 2 로 거부되고 위 V2 명령을 안내한다.
+V1 마커(`portfolio-source@1`)를 의도적으로 새로 쓰려는 경우에만 `--adopt --legacy-v1` 을 쓴다 (3 절, 8.1 절).
 
 ## 1. 절대 규칙
 
@@ -54,7 +84,7 @@ RECON_PUBLISH_ALLOW_REMOTE=1 pnpm site:portfolio-sync --site <siteId> --host <ho
 
 기타 옵션: `--verify-base <origin>` (`--remote` 일 때 기본 `https://<hostname>`; `--local` 은 명시 필수), `--persist-to <dir>` (기본 `tmp/recon-runtime-state`),
 `--bucket <name>`, `--allow-origin-mismatch` (site:publish 와 동일 의미), `--force` (revision == liveRevision 이어도 실행),
-`--adopt` (생성 후 tracked 마커 `portfolio.source.json` 을 쓴다 — 8 절).
+`--adopt --legacy-v1` (생성 후 tracked 마커 `portfolio.source.json` 을 `portfolio-source@1` 로 쓴다 — 8 절. `--adopt` 단독은 거부된다: 0 절).
 
 ### 3.1 거부되는 조합 (exit 2, 아무것도 하기 전에)
 
@@ -155,7 +185,7 @@ site.json 의 `publicOrigin` 과 같아야 한다(P5) — 로컬 BoostChat 의 �
 
 sidecar 는 commit 하지 않으므로(9 절) "이 사이트는 BoostChat 이 소유한다"는 사실은 tracked 마커로 저장소에 남긴다.
 
-1. publisher 전용 checkout 에서 첫 managed sync 를 성공시킨다 (`--adopt` 를 붙이면 생성 직후 마커를 써 준다. 손으로 만들어도 된다).
+1. publisher 전용 checkout 에서 첫 managed sync 를 성공시킨다 (`--adopt --legacy-v1` 을 붙이면 생성 직후 마커를 써 준다. 손으로 만들어도 된다. V1 로 도입하는 것은 호환 경로다 — 새 사이트는 0 절의 V2 절차).
    `data/sites/<siteId>/portfolio.source.json`:
    ```json
    {
