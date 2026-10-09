@@ -1,0 +1,1051 @@
+/* interior-02 v1 — home page sections (HOME area). Desktop-first; breakpoints (max-width)
+   640 · 860 · 920 · 960 · 1024 · 1280 as base.css. Every brandable value reads a theme token
+   or a base.css alias; shades without a token are color-mix()ed from tokens. */
+
+/* On the home page a section's "more" arrow is the arrow alone; its name stays for assistive tech. */
+.i2-main--home .i2-head__more > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ====================================================================== hero */
+.i2-hero {
+  position: relative;
+  height: 100vh;
+  min-height: 520px;
+  overflow: hidden;
+  color: var(--color-text-inverse);
+  background: var(--i2-navy);
+}
+
+.i2-hero .i2-c,
+.i2-hero .i2-c__viewport,
+.i2-hero .i2-c__stage,
+.i2-hero .i2-c__track,
+.i2-hero .i2-c__slide {
+  height: 100%;
+}
+
+.i2-hero__slide {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* scrim under the copy: the photo is not guaranteed to be dark where the white text sits
+   (bottom-left); it fades out before the upper half so dark photos keep the plain look */
+.i2-hero__slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to top, rgb(0 0 0 / 0.62) 0%, rgb(0 0 0 / 0.42) 30%, rgb(0 0 0 / 0.12) 60%, rgb(0 0 0 / 0) 80%),
+    linear-gradient(to right, rgb(0 0 0 / 0.28) 0%, rgb(0 0 0 / 0) 55%);
+}
+
+/* each image rests at 1.05 and settles to 1 over 1.5 s once its slide is the current one */
+.i2-hero__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.05);
+  transition: transform 1s;
+}
+
+.i2-c__slide[data-active] .i2-hero__img {
+  animation: i2-hero-settle 1.5s var(--i2-ease-out) forwards;
+}
+
+@keyframes i2-hero-settle {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.i2-hero__copy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 180px;
+  z-index: 1;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
+
+.i2-hero__info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-size: 1.5rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.5;
+}
+
+.i2-hero__spec {
+  font-size: 1.6875rem;
+  font-weight: var(--i2-w-display);
+}
+
+.i2-hero__spec small {
+  margin-left: 4px;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.i2-hero__sep {
+  align-self: center;
+  width: 1px;
+  height: 20px;
+  margin: 0 10px;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.i2-hero__title {
+  margin-top: 8px;
+  font-size: 2.5rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.i2-hero__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 56px;
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+
+.i2-hero__cta .i2-icon {
+  transition: transform 0.3s ease-out;
+}
+
+.i2-hero__slide:hover .i2-hero__cta .i2-icon {
+  transform: translateX(6px);
+}
+
+/* control row over the slides: progress bar + prev / next / stop, 52 px from the bottom */
+.i2-hero .i2-c__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 52px;
+  z-index: 2;
+  max-width: var(--i2-page-max);
+  margin-inline: auto;
+  padding-inline: var(--i2-gutter);
+  --i2-c-track: color-mix(in srgb, var(--color-text-inverse) 30%, transparent);
+  --i2-c-fill: var(--color-text-inverse);
+}
+
+/* full-height hero only: the row's bottom (52 px) is level with the fixed corner controls, so its
+   right end keeps --i2-corner-reserve clear of the viewport's right edge. 100% = the hero's width
+   (the row's containing block); the subtraction is the row's auto side margin once the viewport is
+   wider than the page box, so the padding shrinks continuously back to the gutter */
+@media (min-width: 1025px) {
+  .i2-hero .i2-c__bar {
+    padding-right: max(var(--i2-gutter), calc(var(--i2-corner-reserve) - max(0px, (100% - var(--i2-page-max)) / 2)));
+  }
+}
+
+/* ================================================================== projects */
+.i2-projects__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 44px var(--i2-gap);
+}
+
+/* ==================================================================== promos */
+.i2-promos {
+  padding-top: 140px;
+}
+
+.i2-promos__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.i2-promo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 211px;
+  padding: 30px;
+  overflow: hidden;
+  isolation: isolate;
+  color: var(--color-text-inverse);
+  background: var(--i2-navy);
+}
+
+.i2-promo__media {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* dark tile: a left-to-right veil keeps the copy legible over the photo */
+.i2-promo--dark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--i2-navy) 92%, transparent) 0%,
+    color-mix(in srgb, var(--i2-navy) 78%, transparent) 50%,
+    color-mix(in srgb, var(--i2-navy) 14%, transparent) 100%
+  );
+}
+
+/* light tile: surface background, the media stands at the right */
+.i2-promo--light {
+  color: var(--color-text-primary);
+  background: var(--i2-surface);
+}
+
+.i2-promo--light .i2-promo__media {
+  inset: 14px 24px 14px auto;
+  width: auto;
+  max-width: 40%;
+  height: calc(100% - 28px);
+  object-fit: contain;
+}
+
+.i2-promo--light .i2-promo__body {
+  max-width: 56%;
+}
+
+.i2-promo__body {
+  display: block;
+  position: relative;
+  min-width: 0;
+}
+
+.i2-promo__label {
+  display: block;
+  margin-bottom: 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--i2-mint);
+}
+
+.i2-promo__title {
+  word-break: keep-all;
+  display: block;
+  font-size: 1.625rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.3;
+}
+
+.i2-promo__text {
+  display: block;
+  margin-top: 14px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* ================================================================== keywords */
+.i2-kw {
+  position: relative;
+  padding-bottom: 100px;
+  overflow: clip;
+}
+
+.i2-kw__head {
+  gap: 16px 12px;
+}
+
+.i2-kw__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* the lower part sits on a light band that starts mid-card and runs to the section's end */
+.i2-kw__lower {
+  position: relative;
+  isolation: isolate;
+}
+
+.i2-kw__lower::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 260px;
+  bottom: -100px;
+  z-index: -1;
+  background: var(--i2-surface);
+}
+
+/* 3 per view, the track bleeds past the stage inside the full-width viewport */
+.i2-kw__slider {
+  --i2-c-per: 3;
+  --i2-c-gap: 31px;
+  --i2-c-stage: calc(min(100% - 2 * var(--i2-gutter), var(--i2-page-max) - 2 * var(--i2-gutter)) - 44px);
+}
+
+.i2-kw .i2-c__bar {
+  width: 100%;
+  max-width: var(--i2-page-max);
+  margin: 56px auto 0;
+  padding-inline: var(--i2-gutter);
+}
+
+.i2-kw .i2-btn-row {
+  margin-top: 90px;
+}
+
+/* =================================================================== service */
+/* the device images may poke past the right edge on narrow screens: the section clips them */
+.i2-service {
+  overflow: clip;
+}
+
+.i2-service__top {
+  position: relative;
+  min-height: 300px;
+  padding-right: 640px;
+}
+
+.i2-service__head .i2-head__more {
+  display: none;
+}
+
+.i2-service__text .i2-head {
+  margin-bottom: 32px;
+}
+
+.i2-service__quote {
+  word-break: keep-all;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.i2-service__body {
+  margin-top: 10px;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* two device images: the left one slides up, the right one slides down, once, at 75 % in view */
+.i2-service__shots {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 588px;
+  height: 570px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.i2-service__shot {
+  position: absolute;
+  width: 47%;
+  overflow: hidden;
+  border-radius: var(--decoration-radius-large);
+  background: var(--i2-surface);
+  box-shadow: var(--decoration-shadow-small);
+  transition: transform 0.35s ease-out;
+}
+
+.i2-service__shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.i2-service__shot--1 {
+  left: 0;
+  bottom: 0;
+  height: 82%;
+  transform: translateY(76%);
+}
+
+.i2-service__shot--2 {
+  right: 0;
+  top: 0;
+  height: 68%;
+  transform: translateY(-72%);
+  transition-delay: 0.1s;
+}
+
+.i2-service__top[data-revealed="true"] .i2-service__shot {
+  transform: none;
+}
+
+.i2-service__lineup {
+  position: relative;
+  z-index: 1;
+  margin-top: 100px;
+}
+
+.i2-tiers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.i2-tier {
+  min-width: 0;
+}
+
+.i2-tier--yellow {
+  color: var(--color-text-primary);
+  background: var(--i2-yellow);
+  --i2-tier-tint: var(--i2-on-yellow);
+}
+
+.i2-tier--mint {
+  color: var(--color-text-primary);
+  background: var(--i2-mint);
+  --i2-tier-tint: var(--i2-on-mint);
+}
+
+.i2-tier--navy {
+  color: var(--color-action-primary-text);
+  background: var(--i2-navy);
+  --i2-tier-tint: var(--i2-on-navy);
+}
+
+.i2-tier__link {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 28px;
+  height: 100%;
+  min-height: 199px;
+  padding: 36px 30px 30px;
+}
+
+.i2-tier__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.i2-tier__title {
+  display: flex;
+  flex-direction: column;
+  font-size: 1.375rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.2;
+}
+
+.i2-tier__title small {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--i2-tier-tint);
+}
+
+.i2-tier__note {
+  padding-top: 2px;
+  font-size: 0.875rem;
+  text-align: right;
+  color: var(--i2-tier-tint);
+}
+
+.i2-tier__foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.i2-tier__figure {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  line-height: 1;
+}
+
+.i2-tier__figure small {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.i2-tier__figure strong {
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+.i2-tier__tag {
+  align-self: center;
+  margin-left: 8px;
+  padding: 3px 10px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: var(--decoration-radius-pill);
+}
+
+.i2-tier__arrow {
+  transition: transform 0.3s ease-out;
+}
+
+.i2-tier__link:hover .i2-tier__arrow {
+  transform: translateX(6px);
+}
+
+/* ==================================================================== recent */
+.i2-recent__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px var(--i2-gap);
+}
+
+.i2-rcard {
+  min-width: 0;
+}
+
+.i2-rcard__link {
+  display: block;
+}
+
+.i2-rcard__media {
+  display: block;
+  aspect-ratio: 464 / 286;
+  overflow: hidden;
+  background: var(--i2-surface);
+}
+
+.i2-rcard__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease-out;
+}
+
+.i2-rcard__link:hover .i2-rcard__media img,
+.i2-rcard__link:focus-visible .i2-rcard__media img {
+  transform: scale(1.05);
+}
+
+.i2-rcard__title {
+  padding-top: 27px;
+  font-size: 1.25rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.i2-rcard__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding-top: 8px;
+  font-size: 0.9375rem;
+  line-height: 22px;
+  color: var(--i2-text-2);
+}
+
+.i2-rcard__meta span + span::before {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  margin: 0 12px;
+  vertical-align: -3px;
+  background: var(--i2-rule);
+}
+
+/* ==================================================================== brands */
+.i2-brands__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 var(--i2-gap);
+}
+
+.i2-brand {
+  min-width: 0;
+  border-top: 1px solid var(--i2-rule);
+  border-bottom: 1px solid var(--i2-rule);
+}
+
+.i2-brand__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 138px;
+  padding: 20px;
+}
+
+.i2-brand__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  color: var(--color-action-primary-text);
+  background: var(--i2-navy);
+  transition: transform 0.1s;
+}
+
+.i2-brand__icon--mint {
+  color: var(--color-text-primary);
+  background: var(--i2-mint);
+}
+
+.i2-brand__icon--yellow {
+  color: var(--color-text-primary);
+  background: var(--i2-yellow);
+}
+
+a.i2-brand__link:hover .i2-brand__icon {
+  transform: scale(1.1);
+}
+
+.i2-brand__body {
+  display: block;
+  min-width: 0;
+}
+
+.i2-brand__title {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.35;
+}
+
+.i2-brand__text {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--i2-text-2);
+}
+
+/* ================================================================= showrooms */
+.i2-rooms__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 28px 48px;
+}
+
+.i2-rooms__slider {
+  display: none;
+}
+
+.i2-room {
+  min-width: 0;
+}
+
+.i2-room__media {
+  aspect-ratio: 336 / 400;
+  overflow: hidden;
+  background: var(--i2-surface);
+}
+
+.i2-room__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.i2-room__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.i2-room__name {
+  font-size: 1.25rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.35;
+}
+
+.i2-room__btns {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: 4px;
+}
+
+.i2-room__btn {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  border-radius: var(--decoration-radius-small);
+}
+
+.i2-room__btn--black {
+  color: var(--color-text-inverse);
+  background: var(--color-border-strong);
+}
+
+.i2-room__btn--outline {
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+}
+
+.i2-room__rows {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.i2-room__row {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  font-size: 0.9375rem;
+  line-height: 21px;
+}
+
+.i2-room__row dt {
+  color: var(--i2-text-2);
+}
+
+.i2-room__row dd {
+  font-weight: 500;
+  color: color-mix(in srgb, var(--color-text-primary) 85%, var(--color-text-secondary));
+}
+
+/* ============================================================== breakpoints */
+@media (max-width: 1280px) {
+  .i2-hero__info {
+    font-size: 1.3333rem;
+  }
+
+  .i2-hero__spec {
+    font-size: 1.5rem;
+  }
+
+  .i2-hero__title {
+    font-size: 2.4rem;
+  }
+
+  .i2-projects__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .i2-kw__slider {
+    --i2-c-gap: 20px;
+  }
+
+  .i2-brands__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .i2-brand + .i2-brand {
+    border-top: 0;
+  }
+
+  .i2-brand__link {
+    min-height: 112px;
+    padding: 24px 0;
+  }
+
+  .i2-service__top {
+    padding-right: 560px;
+  }
+
+  .i2-service__shots {
+    width: 520px;
+    height: 520px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .i2-hero {
+    height: 60vh;
+    min-height: 420px;
+  }
+
+  .i2-hero__title {
+    font-size: 2.1333rem;
+  }
+
+  .i2-hero__copy {
+    bottom: 120px;
+  }
+
+  .i2-hero .i2-c__bar {
+    bottom: 32px;
+  }
+
+  .i2-promos__grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .i2-promo {
+    min-height: 190px;
+  }
+
+  /* chips drop under the title row; 1 per view, the stage is about half the width */
+  .i2-kw__chips {
+    flex-basis: 100%;
+    order: 1;
+  }
+
+  .i2-kw__slider {
+    --i2-c-per: 1;
+    --i2-c-gap: 22px;
+    --i2-c-stage: 52%;
+  }
+
+  .i2-service__top {
+    padding-right: 48%;
+  }
+
+  .i2-service__shots {
+    width: 46%;
+    height: 480px;
+  }
+}
+
+@media (max-width: 960px) {
+  .i2-tiers {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .i2-tier__link {
+    min-height: 169px;
+  }
+}
+
+@media (max-width: 920px) {
+  .i2-recent__grid {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 29px;
+  }
+}
+
+@media (max-width: 860px) {
+  /* principles: the arrow shows, one device image slides in from the right beside the text */
+  .i2-service__head .i2-head__more {
+    display: inline-flex;
+  }
+
+  .i2-service__top {
+    min-height: 0;
+    padding-right: 42%;
+  }
+
+  /* one phone-sized image beside the text, partly past the right edge (the section clips it) */
+  .i2-service__shots {
+    top: 56px;
+    right: -120px;
+    width: 280px;
+    height: 380px;
+  }
+
+  .i2-service__shot--2 {
+    display: none;
+  }
+
+  .i2-service__shot--1 {
+    top: 0;
+    bottom: auto;
+    width: 100%;
+    height: 100%;
+    transform: translateX(100%);
+  }
+
+  .i2-service__lineup {
+    margin-top: 80px;
+  }
+
+  /* showrooms: the grid gives way to the autoplay slider, full-bleed, one card with peeking neighbours */
+  .i2-rooms__grid {
+    display: none;
+  }
+
+  .i2-rooms__slider {
+    display: block;
+    margin-inline: calc(-1 * var(--i2-gutter));
+    --i2-c-per: 1;
+    --i2-c-gap: 20px;
+    --i2-c-stage: calc(100% - 2 * var(--i2-gutter) - 40px);
+  }
+}
+
+@media (max-width: 640px) {
+  .i2-hero {
+    height: 58vh;
+    min-height: 360px;
+  }
+
+  .i2-hero__title {
+    display: none;
+  }
+
+  .i2-hero__copy {
+    bottom: 90px;
+  }
+
+  /* name + area stay on one line, the price takes the next line; the scrim covers more of the
+     short hero because the copy sits proportionally higher */
+  .i2-hero__slide::after {
+    background:
+      linear-gradient(to top, rgb(0 0 0 / 0.66) 0%, rgb(0 0 0 / 0.5) 40%, rgb(0 0 0 / 0.16) 70%, rgb(0 0 0 / 0) 88%),
+      linear-gradient(to right, rgb(0 0 0 / 0.2) 0%, rgb(0 0 0 / 0) 70%);
+  }
+
+  .i2-hero__info {
+    gap: 2px 8px;
+  }
+
+  .i2-hero__spec--price {
+    flex-basis: 100%;
+  }
+
+  .i2-hero__sep {
+    display: none;
+  }
+
+  .i2-hero__cta {
+    margin-top: 28px;
+    font-size: 1rem;
+  }
+
+  .i2-projects__grid {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 29px;
+  }
+
+  /* the source shows the first six cards on phones */
+  .i2-projects__grid > :nth-child(n + 7) {
+    display: none;
+  }
+
+  .i2-promos {
+    padding-top: 80px;
+  }
+
+  .i2-promo {
+    min-height: 146px;
+    padding: 20px 24px;
+  }
+
+  .i2-promo__label {
+    margin-bottom: 10px;
+    font-size: 0.7333rem;
+  }
+
+  .i2-promo__title {
+    font-size: 1.1333rem;
+  }
+
+  .i2-promo__text {
+    margin-top: 10px;
+    font-size: 0.8667rem;
+  }
+
+  /* chip row: a native horizontal scroller, full-bleed, no scrollbar */
+  .i2-kw__chips {
+    flex-basis: calc(100% + 2 * var(--i2-gutter));
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin-inline: calc(-1 * var(--i2-gutter));
+    padding-inline: var(--i2-gutter);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .i2-kw__chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .i2-kw__slider {
+    --i2-c-gap: 20px;
+    --i2-c-stage: calc(100% - 2 * var(--i2-gutter) - 26px);
+  }
+
+  .i2-kw__lower::before {
+    top: 150px;
+  }
+
+  .i2-kw .i2-c__bar {
+    margin-top: 40px;
+  }
+
+  .i2-kw {
+    padding-bottom: 80px;
+  }
+
+  .i2-kw__lower::before {
+    bottom: -80px;
+  }
+
+  /* text keeps ~2/3 of the width; one phone-sized image sits beside it and bleeds past the edge */
+  .i2-service__top {
+    padding-right: 34%;
+    padding-bottom: 60px;
+  }
+
+  .i2-service__shots {
+    top: 56px;
+    right: -62px;
+    width: 134px;
+    height: 261px;
+  }
+
+  .i2-service__quote {
+    font-size: 1.3333rem;
+  }
+
+  .i2-service__lineup {
+    margin-top: 72px;
+  }
+
+  .i2-tier__link {
+    padding: 28px 24px 24px;
+  }
+
+  .i2-tier__title {
+    font-size: 1.3333rem;
+  }
+
+  .i2-tier__figure strong {
+    font-size: 1.8rem;
+  }
+
+  .i2-brand__link {
+    gap: 16px;
+  }
+
+  .i2-rooms__slider {
+    --i2-c-stage: calc(100% - 2 * var(--i2-gutter) - 40px);
+  }
+}
