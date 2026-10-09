@@ -34,6 +34,8 @@ import { PORTFOLIO_PAGE_SIZE } from "../../templates/interior-02/v1/manifest/por
 const repoRoot = process.cwd();
 const TEMPLATE = "interior-02";
 const OTHER_TEMPLATE = "interior-01";
+/** A later Template with sites of its own (interior-03.test.ts): its sites are not this Template's either. */
+const LATER_TEMPLATE = "interior-03";
 const SITE = "ongyeol-interior-demo";
 /** the same release under another brand: nothing but Site Data differs */
 const REUSE_SITE = "boost-interior-demo-02";
@@ -201,11 +203,12 @@ await check("J no emitted text file holds a source term of either Template, the 
   }
   assert(hits.length === 0, hits.slice(0, 12).join("\n"));
 });
-await check("K interior-02 is pinned by its own two sites only: every other site stays on the first Template", async () => {
+await check("K interior-02 is pinned by its own two sites only: every other site stays on the first Template or on a later Template of its own", async () => {
   const pins: Record<string, string> = {};
   for (const id of (await readdir(path.join(repoRoot, "data/sites"))).filter((d) => !d.startsWith(".")).sort()) pins[id] = (await loadSiteInstance(repoRoot, id)).template.templateId;
   eq(Object.entries(pins).filter(([, t]) => t === TEMPLATE).map(([id]) => id), [REUSE_SITE, SITE].sort(), "sites on interior-02");
-  eq([...new Set(Object.entries(pins).filter(([id]) => id !== SITE && id !== REUSE_SITE).map(([, t]) => t))], [OTHER_TEMPLATE], "the other sites' Template");
+  // the first Template's sites, and the third Template's two sites (platform/test/interior-03.test.ts holds those to their own pins)
+  eq([...new Set(Object.entries(pins).filter(([id]) => id !== SITE && id !== REUSE_SITE).map(([, t]) => t))].sort(), [OTHER_TEMPLATE, LATER_TEMPLATE].sort(), "the other sites' Templates");
 });
 
 // ------------------------------------------------------------------ reuse --

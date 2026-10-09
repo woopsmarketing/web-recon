@@ -88,6 +88,14 @@ const SECOND_TEMPLATE_SITE = "ongyeol-interior-demo";
  * own origin. Like SECOND_TEMPLATE_SITE it joins none of the interior-01 loops here.
  */
 const SECOND_TEMPLATE_REUSE_SITE = "boost-interior-demo-02";
+/**
+ * The third Template's two sites (interior-03): its own fictional site and its reuse site (the demo's
+ * brand on interior-03, a separate Site Instance with its own origin). Like the second Template's sites
+ * they join none of the interior-01 loops here — A lists them, holds their origins apart from the
+ * demo's and their pins apart from interior-01.
+ */
+const THIRD_TEMPLATE_SITE = "nuridam-interior-demo";
+const THIRD_TEMPLATE_REUSE_SITE = "boost-interior-demo-03";
 const RELEASE = { id: "interior-01-1.4.0-9e1ea20da947", hash: "9e1ea20da9472d3bb003a27ff5f7374c76fa350c5941beb79457441576130961" };
 const FLAGSHIP = "bi-01";
 const BASELINE_FILE = "docs/result/recon-template-platform-step6-demo/proof/baseline.json";
@@ -201,11 +209,13 @@ await check("A boost-interior-demo exists as its own Site Instance (siteId, Kore
   eq([site.siteId, site.identity.brandName, site.identity.locale], [DEMO, "부스트 인테리어", "ko-KR"], "identity");
   // its own https origin, shared with no fixture (the value itself is Site Data; the package checks G / X hold the output to it)
   assert(site.identity.publicOrigin === ORIGIN && new URL(ORIGIN).protocol === "https:", String(site.identity.publicOrigin));
-  for (const f of [...FIXTURES, INQUIRY_FIXTURE, SECOND_TEMPLATE_SITE, SECOND_TEMPLATE_REUSE_SITE]) assert((await loadSiteInstance(repoRoot, f)).identity.publicOrigin !== ORIGIN, `${f} shares the demo origin`);
+  for (const f of [...FIXTURES, INQUIRY_FIXTURE, SECOND_TEMPLATE_SITE, SECOND_TEMPLATE_REUSE_SITE, THIRD_TEMPLATE_SITE, THIRD_TEMPLATE_REUSE_SITE]) assert((await loadSiteInstance(repoRoot, f)).identity.publicOrigin !== ORIGIN, `${f} shares the demo origin`);
   // exactly: the demo, the three generated fixtures, the online-inquiry reuse fixture (INQUIRY_FIXTURE, its own entry)
   // and the second Template's two sites (SECOND_TEMPLATE_SITE and its reuse site, pinned to interior-02 — never to this Template)
-  eq((await readdir(path.join(repoRoot, "data/sites"))).filter((d) => !d.startsWith(".")).sort(), [DEMO, ...FIXTURES, INQUIRY_FIXTURE, SECOND_TEMPLATE_SITE, SECOND_TEMPLATE_REUSE_SITE].sort(), "data/sites");
+  // and the third Template's two sites (THIRD_TEMPLATE_SITE and its reuse site, pinned to interior-03 — never to this Template)
+  eq((await readdir(path.join(repoRoot, "data/sites"))).filter((d) => !d.startsWith(".")).sort(), [DEMO, ...FIXTURES, INQUIRY_FIXTURE, SECOND_TEMPLATE_SITE, SECOND_TEMPLATE_REUSE_SITE, THIRD_TEMPLATE_SITE, THIRD_TEMPLATE_REUSE_SITE].sort(), "data/sites");
   for (const s of [SECOND_TEMPLATE_SITE, SECOND_TEMPLATE_REUSE_SITE]) eq((await loadSiteInstance(repoRoot, s)).template.templateId, "interior-02", `${s} pins the second Template`);
+  for (const s of [THIRD_TEMPLATE_SITE, THIRD_TEMPLATE_REUSE_SITE]) eq((await loadSiteInstance(repoRoot, s)).template.templateId, "interior-03", `${s} pins the third Template`);
   eq((await loadSiteInstance(repoRoot, INQUIRY_FIXTURE)).siteId, INQUIRY_FIXTURE, "the reuse fixture loads as its own Site Instance");
 });
 await check(`B pins EXACTLY ${later ? "ONE newer verified release (each fixture pins its own verified release)" : RELEASE.id} (id + full hash), and the current package was built with it — pre-publish: with the V0.1 publish target (demo-rollout.ts)`, async () => {
