@@ -31,6 +31,17 @@
  * site") reads it through `frozenDemoRoot` / `testSiteRoot`, and a [live] check runs only where the
  * live directory is a dataset — elsewhere it asserts the refusal (`NOT_GENERATED`).
  *
+ * THE SAME DATASET UNDER THREE SITES. boost-interior-demo-02 and boost-interior-demo-03 (the reuse sites
+ * of interior-02 / interior-03) were authored with this very portfolio: the same projects.json and
+ * categories.json and the same 44 images, byte for byte, and the same 44 registry entries in the same
+ * order ahead of their own site-level ones. So the one fixture serves all three
+ * (`FROZEN_DATASET_SITE_IDS`): `frozenDemoRoot(repoRoot, siteId)` composes it into a copy of THAT
+ * site's live directory, with that site's own settings, slots, theme and site-level assets. Everything
+ * above holds per site — hand-authored and unchanged → the composition is the live directory byte for
+ * byte; adopted without a generated portfolio → the live directory is refused (`notGenerated(siteId)`)
+ * and the composition is what the site's tracked package is checked against (interior-02.test.ts /
+ * interior-03.test.ts L).
+ *
  * Imported by tests only. Nothing is ever written under data/sites.
  */
 import { rmSync } from "node:fs";
@@ -42,6 +53,10 @@ import { MANAGED_FILE, SOURCE_MARKER_FILE, hasSourceMarker, readManagedManifest 
 import { hashJson, sha256 } from "../util/hash";
 
 export const FROZEN_DEMO_SITE_ID = "boost-interior-demo";
+/** every site whose hand-authored portfolio IS the frozen dataset: the demo and the two later Templates' reuse sites */
+export const FROZEN_DATASET_SITE_IDS = [FROZEN_DEMO_SITE_ID, "boost-interior-demo-02", "boost-interior-demo-03"] as const;
+export type FrozenDatasetSiteId = (typeof FROZEN_DATASET_SITE_IDS)[number];
+export const isFrozenDatasetSite = (siteId: string): siteId is FrozenDatasetSiteId => (FROZEN_DATASET_SITE_IDS as readonly string[]).includes(siteId);
 export const FROZEN_DEMO_DIR = "platform/test/fixtures/boost-interior-demo-frozen";
 /** the fixture's own bytes, as literals: the frozen dataset can never drift unnoticed */
 export const FROZEN_PROJECTS_SHA256 = "5331037230ae07a6167a4808e20557b7b2817081df5d4076d02b41b6a5fb7c83";
@@ -53,9 +68,17 @@ export const FROZEN_ASSETS_DIGEST = "1443f135e7042051d36ed8379f45676e34c55d4f536
 export const FROZEN_ASSET_COUNT = 44;
 /** what the loader says for an adopted site in a checkout that holds no generated portfolio (managed.ts) */
 export const NOT_GENERATED = /owned by BoostChat \(portfolio\.source\.json\) but this checkout holds no generated portfolio \(portfolio\.managed\.json is missing\)[\s\S]*site:portfolio-sync --site boost-interior-demo/;
+/**
+ * The same refusal for one named site: the problem is reported for `siteId` and the command it prints is
+ * for exactly that site (`--site <siteId> --host`, so a longer id that merely starts with it does not match).
+ */
+export function notGenerated(siteId: string): RegExp {
+  const id = siteId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`${id}: the portfolio of this site is owned by BoostChat \\(portfolio\\.source\\.json\\) but this checkout holds no generated portfolio \\(portfolio\\.managed\\.json is missing\\)[\\s\\S]*site:portfolio-sync --site ${id} --host `);
+}
 
 export interface FrozenDemoRoot {
-  /** a repository-root-shaped throwaway directory: data/sites/<demo>, data/template-releases, node_modules */
+  /** a repository-root-shaped throwaway directory: data/sites/<siteId>, data/template-releases, node_modules */
   root: string;
   siteDir: string;
   live: {
@@ -93,15 +116,20 @@ export async function readFrozenDataset(repoRoot: string) {
   return { dir, projects, categories, registry, assets };
 }
 
-export async function frozenDemoRoot(repoRoot: string): Promise<FrozenDemoRoot> {
+/**
+ * The frozen dataset composed into a throwaway copy of `siteId`'s live directory. `siteId` is the demo
+ * unless named, and must be one of the sites that were authored with this dataset.
+ */
+export async function frozenDemoRoot(repoRoot: string, siteId: string = FROZEN_DEMO_SITE_ID): Promise<FrozenDemoRoot> {
+  if (!isFrozenDatasetSite(siteId)) throw new Error(`frozenDemoRoot: "${siteId}" was not authored with the frozen dataset (${FROZEN_DATASET_SITE_IDS.join(", ")})`);
   const frozen = await readFrozenDataset(repoRoot);
-  const liveDir = path.join(repoRoot, "data/sites", FROZEN_DEMO_SITE_ID);
+  const liveDir = path.join(repoRoot, "data/sites", siteId);
   const root = await mkdtemp(path.join(os.tmpdir(), "frozen-demo-root-"));
   process.once("exit", () => rmSync(root, { recursive: true, force: true }));
   await mkdir(path.join(root, "data/sites"), { recursive: true });
   await symlink(path.join(repoRoot, "data/template-releases"), path.join(root, "data/template-releases"));
   await symlink(path.join(repoRoot, "node_modules"), path.join(root, "node_modules"));
-  const siteDir = path.join(root, "data/sites", FROZEN_DEMO_SITE_ID);
+  const siteDir = path.join(root, "data/sites", siteId);
   await cp(liveDir, siteDir, { recursive: true });
   const adopted = await hasSourceMarker(liveDir);
 
@@ -133,12 +161,13 @@ export async function frozenDemoRoot(repoRoot: string): Promise<FrozenDemoRoot> 
 
 /**
  * Where a test that needs site `siteId` as a BUILDABLE site reads it from: the repository itself for
- * every site but the demo, the frozen composition for the demo (the live demo directory is regenerated
- * by site:portfolio-sync, and in a checkout without a generated portfolio it does not load at all).
+ * every site that authors its own portfolio, the frozen composition for the demo and the two reuse
+ * sites that share its dataset (their live directories are regenerated by site:portfolio-sync, and in a
+ * checkout without a generated portfolio they do not load at all).
  * `root` holds data/sites/<siteId> and the template releases only — data/site-builds stays in `repoRoot`.
  */
 export async function testSiteRoot(repoRoot: string, siteId: string): Promise<{ root: string; siteDir: string }> {
-  if (siteId !== FROZEN_DEMO_SITE_ID) return { root: repoRoot, siteDir: path.join(repoRoot, "data/sites", siteId) };
-  const { root, siteDir } = await frozenDemoRoot(repoRoot);
+  if (!isFrozenDatasetSite(siteId)) return { root: repoRoot, siteDir: path.join(repoRoot, "data/sites", siteId) };
+  const { root, siteDir } = await frozenDemoRoot(repoRoot, siteId);
   return { root, siteDir };
 }

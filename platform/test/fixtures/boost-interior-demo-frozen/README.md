@@ -12,6 +12,15 @@ Site-level files (site.json, settings, slots, theme, banners, logo, `site-*.jpg`
 `platform/test/demo-frozen-dataset.ts` (`frozenDemoRoot`) composes this dataset into a throwaway copy
 of the LIVE site directory, so a re-pin or a copy change still moves every pinned literal as before.
 
+## One dataset, three sites
+
+`data/sites/boost-interior-demo-02` and `data/sites/boost-interior-demo-03` (the reuse sites of
+interior-02 and interior-03) were authored with this same portfolio — the same two documents, the same
+44 images and the same 44 registry entries, byte for byte. `frozenDemoRoot(repoRoot, siteId)` composes
+this dataset into a copy of that site's own live directory, so no second copy of the images is kept.
+`interior-02.test.ts` / `interior-03.test.ts` check each site's tracked package against that
+composition (L) and hold the live directory to what it is in the checkout (L2).
+
 ## Why it exists
 
 From Portfolio Content System V1 on, the live directory's portfolio is regenerated from BoostChat by

@@ -20,6 +20,14 @@
  * Every expected value is a literal or is read from the site's own authored data — never recomputed
  * with the Template code under test. Reads only: builds nothing, writes nothing.
  *
+ * The reuse site's PORTFOLIO is owned by BoostChat (site:portfolio-sync regenerates it; once its
+ * tracked marker portfolio.source.json is committed, a checkout without a generated portfolio refuses
+ * to load the directory at all). Its portfolio is therefore read through the frozen composition
+ * (demo-frozen-dataset.ts: that site's live directory + the frozen dataset it was authored with) —
+ * byte for byte the live directory while that is still the hand-authored one. Everything the site
+ * itself owns (site.json, settings, theme, scripts) is read from the live directory as before, and
+ * L2 holds the live directory to what it is in this checkout.
+ *
  * Run AFTER `template:release interior-02@1` + `site:build ongyeol-interior-demo` +
  * `site:build boost-interior-demo-02`:
  *   tsx --tsconfig platform/tsconfig.json platform/test/interior-02.test.ts
@@ -32,6 +40,7 @@ import { PORTFOLIO_RUNTIME_GATE, recordedEmptyState, resolvePortfolioRuntime, ty
 import { readPortfolioSource } from "../portfolio-sync/managed";
 import { loadSiteInstance } from "../site/load";
 import { sha256 } from "../util/hash";
+import { frozenDemoRoot, notGenerated } from "./demo-frozen-dataset";
 import template from "../../templates/interior-02/v1/template";
 import { PORTFOLIO_PAGE_SIZE } from "../../templates/interior-02/v1/manifest/portfolio";
 import { portfolioShell } from "../../templates/interior-02/v1/runtime/shell";
@@ -264,6 +273,9 @@ await check("K interior-02 is pinned by its own two sites only: every other site
 // ------------------------------------------------------------------ reuse --
 console.log("\n[reuse] a second site on the same release");
 const reuse = await loadSiteInstance(repoRoot, REUSE_SITE);
+/** the reuse site as a buildable site: its live directory with the frozen portfolio dataset (data/site-builds stays in repoRoot) */
+const reuseFrozen = await frozenDemoRoot(repoRoot, REUSE_SITE);
+const reuseProjects = async (): Promise<{ slug: string; status: string }[]> => JSON.parse(await readFile(path.join(reuseFrozen.siteDir, "content/projects.json"), "utf8")).items;
 const reuseCurrent = await readJson(`data/site-builds/${REUSE_SITE}/current.json`);
 const reuseRecord = await readJson(`${reuseCurrent.packageDir}/build-record.json`);
 const reuseSiteDir = path.join(repoRoot, reuseCurrent.packageDir, "site");
@@ -273,15 +285,28 @@ await check("L the reuse site pins the SAME release as the first site (id + full
   eq([reuseRecord.siteId, reuseRecord.status, reuseRecord.parts.mode], [REUSE_SITE, "success", "public"], "record");
   eq([reuseRecord.template.templateId, reuseRecord.template.releaseId, reuseRecord.template.releaseHash], [pin.templateId, pin.releaseId, pin.releaseHash], "the package's Template");
   eq([reuseRecord.qa.pass, reuseRecord.qa.failures], [true, []], "package QA");
-  const input = await prepareSiteInput({ repoRoot, siteId: REUSE_SITE, mode: "public", at: reuseRecord.at });
+  const input = await prepareSiteInput({ repoRoot: reuseFrozen.root, siteId: REUSE_SITE, mode: "public", at: reuseRecord.at });
   eq([input.parts.siteSnapshotHash, input.buildInputId], [reuseRecord.parts.siteSnapshotHash, reuseCurrent.buildInputId], "identity = the site's present data");
   assert(reuseCurrent.buildInputId !== current.buildInputId && reuseCurrent.packageDir !== current.packageDir, "the two sites share a package");
+});
+await check("L2 the reuse site's live directory: its portfolio is the frozen dataset or a generated one; while it is the frozen dataset and loads, it has the tracked package's identity; generated, it loads; adopted without a generated portfolio, it is refused", async () => {
+  const { live } = reuseFrozen;
+  assert(live.identical || live.managed, `data/sites/${REUSE_SITE}: the portfolio is neither the frozen dataset nor a generated one`);
+  if (live.dataset) {
+    const liveNow = await prepareSiteInput({ repoRoot, siteId: REUSE_SITE, mode: "public", at: live.identical ? reuseRecord.at : new Date().toISOString() });
+    if (live.identical) eq([liveNow.parts.siteSnapshotHash, liveNow.buildInputId], [reuseRecord.parts.siteSnapshotHash, reuseCurrent.buildInputId], "live directory = the tracked package's data");
+  } else {
+    // adopted (portfolio.source.json) and no generated portfolio in this checkout: the live directory is not a dataset here
+    const refused = await prepareSiteInput({ repoRoot, siteId: REUSE_SITE, mode: "public", at: reuseRecord.at }).then(() => "it loaded", (e: Error) => e.message);
+    assert(notGenerated(REUSE_SITE).test(refused), `an adopted directory without a generated portfolio must be refused, got: ${refused}`);
+  }
 });
 await check("M the two sites differ in Site Data only: identity, origin, projects, and theme values (the first site shows the Template defaults, the reuse site overrides declared tokens)", async () => {
   assert(reuse.siteId !== site.siteId && reuse.identity.brandName !== site.identity.brandName, "identity");
   assert(new URL(reuse.identity.publicOrigin!).origin !== new URL(site.identity.publicOrigin!).origin, "the two sites share an origin");
   const slugs = async (id: string): Promise<string[]> => (await readJson(`data/sites/${id}/content/projects.json`)).items.map((p: { slug: string }) => p.slug);
-  const [a, b] = [await slugs(SITE), await slugs(REUSE_SITE)];
+  const [a, b] = [await slugs(SITE), (await reuseProjects()).map((p) => p.slug)];
+  assert(a.length > 0 && b.length > 0, `a site stores no project (${a.length} / ${b.length})`);
   eq(a.filter((s) => b.includes(s)), [], "project slugs in both sites");
   // the first site authors no theme.json (it shows the Template's default values); the reuse site overrides them
   assert(!(await exists(`data/sites/${SITE}/theme.json`)), "the first site authors a theme.json: compare the two documents instead");
@@ -295,8 +320,9 @@ await check("M the two sites differ in Site Data only: identity, origin, project
   }
 });
 await check("N the reuse site's package: the pages its data plans, no source term of either Template, neither site's brand in the other's package", async () => {
-  const projects: { slug: string; status: string }[] = (await readJson(`data/sites/${REUSE_SITE}/content/projects.json`)).items;
+  const projects = await reuseProjects();
   const published = projects.filter((p) => p.status === "published");
+  assert(published.length > 0, "the reuse site's dataset has no published project");
   const pages = Math.ceil(published.length / PORTFOLIO_PAGE_SIZE);
   // Since 2026-10-10 the reuse site is published INCREMENTALLY (portfolio.source.json, publishing:
   // "incremental"): its package is a shell — the fixed pages plus the ONE detail shell the Template
