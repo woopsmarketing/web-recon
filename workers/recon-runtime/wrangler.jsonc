@@ -42,7 +42,14 @@
       // LIVE since 2026-09-22 (docs/result/cloudflare-live-pilot/): form (b). boostweb.co.kr carries
       // "*.boostweb.co.kr/*" and "*/*" → site-factory-next; this exact route wins over both. No DNS
       // record was created: the zone's existing proxied wildcard "*.boostweb.co.kr" AAAA 100:: covers it.
-      ,"routes": [ { "pattern": "interior-demo.boostweb.co.kr/*", "zone_name": "boostweb.co.kr" } ]
+      //
+      // 2026-10-09: second exact route for the interior-02 demo (docs/result/interior-02-reuse-boostinterior/
+      // 05-production-demo-02.md), same form (b) and the same wildcard DNS record. `wrangler deploy` PUTs the
+      // whole list, so every live hostname must stay in this array.
+      ,"routes": [
+        { "pattern": "interior-demo.boostweb.co.kr/*", "zone_name": "boostweb.co.kr" },
+        { "pattern": "interior-demo-2.boostweb.co.kr/*", "zone_name": "boostweb.co.kr" }
+      ]
     }
   }
 }
