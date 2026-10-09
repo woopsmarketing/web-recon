@@ -1,0 +1,573 @@
+/*
+ * support.css (SUPPORT) — the FAQ board and the contact form, inside the shared sub-page frame
+ * (base.css: .i3-visual · .i3-lnb · .i3-content · .i3-ptitle · .i3-page · .i3-btn). Desktop-first;
+ * breakpoints 1100 (the board's column widths) · 768 · 480. Colours: theme tokens only (COLOUR
+ * RULE). No transition anywhere: every hover / open state changes instantly, as in the reference
+ * type scale.
+ *
+ *   .i3-board           the list table: header row 46px on the quiet surface under a 2px strong
+ *                       rule, 52px rows (14.6px question on a 19px line, 16px above and below),
+ *                       a hairline under each row; columns 10 / 75 / 15 % (12 / 70 / 18 ≤ 1100;
+ *                       20 / 80 ≤ 768 where the topic column is hidden and the topic becomes a
+ *                       12px line under the question, number 15px/600)
+ *   .i3-board__answer   the full-width answer row under an open question (soft surface)
+ *   .i3-form__table     the form table: label cells 14% on the quiet surface (15px/500), field
+ *                       cells with 35px inputs (148 / 218 / 428 / 113 px wide steps) and 12px
+ *                       hints, the 187px textarea; ≤ 768 every row stacks (label 15px above the
+ *                       field, every input full width)
+ *   .i3-form__must      the check glyph at the right inside a required field
+ *   .i3-policy          the bordered, scrollable policy box (137px; 130px ≤ 768) above the consent row
+ *   .i3-form__actions   the two centred buttons, 30px under the table
+ *   .i3-form__alert / __status   the message block under the buttons (failure / hand-off / confirmation)
+ * States are attributes: [hidden] rows (filtered out or closed), [data-open] rows, [aria-invalid]
+ * controls, [aria-busy] form, [disabled] buttons.
+ */
+
+/* ---------- FAQ board ---------- */
+
+.i3-board {
+  width: 100%;
+  letter-spacing: 0;
+}
+
+.i3-board__col-no {
+  width: 10%;
+}
+
+.i3-board__col-q {
+  width: 75%;
+}
+
+.i3-board__col-topic {
+  width: 15%;
+}
+
+.i3-board th {
+  border-top: 2px solid var(--color-border-strong);
+  border-bottom: 1px solid var(--i3-rule);
+  background: var(--i3-surface);
+  color: var(--i3-strong);
+  font-size: 14px;
+  font-weight: var(--i3-w-strong);
+  line-height: 46px;
+  letter-spacing: -1px;
+  text-align: center;
+}
+
+.i3-board td {
+  padding: 0 4px;
+  border-bottom: 1px solid color-mix(in srgb, var(--i3-rule) 60%, var(--color-canvas));
+  background: var(--color-surface-primary);
+  color: var(--i3-text-3);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.i3-board td.i3-board__q {
+  text-align: left;
+}
+
+/* the question cell is one button: the whole row height answers a press */
+.i3-board__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 51px;
+  padding: 16px 0;
+  color: var(--color-text-primary);
+  font-size: 14.6px;
+  line-height: 19px;
+  letter-spacing: -0.6px;
+  text-align: left;
+}
+
+.i3-board__toggle:focus-visible {
+  outline-offset: -2px;
+}
+
+.i3-board__text {
+  min-width: 0;
+}
+
+.i3-board__question {
+  display: block;
+}
+
+/* the topic under the question: only ≤ 768, where the topic column is gone */
+.i3-board__sub {
+  display: none;
+  padding-top: 5px;
+  font-size: 12px;
+  line-height: 15px;
+  letter-spacing: -0.4px;
+  color: var(--i3-text-3);
+}
+
+.i3-board__chev {
+  flex: 0 0 auto;
+  margin-right: 8px;
+  color: var(--i3-text-3);
+}
+
+.i3-board__row[data-open="true"] .i3-board__toggle {
+  color: var(--i3-gold);
+}
+
+.i3-board__row[data-open="true"] .i3-board__chev {
+  transform: rotate(180deg);
+}
+
+@media (hover: hover) {
+  .i3-board__toggle:hover {
+    color: var(--i3-gold);
+  }
+}
+
+.i3-board__answer td {
+  padding: 20px 4% 26px 10%;
+  background: var(--i3-surface-soft);
+  text-align: left;
+}
+
+.i3-board__answer-in {
+  max-width: 820px;
+  font-size: 14px;
+  line-height: 22px;
+  letter-spacing: -0.4px;
+  color: var(--i3-text-2);
+}
+
+.i3-board__answer-in p + p {
+  margin-top: 8px;
+}
+
+.i3-board__empty td {
+  padding: 70px 4px;
+}
+
+/* ---------- contact: the form table ---------- */
+
+.i3-form__table {
+  width: 100%;
+}
+
+.i3-form__col-label {
+  width: 14%;
+}
+
+.i3-form__col-field {
+  width: 86%;
+}
+
+.i3-form__table th {
+  padding: 7px 5px 7px 25px;
+  border: 1px solid var(--i3-rule);
+  background: var(--i3-surface);
+  color: var(--i3-strong);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 18px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.i3-form__table td {
+  padding: 7px;
+  border: 1px solid var(--i3-rule);
+  background: var(--color-surface-primary);
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.4px;
+}
+
+.i3-form__control {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.i3-form__control--s {
+  width: 113px;
+}
+
+.i3-form__control--m {
+  width: 148px;
+}
+
+.i3-form__control--l {
+  width: 218px;
+}
+
+.i3-form__control--xl {
+  width: 428px;
+}
+
+.i3-form__control--area {
+  display: block;
+  width: 100%;
+}
+
+.i3-input {
+  display: block;
+  width: 100%;
+  height: 35px;
+  padding: 0 10px;
+  border: 1px solid var(--i3-rule);
+  border-radius: 0;
+  background: var(--color-surface-primary);
+  color: var(--i3-text-2);
+  font-size: 14px;
+  line-height: 33px;
+  letter-spacing: 0;
+}
+
+.i3-input::placeholder {
+  color: var(--i3-text-3);
+  opacity: 1;
+}
+
+.i3-input[aria-invalid="true"] {
+  border-color: var(--i3-warm);
+}
+
+.i3-form__control--must .i3-input {
+  padding-right: 30px;
+}
+
+.i3-form__must {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+  margin-top: -7px;
+  color: var(--i3-strong);
+  pointer-events: none;
+}
+
+.i3-form__must-tick {
+  stroke: var(--color-surface-primary);
+}
+
+.i3-form__control--area .i3-form__must {
+  top: 10px;
+  margin-top: 0;
+}
+
+.i3-textarea {
+  height: auto;
+  min-height: 187px;
+  padding: 10px;
+  font-size: 13px;
+  line-height: 18px;
+  resize: vertical;
+}
+
+.i3-form__hint {
+  display: inline-block;
+  padding-left: 2px;
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--i3-text-3);
+  vertical-align: middle;
+}
+
+.i3-form__error {
+  padding-top: 4px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--i3-strong);
+}
+
+/* ---------- contact: policy box + consent ---------- */
+
+.i3-policy {
+  padding-top: 25px;
+}
+
+.i3-policy__title {
+  padding-bottom: 10px;
+  font-size: 16.4px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.6px;
+  color: var(--i3-strong);
+}
+
+.i3-policy__box {
+  height: 137px;
+  padding: 25px;
+  border: 1px solid var(--i3-rule);
+  background: var(--color-surface-primary);
+  overflow: auto;
+  font-size: 13px;
+  line-height: 20px;
+  letter-spacing: -0.4px;
+  color: var(--i3-text-2);
+}
+
+.i3-policy__box p + p {
+  margin-top: 8px;
+}
+
+.i3-consent {
+  padding-top: 12px;
+}
+
+.i3-consent__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.i3-consent__check {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  margin: 3px 0 0;
+  accent-color: var(--i3-gold);
+}
+
+.i3-consent__label {
+  font-size: 13px;
+  line-height: 19px;
+  letter-spacing: -0.4px;
+  color: var(--i3-text-2);
+}
+
+/* ---------- contact: buttons + messages ---------- */
+
+.i3-form__actions {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding-top: 30px;
+}
+
+.i3-form__submit:disabled,
+.i3-form__reset:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.i3-form__notice {
+  padding-top: 12px;
+  font-size: 13px;
+  line-height: 19px;
+  color: var(--i3-text-3);
+}
+
+.i3-form__alert,
+.i3-form__status {
+  font-size: 14px;
+  line-height: 22px;
+  letter-spacing: -0.4px;
+  text-align: center;
+}
+
+.i3-form__alert:not(:empty) {
+  margin-top: 20px;
+  padding: 12px 15px;
+  border: 1px solid var(--i3-warm);
+  color: var(--i3-warm);
+}
+
+.i3-form__status:not(:empty) {
+  margin-top: 20px;
+  padding: 12px 15px;
+  border: 1px solid var(--i3-rule);
+  background: var(--i3-surface-soft);
+  color: var(--i3-text-2);
+}
+
+.i3-form__status--done {
+  padding: 40px 15px;
+}
+
+.i3-form__done-title {
+  display: block;
+  font-size: 18px;
+  font-weight: var(--i3-w-strong);
+  line-height: 26px;
+  color: var(--i3-strong);
+}
+
+.i3-form__done-body {
+  display: block;
+  margin-top: 6px;
+}
+
+.i3-form__contacts {
+  display: block;
+  margin-top: 6px;
+  color: var(--i3-text-2);
+}
+
+.i3-form__contacts-lead {
+  display: block;
+}
+
+.i3-form__contact {
+  display: inline-block;
+  margin: 2px 8px;
+}
+
+.i3-form__contact a,
+.i3-form__fallback-to a {
+  color: var(--color-link);
+  text-decoration: underline;
+}
+
+.i3-form__fallback {
+  margin-top: 16px;
+}
+
+.i3-form__fallback-to {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.i3-form__fallback-label {
+  display: block;
+  margin: 10px 0 4px;
+  font-size: 13px;
+}
+
+.i3-textarea--copy {
+  min-height: 160px;
+}
+
+.i3-form__select-text {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--color-link);
+  text-decoration: underline;
+}
+
+.i3-form__noscript {
+  padding-top: 12px;
+  font-size: 13px;
+  text-align: center;
+  color: var(--i3-text-3);
+}
+
+.i3-contact__unavailable {
+  padding: 40px 0;
+  font-size: 15px;
+  line-height: 22px;
+  text-align: center;
+  color: var(--i3-text-2);
+}
+
+/* ---------- breakpoints ---------- */
+
+@media (max-width: 1100px) {
+  .i3-board__col-no {
+    width: 12%;
+  }
+
+  .i3-board__col-q {
+    width: 70%;
+  }
+
+  .i3-board__col-topic {
+    width: 18%;
+  }
+
+  .i3-board__answer td {
+    padding-left: 12%;
+  }
+}
+
+@media (max-width: 768px) {
+  .i3-board__col-no {
+    width: 20%;
+  }
+
+  .i3-board__col-q {
+    width: 80%;
+  }
+
+  .i3-board__col-topic {
+    width: 0;
+  }
+
+  .i3-board__topic {
+    display: none;
+  }
+
+  .i3-board td.i3-board__no {
+    font-size: 15px;
+    font-weight: var(--i3-w-strong);
+    color: var(--i3-text-2);
+  }
+
+  .i3-board__sub {
+    display: block;
+  }
+
+  .i3-board__answer td {
+    padding: 16px 12px 22px;
+  }
+
+  .i3-form__table,
+  .i3-form__table tbody,
+  .i3-form__table tr,
+  .i3-form__table th,
+  .i3-form__table td {
+    display: block;
+    width: 100%;
+  }
+
+  .i3-form__table colgroup {
+    display: none;
+  }
+
+  .i3-form__table th {
+    padding: 15px 0 8px;
+    border: 0;
+    background: none;
+  }
+
+  .i3-form__table td {
+    padding: 0;
+    border: 0;
+  }
+
+  .i3-form__control {
+    display: block;
+    width: 100%;
+  }
+
+  .i3-form__hint {
+    display: block;
+    padding: 2px 0 0;
+  }
+
+  .i3-policy {
+    padding-top: 15px;
+  }
+
+  .i3-policy__title {
+    font-size: 15px;
+  }
+
+  .i3-policy__box {
+    height: 130px;
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .i3-board__toggle {
+    font-size: 14px;
+  }
+
+  .i3-board__answer td {
+    padding: 14px 8px 18px;
+  }
+}

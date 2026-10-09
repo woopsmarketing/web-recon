@@ -1,0 +1,350 @@
+/*
+ * pages.css (PAGES) — the ABOUT page and the SERVICE page. Both sit in the shared sub-page frame
+ * of base.css (.i3-content · .i3-ptitle · .i3-page · .i3-prose) and set only what their blocks add.
+ * Desktop-first; breakpoints 980 · 768 · 480. Colours: theme tokens only (base.css, COLOUR RULE).
+ *
+ *   .i3-about          the greeting page: .i3-about__greet (headline + intro in the left 35%, the
+ *                      quote centred in the right 65%) · .i3-about__pic (the wide picture; the
+ *                      narrow variant takes over ≤ 480) · .i3-about__body (indented 35%, justified,
+ *                      the signature right-aligned under it). ≤ 768: full width, no quote.
+ *   .i3-svc            the business page: .i3-svc__block (100px apart; 60 ≤ 768; 30 ≤ 480) with
+ *                      .i3-svc__title (23px / 21px ≤ 768) over one of
+ *                        .i3-svc-spaces  three picture cards, 31% wide 3.5% apart, justified copy
+ *                        .i3-svc-split   picture in the left half, headline + copy in the right 45%
+ *                        .i3-svc-cards   three bordered cards, 32% wide 2% apart, centred, with the
+ *                                        full-width accent button (.i3-btn--gold)
+ *                      ≤ 768 every row stacks (30px under each card), the split block stacks too.
+ */
+
+/* ---------- about: greeting block ---------- */
+
+.i3-about__page,
+.i3-svc__page {
+  overflow-wrap: anywhere;
+}
+
+.i3-about__greet {
+  position: relative;
+  padding-right: 65%;
+}
+
+.i3-about__headline {
+  padding-bottom: 30px;
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: -1px;
+  color: var(--i3-strong);
+}
+
+.i3-about__intro {
+  text-align: justify;
+}
+
+/* the ornamental line: heading font, wide tracking, vertically centred on the greeting */
+.i3-about__quote {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  padding-left: 35%;
+  transform: translateY(-50%);
+  font-family: var(--typography-heading);
+  font-size: 26px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: 0.12em;
+  text-align: center;
+  color: var(--i3-strong);
+}
+
+/* ---------- about: the wide picture ---------- */
+
+.i3-about__pic {
+  margin-top: 50px;
+}
+
+.i3-about__pic img {
+  width: 100%;
+}
+
+.i3-about__pic-narrow {
+  display: none;
+}
+
+/* ---------- about: body + signature ---------- */
+
+.i3-about__body {
+  margin-top: 50px;
+  padding-left: 35%;
+  text-align: justify;
+}
+
+.i3-about__copy p + p {
+  margin-top: 24px;
+}
+
+.i3-about__sign {
+  text-align: right;
+}
+
+.i3-about__copy + .i3-about__sign {
+  padding-top: 50px;
+}
+
+.i3-about__sign-role,
+.i3-about__sign-name {
+  display: block;
+}
+
+.i3-about__sign-role {
+  font-size: 12px;
+  font-weight: var(--i3-w-strong);
+}
+
+.i3-about__sign-name {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+/* ---------- service: blocks + heading ---------- */
+
+.i3-svc__block + .i3-svc__block {
+  margin-top: 100px;
+}
+
+.i3-svc__title {
+  padding-bottom: 30px;
+  font-size: 23px;
+  font-weight: var(--i3-w-strong);
+  line-height: 24px;
+  color: var(--i3-strong);
+}
+
+/* ---------- service: block A — picture cards ---------- */
+
+.i3-svc-spaces {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 3.5%;
+}
+
+.i3-svc-space {
+  flex: 0 0 31%;
+  min-width: 0;
+  text-align: justify;
+}
+
+.i3-svc-space__pic img,
+.i3-svc-split__pic img,
+.i3-svc-card__pic img {
+  width: 100%;
+}
+
+.i3-svc-space__title {
+  padding: 20px 0 5px;
+  font-size: 18.4px;
+  font-weight: 500;
+  color: var(--i3-strong);
+}
+
+.i3-svc-space__text {
+  font-size: 14.6px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--i3-text-2);
+}
+
+/* ---------- service: block B — split ---------- */
+
+.i3-svc-split {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.i3-svc-split__pic {
+  flex: 0 0 50%;
+  min-width: 0;
+}
+
+.i3-svc-split__text {
+  flex: 0 0 45%;
+  min-width: 0;
+  margin-top: -5px;
+}
+
+.i3-svc-split__text:only-child {
+  flex-basis: 100%;
+  margin-top: 0;
+}
+
+.i3-svc-split__headline {
+  padding-bottom: 15px;
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 25px;
+  color: var(--i3-strong);
+}
+
+.i3-svc-split__body {
+  font-weight: 300;
+  text-align: justify;
+}
+
+.i3-svc-split__body p + p {
+  margin-top: 24px;
+}
+
+/* ---------- service: block C — bordered cards ---------- */
+
+.i3-svc-cards {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 2%;
+}
+
+.i3-svc-card {
+  display: flex;
+  flex: 0 0 32%;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--i3-rule-soft);
+  text-align: center;
+}
+
+.i3-svc-card__box {
+  flex: 1 1 auto;
+  min-height: 259px;
+  padding: 30px;
+}
+
+.i3-svc-card__title {
+  padding-bottom: 15px;
+  font-size: 21px;
+  font-weight: var(--i3-w-strong);
+  color: var(--i3-strong);
+}
+
+.i3-svc-card__text {
+  margin-bottom: 15px;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 22px;
+  color: var(--i3-text-2);
+  word-break: keep-all;
+}
+
+.i3-svc-card__btn {
+  margin-bottom: 5px;
+}
+
+/* ---------- breakpoints ---------- */
+
+@media (max-width: 980px) {
+  .i3-about__quote {
+    font-size: 21px;
+    letter-spacing: 0.1em;
+  }
+}
+
+@media (max-width: 768px) {
+  .i3-about__greet {
+    padding-right: 0;
+  }
+
+  .i3-about__headline {
+    padding-bottom: 20px;
+    font-size: 18px;
+    line-height: 22px;
+    letter-spacing: -0.6px;
+  }
+
+  .i3-about__quote {
+    display: none;
+  }
+
+  .i3-about__pic {
+    margin-top: 30px;
+  }
+
+  .i3-about__body {
+    margin-top: 30px;
+    padding-left: 0;
+  }
+
+  .i3-about__copy p + p {
+    margin-top: 22px;
+  }
+
+  .i3-about__copy + .i3-about__sign {
+    padding-top: 25px;
+  }
+
+  .i3-svc__block + .i3-svc__block {
+    margin-top: 60px;
+  }
+
+  .i3-svc__title {
+    padding-bottom: 20px;
+    font-size: 21px;
+    line-height: 22px;
+  }
+
+  .i3-svc-space {
+    flex-basis: 100%;
+    margin-bottom: 30px;
+  }
+
+  .i3-svc-split {
+    flex-direction: column;
+  }
+
+  .i3-svc-split__pic,
+  .i3-svc-split__text {
+    flex-basis: auto;
+    width: 100%;
+  }
+
+  .i3-svc-split__text {
+    margin-top: 0;
+    padding-top: 30px;
+  }
+
+  .i3-svc-split__text:only-child {
+    padding-top: 0;
+  }
+
+  .i3-svc-split__headline {
+    font-size: 17px;
+  }
+
+  .i3-svc-split__body p + p {
+    margin-top: 22px;
+  }
+
+  .i3-svc-card {
+    flex-basis: 100%;
+    margin-bottom: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .i3-about__pic[data-narrow] .i3-about__pic-wide {
+    display: none;
+  }
+
+  .i3-about__pic[data-narrow] .i3-about__pic-narrow {
+    display: block;
+  }
+
+  .i3-svc__block + .i3-svc__block {
+    margin-top: 30px;
+  }
+
+  .i3-svc-card__box {
+    min-height: 0;
+    padding: 20px 15px;
+  }
+}

@@ -1,0 +1,478 @@
+/*
+ * shell.css (SHELL) — the header (top bar · main bar · narrow bar), the drawer, the footer, the
+ * optional "back to top" button and the 404 block. Desktop-first; breakpoints 1040 · 768 · 480.
+ * Colours: theme tokens only (see base.css, COLOUR RULE).
+ *
+ *   .i3-header     in the page flow (scrolls away with the page); 120px high (> 768), 65px (≤ 768)
+ *   .i3-topbar     34px strip above the main bar (> 768 only; rendered only with a tagline / links)
+ *   .i3-nav        page links, right-aligned (> 768)
+ *   .i3-menu-btn   the menu button (≤ 768), .i3-drawer the panel it opens (250px, from the left)
+ *   .i3-footer     info block left + phone block right (> 768); centred column (≤ 768)
+ *   .i3-totop      fixed bottom-right; above a site-declared third-party widget box
+ * z-index: to-top 10 · header 20 (the drawer, 60, lives inside the header's layer and so covers the to-top)
+ */
+
+/* ---------- header ---------- */
+
+.i3-header {
+  position: relative;
+  z-index: 20;
+  background: var(--color-surface-primary);
+  box-shadow: var(--decoration-shadow-small);
+}
+
+.i3-topbar {
+  height: 34px;
+  background: color-mix(in srgb, var(--color-surface-secondary) 60%, var(--color-border-default));
+}
+
+.i3-topbar__in {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.i3-topbar__tag {
+  padding: 0 18px;
+  background: color-mix(in srgb, var(--color-text-muted) 42%, var(--color-surface-secondary));
+  color: var(--color-text-inverse);
+  font-size: 13px;
+  line-height: 34px;
+  white-space: nowrap;
+}
+
+.i3-topbar__links {
+  display: flex;
+  margin-left: auto;
+}
+
+.i3-topbar__link {
+  display: block;
+  padding: 0 12px;
+  color: var(--i3-text-3);
+  font-size: 13.2px;
+  line-height: 34px;
+}
+
+.i3-topbar__links li + li .i3-topbar__link {
+  position: relative;
+}
+
+.i3-topbar__links li + li .i3-topbar__link::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 1px;
+  height: 10px;
+  background: var(--i3-rule);
+}
+
+.i3-header__bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 86px;
+}
+
+.i3-header:not(:has(.i3-topbar)) .i3-header__bar {
+  height: var(--i3-header-h);
+}
+
+.i3-header__brand {
+  display: block;
+  flex: none;
+  margin-left: 5px;
+}
+
+.i3-header__logo {
+  width: auto;
+  height: 49px;
+  max-width: 220px;
+  object-fit: contain;
+  object-position: 0 50%;
+}
+
+.i3-header__wordmark {
+  font-family: var(--typography-heading);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 49px;
+  letter-spacing: 0;
+}
+
+.i3-nav__list {
+  display: flex;
+}
+
+.i3-nav__link {
+  display: block;
+  padding: 0 30px;
+  color: var(--color-text-primary);
+  font-size: 18px;
+  font-weight: var(--i3-w-strong);
+  line-height: 86px;
+  white-space: nowrap;
+}
+
+.i3-nav__list li:last-child .i3-nav__link {
+  padding-right: 5px;
+}
+
+.i3-nav__link[aria-current="page"] {
+  color: var(--i3-warm);
+}
+
+@media (hover: hover) {
+  .i3-nav__link:hover {
+    color: var(--i3-warm);
+  }
+
+  .i3-topbar__link:hover {
+    color: var(--color-text-primary);
+  }
+}
+
+.i3-menu-btn {
+  display: none;
+}
+
+.i3-icon {
+  flex: none;
+}
+
+/* ---------- drawer (≤ 768) ---------- */
+
+.i3-drawer {
+  position: fixed;
+  z-index: 60;
+  top: 0;
+  left: 0;
+  width: 250px;
+  max-width: 86vw;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--i3-dark);
+  color: var(--i3-on-dark);
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition:
+    transform 0.3s var(--i3-ease-out),
+    visibility 0s linear 0.3s;
+}
+
+.i3-drawer[data-drawer-open] {
+  transform: none;
+  visibility: visible;
+  transition:
+    transform 0.3s var(--i3-ease-out),
+    visibility 0s;
+}
+
+.i3-drawer__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 50px;
+  border-bottom: 1px solid var(--i3-dark-rule);
+}
+
+.i3-drawer__home {
+  padding: 0 15px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 50px;
+  letter-spacing: 0;
+}
+
+.i3-drawer__close {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  margin-left: auto;
+  color: var(--i3-on-dark);
+}
+
+.i3-drawer__link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 15px;
+  border-bottom: 1px solid var(--i3-dark-rule);
+  color: var(--i3-on-dark);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 46px;
+}
+
+.i3-drawer__link .i3-icon {
+  color: var(--i3-on-dark-2);
+}
+
+.i3-drawer__link[aria-current="page"] {
+  color: color-mix(in srgb, var(--i3-gold) 55%, var(--i3-on-dark));
+}
+
+/* ---------- footer ---------- */
+
+.i3-footer {
+  border-top: 1px solid var(--i3-rule);
+  background: var(--color-surface-secondary);
+  color: var(--i3-text-3);
+}
+
+.i3-footer__in {
+  position: relative;
+  padding: 50px 220px 60px 0;
+}
+
+.i3-footer:not(:has(.i3-footer__cs)) .i3-footer__in {
+  padding-right: 0;
+}
+
+.i3-footer__info {
+  font-size: 13px;
+  line-height: 19px;
+  letter-spacing: -0.3px;
+}
+
+.i3-footer__row {
+  display: inline-block;
+  margin-right: 14px;
+}
+
+.i3-footer__row strong {
+  font-weight: 500;
+  color: var(--i3-text-2);
+}
+
+.i3-footer__note {
+  margin-top: 6px;
+  font-size: 12.4px;
+  line-height: 18px;
+}
+
+.i3-footer__copy {
+  margin-top: 14px;
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: 0;
+}
+
+/* wide: the phone block at the right edge, behind a hairline */
+.i3-footer__cs {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  display: flex;
+  gap: 10px;
+  width: 190px;
+  min-height: 60px;
+  padding-left: 28px;
+  border-left: 1px solid var(--i3-rule);
+  color: var(--i3-strong);
+}
+
+.i3-footer__cs .i3-icon {
+  margin-top: 4px;
+}
+
+.i3-footer__cs-list {
+  display: grid;
+  gap: 4px;
+}
+
+.i3-footer__tel {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: 0;
+  color: var(--i3-strong);
+  white-space: nowrap;
+}
+
+/* narrow: the same lines, centred above the info block, with their label */
+.i3-footer__call {
+  display: none;
+}
+
+/* ---------- back to top (optional) ---------- */
+
+.i3-top-sentinel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 600px;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.i3-totop {
+  position: fixed;
+  z-index: 10;
+  right: 18px;
+  bottom: 18px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--i3-rule);
+  border-radius: var(--decoration-radius-pill);
+  background: var(--color-surface-elevated);
+  color: var(--i3-strong);
+  box-shadow: var(--decoration-shadow-small);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition:
+    opacity 0.2s,
+    transform 0.2s,
+    visibility 0s linear 0.2s;
+}
+
+.i3-totop[data-shown] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 0.2s,
+    transform 0.2s,
+    visibility 0s;
+}
+
+/* a third-party widget owns the corner: the button stands above its box, centred on it */
+html[data-ext-widget] .i3-totop {
+  right: calc(var(--i3-ext-right) + (var(--i3-ext-w) - 44px) / 2);
+  bottom: calc(var(--i3-corner-clear) + 12px);
+}
+
+/* ---------- 404 ---------- */
+
+.i3-notfound {
+  text-align: center;
+}
+
+.i3-notfound__message {
+  margin-top: 30px;
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--i3-text-2);
+}
+
+.i3-notfound__action {
+  margin-top: 40px;
+}
+
+/* ---------- breakpoints ---------- */
+
+@media (max-width: 1040px) {
+  .i3-nav__link {
+    padding: 0 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .i3-topbar,
+  .i3-nav {
+    display: none;
+  }
+
+  .i3-header__bar,
+  .i3-header:not(:has(.i3-topbar)) .i3-header__bar {
+    width: auto;
+    height: var(--i3-header-h);
+    margin-inline: 0;
+    padding: 0 8px 0 10px;
+  }
+
+  .i3-header__brand {
+    margin-left: 0;
+  }
+
+  .i3-header__logo {
+    height: 43px;
+    max-width: 180px;
+  }
+
+  .i3-header__wordmark {
+    font-size: 19px;
+    line-height: 43px;
+  }
+
+  .i3-menu-btn {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    color: var(--i3-strong);
+  }
+
+  .i3-footer__in,
+  .i3-footer:not(:has(.i3-footer__cs)) .i3-footer__in {
+    padding: 30px 0 calc(34px + var(--i3-corner-clear));
+    text-align: center;
+  }
+
+  .i3-footer__cs {
+    display: none;
+  }
+
+  .i3-footer__call {
+    display: block;
+    margin-bottom: 18px;
+  }
+
+  .i3-footer__call-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-size: 17px;
+    font-weight: var(--i3-w-strong);
+    line-height: 26px;
+    color: var(--i3-strong);
+  }
+
+  .i3-footer__call .i3-footer__tel {
+    display: block;
+    font-size: 17px;
+    line-height: 26px;
+  }
+
+  .i3-footer__row {
+    margin-inline: 6px;
+  }
+}
+
+@media (min-width: 769px) {
+  /* the widget box overlaps only the bottom-right of the wide footer: the last line stays left of it */
+  html[data-ext-widget] .i3-footer__copy,
+  html[data-ext-widget] .i3-footer__note {
+    padding-right: calc(var(--i3-ext-right) + var(--i3-ext-w));
+  }
+}
+
+@media (max-width: 480px) {
+  .i3-footer__info {
+    font-size: 12.4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .i3-drawer,
+  .i3-drawer[data-drawer-open],
+  .i3-totop,
+  .i3-totop[data-shown] {
+    transition: none;
+  }
+
+  .i3-totop {
+    transform: none;
+  }
+}

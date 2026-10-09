@@ -1,0 +1,1 @@
+self.__SSG_MANIFEST=new Set(["\u002Fportfolio\u002F[slug]","\u002Fportfolio\u002Fpage\u002F[n]"]);self.__SSG_MANIFEST_CB&&self.__SSG_MANIFEST_CB()
