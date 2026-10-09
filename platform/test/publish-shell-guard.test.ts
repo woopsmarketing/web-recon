@@ -1107,6 +1107,9 @@ async function markerRefusal(p: Promise<unknown>, label: string): Promise<string
   throw new Error(`${label}: expected a refusal`);
 }
 const UNSUPPORTED_SITE = "boost-interior-demo-03";
+// The refusal is about the PIN, not about a site: the fixture pins the copy to a stored release that never declared
+// the portfolio runtime, so the case keeps meaning the same thing after the live site moves to a release that does.
+const UNSUPPORTED_RELEASE = { templateVersion: "1.0.0", releaseId: "interior-03-1.0.0-2a949e9f0247", releaseHash: "2a949e9f0247e567bfc48629bc14b653199c2c6c139240b5a980a824acbc510a" };
 const tsx = path.join(repoRoot, "node_modules/.bin/tsx");
 const cliIn = (cwd: string, script: string, flags: string[], env: Record<string, string> = {}) =>
   spawnSync(tsx, ["--tsconfig", path.join(repoRoot, "platform/tsconfig.json"), path.join(repoRoot, "platform/cli", script), ...flags], { cwd, encoding: "utf8", env: { ...process.env, BOOSTCHAT_BASE_URL: "", BOOSTCHAT_PUBLISHER_TOKEN: "", ...env } });
@@ -1135,7 +1138,7 @@ await check("K1 declaring a site BoostChat-managed writes the portfolio-source@2
 });
 
 await check("K2 a site whose pinned release does not support the portfolio runtime is REFUSED with what to do, and nothing is written (function and CLI, exit 1); so is a site without identity.publicOrigin, a pin whose hash is not the stored release's, and a V1 (@1) site unless --upgrade-v1 asks for the conversion", async () => {
-  const { root, markerFile } = await markerRoot("k2", UNSUPPORTED_SITE);
+  const { root, markerFile } = await markerRoot("k2", UNSUPPORTED_SITE, (site) => Object.assign(site.template, UNSUPPORTED_RELEASE));
   for (const dryRun of [true, false]) {
     const message = await markerRefusal(declareManagedPortfolio({ repoRoot: root, siteId: UNSUPPORTED_SITE, dryRun }), `unsupported release (dryRun ${dryRun})`);
     assert(/cannot be declared BoostChat-managed \(portfolio-source@2, incremental publishing\): its pinned release interior-03-1\.0\.0-[0-9a-f]{12} does not support the portfolio runtime — its Template does not declare the portfolio runtime/.test(message), `message: ${message}`);
