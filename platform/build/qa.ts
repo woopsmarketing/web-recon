@@ -92,6 +92,12 @@ export async function qaStaticPackage(opts: {
    * by declaring one.
    */
   declaredEndpoints?: readonly string[];
+  /**
+   * Package files that ARE the site's own data, written by the builder (the portfolio shell
+   * document, platform/portfolio-runtime): a declared inquiry endpoint may appear anywhere in them,
+   * as it may in a flight `.txt`. Exact package paths; nothing else is loosened for them.
+   */
+  dataFiles?: readonly string[];
 }): Promise<PackageQaResult> {
   const { outDir } = opts;
   // Both spellings of each declared URL: as authored (RSC flight / JSON) and with "&" escaped,
@@ -131,7 +137,7 @@ export async function qaStaticPackage(opts: {
     if (!f.endsWith(".svg")) {
       // where this file may carry a declared inquiry endpoint: anywhere in a flight .txt, only
       // inside <script> bodies in an .html page, nowhere in any other file
-      const endpointAllowed = endpointZones(f, text);
+      const endpointAllowed = opts.dataFiles?.includes(f) ? () => true : endpointZones(f, text);
       for (const m of text.matchAll(/(?:https?:)?\/\/[A-Za-z0-9.-]+\.[A-Za-z]{2,}[^\s"'`)<>\\]*/g)) {
         const url = m[0];
         if (FRAMEWORK_URL_PREFIXES.some((p) => url.startsWith(p))) continue;

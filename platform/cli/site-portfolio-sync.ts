@@ -48,6 +48,7 @@ import { BoostChatError, createPublisherClient } from "../portfolio-sync/client"
 import { LockHeldError, acquireSyncLock, type SyncLock } from "../portfolio-sync/lock";
 import { BACKOFF_CAP_MS, buildForSync, clientSource, fileSource, liveIsFor, nextFailureMemory, publishForSync, runSync, type CycleResult, type FailureMemory, type SyncOptions } from "../portfolio-sync/sync";
 import { isLoopbackOrigin, verifyBaseOrigin, verifyPublic } from "../portfolio-sync/verify";
+import { SOURCE_MARKER_FILE, readPortfolioSource } from "../portfolio-sync/managed";
 
 const args = process.argv.slice(2);
 const VALUE_FLAGS = ["--site", "--host", "--interval", "--from-file", "--assets-dir", "--persist-to", "--bucket", "--verify-base"];
@@ -71,6 +72,12 @@ const siteId = flag("--site");
 const hostInput = flag("--host");
 if (!siteId || !hostInput) usageError();
 if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(siteId) || siteId.length > 64) usageError(`invalid --site "${siteId}"`);
+// Portfolio Publishing V2: an incrementally published site never has its portfolio generated into a
+// checkout — BoostChat composes its pages at publish time. Nothing here applies to it.
+if ((await readPortfolioSource(path.join(process.cwd(), "data/sites", siteId)).catch(() => "authored")) === "incremental") {
+  console.error(`site:portfolio-sync: the portfolio of "${siteId}" is published incrementally (${SOURCE_MARKER_FILE}, portfolio-source@2); it is never generated into a checkout. Ship its shell package with: pnpm site:build ${siteId} && pnpm site:publish --site ${siteId} --host ${hostInput}`);
+  process.exit(2);
+}
 if (has("--once") && has("--watch")) usageError("--once and --watch are exclusive");
 if (has("--local") && has("--remote")) usageError("--local and --remote are exclusive");
 const watch = has("--watch");

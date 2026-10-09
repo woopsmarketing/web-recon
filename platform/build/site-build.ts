@@ -15,9 +15,26 @@ import { CORE_SCHEMA_VERSION, INTEGRATION_DIR, PORTFOLIO_SCHEMA_VERSION, PRODUCE
 import { DeclaredRoutesSchema, emitIntegration, IntegrationError, type EmittedFile } from "../integration/emit";
 import { assertIntegration } from "../integration/validate";
 import { producerSources } from "../integration/sources";
+import {
+  PortfolioShellDeclSchema,
+  RUNTIME_DIR,
+  RUNTIME_FILE,
+  RUNTIME_SCHEMA,
+  SHELL_FILE,
+  SHELL_SCHEMA,
+  SHELL_SETTING,
+  TEMPLATE_SHELL_MODULE,
+  pageFile,
+  serializeRuntimeDoc,
+  serializeShellDoc,
+  withShellSetting,
+  type PortfolioShellDecl,
+} from "../portfolio-runtime/contract";
 
 /** the declared-routes reader lives next to this module (platform code), never under the repo root being built */
 const DECLARED_ROUTES_HELPER = fileURLToPath(new URL("./declared-routes.ts", import.meta.url));
+/** the portfolio-shell reader (platform code, run inside the workspace against the RELEASE's runtime/shell.ts) */
+const SHELL_PLAN_HELPER = fileURLToPath(new URL("../portfolio-runtime/shell-plan.ts", import.meta.url));
 
 /**
  * site:build — exact pinned Template Release + site snapshot → static package.
@@ -38,6 +55,15 @@ const DECLARED_ROUTES_HELPER = fileURLToPath(new URL("./declared-routes.ts", imp
  * (platform/integration, pure), validates them fail-closed, writes them into the workspace public/
  * before `next build` (the seam of the asset copy) and verifies them in the export afterwards. Every
  * other build has no /_integration/ and the identity/bytes it had before the integration existed.
+ *
+ * Incremental portfolio (Portfolio Publishing V2, platform/portfolio-runtime/contract.ts): a site
+ * whose tracked marker is `portfolio-source@2` is built as a SHELL package. Its snapshot holds no
+ * portfolio (platform/site/load.ts); the builder sets the Template's shell switch in the workspace
+ * snapshot, takes the shell pages from the RELEASE's runtime/shell.ts (they are generated whatever
+ * the empty portfolio plans; a list page beyond the first stays pruned), writes
+ * /_runtime/portfolio/runtime.json + shell.json into public/ before `next build`, and emits no
+ * integration documents (the portfolio is not in the package; BoostChat reads it from its own
+ * database). Every other site builds exactly as before.
  */
 
 export const SITE_BUILDS_DIR = "data/site-builds";
@@ -90,6 +116,8 @@ export interface BuildRecord {
   hermeticity: string[];
   /** present only when this build emitted integration documents */
   integration?: IntegrationBuildSummary;
+  /** present only for the SHELL package of an incrementally published site */
+  portfolioRuntime?: { runtime: { path: string; bytes: number; sha256: string }; shell: { path: string; bytes: number; sha256: string }; shellSlug: string; shellPages: string[] };
 }
 
 interface Pointer {
@@ -184,14 +212,20 @@ export async function prepareSiteInput(opts: { repoRoot: string; siteId: string;
     throw new SiteBuildError(`release mismatch: pin ${pin.releaseId}/${pin.releaseHash.slice(0, 12)} ≠ stored release ${release.releaseId}/${release.releaseHash.slice(0, 12)}`);
   }
   await verifyRelease(opts.repoRoot, release);
-  const { snapshot, assetFiles, unserved } = await buildSiteSnapshot(opts);
+  const { snapshot: siteSnapshot, assetFiles, unserved, portfolio } = await buildSiteSnapshot(opts);
+  const incremental = portfolio === "incremental";
+  if (incremental && opts.mode !== "public") throw new SiteBuildError(`site "${opts.siteId}" is published incrementally: its shell package is a public build (a preview has no portfolio to show)`);
+  // The snapshot the BUILD reads: for a shell build, the site snapshot + the Template's shell switch.
+  const snapshot = incremental ? withShellSetting(siteSnapshot) : siteSnapshot;
   const tc = currentToolchain();
   const integrationConfig = await loadIntegrationConfig(opts.repoRoot, opts.siteId);
-  const emit = integrationEmits(integrationConfig, opts.mode);
+  // a shell package carries no portfolio, so it has no portfolio document to offer
+  const emit = !incremental && integrationEmits(integrationConfig, opts.mode);
   const integration: IntegrationInput = { config: integrationConfig, emit, producerSourceHash: emit ? (await producerSources()).hash : undefined };
   const parts: BuildInputParts = {
     releaseHash: release.releaseHash,
-    siteSnapshotHash: hashJson(snapshot),
+    // a shell build also binds the two runtime documents it writes (their schema versions)
+    siteSnapshotHash: incremental ? hashJson({ snapshot, portfolioRuntime: { runtime: RUNTIME_SCHEMA, shell: SHELL_SCHEMA } }) : hashJson(snapshot),
     mode: opts.mode,
     toolchainHash: toolchainHash(tc),
     ...(integration.emit
@@ -205,7 +239,7 @@ export async function prepareSiteInput(opts: { repoRoot: string; siteId: string;
         }
       : {}),
   };
-  return { site, release, snapshot, assetFiles, unserved, toolchain: tc, integration, parts, buildInputId: computeBuildInputId(parts) };
+  return { site, release, snapshot, siteSnapshot, incremental, assetFiles, unserved, toolchain: tc, integration, parts, buildInputId: computeBuildInputId(parts) };
 }
 
 export interface IntegrationInput {
@@ -387,9 +421,19 @@ export async function buildSite(opts: SiteBuildOptions): Promise<SiteBuildResult
     );
     const preflightOut = normalizePreflight(JSON.parse(pre.stdout.trim().split("\n").pop()!) as RawPreflight);
     const preflight = Date.now() - t;
+    // Shell build: the portfolio routes generate their SHELL pages whatever the empty portfolio plans.
+    let shellDecl: PortfolioShellDecl | undefined;
+    if (input.incremental) {
+      shellDecl = await readShellDecl(tsx, ws, projectDir, env, release);
+      applyShellPlan(preflightOut, shellDecl);
+      // preflight warnings are about selections over the portfolio ("id … is not a visible project"):
+      // a shell has none by design — the selections are resolved at publish time, by the runtime kit
+      preflightOut.warnings.length = 0;
+    }
     const pagePaths = preflightOut.routes.flatMap((r) => r.paths);
     preflightOut.warnings.push(...unservedSlugWarnings(input.unserved, preflightOut.reservedSlugs));
-    preflightOut.warnings.push(...droppedDestinationWarnings(snapshot, input.unserved, pagePaths));
+    // (a shell build resolves a banner's project at publish time: nothing is "dropped" here)
+    if (!input.incremental) preflightOut.warnings.push(...droppedDestinationWarnings(snapshot, input.unserved, pagePaths));
     for (const w of preflightOut.warnings) log(`[${opts.siteId}] WARNING ${w}`);
     if (pagePaths.length === 0) throw new SiteBuildError("route plan generates no page");
     await pruneRoutes(projectDir, preflightOut.prune);
@@ -463,6 +507,29 @@ export async function buildSite(opts: SiteBuildOptions): Promise<SiteBuildResult
       else log(`[${opts.siteId}] integration: the release declares no detail page per record → portfolio resource not offered, manifest only (${Date.now() - t} ms)`);
     }
 
+    // Shell build: the two runtime documents, placed in public/ like the site assets.
+    let runtimeFiles: { path: string; text: string }[] = [];
+    if (shellDecl) {
+      const target = path.join(projectDir, "public", RUNTIME_DIR);
+      if (await stat(path.join(projectDir, "public", RUNTIME_DIR.split("/")[0]!)).then(() => true, () => false)) throw new SiteBuildError(`the release's public/ already contains ${RUNTIME_DIR.split("/")[0]}/ — refusing to overwrite`);
+      runtimeFiles = [
+        {
+          path: RUNTIME_FILE,
+          text: serializeRuntimeDoc({
+            schema: RUNTIME_SCHEMA,
+            siteId: opts.siteId,
+            publicOrigin: snapshot.site.identity.publicOrigin!,
+            template: { templateId: release.templateId, templateVersion: release.templateVersion, releaseId: release.releaseId, releaseHash: release.releaseHash },
+            shell: SHELL_FILE,
+            shellPages: shellDecl.pages.map((p) => pageFile(p.path)),
+          }),
+        },
+        { path: SHELL_FILE, text: serializeShellDoc({ schema: SHELL_SCHEMA, snapshot: input.siteSnapshot as unknown as Record<string, unknown> }) },
+      ];
+      await mkdir(target, { recursive: true });
+      for (const f of runtimeFiles) await writeFile(path.join(projectDir, "public", f.path), f.text);
+    }
+
     t = Date.now();
     await run(path.join(ws, "node_modules/.bin/next"), ["build"], projectDir, env, 600_000);
     const nextBuild = Date.now() - t;
@@ -470,6 +537,7 @@ export async function buildSite(opts: SiteBuildOptions): Promise<SiteBuildResult
     t = Date.now();
     const outDir = path.join(projectDir, "out");
     await verifyIntegrationOutput(outDir, emittedFiles);
+    await verifyRuntimeOutput(outDir, runtimeFiles);
     const qa = await qaStaticPackage({
       outDir,
       routes: pagePaths.map((p) => ({ path: p })),
@@ -480,6 +548,8 @@ export async function buildSite(opts: SiteBuildOptions): Promise<SiteBuildResult
       declaredScriptSrcs: snapshot.headScripts?.headScripts.map((s) => s.src) ?? [],
       // …and its declared inquiry endpoint the only remote URL its page data may carry.
       declaredEndpoints: snapshot.inquiry ? [snapshot.inquiry.endpoint] : [],
+      // the shell document IS the site's data (it holds the inquiry endpoint as the snapshot does)
+      dataFiles: runtimeFiles.map((f) => f.path),
     });
     const qaMs = Date.now() - t;
     if (!qa.pass) {
@@ -533,6 +603,16 @@ export async function buildSite(opts: SiteBuildOptions): Promise<SiteBuildResult
         "integration documents (opted-in public builds only): projected by the builder (platform/integration, repository working tree) from the same site snapshot and the RELEASE's declared routes (read from the workspace copy of template.ts under the release's tsconfig); the producer version is a build input",
       ],
       ...(integrationSummary ? { integration: integrationSummary } : {}),
+      ...(shellDecl
+        ? {
+            portfolioRuntime: {
+              runtime: { path: RUNTIME_FILE, bytes: Buffer.byteLength(runtimeFiles[0]!.text), sha256: sha256(runtimeFiles[0]!.text) },
+              shell: { path: SHELL_FILE, bytes: Buffer.byteLength(runtimeFiles[1]!.text), sha256: sha256(runtimeFiles[1]!.text) },
+              shellSlug: shellDecl.slug,
+              shellPages: shellDecl.pages.map((p) => pageFile(p.path)),
+            },
+          }
+        : {}),
     };
     await writeFile(path.join(staging, "build-record.json"), `${JSON.stringify(record, null, 2)}\n`);
     const replaced = `${packageDir}.replaced-${process.pid}`;
@@ -572,6 +652,62 @@ export async function buildSite(opts: SiteBuildOptions): Promise<SiteBuildResult
   } finally {
     if (!opts.keepWorkspace) await rm(ws, { recursive: true, force: true });
   }
+  }
+}
+
+/** `portfolioShell` of the RELEASE's runtime/shell.ts, read inside the workspace and validated here. */
+async function readShellDecl(tsx: string, ws: string, projectDir: string, env: NodeJS.ProcessEnv, release: ReleaseRecord): Promise<PortfolioShellDecl> {
+  const shellModule = path.join(projectDir, TEMPLATE_SHELL_MODULE);
+  if (!(await stat(shellModule).then((s) => s.isFile(), () => false))) {
+    throw new SiteBuildError(`release ${release.releaseId} cannot be published incrementally: it has no ${TEMPLATE_SHELL_MODULE} (pin a release of the Template that declares a portfolio shell)`);
+  }
+  const out = await run(tsx, ["--tsconfig", path.join(projectDir, "tsconfig.json"), SHELL_PLAN_HELPER, shellModule], ws, env, 120_000);
+  let json: unknown;
+  try {
+    const last = out.stdout.trim().split("\n").pop();
+    if (!last) throw new Error("empty output");
+    json = JSON.parse(last);
+  } catch (error) {
+    throw new SiteBuildError(`portfolio shell: could not read ${TEMPLATE_SHELL_MODULE} of ${release.releaseId} (${(error as Error).message}); stderr: ${out.stderr.trim().slice(-500)}`);
+  }
+  const parsed = PortfolioShellDeclSchema.safeParse(json);
+  if (!parsed.success) throw new SiteBuildError(`portfolio shell: ${TEMPLATE_SHELL_MODULE} of ${release.releaseId} exports an unexpected portfolioShell: ${parsed.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`).join("; ")}`);
+  return parsed.data;
+}
+
+/**
+ * Shell build: rewrite the release's route plan (computed for an EMPTY portfolio) so that every
+ * route the Template declares a shell page for generates exactly that page — and is not pruned.
+ * Routes without a shell page keep what the plan said (a list page beyond the first: pruned; the
+ * static pages: themselves). Mutates `preflight`.
+ */
+export function applyShellPlan(preflight: ReturnType<typeof normalizePreflight>, decl: PortfolioShellDecl): void {
+  const byKey = new Map(preflight.routes.map((r) => [r.key, r]));
+  const taken = new Map(preflight.routes.flatMap((r) => r.paths.map((p) => [p, r.key] as const)));
+  for (const page of decl.pages) {
+    const route = byKey.get(page.route);
+    if (!route) throw new SiteBuildError(`portfolio shell: the Template declares a shell page for route "${page.route}", which its manifest does not declare`);
+    const owner = taken.get(page.path);
+    if (owner !== undefined && owner !== page.route) throw new SiteBuildError(`portfolio shell: shell page ${page.path} of "${page.route}" is already generated by "${owner}"`);
+    for (const p of route.paths) taken.delete(p);
+    route.paths = [page.path];
+    taken.set(page.path, page.route);
+  }
+  const shellKeys = new Set(decl.pages.map((p) => p.route));
+  preflight.prune = preflight.prune.filter((p) => !shellKeys.has(p.key));
+}
+
+/** After `next build`: the export holds the runtime documents byte for byte — or, for any other build, no /_runtime/ at all. */
+export async function verifyRuntimeOutput(outDir: string, written: readonly { path: string; text: string }[]): Promise<void> {
+  const top = RUNTIME_DIR.split("/")[0]!;
+  const exists = await stat(path.join(outDir, top)).then((s) => s.isDirectory(), () => false);
+  if (written.length === 0) {
+    if (exists) throw new SiteBuildError(`export contains ${top}/ but this build writes no portfolio runtime documents`);
+    return;
+  }
+  for (const f of written) {
+    const bytes = await readFile(path.join(outDir, f.path)).catch(() => undefined);
+    if (!bytes || sha256(bytes) !== sha256(f.text)) throw new SiteBuildError(`export ${f.path} is missing or differs from the written bytes`);
   }
 }
 

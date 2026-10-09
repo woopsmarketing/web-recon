@@ -35,7 +35,7 @@
  */
 import { publishSite, rollbackHost, sealBytes, type PortfolioTruthLoader, type PublishResult } from "../publish/publish";
 import { WranglerStore } from "../publish/wrangler-store";
-import { hasSourceMarker, SOURCE_MARKER_FILE } from "../portfolio-sync/managed";
+import { readPortfolioSource, SOURCE_MARKER_FILE } from "../portfolio-sync/managed";
 import { buildSiteSnapshot, siteDir } from "../site/load";
 
 const args = process.argv.slice(2);
@@ -89,10 +89,13 @@ if (remote && (!dryRun || checkStore) && process.env.RECON_PUBLISH_ALLOW_REMOTE 
 // it regenerates the site from what is live, publishes exactly the package it built, checks the public
 // URLs and reports. A manual publish from a checkout could put an older portfolio back. (--rollback
 // stays available: it is the emergency path and keeps its own portfolio-truth guard.)
+// A site published INCREMENTALLY (portfolio-source@2) is the opposite case: its package is a shell
+// that carries no portfolio at all, so a manual publish cannot put an older one back — and it is the
+// intended way to ship that package (with --no-activate to upload it ahead of the switch).
 if (!dryRun && !has("--rollback")) {
   let adopted = false;
   try {
-    adopted = await hasSourceMarker(siteDir(process.cwd(), siteId));
+    adopted = (await readPortfolioSource(siteDir(process.cwd(), siteId))) === "generated";
   } catch (error) {
     console.error(`site:publish: ${siteId}/${(error as Error).message}`);
     process.exit(2);

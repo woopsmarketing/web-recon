@@ -46,13 +46,38 @@ export const SOURCE_MARKER_SCHEMA = "portfolio-source@1";
 export const SourceMarkerSchema = z.object({ schema: z.literal(SOURCE_MARKER_SCHEMA), managedBy: z.literal("boostchat") }).strict();
 export const SOURCE_MARKER_TEXT = `${JSON.stringify({ schema: SOURCE_MARKER_SCHEMA, managedBy: "boostchat" }, null, 2)}\n`;
 
-/** true = the site is adopted (its portfolio is owned by BoostChat). A malformed marker throws. */
-export async function hasSourceMarker(siteDir: string): Promise<boolean> {
+/**
+ * Portfolio Publishing V2: the same file, schema `portfolio-source@2`, marks a site whose portfolio is
+ * published INCREMENTALLY. BoostChat still owns the portfolio, but nothing of it is ever generated
+ * into this repository: the site is built ONCE, without portfolio content, into a SHELL package
+ * (platform/portfolio-runtime), and BoostChat composes the portfolio pages at publish time from that
+ * package and the pinned release's runtime kit. For such a site
+ *   - the loader ignores content/projects.json, content/categories.json and every portfolio image on
+ *     disk (they may still be there as the import source; they are never read into a build);
+ *   - no sidecar is needed or looked at, and site:portfolio-sync refuses the site;
+ *   - the manual site:publish is the way to ship the shell package (it carries no portfolio, so it
+ *     cannot put an older one back).
+ * A `@1` marker keeps every meaning it had.
+ */
+export const SOURCE_MARKER_SCHEMA_V2 = "portfolio-source@2";
+export const SourceMarkerV2Schema = z.object({ schema: z.literal(SOURCE_MARKER_SCHEMA_V2), managedBy: z.literal("boostchat"), publishing: z.literal("incremental") }).strict();
+export const SOURCE_MARKER_V2_TEXT = `${JSON.stringify({ schema: SOURCE_MARKER_SCHEMA_V2, managedBy: "boostchat", publishing: "incremental" }, null, 2)}\n`;
+
+/**
+ * How the site's portfolio reaches its pages:
+ *   "authored"     no marker — the hand-authored content files of this checkout
+ *   "generated"    `@1` marker — generated into this checkout by site:portfolio-sync (V1)
+ *   "incremental"  `@2` marker — never in a build; composed at publish time (V2)
+ * A malformed marker throws.
+ */
+export type PortfolioSourceKind = "authored" | "generated" | "incremental";
+
+export async function readPortfolioSource(siteDir: string): Promise<PortfolioSourceKind> {
   let text: string;
   try {
     text = await readFile(path.join(siteDir, SOURCE_MARKER_FILE), "utf8");
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return "authored";
     throw new ManagedPortfolioError(`cannot read ${SOURCE_MARKER_FILE}: ${(error as Error).message}`);
   }
   let raw: unknown;
@@ -61,8 +86,16 @@ export async function hasSourceMarker(siteDir: string): Promise<boolean> {
   } catch {
     throw new ManagedPortfolioError(`${SOURCE_MARKER_FILE} is not valid JSON`);
   }
-  if (!SourceMarkerSchema.safeParse(raw).success) throw new ManagedPortfolioError(`${SOURCE_MARKER_FILE} invalid: expected ${SOURCE_MARKER_TEXT.replace(/\s+/g, " ").trim()}`);
-  return true;
+  if (SourceMarkerSchema.safeParse(raw).success) return "generated";
+  if (SourceMarkerV2Schema.safeParse(raw).success) return "incremental";
+  throw new ManagedPortfolioError(
+    `${SOURCE_MARKER_FILE} invalid: expected ${SOURCE_MARKER_TEXT.replace(/\s+/g, " ").trim()} or ${SOURCE_MARKER_V2_TEXT.replace(/\s+/g, " ").trim()}`,
+  );
+}
+
+/** true = the site is adopted (its portfolio is owned by BoostChat, either way). A malformed marker throws. */
+export async function hasSourceMarker(siteDir: string): Promise<boolean> {
+  return (await readPortfolioSource(siteDir)) !== "authored";
 }
 
 export const MANAGED_NOTICE =
@@ -151,7 +184,10 @@ export async function managedPortfolioProblems(siteDir: string, siteId: string):
   }
   let adopted = false;
   try {
-    adopted = await hasSourceMarker(siteDir);
+    const source = await readPortfolioSource(siteDir);
+    // an incrementally published site has no generated portfolio to guard: the loader reads none of it
+    if (source === "incremental") return [];
+    adopted = source === "generated";
   } catch (error) {
     return [`${siteId}/${(error as Error).message}`];
   }
