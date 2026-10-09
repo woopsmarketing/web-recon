@@ -29,6 +29,12 @@
  * itself owns (site.json, settings, theme, scripts, inquiry) is read from the live directory as
  * before, and L2 holds the live directory to what it is in this checkout.
  *
+ * Since 2026-10-10 the reuse site is published INCREMENTALLY (portfolio.source.json, publishing:
+ * "incremental"): its tracked package is a SHELL — built from the live directory itself, with no
+ * project page, card or image in it — and its project pages are composed at publish time. Those pages
+ * are held by portfolio-runtime.test.ts, page by page against the last package that had them built in;
+ * here L / L2 / N / W2 hold the shell package, and G3 the capability the release records.
+ *
  * Run AFTER `template:release interior-03@1` + `site:build nuridam-interior-demo` +
  * `site:build boost-interior-demo-03`:
  *   tsx --tsconfig platform/tsconfig.json platform/test/interior-03.test.ts
@@ -37,12 +43,15 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { prepareSiteInput } from "../build/site-build";
+import { PORTFOLIO_RUNTIME_GATE, recordedEmptyState, resolvePortfolioRuntime, type PortfolioRuntimeCapability } from "../portfolio-runtime/capability";
+import { readPortfolioSource } from "../portfolio-sync/managed";
 import { collectReleaseSources, gateTemplateSources, loadRelease, scanForbiddenTerms, verifyRelease } from "../release/release";
 import { loadSiteInstance } from "../site/load";
 import { sha256 } from "../util/hash";
 import { frozenDemoRoot, notGenerated } from "./demo-frozen-dataset";
 import template from "../../templates/interior-03/v1/template";
 import { PORTFOLIO_PAGE_SIZE } from "../../templates/interior-03/v1/manifest/portfolio";
+import { portfolioShell } from "../../templates/interior-03/v1/runtime/shell";
 
 const repoRoot = process.cwd();
 const TEMPLATE = "interior-03";
@@ -93,11 +102,18 @@ async function storedProjects(siteId: string): Promise<{ slug: string; status: s
   if (siteId !== REUSE_SITE) return (await readJson(`data/sites/${siteId}/content/projects.json`)).items;
   return JSON.parse(await readFile(path.join(reuseFrozen.siteDir, "content/projects.json"), "utf8")).items;
 }
-/** the HTML pages a site's data plans: the fixed pages, one detail per published project, the list's later pages */
+/** true = the site is published incrementally (portfolio-source@2): its package is a shell, its project pages are composed at publish time */
+const isIncremental = async (siteId: string) => (await readPortfolioSource(path.join(repoRoot, "data/sites", siteId))) === "incremental";
+/**
+ * The HTML pages a site's data plans: the fixed pages, one detail per published project, the list's
+ * later pages — or, for a site published incrementally, the fixed pages plus the ONE detail shell the
+ * Template declares.
+ */
 async function plannedPages(siteId: string): Promise<string[]> {
   const projects = await storedProjects(siteId);
   const published = projects.filter((p) => p.status === "published");
   assert(published.length > 0, `${siteId}: the dataset has no published project`);
+  if (await isIncremental(siteId)) return [...FIXED_PAGES, ...portfolioShell.pages.filter((p) => p.route === "portfolio.detail").map((p) => `${p.path.slice(1)}.html`)].sort();
   const pages = Math.ceil(published.length / PORTFOLIO_PAGE_SIZE);
   return [...FIXED_PAGES, ...published.map((p) => `portfolio/${p.slug}.html`), ...Array.from({ length: pages - 1 }, (_, i) => `portfolio/page/${i + 2}.html`)].sort();
 }
@@ -356,6 +372,15 @@ await check("G the pinned release IS the working tree: same files, same bytes (n
   ];
   assert(drift.length === 0, drift.slice(0, 12).join("\n"));
 });
+await check("G3 the Template declares the portfolio runtime, and the pinned release records exactly that after proving it: gate passed, a safe empty state", async () => {
+  // typed: the declaration is assignable to what the platform reads
+  const declared: PortfolioRuntimeCapability = template.portfolioRuntime;
+  eq(declared, { supported: true, contract: "portfolio-runtime@1" }, "manifest declaration");
+  const record = await loadRelease(repoRoot, TEMPLATE, pin.releaseId);
+  eq(record.portfolioRuntime, declared, "release record");
+  eq([record.gates[PORTFOLIO_RUNTIME_GATE]?.pass, recordedEmptyState(record)], [true, "supported"], `gate: ${record.gates[PORTFOLIO_RUNTIME_GATE]?.detail}`);
+  eq(resolvePortfolioRuntime(record), { supported: true, contract: "portfolio-runtime@1", declared: "release" }, "the pinned release");
+});
 
 // ---------------------------------------------------------------- package --
 console.log("\n[package] the site's current package");
@@ -434,15 +459,24 @@ await check("L the reuse site pins the SAME release as the first site (id + full
   eq([reuseRecord.siteId, reuseRecord.status, reuseRecord.parts.mode], [REUSE_SITE, "success", "public"], "record");
   eq([reuseRecord.template.templateId, reuseRecord.template.releaseId, reuseRecord.template.releaseHash], [pin.templateId, pin.releaseId, pin.releaseHash], "the package's Template");
   eq([reuseRecord.qa.pass, reuseRecord.qa.failures], [true, []], "package QA");
-  const input = await prepareSiteInput({ repoRoot: reuseFrozen.root, siteId: REUSE_SITE, mode: "public", at: reuseRecord.at });
+  // a site published incrementally is built from its live directory (the marker is what makes the package a shell;
+  // the frozen composition drops it and describes a site that builds its own portfolio)
+  const input = await prepareSiteInput({ repoRoot: (await isIncremental(REUSE_SITE)) ? repoRoot : reuseFrozen.root, siteId: REUSE_SITE, mode: "public", at: reuseRecord.at });
   eq([input.parts.siteSnapshotHash, input.buildInputId], [reuseRecord.parts.siteSnapshotHash, reuseCurrent.buildInputId], "identity = the site's present data");
   assert(reuseCurrent.buildInputId !== current.buildInputId && reuseCurrent.packageDir !== current.packageDir, "the two sites share a package");
 });
-await check("L2 the reuse site's live directory: its portfolio is the frozen dataset or a generated one; while it is the frozen dataset and loads, it has the tracked package's identity; generated, it loads; adopted without a generated portfolio, it is refused", async () => {
+await check("L2 the reuse site's live directory: its portfolio is the frozen dataset or a generated one; while it is the frozen dataset and loads, it has the tracked package's identity; generated, it loads; adopted for incremental publishing, it loads as the tracked shell package's input; adopted without a generated portfolio, it is refused", async () => {
   const { live } = reuseFrozen;
   const { reuseCurrent, reuseRecord } = reusePackage();
   assert(live.identical || live.managed, `data/sites/${REUSE_SITE}: the portfolio is neither the frozen dataset nor a generated one`);
-  if (live.dataset) {
+  if (await isIncremental(REUSE_SITE)) {
+    // adopted for incremental publishing (portfolio-source@2): nothing is generated into this checkout and nothing is refused —
+    // the directory is a shell input, and the package records the publisher's runtime documents
+    assert(live.adopted && !live.managed, "an incremental site carries the marker and no generated portfolio");
+    const shell = await prepareSiteInput({ repoRoot, siteId: REUSE_SITE, mode: "public", at: reuseRecord.at });
+    eq([shell.parts.siteSnapshotHash, shell.buildInputId], [reuseRecord.parts.siteSnapshotHash, reuseCurrent.buildInputId], "live directory = the tracked shell package's input");
+    assert(reuseRecord.portfolioRuntime !== undefined, "the shell package records no portfolio runtime");
+  } else if (live.dataset) {
     const liveNow = await prepareSiteInput({ repoRoot, siteId: REUSE_SITE, mode: "public", at: live.identical ? reuseRecord.at : new Date().toISOString() });
     if (live.identical) eq([liveNow.parts.siteSnapshotHash, liveNow.buildInputId], [reuseRecord.parts.siteSnapshotHash, reuseCurrent.buildInputId], "live directory = the tracked package's data");
   } else {
@@ -481,8 +515,9 @@ await check("T the reuse site's theme is its own Site Data: declared tokens only
   for (const t of ["color.action.primary", "color.accent.primary"]) assert(!same.includes(t as (typeof roles)[number]), `${t}: the reuse site repeats boost-interior-demo-02's value (${other[t]})`);
 });
 await check("N the reuse site's package: the pages its data plans, no source term of any Template, neither site's brand in the other's package", async () => {
-  const { reuseSiteDir } = reusePackage();
+  const { reuseSiteDir, reuseRecord } = reusePackage();
   eq(await emittedPages(reuseSiteDir), await plannedPages(REUSE_SITE), "pages");
+  eq(reuseRecord.portfolioRuntime !== undefined, await isIncremental(REUSE_SITE), "the package carries the publisher's runtime documents exactly when the site is incremental");
   const terms = await allTerms();
   const hits: string[] = [];
   // a brand name, its Latin spelling, the site id and (the reuse site) the origin's host: none of them may cross into the other package
@@ -597,10 +632,15 @@ await check("V no brand leaks: the fixture brand in no text file of the reuse pa
   await scan(pin.releaseId, path.join(repoRoot, "data/template-releases", TEMPLATE, pin.releaseId), provenanceTerms, false, ["release.json"]);
   assert(hits.length === 0, hits.slice(0, 12).join("\n"));
 });
-await check("W2 every internal href of every page of the reuse package resolves to an emitted file, and its portfolio cards link on-site detail pages (/portfolio/<slug>)", async () => {
+await check("W2 every internal href of every page of the reuse package resolves to an emitted file, and its portfolio cards link on-site detail pages (/portfolio/<slug>) — a shell package holds no card at all", async () => {
   const { reuseSiteDir } = reusePackage();
   const own = new URL(reuse.identity.publicOrigin!).origin;
   eq((await unresolvedHrefs(reuseSiteDir, own)).slice(0, 12), [], "unresolved hrefs");
+  if (await isIncremental(REUSE_SITE)) {
+    // the cards are composed at publish time (portfolio-runtime.test.ts holds every card link of the composed pages)
+    for (const f of ["index.html", "portfolio.html"]) eq(cardHrefs(await readFile(path.join(reuseSiteDir, f), "utf8")), [], `${f}: project cards in a shell package`);
+    return;
+  }
   const planned = new Set(await plannedPages(REUSE_SITE));
   let cards = 0;
   for (const f of ["index.html", "portfolio.html"]) {
