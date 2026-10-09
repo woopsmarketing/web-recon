@@ -21,7 +21,11 @@
 
 import { SEAL_NAME } from "./contract";
 
-export type PathResolution = { kind: "key"; key: string } | { kind: "not-found"; reason: string } | { kind: "bad-request"; reason: string };
+export type PathResolution =
+  | { kind: "key"; key: string }
+  /** `runtimeInput`: the path is under /_runtime/ (in any percent-escaped spelling) — the package's alone, like /_next/ */
+  | { kind: "not-found"; reason: string; runtimeInput?: true }
+  | { kind: "bad-request"; reason: string };
 
 /** HTML files the framework always emits that are not routes of the site. */
 const FRAMEWORK_PAGES = new Set(["404", "_not-found"]);
@@ -54,7 +58,7 @@ export function resolvePath(pathname: string): PathResolution {
     segments.push(seg);
   }
 
-  if (segments.length > 1 && segments[0] === RUNTIME_DIR) return { kind: "not-found", reason: "publisher runtime inputs are not site files" };
+  if (segments.length > 1 && segments[0] === RUNTIME_DIR) return { kind: "not-found", reason: "publisher runtime inputs are not site files", runtimeInput: true };
   const rel = segments.join("/");
   const last = segments[segments.length - 1]!;
   const ext = /\.([A-Za-z0-9]+)$/.exec(last)?.[1];

@@ -15,7 +15,12 @@
  *
  * Portfolio overlay (a site whose portfolio is published without a rebuild). Outside /_next/ and
  * /_runtime/ one more read looks for portfolio-public/<siteId>/current/<packageHash>.json:
- *   absent                      the package alone, exactly as above
+ *   absent, ordinary package    the package alone, exactly as above
+ *   absent, SHELL package       503 "content unavailable", no-store, + one log line (outcome
+ *                               overlay-absent, trace.overlay = "absent"). FAILS CLOSED: a shell
+ *                               package (it carries _runtime/portfolio/runtime.json) is served only
+ *                               together with its portfolio — its own portfolio pages are empty
+ *                               placeholders, and every other page of it links to them
  *   present and verified        manifest.routes[path]  → portfolio-public/<siteId>/<key>   (revalidate)
  *                               manifest.assets[path]  → portfolio-assets/<key>            (immutable)
  *                               path owned by the manifest, in neither table → the package's 404 page
@@ -30,6 +35,9 @@
  * The pointer is read on every request, so a publish / rollback is live on the next one; manifests are
  * immutable and kept parsed in isolate memory by key + sha256. portfolio-assets/ is reachable through
  * manifest.assets only, so an image that is not in the live manifest has no URL.
+ * Whether a package is a shell is asked only when its pointer is absent, with one HEAD of
+ * _runtime/portfolio/runtime.json, and remembered per isolate by siteId + packageHash (a package
+ * never changes): an ordinary site pays one extra read per isolate, a shell with its pointer none.
  *
  * Failure classes (each has one deterministic status; nothing ever falls through to another site):
  *   method other than GET/HEAD            405   method-not-allowed
@@ -45,11 +53,14 @@
  *   overlay pointer present, not verified  503   overlay-refused     (never the shell package's pages;
  *                                                                     /_next/ and /_runtime/ are answered
  *                                                                     as always — they read no pointer)
+ *   shell package, no overlay pointer      503   overlay-absent      (same paths, same reason: a shell
+ *                                                                     page is never served on its own)
  *   R2 / unexpected error                  500   internal-error
  *
  * Logs: one JSON line per response with status >= 400 (every response when LOG_ALL = "1"):
  * host, path (no query string, first 256 characters), method, status, outcome, siteId,
- * packageHash, key, plus overlay = the check that refused a portfolio pointer / manifest (a 503).
+ * packageHash, key, plus overlay = the check that refused a portfolio pointer / manifest, or
+ * "absent" for a shell package that has no pointer (a 503 either way).
  * No headers, no query strings, no bodies.
  */
 
@@ -99,6 +110,7 @@ export type Outcome =
   | "package-missing"
   | "overlay-missing"
   | "overlay-refused"
+  | "overlay-absent"
   | "unknown-host"
   | "pointer-invalid"
   | "bad-path"
@@ -116,7 +128,10 @@ export interface Trace {
   packageHash?: string;
   /** package-relative key, or the full R2 key of an overlay object */
   key?: string;
-  /** which check refused this site's portfolio pointer / manifest (the request was answered 503 overlay-refused) */
+  /**
+   * which check refused this site's portfolio pointer / manifest (the request was answered 503
+   * overlay-refused), or "absent": a shell package without a pointer (503 overlay-absent)
+   */
   overlay?: string;
   error?: string;
 }
@@ -128,6 +143,9 @@ const MAX_KEY_BYTES = 1024;
 const MAX_LOGGED_PATH = 256;
 const MAX_MANIFEST_BYTES = 4 * 1024 * 1024;
 const MANIFEST_CACHE_MAX = 32;
+/** The package file only a shell build writes (platform/portfolio-runtime/contract.ts RUNTIME_FILE). */
+const SHELL_MARKER = "_runtime/portfolio/runtime.json";
+const SHELL_CACHE_MAX = 256;
 /** Header-safe media type (a manifest value is copied into Content-Type). */
 const CONTENT_TYPE_RE = /^[\x20-\x7e]{1,255}$/;
 
@@ -247,6 +265,26 @@ export async function loadOverlay(
   return manifest;
 }
 
+/** siteId/packageHash → "is a shell package" (oldest dropped first). A package never changes, so an entry cannot go stale. */
+const shellCache = new Map<string, boolean>();
+
+/**
+ * Whether the routed package is a SHELL package: it carries the portfolio publisher's runtime
+ * document, which only the shell build of an incrementally published site writes. One HEAD per
+ * package per isolate; a store failure throws (the 500) and is not remembered.
+ */
+export async function packageIsShell(env: Pick<Env, "SITES">, pointer: Pick<RoutingPointer, "siteId" | "packageHash">, cache: Map<string, boolean> | null = shellCache): Promise<boolean> {
+  const cacheKey = `${pointer.siteId}/${pointer.packageHash}`;
+  const known = cache?.get(cacheKey);
+  if (known !== undefined) return known;
+  const shell = (await env.SITES.head(packageKey(pointer.siteId, pointer.packageHash, SHELL_MARKER))) !== null;
+  if (cache) {
+    if (cache.size >= SHELL_CACHE_MAX) cache.delete(cache.keys().next().value!);
+    cache.set(cacheKey, shell);
+  }
+  return shell;
+}
+
 /** The entry a manifest table has for one of these spellings of the path; an entry with an unsafe key or content type is ignored. */
 function entryOf(table: Record<string, unknown>, paths: string[], keyOf: (rel: string) => string): { key: string; contentType: string } | undefined {
   for (const path of paths) {
@@ -308,8 +346,9 @@ export async function handle(request: Request, env: Env, trace: Trace = newTrace
   /** the package file this request may be answered with */
   let packageFile = resolved.kind === "key" ? resolved.key : undefined;
 
-  // Build output and publisher inputs are the package's alone: no overlay read for them.
-  const packageOnly = /^\/_(next|runtime)\//.test(pathname) || packageFile?.startsWith("_next/") === true;
+  // Build output and publisher inputs are the package's alone: no overlay read for them — in any
+  // spelling the resolver decodes to them (/%5Fnext/…, /%5Fruntime/…).
+  const packageOnly = /^\/_(next|runtime)\//.test(pathname) || packageFile?.startsWith("_next/") === true || (resolved.kind === "not-found" && resolved.runtimeInput === true);
   // The verdict is taken from a fresh object, so a caller-supplied trace cannot pre-set or mask it.
   const verdict: Pick<Trace, "overlay"> = {};
   const manifest = packageOnly ? undefined : await loadOverlay(env, pointer, verdict);
@@ -317,6 +356,11 @@ export async function handle(request: Request, env: Env, trace: Trace = newTrace
     // A pointer exists but cannot be trusted: fail closed. The package is a shell — its portfolio pages are placeholders.
     trace.overlay = verdict.overlay;
     return end("overlay-refused", plain(503, "content unavailable\n"));
+  }
+  if (!manifest && !packageOnly && (await packageIsShell(env, pointer))) {
+    // No pointer for a shell package: the same closed door. Its pages are placeholders (and link to placeholders) until a portfolio is published for it.
+    trace.overlay = "absent";
+    return end("overlay-absent", plain(503, "content unavailable\n"));
   }
   if (manifest) {
     // The path as requested, and as the package resolver reads it (percent-escapes decoded).

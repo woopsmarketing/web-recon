@@ -2,7 +2,10 @@
  * recon-runtime portfolio overlay (workers/recon-runtime/src/index.ts) over a synthetic fake R2 that
  * records every key it is asked for:
  *
- *   1. no overlay pointer → the package alone, same status / headers / body as before the overlay
+ *   1. no overlay pointer, ORDINARY package → the package alone, same status / headers / body as
+ *      before the overlay; whether it is a shell is asked once per package (one HEAD), then remembered
+ *   1b. no overlay pointer, SHELL package → 503 no-store for every path the overlay would decide,
+ *      never a shell page; /_next/ and /_runtime/ answer as always
  *   2. /_next/ and /_runtime/ never consult the overlay; /_runtime/ is never served
  *   3. routes / assets from the verified live manifest (headers, HEAD, 304)
  *   4. owned paths and their RSC payloads answer from the manifest or 404, never from the package
@@ -76,7 +79,7 @@ class RecordingBucket implements R2BucketLike {
   }
 }
 
-/** A V2 shell package: index / portfolio / portfolio/<shell-slug> are placeholder pages that must never be served once an overlay is live. */
+/** A V2 shell package: index / portfolio / portfolio/<shell-slug> are placeholder pages that must never be served — with an overlay (it answers them) or without one (503). */
 const PACKAGE: Record<string, [body: string, contentType: string, cacheControl?: string]> = {
   "index.html": ["SHELL index", HTML],
   "index.txt": ["SHELL rsc index", "text/x-component"],
@@ -101,6 +104,11 @@ const PACKAGE: Record<string, [body: string, contentType: string, cacheControl?:
   "_package.json": ['{"seal":true}', "application/json"],
 };
 
+/** An ordinary package: the same files without the portfolio publisher's inputs — the Worker must serve it as it always did. */
+const ORDINARY: typeof PACKAGE = Object.fromEntries(Object.entries(PACKAGE).filter(([rel]) => !rel.startsWith("_runtime/")));
+/** the one package file that makes a package a shell */
+const SHELL_MARKER = "_runtime/portfolio/runtime.json";
+
 interface Fixture {
   b: RecordingBucket;
   env: Env;
@@ -109,7 +117,7 @@ interface Fixture {
   hash: string;
 }
 let fixtureCount = 0;
-function addSite(b: RecordingBucket, label: string): Fixture {
+function addSite(b: RecordingBucket, label: string, files: typeof PACKAGE = PACKAGE): Fixture {
   fixtureCount++;
   const host = `${label}-${fixtureCount}.test.example`;
   const siteId = `${label}-${fixtureCount}`;
@@ -120,10 +128,13 @@ function addSite(b: RecordingBucket, label: string): Fixture {
     "application/json",
     "no-store",
   );
-  for (const [rel, [body, contentType, cacheControl]] of Object.entries(PACKAGE)) b.set(packageKey(siteId, hash, rel), body, contentType, cacheControl);
+  for (const [rel, [body, contentType, cacheControl]] of Object.entries(files)) b.set(packageKey(siteId, hash, rel), body, contentType, cacheControl);
   return { b, env: { SITES: b }, host, siteId, hash };
 }
+/** a host routed to a SHELL package (nothing published for it yet) */
 const site = (label = "site") => addSite(new RecordingBucket(), label);
+/** a host routed to an ORDINARY package */
+const ordinarySite = (label = "ordinary") => addSite(new RecordingBucket(), label, ORDINARY);
 
 interface PublishInput {
   /** URL path → page body (stored as blobs/<sha256>.html) or a ready manifest entry */
@@ -193,17 +204,20 @@ const readsAssets = (recorded: string) => recorded.slice(recorded.indexOf(" ") +
 const pkg = (fx: Fixture, rel: string) => packageKey(fx.siteId, fx.hash, rel);
 const ROUTING = (fx: Fixture) => `get ${routingKey(fx.host)}`;
 const CURRENT = (fx: Fixture) => `get ${portfolioCurrentKey(fx.siteId, fx.hash)}`;
+/** the read that asks whether the routed package is a shell */
+const PROBE = (fx: Fixture) => `head ${pkg(fx, SHELL_MARKER)}`;
+const probes = (fx: Fixture) => fx.b.recorded.filter((k) => k === PROBE(fx)).length;
 
 const LIVE: PublishInput = {
   routes: { "/": "LIVE home", "/portfolio": "LIVE list", "/portfolio/page/2": "LIVE list 2", "/portfolio/live-slug": "LIVE detail", "/sitemap.xml": "LIVE sitemap" },
   assets: { "/assets/0123456789abcdef0123.jpg": "tenant-1/originals/photo-1.jpg" },
 };
 
-// ── 1. no overlay pointer ───────────────────────────────────────────────────────
-console.log("\nrecon-runtime overlay: a site without an overlay pointer");
+// ── 1. no overlay pointer, ordinary package ─────────────────────────────────────
+console.log("\nrecon-runtime overlay: an ordinary site (no overlay pointer)");
 
-await check("V1 site: every path answers from the package with the stored headers; one extra read (the absent pointer) and nothing else", async () => {
-  const fx = site("v1");
+await check("ordinary package: every path answers from the package with the stored headers, byte for byte; the reads are the absent pointer and — on the first request only — one HEAD that asks whether the package is a shell", async () => {
+  const fx = ordinarySite("v1");
   const cases: [path: string, rel: string][] = [
     ["/", "index.html"],
     ["/portfolio", "portfolio.html"],
@@ -216,36 +230,147 @@ await check("V1 site: every path answers from the package with the stored header
     ["/robots.txt", "robots.txt"],
     ["/assets/pkg.jpg", "assets/pkg.jpg"],
   ];
+  let first = true;
   for (const [p, rel] of cases) {
-    const [body, contentType, cacheControl = CACHE_REVALIDATE] = PACKAGE[rel]!;
+    const [body, contentType, cacheControl = CACHE_REVALIDATE] = ORDINARY[rel]!;
     const expected = { "cache-control": cacheControl, "content-length": String(body.length), "content-type": contentType, etag: md5Etag(body), "x-content-type-options": "nosniff" };
     const got = await call(fx, p);
     eq([got.status, got.text], [200, body], `GET ${p}`);
     eq(Object.entries(got.headers).sort(), Object.entries(expected).sort(), `GET ${p} headers`);
-    eq(got.keys, [ROUTING(fx), CURRENT(fx), `get ${pkg(fx, rel)}`], `GET ${p} reads`);
-    eq(got.trace.overlay, undefined, `GET ${p}: nothing refused`);
+    eq(got.keys, first ? [ROUTING(fx), CURRENT(fx), PROBE(fx), `get ${pkg(fx, rel)}`] : [ROUTING(fx), CURRENT(fx), `get ${pkg(fx, rel)}`], `GET ${p} reads`);
+    first = false;
+    eq([got.trace.overlay, got.trace.outcome], [undefined, "served"], `GET ${p}: nothing refused`);
 
     const headed = await call(fx, p, { method: "HEAD" });
     eq([headed.status, headed.text], [200, ""], `HEAD ${p}`);
     eq(Object.entries(headed.headers).sort(), Object.entries(expected).sort(), `HEAD ${p} headers`);
+    eq(headed.keys, [ROUTING(fx), CURRENT(fx), `head ${pkg(fx, rel)}`], `HEAD ${p} reads`);
     const cached = await call(fx, p, { headers: { "If-None-Match": md5Etag(body) } });
     eq([cached.status, cached.text, cached.headers["content-length"]], [304, "", undefined], `304 ${p}`);
   }
   const miss = await call(fx, "/nope");
   eq([miss.status, miss.text, miss.headers["cache-control"], miss.headers.etag], [404, "PKG 404", "no-store", undefined], "miss → the package's 404 page");
   eq(miss.keys, [ROUTING(fx), CURRENT(fx), `get ${pkg(fx, "nope.html")}`, `get ${pkg(fx, "404.html")}`], "miss reads");
-  assert(fx.b.recorded.every((k) => !readsAssets(k)), "a V1 site never reads portfolio-assets/");
+  eq(probes(fx), 1, `the shell question was asked once in ${fx.b.recorded.length} reads`);
+  assert(fx.b.recorded.every((k) => !readsAssets(k)), "an ordinary site never reads portfolio-assets/");
+});
+
+await check("the shell question is per PACKAGE (siteId + packageHash): a second package of the same site is asked once more, and each keeps its own answer", async () => {
+  const b = new RecordingBucket();
+  const first = addSite(b, "two-kinds", ORDINARY);
+  eq((await call(first, "/")).text, "SHELL index", "the ordinary package serves its own index");
+  // the same site re-pointed (another host) at a SHELL package
+  const second: Fixture = { ...first, host: `next-${first.host}`, hash: sha256("the shell package of the same site") };
+  b.set(routingKey(second.host), JSON.stringify({ schemaVersion: 1, hostname: second.host, siteId: second.siteId, packageHash: second.hash, buildInputId: "2".repeat(64), releaseId: "r-2", publishedAt: "x" }));
+  for (const [rel, [body, contentType]] of Object.entries(PACKAGE)) b.set(packageKey(second.siteId, second.hash, rel), body, contentType);
+  const refused = await call(second, "/");
+  eq([refused.status, refused.keys], [503, [ROUTING(second), CURRENT(second), PROBE(second)]], "the shell package of the same site is judged on its own");
+  eq([(await call(first, "/")).status, (await call(second, "/")).status, (await call(first, "/about")).text], [200, 503, "PKG about"], "each package keeps its answer");
+  eq([probes(first), probes(second)], [1, 1], "one question per package");
+});
+
+// ── 1b. no overlay pointer, shell package ───────────────────────────────────────
+console.log("\nrecon-runtime overlay: a shell package without an overlay pointer");
+
+await check("shell package, no pointer → FAILS CLOSED: 503 no-store for every path the overlay would decide (GET and HEAD), no package object read, one log line; /_next/ and /_runtime/ answer as always; the question is asked once", async () => {
+  const fx = site("bare");
+  const PATHS = ["/", "/portfolio", "/portfolio/shell-slug", "/portfolio/page/2", "/index.txt", "/portfolio.txt", "/sitemap.xml", "/about", "/about.txt", "/robots.txt", "/assets/pkg.jpg", "/no-such-page", "/portfolio/"];
+  let first = true;
+  for (const p of PATHS) {
+    const got = await call(fx, p);
+    eq([got.status, got.text, got.trace.outcome, got.trace.overlay], [503, "content unavailable\n", "overlay-absent", "absent"], `GET ${p}`);
+    eq(Object.entries(got.headers).sort(), Object.entries({ "cache-control": "no-store", "content-type": "text/plain; charset=utf-8", "x-content-type-options": "nosniff" }).sort(), `GET ${p} headers`);
+    eq(got.keys, first ? [ROUTING(fx), CURRENT(fx), PROBE(fx)] : [ROUTING(fx), CURRENT(fx)], `GET ${p} reads`);
+    first = false;
+    const head = await call(fx, p, { method: "HEAD" });
+    eq([head.status, head.text, head.trace.outcome, head.headers["cache-control"], head.keys], [503, "", "overlay-absent", "no-store", [ROUTING(fx), CURRENT(fx)]], `HEAD ${p}`);
+    eq((await call(fx, p, { headers: { "If-None-Match": "*" } })).status, 503, `${p}: never a 304`);
+  }
+  eq(probes(fx), 1, "asked once for the package");
+  assert(fx.b.recorded.every((k) => k === PROBE(fx) || !k.includes(`/packages/${fx.hash}/`)), "no file of the shell package was read");
+
+  // what never consults the overlay is the package's, exactly as for any site
+  for (const p of ["/_next/static/app.js", "/%5Fnext/static/app.js"]) {
+    const next = await call(fx, p);
+    eq([next.status, next.text, next.headers["cache-control"], next.headers.etag, next.trace.overlay], [200, "PKG js", CACHE_IMMUTABLE, md5Etag("PKG js"), undefined], p);
+    eq(next.keys, [ROUTING(fx), `get ${pkg(fx, "_next/static/app.js")}`], `${p} reads`);
+  }
+  eq((await call(fx, "/_next/static/app.js", { headers: { "If-None-Match": md5Etag("PKG js") } })).status, 304, "/_next/ still revalidates");
+  const nextMiss = await call(fx, "/_next/static/missing.js");
+  eq([nextMiss.status, nextMiss.text], [404, "PKG 404"], "/_next/ miss → the package's 404 page");
+  for (const p of ["/_runtime/portfolio/runtime.json", "/_runtime/portfolio/shell.json", "/%5Fruntime/portfolio/shell.json"]) {
+    const runtime = await call(fx, p);
+    eq([runtime.status, runtime.text, runtime.trace.overlay, runtime.keys], [404, "PKG 404", undefined, [ROUTING(fx), `get ${pkg(fx, "404.html")}`]], `${p} stays a 404`);
+  }
+  // path rules that come before any overlay decision are unchanged
+  eq((await call(fx, "/%00")).status, 400, "bad path");
+  eq((await call(fx, "/", { method: "POST" })).status, 405, "method");
+
+  const lines: string[] = [];
+  const request = new Request(`https://${fx.host}/portfolio?secret=1`);
+  const trace = newTrace(request);
+  await handle(request, fx.env, trace);
+  logTrace(fx.env, trace, (l) => lines.push(l));
+  eq(lines.length, 1, "one log line");
+  const line = JSON.parse(lines[0]!);
+  eq([line.evt, line.status, line.outcome, line.overlay, line.siteId, line.packageHash, line.path], ["recon-runtime", 503, "overlay-absent", "absent", fx.siteId, fx.hash, "/portfolio"], "log line");
+});
+
+await check("shell package: the portfolio goes live on the next request after its pointer is written (no stale 503), and the door closes again if the pointer goes — the shell page is never served either way", async () => {
+  const fx = site("bare");
+  eq([(await call(fx, "/")).status, (await call(fx, "/about")).status], [503, 503], "nothing published yet");
+  const live = publish(fx, 1, LIVE);
+  const home = await call(fx, "/");
+  eq([home.status, home.text, home.trace.overlay], [200, "LIVE home", undefined], "published → served");
+  eq(home.keys, [ROUTING(fx), CURRENT(fx), `get ${live.manifestKey}`, home.keys[3]], "…from the overlay, with no question about the package");
+  eq([(await call(fx, "/about")).text, (await call(fx, "/portfolio/shell-slug")).status], ["PKG about", 404], "the package's own pages answer; an owned path that was not rendered is a 404");
+  fx.b.objects.delete(portfolioCurrentKey(fx.siteId, fx.hash));
+  for (const p of ["/", "/portfolio", "/portfolio/live-slug", "/about"]) {
+    const gone = await call(fx, p);
+    eq([gone.status, gone.text, gone.trace.outcome, gone.keys], [503, "content unavailable\n", "overlay-absent", [ROUTING(fx), CURRENT(fx)]], `pointer removed: ${p}`);
+  }
+  eq(probes(fx), 1, "asked once, before the publish; the answer outlives the pointer");
+});
+
+await check("shell package WITH a pointer from the start: served exactly as before — the shell question is never asked", async () => {
+  const fx = site("v2");
+  publish(fx, 1, LIVE);
+  for (const p of ["/", "/portfolio", "/portfolio/live-slug", "/about", "/robots.txt", "/assets/pkg.jpg", "/assets/0123456789abcdef0123.jpg", "/nope", "/portfolio/nope", "/_next/static/app.js", "/_runtime/portfolio/runtime.json"]) {
+    await call(fx, p);
+    await call(fx, p, { method: "HEAD" });
+  }
+  eq(probes(fx), 0, "no HEAD of the runtime document");
+  assert(fx.b.recorded.every((k) => !k.includes("/_runtime/")), "nothing under /_runtime/ was read");
+});
+
+await check("the shell question fails as every R2 failure does (500), and a failure is not remembered", async () => {
+  const fx = site("bare");
+  let down = true;
+  const flaky: Env = { SITES: { get: (key) => fx.b.get(key), head: (key) => (down && key.endsWith(SHELL_MARKER) ? Promise.reject(new Error("r2 down")) : fx.b.head(key)) } };
+  const lines: string[] = [];
+  const original = console.log;
+  console.log = (l: string) => void lines.push(l);
+  let r: Response;
+  try {
+    r = await runtimeDefault.fetch(new Request(`https://${fx.host}/`), flaky);
+  } finally {
+    console.log = original;
+  }
+  eq([r.status, await r.text(), JSON.parse(lines[0]!).outcome], [500, "internal error\n", "internal-error"], "the question could not be answered → 500, not a shell page");
+  down = false;
+  const after = await handle(new Request(`https://${fx.host}/`), flaky);
+  eq([after.status, probes(fx)], [503, 1], "asked again once the store answers: still a shell, still closed");
 });
 
 // ── 2. rule 1 ───────────────────────────────────────────────────────────────────
 console.log("\nrecon-runtime overlay: /_next/ and /_runtime/");
 
-await check("/_next/* is the package's alone: two reads, the overlay pointer is never asked for — with or without a live overlay, even if the manifest lists the path", async () => {
+await check("/_next/* is the package's alone: two reads, neither the overlay pointer nor the shell question is asked — ordinary package, shell without or with a live overlay, even if the manifest lists the path", async () => {
   const v1 = site("v1");
   const v2 = site("v2");
   publish(v2, 1, { ...LIVE, routes: { ...LIVE.routes, "/_next/static/app.js": "HIJACK", "/_next/static/missing.js": "HIJACK" } });
   await call(v2, "/"); // manifest is now cached: still must not be consulted
-  for (const fx of [v1, v2]) {
+  for (const fx of [ordinarySite(), v1, v2]) {
     for (const p of ["/_next/static/app.js", "/%5Fnext/static/app.js"]) {
       const got = await call(fx, p);
       eq([got.status, got.text, got.headers["cache-control"]], [200, "PKG js", CACHE_IMMUTABLE], `${fx.siteId} ${p}`);
@@ -265,13 +390,13 @@ await check("/_runtime/* is never served (the package's 404 page), in any spelli
   const v1 = site("v1");
   const v2 = site("v2");
   publish(v2, 1, { ...LIVE, routes: { ...LIVE.routes, "/_runtime/portfolio/shell.json": "HIJACK" } });
-  for (const fx of [v1, v2]) {
+  for (const fx of [ordinarySite(), v1, v2]) {
     for (const p of ["/_runtime/portfolio/shell.json", "/_runtime/portfolio/runtime.json", "/%5Fruntime/portfolio/shell.json", "/_runtime/portfolio/shell.json?x=1", "/_runtime/portfolio/"]) {
       const got = await call(fx, p);
       eq([got.status, got.text], [404, "PKG 404"], `${fx.siteId} ${p}`);
       assert(got.keys.every((k) => !k.includes("/_runtime/")), `${fx.siteId} ${p}: read ${got.keys.join(", ")}`);
     }
-    eq((await call(fx, "/_runtime/portfolio/shell.json")).keys, [ROUTING(fx), `get ${pkg(fx, "404.html")}`], `${fx.siteId}: no overlay read for /_runtime/`);
+    for (const p of ["/_runtime/portfolio/shell.json", "/%5Fruntime/portfolio/shell.json"]) eq((await call(fx, p)).keys, [ROUTING(fx), `get ${pkg(fx, "404.html")}`], `${fx.siteId} ${p}: no overlay read, no shell question`);
     eq((await call(fx, "/_runtime/portfolio/shell.json", { method: "HEAD" })).status, 404, `${fx.siteId} HEAD`);
   }
   eq(resolvePath("/_runtime/portfolio/shell.json").kind, "not-found", "resolver refuses _runtime/**");
@@ -544,14 +669,14 @@ await check(`a pointer / manifest that does not verify (${REFUSALS.length + 1} w
   eq([...seen].sort(), ["current-identity", "current-manifest-ref", "current-schema", "current-unparsable", "manifest-identity", "manifest-invalid", "manifest-missing", "manifest-sha256", "manifest-too-large"], "every refusal class of loadOverlay is covered");
 });
 
-await check("fail closed is about a pointer that EXISTS: the same site with the pointer removed answers from the package again, byte for byte as a site that never had one; an R2 failure is still the 500", async () => {
+await check("a shell package stays closed when its refused pointer is removed (503 overlay-absent — the shell page is not the fallback); an R2 failure is still the 500", async () => {
   const fx = site("closed");
   publish(fx, 1, { ...LIVE, storedManifest: null });
   eq([(await call(fx, "/")).status, (await call(fx, "/about")).status], [503, 503], "refused while the pointer is there");
   fx.b.objects.delete(portfolioCurrentKey(fx.siteId, fx.hash));
   const home = await call(fx, "/");
-  eq([home.status, home.text, home.trace.outcome, home.trace.overlay, home.headers["cache-control"]], [200, "SHELL index", "served", undefined, CACHE_REVALIDATE], "pointer absent → the package, as before");
-  eq(home.keys, [ROUTING(fx), CURRENT(fx), `get ${pkg(fx, "index.html")}`], "…with the one extra read");
+  eq([home.status, home.text, home.trace.outcome, home.trace.overlay, home.headers["cache-control"]], [503, "content unavailable\n", "overlay-absent", "absent", "no-store"], "pointer absent → still no shell page");
+  eq(home.keys, [ROUTING(fx), CURRENT(fx), PROBE(fx)], "…decided by the pointer read and the one question about the package");
   const broken: Env = { SITES: { get: async (key) => (key.startsWith("portfolio-public/") ? Promise.reject(new Error("r2 down")) : fx.b.get(key)), head: (key) => fx.b.head(key) } };
   const lines: string[] = [];
   const original = console.log;
@@ -682,7 +807,8 @@ await check("the manifest is read once per revision; a new pointer is live on th
   eq([(await call(fx, "/portfolio/only-in-r2")).status, (await call(fx, "/assets/a.jpg")).status], [404, 200], "…and only r1's set");
 
   fx.b.objects.delete(portfolioCurrentKey(fx.siteId, fx.hash));
-  eq((await call(fx, "/")).text, "SHELL index", "pointer removed: the package again, cached manifests are not consulted");
+  const removed = await call(fx, "/");
+  eq([removed.status, removed.text, removed.trace.outcome], [503, "content unavailable\n", "overlay-absent"], "pointer removed: closed — cached manifests are not consulted, the shell page is not served");
 });
 
 await check("the cache is bounded: after 32 newer manifests the first one is read (and verified) again", async () => {

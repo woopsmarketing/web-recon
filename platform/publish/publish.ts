@@ -45,8 +45,8 @@
  *   portfolio-public/<siteId>/current/<packageHash>.json and the manifest it names, checked by the
  *   Worker's own loadOverlay (pointer schema / siteId / shellPackageHash, manifest object present,
  *   bytes = manifestSha256, manifest schema / siteId / shell.packageHash). Without one the Worker
- *   would serve the empty shell pages with 200 (no pointer) or answer 503 (a pointer it refuses), so
- *   the switch is refused; BoostChat publishes the portfolio for the package first. An ordinary package is not looked at. activate: false never
+ *   answers 503 for every page of the site (no pointer, or a pointer it refuses — it never serves a
+ *   shell package's pages without its portfolio), so the switch is refused; BoostChat publishes the portfolio for the package first. An ordinary package is not looked at. activate: false never
  *   reads the overlay; a dry run reports the overlay (StoreCheck.portfolioOverlay) and never throws
  *   for it — the normal order is package first (activate: false), portfolio second, switch last.
  * Rollback (rollbackHost): re-point a hostname at its pointer's `previous` package; no upload.
@@ -421,7 +421,7 @@ async function assertPortfolioLive(store: ObjectStore, target: { siteId: string;
   const found = state.state === "absent" ? `${state.key} does not exist` : `${state.key} is refused by recon-runtime (${state.reason}: ${OVERLAY_REFUSALS[state.reason] ?? "see workers/recon-runtime/src/index.ts loadOverlay"})`;
   throw new PublishError(
     `package ${shortHash(target.packageHash)} of "${target.siteId}" is a portfolio shell package (its portfolio pages are empty placeholders until BoostChat publishes them) and ${store.description} holds no usable portfolio for it: ${found}. ` +
-      `Pointing ${hostname} at it would ${state.state === "absent" ? "serve the empty shell pages" : "make recon-runtime answer 503 for the whole site"}; refusing — routing pointer NOT written. ` +
+      `Pointing ${hostname} at it would make recon-runtime answer 503 for the whole site (it never serves a shell package's pages without its portfolio); refusing — routing pointer NOT written. ` +
       `Publish the portfolio of "${target.siteId}" for this package from BoostChat first (it writes that pointer last), then run this command again. The package itself is already uploaded and sealed.`,
   );
 }

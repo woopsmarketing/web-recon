@@ -20,7 +20,8 @@
  *                       live package = ordinary → the caller's loader, as before
  *   S10 incremental host  an ordinary build may not replace the shell package a host serves — from any
  *                       checkout — unless leaveIncremental says so
- *   S8  serving         every addressable file of the shell package is served; /_runtime/** never is
+ *   S8  serving         a shell package without its overlay is closed (503) outside /_next/; with it, every
+ *                       addressable file the overlay does not own is served; /_runtime/** never is
  *   S9  CLI             the offline dry run names the guard
  */
 import { spawnSync } from "node:child_process";
@@ -344,7 +345,7 @@ await check("S7 rollback and the shell guard: an ORDINARY target is not held to 
   const liveOrdinary = pointerBytes(s);
   const w = s.writes.length;
   const absent = await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0 }), "rollback to shell, no overlay");
-  assert(REFUSAL.test(absent) && absent.includes(`${CURRENT_KEY} does not exist`) && absent.includes("would serve the empty shell pages") && absent.includes("routing pointer NOT written"), `message: ${absent}`);
+  assert(REFUSAL.test(absent) && absent.includes(`${CURRENT_KEY} does not exist`) && absent.includes("answer 503") && absent.includes("routing pointer NOT written"), `message: ${absent}`);
   publishOverlay(s, { storedManifest: enc("{}") });
   const defective = await refusal(rollbackHost({ store: s, siteId: SHELL_SITE, hostname: HOST, now: T0 }), "rollback to shell, bad manifest");
   assert(REFUSAL.test(defective) && defective.includes("(manifest-sha256:") && defective.includes("answer 503"), `message: ${defective}`);
@@ -440,7 +441,7 @@ await check("S10 incremental-host guard: a host that serves a SHELL package (per
   assert(re.status === "published" && re.pointerWrite === "unchanged", "ordinary host: as before");
 });
 
-await check("S8 serving a shell package: every addressable file is served byte for byte with its stored headers — except /_runtime/**, which is a 404 (the package's 404 page) for both documents, with and without an overlay", async () => {
+await check("S8 serving a shell package: WITHOUT an overlay only /_next/** is served (byte for byte, stored headers) and every other path is 503 no-store — never a shell page; WITH one, every addressable file outside the overlay's URL space is served byte for byte; /_runtime/** is a 404 (the package's 404 page) either way", async () => {
   const s = new MemoryStore();
   await publishSite({ repoRoot, siteId: SHELL_SITE, hostname: HOST, store: s, now: T0, activate: false });
   s.objects.set(shellPlan.routingKey, { body: enc({ schemaVersion: 1, hostname: HOST, siteId: SHELL_SITE, packageHash: HASH, buildInputId: shellPlan.buildInputId, releaseId: shellPlan.releaseId, publishedAt: T0().toISOString() }), meta: JSON_META });
@@ -448,25 +449,51 @@ await check("S8 serving a shell package: every addressable file is served byte f
   const notFound = shellPlan.files.find((f) => f.path === "404.html")!;
   const runtimeFiles = shellPlan.files.filter((f) => f.path.startsWith("_runtime/"));
   eq(runtimeFiles.map((f) => f.path).sort(), [RUNTIME_FILE, SHELL_FILE], `${RUNTIME_DIR} holds the two documents`);
-  let served = 0;
-  for (const f of shellPlan.files) {
-    if (f.path === "404.html" || f.path === "_not-found.html") continue;
-    const url = f.path === "index.html" ? "/" : `/${f.path.endsWith(".html") ? f.path.slice(0, -5) : f.path}`;
-    const r = await handle(new Request(`https://${HOST}${url}`), env);
+  const addressable = shellPlan.files.filter((f) => f.path !== "404.html" && f.path !== "_not-found.html");
+  const urlOf = (rel: string) => (rel === "index.html" ? "/" : `/${rel.endsWith(".html") ? rel.slice(0, -5) : rel}`);
+  const fetchFile = async (rel: string) => {
+    const r = await handle(new Request(`https://${HOST}${urlOf(rel)}`), env);
     const body = new Uint8Array(await r.arrayBuffer());
-    if (f.path.startsWith("_runtime/")) {
-      eq([r.status, r.headers.get("cache-control"), sha256(body)], [404, "no-store", notFound.sha256], `${url} is never served`);
-      continue;
+    return { r, body, got: [r.status, r.headers.get("content-type"), r.headers.get("cache-control"), body.length, sha256(body)] };
+  };
+  const asStored = (f: (typeof addressable)[number]) => [200, f.contentType, f.cacheControl, f.size, f.sha256];
+  const CLOSED = [503, "text/plain; charset=utf-8", "no-store", "content unavailable\n".length, sha256("content unavailable\n")];
+
+  // nothing published for the package: the hostname is closed, the build output is not
+  const counts = { next: 0, closed: 0 };
+  for (const f of addressable) {
+    const { r, body, got } = await fetchFile(f.path);
+    if (f.path.startsWith("_runtime/")) eq([r.status, r.headers.get("cache-control"), sha256(body)], [404, "no-store", notFound.sha256], `${urlOf(f.path)} is never served`);
+    else if (f.path.startsWith("_next/")) {
+      eq(got, asStored(f), `${urlOf(f.path)} (no overlay)`);
+      counts.next++;
+    } else {
+      eq(got, CLOSED, `${urlOf(f.path)} (no overlay)`);
+      counts.closed++;
     }
-    eq([r.status, r.headers.get("content-type"), r.headers.get("cache-control"), body.length, sha256(body)], [200, f.contentType, f.cacheControl, f.size, f.sha256], url);
-    served++;
   }
-  eq(served, shellPlan.files.length - 2 - runtimeFiles.length, "addressable = all but 404.html, _not-found.html and /_runtime/**");
-  publishOverlay(s);
-  for (const f of runtimeFiles) {
-    const r = await handle(new Request(`https://${HOST}/${f.path}`), env);
-    eq([r.status, sha256(new Uint8Array(await r.arrayBuffer()))], [404, notFound.sha256], `/${f.path} with a live overlay`);
+  assert(counts.next > 0 && counts.closed > 0, `nothing compared: ${JSON.stringify(counts)}`);
+  eq(counts.next + counts.closed, addressable.length - runtimeFiles.length, "every addressable file was judged");
+
+  // the portfolio is published: the package answers everything the overlay does not own
+  const overlay = publishOverlay(s);
+  const owned = (url: string) => {
+    const isRsc = (page: string) => url === (page === "/" ? "/index.txt" : `${page}.txt`) || (url.startsWith(page === "/" ? "/__next." : `${page}/__next.`) && url.endsWith(".txt") && !url.slice((page === "/" ? "/" : `${page}/`).length).includes("/"));
+    return ["/", "/sitemap.xml"].some((p) => url === p || isRsc(p)) || url === "/portfolio" || url.startsWith("/portfolio/") || isRsc("/portfolio");
+  };
+  let served = 0;
+  for (const f of addressable) {
+    const url = urlOf(f.path);
+    const { r, body, got } = await fetchFile(f.path);
+    if (f.path.startsWith("_runtime/")) eq([r.status, sha256(body)], [404, notFound.sha256], `${url} with a live overlay`);
+    else if (url === "/") eq([r.status, sha256(body)], [200, sha256(overlay.home)], "/ is the composed page");
+    else if (owned(url)) eq([r.status, sha256(body)], [404, notFound.sha256], `${url} is the overlay's and was not rendered: never the shell's file`);
+    else {
+      eq(got, asStored(f), `${url} (live overlay)`);
+      served++;
+    }
   }
+  assert(served > counts.next, `only ${served} package files served under a live overlay`);
 });
 
 await check("S9 CLI: the offline --dry-run of the shell site exits 0, names the overlay pointer the activation needs and says it was not checked; nothing about it for an ordinary site", () => {
