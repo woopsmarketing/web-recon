@@ -276,6 +276,8 @@ const reuse = await loadSiteInstance(repoRoot, REUSE_SITE);
 /** the reuse site as a buildable site: its live directory with the frozen portfolio dataset (data/site-builds stays in repoRoot) */
 const reuseFrozen = await frozenDemoRoot(repoRoot, REUSE_SITE);
 const reuseProjects = async (): Promise<{ slug: string; status: string }[]> => JSON.parse(await readFile(path.join(reuseFrozen.siteDir, "content/projects.json"), "utf8")).items;
+/** true = the reuse site is published incrementally (portfolio-source@2): its package is a shell, its project pages are composed at publish time */
+const reuseIncremental = async () => (await readPortfolioSource(path.join(repoRoot, "data/sites", REUSE_SITE))) === "incremental";
 const reuseCurrent = await readJson(`data/site-builds/${REUSE_SITE}/current.json`);
 const reuseRecord = await readJson(`${reuseCurrent.packageDir}/build-record.json`);
 const reuseSiteDir = path.join(repoRoot, reuseCurrent.packageDir, "site");
@@ -285,14 +287,23 @@ await check("L the reuse site pins the SAME release as the first site (id + full
   eq([reuseRecord.siteId, reuseRecord.status, reuseRecord.parts.mode], [REUSE_SITE, "success", "public"], "record");
   eq([reuseRecord.template.templateId, reuseRecord.template.releaseId, reuseRecord.template.releaseHash], [pin.templateId, pin.releaseId, pin.releaseHash], "the package's Template");
   eq([reuseRecord.qa.pass, reuseRecord.qa.failures], [true, []], "package QA");
-  const input = await prepareSiteInput({ repoRoot: reuseFrozen.root, siteId: REUSE_SITE, mode: "public", at: reuseRecord.at });
+  // a site published incrementally is built from its live directory (the marker is what makes the package a shell;
+  // the frozen composition drops it and describes a site that builds its own portfolio)
+  const input = await prepareSiteInput({ repoRoot: (await reuseIncremental()) ? repoRoot : reuseFrozen.root, siteId: REUSE_SITE, mode: "public", at: reuseRecord.at });
   eq([input.parts.siteSnapshotHash, input.buildInputId], [reuseRecord.parts.siteSnapshotHash, reuseCurrent.buildInputId], "identity = the site's present data");
   assert(reuseCurrent.buildInputId !== current.buildInputId && reuseCurrent.packageDir !== current.packageDir, "the two sites share a package");
 });
-await check("L2 the reuse site's live directory: its portfolio is the frozen dataset or a generated one; while it is the frozen dataset and loads, it has the tracked package's identity; generated, it loads; adopted without a generated portfolio, it is refused", async () => {
+await check("L2 the reuse site's live directory: its portfolio is the frozen dataset or a generated one; while it is the frozen dataset and loads, it has the tracked package's identity; generated, it loads; adopted for incremental publishing, it loads as the tracked shell package's input; adopted without a generated portfolio, it is refused", async () => {
   const { live } = reuseFrozen;
   assert(live.identical || live.managed, `data/sites/${REUSE_SITE}: the portfolio is neither the frozen dataset nor a generated one`);
-  if (live.dataset) {
+  if (await reuseIncremental()) {
+    // adopted for incremental publishing (portfolio-source@2): nothing is generated into this checkout and nothing is refused —
+    // the directory is a shell input, and the package records the publisher's runtime documents
+    assert(live.adopted && !live.managed, "an incremental site carries the marker and no generated portfolio");
+    const shell = await prepareSiteInput({ repoRoot, siteId: REUSE_SITE, mode: "public", at: reuseRecord.at });
+    eq([shell.parts.siteSnapshotHash, shell.buildInputId], [reuseRecord.parts.siteSnapshotHash, reuseCurrent.buildInputId], "live directory = the tracked shell package's input");
+    assert(reuseRecord.portfolioRuntime !== undefined, "the shell package records no portfolio runtime");
+  } else if (live.dataset) {
     const liveNow = await prepareSiteInput({ repoRoot, siteId: REUSE_SITE, mode: "public", at: live.identical ? reuseRecord.at : new Date().toISOString() });
     if (live.identical) eq([liveNow.parts.siteSnapshotHash, liveNow.buildInputId], [reuseRecord.parts.siteSnapshotHash, reuseCurrent.buildInputId], "live directory = the tracked package's data");
   } else {
