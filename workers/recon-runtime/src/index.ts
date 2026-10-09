@@ -188,8 +188,17 @@ function parseManifest(bytes: ArrayBuffer): PortfolioManifest | undefined {
  * The live portfolio manifest of the routed package; undefined when the site has none.
  * Fail safe: a pointer or manifest that does not verify is refused (trace.overlay says why) and the
  * request is answered from the package alone — nothing is ever served from an unverified manifest.
+ *
+ * Exported for the publisher (platform/publish): before it points a hostname at a shell package it
+ * asks this very function whether the Worker would use the overlay, with `cache: null` so the
+ * manifest object is read and hashed again instead of being taken from memory.
  */
-async function loadOverlay(env: Env, pointer: RoutingPointer, trace: Trace): Promise<PortfolioManifest | undefined> {
+export async function loadOverlay(
+  env: Pick<Env, "SITES">,
+  pointer: Pick<RoutingPointer, "siteId" | "packageHash">,
+  trace: Pick<Trace, "overlay">,
+  cache: Map<string, PortfolioManifest> | null = manifestCache,
+): Promise<PortfolioManifest | undefined> {
   const refuse = (why: string): undefined => void (trace.overlay = why);
   const currentObj = await env.SITES.get(portfolioCurrentKey(pointer.siteId, pointer.packageHash));
   if (!currentObj) return undefined;
@@ -207,7 +216,7 @@ async function loadOverlay(env: Env, pointer: RoutingPointer, trace: Trace): Pro
   if (manifestKey.length > MAX_KEY_BYTES) return refuse("current-manifest-ref");
 
   const cacheKey = `${manifestKey}#${sha256}`;
-  let manifest = manifestCache.get(cacheKey);
+  let manifest = cache?.get(cacheKey);
   if (!manifest) {
     const obj = await env.SITES.get(manifestKey);
     if (!obj) return refuse("manifest-missing");
@@ -219,8 +228,10 @@ async function loadOverlay(env: Env, pointer: RoutingPointer, trace: Trace): Pro
     if ((await sha256Hex(bytes)) !== sha256) return refuse("manifest-sha256");
     manifest = parseManifest(bytes);
     if (!manifest) return refuse("manifest-invalid");
-    if (manifestCache.size >= MANIFEST_CACHE_MAX) manifestCache.delete(manifestCache.keys().next().value!);
-    manifestCache.set(cacheKey, manifest);
+    if (cache) {
+      if (cache.size >= MANIFEST_CACHE_MAX) cache.delete(cache.keys().next().value!);
+      cache.set(cacheKey, manifest);
+    }
   }
   // Checked on every request, cached or not: the manifest must be this site's, for this package.
   if (manifest.siteId !== pointer.siteId || manifest.shell.packageHash !== pointer.packageHash) return refuse("manifest-identity");

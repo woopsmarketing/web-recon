@@ -886,9 +886,12 @@ function bucketOf(s: MemoryStore): R2BucketLike {
 }
 const env: Env = { SITES: bucketOf(published!) };
 const req = (p: string, init: RequestInit & { host?: string } = {}) => handle(new Request(`https://${init.host ?? HOST}${p}`, init), env);
+/** package files the runtime never serves by contract: /_runtime/** — the portfolio publisher's inputs, which only a SHELL package carries */
+const NEVER_SERVED = plan.files.filter((f) => f.path.startsWith("_runtime/"));
 function urlFor(rel: string): string | undefined {
   if (rel === "index.html") return "/";
   if (rel === "404.html" || rel === "_not-found.html") return undefined;
+  if (NEVER_SERVED.some((f) => f.path === rel)) return undefined;
   return `/${rel.endsWith(".html") ? rel.slice(0, -5) : rel}`;
 }
 
@@ -904,7 +907,10 @@ await check("every addressable package file: 200, stored content-type + cache-co
     eq([body.length, sha256(body)], [f.size, f.sha256], `${u} bytes`);
     n++;
   }
-  eq(n, plan.files.length - 2, "addressable = all but 404.html and _not-found.html");
+  // An ordinary package has no /_runtime/ at all, so nothing is skipped for it; a shell package skips exactly its runtime documents.
+  eq(NEVER_SERVED.length > 0, plan.shell !== undefined, "/_runtime/** exists in a shell package only");
+  eq(n, plan.files.length - 2 - NEVER_SERVED.length, "addressable = all but 404.html and _not-found.html (and a shell package's /_runtime/**)");
+  for (const f of NEVER_SERVED) eq((await req(`/${f.path}`)).status, 404, `/${f.path} is never served`);
 });
 
 await check("unknown path → 404 with the package's 404.html bytes, no-store, no ETag; HEAD same status, no body", async () => {

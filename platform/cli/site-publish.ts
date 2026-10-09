@@ -25,6 +25,13 @@
  *                     the one that was reviewed. Single operator is still assumed (not atomic).
  *  --no-activate      upload + verify + seal only; the routing pointer is not read or written. A later
  *                     run without it finds the seal, uploads nothing and only switches the pointer.
+ *  SHELL PACKAGE      (an incrementally published site, portfolio.source.json portfolio-source@2): its
+ *                     portfolio pages are empty until BoostChat publishes them, so the pointer write —
+ *                     publish or --rollback — is refused unless the same store holds
+ *                     portfolio-public/<siteId>/current/<packageHash>.json and a manifest recon-runtime
+ *                     would use (the Worker's own checks). Order: --no-activate → publish the portfolio
+ *                     from BoostChat → run again without --no-activate. --dry-run reports the guard
+ *                     (with --check-store: absent / refused / live) and is never failed by it.
  *  --reverify         when the package is already sealed, read every object back and compare
  *                     sha256/size instead of trusting the seal (read-only; mismatches are reported)
  *  --allow-origin-mismatch  a --remote publish is refused when the origin baked into the package
@@ -32,8 +39,11 @@
  *  --rollback         re-point the hostname at its pointer's `previous` (already sealed) package; no upload
  *                     refused (no override) when that package serves portfolio records that are no longer in
  *                     data/sites/<siteId>/content/projects.json (served set) — docs/result/sales-demo-final-closeout-v1/rollback-truth-runbook.md
+ *                     For an incrementally published site that file is not the truth (BoostChat is): the
+ *                     served set is read from the live portfolio overlay of the package the hostname
+ *                     serves now; without a usable overlay there is nothing to check against → refused.
  */
-import { publishSite, rollbackHost, sealBytes, type PortfolioTruthLoader, type PublishResult } from "../publish/publish";
+import { publishedPortfolioTruth, publishSite, rollbackHost, sealBytes, type PortfolioTruthLoader, type PublishResult } from "../publish/publish";
 import { WranglerStore } from "../publish/wrangler-store";
 import { readPortfolioSource, SOURCE_MARKER_FILE } from "../portfolio-sync/managed";
 import { buildSiteSnapshot, siteDir } from "../site/load";
@@ -116,7 +126,10 @@ if (has("--rollback")) {
   // The served set a fresh public build would emit into the portfolio document (integration/emit.ts).
   const portfolioTruth: PortfolioTruthLoader = async () => {
     const at = new Date().toISOString();
-    const { snapshot } = await buildSiteSnapshot({ repoRoot: process.cwd(), siteId, mode: "public", at });
+    const { snapshot, portfolio } = await buildSiteSnapshot({ repoRoot: process.cwd(), siteId, mode: "public", at });
+    // An incrementally published site has no portfolio in this checkout (the snapshot holds none by design):
+    // its served set is what BoostChat has published for the package the hostname serves now.
+    if (portfolio === "incremental") return publishedPortfolioTruth(store!, siteId, host);
     return { authoritativeIds: snapshot.content.projects.map((p) => p.id), source: `data/sites/${siteId}/content/projects.json (served at ${at})` };
   };
   try {
@@ -175,6 +188,13 @@ if (res.status === "dry-run") {
   for (const f of plan.files) console.log(`${f.key}\t${f.contentType}\t${f.cacheControl}\t${f.size}`);
   console.log(`${plan.sealKey}\tapplication/json\tno-store\t${sealBytes(plan.seal).length}\t(SEAL, written last)`);
   console.log(`${plan.routingKey}\tapplication/json\tno-store\t-\t(POINTER, written after the verified seal${sc ? "" : '; "previous" filled from the existing pointer at publish time'})`);
+  if (plan.shell) {
+    const o = sc?.portfolioOverlay;
+    console.log(
+      `SHELL PACKAGE — the pointer write is refused unless the store holds a portfolio overlay recon-runtime would use: ${plan.shell.currentKey} → ` +
+        (o ? `${o.state}${o.state === "live" ? ` (revision ${o.revision})` : o.state === "refused" ? ` (${o.reason})` : ""} → activation ${o.activation === "would-pass" ? "WOULD PASS" : "WOULD BE REFUSED (publish the portfolio for this package from BoostChat first)"}` : "not checked (add --check-store)"),
+    );
+  }
   console.log(JSON.stringify(res.pointer, null, 2));
 }
 console.log(
@@ -196,6 +216,7 @@ console.log(
       byContentType: byType,
       byCachePolicy: byCache,
       warnings: plan.warnings,
+      ...(plan.shell ? { portfolioShell: { currentKey: plan.shell.currentKey, activationNeedsLiveOverlay: true } } : {}),
       ...(res.status === "dry-run" ? { storeCheck: res.storeCheck ?? null } : {}),
       ...(res.status === "published" ? { upload: res.upload, uploaded: res.uploaded, verified: res.verified, pointerWrite: res.pointerWrite, previous: res.pointer.previous ?? null } : {}),
       ...(res.status === "uploaded" ? { upload: res.upload, uploaded: res.uploaded, verified: res.verified, pointerWrite: "not-activated" } : {}),
