@@ -2,6 +2,7 @@ import { chmod, cp, mkdir, readFile, readdir, rename, rm, stat, writeFile } from
 import path from "node:path";
 import { z } from "zod";
 import ts from "typescript";
+import { PORTFOLIO_RUNTIME_GATE, ReleasePortfolioRuntimeSchema, type ReleasePortfolioRuntime } from "../portfolio-runtime/capability";
 import { hashJson, sha256, stableStringify } from "../util/hash";
 
 /**
@@ -13,9 +14,10 @@ import { hashJson, sha256, stableStringify } from "../util/hash";
  *   package.json + pnpm-lock.yaml   (scoped: platform/runtime/, never the repo root manifest)
  *
  * releaseHash = sha256 over { sorted (path, sha256) file list, templateId,
- * templateVersion, forbiddenTerms, gates } — no timestamps, so the same code
- * always yields the same hash, and editing any of that metadata (or any file byte)
- * is detected. `createdAt` and per-file `size` are informational and NOT hashed.
+ * templateVersion, forbiddenTerms, gates, portfolioRuntime (only when the release
+ * declares it) } — no timestamps, so the same code always yields the same hash, and
+ * editing any of that metadata (or any file byte) is detected. `createdAt` and
+ * per-file `size` are informational and NOT hashed.
  * A stored release is never rewritten: files are read-only and every use re-verifies.
  */
 
@@ -36,6 +38,13 @@ export const ReleaseRecordSchema = z
     /** Frozen from provenance.json at release time; builds never read provenance. */
     forbiddenTerms: z.array(z.string()),
     gates: z.record(z.string(), z.object({ pass: z.boolean(), detail: z.string() }).strict()),
+    /**
+     * Present ONLY when the Template's manifest declares the portfolio runtime and the release gate
+     * "portfolio-runtime-kit" proved it (platform/portfolio-runtime/capability.ts + gate.ts). A
+     * release without the capability has no such member, so its hash is what it always was.
+     * Ask resolvePortfolioRuntime(record) — never read this, or the files, directly.
+     */
+    portfolioRuntime: ReleasePortfolioRuntimeSchema.optional(),
   })
   .strict();
 export type ReleaseRecord = z.infer<typeof ReleaseRecordSchema>;
@@ -91,6 +100,8 @@ export interface ReleaseHashInput {
   forbiddenTerms: readonly string[];
   gates: Record<string, { pass: boolean; detail: string }>;
   files: { path: string; sha256: string }[];
+  /** hashed only when present (an absent member is not part of the canonical JSON) */
+  portfolioRuntime?: ReleasePortfolioRuntime;
 }
 
 export function computeReleaseHash(r: ReleaseHashInput): string {
@@ -100,6 +111,7 @@ export function computeReleaseHash(r: ReleaseHashInput): string {
     forbiddenTerms: [...r.forbiddenTerms],
     gates: r.gates,
     files: r.files.map((f) => ({ path: f.path, sha256: f.sha256 })),
+    portfolioRuntime: r.portfolioRuntime,
   });
 }
 
@@ -313,6 +325,12 @@ export interface CreateReleaseResult {
   record: ReleaseRecord;
   dir: string;
   created: boolean;
+  /**
+   * The "portfolio-runtime-kit" gate of this cut. Not applicable (the Template declares no
+   * portfolio runtime) = passed with nothing added to the record; applicable = what the record
+   * carries as gates["portfolio-runtime-kit"] and `portfolioRuntime`.
+   */
+  portfolioRuntimeGate: { applicable: boolean; pass: true; detail: string; emptyState?: "supported" | "refused" };
 }
 
 export function releaseDir(repoRoot: string, templateId: string, releaseId: string): string {
@@ -338,7 +356,7 @@ export async function createRelease(opts: {
   if (!templateVersion.startsWith(`${major}.`)) {
     throw new ReleaseError(`template manifest version ${templateVersion} is not in major v${major}`);
   }
-  const { templateDir, sources } = await collectReleaseSources(repoRoot, templateId, major);
+  const { templateRel, templateDir, sources } = await collectReleaseSources(repoRoot, templateId, major);
   const provenance = JSON.parse(await readFile(path.join(templateDir, "provenance.json"), "utf8")) as { forbiddenTerms: string[] };
   const forbiddenTerms = [...provenance.forbiddenTerms];
 
@@ -357,14 +375,31 @@ export async function createRelease(opts: {
     throw new ReleaseError(`release gates failed:\n${findings.map((f) => `  ${f.file}: ${f.why}`).join("\n")}`);
   }
 
-  const gates = {
+  // "portfolio-runtime-kit": a release that declares the portfolio runtime must prove it — its kit
+  // is bundled from these very bytes and smoke-rendered — and one that ships a runtime must declare
+  // it. Runs after the source gates (it executes Template code) and before anything is written: a
+  // failure records nothing. Loaded on demand: the gate reaches the kit bundler, which reads the
+  // release store through this module.
+  const { gatePortfolioRuntimeKit, PortfolioRuntimeGateError } = await import("../portfolio-runtime/gate");
+  const runtimeGate = await gatePortfolioRuntimeKit({ templateId, templateVersion, templateRel, contents }).catch((error: unknown) => {
+    if (error instanceof PortfolioRuntimeGateError) throw new ReleaseError(`release gates failed:\n  ${PORTFOLIO_RUNTIME_GATE}: ${error.message}`);
+    throw error;
+  });
+
+  const gates: Record<string, { pass: boolean; detail: string }> = {
     "source-isolation": { pass: true, detail: `${files.length} files scanned for ${forbiddenTerms.length} forbidden terms` },
     "template-code-rules": {
       pass: true,
       detail: "template imports on allowlist only; no Date/random/network/require/eval; no siteId literals; no env reads (next.config: RECON_BUILD_ID only)",
     },
+    // recorded only when it applies: a release without the capability keeps the hash it always had
+    ...(runtimeGate.applicable ? { [PORTFOLIO_RUNTIME_GATE]: runtimeGate.gate } : {}),
   };
-  const releaseHash = computeReleaseHash({ templateId, templateVersion, forbiddenTerms, gates, files });
+  const portfolioRuntime = runtimeGate.applicable ? runtimeGate.portfolioRuntime : undefined;
+  const portfolioRuntimeGate: CreateReleaseResult["portfolioRuntimeGate"] = runtimeGate.applicable
+    ? { applicable: true, pass: true, detail: runtimeGate.gate.detail, emptyState: runtimeGate.emptyState }
+    : { applicable: false, pass: true, detail: runtimeGate.detail };
+  const releaseHash = computeReleaseHash({ templateId, templateVersion, forbiddenTerms, gates, files, portfolioRuntime });
   const releaseId = `${templateId}-${templateVersion}-${releaseHash.slice(0, 12)}`;
   const dir = releaseDir(repoRoot, templateId, releaseId);
 
@@ -375,7 +410,7 @@ export async function createRelease(opts: {
       throw new ReleaseError(`release ${releaseId} exists with a different hash — refusing to overwrite`);
     }
     await verifyRelease(repoRoot, record);
-    return { record, dir, created: false };
+    return { record, dir, created: false, portfolioRuntimeGate };
   }
 
   const record: ReleaseRecord = {
@@ -389,6 +424,7 @@ export async function createRelease(opts: {
     files,
     forbiddenTerms,
     gates,
+    ...(portfolioRuntime ? { portfolioRuntime } : {}),
   };
 
   const tmp = `${dir}.tmp-${process.pid}`;
@@ -403,7 +439,7 @@ export async function createRelease(opts: {
   await chmod(path.join(tmp, "release.json"), 0o444);
   await mkdir(path.dirname(dir), { recursive: true });
   await rename(tmp, dir);
-  return { record, dir, created: true };
+  return { record, dir, created: true, portfolioRuntimeGate };
 }
 
 // ------------------------------------------------------- load + verify ------
@@ -446,6 +482,11 @@ export async function verifyRelease(repoRoot: string, record: ReleaseRecord): Pr
   }
   if (computeTemplateSourceHash(record.files) !== record.templateSourceHash) {
     throw new ReleaseError(`release ${record.releaseId}: templateSourceHash does not match its file list`);
+  }
+  // the capability and its gate are recorded together or not at all (a record cut before either existed has neither)
+  const gate = record.gates[PORTFOLIO_RUNTIME_GATE];
+  if ((record.portfolioRuntime !== undefined) !== (gate !== undefined) || (gate !== undefined && !gate.pass)) {
+    throw new ReleaseError(`release ${record.releaseId}: the portfolio runtime it declares and its "${PORTFOLIO_RUNTIME_GATE}" gate do not agree`);
   }
 }
 

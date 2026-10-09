@@ -26,6 +26,11 @@ import { z } from "zod";
  *      own. The builder reads it inside the build workspace (shell-plan.ts).
  *   3. `runtime/portfolio.ts` — exports `portfolioRuntime` (TemplatePortfolioRuntime, entry.tsx): the
  *      pages, their metadata and slot data for a site context, and the element of each slot.
+ *   4. the DECLARATION, in its manifest (template.ts):
+ *        portfolioRuntime: { supported: true, contract: "portfolio-runtime@1" }
+ *      A release is recorded with the capability only after the release gate "portfolio-runtime-kit"
+ *      (gate.ts) has bundled its kit and rendered with it; whether a release has the capability is
+ *      asked of resolvePortfolioRuntime (capability.ts) — never found out by looking for 2 and 3.
  * Nothing here names a Template, a site or a section.
  */
 

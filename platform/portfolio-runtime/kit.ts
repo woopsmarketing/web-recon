@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import * as esbuild from "esbuild";
 import { loadRelease, releaseDir, verifyRelease } from "../release/release";
 import { sha256 } from "../util/hash";
+import { resolvePortfolioRuntime, templateRelOf } from "./capability";
 import { KIT_FORMAT, KIT_KIND, TEMPLATE_RUNTIME_MODULE, TEMPLATE_SHELL_MODULE } from "./contract";
 import type { RuntimeKitInfo } from "./entry";
 
@@ -24,6 +25,11 @@ import type { RuntimeKitInfo } from "./entry";
  * composed by the same kit (the site arrives as data — the two documents and the shell pages of its
  * package). The only input is the release store; no site directory is read.
  *
+ * Which releases have a kit is not probed for here: resolvePortfolioRuntime (capability.ts) says so.
+ * bundleRuntimeKit is the bundler alone, over a directory of release files — buildRuntimeKit feeds
+ * it a stored release; the release gate (gate.ts) feeds it the files of a release that is not
+ * recorded yet.
+ *
  * Reproducible: the same release and platform sources give byte-identical files. Nothing written
  * here carries a clock value; `sourceCommit` (kit.json only) is the caller's.
  */
@@ -41,7 +47,7 @@ export class RuntimeKitError extends Error {
 /** the checkout this module lives in: its platform/portfolio-runtime sources and its node_modules are what gets bundled */
 const CODE_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
-/** What a release must contain to be composed at publish time, relative to its template directory / to the release root. */
+/** What a release that supports the portfolio runtime contains, relative to its template directory / to the release root. */
 const TEMPLATE_SURFACE = ["template.ts", TEMPLATE_SHELL_MODULE, TEMPLATE_RUNTIME_MODULE] as const;
 const PLATFORM_SURFACE = ["platform/site/context.ts", "platform/assets/assets.ts", "platform/content/schema.ts"] as const;
 /** the packages a kit bundles, at exactly the version the release's own manifest pins */
@@ -51,6 +57,8 @@ const GLUE_FILE = "portfolio-runtime-kit-entry.ts";
 /** the module react-dom/server.browser takes renderToString from: the synchronous renderer — no stream, no scheduler, no MessageChannel */
 const SYNC_RENDER_MODULE = "cjs/react-dom-server-legacy.browser.production.js";
 const EXPORTS = ["kit", "renderPortfolioSite"];
+/** the extra export of a gate bundle (never of a kit) */
+const PROBE_EXPORT = "probe";
 
 /** react / react-dom / zod exactly as the release's own manifest pins them, from this checkout's node_modules. */
 async function pinnedPackages(filesDir: string): Promise<{ dirs: Record<string, string>; versions: Record<string, string> }> {
@@ -96,33 +104,35 @@ export interface RuntimeKit {
   inputs: string[];
 }
 
-export async function buildRuntimeKit(opts: {
-  /** the repository root that holds data/template-releases */
-  repoRoot: string;
-  templateId: string;
-  releaseId: string;
-  /** written to kit.json; default: this checkout's HEAD ("-dirty" when a kit input has uncommitted changes) */
-  sourceCommit?: string;
-}): Promise<RuntimeKit> {
-  const release = await loadRelease(opts.repoRoot, opts.templateId, opts.releaseId);
-  if (release.templateId !== opts.templateId || release.releaseId !== opts.releaseId) throw new RuntimeKitError(`the release store returned ${release.templateId}/${release.releaseId} for ${opts.templateId}/${opts.releaseId}`);
-  await verifyRelease(opts.repoRoot, release);
-  const templateRel = `templates/${release.templateId}/v${release.templateVersion.split(".")[0]}`;
-  const have = new Set(release.files.map((f) => f.path));
-  const missing = [...TEMPLATE_SURFACE.map((f) => `${templateRel}/${f}`), ...PLATFORM_SURFACE].filter((f) => !have.has(f));
-  if (missing.length > 0) throw new RuntimeKitError(`release ${release.releaseId} cannot be composed at publish time: it has no ${missing.join(", ")}`);
-  // the store may be reached through a symlink (a test root); the bundler names modules by their real path
-  const filesDir = await realpath(path.join(releaseDir(opts.repoRoot, release.templateId, release.releaseId), "files"));
-  const { dirs: packageDirs, versions } = await pinnedPackages(filesDir);
+/** The files a release must hold for its kit to be bundled, as snapshot paths. */
+export function runtimeKitSurface(templateRel: string): string[] {
+  return [...TEMPLATE_SURFACE.map((f) => `${templateRel}/${f}`), ...PLATFORM_SURFACE];
+}
 
-  const info: RuntimeKitInfo = {
-    kitFormat: KIT_FORMAT,
-    kind: KIT_KIND,
-    templateId: release.templateId,
-    templateVersion: release.templateVersion,
-    releaseId: release.releaseId,
-    releaseHash: release.releaseHash,
-  };
+export interface RuntimeKitBundle {
+  /** renderer.mjs, exactly as it is (to be) written */
+  renderer: string;
+  rendererBytes: number;
+  /** every source file bundled, relative to this checkout */
+  inputs: string[];
+  /** the release-pinned package versions that were bundled */
+  versions: Record<string, string>;
+}
+
+/**
+ * The bundler: ONE import-free ESM file from a directory that holds a release's files (`filesDir`,
+ * the layout of data/template-releases/<id>/<releaseId>/files) and the identity the kit states.
+ *
+ * `probe: true` is for the release gate only: the same bundle with one more export, `probe`, that
+ * hands out what the bundle was made of (the Template's manifest, its shell declaration, the release
+ * modules, the renderer factory) so the gate can make a synthetic input for the release. A bundle
+ * with a probe is never written as a kit.
+ */
+export async function bundleRuntimeKit(opts: { filesDir: string; templateRel: string; info: RuntimeKitInfo; probe?: boolean }): Promise<RuntimeKitBundle> {
+  const { templateRel, info } = opts;
+  // the directory may be reached through a symlink (a test root, the OS temp directory); the bundler names modules by their real path
+  const filesDir = await realpath(opts.filesDir);
+  const { dirs: packageDirs, versions } = await pinnedPackages(filesDir);
 
   // The bundle's entry: binds platform/portfolio-runtime/entry.tsx to the RELEASE's modules
   // ("runtime-kit:release/…" is the release's files directory). Generated, never a file.
@@ -135,15 +145,23 @@ export async function buildRuntimeKit(opts: {
     `import { createSiteContext } from "runtime-kit:release/platform/site/context";`,
     `import { AssetEntrySchema, publicAssetPath } from "runtime-kit:release/platform/assets/assets";`,
     `import { CategorySchema, ProjectSchema, projectAssetRefs } from "runtime-kit:release/platform/content/schema";`,
+    ...(opts.probe ? [`import { portfolioShell } from "${rel}/${TEMPLATE_SHELL_MODULE.replace(/\.tsx?$/, "")}";`] : []),
     `export const kit = ${JSON.stringify(info)};`,
-    `export const renderPortfolioSite = createPortfolioSiteRenderer({`,
-    `  kit,`,
-    `  release: { template, createSiteContext, publicAssetPath, ProjectSchema, CategorySchema, AssetEntrySchema, projectAssetRefs, portfolioRuntime },`,
-    `  renderToString,`,
-    `});`,
+    ...(opts.probe
+      ? [
+          `const release = { template, createSiteContext, publicAssetPath, ProjectSchema, CategorySchema, AssetEntrySchema, projectAssetRefs, portfolioRuntime };`,
+          `export const renderPortfolioSite = createPortfolioSiteRenderer({ kit, release, renderToString });`,
+          `export const ${PROBE_EXPORT} = { template, portfolioShell, release, renderToString, createPortfolioSiteRenderer };`,
+        ]
+      : [
+          `export const renderPortfolioSite = createPortfolioSiteRenderer({`,
+          `  kit,`,
+          `  release: { template, createSiteContext, publicAssetPath, ProjectSchema, CategorySchema, AssetEntrySchema, projectAssetRefs, portfolioRuntime },`,
+          `  renderToString,`,
+          `});`,
+        ]),
     ``,
   ].join("\n");
-
   const SKIP = "runtime-kit-resolved";
   const plugin: esbuild.Plugin = {
     name: "portfolio-runtime-kit",
@@ -196,17 +214,51 @@ export async function buildRuntimeKit(opts: {
   } catch (error) {
     const errors = (error as esbuild.BuildFailure).errors;
     const detail = errors?.length ? errors.map((e) => `${e.location ? `${e.location.file}:${e.location.line}: ` : ""}${e.text}`).join("\n  ") : (error as Error).message;
-    throw new RuntimeKitError(`bundling ${release.releaseId} failed:\n  ${detail}`);
+    throw new RuntimeKitError(`bundling ${info.releaseId} failed:\n  ${detail}`);
   }
   const output = result.outputFiles[0];
   const meta = Object.values(result.metafile.outputs)[0];
   if (result.outputFiles.length !== 1 || !output || !meta) throw new RuntimeKitError("the bundler did not produce exactly one file");
   if (meta.imports.length > 0) throw new RuntimeKitError(`renderer would import ${meta.imports.map((i) => i.path).join(", ")}: a kit must be import-free`);
-  if (JSON.stringify([...meta.exports].sort()) !== JSON.stringify(EXPORTS)) throw new RuntimeKitError(`renderer exports ${meta.exports.join(", ")}`);
+  const wanted = opts.probe ? [...EXPORTS, PROBE_EXPORT].sort() : EXPORTS;
+  if (JSON.stringify([...meta.exports].sort()) !== JSON.stringify(wanted)) throw new RuntimeKitError(`renderer exports ${meta.exports.join(", ")}`);
   const renderer = output.text;
   if (/\b__require\b|\bprocess\.env\b/.test(renderer)) throw new RuntimeKitError("renderer still refers to require / process.env");
 
   const inputs = Object.keys(result.metafile.inputs).filter((f) => f !== GLUE_FILE).sort();
+  return { renderer, rendererBytes: output.contents.length, inputs, versions };
+}
+
+export async function buildRuntimeKit(opts: {
+  /** the repository root that holds data/template-releases */
+  repoRoot: string;
+  templateId: string;
+  releaseId: string;
+  /** written to kit.json; default: this checkout's HEAD ("-dirty" when a kit input has uncommitted changes) */
+  sourceCommit?: string;
+}): Promise<RuntimeKit> {
+  const release = await loadRelease(opts.repoRoot, opts.templateId, opts.releaseId);
+  if (release.templateId !== opts.templateId || release.releaseId !== opts.releaseId) throw new RuntimeKitError(`the release store returned ${release.templateId}/${release.releaseId} for ${opts.templateId}/${opts.releaseId}`);
+  await verifyRelease(opts.repoRoot, release);
+  // the capability decides (capability.ts); the file list below only says what a broken release lacks
+  const support = resolvePortfolioRuntime(release);
+  if (!support.supported) throw new RuntimeKitError(`release ${release.releaseId} cannot be composed at publish time: ${support.reason}`);
+  const templateRel = templateRelOf(release);
+  const have = new Set(release.files.map((f) => f.path));
+  const missing = runtimeKitSurface(templateRel).filter((f) => !have.has(f));
+  if (missing.length > 0) throw new RuntimeKitError(`release ${release.releaseId} cannot be composed at publish time: it has no ${missing.join(", ")}`);
+
+  const info: RuntimeKitInfo = {
+    kitFormat: KIT_FORMAT,
+    kind: KIT_KIND,
+    templateId: release.templateId,
+    templateVersion: release.templateVersion,
+    releaseId: release.releaseId,
+    releaseHash: release.releaseHash,
+  };
+  const bundle = await bundleRuntimeKit({ filesDir: path.join(releaseDir(opts.repoRoot, release.templateId, release.releaseId), "files"), templateRel, info });
+  const { renderer, versions } = bundle;
+
   // "-dirty" = a kit input differs from the commit: this platform's sources (its tests are no input) or the release
   const sourceCommit = opts.sourceCommit ?? sourceCommitOf(["platform", ":(exclude)platform/test", "package.json", "pnpm-lock.yaml", `data/template-releases/${release.templateId}/${release.releaseId}`]);
   const kitJson = {
@@ -218,8 +270,8 @@ export async function buildRuntimeKit(opts: {
   return {
     info,
     files: { [RENDERER_FILE]: renderer, [KIT_FILE]: `${JSON.stringify(kitJson, null, 2)}\n` },
-    rendererBytes: output.contents.length,
-    inputs,
+    rendererBytes: bundle.rendererBytes,
+    inputs: bundle.inputs,
   };
 }
 

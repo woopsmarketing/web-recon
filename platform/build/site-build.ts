@@ -15,6 +15,7 @@ import { CORE_SCHEMA_VERSION, INTEGRATION_DIR, PORTFOLIO_SCHEMA_VERSION, PRODUCE
 import { DeclaredRoutesSchema, emitIntegration, IntegrationError, type EmittedFile } from "../integration/emit";
 import { assertIntegration } from "../integration/validate";
 import { producerSources } from "../integration/sources";
+import { resolvePortfolioRuntime } from "../portfolio-runtime/capability";
 import {
   PortfolioShellDeclSchema,
   RUNTIME_DIR,
@@ -215,6 +216,14 @@ export async function prepareSiteInput(opts: { repoRoot: string; siteId: string;
   const { snapshot: siteSnapshot, assetFiles, unserved, portfolio } = await buildSiteSnapshot(opts);
   const incremental = portfolio === "incremental";
   if (incremental && opts.mode !== "public") throw new SiteBuildError(`site "${opts.siteId}" is published incrementally: its shell package is a public build (a preview has no portfolio to show)`);
+  // Whether the pinned release can be built as a shell is the release's declared capability
+  // (portfolio-runtime/capability.ts) — asked before anything is materialized, never probed for.
+  if (incremental) {
+    const support = resolvePortfolioRuntime(release);
+    if (!support.supported) {
+      throw new SiteBuildError(`site "${opts.siteId}" is published incrementally, but release ${release.releaseId} cannot be: ${support.reason}. Pin a release of the Template that declares the portfolio runtime.`);
+    }
+  }
   // The snapshot the BUILD reads: for a shell build, the site snapshot + the Template's shell switch.
   const snapshot = incremental ? withShellSetting(siteSnapshot) : siteSnapshot;
   const tc = currentToolchain();
@@ -657,10 +666,8 @@ export async function buildSite(opts: SiteBuildOptions): Promise<SiteBuildResult
 
 /** `portfolioShell` of the RELEASE's runtime/shell.ts, read inside the workspace and validated here. */
 async function readShellDecl(tsx: string, ws: string, projectDir: string, env: NodeJS.ProcessEnv, release: ReleaseRecord): Promise<PortfolioShellDecl> {
+  // that the release HAS a portfolio runtime was settled by its capability (prepareSiteInput)
   const shellModule = path.join(projectDir, TEMPLATE_SHELL_MODULE);
-  if (!(await stat(shellModule).then((s) => s.isFile(), () => false))) {
-    throw new SiteBuildError(`release ${release.releaseId} cannot be published incrementally: it has no ${TEMPLATE_SHELL_MODULE} (pin a release of the Template that declares a portfolio shell)`);
-  }
   const out = await run(tsx, ["--tsconfig", path.join(projectDir, "tsconfig.json"), SHELL_PLAN_HELPER, shellModule], ws, env, 120_000);
   let json: unknown;
   try {

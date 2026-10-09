@@ -69,7 +69,9 @@ import { z } from "zod";
 import { SITE_BUILDS_DIR, packageIntact } from "../build/site-build";
 import { INTEGRATION_DIR, MANIFEST_FILE, PORTFOLIO_KIND } from "../integration/contract";
 import { compareCodePoints } from "../integration/emit";
+import { resolvePortfolioRuntime } from "../portfolio-runtime/capability";
 import { RUNTIME_DIR } from "../portfolio-runtime/contract";
+import { loadRelease } from "../release/release";
 import { sha256 } from "../util/hash";
 import {
   CACHE_IMMUTABLE,
@@ -300,6 +302,17 @@ export async function planPublish(opts: { repoRoot: string; siteId: string; host
   }
   // Bind the inventory to the verified bytes (nothing changed while it was read).
   if (!(await packageIntact(packageDir))) throw new PublishError("package changed while it was being inventoried");
+  // A shell package is composed by its release's runtime kit, so the release must have one: its
+  // declared capability (portfolio-runtime/capability.ts), read from the release record — the
+  // release's files are not looked at.
+  if (isShellPackage(files)) {
+    const built = record.template;
+    const release = await loadRelease(repoRoot, built.templateId, built.releaseId).catch((error: unknown) => {
+      throw new PublishError(`package ${shortHash(record.packageHash)} is a portfolio shell package built with ${built.releaseId}, and this checkout's release store cannot say whether that release has a portfolio runtime (${(error as Error).message})`);
+    });
+    const support = release.releaseHash === built.releaseHash ? resolvePortfolioRuntime(release) : { supported: false as const, reason: `the stored release ${release.releaseId} has another hash than the one the package was built with` };
+    if (!support.supported) throw new PublishError(`package ${shortHash(record.packageHash)} is a portfolio shell package, but release ${built.releaseId} cannot be published incrementally: ${support.reason}`);
+  }
 
   const seal: PackageSeal = {
     schemaVersion: SCHEMA_VERSION,

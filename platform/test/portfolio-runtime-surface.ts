@@ -17,6 +17,15 @@
  *    cli/site-publish.ts (publish surface), site/load.ts + build/site-build.ts (integration
  *    surface), build/qa.ts (1.6.0 surface). No file of a release's runtime dirs changed.
  *
+ *  - The explicit capability + release gate (portfolio-runtime/capability.ts, gate.ts; 2026-10-10)
+ *    ADDED files inside this surface only. It MODIFIED release/release.ts (the record's optional
+ *    `portfolioRuntime` member, the "portfolio-runtime-kit" gate in createRelease) — a file the cut
+ *    proofs already judge at its pre-1.6.2 hash (release-162-surface.ts) — plus build/site-build.ts
+ *    and publish/publish.ts (integration surface, as above). Again no file of a release's runtime
+ *    dirs changed: the capability's type is NOT in site/template-manifest.ts for exactly that
+ *    reason. Held by portfolio-capability.test.ts (a Template without the capability cuts the very
+ *    release it always did — G2 — and every stored release still verifies — C5).
+ *
  * What the cut proofs care about — every ordinary site still builds byte-identically — is held for
  * this surface by the builds themselves (an ordinary site takes no new branch); what the surface
  * promises is asserted by portfolio-runtime.test.ts.
