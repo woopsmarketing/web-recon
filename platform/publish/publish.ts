@@ -49,6 +49,8 @@
  *   shell package's pages without its portfolio), so the switch is refused; BoostChat publishes the portfolio for the package first. An ordinary package is not looked at. activate: false never
  *   reads the overlay; a dry run reports the overlay (StoreCheck.portfolioOverlay) and never throws
  *   for it — the normal order is package first (activate: false), portfolio second, switch last.
+ *   That order as ONE command (upload → announce to BoostChat → wait for the overlay → this guarded
+ *   write) is managed-flow.ts; it calls publishSite for the write and adds no way around this guard.
  * Rollback (rollbackHost): re-point a hostname at its pointer's `previous` package; no upload.
  *   Portfolio-truth guard (before the pointer write): when the target package serves a portfolio
  *   document (_integration/manifest.json → resources.portfolio), every record id in it must still be
@@ -489,6 +491,16 @@ function assertExpectedLive(existing: RoutingPointer | undefined, expected: stri
   if (live !== expected) {
     throw new PublishError(`${key} currently names ${live === "none" ? "no package" : shortHash(live)}, not the expected ${expected === "none" ? "none" : shortHash(expected)} — it was changed since it was reviewed; refusing (stale-write guard)`);
   }
+}
+
+/**
+ * The stale-write guard on its own (read-only): for a caller that uploads in one publishSite call and
+ * switches the pointer in a later one (managed-flow.ts), so a switch that would be refused as stale is
+ * refused before the upload — exactly where a single publishSite call refuses it.
+ */
+export async function assertLivePackageIs(store: ObjectStore, hostnameInput: string, expected: string): Promise<void> {
+  const key = routingKey(normalizeHostname(hostnameInput));
+  assertExpectedLive(await readRoutingPointer(store, key), expected, key);
 }
 
 /** Step 8 decision without the write; throws every refusal the write path would. */

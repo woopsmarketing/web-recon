@@ -51,7 +51,28 @@ const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]"]);
 /** contract §4: the result body is at most 16 KiB */
 export const RESULT_BODY_MAX = 16 * 1024;
 
-export function createPublisherClient(opts: PublisherClientOptions): PublisherClient {
+/** What every call to BoostChat's publisher API shares: where it may go and how it is authorized. */
+export interface PublisherTransportOptions {
+  baseUrl: string;
+  token: string;
+  fetch?: typeof fetch;
+  timeoutMs?: number;
+}
+
+export interface PublisherTransport {
+  /** the origin of BOOSTCHAT_BASE_URL — safe to print (never the token) */
+  readonly origin: string;
+  /** a request to a path on that origin, with the bearer token; redirects are refused; a network failure is a BoostChatError("network") */
+  request(pathname: string, init?: RequestInit): Promise<Response>;
+}
+
+/**
+ * The validated base URL + token of the publisher API and the one way a request is sent with them.
+ * Shared by the V1 publisher client below and by the shell-package announce of site:publish
+ * (platform/publish/announce.ts), so both accept exactly the same configuration and send exactly the
+ * same Authorization header.
+ */
+export function createPublisherTransport(opts: PublisherTransportOptions): PublisherTransport {
   let base: URL;
   try {
     base = new URL(opts.baseUrl);
@@ -67,8 +88,6 @@ export function createPublisherClient(opts: PublisherClientOptions): PublisherCl
   if (!opts.token || opts.token.trim() !== opts.token) throw new BoostChatError("BOOSTCHAT_PUBLISHER_TOKEN is missing or has surrounding whitespace", "config");
   const doFetch = opts.fetch ?? fetch;
   const timeoutMs = opts.timeoutMs ?? 30_000;
-  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
-  const log = opts.log ?? (() => {});
 
   async function request(pathname: string, init: RequestInit = {}): Promise<Response> {
     const url = new URL(pathname, base);
@@ -84,6 +103,14 @@ export function createPublisherClient(opts: PublisherClientOptions): PublisherCl
       throw new BoostChatError(`${init.method ?? "GET"} ${url.pathname}: ${(error as Error).message}`, "network");
     }
   }
+
+  return { origin: base.origin, request };
+}
+
+export function createPublisherClient(opts: PublisherClientOptions): PublisherClient {
+  const { request } = createPublisherTransport(opts);
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  const log = opts.log ?? (() => {});
 
   async function errorOf(res: Response, what: string): Promise<BoostChatError> {
     const body = (await res.json().catch(() => undefined)) as { error?: unknown } | undefined;

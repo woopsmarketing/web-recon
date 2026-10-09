@@ -3,6 +3,7 @@
  *                   [--dry-run [--check-store]] [--local | --remote] [--persist-to <dir>]
  *                   [--concurrency N] [--allow-site-change] [--expect-package <packageHash>]
  *                   [--expect-live <packageHash|none>] [--no-activate] [--reverify] [--leave-incremental]
+ *                   [--no-announce] [--wait-seconds N]
  * pnpm site:publish --site <siteId> --host <hostname> --rollback [--expect-live <packageHash>]
  *                   [--local | --remote] [--persist-to <dir>]
  *
@@ -25,13 +26,31 @@
  *                     the one that was reviewed. Single operator is still assumed (not atomic).
  *  --no-activate      upload + verify + seal only; the routing pointer is not read or written. A later
  *                     run without it finds the seal, uploads nothing and only switches the pointer.
- *  SHELL PACKAGE      (an incrementally published site, portfolio.source.json portfolio-source@2): its
- *                     portfolio pages are empty until BoostChat publishes them, so the pointer write —
- *                     publish or --rollback — is refused unless the same store holds
+ *  SHELL PACKAGE      (an incrementally published site, portfolio.source.json portfolio-source@2 — declare
+ *                     one with `pnpm site:portfolio-managed --site <siteId>`): its portfolio pages are
+ *                     empty until BoostChat publishes them, so the pointer write — publish or --rollback —
+ *                     is refused unless the same store holds
  *                     portfolio-public/<siteId>/current/<packageHash>.json and a manifest recon-runtime
- *                     would use (the Worker's own checks). Order: --no-activate → publish the portfolio
- *                     from BoostChat → run again without --no-activate. --dry-run reports the guard
- *                     (with --check-store: absent / refused / live) and is never failed by it.
+ *                     would use (the Worker's own checks). --dry-run reports the guard (with
+ *                     --check-store: absent / refused / live) and is never failed by it.
+ *                     ONE COMMAND ships it (platform/publish/managed-flow.ts):
+ *                       1. upload + verify + seal the package (no routing change)
+ *                       2. ANNOUNCE it to BoostChat: POST {BOOSTCHAT_BASE_URL}/api/publisher/sites/<siteId>/shell-package
+ *                       3. WAIT until the store shows the portfolio BoostChat published for this package
+ *                          (looked at every 3 s, at most --wait-seconds, default 180)
+ *                       4. switch the hostname — the same guarded pointer write as ever
+ *                     Every stop leaves the package sealed and the pointer untouched; running the same
+ *                     command again continues (nothing is uploaded twice; the announce is idempotent).
+ *    env BOOSTCHAT_BASE_URL         e.g. https://boostchat.co.kr (http only for a loopback host)
+ *        BOOSTCHAT_PUBLISHER_TOKEN  bearer token; never printed. The same pair site:portfolio-sync uses.
+ *                     Without both, nothing is announced (one line says so) and the run is what it
+ *                     always was: upload, and switch only if the portfolio is already published.
+ *                     A --local publish is announced to a loopback BoostChat only.
+ *  --no-announce      do not announce, whatever the environment says (same behaviour as above)
+ *  --wait-seconds N   how long step 3 waits (default 180; 0 = look once)
+ *                     With --no-activate: upload + announce, print BoostChat's answer, stop (exit 0).
+ *                     An ORDINARY package is never announced; none of this applies to it.
+ *                     --dry-run never announces and never waits (the two flags are accepted and ignored).
  *  --reverify         when the package is already sealed, read every object back and compare
  *                     sha256/size instead of trusting the seal (read-only; mismatches are reported)
  *  --allow-origin-mismatch  a --remote publish is refused when the origin baked into the package
@@ -48,22 +67,33 @@
  *                     checkout's marker says) that file is not the truth — BoostChat is: the served set
  *                     is read from the live portfolio overlay of that package; without a usable overlay
  *                     there is nothing to check against → refused.
+ *
+ * Exit codes: 0 published / uploaded (--no-activate) / dry run · 1 refused or failed (the message says
+ * whether the pointer was written) · 2 usage, remote not allowed, or an unusable BOOSTCHAT_BASE_URL /
+ * BOOSTCHAT_PUBLISHER_TOKEN (nothing was uploaded) · 3 BoostChat was not told, or refused the package:
+ * the site is not linked to a tenant (404 site_not_found), 409 package_not_v2, 401 / 403, 5xx, no
+ * answer · 4 BoostChat has the site in V1 mode · 5 BoostChat has not published the portfolio within
+ * --wait-seconds. For 3, 4 and 5 the package is uploaded and sealed, the routing pointer was not
+ * written, and the same command can simply be run again once the cause is fixed.
  */
+import { AnnounceError, createBoostChatAnnouncer } from "../publish/announce";
+import { DEFAULT_WAIT_SECONDS, managedExitCode, publishManaged, type AnnounceSetup, type ManagedPublishResult } from "../publish/managed-flow";
 import { publishedPortfolioTruth, publishSite, rollbackHost, sealBytes, type PortfolioTruthLoader, type PublishResult } from "../publish/publish";
 import { WranglerStore } from "../publish/wrangler-store";
 import { readPortfolioSource, SOURCE_MARKER_FILE } from "../portfolio-sync/managed";
+import { isLoopbackOrigin } from "../portfolio-sync/verify";
 import { buildSiteSnapshot, siteDir } from "../site/load";
 
 const args = process.argv.slice(2);
-const VALUE_FLAGS = ["--site", "--host", "--bucket", "--persist-to", "--concurrency", "--expect-package", "--expect-live"];
-const BOOL_FLAGS = ["--dry-run", "--check-store", "--local", "--remote", "--allow-site-change", "--allow-origin-mismatch", "--rollback", "--no-activate", "--reverify", "--leave-incremental"];
+const VALUE_FLAGS = ["--site", "--host", "--bucket", "--persist-to", "--concurrency", "--expect-package", "--expect-live", "--wait-seconds"];
+const BOOL_FLAGS = ["--dry-run", "--check-store", "--local", "--remote", "--allow-site-change", "--allow-origin-mismatch", "--rollback", "--no-activate", "--reverify", "--leave-incremental", "--no-announce"];
 function flag(name: string): string | undefined {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : undefined;
 }
 const has = (name: string) => args.includes(name);
 const usage =
-  "usage: pnpm site:publish --site <siteId> --host <hostname> [--bucket boost-sites-artifacts] [--dry-run [--check-store] | --rollback] [--local|--remote] [--persist-to <dir>] [--concurrency N] [--allow-site-change] [--expect-package <packageHash>] [--expect-live <packageHash|none>] [--no-activate] [--reverify] [--allow-origin-mismatch] [--leave-incremental]";
+  "usage: pnpm site:publish --site <siteId> --host <hostname> [--bucket boost-sites-artifacts] [--dry-run [--check-store] | --rollback] [--local|--remote] [--persist-to <dir>] [--concurrency N] [--allow-site-change] [--expect-package <packageHash>] [--expect-live <packageHash|none>] [--no-activate] [--reverify] [--allow-origin-mismatch] [--leave-incremental] [--no-announce] [--wait-seconds N]";
 function usageError(message?: string): never {
   console.error(message ? `site:publish: ${message}\n${usage}` : usage);
   process.exit(2);
@@ -75,7 +105,7 @@ const siteId = flag("--site");
 const host = flag("--host");
 if (!siteId || !host) usageError();
 if (has("--local") && has("--remote")) usageError("--local and --remote are exclusive");
-if (has("--rollback") && (has("--dry-run") || has("--no-activate") || has("--reverify") || has("--expect-package") || has("--leave-incremental"))) usageError("--rollback only combines with --expect-live and the store flags");
+if (has("--rollback") && (has("--dry-run") || has("--no-activate") || has("--reverify") || has("--expect-package") || has("--leave-incremental") || has("--no-announce") || has("--wait-seconds"))) usageError("--rollback only combines with --expect-live and the store flags");
 if (has("--check-store") && !has("--dry-run")) usageError("--check-store is a --dry-run option");
 if (has("--no-activate") && has("--expect-live")) usageError("--expect-live guards the pointer write; it cannot be combined with --no-activate");
 if (has("--no-activate") && has("--leave-incremental")) usageError("--leave-incremental overrides a refusal of the pointer write; it cannot be combined with --no-activate");
@@ -91,6 +121,11 @@ if (!/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(bucket)) usageError(`--bucket "${b
 /** --concurrency must be a positive integer; anything else is a usage error before any store access. */
 const concurrencyRaw = flag("--concurrency");
 if (concurrencyRaw !== undefined && !/^[1-9]\d*$/.test(concurrencyRaw)) usageError(`--concurrency must be a positive integer, got "${concurrencyRaw}"`);
+/** --wait-seconds: whole seconds, 0 = look once; at most a day (a typo must not hang a terminal for a week). */
+const waitRaw = flag("--wait-seconds");
+if (has("--wait-seconds") && (waitRaw === undefined || !/^(0|[1-9]\d{0,4})$/.test(waitRaw) || Number(waitRaw) > 86_400)) usageError(`--wait-seconds must be a whole number of seconds from 0 to 86400, got "${String(waitRaw)}"`);
+if (has("--wait-seconds") && has("--no-activate")) usageError("--wait-seconds is the wait before the pointer switch; it cannot be combined with --no-activate");
+if (has("--wait-seconds") && has("--no-announce")) usageError("--wait-seconds is the wait after an announce; it cannot be combined with --no-announce");
 
 const remote = has("--remote");
 const dryRun = has("--dry-run");
@@ -152,31 +187,66 @@ if (has("--rollback")) {
   process.exit();
 }
 
+/**
+ * Who is told about a shell package. Decided from the flags and the environment only; the announcer
+ * itself is constructed (and its configuration judged) by the flow, and only for a shell package.
+ */
+function announceSetup(): AnnounceSetup {
+  if (has("--no-announce")) return { mode: "off", why: "--no-announce" };
+  const baseUrl = process.env.BOOSTCHAT_BASE_URL;
+  const token = process.env.BOOSTCHAT_PUBLISHER_TOKEN;
+  const missing = [...(baseUrl ? [] : ["BOOSTCHAT_BASE_URL"]), ...(token ? [] : ["BOOSTCHAT_PUBLISHER_TOKEN"])];
+  if (missing.length > 0) {
+    return { mode: "off", why: `${missing.join(" and ")} ${missing.length > 1 ? "are" : "is"} not set (set both and run this same command again to have BoostChat publish the portfolio for this package)` };
+  }
+  // What is uploaded and who is told must be ONE environment: a package that exists only in local
+  // runtime state is not announced to a real BoostChat (site:portfolio-sync draws the same line).
+  if (!remote) {
+    let origin: string | undefined;
+    try {
+      origin = new URL(baseUrl!).origin;
+    } catch {
+      origin = undefined; // not a URL: the announcer says so (exit 2)
+    }
+    if (origin && !isLoopbackOrigin(origin)) return { mode: "off", why: `a --local publish is announced to a loopback BoostChat only, and BOOSTCHAT_BASE_URL is ${origin} (use --remote for the real publish)` };
+  }
+  return { mode: "on", create: () => createBoostChatAnnouncer({ baseUrl: baseUrl!, token: token! }) };
+}
+
+const publishOptions = {
+  repoRoot: process.cwd(),
+  siteId,
+  hostname: host,
+  allowSiteChange: has("--allow-site-change"),
+  leaveIncremental: has("--leave-incremental"),
+  expectPackageHash: expectPackage,
+  expectLivePackageHash: expectLive,
+  activate: !has("--no-activate"),
+  reverify: has("--reverify"),
+  requireOriginMatch: remote && !has("--allow-origin-mismatch"),
+  concurrency: concurrencyRaw === undefined ? undefined : Number(concurrencyRaw),
+  log: (l: string) => console.log(l),
+};
+
 let res: PublishResult | undefined;
+let managed: ManagedPublishResult | undefined;
+let failure = 1;
 try {
-  res = await publishSite({
-    repoRoot: process.cwd(),
-    siteId,
-    hostname: host,
-    store,
-    dryRun,
-    checkStore,
-    allowSiteChange: has("--allow-site-change"),
-    leaveIncremental: has("--leave-incremental"),
-    expectPackageHash: expectPackage,
-    expectLivePackageHash: expectLive,
-    activate: !has("--no-activate"),
-    reverify: has("--reverify"),
-    requireOriginMatch: remote && !has("--allow-origin-mismatch"),
-    concurrency: concurrencyRaw === undefined ? undefined : Number(concurrencyRaw),
-    log: (l) => console.log(l),
-  });
+  if (dryRun) res = await publishSite({ ...publishOptions, store, dryRun, checkStore });
+  else {
+    managed = await publishManaged({ ...publishOptions, store: store!, announce: announceSetup(), waitSeconds: waitRaw === undefined ? DEFAULT_WAIT_SECONDS : Number(waitRaw) });
+    res = managed.result;
+  }
 } catch (error) {
-  console.error(`site:publish FAILED (routing pointer untouched unless the message says it was written): ${(error as Error).message}`);
+  if (error instanceof AnnounceError && error.code === "config") {
+    // judged before anything was uploaded
+    console.error(`site:publish: ${error.message} — nothing was uploaded (--no-announce publishes without telling BoostChat)`);
+    failure = 2;
+  } else console.error(`site:publish FAILED (routing pointer untouched unless the message says it was written): ${(error as Error).message}`);
 } finally {
   await store?.close();
 }
-if (!res) process.exit(1);
+if (!res) process.exit(failure);
 
 const { plan } = res;
 const byCache: Record<string, number> = {};
@@ -229,8 +299,27 @@ console.log(
       ...(res.status === "dry-run" ? { storeCheck: res.storeCheck ?? null } : {}),
       ...(res.status === "published" ? { upload: res.upload, uploaded: res.uploaded, verified: res.verified, pointerWrite: res.pointerWrite, previous: res.pointer.previous ?? null } : {}),
       ...(res.status === "uploaded" ? { upload: res.upload, uploaded: res.uploaded, verified: res.verified, pointerWrite: "not-activated" } : {}),
+      ...(managed?.managed
+        ? {
+            boostchat: {
+              announcedTo: managed.managed.announcedTo,
+              state: managed.managed.announcement?.state ?? null,
+              publishMode: managed.managed.announcement?.publishMode ?? null,
+              searchSource: managed.managed.announcement?.searchSource ?? null,
+              desiredRevision: managed.managed.announcement?.desiredRevision ?? null,
+              liveRevision: managed.managed.announcement?.liveRevision ?? null,
+              portfolioOverlay: managed.managed.overlay ?? null,
+              waitedSeconds: Math.round(managed.managed.waitedMs / 1000),
+            },
+          }
+        : {}),
+      ...(managed?.status === "stopped" ? { stopped: managed.stop } : {}),
     },
     null,
     2,
   ),
 );
+if (managed?.status === "stopped") {
+  console.error(`site:publish STOPPED (${managed.stop}): ${managed.message}`);
+  process.exit(managedExitCode(managed));
+}
