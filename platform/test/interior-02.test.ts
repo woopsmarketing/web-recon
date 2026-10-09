@@ -306,6 +306,61 @@ await check("O the third-party script the reuse site declares is Site Data: its 
   assert(hits.length === 0, hits.slice(0, 12).join("\n"));
 });
 
+// --------------------------------------------------------- corner widget --
+console.log("\n[corner] the reuse site's third-party corner widget is Site Data (1.0.1)");
+/** the Site Data declaration (settings.json, read as authored — never through the Template's manifest) */
+const EXT_KEYS = ["width", "height", "right", "bottom"] as const;
+const extOf = async (id: string): Promise<Record<string, unknown> | undefined> => (await readJson(`data/sites/${id}/settings.json`)).overrides?.["site.floater"]?.externalWidget;
+await check("P the reuse site declares the widget's closed box as Site Data (site.floater.externalWidget: four positive integer px), the first site declares none", async () => {
+  const ext = await extOf(REUSE_SITE);
+  assert(ext && typeof ext === "object", `${REUSE_SITE} declares no site.floater.externalWidget`);
+  eq(Object.keys(ext).sort(), [...EXT_KEYS].sort(), "keys");
+  for (const k of EXT_KEYS) assert(Number.isInteger(ext[k]) && (ext[k] as number) > 0, `${k} is not a positive integer: ${JSON.stringify(ext[k])}`);
+  eq((await readJson(`data/sites/${REUSE_SITE}/settings.json`)).overrides["site.floater"].contact, false, "the reuse site's own contact button stays off (the widget is the contact)");
+  eq(await extOf(SITE), undefined, `${SITE} declares an external widget`);
+});
+await check("Q the reuse site's package marks every page for the widget (html[data-ext-widget] + the four --i2-ext-* custom properties = the declared numbers); no page of the first site's package carries the marker or a property", async () => {
+  const ext = await extOf(REUSE_SITE);
+  assert(ext, `${REUSE_SITE} declares no site.floater.externalWidget`);
+  const expectStyle = `--i2-ext-w:${ext.width}px;--i2-ext-h:${ext.height}px;--i2-ext-right:${ext.right}px;--i2-ext-bottom:${ext.bottom}px`;
+  const htmlTag = (html: string) => /<html\b[^>]*>/.exec(html)?.[0] ?? "";
+  let reusePages = 0;
+  for (const f of (await walkFiles(reuseSiteDir)).filter((p) => p.endsWith(".html") && !/^(404|_not-found)\.html$/.test(p))) {
+    const tag = htmlTag(await readFile(path.join(reuseSiteDir, f), "utf8"));
+    assert(/\sdata-ext-widget(=""|\s|>)/.test(tag), `${REUSE_SITE}/${f}: <html> has no data-ext-widget: ${tag.slice(0, 200)}`);
+    assert(tag.includes(`style="${expectStyle}"`), `${REUSE_SITE}/${f}: <html> does not carry ${expectStyle}: ${tag.slice(0, 240)}`);
+    reusePages++;
+  }
+  assert(reusePages >= FIXED_PAGES.length, `only ${reusePages} pages scanned in the reuse package`);
+  let firstPages = 0;
+  for (const f of (await walkFiles(siteDir)).filter((p) => p.endsWith(".html"))) {
+    const html = await readFile(path.join(siteDir, f), "utf8");
+    assert(!html.includes("data-ext-widget") && !html.includes("--i2-ext-"), `${SITE}/${f}: carries the corner-widget marker without declaring one`);
+    firstPages++;
+  }
+  assert(firstPages >= FIXED_PAGES.length, `only ${firstPages} pages scanned in the first site's package`);
+});
+await check("R the Template knows no vendor: no source file of the Template names the widget's vendor, its key or either site, and its CSS reads the box through the custom properties only", async () => {
+  const scripts: { src: string; attrs?: Record<string, string> }[] = (await readJson(`data/sites/${REUSE_SITE}/scripts.json`)).headScripts;
+  const vendorHost = new URL(scripts[0]!.src).host; // e.g. vendor.example
+  const vendorName = vendorHost.split(".")[0]!; // the brand word of the host
+  const needles = ["boost", vendorName, ...scripts.flatMap((sc) => Object.values(sc.attrs ?? {})), SITE, REUSE_SITE];
+  const dir = path.join(repoRoot, templateDir(TEMPLATE));
+  const hits: string[] = [];
+  let cssReadsExt = false;
+  for (const f of await walkFiles(dir)) {
+    if (f === "provenance.json") continue;
+    const text = await readFile(path.join(dir, f), "utf8");
+    const lower = text.toLowerCase();
+    for (const n of needles) if (lower.includes(n.toLowerCase())) hits.push(`${f}: "${n}"`);
+    if (f.endsWith(".css") && /html\[data-ext-widget\]/.test(text) && /var\(--i2-ext-(w|h|right|bottom)\)/.test(text)) cssReadsExt = true;
+    // no site-specific coordinate: the declared numbers appear in no CSS rule under the marker
+    if (f.endsWith(".css")) for (const m of text.matchAll(/html\[data-ext-widget\][^{]*\{([^}]*)\}/g)) assert(!/\b(64|18)px/.test(m[1]!), `${f}: a site's coordinate is hard-coded under html[data-ext-widget]: ${m[1]!.slice(0, 120)}`);
+  }
+  assert(hits.length === 0, hits.slice(0, 12).join("\n"));
+  assert(cssReadsExt, "no Template stylesheet reads the widget box through html[data-ext-widget] + var(--i2-ext-*)");
+});
+
 console.log(`\ninterior-02: ${passed} passed, ${failed.length} failed`);
 if (failed.length) {
   for (const f of failed) console.log(`  - ${f}`);
