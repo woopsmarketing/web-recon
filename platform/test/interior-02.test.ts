@@ -26,10 +26,12 @@ import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { prepareSiteInput } from "../build/site-build";
 import { collectReleaseSources, gateTemplateSources, loadRelease, scanForbiddenTerms, verifyRelease } from "../release/release";
+import { readPortfolioSource } from "../portfolio-sync/managed";
 import { loadSiteInstance } from "../site/load";
 import { sha256 } from "../util/hash";
 import template from "../../templates/interior-02/v1/template";
 import { PORTFOLIO_PAGE_SIZE } from "../../templates/interior-02/v1/manifest/portfolio";
+import { portfolioShell } from "../../templates/interior-02/v1/runtime/shell";
 
 const repoRoot = process.cwd();
 const TEMPLATE = "interior-02";
@@ -248,8 +250,17 @@ await check("N the reuse site's package: the pages its data plans, no source ter
   const projects: { slug: string; status: string }[] = (await readJson(`data/sites/${REUSE_SITE}/content/projects.json`)).items;
   const published = projects.filter((p) => p.status === "published");
   const pages = Math.ceil(published.length / PORTFOLIO_PAGE_SIZE);
-  const expected = [...FIXED_PAGES, ...published.map((p) => `portfolio/${p.slug}.html`), ...Array.from({ length: pages - 1 }, (_, i) => `portfolio/page/${i + 2}.html`)].sort();
+  // Since 2026-10-10 the reuse site is published INCREMENTALLY (portfolio.source.json, publishing:
+  // "incremental"): its package is a shell — the fixed pages plus the ONE detail shell the Template
+  // declares — and its project pages are composed at publish time (held by portfolio-runtime.test.ts,
+  // page by page against the last package that had them built in). A site that builds its own
+  // portfolio is still held to one page per published project.
+  const incremental = (await readPortfolioSource(path.join(repoRoot, "data/sites", REUSE_SITE))) === "incremental";
+  const expected = incremental
+    ? [...FIXED_PAGES, ...portfolioShell.pages.filter((p) => p.route === "portfolio.detail").map((p) => `${p.path.slice(1)}.html`)].sort()
+    : [...FIXED_PAGES, ...published.map((p) => `portfolio/${p.slug}.html`), ...Array.from({ length: pages - 1 }, (_, i) => `portfolio/page/${i + 2}.html`)].sort();
   eq((await walkFiles(reuseSiteDir)).filter((f) => f.endsWith(".html") && !/^(404|_not-found)\.html$/.test(f)).sort(), expected, "pages");
+  eq(reuseRecord.portfolioRuntime !== undefined, incremental, "the package carries the publisher's runtime documents exactly when the site is incremental");
   const terms = [...(await termsOf(TEMPLATE)), ...(await termsOf(OTHER_TEMPLATE)), OTHER_TEMPLATE];
   const hits: string[] = [];
   // a brand name, its Latin spelling and the site id each: none of them may cross into the other package

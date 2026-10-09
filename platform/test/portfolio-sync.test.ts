@@ -33,7 +33,7 @@ import { emitIntegration } from "../integration/emit";
 import { BoostChatError, createPublisherClient, RESULT_BODY_MAX } from "../portfolio-sync/client";
 import { EXPORT_SCHEMA, RESULT_MESSAGE_MAX, RESULT_SCHEMA, STAGE_FAILURE_MESSAGE, PortfolioResultSchema, assetPathPrefix, exportPath, resultMessage, resultPath, type ExportAsset, type PortfolioResult } from "../portfolio-sync/contract";
 import { applyFilePlan, planManagedPortfolio, PortfolioGenerateError, readSiteDirState, restoreAppliedPlan, validatePlanStaged, type PortfolioFilePlan } from "../portfolio-sync/generate";
-import { MANAGED_FILE, MANAGED_SCHEMA, ManagedManifestSchema, SOURCE_MARKER_FILE, hasSourceMarker, managedPortfolioProblems, readManagedManifest } from "../portfolio-sync/managed";
+import { MANAGED_FILE, MANAGED_SCHEMA, ManagedManifestSchema, SOURCE_MARKER_FILE, hasSourceMarker, managedPortfolioProblems, readManagedManifest, readPortfolioSource } from "../portfolio-sync/managed";
 import { BACKOFF_CAP_MS, buildForSync, clientSource, fileSource, liveIsFor, nextFailureMemory, publishForSync, runCycle, runSync, type BuildOutcome, type CycleResult, type FailureMemory, type SyncOptions } from "../portfolio-sync/sync";
 import { isLoopbackOrigin, verifyBaseOrigin, verifyPublic, type ExpectedFile, type VerifyOutcome } from "../portfolio-sync/verify";
 import { MemoryStore } from "../publish/store";
@@ -470,7 +470,11 @@ await check("L3 sites without the sidecar and without the marker are exactly as 
   const adoptedSites: string[] = [];
   for (const siteId of (await readdir(path.join(repoRoot, "data/sites"))).filter((d) => !d.startsWith(".")).sort()) {
     const dir = path.join(repoRoot, "data/sites", siteId);
-    if (await hasSourceMarker(dir)) {
+    // portfolio-source@1 = the portfolio is GENERATED into this site directory by BoostChat ("adopted").
+    // portfolio-source@2 (publishing: "incremental") is not that: such a site holds no generated
+    // portfolio by design — the guard has nothing to report for it, and its (shell) package is held to
+    // its present data below like any other site's (platform/test/portfolio-runtime.test.ts holds the rest).
+    if ((await readPortfolioSource(dir)) === "generated") {
       adoptedSites.push(siteId);
       // generated here (the publisher's checkout) → L1's rules; not generated → refused, by the tracked marker alone
       const problems = await managedPortfolioProblems(dir, siteId);

@@ -58,6 +58,7 @@ import { integrationSurfaceBefore, isIntegrationSurface } from "./integration-su
 import { isPublishSurface } from "./publish-surface";
 import { isPortfolioSyncSurface } from "./portfolio-sync-surface";
 import { isPreviewSurface } from "./preview-surface";
+import { isPortfolioRuntimeSurface } from "./portfolio-runtime-surface";
 import { isRelease160Added, release160SurfaceBefore } from "./release-160-surface";
 import { isRelease162Added, release162SurfaceBefore } from "./release-162-surface";
 import { composeQaProjectsText, writeQaProjects } from "./portfolio-qa-corpus";
@@ -296,7 +297,7 @@ await check("D Template source unchanged: live templateSourceHash = baseline = t
   const overrides160 = await release160SurfaceBefore(repoRoot);
   const overrides162 = release162SurfaceBefore();
   eq(
-    await treeHash("platform", ["test"], (p) => p === "publish" || isPublishSurface(p) || isPortfolioSyncSurface(p) || isPreviewSurface(p) || (isIntegrationSurface(p) && !(p in overrides)) || isRelease160Added(p) || isRelease162Added(p), { ...overrides, ...overrides160, ...overrides162 }),
+    await treeHash("platform", ["test"], (p) => p === "publish" || isPublishSurface(p) || isPortfolioSyncSurface(p) || isPreviewSurface(p) || isPortfolioRuntimeSurface(p) || (isIntegrationSurface(p) && !(p in overrides)) || isRelease160Added(p) || isRelease162Added(p), { ...overrides, ...overrides160, ...overrides162 }),
     baseline.trees["platform (test/ excluded)"].hash,
     "platform tree (test/ excluded)",
   );
@@ -314,7 +315,7 @@ await check("D2 independent of the baseline: no Template / Platform implementati
   const late: string[] = [];
   for (const root of ["templates/interior-01/v1", "platform"]) {
     for (const f of await walkFiles(path.join(repoRoot, root))) {
-      if (root === "platform" && (f.startsWith("test/") || isPublishSurface(f) || isPortfolioSyncSurface(f) || isPreviewSurface(f) || isIntegrationSurface(f))) continue;
+      if (root === "platform" && (f.startsWith("test/") || isPublishSurface(f) || isPortfolioSyncSurface(f) || isPreviewSurface(f) || isPortfolioRuntimeSurface(f) || isIntegrationSurface(f))) continue;
       if (/(^|\/)(node_modules|\.next|out)\//.test(f)) continue;
       if (dirty && !dirty.has(`${root}/${f}`)) continue;
       if ((await stat(path.join(repoRoot, root, f))).mtimeMs > cut + 1000) late.push(`${root}/${f}`);
