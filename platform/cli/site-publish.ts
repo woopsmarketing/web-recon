@@ -5,7 +5,7 @@
  *                   [--expect-live <packageHash|none>] [--no-activate] [--reverify] [--leave-incremental]
  *                   [--no-announce] [--wait-seconds N]
  * pnpm site:publish --site <siteId> --host <hostname> --rollback [--expect-live <packageHash>]
- *                   [--local | --remote] [--persist-to <dir>]
+ *                   [--local | --remote] [--persist-to <dir>] [--no-announce] [--wait-seconds N]
  *
  * Publishes the site's CURRENT Site Build Package (data/site-builds/<siteId>/current.json) to R2
  * and points routing/<hostname>.json at it (platform/publish/publish.ts).
@@ -36,9 +36,14 @@
  *                     ONE COMMAND ships it (platform/publish/managed-flow.ts):
  *                       1. upload + verify + seal the package (no routing change)
  *                       2. ANNOUNCE it to BoostChat: POST {BOOSTCHAT_BASE_URL}/api/publisher/sites/<siteId>/shell-package
- *                       3. WAIT until the store shows the portfolio BoostChat published for this package
- *                          (looked at every 3 s, at most --wait-seconds, default 180)
+ *                       3. WAIT until the store shows the portfolio BoostChat published for this package:
+ *                          an overlay recon-runtime would use, at the revision BoostChat answered with
+ *                          or newer (looked at every 3 s, at most --wait-seconds, default 180). An
+ *                          older overlay of the same package — it was live before — is not "published".
  *                       4. switch the hostname — the same guarded pointer write as ever
+ *                     The guard also refuses, by itself and with or without an announce, a shell package
+ *                     whose portfolio overlay is OLDER (lower revision) than the overlay of the package
+ *                     the hostname serves now: it would put back an older portfolio.
  *                     Every stop leaves the package sealed and the pointer untouched; running the same
  *                     command again continues (nothing is uploaded twice; the announce is idempotent).
  *    env BOOSTCHAT_BASE_URL         e.g. https://boostchat.co.kr (http only for a loopback host)
@@ -67,6 +72,12 @@
  *                     checkout's marker says) that file is not the truth — BoostChat is: the served set
  *                     is read from the live portfolio overlay of that package; without a usable overlay
  *                     there is nothing to check against → refused.
+ *                     When the package to go back to is a SHELL package, the rollback is the same managed
+ *                     flow: announce that package to BoostChat, wait until it has published the current
+ *                     portfolio for it, then the guarded pointer write (same env, --no-announce,
+ *                     --wait-seconds and exit codes 3 / 4 / 5). Without an announce the guard alone
+ *                     decides — and refuses a portfolio older than the one being served. A rollback to an
+ *                     ordinary package announces nothing.
  *
  * Exit codes: 0 published / uploaded (--no-activate) / dry run · 1 refused or failed (the message says
  * whether the pointer was written) · 2 usage, remote not allowed, or an unusable BOOSTCHAT_BASE_URL /
@@ -77,8 +88,8 @@
  * written, and the same command can simply be run again once the cause is fixed.
  */
 import { AnnounceError, createBoostChatAnnouncer } from "../publish/announce";
-import { DEFAULT_WAIT_SECONDS, managedExitCode, publishManaged, type AnnounceSetup, type ManagedPublishResult } from "../publish/managed-flow";
-import { publishedPortfolioTruth, publishSite, rollbackHost, sealBytes, type PortfolioTruthLoader, type PublishResult } from "../publish/publish";
+import { DEFAULT_WAIT_SECONDS, managedExitCode, publishManaged, rollbackManaged, type AnnounceSetup, type ManagedInfo, type ManagedPublishResult, type ManagedRollbackResult } from "../publish/managed-flow";
+import { publishedPortfolioTruth, publishSite, sealBytes, type PortfolioTruthLoader, type PublishResult } from "../publish/publish";
 import { WranglerStore } from "../publish/wrangler-store";
 import { readPortfolioSource, SOURCE_MARKER_FILE } from "../portfolio-sync/managed";
 import { isLoopbackOrigin } from "../portfolio-sync/verify";
@@ -105,7 +116,7 @@ const siteId = flag("--site");
 const host = flag("--host");
 if (!siteId || !host) usageError();
 if (has("--local") && has("--remote")) usageError("--local and --remote are exclusive");
-if (has("--rollback") && (has("--dry-run") || has("--no-activate") || has("--reverify") || has("--expect-package") || has("--leave-incremental") || has("--no-announce") || has("--wait-seconds"))) usageError("--rollback only combines with --expect-live and the store flags");
+if (has("--rollback") && (has("--dry-run") || has("--no-activate") || has("--reverify") || has("--expect-package") || has("--leave-incremental"))) usageError("--rollback only combines with --expect-live, --no-announce, --wait-seconds and the store flags");
 if (has("--check-store") && !has("--dry-run")) usageError("--check-store is a --dry-run option");
 if (has("--no-activate") && has("--expect-live")) usageError("--expect-live guards the pointer write; it cannot be combined with --no-activate");
 if (has("--no-activate") && has("--leave-incremental")) usageError("--leave-incremental overrides a refusal of the pointer write; it cannot be combined with --no-activate");
@@ -164,29 +175,6 @@ const store =
     ? undefined
     : new WranglerStore({ repoRoot: process.cwd(), bucket, mode: remote ? "remote" : "local", persistTo: remote ? undefined : persistTo, allowRemote: remote, readOnly: dryRun });
 
-if (has("--rollback")) {
-  // The served set a fresh public build would emit into the portfolio document (integration/emit.ts).
-  const portfolioTruth: PortfolioTruthLoader = async () => {
-    const at = new Date().toISOString();
-    const { snapshot, portfolio } = await buildSiteSnapshot({ repoRoot: process.cwd(), siteId, mode: "public", at });
-    // Only reached when the hostname's live package is NOT a shell package (rollbackHost reads the published
-    // overlay by itself otherwise, whatever this checkout says). A checkout marked incremental still holds no
-    // portfolio (the snapshot has none by design), so it cannot vouch either: ask the store, which then refuses.
-    if (portfolio === "incremental") return publishedPortfolioTruth(store!, siteId, host);
-    return { authoritativeIds: snapshot.content.projects.map((p) => p.id), source: `data/sites/${siteId}/content/projects.json (served at ${at})` };
-  };
-  try {
-    const r = await rollbackHost({ store: store!, siteId, hostname: host, expectLivePackageHash: expectLive, portfolioTruth, log: (l) => console.log(l) });
-    console.log(JSON.stringify({ status: "rolled-back", pointer: r.pointer }, null, 2));
-  } catch (error) {
-    console.error(`site:publish --rollback FAILED (routing pointer untouched unless the message says it was written): ${(error as Error).message}`);
-    process.exitCode = 1;
-  } finally {
-    await store!.close();
-  }
-  process.exit();
-}
-
 /**
  * Who is told about a shell package. Decided from the flags and the environment only; the announcer
  * itself is constructed (and its configuration judged) by the flow, and only for a shell package.
@@ -213,6 +201,57 @@ function announceSetup(): AnnounceSetup {
   return { mode: "on", create: () => createBoostChatAnnouncer({ baseUrl: baseUrl!, token: token! }) };
 }
 
+const waitSeconds = waitRaw === undefined ? DEFAULT_WAIT_SECONDS : Number(waitRaw);
+/** what the announce and the wait observed, for the JSON summary */
+const boostchatSummary = (m: ManagedInfo) => ({
+  announcedTo: m.announcedTo,
+  state: m.announcement?.state ?? null,
+  publishMode: m.announcement?.publishMode ?? null,
+  searchSource: m.announcement?.searchSource ?? null,
+  desiredRevision: m.announcement?.desiredRevision ?? null,
+  liveRevision: m.announcement?.liveRevision ?? null,
+  requiredRevision: m.requiredRevision ?? null,
+  portfolioOverlay: m.overlay ?? null,
+  waitedSeconds: Math.round(m.waitedMs / 1000),
+});
+/** an unusable BOOSTCHAT_BASE_URL / token: judged before anything was written → usage (2) */
+function configError(error: unknown): boolean {
+  if (!(error instanceof AnnounceError && error.code === "config")) return false;
+  console.error(`site:publish: ${error.message} — nothing was uploaded or switched (--no-announce runs without telling BoostChat)`);
+  return true;
+}
+
+if (has("--rollback")) {
+  // The served set a fresh public build would emit into the portfolio document (integration/emit.ts).
+  const portfolioTruth: PortfolioTruthLoader = async () => {
+    const at = new Date().toISOString();
+    const { snapshot, portfolio } = await buildSiteSnapshot({ repoRoot: process.cwd(), siteId, mode: "public", at });
+    // Only reached when the hostname's live package is NOT a shell package (rollbackHost reads the published
+    // overlay by itself otherwise, whatever this checkout says). A checkout marked incremental still holds no
+    // portfolio (the snapshot has none by design), so it cannot vouch either: ask the store, which then refuses.
+    if (portfolio === "incremental") return publishedPortfolioTruth(store!, siteId, host);
+    return { authoritativeIds: snapshot.content.projects.map((p) => p.id), source: `data/sites/${siteId}/content/projects.json (served at ${at})` };
+  };
+  let rolled: ManagedRollbackResult | undefined;
+  try {
+    rolled = await rollbackManaged({ store: store!, siteId, hostname: host, expectLivePackageHash: expectLive, portfolioTruth, log: (l) => console.log(l), announce: announceSetup(), waitSeconds });
+    console.log(JSON.stringify({ status: rolled.status, ...(rolled.status === "rolled-back" ? { pointer: rolled.pointer } : { stopped: rolled.stop }), ...(rolled.managed ? { boostchat: boostchatSummary(rolled.managed) } : {}) }, null, 2));
+  } catch (error) {
+    if (configError(error)) process.exitCode = 2;
+    else {
+      console.error(`site:publish --rollback FAILED (routing pointer untouched unless the message says it was written): ${(error as Error).message}`);
+      process.exitCode = 1;
+    }
+  } finally {
+    await store!.close();
+  }
+  if (rolled?.status === "stopped") {
+    console.error(`site:publish --rollback STOPPED (${rolled.stop}): ${rolled.message}`);
+    process.exitCode = managedExitCode(rolled);
+  }
+  process.exit();
+}
+
 const publishOptions = {
   repoRoot: process.cwd(),
   siteId,
@@ -234,15 +273,12 @@ let failure = 1;
 try {
   if (dryRun) res = await publishSite({ ...publishOptions, store, dryRun, checkStore });
   else {
-    managed = await publishManaged({ ...publishOptions, store: store!, announce: announceSetup(), waitSeconds: waitRaw === undefined ? DEFAULT_WAIT_SECONDS : Number(waitRaw) });
+    managed = await publishManaged({ ...publishOptions, store: store!, announce: announceSetup(), waitSeconds });
     res = managed.result;
   }
 } catch (error) {
-  if (error instanceof AnnounceError && error.code === "config") {
-    // judged before anything was uploaded
-    console.error(`site:publish: ${error.message} — nothing was uploaded (--no-announce publishes without telling BoostChat)`);
-    failure = 2;
-  } else console.error(`site:publish FAILED (routing pointer untouched unless the message says it was written): ${(error as Error).message}`);
+  if (configError(error)) failure = 2;
+  else console.error(`site:publish FAILED (routing pointer untouched unless the message says it was written): ${(error as Error).message}`);
 } finally {
   await store?.close();
 }
@@ -270,8 +306,8 @@ if (res.status === "dry-run") {
   if (plan.shell) {
     const o = sc?.portfolioOverlay;
     console.log(
-      `SHELL PACKAGE — the pointer write is refused unless the store holds a portfolio overlay recon-runtime would use: ${plan.shell.currentKey} → ` +
-        (o ? `${o.state}${o.state === "live" ? ` (revision ${o.revision})` : o.state === "refused" ? ` (${o.reason})` : ""} → activation ${o.activation === "would-pass" ? "WOULD PASS" : "WOULD BE REFUSED (publish the portfolio for this package from BoostChat first)"}` : "not checked (add --check-store)"),
+      `SHELL PACKAGE — the pointer write is refused unless the store holds a portfolio overlay recon-runtime would use (and not an older one than the hostname serves now): ${plan.shell.currentKey} → ` +
+        (o ? `${o.state}${o.state === "live" ? ` (revision ${o.revision})` : o.state === "refused" ? ` (${o.reason})` : ""} → activation ${o.activation === "would-pass" ? "WOULD PASS" : `WOULD BE REFUSED (${o.servedRevision !== undefined ? `older than revision ${o.servedRevision} of the package the hostname serves now; ` : ""}publish the portfolio for this package from BoostChat first)`}` : "not checked (add --check-store)"),
     );
   }
   console.log(JSON.stringify(res.pointer, null, 2));
@@ -299,20 +335,7 @@ console.log(
       ...(res.status === "dry-run" ? { storeCheck: res.storeCheck ?? null } : {}),
       ...(res.status === "published" ? { upload: res.upload, uploaded: res.uploaded, verified: res.verified, pointerWrite: res.pointerWrite, previous: res.pointer.previous ?? null } : {}),
       ...(res.status === "uploaded" ? { upload: res.upload, uploaded: res.uploaded, verified: res.verified, pointerWrite: "not-activated" } : {}),
-      ...(managed?.managed
-        ? {
-            boostchat: {
-              announcedTo: managed.managed.announcedTo,
-              state: managed.managed.announcement?.state ?? null,
-              publishMode: managed.managed.announcement?.publishMode ?? null,
-              searchSource: managed.managed.announcement?.searchSource ?? null,
-              desiredRevision: managed.managed.announcement?.desiredRevision ?? null,
-              liveRevision: managed.managed.announcement?.liveRevision ?? null,
-              portfolioOverlay: managed.managed.overlay ?? null,
-              waitedSeconds: Math.round(managed.managed.waitedMs / 1000),
-            },
-          }
-        : {}),
+      ...(managed?.managed ? { boostchat: boostchatSummary(managed.managed) } : {}),
       ...(managed?.status === "stopped" ? { stopped: managed.stop } : {}),
     },
     null,

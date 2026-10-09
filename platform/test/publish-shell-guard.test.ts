@@ -37,7 +37,15 @@
  *   M8  an ordinary package → no announce
  *   M9  the wait is not the guard (overlay gone at the write → refused); stale --expect-live first
  *   M10 the real announcer over a fake fetch: the contract, the mapping, no token in any message
- *   INVARIANT  every routing write to a shell package in M1–M9 happened under a usable overlay
+ * Stale overlays and rollback (a package that was live earlier keeps the overlay it had then):
+ *   N1  stale overlay + queued → not activated until the store reaches desiredRevision; store_behind;
+ *       an answer without the revision → announce_failed
+ *   N2  the guard alone (no announce) refuses an overlay older than the one served — publish and rollback
+ *   N3  equal / newer allowed; nothing compared across sites or against an unusable served overlay
+ *   N4  rollback to a shell package announces the target and waits; without an announce: the guard
+ *   N5  rollback to an ordinary package does not announce
+ *   INVARIANT  every routing write to a shell package in M1–M9 / N1–N5 happened under a usable overlay
+ *              that was not older than the one served
  * A new managed site is V2:
  *   K1  site:portfolio-managed writes portfolio-source@2; --dry-run; idempotent
  *   K2  refused for a release without the portfolio runtime (and other unpublishable states)
@@ -50,7 +58,7 @@ import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } f
 import os from "node:os";
 import path from "node:path";
 import { AnnounceError, createBoostChatAnnouncer, shellPackagePath, type AnnounceState, type ShellPackageAnnouncer } from "../publish/announce";
-import { managedExitCode, publishManaged, type AnnounceSetup } from "../publish/managed-flow";
+import { managedExitCode, publishManaged, rollbackManaged, type AnnounceSetup } from "../publish/managed-flow";
 import { isShellPackage, planPublish, portfolioOverlayState, publishedPortfolioTruth, publishSite, PublishError, rollbackHost, ROLLBACK_TRUTH_REFUSAL, type PortfolioTruthLoader } from "../publish/publish";
 import { DirectoryStore, MemoryStore, type ObjectStore } from "../publish/store";
 import { declareManagedPortfolio } from "../portfolio-sync/declare";
@@ -548,7 +556,7 @@ async function tmpDir(label: string): Promise<string> {
   return dir;
 }
 /** THE INVARIANT, checked on every routing write of this section: a pointer to a shell package is written only while the store holds a usable overlay for it */
-const invariant = { shellPointerWrites: 0, violations: [] as string[] };
+const invariant = { shellPointerWrites: 0, comparedWrites: 0, violations: [] as string[] };
 function watched(inner: DirectoryStore, label: string, intercept?: (key: string) => Uint8Array | null | undefined): ObjectStore & { gets: string[] } {
   const gets: string[] = [];
   return {
@@ -568,6 +576,16 @@ function watched(inner: DirectoryStore, label: string, intercept?: (key: string)
           invariant.shellPointerWrites++;
           const state = await portfolioOverlayState(inner, pointer.siteId, pointer.packageHash);
           if (state.state !== "live") invariant.violations.push(`${label}: routing → shell package ${pointer.packageHash.slice(0, 12)} while its overlay is ${state.state}`);
+          // …and never to an overlay older than the one the hostname served until this write
+          const before = await inner.get(key);
+          const served = before ? (JSON.parse(Buffer.from(before).toString("utf8")) as { siteId: string; packageHash: string }) : undefined;
+          if (served && served.siteId === pointer.siteId && served.packageHash !== pointer.packageHash) {
+            const now = await portfolioOverlayState(inner, served.siteId, served.packageHash);
+            if (now.state === "live") {
+              invariant.comparedWrites++;
+              if (state.state === "live" && state.revision < now.revision) invariant.violations.push(`${label}: routing → shell package at revision ${state.revision} while the host served revision ${now.revision}`);
+            }
+          }
         }
       }
       return inner.put(key, body, meta);
@@ -582,17 +600,19 @@ async function bucket(label: string, intercept?: (key: string) => Uint8Array | n
 }
 const routingPuts = (s: DirectoryStore) => s.writes.filter((k) => k.startsWith("routing/"));
 const onDisk = async (dir: string, key: string) => readFile(path.join(dir, key)).catch(() => null);
-/** What BoostChat's publisher writes for the package, through the store: page → manifest → pointer LAST. */
-async function boostchatPublishes(store: ObjectStore, edit: { manifest?: (m: Record<string, any>) => void } = {}): Promise<number> {
-  const revision = ++revisionCounter;
+/** What BoostChat's publisher writes for a package, through the store: page → manifest → pointer LAST. `revision` defaults to the next of the test's counter. */
+async function boostchatPublishes(store: ObjectStore, edit: { siteId?: string; packageHash?: string; revision?: number; manifest?: (m: Record<string, any>) => void } = {}): Promise<number> {
+  const siteId = edit.siteId ?? SHELL_SITE;
+  const packageHash = edit.packageHash ?? HASH;
+  const revision = edit.revision ?? ++revisionCounter;
   const home = enc(`COMPOSED home r${revision}`);
   const homeKey = `blobs/${sha256(home)}.html`;
-  await store.put(portfolioPublicKey(SHELL_SITE, homeKey), home, { contentType: "text/html; charset=utf-8", cacheControl: "no-store" });
+  await store.put(portfolioPublicKey(siteId, homeKey), home, { contentType: "text/html; charset=utf-8", cacheControl: "no-store" });
   const manifest: Record<string, any> = {
     schema: "portfolio-manifest@1",
-    siteId: SHELL_SITE,
+    siteId,
     revision,
-    shell: { packageHash: HASH, releaseId: shellPlan.releaseId },
+    shell: { packageHash, releaseId: shellPlan.releaseId },
     owned: { exact: ["/", "/sitemap.xml"], prefixes: ["/portfolio"] },
     routes: { "/": { key: homeKey, sha256: sha256(home), size: home.length, contentType: "text/html; charset=utf-8" } },
     assets: {},
@@ -601,12 +621,15 @@ async function boostchatPublishes(store: ObjectStore, edit: { manifest?: (m: Rec
   edit.manifest?.(manifest);
   const manifestBytes = enc(manifest);
   const manifestKey = `revisions/${revision}/${sha256(manifestBytes).slice(0, 16)}.json`;
-  await store.put(portfolioPublicKey(SHELL_SITE, manifestKey), manifestBytes, JSON_META);
-  await store.put(CURRENT_KEY, enc({ schema: "portfolio-current@1", siteId: SHELL_SITE, shellPackageHash: HASH, revision, manifestKey, manifestSha256: sha256(manifestBytes), publishedAt: "2026-10-10T00:00:00.000Z" }), JSON_META);
+  await store.put(portfolioPublicKey(siteId, manifestKey), manifestBytes, JSON_META);
+  await store.put(portfolioCurrentKey(siteId, packageHash), enc({ schema: "portfolio-current@1", siteId, shellPackageHash: packageHash, revision, manifestKey, manifestSha256: sha256(manifestBytes), publishedAt: "2026-10-10T00:00:00.000Z" }), JSON_META);
   return revision;
 }
-/** BoostChat as the flow sees it: one fixed answer (or error) per announce, every call recorded */
-function fakeBoostChat(answer: AnnounceState | AnnounceError): ShellPackageAnnouncer & { calls: { siteId: string; packageHash: string }[] } {
+/**
+ * BoostChat as the flow sees it: one fixed answer (or error) per announce, every call recorded. `rev` = the
+ * revisions it answers with; the default (1 / 1) is reached by any overlay the test's counter writes.
+ */
+function fakeBoostChat(answer: AnnounceState | AnnounceError, rev: { desired?: number | null; live?: number | null } = {}): ShellPackageAnnouncer & { calls: { siteId: string; packageHash: string }[] } {
   const calls: { siteId: string; packageHash: string }[] = [];
   return {
     description: "BoostChat https://boostchat.test.example",
@@ -614,7 +637,7 @@ function fakeBoostChat(answer: AnnounceState | AnnounceError): ShellPackageAnnou
     async announce(input) {
       calls.push(input);
       if (answer instanceof AnnounceError) throw answer;
-      return { ok: true, siteId: input.siteId, packageHash: input.packageHash, state: answer, publishMode: answer === "mode_v1" ? "v1" : "v2", searchSource: "canonical", desiredRevision: 7, liveRevision: answer === "already_published" ? 7 : 6 };
+      return { ok: true, siteId: input.siteId, packageHash: input.packageHash, state: answer, publishMode: answer === "mode_v1" ? "v1" : "v2", searchSource: "canonical", desiredRevision: rev.desired === undefined ? 1 : rev.desired, liveRevision: rev.live === undefined ? 1 : rev.live };
     },
   };
 }
@@ -646,17 +669,17 @@ console.log("\nmanaged publish flow (directory store, fake BoostChat, fake clock
 
 await check("M1 queued → BoostChat publishes while the flow waits → activated: one announce naming the site and the package; the store is looked at every 3 s; the routing pointer is the LAST write, after BoostChat's pointer; exit 0", async () => {
   const b = await bucket("m1");
-  const bc = fakeBoostChat("queued");
-  const time = fakeTime(async (n) => void (n === 2 && (await boostchatPublishes(b.store))));
+  const bc = fakeBoostChat("queued", { desired: 40, live: 39 });
+  const time = fakeTime(async (n) => void (n === 2 && (await boostchatPublishes(b.store, { revision: 40 }))));
   const log: string[] = [];
   const r = await publishManaged({ ...managedBase, store: b.w, announce: on(bc), sleep: time.sleep, clock: time.clock, log: (l) => log.push(l) });
   assert(r.status === "published" && r.result.pointerWrite === "written", `result ${r.status}`);
   eq([r.result.upload, r.result.uploaded, r.result.verified], ["uploaded", shellPlan.files.length, shellPlan.files.length], "the result reports the upload of this run");
   eq(bc.calls, [{ siteId: SHELL_SITE, packageHash: HASH }], "announce");
-  eq([time.sleeps, r.managed?.polls, r.managed?.waitedMs, r.managed?.announcement?.state, r.managed?.overlay?.state], [[3000, 3000], 3, 6000, "queued", "live"], "wait");
+  eq([time.sleeps, r.managed?.polls, r.managed?.waitedMs, r.managed?.announcement?.state, r.managed?.requiredRevision, r.managed?.overlay], [[3000, 3000], 3, 6000, "queued", 40, { state: "live", key: CURRENT_KEY, revision: 40 }], "wait");
   eq([b.store.writes.length, b.store.writes[packageWrites - 1], b.store.writes[b.store.writes.length - 2], b.store.writes[b.store.writes.length - 1]], [packageWrites + 3 + 1, shellPlan.sealKey, CURRENT_KEY, shellPlan.routingKey], "order: package, seal · BoostChat's overlay (its pointer last) · routing pointer last");
   eq([routingPuts(b.store).length, JSON.parse((await onDisk(b.dir, shellPlan.routingKey))!.toString("utf8")).packageHash, managedExitCode(r)], [1, HASH, 0], "pointer");
-  assert(log.some((l) => l.includes("announced shell package") && l.includes("→ queued")) && log.some((l) => l.includes("waiting for BoostChat")) && log.some((l) => l.includes("BoostChat published the portfolio")), `log: ${log.join(" | ")}`);
+  assert(log.some((l) => l.includes("announced shell package") && l.includes("→ queued")) && log.some((l) => l.includes("waiting for BoostChat to publish revision 40")) && log.some((l) => l.includes("is published — BoostChat published it after 6 s")), `log: ${log.join(" | ")}`);
   // announced before the first look at the overlay, and after the seal
   eq(b.w.gets.filter((k) => k === CURRENT_KEY).length, 3 + 1, "overlay pointer reads: three looks + the guard of the write");
 });
@@ -692,17 +715,18 @@ await check("M2 queued → BoostChat never publishes → TIMEOUT: stopped (exit 
   eq([b.store.writes.slice(w), third.result.pointer.previous?.packageHash, bc.calls.length, third.managed?.polls], [[shellPlan.routingKey], prior.packageHash, 3, 1], "the one write of the re-run is the pointer; announced on every run; live at the first look");
 });
 
-await check("M3 already_published → no wait, straight to the guard — which still decides: with the overlay in the store the host is switched; without it (BoostChat's word alone) the write is REFUSED by the same shell-package guard, nothing switched", async () => {
+await check("M3 already_published → nothing to wait for: ONE look. With the reported revision in the store the host is switched (the guard judges again at the write); without it (BoostChat's word alone) the flow stops at once — store_behind, exit 5 — and nothing is switched", async () => {
   const b = await bucket("m3");
-  const bc = fakeBoostChat("already_published");
+  const bc = fakeBoostChat("already_published", { desired: 21, live: 21 });
   const time = fakeTime();
-  const refused = await refusal(publishManaged({ ...managedBase, store: b.w, announce: on(bc), sleep: time.sleep, clock: time.clock }), "already_published, no overlay in the store");
-  assert(REFUSAL.test(refused) && refused.includes(`${CURRENT_KEY} does not exist`) && refused.includes("routing pointer NOT written"), `message: ${refused}`);
-  eq([time.sleeps, routingPuts(b.store), await onDisk(b.dir, shellPlan.routingKey)], [[], [], null], "no wait, no pointer");
-  await boostchatPublishes(b.store);
+  const behind = await publishManaged({ ...managedBase, store: b.w, announce: on(bc), sleep: time.sleep, clock: time.clock });
+  assert(behind.status === "stopped" && behind.stop === "store_behind", `already_published, no overlay in the store: ${behind.status}`);
+  assert(/BoostChat reports the portfolio of "boost-interior-demo-02" for package 7ef062643a5e5889… as already published at revision 21, but the store's .* is absent\. .*republish the portfolio in BoostChat, then run this same command again/.test(behind.message) && behind.message.includes("routing pointer was NOT written"), `message: ${behind.message}`);
+  eq([managedExitCode(behind), time.sleeps, behind.managed.polls, routingPuts(b.store), await onDisk(b.dir, shellPlan.routingKey)], [5, [], 1, [], null], "exit 5, one look, no wait, no pointer");
+  await boostchatPublishes(b.store, { revision: 21 });
   const r = await publishManaged({ ...managedBase, store: b.w, announce: on(bc), sleep: time.sleep, clock: time.clock });
   assert(r.status === "published" && r.result.pointerWrite === "written", `result ${r.status}`);
-  eq([time.sleeps, r.managed?.polls, r.managed?.waitedMs, b.store.writes[b.store.writes.length - 1], bc.calls.length], [[], 0, 0, shellPlan.routingKey, 2], "activated without waiting");
+  eq([time.sleeps, r.managed?.polls, r.managed?.waitedMs, r.managed?.requiredRevision, b.store.writes[b.store.writes.length - 1], bc.calls.length], [[], 1, 0, 21, shellPlan.routingKey, 2], "activated without waiting");
   // a host that already serves the package: announce, nothing to switch
   const same = await publishManaged({ ...managedBase, store: b.w, announce: on(bc), sleep: time.sleep, clock: time.clock });
   assert(same.status === "published" && same.result.pointerWrite === "unchanged", "unchanged pointer");
@@ -883,6 +907,183 @@ await check("M10 the BoostChat announcer (fake fetch): POST {base}/api/publisher
   eq([config("http://localhost:3000"), config("http://127.0.0.1:3000"), config("https://boostchat.test.example/")], ["accepted", "accepted", "accepted"], "loopback http and https are accepted — the V1 publisher client's rule");
 });
 
+console.log("\nstale overlays and rollback: READY = the announced revision; the guard refuses a portfolio older than the one served");
+
+/** a second, crafted SHELL package of the same site (its seal lists a /_runtime/portfolio/ file): what the host serves, or goes back to */
+const SHELL_B = "9".repeat(64);
+const SHELL_B_REF = { siteId: SHELL_SITE, packageHash: SHELL_B, buildInputId: "8".repeat(64), releaseId: "interior-02-0.0.0-shell-b", publishedAt: "2026-10-05T00:00:00.000Z" };
+const HASH_REF = { siteId: SHELL_SITE, packageHash: HASH, buildInputId: shellPlan.buildInputId, releaseId: shellPlan.releaseId, publishedAt: "2026-10-08T00:00:00.000Z" };
+const craftedFiles = (paths: string[]) => paths.map((rel) => ({ path: rel, size: 15, sha256: sha256("<!doctype html>"), contentType: "text/html; charset=utf-8", cacheControl: "public, max-age=0, must-revalidate" }));
+async function sealCrafted(store: ObjectStore, ref: { siteId: string; packageHash: string; buildInputId: string; releaseId: string }, paths: string[]): Promise<void> {
+  const files = craftedFiles(paths);
+  await store.put(sealKey(ref.siteId, ref.packageHash), enc({ schemaVersion: 1, siteId: ref.siteId, packageHash: ref.packageHash, buildInputId: ref.buildInputId, releaseId: ref.releaseId, fileCount: files.length, bytes: 15 * files.length, files }), JSON_META);
+}
+const sealShellB = (store: ObjectStore) => sealCrafted(store, SHELL_B_REF, ["index.html", "404.html", RUNTIME_FILE]);
+const pointerOf = (ref: Record<string, unknown>, previous?: Record<string, unknown>) => enc(`${JSON.stringify({ schemaVersion: 1, hostname: HOST, ...ref, ...(previous ? { previous } : {}) }, null, 2)}\n`);
+const samePointer = async (dir: string, bytes: Uint8Array) => Buffer.compare(Buffer.from((await onDisk(dir, shellPlan.routingKey))!), Buffer.from(bytes)) === 0;
+const OLDER = /is a portfolio shell package and its portfolio overlay is older than the one being served: portfolio-public\/boost-interior-demo-02\/current\/[0-9a-f]{64}\.json is at revision (\d+), and shell-guard\.test\.example serves package [0-9a-f]{16}… at revision (\d+) now\. .*routing pointer NOT written.*Let BoostChat publish the portfolio .* for this package first: run this command again with the announce .*or republish in BoostChat/s;
+/**
+ * The situation of fix 1: the package about to go live (HASH) was live EARLIER and still has the overlay it
+ * had then (revision `stale`); the hostname has since moved to SHELL_B, whose overlay is at `served`.
+ */
+async function staleTarget(label: string, stale: number, served: number, intercept?: (key: string) => Uint8Array | null | undefined) {
+  const b = await bucket(label, intercept);
+  await publishSite({ ...managedBase, store: b.store, activate: false });
+  await boostchatPublishes(b.store, { revision: stale });
+  await sealShellB(b.store);
+  await boostchatPublishes(b.store, { packageHash: SHELL_B, revision: served });
+  const live = pointerOf(SHELL_B_REF);
+  await b.store.put(shellPlan.routingKey, live, JSON_META);
+  return { ...b, live, seeded: b.store.writes.length };
+}
+
+await check("N1 a STALE overlay is not 'published': with the package's old pointer (revision 5) still verifying, queued/desiredRevision 10 waits — revision 5 and then 9 do not activate, revision 10 does; never reached → timeout, pointer byte-identical; already_published/liveRevision 9 against a store at 5 stops at once (store_behind, exit 5); an answer without the revision cannot be decided → announce_failed (exit 3), nothing switched", async () => {
+  const b = await staleTarget("n1", 5, 9);
+  // an answer that names no revision to wait for
+  for (const [state, rev, field] of [["queued", { desired: null, live: 9 }, "desiredRevision"], ["queued", { desired: 2.5, live: 9 }, "desiredRevision"], ["already_published", { desired: 9, live: null }, "liveRevision"]] as const) {
+    const time = fakeTime();
+    const r = await publishManaged({ ...managedBase, store: b.w, announce: on(fakeBoostChat(state, rev)), sleep: time.sleep, clock: time.clock });
+    assert(r.status === "stopped" && r.stop === "announce_failed" && r.message.includes(`without a usable ${field}`) && r.message.includes("Nothing is switched on a guess"), `${state} without ${field}: ${r.status} ${"message" in r ? r.message : ""}`);
+    eq([managedExitCode(r), time.sleeps, await samePointer(b.dir, b.live)], [3, [], true], `${state} without ${field}: exit 3, no wait, pointer untouched`);
+  }
+  // BoostChat says "already published at 9"; the store shows the old revision 5 → not ready, and nothing to wait for
+  const behindTime = fakeTime();
+  const behind = await publishManaged({ ...managedBase, store: b.w, announce: on(fakeBoostChat("already_published", { desired: 9, live: 9 })), sleep: behindTime.sleep, clock: behindTime.clock });
+  assert(behind.status === "stopped" && behind.stop === "store_behind" && /as already published at revision 9, but the store's .* is at revision 5, older than the revision 9 BoostChat reports as published/.test(behind.message), `store_behind: ${behind.status} ${"message" in behind ? behind.message : ""}`);
+  eq([managedExitCode(behind), behindTime.sleeps, behind.managed.polls, await samePointer(b.dir, b.live)], [5, [], 1, true], "store_behind: exit 5, one look, no wait, pointer untouched");
+
+  // queued for revision 10, never published in time
+  const bc = fakeBoostChat("queued", { desired: 10, live: 9 });
+  const t1 = fakeTime();
+  const timeout = await publishManaged({ ...managedBase, store: b.w, announce: on(bc), waitSeconds: 6, sleep: t1.sleep, clock: t1.clock });
+  assert(timeout.status === "stopped" && timeout.stop === "timeout" && timeout.message.includes("is at revision 5, older than the revision 10 BoostChat is publishing (waiting for revision 10)"), `timeout: ${timeout.status} ${"message" in timeout ? timeout.message : ""}`);
+  eq([t1.sleeps, timeout.managed.requiredRevision, timeout.managed.overlay, managedExitCode(timeout), await samePointer(b.dir, b.live), b.store.writes.length - b.seeded], [[3000, 3000], 10, { state: "live", key: CURRENT_KEY, revision: 5 }, 5, true, 0], "the old overlay verifies and is still not ready: waited, stopped, zero writes");
+
+  // BoostChat republishes for the package: 9 first (still behind), then 10
+  const log: string[] = [];
+  const t2 = fakeTime(async (n) => {
+    if (n === 1) await boostchatPublishes(b.store, { revision: 9 });
+    if (n === 3) await boostchatPublishes(b.store, { revision: 10 });
+  });
+  const done = await publishManaged({ ...managedBase, store: b.w, announce: on(bc), sleep: t2.sleep, clock: t2.clock, log: (l) => log.push(l) });
+  assert(done.status === "published" && done.result.pointerWrite === "written", `republished: ${done.status}`);
+  eq([t2.sleeps, done.managed?.polls, done.managed?.overlay, done.result.pointer.previous?.packageHash, b.store.writes.slice(-2)], [[3000, 3000, 3000], 4, { state: "live", key: CURRENT_KEY, revision: 10 }, SHELL_B, [CURRENT_KEY, shellPlan.routingKey]], "activated only once revision 10 was in the store; the pointer is the last write");
+  assert(log.some((l) => l.includes("is at revision 5, older than the revision 10")) && log.some((l) => l.includes("is at revision 9, older than the revision 10")) && log.some((l) => l.includes("the package served now, 9999999999999999…, is at revision 9")), `log: ${log.filter((l) => l.includes("revision")).join(" | ")}`);
+});
+
+await check("N2 the GUARD by itself (store only, no announce): a shell package whose overlay is OLDER than the overlay of the shell package the host serves now is refused — publishSite, the flow without an announce, the dry run (would-refuse, servedRevision) and rollbackHost alike; pointer byte-identical, zero writes; the message says to let BoostChat publish for it first", async () => {
+  const b = await staleTarget("n2", 5, 9);
+  const direct = await refusal(publishSite({ ...managedBase, store: b.w }), "publishSite");
+  const [, targetRev, servedRev] = OLDER.exec(direct) ?? [];
+  eq([OLDER.test(direct), targetRev, servedRev], [true, "5", "9"], `message: ${direct}`);
+  const log: string[] = [];
+  const flow = await refusal(publishManaged({ ...managedBase, store: b.w, announce: { mode: "off", why: "--no-announce" }, log: (l) => log.push(l) }), "the flow without an announce");
+  assert(OLDER.test(flow) && log.some((l) => l.includes("NOT ANNOUNCED") && l.includes("not an older one than the hostname serves now")), `flow: ${flow}`);
+  const dry = await publishSite({ ...managedBase, store: b.w, dryRun: true, checkStore: true });
+  assert(dry.status === "dry-run", "dry-run");
+  eq([dry.storeCheck?.pointerAction, dry.storeCheck?.portfolioOverlay], ["write", { state: "live", key: CURRENT_KEY, revision: 5, activation: "would-refuse", servedRevision: 9 }], "dry run reports it");
+  eq([b.store.writes.length - b.seeded, await samePointer(b.dir, b.live)], [0, true], "zero writes, pointer byte-identical");
+
+  // rollback: the host serves HASH (revision 9); its previous package SHELL_B still has the overlay it had when it was live (5)
+  const r = await bucket("n2-rollback");
+  await publishSite({ ...managedBase, store: r.store, activate: false });
+  await boostchatPublishes(r.store, { revision: 9 });
+  await sealShellB(r.store);
+  await boostchatPublishes(r.store, { packageHash: SHELL_B, revision: 5 });
+  const live = pointerOf(HASH_REF, SHELL_B_REF);
+  await r.store.put(shellPlan.routingKey, live, JSON_META);
+  const seeded = r.store.writes.length;
+  const back = await refusal(rollbackHost({ store: r.w, siteId: SHELL_SITE, hostname: HOST, now: T0 }), "rollbackHost");
+  eq([OLDER.test(back), (OLDER.exec(back) ?? []).slice(1), r.store.writes.length - seeded, await samePointer(r.dir, live)], [true, ["5", "9"], 0, true], `rollback message: ${back}`);
+});
+
+await check("N3 equal or newer is allowed, and the rule compares only what it can: same revision → switched; newer → switched; the served shell package has no usable overlay → nothing to compare; the served package belongs to ANOTHER site → not compared (ordinary ↔ shell keeps its own rules: S7, S7b, S10)", async () => {
+  const equal = await staleTarget("n3-equal", 9, 9);
+  const log: string[] = [];
+  const same = await publishSite({ ...managedBase, store: equal.w, log: (l) => log.push(l) });
+  assert(same.status === "published" && same.pointerWrite === "written" && same.pointer.previous?.packageHash === SHELL_B, "equal revision");
+  assert(log.some((l) => l.includes("portfolio overlay is live (revision 9") && l.includes("the package served now, 9999999999999999…, is at revision 9")), `log: ${log.join(" | ")}`);
+  const newer = await staleTarget("n3-newer", 12, 9);
+  const up = await publishSite({ ...managedBase, store: newer.w });
+  assert(up.status === "published" && up.pointerWrite === "written", "newer revision");
+
+  // the served shell package's own overlay does not verify: there is no served revision to be older than
+  const closed = await staleTarget("n3-closed", 2, 9);
+  await boostchatPublishes(closed.store, { packageHash: SHELL_B, revision: 11, manifest: (m) => (m.siteId = "another-site") });
+  eq((await portfolioOverlayState(closed.store, SHELL_SITE, SHELL_B)).state, "refused", "served overlay refused");
+  const over = await publishSite({ ...managedBase, store: closed.w });
+  assert(over.status === "published" && over.pointerWrite === "written", "served overlay unusable → not compared");
+
+  // another site's shell package on the hostname (allowSiteChange): its revision is another site's counter
+  const other = await bucket("n3-other-site");
+  const OTHER = { siteId: "another-site", packageHash: "7".repeat(64), buildInputId: "6".repeat(64), releaseId: "interior-02-0.0.0-other", publishedAt: "2026-10-05T00:00:00.000Z" };
+  await sealCrafted(other.store, OTHER, ["index.html", "404.html", RUNTIME_FILE]);
+  await boostchatPublishes(other.store, { siteId: OTHER.siteId, packageHash: OTHER.packageHash, revision: 99 });
+  await other.store.put(shellPlan.routingKey, pointerOf(OTHER), JSON_META);
+  await publishSite({ ...managedBase, store: other.store, activate: false });
+  await boostchatPublishes(other.store, { revision: 1 });
+  eq((await portfolioOverlayState(other.store, OTHER.siteId, OTHER.packageHash)), { state: "live", key: portfolioCurrentKey(OTHER.siteId, OTHER.packageHash), revision: 99 }, "the other site's overlay verifies at 99");
+  const moved = await publishSite({ ...managedBase, store: other.w, allowSiteChange: true });
+  assert(moved.status === "published" && moved.pointerWrite === "written" && moved.pointer.previous?.siteId === "another-site", "another site's revision is not compared");
+});
+
+/** the host serves HASH (overlay at `served`); its previous package is SHELL_B with the overlay it had when it stopped being live (`stale`) */
+async function rollbackToShell(label: string, stale: number, served: number) {
+  const b = await bucket(label);
+  await publishSite({ ...managedBase, store: b.store, activate: false });
+  await boostchatPublishes(b.store, { revision: served });
+  await sealShellB(b.store);
+  await boostchatPublishes(b.store, { packageHash: SHELL_B, revision: stale });
+  const live = pointerOf(HASH_REF, SHELL_B_REF);
+  await b.store.put(shellPlan.routingKey, live, JSON_META);
+  return { ...b, live, seeded: b.store.writes.length };
+}
+const rollbackBase = { siteId: SHELL_SITE, hostname: HOST, now: T0 };
+const SHELL_B_CURRENT = portfolioCurrentKey(SHELL_SITE, SHELL_B);
+
+await check("N4 ROLLBACK to a shell package is the same flow: the TARGET package is announced, the flow waits until BoostChat has published the announced revision for it, then the guarded rollback write (previous = the package left); without an announce it is today's rollback + the guard's revision check (refused: older than served); timeout / mode_v1 stop with the pointer byte-identical; --expect-live is kept and judged before any announce", async () => {
+  const b = await rollbackToShell("n4", 5, 9);
+  // no BoostChat configuration: the guard alone → refused
+  const log: string[] = [];
+  const alone = await refusal(rollbackManaged({ ...rollbackBase, store: b.w, announce: { mode: "off", why: "BOOSTCHAT_BASE_URL and BOOSTCHAT_PUBLISHER_TOKEN are not set" }, log: (l) => log.push(l) }), "rollback without an announce");
+  assert(OLDER.test(alone) && log.filter((l) => l.includes("NOT ANNOUNCED to BoostChat — BOOSTCHAT_BASE_URL")).length === 1, `message: ${alone}`);
+  // a stale --expect-live is refused before BoostChat is told anything
+  const never = fakeBoostChat("queued", { desired: 9, live: 9 });
+  assert((await refusal(rollbackManaged({ ...rollbackBase, store: b.w, announce: on(never), expectLivePackageHash: "e".repeat(64) }), "stale expect-live")).includes("stale-write guard"), "stale --expect-live");
+  eq(never.calls, [], "nothing announced for a stale --expect-live");
+  // mode_v1 and a timeout stop
+  const v1 = await rollbackManaged({ ...rollbackBase, store: b.w, announce: on(fakeBoostChat("mode_v1")), ...fakeTime() });
+  assert(v1.status === "stopped" && v1.stop === "mode_v1" && v1.message.includes("then run this same rollback again") && v1.message.includes("--no-announce"), `mode_v1: ${v1.status}`);
+  const bc = fakeBoostChat("queued", { desired: 9, live: 9 });
+  const t1 = fakeTime();
+  const timeout = await rollbackManaged({ ...rollbackBase, store: b.w, announce: on(bc), waitSeconds: 3, sleep: t1.sleep, clock: t1.clock });
+  assert(timeout.status === "stopped" && timeout.stop === "timeout" && timeout.message.includes(`${SHELL_B_CURRENT} is at revision 5, older than the revision 9 BoostChat is publishing`) && timeout.message.includes("routing pointer was NOT written"), `timeout: ${timeout.status} ${"message" in timeout ? timeout.message : ""}`);
+  eq([managedExitCode(v1), managedExitCode(timeout), t1.sleeps, bc.calls, b.store.writes.length - b.seeded, await samePointer(b.dir, b.live)], [4, 5, [3000], [{ siteId: SHELL_SITE, packageHash: SHELL_B }], 0, true], "exit codes; the TARGET package was announced; zero writes; pointer byte-identical");
+
+  // BoostChat publishes the current portfolio for the target while the flow waits → rolled back
+  const t2 = fakeTime(async (n) => void (n === 2 && (await boostchatPublishes(b.store, { packageHash: SHELL_B, revision: 9 }))));
+  const done = await rollbackManaged({ ...rollbackBase, store: b.w, announce: on(bc), expectLivePackageHash: HASH, sleep: t2.sleep, clock: t2.clock });
+  assert(done.status === "rolled-back", `rollback: ${done.status}`);
+  eq([done.pointer.packageHash, done.pointer.previous?.packageHash, done.from.packageHash, t2.sleeps, done.managed?.polls, done.managed?.requiredRevision, done.managed?.overlay, b.store.writes.slice(-2), managedExitCode(done)], [SHELL_B, HASH, HASH, [3000, 3000], 3, 9, { state: "live", key: SHELL_B_CURRENT, revision: 9 }, [SHELL_B_CURRENT, shellPlan.routingKey], 0], "announced, waited, rolled back; the pointer is the last write");
+  eq(JSON.parse((await onDisk(b.dir, shellPlan.routingKey))!.toString("utf8")).packageHash, SHELL_B, "the hostname serves the target");
+  // and forward again the same way (a second rollback): HASH is at 9 = served 9 → already ready
+  const forward = await rollbackManaged({ ...rollbackBase, store: b.w, announce: on(fakeBoostChat("already_published", { desired: 9, live: 9 })), ...fakeTime() });
+  assert(forward.status === "rolled-back" && forward.pointer.packageHash === HASH && forward.managed?.polls === 1, `second rollback: ${forward.status}`);
+});
+
+await check("N5 rollback to an ORDINARY package is unchanged: nothing is announced — the announcer is not even constructed — and no overlay key is read", async () => {
+  const b = await bucket("n5");
+  await publishSite({ ...managedBase, store: b.store, activate: false });
+  await boostchatPublishes(b.store, { revision: 9 });
+  const PLAIN_REF = { siteId: SHELL_SITE, packageHash: "f".repeat(64), buildInputId: "1".repeat(64), releaseId: "interior-02-0.0.0-plain", publishedAt: "2026-10-01T00:00:00.000Z" };
+  await sealCrafted(b.store, PLAIN_REF, ["index.html", "404.html"]);
+  await b.store.put(shellPlan.routingKey, pointerOf(HASH_REF, PLAIN_REF), JSON_META);
+  const seeded = b.store.writes.length;
+  const r = await rollbackManaged({ ...rollbackBase, store: b.w, announce: NEVER });
+  assert(r.status === "rolled-back" && r.managed === undefined, `rollback: ${r.status}`);
+  eq([r.pointer.packageHash, r.pointer.previous?.packageHash, b.store.writes.slice(seeded), b.w.gets.filter((k) => k.startsWith("portfolio-public/"))], [PLAIN_REF.packageHash, HASH, [shellPlan.routingKey], []], "rolled back to the ordinary package");
+});
+
 console.log("\na new managed site is V2 (marker), V1 only by name");
 
 /** a repository-root-shaped throwaway directory with one site's site.json and the real release store */
@@ -977,15 +1178,18 @@ await check("K3 V1 is a compatibility path, asked for by name: site:portfolio-sy
   eq([JSON.parse(SOURCE_MARKER_TEXT), SOURCE_MARKER_TEXT === SOURCE_MARKER_V2_TEXT], [{ schema: "portfolio-source@1", managedBy: "boostchat" }, false], "the V1 marker text is what it was");
 });
 
-await check("K4 CLI site:publish: --wait-seconds / --no-announce are validated (exit 2) and refused next to --rollback; a dry run accepts and ignores them; an unusable BOOSTCHAT_BASE_URL stops a shell publish before anything is uploaded (exit 2, the token is not printed) and does not concern an ordinary --dry-run", async () => {
+await check("K4 CLI site:publish: --wait-seconds / --no-announce are validated (exit 2) and accepted next to --rollback; a dry run accepts and ignores them; an unusable BOOSTCHAT_BASE_URL stops a shell publish before anything is uploaded (exit 2, the token is not printed) and does not concern an ordinary --dry-run", async () => {
   const pub = (flags: string[], env: Record<string, string> = {}, site = SHELL_SITE) => cliIn(repoRoot, "site-publish.ts", ["--site", site, "--host", HOST, ...flags], env);
   const bad = pub(["--wait-seconds", "soon"]);
   assert(bad.status === 2 && bad.stderr.includes("--wait-seconds must be a whole number of seconds") && bad.stderr.includes("[--no-announce] [--wait-seconds N]"), `--wait-seconds soon: ${bad.status} ${bad.stderr.slice(0, 200)}`);
   eq([pub(["--wait-seconds"]).status, pub(["--wait-seconds", "-1"]).status, pub(["--wait-seconds", "999999"]).status], [2, 2, 2], "missing / negative / absurd");
-  for (const flags of [["--rollback", "--no-announce"], ["--rollback", "--wait-seconds", "5"]]) {
-    const r = pub(flags);
-    assert(r.status === 2 && r.stderr.includes("--rollback only combines with"), `${flags.join(" ")}: ${r.status}`);
-  }
+  // --rollback takes the two flags (a rollback to a shell package is the same flow); on an empty local store it then finds nothing to roll back
+  const emptyState = await tmpDir("k4-rollback-state");
+  const rb = pub(["--rollback", "--no-announce", "--local", "--persist-to", emptyState]);
+  assert(rb.status === 1 && rb.stderr.includes("does not exist; nothing to roll back") && !rb.stderr.includes("--rollback only combines with"), `--rollback --no-announce: ${rb.status} ${rb.stderr.slice(0, 300)}`);
+  const rbUsage = pub(["--rollback", "--no-activate"]);
+  assert(rbUsage.status === 2 && rbUsage.stderr.includes("--rollback only combines with --expect-live, --no-announce, --wait-seconds and the store flags"), `--rollback --no-activate: ${rbUsage.status}`);
+  eq(pub(["--rollback", "--wait-seconds", "soon"]).status, 2, "--rollback --wait-seconds soon");
   assert(pub(["--no-activate", "--wait-seconds", "5"]).stderr.includes("cannot be combined with --no-activate") && pub(["--no-announce", "--wait-seconds", "5"]).stderr.includes("cannot be combined with --no-announce"), "--wait-seconds needs a wait");
   const UNUSABLE = { BOOSTCHAT_BASE_URL: "http://localhost:9/not-an-origin", BOOSTCHAT_PUBLISHER_TOKEN: "tok-SECRET-never-printed" };
   for (const flags of [["--no-announce"], ["--wait-seconds", "5"]]) {
@@ -1001,9 +1205,9 @@ await check("K4 CLI site:publish: --wait-seconds / --no-announce are validated (
   eq(await readdir(state), [], "the local store was not touched");
 });
 
-await check("INVARIANT every routing write of the managed flow that named a shell package (activations above) was made while the store held an overlay recon-runtime would use for it — and there were such writes; no branch wrote one otherwise", () => {
+await check("INVARIANT every routing write above that named a shell package (publishes and rollbacks, M1–M9 and N1–N5) was made while the store held an overlay recon-runtime would use for it, and never one OLDER than the overlay the hostname served until that write — and there were such writes; no branch wrote one otherwise", () => {
   eq(invariant.violations, [], "violations");
-  assert(invariant.shellPointerWrites >= 4, `only ${invariant.shellPointerWrites} shell pointer writes were observed`);
+  assert(invariant.shellPointerWrites >= 9 && invariant.comparedWrites >= 4, `only ${invariant.shellPointerWrites} shell pointer writes (${invariant.comparedWrites} over a served shell overlay) were observed`);
 });
 
 for (const dir of tmpDirs) await rm(dir, { recursive: true, force: true });
