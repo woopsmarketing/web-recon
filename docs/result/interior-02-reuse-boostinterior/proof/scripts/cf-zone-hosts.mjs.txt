@@ -1,0 +1,25 @@
+// Read-only Cloudflare GraphQL: zone-level request counts per host and per window (token from wrangler OAuth, never printed).
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+const toml = readFileSync(`${homedir()}/Library/Preferences/.wrangler/config/default.toml`, "utf8");
+const token = /oauth_token\s*=\s*"([^"]+)"/.exec(toml)?.[1];
+if (!token) throw new Error("no oauth token");
+const api = async (path, init) => (await fetch(`https://api.cloudflare.com/client/v4${path}`, { ...init, headers: { authorization: `Bearer ${token}`, "content-type": "application/json" } })).json();
+const z = await api("/zones?name=boostweb.co.kr");
+const zone = z.result?.[0]?.id;
+if (!zone) { console.log("zone lookup failed:", JSON.stringify(z.errors ?? z).slice(0, 300)); process.exit(1); }
+console.log("zone plan:", z.result[0].plan?.name);
+const wins = process.argv.slice(2).map((w) => w.split(","));
+for (const [s, e] of wins) {
+  const q = `query($z:String!,$s:Time!,$e:Time!){viewer{zones(filter:{zoneTag:$z}){
+    h:httpRequestsAdaptiveGroups(limit:200,filter:{datetime_geq:$s,datetime_lt:$e,clientRequestHTTPHost_like:"interior-demo%"}){count sum{edgeResponseBytes} dimensions{clientRequestHTTPHost edgeResponseStatus}}
+  }}}`;
+  const r = await api("/graphql", { method: "POST", body: JSON.stringify({ query: q, variables: { z: zone, s, e } }) });
+  if (r.errors) { console.log(s, e, "ERROR", JSON.stringify(r.errors).slice(0, 400)); continue; }
+  const by = {};
+  for (const g of r.data.viewer.zones[0].h) {
+    const k = g.dimensions.clientRequestHTTPHost; by[k] ??= { requests: 0, bytes: 0, status: {} };
+    by[k].requests += g.count; by[k].bytes += g.sum.edgeResponseBytes; by[k].status[g.dimensions.edgeResponseStatus] = (by[k].status[g.dimensions.edgeResponseStatus] || 0) + g.count;
+  }
+  console.log(JSON.stringify({ window: [s, e], hosts: by }));
+}

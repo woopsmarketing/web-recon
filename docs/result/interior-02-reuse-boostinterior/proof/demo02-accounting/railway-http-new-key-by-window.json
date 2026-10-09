@@ -1,0 +1,222 @@
+{
+ "range": [
+  "2026-10-09T09:00:01.314726938Z",
+  "2026-10-09T10:02:18.088250388Z"
+ ],
+ "total": {
+  "n": 1887,
+  "fivexx": 0,
+  "newKey": 253,
+  "oldKey": 72,
+  "other3": 0
+ },
+ "statusAllTenants": {
+  "200": 1341,
+  "202": 14,
+  "204": 1,
+  "304": 130,
+  "403": 4,
+  "499": 397
+ },
+ "deployments": [
+  "5b4afeee"
+ ],
+ "instances": {
+  "b2d1306a": {
+   "requests": 1481,
+   "first": "09:00:01",
+   "last": "10:02:18"
+  },
+  "00000000": {
+   "requests": 406,
+   "first": "09:00:05",
+   "last": "09:41:25"
+  }
+ },
+ "otherKeys": {
+  "wgt_lUsT…": 4
+ },
+ "windows": {
+  "1 provisioning (… → 09:26:56)": {
+   "allTenants": 1166,
+   "newKey": 58,
+   "status": {
+    "200": 58
+   },
+   "paths": {
+    "GET /widget/<key>": 55,
+    "POST /api/widget/<key>/bootstrap": 3
+   },
+   "first": "09:10:02",
+   "last": "09:26:55"
+  },
+  "2 original live run (09:26:56 → 09:37:54)": {
+   "allTenants": 553,
+   "newKey": 156,
+   "status": {
+    "200": 152,
+    "403": 3,
+    "499": 1
+   },
+   "paths": {
+    "GET /widget/<key>": 72,
+    "POST /api/widget/<key>/bootstrap": 72,
+    "POST /api/widget/<key>/chat": 2,
+    "GET /api/widget/<key>/portfolio/<id>/media/cover": 3,
+    "GET /api/widget/<key>/portfolio/<id>": 1,
+    "GET /api/widget/<key>/portfolio/<id>/media/1": 1,
+    "GET /api/widget/<key>/portfolio/<id>/media/0": 1,
+    "GET /api/widget/<key>/conversation/<uuid>": 1,
+    "OPTIONS /api/widget/<key>/lead": 2,
+    "POST /api/widget/<key>/lead": 1
+   },
+   "first": "09:27:01",
+   "last": "09:37:52"
+  },
+  "3 gap (09:37:54 → 09:39:30)": {
+   "allTenants": 48,
+   "newKey": 6,
+   "status": {
+    "200": 6
+   },
+   "paths": {
+    "GET /widget/<key>": 3,
+    "POST /api/widget/<key>/bootstrap": 3
+   },
+   "first": "09:38:48",
+   "last": "09:39:20"
+  },
+  "4 card probe run 1 (09:39:30 → 09:41:05)": {
+   "allTenants": 30,
+   "newKey": 10,
+   "status": {
+    "200": 10
+   },
+   "paths": {
+    "GET /widget/<key>": 1,
+    "POST /api/widget/<key>/bootstrap": 1,
+    "GET /api/widget/<key>/portfolio/<id>/media/cover": 4,
+    "POST /api/widget/<key>/chat": 1,
+    "GET /api/widget/<key>/portfolio/<id>": 1,
+    "GET /api/widget/<key>/portfolio/<id>/media/1": 1,
+    "GET /api/widget/<key>/portfolio/<id>/media/0": 1
+   },
+   "first": "09:39:40",
+   "last": "09:39:50"
+  },
+  "5 card probe run 2 (09:41:05 → 09:42:00)": {
+   "allTenants": 48,
+   "newKey": 23,
+   "status": {
+    "200": 21,
+    "499": 2
+   },
+   "paths": {
+    "GET /widget/<key>": 1,
+    "POST /api/widget/<key>/bootstrap": 1,
+    "GET /api/widget/<key>/portfolio/<id>/media/cover": 5,
+    "POST /api/widget/<key>/chat": 1,
+    "GET /api/widget/<key>/portfolio/<id>": 5,
+    "GET /api/widget/<key>/portfolio/<id>/media/1": 5,
+    "GET /api/widget/<key>/portfolio/<id>/media/0": 5
+   },
+   "first": "09:41:11",
+   "last": "09:41:25"
+  },
+  "6 after probes (09:42:00 → end)": {
+   "allTenants": 42,
+   "newKey": 0,
+   "status": {},
+   "paths": {}
+  }
+ },
+ "newKeyNon2xx": [
+  "09:33:30 POST /api/widget/<key>/bootstrap 499",
+  "09:36:44 OPTIONS /api/widget/<key>/lead 403",
+  "09:36:45 POST /api/widget/<key>/lead 403",
+  "09:37:47 OPTIONS /api/widget/<key>/lead 403",
+  "09:41:25 GET /api/widget/<key>/portfolio/<id>/media/0 499",
+  "09:41:25 GET /api/widget/<key>/portfolio/<id>/media/1 499"
+ ],
+ "newKeyByMinute": {
+  "09:10": {
+   "GET /widget/<key>": 31
+  },
+  "09:11": {
+   "GET /widget/<key>": 20
+  },
+  "09:12": {
+   "GET /widget/<key>": 1
+  },
+  "09:26": {
+   "GET /widget/<key>": 3,
+   "POST /api/widget/<key>/bootstrap": 3
+  },
+  "09:27": {
+   "GET /widget/<key>": 16,
+   "POST /api/widget/<key>/bootstrap": 16
+  },
+  "09:28": {
+   "GET /widget/<key>": 13,
+   "POST /api/widget/<key>/bootstrap": 12
+  },
+  "09:29": {
+   "POST /api/widget/<key>/bootstrap": 13,
+   "GET /widget/<key>": 12
+  },
+  "09:30": {
+   "GET /widget/<key>": 12,
+   "POST /api/widget/<key>/bootstrap": 11
+  },
+  "09:31": {
+   "POST /api/widget/<key>/bootstrap": 3,
+   "GET /widget/<key>": 2
+  },
+  "09:32": {
+   "GET /widget/<key>": 3,
+   "POST /api/widget/<key>/bootstrap": 3
+  },
+  "09:33": {
+   "GET /widget/<key>": 3,
+   "POST /api/widget/<key>/bootstrap": 3
+  },
+  "09:34": {
+   "GET /widget/<key>": 3,
+   "POST /api/widget/<key>/bootstrap": 3
+  },
+  "09:35": {
+   "GET /widget/<key>": 2,
+   "POST /api/widget/<key>/bootstrap": 2,
+   "POST /api/widget/<key>/chat": 2,
+   "GET /api/widget/<key>/portfolio/…": 6
+  },
+  "09:36": {
+   "GET /widget/<key>": 4,
+   "POST /api/widget/<key>/bootstrap": 4,
+   "GET /api/widget/<key>/conversation/<uuid>": 1,
+   "OPTIONS /api/widget/<key>/lead": 1,
+   "POST /api/widget/<key>/lead": 1
+  },
+  "09:37": {
+   "GET /widget/<key>": 2,
+   "POST /api/widget/<key>/bootstrap": 2,
+   "OPTIONS /api/widget/<key>/lead": 1
+  },
+  "09:38": {
+   "GET /widget/<key>": 1,
+   "POST /api/widget/<key>/bootstrap": 1
+  },
+  "09:39": {
+   "GET /widget/<key>": 3,
+   "POST /api/widget/<key>/bootstrap": 3,
+   "GET /api/widget/<key>/portfolio/…": 7,
+   "POST /api/widget/<key>/chat": 1
+  },
+  "09:41": {
+   "GET /widget/<key>": 1,
+   "POST /api/widget/<key>/bootstrap": 1,
+   "GET /api/widget/<key>/portfolio/…": 20,
+   "POST /api/widget/<key>/chat": 1
+  }
+ }
+}

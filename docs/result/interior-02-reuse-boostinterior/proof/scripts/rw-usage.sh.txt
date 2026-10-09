@@ -1,0 +1,8 @@
+#!/bin/sh
+# Read-only Railway metrics for the BoostChat `app` service. usage: sh rw-usage.sh <startISO> <endISO>
+S="$1"; E="$2"
+cd /Users/woops/projects/boost-chat || exit 1
+railway api "query { metrics(environmentId: \"df743d69-762c-4a09-98a3-eece770070d9\", serviceId: \"903db89c-05f9-4c57-96b9-9df0e5f1a628\", startDate: \"$S\", endDate: \"$E\", sampleRateSeconds: 60, measurements: [CPU_USAGE, MEMORY_USAGE_GB, NETWORK_RX_GB, NETWORK_TX_GB, CPU_LIMIT, MEMORY_LIMIT_GB]) { measurement values { ts value } } }" | node -e '
+let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);const m=(j.data||j).metrics;if(!m){console.log(s.slice(0,400));return}
+for(const x of m){const v=x.values.map(p=>p.value);if(!v.length){console.log(x.measurement,"no samples");continue}
+const f=n=>Number(n).toFixed(4);console.log(x.measurement.padEnd(18),"n="+v.length,"first="+f(v[0]),"min="+f(Math.min(...v)),"max="+f(Math.max(...v)),"last="+f(v[v.length-1]),"avg="+f(v.reduce((a,b)=>a+b,0)/v.length))}})'

@@ -1,0 +1,812 @@
+// provision.mts — BoostChat: provision the second demo tenant `boost-interior-demo-02`
+// by mirroring `boost-interior-demo`, using ONLY the product's own service functions.
+//
+// DEFAULT IS DRY-RUN. Nothing is written unless BOTH `--apply` is passed AND
+// env ALLOW_PRODUCTION_DB=1 is set (double opt-in, same idea as the 2026-09-23 executor).
+//
+// Phases (one per invocation):
+//   --phase tenant-config   plan master · action pilot on · capability portfolio.search on ·
+//                           business facts · AI config · public profile (handle) · widget channel
+//                           (allowed origin + enabled). No model calls.
+//   --phase faq             OPTIONAL — copy the template tenant's FAQ entries via createFaq().
+//                           Each createFaq() republishes the FAQ source and EMBEDS the new
+//                           document (OpenAI text-embedding-3-small, 1 call per new entry).
+//   --phase binding         registerFirstPartyBinding → setFirstPartyBindingEnabled (CAS on
+//                           origin). Run AFTER the site is live. Refresh is NOT run here — the
+//                           script prints the exact scripts/ops-first-party-refresh.ts commands.
+//
+// Run through the repo's prod wrapper (it injects app vars + reachable DATABASE_URL and asserts
+// the cluster identity before this file is even loaded). prod-run only accepts a script path
+// INSIDE the repo, so a gitignored one-line shim lives at proof/provision/provision.mts:
+//
+//   DRY-RUN (session forced read-only by PGOPTIONS — any write would fail at the server):
+//     node scripts/prod-run.mjs --read-only -- proof/provision/provision.mts --phase tenant-config
+//   APPLY:
+//     ALLOW_PRODUCTION_DB=1 node scripts/prod-run.mjs -- proof/provision/provision.mts --phase tenant-config --apply
+//
+// Guards (all hard failures, exit 3):
+//   · pg_control_system().system_identifier must equal EXPECTED_SYSTEM_IDENTIFIER (and match
+//     EXPECTED_DB_SYSTEM_IDENTIFIER if prod-run set it).
+//   · target slug is a constant; `--slug` is accepted only as a confirmation and must be equal.
+//   · the target tenant must already exist (created by scripts/tenant-bootstrap.ts — step 1).
+//     In DRY-RUN a missing target is reported and the plan is still printed from the template.
+//   · operator = first entry of the app's OPS_OPERATOR_EMAILS (or --operator-email, which must be
+//     in that allow-list). Must be a "user" row AND the owner member of the template tenant AND
+//     (when the target exists) an owner member of the target tenant — so lead notifications go to
+//     that owner-controlled address only. E-mails are printed masked (3 chars + domain).
+//   · every write goes through writeScope(tenantId) which throws unless tenantId is the target's.
+//   · a "fence" snapshot of the template tenant (tenant · widget · integration · snapshot · plan ·
+//     pilot · capability · facts/ai/profile versions · faq count) is taken before and after apply
+//     and must be byte-identical; audit rows written since start must all be scoped to the target.
+//   · idempotent: every step reads first and reports `unchanged` when already in the goal state.
+//
+// Secrets: DATABASE_URL · API keys · passwords are never printed. Widget public keys (wgt_…)
+// are public identifiers and are printed. No lead/customer row contents are read.
+import { parseArgs } from "node:util";
+import type { Pool, PoolClient, QueryResult, QueryResultRow } from "pg";
+
+import { getPool, closePool, assertDatabaseConfigured } from "/Users/woops/projects/boost-chat/src/lib/db/pool.ts";
+import { cliErrorMessage } from "/Users/woops/projects/boost-chat/src/lib/cli/sanitize.ts";
+import { configuredOperatorEmails, isOperatorEmail } from "/Users/woops/projects/boost-chat/src/lib/ops/operator.ts";
+import { setTenantPlanByOperator } from "/Users/woops/projects/boost-chat/src/lib/ops/plan-control.ts";
+import { setTenantActionPilotByOperator } from "/Users/woops/projects/boost-chat/src/lib/ops/action-pilot.ts";
+import { setTenantCapabilityByOperator } from "/Users/woops/projects/boost-chat/src/lib/ops/capability-control.ts";
+import {
+  CORE_AUDIT_TARGET,
+  insertAiConfigIfAbsent,
+  insertBusinessFactsIfAbsent,
+  readAiConfig,
+  readBusinessFacts,
+  updateAiConfig,
+  updateBusinessFacts,
+} from "/Users/woops/projects/boost-chat/src/lib/data/core-repository.ts";
+import type { AiConfig, BusinessFacts } from "/Users/woops/projects/boost-chat/src/lib/data/repository.ts";
+import {
+  AI_CONFIG_KEYS,
+  BUSINESS_FACTS_KEYS,
+  changedFields,
+  validateAiConfig,
+  validateBusinessFacts,
+} from "/Users/woops/projects/boost-chat/src/lib/admin/validate.ts";
+import { runTenantMutation } from "/Users/woops/projects/boost-chat/src/lib/admin/audit.ts";
+import {
+  HandleTakenError,
+  PROFILE_AUDIT_TARGET,
+  getPublicProfileForAdmin,
+  insertPublicProfile,
+  lockPublicProfileForUpdate,
+  publishPublicProfile,
+} from "/Users/woops/projects/boost-chat/src/lib/profile/repository.ts";
+import { PUBLIC_PROFILE_KEYS, validatePublicProfile, type PublicProfileValue } from "/Users/woops/projects/boost-chat/src/lib/profile/validate.ts";
+import { parseHandle } from "/Users/woops/projects/boost-chat/src/lib/profile/handle.ts";
+import { isPublicChatProfileEnabled } from "/Users/woops/projects/boost-chat/src/lib/profile/gate.ts";
+import { ensureWidgetChannel, isWidgetServingBlocked, type WidgetApprovalStatus } from "/Users/woops/projects/boost-chat/src/lib/widget/channel.ts";
+import { normalizeOriginList } from "/Users/woops/projects/boost-chat/src/lib/widget/origins.ts";
+import { buildInstallSnippet, getPublicAppOrigin } from "/Users/woops/projects/boost-chat/src/lib/widget/public-url.ts";
+import { isPublicWidgetEnabled, PUBLIC_WIDGET_ENV } from "/Users/woops/projects/boost-chat/src/lib/widget/gate.ts";
+import { createFaq, listFaqs } from "/Users/woops/projects/boost-chat/src/lib/knowledge/faq.ts";
+import {
+  getFirstPartyBindingStatus,
+  registerFirstPartyBinding,
+  setFirstPartyBindingEnabled,
+} from "/Users/woops/projects/boost-chat/src/lib/first-party/binding-repository.ts";
+import { PORTFOLIO_SEARCH_KEY } from "/Users/woops/projects/boost-chat/src/lib/first-party/tool-def.ts";
+import { FIRST_PARTY_DEFAULT_LABEL } from "/Users/woops/projects/boost-chat/src/lib/first-party/capability.ts";
+
+// ── constants (the goal state) ──────────────────────────────────────────────
+const EXPECTED_SYSTEM_IDENTIFIER = "7675084143306387491";
+const TARGET_SLUG = "boost-interior-demo-02";
+const TEMPLATE_SLUG = "boost-interior-demo";
+const TARGET_ORIGIN = "https://interior-demo-2.boostweb.co.kr";
+const DEFAULT_HANDLE = "boost-interior-2";
+const PLAN = "master" as const;
+const CAPABILITY = PORTFOLIO_SEARCH_KEY; // "portfolio.search"
+const DEFAULT_REASON = "demo tenant #2 (interior-demo-2.boostweb.co.kr) provisioning - mirror of boost-interior-demo";
+const PHASES = ["tenant-config", "faq", "binding"] as const;
+type Phase = (typeof PHASES)[number];
+
+interface Queryable {
+  query<R extends QueryResultRow>(text: string, values?: unknown[]): Promise<QueryResult<R>>;
+}
+
+// ── output helpers (masking) ────────────────────────────────────────────────
+const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+function maskEmail(email: string): string {
+  const at = email.indexOf("@");
+  if (at < 0) return email.slice(0, 3) + "***";
+  return email.slice(0, Math.min(3, at)) + "***@" + email.slice(at + 1);
+}
+/** Masks every e-mail-looking substring in free text before printing. */
+function maskText(value: unknown): string {
+  const text = typeof value === "string" ? value : JSON.stringify(value);
+  return text.replace(EMAIL_RE, (m) => maskEmail(m));
+}
+function log(line: string): void {
+  console.log(line);
+}
+function fail(code: number, message: string): never {
+  console.error(`provision: ${message}`);
+  process.exit(code);
+}
+function hasControlChars(s: string): boolean {
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c < 32 || c === 127) return true;
+  }
+  return false;
+}
+
+// ── plan table ──────────────────────────────────────────────────────────────
+interface PlanItem {
+  step: string;
+  before: string;
+  after: string;
+  action: string; // "create" | "update" | "unchanged" | "REFUSE: …" | "skip: …"
+}
+function printPlan(title: string, items: PlanItem[]): void {
+  log("");
+  log(`== ${title} ==`);
+  for (const it of items) {
+    log(`  [${it.action.padEnd(9)}] ${it.step}`);
+    log(`             before: ${maskText(it.before)}`);
+    log(`             after : ${maskText(it.after)}`);
+  }
+}
+
+// ── fence: the template tenant must not change ──────────────────────────────
+async function fenceSnapshot(q: Queryable, tenantId: string): Promise<string> {
+  const { rows } = await q.query<Record<string, unknown>>(
+    `select
+       (select row_to_json(t) from (select slug, name, status, updated_at, action_pilot_enabled
+                                       from tenant where id = $1) t)                                  as tenant,
+       (select row_to_json(w) from (select public_key, enabled, version, updated_at, approval_status,
+                                           allowed_origins from tenant_public_widget where tenant_id = $1) w) as widget,
+       (select json_agg(i order by i.capability) from (select capability, kind, enabled, base_url, updated_at
+                                       from tenant_integration where tenant_id = $1) i)             as integrations,
+       (select json_agg(s order by s.last_checked_at) from (select state, public_origin, resource_version,
+                                       last_success_at, last_checked_at
+                                       from first_party_snapshot where tenant_id = $1) s)           as snapshots,
+       (select row_to_json(p) from (select plan_id, source, updated_at
+                                       from tenant_plan_assignment where tenant_id = $1) p)         as plan,
+       (select json_agg(c order by c.capability) from (select capability, enabled, updated_at
+                                       from tenant_capability_control where tenant_id = $1) c)      as capabilities,
+       (select version from tenant_business_facts where tenant_id = $1)                             as facts_version,
+       (select version from tenant_ai_config where tenant_id = $1)                                  as ai_version,
+       (select version from tenant_public_profile where tenant_id = $1)                             as profile_version,
+       (select count(*)::int from knowledge_faq where tenant_id = $1)                               as faq_count,
+       (select row_to_json(pr) from (select launcher, version, updated_at
+                                       from tenant_widget_presentation where tenant_id = $1) pr)    as presentation`,
+    [tenantId],
+  );
+  return JSON.stringify(rows[0]);
+}
+
+// ── tenant / operator resolution ────────────────────────────────────────────
+interface TenantRow extends QueryResultRow {
+  id: string;
+  slug: string;
+  name: string;
+  status: string;
+  action_pilot_enabled: boolean;
+  updated_at: Date;
+}
+async function findTenant(q: Queryable, slug: string): Promise<TenantRow | null> {
+  const { rows } = await q.query<TenantRow>(
+    "select id, slug, name, status, action_pilot_enabled, updated_at from tenant where slug = $1",
+    [slug],
+  );
+  return rows[0] ?? null;
+}
+async function ownerEmails(q: Queryable, tenantId: string): Promise<{ email: string; userId: string; role: string }[]> {
+  const { rows } = await q.query<{ email: string; user_id: string; role: string }>(
+    `select u.email, m.user_id, m.role
+       from tenant_membership m join "user" u on u.id = m.user_id
+      where m.tenant_id = $1
+      order by m.created_at asc`,
+    [tenantId],
+  );
+  return rows.map((r) => ({ email: r.email, userId: r.user_id, role: r.role }));
+}
+
+interface Operator {
+  id: string;
+  email: string; // lower-cased allow-list entry (what the ops routes use)
+  storedEmail: string; // byte-exact "user".email (what tenant-bootstrap compares with)
+}
+async function resolveOperator(q: Queryable, override: string | undefined): Promise<Operator> {
+  const list = configuredOperatorEmails();
+  if (list.length === 0) fail(3, "OPS_OPERATOR_EMAILS is empty/missing in this environment (fail-closed).");
+  const email = (override ?? list[0]).trim().toLowerCase();
+  if (!isOperatorEmail(email)) fail(3, `operator e-mail ${maskEmail(email)} is not in OPS_OPERATOR_EMAILS.`);
+  const { rows } = await q.query<{ id: string; email: string }>('select id, email from "user" where lower(email) = $1', [email]);
+  const user = rows[0];
+  if (!user) fail(3, `no "user" row for operator ${maskEmail(email)}.`);
+  return { id: user.id, email, storedEmail: user.email };
+}
+
+// ── widget row (read) ───────────────────────────────────────────────────────
+interface WidgetRow extends QueryResultRow {
+  id: string;
+  public_key: string;
+  enabled: boolean;
+  version: number;
+  rotated_at: Date | null;
+  approval_status: string;
+  allowed_origins: string[] | null;
+}
+const WIDGET_COLUMNS = "id, public_key, enabled, version, rotated_at, approval_status, allowed_origins";
+async function readWidget(q: Queryable, tenantId: string): Promise<WidgetRow | null> {
+  const { rows } = await q.query<WidgetRow>(`select ${WIDGET_COLUMNS} from tenant_public_widget where tenant_id = $1`, [tenantId]);
+  return rows[0] ?? null;
+}
+function toApproval(raw: string): WidgetApprovalStatus {
+  return raw === "approved" || raw === "revoked" ? raw : "pending";
+}
+function sameList(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
+// ── main ────────────────────────────────────────────────────────────────────
+async function main(): Promise<void> {
+  const { values } = parseArgs({
+    options: {
+      phase: { type: "string" },
+      apply: { type: "boolean", default: false },
+      reason: { type: "string" },
+      handle: { type: "string" },
+      slug: { type: "string" },
+      "operator-email": { type: "string" },
+      "update-core": { type: "boolean", default: false },
+      "skip-manifest-check": { type: "boolean", default: false },
+    },
+  });
+  const phase = values.phase as Phase | undefined;
+  if (!phase || !(PHASES as readonly string[]).includes(phase)) {
+    fail(2, `--phase must be one of ${PHASES.join(" | ")}`);
+  }
+  if (values.slug !== undefined && values.slug !== TARGET_SLUG) {
+    fail(3, `--slug must equal ${TARGET_SLUG} (this script provisions exactly one tenant).`);
+  }
+  if (TARGET_SLUG === (TEMPLATE_SLUG as string)) fail(3, "target and template slug are identical.");
+  const apply = values.apply === true;
+  if (apply && process.env.ALLOW_PRODUCTION_DB !== "1") {
+    fail(3, "--apply requires env ALLOW_PRODUCTION_DB=1 (double opt-in). Nothing was written.");
+  }
+  const reason = (values.reason ?? DEFAULT_REASON).trim();
+  if (reason.length === 0 || reason.length > 200 || hasControlChars(reason)) fail(2, "--reason must be a single line of at most 200 chars.");
+  const handleRaw = values.handle ?? DEFAULT_HANDLE;
+  const handleParsed = parseHandle(handleRaw);
+  if (!handleParsed.ok) fail(2, `handle "${handleRaw}" rejected by parseHandle: ${handleParsed.reason}`);
+  const handle = handleParsed.value;
+
+  assertDatabaseConfigured();
+  const pool: Pool = getPool();
+
+  // identity assertion — before any other statement
+  const sys = await pool.query<{ id: string; db: string; ro: string }>(
+    "select system_identifier::text as id, current_database() as db, current_setting('default_transaction_read_only') as ro from pg_control_system()",
+  );
+  const identity = sys.rows[0];
+  if (identity?.id !== EXPECTED_SYSTEM_IDENTIFIER) {
+    fail(3, `system_identifier mismatch (got ${identity?.id ?? "none"}, expected ${EXPECTED_SYSTEM_IDENTIFIER}) — abort.`);
+  }
+  const envExpected = process.env.EXPECTED_DB_SYSTEM_IDENTIFIER?.trim();
+  if (envExpected && envExpected !== EXPECTED_SYSTEM_IDENTIFIER) fail(3, "EXPECTED_DB_SYSTEM_IDENTIFIER disagrees with this script's constant — abort.");
+  const sessionReadOnly = identity.ro === "on";
+  if (apply && sessionReadOnly) fail(3, "session is read-only (prod-run --read-only); drop --read-only for --apply.");
+
+  log(`provision: mode=${apply ? "APPLY" : "DRY-RUN"} phase=${phase} db=${identity.db} system_identifier=${identity.id} session_read_only=${identity.ro}`);
+  log(`provision: env ${PUBLIC_WIDGET_ENV}=${isPublicWidgetEnabled() ? "true" : "not-true"} PUBLIC_CHAT_PROFILE=${isPublicChatProfileEnabled() ? "true" : "not-true"} OPENAI_API_KEY=${process.env.OPENAI_API_KEY ? "set" : "MISSING"} OPS_OPERATOR_EMAILS=${configuredOperatorEmails().length} entr(y|ies)`);
+
+  // In DRY-RUN every read happens inside one READ ONLY transaction on a dedicated client
+  // (in addition to prod-run's PGOPTIONS). It is rolled back at the end.
+  let ro: PoolClient | null = null;
+  const q: Queryable = apply ? pool : (ro = await pool.connect());
+  if (ro) await ro.query("begin transaction read only");
+
+  try {
+    const operator = await resolveOperator(q, values["operator-email"]);
+    const template = await findTenant(q, TEMPLATE_SLUG);
+    if (!template) fail(3, `template tenant ${TEMPLATE_SLUG} not found — abort.`);
+    const target = await findTenant(q, TARGET_SLUG);
+    if (!target && apply) fail(3, `target tenant ${TARGET_SLUG} does not exist. Run step 1 (scripts/tenant-bootstrap.ts) first.`);
+
+    // owner checks
+    const templateMembers = await ownerEmails(q, template.id);
+    const templateOwner = templateMembers.find((m) => m.role === "owner");
+    if (!templateOwner) fail(3, `template tenant has no owner membership — abort.`);
+    if (templateOwner.email.toLowerCase() !== operator.email) {
+      fail(3, `operator ${maskEmail(operator.email)} is not the owner of ${TEMPLATE_SLUG} (${maskEmail(templateOwner.email)}) — abort.`);
+    }
+    log(`provision: operator=${maskEmail(operator.email)} user=${operator.id.slice(0, 8)}… owner-of-template=yes stored-email-matches-allowlist-bytewise=${operator.storedEmail === configuredOperatorEmails()[0] ? "yes" : "NO (tenant-bootstrap compares byte-exact — use the stored spelling)"}`);
+    if (target) {
+      const targetMembers = await ownerEmails(q, target.id);
+      const ownerHere = targetMembers.find((m) => m.userId === operator.id && m.role === "owner");
+      log(`provision: target ${TARGET_SLUG} exists id=${target.id.slice(0, 8)}… status=${target.status} members=${targetMembers.length} owner-is-operator=${ownerHere ? "yes" : "NO"}`);
+      if (!ownerHere) {
+        if (apply) fail(3, "operator is not an owner member of the target tenant — lead notifications would not reach the owner. Abort.");
+        log("provision: WARN — operator is not (yet) an owner member of the target; apply will refuse.");
+      }
+      if (target.status !== "active" && apply) fail(3, `target tenant status=${target.status} — abort.`);
+    } else {
+      log(`provision: target ${TARGET_SLUG} DOES NOT EXIST yet — step 1 (tenant-bootstrap) pending. Plan below is computed from the template.`);
+    }
+
+    const fenceBefore = await fenceSnapshot(q, template.id);
+    const startedAt = new Date();
+    const scope = (tenantId: string): string => {
+      if (!target || tenantId !== target.id) throw new Error(`write scope violation: ${tenantId.slice(0, 8)}… is not the target tenant`);
+      return tenantId;
+    };
+
+    if (phase === "tenant-config") await phaseTenantConfig({ q, pool, apply, operator, template, target, handle, reason, updateCore: values["update-core"] === true, scope });
+    if (phase === "faq") await phaseFaq({ q, apply, operator, template, target, scope });
+    if (phase === "binding") await phaseBinding({ q, pool, apply, operator, target, reason, skipManifest: values["skip-manifest-check"] === true, scope });
+
+    if (apply) {
+      const fenceAfter = await fenceSnapshot(pool, template.id);
+      const same = fenceBefore === fenceAfter;
+      log("");
+      log(`== fence: template tenant ${TEMPLATE_SLUG} unchanged? ${same ? "YES" : "NO — INVESTIGATE"}`);
+      if (!same) {
+        log(`   before: ${fenceBefore}`);
+        log(`   after : ${fenceAfter}`);
+      }
+      const ops = await pool.query<{ n: number }>(
+        "select count(*)::int as n from ops_audit_log where created_at >= $1 and tenant_id is distinct from $2",
+        [startedAt, target!.id],
+      );
+      const adm = await pool.query<{ n: number }>(
+        "select count(*)::int as n from admin_audit_log where created_at >= $1 and tenant_id <> $2",
+        [startedAt, target!.id],
+      );
+      log(`== audit scope since ${startedAt.toISOString()}: ops_audit_log rows not for target=${ops.rows[0].n} admin_audit_log rows not for target=${adm.rows[0].n} (expected 0; non-zero = another actor wrote concurrently, or a bug — investigate)`);
+      if (!same || ops.rows[0].n !== 0 || adm.rows[0].n !== 0) process.exitCode = 4;
+    } else {
+      log("");
+      log("provision: DRY-RUN complete — no write was issued (read-only transaction rolled back).");
+    }
+  } finally {
+    if (ro) {
+      await ro.query("rollback").catch(() => undefined);
+      ro.release();
+    }
+  }
+}
+
+// ── phase: tenant-config ────────────────────────────────────────────────────
+interface Ctx {
+  q: Queryable;
+  pool: Pool;
+  apply: boolean;
+  operator: Operator;
+  template: TenantRow;
+  target: TenantRow | null;
+  handle: string;
+  reason: string;
+  updateCore: boolean;
+  scope: (tenantId: string) => string;
+}
+
+async function phaseTenantConfig(c: Ctx): Promise<void> {
+  const { q, pool, apply, operator, template, target } = c;
+  const items: PlanItem[] = [];
+  const op = { id: operator.id, email: operator.email };
+
+  // 1) plan
+  const planRow = target
+    ? (await q.query<{ plan_id: string; source: string }>("select plan_id, source from tenant_plan_assignment where tenant_id = $1", [target.id])).rows[0]
+    : undefined;
+  const planBefore = planRow ? `${planRow.plan_id} (source=${planRow.source})` : "legacy (no assignment row)";
+  const planGoal = planRow?.plan_id === PLAN && planRow.source === "operator";
+  items.push({ step: "plan — setTenantPlanByOperator → ops_audit_log ops.plan.set", before: planBefore, after: `${PLAN} (source=operator)`, action: planGoal ? "unchanged" : "update" });
+
+  // 2) pilot
+  items.push({
+    step: "action pilot — setTenantActionPilotByOperator → ops.action_pilot.set",
+    before: target ? String(target.action_pilot_enabled) : "(tenant missing)",
+    after: "true",
+    action: target?.action_pilot_enabled ? "unchanged" : "update",
+  });
+
+  // 3) capability
+  const capRow = target
+    ? (await q.query<{ enabled: boolean }>("select enabled from tenant_capability_control where tenant_id = $1 and capability = $2", [target.id, CAPABILITY])).rows[0]
+    : undefined;
+  items.push({
+    step: `capability ${CAPABILITY} — setTenantCapabilityByOperator → ops.capability.set`,
+    before: capRow ? String(capRow.enabled) : "no row (= disabled)",
+    after: "true",
+    action: capRow?.enabled === true ? "unchanged" : "update",
+  });
+
+  // 4) business facts (mirror template)
+  const tFacts = await readBusinessFacts(q, template.id);
+  if (!tFacts) fail(3, "template tenant has no business facts — nothing to mirror.");
+  const factsValidated = validateBusinessFacts(tFacts.value, "stored");
+  if (!factsValidated.ok) fail(3, `mirrored business facts fail validation: ${factsValidated.error.field} — ${factsValidated.error.message}`);
+  const facts: BusinessFacts = factsValidated.value;
+  const curFacts = target ? await readBusinessFacts(q, target.id) : null;
+  const factsSame = curFacts !== null && JSON.stringify(curFacts.value) === JSON.stringify(facts);
+  const factsDiff = curFacts !== null && !factsSame ? changedFields(curFacts.value as unknown as Record<string, unknown>, facts as unknown as Record<string, unknown>) : [];
+  items.push({
+    step: "business facts — runTenantMutation(business_facts.update) + insertBusinessFactsIfAbsent" + (curFacts && !factsSame ? (c.updateCore ? " / updateBusinessFacts(expectedVersion)" : " (differs; --update-core to overwrite)") : ""),
+    before: curFacts ? `v${curFacts.version} ${factsSame ? "identical" : "DIFFERS in " + factsDiff.join(",")}` : "absent",
+    after: JSON.stringify(facts),
+    action: curFacts === null ? "create" : factsSame ? "unchanged" : c.updateCore ? "update" : "skip: differs",
+  });
+
+  // 5) AI config (mirror template)
+  const tAi = await readAiConfig(q, template.id);
+  if (!tAi) fail(3, "template tenant has no AI config — nothing to mirror.");
+  const aiValidated = validateAiConfig(tAi.value, "stored");
+  if (!aiValidated.ok) fail(3, `mirrored AI config fails validation: ${aiValidated.error.field} — ${aiValidated.error.message}`);
+  const ai: AiConfig = aiValidated.value;
+  const curAi = target ? await readAiConfig(q, target.id) : null;
+  const aiSame = curAi !== null && JSON.stringify(curAi.value) === JSON.stringify(ai);
+  items.push({
+    step: "AI config — runTenantMutation(ai_config.update) + insertAiConfigIfAbsent" + (curAi && !aiSame ? (c.updateCore ? " / updateAiConfig(expectedVersion)" : " (differs; --update-core to overwrite)") : ""),
+    before: curAi ? `v${curAi.version} ${aiSame ? "identical" : "DIFFERS"}` : "absent",
+    after: JSON.stringify(ai),
+    action: curAi === null ? "create" : aiSame ? "unchanged" : c.updateCore ? "update" : "skip: differs",
+  });
+
+  // 6) public profile (mirror template, new handle + website)
+  const tProfile = await getPublicProfileForAdmin(q, template.id);
+  if (!tProfile) fail(3, "template tenant has no public profile — nothing to mirror.");
+  const profileCandidate: PublicProfileValue = { ...tProfile.value, handle: c.handle, websiteUrl: TARGET_ORIGIN };
+  const profValidated = validatePublicProfile(profileCandidate);
+  if (!profValidated.ok) fail(3, `mirrored profile fails validation: ${profValidated.error.field} — ${profValidated.error.message}`);
+  const profile = profValidated.value;
+  const handleTaken = (await q.query<{ slug: string }>("select t.slug from tenant_public_profile p join tenant t on t.id = p.tenant_id where p.handle = $1", [profile.handle])).rows[0];
+  const curProfile = target ? await getPublicProfileForAdmin(q, target.id) : null;
+  if (handleTaken && (!target || handleTaken.slug !== target.slug)) fail(3, `handle "${profile.handle}" is already taken by another tenant — pick another with --handle.`);
+  items.push({
+    step: "public profile — runTenantMutation(public_profile.update) + insertPublicProfile",
+    before: curProfile ? `exists handle=${curProfile.value.handle} v${curProfile.version} published=${curProfile.isPublished}` : "absent",
+    after: JSON.stringify({ ...profile, contactEmail: profile.contactEmail ? maskEmail(profile.contactEmail) : null }),
+    action: curProfile === null ? "create" : "unchanged",
+  });
+  items.push({
+    step: "public profile publish — runTenantMutation(public_profile.publish) + publishPublicProfile",
+    before: curProfile ? String(curProfile.isPublished) : "absent",
+    after: "true",
+    action: curProfile?.isPublished ? "unchanged" : "update",
+  });
+
+  // 7) widget channel
+  const originList = normalizeOriginList([TARGET_ORIGIN]);
+  if (!originList.ok) fail(3, `origin ${TARGET_ORIGIN} rejected by normalizeOriginList (${originList.reason}).`);
+  const origins = originList.origins;
+  const curWidget = target ? await readWidget(q, target.id) : null;
+  const tWidget = await readWidget(q, template.id);
+  items.push({
+    step: "widget channel — ensureWidgetChannel (insert .. on conflict do nothing)",
+    before: curWidget ? `exists key=${curWidget.public_key} enabled=${curWidget.enabled} v${curWidget.version} approval=${curWidget.approval_status}` : "absent",
+    after: curWidget ? "same row" : "row with public_key=<to be generated on apply>, enabled=false, approval=pending",
+    action: curWidget ? "unchanged" : "create",
+  });
+  items.push({
+    step: "widget allowed origins — runTenantMutation(widget.update, changed_fields=[allowed_origins]) — same statement as POST …/widget action=set_origins",
+    before: curWidget ? JSON.stringify(curWidget.allowed_origins ?? []) : "absent",
+    after: JSON.stringify(origins),
+    action: curWidget && sameList(curWidget.allowed_origins ?? [], origins) ? "unchanged" : "update",
+  });
+  const blocked = curWidget ? isWidgetServingBlocked(toApproval(curWidget.approval_status)) : false;
+  items.push({
+    step: "widget enabled — runTenantMutation(widget.update, changed_fields=[enabled]) — same statement as POST …/widget action=update",
+    before: curWidget ? String(curWidget.enabled) : "absent",
+    after: "true",
+    action: blocked ? "REFUSE: approval_status=revoked" : curWidget?.enabled ? "unchanged" : "update",
+  });
+  items.push({
+    step: "widget presentation (tenant_widget_presentation) — NOT written; product default applies (chat_dots · brand_blue · label 상담 · showLabel true)",
+    before: `template row: ${tWidget ? "see verify.sh (launcher json)" : "n/a"}`,
+    after: "(no row — default)",
+    action: "skip: n/a",
+  });
+  items.push({
+    step: "lead_form_config — NOT written; DEFAULT_LEAD_FORM applies when the row is absent",
+    before: "absent",
+    after: "(no row — default)",
+    action: "skip: n/a",
+  });
+
+  printPlan(`tenant-config plan for ${TARGET_SLUG} (template ${TEMPLATE_SLUG})`, items);
+  if (!apply) return;
+  if (!target) return;
+  const tenantId = c.scope(target.id);
+  const actor = { tenantId, userId: operator.id };
+
+  log("");
+  log("== applying ==");
+  // 1) plan
+  const r1 = await setTenantPlanByOperator(pool, { tenantSlug: TARGET_SLUG, plan: PLAN, reason: c.reason, operator: op });
+  log(`plan: ${JSON.stringify(r1)}`);
+  if (!r1.ok) throw new Error(`plan: ${r1.reason}`);
+  // 2) pilot
+  const r2 = await setTenantActionPilotByOperator(pool, { tenantSlug: TARGET_SLUG, enabled: true, reason: c.reason, operator: op });
+  log(`pilot: ${JSON.stringify(r2)}`);
+  if (!r2.ok) throw new Error(`pilot: ${r2.reason}`);
+  // 3) capability
+  const r3 = await setTenantCapabilityByOperator(pool, { tenantSlug: TARGET_SLUG, capability: CAPABILITY, enabled: true, reason: c.reason, operator: op });
+  log(`capability: ${JSON.stringify(r3)}`);
+  if (!r3.ok) throw new Error(`capability: ${r3.reason}`);
+
+  // 4) business facts — audited like the settings route (runTenantMutation), insert-if-absent
+  const r4 = await runTenantMutation<string>(actor, async (client) => {
+    const cur = await readBusinessFacts(client, tenantId);
+    if (cur === null) {
+      return {
+        proceed: true,
+        action: "business_facts.update",
+        target: CORE_AUDIT_TARGET.businessFacts,
+        changedFields: [...BUSINESS_FACTS_KEYS],
+        persist: async (w) => {
+          const rec = await insertBusinessFactsIfAbsent(w, tenantId, facts);
+          if (!rec) throw new Error("business facts insert raced");
+          return `created v${rec.version}`;
+        },
+      };
+    }
+    if (JSON.stringify(cur.value) === JSON.stringify(facts)) return { proceed: false, result: `unchanged v${cur.version}` };
+    if (!c.updateCore) return { proceed: false, result: `left as is v${cur.version} (differs; --update-core to overwrite)` };
+    const diff = changedFields(cur.value as unknown as Record<string, unknown>, facts as unknown as Record<string, unknown>);
+    return {
+      proceed: true,
+      action: "business_facts.update",
+      target: CORE_AUDIT_TARGET.businessFacts,
+      changedFields: diff,
+      persist: async (w) => {
+        const rec = await updateBusinessFacts(w, tenantId, facts, cur.version);
+        if (!rec) throw new Error("business facts update: stale version under lock");
+        return `updated v${cur.version} → v${rec.version}`;
+      },
+    };
+  });
+  log(`business facts: ${r4}`);
+  // 5) AI config
+  const r5 = await runTenantMutation<string>(actor, async (client) => {
+    const cur = await readAiConfig(client, tenantId);
+    if (cur === null) {
+      return {
+        proceed: true,
+        action: "ai_config.update",
+        target: CORE_AUDIT_TARGET.aiConfig,
+        changedFields: [...AI_CONFIG_KEYS],
+        persist: async (w) => {
+          const rec = await insertAiConfigIfAbsent(w, tenantId, ai);
+          if (!rec) throw new Error("ai config insert raced");
+          return `created v${rec.version}`;
+        },
+      };
+    }
+    if (JSON.stringify(cur.value) === JSON.stringify(ai)) return { proceed: false, result: `unchanged v${cur.version}` };
+    if (!c.updateCore) return { proceed: false, result: `left as is v${cur.version} (differs; --update-core to overwrite)` };
+    const diff = changedFields(cur.value as unknown as Record<string, unknown>, ai as unknown as Record<string, unknown>);
+    return {
+      proceed: true,
+      action: "ai_config.update",
+      target: CORE_AUDIT_TARGET.aiConfig,
+      changedFields: diff,
+      persist: async (w) => {
+        const rec = await updateAiConfig(w, tenantId, ai, cur.version);
+        if (!rec) throw new Error("ai config update: stale version under lock");
+        return `updated v${cur.version} → v${rec.version}`;
+      },
+    };
+  });
+  log(`ai config: ${r5}`);
+  // 6) public profile — insert (first save) then publish, exactly the two mutations of the profile route
+  try {
+    const r6 = await runTenantMutation<string>(actor, async (client) => {
+      const cur = await lockPublicProfileForUpdate(client, tenantId);
+      if (cur !== null) return { proceed: false, result: `exists handle=${cur.value.handle} v${cur.version} (not overwritten)` };
+      return {
+        proceed: true,
+        action: "public_profile.update",
+        target: PROFILE_AUDIT_TARGET,
+        changedFields: [...PUBLIC_PROFILE_KEYS],
+        persist: async (w) => {
+          const rec = await insertPublicProfile(w, tenantId, profile);
+          if (!rec) throw new Error("profile insert raced");
+          return `created handle=${rec.value.handle} v${rec.version}`;
+        },
+      };
+    });
+    log(`public profile: ${r6}`);
+  } catch (err) {
+    if (err instanceof HandleTakenError) throw new Error(`handle "${profile.handle}" taken — rerun with --handle <other>`);
+    throw err;
+  }
+  const r7 = await runTenantMutation<string>(actor, async (client) => {
+    const cur = await lockPublicProfileForUpdate(client, tenantId);
+    if (cur === null) throw new Error("profile row vanished");
+    if (cur.isPublished) return { proceed: false, result: `already published v${cur.version}` };
+    return {
+      proceed: true,
+      action: "public_profile.publish",
+      target: PROFILE_AUDIT_TARGET,
+      changedFields: ["is_published"],
+      persist: async (w) => {
+        const rec = await publishPublicProfile(w, tenantId, cur.version);
+        if (!rec) throw new Error("profile publish: stale version under lock");
+        return `published v${rec.version}`;
+      },
+    };
+  });
+  log(`public profile publish: ${r7}`);
+
+  // 7) widget — ensure row (Pool, auto-commit, as the Admin page does), then the two route mutations
+  const channel = await ensureWidgetChannel(pool, tenantId);
+  log(`widget channel: key=${channel.publicKey} enabled=${channel.enabled} v${channel.version} approval=${channel.approvalStatus}`);
+  const r8 = await runTenantMutation<string>(actor, async (client) => {
+    const { rows } = await client.query<WidgetRow>(`select ${WIDGET_COLUMNS} from tenant_public_widget where tenant_id = $1 for update`, [tenantId]);
+    const cur = rows[0];
+    if (!cur) throw new Error("widget row vanished");
+    if (sameList(cur.allowed_origins ?? [], origins)) return { proceed: false, result: `origins unchanged v${cur.version}` };
+    return {
+      proceed: true,
+      action: "widget.update",
+      target: "widget",
+      changedFields: ["allowed_origins"],
+      persist: async (w) => {
+        const u = await w.query<WidgetRow>(
+          `update tenant_public_widget
+              set allowed_origins = $3::text[], version = version + 1, updated_at = now()
+            where tenant_id = $1 and version = $2
+            returning ${WIDGET_COLUMNS}`,
+          [tenantId, cur.version, origins],
+        );
+        if (!u.rows[0]) throw new Error("widget origins update was 0 rows under lock");
+        return `origins set v${cur.version} → v${u.rows[0].version} ${JSON.stringify(u.rows[0].allowed_origins)}`;
+      },
+    };
+  });
+  log(`widget origins: ${r8}`);
+  const r9 = await runTenantMutation<string>(actor, async (client) => {
+    const { rows } = await client.query<WidgetRow>(`select ${WIDGET_COLUMNS} from tenant_public_widget where tenant_id = $1 for update`, [tenantId]);
+    const cur = rows[0];
+    if (!cur) throw new Error("widget row vanished");
+    if (isWidgetServingBlocked(toApproval(cur.approval_status))) return { proceed: false, result: "REFUSED: approval_status=revoked" };
+    if (cur.enabled) return { proceed: false, result: `already enabled v${cur.version}` };
+    return {
+      proceed: true,
+      action: "widget.update",
+      target: "widget",
+      changedFields: ["enabled"],
+      persist: async (w) => {
+        const u = await w.query<WidgetRow>(
+          `update tenant_public_widget
+              set enabled = $3, version = version + 1, updated_at = now()
+            where tenant_id = $1 and version = $2
+            returning ${WIDGET_COLUMNS}`,
+          [tenantId, cur.version, true],
+        );
+        if (!u.rows[0]) throw new Error("widget enable update was 0 rows under lock");
+        return `enabled v${cur.version} → v${u.rows[0].version}`;
+      },
+    };
+  });
+  log(`widget enabled: ${r9}`);
+  const finalWidget = await readWidget(pool, tenantId);
+  const appOrigin = getPublicAppOrigin();
+  log("");
+  log(`== widget public key: ${finalWidget?.public_key ?? "?"}`);
+  log(`== install snippet: ${finalWidget && appOrigin.ok ? buildInstallSnippet(appOrigin.origin, finalWidget.public_key) : "(PUBLIC_APP_ORIGIN/BETTER_AUTH_URL not https — snippet unavailable here; key above)"}`);
+  if (!isPublicWidgetEnabled()) log(`== NOTE: ${PUBLIC_WIDGET_ENV} is not "true" in this process env — serving depends on the deployed app's env, not this shell.`);
+}
+
+// ── phase: faq (optional — embeds) ──────────────────────────────────────────
+interface FaqCtx {
+  q: Queryable;
+  apply: boolean;
+  operator: Operator;
+  template: TenantRow;
+  target: TenantRow | null;
+  scope: (tenantId: string) => string;
+}
+async function phaseFaq(c: FaqCtx): Promise<void> {
+  const tFaqs = await listFaqs(c.q, c.template.id);
+  const cur = c.target ? await listFaqs(c.q, c.target.id) : [];
+  const have = new Set(cur.map((f) => f.question.trim()));
+  const missing = tFaqs.filter((f) => !have.has(f.question.trim()));
+  const items: PlanItem[] = tFaqs.map((f) => ({
+    step: `FAQ — createFaq() → republishFaqs() → publishOwnerAuthoredSource(src-faq) [embeds 1 new doc]: ${f.question}`,
+    before: have.has(f.question.trim()) ? "present" : "absent",
+    after: `enabled=${f.enabled} answer=${f.answer.length} chars`,
+    action: have.has(f.question.trim()) ? "unchanged" : "create",
+  }));
+  printPlan(`faq plan — template has ${tFaqs.length} entries, target has ${cur.length}, to create ${missing.length}`, items);
+  log(`faq: model calls on apply = ${missing.length} embedding request(s) (text-embedding-3-small unless OPENAI_EMBEDDING_MODEL is set); 0 chat/LLM calls. Each createFaq() also inserts knowledge_source/ingestion_run/document/publication rows and one admin_audit_log knowledge.faq.update row.`);
+  if (!c.apply) return;
+  if (!c.target) return;
+  if (!process.env.OPENAI_API_KEY) fail(3, "OPENAI_API_KEY missing — publishOwnerAuthoredSource would return not_configured. Abort before writing.");
+  const tenantId = c.scope(c.target.id);
+  const actor = { tenantId, userId: c.operator.id };
+  log("");
+  log("== applying ==");
+  for (const f of missing) {
+    const r = await createFaq(actor, { question: f.question, answer: f.answer });
+    if (!r.ok) throw new Error(`createFaq failed: ${r.error} (question: ${f.question})`);
+    log(`faq created id=${r.id.slice(0, 8)}… publish=${JSON.stringify(r.publish)} — ${f.question}`);
+    if (!r.publish.ok) throw new Error(`FAQ row inserted but publish failed: ${r.publish.error} — stop; fix and rerun (idempotent).`);
+  }
+}
+
+// ── phase: binding ──────────────────────────────────────────────────────────
+interface BindingCtx {
+  q: Queryable;
+  pool: Pool;
+  apply: boolean;
+  operator: Operator;
+  target: TenantRow | null;
+  reason: string;
+  skipManifest: boolean;
+  scope: (tenantId: string) => string;
+}
+async function phaseBinding(c: BindingCtx): Promise<void> {
+  const op = { id: c.operator.id, email: c.operator.email };
+  const items: PlanItem[] = [];
+  let current: { origin: string; enabled: boolean; label: string } | null = null;
+  if (c.target) {
+    const status = await getFirstPartyBindingStatus(c.pool, TARGET_SLUG);
+    if (!status.ok) fail(3, "target tenant not found by getFirstPartyBindingStatus");
+    const b = status.bindings.find((x) => x.capability === CAPABILITY);
+    if (b) current = { origin: b.origin, enabled: b.enabled, label: b.label };
+  }
+  // the site must be live: manifest reachability (informational in dry-run, blocking in apply)
+  let manifest = "skipped";
+  if (!c.skipManifest) {
+    try {
+      const res = await fetch(`${TARGET_ORIGIN}/_integration/manifest.json`, { method: "GET", redirect: "manual", signal: AbortSignal.timeout(8000) });
+      manifest = `${res.status} ${res.headers.get("content-type") ?? ""}`.trim();
+    } catch (err) {
+      manifest = `unreachable (${err instanceof Error ? err.name : "error"})`;
+    }
+  }
+  const conflict = current !== null && current.origin !== TARGET_ORIGIN;
+  items.push({
+    step: `register — registerFirstPartyBinding(tenantSlug, capability=${CAPABILITY}, origin, previousOrigin=null) → ops.first_party.create; label is server-fixed "${FIRST_PARTY_DEFAULT_LABEL[CAPABILITY]}"`,
+    before: current ? `exists origin=${current.origin} enabled=${current.enabled} label=${current.label}` : "absent",
+    after: `origin=${TARGET_ORIGIN} enabled=false kind=first_party_static label=${FIRST_PARTY_DEFAULT_LABEL[CAPABILITY]}`,
+    action: conflict ? "REFUSE: existing binding has a different origin (no CAS change by this script)" : current ? "unchanged" : "create",
+  });
+  items.push({
+    step: `enable — setFirstPartyBindingEnabled(enabled=true, expectedOrigin=${TARGET_ORIGIN}) → ops.first_party.enable`,
+    before: current ? String(current.enabled) : "absent",
+    after: "true",
+    action: conflict ? "REFUSE" : current?.enabled ? "unchanged" : "update",
+  });
+  items.push({
+    step: "refresh — NOT run by this script. Use scripts/ops-first-party-refresh.ts (dry-run first, then --apply); gates: plan+pilot, cooldown 10 min",
+    before: `manifest ${TARGET_ORIGIN}/_integration/manifest.json → ${manifest}`,
+    after: "snapshot state=ON after refresh",
+    action: "skip: n/a",
+  });
+  printPlan(`binding plan for ${TARGET_SLUG}`, items);
+  log("");
+  log("refresh commands (run after this phase; dry-run reads only, --apply fetches the manifest and writes the snapshot + ops.first_party.refresh audit):");
+  log(`  node scripts/prod-run.mjs --read-only -- scripts/ops-first-party-refresh.ts --tenant ${TARGET_SLUG} --expect-system-identifier ${EXPECTED_SYSTEM_IDENTIFIER} --operator-email "$(railway variables -e production -s app --kv | grep '^OPS_OPERATOR_EMAILS=' | cut -d= -f2- | cut -d, -f1)" --reason "${c.reason}"`);
+  log(`  node scripts/prod-run.mjs -- scripts/ops-first-party-refresh.ts --tenant ${TARGET_SLUG} --expect-system-identifier ${EXPECTED_SYSTEM_IDENTIFIER} --operator-email "$(railway variables -e production -s app --kv | grep '^OPS_OPERATOR_EMAILS=' | cut -d= -f2- | cut -d, -f1)" --reason "${c.reason}" --apply`);
+  if (!c.apply) return;
+  if (!c.target) return;
+  if (conflict) fail(3, "existing binding origin differs — abort.");
+  if (!c.skipManifest && !/^200\b/.test(manifest)) fail(3, `manifest not reachable (${manifest}) — the site is not live; abort (or --skip-manifest-check).`);
+  c.scope(c.target.id);
+  log("");
+  log("== applying ==");
+  const r1 = await registerFirstPartyBinding(c.pool, { tenantSlug: TARGET_SLUG, capability: CAPABILITY, origin: TARGET_ORIGIN, previousOrigin: null, reason: c.reason, operator: op });
+  log(`register: ${JSON.stringify(r1.ok ? { outcome: r1.outcome, origin: r1.binding.origin, enabled: r1.binding.enabled, id: r1.binding.id.slice(0, 8) + "…" } : r1)}`);
+  if (!r1.ok) throw new Error(`register: ${r1.reason}`);
+  const r2 = await setFirstPartyBindingEnabled(c.pool, { tenantSlug: TARGET_SLUG, capability: CAPABILITY, enabled: true, expectedOrigin: TARGET_ORIGIN, reason: c.reason, operator: op });
+  log(`enable: ${JSON.stringify(r2.ok ? { changed: r2.changed, snapshotsDeleted: r2.snapshotsDeleted, enabled: r2.binding.enabled, origin: r2.binding.origin } : r2)}`);
+  if (!r2.ok) throw new Error(`enable: ${r2.reason}`);
+}
+
+main()
+  .catch((err) => {
+    console.error("provision: FAILED — " + maskText(cliErrorMessage(err)));
+    process.exitCode = process.exitCode ?? 1;
+  })
+  .finally(closePool);

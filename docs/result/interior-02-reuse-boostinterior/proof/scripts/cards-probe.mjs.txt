@@ -1,0 +1,74 @@
+// Live probe: every portfolio recommendation card of the widget must lead to the site's own origin.
+// Sends ONE chat message. For each card: open the viewer, read the project URL the viewer was given
+// (network JSON from the widget API), go back to the chat. Finally click the LAST card's "open page"
+// control with main-frame navigation recorded and aborted.
+//   node cards-probe.mjs <origin> <oldOrigin> <out.json>
+import { createRequire } from "node:module";
+import { writeFileSync } from "node:fs";
+const require = createRequire("/Users/woops/projects/web-recon-track-b/package.json");
+const { chromium } = require("playwright");
+const [ORIGIN, OLD, OUT] = process.argv.slice(2);
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "ko-KR", timezoneId: "Asia/Seoul" });
+const page = await ctx.newPage();
+const navs = []; let armed = false; const apiUrls = []; const result = { origin: ORIGIN, oldOrigin: OLD, chatMessagesSent: 0, cards: [], notes: [] };
+await page.route("**/*", async (route) => {
+  const req = route.request();
+  if (armed && req.isNavigationRequest() && req.frame() === page.mainFrame()) { navs.push(req.url()); return route.abort(); }
+  return route.continue();
+});
+ctx.on("page", async (p) => { await p.waitForLoadState("commit", { timeout: 8000 }).catch(() => {}); navs.push("POPUP " + p.url()); await p.close().catch(() => {}); });
+// every absolute URL containing /portfolio/ that the widget API hands to the widget
+page.on("response", async (res) => {
+  const u = res.url();
+  if (!u.startsWith("https://boostchat.co.kr/api/")) return;
+  let body = ""; try { body = await res.text(); } catch { return; }
+  for (const m of body.matchAll(/https?:\\?\/\\?\/[^"\\\s]+?\\?\/portfolio\\?\/[^"\\\s]*/g)) apiUrls.push({ api: new URL(u).pathname.replace(/wgt_[^/]+/, "<key>"), status: res.status(), url: m[0].replace(/\\\//g, "/") });
+});
+const dump = async (frame) => (await frame.locator("[data-testid]").evaluateAll((els) => [...new Set(els.map((e) => e.getAttribute("data-testid")))]).catch(() => [])).join(",");
+try {
+  await page.goto(ORIGIN + "/", { waitUntil: "load" });
+  const frame = page.frameLocator("iframe[data-boost-chat-frame]").first();
+  await frame.locator('button[aria-label="상담창 열기"]').click({ timeout: 30000 });
+  await frame.locator('[data-testid="chat-input"]').fill("화이트 톤 30평대 아파트 시공 사례를 보여주세요");
+  result.sentAt = new Date().toISOString();
+  await frame.locator('[data-testid="chat-send"]').click(); result.chatMessagesSent = 1;
+  await frame.locator("[data-portfolio-card]").first().waitFor({ timeout: 60000 });
+  await page.waitForTimeout(6000);
+  const more = frame.getByRole("button", { name: /더 보기/ });
+  if (await more.count()) { await more.first().click().catch(() => {}); await page.waitForTimeout(800); }
+  const n = await frame.locator("[data-portfolio-card]").count(); result.cardCount = n;
+  for (let i = 0; i < n; i++) {
+    const card = frame.locator("[data-portfolio-card]").nth(i);
+    const entry = { index: i };
+    try {
+      entry.id = await card.getAttribute("data-portfolio-card", { timeout: 8000 });
+      entry.title = ((await card.innerText()) || "").split("\n").slice(0, 3).join(" / ");
+      const before = apiUrls.length;
+      await card.locator('[data-testid="portfolio-card"]').click({ timeout: 8000 });
+      await frame.locator('[data-testid="portfolio-viewer"]').waitFor({ timeout: 15000 });
+      await frame.locator('[data-testid="portfolio-viewer-page"]').first().waitFor({ timeout: 15000 });
+      entry.viewerApiUrls = [...new Set(apiUrls.slice(before).map((x) => x.url))];
+      if (i === n - 1) { // last card: really press "open page", record + abort the navigation
+        armed = true; const nb = navs.length;
+        await frame.locator('[data-testid="portfolio-viewer-page"]').first().click({ timeout: 8000 });
+        for (let t = 0; t < 40 && navs.length === nb; t++) await page.waitForTimeout(250);
+        entry.navigatedTo = navs.slice(nb);
+      } else {
+        await frame.locator('[data-testid="portfolio-viewer-back"]').first().click({ timeout: 8000 });
+        await frame.locator('[data-testid="portfolio-viewer"]').waitFor({ state: "detached", timeout: 8000 }).catch(() => {});
+        await page.waitForTimeout(500);
+      }
+    } catch (e) { entry.err = String(e).split("\n")[0].slice(0, 200); entry.testids = await dump(frame); }
+    result.cards.push(entry);
+  }
+} catch (e) { result.fatal = String(e).split("\n")[0].slice(0, 300); }
+const all = [...new Set(apiUrls.map((x) => x.url))];
+result.apiPortfolioUrls = all;
+result.apiPortfolioUrlSources = [...new Set(apiUrls.map((x) => x.api + " " + x.status))];
+result.allApiUrlsOnOrigin = all.length > 0 && all.every((u) => u.startsWith(ORIGIN + "/"));
+result.anyOld = all.some((u) => u.includes(OLD)) || navs.some((u) => u.includes(OLD));
+result.navs = navs;
+writeFileSync(OUT, JSON.stringify(result, null, 1));
+console.log(JSON.stringify(result, null, 1));
+await browser.close();

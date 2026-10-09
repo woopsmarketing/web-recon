@@ -1,0 +1,183 @@
+#!/usr/bin/env bash
+# verify.sh — READ-ONLY masked state dump for the BoostChat demo tenant #2 (boost-interior-demo-02)
+# plus proof that the existing tenant (boost-interior-demo) rows are unchanged, plus the
+# migration-ledger compatibility check (deliverable D).
+#
+# Usage:
+#   verify.sh [SINCE] [UNTIL]        # ISO timestamps for the usage-event window
+#   verify.sh "2026-10-09T00:00:00Z" "2026-10-10T00:00:00Z"
+#   defaults: SINCE = now - 24h, UNTIL = now  (UTC)
+#
+# What it does:
+#   1. fetches the pgvector service's public-proxy DATABASE_URL via `railway variables` into a shell
+#      variable (never printed, never written to disk)
+#   2. opens psql with PGOPTIONS default_transaction_read_only=on AND `begin transaction read only`
+#   3. asserts pg_control_system().system_identifier = 7675084143306387491 (else \quit 3)
+#   4. prints masked state; e-mails as 3 chars + domain; lead rows are COUNTED only
+#   5. rollback at the end — no write can occur
+set -euo pipefail
+set +x
+
+REPO=/Users/woops/projects/boost-chat
+TARGET_SLUG=boost-interior-demo-02
+TEMPLATE_SLUG=boost-interior-demo
+EXPECTED_SID=7675084143306387491
+SINCE="${1:-$(date -u -v-24H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)}"
+UNTIL="${2:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+
+echo "verify: target=$TARGET_SLUG template=$TEMPLATE_SLUG window=[$SINCE, $UNTIL)"
+echo "verify: fetching pgvector public DATABASE_URL via railway (value is not printed)"
+DBURL="$(railway variables -e production -s pgvector --kv 2>/dev/null | grep '^DATABASE_URL=' | cut -d= -f2-)"
+if [ -z "$DBURL" ]; then echo "verify: could not read DATABASE_URL from railway pgvector service" >&2; exit 3; fi
+case "$DBURL" in *.railway.internal*) echo "verify: pgvector DATABASE_URL is an internal host — not reachable from laptop" >&2; exit 3;; esac
+
+# ── section 0: migration ledger vs local checkout (deliverable D) ───────────
+echo
+echo "== 0. migration ledger (prod _migration) vs local db/migrations =="
+LOCAL_LIST="$(ls "$REPO/db/migrations" | grep '\.sql$' | sort)"
+PROD_LIST="$(PGOPTIONS='-c default_transaction_read_only=on' psql "$DBURL" -X -q -At -v ON_ERROR_STOP=1 -c "begin transaction read only;" -c "select name from _migration order by name;" -c "rollback;" 2>&1 | sed -E 's#postgres(ql)?://[^ ]+#<redacted>#g')"
+echo "local files : $(echo "$LOCAL_LIST" | wc -l | tr -d ' ') (head $(echo "$LOCAL_LIST" | tail -1))"
+echo "prod ledger : $(echo "$PROD_LIST" | wc -l | tr -d ' ') (head $(echo "$PROD_LIST" | tail -1))"
+echo "only local  : $(comm -23 <(echo "$LOCAL_LIST") <(echo "$PROD_LIST") | tr '\n' ' ')"
+echo "only prod   : $(comm -13 <(echo "$LOCAL_LIST") <(echo "$PROD_LIST") | tr '\n' ' ')"
+echo "local HEAD  : $(git -C "$REPO" rev-parse --short HEAD) ($(git -C "$REPO" log -1 --format=%s))"
+echo "deployed    : 72ff14d (DEPLOYED_HEAD in docs/reports/content-engine/rollout/08-…, deployment 5b4afeee, 2026-10-08T19:39Z)"
+echo "product diff 72ff14d..HEAD excluding docs: $(git -C "$REPO" diff --stat 72ff14d..HEAD -- . ':!docs' | tail -1 | sed 's/^$/none/')"
+
+# ── section 1..: tenant state (one read-only transaction) ────────────────────
+PGOPTIONS='-c default_transaction_read_only=on' psql "$DBURL" -X -q -v ON_ERROR_STOP=1 \
+  -v target="$TARGET_SLUG" -v template="$TEMPLATE_SLUG" -v sid="$EXPECTED_SID" -v since="$SINCE" -v until="$UNTIL" <<'SQL' 2>&1 | sed -E 's#postgres(ql)?://[^ ]+#<redacted>#g'
+\pset footer off
+\pset null '∅'
+begin transaction read only;
+select (system_identifier::text = :'sid') as sid_ok, system_identifier::text as sid, current_database() as db from pg_control_system() \gset
+\if :sid_ok
+\echo system_identifier OK: :sid  db: :db
+\else
+\echo system_identifier MISMATCH — aborting without reading anything
+rollback;
+\quit 3
+\endif
+
+\echo
+\echo '== 1. tenant'
+select slug, name, status, action_pilot_enabled, action_pilot_updated_at, created_at, updated_at
+  from tenant where slug = :'target';
+
+\echo
+\echo '== 2. membership (count / role / masked e-mail)'
+select m.role, left(u.email, 3) || '***@' || split_part(u.email, '@', 2) as email_masked,
+       left(m.user_id, 8) || '…' as user_id, m.created_at
+  from tenant_membership m join "user" u on u.id = m.user_id join tenant t on t.id = m.tenant_id
+ where t.slug = :'target' order by m.created_at;
+select count(*) as membership_count from tenant_membership m join tenant t on t.id = m.tenant_id where t.slug = :'target';
+
+\echo
+\echo '== 3. plan assignment'
+select p.plan_id, p.source, p.effective_at, p.updated_at
+  from tenant_plan_assignment p join tenant t on t.id = p.tenant_id where t.slug = :'target';
+
+\echo
+\echo '== 4. capability control'
+select c.capability, c.enabled, c.updated_at
+  from tenant_capability_control c join tenant t on t.id = c.tenant_id where t.slug = :'target';
+
+\echo
+\echo '== 5. core data presence (facts / ai config) — brand fields only, contact strings masked'
+select 'business_facts' as section, f.version, f.updated_at, f.name, f.industry,
+       f.phone is not null as has_phone, f.address is not null as has_address,
+       f.business_hours, f.service_area, cardinality(f.services) as services_n,
+       cardinality(f.contact_methods) as contact_methods_n
+  from tenant_business_facts f join tenant t on t.id = f.tenant_id where t.slug = :'target';
+select 'ai_config' as section, a.version, a.updated_at, a.name, a.tone, a.answer_length,
+       a.unknown_answer_policy, a.can_ask_questions_first, length(a.greeting) as greeting_len
+  from tenant_ai_config a join tenant t on t.id = a.tenant_id where t.slug = :'target';
+
+\echo
+\echo '== 6. public profile'
+select p.handle, p.is_published, p.published_at, p.version, p.website_url,
+       case when p.contact_email is null then null else left(p.contact_email,3) || '***@' || split_part(p.contact_email,'@',2) end as contact_email_masked,
+       p.show_phone, p.show_address, p.show_business_hours, p.show_service_area, p.show_services
+  from tenant_public_profile p join tenant t on t.id = p.tenant_id where t.slug = :'target';
+
+\echo
+\echo '== 7. widget channel (public key is a public identifier)'
+select w.public_key, w.enabled, w.approval_status, w.allowed_origins, w.version, w.rotated_at, w.created_at, w.updated_at
+  from tenant_public_widget w join tenant t on t.id = w.tenant_id where t.slug = :'target';
+\echo '-- widget presentation row (absent = product default: chat_dots · brand_blue · label 상담 · showLabel true)'
+select pr.launcher, jsonb_array_length(pr.contact_channels) as contact_channels_n, pr.version, pr.updated_at
+  from tenant_widget_presentation pr join tenant t on t.id = pr.tenant_id where t.slug = :'target';
+
+\echo
+\echo '== 8. lead_form_config presence (absent = DEFAULT_LEAD_FORM)'
+select count(*) as lead_form_config_rows
+  from lead_form_config l join tenant t on t.id = l.tenant_id where t.slug = :'target';
+
+\echo
+\echo '== 9. FAQ (count, enabled count) and knowledge publication for src-faq'
+select count(*) as faq_rows, count(*) filter (where enabled) as faq_enabled
+  from knowledge_faq f join tenant t on t.id = f.tenant_id where t.slug = :'target';
+select s.source_key, s.source_type, count(p.id) as publications
+  from knowledge_source s join tenant t on t.id = s.tenant_id
+  left join knowledge_publication p on p.source_id = s.id
+ where t.slug = :'target' group by s.source_key, s.source_type;
+
+\echo
+\echo '== 10. first-party integration row + snapshot'
+select i.capability, i.kind, i.label, i.enabled, i.base_url, left(i.id::text,8) || '…' as integration_id, i.created_at, i.updated_at
+  from tenant_integration i join tenant t on t.id = i.tenant_id where t.slug = :'target';
+select s.resource, s.state, s.last_observation, s.public_origin, s.site_id, s.resource_version,
+       s.resource_schema_version, s.last_success_at, s.last_checked_at, s.payload is not null as has_payload
+  from first_party_snapshot s join tenant t on t.id = s.tenant_id where t.slug = :'target';
+
+\echo
+\echo '== 11. usage events by operation in window (ai_usage_event)'
+select e.provider, e.operation, e.surface, e.status, count(*) as n,
+       coalesce(sum(e.total_tokens),0) as total_tokens
+  from ai_usage_event e join tenant t on t.id = e.tenant_id
+ where t.slug = :'target' and e.created_at >= :'since'::timestamptz and e.created_at < :'until'::timestamptz
+ group by 1,2,3,4 order by 1,2,3,4;
+\echo '-- lead requests in window (COUNT only)'
+select count(*) as lead_requests
+  from lead_request l join tenant t on t.id = l.tenant_id
+ where t.slug = :'target' and l.created_at >= :'since'::timestamptz and l.created_at < :'until'::timestamptz;
+
+\echo
+\echo '== 12. audit rows for the target (ops_audit_log · admin_audit_log) — last 30'
+select 'ops' as log, o.action, o.target, left(o.operator_email,3) || '***@' || split_part(o.operator_email,'@',2) as operator_masked,
+       o.detail - 'reason' as detail, o.created_at
+  from ops_audit_log o join tenant t on t.id = o.tenant_id where t.slug = :'target' order by o.created_at desc limit 30;
+select 'admin' as log, a.action, a.target, a.changed_fields, a.created_at
+  from admin_audit_log a join tenant t on t.id = a.tenant_id where t.slug = :'target' order by a.created_at desc limit 30;
+
+\echo
+\echo '== 13. EXISTING TENANT UNCHANGED? (boost-interior-demo) — compare these against the pre-apply run'
+select t.slug, t.status, t.action_pilot_enabled, t.updated_at as tenant_updated_at from tenant t where t.slug = :'template';
+select 'widget' as row, w.public_key, w.enabled, w.approval_status, w.allowed_origins, w.version, w.updated_at
+  from tenant_public_widget w join tenant t on t.id = w.tenant_id where t.slug = :'template';
+select 'integration' as row, i.capability, i.enabled, i.base_url, i.updated_at
+  from tenant_integration i join tenant t on t.id = i.tenant_id where t.slug = :'template';
+select 'snapshot' as row, s.state, s.public_origin, s.resource_version, s.last_success_at, s.last_checked_at
+  from first_party_snapshot s join tenant t on t.id = s.tenant_id where t.slug = :'template';
+select 'plan' as row, p.plan_id, p.source, p.updated_at
+  from tenant_plan_assignment p join tenant t on t.id = p.tenant_id where t.slug = :'template';
+select 'capability' as row, c.capability, c.enabled, c.updated_at
+  from tenant_capability_control c join tenant t on t.id = c.tenant_id where t.slug = :'template';
+select 'versions' as row,
+       (select version from tenant_business_facts where tenant_id = t.id) as facts_v,
+       (select version from tenant_ai_config where tenant_id = t.id) as ai_v,
+       (select version from tenant_public_profile where tenant_id = t.id) as profile_v,
+       (select count(*) from knowledge_faq where tenant_id = t.id) as faq_n
+  from tenant t where t.slug = :'template';
+select 'presentation' as row, pr.launcher, pr.version, pr.updated_at
+  from tenant_widget_presentation pr join tenant t on t.id = pr.tenant_id where t.slug = :'template';
+\echo '-- any audit row for the template tenant inside the window?'
+select count(*) as template_ops_audit_rows_in_window from ops_audit_log o join tenant t on t.id = o.tenant_id
+ where t.slug = :'template' and o.created_at >= :'since'::timestamptz and o.created_at < :'until'::timestamptz;
+select count(*) as template_admin_audit_rows_in_window from admin_audit_log a join tenant t on t.id = a.tenant_id
+ where t.slug = :'template' and a.created_at >= :'since'::timestamptz and a.created_at < :'until'::timestamptz;
+
+rollback;
+\echo
+\echo 'verify: read-only transaction rolled back — nothing written.'
+SQL

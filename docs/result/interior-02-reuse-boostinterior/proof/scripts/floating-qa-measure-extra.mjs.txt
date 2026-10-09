@@ -1,0 +1,80 @@
+// Scratch: (a) default-theme computed colours before (1.0.0 package) / after (1.0.1 package) with WCAG contrast
+// on their surfaces; (b) the hero control row's computed padding-right and the controls' distance from the
+// viewport's right edge at 1025 / 1280 / 1440 / 1500 / 1560 / 1920 on the patched Ongyeol and Demo 02 packages.
+//   node measure-extra.mjs <beforeBase> <afterBase> <demo02Base> <out.json>
+import { chromium } from "/Users/woops/projects/web-recon-track-b/node_modules/playwright/index.mjs";
+import { writeFileSync } from "node:fs";
+const [before, after, demo02, outFile] = process.argv.slice(2);
+const browser = await chromium.launch();
+
+const parse = (s) => {
+  let m = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/.exec(s);
+  if (m) return [+m[1], +m[2], +m[3], m[4] === undefined ? 1 : +m[4]];
+  m = /color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)(?: \/ ([\d.]+))?\)/.exec(s);
+  if (m) return [+m[1] * 255, +m[2] * 255, +m[3] * 255, m[4] === undefined ? 1 : +m[4]];
+  throw new Error("unparsed colour " + s);
+};
+const asRgb = (s) => { const c = parse(s); return `rgb(${c.slice(0, 3).map((v) => Math.round(v)).join(", ")})` + (c[3] < 1 ? ` / ${c[3]}` : ""); };
+const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+const contrast = (a, b) => { const [l1, l2] = [lum(a), lum(b)].sort((x, y) => y - x); return Math.round(((l1 + 0.05) / (l2 + 0.05)) * 100) / 100; };
+
+/** computed colours of the aliases, resolved through a probe element on each surface */
+const probeColours = async (base) => {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  await page.goto(base + "/", { waitUntil: "load" });
+  const out = await page.evaluate(() => {
+    const probe = (fg, bg) => {
+      const el = document.createElement("div");
+      el.style.cssText = `position:fixed;left:-9999px;color:${fg};background:${bg}`;
+      document.body.appendChild(el);
+      const cs = getComputedStyle(el);
+      const r = { color: cs.color, background: cs.backgroundColor };
+      el.remove();
+      return r;
+    };
+    return {
+      onYellow: probe("var(--i2-on-yellow)", "var(--i2-yellow)"),
+      onMint: probe("var(--i2-on-mint)", "var(--i2-mint)"),
+      onMintOnCanvas: probe("var(--i2-on-mint)", "var(--color-canvas)"),
+      onNavy: probe("var(--i2-on-navy)", "var(--i2-navy)"),
+      veilStops: (() => {
+        // the veil is a gradient: read the resolved background-image of the showcase half's ::before
+        const el = document.querySelector(".i2-fcta__half--showcase");
+        return el ? getComputedStyle(el, "::before").backgroundImage : null;
+      })(),
+    };
+  });
+  await ctx.close();
+  const row = (p) => ({ color: asRgb(p.color), surface: asRgb(p.background), raw: p.color, contrast: contrast(parse(p.color), parse(p.background)) });
+  return { onYellow: row(out.onYellow), onMint: row(out.onMint), onMintOnCanvas: row(out.onMintOnCanvas), onNavy: row(out.onNavy), veil: out.veilStops };
+};
+
+/** hero control row geometry per width */
+const heroGeometry = async (base, widths) => {
+  const rows = [];
+  for (const width of widths) {
+    const ctx = await browser.newContext({ viewport: { width, height: 900 } });
+    const page = await ctx.newPage();
+    await page.goto(base + "/", { waitUntil: "load" });
+    rows.push(await page.evaluate((width) => {
+      const bar = document.querySelector(".i2-hero .i2-c__bar");
+      const cs = getComputedStyle(bar);
+      const next = document.querySelector(".i2-hero [data-c-toggle]").getBoundingClientRect();
+      const fl = document.querySelector(".i2-floater").getBoundingClientRect();
+      const barR = bar.getBoundingClientRect();
+      return { width, innerWidth, barLeft: barR.left, barRight: Math.round(barR.right * 100) / 100, barWidth: barR.width, paddingRight: cs.paddingRight, paddingLeft: cs.paddingLeft, gutter: getComputedStyle(document.documentElement).getPropertyValue("--i2-gutter").trim(), cornerReserve: getComputedStyle(document.documentElement).getPropertyValue("--i2-corner-reserve").trim(), controlsRightEdge: Math.round(next.right * 100) / 100, controlsFromViewportRight: Math.round((innerWidth - next.right) * 100) / 100, floaterLeft: Math.round(fl.left * 100) / 100, gapControlsToFloater: Math.round((fl.left - next.right) * 100) / 100 };
+    }, width));
+    await ctx.close();
+  }
+  return rows;
+};
+
+const out = {
+  colours: { before: await probeColours(before), after: await probeColours(after) },
+  heroGeometry: { ongyeol101: await heroGeometry(after, [1025, 1280, 1440, 1500, 1528, 1560, 1920]), demo02: await heroGeometry(demo02, [1025, 1280, 1440, 1500, 1560, 1920]), ongyeolPrepatch: await heroGeometry(before, [1025, 1280, 1440, 1500, 1560, 1920]) },
+};
+await browser.close();
+writeFileSync(outFile, JSON.stringify(out, null, 1));
+console.log(JSON.stringify(out.colours, null, 1));
+for (const [k, rows] of Object.entries(out.heroGeometry)) { console.log(k); for (const r of rows) console.log("  ", JSON.stringify(r)); }

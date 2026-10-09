@@ -1,0 +1,42 @@
+// Buckets the BoostChat app HTTP log (already downloaded, read-only) by time window and widget key.
+// Prints method + normalised path + status counts only: no IP address, no request id, no query string.
+import { readFileSync, writeFileSync } from "node:fs";
+const [file, out] = process.argv.slice(2);
+const NEW = "wgt_xVMphzTAQKf3AD7xpPOB7KuSUFsJsexR", OLD = "wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3";
+const rows = readFileSync(file, "utf8").split("\n").filter((l) => l.trim().startsWith("{")).map((l) => JSON.parse(l));
+console.log("fields:", Object.keys(rows[0]).join(","));
+const W = [
+  ["1 provisioning (… → 09:26:56)", "2026-10-09T09:00:00", "2026-10-09T09:26:56"],
+  ["2 original live run (09:26:56 → 09:37:54)", "2026-10-09T09:26:56", "2026-10-09T09:37:54"],
+  ["3 gap (09:37:54 → 09:39:30)", "2026-10-09T09:37:54", "2026-10-09T09:39:30"],
+  ["4 card probe run 1 (09:39:30 → 09:41:05)", "2026-10-09T09:39:30", "2026-10-09T09:41:05"],
+  ["5 card probe run 2 (09:41:05 → 09:42:00)", "2026-10-09T09:41:05", "2026-10-09T09:42:00"],
+  ["6 after probes (09:42:00 → end)", "2026-10-09T09:42:00", "2026-10-10T00:00:00"],
+];
+const norm = (r) => r.method + " " + r.path.split("?")[0].replace(/wgt_[A-Za-z0-9_-]+/, "<key>").replace(/\/portfolio\/[^/]+/, "/portfolio/<id>").replace(/[0-9a-f]{8}-[0-9a-f-]{27}/g, "<uuid>");
+const total = { n: rows.length, fivexx: rows.filter((r) => r.httpStatus >= 500).length, newKey: 0, oldKey: 0, other3: 0 };
+const res = {};
+for (const [name, a, b] of W) {
+  const inW = rows.filter((r) => r.timestamp >= a && r.timestamp < b);
+  const mine = inW.filter((r) => r.path.includes(NEW));
+  const by = {}, st = {};
+  for (const r of mine) { const k = norm(r); by[k] = (by[k] || 0) + 1; st[r.httpStatus] = (st[r.httpStatus] || 0) + 1; }
+  res[name] = { allTenants: inW.length, newKey: mine.length, status: st, paths: by, first: mine[0]?.timestamp?.slice(11, 19), last: mine.at(-1)?.timestamp?.slice(11, 19) };
+  total.newKey += mine.length;
+}
+total.oldKey = rows.filter((r) => r.path.includes(OLD)).length;
+const otherKeys = {};
+for (const r of rows) { const m = /wgt_[A-Za-z0-9_-]+/.exec(r.path); if (m && m[0] !== NEW && m[0] !== OLD) otherKeys[m[0].slice(0, 8) + "…"] = (otherKeys[m[0].slice(0, 8) + "…"] || 0) + 1; }
+const non2xx = rows.filter((r) => r.path.includes(NEW) && (r.httpStatus < 200 || r.httpStatus >= 300)).map((r) => `${r.timestamp.slice(11, 19)} ${r.method} ${norm(r).split(" ")[1]} ${r.httpStatus}`);
+// app instances that answered (edge-only responses such as 499 carry an all-zero id) and all-tenant status counts
+const instances = {}, statusAllTenants = {}, newKeyByMinute = {};
+for (const r of rows) {
+  const i = (r.deploymentInstanceId || "?").slice(0, 8); instances[i] ??= { requests: 0, first: r.timestamp.slice(11, 19), last: r.timestamp.slice(11, 19) };
+  instances[i].requests++; instances[i].last = r.timestamp.slice(11, 19);
+  statusAllTenants[r.httpStatus] = (statusAllTenants[r.httpStatus] || 0) + 1;
+  if (r.path.includes(NEW)) { const k = r.timestamp.slice(11, 16); newKeyByMinute[k] ??= {}; const p = norm(r).replace(/\/portfolio\/.*/, "/portfolio/…"); newKeyByMinute[k][p] = (newKeyByMinute[k][p] || 0) + 1; }
+}
+const deployments = [...new Set(rows.map((r) => (r.deploymentId || "?").slice(0, 8)))];
+const o = { range: [rows[0].timestamp, rows.at(-1).timestamp], total, statusAllTenants, deployments, instances, otherKeys, windows: res, newKeyNon2xx: non2xx, newKeyByMinute };
+writeFileSync(out, JSON.stringify(o, null, 1));
+console.log(JSON.stringify(o, null, 1));

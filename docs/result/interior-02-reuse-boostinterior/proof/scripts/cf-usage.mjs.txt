@@ -1,0 +1,19 @@
+// Read-only Cloudflare GraphQL Analytics query for the recon-runtime Worker and its R2 bucket.
+// usage: node cf-usage.mjs <startISO> <endISO>   (token read from wrangler's OAuth file, never printed)
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+const [start, end] = process.argv.slice(2);
+const toml = readFileSync(`${homedir()}/Library/Preferences/.wrangler/config/default.toml`, "utf8");
+const token = /oauth_token\s*=\s*"([^"]+)"/.exec(toml)?.[1];
+if (!token) throw new Error("no oauth token");
+const api = async (path, init) => (await fetch(`https://api.cloudflare.com/client/v4${path}`, { ...init, headers: { authorization: `Bearer ${token}`, "content-type": "application/json", ...(init?.headers ?? {}) } })).json();
+const acct = (await api("/accounts")).result?.[0]?.id;
+const q = `query($a:String!,$s:Time!,$e:Time!){viewer{accounts(filter:{accountTag:$a}){
+ w:workersInvocationsAdaptive(limit:100,filter:{scriptName:"recon-runtime-pilot",datetime_geq:$s,datetime_leq:$e}){sum{requests errors subrequests} quantiles{cpuTimeP50 cpuTimeP99 wallTimeP50 wallTimeP99} dimensions{status}}
+ ops:r2OperationsAdaptiveGroups(limit:100,filter:{bucketName:"boost-sites-artifacts",datetime_geq:$s,datetime_leq:$e}){sum{requests responseObjectSize} dimensions{actionType}}
+ st:r2StorageAdaptiveGroups(limit:1,orderBy:[datetime_DESC],filter:{bucketName:"boost-sites-artifacts",datetime_geq:$s,datetime_leq:$e}){max{objectCount payloadSize metadataSize} dimensions{datetime}}
+}}}`;
+const r = await api("/graphql", { method: "POST", body: JSON.stringify({ query: q, variables: { a: acct, s: start, e: end } }) });
+if (r.errors) { console.log(JSON.stringify(r.errors)); process.exit(1); }
+const a = r.data.viewer.accounts[0];
+console.log(JSON.stringify({ window: { start, end }, worker: a.w, r2ops: a.ops, r2storage: a.st }, null, 1));

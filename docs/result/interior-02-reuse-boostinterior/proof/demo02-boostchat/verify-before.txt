@@ -1,0 +1,144 @@
+verify: target=boost-interior-demo-02 template=boost-interior-demo window=[2026-10-08T00:00:00Z, 2026-10-10T00:00:00Z)
+verify: fetching pgvector public DATABASE_URL via railway (value is not printed)
+
+== 0. migration ledger (prod _migration) vs local db/migrations ==
+local files : 59 (head 0059_portfolio_channel_content_style.sql)
+prod ledger : 59 (head 0059_portfolio_channel_content_style.sql)
+only local  : 
+only prod   : 
+local HEAD  : 5038e80 (docs(content): correct v1.1 rollout report end time)
+deployed    : 72ff14d (DEPLOYED_HEAD in docs/reports/content-engine/rollout/08-…, deployment 5b4afeee, 2026-10-08T19:39Z)
+product diff 72ff14d..HEAD excluding docs: 
+system_identifier OK: 7675084143306387491 db: railway
+
+== 1. tenant
+ slug | name | status | action_pilot_enabled | action_pilot_updated_at | created_at | updated_at 
+------+------+--------+----------------------+-------------------------+------------+------------
+
+
+== 2. membership (count / role / masked e-mail)
+ role | email_masked | user_id | created_at 
+------+--------------+---------+------------
+
+ membership_count 
+------------------
+                0
+
+
+== 3. plan assignment
+ plan_id | source | effective_at | updated_at 
+---------+--------+--------------+------------
+
+
+== 4. capability control
+ capability | enabled | updated_at 
+------------+---------+------------
+
+
+== 5. core data presence (facts / ai config) — brand fields only, contact strings masked
+ section | version | updated_at | name | industry | has_phone | has_address | business_hours | service_area | services_n | contact_methods_n 
+---------+---------+------------+------+----------+-----------+-------------+----------------+--------------+------------+-------------------
+
+ section | version | updated_at | name | tone | answer_length | unknown_answer_policy | can_ask_questions_first | greeting_len 
+---------+---------+------------+------+------+---------------+-----------------------+-------------------------+--------------
+
+
+== 6. public profile
+ handle | is_published | published_at | version | website_url | contact_email_masked | show_phone | show_address | show_business_hours | show_service_area | show_services 
+--------+--------------+--------------+---------+-------------+----------------------+------------+--------------+---------------------+-------------------+---------------
+
+
+== 7. widget channel (public key is a public identifier)
+ public_key | enabled | approval_status | allowed_origins | version | rotated_at | created_at | updated_at 
+------------+---------+-----------------+-----------------+---------+------------+------------+------------
+
+-- widget presentation row (absent = product default: chat_dots · brand_blue · label 상담 · showLabel true)
+ launcher | contact_channels_n | version | updated_at 
+----------+--------------------+---------+------------
+
+
+== 8. lead_form_config presence (absent = DEFAULT_LEAD_FORM)
+ lead_form_config_rows 
+-----------------------
+                     0
+
+
+== 9. FAQ (count, enabled count) and knowledge publication for src-faq
+ faq_rows | faq_enabled 
+----------+-------------
+        0 |           0
+
+ source_key | source_type | publications 
+------------+-------------+--------------
+
+
+== 10. first-party integration row + snapshot
+ capability | kind | label | enabled | base_url | integration_id | created_at | updated_at 
+------------+------+-------+---------+----------+----------------+------------+------------
+
+ resource | state | last_observation | public_origin | site_id | resource_version | resource_schema_version | last_success_at | last_checked_at | has_payload 
+----------+-------+------------------+---------------+---------+------------------+-------------------------+-----------------+-----------------+-------------
+
+
+== 11. usage events by operation in window (ai_usage_event)
+ provider | operation | surface | status | n | total_tokens 
+----------+-----------+---------+--------+---+--------------
+
+-- lead requests in window (COUNT only)
+ lead_requests 
+---------------
+             0
+
+
+== 12. audit rows for the target (ops_audit_log · admin_audit_log) — last 30
+ log | action | target | operator_masked | detail | created_at 
+-----+--------+--------+-----------------+--------+------------
+
+ log | action | target | changed_fields | created_at 
+-----+--------+--------+----------------+------------
+
+
+== 13. EXISTING TENANT UNCHANGED? (boost-interior-demo) — compare these against the pre-apply run
+        slug         | status | action_pilot_enabled |      tenant_updated_at       
+---------------------+--------+----------------------+------------------------------
+ boost-interior-demo | active | t                    | 2026-10-08 11:24:26.57193+00
+
+  row   |              public_key              | enabled | approval_status |            allowed_origins             | version |          updated_at           
+--------+--------------------------------------+---------+-----------------+----------------------------------------+---------+-------------------------------
+ widget | wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3 | t       | pending         | {https://interior-demo.boostweb.co.kr} |       3 | 2026-09-28 13:41:16.646485+00
+
+     row     |    capability    | enabled |               base_url               |          updated_at           
+-------------+------------------+---------+--------------------------------------+-------------------------------
+ integration | portfolio.search | t       | https://interior-demo.boostweb.co.kr | 2026-09-22 16:18:46.646253+00
+
+   row    | state |            public_origin             |         resource_version         |      last_success_at       |      last_checked_at       
+----------+-------+--------------------------------------+----------------------------------+----------------------------+----------------------------
+ snapshot | ON    | https://interior-demo.boostweb.co.kr | 968afbccb944940d8d3c099dd54df5be | 2026-10-08 10:39:27.361+00 | 2026-10-08 10:39:27.361+00
+
+ row  | plan_id |  source  |          updated_at           
+------+---------+----------+-------------------------------
+ plan | master  | operator | 2026-09-22 16:18:23.474194+00
+
+    row     |    capability    | enabled |          updated_at           
+------------+------------------+---------+-------------------------------
+ capability | portfolio.search | t       | 2026-09-28 12:32:29.313012+00
+
+   row    | facts_v | ai_v | profile_v | faq_n 
+----------+---------+------+-----------+-------
+ versions |       2 |    1 |         2 |     7
+
+     row      |                                                          launcher                                                           | version |          updated_at           
+--------------+-----------------------------------------------------------------------------------------------------------------------------+---------+-------------------------------
+ presentation | {"label": "24시간문의", "showLabel": true, "iconPreset": "ai_chat", "colorPreset": "warm_yellow", "customBackground": null} |       4 | 2026-10-02 17:52:11.538686+00
+
+-- any audit row for the template tenant inside the window?
+ template_ops_audit_rows_in_window 
+-----------------------------------
+                                 1
+
+ template_admin_audit_rows_in_window 
+-------------------------------------
+                                   2
+
+
+verify: read-only transaction rolled back — nothing written.

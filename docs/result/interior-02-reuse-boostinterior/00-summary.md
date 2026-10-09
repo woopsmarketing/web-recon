@@ -10,6 +10,23 @@ INTERIOR_02_REUSE = PARTIAL
 template 재사용 자체는 성립했습니다(같은 release, template 변경 0). PARTIAL인 이유는 BoostChat을 붙였을 때 남는
 두 가지입니다 — §0의 2번과 3번.
 
+> **후속 작업 (2026-10-09, `05-production-demo-02.md`)** — 아래 본문은 재사용 검증 시점의 기록이고, 그 뒤 상태가 바뀌었습니다.
+>
+> ```
+> INTERIOR_02_DEMO02 = PARTIAL
+> PUBLIC_URL         = https://interior-demo-2.boostweb.co.kr
+> INTERIOR_02_RELEASE = interior-02-1.0.1-61116e77e274 (Ongyeol · Demo 02 모두 re-pin)
+> DEDICATED_BOOSTCHAT = tenant boost-interior-demo-02 · widget wgt_xVMphzTAQKf3AD7xpPOB7KuSUFsJsexR
+> ```
+>
+> - §0의 3번(launcher 겹침)과 4번(hero 버튼 가림)은 interior-02 1.0.1에서 고쳤습니다. 실제 domain에서 겹침 0입니다.
+> - §0의 2번과 §4의 결정 1 · 2 · 3은 끝났습니다: Demo 02는 자기 domain과 전용 BoostChat tenant를 갖고, `site.json`의 origin은
+>   `https://interior-demo-2.boostweb.co.kr`입니다. localhost origin은 추가하지 않았습니다.
+> - 남은 것은 하나입니다: 공개 사이트의 견적 문의 폼 제출이 BoostChat 서버 설정(`WIDGET_SITE_LEAD_KEYS`) 때문에 403으로
+>   거절됩니다. 필요한 변경과 내리는 절차는 `05`의 §7 · §8에 있습니다.
+> - 작업 중 같은 세션이 두 프로세스로 동시에 실행된 일이 있었습니다. 운영 쓰기의 중복은 없고, 추가로 나간 채팅 2건과
+>   그 사용량은 `05`의 §10에 원래 E2E와 나누어 적었습니다.
+
 ## 0. 먼저 알아야 할 것
 
 1. **interior-02는 수정 없이 재사용됐습니다.** `boost-interior-demo-02`는 Ongyeol과 같은 immutable release
@@ -165,7 +182,8 @@ template을 고치고 싶어진 지점마다 먼저 분류했습니다. **결과
 2. **interior-02 1.0.1 patch를 진행할 것인가** (§3 권고).
 3. **Demo 02를 별도 domain으로 publish할 것인가.** 한다면 전용 BoostChat tenant / key를 권합니다. 같은 tenant에 origin만
    추가하면 두 사이트의 문의가 구분되지 않고, 채팅의 시공사례 카드가 첫 번째 demo로 이동합니다(`04` MAJOR 1).
-   `site.json`의 origin은 지금 `https://boost-interior-demo-02.example` 자리표시 값입니다.
+   이 보고서 시점의 `site.json` origin은 `https://boost-interior-demo-02.example` 자리표시 값이었습니다.
+   → 후속 작업에서 `https://interior-demo-2.boostweb.co.kr`로 바꾸고 전용 tenant를 만들었습니다(`05-production-demo-02.md`).
 
 ## 5. 작업 내용
 
@@ -245,4 +263,5 @@ Windows browser에서는 4321을 보던 방식 그대로 4322를 열면 됩니�
 | `02-boostchat-qa.md` | 기존 integration, origin 제약, 실제 widget QA, launcher 충돌, runtime 사용량 |
 | `03-browser-qa-and-regression.md` | sweep, 시각 QA 19건의 처리, regression, 테스트 |
 | `04-independent-review.md` | 독립 리뷰와 MASTER 확인 |
+| `05-production-demo-02.md` | 후속: interior-02 1.0.1 patch, `interior-demo-2.boostweb.co.kr` publish, 전용 BoostChat tenant, 실제 domain E2E, 사용량 · 비용, 세션 중복 실행 기록 |
 | `proof/` | sweep · widget QA JSON, 운영 읽기 전용 조회 결과, 스크립트 사본(`*.txt`). 스크린샷은 gitignore 대상이라 로컬에만 있음 |

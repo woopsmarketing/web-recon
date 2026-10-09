@@ -1,0 +1,25 @@
+#!/bin/sh
+# READ-ONLY: conversations of boost-interior-demo-02 (timestamps, status, message COUNTS only: no content).
+set -eu
+EXPECT_SID=7675084143306387491
+DBURL=$(cd /Users/woops/projects/boost-chat && railway variables -e production -s pgvector --kv 2>/dev/null | grep '^DATABASE_URL=' | cut -d= -f2-)
+[ -n "$DBURL" ] || { echo "FAILED: no DATABASE_URL from railway"; exit 1; }
+PGOPTIONS='-c default_transaction_read_only=on' PGCONNECT_TIMEOUT=20 psql "$DBURL" -X -q -v ON_ERROR_STOP=1 -v sid="$EXPECT_SID" -P pager=off 2>&1 <<'SQL' | sed -E 's#postgres(ql)?://[^ ]+#<redacted-url>#g'
+begin transaction read only;
+select set_config('check.sid', :'sid', true) as "guard";
+do $$ begin
+  if (select system_identifier::text from pg_control_system()) <> current_setting('check.sid') then
+    raise exception 'system_identifier mismatch';
+  end if;
+end $$;
+select now() as now_utc;
+select left(c.id::text,8) as conv, c.surface, c.actor_kind, c.status, c.completion_reason,
+       to_char(c.started_at at time zone 'utc','HH24:MI:SS') as started, to_char(c.last_activity_at at time zone 'utc','HH24:MI:SS') as last_activity,
+       to_char(c.completed_at at time zone 'utc','HH24:MI:SS') as completed, c.summary_status,
+       to_char(c.summarized_at at time zone 'utc','HH24:MI:SS') as summarized, (c.summary is not null) as has_summary,
+       (select count(*) from conversation_message m where m.conversation_id = c.id and m.role='user')::int as user_msgs,
+       (select count(*) from conversation_message m where m.conversation_id = c.id and m.role='assistant')::int as asst_msgs
+  from conversation c join tenant t on t.id = c.tenant_id
+ where t.slug = 'boost-interior-demo-02' order by c.started_at;
+rollback;
+SQL

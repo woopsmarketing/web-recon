@@ -1,0 +1,248 @@
+// Scratch tooling (not a repo file): fixed-corner collision QA for an interior-02 site — hero control row,
+// floater column, a third-party corner widget and the ≤ 640 tab bar must never overlap, at load (before any
+// scroll) and after scrolling, with the tab bar shown and hidden. Nothing site-specific is hard-coded: every
+// default below can be overridden by a flag, so the same script runs against a local package or a live domain.
+//
+//   node floating-qa.mjs <baseUrl> <out.json> [--shots <dir>] [--widget none|fake|real] [--label <name>]
+//     --widget none   no corner widget (the site's own floater only)
+//     --widget fake   inject a fixed box that mimics a real launcher: --fake-box W,H,R,B (64,64,18,18 above the
+//                     breakpoint) and --fake-box-narrow W,H,R,B (60,60,12,12 at <= --fake-breakpoint, 480), max z-index
+//     --widget real   measure the real launcher: --real-selector <css> (iframe[data-boost-chat-frame]), --real-timeout ms
+//     --widths 1920,1560,...   viewports (mobile context with touch at <= 640)
+//     --detail /portfolio/<slug>   the portfolio detail page (default: the first detail link found on /portfolio)
+//     --pages /portfolio,/contact  the other pages (the detail page is added after the first)
+//     --shot-widths 1440,390       widths screenshotted on / at scroll 0 and mid-page (jpg)
+//     --clearance 8  --gap-min 12  --gap-max 16   hero-control clearance; to-top -> widget gap (above 640)
+//   exit code 1 when any assertion fails; every measured rect goes into the JSON.
+import { chromium } from "/Users/woops/projects/web-recon-track-b/node_modules/playwright/index.mjs";
+import { mkdirSync, writeFileSync } from "node:fs";
+
+const argv = process.argv.slice(2);
+const positional = argv.filter((a, i) => !a.startsWith("--") && !(i > 0 && argv[i - 1].startsWith("--")));
+const flag = (name, dflt) => { const i = argv.indexOf(name); return i >= 0 && argv[i + 1] !== undefined ? argv[i + 1] : dflt; };
+const [base, outFile] = positional;
+if (!base || !outFile) { console.error("usage: node floating-qa.mjs <baseUrl> <out.json> [--shots <dir>] [--widget none|fake|real] ..."); process.exit(2); }
+const shotsDir = flag("--shots", null);
+const mode = flag("--widget", "none");
+const label = flag("--label", new URL(base).host.replace(/[:.]/g, "-"));
+const WIDTHS = flag("--widths", "1920,1560,1440,1280,1025,1024,768,640,600,481,480,390,320").split(",").map(Number);
+const SHOT_WIDTHS = flag("--shot-widths", "1440,390").split(",").map(Number);
+const box = (s) => { const [w, h, r, b] = s.split(",").map(Number); return { w, h, r, b }; };
+const FAKE = box(flag("--fake-box", "64,64,18,18"));
+const FAKE_NARROW = box(flag("--fake-box-narrow", "60,60,12,12"));
+const FAKE_BP = Number(flag("--fake-breakpoint", "480"));
+const REAL_SELECTOR = flag("--real-selector", "iframe[data-boost-chat-frame]");
+const REAL_TIMEOUT = Number(flag("--real-timeout", "30000"));
+const CLEARANCE = Number(flag("--clearance", "8"));
+const GAP_MIN = Number(flag("--gap-min", "12"));
+const GAP_MAX = Number(flag("--gap-max", "16"));
+const WIDGET_SELECTOR = mode === "fake" ? "[data-qa-fake-widget]" : mode === "real" ? REAL_SELECTOR : null;
+if (!["none", "fake", "real"].includes(mode)) { console.error(`unknown --widget ${mode}`); process.exit(2); }
+if (shotsDir) mkdirSync(shotsDir, { recursive: true });
+
+const result = { base, mode, label, startedAt: new Date().toISOString(), widths: WIDTHS, fake: mode === "fake" ? { wide: FAKE, narrow: FAKE_NARROW, breakpoint: FAKE_BP } : undefined, realSelector: mode === "real" ? REAL_SELECTOR : undefined, pages: [], runs: [], checks: [] };
+let current = null;
+const check = (name, ok, detail) => {
+  const row = { where: current, name, ok: !!ok, detail };
+  result.checks.push(row);
+  if (!ok) console.log(`  FAIL  [${current}] ${name}  ${detail === undefined ? "" : JSON.stringify(detail).slice(0, 300)}`);
+  return !!ok;
+};
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ------------------------------------------------------------------ geometry
+const edges = (r) => ({ ...r, right: r.x + r.w, bottom: r.y + r.h });
+const intersects = (a, b) => { a = edges(a); b = edges(b); return Math.min(a.right, b.right) - Math.max(a.x, b.x) > 0 && Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y) > 0; };
+/** shortest distance between two rects (0 when they touch or overlap) */
+const distance = (a, b) => { a = edges(a); b = edges(b); const dx = Math.max(0, b.x - a.right, a.x - b.right); const dy = Math.max(0, b.y - a.bottom, a.y - b.bottom); return Math.hypot(dx, dy); };
+const round = (v) => Math.round(v * 100) / 100;
+
+// --------------------------------------------------------------- in-page code
+const FAKE_INSTALL = `(() => {
+  const F = ${JSON.stringify(FAKE)}, N = ${JSON.stringify(FAKE_NARROW)}, BP = ${FAKE_BP};
+  if (document.querySelector("[data-qa-fake-widget]")) return;
+  const style = document.createElement("style");
+  style.setAttribute("data-qa-fake-widget-style", "");
+  style.textContent = "[data-qa-fake-widget]{position:fixed;right:" + F.r + "px;bottom:" + F.b + "px;width:" + F.w + "px;height:" + F.h + "px;z-index:2147483647;box-sizing:border-box;border-radius:50%;background:rgba(255,0,170,.55);outline:2px solid #ff00aa;pointer-events:none}" +
+    "@media (max-width:" + BP + "px){[data-qa-fake-widget]{right:" + N.r + "px;bottom:" + N.b + "px;width:" + N.w + "px;height:" + N.h + "px}}";
+  document.head.appendChild(style);
+  const el = document.createElement("div");
+  el.setAttribute("data-qa-fake-widget", "");
+  document.body.appendChild(el);
+})()`;
+
+const measure = (widgetSelector) => {
+  const r = (el) => { const b = el.getBoundingClientRect(); return { x: Math.round(b.x * 100) / 100, y: Math.round(b.y * 100) / 100, w: Math.round(b.width * 100) / 100, h: Math.round(b.height * 100) / 100 }; };
+  const vis = (el) => { const s = getComputedStyle(el); return s.display !== "none" && s.visibility !== "hidden" && el.getClientRects().length > 0; };
+  const q = (sel) => [...document.querySelectorAll(sel)].filter(vis);
+  const de = document.documentElement;
+  const hero = [];
+  for (const s of ["[data-c-prev]", "[data-c-next]", "[data-c-toggle]"]) { const el = document.querySelector(".i2-hero " + s); if (el && vis(el)) hero.push({ name: s, rect: r(el) }); }
+  const floater = q(".i2-floater > *").map((el) => ({ name: el.hasAttribute("data-to-top") ? "to-top" : el.hasAttribute("data-floating-contact") ? "contact" : String(el.className), rect: r(el) }));
+  let widget = null;
+  if (widgetSelector) { const el = document.querySelector(widgetSelector); if (el && vis(el)) widget = r(el); }
+  let tabbar = null;
+  const nav = document.querySelector(".i2-tabbar");
+  if (nav && vis(nav)) {
+    tabbar = { rect: r(nav), hidden: nav.hasAttribute("data-hidden"), links: q(".i2-tabbar__link").map((a) => { const lb = a.querySelector(".i2-tabbar__label"); return { label: lb ? lb.textContent.trim() : null, rect: r(a), labelWidth: lb ? Math.round(lb.getBoundingClientRect().width * 100) / 100 : null, truncated: lb ? lb.scrollWidth > lb.clientWidth : null }; }) };
+  }
+  const bar = document.querySelector(".i2-hero .i2-c__bar");
+  return {
+    innerWidth, innerHeight, scrollY: Math.round(scrollY), scrollWidth: de.scrollWidth, clientWidth: de.clientWidth, scrollHeight: de.scrollHeight,
+    extWidget: de.hasAttribute("data-ext-widget"),
+    cornerReserve: getComputedStyle(de).getPropertyValue("--i2-corner-reserve").trim() || null,
+    heroBar: bar ? { rect: r(bar), paddingRight: getComputedStyle(bar).paddingRight } : null,
+    hero, floater, widget, tabbar,
+  };
+};
+
+// ---------------------------------------------------------------- assertions
+function assertState(m, { width, page, state }) {
+  const widgetExpected = mode !== "none";
+  const mobile = width <= 640;
+  const items = [];
+  const push = (group, name, rect) => items.push({ group, name, rect });
+  if (page === "/" && state === "load") {
+    check("hero control row present (prev / next / pause)", m.hero.length === 3, m.hero.map((h) => h.name));
+    for (const h of m.hero) push("hero", h.name, h.rect);
+  }
+  check("floater to-top present", m.floater.some((f) => f.name === "to-top"), m.floater.map((f) => f.name));
+  for (const f of m.floater) push("floater", f.name, f.rect);
+  if (widgetExpected) {
+    check("widget box present", !!m.widget, m.widget);
+    if (m.widget) push("widget", "widget", m.widget);
+  }
+  // everything fixed must sit inside the viewport
+  for (const it of items.filter((i) => i.group !== "hero")) {
+    const e = edges(it.rect);
+    check(`${it.name} inside the viewport`, e.x >= 0 && e.y >= 0 && e.right <= m.innerWidth + 0.5 && e.bottom <= m.innerHeight + 0.5, { rect: it.rect, viewport: [m.innerWidth, m.innerHeight] });
+  }
+  // no pair intersects; hero controls keep the clearance from floater buttons and the widget
+  for (let i = 0; i < items.length; i++) {
+    for (let j = i + 1; j < items.length; j++) {
+      const a = items[i], b = items[j];
+      if (a.group === b.group && a.group !== "hero") continue; // floater buttons stack by design
+      check(`${a.name} does not intersect ${b.name}`, !intersects(a.rect, b.rect), { a: a.rect, b: b.rect });
+      if ((a.group === "hero") !== (b.group === "hero")) {
+        const d = round(distance(a.rect, b.rect));
+        check(`${a.name} keeps >= ${CLEARANCE}px from ${b.name}`, d >= CLEARANCE, { distance: d, a: a.rect, b: b.rect });
+      }
+    }
+  }
+  // above 640 with a widget: the lowest floater button (to-top when there is no contact link) sits 12-16px above it
+  if (widgetExpected && m.widget && !mobile && m.floater.length) {
+    const lowest = m.floater.reduce((p, f) => (edges(f.rect).bottom > edges(p.rect).bottom ? f : p));
+    const gap = round(m.widget.y - edges(lowest.rect).bottom);
+    check(`gap between the lowest floater button (${lowest.name}) and the widget top is ${GAP_MIN}-${GAP_MAX}px`, gap >= GAP_MIN && gap <= GAP_MAX, { gap, floater: lowest.rect, widget: m.widget });
+    const cf = lowest.rect.x + lowest.rect.w / 2, cw = m.widget.x + m.widget.w / 2;
+    check("floater column is centred on the widget column (+-1px)", Math.abs(cf - cw) <= 1, { floaterCentre: round(cf), widgetCentre: round(cw) });
+  }
+  if (widgetExpected && m.widget && mobile && m.floater.length) {
+    const lowest = m.floater.reduce((p, f) => (edges(f.rect).bottom > edges(p.rect).bottom ? f : p));
+    const gap = round(m.widget.y - edges(lowest.rect).bottom);
+    check(`floater stays above the widget box (gap >= ${CLEARANCE}px)`, gap >= CLEARANCE, { gap, tabbarHidden: m.tabbar?.hidden ?? null });
+  }
+  if (mobile) {
+    check("tab bar present", !!m.tabbar && m.tabbar.links.length > 0, m.tabbar ? m.tabbar.links.length : null);
+    if (m.tabbar) {
+      for (const l of m.tabbar.links) {
+        if (widgetExpected && m.widget) check(`tab "${l.label}" does not intersect the widget`, !intersects(l.rect, m.widget), { tab: l.rect, widget: m.widget });
+        check(`tab "${l.label}" label is not truncated`, l.truncated === false, { labelWidth: l.labelWidth, tab: l.rect });
+      }
+    }
+  }
+}
+
+// ------------------------------------------------------------------- driver
+const browser = await chromium.launch();
+// the detail page: a flag, or the first portfolio detail link on /portfolio
+let detail = flag("--detail", null);
+if (!detail) {
+  const ctx0 = await browser.newContext();
+  const html = await (await ctx0.request.get(base + "/portfolio")).text();
+  detail = (/href="(\/portfolio\/(?!page\/)[^"/#?]+)"/.exec(html) ?? [])[1] ?? null;
+  await ctx0.close();
+}
+const others = flag("--pages", "/portfolio,/contact").split(",").filter(Boolean);
+const PAGES = ["/", others[0], ...(detail ? [detail] : []), ...others.slice(1)].filter(Boolean);
+result.pages = PAGES;
+
+async function prepareWidget(page, width) {
+  if (mode === "fake") await page.evaluate(FAKE_INSTALL);
+  if (mode === "real") {
+    await page.locator(REAL_SELECTOR).first().waitFor({ state: "visible", timeout: REAL_TIMEOUT }).catch(() => {});
+    await sleep(600);
+  }
+}
+async function snapshot(page, width, route, state, extra = {}) {
+  current = `${width} ${route} ${state}`;
+  const m = await page.evaluate(measure, WIDGET_SELECTOR);
+  result.runs.push({ width, page: route, state, ...extra, measured: m });
+  return m;
+}
+const settle = () => sleep(550); // floater bottom / tab bar transforms transition over .35s
+
+for (const width of WIDTHS) {
+  const mobile = width <= 640;
+  const context = await browser.newContext({ viewport: { width, height: mobile ? 844 : 900 }, deviceScaleFactor: 1, isMobile: mobile, hasTouch: mobile, locale: "ko-KR", timezoneId: "Asia/Seoul" });
+  for (const route of PAGES) {
+    const page = await context.newPage();
+    const consoleErrors = [];
+    page.on("console", (msg) => msg.type() === "error" && consoleErrors.push(msg.text().slice(0, 200)));
+    page.on("pageerror", (e) => consoleErrors.push("pageerror " + String(e).slice(0, 200)));
+    const res = await page.goto(base + route, { waitUntil: "load" });
+    current = `${width} ${route} load`;
+    check("page answers 200", res?.status() === 200, res?.status());
+    await prepareWidget(page, width);
+    // (1) at load, BEFORE any scroll: layout viewport = the window; no horizontal overflow
+    let m = await snapshot(page, width, route, "load");
+    check(`innerWidth === ${width} at load`, m.innerWidth === width, m.innerWidth);
+    check("no horizontal overflow at load (scrollWidth <= clientWidth)", m.scrollWidth <= m.clientWidth, { scrollWidth: m.scrollWidth, clientWidth: m.clientWidth });
+    check("scrollY is 0 at load", m.scrollY === 0, m.scrollY);
+    if (mode === "fake") check("fake widget box has the expected size for this width", m.widget && m.widget.w === (width <= FAKE_BP ? FAKE_NARROW.w : FAKE.w), m.widget);
+    assertState(m, { width, page: route, state: "load" });
+    if (shotsDir && route === "/" && SHOT_WIDTHS.includes(width)) await page.screenshot({ path: `${shotsDir}/${label}-home-${width}-load.jpg`, type: "jpeg", quality: 80 });
+
+    // (2) mid-page, tab bar shown (a downward scroll); then hidden (an upward scroll > 15px while scrollTop > 300)
+    const mid = Math.max(400, Math.floor(m.scrollHeight / 2));
+    await page.evaluate((y) => scrollTo(0, y), mid);
+    await settle();
+    m = await snapshot(page, width, route, "mid");
+    if (mobile) check("tab bar shown after scrolling down", m.tabbar && !m.tabbar.hidden, m.tabbar?.hidden);
+    assertState(m, { width, page: route, state: "mid" });
+    if (shotsDir && route === "/" && SHOT_WIDTHS.includes(width)) await page.screenshot({ path: `${shotsDir}/${label}-home-${width}-mid.jpg`, type: "jpeg", quality: 80 });
+    if (mobile) {
+      await page.evaluate(() => scrollBy(0, -120));
+      await settle();
+      m = await snapshot(page, width, route, "mid-tabhidden");
+      check("tab bar hidden after scrolling up", m.tabbar && m.tabbar.hidden, m.tabbar?.hidden);
+      assertState(m, { width, page: route, state: "mid-tabhidden" });
+    }
+
+    // (3) bottom, tab bar shown; then hidden
+    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    await settle();
+    m = await snapshot(page, width, route, "bottom");
+    if (mobile) check("tab bar shown at the bottom", m.tabbar && !m.tabbar.hidden, m.tabbar?.hidden);
+    assertState(m, { width, page: route, state: "bottom" });
+    if (mobile) {
+      await page.evaluate(() => scrollBy(0, -120));
+      await settle();
+      m = await snapshot(page, width, route, "bottom-tabhidden");
+      check("tab bar hidden after scrolling up from the bottom", m.tabbar && m.tabbar.hidden, m.tabbar?.hidden);
+      assertState(m, { width, page: route, state: "bottom-tabhidden" });
+    }
+    check("no horizontal overflow after scrolling", m.scrollWidth <= m.clientWidth, { scrollWidth: m.scrollWidth, clientWidth: m.clientWidth });
+    result.runs.push({ width, page: route, state: "console", consoleErrors });
+    await page.close();
+  }
+  await context.close();
+}
+await browser.close();
+
+result.finishedAt = new Date().toISOString();
+result.summary = { checks: result.checks.length, passed: result.checks.filter((c) => c.ok).length, failed: result.checks.filter((c) => !c.ok).length };
+result.failures = result.checks.filter((c) => !c.ok);
+writeFileSync(outFile, JSON.stringify(result, null, 1));
+console.log(`floating-qa ${label} (${mode}): ${result.summary.passed}/${result.summary.checks} passed, ${result.summary.failed} failed -> ${outFile}`);
+process.exit(result.summary.failed ? 1 : 0);

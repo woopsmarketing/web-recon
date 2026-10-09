@@ -1,0 +1,82 @@
+# Saved outputs of the publish-time commands and of the last smoke check (copied from the session record; nothing re-run).
+
+===== command started 2026-10-09T09:24:12Z | Deploy the Worker with the added route and check both hosts
+WORKER_DEPLOY_START 2026-10-09T09:24:12Z
+rc=0
+WORKER_DEPLOY_END 2026-10-09T09:24:19Z
+ ⛅️ wrangler 4.135.0 (update available 4.149.0)
+───────────────────────────────────────────────
+Total Upload: 7.49 KiB / gzip: 2.74 KiB
+Worker Startup Time: 2 ms
+Your Worker has access to the following bindings:
+Binding                                Resource       
+env.SITES (boost-sites-artifacts)      R2 Bucket      
+Uploaded recon-runtime-pilot (2.56 sec)
+Deployed recon-runtime-pilot triggers (2.30 sec)
+  interior-demo.boostweb.co.kr/* (zone name: boostweb.co.kr)
+  interior-demo-2.boostweb.co.kr/* (zone name: boostweb.co.kr)
+Current Version ID: c8796aae-036c-47fa-9e8a-5ea53cb258ee
+./node_modules/.bin/wrangler deploy -c workers/recon-runtime/wrangler.jsonc    0.58s user 0.10s system 10% cpu 6.321 total
+t+5s old=200 new=unknown host  [404 text/plain; charset=utf-8]
+ROUTE_LIVE_CHECK 2026-10-09T09:24:22Z
+
+===== command started 2026-10-09T09:24:31Z | Activate the host pointer and smoke-test the live domain
+ACTIVATE_START 2026-10-09T09:24:32Z
+rc=0
+ACTIVATE_END 2026-10-09T09:24:40Z
+  "status": "published",
+  "upload": "skipped-sealed",
+  "pointerWrite": "written",
+  "previous": null
+200 text/html; charset=utf-8 1.063540s  /
+200 text/html; charset=utf-8 0.973256s  /portfolio
+200 text/html; charset=utf-8 1.018146s  /portfolio/suseong-white-34py-apartment-remodeling
+200 text/html; charset=utf-8 0.946913s  /service
+200 text/html; charset=utf-8 0.939356s  /about
+200 text/html; charset=utf-8 3.151170s  /faq
+200 text/html; charset=utf-8 1.994445s  /contact
+200 text/plain; charset=utf-8 0.882767s  /robots.txt
+200 application/xml 3.723377s  /sitemap.xml
+200 application/json 0.864233s  /_integration/manifest.json
+404 text/html; charset=utf-8 1.954978s  /__no-such-page__
+HTTP_READY 2026-10-09T09:24:57Z
+HTTP/2 200 
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate
+x-content-type-options: nosniff
+server: cloudflare
+subject=CN=boostweb.co.kr
+issuer=C=US, O=Google Trust Services, CN=WE1
+notBefore=Sep 11 08:42:30 2026 GMT
+notAfter=Dec 10 09:42:27 2026 GMT
+X509v3 Subject Alternative Name: 
+    DNS:boostweb.co.kr, DNS:*.boostweb.co.kr
+old host 200
+
+===== command started 2026-10-09T10:01:07Z | Final light smoke check of both live hosts and the live page's widget markers
+NOW 2026-10-09T10:01:07Z
+200 0.938956s  https://interior-demo-2.boostweb.co.kr/
+200 0.913670s  https://interior-demo-2.boostweb.co.kr/portfolio/suseong-white-34py-apartment-remodeling
+200 1.138918s  https://interior-demo-2.boostweb.co.kr/contact
+404 1.072201s  https://interior-demo-2.boostweb.co.kr/__no-such-page__
+200 0.871589s  https://interior-demo.boostweb.co.kr/
+--- widget key + origin in live HTML (GET home once)
+   1 --i2-ext-bottom:18px
+   1 --i2-ext-h:64px
+   1 --i2-ext-right:18px
+   1 --i2-ext-w:64px
+   1 data-boost-chat-key="wgt_xVMphzTAQKf3AD7xpPOB7KuSUFsJsexR"
+   2 data-ext-widget
+   1 rel="canonical" href="https://interior-demo-2.boostweb.co.kr"
+--- wrangler.jsonc routes on disk
+30:      // Pick ONE form. Never a wildcard, never a pattern that an existing Worker already serves.
+34:      // ,"routes": [ { "pattern": "<pilot-hostname>", "custom_domain": true } ]
+38:      //     run first. Use an exact route instead — the most specific pattern wins — and create a
+40:      // ,"routes": [ { "pattern": "<pilot-hostname>/*", "zone_name": "<zone>" } ]
+50:        { "pattern": "interior-demo.boostweb.co.kr/*", "zone_name": "boostweb.co.kr" },
+51:        { "pattern": "interior-demo-2.boostweb.co.kr/*", "zone_name": "boostweb.co.kr" }
+
+===== offline publish dry-run (09:12:23Z): seal and pointer lines of the object plan
+sites/boost-interior-demo-02/packages/5868df38f4bda149e7c83c8e6ceaac621d61f9ad62551fb518d859dc35ca511e/_package.json	application/json	no-store	47082	(SEAL, written last)
+routing/interior-demo-2.boostweb.co.kr.json	application/json	no-store	-	(POINTER, written after the verified seal; "previous" filled from the existing pointer at publish time)
+  "routingKey": "routing/interior-demo-2.boostweb.co.kr.json",

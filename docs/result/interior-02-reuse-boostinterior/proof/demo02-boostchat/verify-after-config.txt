@@ -1,0 +1,170 @@
+verify: target=boost-interior-demo-02 template=boost-interior-demo window=[2026-10-09T09:00:00Z, 2026-10-09T10:30:00Z)
+verify: fetching pgvector public DATABASE_URL via railway (value is not printed)
+
+== 0. migration ledger (prod _migration) vs local db/migrations ==
+local files : 59 (head 0059_portfolio_channel_content_style.sql)
+prod ledger : 59 (head 0059_portfolio_channel_content_style.sql)
+only local  : 
+only prod   : 
+local HEAD  : 5038e80 (docs(content): correct v1.1 rollout report end time)
+deployed    : 72ff14d (DEPLOYED_HEAD in docs/reports/content-engine/rollout/08-…, deployment 5b4afeee, 2026-10-08T19:39Z)
+product diff 72ff14d..HEAD excluding docs: 
+system_identifier OK: 7675084143306387491 db: railway
+
+== 1. tenant
+          slug          |      name       | status | action_pilot_enabled |    action_pilot_updated_at    |          created_at           |          updated_at           
+------------------------+-----------------+--------+----------------------+-------------------------------+-------------------------------+-------------------------------
+ boost-interior-demo-02 | 부스트 인테리어 | active | t                    | 2026-10-09 09:07:24.048936+00 | 2026-10-09 09:06:54.493983+00 | 2026-10-09 09:09:08.187058+00
+
+
+== 2. membership (count / role / masked e-mail)
+ role  |   email_masked   |  user_id  |          created_at           
+-------+------------------+-----------+-------------------------------
+ owner | vnf***@gmail.com | RS3jeCzT… | 2026-10-09 09:06:55.586757+00
+
+ membership_count 
+------------------
+                1
+
+
+== 3. plan assignment
+ plan_id |  source  |         effective_at          |          updated_at           
+---------+----------+-------------------------------+-------------------------------
+ master  | operator | 2026-10-09 09:07:22.525254+00 | 2026-10-09 09:07:22.525254+00
+
+
+== 4. capability control
+    capability    | enabled |          updated_at          
+------------------+---------+------------------------------
+ portfolio.search | t       | 2026-10-09 09:07:25.31623+00
+
+
+== 5. core data presence (facts / ai config) — brand fields only, contact strings masked
+    section     | version |          updated_at           |      name       |         industry         | has_phone | has_address |                             business_hours                             |                                            service_area                                            | services_n | contact_methods_n 
+----------------+---------+-------------------------------+-----------------+--------------------------+-----------+-------------+------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------+------------+-------------------
+ business_facts |       1 | 2026-10-09 09:07:26.840719+00 | 부스트 인테리어 | 주거 인테리어 · 리모델링 | f         | f           | 평일 09:00–18:00, 토요일 09:00–13:00, 일요일·공휴일 휴무 (데모 기준값) | 대구 전역(수성구·달서구·북구·동구·중구)과 경북 경산 등 인근 지역 — 실제 시공 사례가 있는 지역 기준 |          5 |                 2
+
+  section  | version |          updated_at           |    name     |   tone   | answer_length | unknown_answer_policy | can_ask_questions_first | greeting_len 
+-----------+---------+-------------------------------+-------------+----------+---------------+-----------------------+-------------------------+--------------
+ ai_config |       1 | 2026-10-09 09:07:28.360372+00 | 상담 도우미 | friendly | medium        | consult               | t                       |          121
+
+
+== 6. public profile
+      handle      | is_published |         published_at          | version |               website_url               | contact_email_masked | show_phone | show_address | show_business_hours | show_service_area | show_services 
+------------------+--------------+-------------------------------+---------+-----------------------------------------+----------------------+------------+--------------+---------------------+-------------------+---------------
+ boost-interior-2 | t            | 2026-10-09 09:07:31.999738+00 |       2 | https://interior-demo-2.boostweb.co.kr/ | vnf***@gmail.com     | f          | f            | t                   | t                 | t
+
+
+== 7. widget channel (public key is a public identifier)
+              public_key              | enabled | approval_status |             allowed_origins              | version | rotated_at |          created_at           |          updated_at           
+--------------------------------------+---------+-----------------+------------------------------------------+---------+------------+-------------------------------+-------------------------------
+ wgt_xVMphzTAQKf3AD7xpPOB7KuSUFsJsexR | t       | pending         | {https://interior-demo-2.boostweb.co.kr} |       3 | ∅          | 2026-10-09 09:07:33.519889+00 | 2026-10-09 09:07:35.684124+00
+
+-- widget presentation row (absent = product default: chat_dots · brand_blue · label 상담 · showLabel true)
+ launcher | contact_channels_n | version | updated_at 
+----------+--------------------+---------+------------
+
+
+== 8. lead_form_config presence (absent = DEFAULT_LEAD_FORM)
+ lead_form_config_rows 
+-----------------------
+                     0
+
+
+== 9. FAQ (count, enabled count) and knowledge publication for src-faq
+ faq_rows | faq_enabled 
+----------+-------------
+        7 |           7
+
+ source_key | source_type | publications 
+------------+-------------+--------------
+ src-faq    | manual      |            7
+
+
+== 10. first-party integration row + snapshot
+ capability | kind | label | enabled | base_url | integration_id | created_at | updated_at 
+------------+------+-------+---------+----------+----------------+------------+------------
+
+ resource | state | last_observation | public_origin | site_id | resource_version | resource_schema_version | last_success_at | last_checked_at | has_payload 
+----------+-------+------------------+---------------+---------+------------------+-------------------------+-----------------+-----------------+-------------
+
+
+== 11. usage events by operation in window (ai_usage_event)
+ provider |      operation      | surface |  status   | n | total_tokens 
+----------+---------------------+---------+-----------+---+--------------
+ openai   | knowledge_embedding | ∅       | completed | 7 |         1143
+
+-- lead requests in window (COUNT only)
+ lead_requests 
+---------------
+             0
+
+
+== 12. audit rows for the target (ops_audit_log · admin_audit_log) — last 30
+ log |        action        |            target             | operator_masked  |                                                 detail                                                 |          created_at           
+-----+----------------------+-------------------------------+------------------+--------------------------------------------------------------------------------------------------------+-------------------------------
+ ops | ops.capability.set   | tenant:boost-interior-demo-02 | vnf***@gmail.com | {"capability": "portfolio.search", "next_enabled": true, "previous_enabled": false}                    | 2026-10-09 09:07:25.31623+00
+ ops | ops.action_pilot.set | tenant:boost-interior-demo-02 | vnf***@gmail.com | {"next_enabled": true, "previous_enabled": false}                                                      | 2026-10-09 09:07:24.048936+00
+ ops | ops.plan.set         | tenant:boost-interior-demo-02 | vnf***@gmail.com | {"next_plan": "master", "next_source": "operator", "previous_plan": "legacy", "previous_source": null} | 2026-10-09 09:07:22.525254+00
+
+  log  |         action         |        target         |                                                                       changed_fields                                                                       |          created_at           
+-------+------------------------+-----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------
+ admin | knowledge.faq.update   | 상담 자료             | {faq}                                                                                                                                                      | 2026-10-09 09:09:08.187058+00
+ admin | knowledge.faq.update   | 상담 자료             | {faq}                                                                                                                                                      | 2026-10-09 09:08:56.485161+00
+ admin | knowledge.faq.update   | 상담 자료             | {faq}                                                                                                                                                      | 2026-10-09 09:08:45.148584+00
+ admin | knowledge.faq.update   | 상담 자료             | {faq}                                                                                                                                                      | 2026-10-09 09:08:33.784057+00
+ admin | knowledge.faq.update   | 상담 자료             | {faq}                                                                                                                                                      | 2026-10-09 09:08:21.284323+00
+ admin | knowledge.faq.update   | 상담 자료             | {faq}                                                                                                                                                      | 2026-10-09 09:08:09.198478+00
+ admin | knowledge.faq.update   | 상담 자료             | {faq}                                                                                                                                                      | 2026-10-09 09:07:54.562157+00
+ admin | widget.update          | widget                | {enabled}                                                                                                                                                  | 2026-10-09 09:07:35.684124+00
+ admin | widget.update          | widget                | {allowed_origins}                                                                                                                                          | 2026-10-09 09:07:34.026534+00
+ admin | public_profile.publish | public_profile        | {is_published}                                                                                                                                             | 2026-10-09 09:07:31.999738+00
+ admin | public_profile.update  | public_profile        | {handle,tagline,bio,websiteUrl,contactEmail,instagramUrl,youtubeUrl,blogUrl,kakaoUrl,showPhone,showBusinessHours,showAddress,showServiceArea,showServices} | 2026-10-09 09:07:29.973006+00
+ admin | ai_config.update       | tenant_ai_config      | {name,tone,answerLength,unknownAnswerPolicy,canAskQuestionsFirst,greeting}                                                                                 | 2026-10-09 09:07:28.360372+00
+ admin | business_facts.update  | tenant_business_facts | {name,industry,phone,businessHours,serviceArea,address,services,contactMethods}                                                                            | 2026-10-09 09:07:26.840719+00
+
+
+== 13. EXISTING TENANT UNCHANGED? (boost-interior-demo) — compare these against the pre-apply run
+        slug         | status | action_pilot_enabled |      tenant_updated_at       
+---------------------+--------+----------------------+------------------------------
+ boost-interior-demo | active | t                    | 2026-10-08 11:24:26.57193+00
+
+  row   |              public_key              | enabled | approval_status |            allowed_origins             | version |          updated_at           
+--------+--------------------------------------+---------+-----------------+----------------------------------------+---------+-------------------------------
+ widget | wgt_99kYYFOm7ABvdQbVh_8SdrnOlLrPqDI3 | t       | pending         | {https://interior-demo.boostweb.co.kr} |       3 | 2026-09-28 13:41:16.646485+00
+
+     row     |    capability    | enabled |               base_url               |          updated_at           
+-------------+------------------+---------+--------------------------------------+-------------------------------
+ integration | portfolio.search | t       | https://interior-demo.boostweb.co.kr | 2026-09-22 16:18:46.646253+00
+
+   row    | state |            public_origin             |         resource_version         |      last_success_at       |      last_checked_at       
+----------+-------+--------------------------------------+----------------------------------+----------------------------+----------------------------
+ snapshot | ON    | https://interior-demo.boostweb.co.kr | 968afbccb944940d8d3c099dd54df5be | 2026-10-08 10:39:27.361+00 | 2026-10-08 10:39:27.361+00
+
+ row  | plan_id |  source  |          updated_at           
+------+---------+----------+-------------------------------
+ plan | master  | operator | 2026-09-22 16:18:23.474194+00
+
+    row     |    capability    | enabled |          updated_at           
+------------+------------------+---------+-------------------------------
+ capability | portfolio.search | t       | 2026-09-28 12:32:29.313012+00
+
+   row    | facts_v | ai_v | profile_v | faq_n 
+----------+---------+------+-----------+-------
+ versions |       2 |    1 |         2 |     7
+
+     row      |                                                          launcher                                                           | version |          updated_at           
+--------------+-----------------------------------------------------------------------------------------------------------------------------+---------+-------------------------------
+ presentation | {"label": "24시간문의", "showLabel": true, "iconPreset": "ai_chat", "colorPreset": "warm_yellow", "customBackground": null} |       4 | 2026-10-02 17:52:11.538686+00
+
+-- any audit row for the template tenant inside the window?
+ template_ops_audit_rows_in_window 
+-----------------------------------
+                                 0
+
+ template_admin_audit_rows_in_window 
+-------------------------------------
+                                   0
+
+
+verify: read-only transaction rolled back — nothing written.
