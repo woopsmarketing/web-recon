@@ -42,6 +42,14 @@
  * and the composition is what the site's tracked package is checked against (interior-02.test.ts /
  * interior-03.test.ts L).
  *
+ * Since 2026-10-10 the demo is published INCREMENTALLY: its marker is portfolio-source@2
+ * (`publishing: "incremental"`). Such a directory is never a portfolio dataset either, but it is not
+ * refused: every loader path reads its SHELL — the site without a single project or category — and
+ * the portfolio is composed at publish time (portfolio-runtime-interior-01.test.ts). `live.incremental`
+ * says so, `live.dataset` stays false, and a [live] check then asserts the shell instead of the
+ * refusal (`assertLiveNotADataset`): either way no record of the committed projects.json reaches a
+ * snapshot, a build or an emission.
+ *
  * Imported by tests only. Nothing is ever written under data/sites.
  */
 import { rmSync } from "node:fs";
@@ -49,7 +57,7 @@ import { cp, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "n
 import os from "node:os";
 import path from "node:path";
 import { AssetRegistryDocSchema } from "../assets/assets";
-import { MANAGED_FILE, SOURCE_MARKER_FILE, hasSourceMarker, readManagedManifest } from "../portfolio-sync/managed";
+import { MANAGED_FILE, SOURCE_MARKER_FILE, hasSourceMarker, readManagedManifest, readPortfolioSource } from "../portfolio-sync/managed";
 import { hashJson, sha256 } from "../util/hash";
 
 export const FROZEN_DEMO_SITE_ID = "boost-interior-demo";
@@ -94,6 +102,8 @@ export interface FrozenDemoRoot {
      * files may be older than what is live, and every loader path refuses it (NOT_GENERATED)
      */
     dataset: boolean;
+    /** the tracked marker is portfolio-source@2: the directory is published incrementally and loads as a shell (never a dataset) */
+    incremental: boolean;
   };
 }
 
@@ -156,7 +166,28 @@ export async function frozenDemoRoot(repoRoot: string, siteId: string = FROZEN_D
   const registrySame = JSON.stringify(items) === JSON.stringify(liveRegistry.items);
   identical &&= registrySame;
   if (!registrySame) await writeFile(path.join(siteDir, "assets/registry.json"), `${JSON.stringify({ schema: "assets@1", origin: liveRegistry.origin, items }, null, 2)}\n`);
-  return { root, siteDir, live: { managed: managed !== undefined, identical, adopted, dataset: !adopted || managed !== undefined } };
+  const incremental = (await readPortfolioSource(liveDir)) === "incremental";
+  return { root, siteDir, live: { managed: managed !== undefined, identical, adopted, dataset: !incremental && (!adopted || managed !== undefined), incremental } };
+}
+
+/**
+ * What a loader path does with the live demo directory where it is NOT a dataset (`live.dataset`
+ * false): it refuses it (adopted with portfolio-source@1 and nothing generated here — NOT_GENERATED),
+ * or — published incrementally (portfolio-source@2) — it loads the site's SHELL, with no project and
+ * no category. `load` is that path; a result must carry the snapshot it produced.
+ */
+export async function assertLiveNotADataset(frozen: FrozenDemoRoot, load: () => Promise<{ snapshot: { content: { projects: readonly unknown[]; categories: readonly unknown[] } } }>, what: string): Promise<void> {
+  if (frozen.live.dataset) throw new Error(`${what}: the live directory is a dataset here`);
+  const outcome = await load().then(
+    (r) => ({ loaded: r.snapshot.content }),
+    (e: Error) => ({ refused: e.message }),
+  );
+  if (frozen.live.incremental) {
+    if (!("loaded" in outcome)) throw new Error(`${what}: an incrementally published directory loads as its shell, got: ${outcome.refused}`);
+    if (outcome.loaded.projects.length !== 0 || outcome.loaded.categories.length !== 0) throw new Error(`${what}: the shell of an incrementally published directory holds ${outcome.loaded.projects.length} project(s) and ${outcome.loaded.categories.length} categor(ies)`);
+    return;
+  }
+  if (!("refused" in outcome) || !NOT_GENERATED.test(outcome.refused)) throw new Error(`${what}: an adopted directory without a generated portfolio must be refused, got: ${"refused" in outcome ? outcome.refused : "(it loaded)"}`);
 }
 
 /**

@@ -16,7 +16,7 @@ import { AssetRegistryDocSchema } from "../assets/assets";
 import { loadRelease, verifyRelease } from "../release/release";
 import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
-import { demoBuiltRelease, demoExpectedPages } from "./demo-rollout";
+import { demoBuiltRelease, demoExpectedPages, demoPagesPackage } from "./demo-rollout";
 import { formatPricePerArea } from "../../templates/interior-01/v1/lib/format";
 
 const repoRoot = process.cwd();
@@ -61,7 +61,8 @@ const visibleText = (h: string) => h.replace(/<script\b[^>]*>[\s\S]*?<\/script>/
 
 const demoDir = path.join(repoRoot, "data/sites", DEMO);
 const pin = (await readJson(path.join(demoDir, "site.json"))).template as { templateVersion: string; releaseId: string; releaseHash: string };
-const ptr = await readJson(path.join(repoRoot, "data/site-builds", DEMO, "current.json"));
+// the demo's package of PAGES (demo-rollout.ts demoPagesPackage): `current`, or — the demo being published incrementally, its current package a shell — its last ordinary package
+const ptr = await demoPagesPackage(repoRoot);
 const pkg = path.join(repoRoot, ptr.packageDir);
 const record = await readJson(path.join(pkg, "build-record.json"));
 const before = await readJson(path.join(repoRoot, BEFORE_FILE));

@@ -93,8 +93,8 @@ import { ProjectSchema, type MediaRef, type Project } from "../content/schema";
 import template from "../../templates/interior-01/v1/template";
 import { GOLDEN_DIR, GOLDEN_V02_DIR, goldenRecord } from "../cli/integration-golden";
 import { MediaImageSchema, PortfolioMediaSchema } from "../integration/validate";
-import { NOT_GENERATED, frozenDemoRoot } from "./demo-frozen-dataset";
-import { demoExpectedPages, demoRollout } from "./demo-rollout";
+import { assertLiveNotADataset, frozenDemoRoot } from "./demo-frozen-dataset";
+import { demoExpectedPages, demoOrdinaryRoot, demoRollout } from "./demo-rollout";
 import { gitMaterialize } from "./git-checkout";
 import { PRE_SPLIT_SNAPSHOT_HASH, QA_GOLDEN_DIR, QA_GOLDEN_DOC_BYTES, QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256, QA_GOLDEN_VERSION, DEMO_INQUIRY_DELIVERY_SLOTS, DEMO_ONLINE_INQUIRY_ENDPOINT, DEMO_PIN_161, DEMO_PIN_162, atPin, composeQaSnapshot, readSyntheticFixture, revertFooterNotice, revertFooterProductName, revertInquiryDelivery, revertOnlineInquiry } from "./portfolio-qa-corpus";
 
@@ -496,7 +496,7 @@ const qaSnapshot = composeQaSnapshot(demo.snapshot, synthetic, AT);
 const qaEmission = emitFor(qaSnapshot);
 /** both corpora, for the rules that must hold on the published demo AND on the QA corpus */
 const CORPORA = [["production", demo.snapshot, demoEmission], ["QA", qaSnapshot, qaEmission]] as const;
-/** the demo's rollout state (demo-rollout.ts): PRE_PUBLISH_TRANSITION or POST_PUBLISH_STEADY; anything else throws */
+/** the demo's rollout state (demo-rollout.ts): PRE_PUBLISH_TRANSITION, POST_PUBLISH_STEADY or INCREMENTAL (its current package a shell); anything else throws */
 const rollout = (await demoRollout(repoRoot)).state;
 const demoBuilds = path.join(repoRoot, "data/site-builds", DEMO);
 const currentDir = await packageOf(repoRoot, DEMO);
@@ -527,6 +527,28 @@ const needV01 = (): BuildRecord => {
  * package, release 1.5.2 — stay literal.
  */
 const demoPin = (await readJson(path.join(repoRoot, "data/sites", DEMO, "site.json"))).template as { templateId: string; templateVersion: string; releaseId: string; releaseHash: string };
+// (type aliases for B2b's lineage, which shadows these names)
+const demoAsPinned = demo;
+const pinOfDemo = demoPin;
+/**
+ * The demo's package lineage as the repository stood when the site was converted to incremental
+ * publishing (demo-rollout.ts demoOrdinaryRoot): the last ordinary package current, the build behind
+ * it as previous, the site pinned to that package's release — and the demo's build identity there.
+ */
+async function lineageAtConversion() {
+  const root = await demoOrdinaryRoot(repoRoot);
+  const builds = path.join(root, "data/site-builds", DEMO);
+  const dir = await packageOf(root, DEMO);
+  return {
+    rollout: (await demoRollout(root)).state as string,
+    demo: await prepareSiteInput({ repoRoot: (await frozenDemoRoot(root)).root, siteId: DEMO, mode: "public", at: AT }),
+    demoPin: (await readJson(path.join(root, "data/sites", DEMO, "site.json"))).template as typeof demoPin,
+    currentRecord: (await readJson(path.join(dir, "build-record.json"))) as BuildRecord,
+    currentDir: dir,
+    previousId: (await readJson(path.join(builds, "previous.json"))).buildInputId as string,
+    lineageBuilds: builds,
+  };
+}
 /**
  * The demo's identity with the integration part dropped, under the CURRENT pin — derived, not
  * frozen: the LIVE package's own parts with exactly the two parts a re-pin moves taken from the
@@ -1548,7 +1570,8 @@ await check("V1 the demo emission validates: 0 errors, 0 warnings; the QA corpus
   } else {
     // adopted (portfolio.source.json) and no generated portfolio in this checkout: the live directory is not a
     // dataset here — nothing may be emitted from it; the frozen composition above is what the pins describe
-    await rejects(() => prepareSiteInput({ repoRoot, siteId: DEMO, mode: "public", at: liveAt }), NOT_GENERATED);
+    // (published incrementally, portfolio-source@2: it loads as its shell — no record, so nothing to emit either)
+    await assertLiveNotADataset(frozen, () => prepareSiteInput({ repoRoot, siteId: DEMO, mode: "public", at: liveAt }), "prepareSiteInput");
   }
   for (const s of FIXTURES) {
     const inp = await prepareSiteInput({ repoRoot, siteId: s, mode: "public", at: AT });
@@ -2082,6 +2105,20 @@ await check("B2b the current/previous packages are exactly the rollout state's: 
     eq(previousId, LIVE_BUILD_INPUT_ID, "previous = the pilot package");
     return;
   }
+  // INCREMENTAL (2026-10-10): current.json names the demo's SHELL package and the frozen lineage hangs
+  // behind it — the inquiry-delivery build (the last ORDINARY package: the rollback now) and everything
+  // that one rolled back to. The shell is held here; the lineage is asserted exactly as before, read as
+  // the repository stood when the site was converted (demoOrdinaryRoot): the last ordinary package
+  // current, the online-inquiry build behind it, the demo's identity at that package's pin.
+  const then = rollout === "INCREMENTAL" ? await lineageAtConversion() : undefined;
+  if (then) {
+    eq([currentRecord.template.releaseId, currentRecord.template.releaseHash, currentRecord.status, currentRecord.qa.pass], [demoPin.releaseId, demoPin.releaseHash, "success", true], "the shell package is built with the pin");
+    assert(currentRecord.portfolioRuntime !== undefined && (await packageIntact(currentDir)), "the current package is an intact shell package (it carries the runtime documents)");
+    assert(!(await exists(path.join(currentDir, "site", INTEGRATION_DIR))), "a shell package carries no integration feed");
+    eq(previousId, then.currentRecord.buildInputId, "previous = the last ordinary package (the rollback behind the shell)");
+    assert(await packageIntact(path.join(demoBuilds, "packages", previousId)), "the last ordinary package is intact on disk");
+  }
+  await (async ({ rollout, demo, demoPin, currentRecord, currentDir, previousId, lineageBuilds }: { rollout: string; demo: typeof demoAsPinned; demoPin: typeof pinOfDemo; currentRecord: BuildRecord; currentDir: string; previousId: string; lineageBuilds: string }) => {
   eq(rollout, "POST_PUBLISH_STEADY", "rollout state");
   eq(currentRecord.buildInputId, demo.buildInputId, "current = the demo's media 1.1 identity (nothing stale, nothing else)");
   eq([currentRecord.template.releaseId, currentRecord.template.releaseHash], [demoPin.releaseId, demoPin.releaseHash], "built with the pin");
@@ -2105,7 +2142,7 @@ await check("B2b the current/previous packages are exactly the rollout state's: 
   const partsAt161 = (snapshot: SiteSnapshot) => ({ ...currentRecord.parts, releaseHash: DEMO_PIN_161.releaseHash, siteSnapshotHash: hashJson(snapshot) });
   assert(demoPin.releaseHash !== DEMO_PIN_162.releaseHash && demoPin.releaseHash !== DEMO_PIN_161.releaseHash && currentRecord.parts.releaseHash === demoPin.releaseHash, "the current build is neither a 1.6.2 nor a 1.6.1 build: the release moved");
   eq(previousId, ONLINE_INQUIRY_BUILD_INPUT_ID, "previous = the online-inquiry build of the 8-record corpus (the rollback behind the inquiry-delivery build)");
-  const prevDir = path.join(demoBuilds, "packages", ONLINE_INQUIRY_BUILD_INPUT_ID);
+  const prevDir = path.join(lineageBuilds, "packages", ONLINE_INQUIRY_BUILD_INPUT_ID);
   const prevRecord = (await readJson(path.join(prevDir, "build-record.json"))) as BuildRecord;
   eq([prevRecord.buildInputId, prevRecord.packageHash], [ONLINE_INQUIRY_BUILD_INPUT_ID, ONLINE_INQUIRY_PACKAGE_HASH], "the rollback's recorded identity");
   assert(await packageIntact(prevDir), "the rollback package is intact");
@@ -2261,6 +2298,7 @@ await check("B2b the current/previous packages are exactly the rollout state's: 
   } finally {
     await rm(scratch, { recursive: true, force: true });
   }
+  })(then ?? { rollout, demo, demoPin, currentRecord, currentDir, previousId, lineageBuilds: demoBuilds });
 });
 await check("B3 preview never emits (SE5): the demo in preview mode has no integration part", async () => {
   const p = await prepareSiteInput({ repoRoot: frozen.root, siteId: DEMO, mode: "preview", at: AT });
@@ -2373,7 +2411,7 @@ await check(`G4 the live pilot package ${LIVE_BUILD_INPUT_ID.slice(0, 12)}… is
   if (rollout === "PRE_PUBLISH_TRANSITION") eq(previousId, LIVE_BUILD_INPUT_ID, "previous pointer");
   else assert(previousId !== LIVE_BUILD_INPUT_ID && currentRecord.buildInputId !== LIVE_BUILD_INPUT_ID, "after the V0.2 publish the pilot package is neither current nor the rollback");
   if (!(await exists(liveDir))) {
-    eq(rollout, "POST_PUBLISH_STEADY", "the pilot package may only be absent once no pointer names it");
+    assert(rollout !== "PRE_PUBLISH_TRANSITION", "the pilot package may only be absent once no pointer names it");
     console.log("       the pilot package directory was retired by keep-2 (its sealed copy stays in R2); LIVE_PARTS stays checked by B2");
     return;
   }
@@ -2389,7 +2427,7 @@ await check("G5 V0.1 package = live + exactly the two integration files: every o
     // A point-in-time proof about how the V0.1 package was made. Once keep-2 retires the pilot
     // package (the first V0.2 build, G4) it cannot be re-run, and it need not be: G1 keeps the V0.1
     // package pinned at V01_PACKAGE_HASH, so the bytes G5 compared cannot have moved since.
-    eq(rollout, "POST_PUBLISH_STEADY", "the comparison may only be unavailable after the V0.2 publish");
+    assert(rollout !== "PRE_PUBLISH_TRANSITION", "the comparison may only be unavailable after the V0.2 publish");
     pointInTime.push("G5 V0.1 package = live + two integration files — the pilot package was retired by keep-2 with the V0.2 build; proven at 0c34606, V0.1 bytes held by G1 (39-)");
     console.log("       point-in-time: the pilot package was retired by keep-2 after the V0.2 publish; this proof stands at 0c34606 (39-)");
     return;
@@ -2634,6 +2672,12 @@ await check("R1 an OFF package answers 404 on the manifest path with the package
   eq((await handle(new Request(`https://${HOST}${MANIFEST_PATH}/`), env)).status, 404, "trailing slash 404 (HT8)");
 });
 await check("R2 publish plans the two files as application/json; the manifest revalidates (HT2/HT3); the baked origin equals the manifest origin — and it plans exactly the rollout state's current package: V0.1 before the V0.2 publish, the current package (golden bytes) after it", async () => {
+  // INCREMENTAL: the demo's current package is a shell, which carries no integration file and which
+  // this publisher refuses on its own (publish-shell-guard.test.ts). The plan of an ORDINARY package
+  // with its two integration files is held as before, read as the repository stood when the site was
+  // converted (demoOrdinaryRoot): the last ordinary package current.
+  const then = rollout === "INCREMENTAL" ? await lineageAtConversion() : undefined;
+  await (async (repoRoot: string, rollout: string, currentDir: string, currentRecord: BuildRecord) => {
   const plan = await planPublish({ repoRoot, siteId: DEMO, hostname: "interior-demo.boostweb.co.kr" });
   const pre = rollout === "PRE_PUBLISH_TRANSITION";
   const [docVersion, otherVersion, docBytes] = pre ? [V01_DEMO_VERSION, DEMO_VERSION, V01_DEMO_DOC_BYTES] : [DEMO_VERSION, V01_DEMO_VERSION, DEMO_DOC_BYTES];
@@ -2657,6 +2701,7 @@ await check("R2 publish plans the two files as application/json; the manifest re
   await rejects(() => planPublish({ repoRoot, siteId: DEMO, hostname: "other.example", requireOriginMatch: true }), /integration manifest was built for https:\/\/interior-demo\.boostweb\.co\.kr, not https:\/\/other\.example|package was built for/);
   const local = await planPublish({ repoRoot, siteId: DEMO, hostname: "localhost" });
   assert(local.warnings.some((w) => /integration manifest was built for/.test(w)), "local host → warning only (same policy as the sitemap origin)");
+  })(then ? await demoOrdinaryRoot(repoRoot) : repoRoot, then?.rollout ?? rollout, then?.currentDir ?? currentDir, then?.currentRecord ?? currentRecord);
 });
 
 console.log("\n[release] Template Release immutability");

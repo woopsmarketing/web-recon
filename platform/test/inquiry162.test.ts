@@ -46,6 +46,7 @@ import { INQUIRY_PHONE_PATTERN, INQUIRY_TIMEOUT_MS, createInquirySender, isInqui
 import { SiteSnapshotSchema } from "../site/instance";
 import { buildSiteSnapshot } from "../site/load";
 import { frozenDemoRoot } from "./demo-frozen-dataset";
+import { demoBuiltRelease, demoPagesPackage } from "./demo-rollout";
 import { resolveSlots } from "../slots/slots";
 import { hashJson } from "../util/hash";
 import { InquiryForm } from "../../templates/interior-01/v1/components/InquiryForm";
@@ -150,7 +151,8 @@ const demoDir = path.join(repoRoot, "data/sites", DEMO);
 // The demo is copied / snapshotted through the frozen composition (demo-frozen-dataset.ts): its site directory is the live one byte for byte except the adoption marker, which makes the live directory refuse to load without a generated portfolio. Plain reads of site-owned files below stay on the live directory.
 const frozen = await frozenDemoRoot(repoRoot);
 const pin = (await readJson(path.join(demoDir, "site.json"))).template as { templateId: string; templateVersion: string; releaseId: string; releaseHash: string };
-const pkg = path.join(repoRoot, (await readJson(path.join(repoRoot, "data/site-builds", DEMO, "current.json"))).packageDir);
+// the demo's package of PAGES (demo-rollout.ts demoPagesPackage): `current`, or — the demo being published incrementally, its current package a shell — its last ordinary package
+const pkg = path.join(repoRoot, (await demoPagesPackage(repoRoot)).packageDir);
 const record = await readJson(path.join(pkg, "build-record.json"));
 const TEXT_FILE = /\.(html|txt|js|mjs|css|json|svg|xml|map|webmanifest)$/i;
 const packageFiles = await walkFiles(path.join(pkg, "site"));
@@ -625,7 +627,7 @@ await check(
 // -------------------------------------------------------------- contract --
 console.log("\n[contract] additive patch");
 await check("T1 Template 1.6.2: nine optional contact.page slots with neutral defaults (no cap raised for the demo's copy); every earlier slot still declared; the fixtures' slots documents still resolve; the demo sets the online copy and none of the mail hand-off's (the 1.6.3 slots are inquiry163.test.ts's TPL-1/TPL-5)", async () => {
-  eq(template.version, "1.6.3", "version (the template is at 1.6.3; this check is only about the nine 1.6.2 slots)");
+  eq(template.version, "1.7.0", "version (the template is at 1.7.0 — 1.7.0 added the portfolio runtime and no contact.page slot; this check is only about the nine 1.6.2 slots)");
   const slots = template.sections["contact.page"].slots as Record<string, { type: string; maxLength?: number; neutralDefault?: string; required?: boolean }>;
   for (const k of ONLINE_SLOTS) {
     eq([slots[k]?.type, typeof slots[k]?.neutralDefault, slots[k]?.required ?? false], ["text", "string", false], `slot ${k}`);
@@ -808,9 +810,13 @@ await check("T5 mail-mode markup unchanged: a site without an endpoint renders t
 console.log("\n[package] the built demo");
 const contact = html.get("contact.html")!;
 const contactMain = mainOf(contact);
-await check("P1 built with the pinned release (the template's current version, QA pass); the endpoint is in the snapshot the package was built from", () => {
-  eq([pin.templateVersion, record.template.releaseId, record.template.releaseHash, record.status, record.qa.pass], [template.version, pin.releaseId, pin.releaseHash, "success", true], "build record");
-  eq(record.parts.siteSnapshotHash, hashJson({ ...demoSnap }), "the package's snapshot = today's site data (the endpoint included)");
+await check("P1 built with the pinned release (the template's current version, QA pass) — the incrementally published demo: its last ordinary package, with that package's release (demo-rollout.ts); the endpoint is in the snapshot the package was built from", async () => {
+  // = the pin once steady; for the incrementally published demo the release of its last ordinary package
+  const built = await demoBuiltRelease(repoRoot, pin);
+  eq([pin.templateVersion, record.template.releaseId, record.template.releaseHash, record.status, record.qa.pass], [template.version, built.releaseId, built.releaseHash, "success", true], "build record");
+  // today's site data under the release the package was built with: the pin is the only site datum that may have moved since
+  const asBuilt = { ...demoSnap, site: { ...demoSnap.site, template: { ...demoSnap.site.template, templateVersion: built.templateVersion, releaseId: built.releaseId, releaseHash: built.releaseHash } } };
+  eq(record.parts.siteSnapshotHash, hashJson(asBuilt), "the package's snapshot = today's site data (the endpoint included)");
 });
 await check("P2 /contact server HTML: a noValidate form with no action / method; name, phone, message and the consent box required; phone type=tel, inputmode tel, the phone rule (8 digits) as pattern, the hint as title, cap 20; the trap field hidden by class (no inline style), out of the tab order and the accessibility tree; the EMPTY alert directly above a DISABLED button, the noscript line, an EMPTY status", () => {
   assert(contactMain.includes('<form class="i1-form" data-inquiry-form="" noValidate="">'), "form without action / method");

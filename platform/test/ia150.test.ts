@@ -31,7 +31,7 @@ import { resolveSlots } from "../slots/slots";
 import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
 import { IA_HTML, IA_PATHS, IA_ROUTES, canonical150Sitemap } from "./canonical-150";
-import { demoBuiltRelease, demoExpectedPages } from "./demo-rollout";
+import { demoBuiltRelease, demoExpectedPages, demoPagesPackage } from "./demo-rollout";
 import { integrationSurfaceBefore, isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
 import { isPortfolioSyncSurface } from "./portfolio-sync-surface";
@@ -102,7 +102,8 @@ const hrefsOf = (h: string) => [...h.matchAll(/<a [^>]*href="([^"]+)"/g)].map((m
 
 const demoDir = path.join(repoRoot, "data/sites", DEMO);
 const pin = (await readJson(path.join(demoDir, "site.json"))).template as { templateVersion: string; releaseId: string; releaseHash: string };
-const packageOf = async (siteId: string) => path.join(repoRoot, (await readJson(path.join(repoRoot, "data/site-builds", siteId, "current.json"))).packageDir);
+// the demo's package of PAGES (demo-rollout.ts demoPagesPackage): `current`, or — the demo being published incrementally, its current package a shell — its last ordinary package
+const packageOf = async (siteId: string) => path.join(repoRoot, siteId === DEMO ? (await demoPagesPackage(repoRoot)).packageDir : (await readJson(path.join(repoRoot, "data/site-builds", siteId, "current.json"))).packageDir);
 const pkg = await packageOf(DEMO);
 const record = await readJson(path.join(pkg, "build-record.json"));
 const before = await readJson(path.join(repoRoot, BEFORE_FILE));

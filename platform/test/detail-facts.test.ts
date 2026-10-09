@@ -45,7 +45,7 @@ import template from "../../templates/interior-01/v1/template";
 import { portfolioDetail } from "../../templates/interior-01/v1/sections/PortfolioDetail";
 import { formatTotalPrice } from "../../templates/interior-01/v1/lib/format";
 import { QA_GOLDEN_DIR, QA_GOLDEN_VERSION, composeQaSnapshot, readSyntheticFixture, writeQaProjects } from "./portfolio-qa-corpus";
-import { NOT_GENERATED, frozenDemoRoot } from "./demo-frozen-dataset";
+import { assertLiveNotADataset, frozenDemoRoot } from "./demo-frozen-dataset";
 
 const repoRoot = process.cwd();
 const DEMO = "boost-interior-demo";
@@ -359,8 +359,8 @@ await check("LIVE every record the live directory serves: a fact row exists iff 
   const loadLive = () => buildSiteSnapshot({ repoRoot, siteId: DEMO, mode: GOLDEN_INPUT.mode, at: frozen.live.identical ? GOLDEN_INPUT.at : new Date().toISOString() });
   if (!frozen.live.dataset) {
     // the committed content files may be older than what is live: nothing is rendered or emitted from them here
-    const message = await loadLive().then(() => "(it loaded)", (e: Error) => e.message);
-    assert(NOT_GENERATED.test(message), `an adopted directory without a generated portfolio must be refused, got: ${message}`);
+    // (adopted: refused; published incrementally: the shell, which holds no record — demo-frozen-dataset.ts)
+    await assertLiveNotADataset(frozen, loadLive, "buildSiteSnapshot");
     return;
   }
   const live = (await loadLive()).snapshot;

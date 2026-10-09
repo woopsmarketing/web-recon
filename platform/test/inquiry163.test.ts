@@ -39,6 +39,7 @@ import {
 } from "../site/inquiry-client";
 import { buildSiteSnapshot } from "../site/load";
 import { frozenDemoRoot } from "./demo-frozen-dataset";
+import { demoBuiltRelease, demoPagesPackage } from "./demo-rollout";
 import { InquiryForm, type InquiryFieldLabels, type InquiryOnline } from "../../templates/interior-01/v1/components/InquiryForm";
 import { contactPage } from "../../templates/interior-01/v1/sections/ContactPage";
 import type { Ctx } from "../../templates/interior-01/v1/sections/types";
@@ -567,9 +568,10 @@ const frozen = await frozenDemoRoot(repoRoot);
 const pin = (await readJson(path.join(demoDir, "site.json"))).template as { templateId: string; templateVersion: string; releaseId: string; releaseHash: string };
 
 await check(
-  'TPL-1 version is "1.6.3"; the five new text slots have non-empty neutral defaults, rateLimitedText\'s default contains "{minutes}"; the two link slots are optional; every slot of 1.6.2\'s contact.page is still declared',
+  'TPL-1 version is "1.7.0" (contact.page as of 1.6.3); the five new text slots have non-empty neutral defaults, rateLimitedText\'s default contains "{minutes}"; the two link slots are optional; every slot of 1.6.2\'s contact.page is still declared',
   async () => {
-    eq(template.version, "1.6.3", "version");
+    // 1.7.0 added the portfolio runtime; contact.page is as 1.6.3 left it
+    eq(template.version, "1.7.0", "version");
     const slots = template.sections["contact.page"].slots as Record<string, { type: string; maxLength?: number; neutralDefault?: string; required?: boolean }>;
     for (const k of ["invalidText", "conflictText", "rateLimitedText", "capacityText", "fallbackLead"]) {
       eq([slots[k]?.type, typeof slots[k]?.neutralDefault, slots[k]?.required ?? false], ["text", "string", false], `slot ${k}`);
@@ -777,7 +779,8 @@ await check(
 
 // -------------------------------------------------------------------- package --
 console.log("\n[package] the built demo: the pinned release, the submission_id body shape, the five new texts confined to /contact");
-const pkgDir = path.join(repoRoot, (await readJson(path.join(repoRoot, "data/site-builds", DEMO, "current.json"))).packageDir as string);
+// the demo's package of PAGES (demo-rollout.ts demoPagesPackage): `current`, or — the demo being published incrementally, its current package a shell — its last ordinary package
+const pkgDir = path.join(repoRoot, (await demoPagesPackage(repoRoot)).packageDir);
 const record = (await readJson(path.join(pkgDir, "build-record.json"))) as { template: { releaseId: string; releaseHash: string }; status: string; qa: { pass: boolean } };
 const TEXT_FILE = /\.(html|txt|js|mjs|css|json|svg|xml|map|webmanifest)$/i;
 const packageFiles = await walkFiles(path.join(pkgDir, "site"));
@@ -786,8 +789,11 @@ for (const f of packageFiles) if (TEXT_FILE.test(f)) packageText.set(f, await re
 const html = new Map([...packageText].filter(([f]) => f.endsWith(".html")));
 const contact = html.get("contact.html")!;
 
-await check("PKG-1 built with the pinned 1.6.3 release (QA pass)", () => {
-  eq([pin.templateVersion, record.template.releaseId, record.template.releaseHash, record.status, record.qa.pass], [template.version, pin.releaseId, pin.releaseHash, "success", true], "build record");
+await check("PKG-1 built with the pinned release (QA pass) — the incrementally published demo: its last ordinary package, with that package's release, ≥ 1.6.3 (demo-rollout.ts)", async () => {
+  // = the pin once steady; for the incrementally published demo the release of its last ordinary package
+  const built = await demoBuiltRelease(repoRoot, pin);
+  assert(built.templateVersion.localeCompare("1.6.3", undefined, { numeric: true }) >= 0, `the package was built with ${built.templateVersion}`);
+  eq([pin.templateVersion, record.template.releaseId, record.template.releaseHash, record.status, record.qa.pass], [template.version, built.releaseId, built.releaseHash, "success", true], "build record");
 });
 
 await check(

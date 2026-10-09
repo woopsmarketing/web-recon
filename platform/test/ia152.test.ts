@@ -30,7 +30,7 @@ import { loadRelease, verifyRelease } from "../release/release";
 import { resolveEffectiveSettings } from "../settings/settings";
 import { sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
-import { demoBuiltRelease, demoExpectedPages } from "./demo-rollout";
+import { demoBuiltRelease, demoExpectedPages, demoPagesPackage } from "./demo-rollout";
 import { isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
 import { isPortfolioSyncSurface } from "./portfolio-sync-surface";
@@ -124,7 +124,8 @@ const site = await readJson(path.join(demoDir, "site.json"));
 const pin = site.template as { templateVersion: string; releaseId: string; releaseHash: string };
 const ORIGIN = site.identity.publicOrigin as string;
 const EMAIL = (await readJson(path.join(demoDir, "content/business.json"))).data.contact.email as string;
-const packageOf = async (siteId: string) => path.join(repoRoot, (await readJson(path.join(repoRoot, "data/site-builds", siteId, "current.json"))).packageDir);
+// the demo's package of PAGES (demo-rollout.ts demoPagesPackage): `current`, or — the demo being published incrementally, its current package a shell — its last ordinary package
+const packageOf = async (siteId: string) => path.join(repoRoot, siteId === DEMO ? (await demoPagesPackage(repoRoot)).packageDir : (await readJson(path.join(repoRoot, "data/site-builds", siteId, "current.json"))).packageDir);
 async function pagesOf(packageDir: string): Promise<Record<string, string>> {
   const s = path.join(packageDir, "site");
   const files = (await walkFiles(s)).filter((f) => f.endsWith(".html"));
@@ -451,8 +452,11 @@ await check("J1 pageMetadata derives canonical + OpenGraph from one { title, des
   assert(seo.includes('from "../sections/homeHeroData"') && !seo.includes('"../sections/HomeHero"'), "seo imports the hero data module");
   const heroData = await readFile(path.join(repoRoot, TEMPLATE_REL, "sections/homeHeroData.ts"), "utf8");
   for (const m of heroData.matchAll(/^import (.*) from "([^"]+)";$/gm)) assert(!m[2]!.startsWith("../components/") || m[1]!.startsWith("type "), `homeHeroData.ts imports a component value: ${m[0]}`);
+  // 1.7.0: the homepage's description lives in runtime/portfolio.ts (homePage) — the app page exports exactly its metadata
   const page = await readFile(path.join(repoRoot, TEMPLATE_REL, "app/page.tsx"), "utf8");
-  assert(page.includes('pageMetadata(ctx, { title: ctx.identity.brandName, description: ctx.content.getSingleton("business").summary, path: "/" })'), "home metadata");
+  const homePageSource = await readFile(path.join(repoRoot, TEMPLATE_REL, "runtime/portfolio.ts"), "utf8");
+  assert(homePageSource.includes('pageMetadata(ctx, { title: ctx.identity.brandName, description: ctx.content.getSingleton("business").summary, path: "/" })'), "home metadata");
+  assert(/homePage\(ctx\)\.metadata/.test(page), "app/page.tsx exports the homepage description's metadata");
   const layout = await readFile(path.join(repoRoot, TEMPLATE_REL, "app/layout.tsx"), "utf8");
   assert(layout.includes('ctx.mode === "preview" ? { index: false, follow: false } : ctx.settings["site.seo"].indexing === "noindex" ? { index: false } : undefined'), "robots");
   for (const f of await walkFiles(path.join(repoRoot, TEMPLATE_REL))) {

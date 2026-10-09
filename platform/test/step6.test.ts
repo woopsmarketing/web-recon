@@ -52,7 +52,7 @@ import { planRoutes } from "../site/routes";
 import { resolveEffectiveTheme } from "../theme/theme";
 import { hashJson, sha256 } from "../util/hash";
 import template from "../../templates/interior-01/v1/template";
-import { demoBuiltRelease, demoPackagedProjects, demoRollout } from "./demo-rollout";
+import { demoBuiltRelease, demoPackagedProjects, demoPagesPackage, demoRollout } from "./demo-rollout";
 import { gitDirtyPaths } from "./git-checkout";
 import { integrationSurfaceBefore, isIntegrationSurface } from "./integration-surface";
 import { isPublishSurface } from "./publish-surface";
@@ -158,7 +158,8 @@ async function treeHash(rel: string, skipTop: readonly string[] = [], skip: (p: 
   return hashJson(out);
 }
 const pointer = async (s: string) => {
-  const ptr = await readJson(path.join(repoRoot, "data/site-builds", s, "current.json"));
+  // the demo's package of PAGES (demo-rollout.ts demoPagesPackage): `current`, or — the demo being published incrementally, its current package a shell — its last ordinary package
+  const ptr = s === DEMO ? await demoPagesPackage(repoRoot) : await readJson(path.join(repoRoot, "data/site-builds", s, "current.json"));
   const dir = path.join(repoRoot, ptr.packageDir);
   return { dir, site: path.join(dir, "site"), record: await readJson(path.join(dir, "build-record.json")) };
 };
@@ -793,10 +794,18 @@ try {
   let rebuiltPages: number | undefined;
   /** U's rebuild: the pinned release over the demo's own inputs (the whole corpus) — H·build / L·build */
   let rebuiltSite: string | undefined;
-  await check("U reproducible: same release + snapshot + settings + theme + assets → same buildInputId (twice, and = current), and an independent rebuild gives the same packageHash (pre-publish: = a second independent rebuild, demo-rollout.ts)", async () => {
+  await check("U reproducible: same release + snapshot + settings + theme + assets → same buildInputId (twice, and = current), and an independent rebuild gives the same packageHash (pre-publish, and for the incrementally published demo whose current package is its shell: = a second independent rebuild, demo-rollout.ts)", async () => {
     // Pre-publish (Portfolio V0.2 window) the current package is the frozen V0.1 one, not built from
     // these inputs, so "= current" becomes "= a second independent rebuild on its own root".
-    const pre = later && (await demoRollout(repoRoot)).state === "PRE_PUBLISH_TRANSITION";
+    // The incrementally published demo (INCREMENTAL): its current package is a SHELL — held to the
+    // site's own build identity right here — and the ordinary build of these inputs is, like
+    // pre-publish, held to a second independent rebuild.
+    const rollout = (await demoRollout(repoRoot)).state;
+    const pre = later && rollout !== "POST_PUBLISH_STEADY";
+    if (rollout === "INCREMENTAL") {
+      const shell = await prepareSiteInput({ repoRoot, siteId: DEMO, mode: "public", at });
+      eq(shell.buildInputId, (await readJson(path.join(repoRoot, "data/site-builds", DEMO, "current.json"))).buildInputId, "the shell package = the site's own build identity");
+    }
     const [a, b] = await Promise.all([1, 2].map(() => prepareSiteInput({ repoRoot: frozen.root, siteId: DEMO, mode: "public", at })));
     const want = pre ? a!.buildInputId : demo.record.buildInputId;
     eq([a!.buildInputId, b!.buildInputId], [want, want], "buildInputId");

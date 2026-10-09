@@ -64,7 +64,7 @@ import { KIT_FILE, RENDERER_FILE, buildPreviewKit, writePreviewKit } from "../pr
 import { loadRelease, releaseDir } from "../release/release";
 import { buildSiteSnapshot, loadSiteInstance } from "../site/load";
 import { sha256 } from "../util/hash";
-import { NOT_GENERATED, frozenDemoRoot } from "./demo-frozen-dataset";
+import { assertLiveNotADataset, frozenDemoRoot } from "./demo-frozen-dataset";
 import { writeQaProjects } from "./portfolio-qa-corpus";
 
 const repoRoot = process.cwd();
@@ -194,8 +194,8 @@ try {
   });
   await check("K2 NO PORTFOLIO NEEDED: the kit of the LIVE site directory generates in this checkout — where the loader refuses the demo when its portfolio is not generated — and is the same renderer, byte for byte; the default sourceCommit is this checkout's HEAD and is in kit.json only", async () => {
     if (!frozen.live.dataset) {
-      const err = await buildSiteSnapshot({ repoRoot, siteId: DEMO, mode: "public", at: GOLDEN_INPUT.at }).then(() => undefined, (e: Error) => e);
-      assert(err && NOT_GENERATED.test(err.message), `the loader was expected to refuse the adopted demo: ${err?.message ?? "it loaded"}`);
+      // adopted: the loader refuses it; published incrementally: it loads the shell, which holds no portfolio (demo-frozen-dataset.ts)
+      await assertLiveNotADataset(frozen, () => buildSiteSnapshot({ repoRoot, siteId: DEMO, mode: "public", at: GOLDEN_INPUT.at }), "buildSiteSnapshot");
     }
     const live = await buildPreviewKit({ repoRoot, siteId: DEMO });
     eq(sha256(live.files[RENDERER_FILE]), sha256(await readFile(rendererFile)), "renderer.mjs of the live directory vs the frozen composition");

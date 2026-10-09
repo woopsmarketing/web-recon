@@ -38,6 +38,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { sha256 } from "../util/hash";
+import { demoBuiltRelease, demoPagesPackage } from "./demo-rollout";
 import template from "../../templates/interior-01/v1/template";
 
 const repoRoot = process.cwd();
@@ -88,7 +89,8 @@ interface LoadedPackage {
 async function loadPackage(siteId: string): Promise<LoadedPackage> {
   const siteDir = path.join(repoRoot, "data/sites", siteId);
   const site = await readJson(path.join(siteDir, "site.json"));
-  const current = (await readJson(path.join(repoRoot, "data/site-builds", siteId, "current.json"))) as { packageDir: string };
+  // the demo's package of PAGES (demo-rollout.ts demoPagesPackage): `current`, or — the demo being published incrementally, its current package a shell — its last ordinary package
+  const current = siteId === DEMO ? await demoPagesPackage(repoRoot) : ((await readJson(path.join(repoRoot, "data/site-builds", siteId, "current.json"))) as { packageDir: string });
   const pkgDir = path.join(repoRoot, current.packageDir);
   const record = await readJson(path.join(pkgDir, "build-record.json"));
   const files = await walkFiles(path.join(pkgDir, "site"));
@@ -138,12 +140,14 @@ async function exists(file: string): Promise<boolean> {
 // --------------------------------------------------------------------------
 console.log("\n[REUSE] a second, unrelated customer gets the same inquiry behaviour as config, not code");
 
-await check("REUSE-1 both sites are pinned to the same Template Release (read from both site.json, no hard-coded release id); both build records report a successful QA pass", () => {
-  eq(fixture.site.template, demo.site.template, "the two sites' template pin must be identical");
-  for (const pkg of [demo, fixture]) {
+await check("REUSE-1 both packages were built with the same Template Release — the fixture's pin and the release of the demo's package of pages (its pin; for the incrementally published demo the release of its last ordinary package, demo-rollout.ts) — no hard-coded release id; both build records report a successful QA pass", async () => {
+  const demoBuilt = await demoBuiltRelease(repoRoot, demo.site.template);
+  const { templateId, templateVersion, releaseId, releaseHash } = fixture.site.template;
+  eq({ templateId, templateVersion, releaseId, releaseHash }, { templateId: demo.site.template.templateId, templateVersion: demoBuilt.templateVersion, releaseId: demoBuilt.releaseId, releaseHash: demoBuilt.releaseHash }, "the two packages' template release must be identical");
+  for (const [pkg, built] of [[demo, demoBuilt], [fixture, fixture.site.template]] as const) {
     eq(pkg.record.status, "success", `${pkg.siteId}: build status`);
     eq(pkg.record.qa.pass, true, `${pkg.siteId}: qa.pass`);
-    eq(pkg.record.template.releaseId, pkg.site.template.releaseId, `${pkg.siteId}: build record release matches the site's own pin`);
+    eq([pkg.record.template.releaseId, pkg.record.template.releaseHash], [built.releaseId, built.releaseHash], `${pkg.siteId}: build record release`);
   }
 });
 

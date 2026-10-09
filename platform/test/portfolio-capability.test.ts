@@ -40,7 +40,7 @@ const TEMPLATE = "interior-02";
 const PLAIN_TEMPLATE = "interior-03";
 const PLAIN_RELEASE = "interior-03-1.0.0-2a949e9f0247";
 /** the releases of OTHER Templates that declare the capability — each one cut through the gate, each proven by portfolio-runtime.test.ts */
-const OTHER_DECLARED_RELEASES = ["interior-03-1.1.0-0e434d80b8e4"] as const;
+const OTHER_DECLARED_RELEASES = ["interior-01-1.7.0-3b5c917a5005", "interior-03-1.1.0-0e434d80b8e4"] as const;
 const SHELL_SITE = "boost-interior-demo-02";
 /** THE release cut before the capability existed that ships a portfolio runtime — a live site pins it */
 const LEGACY_RELEASE = "interior-02-1.1.0-be2c1e2d3850";

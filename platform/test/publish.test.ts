@@ -24,6 +24,7 @@ import { cachePolicyFor, contentTypeFor } from "../publish/media";
 import { sha256 } from "../util/hash";
 import { buildSiteSnapshot } from "../site/load";
 import { testSiteRoot } from "./demo-frozen-dataset";
+import { demoOrdinaryRoot } from "./demo-rollout";
 import { QA_GOLDEN_DIR, QA_GOLDEN_DOC_SHA256, QA_GOLDEN_MANIFEST_SHA256, QA_GOLDEN_VERSION } from "./portfolio-qa-corpus";
 import { resolvePath } from "../../workers/recon-runtime/src/paths";
 import runtimeDefault, {
@@ -38,8 +39,12 @@ import runtimeDefault, {
 } from "../../workers/recon-runtime/src/index";
 import { CACHE_IMMUTABLE, CACHE_REVALIDATE, packageKey, portfolioCurrentKey, routingKey, sealKey, type PackageSeal } from "../../workers/recon-runtime/src/contract";
 
-const repoRoot = process.cwd();
 const SITE = process.env.PUBLISH_TEST_SITE ?? "boost-interior-demo";
+// This suite is about the manual publisher over an ORDINARY package. Since 2026-10-10 the demo is
+// published incrementally (its current package is a shell, which that publisher refuses without a
+// published portfolio — publish-shell-guard.test.ts), so the demo is read through demoOrdinaryRoot:
+// the repository as it stood when the site was converted, the last ordinary package current.
+const repoRoot = SITE === "boost-interior-demo" ? await demoOrdinaryRoot(process.cwd()) : process.cwd();
 const HOST = "demo.test.example";
 
 let passed = 0;

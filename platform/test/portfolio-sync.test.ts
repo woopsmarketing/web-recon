@@ -492,7 +492,9 @@ await check("L3 sites without the sidecar and without the marker are exactly as 
     compared++;
   }
   assert(compared >= 3, `only ${compared} unmanaged sites compared`);
-  assert(adoptedSites.includes(FROZEN_DEMO_SITE_ID), `the demo is adopted (its tracked ${SOURCE_MARKER_FILE} is committed); adopted sites found: ${JSON.stringify(adoptedSites)}`);
+  // the demo's portfolio is BoostChat's either way: adopted (generated into the directory, @1), or — since 2026-10-10 — published incrementally (@2, compared above like every site that builds from its own data)
+  const demoSource = await readPortfolioSource(path.join(repoRoot, "data/sites", FROZEN_DEMO_SITE_ID));
+  assert(adoptedSites.includes(FROZEN_DEMO_SITE_ID) || demoSource === "incremental", `the demo's portfolio is owned by BoostChat (its tracked ${SOURCE_MARKER_FILE} is committed); it is "${demoSource}", adopted sites found: ${JSON.stringify(adoptedSites)}`);
 });
 
 /** An export of a hand-authored site directory as it is, minus `drop` (those are reported as removing, with their slugs). */
