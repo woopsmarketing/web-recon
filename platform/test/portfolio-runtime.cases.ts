@@ -35,6 +35,8 @@ export interface ProofBrowserDriver {
   cards: string;
   /** a link to a project inside the home section that lists projects */
   homeProjectLink: string;
+  /** the link of a card of the list on /portfolio (default: a link inside the list's `ul[data-shown]`) */
+  listCardLink?: string;
   /**
    * the element of the homepage whose markup must still be the composed markup once the page is
    * hydrated: "main" (default), or `[attribute="value"]` of a runtime slot's section when <main>
@@ -84,6 +86,21 @@ export interface RuntimeProofCase {
   dataset: { records: number; categories: number };
   /** shell page file → its runtime slots, in document order (the first entry is the homepage) */
   shellSlots: Record<string, string[]>;
+  /**
+   * which shell page is which, for a Template that has more than the three of the default (the keys of
+   * `shellSlots` in order: homepage, list, detail). `listPages` = a separate shell that list pages
+   * 2…N are composed from (a Template whose header marks the current PAGE: on /portfolio the list link
+   * is the current page, on /portfolio/page/2 it is only the current section). It is a shell page of
+   * the package like the other three — never a built list page — and never served under its own URL.
+   */
+  shellRoles?: { home: string; list: string; detail: string; listPages?: string };
+  /**
+   * the 9th record of the proof is a copy of the last one with a NEW image as its cover, and the proof
+   * holds its detail page to showing that image. A Template whose detail page shows the gallery and not
+   * the cover (the cover is the card's picture and the page's og:image) says here where the record
+   * carries the new image as well, so that the same assertion is about a picture the page really shows.
+   */
+  ninthRecord?(record: ProofRecord, newAssetId: string): ProofRecord;
   /** ids a composed page carries where an ordinary build carries React's "_R_…_" ids */
   generatedIds: RegExp;
   /** the complete list of what a composed page may differ in from the built one (normalised or not compared byte for byte) */
@@ -397,4 +414,82 @@ const interior03Demo03: RuntimeProofCase = {
   },
 };
 
-export const RUNTIME_PROOF_CASES: readonly RuntimeProofCase[] = [interior02Demo02, interior03Demo03];
+// ─────────────────────────────────────────────────────────────────────────── interior-01 / Demo 01 ──
+/** the count line of the list: the number of records the current filter leaves */
+const i1ResultCount = async (page: Page) => Number(await page.locator("[data-result-count]").first().getAttribute("data-result-count"));
+
+/**
+ * interior-01 · Demo 01. What only this Template has — the home rules (two manual showcases, the
+ * intro's anchor link, a hero call to action that names a record), before / after photos, 31 records →
+ * page 2, the empty state — is proven in portfolio-runtime-interior-01.test.ts; this entry holds the
+ * site to the proof every incrementally published site passes.
+ */
+const interior01Demo01: RuntimeProofCase = {
+  site: "boost-interior-demo",
+  label: "interior-01 · Demo 01",
+  /** release interior-01 1.6.3, all 8 records built in — packageHash 3d250199…, the package live before the site became a shell */
+  reference: { commit: "b2a29d2", buildInputId: "8a0c21182f47bd45bc26f087da4538fe101d8411445de2fe2e7a71ad41effd60", what: "the last ordinary package (interior-01 1.6.3, packageHash 3d250199…)" },
+  dataset: { records: 8, categories: 4 },
+  shellSlots: {
+    "index.html": ["home.hero", "home.intro", "home.projects-a", "home.projects-b"],
+    "portfolio.html": ["portfolio.index"],
+    "portfolio/page/_shell.html": ["portfolio.index"],
+    "portfolio/_shell.html": ["portfolio.detail"],
+  },
+  shellRoles: { home: "index.html", list: "portfolio.html", listPages: "portfolio/page/_shell.html", detail: "portfolio/_shell.html" },
+  generatedIds: /rs-[a-z0-9-]+?-browser(?![a-z])/g,
+  differences: [BOUNDARY_MARKERS, GENERATED_IDS, PRELOAD_ORDER],
+  // the order differs on one page of ten (/portfolio)
+  imagePreloads: "same-set",
+  minHeadTags: 17,
+  /** the detail page shows the gallery, not the cover: the new image is also the first photo of the 9th record's first gallery group */
+  ninthRecord: (record, newAssetId) => {
+    const galleryGroups = structuredClone(record.galleryGroups) as { items: { image: { asset: string } }[] }[];
+    galleryGroups[0]!.items[0]!.image.asset = newAssetId;
+    return { ...record, galleryGroups };
+  },
+  browser: {
+    listReady: async (page) => {
+      // the filter island is hydrated: React has attached to the count line it owns
+      await page.waitForFunction(() => {
+        const el = document.querySelector("[data-result-count]");
+        return !!el && Object.keys(el).some((k) => k.startsWith("__reactFiber$") || k.startsWith("__reactProps$"));
+      }, undefined, { timeout: 10_000 });
+    },
+    cards: '[data-section="portfolio.index"] [data-project-card]',
+    homeProjectLink: '[data-section="home.projects-a"] a[href^="/portfolio/"]',
+    listCardLink: '[data-section="portfolio.index"] [data-project-card] a[href^="/portfolio/"]',
+    // <main> opens with the hero, a running slider; the first showcase is a runtime slot whose section opens with static markup
+    hydrationProbe: '[data-section="home.projects-a"]',
+    applyFilter: async (page) => {
+      // a real click on a visible control: the chips are open on desktop, behind the filter button on mobile
+      const options = page.locator("[data-filter-group] label.i1-chip");
+      if (!(await options.first().isVisible())) await page.locator(".i1-pfilter__toggle").click();
+      const total = await i1ResultCount(page);
+      // the first option that narrows the list (fewer cards, not none)
+      for (let i = 0; i < (await options.count()); i++) {
+        await options.nth(i).click();
+        await page.waitForFunction(() => location.search.length > 1);
+        const left = await i1ResultCount(page);
+        if (left > 0 && left < total) return;
+        await options.nth(i).click();
+        await page.waitForFunction(() => location.search === "");
+      }
+      throw new Error(`no filter option narrowed the list of ${total}`);
+    },
+    detailGallery: async (page) => {
+      const zoom = page.locator("[data-gallery-panel]:not([hidden]) [data-gallery-zoom]").first();
+      await zoom.scrollIntoViewIfNeeded();
+      await zoom.click();
+      const viewer = page.locator("dialog[data-gallery-viewer]");
+      await viewer.waitFor({ state: "visible", timeout: 5000 });
+      if (!(await viewer.evaluate((d) => (d as HTMLDialogElement).open))) throw new Error("the dialog is not open");
+      await page.locator("[data-viewer-img]").waitFor({ state: "visible" });
+      if (!(await page.locator("[data-viewer-img]").evaluate((i) => (i as HTMLImageElement).decode().then(() => (i as HTMLImageElement).naturalWidth > 0)))) throw new Error("the viewer image did not load");
+      await page.locator("[data-viewer-close]").click();
+      await page.waitForFunction(() => !document.querySelector("dialog[data-gallery-viewer]") || !(document.querySelector("dialog[data-gallery-viewer]") as HTMLDialogElement).open);
+    },
+  },
+};
+
+export const RUNTIME_PROOF_CASES: readonly RuntimeProofCase[] = [interior02Demo02, interior03Demo03, interior01Demo01];

@@ -238,10 +238,13 @@ async function proveCase(c: RuntimeProofCase): Promise<void> {
   currentCase = SITE;
   console.log(`\n━━ ${c.label} (${SITE}) ━━`);
   const shellFiles = Object.keys(c.shellSlots);
-  const [homeShell, listShell, detailShell] = shellFiles as [string, string, string];
+  // the homepage, the list and the detail shell: the three keys in order, or what the case says (a Template with a separate shell for list pages 2…N)
+  const { home: homeShell, list: listShell, detail: detailShell, listPages: listPagesShell } = c.shellRoles ?? { home: shellFiles[0]!, list: shellFiles[1]!, detail: shellFiles[2]!, listPages: undefined };
   const HOME_SLOTS = c.shellSlots[homeShell]!;
   /** the slots of a composed page, by its public path */
-  const slotsOfPath = (p: string): string[] => c.shellSlots[p === "/" ? homeShell : p === urlOf(listShell) || p.startsWith(`${urlOf(listShell)}/page/`) ? listShell : detailShell]!;
+  const slotsOfPath = (p: string): string[] => c.shellSlots[p === "/" ? homeShell : p === urlOf(listShell) ? listShell : p.startsWith(`${urlOf(listShell)}/page/`) ? (listPagesShell ?? listShell) : detailShell]!;
+  /** a file of the declared shell for list pages 2…N: the page itself and the framework's payload files beside it */
+  const ofListPagesShell = (f: string) => !!listPagesShell && (f === listPagesShell || f === listPagesShell.replace(/\.html$/, ".txt") || f.startsWith(listPagesShell.replace(/\.html$/, "/")));
   const siteDir = path.join(repoRoot, "data/sites", SITE);
   const tmp = await mkdtemp(path.join(tmpdir(), "portfolio-runtime-proof-"));
   const results: Record<string, unknown> = {};
@@ -295,8 +298,8 @@ async function proveCase(c: RuntimeProofCase): Promise<void> {
         for (const e of await readdir(path.join(packageSite, rel), { withFileTypes: true })) e.isDirectory() ? await walk(path.join(rel, e.name)) : files.push(path.join(rel, e.name));
       };
       await walk("");
-      eq(files.filter((f) => f.startsWith("portfolio/") && f.endsWith(".html")), shellFiles.filter((f) => f.startsWith("portfolio/")), "HTML pages under portfolio/");
-      assert(!files.some((f) => f.startsWith("portfolio/page/")), "a list page 2+ was built");
+      eq(files.filter((f) => f.startsWith("portfolio/") && f.endsWith(".html")).sort(), shellFiles.filter((f) => f.startsWith("portfolio/")).sort(), "HTML pages under portfolio/");
+      assert(!files.some((f) => f.startsWith("portfolio/page/") && !ofListPagesShell(f)), "a list page 2+ was built");
       assert(!files.some((f) => /integration|first-party|\.well-known/.test(f)), `an integration feed is in the package: ${files.filter((f) => /integration|first-party|\.well-known/.test(f)).join(", ")}`);
       const sitemap = await readFile(path.join(packageSite, "sitemap.xml"), "utf8");
       assert(!/\/portfolio\/[^<]/.test(sitemap), "the build-time sitemap lists a URL under /portfolio/");
@@ -365,7 +368,7 @@ async function proveCase(c: RuntimeProofCase): Promise<void> {
     const ninthAsset: ProofAsset = { ...lastCover, id: "proof-ninth-cover", file: "proof-ninth-cover.jpg", sha256: sha256(ninthBytes), size: ninthBytes.length };
     await writeFile(path.join(tmp, ninthAsset.file), ninthBytes);
     assetFile.set(ninthAsset.id, path.join(tmp, ninthAsset.file));
-    const ninth: ProofRecord = {
+    const ninthAsCopy: ProofRecord = {
       ...last,
       id: "bi-09",
       slug: "proof-ninth-project",
@@ -373,6 +376,8 @@ async function proveCase(c: RuntimeProofCase): Promise<void> {
       publishedAt: "2026-10-09T09:00:00+09:00",
       cover: { ...last.cover, asset: ninthAsset.id },
     };
+    // (a Template whose detail page does not show the cover says where else the record carries the new image)
+    const ninth: ProofRecord = c.ninthRecord ? c.ninthRecord(ninthAsCopy, ninthAsset.id) : ninthAsCopy;
     const publicPathOf = (a: { sha256: string }) => `/assets/${a.sha256.slice(0, 20)}.jpg`;
     const input = (over: Partial<PortfolioSiteInput> = {}): PortfolioSiteInput => ({ runtime, shell, shellPages, portfolio: { categories, projects, assets }, at: AT, ...over });
     let composed!: Composed;
@@ -795,7 +800,7 @@ async function proveCase(c: RuntimeProofCase): Promise<void> {
         ok.push(
           await check(`D3 ${vp.name}: a card on /portfolio leads to its detail page — a document load, not a client transition`, async () => {
             await page.evaluate(() => ((window as any).__proofSameDocument = true));
-            const link = page.locator('[data-section="portfolio.index"] ul[data-shown] a[href^="/portfolio/"]').first();
+            const link = page.locator(c.browser.listCardLink ?? '[data-section="portfolio.index"] ul[data-shown] a[href^="/portfolio/"]').first();
             detailPath = (await link.getAttribute("href"))!;
             const project = projects.find((p) => `/portfolio/${p.slug}` === detailPath);
             assert(project, `the first card links ${detailPath}, which is no record`);
@@ -839,7 +844,7 @@ async function proveCase(c: RuntimeProofCase): Promise<void> {
       await check("D7 what the revision does not answer inside its URL space is the package's 404 page: an unknown slug, the shell slug, a list page, RSC forms; /_runtime is never served", async () => {
         const context = await browser.newContext();
         const notFound = await readFile(path.join(packageSite, NOT_FOUND_KEY), "utf8");
-        for (const p of ["/portfolio/no-such-project", urlOf(detailShell), "/portfolio/page/2", "/portfolio.txt", `/portfolio/${projects[0]!.slug}.txt`, "/_runtime/portfolio/shell.json", "/_runtime/portfolio/runtime.json"]) {
+        for (const p of ["/portfolio/no-such-project", urlOf(detailShell), ...(listPagesShell ? [urlOf(listPagesShell)] : []), "/portfolio/page/2", "/portfolio.txt", `/portfolio/${projects[0]!.slug}.txt`, "/_runtime/portfolio/shell.json", "/_runtime/portfolio/runtime.json"]) {
           const res = await context.request.get(`${server.origin}${p}`);
           eq(res.status(), 404, `${p} status`);
           eq(sha256(await res.text()), sha256(notFound), `${p} body is the package's 404 page`);
