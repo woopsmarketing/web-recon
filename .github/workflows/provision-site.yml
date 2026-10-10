@@ -10,6 +10,11 @@
 #     job id) or `with:` (the ref to check out); the scripts below contain no ${{ }} at all.
 #   - Secrets are mapped on the ONE step that needs them. The smoke step has none.
 #   - Third-party actions are pinned to a full commit SHA.
+#   - Nothing from the checkout runs before the commit is proven to be ON THE TRUSTED BRANCH: `source_ref`
+#     must be a full commit SHA, and that commit must be the branch's head or one of its ancestors. A
+#     pull-request head, a fork's commit or another branch is refused — for smoke runs too, because a
+#     smoke run writes the package cache the real run restores. Holding the right to dispatch this
+#     workflow is therefore not the right to run arbitrary code with the secrets.
 name: provision-site
 
 on:
@@ -20,7 +25,7 @@ on:
         type: string
         required: false
       source_ref:
-        description: The commit or branch of this repository the runner is checked out at.
+        description: The full commit SHA (40 hex) the runner is checked out at. It must be on the trusted branch.
         type: string
         required: true
       smoke:
@@ -47,6 +52,27 @@ jobs:
           ref: ${{ inputs.source_ref }}
           fetch-depth: 1
           persist-credentials: false
+
+      # The trusted branch is a constant of this file (it is read from the default branch, see README).
+      # compare/<branch>...<sha> answers "identical" (the head) or "behind" (an ancestor) for a commit of
+      # the branch, and "ahead" / "diverged" for anything else.
+      - name: Refuse a commit that is not on the trusted branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SOURCE_REF: ${{ inputs.source_ref }}
+          TRUSTED_BRANCH: portfolio-v2/incremental-runtime
+        run: |
+          head="$(git rev-parse HEAD)"
+          if ! printf '%s' "$SOURCE_REF" | grep -Eq '^[0-9a-f]{40}$' || [ "$SOURCE_REF" != "$head" ]; then
+            echo "refused: source_ref must be the full commit SHA that was checked out"
+            exit 1
+          fi
+          status="$(gh api "repos/$REPOSITORY/compare/$TRUSTED_BRANCH...$head" --jq .status)"
+          case "$status" in
+            identical|behind) echo "ok: $head is on $TRUSTED_BRANCH ($status)" ;;
+            *) echo "refused: $head is not on $TRUSTED_BRANCH ($status)"; exit 1 ;;
+          esac
 
       - name: Set up Node 22
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0

@@ -32,9 +32,23 @@ The hostname becomes public in the last step only. Any failure after the claim s
 `data/site-starters/` must be **committed** (the root `.gitignore` ignores `data/*`; it needs
 `!data/site-starters/` and `!data/site-starters/**` like the three directories already re-included).
 
+## Which code the workflow runs (the trusted branch)
+
+`source_ref` must be a **full commit SHA**, and that commit must be on the trusted branch named in the
+workflow file (`TRUSTED_BRANCH`, today `portfolio-v2/incremental-runtime`): its head or one of its ancestors.
+The second step of the workflow checks this through the compare API before anything from the checkout runs,
+for smoke runs too. A pull-request head, a fork's commit, a branch name or a short SHA is refused.
+
+- The workflow file is read from the ref the run is dispatched on — BoostChat dispatches on `main`
+  (`SITE_PROVISIONING_GITHUB_REF`). **After changing `.github/workflows/provision-site.yml` on the working
+  branch, copy the same file to `main`**; the test `H1` checks the file of the checkout, not the one on `main`.
+- BoostChat's `SITE_PROVISIONING_SOURCE_REF` is the commit to run, and it accepts a 40-hex SHA only.
+- If the working branch is renamed or retired, change `TRUSTED_BRANCH` (the workflow then fails closed until
+  that is done).
+
 ## Smoke run (no secret, nothing leaves the runner)
 
-Actions → `provision-site` → Run workflow → `source_ref` = the commit to test, `smoke` = true.
+Actions → `provision-site` → Run workflow → `source_ref` = the full SHA of the commit to test, `smoke` = true.
 It installs, primes the pnpm store, and builds the fixture site
 (`platform/provision/fixtures/smoke-spec.json`) with zero projects. Green = the checkout can build a new site
 on a GitHub runner. Locally: `tsx --tsconfig platform/tsconfig.json platform/cli/site-provision.ts --build-only

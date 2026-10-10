@@ -1079,7 +1079,7 @@ try {
 
   // ══ H. runner files ═══════════════════════════════════════════════════════════════════════════
   console.log("H. runner files");
-  await check("H1 the workflow keeps its rules: workflow_dispatch(job_id, source_ref required, smoke); contents: read only; concurrency per job without cancelling; 25 minutes; no ${{ }} inside any run script; every action pinned to a commit; secrets on the one real step", async () => {
+  await check("H1 the workflow keeps its rules: workflow_dispatch(job_id, source_ref required, smoke); the checked-out commit is proven to be on the trusted branch before anything of it runs; contents: read only; concurrency per job without cancelling; 25 minutes; no ${{ }} inside any run script; every action pinned to a commit; secrets on the one real step", async () => {
     const yml = await readFile(path.join(repoRoot, ".github/workflows/provision-site.yml"), "utf8");
     const lines = yml.split("\n");
     assert(/^on:\n  workflow_dispatch:\n    inputs:\n      job_id:\n(?:        .*\n)*?        type: string\n        required: false\n      source_ref:\n(?:        .*\n)*?        type: string\n        required: true\n      smoke:\n(?:        .*\n)*?        type: boolean\n        default: false\n/m.test(yml), "inputs");
@@ -1087,6 +1087,15 @@ try {
     assert(yml.includes("concurrency:\n  group: provision-${{ inputs.job_id || 'smoke' }}\n  cancel-in-progress: false\n"), "concurrency");
     assert(/runs-on: ubuntu-latest\n    timeout-minutes: 25\n/.test(yml) && (yml.match(/^  [a-z-]+:\n    runs-on:/gm) ?? []).length === 1, "one job, ubuntu-latest, 25 minutes");
     assert(/ref: \$\{\{ inputs\.source_ref \}\}\n          fetch-depth: 1\n/.test(yml), "checkout");
+    // the commit is proven to be on the trusted branch BEFORE anything from the checkout runs, for every run (smoke too)
+    const stepNames = [...yml.matchAll(/^      - name: (.+)$/gm)].map((m) => m[1]!);
+    eq(stepNames[0], "Check out the runner", "the first step");
+    eq(stepNames[1], "Refuse a commit that is not on the trusted branch", "the second step — before node, pnpm, the cache and every script of the checkout");
+    const guard = yml.slice(yml.indexOf("      - name: Refuse a commit that is not on the trusted branch"), yml.indexOf("      - name: Set up Node 22"));
+    assert(!/^\s*if:/m.test(guard), "the guard has no condition: it runs for smoke runs too");
+    assert(guard.includes("SOURCE_REF: ${{ inputs.source_ref }}") && guard.includes("GH_TOKEN: ${{ github.token }}") && /TRUSTED_BRANCH: [a-z0-9][a-z0-9._\/-]*\n/.test(guard), "the guard's inputs come through env");
+    assert(guard.includes("grep -Eq '^[0-9a-f]{40}$'") && guard.includes('[ "$SOURCE_REF" != "$head" ]'), "source_ref must be the full SHA that was checked out");
+    assert(guard.includes('compare/$TRUSTED_BRANCH...$head') && /identical\|behind\) echo/.test(guard) && /\*\) echo "refused:[^\n]*exit 1/.test(guard), "only the head or an ancestor of the trusted branch passes; everything else exits 1");
     // run scripts: single-line and block form
     const scripts: string[] = [];
     for (let i = 0; i < lines.length; i++) {
@@ -1115,6 +1124,7 @@ try {
     const smoke = steps.find((s) => s.includes("--build-only"));
     assert(smoke && /if: \$\{\{ inputs\.smoke \}\}/.test(smoke) && !/\benv:/.test(smoke) && smoke.includes(`--spec-file ${FIXTURE}`), "the smoke step (no env, the fixture)");
     eq((yml.match(/inputs\.job_id/g) ?? []).length, 2, "inputs.job_id appears in the concurrency group and in one env mapping only");
+    eq((yml.match(/inputs\.source_ref/g) ?? []).length, 2, "inputs.source_ref appears in the checkout and in the guard's env mapping only");
     assert(yml.includes("pnpm install --frozen-lockfile") && yml.includes("platform/provision/prime-store.ts") && !/pnpm\/action-setup/.test(yml.replace(/^\s*#.*$/gm, "")), "install + store priming, no pnpm/action-setup");
   });
   const tsx = path.join(repoRoot, "node_modules/.bin/tsx");
