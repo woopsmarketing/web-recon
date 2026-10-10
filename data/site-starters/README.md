@@ -54,6 +54,10 @@ A new site knows only what the spec says: a brand name, maybe a phone number, ma
 - **No fact we cannot know.** No years in business, project counts, awards, certificates, prices, addresses,
   staff, guarantees, "No.1", customer counts, service areas. Rewrite the sentence so it is true for any
   customer of this Template, or remove the slot.
+- **The consent text says what really happens to an inquiry.** Who collects it (`{{brandName}}`), what is
+  collected, what for, how long it is kept, and who processes it. The retention period is not the customer's
+  choice: inquiries are stored in BoostChat, which deletes them 90 days after receipt (boost-chat
+  `src/lib/lead/retention.ts`, `LEAD_RETENTION_DAYS`). If that number changes there, change it here.
 - **The brand comes from the token.** Never the name of a demo site. Use `{{brandName}}` standalone (no Korean
   particle attached to it — the right particle depends on the name) and only in a slot whose maximum length
   leaves room for 80 characters.
