@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| status | **READY CANDIDATE rev 9.2.1 — owner questions closed; not frozen until the consumer confirmations of §16.** V0.2 ranks on **project type, work scope, area and total price** (style a weak bonus, location never), with one match class, four tiers and one fixed order (§14.3). Budget comparison is back in one form — a total budget against the total price of an `exact` record only — and V0.2 therefore amends V0 `PR4` for `pricing.total` (§16). |
-| date | 2026-09-25 |
-| revision | rev 9.2.1 — closeout: owner decisions `OQ-1`…`OQ-6` recorded (§18), `34d`'s minors fixed (§20.9). Rev 9.2 — product simplification under the owner brief of 2026-09-25 and `32-round-9-handoff.md`: the evaluation function (§14.3) is replaced, the retired machinery and every change log before §20.9 move to `archive/07-rev9.1-corrected.md`. See §20.9. Earlier revisions: rev 9.1 (corrections pass), rev 9, rev 8 (the narrowing), rev 1–7 — all in the archive. |
+| status | **READY CANDIDATE rev 9.3 — owner questions closed; not frozen until the consumer confirmations of §16.** V0.2 ranks on **project type, work scope, area and total price** (style a weak bonus, location never), with one match class, four tiers and one fixed order (§14.3). Budget comparison is back in one form — a total budget against the total price of an `exact` record only — and V0.2 therefore amends V0 `PR4` for `pricing.total` (§16). |
+| date | 2026-10-10 (rev 9.3). Rev 9.2.1 is dated 2026-09-25 |
+| revision | rev 9.3 (2026-10-10) — synchronised with the consumer's matcher as it runs today: `EV4`'s tuple has **eight** entries (`areaExact` and `areaGap` added by the consumer's matcher ranking hotfix, BoostChat `40863fb`); the area tier has a fourth value `similar` (within 30 %) and `V.area` may be an area class "N평대" (owner-approved policy of 2026-10-10, BoostChat `d88d5c9`); a class is the half-open interval `N ≤ x < N+10`, a compound of classes is absent and a corrected area is the one stated last (the consumer's review fixes, BoostChat `77aef92`). §19's rows A–I are unchanged. See §20.11. Rev 9.2.1 (2026-09-25) — closeout: owner decisions `OQ-1`…`OQ-6` recorded (§18), `34d`'s minors fixed (§20.9). Rev 9.2 — product simplification under the owner brief of 2026-09-25 and `32-round-9-handoff.md`: the evaluation function (§14.3) is replaced, the retired machinery and every change log before §20.9 move to `archive/07-rev9.1-corrected.md`. See §20.9. Earlier revisions: rev 9.1 (corrections pass), rev 9, rev 8 (the narrowing), rev 1–7 — all in the archive. |
 | supersedes | `02-integration-contract-v0-candidate.md` (FROZEN V0, schemaVersion `0.1`) |
 | normative | this file. `08-integration-contract-v0.2.json` is derived from it; any disagreement is a defect of that file. |
 | canonical owner | **web-recon**. The consumer (BoostChat) holds a *consumer confirmation*, never a second copy of the contract. |
@@ -802,7 +802,8 @@ and is recorded in its implementation report, not here.
 > before it was written here.
 
 The function takes the visitor query `V` and a record `R` and returns one **match class** and four
-**tiers**. The result is ordered by one fixed tuple of those values. That is the whole function.
+**tiers** — and, for the area, two finer readings of the same comparison (`areaExact`, `areaGap`;
+`EV3`, rev 9.3). The result is ordered by one fixed tuple of those values. That is the whole function.
 
 #### 14.3.1 Inputs
 
@@ -812,12 +813,12 @@ The function takes the visitor query `V` and a record `R` and returns one **matc
 |---|---|---|
 | `V.breadth` | `whole` · `partial` (`VB3`) | the visitor did not say how much of the home |
 | `V.scope` | **one** set `Q` of §7.3 ids; `Q_s = Q ∩ Spaces`, `Q_t = Q ∩ Works` (`WS6`). A room or trade the visitor **excludes** (욕실만 빼고, 주방 제외) is not in `Q` | named no room and no trade |
-| `V.area` | value + unit + basis. An area whose unit cannot be resolved, or that is a range or a class (30평대), is **absent**, never guessed | stated no size |
+| `V.area` | an interval in one unit, with that unit and a basis (`VB4`). An exact figure `v` is the single point `[v, v]`; an area class "N평대" is `N ≤ x < N+10`. An area whose unit cannot be resolved, or that is any other range or a compound of classes, is **absent**, never guessed | stated no size |
 | `V.budget` | `VB1` | stated no budget |
 | `V.styles` | style values the visitor stated **positively** (`ST5`) | no style preference |
 
-The contract is a function of `V` and the document. How an utterance becomes `V` beyond `VB1` and
-`VB3` — the alias table above all — belongs to the consumer (`WS6`). §19 fixes `V` for every
+The contract is a function of `V` and the document. How an utterance becomes `V` beyond `VB1`,
+`VB3` and `VB4` — the alias table above all — belongs to the consumer (`WS6`). §19 fixes `V` for every
 acceptance row, so the evaluation can be checked without any parser.
 
 > - **VB1 (C: MUST)** — a numeric budget is held in **one** of three shapes, never two:
@@ -850,6 +851,59 @@ acceptance row, so the evaluation can be checked without any parser.
 >   a room or trade is named, `partial` and absent select the same mode (§14.3.2), so the move changes
 >   no result, and `Q-26` (which of rows 3 and 5 a mixed 만-chain hits) no longer matters. The
 >   restriction row sits above the whole-forms since the fresh review of rev 9.2 (`34c` m-2).
+> - **VB4 (C: MUST; rev 9.3)** — `V.area` is an **interval** in one unit, with that unit and a
+>   basis (`supply`, `exclusive`, or unknown). It has two **ends**, `lo ≤ hi`, from which a record
+>   outside it is measured (`EV3`).
+>
+>   | the visitor says | `V.area` | ends `lo` · `hi` |
+>   |---|---|---|
+>   | an exact figure — 34평, 전용 84㎡ | the single point `[v, v]` | `v` · `v` |
+>   | an area **class** "N평대", `N` ∈ {10, 20, … 90} — 30평대, 전용 20평대 | the half-open interval `N ≤ x < N+10` 평: 10평대 = 10 ≤ x < 20, 30평대 = 30 ≤ x < 40, 90평대 = 90 ≤ x < 100 | `N` · `N+9` |
+>   | any other range or class — 30~40평, 34평대, 100평대 | absent | — |
+>   | a **compound** of classes: a class joined to another class or figure as a range or a list — 20~30평대, 2,30평대, 20평대에서 30평대 사이, 20평대나 30평대, 30평대나 40평 | absent: it is not read as either class, nor as their union | — |
+>   | "N형" — 19형, 30형대, 84형 | absent: it is not an area expression. It is not read as 평 and not corrected to it | — |
+>
+>   For whole-number areas a class is exactly `N … N+9` — 30평대 is 30, 31, … 39평 — and an area
+>   between `N+9` and `N+10` belongs to it as well: 39.5평 and 공급 130㎡ (39.33평) are inside
+>   30평대, 40평 is not, and 29.99평 is inside 20평대, not 30평대. So every area from 10평 up to, but
+>   not including, 100평 lies inside exactly one class. `hi` is the last whole 평 of the class,
+>   `N+9`, not `N+10`.
+>
+>   A class is not converted to a representative figure: nothing is compared with, or said about,
+>   the midpoint of the interval. A class carries a basis like any other area. An interval that
+>   cannot be read (an end that is not positive, `lo > hi`) makes the whole `V.area` **absent** —
+>   the evaluation does not fall back to a figure inside it.
+>
+>   **A correction names the area.** When the visitor negates or replaces one area with another in
+>   one utterance — *A 말고 B*, *A 대신 B*, *A가 아니라 B*, *A 아니고 B* — `V.area` is `B`, the area
+>   stated **after** the marker, read by the table above: "30평대 말고 20평대" ⇒ 20평대, "30평이
+>   아니라 34평" ⇒ `[34, 34]`, "30평대 말고 20~30평대" ⇒ absent. The same holds against an area
+>   stated in an earlier turn: it is replaced. A marker with no area expression after it ("34평인데
+>   전체 말고 주방만") is not a correction of the area, which is then the one the utterance states.
+>   An utterance whose area is absent by the table leaves an area stated in an earlier turn as it
+>   was: "34평" followed by "20~30평대" is still 34평.
+>
+>   *Rev 9.3, by owner decision (2026-10-10).* Through rev 9.2.1 every range and every class was
+>   absent. "N평대" is now an area criterion, because a visitor who says 30평대 has stated a size;
+>   the other forms stay absent because no single interval is agreed for them ("34평대" could be
+>   34…43 or 30…39; "20~30평대" could be 20…30, 20…39 or two classes), and "N형" stays unread
+>   because 34형, 59형 and 84형 name different area conventions on the Korean market. The owner
+>   approved a class as its whole-number areas `N … N+9`; the half-open reading, which agrees with
+>   it on every whole number and gives the areas between 39 and 40평 a class, and the two rules on
+>   compounds and corrections came out of the independent review of the consumer's implementation
+>   on the same day (BoostChat `77aef92`; §20.11).
+>
+>   *Open consumer differences, recorded and not written into the rule (2026-10-10).* All three are
+>   BoostChat's reading of an utterance, verified by running it; none is an owner decision, and
+>   under this rule each is a defect of the consumer (§20.11).
+>   (1) A range of exact figures is not absent there: one of the two figures is read as an exact
+>   area ("30~40평" ⇒ 40평, "30평에서 40평 사이" ⇒ 30평). The behaviour predates rev 9.3 and the
+>   consumer's test `MT-AC6` now pins it as its existing reading ("20~30평" ⇒ 30평).
+>   (2) A compound is recognised by a closed list of joins (~ - , · / 에서 부터 나 이나 또는 혹은).
+>   Joined any other way — "20평대랑 30평대", "20평대 아니면 30평대", "20평대와 30평대" — the first
+>   class is read.
+>   (3) A correction is recognised by the four markers above. Said any other way — "30평대 빼고
+>   20평대", "30평대보다는 20평대" — the first area is read.
 
 **The record `R`**: `R.projectType`; `R.workScopeIds` (`R_s = ∩ Spaces`, `R_t = ∩ Works`); whether
 the consumer **dropped** an unrecognised id from it (`WS8`); `R.property.area`; `R.pricing.total`;
@@ -921,20 +975,55 @@ What the table says, in the owner's terms (brief of 2026-09-25, decision A; `OD-
 >
 > | tier | values, best first | applies when | otherwise |
 > |---|---|---|---|
-> | `area` | `strong` · `acceptable` · `none` | `V.area` stated, and mode `whole` or `open` | `none` (`not_applied` if `V.area` stated) |
+> | `area` | `strong` · `acceptable` · `similar` · `none` | `V.area` stated, and mode `whole` or `open` | `none` (`not_applied` if `V.area` stated) |
 > | `price` | `strong` · `acceptable` · `none` | `V.budget` stated, mode `whole` or `part`, and class `exact` | `none` (`not_applied` if `V.budget` stated) |
 > | `coverage` | an integer `0 … |Q|`, higher first | always (it is `0` for every record when `Q = ∅`) | — |
 > | `style` | `match` · `none` | `V.styles` stated | `none` |
 >
-> - **area** (`OD-M`). `v` is the visitor's figure and `r` the record's `property.area.value`, both
->   in one unit under `AR4`, compared in exact rational arithmetic (never floating point).
->   `|r − v| ≤ 0.10·v` ⇒ `strong`; `≤ 0.20·v` ⇒
->   `acceptable`; otherwise `none`. The tier is also `none` when the record has no area, or when
->   both bases are known and differ (`AR5`: supply and exclusive are never compared). When either
+> - **area** (`OD-M`; rev 9.3). `lo` and `hi` are the ends of the visitor's interval (`VB4`) and
+>   `r` the record's `property.area.value`, all in one unit under `AR4`,
+>   compared in exact rational arithmetic (never floating point). The **gap** `g` and its **base** `b` are
+>
+>   | where `r` lies | gap `g` | base `b` |
+>   |---|---|---|
+>   | below the interval: `r < lo` | `lo − r` | `lo` |
+>   | above it: `r > v` for an exact figure; `r ≥ N+10` for a class | `r − hi` | `hi` |
+>   | inside it: `r = v`; `N ≤ r < N+10` | `0` | — |
+>
+>   and `g ≤ 0.10·b` ⇒ `strong`; `≤ 0.20·b` ⇒ `acceptable`; `≤ 0.30·b` ⇒ `similar`; otherwise
+>   `none`. Every bound is inclusive, and `g = 0` is `strong`. For an exact figure `lo = hi = v`, so
+>   `g = |r − v|` and `b = v`: the 10 % and 20 % results are rev 9.2.1's, and what lay beyond 20 %
+>   is now split at 30 %. For a class every area inside the interval has `g = 0` — 32평, 37평 and
+>   39.5평 are the same evidence for "30평대" — and an area outside it is measured to the **nearer
+>   end** and judged against that end: `N` below, `N+9` above. For 30평대, 27평 is `strong`
+>   (3 ≤ 0.10·30) and 42.9평 is `strong` (3.9 ≤ 0.10·39). Above a class the gap is therefore not
+>   continuous: it is `0` up to, but not including, `N+10`, and `1`평 at `N+10` — 39.99평 is inside
+>   30평대 and 40평 is 1평 from it (40.01평: 1.01평), because the distance is counted from 39, the
+>   last whole 평 of the class. Below a class there is no such step: 29.99평 is 0.01평 from 30평대.
+>
+>   The tier is also `none` when the record has no usable area (none at all, or one in a unit the
+>   consumer cannot read — `missing`), or when
+>   both bases are known and differ (`AR5`: supply and exclusive are never compared —
+>   `not_comparable`; a unit is converted inside one basis only). When either
 >   basis is absent the tier is still computed and the reply says the match is approximate (`PY1`);
 >   that disclosure never changes the tier. There is no area tier in mode `part`: a partial job's
 >   area is the dwelling's, not the area the price bought (`PT2`), and the owner ranks partial
->   requests without it.
+>   requests without it. A class changes none of this.
+>
+>   Two finer readings of the same comparison go into `EV4`'s tuple and nowhere else. They are not
+>   tiers, carry no note, and are defined for every record:
+>
+>   - **`areaExact`** — `0` iff the tier was computed, `g = 0` and **both** bases are known (and
+>     therefore equal); otherwise `1`. For an exact figure that is *the same area on the same
+>     basis*; for a class, *inside the stated range on the same basis*. With a basis unknown on
+>     either side it is `1`: the tier is still `strong`, and approximate.
+>   - **`areaGap`** — `g` itself, in the one unit of the comparison, when the tier is `strong`,
+>     `acceptable` or `similar`; **one fixed value greater than every real gap** when the tier is
+>     `none`, whatever the reason — farther than 30 %, no area in the query, mode `part`, a record
+>     without a usable area, bases that differ. A record with no area therefore carries exactly the
+>     area evidence of a record whose area is far away, never less (`PB4`).
+>
+>   `similar` exists for the area only; the price tier keeps its three values.
 > - **price** (`OD-N`, `OD-O`). The budget becomes an interval `B` — `exact a` ⇒ `[a, a]`, `range` ⇒
 >   `[min, max]`, `max a` ⇒ `[0, a]` — and `R.pricing.total` an interval `P` — `exact` ⇒ `[x, x]`,
 >   `range` ⇒ `[min, max]` — in one currency (V0 `PR6`). If `B` and `P` intersect ⇒ `strong`.
@@ -962,29 +1051,69 @@ What the table says, in the owner's terms (brief of 2026-09-25, decision A; `OD-
 > **EV4 (C: MUST) — one order.** Records are sorted ascending by the tuple
 >
 > ```
-> ( classRank, areaRank, priceRank, −coverage, styleRank, id )
+> ( classRank, areaRank, priceRank, −coverage, areaExact, styleRank, areaGap, id )
 > ```
 >
-> where `classRank` is `exact` 0 · `overlap` 1 · `fallback` 2 · `other` 3; `areaRank` and
-> `priceRank` are `strong` 0 · `acceptable` 1 · `none` 2; `styleRank` is `match` 0 · `none` 1; and
+> — eight entries — where `classRank` is `exact` 0 · `overlap` 1 · `fallback` 2 · `other` 3; `areaRank` is
+> `strong` 0 · `acceptable` 1 · `similar` 2 · `none` 3; `priceRank` is `strong` 0 · `acceptable` 1 ·
+> `none` 2; `areaExact` (0 · 1) and `areaGap` are `EV3`'s; `styleRank` is `match` 0 · `none` 1; and
 > `id` is compared by code unit (`ID1`: present on every record; V0 `ID3`: unique within the resource). The
 > order is over one document's records.
 >
 > Every position of the tuple is defined for every record. No key is skipped for some records, and
-> no key refers to a position another key produced. The order is lexicographic over totally ordered
+> every entry is a value of the record's own evaluation (`EV2`, `EV3`): none depends on another
+> record, or on where an earlier entry placed this one. The order is lexicographic over totally ordered
 > components and ends in a unique key, so it is **total**, **transitive** and **deterministic**:
 > two runs of one query over one snapshot give the same order.
 >
 > The order covers **every** record. No class or tier removes one (`OD-M`: a tier ranks, it never
-> filters). The reply shows a prefix of this order — three records in the demo — and takes it from
-> this order and nothing else.
+> filters) — `similar` included: a record outside 30 % is still returned. The reply shows a prefix
+> of this order and takes its records from this order and nothing else.
 
-*Why this tuple* (owner brief §3). For a whole-home request the strong signals are project type,
+> **Presentation order — consumer behaviour, not a rule of this contract** (BoostChat
+> `search-policy.ts`, as of the hotfix `40863fb`; rev 9.3 records it because rev 9.2.1's "three
+> records in the demo" no longer describes it). The consumer shows up to the first five records of the
+> order as cards labelled A–E by position; up to three are visible before "더 보기". On a follow-up search
+> in a conversation that already has cards on screen:
+>
+> | the new result against the cards on screen | what the visitor sees |
+> |---|---|
+> | the visible three are the same **set**, and so is the whole card set | the on-screen order and the labels A–E are kept; the new order is given to the model only as a list of those labels |
+> | the visible three are the same set, the cards behind "더 보기" are not | the visible three keep their order and labels; the rest follow `EV4` |
+> | the visible three are a different set | `EV4`'s order, relabelled A–E by position |
+>
+> So a label never changes its record silently while the visitor is looking at it, and the visible
+> three are always the **set** of the new result's first three. Before the hotfix the first row applied
+> whenever the whole card set was the same, visible three or not, and a new best match could stay
+> behind "더 보기" as E. This note covers label stability only; the consumer's other presentation
+> choices (its style-alternative search, a size budget that can shorten the list) are not described
+> here.
+
+*Why this tuple* (owner brief §3; rev 9.3 for the two area readings). For a whole-home request the strong signals are project type,
 area and total price, then scope and style. For a partial request they are project type and scope —
 both inside the class — then total price, then style. `location` is never read (`LO1`). One fixed
-tuple serves both because the area tier is `none` for every record in mode `part`, and the price
+tuple serves both because the area tier is `none` for every record in mode `part` — and with it
+`areaExact` is 1 and `areaGap` its one fixed value for every record, so the three area entries
+order nothing there — and the price
 tier is only computed inside `exact`. Rev 9.1's key (2) carve-out and its `publishedAt` key are
 deleted; nothing replaced them.
+
+`areaExact` and `areaGap` refine the area **after** the first four entries, whose order is
+rev 9.2.1's. They decide only between records equal on class, area tier, price tier and
+coverage: they never override a class difference, and inside one area tier they never override a
+budget match or a covered scope. `areaExact` comes before `styleRank`: the same area on the same basis is stronger evidence
+than a style match — through rev 9.2.1 every area within 10 % ranked alike, and a 32평 record could
+lead a 34평 one on style or `id` alone. `areaGap` comes after `styleRank`, immediately before
+`id`: among records otherwise equal the nearer area is first, and a style match still outranks an
+area that is merely nearer. Inside a class's interval all three area entries are equal, so the
+remaining entries and `id` decide: 32평 does not lead 37평 on a request for 30평대.
+
+`priceRank` precedes `areaExact`, for a class as for an exact figure. The same area, or an area
+inside the stated range, is a finer reading of an area tier both records already share; a total
+inside the budget is a tier of its own. So on a whole-home request with a budget, a record just
+outside the area — 33평 against 34평, 29평 against 30평대, both within 10 % — whose total matches
+the budget precedes a record with the same area, or inside the range, that has no total
+(`CINV-27`(c)).
 
 #### 14.3.5 Missing data
 
@@ -995,8 +1124,10 @@ deleted; nothing replaced them.
 >
 > 1. **no reserved value** — no class or tier has a value for "missing". The last value of every
 >    tier, and `fallback` / `other` for the class, mean *no positive evidence*, and that is where a
->    missing input lands;
-> 2. **the least favourable real value** — `R⁻`'s evaluation, class and all four tiers **together**,
+>    missing input lands. The two area readings have none either: `areaExact` 1 and `areaGap`'s
+>    fixed value are what an area farther than 30 % carries (`EV3`; rev 9.3);
+> 2. **the least favourable real value** — `R⁻`'s evaluation, class and all four tiers **together**
+>    (with `areaExact` and `areaGap`, which follow the area),
 >    equals the one `R` gets in that query when the input holds its least favourable **valid** value
 >    (`INV-28`–`INV-30` and §9 respected): the value whose evaluation sorts last under `EV4`. Taking
 >    each key's worst separately is not the rule — it can combine the worse halves of two real values.
@@ -1059,9 +1190,11 @@ The disclosures below phrase `EV2`'s and `EV3`'s outputs. They assign nothing (`
 >   `PT4`(b), the reply states the ground — *"이 사례는 집 전체를 리모델링한 사례입니다"* — and never
 >   *"주방이 포함되어 있습니다"* unless `kitchen` is listed.
 > - **Tiers.** For each criterion the visitor stated, the reply gives the record's own value and
->   the tier in words — for area, within 10 %, within 20 %, or neither; for a budget, inside it
+>   the tier in words — for area: the same area (an exact figure with `areaExact` 0), inside the
+>   stated range (a class with `g = 0`), within 10 %, within 20 % or within 30 % — of the figure,
+>   or for a class of the nearer end of its range — or neither; for a budget, inside it
 >   (the intervals meet), within 10 % or 20 % of its nearest bound, or neither — only when the tier
->   was computed. A `not_applied` note is said as *"비교하지 않았습니다"*, with the record's own value
+>   was computed. A class is named as the visitor said it (30평대), never by a midpoint. A `not_applied` note is said as *"비교하지 않았습니다"*, with the record's own value
 >   as a fact if it has one; a `missing` note as *"이 사례에는 … 정보가 없습니다"*; a
 >   `not_comparable` note gives the reason (`AR5`).
 > - **Budget.** A visitor who stated a budget is told each shown record's total as a fact (`GR1`).
@@ -1127,7 +1260,7 @@ The disclosures below phrase `EV2`'s and `EV3`'s outputs. They assign nothing (`
 > - **ST3 (C: MUST)** — the path is: visitor utterance → semantic candidate → **a `style` id actually
 >   present in the document** → a small ranking bonus. An embedding never selects the final record
 >   set, a style miss carries **no penalty**, and no search fails for want of a style match. Style is
->   deliberately **not** a class input (`EV2`): it is `EV3`'s last tier before `id`, it can never make
+>   deliberately **not** a class input (`EV2`): it is the last tier in `EV4`'s tuple (after `areaExact`; only `areaGap` and `id` follow), it can never make
 >   a record `exact` and can never keep it out. (OD-H.)
 > - **ST5 (C: MUST)** — only a style the visitor stated **positively** becomes a recorded preference.
 >   A negated preference (*"너무 화려한 건 싫어요"*) must not produce a positive bonus and must not be
@@ -1204,6 +1337,9 @@ Consumer-side:
 | `CINV-22` | no class or tier is a filter: for every fixture, all 19 records are returned |
 | `CINV-23` | whole-home cover (§14.3.6): for a `full_remodel` covering a requested room only through `PT4`(b), the reply says *"집 전체를 리모델링한 사례"* and **never** names that room as included. Fixture: *"욕실 하나만"* against `bi-07`, which lists no `bathroom` |
 | `CINV-24` | mode `whole` and the ladder together. (a) *"전체 리모델링 사례 보여주세요"* ⇒ `bi-15` (one bathroom, 7,000,000) `fallback`, never `exact`, after every `full_remodel`. (b) *"주방만 하고 싶어요"* ⇒ `bi-14` `exact` and `bi-09` `fallback`, in that order |
+| `CINV-26` | **`EV3` area, four values with inclusive bounds** (rev 9.3). Against an exact 34평 (10 % = 3.4, 20 % = 6.8, 30 % = 10.2): 30.6 and 37.4 `strong`; 30.59, 27.2, 37.41 and 40.8 `acceptable`; 27.19, 23.8, 40.81 and 44.2 `similar`; 23.79 and 44.21 `none`. Against 30평대 (`VB4`: 30 ≤ x < 40): 30, 34.5, 39, 39.01, 39.5 and 39.99 are inside (`g = 0`, `areaExact` 0), and so is 공급 130㎡ (39.33평); below, judged against 30 — 29.99…27 `strong`, 26.99…24 `acceptable`, 23.99…21 `similar`, 20.99 `none`; above, measured from and judged against 39 — 40…42.9 `strong`, 42.91…46.8 `acceptable`, 46.81…50.7 `similar`, 50.71 `none`. The gap is 0 at 39.99, 1평 at 40, 1.01평 at 40.01, and 0.01평 at 29.99; 29.99 is inside 20평대, and 39.5 is 0.5평 from 40평대. An interval that cannot be read makes `V.area` absent; the price tier has no `similar` |
+| `CINV-27` | **`EV4`, the two area readings** (rev 9.3). (a) `areaExact` outranks `id` and style: against 34평, a 34평 record precedes a 32평 one with a smaller `id`, and a 34평 record with no style match precedes a 33평 one with a match. (b) Inside one tier a style match outranks a nearer area, and with everything else equal the nearer area precedes the smaller `id` (`areaGap`). (c) Price and coverage keep their place: on *"34평 전체 5천"* a 33평 record inside the budget precedes a 34평 record with no total, and on *"30평대 전체 5천"* a 29평 record inside the budget precedes a record inside the range with no total. (d) Records whose tier is `none` are not ordered by distance: they share one `areaGap` and fall to `id`. (e) Inside a class's interval the three area entries are equal: exchanging 32평 and 37평 between two records leaves a 30평대 order unchanged. Fixture: *19평* ⇒ `bi-07`, `bi-11`, `bi-02`; `bi-02` (24평, `similar`) precedes `bi-01` (34평, `none`) although `bi-01` has the smaller `id` |
+| `CINV-28` | **area neutrality, for the tier and both readings** (`PB4`; rev 9.3). A record with no area, a record on the other basis, every record in mode `part`, and every record when the query states no area carry `areaRank` `none`, `areaExact` 1 and `areaGap`'s fixed value — the same three entries as a record farther than 30 %. Deleting `property.area` gives the evaluation of an area far outside 30 %, never an earlier tuple, and removes no record; a partial request orders identically with and without an area. Fixtures: open *34평* and open *30평대* × `bi-15` (no area) — its tuple without `id` equals that of every compared record beyond 30 % (in mode `open`, with no style asked, nothing else differs); *전용 30평대* ⇒ the 17 supply records `not_comparable`, `bi-14` (전용 84㎡) first |
 
 ---
 
@@ -1309,7 +1445,10 @@ kept in the archive. Rev 9.2 put six questions to the owner; the owner closed al
 ## 19. Acceptance rows — executed
 
 `04` §4.1's rows, with `V` fixed so that they test the evaluation and not a parser. Records are the
-19 in `data/sites/boost-interior-demo/content/projects.json`. Hand-computed in
+19 of the golden V0.2 package `platform/test/golden/portfolio-v0.2/portfolio.d56509c8100a56fdf9644baff78ff9e1.json`
+— the corpus authored in `data/sites/boost-interior-demo/content/projects.json`, which has held only
+eight of them since the record truth split of 2026-09-29 (`f93e04a`); the consumer's tests read the
+same bytes (sha256 `c7662414…3816`). Hand-computed in
 `docs/result/interior-portfolio-v0.2/34a-product-rules-and-hand-examples.md` §3.5 and re-executed by
 `proof/contract-simplified.mjs`. These rows supersede `04` §4.1.
 
@@ -1329,6 +1468,31 @@ kept in the archive. Rev 9.2 put six questions to the owner; the owner closed al
 Row I under a consumer table that maps 수납 to `storage` instead: `Q = {entrance, storage}`, no
 `exact`, and `bi-06`, `bi-18` `overlap`. The difference belongs to the alias table (`WS6`); the
 evaluation is a function of `V`.
+
+**Rev 9.3 — rows A–I re-verified, none changed.** Every row above is byte-identical to rev 9.2.1
+and was re-executed under the eight-entry tuple, the `similar` tier and `VB4`, by the consumer
+(BoostChat `test:portfolio-matcher-v02`, `ACC-A` … `ACC-I`, `ACC-D2`, `ACC-F-8th`, `ACC-G-4th`,
+`ACC-I-alt`) and by `proof/contract-simplified.mjs` (`P7`, `P9`). The rows give an area as a figure
+and a unit; the basis of a bare "34평" is the consumer's reading (BoostChat: `supply`). Rows A, F and
+G have the same top three whether that basis is `supply` or unknown (`P9`); below the top three the
+full order does depend on it, and rev 9.3 changes it (`areaGap`, `similar`) — §20.11.
+
+**Rev 9.3 — added rows.** The area behaviour rev 9.3 introduces, on the same 19 records. `V` is the
+query the consumer test fixes; the areas are `supply` unless the row says otherwise. Every outcome
+is asserted by the named BoostChat test and re-executed by `proof/contract-simplified.mjs` (`P9`).
+
+| row | `V` | outcome | consumer test |
+|---|---|---|---|
+| J | open · area 19 py | `bi-07` (19평, same area) · `bi-11` (20평, within 10 %) · `bi-02` (24평, within 30 %). `bi-02` precedes `bi-01` (34평, beyond 30 %) on area evidence, although `bi-01` has the smaller `id` | `CLASS-1`, `RANK-4` |
+| K | open · area 34 py | `bi-01` · `bi-06` · `bi-09` · `bi-10` — the four 34평 records (`areaExact` 0), by `id`, ahead of every other record. Likewise 24 py ⇒ `bi-02` first, 51 py ⇒ `bi-08` first; whole · 34 py ⇒ `bi-01` first, whole · 19 py ⇒ `bi-07` first | `CLASS-2`, `RANK-12` |
+| L | open · area 30평대 (30 ≤ x < 40) | first nine, by `id`: `bi-01` · `bi-04` · `bi-06` · `bi-09` · `bi-10` · `bi-16` · `bi-17` (공급 112㎡ = 33.88평) · `bi-18` · `bi-19` — every record inside the range, all with equal area entries; the other ten follow | `CLASS-3-30` |
+| M | open · area 20평대 (20 ≤ x < 30) | first four, by `id`: `bi-02` · `bi-05` · `bi-11` · `bi-12` | `CLASS-3-20` |
+| N | open · area 40평대 (40 ≤ x < 50) | first two, by `id`: `bi-03` · `bi-13` | `CLASS-3-40` |
+| O | open · area 30평대 · styles {화이트} — *"30평대 화이트 아파트 사례 보여주세요"* | first nine: `bi-01` · `bi-04` · `bi-06` · `bi-09` · `bi-16` · `bi-19` (inside the range, 화이트) then `bi-10` · `bi-17` · `bi-18` (inside, no match). Every 화이트 record outside the range follows them: `bi-18` precedes `bi-02` (24평, 화이트) | `CLASS-6`; the utterance and its five cards: `AC-1` (`test:dogfood-stabilization-v1`) |
+| P | whole · area 30평대 | `bi-01` exact · `bi-09` exact · `bi-10` exact | `CLASS-12` |
+| Q | partial · {kitchen} · area 30평대 (`not_applied`) | the order of row C's `V` — identical with and without the area; `bi-14` `exact` first; every record's area `none`, noted `not_applied` | `CLASS-7`, `RANK-8` |
+| R | open · area 전용 30평대 | the 17 `supply` records are `not_comparable`; `bi-14` (전용 84㎡ = 25.41평, within 20 % of 30) is first | `CLASS-9` |
+| S | whole · area 30평대 · budget exact 5천 | first seven, all `exact`: `bi-09` (inside the range, total inside the budget) · `bi-01` · `bi-10` (inside the range, price `none`) · `bi-12` (26평, within 20 %; price `strong`) · `bi-13` (48평, within 30 %) · `bi-07` · `bi-11` (beyond 30 %). `areaRank` precedes `priceRank`, so `bi-12` follows the records inside the range; `priceRank` precedes `areaExact`, so with `bi-09` moved to 29평 it still precedes `bi-01` | `CLASS-16` |
 
 ---
 
@@ -1410,3 +1574,81 @@ results: every §19 row and every class, tier and order is unchanged. Checked by
 | `D-10` | already fixed in `34a` §1.2 (‡); confirmed, not re-edited |
 | `D-11` | `EV4` cites V0 `ID3` for uniqueness; checker fixture counts printed, `CINV-24(b)` label, and the two checker-only defaults (unknown unit, missing currency) removed |
 
+### 20.11 Rev 9.2.1 → rev 9.3 — area evidence in the order, the `similar` tier, area classes
+
+Dated 2026-10-10. This revision **synchronises the contract with the consumer's matcher as it runs
+today**; it designs nothing. Two changes of that day reached it by different routes, and the table
+says which is which:
+
+- **the consumer's matcher ranking hotfix** (BoostChat `40863fb`) inserted `areaExact` and `areaGap`
+  into `EV4`'s tuple and narrowed the consumer's card-order rule. The contract was **not** edited at
+  the time; the difference was recorded in BoostChat `docs/reports/portfolio-publishing-v2.md` §11.3.
+  As shipped by the hotfix, `areaGap` ordered records inside the 10 % and 20 % tiers;
+- **owner-approved policy** (Auto Onboarding V1 brief §13, 2026-10-10; BoostChat `d88d5c9`): an area
+  class "N평대" is an area criterion, and an exact figure is compared out to ±30 % (`similar`). That
+  commit also carried `areaExact` and `areaGap` over to the class interval and to `similar`;
+- **the consumer's review fixes** (BoostChat `77aef92`, the same day): an independent review of
+  `d88d5c9` found three defects in how a class was read, and the fixes are part of this revision —
+  a class is the half-open interval `N ≤ x < N+10` (an area such as 39.5평 belonged to no class),
+  a compound of classes is absent (it was read as one of its classes), and a corrected area is the
+  one stated after the marker (the negated one was read). For whole-number areas the first changes
+  nothing the owner approved.
+
+Read against BoostChat `src/lib/first-party/matcher-v02.ts`, `interior-query.ts`,
+`interior-search.ts`, `interior-extract.ts`, `area.ts`, `executor.ts` and `search-policy.ts` at
+`77aef92`, and its tests, run at that commit: `test:portfolio-matcher-v02` (130/130),
+`test:dogfood-stabilization-v1` (225/225) and `test:interior-extract-v02` (161/161). The
+tool-argument path is asserted by `test:portfolio-v02-acceptance` (`AC-6` … `AC-10`), which needs a
+database and was read, not run, for this revision. Checked by `proof/contract-simplified.mjs`.
+
+| item | change | why |
+|---|---|---|
+| `VB4` (**new**), `V.area` in §14.3.1 | `V.area` is an interval with ends `lo`, `hi`: an exact figure is `[v, v]`, "N평대" (`N` = 10 … 90) is `N ≤ x < N+10` with ends `N` and `N+9`. Every other range and "N형" stay absent; an unreadable interval makes the whole area absent. Rev 9.2.1: *a range or a class (30평대) is absent* | owner-approved policy (brief §13.1, §13.3, §13.5) |
+| `VB4`, the class as a half-open interval | an area between `N+9` and `N+10` is inside the class (39.5평, 공급 130㎡ are 30평대). `d88d5c9` read a class as `[N, N+9]` with both ends inclusive, which left those areas in no class (39.5평 was 0.5평 outside 30평대 and 0.5평 outside 40평대) | review fix `77aef92` (`CLASS-10b`, `CLASS-15a/b/c`). For whole-number areas it is the owner-approved `N … N+9` |
+| `VB4`, compounds | a class joined to another class or figure (20~30평대, 20평대나 30평대, 30평대나 40평) is absent. `d88d5c9` read one of the classes | review fix `77aef92` (`MT-AC5`, `MT-AC7`, dogfood `AC-8`; tool argument: acceptance `AC-6` … `AC-8`, `AC-10`). It applies the rule rev 9.2.1 already had for a range — absent, never guessed |
+| `VB4`, corrections | after 말고 · 대신 · 아니라 · 아니고 the area stated after the marker is `V.area`. `d88d5c9` read the first, negated, area | review fix `77aef92` (`MT-AC8` … `MT-AC10`, dogfood `AC-9`, acceptance `AC-9`, `AC-10`) |
+| `EV3` area tier | four values — `similar` (≤ 30 %) between `acceptable` and `none`; gap `g` and base `b` defined on the interval (nearer end: `N` below a class, `N+9` above it, so the gap steps from 0 to 1평 at `N+10`), every bound inclusive. For an exact figure the 10 % and 20 % results are unchanged | owner-approved policy (brief §13.2, §13.3); the upper edge of a class by `77aef92` |
+| `EV3` `areaExact`, `areaGap` (**new** readings of the area comparison, not tiers) | `areaExact` 0 iff computed, `g = 0`, both bases known; `areaGap` = `g` inside `strong`/`acceptable`/`similar`, one fixed value otherwise | hotfix `40863fb`; extended to the interval and to `similar` with the policy (`d88d5c9`) |
+| `EV4` | the tuple is `( classRank, areaRank, priceRank, −coverage, areaExact, styleRank, areaGap, id )` — eight entries where rev 9.2.1 had six; `areaRank` has four levels, `priceRank` three, stated separately. The first four entries and their order are unchanged | hotfix `40863fb` (the two entries); policy (the fourth level) |
+| `EV4`, wording | "no key refers to a position another key produced" restated as "every entry is a value of the record's own evaluation", which is what stays true once `areaGap` is defined through the tier; "three records in the demo" removed | accuracy — the consumer shows up to five cards |
+| presentation order (**new**, consumer behaviour, not a rule) | the on-screen order and the labels A–E are kept only while the three visible cards are the same set; otherwise `EV4`'s order is shown | hotfix `40863fb` (`search-policy.ts`); recorded here because the contract had no statement of it |
+| *Why this tuple* | says why `areaExact` precedes style and `areaGap` precedes only `id`, why the three area entries order nothing in mode `part`, and that `priceRank` precedes `areaExact` for a class as for a figure | hotfix `40863fb`; the last is pinned by `RANK-14` and `CLASS-16` (no code change in `77aef92`) |
+| `PB4` items 1 and 2 | name the two readings: a missing area carries `areaExact` 1 and `areaGap`'s fixed value, the evidence of a far area. The rule itself is unchanged | consequence of the hotfix, kept by the consumer (`RANK-5`, `CLASS-8b`) |
+| §14.3.6, tier wording | area: the same area, inside the stated range, within 10 / 20 / 30 %, or neither; a class is named as said | hotfix (same area) and policy (range, 30 %) |
+| `ST3` | style is the last *tier* of the tuple, after `areaExact`, with `areaGap` and `id` behind it — no longer "the last tier before `id`" | hotfix `40863fb` |
+| `CINV-26`, `CINV-27`, `CINV-28` (**new**) | area bounds for a figure and a class; the two readings in the order; area neutrality | cover the above; each cites fixtures the consumer asserts |
+| §19 | rows A–I byte-identical, re-verified; rows J–S added; the corpus sentence now names the golden package, because `projects.json` has held 8 of the 19 records since 2026-09-29 | — |
+| checker | `proof/contract-simplified.mjs` mirrors rev 9.3 (interval with a half-open class, four area values, eight entries), reads the golden package, and gains `P9` | — |
+
+**Unchanged, and verified so**: `EV1`, `EV2` (mode and class — full against partial, the partial
+ladder), the price, coverage and style tiers, `VB1`–`VB3`, `GR2`, `GR3`, `LO1`, `PY1`/`AR5` (bases
+are never compared; a unit is converted inside one basis), `CINV-1` … `CINV-25`, and §19 rows A–I
+with `D2`, `F`'s 8th and `G`'s 4th.
+
+**What rev 9.3 does change below the top three.** Three hand examples of `34a` §3 (rev 9.2 history,
+not edited) no longer follow from the contract, and the checker asserts the new outcome and prints
+the old one instead of passing them:
+
+| `34a` example | rev 9.2.1 | rev 9.3 | reason |
+|---|---|---|---|
+| row A, full order (`34a` §3.5), positions 8–18 | `bi-04` `bi-06` `bi-17` `bi-19` · `bi-05` `bi-16` `bi-18` · `bi-02` `bi-03` `bi-08` `bi-14` | `bi-06` `bi-17` `bi-04` `bi-19` · `bi-16` `bi-18` `bi-05` · `bi-03` `bi-14` `bi-02` · `bi-08` | the `fallback` records are ordered by `areaGap` inside each tier; 42평, 전용 84㎡ and 24평 are `similar`, no longer `none`. Positions 1–7 and 19 are unchanged. (This is the checker's fixture, where the request's basis is unknown, so 전용 84㎡ is compared; with the basis read as `supply` it is `not_comparable` and stays `none`) |
+| `O-6` (`34a` §3.4), *"창호 교체하려는데 34평 전체 리모델링"*, first seven | `bi-10` `bi-01` `bi-09` `bi-13` `bi-07` `bi-11` `bi-12` | `bi-10` `bi-01` `bi-09` `bi-12` `bi-13` `bi-07` `bi-11` | `bi-12` (26평) is `similar`, and `areaRank` precedes coverage, so it passes `bi-13` (48평, `none`, coverage 1). The first three are unchanged |
+| `MN-4` (`34a` §3.2), row A, `bi-09` with its area deleted | rank 1 → 3 | rank 1 → 4 | `bi-12` is `similar` and precedes a record with no area. `PB4` allows a fall; the tuple never rises |
+
+The old cycle trio of `32-` §5 (`O-2`) is still a chain, in the order `bi-17` < `bi-04` < `bi-15`
+(rev 9.2.1: `bi-04` < `bi-17`, on `id`). `CINV-13`(c)'s statement — `bi-09` and `bi-10` both
+`exact`, `bi-10` first on coverage — still holds.
+
+**Recorded, not fixed.** (1) Three readings of an utterance in which BoostChat differs from `VB4`
+(listed under `VB4`): a range of exact figures is read as one of its figures ("30~40평" ⇒ 40평 —
+older than rev 9.3, no owner decision, pinned as existing behaviour by `MT-AC6`); a compound joined
+by a word outside the consumer's closed list ("20평대랑 30평대") is read as its first class; a
+correction made without one of the four markers ("30평대 빼고 20평대") is read as its first area.
+The last two were observed by running the consumer at `77aef92`; no consumer test covers them.
+(2) `08-integration-contract-v0.2.json`, which the header calls derived from this file, does not
+exist in the repository, so there is no derived copy to regenerate.
+(3) `08-portfolio-media-1.1-addendum.md` says it amends rev 9.2.1; it concerns media only and no
+statement in it is affected. (4) The six-entry tuple and the two-step area tier remain in the dated
+rev 9.2 reports `docs/result/interior-portfolio-v0.2/34-product-invariant-simplification.md` and
+`34a-product-rules-and-hand-examples.md`. They are history and are not edited; this file is the
+contract.
