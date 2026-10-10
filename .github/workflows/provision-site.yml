@@ -1,0 +1,107 @@
+# Hosted site provisioning — creates ONE new site from a BoostChat provisioning job.
+#
+# BoostChat's Super Admin creates the job and dispatches this workflow with nothing but the job id.
+# The runner (platform/cli/site-provision.ts) claims the job, gets the spec from BoostChat, and does
+# the rest: scaffold (zero portfolio projects) → build → upload → announce → Worker route → activate.
+# Contract: boost-chat docs/reports/auto-onboarding-v1.md §3.2 / §7. Runbook: docs/result/site-provisioning/README.md.
+#
+# RULES OF THIS FILE (platform/test/provision.test.ts checks them):
+#   - An input never appears inside a `run:` script. Inputs reach a process ONLY through `env:` (the
+#     job id) or `with:` (the ref to check out); the scripts below contain no ${{ }} at all.
+#   - Secrets are mapped on the ONE step that needs them. The smoke step has none.
+#   - Third-party actions are pinned to a full commit SHA.
+name: provision-site
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: BoostChat provisioning job id (a lowercase UUID). Not needed for a smoke run.
+        type: string
+        required: false
+      source_ref:
+        description: The commit or branch of this repository the runner is checked out at.
+        type: string
+        required: true
+      smoke:
+        description: Build the fixture site only — no claim, no secret, no upload, no route.
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# One run per job: a re-dispatch of the same job queues behind the running one instead of racing it.
+concurrency:
+  group: provision-${{ inputs.job_id || 'smoke' }}
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out the runner
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.source_ref }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Node 22
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      # pnpm is installed NEXT TO node on purpose, and not with pnpm/action-setup:
+      #   - site:build runs `pnpm` with an allowlisted PATH (node's own directory + the system's), so a
+      #     pnpm anywhere else is not found by the build;
+      #   - pnpm/action-setup sets PNPM_HOME, which moves pnpm 11's store; the build drops that variable
+      #     and would then look for its packages in another (empty) store.
+      # 11.21.0 = the pnpm of the lockfile (lockfileVersion 9.0) and of every build record so far.
+      - name: Install pnpm 11.21.0 next to node
+        run: |
+          npm install --global --no-fund --no-audit pnpm@11.21.0
+          test "$(dirname "$(command -v pnpm)")" = "$(dirname "$(command -v node)")"
+          pnpm --version
+
+      # The store as the site builder resolves it: the same allowlisted environment (HOME and PATH only).
+      - name: Locate the pnpm store
+        id: store
+        run: |
+          store="$(env -i HOME="$HOME" PATH="$(dirname "$(command -v node)"):/usr/bin:/bin" pnpm store path)"
+          echo "path=$store" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the pnpm store
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'data/template-releases/**/files/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+
+      - name: Install the platform
+        run: pnpm install --frozen-lockfile
+
+      # site:build installs every release workspace OFFLINE from the release's own lockfile, which pins
+      # packages the root lockfile does not hold. This fetches them and runs the builder's exact offline
+      # install as a proof — a failure here is a failure before any job is claimed.
+      - name: Prime the store for the offline site build
+        run: node_modules/.bin/tsx --tsconfig platform/tsconfig.json platform/provision/prime-store.ts
+
+      - name: Smoke — build the fixture site (no secret, no network target)
+        if: ${{ inputs.smoke }}
+        run: node_modules/.bin/tsx --tsconfig platform/tsconfig.json platform/cli/site-provision.ts --build-only --spec-file platform/provision/fixtures/smoke-spec.json
+
+      - name: Provision the site of the job
+        if: ${{ !inputs.smoke }}
+        env:
+          PROVISION_JOB_ID: ${{ inputs.job_id }}
+          BOOSTCHAT_BASE_URL: ${{ vars.BOOSTCHAT_BASE_URL }}
+          BOOSTCHAT_PUBLISHER_TOKEN: ${{ secrets.BOOSTCHAT_PUBLISHER_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          RECON_PUBLISH_ALLOW_REMOTE: "1"
+        run: node_modules/.bin/tsx --tsconfig platform/tsconfig.json platform/cli/site-provision.ts

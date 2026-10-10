@@ -49,6 +49,22 @@
       //
       // 2026-10-09: third exact route for the interior-03 demo (docs/result/interior-03-dagamhome-e2e/
       // 05-boostchat-and-domain.md), same form (b), same wildcard DNS record.
+      //
+      // ┌─ THIS ARRAY IS NO LONGER THE WHOLE LIST ───────────────────────────────────────────────────┐
+      // Since hosted site provisioning (platform/provision/, .github/workflows/provision-site.yml),
+      // one exact route per NEW hostname is created through the Cloudflare API
+      // (POST zones/<zone>/workers/routes → this script) and is NOT written back to this file.
+      //
+      // `wrangler deploy --env pilot` from this file is therefore FORBIDDEN: wrangler replaces the
+      // Worker's whole route list with the array below, and every provisioned site would go off the
+      // air without an error. Deploy this Worker ONLY with
+      //
+      //     tsx --tsconfig platform/tsconfig.json platform/cli/runtime-deploy.ts [--dry-run]
+      //
+      // which lists the zone's live routes of this script, merges them with this array, refuses when
+      // the list cannot be read, and deploys from the merged list. The array below stays as the seed
+      // (the hostnames attached by hand) and must keep the form { pattern, zone_name } with ONE zone.
+      // └────────────────────────────────────────────────────────────────────────────────────────────┘
       ,"routes": [
         { "pattern": "interior-demo.boostweb.co.kr/*", "zone_name": "boostweb.co.kr" },
         { "pattern": "interior-demo-2.boostweb.co.kr/*", "zone_name": "boostweb.co.kr" },
