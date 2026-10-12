@@ -1,0 +1,278 @@
+/* ds-hero-statement — hero.statement (HE-C). Owner: E-TB-H.
+   The type is the image: label · display heading · a second-tone sentence · one link, then a
+   staggered strip of project covers (2 below 700, 3 from 700, 5 from 1024). No strip, no gap.
+   .ds-hero-statement--long = a long heading, one type step smaller.
+   Colour, type and spacing are --ds-* values only (platform/design/README.md). */
+
+.ds-hero-statement {
+  padding-block: var(--ds-space-6) calc(var(--ds-section-gap) / 2);
+  color: var(--ds-ink);
+  background: var(--ds-bg);
+}
+
+.ds-hero-statement__inner {
+  width: 100%;
+  max-width: calc(var(--ds-container-max) + 2 * var(--ds-gutter));
+  margin-inline: auto;
+  padding-inline: var(--ds-gutter);
+}
+
+/* the micro-label: the accent as one small solid block, then the company name */
+.ds-hero-statement__label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ds-space-3);
+  margin-bottom: var(--ds-space-5);
+  padding-bottom: var(--ds-space-4);
+  border-bottom: var(--ds-hairline) solid var(--ds-line);
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.ds-hero-statement__label::before {
+  content: "";
+  flex: none;
+  width: var(--ds-space-3);
+  height: var(--ds-space-3);
+  background: var(--ds-accent);
+}
+
+.ds-hero-statement__heading {
+  max-width: 13em;
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-display);
+  font-weight: var(--ds-weight-display);
+  line-height: var(--ds-leading-display);
+  letter-spacing: var(--ds-tracking-display);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.ds-hero-statement--long .ds-hero-statement__heading {
+  max-width: 17em;
+  font-size: var(--ds-text-3xl);
+}
+
+/* the second tone of the heading */
+.ds-hero-statement__line {
+  max-width: 26em;
+  margin-top: var(--ds-space-4);
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-xl);
+  font-weight: var(--ds-weight-display);
+  line-height: 1.4;
+  letter-spacing: var(--ds-tracking-display);
+  color: var(--ds-muted);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.ds-hero-statement__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-height: 44px;
+  margin-top: var(--ds-space-5);
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-base);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-decoration: underline;
+  text-decoration-color: var(--ds-accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.45em;
+  word-break: keep-all;
+}
+
+.ds-hero-statement__link svg {
+  flex: none;
+  transition: transform var(--ds-dur-1) var(--ds-ease);
+}
+
+.ds-hero-statement__link:hover svg {
+  transform: translateX(var(--ds-space-1));
+}
+
+.ds-hero-statement__link:focus-visible,
+.ds-hero-statement__shot:focus-visible {
+  outline: 2px solid var(--ds-ink);
+  outline-offset: var(--ds-space-1);
+}
+
+/* ---- the strip ---- */
+.ds-hero-statement__strip {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-4);
+  margin-top: var(--ds-space-7);
+  margin-left: auto;
+}
+
+.ds-hero-statement__strip--n1 {
+  max-width: 64%;
+}
+
+.ds-hero-statement__item {
+  flex: 5 1 0;
+  min-width: 0;
+}
+
+.ds-hero-statement__item:nth-child(2) {
+  flex-grow: 4;
+  margin-top: var(--ds-space-7);
+}
+
+.ds-hero-statement__item:nth-child(n + 3) {
+  display: none;
+}
+
+.ds-hero-statement__shot {
+  display: block;
+}
+
+.ds-hero-statement__frame {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--ds-radius-media);
+  background: var(--ds-surface);
+}
+
+.ds-hero-statement__item:nth-child(2) .ds-hero-statement__frame {
+  aspect-ratio: 1 / 1;
+}
+
+.ds-hero-statement__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--ds-dur-2) var(--ds-ease);
+}
+
+.ds-hero-statement__shot:hover .ds-hero-statement__img {
+  transform: scale(1.02);
+}
+
+.ds-hero-statement__name {
+  display: block;
+  margin-top: var(--ds-space-2);
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-sm);
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: 0;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.ds-hero-statement__place {
+  display: block;
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-sm);
+  line-height: 1.5;
+  letter-spacing: 0;
+  color: var(--ds-muted);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 700px) {
+  .ds-hero-statement {
+    padding-block: var(--ds-space-7) calc(var(--ds-section-gap) / 2);
+  }
+
+  .ds-hero-statement__label {
+    margin-bottom: var(--ds-space-7);
+  }
+
+  .ds-hero-statement__strip {
+    gap: var(--ds-space-5);
+  }
+
+  .ds-hero-statement__strip--n1 {
+    max-width: 40%;
+  }
+
+  .ds-hero-statement__strip--n2 {
+    max-width: 68%;
+  }
+
+  .ds-hero-statement__item:nth-child(3) {
+    display: block;
+    flex-grow: 4;
+    margin-top: var(--ds-space-5);
+  }
+
+  .ds-hero-statement__item:nth-child(1) .ds-hero-statement__frame {
+    aspect-ratio: 4 / 3;
+  }
+
+  .ds-hero-statement__item:nth-child(2) {
+    flex-grow: 3;
+  }
+
+  .ds-hero-statement__item:nth-child(2) .ds-hero-statement__frame {
+    aspect-ratio: 4 / 5;
+  }
+
+  .ds-hero-statement__item:nth-child(3) .ds-hero-statement__frame {
+    aspect-ratio: 1 / 1;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ds-hero-statement__strip {
+    margin-top: var(--ds-space-8);
+  }
+
+  .ds-hero-statement__strip--n1 {
+    max-width: 34%;
+  }
+
+  .ds-hero-statement__strip--n2 {
+    max-width: 56%;
+  }
+
+  .ds-hero-statement__strip--n3 {
+    max-width: 80%;
+  }
+
+  .ds-hero-statement__item:nth-child(4) {
+    display: block;
+    flex-grow: 3;
+  }
+
+  .ds-hero-statement__item:nth-child(4) .ds-hero-statement__frame {
+    aspect-ratio: 3 / 4;
+  }
+
+  .ds-hero-statement__item:nth-child(5) {
+    display: block;
+    flex-grow: 5;
+    margin-top: var(--ds-space-8);
+  }
+
+  .ds-hero-statement__item:nth-child(5) .ds-hero-statement__frame {
+    aspect-ratio: 3 / 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-hero-statement__link svg,
+  .ds-hero-statement__img {
+    transition: none;
+  }
+
+  .ds-hero-statement__link:hover svg,
+  .ds-hero-statement__shot:hover .ds-hero-statement__img {
+    transform: none;
+  }
+}

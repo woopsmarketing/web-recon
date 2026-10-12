@@ -29,7 +29,7 @@ export interface GalleryLabels {
 }
 
 /** one photo seat of the current view, with the group it belongs to and its index inside that group */
-interface Seat {
+export interface Seat {
   key: string;
   group: string;
   n: number;
@@ -103,7 +103,7 @@ export function ProjectGallery({ groups, labels }: { groups: GalleryGroupData[];
   );
 }
 
-function PhotoViewer({ seats, start, labels, onClose }: { seats: Seat[]; start: number; labels: GalleryLabels; onClose: () => void }) {
+export function PhotoViewer({ seats, start, labels, onClose }: { seats: Seat[]; start: number; labels: GalleryLabels; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
   /** where the press began: only a press that starts AND ends on the backdrop closes (a drag off the photo does not) */

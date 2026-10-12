@@ -1,0 +1,126 @@
+/* ds-about-manifesto — AB-C: one large statement under a small label; the first paragraph quiet beneath, a link for the rest.
+   The section is the page's ONE brand block, full bleed (--ds-block-bg / --ds-block-ink): a solid accent field under
+   accentUse `blocks`, a surface band under `minimal`, a tint under `fills`. Every colour inside is the block pair (or a
+   mix of the two), never --ds-ink / --ds-muted, so it reads on whatever the block is. Owner: E-TB-S, composed by E-TB-5. */
+.ds-about-manifesto,
+.ds-about-manifesto * {
+  box-sizing: border-box;
+}
+
+/* a full-bleed field: the half gaps are margins, so the distance to both neighbours stays one section gap */
+.ds-about-manifesto {
+  margin-block: calc(var(--ds-section-gap) / 2);
+  padding-block: calc(var(--ds-section-gap) * 0.75);
+  background: var(--ds-block-bg);
+  color: var(--ds-block-ink);
+}
+
+.ds-about-manifesto__inner {
+  width: 100%;
+  max-width: calc(var(--ds-container-max) + 2 * var(--ds-gutter));
+  margin-inline: auto;
+  padding-inline: var(--ds-gutter);
+}
+
+/* the micro-label of the statement hero: one small solid square, then the word */
+.ds-about-manifesto__label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ds-space-3);
+  margin: 0 0 var(--ds-space-6);
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.ds-about-manifesto__label::before {
+  content: "";
+  flex: none;
+  width: var(--ds-space-3);
+  height: var(--ds-space-3);
+  background: currentColor;
+}
+
+.ds-about-manifesto__statement {
+  margin: 0;
+  max-width: 18em;
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-2xl);
+  font-weight: var(--ds-weight-display);
+  line-height: var(--ds-leading-display);
+  letter-spacing: var(--ds-tracking-display);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+
+.ds-about-manifesto--long .ds-about-manifesto__statement {
+  font-size: var(--ds-text-xl);
+  max-width: 26em;
+}
+
+.ds-about-manifesto__aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ds-space-4);
+  max-width: 36em;
+  margin-top: var(--ds-space-6);
+  padding-top: var(--ds-space-5);
+  border-top: var(--ds-hairline) solid color-mix(in srgb, var(--ds-block-ink) 40%, var(--ds-block-bg));
+}
+
+.ds-about-manifesto__lead {
+  margin: 0;
+  font-family: var(--ds-font-body);
+  font-size: var(--ds-text-base);
+  line-height: var(--ds-leading-body);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.ds-about-manifesto__more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-height: 44px;
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-base);
+  font-weight: 500;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: var(--ds-hairline);
+  text-underline-offset: 0.4em;
+}
+
+.ds-about-manifesto__more:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ds-about-manifesto__more .i2-icon {
+    transition: transform var(--ds-dur-1) var(--ds-ease);
+  }
+  .ds-about-manifesto__more:hover .i2-icon {
+    transform: translateX(3px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .ds-about-manifesto__label {
+    margin-bottom: var(--ds-space-7);
+  }
+  .ds-about-manifesto__statement {
+    font-size: var(--ds-text-3xl);
+  }
+  .ds-about-manifesto--long .ds-about-manifesto__statement {
+    font-size: var(--ds-text-2xl);
+  }
+  .ds-about-manifesto__aside {
+    margin-top: var(--ds-space-8);
+    margin-inline-start: auto;
+    width: min(36em, 50%);
+  }
+}

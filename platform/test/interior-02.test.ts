@@ -10,8 +10,8 @@
  *           and proved it at the release gate; the site's pin is an immutable release that exists,
  *           verifies byte for byte, froze the provenance terms, passed every gate — the working
  *           tree's, or an earlier one that differs from it only in files no site build is changed by
- *           (plus ONE exact, closed exception: 1.1.0 ↔ 1.1.2 in sections/HomeKeywords.tsx — a re-pin
- *           that is pending, see PENDING_REPIN).
+ *           (plus ONE exact, closed exception: 1.1.0 ↔ 1.2.0 in the files PENDING_REPIN names one by
+ *           one — a re-pin that is pending, see there).
  * [package] the site's current package: built with that pin from the site's present data (identity
  *           recomputed here), QA pass, every page the fixture's data plans, no source term of either
  *           Template in any emitted text file, and no site of the first Template pinned to this one.
@@ -167,29 +167,81 @@ const PIN_MAY_LAG_IN = [`${templateDir(TEMPLATE)}/template.ts`];
  * ONE exact exception to that rule, for ONE pair of releases — a re-pin that is pending, not a
  * harmless lag.
  *
- * 1.1.2 changes sections/HomeKeywords.tsx: a home chip none of whose values (of a dimension it
- * names) matches a project of the site is left out, instead of being shown with every project.
- * That file IS read by a site build (and by a release's runtime kit), so by the rule above the
- * sites would be re-pinned. They were not: the site this check looks at — `SITE`,
- * ongyeol-interior-demo, the Template's own fictional site, whose tracked package the [package]
- * checks hold to its pin — is still pinned to 1.1.0, because re-pinning means rebuilding and re-recording its package
- * (and, for the reuse site, a production publish), and the release was cut without doing either.
- * Until it is re-pinned that site's package is built from the OLD HomeKeywords.tsx.
+ * WHAT IS PENDING. The site this check looks at — `SITE`, ongyeol-interior-demo, the Template's own
+ * fictional site, whose tracked package the [package] checks hold to its pin — is still pinned to
+ * 1.1.0. Two releases were cut since without re-pinning it: 1.1.2 (sections/HomeKeywords.tsx: a
+ * home chip none of whose values matches a project of the site is left out) and 1.2.0 (the design
+ * system: presets, variants, font sets, and the classic pages routed through it). Re-pinning means
+ * rebuilding and re-recording the site's package — and, for the reuse site, a production publish —
+ * and rebuilding a demo site is a production action that is not approved yet. Until it is re-pinned
+ * the site's package is built from the 1.1.0 bytes of every file under `changed`, and from none of
+ * the files under `added`.
  *
- * What makes the lag tolerable for THIS site with its PRESENT content is checked, not assumed:
- * interior-02-home-keywords.test.ts C2 computes home.keywords of ongyeol-interior-demo (and of the
- * reuse site) with the 1.1.0 release's runtime and with the 1.1.2 one and holds them identical —
- * all six of its chips match projects, so the fix changes nothing it shows today.
+ * WHY THE LAG IS TOLERABLE for a CLASSIC site (one with no design document — `site.design.config`
+ * is null by default, and this site sets none), checked, not assumed:
+ *   - 1.1.0 → 1.1.2: interior-02-home-keywords.test.ts C2 computes home.keywords of this site (and
+ *     of the reuse site) with the 1.1.0 release's runtime and with the newer one and holds them
+ *     identical — all six of its chips match projects.
+ *   - 1.1.2 → 1.2.0: the classic regression proof (`pnpm design:parity classic <out> --baseline
+ *     interior-02-1.1.2-0b35f76a156d`) builds the same classic fixture on both and compares five
+ *     pages at two widths: 10 / 10 identical, 0 differing pixels, identical body markup. The sixteen
+ *     changed files reach the classic output through `design/classic.tsx` (the classic sections and
+ *     chrome, by identity) and add `id` / `data-design` only where a design document exists.
+ *   - the manifest gains ONE member, `...designSections` (manifest/design.ts: the setting
+ *     `site.design` with `defaults: { config: null }` and no slot) — a site that does not set it
+ *     resolves to the classic recipe; routes, the other sections and the theme are unchanged.
+ * None of this makes the site current: a preset cannot be applied to it until it is re-pinned.
  *
- * The exception ends by itself: it names both release ids. Any later release of the Template is a
- * different head, so a site still pinned to 1.1.0 then fails G2 in this file again (as does a later
- * release that touches the file for a site pinned to 1.1.2) — until someone re-pins the site or
- * decides, here, in writing, why not. Delete this constant when no interior-02 site pins 1.1.0.
+ * THE EXCEPTION IS EXACT. It names both release ids and every file, one by one — no pattern, no
+ * directory. G2 holds it to the two release records in both directions: a file that differs and is
+ * not named fails, a named file that does not differ fails, a `changed` file must exist in both
+ * releases and an `added` one only in the head, and each manifest line must be in the head's body
+ * exactly once and absent from the pinned one. It ends by itself: any later release of the Template
+ * is a different head, so a site still pinned to 1.1.0 then fails G2 again — until someone re-pins
+ * the site or decides, here, in writing, why not. Delete this constant when the site is re-pinned.
  */
 const PENDING_REPIN = {
   pinned: "interior-02-1.1.0-be2c1e2d3850",
-  head: "interior-02-1.1.2-0b35f76a156d",
-  files: [`${templateDir(TEMPLATE)}/sections/HomeKeywords.tsx`],
+  head: "interior-02-1.2.0-da9e2c3b9d2b",
+  /** files BOTH releases hold, with other bytes in the head (16) — a build of the pinned site reads the OLD bytes of each */
+  changed: [
+    "app/about/page.tsx", "app/contact/page.tsx", "app/faq/page.tsx", "app/layout.tsx", "app/not-found.tsx", "app/page.tsx",
+    "app/portfolio/[slug]/page.tsx", "app/portfolio/page.tsx", "app/portfolio/page/[n]/page.tsx", "app/service/page.tsx",
+    "components/portfolio/ProjectGallery.tsx", "components/runtime/RuntimeSlot.tsx", "runtime/portfolio.ts", "sections/AboutPage.tsx", "sections/HomeKeywords.tsx",
+    "sections/SiteFooter.tsx",
+  ],
+  /** files only the head holds (88): the design system — nothing in the pinned release imports them */
+  added: [
+    "design/chrome.tsx", "design/classic.tsx", "design/config.ts", "design/contract.ts", "design/fonts.json",
+    "design/fonts.ts", "design/registry.ts", "design/resolve.ts", "design/sections.tsx", "design/slot-components.ts",
+    "design/slots.ts", "design/styles.ts", "design/tokens.ts", "design/variants/about/manifesto.tsx",
+    "design/variants/about/shared.ts", "design/variants/about/split-panel.tsx", "design/variants/about/statement-photo.tsx",
+    "design/variants/about/status.ts", "design/variants/action-bar/action-bar.tsx", "design/variants/action-bar/channels.ts",
+    "design/variants/action-bar/status.ts", "design/variants/cta/band.tsx", "design/variants/cta/quiet.tsx",
+    "design/variants/cta/shared.ts", "design/variants/cta/status.ts", "design/variants/detail/build.data.ts",
+    "design/variants/detail/gallery.data.ts", "design/variants/detail/gallery.tsx", "design/variants/detail/model.ts",
+    "design/variants/detail/parts.tsx", "design/variants/detail/status.ts", "design/variants/detail/typographic.data.ts",
+    "design/variants/detail/typographic.tsx", "design/variants/detail/zoom.tsx", "design/variants/footer/minimal.tsx", "design/variants/footer/status.ts",
+    "design/variants/header/centered.tsx", "design/variants/header/conversion.tsx", "design/variants/header/shared.tsx",
+    "design/variants/header/status.ts", "design/variants/hero/model.ts", "design/variants/hero/parts.tsx",
+    "design/variants/hero/photo.data.ts", "design/variants/hero/photo.tsx", "design/variants/hero/source.ts",
+    "design/variants/hero/split.data.ts", "design/variants/hero/split.tsx", "design/variants/hero/statement.data.ts",
+    "design/variants/hero/statement.tsx", "design/variants/hero/status.ts", "design/variants/services/numbered.tsx",
+    "design/variants/services/rows.tsx", "design/variants/services/shared.ts", "design/variants/services/status.ts",
+    "design/variants/showcase/cards.data.ts", "design/variants/showcase/cards.tsx", "design/variants/showcase/index.data.ts",
+    "design/variants/showcase/index.tsx", "design/variants/showcase/items.data.ts", "design/variants/showcase/model.ts",
+    "design/variants/showcase/panels.data.ts", "design/variants/showcase/panels.tsx", "design/variants/showcase/parts.tsx",
+    "design/variants/showcase/status.ts", "manifest/design.ts", "sections/AboutStory.tsx", "sections/FooterBand.tsx",
+    "styles/design/about-manifesto.css", "styles/design/about-split-panel.css", "styles/design/about-statement-photo.css",
+    "styles/design/action-bar.css", "styles/design/cta-band.css", "styles/design/cta-quiet.css",
+    "styles/design/detail-gallery.css", "styles/design/detail-typographic.css", "styles/design/footer-minimal.css",
+    "styles/design/header-centered.css", "styles/design/header-conversion.css", "styles/design/hero-photo.css",
+    "styles/design/hero-split.css", "styles/design/hero-statement.css", "styles/design/inner.css",
+    "styles/design/services-numbered.css", "styles/design/services-rows.css", "styles/design/showcase-cards.css",
+    "styles/design/showcase-index.css", "styles/design/showcase-panels.css", "styles/design/tokens.css",
+  ],
+  /** lines the head's manifest body (template.ts, `vertical:` … `});`) holds and the pinned one does not — by name, each exactly once */
+  manifestAdds: ["...designSections,"],
 } as const;
 const versionOf = (v: string) => v.split(".").map(Number) as [number, number, number];
 const notNewer = (a: string, b: string) => {
@@ -225,22 +277,49 @@ await check("G the release of the working-tree version IS the working tree: same
   ];
   assert(drift.length === 0, drift.slice(0, 12).join("\n"));
 });
-await check(`G2 the pin of ${SITE} is that release, or lags it only where a site build is not changed (PIN_MAY_LAG_IN: template.ts) — and, for exactly ${PENDING_REPIN.pinned} ↔ ${PENDING_REPIN.head}, in sections/HomeKeywords.tsx (PENDING_REPIN: the site is not re-pinned yet); every other file is byte-identical in both`, async () => {
+const PENDING_FILES: readonly string[] = [...PENDING_REPIN.changed, ...PENDING_REPIN.added].map((rel) => `${templateDir(TEMPLATE)}/${rel}`);
+await check(`G2 the pin of ${SITE} is that release, or lags it only where a site build is not changed (PIN_MAY_LAG_IN: template.ts) — and, for exactly ${PENDING_REPIN.pinned} ↔ ${PENDING_REPIN.head}, in the ${PENDING_FILES.length} files PENDING_REPIN names one by one (${PENDING_REPIN.changed.length} changed, ${PENDING_REPIN.added.length} only in the head: the site is not re-pinned yet) and in ${PENDING_REPIN.manifestAdds.length} named manifest line; every other file is byte-identical in both`, async () => {
   if (pin.releaseId === headId) return;
   const [pinned, head] = [await loadRelease(repoRoot, TEMPLATE, pin.releaseId), await loadRelease(repoRoot, TEMPLATE, headId)];
   const a = new Map(pinned.files.map((f) => [f.path, f.sha256]));
   const b = new Map(head.files.map((f) => [f.path, f.sha256]));
   const differs = [...new Set([...a.keys(), ...b.keys()])].filter((rel) => a.get(rel) !== b.get(rel)).sort();
   // the pending re-pin is this pair of releases and no other: another pin or another head gets no exception
-  const pending: readonly string[] = pin.releaseId === PENDING_REPIN.pinned && headId === PENDING_REPIN.head ? PENDING_REPIN.files : [];
+  const applies = pin.releaseId === PENDING_REPIN.pinned && headId === PENDING_REPIN.head;
+  const pending: readonly string[] = applies ? PENDING_FILES : [];
+  eq(new Set(PENDING_FILES).size, PENDING_FILES.length, "PENDING_REPIN names a file twice");
+  assert(!PENDING_FILES.some((rel) => /[*?{}]|\/$/.test(rel)), "PENDING_REPIN holds a pattern or a directory");
   eq(differs.filter((rel) => !PIN_MAY_LAG_IN.includes(rel) && !pending.includes(rel)), [], `files that differ between ${pin.releaseId} and ${headId}`);
-  // …and while the exception applies it is exact: the file it names does differ (a stale exception is not kept)
+  // …and while the exception applies it is exact: every file it names does differ (a stale exception is not kept) …
   eq(pending.filter((rel) => !differs.includes(rel)), [], `PENDING_REPIN names a file that does not differ between ${pin.releaseId} and ${headId}`);
-  // …and in that file, the manifest a build reads is the same but for the version: routes, sections, theme
+  if (applies) {
+    // … in the way it says: `changed` = in both releases, `added` = only in the head; nothing was removed
+    const of = (rels: readonly string[]) => rels.map((rel) => `${templateDir(TEMPLATE)}/${rel}`);
+    eq(of(PENDING_REPIN.changed).filter((rel) => !(a.has(rel) && b.has(rel))), [], "PENDING_REPIN.changed names a file that is not in both releases");
+    eq(of(PENDING_REPIN.added).filter((rel) => a.has(rel) || !b.has(rel)), [], "PENDING_REPIN.added names a file the pinned release holds (or the head does not)");
+    eq(differs.filter((rel) => !b.has(rel)), [], "files the head no longer holds");
+    eq([differs.length, pinned.files.length, head.files.length], [PENDING_FILES.length + PIN_MAY_LAG_IN.length, 112, 200], "the size of the lag: differing files, files of the pinned release, files of the head");
+  }
+  // …and in template.ts, the manifest a build reads is the same but for the version — routes, sections, theme — and, for this pair
+  // only, but for the manifest lines PENDING_REPIN names: each one in the head's body exactly once, and not in the pinned one
   const text = async (id: string) => readFile(path.join(repoRoot, "data/template-releases", TEMPLATE, id, "files", PIN_MAY_LAG_IN[0]!), "utf8");
   const body = (t: string) => t.slice(t.indexOf("vertical:"), t.indexOf("\n});") + 4);
-  const [before, after] = [await text(pin.releaseId), await text(headId)];
-  assert(body(before).length > 500 && body(before) === body(after), "the manifest body (routes, sections, theme) differs between the two releases");
+  const [before, after] = [body(await text(pin.releaseId)), body(await text(headId))];
+  const mayAdd: readonly string[] = applies ? PENDING_REPIN.manifestAdds : [];
+  const linesOf = (t: string) => t.split("\n");
+  for (const line of mayAdd) {
+    eq([linesOf(before).filter((l) => l.trim() === line).length, linesOf(after).filter((l) => l.trim() === line).length], [0, 1], `manifest line \`${line}\` (pinned, head)`);
+  }
+  const without = (t: string) => linesOf(t).filter((l) => !mayAdd.includes(l.trim())).join("\n");
+  assert(before.length > 500 && before === without(after), "the manifest body (routes, sections, theme) differs between the two releases beyond what PENDING_REPIN names");
+  if (applies) {
+    // what that one line spreads in: ONE setting section whose default is "no design document" — the classic site
+    const fragment = await readFile(path.join(repoRoot, "data/template-releases", TEMPLATE, headId, "files", templateDir(TEMPLATE), "manifest/design.ts"), "utf8");
+    eq((fragment.match(/^  "[a-z.]+": \{$/gm) ?? []).map((l) => l.trim()), ['"site.design": {'], "the sections manifest/design.ts declares");
+    assert(/defaults: \{ config: null \},\n    slots: \{\},/.test(fragment), "site.design no longer defaults to no design document (config: null) with no slot");
+    const siteSettings = JSON.parse(await readFile(path.join(repoRoot, "data/sites", SITE, "settings.json"), "utf8")) as { overrides?: Record<string, unknown> };
+    eq(siteSettings.overrides?.["site.design"], undefined, `${SITE} sets a design document: it is no longer a classic site, and this lag is not tolerable`);
+  }
 });
 await check("G3 the Template declares the portfolio runtime, and its release records exactly that after proving it: gate passed, a safe empty state; the pinned release still resolves (declared, or legacy for one cut before the capability)", async () => {
   // typed: the declaration is assignable to what the platform reads

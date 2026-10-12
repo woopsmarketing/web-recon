@@ -1,0 +1,56 @@
+/* Design tokens — the --ds-* vocabulary with its CLASSIC defaults (theme tier 2 of a site that chose nothing, in
+   reference form: the colour roles follow the tier-1 custom properties). GENERATED: this file is exactly
+   defaultTokensCss(CLASSIC_THEME) of design/tokens.ts below this comment (platform/test/design.test.ts holds it);
+   change the compiler, then run `pnpm design:check --write-tokens`. A site WITH a design document gets its own
+   values inline (<style id="site-design">), which win over this sheet. Meanings: design/tokens.ts DS_TOKENS. */
+:where(:root) {
+  --ds-font-display: var(--typography-heading);
+  --ds-font-body: var(--typography-body);
+  --ds-font-label: var(--typography-body);
+  --ds-text-xs: 0.8125rem;
+  --ds-text-sm: 0.875rem;
+  --ds-text-base: clamp(1rem, 0.0926vw + 0.9792rem, 1.0625rem);
+  --ds-text-md: clamp(1.0625rem, 0.1852vw + 1.0208rem, 1.1875rem);
+  --ds-text-lg: clamp(1.25rem, 0.3704vw + 1.1667rem, 1.5rem);
+  --ds-text-xl: clamp(1.5rem, 0.7407vw + 1.3333rem, 2rem);
+  --ds-text-2xl: clamp(1.875rem, 1.2963vw + 1.5833rem, 2.75rem);
+  --ds-text-3xl: clamp(2.25rem, 2.2222vw + 1.75rem, 3.75rem);
+  --ds-text-display: clamp(2.5rem, 3.7037vw + 1.6667rem, 5rem);
+  --ds-weight-display: 700;
+  --ds-weight-heading: 700;
+  --ds-leading-display: 1.24;
+  --ds-leading-body: 1.7;
+  --ds-tracking-display: -0.02em;
+  --ds-space-1: 0.25rem;
+  --ds-space-2: 0.5rem;
+  --ds-space-3: 0.75rem;
+  --ds-space-4: 1rem;
+  --ds-space-5: 1.5rem;
+  --ds-space-6: 2rem;
+  --ds-space-7: 3rem;
+  --ds-space-8: 4.5rem;
+  --ds-section-gap: clamp(4rem, 5.1852vw + 2.8333rem, 7.5rem);
+  --ds-container-max: 1280px;
+  --ds-gutter: clamp(1.25rem, 1.8519vw + 0.8333rem, 2.5rem);
+  --ds-radius-media: 10px;
+  --ds-radius-control: 8px;
+  --ds-hairline: 1px;
+  --ds-bg: var(--color-canvas);
+  --ds-surface: var(--color-surface-secondary);
+  --ds-ink: var(--color-text-primary);
+  --ds-muted: var(--color-text-secondary);
+  --ds-line: var(--color-border-default);
+  --ds-accent: var(--color-accent-primary);
+  --ds-accent-ink: var(--color-action-primary-text);
+  --ds-accent-text: var(--color-text-primary);
+  --ds-tint: var(--color-surface-secondary);
+  --ds-block-bg: var(--color-surface-secondary);
+  --ds-block-ink: var(--color-text-primary);
+  --ds-inverse-bg: var(--color-text-primary);
+  --ds-inverse-ink: var(--color-canvas);
+  --ds-scrim: rgba(12, 12, 10, 0.52);
+  --ds-on-scrim: rgb(255, 255, 255);
+  --ds-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ds-dur-1: 180ms;
+  --ds-dur-2: 420ms;
+}

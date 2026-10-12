@@ -1,47 +1,28 @@
 import Link from "../components/ui/Link";
-import { contactEmail, contactHref, liveLink, navItems, type LiveLink } from "../lib/links";
-import { hasRoute } from "../lib/routes";
+import { contactEmail, liveLink, navItems, type LiveLink } from "../lib/links";
+import { FooterBand, footerBand } from "./FooterBand";
 import type { Ctx } from "./types";
 
 /**
  * site.footer (SHELL) — rendered once by the root layout after every page:
- *   (a) the two-half CTA band: left half on the accent with label / title / line / button → contact
- *       route (+ an optional mark), right half over `showcaseMedia` with the same structure → portfolio
- *       route; a half without a title is omitted, the band without halves too;
+ *   (a) the two-half CTA band (sections/FooterBand): left half on the accent with label / title /
+ *       line / button → contact route (+ an optional mark), right half over `showcaseMedia` with the
+ *       same structure → portfolio route; a half without a title is omitted, the band without halves too;
  *   (b) the dark block: logo mark + up to four columns (site pages · support links · locations ·
  *       company rows + e-mail); every row and every empty column is omitted;
  *   (c) up to three legal lines + a copyright line.
+ * `band={false}` leaves (a) out — for a footer variant of a site whose home recipe carries its own
+ * call to action (design/variants/footer). The classic site renders all three.
  */
-export function SiteFooter({ ctx }: { ctx: Ctx }) {
+export function SiteFooter({ ctx, band = true }: { ctx: Ctx; band?: boolean }) {
   const t = (key: string) => ctx.slots.text("site.footer", key);
-  const contact = contactHref(ctx);
-  const portfolio = hasRoute(ctx, "portfolio.index") ? "/portfolio" : undefined;
   const media = (key: string) => {
     const m = ctx.slots.media("site.footer", key);
     return m ? { ...ctx.assets.resolve(m.asset), alt: m.alt } : undefined;
   };
 
   // (a) CTA band
-  const ctaTitle = t("ctaTitle");
-  const showcaseTitle = t("showcaseTitle");
-  const ctaMark = media("ctaMark");
-  const showcaseMedia = media("showcaseMedia");
-  const half = (kind: "cta" | "showcase", title: string, href: string | undefined, buttonLabel: string | undefined) => (
-    <div className={`i2-fcta__half i2-fcta__half--${kind}`}>
-      {kind === "showcase" && showcaseMedia ? <img className="i2-fcta__bg" src={showcaseMedia.src} width={showcaseMedia.width} height={showcaseMedia.height} alt={showcaseMedia.alt} loading="lazy" decoding="async" /> : null}
-      <div className="i2-fcta__body">
-        {t(`${kind}Label`) ? <p className="i2-fcta__label">{t(`${kind}Label`)}</p> : null}
-        <p className="i2-fcta__title">{title}</p>
-        {t(`${kind}Text`) ? <p className="i2-fcta__text">{t(`${kind}Text`)}</p> : null}
-        {href && buttonLabel ? (
-          <Link href={href} className={`i2-btn ${kind === "cta" ? "i2-btn--navy" : "i2-btn--mint"}`}>
-            {buttonLabel}
-          </Link>
-        ) : null}
-      </div>
-      {kind === "cta" && ctaMark ? <img className="i2-fcta__mark" src={ctaMark.src} width={ctaMark.width} height={ctaMark.height} alt={ctaMark.alt} loading="lazy" decoding="async" /> : null}
-    </div>
-  );
+  const bandData = band ? footerBand(ctx) : undefined;
 
   // (b) dark block
   const pages = navItems(ctx, {
@@ -78,12 +59,7 @@ export function SiteFooter({ ctx }: { ctx: Ctx }) {
 
   return (
     <footer className="i2-footer" data-section="site.footer">
-      {ctaTitle || showcaseTitle ? (
-        <div className="i2-fcta">
-          {ctaTitle ? half("cta", ctaTitle, contact, t("ctaButtonLabel")) : null}
-          {showcaseTitle ? half("showcase", showcaseTitle, portfolio, t("showcaseButtonLabel")) : null}
-        </div>
-      ) : null}
+      {bandData ? <FooterBand data={bandData} /> : null}
       <div className="i2-finfo">
         <div className="i2-finfo__inner">
           <div className="i2-finfo__brand">

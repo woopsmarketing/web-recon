@@ -1,0 +1,229 @@
+/* ds-footer-minimal — the footer without the call-to-action band: brand and pages, the business facts the site holds,
+   the legal lines. Quiet, on the page background, one hairline above. Owner: E-TB-C. */
+
+.ds-footer-minimal {
+  margin-top: var(--ds-section-gap);
+  color: var(--ds-ink);
+  background: var(--ds-bg);
+  border-top: var(--ds-hairline) solid var(--ds-line);
+}
+
+/* a page whose <main> ends in a design section (the home recipe, a design detail page): that section already
+   closes with half a gap, so the footer adds the other half — one section gap, like every other seam */
+main:has(> [class*="ds-"]:last-child) ~ .ds-footer-minimal {
+  margin-top: calc(var(--ds-section-gap) / 2);
+}
+
+.ds-footer-minimal__inner {
+  display: grid;
+  gap: var(--ds-space-7);
+  max-width: calc(var(--ds-container-max) + 2 * var(--ds-gutter));
+  margin-inline: auto;
+  padding: var(--ds-space-7) var(--ds-gutter) var(--ds-space-6);
+}
+
+.ds-footer-minimal__top {
+  display: grid;
+  gap: var(--ds-space-6);
+}
+
+.ds-footer-minimal__brand {
+  min-width: 0;
+}
+
+.ds-footer-minimal__mark {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 44px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ds-footer-minimal__wordmark {
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-weight-display);
+  line-height: 1.2;
+  letter-spacing: var(--ds-tracking-display);
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+.ds-footer-minimal__logo {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 48px;
+  object-fit: contain;
+}
+
+.ds-footer-minimal__summary {
+  max-width: 36em;
+  margin: var(--ds-space-3) 0 0;
+  font-size: var(--ds-text-sm);
+  line-height: var(--ds-leading-body);
+  color: var(--ds-muted);
+  word-break: keep-all;
+}
+
+.ds-footer-minimal__heading {
+  margin: 0 0 var(--ds-space-2);
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-xs);
+  line-height: 1.4;
+  color: var(--ds-muted);
+}
+
+.ds-footer-minimal__links {
+  display: flex;
+  flex-wrap: wrap;
+  /* the links carry their own side padding (a tap target is 44px wide at least); the list steps out by as much,
+     so the first word still stands on the column edge */
+  margin: 0 calc(var(--ds-space-4) * -1);
+  padding: 0;
+  list-style: none;
+}
+
+.ds-footer-minimal__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: var(--ds-space-4);
+  font-size: var(--ds-text-base);
+  color: inherit;
+  text-decoration: none;
+  word-break: keep-all;
+}
+
+.ds-footer-minimal__link:hover {
+  color: var(--ds-accent-text);
+  text-decoration: underline;
+}
+
+.ds-footer-minimal__facts {
+  display: grid;
+  gap: var(--ds-space-6);
+  padding-top: var(--ds-space-6);
+  border-top: var(--ds-hairline) solid var(--ds-line);
+}
+
+.ds-footer-minimal__col {
+  min-width: 0;
+  font-size: var(--ds-text-sm);
+  line-height: var(--ds-leading-body);
+}
+
+.ds-footer-minimal__places,
+.ds-footer-minimal__hours {
+  display: grid;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ds-footer-minimal__hours {
+  margin-top: var(--ds-space-3);
+}
+
+.ds-footer-minimal__place,
+.ds-footer-minimal__hour {
+  display: grid;
+  gap: 0;
+}
+
+.ds-footer-minimal__place-name,
+.ds-footer-minimal__hour-label {
+  font-weight: var(--ds-weight-heading);
+}
+
+.ds-footer-minimal__place-addr,
+.ds-footer-minimal__hour-value {
+  color: var(--ds-muted);
+  overflow-wrap: anywhere;
+}
+
+.ds-footer-minimal__note {
+  margin: var(--ds-space-3) 0 0;
+  color: var(--ds-muted);
+  word-break: keep-all;
+}
+
+.ds-footer-minimal__company {
+  display: grid;
+  gap: var(--ds-space-2);
+  margin: 0;
+}
+
+.ds-footer-minimal__row {
+  display: grid;
+  gap: 0;
+}
+
+.ds-footer-minimal__row dt {
+  font-weight: var(--ds-weight-heading);
+}
+
+.ds-footer-minimal__row dd {
+  margin: 0;
+  color: var(--ds-muted);
+  overflow-wrap: anywhere;
+}
+
+/* a value that is a link (the phone as tel:, the e-mail): it stands on the row's edge like the values around it and is
+   drawn as something to tap — ink, underlined, 44px high */
+.ds-footer-minimal__row .ds-footer-minimal__link {
+  justify-content: flex-start;
+  padding-inline: 0;
+  color: var(--ds-ink);
+  text-decoration: underline;
+  text-decoration-thickness: var(--ds-hairline);
+  text-underline-offset: 0.3em;
+}
+
+.ds-footer-minimal__legal {
+  display: grid;
+  gap: var(--ds-space-1);
+  padding-top: var(--ds-space-5);
+  border-top: var(--ds-hairline) solid var(--ds-line);
+  font-size: var(--ds-text-xs);
+  line-height: var(--ds-leading-body);
+  color: var(--ds-muted);
+}
+
+.ds-footer-minimal__legal-line,
+.ds-footer-minimal__copy {
+  margin: 0;
+  word-break: keep-all;
+}
+
+.ds-footer-minimal :focus-visible {
+  outline: 2px solid var(--ds-ink);
+  outline-offset: 2px;
+}
+
+@media (min-width: 700px) {
+  .ds-footer-minimal__top {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--ds-space-7);
+  }
+
+  .ds-footer-minimal__pages {
+    max-width: 32em;
+  }
+
+  .ds-footer-minimal__facts {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    column-gap: var(--ds-space-6);
+  }
+
+  .ds-footer-minimal__legal {
+    grid-template-columns: 1fr auto;
+    column-gap: var(--ds-space-6);
+  }
+}

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { getSiteContext } from "@platform/site/bound";
 import template from "../../template";
-import { SiteHeader } from "../../sections/SiteHeader";
+import { Header } from "../../design/chrome";
+import { mainId } from "../../design/resolve";
 import { ContactPage, contactPage } from "../../sections/ContactPage";
 import { pageMetadata, titleWithBrand } from "../../lib/seo";
 
@@ -20,8 +21,8 @@ export default function Contact() {
   const data = contactPage(ctx);
   return (
     <>
-      <SiteHeader ctx={ctx} variant="sub" current="contact" title={data.title} />
-      <main className="i2-main i2-main--sub" data-page="contact">
+      <Header ctx={ctx} variant="sub" current="contact" title={data.title} />
+      <main className="i2-main i2-main--sub" data-page="contact" id={mainId(ctx)}>
         <ContactPage data={data} />
       </main>
     </>

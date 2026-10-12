@@ -1,0 +1,46 @@
+{
+  "schema": "site-preset@1",
+  "id": "luxury-gallery",
+  "version": 1,
+  "name": "Luxury Gallery",
+  "summary": "사진과 여백이 중심인 갤러리형 구성. 세리프 제목, 각진 모서리, 넓은 간격. 브랜드 색은 버튼·링크·숫자에만 씁니다.",
+  "bestFor": ["하이엔드 주거 인테리어", "디자인 스튜디오", "사진 자료가 좋은 업체"],
+  "minRelease": "1.2.0",
+  "design": {
+    "chrome": { "header": "centered", "footer": "minimal", "mobileBar": "action-bar" },
+    "home": [
+      { "section": "hero", "variant": "photo" },
+      { "section": "showcase", "variant": "panels" },
+      { "section": "about", "variant": "split-panel" },
+      { "section": "services", "variant": "rows" },
+      { "section": "cta", "variant": "quiet" }
+    ],
+    "pages": { "listing": "classic", "detail": "gallery" },
+    "theme": {
+      "typeScale": "regular",
+      "headingWeight": "light",
+      "density": "airy",
+      "container": "wide",
+      "corner": "square",
+      "surface": "warm",
+      "accentUse": "minimal"
+    },
+    "fontSet": "serif-noto"
+  },
+  "tier1": {
+    "color.canvas": "#f3f2ed",
+    "color.surface.primary": "#f3f2ed",
+    "color.surface.secondary": "#e9e8e1",
+    "color.surface.elevated": "#faf9f6",
+    "color.text.primary": "#1a1a17",
+    "color.text.secondary": "#57554e",
+    "color.text.muted": "#66645d",
+    "color.link": "#1a1a17",
+    "color.border.default": "#d8d6cc",
+    "color.action.primary": "#1a1a17",
+    "color.accent.primary": "#8c6239"
+  },
+  "copy": {
+    "home.projects": { "title": "Projects", "moreLabel": "전체 프로젝트 보기" }
+  }
+}

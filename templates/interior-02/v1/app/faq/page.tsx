@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { getSiteContext } from "@platform/site/bound";
 import template from "../../template";
-import { SiteHeader } from "../../sections/SiteHeader";
+import { Header } from "../../design/chrome";
+import { mainId } from "../../design/resolve";
 import { FaqPage, faqPage } from "../../sections/FaqPage";
 import { pageMetadata, titleWithBrand } from "../../lib/seo";
 
@@ -18,9 +19,9 @@ export default function Faq() {
   const title = ctx.slots.text("faq.page", "title");
   return (
     <>
-      <SiteHeader ctx={ctx} variant="sub" current="faq" title={title} />
+      <Header ctx={ctx} variant="sub" current="faq" title={title} />
       {/* no .i2-main--sub: the tab strip (≤ 1280) sits directly under the header; the layout carries the sub-page padding itself */}
-      <main className="i2-main" data-page="faq">
+      <main className="i2-main" data-page="faq" id={mainId(ctx)}>
         {data ? (
           <FaqPage data={data} />
         ) : (

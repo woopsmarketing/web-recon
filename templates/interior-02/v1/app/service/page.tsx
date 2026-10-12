@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { getSiteContext } from "@platform/site/bound";
 import template from "../../template";
-import { SiteHeader } from "../../sections/SiteHeader";
+import { Header } from "../../design/chrome";
+import { mainId } from "../../design/resolve";
 import { ServicePage, servicePage } from "../../sections/ServicePage";
 import { pageMetadata, titleWithBrand } from "../../lib/seo";
 
@@ -17,8 +18,8 @@ export default function Page() {
   const data = servicePage(ctx);
   return (
     <>
-      <SiteHeader ctx={ctx} variant="sub" current="service" title={data.title} />
-      <main className="i2-main i2-main--sub" data-page="service">
+      <Header ctx={ctx} variant="sub" current="service" title={data.title} />
+      <main className="i2-main i2-main--sub" data-page="service" id={mainId(ctx)}>
         <ServicePage data={data} />
       </main>
     </>

@@ -1,0 +1,450 @@
+/* ds inner pages — theming of the pages that keep the classic markup (portfolio list, about, service, faq, contact, not-found
+   and the classic detail) for a site WITH a design document. Owner: E-TB-C, composed by E-TB-5.
+   Every rule starts with html[data-design]:not([data-design="classic"]), so the classic site is untouched. The classic
+   sheets are driven by a handful of custom properties and by the tier-1 theme (colours and the two font families already
+   follow the site's palette and font set); this sheet turns those handles onto the --ds-* values:
+     root size · container and side padding · section rhythm · heading weight · corner radius, and then the type of the
+     page titles and section headings and the corners of the photographs.
+   Beyond the theme it holds only corrections a designed site needs from the classic sheets: the floating corner, the
+   accent pair on accent fills, the about page's tone tiles on the theme's block pair, the type and tap-target floors,
+   whole Korean words, check controls that read as unchecked, and a total that stays on one line
+   (platform/design/README.md §3.4). */
+
+html[data-design]:not([data-design="classic"]) {
+  /* the --ds-* type steps are rem: the classic sheet sets the root to 15px below 1281px, which would turn --ds-text-xs into 12.2px;
+     `inherit` on <html> is the browser default size (16px) */
+  font-size: inherit;
+  /* container and side padding of the design: the classic .i2-wrap / footer / floater boxes line up with the chrome */
+  --i2-page-max: calc(var(--ds-container-max) + 2 * var(--ds-gutter));
+  --i2-wrap-pad: var(--ds-gutter);
+  --i2-gutter: var(--ds-gutter);
+  --i2-sec-gap: var(--ds-section-gap);
+  /* the one weight handle of the classic headings, and the corners of its buttons and controls */
+  --i2-w-display: var(--ds-weight-heading);
+  --decoration-radius-small: var(--ds-radius-control);
+  --decoration-radius-large: var(--ds-radius-media);
+}
+
+/* the bottom tab bar belongs to the classic header: a design whose header is a ds variant has none to make room for
+   (action-bar.css, later in the cascade, gives the room back for its own bar). A "custom" design that keeps the classic
+   header keeps the classic bar and its height. */
+html[data-design]:not([data-design="classic"]):not(:has(.i2-tabbar)) {
+  --i2-tabbar-h: 0px;
+}
+
+/* Korean text never breaks inside a word (the classic sheets leave it to the browser: "계 / 획하는"); a string with no
+   break opportunity still wraps */
+html[data-design]:not([data-design="classic"]) body {
+  font-family: var(--ds-font-body);
+  background: var(--ds-bg);
+  color: var(--ds-ink);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-main--sub {
+  padding-top: var(--ds-space-6);
+}
+
+@media (min-width: 1024px) {
+  html[data-design]:not([data-design="classic"]) .i2-main--sub {
+    padding-top: var(--ds-space-8);
+  }
+}
+
+html[data-design]:not([data-design="classic"]) .i2-contact__title,
+html[data-design]:not([data-design="classic"]) .i2-faq__title,
+html[data-design]:not([data-design="classic"]) .i2-pg-title {
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-2xl);
+  font-weight: var(--ds-weight-display);
+  line-height: var(--ds-leading-display);
+  letter-spacing: var(--ds-tracking-display);
+  word-break: keep-all;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-head__title,
+html[data-design]:not([data-design="classic"]) .i2-ab-hang__title,
+html[data-design]:not([data-design="classic"]) .i2-ab-sys__title,
+html[data-design]:not([data-design="classic"]) .i2-sv-band__title,
+html[data-design]:not([data-design="classic"]) .i2-sv-team__title,
+html[data-design]:not([data-design="classic"]) .i2-sv-glance__title,
+html[data-design]:not([data-design="classic"]) .i2-pdetail__title,
+html[data-design]:not([data-design="classic"]) .i2-pgroup__title,
+html[data-design]:not([data-design="classic"]) .i2-pblock__title,
+html[data-design]:not([data-design="classic"]) .i2-faq__side-title,
+html[data-design]:not([data-design="classic"]) .i2-pempty__title,
+html[data-design]:not([data-design="classic"]) .i2-form__done-title {
+  font-family: var(--ds-font-display);
+  font-weight: var(--ds-weight-heading);
+  letter-spacing: var(--ds-tracking-display);
+  word-break: keep-all;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-head__title,
+html[data-design]:not([data-design="classic"]) .i2-ab-hang__title,
+html[data-design]:not([data-design="classic"]) .i2-ab-sys__title,
+html[data-design]:not([data-design="classic"]) .i2-sv-band__title {
+  font-size: var(--ds-text-xl);
+  line-height: var(--ds-leading-display);
+}
+
+html[data-design]:not([data-design="classic"]) .i2-card__title,
+html[data-design]:not([data-design="classic"]) .i2-sv-tier__name {
+  font-family: var(--ds-font-display);
+  font-weight: var(--ds-weight-heading);
+  letter-spacing: var(--ds-tracking-display);
+  word-break: keep-all;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-contact__lead,
+html[data-design]:not([data-design="classic"]) .i2-contact__desc,
+html[data-design]:not([data-design="classic"]) .i2-ab-hang__body,
+html[data-design]:not([data-design="classic"]) .i2-ab-sys__body,
+html[data-design]:not([data-design="classic"]) .i2-acc__text,
+html[data-design]:not([data-design="classic"]) .i2-pdetail__desc,
+html[data-design]:not([data-design="classic"]) .i2-pstory__body {
+  word-break: keep-all;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-card__media,
+html[data-design]:not([data-design="classic"]) .i2-contact__photo,
+html[data-design]:not([data-design="classic"]) .i2-ab-story__photo,
+html[data-design]:not([data-design="classic"]) .i2-sv-card__media,
+html[data-design]:not([data-design="classic"]) .i2-sv-glance__figure,
+html[data-design]:not([data-design="classic"]) .i2-ab-sys__figure,
+html[data-design]:not([data-design="classic"]) .i2-rcard__media,
+html[data-design]:not([data-design="classic"]) .i2-room__media,
+html[data-design]:not([data-design="classic"]) .i2-pviewer__img,
+html[data-design]:not([data-design="classic"]) .i2-pviewer__thumb {
+  border-radius: var(--ds-radius-media);
+  overflow: hidden;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-btn,
+html[data-design]:not([data-design="classic"]) .i2-chip,
+html[data-design]:not([data-design="classic"]) .i2-input,
+html[data-design]:not([data-design="classic"]) .i2-textarea,
+html[data-design]:not([data-design="classic"]) .i2-pdetail__btn,
+html[data-design]:not([data-design="classic"]) .i2-sv-tier__btn,
+html[data-design]:not([data-design="classic"]) .i2-sv-team__btn {
+  border-radius: var(--ds-radius-control);
+}
+
+html[data-design]:not([data-design="classic"]) .i2-btn,
+html[data-design]:not([data-design="classic"]) .i2-pdetail__btn,
+html[data-design]:not([data-design="classic"]) .i2-sv-tier__btn,
+html[data-design]:not([data-design="classic"]) .i2-sv-team__btn {
+  font-family: var(--ds-font-label);
+}
+
+/* ---- the fixed corner (classic floater: to-top button + optional contact link)
+   On a designed site nothing floats over the content column:
+     * below 1400px there is no free margin beside the column, so the to-top button is not shown — the header is sticky
+       there (the pages, the consultation control) and the action bar owns the foot of the screen;
+     * from 1400px it is a quiet 44px control (page colour, hairline) in the free strip beside the column, shown after
+       the first screen: over the launcher box of the chat widget when the site declares one (html[data-ext-widget],
+       same stacking as the classic site) and that keeps it off the column, else centred in the strip.
+   The contact link (site.floater.contact) is redundant wherever the action bar is shown, and is taken away there;
+   elsewhere it keeps its classic place and gets the design's call-to-action pair. */
+html[data-design]:not([data-design="classic"]) .i2-floater__top {
+  display: none;
+  /* hidden is the resting state; only the scroll-driven animation below shows it (a capture that switches animations
+     off gets the truth of scroll position 0: no button) */
+  visibility: hidden;
+  width: 44px;
+  height: 44px;
+  color: var(--ds-ink);
+  background: var(--ds-bg);
+  border: var(--ds-hairline) solid var(--ds-line);
+  border-radius: var(--ds-radius-control);
+  box-shadow: none;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-floater__top:hover {
+  border-color: var(--ds-ink);
+}
+
+html[data-design]:not([data-design="classic"]) .i2-floater__contact {
+  color: var(--ds-accent-ink);
+  background: var(--ds-accent);
+  border-radius: var(--ds-radius-control);
+  box-shadow: none;
+}
+
+html[data-design]:not([data-design="classic"]):has(.ds-action-bar) .i2-floater__contact {
+  display: none;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-floater {
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  html[data-design]:not([data-design="classic"]):has(.ds-action-bar) .i2-floater__contact {
+    display: inline-flex;
+  }
+}
+
+@media (min-width: 1400px) {
+  /* at the top of a page there is nothing to go back to, and a hero photograph fills the first screen: the button
+     appears only after the first screen (a switch of visibility tied to the scroll position, not a movement — it stays
+     under reduced motion). A browser that cannot tie a style to the scroll position does not show the button at all. */
+  @supports (animation-timeline: scroll()) {
+    html[data-design]:not([data-design="classic"]) .i2-floater__top {
+      display: inline-flex;
+      animation: ds-inner-to-top 1ms step-end both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 100vh;
+    }
+  }
+
+  /* the free strip to the right of the content column is the gutter, or the margin once the viewport is wider than the
+     column: the control is centred in it … */
+  html[data-design]:not([data-design="classic"]) .i2-floater {
+    right: max(4px, calc(max(var(--ds-gutter), (100vw - var(--ds-container-max)) / 2) / 2 - 22px));
+  }
+
+  /* … or centred over the chat launcher, as long as that keeps it off the column */
+  html[data-design]:not([data-design="classic"])[data-ext-widget] .i2-floater {
+    right: max(4px, min(calc(var(--i2-ext-right) + (var(--i2-ext-w) - 44px) / 2), calc(max(var(--ds-gutter), (100vw - var(--ds-container-max)) / 2) - 48px)));
+  }
+}
+
+/* ---- accent fills of the classic pages: the text on them is the pair computed for the site's accent, not the page ink
+   (the classic sheets put --color-text-primary on the accent: 3.3:1 on a mid-dark brand colour) */
+html[data-design]:not([data-design="classic"]) .i2-pdetail__btn--mint,
+html[data-design]:not([data-design="classic"]) .i2-btn--mint,
+html[data-design]:not([data-design="classic"]) .i2-pside__apply {
+  color: var(--ds-accent-ink);
+  background: var(--ds-accent);
+}
+
+html[data-design]:not([data-design="classic"]) .i2-badge:not(.i2-badge--yellow):not(.i2-badge--navy),
+html[data-design]:not([data-design="classic"]) .i2-ab-value--mint,
+html[data-design]:not([data-design="classic"]) .i2-tier--mint,
+html[data-design]:not([data-design="classic"]) .i2-brand__icon--mint {
+  color: var(--ds-accent-ink);
+}
+
+html[data-design]:not([data-design="classic"]) .i2-sv-tier--mint {
+  --i2-tile-text: var(--ds-accent-ink);
+}
+
+/* ---- the about page's four tone tiles and its second photograph, on a site composed from a PRESET. The classic sheet
+   paints the tiles navy / mint / yellow / dark and lifts the photograph on a shadow; a preset site has one emphasis, the
+   theme's block pair, and no shadow anywhere. Three tiles are surface panels and the "mint" one is the block: under
+   accentUse `minimal` the block IS the surface (four quiet panels, no brand colour), under `blocks` it is the accent,
+   under `fills` the accent tint. A "custom" design (the classic recipe in another font) keeps the classic tones: its
+   home page is drawn in them too. */
+html[data-design]:not([data-design="classic"]):not([data-design="custom"]) .i2-ab-value {
+  color: var(--ds-ink);
+  background: var(--ds-surface);
+  --i2-tile-tint: var(--ds-muted);
+}
+
+html[data-design]:not([data-design="classic"]):not([data-design="custom"]) .i2-ab-value--mint {
+  color: var(--ds-block-ink);
+  background: var(--ds-block-bg);
+  --i2-tile-tint: color-mix(in srgb, var(--ds-block-ink) 60%, var(--ds-block-bg));
+}
+
+html[data-design]:not([data-design="classic"]):not([data-design="custom"]) .i2-ab-sys__figure {
+  box-shadow: none;
+}
+
+/* ---- the service page on a PRESET site (a "custom" design keeps the classic page, as for the about tiles above).
+   F2 — no dead column. The classic page reserves a 420 / 580px column for the "at a glance" diagram and a fixed five
+   tracks for the "before you ask for a quote" list; with no diagram and three items that leaves the right 40% of the
+   page empty and the button under the gap. Here the glance rows share the width as columns when there is no figure,
+   and the list holds as many tracks as it has items (three up to 1400px, five from 1400px), items and button on the
+   block's left edge. The figure case (a diagram present) is the classic two-column grid, untouched. 1025px is the
+   classic sheet's own switch to the figure column, 861px its switch to the bar list. */
+@media (min-width: 1025px) {
+  html[data-design]:not([data-design="classic"]):not([data-design="custom"]) .i2-sv-glance__cols:not(:has(.i2-sv-glance__figure)) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-design]:not([data-design="classic"]):not([data-design="custom"]) .i2-sv-glance__cols:not(:has(.i2-sv-glance__figure)) .i2-sv-glance__rows {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(max(15rem, calc((100% - 3 * var(--ds-space-6)) / 4)), 1fr));
+    gap: 0 var(--ds-space-6);
+    border-top: 0;
+  }
+
+  html[data-design]:not([data-design="classic"]):not([data-design="custom"]) .i2-sv-glance__cols:not(:has(.i2-sv-glance__figure)) .i2-sv-glance__row {
+    display: block;
+    min-height: 0;
+    padding: var(--ds-space-5) 0 var(--ds-space-6);
+    border-top: var(--ds-hairline) solid var(--ds-line);
+    border-bottom: 0;
+  }
+
+  html[data-design]:not([data-design="classic"]):not([data-design="custom"]) .i2-sv-glance__cols:not(:has(.i2-sv-glance__figure)) .i2-sv-glance__body {
+    margin-top: var(--ds-space-4);
+  }
+}
+
+@media (min-width: 861px) {
+  html[data-design]:not([data-design="classic"]):not([data-design="custom"]) .i2-sv-team__list {
+    grid-template-columns: repeat(auto-fit, minmax(max(14rem, calc((100% - 2 * var(--ds-space-6)) / 3)), 1fr));
+    justify-content: stretch;
+    gap: var(--ds-space-7) var(--ds-space-6);
+  }
+
+  html[data-design]:not([data-design="classic"]):not([data-design="custom"]) .i2-sv-team__item {
+    text-align: left;
+  }
+
+  html[data-design]:not([data-design="classic"]):not([data-design="custom"]) .i2-sv-team__icon {
+    margin: 0;
+  }
+}
+
+@media (min-width: 1401px) {
+  html[data-design]:not([data-design="classic"]):not([data-design="custom"]) .i2-sv-team__list {
+    grid-template-columns: repeat(auto-fit, minmax(max(14rem, calc((100% - 4 * var(--ds-space-6)) / 5)), 1fr));
+  }
+}
+
+/* F1 — luxury-gallery's service page is as calm as its home. The direction is "the brand colour is for the call to
+   action, the link and numerals; it never tints a large area", and the classic page paints three full-width tiles
+   (yellow / mint / navy) and three black icon bars. Here, on THIS preset only, the three tiles are quiet surface
+   panels in a hairline outline (the same treatment as the about page's tone tiles under accentUse `minimal`, which is
+   why the hover button of a tile is a surface strip too), and the icon circles and bars of the "before you ask for a
+   quote" list are surface with ink and a hairline. editorial-studio (colour blocking: one brand block and one deep
+   neutral, E2) and remodeling-conversion (bolder by direction) keep the tile colours. */
+html[data-design]:not([data-design="classic"])[data-design="luxury-gallery"] .i2-sv-tier {
+  --i2-tile: var(--ds-surface);
+  --i2-tile-text: var(--ds-ink);
+  --i2-tile-tint: var(--ds-muted);
+  background: var(--ds-bg);
+  border: var(--ds-hairline) solid var(--ds-line);
+}
+
+@media (min-width: 961px) {
+  html[data-design]:not([data-design="classic"])[data-design="luxury-gallery"] .i2-sv-tier + .i2-sv-tier {
+    border-left-width: 0;
+  }
+}
+
+html[data-design]:not([data-design="classic"])[data-design="luxury-gallery"] .i2-sv-team__icon {
+  color: var(--ds-ink);
+}
+
+@media (min-width: 861px) {
+  html[data-design]:not([data-design="classic"])[data-design="luxury-gallery"] .i2-sv-team__icon {
+    background: var(--ds-surface);
+    border: var(--ds-hairline) solid var(--ds-line);
+  }
+}
+
+@media (max-width: 860px) {
+  html[data-design]:not([data-design="classic"])[data-design="luxury-gallery"] .i2-sv-team__head {
+    color: var(--ds-ink);
+    background: var(--ds-surface);
+    border: var(--ds-hairline) solid var(--ds-line);
+  }
+}
+
+/* ---- check controls: the classic sheets draw the tick in every state (outline + tick = off, filled + tick = on), so a
+   required consent and every list filter read as already chosen. Off is an empty outline here; on stays as it is. */
+html[data-design]:not([data-design="classic"]) .i2-consent__check:not(:checked)::after {
+  border-color: transparent;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-pcheck__input:not(:checked) ~ .i2-pcheck__box {
+  color: transparent;
+}
+
+/* ---- the classic total block: the figure and its unit never part ("115,600,00 / 0 원" on a 375px phone). Each number
+   and the unit are unbreakable, the figure takes the fluid heading step where the row is narrow, and a figure that
+   still cannot share the row with its label moves under it whole. A range is already laid out by the classic sheet
+   ("min ~" / "max unit" on two lines; at phone width under the label and the toggle): its row is left alone and its
+   two ends only become unbreakable. */
+html[data-design]:not([data-design="classic"]) .i2-ptotal:not(.i2-ptotal--range) .i2-ptotal__row {
+  flex-wrap: wrap;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-ptotal__amount:not(.i2-ptotal__amount--range),
+html[data-design]:not([data-design="classic"]) .i2-ptotal__amount strong,
+html[data-design]:not([data-design="classic"]) .i2-ptotal__amount small {
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  html[data-design]:not([data-design="classic"]) .i2-ptotal__amount:not(.i2-ptotal__amount--range) strong {
+    font-size: var(--ds-text-xl);
+  }
+}
+
+/* ---- floors of the classic pages: nothing under the smallest type step, no control under 44px.
+   Text controls grow to 44px; the icon-only buttons keep their drawn size and get a 44px hit area around them. */
+html[data-design]:not([data-design="classic"]) .i2-acc__pill {
+  font-size: var(--ds-text-xs);
+}
+
+html[data-design]:not([data-design="classic"]) .i2-chip,
+html[data-design]:not([data-design="classic"]) .i2-pgallery__chip {
+  height: auto;
+  min-height: 44px;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-psort__tab,
+html[data-design]:not([data-design="classic"]) .i2-faq__menu-link,
+html[data-design]:not([data-design="classic"]) .i2-pside__reset,
+html[data-design]:not([data-design="classic"]) .i2-pside__apply,
+html[data-design]:not([data-design="classic"]) .i2-psearch__input {
+  min-height: 44px;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-pselect {
+  height: 44px;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-contact__call-number {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-psearch__btn,
+html[data-design]:not([data-design="classic"]) .i2-pgallery__view,
+html[data-design]:not([data-design="classic"]) .i2-c__btn,
+html[data-design]:not([data-design="classic"]) .i2-ptotal__toggle {
+  position: relative;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-psearch__btn::after,
+html[data-design]:not([data-design="classic"]) .i2-pgallery__view::after,
+html[data-design]:not([data-design="classic"]) .i2-c__btn::after,
+html[data-design]:not([data-design="classic"]) .i2-ptotal__toggle::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+
+html[data-design]:not([data-design="classic"]) .i2-ptotal__toggle::after {
+  inset: -11px;
+}
+
+/* ---- the about page's story block: the classic title "hangs" 18px into the photograph's foot — drawn for a heavy
+   sans; in the design's display face it reads as a collision, so the block simply follows the photograph */
+html[data-design]:not([data-design="classic"]) .i2-ab-hang {
+  padding-top: var(--ds-space-5);
+  transform: none;
+}
+
+/* ---- list cards: the price is a figure of the card, in the weight of the design's headings */
+html[data-design]:not([data-design="classic"]) .i2-card__price strong {
+  font-weight: var(--ds-weight-heading);
+}
+
+@keyframes ds-inner-to-top {
+  from {
+    visibility: hidden;
+  }
+  to {
+    visibility: visible;
+  }
+}

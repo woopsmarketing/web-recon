@@ -145,11 +145,12 @@ const HOST = fixture.hostname;
 const SITE = fixture.siteId;
 /**
  * The releases a new site may be created with — exactly what starter.json lists, in its order: the
- * one the smoke fixture pins (everything below is built with it), and 1.1.2 (the home.keywords fix).
- * 1.1.0 stays listed while BoostChat can still offer it: a checkout that no longer lists the release
- * of a job it claims refuses the job (`release_not_allowed`).
+ * one the smoke fixture pins (everything below is built with it), 1.1.2 (the home.keywords fix) and
+ * 1.2.0 (the first release that carries the design system: presets, font sets).
+ * The earlier ones stay listed while BoostChat can still offer them: a checkout that no longer lists
+ * the release of a job it claims refuses the job (`release_not_allowed`).
  */
-const STARTER_RELEASES = [fixture.template.releaseId, "interior-02-1.1.2-0b35f76a156d"];
+const STARTER_RELEASES = [fixture.template.releaseId, "interior-02-1.1.2-0b35f76a156d", "interior-02-1.2.0-da9e2c3b9d2b"];
 /** a stored release of the Template that declares the portfolio runtime and is NOT listed by the starter */
 const UNLISTED_RELEASE = "interior-02-1.1.1-b60c756ce173";
 

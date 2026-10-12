@@ -2,13 +2,10 @@ import type { Metadata } from "next";
 import { getSiteContext } from "@platform/site/bound";
 import template from "../template";
 import { isShell } from "../lib/routes";
-import { Slot } from "../runtime/Slot";
 import { SHELL_METADATA, homePage } from "../runtime/portfolio";
-import { SiteHeader } from "../sections/SiteHeader";
-import { HomePromos, homePromos } from "../sections/HomePromos";
-import { HomeService, homeService } from "../sections/HomeService";
-import { HomeBrands, homeBrands } from "../sections/HomeBrands";
-import { HomeShowrooms, homeShowrooms } from "../sections/HomeShowrooms";
+import { Header } from "../design/chrome";
+import { mainId } from "../design/resolve";
+import { HomeSections } from "../design/sections";
 
 export function generateMetadata(): Metadata {
   const ctx = getSiteContext(template);
@@ -16,34 +13,31 @@ export function generateMetadata(): Metadata {
 }
 
 /**
- * Homepage — the section ORDER is template code (never a setting):
- *   header · hero · projects · promos · keywords · service · recent · brands · showrooms
- *   (the footer and the fixed floater come from the root layout).
- * Every section resolves its own data first and is omitted entirely when it has none. The four
- * sections that show the portfolio (hero · projects · keywords · recent) are runtime slots
- * (runtime/portfolio.ts): rendered here in an ordinary build, placeholders in a shell build.
+ * Homepage — header, then the sections of the site's HOME RECIPE in the recipe's order
+ * (design/sections.tsx; the footer, the fixed floater and the mobile bar come from the root layout).
+ *
+ * The recipe is the `home` list of the site's design document (settings `site.design`): which
+ * sections, in which order, each in which variant — every value a member of the Template's registry
+ * (design/registry.ts), nothing free-form. A site WITHOUT a design document gets the classic recipe,
+ * which is the 1.1 home page:
+ *   hero · projects · promos · keywords · service · recent · brands · showrooms
+ *
+ * Every section resolves its own data first and is omitted entirely when it has none. The sections
+ * that show the portfolio (hero · projects · keywords · recent) are runtime slots
+ * (runtime/portfolio.ts): rendered here in an ordinary build, placeholders in a shell build; their
+ * variant travels inside the slot data. The page's one <h1> is the brand name, here — a home
+ * section never renders an <h1>.
  */
 export default function HomePage() {
   const ctx = getSiteContext(template);
   const shell = isShell(ctx);
   const { slots } = homePage(ctx);
-  const promos = homePromos(ctx);
-  const service = homeService(ctx);
-  const brands = homeBrands(ctx);
-  const showrooms = homeShowrooms(ctx);
   return (
     <>
-      <SiteHeader ctx={ctx} variant="home" />
-      <main className="i2-main i2-main--home">
+      <Header ctx={ctx} variant="home" />
+      <main className="i2-main i2-main--home" id={mainId(ctx)}>
         <h1 className="i2-sr">{ctx.identity.brandName}</h1>
-        <Slot name="home.hero" slots={slots} shell={shell} />
-        <Slot name="home.projects" slots={slots} shell={shell} />
-        {promos ? <HomePromos data={promos} /> : null}
-        <Slot name="home.keywords" slots={slots} shell={shell} />
-        {service ? <HomeService data={service} /> : null}
-        <Slot name="home.recent" slots={slots} shell={shell} />
-        {brands ? <HomeBrands data={brands} /> : null}
-        {showrooms ? <HomeShowrooms data={showrooms} /> : null}
+        <HomeSections ctx={ctx} slots={slots} shell={shell} />
       </main>
     </>
   );

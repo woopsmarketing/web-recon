@@ -9,6 +9,7 @@ import { HomeKeywords } from "../../sections/HomeKeywords";
 import { HomeRecent } from "../../sections/HomeRecent";
 import { PortfolioIndex } from "../../sections/PortfolioIndex";
 import { PortfolioDetail } from "../../sections/PortfolioDetail";
+import { SLOT_VARIANT_COMPONENTS, slotVariant } from "../../design/slot-components";
 
 /**
  * Runtime slot (client) — the ONE component every portfolio-dependent section is rendered through.
@@ -24,6 +25,11 @@ import { PortfolioDetail } from "../../sections/PortfolioDetail";
  *
  * <SlotElement> is what a composed page shows for a slot — the runtime kit renders the same element,
  * so the markup it writes is the markup the browser hydrates. A slot's data is plain JSON.
+ *
+ * Design variants: a slot's data may name a variant of its section (design/slots.ts writes it,
+ * design/slot-components.ts maps it). The variant travels IN the data, so an ordinary build, a
+ * composed page and the browser pick the same component. Data that names none is the classic
+ * section below — the only case on a site without a design document.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SLOT_COMPONENTS: Record<string, (props: { data: any }) => ReactElement> = {
@@ -38,8 +44,11 @@ const SLOT_COMPONENTS: Record<string, (props: { data: any }) => ReactElement> = 
 export const SLOT_NAMES: readonly string[] = Object.keys(SLOT_COMPONENTS);
 
 function Section({ slot, data }: { slot: string; data: unknown }) {
-  const Component = SLOT_COMPONENTS[slot];
-  if (!Component) throw new Error(`unknown runtime slot "${slot}"`);
+  if (!Object.hasOwn(SLOT_COMPONENTS, slot)) throw new Error(`unknown runtime slot "${slot}"`);
+  const variant = slotVariant(data);
+  const variants = SLOT_VARIANT_COMPONENTS[slot] ?? {};
+  if (variant !== undefined && !Object.hasOwn(variants, variant)) throw new Error(`runtime slot "${slot}" has no variant "${variant}"`);
+  const Component = variant === undefined ? SLOT_COMPONENTS[slot]! : variants[variant]!;
   return <Component data={data} />;
 }
 

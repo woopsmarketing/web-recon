@@ -5,21 +5,24 @@ import { homeSections } from "./manifest/home";
 import { portfolioSections, PORTFOLIO_PAGE_SIZE } from "./manifest/portfolio";
 import { pagesSections } from "./manifest/pages";
 import { supportSections } from "./manifest/support";
+import { designSections } from "./manifest/design";
 
 /**
  * interior-02 v1 — second authored Recon Template (interior vertical).
  *
  * The template owns design, layout, responsive rules and interaction presentation; the site
  * owns content, identity, theme values and business data. Every per-site variation is declared
- * here through five manifest fragments (manifest/shell · home · portfolio · pages · support), each
- * owned by one area; `sections` is their spread. Section order on a page is template code.
+ * here through six manifest fragments (manifest/shell · home · portfolio · pages · support ·
+ * design), each owned by one area; `sections` is their spread. Which sections the home page shows,
+ * in which order and in which variant is the site's design document (`site.design`, design/**) —
+ * chosen from the Template's registry, never free-form; a site without one is the classic site.
  *
  * Routes: home · portfolio list (page 1 static, pages 2…N dynamic) · project detail · four
  * static pages. Only routes that generate a page for a site are linked (ctx.routes.has).
  */
 const manifest = defineTemplate({
   id: "interior-02",
-  version: "1.1.2",
+  version: "1.2.0",
   vertical: "interior",
   routes: [
     { key: "home", path: "/" },
@@ -37,6 +40,7 @@ const manifest = defineTemplate({
     ...portfolioSections,
     ...pagesSections,
     ...supportSections,
+    ...designSections,
   },
   theme: {
     consumes: [

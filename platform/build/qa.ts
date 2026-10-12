@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { scanForbiddenTerms, type GateFinding } from "../release/release";
@@ -21,7 +22,10 @@ import { svgProblems } from "../assets/assets";
  *    flight payload lives: a .txt file, or a <script> body of an .html file), nor an exact
  *    framework-internal prefix
  *    (XML namespaces, Next.js/React error-doc links, core-js license string) — this
- *    covers URLs a client component could inject at runtime, not just attributes
+ *    covers URLs a client component could inject at runtime, not just attributes.
+ *    ONE exemption: the licence texts of the site's font set, exactly as the release pins them
+ *    (`licenceFiles`, FONT_LICENCE_FILE_RE) — a licence names its own address; the file is never
+ *    fetched by a page and never rendered
  *  - any frozen forbidden source term in ANY emitted file (HTML, RSC flight, JS, CSS, SVG)
  */
 
@@ -50,6 +54,8 @@ export interface PackageQaResult {
 }
 
 const TEXT_EXT = /\.(html|txt|js|mjs|css|json|svg|xml|map|webmanifest)$/i;
+/** Where a font set's licence text lives in a package, and nothing else: `_fonts/<set>/<first 20 hex of its sha256>.txt`. */
+export const FONT_LICENCE_FILE_RE = /^_fonts\/[a-z0-9]+(?:-[a-z0-9]+)*\/([0-9a-f]{20})\.txt$/;
 
 async function listFiles(dir: string, rel = ""): Promise<string[]> {
   const out: string[] = [];
@@ -98,6 +104,16 @@ export async function qaStaticPackage(opts: {
    * as it may in a flight `.txt`. Exact package paths; nothing else is loosened for them.
    */
   dataFiles?: readonly string[];
+  /**
+   * The licence texts of the site's font set, as the site builder placed them (platform/design/font-step.ts):
+   * exact package paths, each with the sha256 the release pins. Such a file is not read by the absolute-URL
+   * scan — the SIL Open Font License names its own address and a copyright line names the font's project —
+   * and ONLY such a file: it must be listed here, sit at `_fonts/<set>/<20 hex>.txt`, be named by the head of
+   * its own hash and hold exactly the pinned bytes. A listed file that is missing or holds other bytes fails
+   * the package; a `.txt` under `_fonts/` that is not listed is scanned like any other text file. The
+   * forbidden-terms scan reads it all the same. Nothing else is loosened.
+   */
+  licenceFiles?: readonly { path: string; sha256: string }[];
 }): Promise<PackageQaResult> {
   const { outDir } = opts;
   // Both spellings of each declared URL: as authored (RSC flight / JSON) and with "&" escaped,
@@ -108,6 +124,11 @@ export async function qaStaticPackage(opts: {
   const failures: GateFinding[] = [];
   const files = await listFiles(outDir);
   const fileSet = new Set(files);
+  const licences = new Map((opts.licenceFiles ?? []).map((l) => [l.path, l.sha256]));
+  for (const [file, pinned] of licences) {
+    if (!fileSet.has(file)) failures.push({ file, why: "pinned font licence text is not in the package" });
+    else if (FONT_LICENCE_FILE_RE.exec(file)?.[1] !== pinned.slice(0, 20)) failures.push({ file, why: "a font licence text must be _fonts/<set>/<first 20 hex of its pinned sha256>.txt" });
+  }
   let bytes = 0;
   const pages: PackageQaResult["pages"] = {};
 
@@ -134,7 +155,17 @@ export async function qaStaticPackage(opts: {
     }
     const text = await readFile(abs, "utf8");
     failures.push(...scanForbiddenTerms(f, text, opts.forbiddenTerms));
-    if (!f.endsWith(".svg")) {
+    // a pinned font licence text (see `licenceFiles`): exactly the pinned bytes, at exactly its hash-named path
+    const pinnedLicence = licences.get(f);
+    let licenceText = false;
+    if (pinnedLicence !== undefined && FONT_LICENCE_FILE_RE.exec(f)?.[1] === pinnedLicence.slice(0, 20)) {
+      licenceText = createHash("sha256").update(await readFile(abs)).digest("hex") === pinnedLicence;
+      if (!licenceText) failures.push({ file: f, why: "font licence text does not hold the pinned bytes" });
+    }
+    if (licenceText) {
+      // not page data either: a declared inquiry endpoint has no place in it
+      for (const e of declaredEndpoints) if (text.includes(e)) failures.push({ file: f, why: endpointOutsideData(e) });
+    } else if (!f.endsWith(".svg")) {
       // where this file may carry a declared inquiry endpoint: anywhere in a flight .txt, only
       // inside <script> bodies in an .html page, nowhere in any other file
       const endpointAllowed = opts.dataFiles?.includes(f) ? () => true : endpointZones(f, text);

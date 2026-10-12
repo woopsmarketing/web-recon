@@ -1,0 +1,44 @@
+{
+  "schema": "site-preset@1",
+  "id": "remodeling-conversion",
+  "version": 1,
+  "name": "Remodeling Conversion",
+  "summary": "상담 전환이 중심인 구성. 상담 버튼과 전화가 있는 헤더, 사진과 문구가 나란한 첫 화면, 정보 칩이 붙은 시공사례 카드, 모바일 하단 상담 바.",
+  "bestFor": ["리모델링·시공 전문 업체", "상담 문의가 중요한 업체", "시공사례가 꾸준히 쌓이는 업체"],
+  "minRelease": "1.2.0",
+  "design": {
+    "chrome": { "header": "conversion", "footer": "minimal", "mobileBar": "action-bar" },
+    "home": [
+      { "section": "hero", "variant": "split" },
+      { "section": "showcase", "variant": "cards" },
+      { "section": "services", "variant": "rows" },
+      { "section": "about", "variant": "statement-photo" },
+      { "section": "cta", "variant": "band" }
+    ],
+    "pages": { "listing": "classic", "detail": "classic" },
+    "theme": {
+      "typeScale": "regular",
+      "headingWeight": "bold",
+      "density": "regular",
+      "container": "regular",
+      "corner": "soft",
+      "surface": "neutral",
+      "accentUse": "fills"
+    },
+    "fontSet": "sans-pretendard"
+  },
+  "tier1": {
+    "color.canvas": "#ffffff",
+    "color.surface.primary": "#ffffff",
+    "color.surface.secondary": "#f7f7f5",
+    "color.surface.elevated": "#ffffff",
+    "color.text.primary": "#1d1d1d",
+    "color.text.secondary": "#555555",
+    "color.text.muted": "#707070",
+    "color.link": "#1d1d1d",
+    "color.border.default": "#e2e2de",
+    "color.action.primary": "#1d1d1d",
+    "color.accent.primary": "#d9691f"
+  },
+  "copy": {}
+}

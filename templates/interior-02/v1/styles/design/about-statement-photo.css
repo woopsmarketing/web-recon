@@ -1,0 +1,186 @@
+/* ds-about-statement-photo — AB-A: a statement line, then the photograph and the details the site holds, in two columns.
+   No photograph → text only. Owner: E-TB-S. */
+.ds-about-statement-photo,
+.ds-about-statement-photo * {
+  box-sizing: border-box;
+}
+
+.ds-about-statement-photo {
+  padding-block: calc(var(--ds-section-gap) / 2);
+}
+
+.ds-about-statement-photo__inner {
+  width: 100%;
+  max-width: calc(var(--ds-container-max) + 2 * var(--ds-gutter));
+  margin-inline: auto;
+  padding-inline: var(--ds-gutter);
+}
+
+.ds-about-statement-photo__statement {
+  margin: 0 0 var(--ds-space-6);
+  max-width: 22em;
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-xl);
+  font-weight: var(--ds-weight-heading);
+  line-height: var(--ds-leading-display);
+  letter-spacing: var(--ds-tracking-display);
+  color: var(--ds-ink);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+
+.ds-about-statement-photo__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-6);
+}
+
+.ds-about-statement-photo__photo {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--ds-radius-media);
+  background: var(--ds-surface);
+}
+
+.ds-about-statement-photo__photo img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ds-about-statement-photo__aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: var(--ds-space-5);
+  min-width: 0;
+}
+
+.ds-about-statement-photo__lead {
+  margin: 0;
+  max-width: 34em;
+  font-family: var(--ds-font-body);
+  font-size: var(--ds-text-base);
+  line-height: var(--ds-leading-body);
+  color: var(--ds-ink);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.ds-about-statement-photo__rows {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: var(--ds-hairline) solid var(--ds-line);
+}
+
+.ds-about-statement-photo__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  padding-block: var(--ds-space-3);
+  border-top: var(--ds-hairline) solid var(--ds-line);
+}
+
+.ds-about-statement-photo__row-label {
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-sm);
+  font-weight: 600;
+  line-height: var(--ds-leading-body);
+  color: var(--ds-muted);
+}
+
+.ds-about-statement-photo__row-value {
+  font-family: var(--ds-font-body);
+  font-size: var(--ds-text-base);
+  line-height: var(--ds-leading-body);
+  color: var(--ds-ink);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.ds-about-statement-photo__more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-height: 44px;
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-base);
+  font-weight: 600;
+  color: var(--ds-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--ds-accent-text);
+  text-decoration-thickness: var(--ds-hairline);
+  text-underline-offset: 0.4em;
+}
+
+.ds-about-statement-photo__more:focus-visible {
+  outline: 2px solid var(--ds-accent-text);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ds-about-statement-photo__more .i2-icon {
+    transition: transform var(--ds-dur-1) var(--ds-ease);
+  }
+  .ds-about-statement-photo__more:hover .i2-icon {
+    transform: translateX(3px);
+  }
+}
+
+@media (min-width: 700px) {
+  .ds-about-statement-photo__row {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--ds-space-4);
+  }
+  .ds-about-statement-photo__row-label {
+    flex: 0 0 6.5rem;
+  }
+  .ds-about-statement-photo__row-value {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ds-about-statement-photo__statement {
+    margin-bottom: var(--ds-space-7);
+  }
+  .ds-about-statement-photo__body {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: var(--ds-space-8);
+    align-items: center;
+  }
+  .ds-about-statement-photo--text .ds-about-statement-photo__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ds-about-statement-photo--text.ds-about-statement-photo--twin .ds-about-statement-photo__aside {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    column-gap: var(--ds-space-7);
+    row-gap: var(--ds-space-5);
+    align-items: start;
+  }
+  .ds-about-statement-photo--text.ds-about-statement-photo--twin .ds-about-statement-photo__lead {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .ds-about-statement-photo--text.ds-about-statement-photo--twin .ds-about-statement-photo__rows {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+  .ds-about-statement-photo--text.ds-about-statement-photo--twin .ds-about-statement-photo__more {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}

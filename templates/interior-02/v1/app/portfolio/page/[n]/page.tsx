@@ -4,7 +4,8 @@ import { getSiteContext } from "@platform/site/bound";
 import template from "../../../../template";
 import { Slot } from "../../../../runtime/Slot";
 import { portfolioListPage } from "../../../../runtime/portfolio";
-import { SiteHeader } from "../../../../sections/SiteHeader";
+import { Header } from "../../../../design/chrome";
+import { mainId } from "../../../../design/resolve";
 import { portfolioIndexTitle } from "../../../../sections/portfolioIndexData";
 
 /**
@@ -38,8 +39,8 @@ export default async function PortfolioPagedPage({ params }: Params) {
   if (!page) notFound();
   return (
     <>
-      <SiteHeader ctx={ctx} variant="sub" current="portfolio" title={portfolioIndexTitle(ctx)} />
-      <main className="i2-main i2-main--sub" data-page="portfolio">
+      <Header ctx={ctx} variant="sub" current="portfolio" title={portfolioIndexTitle(ctx)} />
+      <main className="i2-main i2-main--sub" data-page="portfolio" id={mainId(ctx)}>
         <Slot name="portfolio.index" slots={page.slots} shell={false} />
       </main>
     </>

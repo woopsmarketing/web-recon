@@ -1,0 +1,206 @@
+/* ds-services-numbered — SV-A: a numbered set. Each service stands under an ink rule: its number in the accent, its name
+   in the display face, the one-line descriptor when the site wrote one. No boxes — a lineup of names alone
+   (.ds-services-numbered--bare) is set one step larger and is complete as it is. A phone lists them as rows
+   (number · name), a tablet and a desktop as columns. Owner: E-TB-S, composed by E-TB-5. */
+.ds-services-numbered,
+.ds-services-numbered * {
+  box-sizing: border-box;
+}
+
+.ds-services-numbered {
+  padding-block: calc(var(--ds-section-gap) / 2);
+}
+
+.ds-services-numbered__inner {
+  width: 100%;
+  max-width: calc(var(--ds-container-max) + 2 * var(--ds-gutter));
+  margin-inline: auto;
+  padding-inline: var(--ds-gutter);
+}
+
+.ds-services-numbered__head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+  margin-bottom: var(--ds-space-6);
+}
+
+.ds-services-numbered__title {
+  margin: 0;
+  max-width: 18em;
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-xl);
+  font-weight: var(--ds-weight-heading);
+  line-height: var(--ds-leading-display);
+  letter-spacing: var(--ds-tracking-display);
+  color: var(--ds-ink);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+
+.ds-services-numbered__more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-height: 44px;
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-base);
+  font-weight: 500;
+  color: var(--ds-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--ds-accent-text);
+  text-decoration-thickness: var(--ds-hairline);
+  text-underline-offset: 0.4em;
+  word-break: keep-all;
+}
+
+.ds-services-numbered__more .i2-icon {
+  flex: none;
+  color: var(--ds-accent-text);
+}
+
+.ds-services-numbered__list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin: 0;
+  padding: 0;
+  border-bottom: var(--ds-hairline) solid var(--ds-line);
+  list-style: none;
+}
+
+.ds-services-numbered__item {
+  min-width: 0;
+  border-top: var(--ds-hairline) solid var(--ds-line);
+}
+
+.ds-services-numbered__item:first-child {
+  border-top-color: var(--ds-ink);
+}
+
+/* a phone: one row per service — the number, then the name (and its descriptor under it) */
+.ds-services-numbered__card {
+  display: grid;
+  grid-template-columns: var(--ds-space-7) minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: var(--ds-space-3);
+  min-height: 4rem;
+  padding-block: var(--ds-space-4);
+  color: var(--ds-ink);
+  text-decoration: none;
+}
+
+.ds-services-numbered__no {
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  color: var(--ds-accent-text);
+}
+
+.ds-services-numbered__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+  min-width: 0;
+}
+
+.ds-services-numbered__name {
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-weight-heading);
+  line-height: var(--ds-leading-display);
+  letter-spacing: var(--ds-tracking-display);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: var(--ds-hairline);
+  text-underline-offset: 0.2em;
+}
+
+.ds-services-numbered__desc {
+  font-family: var(--ds-font-body);
+  font-size: var(--ds-text-base);
+  line-height: var(--ds-leading-body);
+  color: var(--ds-muted);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.ds-services-numbered__more:focus-visible,
+.ds-services-numbered__card:focus-visible {
+  outline: 2px solid var(--ds-accent-text);
+  outline-offset: 4px;
+}
+
+.ds-services-numbered__card:hover .ds-services-numbered__name,
+.ds-services-numbered__card:focus-visible .ds-services-numbered__name {
+  text-decoration-color: currentColor;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ds-services-numbered__name {
+    transition: text-decoration-color var(--ds-dur-1) var(--ds-ease);
+  }
+}
+
+@media (min-width: 700px) {
+  .ds-services-numbered__head {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--ds-space-5);
+  }
+
+  /* columns: every service under its own rule, the number above the name (three fit a tablet) */
+  .ds-services-numbered__list {
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: var(--ds-space-7) var(--ds-space-6);
+    border-bottom: 0;
+  }
+
+  .ds-services-numbered__list[data-count="1"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ds-services-numbered__item,
+  .ds-services-numbered__item:first-child {
+    display: flex;
+    border-top-color: var(--ds-ink);
+  }
+
+  .ds-services-numbered__card {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    row-gap: var(--ds-space-6);
+    width: 100%;
+    min-height: 0;
+    padding-block: var(--ds-space-4) 0;
+  }
+
+  .ds-services-numbered__name {
+    font-size: var(--ds-text-lg);
+  }
+
+  .ds-services-numbered--bare .ds-services-numbered__card {
+    row-gap: var(--ds-space-7);
+  }
+
+  .ds-services-numbered--bare .ds-services-numbered__name {
+    font-size: var(--ds-text-xl);
+  }
+}
+
+@media (min-width: 1024px) {
+  .ds-services-numbered__head {
+    margin-bottom: var(--ds-space-7);
+  }
+
+  .ds-services-numbered__list {
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    column-gap: var(--ds-space-7);
+  }
+}

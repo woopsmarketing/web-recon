@@ -1,0 +1,448 @@
+/* ds-header-centered (H-B) — centred wordmark, menu on one side, one quiet consult control on the other.
+   Solid bar with a hairline, sticky, no script. The menu panel is a native popover. Owner: E-TB-C. */
+
+/* the sticky offsets of the classic pages (list sidebar, filters, scroll padding) follow this bar's height */
+html:has(.ds-header-centered) {
+  --i2-header-h: 64px;
+}
+
+.ds-header-centered {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  width: 100%;
+  color: var(--ds-ink);
+  background: var(--ds-bg);
+  border-bottom: var(--ds-hairline) solid var(--ds-line);
+}
+
+.ds-header-centered__bar {
+  display: grid;
+  grid-template-columns: minmax(44px, 1fr) minmax(0, auto) minmax(44px, 1fr);
+  align-items: center;
+  column-gap: var(--ds-space-3);
+  max-width: calc(var(--ds-container-max) + 2 * var(--ds-gutter));
+  height: var(--i2-header-h);
+  margin-inline: auto;
+  padding-inline: var(--ds-gutter);
+}
+
+.ds-header-centered__side {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.ds-header-centered__side--end {
+  justify-content: flex-end;
+}
+
+.ds-header-centered__center {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* ---- skip link: the first focusable element of the page; off screen until it has the focus (target: main#main) */
+.ds-header-centered__skip {
+  position: absolute;
+  top: var(--ds-space-2);
+  left: var(--ds-gutter);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: var(--ds-space-4);
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ds-inverse-ink);
+  text-decoration: none;
+  white-space: nowrap;
+  background: var(--ds-inverse-bg);
+  border-radius: var(--ds-radius-control);
+  transform: translateY(-300%);
+}
+
+.ds-header-centered__skip:focus {
+  transform: none;
+}
+
+/* ---- brand */
+.ds-header-centered__brand {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ds-header-centered__wordmark {
+  display: -webkit-box;
+  overflow: hidden;
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-base);
+  font-weight: var(--ds-weight-display);
+  line-height: 1.2;
+  letter-spacing: var(--ds-tracking-display);
+  text-align: center;
+  text-wrap: balance;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.ds-header-centered__logo {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 32px;
+  object-fit: contain;
+}
+
+/* ---- back link (a sub-page with a title, below 700px) */
+.ds-header-centered__back {
+  display: none;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ds-header-centered__back svg {
+  flex: none;
+}
+
+.ds-header-centered__back-title {
+  overflow: hidden;
+  font-family: var(--ds-font-body);
+  font-size: var(--ds-text-base);
+  font-weight: var(--ds-weight-heading);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ds-header-centered--titled .ds-header-centered__back {
+  display: flex;
+}
+
+.ds-header-centered--titled .ds-header-centered__brand {
+  display: none;
+}
+
+.ds-header-centered__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---- menu button and consult control */
+.ds-header-centered__menu,
+.ds-header-centered__consult,
+.ds-header-centered__panel-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-2);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-weight-heading);
+  line-height: 1.2;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.ds-header-centered__menu-label {
+  display: none;
+}
+
+/* the consult control is its word at every width (an icon alone reads as "chat"): a text link at phone width, an
+   outlined button from 700px */
+.ds-header-centered__consult-label {
+  white-space: nowrap;
+}
+
+/* phone width with the action bar on screen: the bar carries the labelled consultation (and the phone), so the header
+   keeps the menu and the wordmark only */
+@media (max-width: 699px) {
+  html:has(.ds-action-bar) .ds-header-centered__consult {
+    display: none;
+  }
+}
+
+.ds-header-centered__consult[aria-current="page"] {
+  color: var(--ds-accent-text);
+}
+
+/* ---- focus */
+.ds-header-centered :focus-visible {
+  outline: 2px solid var(--ds-ink);
+  outline-offset: 2px;
+}
+
+/* ---- the menu panel (native popover, full screen) */
+.ds-header-centered__panel {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  color: var(--ds-ink);
+  background: var(--ds-bg);
+  border: 0;
+}
+
+.ds-header-centered__panel:popover-open {
+  animation: ds-header-centered-in var(--ds-dur-1) var(--ds-ease);
+}
+
+@keyframes ds-header-centered-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+html:has(.ds-header-centered__panel:popover-open) {
+  overflow: hidden;
+}
+
+.ds-header-centered__panel-bar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  height: 64px;
+  padding-inline: var(--ds-gutter);
+  background: var(--ds-bg);
+  border-bottom: var(--ds-hairline) solid var(--ds-line);
+}
+
+.ds-header-centered__panel-brand {
+  overflow: hidden;
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-base);
+  font-weight: var(--ds-weight-display);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ds-header-centered__panel-body {
+  max-width: calc(var(--ds-container-max) + 2 * var(--ds-gutter));
+  margin-inline: auto;
+  padding: var(--ds-space-6) var(--ds-gutter) var(--ds-space-8);
+}
+
+.ds-header-centered__slogan {
+  margin-bottom: var(--ds-space-6);
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-xl);
+  font-weight: var(--ds-weight-display);
+  line-height: var(--ds-leading-display);
+  letter-spacing: var(--ds-tracking-display);
+  color: var(--ds-muted);
+  word-break: keep-all;
+}
+
+.ds-header-centered__slogan p {
+  margin: 0;
+}
+
+.ds-header-centered__groups {
+  display: grid;
+  gap: var(--ds-space-6);
+}
+
+.ds-header-centered__group-label {
+  margin: 0 0 var(--ds-space-2);
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-muted);
+}
+
+.ds-header-centered__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ds-header-centered__link {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-weight-display);
+  line-height: 1.25;
+  color: inherit;
+  text-decoration: none;
+  word-break: keep-all;
+  border-bottom: var(--ds-hairline) solid var(--ds-line);
+}
+
+.ds-header-centered__link[aria-current="page"] {
+  color: var(--ds-accent-text);
+}
+
+.ds-header-centered__link:hover {
+  color: var(--ds-accent-text);
+}
+
+.ds-header-centered__panel-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-height: 56px;
+  margin-top: var(--ds-space-5);
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-md);
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (min-width: 700px) {
+  html:has(.ds-header-centered) {
+    --i2-header-h: 80px;
+  }
+
+  .ds-header-centered__wordmark {
+    font-size: var(--ds-text-lg);
+  }
+
+  .ds-header-centered__logo {
+    max-height: 40px;
+  }
+
+  .ds-header-centered--titled .ds-header-centered__back {
+    display: none;
+  }
+
+  .ds-header-centered--titled .ds-header-centered__brand {
+    display: flex;
+  }
+
+  .ds-header-centered__menu {
+    padding-inline: 0 var(--ds-space-3);
+  }
+
+  .ds-header-centered__menu-label {
+    display: inline;
+  }
+
+  .ds-header-centered__consult {
+    padding-inline: var(--ds-space-5);
+    border: var(--ds-hairline) solid var(--ds-ink);
+    border-radius: var(--ds-radius-control);
+    transition: background-color var(--ds-dur-1) var(--ds-ease), color var(--ds-dur-1) var(--ds-ease);
+  }
+
+  .ds-header-centered__consult:hover,
+  .ds-header-centered__consult[aria-current="page"] {
+    color: var(--ds-bg);
+    background: var(--ds-ink);
+  }
+
+  .ds-header-centered__panel-bar {
+    height: 80px;
+  }
+
+  .ds-header-centered__groups {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    column-gap: var(--ds-space-7);
+  }
+}
+
+@media (min-width: 1024px) {
+  .ds-header-centered__link {
+    font-size: var(--ds-text-xl);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-header-centered__panel:popover-open {
+    animation: none;
+  }
+
+  .ds-header-centered__consult {
+    transition: none;
+  }
+}
+
+/* ---- a browser without the Popover API (Safari < 17, Firefox < 125): the panel can never be opened, and without the
+   browser's own `[popover]` rule it would lie over the page for good. There the menu button is taken away and the
+   panel becomes ONE in-flow row of the site's pages under the bar (sideways scroll when they do not fit), so the
+   navigation stays reachable with no script. Slogan, group labels and the phone line are left to the footer. */
+@supports not selector(:popover-open) {
+  .ds-header-centered__menu {
+    display: none;
+  }
+
+  .ds-header-centered__panel {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    border-top: var(--ds-hairline) solid var(--ds-line);
+  }
+
+  .ds-header-centered__panel-bar,
+  .ds-header-centered__slogan,
+  .ds-header-centered__group-label,
+  .ds-header-centered__panel-phone {
+    display: none;
+  }
+
+  .ds-header-centered__panel-body {
+    padding-block: 0;
+  }
+
+  .ds-header-centered__groups {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  .ds-header-centered__group {
+    flex: none;
+  }
+
+  .ds-header-centered__list {
+    display: flex;
+  }
+
+  .ds-header-centered__link {
+    min-height: 44px;
+    padding-inline-end: var(--ds-space-5);
+    font-family: var(--ds-font-label);
+    font-size: var(--ds-text-sm);
+    white-space: nowrap;
+    border-bottom: 0;
+  }
+}

@@ -92,8 +92,12 @@ export async function planScaffold(opts: { repoRoot: string; spec: unknown }): P
   return { spec, files };
 }
 
-export async function scaffoldSite(opts: { repoRoot: string; spec: unknown }): Promise<ScaffoldResult> {
-  const { spec, files } = await planScaffold(opts);
+/**
+ * `plan` (optional): files already planned for `spec` by a caller that changes the plan after planScaffold
+ * (rebuild.ts applies a brand block). Absent = planScaffold, exactly as before.
+ */
+export async function scaffoldSite(opts: { repoRoot: string; spec: unknown; plan?: { spec: ProvisionSpec; files: Map<string, Buffer> } }): Promise<ScaffoldResult> {
+  const { spec, files } = opts.plan ?? (await planScaffold(opts));
   const dir = siteDir(opts.repoRoot, spec.siteId);
   const rel = `${SITES_DIR}/${spec.siteId}`;
   const planned = [...files.keys()].sort();

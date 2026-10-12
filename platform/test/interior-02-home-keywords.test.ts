@@ -55,6 +55,8 @@ const repoRoot = process.cwd();
 const TEMPLATE = "interior-02";
 /** the frozen release every interior-02 site of this checkout pins — the last one a site was built with before the fix */
 const BEFORE_RELEASE = "interior-02-1.1.0-be2c1e2d3850";
+/** the release that carried the fix: 1.1.0 + sections/HomeKeywords.tsx + the version in template.ts, and nothing else (K1) */
+const FIX_RELEASE = "interior-02-1.1.2-0b35f76a156d";
 const DEMO = "boost-interior-demo-02";
 const SMOKE_SPEC = "platform/provision/fixtures/smoke-spec.json";
 const AT = "2026-10-10T00:00:00.000Z";
@@ -88,6 +90,7 @@ const headId = await (async () => {
 })();
 const head = await loadRelease(repoRoot, TEMPLATE, headId);
 const before = await loadRelease(repoRoot, TEMPLATE, BEFORE_RELEASE);
+const fix = await loadRelease(repoRoot, TEMPLATE, FIX_RELEASE);
 const pinOf = (r: typeof head) => ({ templateId: r.templateId, templateVersion: r.templateVersion, releaseId: r.releaseId, releaseHash: r.releaseHash });
 const headPin = pinOf(head);
 
@@ -364,7 +367,9 @@ try {
   /**
    * The package's two documents for the kit of `release`. The package was built with the release the
    * site pins; a kit renders its own release only, so for the other kit the pin — and nothing else —
-   * is rewritten in memory (the two releases differ in HomeKeywords.tsx and template.ts: no shell page).
+   * is rewritten in memory. 1.1.0 and the fix release 1.1.2 differ in HomeKeywords.tsx and template.ts — no shell page; the
+   * working tree's release may differ in more (1.2.0: the design system), and its kit is still handed this classic shell:
+   * what K2–K4 hold is the home.keywords slot data and section it composes from it.
    */
   function documentsFor(release: typeof head, starterChips: boolean): Pick<PortfolioSiteInput, "runtime" | "shell" | "shellPages"> {
     const r = structuredClone(runtime);
@@ -384,46 +389,70 @@ try {
   };
 
   let renderBefore!: Render;
-  let renderHead!: Render;
-  await check(`K1 the two kits build from the release store: ${BEFORE_RELEASE} (frozen) and ${headId}; the package documents are those of ${DEMO}, pinned to the frozen release`, async () => {
+  /**
+   * The kits that must show the fix, each with its release: the one the fix was cut as (1.1.2 — what K2–K4 were written
+   * against, when it was the head) and the working tree's release (what a site re-pinned today is composed by). One entry
+   * while they are the same release. K2–K4 are about "the new kit": the fix must hold in both, so each runs against both.
+   */
+  const fixedKits: { release: typeof head; render: Render }[] = [];
+  await check(`K1 the fix release ${FIX_RELEASE} is ${BEFORE_RELEASE} with exactly two files changed (sections/HomeKeywords.tsx, template.ts); the working tree's release ${headId} still carries that very HomeKeywords.tsx; the kits build from the release store: the frozen one, the fix release's${headId === FIX_RELEASE ? "" : " and the working tree's"}; the package documents are those of ${DEMO}, pinned to the frozen release`, async () => {
     eq([runtime.siteId, runtime.template.releaseId, shell.snapshot.site.template.releaseId], [DEMO, BEFORE_RELEASE, BEFORE_RELEASE], "the demo package");
     assert(demoProjects.length >= 8 && demoCategories.length >= 4, `the demo dataset: ${demoProjects.length} records, ${demoCategories.length} categories`);
+    await verifyRelease(repoRoot, fix);
+    eq([fix.releaseId, fix.templateVersion], [FIX_RELEASE, "1.1.2"], "the fix release");
     const differs = (() => {
-      const [a, b] = [new Map(before.files.map((f) => [f.path, f.sha256])), new Map(head.files.map((f) => [f.path, f.sha256]))];
+      const [a, b] = [new Map(before.files.map((f) => [f.path, f.sha256])), new Map(fix.files.map((f) => [f.path, f.sha256]))];
       return [...new Set([...a.keys(), ...b.keys()])].filter((rel) => a.get(rel) !== b.get(rel)).sort();
     })();
-    eq(differs, [HOME_KEYWORDS_SOURCE, `templates/${TEMPLATE}/v1/template.ts`], `files that differ between ${BEFORE_RELEASE} and ${headId}`);
+    eq(differs, [HOME_KEYWORDS_SOURCE, `templates/${TEMPLATE}/v1/template.ts`], `files that differ between ${BEFORE_RELEASE} and ${FIX_RELEASE}`);
+    // the fix is still in the working tree's release: byte for byte the file 1.1.2 shipped (a later release may not quietly change it)
+    const shaOf = (r: typeof head) => r.files.find((f) => f.path === HOME_KEYWORDS_SOURCE)?.sha256;
+    assert(shaOf(fix) !== undefined && shaOf(fix) !== shaOf(before), "the fix release does not change HomeKeywords.tsx");
+    eq(shaOf(head), shaOf(fix), `${HOME_KEYWORDS_SOURCE} in ${headId} vs ${FIX_RELEASE}`);
     renderBefore = await loadKit(BEFORE_RELEASE);
-    renderHead = await loadKit(headId);
+    fixedKits.push({ release: fix, render: await loadKit(FIX_RELEASE) });
+    if (headId !== FIX_RELEASE) fixedKits.push({ release: head, render: await loadKit(headId) });
+    eq(fixedKits.map((k) => k.release.releaseId), [...new Set([FIX_RELEASE, headId])], "the kits that must show the fix");
   });
   const starterInput = (release: typeof head, projects: unknown[]): PortfolioSiteInput => ({ ...documentsFor(release, true), portfolio: { categories: demoCategories, projects, assets: demoAssets }, at: AT });
   await check("K2 one 27평 project, the starter's chips — the frozen kit shows it under all three chips (the defect: the same chips, links and cards a 1.1.0 site served with one 27평 project); the new kit under 20평대 이하 only", () => {
     const one = [demoVariant("hk-27", py(27))];
     const old = chipsOf(homeOf(renderBefore(starterInput(before, one))).slots[SECTION] as KeywordsData);
     eq(old, [chip("chip1", L1, "/portfolio?area=20", ["hk-27"]), chip("chip2", L2, "/portfolio", ["hk-27"]), chip("chip3", L3, "/portfolio", ["hk-27"])], `${BEFORE_RELEASE}`);
-    const home = homeOf(renderHead(starterInput(head, one)));
-    eq(chipsOf(home.slots[SECTION] as KeywordsData), [chip("chip1", L1, "/portfolio?area=20", ["hk-27"])], headId);
-    // …and the page itself: one chip, one card in the section, no placeholder left
-    const section = /<section[^>]*data-section="home\.keywords"[\s\S]*?<\/section>/.exec(home.body)?.[0] ?? "";
-    assert(section.includes(L1) && !section.includes(L2) && !section.includes(L3), "the rendered section names a chip it does not have");
-    assert(!home.body.includes("data-portfolio-slot"), "a placeholder is left on the home page");
+    eq(fixedKits.length >= 1, true, "K1 loaded no kit");
+    for (const { release, render } of fixedKits) {
+      const home = homeOf(render(starterInput(release, one)));
+      eq(chipsOf(home.slots[SECTION] as KeywordsData), [chip("chip1", L1, "/portfolio?area=20", ["hk-27"])], release.releaseId);
+      // …and the page itself: one chip, one card in the section, no placeholder left
+      const section = /<section[^>]*data-section="home\.keywords"[\s\S]*?<\/section>/.exec(home.body)?.[0] ?? "";
+      assert(section.includes(L1) && !section.includes(L2) && !section.includes(L3), `${release.releaseId}: the rendered section names a chip it does not have`);
+      assert(!home.body.includes("data-portfolio-slot"), `${release.releaseId}: a placeholder is left on the home page`);
+    }
   });
   await check("K3 the new kit, the starter's chips: 34평 → 30평대 only; 27 + 34평 → two chips; a project without an area → no section; nothing published → no section, the home page still composes", () => {
-    const view = (projects: unknown[]) => chipsOf(homeOf(renderHead(starterInput(head, projects))).slots[SECTION] as KeywordsData | undefined);
-    eq(view([demoVariant("hk-34", py(34))]), [chip("chip2", L2, "/portfolio?area=30", ["hk-34"])], "34평");
-    eq(view([demoVariant("hk-27", py(27)), demoVariant("hk-34", py(34))]).map((c) => [c.id, c.projects]), [["chip1", ["hk-27"]], ["chip2", ["hk-34"]]], "27평 + 34평");
-    eq(view([demoVariant("hk-none", undefined)]), [], "no area");
-    const empty = homeOf(renderHead(starterInput(head, [])));
-    assert(empty.slots[SECTION] === undefined && !empty.body.includes('data-section="home.keywords"') && !empty.body.includes("data-portfolio-slot"), "nothing published: the section is left out and no placeholder remains");
+    eq(fixedKits.length >= 1, true, "K1 loaded no kit");
+    for (const { release, render } of fixedKits) {
+      const id = release.releaseId;
+      const view = (projects: unknown[]) => chipsOf(homeOf(render(starterInput(release, projects))).slots[SECTION] as KeywordsData | undefined);
+      eq(view([demoVariant("hk-34", py(34))]), [chip("chip2", L2, "/portfolio?area=30", ["hk-34"])], `${id}: 34평`);
+      eq(view([demoVariant("hk-27", py(27)), demoVariant("hk-34", py(34))]).map((c) => [c.id, c.projects]), [["chip1", ["hk-27"]], ["chip2", ["hk-34"]]], `${id}: 27평 + 34평`);
+      eq(view([demoVariant("hk-none", undefined)]), [], `${id}: no area`);
+      const empty = homeOf(render(starterInput(release, [])));
+      assert(empty.slots[SECTION] === undefined && !empty.body.includes('data-section="home.keywords"') && !empty.body.includes("data-portfolio-slot"), `${id}: nothing published: the section is left out and no placeholder remains`);
+    }
   });
   await check(`K4 ${DEMO}, its own settings and shell package with the frozen demo dataset of this repository (8 records): the new kit composes the same home.keywords as the frozen kit — six chips, the same labels, links and projects in the same order (the whole slot data is equal)`, () => {
     const demoInput = (release: typeof head): PortfolioSiteInput => ({ ...documentsFor(release, false), portfolio: { categories: demoCategories, projects: demoProjects, assets: demoAssets }, at: AT });
-    const [old, now] = [homeOf(renderBefore(demoInput(before))), homeOf(renderHead(demoInput(head)))];
-    const [oldChips, newChips] = [chipsOf(old.slots[SECTION] as KeywordsData), chipsOf(now.slots[SECTION] as KeywordsData)];
-    eq(newChips, oldChips, "chips (id, label, link, projects in order)");
+    const old = homeOf(renderBefore(demoInput(before)));
+    const oldChips = chipsOf(old.slots[SECTION] as KeywordsData);
     eq(oldChips.map((c) => c.id), ["chip1", "chip2", "chip3", "chip4", "chip5", "chip6"], "the six chips of the demo site");
     assert(oldChips.every((c) => c.projects.length > 0 && c.href !== "/portfolio"), "a demo chip is empty or unfiltered");
-    assertNode.deepStrictEqual(now.slots[SECTION], old.slots[SECTION], "home.keywords slot data");
+    eq(fixedKits.length >= 1, true, "K1 loaded no kit");
+    for (const { release, render } of fixedKits) {
+      const now = homeOf(render(demoInput(release)));
+      eq(chipsOf(now.slots[SECTION] as KeywordsData), oldChips, `${release.releaseId}: chips (id, label, link, projects in order)`);
+      assertNode.deepStrictEqual(now.slots[SECTION], old.slots[SECTION], `${release.releaseId}: home.keywords slot data`);
+    }
     console.log(oldChips.map((c) => `         ${c.id} "${c.label}" ${c.href} → ${c.projects.join(", ")}`).join("\n"));
   });
 

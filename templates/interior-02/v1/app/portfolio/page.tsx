@@ -5,7 +5,8 @@ import template from "../../template";
 import { isShell } from "../../lib/routes";
 import { Slot } from "../../runtime/Slot";
 import { SHELL_METADATA, portfolioListPage } from "../../runtime/portfolio";
-import { SiteHeader } from "../../sections/SiteHeader";
+import { Header } from "../../design/chrome";
+import { mainId } from "../../design/resolve";
 import { portfolioIndexTitle } from "../../sections/portfolioIndexData";
 
 /**
@@ -25,8 +26,8 @@ export default function PortfolioPage() {
   if (!shell && !page) notFound();
   return (
     <>
-      <SiteHeader ctx={ctx} variant="sub" current="portfolio" title={portfolioIndexTitle(ctx)} />
-      <main className="i2-main i2-main--sub" data-page="portfolio">
+      <Header ctx={ctx} variant="sub" current="portfolio" title={portfolioIndexTitle(ctx)} />
+      <main className="i2-main i2-main--sub" data-page="portfolio" id={mainId(ctx)}>
         <Slot name="portfolio.index" slots={page?.slots ?? {}} shell={shell} />
       </main>
     </>

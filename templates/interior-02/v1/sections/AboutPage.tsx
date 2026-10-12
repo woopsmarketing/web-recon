@@ -5,6 +5,7 @@ import { TimelineSlider } from "../components/pages/TimelineSlider";
 import { mediaOf, paragraphsOf, type Media } from "../components/pages/shared";
 import type { CarouselLabels } from "../components/ui/Carousel";
 import { STAT_NUMBERS, SYSTEM_ITEM_NUMBERS, VALUE_NUMBERS, YEAR_NUMBERS, type ValueIcon, type ValueTone } from "../manifest/pages";
+import { AboutStory, aboutStory, type AboutStoryData } from "./AboutStory";
 import type { Ctx } from "./types";
 
 const SECTION = "about.page";
@@ -12,7 +13,7 @@ const SECTION = "about.page";
 export interface AboutPageData {
   title: string;
   intro?: string[];
-  story?: { media?: Media; title?: string; body?: string[] };
+  story?: AboutStoryData;
   stats?: { title?: string; items: { key: string; figure: string; unit?: string; label?: string; note?: string }[] };
   values?: { title?: string; items: { key: string; tone: ValueTone; icon: ValueIcon; title: string; text?: string }[] };
   history?: { title?: string; autoplay: boolean; years: { key: string; label: string; items?: string[] }[]; labels: CarouselLabels; slideLabelFormat: string };
@@ -32,10 +33,7 @@ export function aboutPage(ctx: Ctx): AboutPageData {
   const title = t("title") ?? "";
   const intro = paragraphsOf(ctx, SECTION, "intro");
 
-  const photo = mediaOf(ctx, SECTION, "photoMedia");
-  const introTitle = t("introTitle");
-  const introBody = paragraphsOf(ctx, SECTION, "introBody");
-  const story = photo || introTitle || introBody ? { media: photo, title: introTitle, body: introBody } : undefined;
+  const story = aboutStory(ctx);
 
   const statItems: NonNullable<AboutPageData["stats"]>["items"] = [];
   for (const n of STAT_NUMBERS) {
@@ -120,31 +118,7 @@ export function AboutPage({ data }: { data: AboutPageData }) {
         ) : null}
       </section>
 
-      {story ? (
-        <section className="i2-ab-story" aria-labelledby={story.title ? "i2-ab-story-title" : undefined}>
-          {story.media ? (
-            <div className="i2-ab-story__photo">
-              <img src={story.media.src} width={story.media.width} height={story.media.height} alt={story.media.alt} decoding="async" />
-            </div>
-          ) : null}
-          {story.title || story.body ? (
-            <Reveal className="i2-wrap i2-ab-hang" data-hang="">
-              {story.title ? (
-                <h2 id="i2-ab-story-title" className="i2-ab-hang__title">
-                  {story.title}
-                </h2>
-              ) : null}
-              {story.body ? (
-                <div className="i2-ab-hang__body">
-                  {story.body.map((p, i) => (
-                    <p key={i}>{p}</p>
-                  ))}
-                </div>
-              ) : null}
-            </Reveal>
-          ) : null}
-        </section>
-      ) : null}
+      {story ? <AboutStory story={story} /> : null}
 
       {stats ? (
         <section className="i2-ab-stats" aria-labelledby={stats.title ? "i2-ab-stats-title" : undefined}>

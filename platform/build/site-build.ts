@@ -16,6 +16,8 @@ import { DeclaredRoutesSchema, emitIntegration, IntegrationError, type EmittedFi
 import { assertIntegration } from "../integration/validate";
 import { producerSources } from "../integration/sources";
 import { resolvePortfolioRuntime } from "../portfolio-runtime/capability";
+import { DesignError } from "../design/errors";
+import { placeDesignFonts } from "../design/font-step";
 import {
   PortfolioShellDeclSchema,
   RUNTIME_DIR,
@@ -544,6 +546,13 @@ export async function buildSite(opts: SiteBuildOptions): Promise<SiteBuildResult
       for (const f of runtimeFiles) await writeFile(path.join(projectDir, "public", f.path), f.text);
     }
 
+    // Design fonts (platform/design/font-step.ts): the files of the site's font set, placed in public/ like the
+    // documents above. Nothing for a release without a design system or a site on the system font set.
+    const placedFonts = await placeDesignFonts({ repoRoot: opts.repoRoot, projectDir, settings: preflightOut.settings }).catch((error: unknown) => {
+      throw error instanceof DesignError ? new SiteBuildError(`design fonts: ${error.message}`) : error;
+    });
+    if (placedFonts) log(`[${opts.siteId}] design fonts: set ${placedFonts.fontSet} → ${placedFonts.dir}/ (${placedFonts.files} files, ${placedFonts.licences.length} licence text(s), ${placedFonts.bytes} bytes)`);
+
     t = Date.now();
     await run(path.join(ws, "node_modules/.bin/next"), ["build"], projectDir, env, 600_000);
     const nextBuild = Date.now() - t;
@@ -564,6 +573,8 @@ export async function buildSite(opts: SiteBuildOptions): Promise<SiteBuildResult
       declaredEndpoints: snapshot.inquiry ? [snapshot.inquiry.endpoint] : [],
       // the shell document IS the site's data (it holds the inquiry endpoint as the snapshot does)
       dataFiles: runtimeFiles.map((f) => f.path),
+      // the pinned licence texts of the site's font set: the only files the absolute-URL scan does not read
+      licenceFiles: placedFonts?.licences ?? [],
     });
     const qaMs = Date.now() - t;
     if (!qa.pass) {

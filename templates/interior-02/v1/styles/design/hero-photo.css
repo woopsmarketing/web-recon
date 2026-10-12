@@ -1,0 +1,200 @@
+/* ds-hero-photo — hero.photo (HE-A). Owner: E-TB-H.
+   One full-bleed photograph; the text sits at its foot on a veil that exists only under the text.
+   .ds-hero-photo--plain = no photograph: the same lines as type on the page surface.
+   Colour, type and spacing are --ds-* values only (platform/design/README.md). */
+
+.ds-hero-photo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  /* header + hero = one screen: the sticky header takes --i2-header-h of layout (set by the header variant's sheet) */
+  min-height: max(30rem, calc(100svh - var(--i2-header-h, 0px) - var(--ds-hairline)));
+  overflow: hidden;
+  color: var(--ds-on-scrim);
+  background: var(--ds-surface);
+}
+
+.ds-hero-photo__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* The veil — two passes of the scrim role. The first holds the full scrim under the whole text
+   block and fades only inside the bar's top padding (so the heading, ≥ 24px, reads at ≥ 3:1 even on
+   a white photograph); the second deepens toward the foot, where the small text is (≥ 4.5:1). */
+.ds-hero-photo__bar {
+  position: relative;
+  padding-block: calc(var(--ds-space-8) + var(--ds-space-6)) var(--ds-space-6);
+  background:
+    linear-gradient(to top, var(--ds-scrim), transparent),
+    linear-gradient(to top, var(--ds-scrim) calc(100% - var(--ds-space-8) - var(--ds-space-6)), transparent);
+}
+
+.ds-hero-photo__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  max-width: calc(var(--ds-container-max) + 2 * var(--ds-gutter));
+  margin-inline: auto;
+  padding-inline: var(--ds-gutter);
+  text-shadow: 0 0 var(--ds-space-5) var(--ds-scrim);
+}
+
+/* on a photograph the small lines sit under the heading, in the darkest part of the veil */
+.ds-hero-photo__caption {
+  order: 1;
+  margin-top: var(--ds-space-3);
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-sm);
+  line-height: 1.5;
+  letter-spacing: 0;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.ds-hero-photo__heading {
+  max-width: 18em;
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-text-2xl);
+  font-weight: var(--ds-weight-display);
+  line-height: var(--ds-leading-display);
+  letter-spacing: var(--ds-tracking-display);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.ds-hero-photo__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  order: 2;
+  min-height: 44px;
+  margin-top: var(--ds-space-3);
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-base);
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-decoration: underline;
+  text-decoration-thickness: var(--ds-hairline);
+  text-underline-offset: 0.4em;
+  word-break: keep-all;
+}
+
+.ds-hero-photo__link svg {
+  flex: none;
+  transition: transform var(--ds-dur-1) var(--ds-ease);
+}
+
+.ds-hero-photo__link:hover svg {
+  transform: translateX(var(--ds-space-1));
+}
+
+.ds-hero-photo__link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: var(--ds-space-1);
+}
+
+/* ---- no photograph: type on the page surface ---- */
+.ds-hero-photo--plain {
+  justify-content: center;
+  min-height: max(24rem, calc(72svh - var(--i2-header-h, 0px) - var(--ds-hairline)));
+  color: var(--ds-ink);
+  background: var(--ds-bg);
+  border-bottom: var(--ds-hairline) solid var(--ds-line);
+}
+
+.ds-hero-photo--plain .ds-hero-photo__bar {
+  padding-block: var(--ds-space-8);
+  background: none;
+}
+
+.ds-hero-photo--plain .ds-hero-photo__inner {
+  align-items: center;
+  text-align: center;
+  text-shadow: none;
+}
+
+.ds-hero-photo--plain .ds-hero-photo__caption {
+  order: -1;
+  margin-top: 0;
+  margin-bottom: var(--ds-space-5);
+  color: var(--ds-muted);
+}
+
+.ds-hero-photo--plain .ds-hero-photo__heading {
+  max-width: 14em;
+  font-size: var(--ds-text-3xl);
+}
+
+.ds-hero-photo--plain .ds-hero-photo__link {
+  margin-top: var(--ds-space-6);
+}
+
+/* ---- phone (<= 640px): the photograph is shown, not used as a backdrop. A full-height hero keeps under a third of a
+   landscape photograph's width and lays the veil over what is left; here the picture is a square (two thirds of a 3:2
+   photograph, more than half of a 16:9 one) and the lines follow it as type on the page: header, photograph, the
+   statement and the start of the next section share the first screen. The caption names the picture, so it comes
+   first, directly under it. */
+@media (max-width: 640px) {
+  .ds-hero-photo:not(.ds-hero-photo--plain) {
+    display: block;
+    min-height: 0;
+    color: var(--ds-ink);
+    background: var(--ds-bg);
+  }
+
+  .ds-hero-photo:not(.ds-hero-photo--plain) .ds-hero-photo__img {
+    position: static;
+    display: block;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    max-height: calc(100svh - var(--i2-header-h, 0px) - var(--ds-hairline));
+  }
+
+  .ds-hero-photo:not(.ds-hero-photo--plain) .ds-hero-photo__bar {
+    padding-block: var(--ds-space-5) calc(var(--ds-section-gap) / 2);
+    background: none;
+  }
+
+  .ds-hero-photo:not(.ds-hero-photo--plain) .ds-hero-photo__inner {
+    text-shadow: none;
+  }
+
+  .ds-hero-photo:not(.ds-hero-photo--plain) .ds-hero-photo__caption {
+    order: -1;
+    margin-top: 0;
+    margin-bottom: var(--ds-space-2);
+    color: var(--ds-muted);
+  }
+}
+
+@media (min-width: 700px) {
+  .ds-hero-photo {
+    min-height: max(34rem, calc(100svh - var(--i2-header-h, 0px) - var(--ds-hairline)));
+  }
+
+  .ds-hero-photo__bar {
+    padding-bottom: var(--ds-space-8);
+  }
+
+  .ds-hero-photo--plain {
+    min-height: max(28rem, calc(76svh - var(--i2-header-h, 0px) - var(--ds-hairline)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-hero-photo__link svg {
+    transition: none;
+  }
+
+  .ds-hero-photo__link:hover svg {
+    transform: none;
+  }
+}

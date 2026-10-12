@@ -1,12 +1,8 @@
 import { createElement, type ReactElement } from "react";
 import type { Metadata } from "next";
 import { SlotElement, SlotPlaceholder, SLOT_NAMES } from "../components/runtime/RuntimeSlot";
-import { homeHero } from "../sections/HomeHero";
-import { homeProjects } from "../sections/homeProjectsData";
-import { homeKeywords } from "../sections/HomeKeywords";
-import { homeRecent } from "../sections/homeRecentData";
-import { portfolioIndex, portfolioIndexTitle } from "../sections/portfolioIndexData";
-import { portfolioDetail } from "../sections/PortfolioDetail";
+import { portfolioIndexTitle } from "../sections/portfolioIndexData";
+import { detailSlot, homeSlots, listingSlot } from "../design/slots";
 import { pageHref } from "../components/portfolio/Pager";
 import { listedPaths } from "../lib/links";
 import { projectHref } from "../lib/projects";
@@ -26,6 +22,10 @@ import { portfolioShell } from "./shell";
  *
  * A slot value of `undefined` = the section is omitted on that page (no data / disabled).
  * Pure: everything comes from the site context.
+ *
+ * Design: WHICH slots the home page has and which variant each slot shows comes from the site's
+ * design document, through design/slots.ts (the variant is written into the slot's data). A site
+ * without one gets the four home slots, the list and the detail with their classic data, unchanged.
  */
 export interface RuntimePage {
   /** canonical public path ("/", "/portfolio", "/portfolio/page/2", "/portfolio/<slug>") */
@@ -47,12 +47,7 @@ export function homePage(ctx: Ctx): RuntimePage {
     path: "/",
     shell: SHELL_PATH.home,
     metadata: pageMetadata(ctx, { title: ctx.identity.brandName, description: ctx.content.getSingleton("business").summary, path: "/" }),
-    slots: {
-      "home.hero": homeHero(ctx),
-      "home.projects": homeProjects(ctx),
-      "home.keywords": homeKeywords(ctx),
-      "home.recent": homeRecent(ctx),
-    },
+    slots: homeSlots(ctx),
   };
 }
 
@@ -61,7 +56,7 @@ export function homePage(ctx: Ctx): RuntimePage {
  * `emptyFirstPage`: see portfolioIndex — the runtime asks for it, an ordinary build does not.
  */
 export function portfolioListPage(ctx: Ctx, n: number, options: { emptyFirstPage?: boolean } = {}): RuntimePage | undefined {
-  const data = portfolioIndex(ctx, n, options);
+  const data = listingSlot(ctx, n, options);
   if (!data) return undefined;
   const path = pageHref(n);
   return {
@@ -79,7 +74,7 @@ export function portfolioDetailPage(ctx: Ctx, project: ProjectItem): RuntimePage
     shell: SHELL_PATH["portfolio.detail"],
     // The content model has no per-item SEO fields: item title + brand, item summary.
     metadata: pageMetadata(ctx, { title: `${project.title} | ${ctx.identity.brandName}`, description: project.summary, path }),
-    slots: { "portfolio.detail": portfolioDetail(ctx, project) },
+    slots: { "portfolio.detail": detailSlot(ctx, project) },
     project: { id: project.id, slug: project.slug },
   };
 }

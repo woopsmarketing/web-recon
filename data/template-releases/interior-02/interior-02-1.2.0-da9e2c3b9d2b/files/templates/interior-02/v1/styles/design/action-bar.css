@@ -1,0 +1,118 @@
+/* ds-action-bar (CT-B) — the fixed bottom bar at phone / tablet width: phone · consultation, each only when the site
+   has it. Hidden from 1024px. Owner: E-TB-C.
+
+   Corner and page bottom — the same mechanism as the classic bottom tab bar (shell.css / base.css):
+     * --i2-tabbar-h is the height of the bar: the floater (to-top button) sits 15px above it at <= 640px and
+       the body keeps that much padding at the bottom, so the bar never covers the last content;
+     * under html[data-ext-widget] (the closed box of the corner widget's launcher, declared by the site:
+       --i2-ext-right / --i2-ext-w) the actions share the width to the LEFT of the launcher, the bar's background
+       still spans the full width; from 641px the floater sits in the corner, so that corner stays free as well. */
+
+html[data-design]:not([data-design="classic"]):has(.ds-action-bar) {
+  --ds-ab-h: calc(57px + env(safe-area-inset-bottom, 0px));
+  --i2-tabbar-h: var(--ds-ab-h);
+}
+
+html[data-design]:not([data-design="classic"]):has(.ds-action-bar) body {
+  padding-bottom: var(--ds-ab-h);
+}
+
+.ds-action-bar {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 55;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  color: var(--ds-ink);
+  background: var(--ds-bg);
+  border-top: var(--ds-hairline) solid var(--ds-line);
+}
+
+.ds-action-bar__list {
+  display: flex;
+  height: 56px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ds-action-bar__item {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.ds-action-bar__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-2);
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  padding-inline: var(--ds-space-2);
+  font-family: var(--ds-font-label);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-weight-heading);
+  line-height: 1.2;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ds-action-bar__action svg {
+  flex: none;
+}
+
+.ds-action-bar__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ds-action-bar__action--primary {
+  color: var(--ds-accent-ink);
+  background: var(--ds-accent);
+}
+
+/* --quiet (accent use `minimal` / `blocks`): the emphasis is the theme's block pair, set off by a hairline —
+   the surface on a minimal site (no brand colour on a surface), the accent where the accent is the site's block */
+.ds-action-bar--quiet .ds-action-bar__action--primary {
+  color: var(--ds-block-ink);
+  background: var(--ds-block-bg);
+  border-inline-start: var(--ds-hairline) solid var(--ds-line);
+}
+
+.ds-action-bar--quiet .ds-action-bar__action--primary:focus-visible {
+  outline-color: var(--ds-block-ink);
+}
+
+.ds-action-bar__action:focus-visible {
+  outline: 2px solid var(--ds-ink);
+  outline-offset: -4px;
+}
+
+.ds-action-bar__action--primary:focus-visible {
+  outline-color: var(--ds-accent-ink);
+}
+
+/* the corner widget: the actions stay left of its box */
+html[data-ext-widget] .ds-action-bar__list {
+  padding-right: calc(var(--i2-ext-right) + var(--i2-ext-w) + 8px);
+}
+
+/* 641px = where the classic floater leaves the bar (shell.css): the corner is the floater's / the widget's */
+@media (min-width: 641px) {
+  .ds-action-bar__list {
+    padding-right: var(--i2-corner-reserve, 92px);
+  }
+}
+
+@media (min-width: 1024px) {
+  html[data-design]:not([data-design="classic"]):has(.ds-action-bar) {
+    --ds-ab-h: 0px;
+    --i2-tabbar-h: 0px;
+  }
+
+  .ds-action-bar {
+    display: none;
+  }
+}

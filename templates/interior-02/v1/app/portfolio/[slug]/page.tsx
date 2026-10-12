@@ -6,7 +6,8 @@ import { isShell } from "../../../lib/routes";
 import { Slot } from "../../../runtime/Slot";
 import { SHELL_METADATA, portfolioDetailPage } from "../../../runtime/portfolio";
 import { PORTFOLIO_SHELL_SLUG } from "../../../runtime/shell";
-import { SiteHeader } from "../../../sections/SiteHeader";
+import { Header } from "../../../design/chrome";
+import { mainId } from "../../../design/resolve";
 import { pageHref } from "../../../components/portfolio/Pager";
 
 /**
@@ -40,8 +41,8 @@ export default async function ProjectDetailPage({ params }: Params) {
   const listTitle = ctx.slots.text("portfolio.index", "title");
   return (
     <>
-      <SiteHeader ctx={ctx} variant="sub" current="portfolio" title={listTitle ?? project?.title} backHref={pageHref(1)} />
-      <main className="i2-main i2-main--sub" data-page="portfolio-detail">
+      <Header ctx={ctx} variant="sub" current="portfolio" title={listTitle ?? project?.title} backHref={pageHref(1)} />
+      <main className="i2-main i2-main--sub" data-page="portfolio-detail" id={mainId(ctx)}>
         <Slot name="portfolio.detail" slots={project ? portfolioDetailPage(ctx, project).slots : {}} shell={shell} />
       </main>
     </>

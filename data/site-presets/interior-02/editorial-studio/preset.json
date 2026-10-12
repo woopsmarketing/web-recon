@@ -1,0 +1,46 @@
+{
+  "schema": "site-preset@1",
+  "id": "editorial-studio",
+  "version": 1,
+  "name": "Editorial Studio",
+  "summary": "큰 글자와 문장이 이끄는 편집형 구성. 종이 톤 바탕에 브랜드 색 블록 하나, 번호가 붙은 서비스, 글 중심의 프로젝트 목록.",
+  "bestFor": ["디자인 철학이 분명한 스튜디오", "글과 이야기가 많은 업체", "사진이 적은 초기 업체"],
+  "minRelease": "1.2.0",
+  "design": {
+    "chrome": { "header": "centered", "footer": "minimal", "mobileBar": "action-bar" },
+    "home": [
+      { "section": "hero", "variant": "statement" },
+      { "section": "about", "variant": "manifesto" },
+      { "section": "showcase", "variant": "index" },
+      { "section": "services", "variant": "numbered" },
+      { "section": "cta", "variant": "quiet" }
+    ],
+    "pages": { "listing": "classic", "detail": "typographic" },
+    "theme": {
+      "typeScale": "display",
+      "headingWeight": "regular",
+      "density": "regular",
+      "container": "regular",
+      "corner": "square",
+      "surface": "warm",
+      "accentUse": "blocks"
+    },
+    "fontSet": "serif-noto"
+  },
+  "tier1": {
+    "color.canvas": "#f4f0e8",
+    "color.surface.primary": "#f4f0e8",
+    "color.surface.secondary": "#eae4d8",
+    "color.surface.elevated": "#faf7f1",
+    "color.text.primary": "#22201c",
+    "color.text.secondary": "#57514a",
+    "color.text.muted": "#6a6259",
+    "color.link": "#22201c",
+    "color.border.default": "#d8d0c2",
+    "color.action.primary": "#22201c",
+    "color.accent.primary": "#b4532a"
+  },
+  "copy": {
+    "home.projects": { "title": "Index", "moreLabel": "전체 프로젝트 보기" }
+  }
+}
