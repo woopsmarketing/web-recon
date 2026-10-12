@@ -19,7 +19,7 @@ import { supportSections } from "./manifest/support";
  */
 const manifest = defineTemplate({
   id: "interior-02",
-  version: "1.1.1",
+  version: "1.1.2",
   vertical: "interior",
   routes: [
     { key: "home", path: "/" },

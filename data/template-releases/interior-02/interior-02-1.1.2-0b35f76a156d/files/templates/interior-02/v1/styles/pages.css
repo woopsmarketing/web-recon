@@ -1,0 +1,1352 @@
+/* interior-02 v1 — SERVICE and ABOUT pages (PAGES area). Desktop-first; breakpoints (max-width)
+   640 · 800 · 860 · 960 · 1024 · 1280 (+ 1500 through the base.css custom properties). Every
+   brandable value reads a theme token or a base.css alias; shades without a token are
+   color-mix()ed from tokens. rem = 16px above 1280, 15px at and below (base.css).
+   Page rhythm (both pages):  --i2-pg-gap   section margin-top 160 → 120 (≤1280) → 90 (≤800) → 75 (≤640)
+                              --i2-pg-head  heading block margin-bottom 36 → 24 (≤640)
+   Prefixes: .i2-pg-* shared · .i2-sv-* SERVICE · .i2-ab-* ABOUT */
+
+.i2-pg {
+  --i2-pg-gap: 160px;
+  --i2-pg-head: 36px;
+  --i2-pg-text: color-mix(in srgb, var(--color-text-primary) 85%, var(--color-text-secondary));
+}
+
+/* page title 40/52 (32 ≤ 1280; hidden ≤ 640 — the header bar carries it there) */
+.i2-pg-title {
+  font-size: 2.5rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.i2-pg-sub {
+  padding-top: 18px;
+  font-size: 1.25rem;
+  line-height: 1.45;
+}
+
+/* section heading 30 (25 ≤ 1280; 20 ≤ 640) */
+.i2-pg-h2 {
+  margin-bottom: var(--i2-pg-head);
+  font-size: 1.875rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.13;
+  letter-spacing: -0.02em;
+}
+
+/* ================================================================ SERVICE */
+/* the page opens with its own light band directly under the header: the first block cancels
+   the sub-page top padding and paints a 280 px band behind the title block and the tile tops */
+.i2-sv-top {
+  position: relative;
+  isolation: isolate;
+  margin-top: -80px;
+  padding-top: 75px;
+}
+
+.i2-sv-top::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: -1;
+  height: 280px;
+  background: var(--i2-surface);
+}
+
+.i2-sv-top__head {
+  padding-bottom: 24px;
+}
+
+/* ---- tier tiles: a flush row of three; each = coloured head, white spec box, bottom button ---- */
+.i2-sv-tiers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.i2-sv-tier {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.i2-sv-tier--yellow {
+  --i2-tile: var(--i2-yellow);
+  --i2-tile-text: var(--color-text-primary);
+  --i2-tile-tint: var(--i2-on-yellow);
+}
+
+.i2-sv-tier--mint {
+  --i2-tile: var(--i2-mint);
+  --i2-tile-text: var(--color-text-primary);
+  --i2-tile-tint: var(--i2-on-mint);
+}
+
+.i2-sv-tier--navy {
+  --i2-tile: var(--i2-navy);
+  --i2-tile-text: var(--color-action-primary-text);
+  --i2-tile-tint: var(--i2-on-navy);
+}
+
+.i2-sv-tier__head {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  min-height: 199px;
+  padding: 35px 30px 40px;
+  color: var(--i2-tile-text);
+  background: var(--i2-tile);
+}
+
+.i2-sv-tier__name {
+  display: block;
+}
+
+.i2-sv-tier__name h3 {
+  font-size: 1.375rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.5;
+}
+
+.i2-sv-tier__name small {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--i2-tile-tint);
+}
+
+.i2-sv-tier__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.i2-sv-tier__price {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  line-height: 1;
+}
+
+.i2-sv-tier__prefix {
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.i2-sv-tier__price strong {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.i2-sv-tier__unit {
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.i2-sv-tier__tag {
+  align-self: center;
+  margin-left: 6px;
+  padding: 0 10px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 21px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: var(--decoration-radius-pill);
+}
+
+.i2-sv-tier__arrow {
+  transition: transform 0.3s ease-out;
+}
+
+a.i2-sv-tier__head:hover .i2-sv-tier__arrow {
+  transform: translateX(5px);
+}
+
+/* the white spec box; its side borders take the tile colour on hover (always ≤ 960) */
+.i2-sv-tier__spec {
+  flex: 1 1 auto;
+  padding: 42px 36px 58px;
+  background: var(--color-surface-primary);
+  border-inline: 3px solid transparent;
+  transition: border-color 0.15s ease-out;
+}
+
+.i2-sv-tier__spec h4 {
+  font-size: 1.25rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.4;
+}
+
+.i2-sv-tier__spec p {
+  margin-top: 8px;
+  font-size: 0.9375rem;
+  line-height: 1.5333;
+  color: var(--i2-pg-text);
+}
+
+.i2-sv-tier__rows {
+  margin-top: 30px;
+}
+
+.i2-sv-tier__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 57px;
+  padding: 16px 18px;
+}
+
+.i2-sv-tier__row + .i2-sv-tier__row {
+  border-top: 1px dashed var(--i2-rule);
+}
+
+.i2-sv-tier__row dt {
+  flex: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--i2-text-2);
+}
+
+.i2-sv-tier__row dd {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: right;
+}
+
+/* the full-width button fades in at the tile bottom on hover (over the 80 px gap below) */
+.i2-sv-tier__btn {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 60px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--i2-tile-text);
+  background: var(--i2-tile);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.15s ease-out,
+    visibility 0.15s;
+}
+
+.i2-sv-tier:hover .i2-sv-tier__btn,
+.i2-sv-tier:focus-within .i2-sv-tier__btn {
+  opacity: 1;
+  visibility: visible;
+}
+
+.i2-sv-tier:hover .i2-sv-tier__spec,
+.i2-sv-tier:focus-within .i2-sv-tier__spec {
+  border-color: var(--i2-tile);
+}
+
+/* ---- "at a glance": rows between hairlines + the diagram ---- */
+.i2-sv-glance {
+  margin-top: 80px;
+}
+
+.i2-sv-glance__title {
+  margin-bottom: 80px;
+}
+
+.i2-sv-glance__cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  align-items: start;
+}
+
+.i2-sv-glance__rows {
+  border-top: 1px solid var(--i2-rule);
+}
+
+.i2-sv-glance__row {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  min-height: 147px;
+  padding: 33px 0 33px 20px;
+  border-bottom: 1px solid var(--i2-rule);
+}
+
+.i2-sv-glance__name h3 {
+  font-size: 1.25rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.4;
+}
+
+.i2-sv-glance__name small {
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--i2-text-2);
+}
+
+.i2-sv-glance__body h4 {
+  font-size: 1.125rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.5;
+}
+
+.i2-sv-glance__body p {
+  margin-top: 8px;
+  font-size: 0.9375rem;
+  line-height: 1.5333;
+  color: var(--i2-pg-text);
+}
+
+.i2-sv-glance__figure {
+  justify-self: end;
+  width: 100%;
+}
+
+.i2-sv-glance__figure img {
+  width: 100%;
+  height: auto;
+}
+
+/* ---- full-bleed photo band with a white heading at the left gutter ---- */
+.i2-sv-band {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 350px;
+  margin-top: var(--i2-pg-gap);
+  overflow: hidden;
+  color: var(--color-text-inverse);
+  background: var(--i2-navy);
+}
+
+.i2-sv-band__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* scrim under the white heading: strongest at the left gutter where the text sits, gone past the
+   middle so a dark photo keeps the plain look. z-index 1 lifts it above the <img> (which follows it
+   in DOM order); the text wrapper is also z-index 1 and later, so it stays on top of the scrim */
+.i2-sv-band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(to right, rgb(0 0 0 / 0.58) 0%, rgb(0 0 0 / 0.44) 30%, rgb(0 0 0 / 0.14) 62%, rgb(0 0 0 / 0) 85%),
+    linear-gradient(to top, rgb(0 0 0 / 0.18) 0%, rgb(0 0 0 / 0) 55%);
+}
+
+.i2-sv-band > .i2-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+.i2-sv-band__title {
+  font-size: 1.875rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.3333;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+}
+
+.i2-sv-band__title span {
+  display: block;
+}
+
+/* ---- three cards ---- */
+.i2-sv-cards {
+  margin-top: var(--i2-pg-gap);
+}
+
+.i2-sv-cards__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.i2-sv-card {
+  min-width: 0;
+  border: 1px solid var(--i2-rule);
+}
+
+.i2-sv-card__media {
+  aspect-ratio: 672 / 424;
+  overflow: hidden;
+  background: var(--i2-surface);
+}
+
+.i2-sv-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.i2-sv-card__body {
+  padding: 25px 20px;
+  border-top: 1px solid var(--i2-rule);
+}
+
+.i2-sv-card__body h3 {
+  font-size: 1.1875rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.47;
+}
+
+.i2-sv-card__body p {
+  margin-top: 12px;
+  font-size: 0.9375rem;
+  line-height: 1.5333;
+  color: var(--i2-pg-text);
+}
+
+/* ---- team row: five items with a black circle icon, then the mint button ---- */
+.i2-sv-team {
+  margin-top: var(--i2-pg-gap);
+}
+
+.i2-sv-team__title {
+  margin-bottom: 20px;
+}
+
+.i2-sv-team__text {
+  font-size: 1.0625rem;
+  line-height: 1.53;
+}
+
+.i2-sv-team__list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 246px));
+  justify-content: center;
+  gap: 40px 3%;
+  margin-top: 50px;
+}
+
+.i2-sv-team__item {
+  min-width: 0;
+  text-align: center;
+}
+
+.i2-sv-team__icon {
+  display: grid;
+  place-items: center;
+  width: 82px;
+  height: 82px;
+  margin: 0 auto;
+  border-radius: 50%;
+  color: var(--color-text-inverse);
+  background: var(--color-text-primary);
+}
+
+.i2-sv-team__head h3 {
+  padding: 22px 0 16px;
+  font-size: 1.25rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.5;
+}
+
+.i2-sv-team__item p {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--i2-pg-text);
+}
+
+/* the button sits at the container's left edge (full width ≤ 640) */
+.i2-sv-team__cta {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 60px;
+}
+
+.i2-sv-team__btn {
+  min-width: 305px;
+}
+
+/* ================================================================== ABOUT */
+.i2-ab-top {
+  padding-bottom: 52px;
+}
+
+.i2-ab-top .i2-pg-sub {
+  line-height: 1.4;
+}
+
+/* ---- photo band (6:1) with the intro block rising over its bottom edge ---- */
+.i2-ab-story__photo {
+  aspect-ratio: 6 / 1;
+  overflow: hidden;
+  background: var(--i2-surface);
+}
+
+.i2-ab-story__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* settled: 18 px over the photo; entrance: from 50 px below, transparent, .5 s */
+.i2-ab-hang {
+  transform: translateY(-18px);
+  transition:
+    transform 0.5s,
+    opacity 0.5s;
+}
+
+.i2-ab-hang[data-revealed="false"] {
+  opacity: 0;
+  transform: translateY(50px);
+}
+
+.i2-ab-hang__title {
+  font-size: 1.875rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.13;
+  letter-spacing: -0.02em;
+}
+
+.i2-ab-hang__body {
+  padding-top: 17px;
+  font-size: 1.0625rem;
+  line-height: 1.53;
+}
+
+.i2-ab-hang__body p + p {
+  margin-top: 20px;
+}
+
+/* ---- statistics band: six centred figures that count up ---- */
+.i2-ab-stats {
+  margin-top: var(--i2-pg-gap);
+  padding: 155px 0 163px;
+  background: var(--i2-surface);
+}
+
+.i2-ab-stats__list {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 17px;
+}
+
+.i2-ab-stat {
+  flex: 0 1 195px;
+  min-width: 0;
+  text-align: center;
+}
+
+.i2-ab-stat__figure {
+  font-size: 3.75rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.i2-ab-stat__figure small {
+  margin-left: 2px;
+  font-size: 1.40625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.i2-ab-stat__label {
+  padding-top: 31px;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.i2-ab-stat__note {
+  padding-top: 13px;
+  font-size: 0.875rem;
+  line-height: 20px;
+  color: var(--i2-text-2);
+}
+
+/* ---- four value cards: tone background, a line illustration that rotates in ---- */
+.i2-ab-values {
+  margin-top: var(--i2-pg-gap);
+}
+
+.i2-ab-values__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 28px;
+}
+
+/* 329 x 498 at 1440 (padding 50, a 119 px illustration top-left, the text block 145 below it and
+   pushed to the bottom); the percentages resolve against the card's content width (229 at 1440) */
+.i2-ab-value {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  aspect-ratio: 329 / 498;
+  padding: 15.2%;
+  /* the icon waits rotated and shifted before its reveal: keep it inside the card, or it widens a phone's layout viewport */
+  overflow: clip;
+}
+
+.i2-ab-value--navy {
+  color: var(--color-action-primary-text);
+  background: var(--i2-navy);
+  --i2-tile-tint: var(--i2-on-navy);
+}
+
+.i2-ab-value--mint {
+  color: var(--color-text-primary);
+  background: var(--i2-mint);
+  --i2-tile-tint: var(--i2-on-mint);
+}
+
+.i2-ab-value--yellow {
+  color: var(--color-text-primary);
+  background: var(--i2-yellow);
+  --i2-tile-tint: var(--i2-on-yellow);
+}
+
+.i2-ab-value--dark {
+  color: var(--color-text-inverse);
+  background: var(--color-text-primary);
+  --i2-tile-tint: color-mix(in srgb, var(--color-text-primary) 55%, var(--color-canvas));
+}
+
+.i2-ab-value__icon {
+  display: block;
+  width: 52%;
+  color: var(--i2-tile-tint);
+  transition:
+    transform 0.5s,
+    opacity 0.5s;
+}
+
+.i2-ab-value__icon svg {
+  width: 100%;
+  height: auto;
+}
+
+.i2-ab-value[data-revealed="false"] .i2-ab-value__icon {
+  opacity: 0;
+  transform: rotate(45deg) translateX(60px);
+}
+
+.i2-ab-value__body {
+  margin-top: auto;
+  padding-top: 63.3%;
+}
+
+.i2-ab-value__body h3 {
+  font-size: 1.25rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.2;
+}
+
+.i2-ab-value__body p {
+  padding-top: 9px;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+
+/* ---- history timeline: the shared slider, starting at the left gutter and bleeding to the right ---- */
+.i2-ab-history {
+  margin-top: var(--i2-pg-gap);
+  overflow: clip;
+}
+
+/* starts where the page box's content starts; clips at the viewport's right edge; its first
+   column is exactly the page box's content width (the stage), the second the right gutter */
+.i2-ab-tl-clip {
+  display: grid;
+  grid-template-columns: minmax(0, calc(var(--i2-page-max) - 2 * var(--i2-wrap-pad))) minmax(var(--i2-wrap-pad), 1fr);
+  margin-left: calc(max(0px, (100% - var(--i2-page-max)) / 2) + var(--i2-wrap-pad));
+  padding-bottom: 4px;
+  overflow: clip;
+}
+
+.i2-ab-tl {
+  --i2-c-per: 4;
+  --i2-c-gap: 64px;
+}
+
+.i2-ab-tl .i2-c__viewport {
+  overflow: visible;
+}
+
+.i2-ab-tl .i2-c__stage {
+  margin: 0;
+}
+
+.i2-ab-tl .i2-c__bar {
+  margin-top: 29px;
+}
+
+.i2-ab-year {
+  min-width: 0;
+}
+
+.i2-ab-year__label {
+  font-size: min(4vw, 3rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.i2-ab-year__list {
+  padding-top: 25px;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+}
+
+.i2-ab-year__list li {
+  position: relative;
+  padding-left: 12px;
+}
+
+.i2-ab-year__list li + li {
+  margin-top: 7.5px;
+}
+
+.i2-ab-year__list li::before {
+  content: "·";
+  position: absolute;
+  left: 0;
+  font-weight: 700;
+}
+
+/* ---- "system": text column + the oversized image that runs out of the right edge ---- */
+.i2-ab-sys {
+  margin-top: var(--i2-pg-gap);
+  overflow: clip;
+}
+
+.i2-ab-sys__cols {
+  display: grid;
+  grid-template-columns: 600px minmax(0, 1fr);
+  gap: 80px;
+  align-items: center;
+}
+
+.i2-ab-sys__text {
+  min-width: 0;
+}
+
+.i2-ab-sys__title {
+  font-size: 1.875rem;
+  font-weight: var(--i2-w-display);
+  line-height: 1.46;
+  letter-spacing: -0.02em;
+}
+
+.i2-ab-sys__body {
+  padding-top: 36px;
+  font-size: 1.0625rem;
+  line-height: 1.53;
+}
+
+.i2-ab-sys__body p + p {
+  margin-top: 20px;
+}
+
+.i2-ab-sys__list {
+  padding-top: 37px;
+}
+
+.i2-ab-sys__list li {
+  position: relative;
+  padding-left: 30px;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.i2-ab-sys__list li + li {
+  margin-top: 16px;
+}
+
+/* the check mark draws itself in two strokes (.1 s + .1 s) once the block is revealed */
+.i2-ab-check {
+  position: absolute;
+  top: 1px;
+  left: 0;
+  width: 19px;
+  height: 19px;
+}
+
+.i2-ab-check path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.1s linear;
+}
+
+.i2-ab-check path:nth-child(2) {
+  transition-delay: 0.1s;
+}
+
+.i2-ab-sys[data-revealed="false"] .i2-ab-check path {
+  stroke-dashoffset: 1;
+}
+
+.i2-ab-sys__figure {
+  width: 1117px;
+  max-width: none;
+  aspect-ratio: 1117 / 629;
+  overflow: hidden;
+  border-radius: var(--decoration-radius-large);
+  background: var(--i2-surface);
+  box-shadow: var(--decoration-shadow-small);
+  transition:
+    transform 0.35s ease-out,
+    opacity 0.35s ease-out;
+}
+
+.i2-ab-sys__figure img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.i2-ab-sys[data-revealed="false"] .i2-ab-sys__figure {
+  opacity: 0;
+  transform: translateX(50%);
+}
+
+/* ============================================================== breakpoints */
+@media (min-width: 1401px) {
+  .i2-sv-glance__cols {
+    grid-template-columns: minmax(0, 1fr) 580px;
+  }
+
+  .i2-sv-glance__row {
+    grid-template-columns: 143px minmax(0, 1fr);
+    padding-left: 33px;
+  }
+}
+
+@media (min-width: 1501px) {
+  .i2-sv-tier__head {
+    padding: 34px 42px;
+  }
+
+  .i2-sv-cards__grid {
+    gap: 32px;
+  }
+}
+
+@media (max-width: 1420px) {
+  .i2-sv-card__body h3 {
+    font-size: 1.125rem;
+  }
+}
+
+@media (max-width: 1280px) {
+  .i2-pg {
+    --i2-pg-gap: 120px;
+  }
+
+  .i2-pg-title {
+    font-size: 2.1333rem;
+  }
+
+  .i2-pg-h2,
+  .i2-ab-hang__title,
+  .i2-ab-sys__title {
+    font-size: 1.6667rem;
+  }
+
+  .i2-sv-top {
+    margin-top: -30px;
+    padding-top: 30px;
+  }
+
+  .i2-sv-tier__head {
+    padding: 30px 25px 40px;
+  }
+
+  .i2-sv-glance__title {
+    margin-bottom: 60px;
+  }
+
+  .i2-sv-band {
+    height: 280px;
+  }
+
+  .i2-sv-band__title {
+    font-size: 1.6667rem;
+    line-height: 1.44;
+  }
+
+  .i2-sv-team__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 40px 30px;
+  }
+
+  .i2-ab-story__photo {
+    aspect-ratio: 1200 / 390;
+  }
+
+  .i2-ab-stats {
+    padding: 120px 0;
+  }
+
+  .i2-ab-stat__figure {
+    font-size: clamp(10px, 4.8vw, 58px);
+  }
+
+  .i2-ab-values__grid {
+    gap: 20px;
+  }
+
+  .i2-ab-tl {
+    --i2-c-gap: 48px;
+  }
+
+  .i2-ab-year__list {
+    font-size: 1.0667rem;
+  }
+}
+
+@media (max-width: 1100px) {
+  .i2-sv-tier__spec {
+    padding: 36px 22px 52px;
+  }
+
+  .i2-sv-tier__row {
+    padding: 16px 0;
+  }
+}
+
+@media (max-width: 1024px) {
+  .i2-sv-glance__cols {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 80px;
+  }
+
+  .i2-sv-glance__figure {
+    align-self: center;
+    max-width: 560px;
+  }
+
+  .i2-sv-cards__grid {
+    gap: 24px 20px;
+  }
+
+  .i2-sv-team__text {
+    font-size: 1.0667rem;
+  }
+
+  .i2-ab-hang__body,
+  .i2-ab-sys__body {
+    font-size: 1.0667rem;
+  }
+
+  .i2-ab-values__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .i2-ab-value {
+    aspect-ratio: auto;
+    padding: 30px;
+  }
+
+  .i2-ab-value__icon {
+    width: 25%;
+  }
+
+  .i2-ab-value__body {
+    margin-top: 0;
+    padding-top: 20px;
+  }
+
+  .i2-ab-tl {
+    --i2-c-per: 3;
+  }
+
+  .i2-ab-sys__cols {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 40px;
+  }
+
+  .i2-ab-sys__text,
+  .i2-ab-sys__figure {
+    width: 100%;
+  }
+}
+
+@media (max-width: 960px) {
+  .i2-sv-tiers {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .i2-sv-tier__head {
+    min-height: 0;
+    padding: 30px 25px;
+  }
+
+  .i2-sv-tier__name h3 {
+    font-size: 1.3333rem;
+  }
+
+  .i2-sv-tier__spec {
+    padding: 32px 22px 38px;
+    border-color: var(--i2-tile);
+  }
+
+  /* the bottom button is always visible and in flow */
+  .i2-sv-tier__btn {
+    position: static;
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .i2-sv-glance {
+    margin-top: 80px;
+  }
+}
+
+@media (max-width: 860px) {
+  .i2-sv-tier__price strong {
+    font-size: 1.8rem;
+  }
+
+  .i2-sv-cards__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* team: one column of black bars (icon + title), the text under each bar */
+  .i2-sv-team__list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+  }
+
+  .i2-sv-team__item {
+    text-align: left;
+  }
+
+  .i2-sv-team__head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 50px;
+    padding: 0 20px;
+    color: var(--color-text-inverse);
+    background: var(--color-text-primary);
+  }
+
+  .i2-sv-team__icon {
+    width: 30px;
+    height: 30px;
+    margin: 0;
+    border-radius: 0;
+    background: none;
+  }
+
+  .i2-sv-team__icon svg {
+    width: 30px;
+    height: 30px;
+  }
+
+  .i2-sv-team__head h3 {
+    padding: 0;
+    font-size: 1.0667rem;
+    line-height: 1.5;
+  }
+
+  .i2-sv-team__item p {
+    padding: 20px 20px 0;
+    font-size: 0.9333rem;
+    line-height: 1.7;
+  }
+}
+
+@media (max-width: 800px) {
+  .i2-pg {
+    --i2-pg-gap: 90px;
+  }
+
+  .i2-ab-stats {
+    padding: 90px 0;
+  }
+
+  /* statistics: one column; label + note at the left, the figure at the right */
+  .i2-ab-stats__list {
+    flex-direction: column;
+    gap: 10px;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  .i2-ab-stat {
+    display: flex;
+    flex: none;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    text-align: left;
+  }
+
+  .i2-ab-stat__figure {
+    flex: none;
+    font-size: clamp(24px, 7.5vw, 48px);
+  }
+
+  .i2-ab-stat__label {
+    padding-top: 0;
+    font-size: 1.2rem;
+  }
+
+  .i2-ab-stat__note {
+    padding-top: 6px;
+  }
+
+  .i2-ab-tl {
+    --i2-c-per: 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .i2-pg {
+    --i2-pg-gap: 75px;
+    --i2-pg-head: 24px;
+  }
+
+  /* the page title lives in the header bar; keep it for assistive tech */
+  .i2-pg-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .i2-pg-sub {
+    padding-top: 0;
+    font-size: 1.1333rem;
+    line-height: 1.45;
+  }
+
+  .i2-pg-h2,
+  .i2-ab-hang__title {
+    font-size: 1.3333rem;
+  }
+
+  .i2-sv-top__head {
+    padding-bottom: 30px;
+  }
+
+  .i2-sv-tier__head {
+    padding: 24px;
+  }
+
+  .i2-sv-tier__name h3 {
+    font-size: 1.3333rem;
+  }
+
+  .i2-sv-tier__price strong {
+    font-size: 1.8rem;
+  }
+
+  .i2-sv-glance__title {
+    margin-bottom: 40px;
+  }
+
+  .i2-sv-glance__cols {
+    gap: 60px;
+  }
+
+  .i2-sv-glance__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    min-height: 0;
+    padding: 28px 0;
+  }
+
+  .i2-sv-glance__name {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .i2-sv-glance__body h4 {
+    font-size: 1.1333rem;
+  }
+
+  .i2-sv-glance__body p {
+    font-size: 0.9333rem;
+  }
+
+  .i2-sv-band {
+    height: 200px;
+  }
+
+  .i2-sv-band__title {
+    font-size: 1.3333rem;
+    line-height: 1.5;
+  }
+
+  .i2-sv-cards__grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px 15px;
+  }
+
+  .i2-sv-card__body h3 {
+    font-size: 1.0667rem;
+    line-height: 1.75;
+  }
+
+  .i2-sv-card__body p {
+    font-size: 0.9333rem;
+  }
+
+  .i2-sv-team__text {
+    font-size: 1rem;
+  }
+
+  .i2-sv-team__list {
+    margin-top: 40px;
+  }
+
+  .i2-sv-team__cta {
+    margin-top: 50px;
+  }
+
+  .i2-sv-team__btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .i2-ab-top {
+    padding-bottom: 30px;
+  }
+
+  .i2-ab-hang {
+    transform: translateY(-13px);
+  }
+
+  .i2-ab-hang__title {
+    line-height: 1.3;
+  }
+
+  .i2-ab-hang__body {
+    padding-top: 14px;
+    font-size: 0.9333rem;
+    line-height: 1.53;
+  }
+
+  .i2-ab-stats {
+    padding: 75px 0;
+  }
+
+  .i2-ab-stats__list {
+    gap: 30px;
+    max-width: 92%;
+  }
+
+  .i2-ab-stat__label {
+    font-size: 1.0667rem;
+  }
+
+  .i2-ab-values__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .i2-ab-value {
+    min-height: 209px;
+    padding: 20px;
+  }
+
+  .i2-ab-value__icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 27%;
+  }
+
+  .i2-ab-value__body {
+    padding-top: 28%;
+  }
+
+  .i2-ab-value__body h3 {
+    font-size: 1.1333rem;
+  }
+
+  .i2-ab-value__body p {
+    font-size: 0.9333rem;
+    line-height: 1.65;
+  }
+
+  /* one slide with the next one peeking; no autoplay (TimelineSlider) */
+  .i2-ab-tl {
+    --i2-c-per: 1;
+    --i2-c-gap: 20px;
+    --i2-c-stage: calc(100% - 40px);
+  }
+
+  .i2-ab-year__label {
+    font-size: 1.2667rem;
+  }
+
+  .i2-ab-year__list {
+    padding-top: 16px;
+    font-size: 1rem;
+  }
+
+  .i2-ab-sys__title {
+    font-size: 1.3333rem;
+    line-height: 1.45;
+  }
+
+  .i2-ab-sys__body {
+    padding-top: 20px;
+    font-size: 1rem;
+  }
+
+  .i2-ab-sys__list {
+    padding-top: 24px;
+  }
+
+  .i2-ab-sys__list li {
+    padding-left: 20px;
+    font-size: 0.9333rem;
+    line-height: 1.5;
+  }
+
+  .i2-ab-sys__list li + li {
+    margin-top: 10px;
+  }
+
+  .i2-ab-check {
+    top: 5px;
+    width: 11px;
+    height: 11px;
+  }
+}

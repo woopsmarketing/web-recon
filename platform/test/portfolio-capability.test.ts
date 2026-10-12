@@ -39,8 +39,12 @@ const TEMPLATE = "interior-02";
  */
 const PLAIN_TEMPLATE = "interior-03";
 const PLAIN_RELEASE = "interior-03-1.0.0-2a949e9f0247";
-/** the releases of OTHER Templates that declare the capability — each one cut through the gate, each proven by portfolio-runtime.test.ts */
-const OTHER_DECLARED_RELEASES = ["interior-01-1.7.0-3b5c917a5005", "interior-03-1.1.0-0e434d80b8e4"] as const;
+/**
+ * The other releases that declare the capability, each one cut through the gate: those of OTHER
+ * Templates (each proven by portfolio-runtime.test.ts), and the EARLIER release of this Template
+ * that declared it — 1.1.1, the working tree's release until 1.1.2 (the home.keywords fix) was cut.
+ */
+const OTHER_DECLARED_RELEASES = ["interior-01-1.7.0-3b5c917a5005", "interior-02-1.1.1-b60c756ce173", "interior-03-1.1.0-0e434d80b8e4"] as const;
 const SHELL_SITE = "boost-interior-demo-02";
 /** THE release cut before the capability existed that ships a portfolio runtime — a live site pins it */
 const LEGACY_RELEASE = "interior-02-1.1.0-be2c1e2d3850";
@@ -127,7 +131,7 @@ try {
     }
   });
 
-  await check(`C3 the resolver over the whole store (${allReleases.length} releases): declared by the release = the working tree's and ${OTHER_DECLARED_RELEASES.length} named release(s) of other Templates; legacy = exactly ${LEGACY_RELEASE}; every other release is unsupported and says why`, () => {
+  await check(`C3 the resolver over the whole store (${allReleases.length} releases): declared by the release = the working tree's and ${OTHER_DECLARED_RELEASES.length} named release(s) (other Templates, an earlier one of this Template); legacy = exactly ${LEGACY_RELEASE}; every other release is unsupported and says why`, () => {
     const by = { release: [] as string[], legacy: [] as string[], unsupported: [] as string[] };
     for (const r of allReleases) {
       const support = resolvePortfolioRuntime(r);

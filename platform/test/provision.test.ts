@@ -41,6 +41,7 @@ import { escapeHtmlText } from "../provision/package-check";
 import { StepFailure, buildProvisionedSite, provisionSite, type ProvisionDeps, type ProvisionResources, type ProvisionResult } from "../provision/provision";
 import { CLOUDFLARE_API, DEFAULT_RUNTIME_SCRIPT, RouteError, createCloudflareRouteClient, ensureHostRoute, runtimeScriptName, type WorkerRoute, type WorkerRouteClient } from "../provision/routes";
 import { planScaffold, scaffoldSite } from "../provision/scaffold";
+import { loadRelease } from "../release/release";
 import { REDACTED, createScrubber } from "../provision/scrub";
 import { ProvisionError, RunnerEventDataSchemas, parseProvisionSpec, validateProvisionSpec, type ProvisionSpec, type RunnerEventType } from "../provision/spec";
 import { STARTERS_DIR, StarterError, listStarters, loadStarter, phoneOf, renderStarterDocument, type StarterValues } from "../provision/starter";
@@ -142,6 +143,15 @@ const spec = (over: (s: any) => void = () => {}): unknown => {
 };
 const HOST = fixture.hostname;
 const SITE = fixture.siteId;
+/**
+ * The releases a new site may be created with — exactly what starter.json lists, in its order: the
+ * one the smoke fixture pins (everything below is built with it), and 1.1.2 (the home.keywords fix).
+ * 1.1.0 stays listed while BoostChat can still offer it: a checkout that no longer lists the release
+ * of a job it claims refuses the job (`release_not_allowed`).
+ */
+const STARTER_RELEASES = [fixture.template.releaseId, "interior-02-1.1.2-0b35f76a156d"];
+/** a stored release of the Template that declares the portfolio runtime and is NOT listed by the starter */
+const UNLISTED_RELEASE = "interior-02-1.1.1-b60c756ce173";
 
 /**
  * What must never be in a new site, written here independently of the runner's own check: the
@@ -234,6 +244,9 @@ try {
     // interior-01 exists as a Template and has releases — but no starter: still not allowed
     eq(await codeOf(validateProvisionSpec({ repoRoot, raw: spec((s) => ((s.template.templateId = "interior-01"), (s.template.releaseId = `interior-01-1.0.0-${h.slice(0, 12)}`))) })), "template_not_allowed", "a template without a starter");
     eq(await codeOf(validateProvisionSpec({ repoRoot, raw: spec((s) => (s.template.releaseId = `interior-02-9.9.9-${h.slice(0, 12)}`)) })), "release_not_allowed", "unknown release");
+    // a release that IS in the store, with its real hash and a portfolio runtime — but that the starter does not list
+    const unlisted = await loadRelease(repoRoot, TEMPLATE, UNLISTED_RELEASE);
+    eq(await codeOf(validateProvisionSpec({ repoRoot, raw: spec((s) => ((s.template.releaseId = unlisted.releaseId), (s.template.releaseHash = unlisted.releaseHash))) })), "release_not_allowed", "a stored release the starter does not list");
     const otherHash = h.slice(0, 12) + "0".repeat(52);
     eq(await codeOf(validateProvisionSpec({ repoRoot, raw: spec((s) => (s.template.releaseHash = otherHash)) })), "release_hash_mismatch", "hash mismatch");
     // a refusal never quotes a value of the document
@@ -244,12 +257,19 @@ try {
       assert(e instanceof ProvisionError && !e.message.includes("SECRETVALUE"), `the message quotes the value: ${(e as Error).message}`);
     }
   });
+  await check(`A4 every release the starter lists (${STARTER_RELEASES.length}) is a valid pin: in the store with the hash a spec names, intact, publishable incrementally`, async () => {
+    for (const releaseId of STARTER_RELEASES) {
+      const stored = await loadRelease(repoRoot, TEMPLATE, releaseId);
+      const v = await validateProvisionSpec({ repoRoot, raw: spec((s) => ((s.template.releaseId = stored.releaseId), (s.template.releaseHash = stored.releaseHash))) });
+      eq([v.starter.templateId, v.release.releaseId, v.release.releaseHash, v.spec.template.releaseId], [TEMPLATE, releaseId, stored.releaseHash, releaseId], releaseId);
+    }
+  });
 
   // ══ B. starter ════════════════════════════════════════════════════════════════════════════════
   console.log("B. starter");
   const starterRoot = path.join(repoRoot, STARTERS_DIR, TEMPLATE);
   await check("B1 starter.json is exactly { schema, templateId, releaseIds }; the starter is the only one; it carries no portfolio, no reviews, no identity, no script and no endpoint document", async () => {
-    eq(await readJson(path.join(starterRoot, "starter.json")), { schema: "site-starter@1", templateId: TEMPLATE, releaseIds: [fixture.template.releaseId] }, "starter.json");
+    eq(await readJson(path.join(starterRoot, "starter.json")), { schema: "site-starter@1", templateId: TEMPLATE, releaseIds: STARTER_RELEASES }, "starter.json");
     eq((await listStarters(repoRoot)).map((s) => s.templateId), [TEMPLATE], "starters");
     eq((await loadStarter(repoRoot, "interior-99")) ?? null, null, "no starter");
     const files = await walk(starterRoot);
