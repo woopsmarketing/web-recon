@@ -11,6 +11,7 @@
 #   - An input never appears inside a `run:` script. Inputs reach a process ONLY through `env:` or `with:`;
 #     the scripts below contain no ${{ }} at all.
 #   - Secrets are mapped on the ONE step that needs them.
+#   - The job runs in the GitHub Environment `site-rebuild` (restricted to the default branch).
 #   - Third-party actions are pinned to a full commit SHA.
 #   - Nothing from the checkout runs before the commit is proven to be ON THE TRUSTED BRANCH: `source_ref`
 #     must be a full commit SHA, and that commit must be the branch's head or one of its ancestors.
@@ -42,6 +43,9 @@ jobs:
   rebuild:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    # The three secrets below exist in this environment, and the environment admits a run of the default
+    # branch only: a run of this file from any other branch or tag is refused before a step starts.
+    environment: site-rebuild
     steps:
       - name: Check out the runner
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

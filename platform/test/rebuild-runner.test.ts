@@ -311,6 +311,7 @@ try {
     assert(/^permissions:\n  contents: read\n/m.test(code) && !/:\s*write\b/.test(code) && (code.match(/^\s*permissions:/gm) ?? []).length === 1, "permissions");
     assert(code.includes("concurrency:\n  group: rebuild-${{ inputs.rebuild_id }}\n  cancel-in-progress: false\n"), "concurrency");
     assert(/runs-on: ubuntu-latest\n    timeout-minutes: 25\n/.test(code) && (code.match(/^  [a-z-]+:\n    runs-on:/gm) ?? []).length === 1, "one job");
+    eq(code.match(/^    environment: .+$/gm) ?? [], ["    environment: site-rebuild"], "the job's environment (the secrets live there, default branch only)");
     const stepNames = [...code.matchAll(/^      - name: (.+)$/gm)].map((m) => m[1]!);
     eq(stepNames.slice(0, 2), ["Check out the runner", "Refuse a commit that is not on the trusted branch"], "the first two steps");
     const guard = code.slice(code.indexOf("      - name: Refuse a commit that is not on the trusted branch"), code.indexOf("      - name: Set up Node 22"));
