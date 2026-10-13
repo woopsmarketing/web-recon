@@ -43,7 +43,7 @@ import { CLOUDFLARE_API, DEFAULT_RUNTIME_SCRIPT, RouteError, createCloudflareRou
 import { planScaffold, scaffoldSite } from "../provision/scaffold";
 import { loadRelease } from "../release/release";
 import { REDACTED, createScrubber } from "../provision/scrub";
-import { ProvisionError, RunnerEventDataSchemas, parseProvisionSpec, validateProvisionSpec, type ProvisionSpec, type RunnerEventType } from "../provision/spec";
+import { BRAND_NAME_MAX, ProvisionError, RunnerEventDataSchemas, parseProvisionSpec, validateProvisionSpec, type ProvisionSpec, type RunnerEventType } from "../provision/spec";
 import { STARTERS_DIR, StarterError, listStarters, loadStarter, phoneOf, renderStarterDocument, type StarterValues } from "../provision/starter";
 import { handle, type Env, type R2BucketLike, type R2ObjectBodyLike } from "../../workers/recon-runtime/src/index";
 import { portfolioCurrentKey, portfolioPublicKey, routingKey, sealKey } from "../../workers/recon-runtime/src/contract";
@@ -151,6 +151,18 @@ const SITE = fixture.siteId;
  * the release of a job it claims refuses the job (`release_not_allowed`).
  */
 const STARTER_RELEASES = [fixture.template.releaseId, "interior-02-1.1.2-0b35f76a156d", "interior-02-1.2.0-da9e2c3b9d2b"];
+/** every template that has a starter, in the order listStarters returns them (sorted by directory name), with the exact releases its starter.json lists */
+const STARTERS: Record<string, string[]> = {
+  "interior-01": ["interior-01-1.7.0-3b5c917a5005"],
+  "interior-02": STARTER_RELEASES,
+  "interior-03": ["interior-03-1.1.0-0e434d80b8e4"],
+};
+/** the smoke fixture of each template (interior-02: the build fixture above; the others are scaffold-only here, built by site-provision.ts --build-only) */
+const SMOKE_FIXTURES: Record<string, string> = {
+  "interior-01": "platform/provision/fixtures/smoke-spec-interior-01.json",
+  "interior-02": FIXTURE,
+  "interior-03": "platform/provision/fixtures/smoke-spec-interior-03.json",
+};
 /** a stored release of the Template that declares the portfolio runtime and is NOT listed by the starter */
 const UNLISTED_RELEASE = "interior-02-1.1.1-b60c756ce173";
 
@@ -242,8 +254,9 @@ try {
   await check("A3 the allowlist and the release store: an unknown template, a release the starter does not list, a hash that is not the stored release's", async () => {
     const h = fixture.template.releaseHash;
     eq(await codeOf(validateProvisionSpec({ repoRoot, raw: spec((s) => ((s.template.templateId = "interior-99"), (s.template.releaseId = `interior-99-1.0.0-${h.slice(0, 12)}`))) })), "template_not_allowed", "unknown template");
-    // interior-01 exists as a Template and has releases — but no starter: still not allowed
-    eq(await codeOf(validateProvisionSpec({ repoRoot, raw: spec((s) => ((s.template.templateId = "interior-01"), (s.template.releaseId = `interior-01-1.0.0-${h.slice(0, 12)}`))) })), "template_not_allowed", "a template without a starter");
+    // interior-01 and interior-03 have starters now: a template with a starter is allowed, a release id its starter does not list is not
+    eq(await codeOf(validateProvisionSpec({ repoRoot, raw: spec((s) => ((s.template.templateId = "interior-01"), (s.template.releaseId = `interior-01-1.0.0-${h.slice(0, 12)}`))) })), "release_not_allowed", "a template with a starter, a release its starter does not list");
+    eq(await codeOf(validateProvisionSpec({ repoRoot, raw: spec((s) => ((s.template.templateId = "interior-03"), (s.template.releaseId = `interior-03-1.0.0-${h.slice(0, 12)}`))) })), "release_not_allowed", "a second template with a starter, a release its starter does not list");
     eq(await codeOf(validateProvisionSpec({ repoRoot, raw: spec((s) => (s.template.releaseId = `interior-02-9.9.9-${h.slice(0, 12)}`)) })), "release_not_allowed", "unknown release");
     // a release that IS in the store, with its real hash and a portfolio runtime — but that the starter does not list
     const unlisted = await loadRelease(repoRoot, TEMPLATE, UNLISTED_RELEASE);
@@ -269,30 +282,105 @@ try {
   // ══ B. starter ════════════════════════════════════════════════════════════════════════════════
   console.log("B. starter");
   const starterRoot = path.join(repoRoot, STARTERS_DIR, TEMPLATE);
-  await check("B1 starter.json is exactly { schema, templateId, releaseIds }; the starter is the only one; it carries no portfolio, no reviews, no identity, no script and no endpoint document", async () => {
-    eq(await readJson(path.join(starterRoot, "starter.json")), { schema: "site-starter@1", templateId: TEMPLATE, releaseIds: STARTER_RELEASES }, "starter.json");
-    eq((await listStarters(repoRoot)).map((s) => s.templateId), [TEMPLATE], "starters");
+  const starterRootOf = (templateId: string) => path.join(repoRoot, STARTERS_DIR, templateId);
+  await check("B1 starter.json of every starter is exactly { schema, templateId, releaseIds }; listStarters = interior-01, -02, -03; no starter carries a portfolio, reviews, an identity, a script or an endpoint document", async () => {
+    eq((await listStarters(repoRoot)).map((s) => [s.templateId, s.releaseIds]), Object.entries(STARTERS), "starters (and their releases)");
     eq((await loadStarter(repoRoot, "interior-99")) ?? null, null, "no starter");
-    const files = await walk(starterRoot);
-    for (const banned of ["site.json", "scripts.json", "inquiry.json", "integration.json", "content/projects.json", "content/categories.json", "content/reviews.json", SOURCE_MARKER_FILE]) assert(!files.includes(banned), `the starter carries ${banned}`);
+    for (const [templateId, releaseIds] of Object.entries(STARTERS)) {
+      const root = starterRootOf(templateId);
+      eq(await readJson(path.join(root, "starter.json")), { schema: "site-starter@1", templateId, releaseIds }, `${templateId} starter.json`);
+      const files = await walk(root);
+      for (const banned of ["site.json", "scripts.json", "inquiry.json", "integration.json", "content/projects.json", "content/categories.json", "content/reviews.json", SOURCE_MARKER_FILE]) assert(!files.includes(banned), `the ${templateId} starter carries ${banned}`);
+    }
   });
-  await check("B2 hygiene of the starter's own files: no name, hostname, e-mail address or phone number of an existing site, no demo project image or id; every image is site-*; no review, no manual project pick, no logo", async () => {
-    eq(await firstForbidden(starterRoot), undefined, "forbidden content");
-    const files = await walk(starterRoot);
-    const images = files.filter((f) => f.startsWith("assets/") && f !== "assets/registry.json");
-    assert(images.length > 0 && images.every((f) => /^assets\/site-[a-z0-9-]+\.(jpg|png|webp)$/.test(f)), `images: ${images.join(", ")}`);
-    const registry = await readJson(path.join(starterRoot, "assets/registry.json"));
-    eq((registry.items as { file: string }[]).map((i) => `assets/${i.file}`).sort(), images, "registry = the image files");
-    const all = (await Promise.all(files.filter((f) => f.endsWith(".json")).map((f) => readFile(path.join(starterRoot, f), "utf8")))).join("\n");
-    assert(!/"mode"\s*:\s*"(manual|category)"/.test(all), "a project selection that is not latest");
-    assert(!/"kind"\s*:\s*"project"/.test(all), "a CTA to a project");
-    // review CONTENT never; the two UI labels of the per-project review block (shown only when a project of the customer has one) are the only words about it
-    const reviewKeys = [...all.matchAll(/"([^"]*)"\s*:\s*"[^"]*"/g)].filter((m) => /review|후기|한마디/i.test(m[0])).map((m) => m[1]);
-    eq(reviewKeys.sort(), ["reviewJumpLabel", "reviewTitle"], "keys that speak of a review");
-    assert(!/review|후기|한마디/i.test(all.replace(/"review(JumpLabel|Title)"\s*:\s*"[^"]*"/g, "")), "a review");
-    assert(!/"logo"/.test(all) && !/logoMark/.test(all), "a logo");
-    eq((await readJson(path.join(starterRoot, "settings.json"))).overrides["site.seo"], { indexing: "noindex" }, "site.seo");
-  });
+  /**
+   * The words about a review that a starter MAY carry, per template, each justified by the template's manifest
+   * (data/template-releases/<template>/<release>/files/templates/<template>/v1/template.ts):
+   *  - interior-01: `home.reviews` is a section that renders only when the customer's own site has reviews
+   *    (sections/HomeReviews.tsx: "None → undefined: no heading-only shell, no empty track, no invented quote … the review
+   *    items are never slots"); its slots are title / media / previousLabel / nextLabel — UI labels and a decorative image.
+   *    `portfolio.detail.quoteTitle` is the caption of the project's quote and is rendered only `data.quote ?` (the project's own).
+   *  - interior-02: `portfolio.detail.reviewJumpLabel` / `reviewTitle`: the labels of the per-project review block, shown only when a project of the customer has one.
+   *  - interior-03: none (the starter says nothing about reviews).
+   * Anything else that speaks of a review — a quote, an author, a reviews document, any other key — is a failure.
+   */
+  const REVIEW_WORDS = /review|후기|한마디/i;
+  const HOME_REVIEWS_SLOTS = ["title", "media", "previousLabel", "nextLabel"];
+  const ALLOWED_REVIEW_HITS: Record<string, string[]> = {
+    "interior-01": [
+      "assets/registry.json:items.#.file",
+      "assets/registry.json:items.#.id",
+      "slots.json:values.home.reviews.media.alt",
+      "slots.json:values.home.reviews.media.asset",
+      "slots.json:values.home.reviews.nextLabel",
+      "slots.json:values.home.reviews.previousLabel",
+      "slots.json:values.home.reviews.title",
+      "slots.json:values.portfolio.detail.quoteTitle",
+    ],
+    "interior-02": ["slots.json:values.portfolio.detail.reviewJumpLabel", "slots.json:values.portfolio.detail.reviewTitle"],
+    "interior-03": [],
+  };
+  /** every leaf of a JSON document whose key path or string value speaks of a review, as "<file>:<path>" (array indexes written "#") */
+  function reviewHits(file: string, doc: unknown): string[] {
+    const hits: string[] = [];
+    const visit = (v: unknown, p: string[]) => {
+      if (v !== null && typeof v === "object") {
+        for (const [k, c] of Object.entries(v)) visit(c, [...p, Array.isArray(v) ? "#" : k]);
+        return;
+      }
+      if (REVIEW_WORDS.test(p.join(".")) || (typeof v === "string" && REVIEW_WORDS.test(v))) hits.push(`${file}:${p.join(".")}`);
+    };
+    visit(doc, []);
+    return hits;
+  }
+  for (const templateId of Object.keys(STARTERS)) {
+    await check(`B2 hygiene of the ${templateId} starter's own files: no name, hostname, e-mail address or phone number of an existing site, no demo project image or id; every image is site-*; no manual project pick, no logo; review content never (only ${ALLOWED_REVIEW_HITS[templateId]!.length === 0 ? "no words about reviews" : "the manifest's review UI labels"})`, async () => {
+      const root = starterRootOf(templateId);
+      eq(await firstForbidden(root), undefined, "forbidden content");
+      const files = await walk(root);
+      const images = files.filter((f) => f.startsWith("assets/") && f !== "assets/registry.json");
+      assert(images.length > 0 && images.every((f) => /^assets\/site-[a-z0-9-]+\.(jpg|png|webp)$/.test(f)), `images: ${images.join(", ")}`);
+      const registry = await readJson(path.join(root, "assets/registry.json"));
+      eq((registry.items as { file: string }[]).map((i) => `assets/${i.file}`).sort(), images, "registry = the image files");
+      const jsonFiles = files.filter((f) => f.endsWith(".json") && f !== "starter.json");
+      const all = (await Promise.all(jsonFiles.map((f) => readFile(path.join(root, f), "utf8")))).join("\n");
+      assert(!/"mode"\s*:\s*"(manual|category)"/.test(all), "a project selection that is not latest");
+      assert(!/"kind"\s*:\s*"project"/.test(all), "a CTA to a project");
+      // review CONTENT never: the only leaves that speak of a review are the manifest's UI labels listed above, exactly
+      const hits: string[] = [];
+      for (const f of jsonFiles) hits.push(...reviewHits(f, await readJson(path.join(root, f))));
+      eq([...new Set(hits)].sort(), ALLOWED_REVIEW_HITS[templateId], "leaves that speak of a review");
+      if (templateId === "interior-01") {
+        // the home.reviews section holds only the manifest's four slots, and the one image in the registry that says "reviews" is that section's decoration
+        const slots = await readJson(path.join(root, "slots.json"));
+        eq(Object.keys(slots.values["home.reviews"]).sort(), [...HOME_REVIEWS_SLOTS].sort(), "home.reviews slots");
+        eq(slots.values["home.reviews"].media.asset, "site-reviews", "the media of home.reviews");
+        eq((registry.items as { id: string; file: string }[]).filter((i) => REVIEW_WORDS.test(i.id) || REVIEW_WORDS.test(i.file)).map((i) => [i.id, i.file]), [["site-reviews", "site-reviews.jpg"]], "registry items that say reviews");
+        eq(Object.keys(slots.values["portfolio.detail"]).filter((k) => REVIEW_WORDS.test(k)), [], "no review key in portfolio.detail");
+      }
+      assert(!/"logo"/.test(all) && !/logoMark/.test(all), "a logo");
+      eq((await readJson(path.join(root, "settings.json"))).overrides["site.seo"], { indexing: "noindex" }, "site.seo");
+    });
+  }
+  for (const templateId of Object.keys(STARTERS)) {
+    await check(`B2b ${templateId}: a brand name of the maximum length (${BRAND_NAME_MAX} characters) with a phone, and without a phone, scaffolds and loads — no slot limit is exceeded by {{brandName}}`, async () => {
+      const smoke = (await readJson(path.join(repoRoot, SMOKE_FIXTURES[templateId]!))) as ProvisionSpec;
+      eq([smoke.template.templateId, STARTERS[templateId]!.includes(smoke.template.releaseId)], [templateId, true], "the smoke fixture pins a release the starter lists");
+      for (const brandName of ["가".repeat(BRAND_NAME_MAX), "W".repeat(BRAND_NAME_MAX)]) {
+        for (const phone of ["02-000-0000", null]) {
+          const root = await makeRoot();
+          const id = `${smoke.siteId}-max`;
+          const over = { ...clone(smoke), siteId: id, hostname: `${id}.boostweb.co.kr`, publicOrigin: `https://${id}.boostweb.co.kr`, identity: { ...smoke.identity, brandName }, contact: { ...smoke.contact, phone } } as ProvisionSpec;
+          eq(parseProvisionSpec(over).identity.brandName.length, BRAND_NAME_MAX, "brand name length");
+          const r = await scaffoldSite({ repoRoot: root, spec: over }); // runs assertLoads (the platform loader: schemas, slot limits, images)
+          eq(r.status, "written", `${templateId} ${brandName[0]}×${BRAND_NAME_MAX} phone=${phone}`);
+          const text = (await Promise.all(r.files.filter((f) => f.endsWith(".json")).map((f) => readFile(path.join(root, "data/sites", id, f), "utf8")))).join("\n");
+          assert(text.includes(JSON.stringify(brandName).slice(1, -1)), "the brand name is in the site documents");
+          eq(/tel:/.test(text), phone !== null, "tel: link iff a phone");
+        }
+      }
+    });
+  }
   await check("B3 tokens: resolved on parsed values, single pass; phone / e-mail only inside the matching $if; the key is left out when the spec has none; an unknown token or directive is refused", () => {
     const values: StarterValues = { brandName: 'A "B" {{phone}} ${x} \\', phone: phoneOf("02-000-0000"), email: null };
     eq(phoneOf("02-000-0000"), { display: "02-000-0000", href: "tel:02-000-0000" }, "phone");

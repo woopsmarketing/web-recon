@@ -1,0 +1,13 @@
+{
+  "schema": "business@1",
+  "origin": "customer",
+  "data": {
+    "summary": "{{brandName}} 홈페이지입니다. 시공사례를 살펴보고 견적 문의를 남길 수 있습니다.",
+    "contact": {
+      "$if": "email",
+      "then": {
+        "email": "{{email}}"
+      }
+    }
+  }
+}

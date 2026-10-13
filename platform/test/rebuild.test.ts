@@ -468,7 +468,8 @@ try {
     const cases: [(s: any) => void, string][] = [
       [(s) => ((s.hostname = "rebuild-fixture.example.com"), (s.publicOrigin = "https://rebuild-fixture.example.com")), "host_invalid"],
       [(s) => (s.publicOrigin = "https://other.boostweb.co.kr"), "origin_mismatch"],
-      [(s) => ((s.template.templateId = "interior-01"), (s.template.releaseId = "interior-01-1.7.0-3b5c917a5005"), (s.template.releaseHash = `3b5c917a5005${"0".repeat(52)}`)), "template_not_allowed"],
+      // (interior-01 and interior-03 have starters now; interior-99 is a well-formed id that has none)
+      [(s) => ((s.template.templateId = "interior-99"), (s.template.releaseId = "interior-99-1.0.0-3b5c917a5005"), (s.template.releaseHash = `3b5c917a5005${"0".repeat(52)}`)), "template_not_allowed"],
       [(s) => ((s.template.releaseId = "interior-02-1.1.1-b60c756ce173"), (s.template.releaseHash = `b60c756ce173${"0".repeat(52)}`)), "release_not_allowed"],
       [(s) => (s.template.releaseHash = `${s.template.releaseHash.slice(0, 12)}${"0".repeat(52)}`), "release_hash_mismatch"],
       [(s) => (s.boostchat.widgetKey = "wgt_short"), "widget_key_invalid"],
